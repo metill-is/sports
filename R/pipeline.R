@@ -32,7 +32,8 @@ scrape_all <- function(config) {
     comp <- tryCatch(
       scrape_competition(config$sport, config$country, competition),
       error = function(e) {
-        message("  FAILED: ", e$message)
+        message("  FAILED: ", conditionMessage(e))
+        message("  ", paste(capture.output(traceback()), collapse = "\n  "))
         NULL
       }
     )

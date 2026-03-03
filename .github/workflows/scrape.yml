@@ -24,12 +24,13 @@ jobs:
           use-public-rspm: true
 
       - uses: browser-actions/setup-chrome@v1
+        id: setup-chrome
         with:
           chrome-version: stable
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::targets
+          extra-packages: any::targets, any::chromote
 
       - name: Restore targets cache
         uses: actions/cache@v4
@@ -39,6 +40,8 @@ jobs:
           restore-keys: targets-
 
       - name: Run pipeline
+        env:
+          CHROMOTE_CHROME: ${{ steps.setup-chrome.outputs.chrome-path }}
         run: |
           Rscript -e 'targets::tar_make()'
 
