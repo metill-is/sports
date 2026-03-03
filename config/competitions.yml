@@ -1,15 +1,52 @@
 # Lengjan competition registry
 # URL pattern: https://games.lotto.is/getraunaleikir/lengjan?sport={sport}&country={country}&competition={id}
+#
+# Sport IDs: 1=Football, 2=Basketball, 6=Handball
 
-sport: 1
-country: "ENG"
+football_england:
+  sport: 1
+  country: "ENG"
+  team_names: "team_names_football_england.csv"
+  leagues:
+    Premier League:
+      competition: "296"
+    Championship:
+      competition: "291"
+    League 1:
+      competition: "294"
+    League 2:
+      competition: "295"
 
-leagues:
-  Premier League:
-    competition: "296"
-  Championship:
-    competition: "291"
-  League 1:
-    competition: "294"
-  League 2:
-    competition: "295"
+football_italy:
+  sport: 1
+  country: "IT"
+  team_names: "team_names_football_italy.csv"
+  leagues:
+    Serie A:
+      competition: "474"
+    Serie B:
+      competition: "475"
+
+football_spain:
+  sport: 1
+  country: "ES"
+  team_names: "team_names_football_spain.csv"
+  leagues:
+    LaLiga:
+      competition: "551"
+    LaLiga2:
+      competition: "557"
+
+basketball_nba:
+  sport: 2
+  country: "US"
+  leagues:
+    NBA:
+      competition: "408"
+
+handball_champions_league:
+  sport: 6
+  country: "INT"
+  leagues:
+    Champions League:
+      competition: "1264"

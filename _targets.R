@@ -1,8 +1,10 @@
 # Lengjan Odds Scraper — {targets} pipeline
 #
+# Creates per-sport targets dynamically from competitions.yml.
+# Each sport gets: scrape (always runs) → accumulate (skips if unchanged).
+#
 # Usage:
 #   targets::tar_make()        # Run full pipeline
-#   targets::tar_read(odds)    # Read latest scraped odds
 #   targets::tar_visnetwork()  # Visualise pipeline DAG
 
 library(targets)
@@ -17,26 +19,38 @@ tar_option_set(
 # Source all R/ files so functions are available to targets
 tar_source("R/")
 
-list(
-  # 1. Load competition config — re-runs if competitions.yml changes
+# Read config at pipeline-definition time to create per-sport targets
+sport_keys <- names(yaml::read_yaml("config/competitions.yml"))
+
+# Build target list: config + per-sport (scrape → accumulate)
+targets <- list(
   tar_target(
     config,
     load_competitions(here::here("config", "competitions.yml"))
-  ),
-
-  # 2. Scrape fresh odds — ALWAYS runs (code doesn't change, but odds do)
-  #    If the scraped data is identical to last run, downstream targets are skipped
-  tar_target(
-    odds,
-    scrape_all(config),
-    cue = tar_cue(mode = "always")
-  ),
-
-  # 3. Accumulate into data/ — only runs if odds hash changed
-  #    Reads existing CSVs, appends new rows, deduplicates, writes back
-  tar_target(
-    data_files,
-    accumulate_odds(odds),
-    format = "file"
   )
 )
+
+for (key in sport_keys) {
+  targets <- c(targets, list(
+    # Scrape fresh odds — ALWAYS runs (code doesn't change, but odds do)
+    tar_target_raw(
+      name = paste0("odds_", key),
+      command = substitute(
+        scrape_sport(config, k),
+        list(k = key)
+      ),
+      cue = tar_cue(mode = "always")
+    ),
+    # Accumulate into data/{sport}/ — only runs if odds hash changed
+    tar_target_raw(
+      name = paste0("data_", key),
+      command = substitute(
+        accumulate_sport_odds(odds, k),
+        list(odds = as.symbol(paste0("odds_", key)), k = key)
+      ),
+      format = "file"
+    )
+  ))
+}
+
+targets

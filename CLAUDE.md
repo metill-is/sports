@@ -5,35 +5,61 @@ Standalone scraper for betting odds from Lengjan (games.lotto.is). Uses {targets
 ## Architecture
 
 ```
-_targets.R          # Pipeline: config → scrape → accumulate
+_targets.R          # Pipeline: config → per-sport scrape → accumulate
 R/
   parse.R           # Icelandic date parsing
   scrape.R          # Two-stage browser scraper (1x2 + handicap/totals)
-  pipeline.R        # Pipeline functions (load_competitions, scrape_all, accumulate_odds)
+  pipeline.R        # Pipeline functions (load_competitions, scrape_sport, accumulate_sport_odds)
 config/
   competitions.yml  # Sport/league IDs for Lengjan URLs
-  team_names.csv    # Lengjan name → standardised name mapping
+  team_names_*.csv  # Lengjan name → standardised name mappings (per sport, optional)
 data/
   football_england/ # Accumulated odds CSVs (committed to git)
+  football_italy/
+  football_spain/
+  basketball_nba/
+  handball_champions_league/
 ```
 
 ## Pipeline
 
 ```
-config (competitions.yml) → scrape_all (always runs) → accumulate_odds (skips if unchanged)
+config (competitions.yml)
+  ├── odds_football_england (always runs) → data_football_england (skips if unchanged)
+  ├── odds_football_italy   (always runs) → data_football_italy
+  ├── odds_football_spain   (always runs) → data_football_spain
+  ├── odds_basketball_nba   (always runs) → data_basketball_nba
+  └── odds_handball_champions_league → data_handball_champions_league
 ```
 
-- `scrape_all` always runs (`tar_cue(mode = "always")`) because the code doesn't change, only the data
-- `accumulate_odds` reads existing CSVs, appends new rows with `scraped_at` timestamp, deduplicates on match identity + odds values, writes back
-- If scraped odds are identical to previous run, {targets} skips the accumulation step entirely
+- Per-sport targets created dynamically via `tar_target_raw()` + `substitute()` from `competitions.yml` keys
+- Each sport scrapes independently — failures in one don't block others
+- `scrape_sport()` always runs (`tar_cue(mode = "always")`) because odds change, not code
+- `accumulate_sport_odds()` reads existing CSVs, appends new rows with `scraped_at` timestamp, deduplicates on match identity + odds values, writes back
+- Team name standardisation is optional: sports with `team_names` config use left_join mapping, others keep Lengjan names as-is
 
 ## Commands
 
 ```bash
-Rscript -e 'targets::tar_make()'        # Run full pipeline
-Rscript -e 'targets::tar_read(odds)'    # Read latest scrape result
+Rscript -e 'targets::tar_make()'        # Run full pipeline (all sports)
 Rscript -e 'targets::tar_visnetwork()'  # Visualise pipeline DAG
 ```
+
+## Adding a new sport
+
+1. Add entry to `config/competitions.yml`:
+   ```yaml
+   sport_key:
+     sport: <id>          # 1=Football, 2=Basketball, 6=Handball
+     country: "<code>"
+     team_names: "team_names_sport_key.csv"  # optional
+     leagues:
+       League Name:
+         competition: "<id>"
+   ```
+2. Optionally create `config/team_names_<sport_key>.csv` with `out, in` columns
+3. Create `data/<sport_key>/` directory
+4. Run pipeline — new targets are created automatically
 
 ## CSS Selector Fragility
 
@@ -48,7 +74,7 @@ The `aria-controls` IDs (`row-OU_FT`, `row-HC_FT`) are more stable.
 
 ## Data Format
 
-CSVs in `data/football_england/`:
+CSVs in `data/<sport_key>/`:
 - `odds_1x2.csv`: date, league, home, away, o_home, o_draw, o_away, scraped_at
 - `odds_handicap.csv`: date, league, home, away, change, o_home, o_draw, o_away, scraped_at
 - `odds_totals.csv`: date, league, home, away, limit, o_over, o_under, scraped_at

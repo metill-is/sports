@@ -1,7 +1,7 @@
 #' Pipeline functions for {targets}
 #'
 #' These are the top-level functions called by _targets.R.
-#' Each function is a single target in the pipeline.
+#' Each sport gets its own pair of targets: scrape → accumulate.
 
 #' Load competition config from YAML
 #' @param path Path to competitions.yml
@@ -10,27 +10,38 @@ load_competitions <- function(path) {
   yaml::read_yaml(path)
 }
 
-#' Scrape all odds for all competitions in config
-#' @param config List from load_competitions()
+#' Scrape all odds for a single sport
+#' @param config Full config list from load_competitions()
+#' @param sport_key Key in config (e.g., "football_england")
 #' @return Named list: $odds_1x2, $odds_handicap, $odds_totals (each a tibble)
-scrape_all <- function(config) {
-  team_names <- readr::read_csv(
-    here::here("config", "team_names.csv"),
-    show_col_types = FALSE
-  )
+scrape_sport <- function(config, sport_key) {
+  sport <- config[[sport_key]]
+
+  # Load team name mapping if configured
+  team_names <- if (!is.null(sport$team_names)) {
+    path <- here::here("config", sport$team_names)
+    if (file.exists(path)) {
+      readr::read_csv(path, show_col_types = FALSE)
+    } else {
+      message("WARNING: team_names file not found: ", path)
+      NULL
+    }
+  } else {
+    NULL
+  }
 
   odds_1x2_all <- list()
   handicap_all <- list()
   totals_all <- list()
 
-  for (league_name in names(config$leagues)) {
-    league <- config$leagues[[league_name]]
+  for (league_name in names(sport$leagues)) {
+    league <- sport$leagues[[league_name]]
     competition <- league$competition
-    message("\n=== ", league_name, " (competition ", competition, ") ===")
+    message("\n=== ", sport_key, " / ", league_name, " (competition ", competition, ") ===")
 
     # Stage 1: competition page -> 1x2 + match URLs
     comp <- tryCatch(
-      scrape_competition(config$sport, config$country, competition),
+      scrape_competition(sport$sport, sport$country, competition),
       error = function(e) {
         message("  FAILED: ", conditionMessage(e))
         message("  ", paste(capture.output(traceback()), collapse = "\n  "))
@@ -85,16 +96,31 @@ scrape_all <- function(config) {
     sleep_between_pages()
   }
 
-  # Standardise team names
+  # Standardise team names (if mapping exists, otherwise pass through)
   standardise_teams <- function(d) {
+    if (is.null(team_names) || nrow(d) == 0) return(d)
+
+    d <- d |>
+      dplyr::mutate(dplyr::across(c(home, away), stringr::str_squish))
+
+    # Warn about unmapped teams
+    all_teams <- unique(c(d$home, d$away))
+    unmapped <- setdiff(all_teams, team_names[["in"]])
+    if (length(unmapped) > 0) {
+      message(
+        "  WARNING: unmapped teams (using Lengjan names): ",
+        paste(unmapped, collapse = ", ")
+      )
+    }
+
+    # Left join — unmapped teams keep their Lengjan name
     d |>
-      dplyr::mutate(dplyr::across(c(home, away), stringr::str_squish)) |>
-      dplyr::inner_join(team_names, by = dplyr::join_by("home" == "in")) |>
-      dplyr::select(-home) |>
-      dplyr::rename(home = out) |>
-      dplyr::inner_join(team_names, by = dplyr::join_by("away" == "in")) |>
-      dplyr::select(-away) |>
-      dplyr::rename(away = out)
+      dplyr::left_join(team_names, by = dplyr::join_by("home" == "in")) |>
+      dplyr::mutate(home = dplyr::coalesce(out, home)) |>
+      dplyr::select(-out) |>
+      dplyr::left_join(team_names, by = dplyr::join_by("away" == "in")) |>
+      dplyr::mutate(away = dplyr::coalesce(out, away)) |>
+      dplyr::select(-out)
   }
 
   # Build output tibbles
@@ -150,15 +176,16 @@ scrape_all <- function(config) {
   )
 }
 
-#' Accumulate new odds into existing parquet files
+#' Accumulate new odds into existing CSV files for a sport
 #'
 #' Reads existing data, appends new rows with scraped_at timestamp,
 #' deduplicates (same match + same odds = duplicate scrape), writes back.
 #'
-#' @param new_odds List from scrape_all()
-#' @param data_dir Path to data directory
+#' @param new_odds List from scrape_sport()
+#' @param sport_key Key in config (used to determine data directory)
 #' @return Character vector of file paths written (for targets file tracking)
-accumulate_odds <- function(new_odds, data_dir = here::here("data", "football_england")) {
+accumulate_sport_odds <- function(new_odds, sport_key) {
+  data_dir <- here::here("data", sport_key)
   if (!dir.exists(data_dir)) dir.create(data_dir, recursive = TRUE)
 
   scraped_at <- Sys.time()
@@ -183,7 +210,7 @@ accumulate_odds <- function(new_odds, data_dir = here::here("data", "football_en
 
     readr::write_csv(combined, path_1x2)
     files_written <- c(files_written, path_1x2)
-    message("1x2: ", nrow(new), " scraped, ", nrow(combined), " total after dedup")
+    message(sport_key, " 1x2: ", nrow(new), " scraped, ", nrow(combined), " total after dedup")
   }
 
   # --- Handicap ---
@@ -205,7 +232,7 @@ accumulate_odds <- function(new_odds, data_dir = here::here("data", "football_en
 
     readr::write_csv(combined, path_hc)
     files_written <- c(files_written, path_hc)
-    message("Handicap: ", nrow(new), " scraped, ", nrow(combined), " total after dedup")
+    message(sport_key, " Handicap: ", nrow(new), " scraped, ", nrow(combined), " total after dedup")
   }
 
   # --- Totals ---
@@ -227,7 +254,7 @@ accumulate_odds <- function(new_odds, data_dir = here::here("data", "football_en
 
     readr::write_csv(combined, path_tot)
     files_written <- c(files_written, path_tot)
-    message("Totals: ", nrow(new), " scraped, ", nrow(combined), " total after dedup")
+    message(sport_key, " Totals: ", nrow(new), " scraped, ", nrow(combined), " total after dedup")
   }
 
   files_written
