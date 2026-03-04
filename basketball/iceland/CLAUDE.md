@@ -76,7 +76,6 @@ basketball/iceland/
 │   ├── prep_data_kk.R              # Download male data from Baskethotel
 │   ├── prep_data_kvk.R             # Download female data from Baskethotel
 │   ├── run_bets.R                  # Betting wrapper → Sports/R/bets/
-│   ├── check_odds.R                # Legacy betting (superseded by run_bets.R)
 │   └── common/
 │       ├── prep_data.R             # Data → Stan format
 │       ├── model_fitting.R         # Compile + sample Stan model

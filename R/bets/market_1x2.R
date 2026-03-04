@@ -4,9 +4,8 @@
 #' Sport-agnostic: tie handling driven by cfg$scoring.
 
 box::use(
-  ./kelly[get_kelly, format_bet_text],
-  dplyr[filter, mutate, summarise, select, any_of, across, rename, inner_join,
-        group_by, ungroup, slice, arrange, everything],
+  ./kelly[apply_two_pass_kelly],
+  dplyr[filter, mutate, summarise, select, any_of, rename, inner_join, everything],
   tidyr[pivot_longer, pivot_wider]
 )
 
@@ -73,25 +72,7 @@ run_1x2 <- function(post, odds, cfg) {
       names_sep = "_"
     ) |>
     pivot_wider(names_from = type) |>
-    # Kelly pass 1: optimal allocation across all outcomes per match
-    mutate(
-      kelly = get_kelly(p, o),
-      .by = c(gestir, division, any_of("league"), date, heima, booker)
-    ) |>
-    filter(
-      kelly == max(kelly),
-      .by = c(heima, division, any_of("league"), date, gestir, outcome)
-    ) |>
-    group_by(date, division, across(any_of("league")), heima, gestir, outcome) |>
-    slice(1) |>
-    ungroup() |>
-    # Kelly pass 2: recompute with filtered outcome set
-    mutate(
-      kelly = get_kelly(p, o),
-      .by = c(date, division, any_of("league"), heima, gestir)
-    ) |>
-    format_bet_text(cfg) |>
-    filter(bet_amount >= cfg$bankroll$min_bet_amount)
+    apply_two_pass_kelly(cfg)
 
   if (nrow(result) == 0) return(NULL)
   result

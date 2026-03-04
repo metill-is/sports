@@ -25,10 +25,8 @@ football_england/
 │   │   ├── market_handicap.R        # Handicap: parse_handicap + many-to-many join
 │   │   ├── market_totals.R          # Over/under: many-to-many join with limit lines
 │   │   └── output.R                 # Display pivot, clipboard, GSheets dedup
-│   ├── run_bets.R                   # Entry point: all 3 markets (replaces check_odds_lengjan.R)
+│   ├── run_bets.R                   # Entry point: all 3 markets
 │   ├── get_odds.R                   # Main odds scraper (all 3 market types)
-│   ├── check_odds.R                 # Kelly criterion vs Google Sheets odds (legacy)
-│   ├── check_odds_lengjan.R         # Kelly criterion vs scraped Lengjan odds (legacy, 1x2 only)
 │   ├── update_model.R               # Fit model & generate results
 │   ├── lengjan -> ../../R/lengjan/  # Symlink to shared scraping modules
 │   └── ...
@@ -62,11 +60,6 @@ Rscript R/get_odds.R
 # Fit model and generate predictions
 Rscript -e 'source("R/update_model.R")'
 
-# Legacy: Kelly vs scraped Lengjan odds (1x2 only)
-Rscript -e 'source("R/check_odds_lengjan.R")'
-
-# Legacy: Kelly vs Google Sheets odds (includes EpicBet/CoolBet)
-Rscript -e 'source("R/check_odds.R")'
 ```
 
 ## Leagues
@@ -133,8 +126,6 @@ The `R/lengjan/` symlink points to `Sports/R/lengjan/`, which contains the share
 - All current Lengjan handicap lines are whole-goal (European 3-way)
 
 **Bankroll config** (`config/bets.yml`): edit `cur_pool` after each bankroll change. Set `use_gsheets: true` to enable deduplication against the Bets_Lengjan sheet.
-
-**Legacy scripts** (`check_odds_lengjan.R`, `check_odds.R`): still functional, kept for reference. Use `run_bets.R` instead.
 
 ### Module architecture (`R/bets/`)
 

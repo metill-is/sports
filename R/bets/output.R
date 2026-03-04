@@ -11,6 +11,15 @@ box::use(
   clipr[write_clip]
 )
 
+# Extract info column value, or empty string if missing
+resolve_info <- function(results, info_col) {
+  if (!is.null(info_col) && info_col %in% names(results)) {
+    as.character(results[[info_col]])
+  } else {
+    ""
+  }
+}
+
 #' Print a market's results in wide (display) format
 #'
 #' Pivots the outcome column into separate columns (e.g., home/tie/away).
@@ -57,12 +66,7 @@ print_market <- function(results, market_name) {
 make_clipboard_rows <- function(results, market_type, info_col = NULL) {
   if (is.null(results) || nrow(results) == 0) return(NULL)
 
-  # Set info column before the pipe (avoids .data pronoun / rlang dependency)
-  if (!is.null(info_col) && info_col %in% names(results)) {
-    results$info <- as.character(results[[info_col]])
-  } else {
-    results$info <- ""
-  }
+  results$info <- resolve_info(results, info_col)
 
   results |>
     mutate(
@@ -166,12 +170,7 @@ log_bets <- function(results, cfg, sport_dir, sex, market, info_col = NULL) {
 
   log_path <- file.path(history_dir, "bets_log.csv")
 
-  # Build info column
-  if (!is.null(info_col) && info_col %in% names(results)) {
-    info <- as.character(results[[info_col]])
-  } else {
-    info <- ""
-  }
+  info <- resolve_info(results, info_col)
 
   log_rows <- results |>
     mutate(

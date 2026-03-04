@@ -89,9 +89,6 @@ handball/iceland/
 │   ├── update_results.R            # Full update: scrape + fit + results (both sexes)
 │   ├── update_model.R              # Fit + results only (single sex, default female)
 │   ├── run_bets.R                  # Betting wrapper → Sports/R/bets/
-│   ├── check_odds.R                # Legacy: GSheets odds (superseded)
-│   ├── check_odds_lengjan.R        # Legacy: Lengjan CSV odds (superseded)
-│   ├── check_odds_lengjan2.R       # Legacy: Lengjan via GSheets (superseded)
 │   ├── get_odds_lengjan.R          # Legacy: scrape Lengjan odds
 │   └── utils/
 │       ├── prep_data.R             # Data → Stan format
@@ -164,7 +161,7 @@ Note: Iceland handball is often off-season on Lengjan. When available, odds can 
 
 6. **No error handling**: Neither Stan sampling nor web scraping has try/catch. Network failures or model issues will crash the script.
 
-7. **Legacy betting scripts**: `check_odds.R`, `check_odds_lengjan.R`, `check_odds_lengjan2.R` have hardcoded bankroll values and are superseded by `run_bets.R` + `config/bets.yml`. Keep for reference but use `run_bets.R`.
+7. **Legacy betting scripts** have been removed. Use `run_bets.R` + `config/bets.yml`.
 
 ## Dependencies
 

@@ -1,8 +1,7 @@
 #' Scrape Lengjan odds for handball Iceland
 #'
 #' Thin wrapper around the shared scraper at Sports/R/lengjan/.
-#' Writes CSVs to the same paths as before (odds/iceland/{sex}/league_N.csv)
-#' so downstream consumers (check_odds_lengjan.R) are unaffected.
+#' Writes CSVs to odds/iceland/{sex}/league_N.csv for the betting pipeline.
 #'
 #' The shared scraper also attempts handicap + totals odds from match detail
 #' pages (saved as league_N_handicap.csv, league_N_totals.csv).

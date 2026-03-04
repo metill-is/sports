@@ -10,9 +10,8 @@
 #' Sport-agnostic: tie threshold driven by cfg$scoring.
 
 box::use(
-  ./kelly[get_kelly, format_bet_text],
-  dplyr[filter, mutate, summarise, select, any_of, across, rename, inner_join,
-        group_by, ungroup, slice, arrange, bind_rows, everything],
+  ./kelly[apply_two_pass_kelly],
+  dplyr[filter, mutate, summarise, select, any_of, rename, inner_join, bind_rows],
   tidyr[pivot_longer, pivot_wider],
   stringr[str_split_fixed]
 )
@@ -30,30 +29,6 @@ parse_handicap <- function(change_str) {
             paste(change_str[is.na(result)], collapse = ", "))
   }
   result
-}
-
-#' Two-pass Kelly selection and formatting (shared by both line types)
-apply_kelly <- function(d, cfg) {
-  d |>
-    # Kelly pass 1: optimal allocation per match x change line
-    mutate(
-      kelly = get_kelly(p, o),
-      .by = c(date, division, any_of("league"), booker, heima, gestir, change)
-    ) |>
-    filter(
-      kelly == max(kelly),
-      .by = c(date, any_of("league"), heima, gestir, outcome)
-    ) |>
-    group_by(date, across(any_of("league")), heima, gestir, outcome) |>
-    slice(1) |>
-    ungroup() |>
-    # Kelly pass 2: recompute with filtered outcome set
-    mutate(
-      kelly = get_kelly(p, o),
-      .by = c(date, division, any_of("league"), booker, heima, gestir)
-    ) |>
-    format_bet_text(cfg) |>
-    filter(bet_amount >= cfg$bankroll$min_bet_amount)
 }
 
 #' European 3-way handicap (whole-goal lines)
@@ -98,7 +73,7 @@ run_european <- function(odds, post_goals, cfg) {
       names_sep = "_"
     ) |>
     pivot_wider(names_from = type) |>
-    apply_kelly(cfg = cfg)
+    apply_two_pass_kelly(cfg, extra_group = "change")
 
   if (is.null(result) || nrow(result) == 0) return(NULL)
   result
@@ -145,7 +120,7 @@ run_asian <- function(odds, post_goals, cfg) {
       names_sep = "_"
     ) |>
     pivot_wider(names_from = type) |>
-    apply_kelly(cfg = cfg)
+    apply_two_pass_kelly(cfg, extra_group = "change")
 
   if (is.null(result) || nrow(result) == 0) return(NULL)
   result
