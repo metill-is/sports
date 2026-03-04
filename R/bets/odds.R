@@ -10,7 +10,7 @@
 
 box::use(
   readr[read_csv],
-  dplyr[mutate, rename, select, any_of, filter]
+  dplyr[mutate, rename, select, any_of, filter, slice_tail, group_by, ungroup]
 )
 
 #' Default odds filenames for local source
@@ -90,9 +90,16 @@ load_lengjan_odds <- function(cfg, sport_dir, sex = NULL) {
   odds_dir <- file.path(sport_dir, cfg$odds$lengjan_odds_path)
   booker <- cfg$odds$booker %||% "Lengjan"
 
+  # Lengjan-odds scrapes 3x daily — keep only the latest scrape per match×line.
+  # CSVs have a scraped_at column; rows are in chronological order,
+  # so slice_tail(n=1) per group keeps the freshest odds.
+
   outcome <- read_csv_safe(file.path(odds_dir, "odds_1x2.csv"))
   if (!is.null(outcome)) {
     outcome <- outcome |>
+      group_by(date, home, away) |>
+      slice_tail(n = 1) |>
+      ungroup() |>
       mutate(booker = booker) |>
       select(any_of(c("date", "league", "home", "away", "o_home", "o_draw", "o_away", "booker")))
   }
@@ -100,6 +107,9 @@ load_lengjan_odds <- function(cfg, sport_dir, sex = NULL) {
   handicap <- read_csv_safe(file.path(odds_dir, "odds_handicap.csv"))
   if (!is.null(handicap)) {
     handicap <- handicap |>
+      group_by(date, home, away, change) |>
+      slice_tail(n = 1) |>
+      ungroup() |>
       mutate(booker = booker) |>
       select(any_of(c("date", "league", "home", "away", "change", "o_home", "o_draw", "o_away", "booker")))
   }
@@ -107,6 +117,9 @@ load_lengjan_odds <- function(cfg, sport_dir, sex = NULL) {
   totals <- read_csv_safe(file.path(odds_dir, "odds_totals.csv"))
   if (!is.null(totals)) {
     totals <- totals |>
+      group_by(date, home, away, limit) |>
+      slice_tail(n = 1) |>
+      ungroup() |>
       mutate(booker = booker) |>
       select(any_of(c("date", "league", "home", "away", "limit", "o_over", "o_under", "booker")))
   }

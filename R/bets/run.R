@@ -65,12 +65,21 @@ run_betting_pipeline <- function(cfg, sport_dir) {
   for (sex in cfg$sex) {
     cat("--- Sex:", sex, "---\n\n")
 
-    # Resolve sex-specific kelly_frac (e.g., kelly_frac_male overrides kelly_frac)
-    sex_key <- paste0("kelly_frac_", sex)
-    effective_kf <- cfg$bankroll[[sex_key]] %||% cfg$bankroll$kelly_frac
+    # Resolve kelly_frac: joint mode has its own scale, with per-sex overrides
+    kelly_mode <- cfg$bankroll$kelly_mode %||% "independent"
+    if (kelly_mode == "joint") {
+      sex_key <- paste0("kelly_frac_joint_", sex)
+      base_key <- "kelly_frac_joint"
+      effective_kf <- cfg$bankroll[[sex_key]] %||%
+        cfg$bankroll[[base_key]] %||%
+        cfg$bankroll$kelly_frac
+    } else {
+      sex_key <- paste0("kelly_frac_", sex)
+      effective_kf <- cfg$bankroll[[sex_key]] %||% cfg$bankroll$kelly_frac
+    }
     cfg_sex <- cfg
     cfg_sex$bankroll$kelly_frac <- effective_kf
-    cat("  Kelly fraction:", effective_kf, "\n")
+    cat("  Kelly fraction:", effective_kf, "(", kelly_mode, ")\n")
 
     # 1. Find latest posterior
     base_path <- file.path(sport_dir, cfg$predictions$path)

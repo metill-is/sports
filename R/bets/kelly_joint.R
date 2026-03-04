@@ -154,6 +154,7 @@ get_kelly_joint <- function(indicators, odds, max_stake = 0.50) {
 #' @param cfg Config list
 #' @return Tibble with one row per bet: bet_type, outcome, market, odds,
 #'   booker, change, limit, tie_threshold, hc_threshold
+#' @export
 collect_match_bets <- function(match_odds_1x2, match_odds_hc, match_odds_tot, cfg) {
   has_ties <- cfg$scoring$has_ties
   tie_threshold <- cfg$scoring$tie_threshold
