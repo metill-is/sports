@@ -110,7 +110,8 @@ Sys.setlocale("LC_ALL", "is_IS.UTF-8")
 generate_model_results <- function(
   config,
   sex = "male",
-  end_date = Sys.Date()
+  end_date = Sys.Date(),
+  make_plots = TRUE
 ) {
   if (!sex %in% c("male", "female")) {
     stop("Sex must be either 'male' or 'female'")
@@ -224,6 +225,8 @@ generate_model_results <- function(
 
   posterior_goals |>
     write_csv(here(sport_dir, "results", sex, end_date, "posterior_goals.csv"))
+
+  if (!make_plots) return(invisible(NULL))
 
   # Build plot data with optional division labels
   if (plots$next_round$show_division) {

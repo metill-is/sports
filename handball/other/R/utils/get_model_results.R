@@ -104,7 +104,8 @@ Sys.setlocale("LC_ALL", "is_IS.UTF-8")
 generate_model_results <- function(
   country,
   sex = "male",
-  end_date = Sys.Date()
+  end_date = Sys.Date(),
+  make_plots = TRUE
 ) {
   country_isl <- function(country) {
     case_when(
@@ -196,6 +197,8 @@ generate_model_results <- function(
 
   posterior_goals |>
     write_csv(here("results", country, sex, end_date, "posterior_goals.csv"))
+
+  if (!make_plots) return(invisible(NULL))
 
   plot_dat <- posterior_goals |>
     mutate(

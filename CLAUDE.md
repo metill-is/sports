@@ -33,11 +33,12 @@ Rscript run.R --sport handball --step bet             # Bet on all handball leag
 Rscript run.R --country iceland --step data,fit,bet   # Full pipeline for Iceland
 Rscript run.R --active --step data,fit,bet            # Only leagues with upcoming games
 Rscript run.R --all --step fit --iter 200             # Quick test fit (200 iterations)
+Rscript run.R --active --step fit --no-plots          # Fit only, skip plot generation
 ```
 
 **Selectors** (pick one): `--sport`, `--country`, `--league`, `--all`, `--active`
 **Steps**: `--step data,fit,results,bet` (default: all four)
-**Overrides**: `--sex male|female`, `--iter <n>`, `--dry-run`
+**Overrides**: `--sex male|female`, `--iter <n>`, `--no-plots`, `--dry-run`
 
 ### Kelly fraction tuning
 

@@ -4,7 +4,7 @@
 #' @param from_season Integer, starting season for analysis (default: 2021)
 #'
 #' @export
-generate_model_results <- function(from_season = 2021) {
+generate_model_results <- function(from_season = 2021, make_plots = TRUE) {
   sex <- "male"
   #### Packages ####
   box::use(
@@ -131,6 +131,8 @@ generate_model_results <- function(from_season = 2021) {
     write_csv(
       here("results", sex, "posterior_goals.csv")
     )
+
+  if (!make_plots) return(invisible(NULL))
 
   posterior_goals |>
     mutate(

@@ -33,7 +33,7 @@ Sys.setlocale("LC_ALL", "is_IS.UTF-8")
 #' @param from_season Integer, starting season for analysis (default: 2021)
 #'
 #' @export
-generate_model_results <- function(sex = "male", from_season = 2021) {
+generate_model_results <- function(sex = "male", from_season = 2021, make_plots = TRUE) {
   
   # Validate input
   if (!sex %in% c("male", "female")) {
@@ -87,6 +87,7 @@ posterior_goals |>
     here("results", sex, "posterior_goals.csv")
   )
 
+if (!make_plots) return(invisible(NULL))
 
 posterior_goals |>
   mutate(

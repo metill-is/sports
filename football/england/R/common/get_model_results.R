@@ -33,7 +33,7 @@ Sys.setlocale("LC_ALL", "is_IS.UTF-8")
 #' @param from_season Integer, starting season for analysis (default: 2021)
 #'
 #' @export
-generate_model_results <- function(sex = "male", from_season = 2021) {
+generate_model_results <- function(sex = "male", from_season = 2021, make_plots = TRUE) {
   sex <- "male"
   # Validate input
   if (!sex %in% c("male", "female")) {
@@ -86,8 +86,9 @@ generate_model_results <- function(sex = "male", from_season = 2021) {
     write_csv(
       here("results", sex, "posterior_goals.csv")
     )
-  
-  
+
+  if (!make_plots) return(invisible(NULL))
+
   posterior_goals |>
     mutate(
       goal_diff = abs(away_goals - home_goals),
@@ -95,7 +96,7 @@ generate_model_results <- function(sex = "male", from_season = 2021) {
     ) |>
     arrange(desc(goal_diff)) |>
     filter(goal_diff > 12)
-  
+
   predictions <- posterior_goals |>
     mutate(
       goal_diff = away_goals - home_goals,

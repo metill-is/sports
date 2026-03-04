@@ -18,6 +18,7 @@
 #   --sex <sex>        Override sex filter (male, female)
 #   --iter <n>         Override sampling iterations
 #   --log              Log bets to history CSV (default: recommend only, no logging)
+#   --no-plots         Skip plot generation (posterior CSV still written)
 #   --dry-run          Print plan without executing
 
 library(here)
@@ -46,8 +47,9 @@ arg_active  <- has_flag("--active")
 arg_step    <- parse_arg("--step")
 arg_sex     <- parse_arg("--sex")
 arg_iter    <- parse_arg("--iter")
-arg_dry_run <- has_flag("--dry-run")
-arg_log     <- has_flag("--log")
+arg_dry_run  <- has_flag("--dry-run")
+arg_log      <- has_flag("--log")
+arg_no_plots <- has_flag("--no-plots")
 
 # Validate: at least one selector
 if (is.null(arg_sport) && is.null(arg_country) && is.null(arg_league) &&
@@ -70,6 +72,7 @@ if (has_flag("--help")) {
   cat("  --sex <sex>        Override: male or female\n")
   cat("  --iter <n>         Override sampling iterations\n")
   cat("  --log              Log bets to history (default: recommend only)\n")
+  cat("  --no-plots         Skip plot generation (posterior CSV still written)\n")
   cat("  --dry-run          Print plan, don't execute\n")
   quit(status = 0)
 }
@@ -131,6 +134,7 @@ cat(strrep("\u2500", 60), "\n\n")
 cat("Steps:", paste(steps, collapse = ", "), "\n")
 if (!is.null(iter_override)) cat("Iterations override:", iter_override, "\n")
 if (!is.null(arg_sex)) cat("Sex override:", arg_sex, "\n")
+if (arg_no_plots) cat("Plots: disabled (--no-plots)\n")
 cat("Leagues:", length(selected), "\n\n")
 
 for (key in names(selected)) {
@@ -232,7 +236,8 @@ for (key in names(selected)) {
         sports_dir = sports_dir,
         iter_warmup = iter_override %||% league$iter_warmup,
         iter_sampling = iter_override %||% league$iter_sampling,
-        generate_results = TRUE
+        generate_results = TRUE,
+        generate_plots = !arg_no_plots
       )
       all_results[[length(all_results) + 1]] <- list(step = "fit", league = key, sex = sex, ok = ok)
       quiet_here(".here")
@@ -249,7 +254,8 @@ for (key in names(selected)) {
         sex = sex,
         sports_dir = sports_dir,
         fit_model = FALSE,
-        generate_results = TRUE
+        generate_results = TRUE,
+        generate_plots = !arg_no_plots
       )
       all_results[[length(all_results) + 1]] <- list(step = "results", league = key, sex = sex, ok = ok)
       quiet_here(".here")

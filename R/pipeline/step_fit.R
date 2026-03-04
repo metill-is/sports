@@ -21,7 +21,8 @@ run_fit_step <- function(
   iter_warmup = 1000,
   iter_sampling = 1000,
   fit_model = TRUE,
-  generate_results = TRUE
+  generate_results = TRUE,
+  generate_plots = TRUE
 ) {
   handler <- switch(
     league$pipeline,
@@ -35,7 +36,8 @@ run_fit_step <- function(
     iter_warmup = iter_warmup,
     iter_sampling = iter_sampling,
     do_fit = fit_model,
-    do_results = generate_results
+    do_results = generate_results,
+    make_plots = generate_plots
   )
 }
 
@@ -50,7 +52,7 @@ quiet_here <- function(...) suppressMessages(here::i_am(...))
 # Uses R/config/{sport}_iceland.R config objects + R/shared/ modules.
 # These modules use here::here() relative to Sports/ root.
 
-fit_shared <- function(league, sex, sports_dir, iter_warmup, iter_sampling, do_fit, do_results) {
+fit_shared <- function(league, sex, sports_dir, iter_warmup, iter_sampling, do_fit, do_results, make_plots = TRUE) {
   # Load the config module to get the rich config object
   # config_module is relative to Sports/ (e.g., "R/config/basketball_iceland.R")
   config_path <- file.path(sports_dir, league$config_module)
@@ -78,7 +80,8 @@ fit_shared <- function(league, sex, sports_dir, iter_warmup, iter_sampling, do_f
     suppressMessages(env$generate_model_results(
       config = config,
       sex = sex,
-      end_date = end_date
+      end_date = end_date,
+      make_plots = make_plots
     ))
   }
 }
@@ -89,7 +92,7 @@ fit_shared <- function(league, sex, sports_dir, iter_warmup, iter_sampling, do_f
 # Each football league has its own R/common/ with fit_football_model(sex, ...).
 # Must run from inside the league directory with here::i_am() set.
 
-fit_football <- function(league, sex, sports_dir, iter_warmup, iter_sampling, do_fit, do_results) {
+fit_football <- function(league, sex, sports_dir, iter_warmup, iter_sampling, do_fit, do_results, make_plots = TRUE) {
   league_dir <- file.path(sports_dir, league$dir)
 
   withr::with_dir(league_dir, {
@@ -109,7 +112,7 @@ fit_football <- function(league, sex, sports_dir, iter_warmup, iter_sampling, do
     if (do_results) {
       env <- new.env(parent = globalenv())
       source(here::here("R", "common", "get_model_results.R"), local = env)
-      env$generate_model_results(sex)
+      env$generate_model_results(sex, make_plots = make_plots)
     }
   })
 }
@@ -120,7 +123,7 @@ fit_football <- function(league, sex, sports_dir, iter_warmup, iter_sampling, do
 # handball/other/ has its own model_fitting.R that takes country + sex args.
 # Must run from handball/other/ directory.
 
-fit_handball_other <- function(league, sex, sports_dir, iter_warmup, iter_sampling, do_fit, do_results) {
+fit_handball_other <- function(league, sex, sports_dir, iter_warmup, iter_sampling, do_fit, do_results, make_plots = TRUE) {
   other_dir <- file.path(sports_dir, "handball", "other")
 
   withr::with_dir(other_dir, {
@@ -144,7 +147,8 @@ fit_handball_other <- function(league, sex, sports_dir, iter_warmup, iter_sampli
       env$generate_model_results(
         country = league$country,
         sex = sex,
-        end_date = Sys.Date()
+        end_date = Sys.Date(),
+        make_plots = make_plots
       )
     }
   })
