@@ -118,4 +118,7 @@ data/{sex}/data.csv + schedule.csv
 - `Sys.setlocale("LC_ALL", "is_IS.UTF-8")` in every script
 - `.here` files in every league directory (critical for `here::here()` resolution)
 - Lengjan odds scraping now in `../lengjan-odds/` (standalone project)
-- 10 git repos across Sports/ — each league has its own repo
+- Single mono-repo: `metill-is/sports` (private) — tracks code + config only
+- `.gitignore` uses deny-all approach: `*` then `!**/*.R`, `!**/*.stan`, `!**/config/*.yml`, etc.
+- Data (`**/data/`), results (`**/results/`), model fits (`*.rds`), and images (`*.png`) are **not tracked**
+- Previous per-league repos preserved on GitHub for history (football-england, football-italy, etc.)
