@@ -1,0 +1,69 @@
+# Sports mono-repo: deny-all, allow-list approach
+# Only track code, config, and project files — never data or outputs
+
+# ── Block everything by default ──
+*
+
+# ── Allow directory traversal ──
+!*/
+
+# ── R code ──
+!**/*.R
+
+# ── Stan models (source only) ──
+!**/*.stan
+
+# ── Config ──
+!**/config/*.yml
+!config/*.yml
+
+# ── Project files ──
+!**/.here
+!**/*.Rproj
+!.here
+
+# ── Root scripts ──
+!run.R
+!update_data.R
+!update.R
+!check_schedules.R
+!scrape_odds.R
+!air.toml
+
+# ── Documentation ──
+!CLAUDE.md
+!**/CLAUDE.md
+!.gitignore
+
+# ── Claude Code config ──
+!.claude/
+!.claude/**
+
+# ── Re-ignore things inside allowed patterns ──
+
+# Compiled Stan binaries (no extension, sitting next to .stan files)
+**/Stan/bivariate_poisson_inflated_diagonal
+**/Stan/bivariate_poisson_inflated_diagonal_corrmodel
+**/Stan/model_poisson_attack_defense_correlation_rwmatches
+**/Stan/model_poisson_attack_defense_rwmatches
+**/Stan/2d_student_t
+**/Stan/2d_student_t_matchup_effects
+**/*.hpp
+
+# IDE / OS
+.DS_Store
+**/.DS_Store
+.Rproj.user/
+**/.Rproj.user/
+.Rhistory
+**/.Rhistory
+.RData
+**/.RData
+
+# Agent files
+AGENTS.md
+**/AGENTS.md
+
+# Audit / temp docs
+betting-pipeline-audit.md
+test_update.R

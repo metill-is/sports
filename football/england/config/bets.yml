@@ -1,0 +1,13 @@
+bankroll:
+  kelly_frac: 0.20
+  kelly_frac_male: 0.01
+  cur_pool: 5952
+  min_bet_amount: 200
+  bet_digits: 0
+  currency: "kr"
+
+deduplication:
+  use_gsheets: false
+  gsheets_url: "https://docs.google.com/spreadsheets/d/1n5Wcrg-eO3urluOrm5bTwbe4B3yUPGFkVQ0_0h-t_jg/edit"
+  gsheets_sheet: "Bets_Lengjan"
+

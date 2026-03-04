@@ -1,0 +1,34 @@
+sport: "handball"
+country: "germany"
+sex: ["male", "female"]
+
+bankroll:
+  kelly_frac: 0.10
+  kelly_frac_male: 0.01
+  kelly_frac_female: 0.19
+
+scoring:
+  has_ties: true
+  tie_threshold: 0.5
+
+markets:
+  outcome: true
+  handicap: false
+  totals: true
+
+predictions:
+  path: "results"
+  max_age_hours: 48
+
+odds:
+  source: "lengjan-odds"
+  lengjan_odds_path: "../../../lengjan-odds/data/handball_germany"
+  booker: "Lengjan"
+
+deduplication:
+  use_gsheets: false
+
+history:
+  enabled: true
+  path: "history"
+

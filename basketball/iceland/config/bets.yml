@@ -1,0 +1,55 @@
+sport: basketball
+country: iceland
+sex:
+- male
+- female
+
+sex_map:
+  male: kk
+  female: kvk
+
+leagues:
+  1: Bónusdeild
+  2: 1. Deild
+
+bankroll:
+  kelly_frac: 0.10
+  kelly_frac_male: 0.19
+  kelly_frac_female: 0.01
+
+scoring:
+  has_ties: false
+  tie_threshold: 0.5
+
+markets:
+  outcome: true
+  handicap: true
+  totals: true
+
+predictions:
+  path: results
+  max_age_hours: 48
+  divisions:
+  - 1
+  - 2
+
+odds:
+  source: local
+  path: ../../data/gsheets/basketball
+  files:
+    outcome: odds_outcome.csv
+    handicap: odds_handicap.csv
+    totals: odds_totals.csv
+  sex_column: kyn
+  booker_include:
+  - Lengjan
+
+deduplication:
+  use_gsheets: false
+  gsheets_url: https://docs.google.com/spreadsheets/d/1ZFa79A3fEXcAkxDz6cxbCMby4Q2WUT0CI9dp6N4UQlk/edit
+  gsheets_sheet: Bets
+
+history:
+  enabled: true
+  path: history
+
