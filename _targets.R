@@ -22,11 +22,18 @@ tar_source("R/")
 # Read config at pipeline-definition time to create per-sport targets
 sport_keys <- names(yaml::read_yaml("config/competitions.yml"))
 
-# Build target list: config + per-sport (scrape → accumulate)
+# Build target list: config file → config → per-sport (scrape → accumulate)
 targets <- list(
+  # Track competitions.yml as a file — re-hashes when file content changes
+  tar_target(
+    config_file,
+    here::here("config", "competitions.yml"),
+    format = "file"
+  ),
+  # Parse config — re-runs when config_file hash changes
   tar_target(
     config,
-    load_competitions(here::here("config", "competitions.yml"))
+    load_competitions(config_file)
   )
 )
 

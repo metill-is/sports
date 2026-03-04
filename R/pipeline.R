@@ -17,6 +17,15 @@ load_competitions <- function(path) {
 scrape_sport <- function(config, sport_key) {
   sport <- config[[sport_key]]
 
+  if (is.null(sport)) {
+    message("WARNING: No config found for '", sport_key, "' — skipping")
+    return(list(
+      odds_1x2 = tibble::tibble(),
+      odds_handicap = tibble::tibble(),
+      odds_totals = tibble::tibble()
+    ))
+  }
+
   # Load team name mapping if configured
   team_names <- if (!is.null(sport$team_names)) {
     path <- here::here("config", sport$team_names)
