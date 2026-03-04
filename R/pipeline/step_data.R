@@ -26,9 +26,10 @@ run_data_step <- function(league, sex, sports_dir) {
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 quiet_source <- function(script) {
+  env <- new.env(parent = globalenv())
   suppressPackageStartupMessages(suppressWarnings(
     utils::capture.output(
-      utils::capture.output(source(script), type = "message"),
+      utils::capture.output(source(script, local = env), type = "message"),
       type = "output"
     )
   ))
