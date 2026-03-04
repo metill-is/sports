@@ -17,8 +17,6 @@ data/
   football_england/ # Accumulated odds CSVs (committed to git)
   football_italy/
   football_spain/
-  basketball_nba/
-  handball_champions_league/
 ```
 
 ## Pipeline
@@ -27,9 +25,7 @@ data/
 config (competitions.yml)
   ├── odds_football_england (always runs) → data_football_england (skips if unchanged)
   ├── odds_football_italy   (always runs) → data_football_italy
-  ├── odds_football_spain   (always runs) → data_football_spain
-  ├── odds_basketball_nba   (always runs) → data_basketball_nba
-  └── odds_handball_champions_league → data_handball_champions_league
+  └── odds_football_spain   (always runs) → data_football_spain
 ```
 
 - Per-sport targets created dynamically via `tar_target_raw()` + `substitute()` from `competitions.yml` keys

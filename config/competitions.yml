@@ -36,17 +36,3 @@ football_spain:
       competition: "551"
     LaLiga2:
       competition: "557"
-
-basketball_nba:
-  sport: 2
-  country: "US"
-  leagues:
-    NBA:
-      competition: "408"
-
-handball_champions_league:
-  sport: 6
-  country: "INT"
-  leagues:
-    Champions League:
-      competition: "1264"
