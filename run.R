@@ -179,6 +179,19 @@ timing_cache_path <- here("config", "timing_cache.json")
 cache <- load_timing_cache(timing_cache_path)
 tracker <- create_tracker(step_keys, cache)
 
+# Register progressr handler for cmdstanr progress bars (PR #1138) — must be
+# done once at top level, not inside tryCatch/handlers.
+# txtprogressbar to stderr flushes immediately; cli handler buffers on Rscript.
+if ("fit" %in% steps && requireNamespace("cmdstanr", quietly = TRUE) &&
+    exists("register_default_progress_handler", where = asNamespace("cmdstanr")) &&
+    requireNamespace("progressr", quietly = TRUE)) {
+  options(progressr.enable = TRUE)
+  progressr::handlers(global = TRUE)
+  progressr::handlers(
+    progressr::handler_txtprogressbar(style = 3, file = stderr())
+  )
+}
+
 # Helpers
 quiet_here <- function(...) suppressMessages(here::i_am(...))
 
@@ -237,7 +250,8 @@ for (key in names(selected)) {
         iter_warmup = iter_override %||% league$iter_warmup,
         iter_sampling = iter_override %||% league$iter_sampling,
         generate_results = TRUE,
-        generate_plots = !arg_no_plots
+        generate_plots = !arg_no_plots,
+        expected_duration = cache[[step_key]]
       )
       all_results[[length(all_results) + 1]] <- list(step = "fit", league = key, sex = sex, ok = ok)
       quiet_here(".here")

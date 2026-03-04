@@ -10,6 +10,22 @@ box::use(
 theme_set(theme_metill())
 Sys.setlocale("LC_ALL", "is_IS.UTF-8")
 
+# Detect whether cmdstanr supports progressr-based progress bars (PR #1138)
+has_progress_bar <- function(model) {
+  "show_progress_bar" %in% names(formals(model$sample))
+}
+
+#' Format seconds as human-readable duration
+format_expected <- function(secs) {
+  if (is.null(secs) || is.na(secs)) return(NULL)
+  secs <- round(secs)
+  if (secs < 60) return(paste0("~", secs, "s"))
+  mins <- secs %/% 60
+  remaining <- secs %% 60
+  if (remaining == 0) return(paste0("~", mins, "m"))
+  paste0("~", mins, "m ", remaining, "s")
+}
+
 #' Fit model for specified sport and sex
 #'
 #' @param config Config list from sport-specific config file
@@ -20,9 +36,8 @@ Sys.setlocale("LC_ALL", "is_IS.UTF-8")
 #' @param iter_warmup Number of warmup iterations (default: 1000)
 #' @param iter_sampling Number of sampling iterations (default: 1000)
 #' @param init Initial values (default: 0)
-#' @param refresh Refresh interval for progress (default: 100)
-#' @param show_stan_output Logical. If FALSE (default), suppresses Stan's
-#'   per-iteration output and informational messages. Set TRUE for debugging.
+#' @param expected_duration Expected duration in seconds (from timing cache),
+#'   displayed before fitting starts. NULL to suppress.
 #'
 #' @export
 fit_model <- function(
@@ -34,11 +49,17 @@ fit_model <- function(
   iter_warmup = 1000,
   iter_sampling = 1000,
   init = 0,
-  refresh = 100,
-  show_stan_output = TRUE
+  expected_duration = NULL
 ) {
   if (!sex %in% c("male", "female")) {
     stop("Sex must be either 'male' or 'female'")
+  }
+
+  # Show cached expected duration
+  dur_label <- format_expected(expected_duration)
+  if (!is.null(dur_label)) {
+    cat(sprintf(" (%s expected)", dur_label))
+    utils::flush.console()
   }
 
   sport_dir <- config$sport_dir
@@ -52,8 +73,10 @@ fit_model <- function(
     here(sport_dir, "Stan", model_name)
   )
 
-  # Fit model
-  if (show_stan_output) {
+  # Fit model — use progressr progress bar if available (cmdstanr PR #1138)
+  # refresh controls how often Stan emits progress updates; 20 gives ~5% granularity
+  if (has_progress_bar(model)) {
+    cat("\n")
     results <- model$sample(
       data = stan_data,
       chains = chains,
@@ -61,7 +84,11 @@ fit_model <- function(
       iter_warmup = iter_warmup,
       iter_sampling = iter_sampling,
       init = init,
-      refresh = refresh
+      refresh = max(1, (iter_warmup + iter_sampling) %/% 50),
+      show_progress_bar = TRUE,
+      suppress_iteration_messages = TRUE,
+      show_messages = FALSE,
+      show_exceptions = FALSE
     )
   } else {
     results <- model$sample(
