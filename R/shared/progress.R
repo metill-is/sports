@@ -199,11 +199,22 @@ create_tracker <- function(step_keys, cache = list()) {
     save_timing_cache(env$cache, path)
   }
 
+  get_state <- function() list(
+    current = env$current,
+    total = env$total,
+    pipeline_start = env$pipeline_start,
+    step_key = env$step_key,
+    step_keys = env$step_keys,
+    cache = env$cache,
+    results = env$results
+  )
+
   list(
     start_step = start_step,
     end_step = end_step,
     summary = summary,
     get_cache = get_cache,
-    save_cache = save_cache_fn
+    save_cache = save_cache_fn,
+    get_state = get_state
   )
 }

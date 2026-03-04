@@ -88,6 +88,12 @@ steps <- if (!is.null(arg_step)) {
   all_steps
 }
 
+# Auto-inject 'results' when 'bet' needs posterior CSVs
+if ("bet" %in% steps && !"results" %in% steps) {
+  steps <- append(steps, "results", after = which(steps == "bet") - 1)
+  cat("Note: 'results' step added (required by 'bet')\n")
+}
+
 # Parse iterations override
 iter_override <- if (!is.null(arg_iter)) as.integer(arg_iter) else NULL
 
@@ -151,17 +157,21 @@ cat("\n")
 # ── Build step manifest ─────────────────────────────────────────────────────
 
 step_keys <- character(0)
-for (key in names(selected)) {
-  league <- selected[[key]]
-  sexes <- if (!is.null(arg_sex)) arg_sex else league$sex
 
-  for (sex in sexes) {
-    if ("data" %in% steps)                          step_keys <- c(step_keys, paste("data", key, sex, sep = "_"))
-    if ("fit" %in% steps)                           step_keys <- c(step_keys, paste("fit", key, sex, sep = "_"))
-    if ("results" %in% steps && !"fit" %in% steps)  step_keys <- c(step_keys, paste("results", key, sex, sep = "_"))
+# Build manifest grouped by step type (all data first, then all fit, etc.)
+for (step_type in c("data", "fit", "results", "bet", "settle")) {
+  if (!step_type %in% steps) next
+  for (key in names(selected)) {
+    league <- selected[[key]]
+    sexes <- if (!is.null(arg_sex)) arg_sex else league$sex
+    if (step_type %in% c("bet", "settle")) {
+      step_keys <- c(step_keys, paste(step_type, key, sep = "_"))
+    } else {
+      for (sex in sexes) {
+        step_keys <- c(step_keys, paste(step_type, key, sex, sep = "_"))
+      }
+    }
   }
-  if ("bet" %in% steps)    step_keys <- c(step_keys, paste("bet", key, sep = "_"))
-  if ("settle" %in% steps) step_keys <- c(step_keys, paste("settle", key, sep = "_"))
 }
 
 cat(sprintf("Total steps: %d\n", length(step_keys)))
@@ -188,7 +198,7 @@ if ("fit" %in% steps && requireNamespace("cmdstanr", quietly = TRUE) &&
   options(progressr.enable = TRUE)
   source(here("R", "shared", "stan_progress_handler.R"), local = TRUE)
   progressr::handlers(global = TRUE)
-  progressr::handlers(stan_progress_handler())
+  progressr::handlers(stan_progress_handler(tracker = tracker))
 }
 
 # Helpers
@@ -216,13 +226,12 @@ if ("settle" %in% steps) box::use(R/pipeline/step_settle[run_settle_step])
 all_results <- list()
 all_recommendations <- list()
 
-for (key in names(selected)) {
-  league <- selected[[key]]
-  sexes <- if (!is.null(arg_sex)) arg_sex else league$sex
-
-  for (sex in sexes) {
-    # Data step
-    if ("data" %in% steps) {
+# Phase 1: All data steps
+if ("data" %in% steps) {
+  for (key in names(selected)) {
+    league <- selected[[key]]
+    sexes <- if (!is.null(arg_sex)) arg_sex else league$sex
+    for (sex in sexes) {
       step_key <- paste("data", key, sex, sep = "_")
       ok <- tracked_step(
         run_data_step,
@@ -235,9 +244,15 @@ for (key in names(selected)) {
       all_results[[length(all_results) + 1]] <- list(step = "data", league = key, sex = sex, ok = ok)
       quiet_here(".here")
     }
+  }
+}
 
-    # Fit step (includes results generation)
-    if ("fit" %in% steps) {
+# Phase 2: All fit steps (fit only, no results)
+if ("fit" %in% steps) {
+  for (key in names(selected)) {
+    league <- selected[[key]]
+    sexes <- if (!is.null(arg_sex)) arg_sex else league$sex
+    for (sex in sexes) {
       step_key <- paste("fit", key, sex, sep = "_")
       ok <- tracked_step(
         run_fit_step,
@@ -248,16 +263,22 @@ for (key in names(selected)) {
         sports_dir = sports_dir,
         iter_warmup = iter_override %||% league$iter_warmup,
         iter_sampling = iter_override %||% league$iter_sampling,
-        generate_results = TRUE,
-        generate_plots = !arg_no_plots,
+        generate_results = FALSE,
+        generate_plots = FALSE,
         expected_duration = cache[[step_key]]
       )
       all_results[[length(all_results) + 1]] <- list(step = "fit", league = key, sex = sex, ok = ok)
       quiet_here(".here")
     }
+  }
+}
 
-    # Results-only step (if fit wasn't requested)
-    if ("results" %in% steps && !"fit" %in% steps) {
+# Phase 3: All results steps (generate posterior CSVs + plots from .rds)
+if ("results" %in% steps) {
+  for (key in names(selected)) {
+    league <- selected[[key]]
+    sexes <- if (!is.null(arg_sex)) arg_sex else league$sex
+    for (sex in sexes) {
       step_key <- paste("results", key, sex, sep = "_")
       ok <- tracked_step(
         run_fit_step,
@@ -274,9 +295,12 @@ for (key in names(selected)) {
       quiet_here(".here")
     }
   }
+}
 
-  # Bet step (runs once per league, iterates sexes internally)
-  if ("bet" %in% steps) {
+# Phase 4: All bet steps (once per league, iterates sexes internally)
+if ("bet" %in% steps) {
+  for (key in names(selected)) {
+    league <- selected[[key]]
     step_key <- paste("bet", key, sep = "_")
     bet_res <- NULL
     tracker$start_step(paste("bet:", key), key = step_key)
@@ -298,9 +322,12 @@ for (key in names(selected)) {
     }
     quiet_here(".here")
   }
+}
 
-  # Settle step (runs once per league, checks all sexes)
-  if ("settle" %in% steps) {
+# Phase 5: All settle steps (once per league, checks all sexes)
+if ("settle" %in% steps) {
+  for (key in names(selected)) {
+    league <- selected[[key]]
     step_key <- paste("settle", key, sep = "_")
     ok <- tracked_step(
       run_settle_step,

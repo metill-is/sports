@@ -30,15 +30,22 @@ Sports/
 Rscript run.R --all --dry-run                        # Preview what would run
 Rscript run.R --league football_england --step bet    # Bet on one league
 Rscript run.R --sport handball --step bet             # Bet on all handball leagues
-Rscript run.R --country iceland --step data,fit,bet   # Full pipeline for Iceland
-Rscript run.R --active --step data,fit,bet            # Only leagues with upcoming games
+Rscript run.R --country iceland --step data,fit,results,bet  # Full pipeline for Iceland
+Rscript run.R --active --step data,fit,results,bet           # Only leagues with upcoming games
 Rscript run.R --all --step fit --iter 200             # Quick test fit (200 iterations)
-Rscript run.R --active --step fit --no-plots          # Fit only, skip plot generation
+Rscript run.R --league basketball_iceland --step results  # Re-generate posteriors from .rds
 ```
 
 **Selectors** (pick one): `--sport`, `--country`, `--league`, `--all`, `--active`
-**Steps**: `--step data,fit,results,bet` (default: all four)
+**Steps**: `--step data,fit,results,bet,settle` (default: all five)
 **Overrides**: `--sex male|female`, `--iter <n>`, `--no-plots`, `--dry-run`
+
+**Step execution order**: Steps run in phases — all data first, then all fit, then all results, then all bet, then all settle. No per-league interleaving.
+
+**Step semantics**:
+- `fit` = Stan sampling only (saves `.rds`), no results generation
+- `results` = generate posterior CSVs + plots from existing `.rds`
+- If `bet` is requested without `results`, `results` is auto-injected (bet needs posterior CSVs)
 
 ### Kelly fraction tuning
 
