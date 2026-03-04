@@ -11,6 +11,29 @@ box::use(
   clipr[write_clip]
 )
 
+#' Compute current bankroll from initial pool and bet history
+#'
+#' Scans all bets_log.csv files under sports_dir, computes:
+#'   cur_pool = initial_pool + sum(settled_pnl) - sum(outstanding_stakes)
+#'
+#' @param initial_pool Starting bankroll amount
+#' @param sports_dir Absolute path to Sports/ root
+#' @return Current available bankroll
+#' @export
+compute_bankroll <- function(initial_pool, sports_dir) {
+  logs <- Sys.glob(file.path(sports_dir, "*", "*", "history", "bets_log.csv"))
+  if (length(logs) == 0) return(initial_pool)
+
+  all_bets <- do.call(rbind, lapply(logs, \(f) {
+    read_csv(f, show_col_types = FALSE)
+  }))
+
+  settled_pnl <- sum(all_bets$pnl[!is.na(all_bets$pnl)], na.rm = TRUE)
+  outstanding <- sum(all_bets$bet_amount[is.na(all_bets$win)], na.rm = TRUE)
+
+  initial_pool + settled_pnl - outstanding
+}
+
 # Extract info column value, or empty string if missing
 resolve_info <- function(results, info_col) {
   if (!is.null(info_col) && info_col %in% names(results)) {

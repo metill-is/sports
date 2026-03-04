@@ -9,6 +9,7 @@
 
 box::use(
   R/bets/run[run_betting_pipeline],
+  R/bets/output[compute_bankroll],
   yaml[yaml.load],
   readr[read_file]
 )
@@ -43,6 +44,13 @@ run_bet_step <- function(league, sports_dir, log = FALSE) {
     merged <- global_bankroll
     merged[names(cfg$bankroll)] <- cfg$bankroll
     cfg$bankroll <- merged
+  }
+
+  # Compute cur_pool dynamically from initial_pool and bet history
+  if (!is.null(cfg$bankroll$initial_pool)) {
+    cfg$bankroll$cur_pool <- compute_bankroll(cfg$bankroll$initial_pool, sports_dir)
+    cat(sprintf("  Bankroll: %s %s (initial: %s)\n",
+        cfg$bankroll$cur_pool, cfg$bankroll$currency, cfg$bankroll$initial_pool))
   }
 
   run_betting_pipeline(cfg, sport_dir = league_dir, log = log)
