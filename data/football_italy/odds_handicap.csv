@@ -14,6 +14,11 @@ date,league,home,away,change,o_home,o_draw,o_away,scraped_at
 2026-03-04,Serie B,Frosinone,Pescara Calcio,0-2,3.76,4.22,1.48,2026-03-04T07:07:45Z
 2026-03-04,Serie B,Frosinone,Pescara Calcio,2-0,1.02,7.16,16.39,2026-03-04T07:07:45Z
 2026-03-04,Serie B,Frosinone,Pescara Calcio,3-0,1.01,7.38,21.61,2026-03-04T07:07:45Z
+2026-03-04,Serie B,Frosinone,Pescara Calcio,0-1,2.18,3.63,2.24,2026-03-04T08:56:38Z
+2026-03-04,Serie B,Frosinone,Pescara Calcio,1-0,1.12,5.51,9.23,2026-03-04T08:56:38Z
+2026-03-04,Serie B,Frosinone,Pescara Calcio,0-2,3.79,4.21,1.47,2026-03-04T08:56:38Z
+2026-03-04,Serie B,Frosinone,Pescara Calcio,2-0,1.02,7.16,16.56,2026-03-04T08:56:38Z
+2026-03-04,Serie B,Frosinone,Pescara Calcio,3-0,1.01,7.36,21.79,2026-03-04T08:56:38Z
 2026-03-04,Serie B,Palermo,Mantova,0-1,2.18,3.37,2.35,2026-03-04T07:07:45Z
 2026-03-04,Serie B,Palermo,Mantova,1-0,1.09,5.55,12.01,2026-03-04T07:07:45Z
 2026-03-04,Serie B,Palermo,Mantova,0-2,3.97,4,1.47,2026-03-04T07:07:45Z
@@ -34,6 +39,11 @@ date,league,home,away,change,o_home,o_draw,o_away,scraped_at
 2026-03-07,Serie A,Atalanta,Udinese,0-2,4.58,4.28,1.43,2026-03-04T07:07:45Z
 2026-03-07,Serie A,Atalanta,Udinese,2-0,1.01,8.09,24.66,2026-03-04T07:07:45Z
 2026-03-07,Serie A,Atalanta,Udinese,0-3,9.32,6.28,1.13,2026-03-04T07:07:45Z
+2026-03-07,Serie A,Cagliari,Como,0-1,11.82,5.52,1.13,2026-03-04T08:56:38Z
+2026-03-07,Serie A,Cagliari,Como,1-0,2.12,3.38,2.61,2026-03-04T08:56:38Z
+2026-03-07,Serie A,Cagliari,Como,0-2,24.24,7.97,1.02,2026-03-04T08:56:38Z
+2026-03-07,Serie A,Cagliari,Como,2-0,1.37,4.39,5.2,2026-03-04T08:56:38Z
+2026-03-07,Serie A,Cagliari,Como,3-0,1.1,6.6,10.79,2026-03-04T08:56:38Z
 2026-03-07,Serie A,Juventus,Pisa,0-1,1.64,3.64,3.76,2026-03-04T07:07:45Z
 2026-03-07,Serie A,Juventus,Pisa,1-0,1.03,7.32,22.84,2026-03-04T07:07:45Z
 2026-03-07,Serie A,Juventus,Pisa,0-2,2.67,3.72,1.97,2026-03-04T07:07:45Z
@@ -49,6 +59,11 @@ date,league,home,away,change,o_home,o_draw,o_away,scraped_at
 2026-03-07,Serie B,Modena,Cesena,0-2,5.65,4.51,1.28,2026-03-04T07:07:45Z
 2026-03-07,Serie B,Modena,Cesena,2-0,1.02,6.81,17.84,2026-03-04T07:07:45Z
 2026-03-07,Serie B,Modena,Cesena,3-0,1.01,7.12,24.14,2026-03-04T07:07:45Z
+2026-03-07,Serie B,Modena,Cesena,0-1,2.89,3.52,1.82,2026-03-04T08:56:38Z
+2026-03-07,Serie B,Modena,Cesena,1-0,1.16,4.96,8.81,2026-03-04T08:56:38Z
+2026-03-07,Serie B,Modena,Cesena,0-2,5.66,4.59,1.27,2026-03-04T08:56:38Z
+2026-03-07,Serie B,Modena,Cesena,2-0,1.02,6.84,17.21,2026-03-04T08:56:38Z
+2026-03-07,Serie B,Modena,Cesena,3-0,1.01,7.19,23.41,2026-03-04T08:56:38Z
 2026-03-07,Serie B,Spezia,Monza,0-1,8.09,4.47,1.2,2026-03-04T07:07:45Z
 2026-03-07,Serie B,Spezia,Monza,1-0,1.68,3.4,3.45,2026-03-04T07:07:45Z
 2026-03-07,Serie B,Spezia,Monza,0-2,17.05,6.55,1.03,2026-03-04T07:07:45Z

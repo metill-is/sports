@@ -5,6 +5,8 @@ date,league,home,away,limit,o_over,o_under,scraped_at
 2026-03-04,Serie B,Carrarese,Catanzaro,2.5,1.91,1.62,2026-03-04T07:07:45Z
 2026-03-04,Serie B,Frosinone,Pescara Calcio,2.5,1.4,2.34,2026-03-04T07:07:45Z
 2026-03-04,Serie B,Frosinone,Pescara Calcio,3.5,2,1.56,2026-03-04T07:07:45Z
+2026-03-04,Serie B,Frosinone,Pescara Calcio,2.5,1.42,2.31,2026-03-04T08:56:38Z
+2026-03-04,Serie B,Frosinone,Pescara Calcio,3.5,2.03,1.54,2026-03-04T08:56:38Z
 2026-03-04,Serie B,Palermo,Mantova,2.5,1.65,1.87,2026-03-04T07:07:45Z
 2026-03-04,Serie B,Palermo,Mantova,3.5,2.57,1.33,2026-03-04T07:07:45Z
 2026-03-04,Serie B,SS Juve Stabia,Sampdoria,1.5,1.42,2.3,2026-03-04T07:07:45Z
@@ -15,6 +17,9 @@ date,league,home,away,limit,o_over,o_under,scraped_at
 2026-03-07,Serie A,Atalanta,Udinese,1.5,1.22,3.1,2026-03-04T07:07:45Z
 2026-03-07,Serie A,Atalanta,Udinese,2.5,1.73,1.78,2026-03-04T07:07:45Z
 2026-03-07,Serie A,Atalanta,Udinese,3.5,2.74,1.29,2026-03-04T07:07:45Z
+2026-03-07,Serie A,Cagliari,Como,1.5,1.26,2.87,2026-03-04T08:56:38Z
+2026-03-07,Serie A,Cagliari,Como,2.5,1.83,1.68,2026-03-04T08:56:38Z
+2026-03-07,Serie A,Cagliari,Como,3.5,2.97,1.24,2026-03-04T08:56:38Z
 2026-03-07,Serie A,Juventus,Pisa,2.5,1.53,2.05,2026-03-04T07:07:45Z
 2026-03-07,Serie A,Juventus,Pisa,3.5,2.32,1.41,2026-03-04T07:07:45Z
 2026-03-07,Serie B,Avellino,Padova,1.5,1.32,2.6,2026-03-04T07:07:45Z
@@ -22,6 +27,9 @@ date,league,home,away,limit,o_over,o_under,scraped_at
 2026-03-07,Serie B,Modena,Cesena,1.5,1.25,2.96,2026-03-04T07:07:45Z
 2026-03-07,Serie B,Modena,Cesena,2.5,1.81,1.7,2026-03-04T07:07:45Z
 2026-03-07,Serie B,Modena,Cesena,3.5,2.88,1.26,2026-03-04T07:07:45Z
+2026-03-07,Serie B,Modena,Cesena,1.5,1.23,3.06,2026-03-04T08:56:38Z
+2026-03-07,Serie B,Modena,Cesena,2.5,1.77,1.74,2026-03-04T08:56:38Z
+2026-03-07,Serie B,Modena,Cesena,3.5,2.77,1.28,2026-03-04T08:56:38Z
 2026-03-07,Serie B,Spezia,Monza,1.5,1.33,2.58,2026-03-04T07:07:45Z
 2026-03-07,Serie B,Spezia,Monza,2.5,2.03,1.54,2026-03-04T07:07:45Z
 2026-03-07,Serie B,Sudtirol,Virtus Entella,1.5,1.34,2.56,2026-03-04T07:07:45Z
