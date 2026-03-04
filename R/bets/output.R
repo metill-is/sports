@@ -231,7 +231,10 @@ log_bets <- function(results, cfg, sport_dir, sex, market, info_col = NULL) {
                   "home", "away", "outcome", "info")
   if (file.exists(log_path)) {
     existing <- read_csv(log_path, show_col_types = FALSE) |>
-      mutate(info = replace(as.character(info), is.na(info), ""))
+      mutate(
+        date_match = as.Date(date_match),
+        info = replace(as.character(info), is.na(info), "")
+      )
     log_rows <- log_rows |>
       mutate(info = replace(info, is.na(info), "")) |>
       anti_join(existing, by = dedup_keys)

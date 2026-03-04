@@ -15,6 +15,7 @@
 
 # ── Config ──
 !**/config/*.yml
+!**/config/*.csv
 !config/*.yml
 
 # ── Project files ──

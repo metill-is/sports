@@ -1,13 +1,39 @@
+sport: "football"
+country: "england"
+sex: ["male"]
+
 bankroll:
   kelly_frac: 0.20
   kelly_frac_male: 0.01
-  cur_pool: 5952
+  kelly_frac_joint: 0.50
+  kelly_mode: joint
   min_bet_amount: 200
   bet_digits: 0
   currency: "kr"
 
+scoring:
+  has_ties: true
+  tie_threshold: 0
+
+markets:
+  outcome: true
+  handicap: true
+  totals: true
+
+predictions:
+  path: "results"
+  max_age_hours: 48
+  divisions: [1, 2, 3, 4]
+
+odds:
+  source: "lengjan-odds"
+  lengjan_odds_path: "../../../lengjan-odds/data/football_england"
+  booker: "Lengjan"
+  team_names: "config/team_names.csv"
+
 deduplication:
   use_gsheets: false
-  gsheets_url: "https://docs.google.com/spreadsheets/d/1n5Wcrg-eO3urluOrm5bTwbe4B3yUPGFkVQ0_0h-t_jg/edit"
-  gsheets_sheet: "Bets_Lengjan"
 
+history:
+  enabled: true
+  path: "history"
