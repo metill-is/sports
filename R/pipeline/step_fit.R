@@ -61,8 +61,9 @@ fit_shared <- function(league, sex, sports_dir, iter_warmup, iter_sampling, do_f
   end_date <- Sys.Date()
 
   if (do_fit) {
-    box::use(R/shared/model_fitting[fit_model_fn = fit_model])
-    fit_model_fn(
+    env <- new.env(parent = globalenv())
+    source(file.path(sports_dir, "R", "shared", "model_fitting.R"), local = env)
+    env$fit_model(
       config = config,
       sex = sex,
       end_date = end_date,
@@ -72,8 +73,9 @@ fit_shared <- function(league, sex, sports_dir, iter_warmup, iter_sampling, do_f
   }
 
   if (do_results) {
-    box::use(R/shared/get_model_results[generate_model_results])
-    suppressMessages(generate_model_results(
+    env <- new.env(parent = globalenv())
+    source(file.path(sports_dir, "R", "shared", "get_model_results.R"), local = env)
+    suppressMessages(env$generate_model_results(
       config = config,
       sex = sex,
       end_date = end_date
@@ -125,8 +127,9 @@ fit_handball_other <- function(league, sex, sports_dir, iter_warmup, iter_sampli
     quiet_here("handball_other.Rproj")
 
     if (do_fit) {
-      box::use(R/utils/model_fitting[fit_model_fn = fit_model])
-      fit_model_fn(
+      env <- new.env(parent = globalenv())
+      source(here::here("R", "utils", "model_fitting.R"), local = env)
+      env$fit_model(
         country = league$country,
         sex = sex,
         end_date = Sys.Date(),
@@ -136,8 +139,9 @@ fit_handball_other <- function(league, sex, sports_dir, iter_warmup, iter_sampli
     }
 
     if (do_results) {
-      box::use(R/utils/get_model_results[generate_model_results])
-      generate_model_results(
+      env <- new.env(parent = globalenv())
+      source(here::here("R", "utils", "get_model_results.R"), local = env)
+      env$generate_model_results(
         country = league$country,
         sex = sex,
         end_date = Sys.Date()

@@ -27,9 +27,14 @@ fit_football_model <- function(
     cmdstanr[cmdstan_model],
     here[here],
     metill[theme_metill],
-    ggplot2[theme_set],
-    R / common / prep_data[prepare_football_data]
+    ggplot2[theme_set]
   )
+
+  # source() prep_data instead of box::use() — box can't resolve relative
+  # module paths when this file is itself loaded via source()
+  prep_env <- new.env(parent = globalenv())
+  source(here("R", "common", "prep_data.R"), local = prep_env)
+  prepare_football_data <- prep_env$prepare_football_data
 
   theme_set(theme_metill())
   Sys.setlocale("LC_ALL", "is_IS.UTF-8")
