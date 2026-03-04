@@ -144,26 +144,50 @@ for (key in names(selected)) {
 }
 cat("\n")
 
+# ── Build step manifest ─────────────────────────────────────────────────────
+
+step_keys <- character(0)
+for (key in names(selected)) {
+  league <- selected[[key]]
+  sexes <- if (!is.null(arg_sex)) arg_sex else league$sex
+
+  for (sex in sexes) {
+    if ("data" %in% steps)                          step_keys <- c(step_keys, paste("data", key, sex, sep = "_"))
+    if ("fit" %in% steps)                           step_keys <- c(step_keys, paste("fit", key, sex, sep = "_"))
+    if ("results" %in% steps && !"fit" %in% steps)  step_keys <- c(step_keys, paste("results", key, sex, sep = "_"))
+  }
+  if ("bet" %in% steps)    step_keys <- c(step_keys, paste("bet", key, sep = "_"))
+  if ("settle" %in% steps) step_keys <- c(step_keys, paste("settle", key, sep = "_"))
+}
+
+cat(sprintf("Total steps: %d\n", length(step_keys)))
+
 if (arg_dry_run) {
-  cat("Dry run complete. Remove --dry-run to execute.\n")
+  cat("\nDry run complete. Remove --dry-run to execute.\n")
   quit(status = 0)
 }
 
 # ── Execute pipeline ──────────────────────────────────────────────────────────
 
+source(here("R", "shared", "progress.R"), local = TRUE)
+
+timing_cache_path <- here("config", "timing_cache.json")
+cache <- load_timing_cache(timing_cache_path)
+tracker <- create_tracker(step_keys, cache)
+
 # Helpers
 quiet_here <- function(...) suppressMessages(here::i_am(...))
 
-run_step <- function(step_fn, label, ...) {
-  cat(sprintf("  [....] %s", label))
+tracked_step <- function(step_fn, label, step_key, ...) {
+  tracker$start_step(label, key = step_key)
   ok <- tryCatch(
     { step_fn(...); TRUE },
     error = function(e) {
-      cat(sprintf("\r  [FAIL] %s\n         %s\n", label, conditionMessage(e)))
+      cat(sprintf("\n         %s\n", conditionMessage(e)))
       FALSE
     }
   )
-  if (ok) cat(sprintf("\r  [ OK ] %s\n", label))
+  tracker$end_step(if (ok) "OK" else "FAILED")
   ok
 }
 
@@ -173,36 +197,36 @@ if ("fit" %in% steps || "results" %in% steps) box::use(R/pipeline/step_fit[run_f
 if ("bet" %in% steps) box::use(R/pipeline/step_bet[run_bet_step])
 if ("settle" %in% steps) box::use(R/pipeline/step_settle[run_settle_step])
 
-results <- list()
+all_results <- list()
 all_recommendations <- list()
 
 for (key in names(selected)) {
   league <- selected[[key]]
   sexes <- if (!is.null(arg_sex)) arg_sex else league$sex
 
-  cat(sprintf("\n=== %s ===\n", key))
-
   for (sex in sexes) {
-    cat(sprintf("\n--- %s ---\n", sex))
-
     # Data step
     if ("data" %in% steps) {
-      ok <- run_step(
+      step_key <- paste("data", key, sex, sep = "_")
+      ok <- tracked_step(
         run_data_step,
         paste("data:", key, sex),
+        step_key,
         league = league,
         sex = sex,
         sports_dir = sports_dir
       )
-      results[[length(results) + 1]] <- list(step = "data", league = key, sex = sex, ok = ok)
+      all_results[[length(all_results) + 1]] <- list(step = "data", league = key, sex = sex, ok = ok)
       quiet_here(".here")
     }
 
     # Fit step (includes results generation)
     if ("fit" %in% steps) {
-      ok <- run_step(
+      step_key <- paste("fit", key, sex, sep = "_")
+      ok <- tracked_step(
         run_fit_step,
         paste("fit:", key, sex),
+        step_key,
         league = league,
         sex = sex,
         sports_dir = sports_dir,
@@ -210,43 +234,46 @@ for (key in names(selected)) {
         iter_sampling = iter_override %||% league$iter_sampling,
         generate_results = TRUE
       )
-      results[[length(results) + 1]] <- list(step = "fit", league = key, sex = sex, ok = ok)
+      all_results[[length(all_results) + 1]] <- list(step = "fit", league = key, sex = sex, ok = ok)
       quiet_here(".here")
     }
 
     # Results-only step (if fit wasn't requested)
     if ("results" %in% steps && !"fit" %in% steps) {
-      ok <- run_step(
+      step_key <- paste("results", key, sex, sep = "_")
+      ok <- tracked_step(
         run_fit_step,
         paste("results:", key, sex),
+        step_key,
         league = league,
         sex = sex,
         sports_dir = sports_dir,
         fit_model = FALSE,
         generate_results = TRUE
       )
-      results[[length(results) + 1]] <- list(step = "results", league = key, sex = sex, ok = ok)
+      all_results[[length(all_results) + 1]] <- list(step = "results", league = key, sex = sex, ok = ok)
       quiet_here(".here")
     }
   }
 
   # Bet step (runs once per league, iterates sexes internally)
   if ("bet" %in% steps) {
+    step_key <- paste("bet", key, sep = "_")
     bet_res <- NULL
+    tracker$start_step(paste("bet:", key), key = step_key)
     ok <- tryCatch({
-      cat(sprintf("  [....] bet: %s", key))
       bet_res <- run_bet_step(
         league = league,
         sports_dir = sports_dir,
         log = arg_log
       )
-      cat(sprintf("\r  [ OK ] bet: %s\n", key))
       TRUE
     }, error = function(e) {
-      cat(sprintf("\r  [FAIL] bet: %s\n         %s\n", key, conditionMessage(e)))
+      cat(sprintf("\n         %s\n", conditionMessage(e)))
       FALSE
     })
-    results[[length(results) + 1]] <- list(step = "bet", league = key, sex = NA, ok = ok)
+    tracker$end_step(if (ok) "OK" else "FAILED")
+    all_results[[length(all_results) + 1]] <- list(step = "bet", league = key, sex = NA, ok = ok)
     if (!is.null(bet_res) && nrow(bet_res) > 0) {
       all_recommendations <- c(all_recommendations, list(bet_res))
     }
@@ -255,37 +282,25 @@ for (key in names(selected)) {
 
   # Settle step (runs once per league, checks all sexes)
   if ("settle" %in% steps) {
-    ok <- run_step(
+    step_key <- paste("settle", key, sep = "_")
+    ok <- tracked_step(
       run_settle_step,
       paste("settle:", key),
+      step_key,
       league = league,
       sports_dir = sports_dir
     )
-    results[[length(results) + 1]] <- list(step = "settle", league = key, sex = NA, ok = ok)
+    all_results[[length(all_results) + 1]] <- list(step = "settle", league = key, sex = NA, ok = ok)
     quiet_here(".here")
   }
 }
 
 # ── Summary ───────────────────────────────────────────────────────────────────
 
-n_total <- length(results)
-n_fail  <- sum(!vapply(results, `[[`, logical(1), "ok"))
+tracker$summary()
+tracker$save_cache(timing_cache_path)
 
-cat("\n")
-cat(strrep("\u2500", 60), "\n")
-
-if (n_fail == 0) {
-  cat(sprintf(" Pipeline complete: %d/%d steps succeeded\n", n_total, n_total))
-} else {
-  cat(sprintf(" Pipeline finished with failures: %d/%d steps failed\n", n_fail, n_total))
-  cat("\n Failed steps:\n")
-  for (r in results[!vapply(results, `[[`, logical(1), "ok")]) {
-    label <- if (is.na(r$sex)) r$league else paste(r$league, r$sex)
-    cat(sprintf("   - %s: %s\n", r$step, label))
-  }
-}
-
-cat(strrep("\u2500", 60), "\n")
+n_fail <- sum(!vapply(all_results, `[[`, logical(1), "ok"))
 
 # ── Write combined recommendations ────────────────────────────────────────────
 

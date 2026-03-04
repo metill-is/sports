@@ -1,35 +1,62 @@
 #### Pipeline Progress Tracker ####
 #
-# Provides compact progress display for the Sports update pipeline.
-# Tracks steps, elapsed time, and estimates remaining time.
+# Compact progress display with timing cache and ETA estimation.
 #
 # Usage:
-#   tracker <- create_tracker(total_steps)
-#   tracker$start_step("Downloading basketball male data")
+#   cache <- load_timing_cache("config/timing_cache.json")
+#   tracker <- create_tracker(step_keys, cache)
+#   tracker$start_step("fit: football_england male")
 #   # ... do work ...
 #   tracker$end_step()           # marks success
 #   tracker$end_step("FAILED")   # marks failure
 #   tracker$summary()            # print final summary
+#   tracker$save_cache("config/timing_cache.json")
+
+#' Load timing cache from JSON
+#'
+#' @param path Path to timing_cache.json
+#' @return Named list of step_key → duration (seconds)
+#' @export
+load_timing_cache <- function(path) {
+  if (!file.exists(path)) return(list())
+  tryCatch(
+    jsonlite::fromJSON(path, simplifyVector = FALSE),
+    error = function(e) list()
+  )
+}
+
+#' Save timing cache to JSON
+#'
+#' @param cache Named list of step_key → duration
+#' @param path Path to write
+#' @export
+save_timing_cache <- function(cache, path) {
+  dir.create(dirname(path), showWarnings = FALSE, recursive = TRUE)
+  jsonlite::write_json(cache, path, auto_unbox = TRUE, pretty = TRUE)
+}
 
 #' Create a pipeline progress tracker
 #'
-#' @param total_steps Total number of steps in the pipeline
-#' @return List of functions: start_step, end_step, summary
+#' @param step_keys Character vector of ordered step keys
+#'   (e.g. "data_football_england_male", "fit_football_england_male")
+#' @param cache Named list from load_timing_cache() (optional)
+#' @return List of functions: start_step, end_step, summary, save_cache, get_cache
 #' @export
-create_tracker <- function(total_steps) {
+create_tracker <- function(step_keys, cache = list()) {
   env <- new.env(parent = emptyenv())
-  env$total <- total_steps
+  env$step_keys <- step_keys
+  env$total <- length(step_keys)
   env$current <- 0L
   env$pipeline_start <- Sys.time()
   env$step_start <- NULL
   env$step_label <- ""
+  env$step_key <- ""
   env$results <- list()
+  env$cache <- cache
 
   format_duration <- function(secs) {
     secs <- round(secs)
-    if (secs < 60) {
-      return(paste0(secs, "s"))
-    }
+    if (secs < 60) return(paste0(secs, "s"))
     mins <- secs %/% 60
     remaining_secs <- secs %% 60
     if (mins < 60) {
@@ -42,12 +69,32 @@ create_tracker <- function(total_steps) {
   }
 
   estimate_remaining <- function() {
-    elapsed <- as.numeric(difftime(Sys.time(), env$pipeline_start, units = "secs"))
-    if (env$current == 0) return("")
-    avg_per_step <- elapsed / env$current
-    remaining_steps <- env$total - env$current
-    est_secs <- avg_per_step * remaining_steps
-    paste0("~", format_duration(est_secs))
+    if (env$current >= env$total) return("")
+
+    remaining_keys <- env$step_keys[(env$current + 1):env$total]
+    total_est <- 0
+    n_uncached <- 0L
+
+    # Sum cached durations for remaining steps
+    for (key in remaining_keys) {
+      if (!is.null(env$cache[[key]])) {
+        total_est <- total_est + env$cache[[key]]
+      } else {
+        n_uncached <- n_uncached + 1L
+      }
+    }
+
+    # For uncached steps, use average of completed steps this run
+    if (n_uncached > 0 && length(env$results) > 0) {
+      completed_durations <- vapply(
+        env$results, function(r) r$elapsed, numeric(1)
+      )
+      avg_duration <- mean(completed_durations)
+      total_est <- total_est + n_uncached * avg_duration
+    }
+
+    if (total_est <= 0) return("")
+    paste0("~", format_duration(total_est))
   }
 
   progress_bar <- function() {
@@ -63,14 +110,11 @@ create_tracker <- function(total_steps) {
     paste0("[", bar, "] ", pct, "%")
   }
 
-  start_step <- function(label) {
+  start_step <- function(label, key = NULL) {
     env$current <- env$current + 1L
     env$step_label <- label
+    env$step_key <- key %||% env$step_keys[env$current]
     env$step_start <- Sys.time()
-
-    elapsed <- format_duration(
-      as.numeric(difftime(Sys.time(), env$pipeline_start, units = "secs"))
-    )
 
     cat(sprintf(
       " [%d/%d] %s...",
@@ -87,15 +131,26 @@ create_tracker <- function(total_steps) {
     env$results[[length(env$results) + 1]] <- list(
       step = env$current,
       label = env$step_label,
+      key = env$step_key,
       status = status,
       elapsed = step_elapsed
     )
 
-    icon <- if (status == "OK") "\u2713" else "\u2717"
+    # Update cache with exponential moving average (0.7 new / 0.3 old)
+    key <- env$step_key
+    if (nzchar(key) && status == "OK") {
+      old <- env$cache[[key]]
+      env$cache[[key]] <- if (is.null(old)) {
+        step_elapsed
+      } else {
+        0.7 * step_elapsed + 0.3 * old
+      }
+    }
 
+    icon <- if (status == "OK") "\u2713" else "\u2717"
     cat(sprintf(" %s %s\n", icon, format_duration(step_elapsed)))
 
-    # Show progress bar + ETA after each step
+    # Progress bar + ETA
     total_elapsed <- format_duration(
       as.numeric(difftime(Sys.time(), env$pipeline_start, units = "secs"))
     )
@@ -138,9 +193,17 @@ create_tracker <- function(total_steps) {
     cat("\n")
   }
 
+  get_cache <- function() env$cache
+
+  save_cache_fn <- function(path) {
+    save_timing_cache(env$cache, path)
+  }
+
   list(
     start_step = start_step,
     end_step = end_step,
-    summary = summary
+    summary = summary,
+    get_cache = get_cache,
+    save_cache = save_cache_fn
   )
 }

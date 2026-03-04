@@ -35,7 +35,7 @@ fit_model <- function(
   iter_sampling = 1000,
   init = 0,
   refresh = 100,
-  show_stan_output = FALSE
+  show_stan_output = TRUE
 ) {
   if (!sex %in% c("male", "female")) {
     stop("Sex must be either 'male' or 'female'")
