@@ -181,15 +181,14 @@ tracker <- create_tracker(step_keys, cache)
 
 # Register progressr handler for cmdstanr progress bars (PR #1138) — must be
 # done once at top level, not inside tryCatch/handlers.
-# txtprogressbar to stderr flushes immediately; cli handler buffers on Rscript.
+# Custom handler writes to stderr (unbuffered) with live ETA from iteration rate.
 if ("fit" %in% steps && requireNamespace("cmdstanr", quietly = TRUE) &&
     exists("register_default_progress_handler", where = asNamespace("cmdstanr")) &&
     requireNamespace("progressr", quietly = TRUE)) {
   options(progressr.enable = TRUE)
+  source(here("R", "shared", "stan_progress_handler.R"), local = TRUE)
   progressr::handlers(global = TRUE)
-  progressr::handlers(
-    progressr::handler_txtprogressbar(style = 3, file = stderr())
-  )
+  progressr::handlers(stan_progress_handler())
 }
 
 # Helpers

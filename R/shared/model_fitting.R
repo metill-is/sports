@@ -84,7 +84,7 @@ fit_model <- function(
       iter_warmup = iter_warmup,
       iter_sampling = iter_sampling,
       init = init,
-      refresh = max(1, (iter_warmup + iter_sampling) %/% 50),
+      refresh = min(20, max(1, (iter_warmup + iter_sampling) %/% 50)),
       show_progress_bar = TRUE,
       suppress_iteration_messages = TRUE,
       show_messages = FALSE,
