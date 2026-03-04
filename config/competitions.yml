@@ -36,3 +36,69 @@ football_spain:
       competition: "551"
     LaLiga2:
       competition: "557"
+
+# --- Handball ---
+
+handball_iceland:
+  sport: 6
+  country: "IS"
+  leagues:
+    Olísdeild karla:
+      competition: "1269"
+
+handball_germany:
+  sport: 6
+  country: "DE"
+  leagues:
+    Bundesliga:
+      competition: "494"
+    2. Bundesliga:
+      competition: "493"
+
+handball_denmark:
+  sport: 6
+  country: "DK"
+  leagues:
+    Håndboldligaen:
+      competition: "490"
+
+handball_sweden:
+  sport: 6
+  country: "SE"
+  leagues:
+    Handbollsligan:
+      competition: "455"
+    Allsvenskan:
+      competition: "454"
+
+handball_france:
+  sport: 6
+  country: "FR"
+  leagues:
+    Starligue:
+      competition: "492"
+
+handball_norway:
+  sport: 6
+  country: "NO"
+  leagues:
+    REMA 1000-ligaen:
+      competition: "1126"
+
+handball_spain:
+  sport: 6
+  country: "ES"
+  leagues:
+    Liga Asobal:
+      competition: "453"
+
+# --- Basketball ---
+
+basketball_iceland:
+  sport: 2
+  country: "IS"
+  leagues:
+    Bónusdeild kvenna efri:
+      competition: "30774"
+    Bónusdeild kvenna neðri:
+      competition: "30773"

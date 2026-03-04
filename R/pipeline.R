@@ -7,7 +7,7 @@
 #' @param path Path to competitions.yml
 #' @return Named list of competition configs
 load_competitions <- function(path) {
-  yaml::read_yaml(path)
+  yaml::yaml.load(readr::read_file(path))
 }
 
 #' Scrape all odds for a single sport

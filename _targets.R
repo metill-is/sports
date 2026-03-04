@@ -20,7 +20,24 @@ tar_option_set(
 tar_source("R/")
 
 # Read config at pipeline-definition time to create per-sport targets
-sport_keys <- names(yaml::read_yaml("config/competitions.yml"))
+all_sport_keys <- names(yaml::yaml.load(readr::read_file("config/competitions.yml")))
+
+# Filter by active competitions if schedule scan has been run
+active_path <- "config/active_competitions.json"
+if (file.exists(active_path)) {
+  active <- jsonlite::fromJSON(active_path)
+  active_keys <- names(which(vapply(active$active, isTRUE, logical(1))))
+  sport_keys <- intersect(all_sport_keys, active_keys)
+  skipped <- setdiff(all_sport_keys, sport_keys)
+  message(
+    "Active filter (", active$generated_at, ", ", active$lookahead_days, "d lookahead): ",
+    "scraping ", paste(sport_keys, collapse = ", "),
+    if (length(skipped) > 0) paste0(" | skipping ", paste(skipped, collapse = ", ")) else ""
+  )
+} else {
+  sport_keys <- all_sport_keys
+  message("No active filter found — scraping all ", length(sport_keys), " competitions")
+}
 
 # Build target list: config file → config → per-sport (scrape → accumulate)
 targets <- list(
