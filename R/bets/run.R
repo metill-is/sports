@@ -14,10 +14,9 @@ box::use(
   ./market_totals[run_totals],
   ./kelly_joint[run_joint_kelly],
   ./odds[load_odds],
-  ./output[print_market, make_clipboard_rows, write_to_clipboard,
-           load_existing_bets, dedup, log_bets],
-  readr[read_csv],
-  dplyr[filter, bind_rows]
+  ./output[print_market, load_existing_bets, dedup, log_bets],
+  readr[read_csv, write_csv],
+  dplyr[filter, bind_rows, mutate, select, any_of, arrange, desc]
 )
 
 #' Find the latest posterior_goals.csv
@@ -50,8 +49,10 @@ find_latest_posterior <- function(base_path, sex) {
 #'
 #' @param cfg Config list from bets.yml
 #' @param sport_dir Root directory of the sport project (absolute path)
+#' @param log Whether to log bets to history CSV. Default FALSE —
+#'   bets should only be logged after explicit user confirmation.
 #' @export
-run_betting_pipeline <- function(cfg, sport_dir) {
+run_betting_pipeline <- function(cfg, sport_dir, log = FALSE) {
   Sys.setlocale("LC_ALL", "is_IS.UTF-8")
 
   cat("=== Betting pipeline:", cfg$sport, "/", cfg$country, "===\n\n")
@@ -59,8 +60,8 @@ run_betting_pipeline <- function(cfg, sport_dir) {
   # Load existing bets for dedup (once, shared across sexes)
   existing_bets <- load_existing_bets(cfg)
 
-  # Collect all clipboard rows across sexes
-  all_clipboard <- list()
+  # Collect all results across sexes for return
+  all_results <- list()
 
   for (sex in cfg$sex) {
     cat("--- Sex:", sex, "---\n\n")
@@ -160,24 +161,45 @@ run_betting_pipeline <- function(cfg, sport_dir) {
     print_market(res_hc, paste0("Handicap (Forgjöf) [", sex, "]"))
     print_market(res_tot, paste0("Totals (Markafjöldi) [", sex, "]"))
 
-    # 6. Log bets to history
-    log_bets(res_1x2, cfg_sex, sport_dir, sex, "outcome")
-    log_bets(res_hc, cfg_sex, sport_dir, sex, "handicap", info_col = "change")
-    log_bets(res_tot, cfg_sex, sport_dir, sex, "totals", info_col = "limit")
+    # 6. Log bets to history (only when explicitly confirmed)
+    if (isTRUE(log)) {
+      log_bets(res_1x2, cfg_sex, sport_dir, sex, "outcome")
+      log_bets(res_hc, cfg_sex, sport_dir, sex, "handicap", info_col = "change")
+      log_bets(res_tot, cfg_sex, sport_dir, sex, "totals", info_col = "limit")
+    }
 
-    # 7. Clipboard rows
-    all_clipboard <- c(all_clipboard, list(
-      make_clipboard_rows(res_1x2, "Niðurstaða"),
-      make_clipboard_rows(res_hc, "Forgjöf", info_col = "change"),
-      make_clipboard_rows(res_tot, "Markafjöldi", info_col = "limit")
+    # 7. Collect results with metadata
+    tag <- function(d, mkt) {
+      if (is.null(d) || nrow(d) == 0) return(NULL)
+      d |> mutate(
+        sport = cfg$sport, country = cfg$country, sex = sex,
+        market = if ("market" %in% names(d)) market else mkt
+      )
+    }
+    all_results <- c(all_results, list(
+      tag(res_1x2, "outcome"),
+      tag(res_hc, "handicap"),
+      tag(res_tot, "totals")
     ))
 
     cat("\n")
   }
 
-  # 8. Write combined clipboard
-  clipboard_rows <- bind_rows(all_clipboard)
-  write_to_clipboard(clipboard_rows)
+  # 8. Combine results
+  combined <- bind_rows(all_results)
+  if (nrow(combined) > 0) {
+    combined <- combined |>
+      arrange(desc(ev)) |>
+      select(any_of(c(
+        "sport", "country", "sex", "date", "division",
+        "heima", "gestir", "market", "outcome",
+        "o", "p", "ev", "kelly", "bet_amount",
+        "change", "limit", "booker"
+      )))
+    cat("\n", nrow(combined), "recommendation(s) generated.\n")
+  } else {
+    cat("\nNo value bets found.\n")
+  }
 
-  invisible(clipboard_rows)
+  invisible(combined)
 }

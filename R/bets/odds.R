@@ -10,7 +10,7 @@
 
 box::use(
   readr[read_csv],
-  dplyr[mutate, rename, select, any_of, filter, slice_tail, group_by, ungroup]
+  dplyr[mutate, rename, select, any_of, filter, slice_tail, group_by, ungroup, left_join, coalesce]
 )
 
 #' Default odds filenames for local source
@@ -83,6 +83,33 @@ load_local <- function(cfg, sport_dir, sex = NULL) {
   list(outcome = outcome, handicap = handicap, totals = totals)
 }
 
+#' Apply team name mapping to home/away columns
+#'
+#' If cfg$odds$team_names points to a CSV with (out, in) columns,
+#' maps Lengjan names (in) to model names (out). This avoids needing
+#' to re-scrape when names differ between Lengjan and the model.
+apply_team_names <- function(d, cfg, sport_dir) {
+  if (is.null(d) || nrow(d) == 0) return(d)
+  tn_file <- cfg$odds$team_names
+  if (is.null(tn_file)) return(d)
+
+  tn_path <- file.path(sport_dir, tn_file)
+  if (!file.exists(tn_path)) return(d)
+
+  mapping <- read_csv(tn_path, show_col_types = FALSE)
+  # Map home
+  d <- d |>
+    left_join(mapping, by = c("home" = "in")) |>
+    mutate(home = coalesce(out, home)) |>
+    select(-out)
+  # Map away
+  d <- d |>
+    left_join(mapping, by = c("away" = "in")) |>
+    mutate(away = coalesce(out, away)) |>
+    select(-out)
+  d
+}
+
 #' Load odds from lengjan-odds repo
 #'
 #' Reads from {sport_dir}/{cfg$odds$lengjan_odds_path}/
@@ -97,6 +124,7 @@ load_lengjan_odds <- function(cfg, sport_dir, sex = NULL) {
   outcome <- read_csv_safe(file.path(odds_dir, "odds_1x2.csv"))
   if (!is.null(outcome)) {
     outcome <- outcome |>
+      apply_team_names(cfg, sport_dir) |>
       group_by(date, home, away) |>
       slice_tail(n = 1) |>
       ungroup() |>
@@ -107,6 +135,7 @@ load_lengjan_odds <- function(cfg, sport_dir, sex = NULL) {
   handicap <- read_csv_safe(file.path(odds_dir, "odds_handicap.csv"))
   if (!is.null(handicap)) {
     handicap <- handicap |>
+      apply_team_names(cfg, sport_dir) |>
       group_by(date, home, away, change) |>
       slice_tail(n = 1) |>
       ungroup() |>
@@ -117,6 +146,7 @@ load_lengjan_odds <- function(cfg, sport_dir, sex = NULL) {
   totals <- read_csv_safe(file.path(odds_dir, "odds_totals.csv"))
   if (!is.null(totals)) {
     totals <- totals |>
+      apply_team_names(cfg, sport_dir) |>
       group_by(date, home, away, limit) |>
       slice_tail(n = 1) |>
       ungroup() |>

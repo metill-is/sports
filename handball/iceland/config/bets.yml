@@ -16,6 +16,10 @@ bankroll:
   kelly_frac: 0.34
   kelly_frac_male: 0.28
   kelly_frac_female: 0.40
+  kelly_frac_joint: 0.50
+  kelly_mode: joint
+  max_match_stake: 0.50
+  ev_threshold: 0.00
 
 scoring:
   has_ties: true
@@ -23,7 +27,7 @@ scoring:
 
 markets:
   outcome: true
-  handicap: true
+  handicap: false
   totals: true
 
 predictions:
@@ -34,15 +38,10 @@ predictions:
   - 2
 
 odds:
-  source: local
-  path: ../../data/gsheets/handball
-  files:
-    outcome: odds_outcome.csv
-    handicap: odds_handicap.csv
-    totals: odds_totals.csv
-  sex_column: kyn
-  booker_include:
-  - Lengjan
+  source: lengjan-odds
+  lengjan_odds_path: "../../../lengjan-odds/data/handball_iceland"
+  booker: "Lengjan"
+  team_names: "config/team_names.csv"
 
 deduplication:
   use_gsheets: false

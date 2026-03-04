@@ -17,6 +17,7 @@
 #   --step <steps>     Comma-separated: data, fit, results, bet, settle (default: all)
 #   --sex <sex>        Override sex filter (male, female)
 #   --iter <n>         Override sampling iterations
+#   --log              Log bets to history CSV (default: recommend only, no logging)
 #   --dry-run          Print plan without executing
 
 library(here)
@@ -46,6 +47,7 @@ arg_step    <- parse_arg("--step")
 arg_sex     <- parse_arg("--sex")
 arg_iter    <- parse_arg("--iter")
 arg_dry_run <- has_flag("--dry-run")
+arg_log     <- has_flag("--log")
 
 # Validate: at least one selector
 if (is.null(arg_sport) && is.null(arg_country) && is.null(arg_league) &&
@@ -67,6 +69,7 @@ if (has_flag("--help")) {
   cat("  --step <steps>     data,fit,results,bet,settle (default: all)\n")
   cat("  --sex <sex>        Override: male or female\n")
   cat("  --iter <n>         Override sampling iterations\n")
+  cat("  --log              Log bets to history (default: recommend only)\n")
   cat("  --dry-run          Print plan, don't execute\n")
   quit(status = 0)
 }
@@ -171,6 +174,7 @@ if ("bet" %in% steps) box::use(R/pipeline/step_bet[run_bet_step])
 if ("settle" %in% steps) box::use(R/pipeline/step_settle[run_settle_step])
 
 results <- list()
+all_recommendations <- list()
 
 for (key in names(selected)) {
   league <- selected[[key]]
@@ -228,13 +232,24 @@ for (key in names(selected)) {
 
   # Bet step (runs once per league, iterates sexes internally)
   if ("bet" %in% steps) {
-    ok <- run_step(
-      run_bet_step,
-      paste("bet:", key),
-      league = league,
-      sports_dir = sports_dir
-    )
+    bet_res <- NULL
+    ok <- tryCatch({
+      cat(sprintf("  [....] bet: %s", key))
+      bet_res <- run_bet_step(
+        league = league,
+        sports_dir = sports_dir,
+        log = arg_log
+      )
+      cat(sprintf("\r  [ OK ] bet: %s\n", key))
+      TRUE
+    }, error = function(e) {
+      cat(sprintf("\r  [FAIL] bet: %s\n         %s\n", key, conditionMessage(e)))
+      FALSE
+    })
     results[[length(results) + 1]] <- list(step = "bet", league = key, sex = NA, ok = ok)
+    if (!is.null(bet_res) && nrow(bet_res) > 0) {
+      all_recommendations <- c(all_recommendations, list(bet_res))
+    }
     quiet_here(".here")
   }
 
@@ -271,5 +286,14 @@ if (n_fail == 0) {
 }
 
 cat(strrep("\u2500", 60), "\n")
+
+# ── Write combined recommendations ────────────────────────────────────────────
+
+if ("bet" %in% steps && length(all_recommendations) > 0) {
+  recs <- do.call(rbind, all_recommendations)
+  recs_path <- here("recommendations.csv")
+  readr::write_csv(recs, recs_path)
+  cat(sprintf("\nWrote %d recommendation(s) to %s\n", nrow(recs), recs_path))
+}
 
 if (n_fail > 0) quit(status = 1)

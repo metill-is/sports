@@ -15,8 +15,9 @@ box::use(
 
 #' @param league League config list from leagues.yml
 #' @param sports_dir Absolute path to Sports/ root
+#' @param log Whether to log bets to history (default FALSE — recommend only)
 #' @export
-run_bet_step <- function(league, sports_dir) {
+run_bet_step <- function(league, sports_dir, log = FALSE) {
   if (!isTRUE(league$has_bets)) {
     cat("  Skipping bets (has_bets: false)\n")
     return(invisible(NULL))
@@ -44,5 +45,5 @@ run_bet_step <- function(league, sports_dir) {
     cfg$bankroll <- merged
   }
 
-  run_betting_pipeline(cfg, sport_dir = league_dir)
+  run_betting_pipeline(cfg, sport_dir = league_dir, log = log)
 }
