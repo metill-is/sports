@@ -18,6 +18,7 @@
 #   --sex <sex>        Override sex filter (male, female)
 #   --iter <n>         Override sampling iterations
 #   --log              Log bets to history CSV (default: recommend only, no logging)
+#   --stale            Filter to leagues with upcoming odds + stale/missing fit
 #   --no-plots         Skip plot generation (posterior CSV still written)
 #   --dry-run          Print plan without executing
 
@@ -47,14 +48,15 @@ arg_active  <- has_flag("--active")
 arg_step    <- parse_arg("--step")
 arg_sex     <- parse_arg("--sex")
 arg_iter    <- parse_arg("--iter")
+arg_stale    <- has_flag("--stale")
 arg_dry_run  <- has_flag("--dry-run")
 arg_log      <- has_flag("--log")
 arg_no_plots <- has_flag("--no-plots")
 
 # Validate: at least one selector
 if (is.null(arg_sport) && is.null(arg_country) && is.null(arg_league) &&
-    !arg_all && !arg_active) {
-  cat("Error: specify --sport, --country, --league, --all, or --active\n")
+    !arg_all && !arg_active && !arg_stale) {
+  cat("Error: specify --sport, --country, --league, --all, --active, or --stale\n")
   cat("Run 'Rscript run.R --help' for usage.\n")
   quit(status = 1)
 }
@@ -66,7 +68,8 @@ if (has_flag("--help")) {
   cat("  --country <name>   Filter by country\n")
   cat("  --league <key>     Filter by league key\n")
   cat("  --all              All leagues\n")
-  cat("  --active           Leagues with upcoming games\n\n")
+  cat("  --active           Leagues with upcoming games\n")
+  cat("  --stale            Leagues with upcoming odds + stale/missing fit\n\n")
   cat("Options:\n")
   cat("  --step <steps>     data,fit,results,bet,settle (default: all)\n")
   cat("  --sex <sex>        Override: male or female\n")
@@ -125,9 +128,38 @@ selected <- filter_leagues(
   active_keys = active_keys
 )
 
+# Apply --stale filter: select all betting leagues when used standalone
+if (arg_stale && is.null(arg_sport) && is.null(arg_country) &&
+    is.null(arg_league) && !arg_all && !arg_active) {
+  selected <- filter_leagues(leagues, has_bets_only = TRUE)
+}
+
 if (length(selected) == 0) {
   cat("No leagues match the given filters.\n")
   quit(status = 1)
+}
+
+# Apply --stale filter: narrow to stale league×sex combos
+stale_sex_map <- NULL
+if (arg_stale) {
+  box::use(R/pipeline/staleness[find_stale_league_sexes])
+  stale <- find_stale_league_sexes(selected, sports_dir)
+
+  if (length(stale) == 0) {
+    cat("No stale leagues found. All fits are fresh.\n")
+    quit(status = 0)
+  }
+
+  stale_keys <- unique(vapply(stale, `[[`, character(1), "key"))
+  selected <- selected[names(selected) %in% stale_keys]
+
+  # Build sex override map: key -> c("male", "female")
+  stale_sex_map <- list()
+  stale_reason_map <- list()
+  for (s in stale) {
+    stale_sex_map[[s$key]] <- c(stale_sex_map[[s$key]], s$sex)
+    stale_reason_map[[paste(s$key, s$sex)]] <- s$reason
+  }
 }
 
 # ── Dry-run: print plan and exit ──────────────────────────────────────────────
@@ -140,19 +172,33 @@ cat(strrep("\u2500", 60), "\n\n")
 cat("Steps:", paste(steps, collapse = ", "), "\n")
 if (!is.null(iter_override)) cat("Iterations override:", iter_override, "\n")
 if (!is.null(arg_sex)) cat("Sex override:", arg_sex, "\n")
+if (arg_stale) cat("Filter: --stale (upcoming odds + stale fit)\n")
 if (arg_no_plots) cat("Plots: disabled (--no-plots)\n")
 cat("Leagues:", length(selected), "\n\n")
 
 for (key in names(selected)) {
   league <- selected[[key]]
-  sexes <- if (!is.null(arg_sex)) arg_sex else league$sex
-  cat(sprintf("  %-30s %s  [%s]\n",
-    key,
-    paste(sexes, collapse = "+"),
-    league$pipeline
-  ))
+  sexes <- if (!is.null(arg_sex)) arg_sex
+           else if (!is.null(stale_sex_map)) stale_sex_map[[key]]
+           else league$sex
+  for (sex in sexes) {
+    reason <- if (!is.null(stale_sex_map)) {
+      stale_reason_map[[paste(key, sex)]]
+    } else NULL
+    cat(sprintf("  %-30s %-7s [%s]%s\n",
+      key, sex, league$pipeline,
+      if (!is.null(reason)) paste0("  [stale: ", reason, "]") else ""
+    ))
+  }
 }
 cat("\n")
+
+# Helper: resolve sexes for a league key
+resolve_sexes <- function(key, league) {
+  if (!is.null(arg_sex)) return(arg_sex)
+  if (!is.null(stale_sex_map)) return(stale_sex_map[[key]] %||% league$sex)
+  league$sex
+}
 
 # ── Build step manifest ─────────────────────────────────────────────────────
 
@@ -163,7 +209,7 @@ for (step_type in c("data", "fit", "results", "bet", "settle")) {
   if (!step_type %in% steps) next
   for (key in names(selected)) {
     league <- selected[[key]]
-    sexes <- if (!is.null(arg_sex)) arg_sex else league$sex
+    sexes <- resolve_sexes(key, league)
     if (step_type %in% c("bet", "settle")) {
       step_keys <- c(step_keys, paste(step_type, key, sep = "_"))
     } else {
@@ -230,7 +276,7 @@ all_recommendations <- list()
 if ("data" %in% steps) {
   for (key in names(selected)) {
     league <- selected[[key]]
-    sexes <- if (!is.null(arg_sex)) arg_sex else league$sex
+    sexes <- resolve_sexes(key, league)
     for (sex in sexes) {
       step_key <- paste("data", key, sex, sep = "_")
       ok <- tracked_step(
@@ -251,7 +297,7 @@ if ("data" %in% steps) {
 if ("fit" %in% steps) {
   for (key in names(selected)) {
     league <- selected[[key]]
-    sexes <- if (!is.null(arg_sex)) arg_sex else league$sex
+    sexes <- resolve_sexes(key, league)
     for (sex in sexes) {
       step_key <- paste("fit", key, sex, sep = "_")
       ok <- tracked_step(
@@ -277,7 +323,7 @@ if ("fit" %in% steps) {
 if ("results" %in% steps) {
   for (key in names(selected)) {
     league <- selected[[key]]
-    sexes <- if (!is.null(arg_sex)) arg_sex else league$sex
+    sexes <- resolve_sexes(key, league)
     for (sex in sexes) {
       step_key <- paste("results", key, sex, sep = "_")
       ok <- tracked_step(

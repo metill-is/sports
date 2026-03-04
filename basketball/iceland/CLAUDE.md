@@ -86,7 +86,7 @@ basketball/iceland/
 │   ├── div1/, div2/                # Raw Excel downloads from Baskethotel
 │   ├── data.csv                    # Combined historical results
 │   └── schedule.csv                # Upcoming fixtures
-├── results/{male,female}/{date}/
+├── results/{male,female}/
 │   ├── fit.rds                     # Fitted Stan model
 │   ├── posterior_goals.csv         # Posterior draws for betting
 │   └── figures/*.png               # 7 visualisation PNGs

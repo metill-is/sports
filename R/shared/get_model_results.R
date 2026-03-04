@@ -131,25 +131,23 @@ generate_model_results <- function(
   }
 
   #### Data Prep ####
-  results <- read_rds(here(sport_dir, "results", sex, end_date, "fit.rds"))
+  results <- read_rds(here(sport_dir, "results", sex, "fit.rds"))
 
-  d <- read_csv(here(sport_dir, "results", sex, end_date, "d.csv"))
-  teams <- read_csv(here(sport_dir, "results", sex, end_date, "teams.csv"))
+  d <- read_csv(here(sport_dir, "results", sex, "d.csv"))
+  teams <- read_csv(here(sport_dir, "results", sex, "teams.csv"))
   next_games <- read_csv(here(
     sport_dir,
     "results",
     sex,
-    end_date,
     "next_games.csv"
   ))
   top_teams <- read_csv(here(
     sport_dir,
     "results",
     sex,
-    end_date,
     "top_teams.csv"
   ))
-  pred_d <- read_csv(here(sport_dir, "results", sex, end_date, "pred_d.csv"))
+  pred_d <- read_csv(here(sport_dir, "results", sex, "pred_d.csv"))
 
   cur_teams <- next_games |>
     pivot_longer(c(home, away)) |>
@@ -224,7 +222,7 @@ generate_model_results <- function(
     )
 
   posterior_goals |>
-    write_csv(here(sport_dir, "results", sex, end_date, "posterior_goals.csv"))
+    write_csv(here(sport_dir, "results", sex, "posterior_goals.csv"))
 
   if (!make_plots) return(invisible(NULL))
 
@@ -417,7 +415,6 @@ generate_model_results <- function(
       sport_dir,
       "results",
       sex,
-      end_date,
       "figures",
       "next_round_predictions.png"
     ),
@@ -674,7 +671,6 @@ generate_model_results <- function(
         sport_dir,
         "results",
         sex,
-        end_date,
         "figures",
         "group_table.png"
       ),
@@ -1001,7 +997,6 @@ generate_model_results <- function(
       sport_dir,
       "results",
       sex,
-      end_date,
       "figures",
       "deild_points.png"
     ),
@@ -1103,7 +1098,6 @@ generate_model_results <- function(
         sport_dir,
         "results",
         sex,
-        end_date,
         "figures",
         "deild_top.png"
       ),
@@ -1363,7 +1357,6 @@ generate_model_results <- function(
         sport_dir,
         "results",
         sex,
-        end_date,
         "figures",
         "strengths_table.png"
       ),
@@ -1558,7 +1551,6 @@ generate_model_results <- function(
       sport_dir,
       "results",
       sex,
-      end_date,
       "figures",
       "styrkur.png"
     ),
@@ -1695,7 +1687,6 @@ generate_model_results <- function(
       sport_dir,
       "results",
       sex,
-      end_date,
       "figures",
       "home_advantage.png"
     ),

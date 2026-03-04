@@ -11,13 +11,13 @@ country <- "denmark"
 sex <- "male"
 
 #### Data Prep ####
-results <- read_rds(here("results", "denmark", sex, end_date, "fit.rds"))
+results <- read_rds(here("results", "denmark", sex, "fit.rds"))
 
-d <- read_csv(here("results", "denmark", sex, end_date, "d.csv"))
-teams <- read_csv(here("results", "denmark", sex, end_date, "teams.csv"))
-next_games <- read_csv(here("results", "denmark", sex, end_date, "next_games.csv"))
-top_teams <- read_csv(here("results", "denmark", sex, end_date, "top_teams.csv"))
-pred_d <- read_csv(here("results", "denmark", sex, end_date, "pred_d.csv"))
+d <- read_csv(here("results", "denmark", sex, "d.csv"))
+teams <- read_csv(here("results", "denmark", sex, "teams.csv"))
+next_games <- read_csv(here("results", "denmark", sex, "next_games.csv"))
+top_teams <- read_csv(here("results", "denmark", sex, "top_teams.csv"))
+pred_d <- read_csv(here("results", "denmark", sex, "pred_d.csv"))
 
 offense <- results$summary("offense")
 defense <- results$summary("defense")

@@ -133,25 +133,23 @@ generate_model_results <- function(
   }
 
   #### Data Prep ####
-  results <- read_rds(here("results", country, sex, end_date, "fit.rds"))
+  results <- read_rds(here("results", country, sex, "fit.rds"))
 
-  d <- read_csv(here("results", country, sex, end_date, "d.csv"))
-  teams <- read_csv(here("results", country, sex, end_date, "teams.csv"))
+  d <- read_csv(here("results", country, sex, "d.csv"))
+  teams <- read_csv(here("results", country, sex, "teams.csv"))
   next_games <- read_csv(here(
     "results",
     country,
     sex,
-    end_date,
     "next_games.csv"
   ))
   top_teams <- read_csv(here(
     "results",
     country,
     sex,
-    end_date,
     "top_teams.csv"
   ))
-  pred_d <- read_csv(here("results", country, sex, end_date, "pred_d.csv"))
+  pred_d <- read_csv(here("results", country, sex, "pred_d.csv"))
 
   #### Next-Round Predictions ####
 
@@ -196,7 +194,7 @@ generate_model_results <- function(
     )
 
   posterior_goals |>
-    write_csv(here("results", country, sex, end_date, "posterior_goals.csv"))
+    write_csv(here("results", country, sex, "posterior_goals.csv"))
 
   if (!make_plots) return(invisible(NULL))
 
@@ -342,7 +340,6 @@ generate_model_results <- function(
       "results",
       country,
       sex,
-      end_date,
       "figures",
       "next_round_predictions.png"
     ),
@@ -465,7 +462,7 @@ generate_model_results <- function(
     )
 
   plot_dat |>
-    write_csv(here("results", country, sex, end_date, "current_strengths.csv"))
+    write_csv(here("results", country, sex, "current_strengths.csv"))
 
   dodge <- 0.3
 
@@ -529,7 +526,6 @@ generate_model_results <- function(
       "results",
       country,
       sex,
-      end_date,
       "figures",
       "styrkur.png"
     ),
@@ -601,7 +597,6 @@ generate_model_results <- function(
         "results",
         country,
         sex,
-        end_date,
         "figures",
         "styrkur_table.png"
       ),
@@ -731,7 +726,6 @@ generate_model_results <- function(
       "results",
       country,
       sex,
-      end_date,
       "figures",
       "home_advantage.png"
     ),
@@ -740,5 +734,5 @@ generate_model_results <- function(
     scale = 1.4
   )
 
-  file.remove(here("results", country, sex, end_date, "fit.rds"))
+  file.remove(here("results", country, sex, "fit.rds"))
 }

@@ -39,10 +39,10 @@ Sys.setlocale("LC_ALL", "is_IS.UTF-8")
 #' @export
 prepare_data <- function(country, sex, end_date = Sys.Date()) {
 
-  if (!dir.exists(here("results", country, sex, end_date))) {
-    dir.create(here("results", country, sex, end_date), recursive = TRUE)
+  if (!dir.exists(here("results", country, sex))) {
+    dir.create(here("results", country, sex), recursive = TRUE)
     dir.create(
-      here("results", country, sex, end_date, "figures"),
+      here("results", country, sex, "figures"),
       recursive = TRUE
     )
   }
@@ -72,7 +72,7 @@ prepare_data <- function(country, sex, end_date = Sys.Date()) {
 
   write_csv(
     d,
-    here("results", country, sex, end_date, "d.csv")
+    here("results", country, sex, "d.csv")
   )
 
   # Create team mapping
@@ -84,7 +84,7 @@ prepare_data <- function(country, sex, end_date = Sys.Date()) {
 
   write_csv(
     teams,
-    here("results", country, sex, end_date, "teams.csv")
+    here("results", country, sex, "teams.csv")
   )
 
   # Read and prepare next games for prediction
@@ -213,7 +213,7 @@ prepare_data <- function(country, sex, end_date = Sys.Date()) {
 
   write_csv(
     model_d,
-    here("results", country, sex, end_date, "model_d.csv")
+    here("results", country, sex, "model_d.csv")
   )
 
   # Create time between matches matrix
@@ -274,7 +274,7 @@ prepare_data <- function(country, sex, end_date = Sys.Date()) {
 
   write_csv(
     top_teams,
-    here("results", country, sex, end_date, "top_teams.csv")
+    here("results", country, sex, "top_teams.csv")
   )
 
   next_games <- next_games |>
@@ -306,7 +306,7 @@ prepare_data <- function(country, sex, end_date = Sys.Date()) {
 
   write_csv(
     next_games,
-    here("results", country, sex, end_date, "next_games.csv")
+    here("results", country, sex, "next_games.csv")
   )
 
   # Prepare prediction data
@@ -322,7 +322,7 @@ prepare_data <- function(country, sex, end_date = Sys.Date()) {
 
   write_csv(
     pred_d,
-    here("results", country, sex, end_date, "pred_d.csv")
+    here("results", country, sex, "pred_d.csv")
   )
 
   # Prepare Stan data

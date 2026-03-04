@@ -51,7 +51,7 @@ prepare_data <- function(config, sex, end_date = Sys.Date()) {
   col_data <- config$columns$data
   col_schedule <- config$columns$schedule
 
-  results_dir <- here(sport_dir, "results", sex, end_date)
+  results_dir <- here(sport_dir, "results", sex)
   if (!dir.exists(results_dir)) {
     dir.create(results_dir, recursive = TRUE)
     dir.create(file.path(results_dir, "figures"), recursive = TRUE)
@@ -93,7 +93,7 @@ prepare_data <- function(config, sex, end_date = Sys.Date()) {
 
   write_csv(
     d,
-    here(sport_dir, "results", sex, end_date, "d.csv")
+    here(sport_dir, "results", sex, "d.csv")
   )
 
   # Create team mapping
@@ -105,7 +105,7 @@ prepare_data <- function(config, sex, end_date = Sys.Date()) {
 
   write_csv(
     teams,
-    here(sport_dir, "results", sex, end_date, "teams.csv")
+    here(sport_dir, "results", sex, "teams.csv")
   )
 
   # Read and prepare next games for prediction
@@ -271,7 +271,7 @@ prepare_data <- function(config, sex, end_date = Sys.Date()) {
 
   write_csv(
     model_d,
-    here(sport_dir, "results", sex, end_date, "model_d.csv")
+    here(sport_dir, "results", sex, "model_d.csv")
   )
 
   # Create time between matches matrix
@@ -355,7 +355,7 @@ prepare_data <- function(config, sex, end_date = Sys.Date()) {
 
   write_csv(
     top_teams,
-    here(sport_dir, "results", sex, end_date, "top_teams.csv")
+    here(sport_dir, "results", sex, "top_teams.csv")
   )
 
   next_games <- next_games |>
@@ -387,7 +387,7 @@ prepare_data <- function(config, sex, end_date = Sys.Date()) {
 
   write_csv(
     next_games,
-    here(sport_dir, "results", sex, end_date, "next_games.csv")
+    here(sport_dir, "results", sex, "next_games.csv")
   )
 
   # Prepare prediction data
@@ -403,7 +403,7 @@ prepare_data <- function(config, sex, end_date = Sys.Date()) {
 
   write_csv(
     pred_d,
-    here(sport_dir, "results", sex, end_date, "pred_d.csv")
+    here(sport_dir, "results", sex, "pred_d.csv")
   )
 
   # Prepare Stan data - always include division/pred_division

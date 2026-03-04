@@ -57,6 +57,6 @@ fit_model <- function(
 
   # Save results
   results$save_object(
-    file = here("results", country, sex, end_date, "fit.rds")
+    file = here("results", country, sex, "fit.rds")
   )
 }

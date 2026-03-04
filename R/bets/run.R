@@ -19,30 +19,14 @@ box::use(
   dplyr[filter, bind_rows, mutate, select, any_of, arrange, desc]
 )
 
-#' Find the latest posterior_goals.csv
-#'
-#' Checks two layouts:
-#'   1. Date subdirs: {base_path}/{sex}/YYYY-MM-DD/posterior_goals.csv (picks latest)
-#'   2. Direct: {base_path}/{sex}/posterior_goals.csv
+#' Find posterior_goals.csv at the direct path
 #'
 #' @param base_path Base results path (e.g., "results")
 #' @param sex Sex subdirectory (e.g., "male")
-#' @return Full path to the latest posterior_goals.csv, or NULL
+#' @return Full path to posterior_goals.csv, or NULL
 find_latest_posterior <- function(base_path, sex) {
-  # Try date subdirectories first
-  pattern <- file.path(base_path, sex, "*", "posterior_goals.csv")
-  candidates <- Sys.glob(pattern)
-
-  if (length(candidates) > 0) {
-    dirs <- basename(dirname(candidates))
-    return(candidates[order(dirs, decreasing = TRUE)[1]])
-  }
-
-  # Fall back to direct file in sex directory
-  direct <- file.path(base_path, sex, "posterior_goals.csv")
-  if (file.exists(direct)) return(direct)
-
-  NULL
+  path <- file.path(base_path, sex, "posterior_goals.csv")
+  if (file.exists(path)) path else NULL
 }
 
 #' Run the full betting pipeline for one sport

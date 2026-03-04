@@ -34,10 +34,13 @@ Rscript run.R --country iceland --step data,fit,results,bet  # Full pipeline for
 Rscript run.R --active --step data,fit,results,bet           # Only leagues with upcoming games
 Rscript run.R --all --step fit --iter 200             # Quick test fit (200 iterations)
 Rscript run.R --league basketball_iceland --step results  # Re-generate posteriors from .rds
+Rscript run.R --stale --dry-run                          # Preview stale leagues
+Rscript run.R --stale --step data,fit,results,bet         # Full pipeline on stale leagues only
 ```
 
-**Selectors** (pick one): `--sport`, `--country`, `--league`, `--all`, `--active`
+**Selectors** (pick one): `--sport`, `--country`, `--league`, `--all`, `--active`, `--stale`
 **Steps**: `--step data,fit,results,bet,settle` (default: all five)
+**Modifiers**: `--stale` (filter to leagues with upcoming odds + stale/missing fit)
 **Overrides**: `--sex male|female`, `--iter <n>`, `--no-plots`, `--dry-run`
 
 **Step execution order**: Steps run in phases — all data first, then all fit, then all results, then all bet, then all settle. No per-league interleaving.
@@ -97,8 +100,8 @@ Both use time-varying team strengths (random walk), separate offensive/defensive
 
 ```
 data/{sex}/data.csv + schedule.csv
-    → results/{sex}/{date}/fit.rds
-    → results/{sex}/{date}/posterior_goals.csv + figures/*.png
+    → results/{sex}/fit.rds
+    → results/{sex}/posterior_goals.csv + figures/*.png
     → Website via raw.githubusercontent.com URLs
 ```
 
