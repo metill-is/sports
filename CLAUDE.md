@@ -80,7 +80,8 @@ Rscript -e 'source("check_schedules.R")' # Scan schedules → active_competition
 ```
 config/leagues.yml → R/pipeline/config.R → filter by CLI args
     ↓
-step_data.R → download data (4 sources: baskethotel, hsi, livesport_football, livesport_handball)
+step_data.R → sync/download data (4 sources: baskethotel, hsi, livesport_football, livesport_handball)
+             → Livesport sources: sync from ../livesport-data/ (git pull), fallback to Chromote
     ↓
 step_fit.R → fit Stan model (3 pipelines: shared, football, handball_other)
     ↓
@@ -160,6 +161,7 @@ Rscript R/storage/migrate_history.R
 - `Sys.setlocale("LC_ALL", "is_IS.UTF-8")` in every script
 - `.here` files in every league directory (critical for `here::here()` resolution)
 - Lengjan odds scraping now in `../lengjan-odds/` (standalone project)
+- Livesport match data scraping now in `../livesport-data/` (daily CI, `git pull` to sync)
 - Single mono-repo: `metill-is/sports` (private) — tracks code + config only
 - `.gitignore` uses deny-all approach: `*` then `!**/*.R`, `!**/*.stan`, `!**/config/*.yml`, etc.
 - Data (`**/data/`), results (`**/results/`), model fits (`*.rds`), and images (`*.png`) are **not tracked**
