@@ -42,6 +42,7 @@ football_spain:
 handball_iceland:
   sport: 6
   country: "IS"
+  team_names: "team_names_handball_iceland.csv"
   leagues:
     Olísdeild karla:
       competition: "1269"
@@ -49,6 +50,7 @@ handball_iceland:
 handball_germany:
   sport: 6
   country: "DE"
+  team_names: "team_names_handball_germany.csv"
   leagues:
     Bundesliga:
       competition: "494"
@@ -58,6 +60,7 @@ handball_germany:
 handball_denmark:
   sport: 6
   country: "DK"
+  team_names: "team_names_handball_denmark.csv"
   leagues:
     Håndboldligaen:
       competition: "490"
@@ -65,6 +68,7 @@ handball_denmark:
 handball_sweden:
   sport: 6
   country: "SE"
+  team_names: "team_names_handball_sweden.csv"
   leagues:
     Handbollsligan:
       competition: "455"
@@ -74,6 +78,7 @@ handball_sweden:
 handball_france:
   sport: 6
   country: "FR"
+  team_names: "team_names_handball_france.csv"
   leagues:
     Starligue:
       competition: "492"
@@ -81,6 +86,7 @@ handball_france:
 handball_norway:
   sport: 6
   country: "NO"
+  team_names: "team_names_handball_norway.csv"
   leagues:
     REMA 1000-ligaen:
       competition: "1126"
@@ -88,6 +94,7 @@ handball_norway:
 handball_spain:
   sport: 6
   country: "ES"
+  team_names: "team_names_handball_spain.csv"
   leagues:
     Liga Asobal:
       competition: "453"
@@ -97,6 +104,7 @@ handball_spain:
 basketball_iceland:
   sport: 2
   country: "IS"
+  team_names: "team_names_basketball_iceland.csv"
   leagues:
     Bónusdeild kvenna efri:
       competition: "30774"
