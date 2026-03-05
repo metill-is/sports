@@ -58,6 +58,13 @@ Rscript R/bets/update_kelly.R              # Compute optimal per-sex kelly_frac 
 Rscript R/bets/update_kelly.R --dry-run    # Preview proposed values without writing
 ```
 
+### Cross-league summary
+
+```bash
+Rscript R/summary/pnl.R              # Full PnL breakdown by sport/country
+Rscript R/summary/pnl.R --settled    # Only settled bets
+```
+
 ### Legacy scripts (still functional, Iceland only)
 
 ```bash
@@ -120,8 +127,8 @@ store/
 Query across leagues:
 ```r
 source("R/storage/store.R")
-read_bets(here::here())                              # All bets
-read_predictions(here::here(), sport = "football")    # All football predictions
+read_bets(here::here()) |> dplyr::filter(sex != "all")  # All bets (exclude settlement duplicates)
+read_predictions(here::here(), sport = "football")       # All football predictions
 ```
 
 Backfill from existing CSV history:

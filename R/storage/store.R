@@ -71,6 +71,11 @@ store_bets <- function(df, sport, country, sex, sports_dir) {
     )
     if (!dir.exists(partition_dir)) dir.create(partition_dir, recursive = TRUE)
 
+    # Enforce consistent types to avoid schema conflicts across partitions
+    if ("win" %in% names(df))  df$win  <- as.logical(df$win)
+    if ("pnl" %in% names(df))  df$pnl  <- as.numeric(df$pnl)
+    if ("info" %in% names(df)) df$info <- as.character(df$info)
+
     out_path <- file.path(partition_dir, "bets.parquet")
     arrow::write_parquet(df, out_path)
     cat("  Store: wrote", nrow(df), "bet rows to", out_path, "\n")

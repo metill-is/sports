@@ -25,7 +25,9 @@ compute_bankroll <- function(initial_pool, sports_dir) {
   store_path <- file.path(sports_dir, "store", "bets")
   if (dir.exists(store_path) && requireNamespace("arrow", quietly = TRUE)) {
     result <- tryCatch({
-      all_bets <- arrow::open_dataset(store_path) |> dplyr::collect()
+      all_bets <- arrow::open_dataset(store_path) |>
+        dplyr::filter(sex != "all") |>
+        dplyr::collect()
       if (nrow(all_bets) > 0) {
         settled_pnl <- sum(all_bets$pnl[!is.na(all_bets$pnl)], na.rm = TRUE)
         outstanding <- sum(all_bets$bet_amount[is.na(all_bets$win)], na.rm = TRUE)
