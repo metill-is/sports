@@ -10,6 +10,26 @@ config/competitions.yml  → R/pipeline.R → per-competition targets
                                         → data/{sport}/{country}/{sex}/{league}/
 ```
 
+## Two-tier scraping
+
+Leagues are split into **daily** (top divisions with betting value) and **historical** (lower divisions for promoted-team context). Controlled by `LIVESPORT_MODE` env var.
+
+| Mode | Env var | Scrapes | Use case |
+|------|---------|---------|----------|
+| Daily (default) | `LIVESPORT_MODE=daily` or unset | `leagues` / `divisions` only | CI cron, in-season |
+| Full | `LIVESPORT_MODE=full` | + `historical_leagues` / `historical_divisions` | Pre-season refresh |
+
+**Rationale**: Lower divisions (e.g., English League One/Two, handball div2) provide historical context for promoted teams but don't need daily updates. Scrape them once pre-season, then daily CI only tracks top divisions.
+
+### What's in each tier
+
+**Football daily**: Premier League + Championship (ENG), Serie A + B (ITA), LaLiga + LaLiga2 (ESP)
+**Football historical**: League One, League Two, FA Cup, EFL Cup (ENG only)
+**Handball daily**: div1 for all 12 countries (both sexes where available)
+**Handball historical**: div2 for 7 countries (DK, FR, DE, NO, PL, ES, SE)
+
+**Removed entirely**: Norway football (not in Sports pipeline), Italy Serie C + cups (no crossover with top 2), Spain lower tiers + cups (broken pipeline, no crossover)
+
 ## Data layout
 
 ```
@@ -22,16 +42,17 @@ data/
 
 ## Coverage
 
-**Football** (3 countries, ~23 leagues): england, italy, spain, norway
-**Handball** (12 countries, ~34 divisions): austria, czech-republic, denmark, finland, france, germany, hungary, norway, poland, portugal, spain, sweden
+**Football** (3 countries): england, italy, spain
+**Handball** (12 countries): austria, czech-republic, denmark, finland, france, germany, hungary, norway, poland, portugal, spain, sweden
 
 **Not covered** (use federation APIs): basketball/iceland, handball/iceland, football/iceland
 
 ## Commands
 
 ```bash
-Rscript -e 'targets::tar_make()'        # Run full pipeline
-Rscript -e 'targets::tar_visnetwork()'  # Visualise DAG
+Rscript -e 'targets::tar_make()'                              # Daily mode (default)
+LIVESPORT_MODE=full Rscript -e 'targets::tar_make()'          # Full mode (preseason)
+Rscript -e 'targets::tar_visnetwork()'                        # Visualise DAG
 ```
 
 ## Rate limiting
@@ -40,7 +61,8 @@ Generous delays to prevent Chromote timeouts:
 - 10-13s after page load (JS rendering)
 - 5-7s between pagination clicks
 - 5-8s between pages
-- ~136 pages total, ~35 minutes runtime
+- Daily mode: ~40 pages, ~15 min runtime
+- Full mode: ~66 pages, ~25 min runtime
 
 ## CSS selectors
 
@@ -68,8 +90,9 @@ Falls back to direct Chromote scraping if livesport-data is not cloned.
 ## Adding a competition
 
 1. Add entry to `config/competitions.yml` (football: flat `leagues` list; handball: nested `divisions`)
-2. Pipeline auto-creates targets and data directories
-3. Update Sports `config/leagues.yml` if the league needs model fitting
+2. For lower divisions, use `historical_leagues` / `historical_divisions` instead
+3. Pipeline auto-creates targets and data directories
+4. Update Sports `config/leagues.yml` if the league needs model fitting
 
 ## Schedule-aware filtering
 

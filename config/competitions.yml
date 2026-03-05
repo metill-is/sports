@@ -3,6 +3,12 @@
 # Each entry defines a competition group scraped from livesport.com.
 # The scraper fetches current-season results + schedule for each league.
 #
+# Two-tier scraping:
+#   leagues / divisions           — scraped daily (CI)
+#   historical_leagues / historical_divisions — scraped in "full" mode only (preseason)
+#
+# Set LIVESPORT_MODE=full to include historical leagues (default: daily).
+#
 # Fields:
 #   livesport_sport: URL path segment (soccer, handball)
 #   country:         URL path segment
@@ -10,8 +16,10 @@
 #   team_selectors:  CSS selectors for team names (football vs handball differ)
 #   pagination:      CSS selector for "show more" button
 #   sex:             list of sexes (for flat league lists)
-#   leagues:         flat list of league URL slugs (football)
-#   divisions:       nested by sex → list of {name, label} (handball)
+#   leagues:         flat list of league URL slugs (football) — daily
+#   historical_leagues: additional leagues scraped in full mode only
+#   divisions:       nested by sex → list of {name, label} (handball) — daily
+#   historical_divisions: additional divisions scraped in full mode only
 
 defaults:
   page_wait: 10       # seconds after page load
@@ -30,6 +38,7 @@ football_england:
   leagues:
     - premier-league
     - championship
+  historical_leagues:
     - league-one
     - league-two
     - fa-cup
@@ -45,13 +54,6 @@ football_italy:
   leagues:
     - serie-a
     - serie-b
-    - serie-c-group-a
-    - serie-c-group-b
-    - serie-c-group-c
-    - serie-c-promotion-play-offs
-    - serie-c-play-out
-    - coppa-italia
-    - coppa-italia-serie-c
 
 football_spain:
   livesport_sport: soccer
@@ -63,32 +65,6 @@ football_spain:
   leagues:
     - laliga
     - laliga2
-    - copa-del-rey
-    - super-cup
-    - primera-rfef-group-1
-    - primera-rfef-group-2
-    - primera-rfef-play-offs
-    - primera-rfef-promotion-play-offs
-
-football_norway:
-  livesport_sport: soccer
-  country: norway
-  url_type: single_year
-  team_selectors: football
-  pagination: ".event__more"
-  sex: [male]
-  leagues:
-    - eliteserien
-    - obos-ligaen
-    - division-2-group-1
-    - division-2-group-2
-    - division-3-group-1
-    - division-3-group-2
-    - division-3-group-3
-    - division-3-group-4
-    - division-3-group-5
-    - division-3-group-6
-    - nm-cup
 
 # ── Handball ──────────────────────────────────────────────────────────────────
 
@@ -124,11 +100,14 @@ handball_denmark:
     male:
       - name: herre-handbold-ligaen
         label: div1
-      - name: 1-division
-        label: div2
     female:
       - name: kvindeligaen-women
         label: div1
+  historical_divisions:
+    male:
+      - name: 1-division
+        label: div2
+    female:
       - name: 1-division-women
         label: div2
 
@@ -156,11 +135,13 @@ handball_france:
     male:
       - name: starligue
         label: div1
-      - name: proligue
-        label: div2
     female:
       - name: division-1-women
         label: div1
+  historical_divisions:
+    male:
+      - name: proligue
+        label: div2
 
 handball_germany:
   livesport_sport: handball
@@ -172,11 +153,14 @@ handball_germany:
     male:
       - name: bundesliga
         label: div1
-      - name: 2-bundesliga
-        label: div2
     female:
       - name: 1-bundesliga-women
         label: div1
+  historical_divisions:
+    male:
+      - name: 2-bundesliga
+        label: div2
+    female:
       - name: 2-bundesliga-women
         label: div2
 
@@ -204,11 +188,14 @@ handball_norway:
     male:
       - name: rema-1000-ligaen
         label: div1
-      - name: 1-division
-        label: div2
     female:
       - name: rema-1000-ligaen-women
         label: div1
+  historical_divisions:
+    male:
+      - name: 1-division
+        label: div2
+    female:
       - name: 1-division-women
         label: div2
 
@@ -222,11 +209,14 @@ handball_poland:
     male:
       - name: superliga
         label: div1
-      - name: central-league
-        label: div2
     female:
       - name: superliga-women
         label: div1
+  historical_divisions:
+    male:
+      - name: central-league
+        label: div2
+    female:
       - name: central-league-women
         label: div2
 
@@ -254,11 +244,13 @@ handball_spain:
     male:
       - name: liga-asobal
         label: div1
-      - name: division-de-honor-plata
-        label: div2
     female:
       - name: division-de-honor-women
         label: div1
+  historical_divisions:
+    male:
+      - name: division-de-honor-plata
+        label: div2
 
 handball_sweden:
   livesport_sport: handball
@@ -270,10 +262,13 @@ handball_sweden:
     male:
       - name: handbollsligan
         label: div1
-      - name: allsvenskan
-        label: div2
     female:
       - name: handbollsligan-women
         label: div1
+  historical_divisions:
+    male:
+      - name: allsvenskan
+        label: div2
+    female:
       - name: allsvenskan-women
         label: div2

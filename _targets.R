@@ -32,6 +32,12 @@ if (file.exists(active_path)) {
   message("No active filter — scraping all ", length(comp_keys), " competitions")
 }
 
+# Log scraping mode
+mode <- tolower(Sys.getenv("LIVESPORT_MODE", "daily"))
+message("Scraping mode: ", mode,
+        if (mode == "full") " (including historical leagues)" else " (daily leagues only)")
+
+
 # Build targets
 targets <- list(
   tar_target(
