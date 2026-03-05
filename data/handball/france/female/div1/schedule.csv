@@ -1,71 +1,71 @@
-date,home,away,home_score,away_score
-12.03. 19:00,Paris 92 W,Besancon W,-,-
-13.03. 19:00,Plan de Cuques W,Havre W,-,-
-13.03. 19:00,Sambre Avesnois W,Nice W,-,-
-14.03. 18:30,Dijon W,Achenheim Truchtersheim W,-,-
-14.03. 18:30,Saint Amand W,Stella St. Maur W,-,-
-14.03. 19:00,Toulon W,Brest Bretagne W,-,-
-15.03. 15:00,Metz W,Chambray Touraine W,-,-
-18.03. 18:00,Sambre Avesnois W,Metz W,-,-
-18.03. 18:30,Havre W,Paris 92 W,-,-
-18.03. 19:00,Achenheim Truchtersheim W,Saint Amand W,-,-
-18.03. 19:00,Brest Bretagne W,Besancon W,-,-
-18.03. 19:00,Chambray Touraine W,Dijon W,-,-
-18.03. 19:00,Nice W,Toulon W,-,-
-18.03. 19:30,Stella St. Maur W,Plan de Cuques W,-,-
-25.03. 18:30,Saint Amand W,Chambray Touraine W,-,-
-25.03. 19:00,Besancon W,Havre W,-,-
-25.03. 19:00,Paris 92 W,Achenheim Truchtersheim W,-,-
-25.03. 19:00,Plan de Cuques W,Toulon W,-,-
-25.03. 19:30,Stella St. Maur W,Brest Bretagne W,-,-
-01.04. 17:30,Dijon W,Sambre Avesnois W,-,-
-01.04. 18:00,Metz W,Nice W,-,-
-17.04. 18:00,Chambray Touraine W,Stella St. Maur W,-,-
-17.04. 18:00,Nice W,Havre W,-,-
-17.04. 18:00,Sambre Avesnois W,Plan de Cuques W,-,-
-18.04. 17:00,Achenheim Truchtersheim W,Besancon W,-,-
-18.04. 18:00,Brest Bretagne W,Saint Amand W,-,-
-18.04. 18:00,Toulon W,Paris 92 W,-,-
-24.04. 17:30,Saint Amand W,Sambre Avesnois W,-,-
-24.04. 18:00,Paris 92 W,Dijon W,-,-
-24.04. 18:00,Plan de Cuques W,Nice W,-,-
-24.04. 18:30,Stella St. Maur W,Achenheim Truchtersheim W,-,-
-25.04. 17:00,Besancon W,Toulon W,-,-
-25.04. 18:00,Havre W,Chambray Touraine W,-,-
-29.04. 17:30,Dijon W,Metz W,-,-
-02.05. 16:00,Metz W,Brest Bretagne W,-,-
-06.05. 17:00,Sambre Avesnois W,Paris 92 W,-,-
-06.05. 17:30,Dijon W,Besancon W,-,-
-06.05. 18:00,Achenheim Truchtersheim W,Havre W,-,-
-06.05. 18:00,Brest Bretagne W,Plan de Cuques W,-,-
-06.05. 18:00,Metz W,Saint Amand W,-,-
-06.05. 18:00,Nice W,Chambray Touraine W,-,-
-06.05. 18:00,Toulon W,Stella St. Maur W,-,-
-09.05. 17:00,Besancon W,Metz W,-,-
-09.05. 18:00,Chambray Touraine W,Brest Bretagne W,-,-
-09.05. 18:00,Havre W,Dijon W,-,-
-09.05. 18:30,Achenheim Truchtersheim W,Nice W,-,-
-10.05. 13:00,Stella St. Maur W,Sambre Avesnois W,-,-
-10.05. 14:00,Saint Amand W,Toulon W,-,-
-10.05. 15:00,Paris 92 W,Plan de Cuques W,-,-
-15.05. 18:00,Brest Bretagne W,Paris 92 W,-,-
-15.05. 18:00,Nice W,Besancon W,-,-
-15.05. 18:00,Sambre Avesnois W,Havre W,-,-
-16.05. 16:00,Metz W,Stella St. Maur W,-,-
-16.05. 17:30,Dijon W,Saint Amand W,-,-
-16.05. 18:00,Plan de Cuques W,Achenheim Truchtersheim W,-,-
-16.05. 18:00,Toulon W,Chambray Touraine W,-,-
-27.05. 17:00,Sambre Avesnois W,Besancon W,-,-
-27.05. 17:30,Havre W,Saint Amand W,-,-
-27.05. 18:00,Achenheim Truchtersheim W,Toulon W,-,-
-27.05. 18:00,Chambray Touraine W,Paris 92 W,-,-
-27.05. 18:00,Nice W,Brest Bretagne W,-,-
-27.05. 18:00,Plan de Cuques W,Metz W,-,-
-27.05. 18:30,Stella St. Maur W,Dijon W,-,-
-31.05. 13:00,Besancon W,Chambray Touraine W,-,-
-31.05. 13:00,Dijon W,Plan de Cuques W,-,-
-31.05. 13:00,Paris 92 W,Stella St. Maur W,-,-
-31.05. 13:00,Saint Amand W,Nice W,-,-
-31.05. 14:00,Brest Bretagne W,Sambre Avesnois W,-,-
-31.05. 14:00,Metz W,Achenheim Truchtersheim W,-,-
-31.05. 18:00,Toulon W,Havre W,-,-
+date,home,away
+12.03. 19:00,Paris 92 W,Besancon W
+13.03. 19:00,Plan de Cuques W,Havre W
+13.03. 19:00,Sambre Avesnois W,Nice W
+14.03. 18:30,Dijon W,Achenheim Truchtersheim W
+14.03. 18:30,Saint Amand W,Stella St. Maur W
+14.03. 19:00,Toulon W,Brest Bretagne W
+15.03. 15:00,Metz W,Chambray Touraine W
+18.03. 18:00,Sambre Avesnois W,Metz W
+18.03. 18:30,Havre W,Paris 92 W
+18.03. 19:00,Achenheim Truchtersheim W,Saint Amand W
+18.03. 19:00,Brest Bretagne W,Besancon W
+18.03. 19:00,Chambray Touraine W,Dijon W
+18.03. 19:00,Nice W,Toulon W
+18.03. 19:30,Stella St. Maur W,Plan de Cuques W
+25.03. 18:30,Saint Amand W,Chambray Touraine W
+25.03. 19:00,Besancon W,Havre W
+25.03. 19:00,Paris 92 W,Achenheim Truchtersheim W
+25.03. 19:00,Plan de Cuques W,Toulon W
+25.03. 19:30,Stella St. Maur W,Brest Bretagne W
+01.04. 17:30,Dijon W,Sambre Avesnois W
+01.04. 18:00,Metz W,Nice W
+17.04. 18:00,Chambray Touraine W,Stella St. Maur W
+17.04. 18:00,Nice W,Havre W
+17.04. 18:00,Sambre Avesnois W,Plan de Cuques W
+18.04. 17:00,Achenheim Truchtersheim W,Besancon W
+18.04. 18:00,Brest Bretagne W,Saint Amand W
+18.04. 18:00,Toulon W,Paris 92 W
+24.04. 17:30,Saint Amand W,Sambre Avesnois W
+24.04. 18:00,Paris 92 W,Dijon W
+24.04. 18:00,Plan de Cuques W,Nice W
+24.04. 18:30,Stella St. Maur W,Achenheim Truchtersheim W
+25.04. 17:00,Besancon W,Toulon W
+25.04. 18:00,Havre W,Chambray Touraine W
+29.04. 17:30,Dijon W,Metz W
+02.05. 16:00,Metz W,Brest Bretagne W
+06.05. 17:00,Sambre Avesnois W,Paris 92 W
+06.05. 17:30,Dijon W,Besancon W
+06.05. 18:00,Achenheim Truchtersheim W,Havre W
+06.05. 18:00,Brest Bretagne W,Plan de Cuques W
+06.05. 18:00,Metz W,Saint Amand W
+06.05. 18:00,Nice W,Chambray Touraine W
+06.05. 18:00,Toulon W,Stella St. Maur W
+09.05. 17:00,Besancon W,Metz W
+09.05. 18:00,Chambray Touraine W,Brest Bretagne W
+09.05. 18:00,Havre W,Dijon W
+09.05. 18:30,Achenheim Truchtersheim W,Nice W
+10.05. 13:00,Stella St. Maur W,Sambre Avesnois W
+10.05. 14:00,Saint Amand W,Toulon W
+10.05. 15:00,Paris 92 W,Plan de Cuques W
+15.05. 18:00,Brest Bretagne W,Paris 92 W
+15.05. 18:00,Nice W,Besancon W
+15.05. 18:00,Sambre Avesnois W,Havre W
+16.05. 16:00,Metz W,Stella St. Maur W
+16.05. 17:30,Dijon W,Saint Amand W
+16.05. 18:00,Plan de Cuques W,Achenheim Truchtersheim W
+16.05. 18:00,Toulon W,Chambray Touraine W
+27.05. 17:00,Sambre Avesnois W,Besancon W
+27.05. 17:30,Havre W,Saint Amand W
+27.05. 18:00,Achenheim Truchtersheim W,Toulon W
+27.05. 18:00,Chambray Touraine W,Paris 92 W
+27.05. 18:00,Nice W,Brest Bretagne W
+27.05. 18:00,Plan de Cuques W,Metz W
+27.05. 18:30,Stella St. Maur W,Dijon W
+31.05. 13:00,Besancon W,Chambray Touraine W
+31.05. 13:00,Dijon W,Plan de Cuques W
+31.05. 13:00,Paris 92 W,Stella St. Maur W
+31.05. 13:00,Saint Amand W,Nice W
+31.05. 14:00,Brest Bretagne W,Sambre Avesnois W
+31.05. 14:00,Metz W,Achenheim Truchtersheim W
+31.05. 18:00,Toulon W,Havre W

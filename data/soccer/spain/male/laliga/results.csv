@@ -1,4 +1,255 @@
 date,home,away,home_score,away_score
+04.03. 18:00,Rayo Vallecano,Oviedo,3,0
+02.03. 20:00,Real Madrid,Getafe,0,1
+01.03. 20:00,Girona,Celta Vigo,1,2
+01.03. 17:30,Betis,Sevilla,2,2
+01.03. 15:15,Valencia,Osasuna,1,0
+01.03. 13:00,Elche,Espanyol,2,2
+28.02. 20:00,Oviedo,Atl. Madrid,0,1
+28.02. 17:30,Mallorca,Real Sociedad,0,1
+28.02. 15:15,Barcelona,Villarreal,4,1
+28.02. 13:00,Rayo Vallecano,Ath Bilbao,1,1
+27.02. 20:00,Levante,Alaves,2,0
+23.02. 20:00,Alaves,Girona,2,2
+22.02. 20:00,Villarreal,Valencia,2,1
+22.02. 17:30,Celta Vigo,Mallorca,2,0
+22.02. 15:15,Barcelona,Levante,3,0
+22.02. 13:00,Getafe,Sevilla,0,1
+21.02. 20:00,Atl. Madrid,Espanyol,4,2
+21.02. 17:30,Osasuna,Real Madrid,2,1
+21.02. 15:15,Betis,Rayo Vallecano,1,1
+21.02. 13:00,Real Sociedad,Oviedo,3,3
+20.02. 20:00,Ath Bilbao,Elche,2,1
+18.02. 19:00,Levante,Villarreal,0,1
+16.02. 20:00,Girona,Barcelona,2,1
+15.02. 20:00,Mallorca,Betis,1,2
+15.02. 17:30,Levante,Valencia,0,2
+15.02. 15:15,Rayo Vallecano,Atl. Madrid,3,0
+15.02. 13:00,Oviedo,Ath Bilbao,1,2
+14.02. 20:00,Real Madrid,Real Sociedad,4,1
+14.02. 17:30,Sevilla,Alaves,1,1
+14.02. 15:15,Getafe,Villarreal,2,1
+14.02. 13:00,Espanyol,Celta Vigo,2,2
+13.02. 20:00,Elche,Osasuna,0,0
+09.02. 20:00,Villarreal,Espanyol,4,1
+08.02. 20:00,Valencia,Real Madrid,0,2
+08.02. 17:30,Atl. Madrid,Betis,0,1
+08.02. 15:15,Ath Bilbao,Levante,4,2
+08.02. 15:15,Sevilla,Girona,1,1
+08.02. 13:00,Alaves,Getafe,0,2
+07.02. 20:00,Real Sociedad,Elche,3,1
+07.02. 15:15,Barcelona,Mallorca,3,0
+06.02. 20:00,Celta Vigo,Osasuna,1,2
+02.02. 20:00,Mallorca,Sevilla,4,1
+01.02. 20:00,Ath Bilbao,Real Sociedad,1,1
+01.02. 17:30,Getafe,Celta Vigo,0,0
+01.02. 15:15,Betis,Valencia,2,1
+01.02. 13:00,Real Madrid,Rayo Vallecano,2,1
+31.01. 20:00,Elche,Barcelona,1,3
+31.01. 17:30,Levante,Atl. Madrid,0,0
+31.01. 15:15,Osasuna,Villarreal,2,2
+31.01. 13:00,Oviedo,Girona,1,0
+30.01. 20:00,Espanyol,Alaves,1,2
+26.01. 20:00,Girona,Getafe,1,1
+25.01. 20:00,Alaves,Betis,2,1
+25.01. 17:30,Real Sociedad,Celta Vigo,3,1
+25.01. 15:15,Barcelona,Oviedo,3,0
+25.01. 13:00,Atl. Madrid,Mallorca,3,0
+24.01. 20:00,Villarreal,Real Madrid,0,2
+24.01. 17:30,Sevilla,Ath Bilbao,2,1
+24.01. 15:15,Valencia,Espanyol,3,2
+24.01. 13:00,Rayo Vallecano,Osasuna,1,3
+23.01. 20:00,Levante,Elche,3,2
+19.01. 20:00,Elche,Sevilla,2,2
+18.01. 20:00,Real Sociedad,Barcelona,2,1
+18.01. 17:30,Celta Vigo,Rayo Vallecano,3,0
+18.01. 15:15,Atl. Madrid,Alaves,1,0
+18.01. 13:00,Getafe,Valencia,0,1
+17.01. 20:00,Betis,Villarreal,2,0
+17.01. 17:30,Osasuna,Oviedo,3,2
+17.01. 15:15,Mallorca,Ath Bilbao,3,2
+17.01. 13:00,Real Madrid,Levante,2,0
+16.01. 20:00,Espanyol,Girona,0,2
+12.01. 20:00,Sevilla,Celta Vigo,0,1
+11.01. 15:15,Levante,Espanyol,1,1
+11.01. 13:00,Rayo Vallecano,Mallorca,2,1
+10.01. 20:00,Valencia,Elche,1,1
+10.01. 17:30,Girona,Osasuna,1,0
+10.01. 15:15,Villarreal,Alaves,3,1
+10.01. 13:00,Oviedo,Betis,1,1
+09.01. 20:00,Getafe,Real Sociedad,1,2
+04.01. 20:00,Real Sociedad,Atl. Madrid,1,1
+04.01. 17:30,Alaves,Oviedo,1,1
+04.01. 17:30,Mallorca,Girona,1,2
+04.01. 15:15,Real Madrid,Betis,5,1
+04.01. 13:00,Sevilla,Levante,0,3
+03.01. 20:00,Espanyol,Barcelona,0,2
+03.01. 17:30,Elche,Villarreal,1,3
+03.01. 15:15,Osasuna,Ath Bilbao,1,1
+03.01. 13:00,Celta Vigo,Valencia,4,1
+02.01. 20:00,Rayo Vallecano,Getafe,1,1
+22.12. 20:00,Ath Bilbao,Espanyol,1,2
+21.12. 20:00,Betis,Getafe,4,0
+21.12. 17:30,Elche,Rayo Vallecano,4,0
+21.12. 15:15,Villarreal,Barcelona,0,2
+21.12. 13:00,Girona,Atl. Madrid,0,3
+20.12. 20:00,Real Madrid,Sevilla,2,0
+20.12. 17:30,Osasuna,Alaves,3,0
+20.12. 15:15,Levante,Real Sociedad,1,1
+20.12. 13:00,Oviedo,Celta Vigo,0,0
+19.12. 20:00,Valencia,Mallorca,1,1
+15.12. 20:00,Rayo Vallecano,Betis,0,0
+14.12. 20:00,Alaves,Real Madrid,1,2
+14.12. 15:15,Celta Vigo,Ath Bilbao,2,0
+14.12. 13:00,Sevilla,Oviedo,4,0
+13.12. 20:00,Getafe,Espanyol,0,1
+13.12. 17:30,Barcelona,Osasuna,2,0
+13.12. 15:15,Mallorca,Elche,3,1
+13.12. 13:00,Atl. Madrid,Valencia,2,1
+12.12. 20:00,Real Sociedad,Girona,1,2
+08.12. 20:00,Osasuna,Levante,2,0
+07.12. 20:00,Real Madrid,Celta Vigo,0,2
+07.12. 17:30,Espanyol,Rayo Vallecano,1,0
+07.12. 15:15,Valencia,Sevilla,1,1
+07.12. 13:00,Elche,Girona,3,0
+06.12. 20:00,Ath Bilbao,Atl. Madrid,1,0
+06.12. 17:30,Betis,Barcelona,3,5
+06.12. 15:15,Alaves,Real Sociedad,1,0
+06.12. 13:00,Villarreal,Getafe,2,0
+05.12. 20:00,Oviedo,Mallorca,0,0
+03.12. 18:00,Ath Bilbao,Real Madrid,0,3
+02.12. 20:00,Barcelona,Atl. Madrid,3,1
+01.12. 20:00,Rayo Vallecano,Valencia,1,1
+30.11. 20:00,Girona,Real Madrid,1,1
+30.11. 17:30,Celta Vigo,Espanyol,0,1
+30.11. 15:15,Sevilla,Betis,0,2
+30.11. 13:00,Real Sociedad,Villarreal,2,3
+29.11. 20:00,Atl. Madrid,Oviedo,2,0
+29.11. 17:30,Levante,Ath Bilbao,0,2
+29.11. 15:15,Barcelona,Alaves,3,1
+29.11. 13:00,Mallorca,Osasuna,2,2
+28.11. 20:00,Getafe,Elche,1,0
+24.11. 20:00,Espanyol,Sevilla,2,1
+23.11. 20:00,Elche,Real Madrid,2,2
+23.11. 17:30,Getafe,Atl. Madrid,0,1
+23.11. 15:15,Betis,Girona,1,1
+23.11. 13:00,Oviedo,Rayo Vallecano,0,0
+22.11. 20:00,Villarreal,Mallorca,2,1
+22.11. 17:30,Osasuna,Real Sociedad,1,3
+22.11. 15:15,Barcelona,Ath Bilbao,4,0
+22.11. 13:00,Alaves,Celta Vigo,0,1
+21.11. 20:00,Valencia,Levante,1,0
+09.11. 20:00,Celta Vigo,Barcelona,2,4
+09.11. 17:30,Mallorca,Getafe,1,0
+09.11. 17:30,Valencia,Betis,1,1
+09.11. 15:15,Rayo Vallecano,Real Madrid,0,0
+09.11. 13:00,Ath Bilbao,Oviedo,1,0
+08.11. 20:00,Espanyol,Villarreal,0,2
+08.11. 17:30,Atl. Madrid,Levante,3,1
+08.11. 15:15,Sevilla,Osasuna,1,0
+08.11. 13:00,Girona,Alaves,1,0
+07.11. 20:00,Elche,Real Sociedad,1,1
+03.11. 20:00,Oviedo,Osasuna,0,0
+02.11. 20:00,Betis,Mallorca,3,0
+02.11. 17:30,Barcelona,Elche,3,1
+02.11. 15:15,Alaves,Espanyol,2,1
+02.11. 13:00,Levante,Celta Vigo,1,2
+01.11. 20:00,Real Madrid,Valencia,4,0
+01.11. 17:30,Real Sociedad,Ath Bilbao,3,2
+01.11. 15:15,Atl. Madrid,Sevilla,3,0
+01.11. 13:00,Villarreal,Rayo Vallecano,4,0
+31.10. 20:00,Getafe,Girona,2,1
+27.10. 20:00,Betis,Atl. Madrid,0,2
+26.10. 20:00,Rayo Vallecano,Alaves,1,0
+26.10. 17:30,Osasuna,Celta Vigo,2,3
+26.10. 15:15,Real Madrid,Barcelona,2,1
+26.10. 13:00,Mallorca,Levante,1,1
+25.10. 19:00,Valencia,Villarreal,0,2
+25.10. 16:30,Ath Bilbao,Getafe,0,1
+25.10. 14:15,Espanyol,Elche,1,0
+25.10. 12:00,Girona,Oviedo,3,3
+24.10. 19:00,Real Sociedad,Sevilla,2,1
+20.10. 19:00,Alaves,Valencia,0,0
+19.10. 19:00,Getafe,Real Madrid,0,1
+19.10. 16:30,Levante,Rayo Vallecano,0,3
+19.10. 14:15,Celta Vigo,Real Sociedad,1,1
+19.10. 12:00,Elche,Ath Bilbao,0,0
+18.10. 19:00,Atl. Madrid,Osasuna,1,0
+18.10. 16:30,Villarreal,Betis,2,2
+18.10. 14:15,Barcelona,Girona,2,1
+18.10. 12:00,Sevilla,Mallorca,1,3
+17.10. 19:00,Oviedo,Espanyol,0,2
+05.10. 19:00,Celta Vigo,Atl. Madrid,1,1
+05.10. 16:30,Espanyol,Betis,1,2
+05.10. 16:30,Real Sociedad,Rayo Vallecano,0,1
+05.10. 14:15,Sevilla,Barcelona,4,1
+05.10. 12:00,Alaves,Elche,3,1
+04.10. 19:00,Real Madrid,Villarreal,3,1
+04.10. 16:30,Ath Bilbao,Mallorca,2,1
+04.10. 14:15,Girona,Valencia,2,1
+04.10. 12:00,Oviedo,Levante,0,2
+03.10. 19:00,Osasuna,Getafe,2,1
+30.09. 18:00,Valencia,Oviedo,1,2
+28.09. 19:00,Betis,Osasuna,2,0
+28.09. 16:30,Barcelona,Real Sociedad,2,1
+28.09. 14:15,Elche,Celta Vigo,2,1
+28.09. 12:00,Rayo Vallecano,Sevilla,0,1
+27.09. 19:00,Villarreal,Ath Bilbao,1,0
+27.09. 16:30,Mallorca,Alaves,1,0
+27.09. 14:15,Atl. Madrid,Real Madrid,5,2
+27.09. 12:00,Getafe,Levante,1,1
+26.09. 19:00,Girona,Espanyol,0,0
+25.09. 19:30,Oviedo,Barcelona,1,3
+25.09. 17:30,Osasuna,Elche,1,1
+24.09. 19:30,Atl. Madrid,Rayo Vallecano,3,2
+24.09. 19:30,Real Sociedad,Mallorca,1,0
+24.09. 17:00,Getafe,Alaves,1,1
+23.09. 19:30,Levante,Real Madrid,1,4
+23.09. 19:30,Sevilla,Villarreal,1,2
+23.09. 17:00,Ath Bilbao,Girona,1,1
+23.09. 17:00,Espanyol,Valencia,2,2
+21.09. 19:00,Barcelona,Getafe,3,0
+21.09. 16:30,Elche,Oviedo,1,0
+21.09. 14:15,Mallorca,Atl. Madrid,1,1
+21.09. 12:00,Rayo Vallecano,Celta Vigo,1,1
+20.09. 19:00,Valencia,Ath Bilbao,2,0
+20.09. 16:30,Alaves,Sevilla,1,2
+20.09. 16:30,Villarreal,Osasuna,2,1
+20.09. 14:15,Real Madrid,Espanyol,2,0
+20.09. 12:00,Girona,Levante,0,4
+19.09. 19:00,Betis,Real Sociedad,3,1
+15.09. 19:00,Espanyol,Mallorca,3,2
+14.09. 19:00,Barcelona,Valencia,6,0
+14.09. 16:30,Osasuna,Rayo Vallecano,2,0
+14.09. 14:15,Levante,Betis,2,2
+14.09. 12:00,Celta Vigo,Girona,1,1
+13.09. 19:00,Atl. Madrid,Villarreal,2,0
+13.09. 16:30,Ath Bilbao,Alaves,0,1
+13.09. 14:15,Real Sociedad,Real Madrid,1,2
+13.09. 12:00,Getafe,Oviedo,2,0
+12.09. 19:00,Sevilla,Elche,2,2
+31.08. 19:30,Rayo Vallecano,Barcelona,1,1
+31.08. 17:30,Espanyol,Osasuna,1,0
+31.08. 17:00,Betis,Ath Bilbao,1,2
+31.08. 15:00,Celta Vigo,Villarreal,1,1
+30.08. 19:30,Real Madrid,Mallorca,2,1
+30.08. 17:30,Girona,Sevilla,0,2
+30.08. 17:00,Oviedo,Real Sociedad,1,0
+30.08. 15:00,Alaves,Atl. Madrid,1,1
+29.08. 19:30,Valencia,Getafe,3,0
+29.08. 17:30,Elche,Levante,2,0
+27.08. 19:00,Celta Vigo,Betis,1,1
+25.08. 19:30,Sevilla,Getafe,1,2
+25.08. 17:30,Ath Bilbao,Rayo Vallecano,1,0
+24.08. 19:30,Oviedo,Real Madrid,0,3
+24.08. 17:30,Real Sociedad,Espanyol,2,2
+24.08. 17:30,Villarreal,Girona,5,0
+24.08. 15:00,Osasuna,Valencia,1,0
+23.08. 19:30,Levante,Barcelona,2,3
+23.08. 17:30,Atl. Madrid,Elche,1,1
+23.08. 15:00,Mallorca,Celta Vigo,1,1
+22.08. 19:30,Betis,Alaves,1,0
+19.08. 19:00,Real Madrid,Osasuna,1,0
 18.08. 19:00,Elche,Betis,1,1
 17.08. 19:30,Espanyol,Atl. Madrid,2,1
 17.08. 17:30,Ath Bilbao,Sevilla,3,2
@@ -6,5 +257,5 @@ date,home,away,home_score,away_score
 16.08. 19:30,Alaves,Levante,2,1
 16.08. 19:30,Valencia,Real Sociedad,1,1
 16.08. 17:30,Mallorca,Barcelona,0,3
-15.08. 19:30,Villarreal,R. Oviedo,2,0
+15.08. 19:30,Villarreal,Oviedo,2,0
 15.08. 17:00,Girona,Rayo Vallecano,1,3

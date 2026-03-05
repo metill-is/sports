@@ -1,4 +1,264 @@
 date,home,away,home_score,away_score
+03.03. 19:30,AlbinoLeffe,Brescia,1,0
+03.03. 19:30,Cittadella,Inter U23,1,1
+03.03. 19:30,L.R. Vicenza,Trento,2,3
+03.03. 19:30,Lecco,Renate,0,3
+03.03. 19:30,Triestina,Dolomiti Bellunesi,2,3
+03.03. 19:30,Virtus Verona,Novara,0,2
+03.03. 17:00,Alcione Milano,Giana Erminio,1,1
+03.03. 17:00,Lumezzane,Arzignano,0,1
+03.03. 17:00,Ospitaletto,Pro Patria,0,0
+03.03. 17:00,Pergolettese,Pro Vercelli,2,1
+28.02. 19:30,Inter U23,Alcione Milano,0,0
+28.02. 16:30,Pro Patria,Virtus Verona,2,2
+28.02. 16:30,Trento,Lumezzane,1,1
+28.02. 13:30,AlbinoLeffe,L.R. Vicenza,0,1
+28.02. 13:30,Brescia,Lecco,3,1
+28.02. 13:30,Dolomiti Bellunesi,Renate,0,3
+27.02. 19:30,Arzignano,Novara,1,1
+27.02. 19:30,Cittadella,Ospitaletto,2,2
+27.02. 19:30,Giana Erminio,Pro Vercelli,1,0
+27.02. 19:30,Pergolettese,Triestina,2,0
+23.02. 19:30,Virtus Verona,L.R. Vicenza,0,1
+22.02. 19:30,Lecco,AlbinoLeffe,0,0
+22.02. 16:30,Arzignano,Ospitaletto,1,2
+22.02. 16:30,Brescia,Pro Patria,3,2
+22.02. 13:30,Lumezzane,Dolomiti Bellunesi,3,0
+22.02. 13:30,Pro Vercelli,Trento,1,3
+21.02. 16:30,Alcione Milano,Pergolettese,1,0
+21.02. 16:30,Renate,Inter U23,2,1
+21.02. 16:30,Triestina,Cittadella,2,3
+21.02. 13:30,Novara,Giana Erminio,3,1
+16.02. 19:30,Cittadella,Renate,2,1
+16.02. 19:30,Ospitaletto,Inter U23,2,2
+16.02. 19:30,Pergolettese,Brescia,2,1
+15.02. 19:30,Lecco,Virtus Verona,2,2
+15.02. 16:30,AlbinoLeffe,Arzignano,2,0
+15.02. 16:30,Lumezzane,Giana Erminio,1,0
+15.02. 16:30,Trento,Pro Patria,2,0
+15.02. 13:30,Dolomiti Bellunesi,Pro Vercelli,1,2
+15.02. 11:30,L.R. Vicenza,Alcione Milano,0,1
+15.02. 11:30,Triestina,Novara,0,1
+11.02. 19:30,Arzignano,Trento,0,2
+11.02. 19:30,Brescia,Virtus Verona,3,1
+11.02. 19:30,Giana Erminio,Lecco,0,1
+11.02. 19:30,Inter U23,Lumezzane,0,0
+11.02. 19:30,Pro Patria,Cittadella,1,0
+11.02. 19:30,Pro Vercelli,L.R. Vicenza,1,2
+11.02. 17:00,Alcione Milano,Ospitaletto,0,0
+11.02. 17:00,Dolomiti Bellunesi,Pergolettese,1,2
+11.02. 17:00,Novara,AlbinoLeffe,2,2
+11.02. 17:00,Renate,Triestina,4,0
+08.02. 16:30,L.R. Vicenza,Dolomiti Bellunesi,0,0
+08.02. 13:30,AlbinoLeffe,Pro Patria,2,2
+08.02. 13:30,Lecco,Pro Vercelli,0,2
+08.02. 13:30,Ospitaletto,Renate,1,1
+08.02. 13:30,Triestina,Inter U23,4,1
+07.02. 16:30,Alcione Milano,Arzignano,1,0
+07.02. 16:30,Pergolettese,Trento,1,2
+07.02. 16:30,Virtus Verona,Giana Erminio,0,1
+07.02. 13:30,Lumezzane,Cittadella,1,2
+07.02. 13:30,Novara,Brescia,0,0
+02.02. 19:30,Giana Erminio,Brescia,0,2
+02.02. 19:30,Renate,Alcione Milano,1,0
+01.02. 13:30,Pro Vercelli,Novara,1,0
+01.02. 11:30,Cittadella,AlbinoLeffe,0,1
+01.02. 11:30,Pro Patria,L.R. Vicenza,0,4
+31.01. 16:30,Inter U23,Pergolettese,1,1
+31.01. 16:30,Ospitaletto,Lumezzane,1,2
+31.01. 13:30,Arzignano,Triestina,4,1
+31.01. 13:30,Dolomiti Bellunesi,Virtus Verona,1,0
+31.01. 13:30,Trento,Lecco,1,1
+26.01. 19:30,L.R. Vicenza,Cittadella,4,1
+26.01. 19:30,Lecco,Inter U23,0,2
+25.01. 16:30,Alcione Milano,Dolomiti Bellunesi,5,0
+25.01. 16:30,Pergolettese,Ospitaletto,1,0
+25.01. 13:30,Giana Erminio,Arzignano,2,1
+25.01. 13:30,Novara,Pro Patria,3,1
+24.01. 16:30,Virtus Verona,Pro Vercelli,2,2
+24.01. 13:30,AlbinoLeffe,Trento,1,2
+24.01. 13:30,Brescia,Renate,1,2
+23.01. 19:30,Triestina,Lumezzane,2,1
+18.01. 16:30,Inter U23,Virtus Verona,1,0
+18.01. 16:30,Renate,AlbinoLeffe,1,1
+18.01. 13:30,Arzignano,L.R. Vicenza,1,2
+18.01. 13:30,Pro Vercelli,Brescia,0,0
+17.01. 16:30,Lumezzane,Alcione Milano,1,0
+17.01. 16:30,Ospitaletto,Triestina,1,0
+17.01. 16:30,Pro Patria,Giana Erminio,0,4
+17.01. 13:30,Cittadella,Pergolettese,3,3
+17.01. 13:30,Dolomiti Bellunesi,Lecco,1,4
+17.01. 13:30,Trento,Novara,1,1
+11.01. 16:30,Lecco,Triestina,1,0
+11.01. 13:30,Alcione Milano,Cittadella,2,0
+11.01. 13:30,Novara,Dolomiti Bellunesi,1,1
+11.01. 13:30,Virtus Verona,Arzignano,0,1
+10.01. 16:30,Pergolettese,Lumezzane,0,2
+10.01. 16:30,Pro Patria,Inter U23,1,2
+10.01. 13:30,AlbinoLeffe,Pro Vercelli,2,1
+10.01. 13:30,Brescia,Trento,2,1
+10.01. 13:30,Giana Erminio,Renate,0,1
+10.01. 13:30,L.R. Vicenza,Ospitaletto,1,0
+05.01. 19:30,Triestina,Alcione Milano,1,2
+04.01. 16:30,Dolomiti Bellunesi,AlbinoLeffe,2,0
+04.01. 13:30,Arzignano,Brescia,1,2
+04.01. 13:30,Inter U23,Novara,0,0
+04.01. 13:30,Lumezzane,L.R. Vicenza,1,1
+03.01. 16:30,Ospitaletto,Lecco,1,1
+03.01. 16:30,Pro Vercelli,Pro Patria,1,0
+03.01. 16:30,Renate,Pergolettese,2,1
+03.01. 13:30,Cittadella,Virtus Verona,4,1
+03.01. 13:30,Trento,Giana Erminio,3,1
+22.12. 19:30,Brescia,Inter U23,2,0
+21.12. 16:30,Giana Erminio,Cittadella,0,2
+21.12. 16:30,Lecco,Pergolettese,1,0
+21.12. 16:30,Novara,Ospitaletto,0,3
+21.12. 13:30,L.R. Vicenza,Triestina,1,0
+21.12. 13:30,Pro Vercelli,Arzignano,0,5
+20.12. 16:30,Pro Patria,Renate,0,3
+20.12. 16:30,Virtus Verona,Lumezzane,0,0
+20.12. 13:30,AlbinoLeffe,Alcione Milano,2,0
+20.12. 13:30,Trento,Dolomiti Bellunesi,2,0
+14.12. 19:30,Arzignano,Pro Patria,2,1
+14.12. 16:30,Ospitaletto,Pro Vercelli,2,0
+14.12. 16:30,Triestina,AlbinoLeffe,5,2
+14.12. 13:30,Cittadella,Novara,2,2
+14.12. 13:30,Dolomiti Bellunesi,Brescia,0,1
+14.12. 13:30,Pergolettese,L.R. Vicenza,0,1
+14.12. 11:30,Inter U23,Giana Erminio,0,1
+13.12. 16:30,Alcione Milano,Virtus Verona,0,1
+13.12. 16:30,Renate,Trento,1,1
+13.12. 13:30,Lumezzane,Lecco,1,1
+08.12. 14:00,Giana Erminio,Triestina,2,1
+08.12. 13:30,AlbinoLeffe,Ospitaletto,1,1
+08.12. 13:30,Lecco,Alcione Milano,1,0
+08.12. 13:30,Virtus Verona,Pergolettese,1,1
+07.12. 16:30,Pro Patria,Dolomiti Bellunesi,0,2
+07.12. 13:30,Brescia,Lumezzane,0,1
+07.12. 13:30,Novara,L.R. Vicenza,2,2
+07.12. 11:30,Arzignano,Inter U23,1,1
+06.12. 13:30,Pro Vercelli,Renate,1,1
+05.12. 19:30,Trento,Cittadella,1,0
+03.12. 17:30,Dolomiti Bellunesi,Inter U23,1,0
+01.12. 19:30,Cittadella,Brescia,1,1
+30.11. 16:30,Dolomiti Bellunesi,Giana Erminio,0,0
+30.11. 13:30,Alcione Milano,Trento,2,0
+30.11. 13:30,Inter U23,Pro Vercelli,1,1
+30.11. 13:30,L.R. Vicenza,Lecco,1,0
+29.11. 16:30,Ospitaletto,Virtus Verona,1,1
+29.11. 16:30,Pergolettese,AlbinoLeffe,0,0
+29.11. 13:30,Lumezzane,Novara,1,1
+29.11. 13:30,Renate,Arzignano,1,2
+28.11. 19:30,Triestina,Pro Patria,2,1
+23.11. 19:30,Lecco,Cittadella,0,1
+23.11. 16:30,Giana Erminio,Ospitaletto,1,0
+23.11. 13:30,Brescia,L.R. Vicenza,1,1
+23.11. 13:30,Novara,Renate,0,1
+23.11. 11:30,Trento,Inter U23,0,1
+22.11. 16:30,Arzignano,Dolomiti Bellunesi,2,2
+22.11. 16:30,Virtus Verona,Triestina,0,0
+22.11. 13:30,AlbinoLeffe,Lumezzane,0,1
+22.11. 13:30,Pro Vercelli,Alcione Milano,1,0
+21.11. 19:30,Pro Patria,Pergolettese,3,1
+17.11. 19:30,Pergolettese,Giana Erminio,0,3
+16.11. 16:30,L.R. Vicenza,Renate,1,0
+16.11. 16:30,Lecco,Pro Patria,1,0
+16.11. 13:30,AlbinoLeffe,Virtus Verona,3,1
+16.11. 13:30,Alcione Milano,Novara,0,1
+16.11. 11:30,Ospitaletto,Brescia,0,0
+15.11. 19:30,Triestina,Trento,1,1
+15.11. 16:30,Cittadella,Arzignano,1,0
+15.11. 16:30,Lumezzane,Pro Vercelli,3,1
+09.11. 16:30,Giana Erminio,AlbinoLeffe,1,1
+09.11. 16:30,Novara,Lecco,1,0
+09.11. 13:30,Brescia,Alcione Milano,0,1
+09.11. 13:30,Pro Vercelli,Triestina,3,1
+09.11. 13:30,Trento,Ospitaletto,3,1
+09.11. 11:30,Inter U23,L.R. Vicenza,1,2
+08.11. 16:30,Pro Patria,Lumezzane,1,1
+08.11. 13:30,Arzignano,Pergolettese,1,0
+08.11. 13:30,Dolomiti Bellunesi,Cittadella,0,1
+08.11. 13:30,Renate,Virtus Verona,1,0
+03.11. 19:30,AlbinoLeffe,Inter U23,1,3
+03.11. 19:30,Alcione Milano,Pro Patria,2,0
+03.11. 19:30,Ospitaletto,Dolomiti Bellunesi,3,1
+02.11. 19:30,Lecco,Arzignano,5,1
+02.11. 19:30,Lumezzane,Renate,0,0
+02.11. 13:30,Cittadella,Pro Vercelli,2,1
+02.11. 13:30,L.R. Vicenza,Giana Erminio,2,1
+02.11. 11:30,Triestina,Brescia,0,1
+01.11. 16:30,Virtus Verona,Trento,0,3
+01.11. 13:30,Pergolettese,Novara,2,2
+27.10. 19:30,Dolomiti Bellunesi,Triestina,1,0
+27.10. 19:30,Inter U23,Cittadella,0,1
+26.10. 16:30,Giana Erminio,Alcione Milano,1,1
+26.10. 16:30,Pro Patria,Ospitaletto,0,0
+26.10. 13:30,Pro Vercelli,Pergolettese,2,0
+26.10. 13:30,Trento,L.R. Vicenza,1,1
+25.10. 15:30,Arzignano,Lumezzane,3,3
+25.10. 15:30,Renate,Lecco,0,1
+25.10. 12:30,Brescia,AlbinoLeffe,2,1
+24.10. 18:30,Novara,Virtus Verona,1,1
+21.10. 14:30,Inter U23,Renate,1,1
+19.10. 18:30,Lecco,Brescia,0,1
+19.10. 15:30,Lumezzane,Trento,1,1
+19.10. 15:30,Pro Vercelli,Giana Erminio,0,0
+19.10. 15:30,Virtus Verona,Pro Patria,0,1
+19.10. 12:30,L.R. Vicenza,AlbinoLeffe,3,1
+18.10. 15:30,Ospitaletto,Cittadella,1,2
+18.10. 12:30,Renate,Dolomiti Bellunesi,2,0
+18.10. 12:30,Triestina,Pergolettese,1,1
+17.10. 18:30,Alcione Milano,Inter U23,1,2
+17.10. 18:30,Novara,Arzignano,1,0
+13.10. 18:30,Dolomiti Bellunesi,Lumezzane,2,0
+13.10. 18:30,Trento,Pro Vercelli,1,0
+12.10. 18:30,Pro Patria,Brescia,0,2
+12.10. 15:30,AlbinoLeffe,Lecco,0,1
+12.10. 15:30,Ospitaletto,Arzignano,2,1
+12.10. 12:30,Cittadella,Triestina,1,0
+11.10. 15:30,L.R. Vicenza,Virtus Verona,2,1
+11.10. 15:30,Pergolettese,Alcione Milano,0,2
+11.10. 12:30,Giana Erminio,Novara,0,0
+05.10. 18:30,Arzignano,AlbinoLeffe,0,0
+05.10. 18:30,Inter U23,Ospitaletto,2,2
+05.10. 15:30,Alcione Milano,L.R. Vicenza,0,1
+05.10. 12:30,Pro Patria,Trento,2,2
+05.10. 12:30,Pro Vercelli,Dolomiti Bellunesi,4,0
+05.10. 10:30,Novara,Triestina,0,0
+04.10. 15:30,Renate,Cittadella,0,0
+04.10. 15:30,Virtus Verona,Lecco,2,2
+04.10. 12:30,Brescia,Pergolettese,0,0
+04.10. 12:30,Giana Erminio,Lumezzane,2,1
+29.09. 18:30,Cittadella,Pro Patria,0,0
+29.09. 18:30,L.R. Vicenza,Pro Vercelli,2,0
+29.09. 18:30,Ospitaletto,Alcione Milano,0,1
+28.09. 18:30,Lecco,Giana Erminio,0,0
+28.09. 18:30,Lumezzane,Inter U23,1,2
+28.09. 15:30,Pergolettese,Dolomiti Bellunesi,1,2
+28.09. 13:00,AlbinoLeffe,Novara,3,2
+28.09. 13:00,Triestina,Renate,3,0
+28.09. 13:00,Virtus Verona,Brescia,1,1
+28.09. 10:30,Trento,Arzignano,2,2
+25.09. 18:45,Brescia,Novara,1,1
+25.09. 18:45,Dolomiti Bellunesi,L.R. Vicenza,1,2
+25.09. 18:45,Inter U23,Triestina,2,0
+25.09. 18:45,Pro Vercelli,Lecco,0,1
+25.09. 16:30,Arzignano,Alcione Milano,1,3
+25.09. 16:30,Cittadella,Lumezzane,0,1
+25.09. 16:30,Giana Erminio,Virtus Verona,1,3
+25.09. 16:30,Pro Patria,AlbinoLeffe,0,3
+25.09. 16:30,Renate,Ospitaletto,1,2
+25.09. 16:30,Trento,Pergolettese,0,0
+21.09. 18:30,AlbinoLeffe,Cittadella,2,1
+21.09. 18:30,Brescia,Giana Erminio,2,0
+21.09. 15:30,Lumezzane,Ospitaletto,2,0
+21.09. 15:30,Triestina,Arzignano,2,1
+21.09. 15:30,Virtus Verona,Dolomiti Bellunesi,1,1
+21.09. 13:00,L.R. Vicenza,Pro Patria,3,0
+21.09. 13:00,Lecco,Trento,3,1
+21.09. 13:00,Novara,Pro Vercelli,0,1
+21.09. 10:30,Alcione Milano,Renate,1,1
+21.09. 10:30,Pergolettese,Inter U23,0,2
 17.09. 17:00,Virtus Verona,Inter U23,1,2
 15.09. 18:30,Cittadella,L.R. Vicenza,0,1
 14.09. 15:30,Pro Patria,Novara,0,0

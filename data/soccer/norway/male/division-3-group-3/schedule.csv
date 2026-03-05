@@ -1,106 +1,106 @@
-date,home,away,home_score,away_score
-14.06. 13:00,Assiden,Skjetten,-,-
-14.06. 13:00,Lorenskog,SK Gjovik-Lyn,-,-
-14.06. 13:00,Skedsmo,Nordstrand,-,-
-15.06. 12:00,Ull/Kisa 2,Ham-Kam 2,-,-
-15.06. 13:00,Bjorkelangen,Lillestrom 2,-,-
-15.06. 13:00,Lillehammer,Elverum,-,-
-16.06. 18:00,Kongsvinger 2,Stromsgodset 2,-,-
-21.06. 13:00,Elverum,Assiden,-,-
-21.06. 13:00,Lillehammer,Bjorkelangen,-,-
-22.06. 11:00,Lillestrom 2,Skedsmo,-,-
-22.06. 12:00,SK Gjovik-Lyn,Ull/Kisa 2,-,-
-22.06. 12:00,Skjetten,Kongsvinger 2,-,-
-23.06. 17:00,Nordstrand,Stromsgodset 2,-,-
-23.06. 18:00,Ham-Kam 2,Lorenskog,-,-
-28.06. 13:00,Assiden,Lillehammer,-,-
-28.06. 13:00,Bjorkelangen,Skjetten,-,-
-28.06. 13:00,Lorenskog,Nordstrand,-,-
-28.06. 13:00,Skedsmo,Elverum,-,-
-28.06. 13:00,Stromsgodset 2,SK Gjovik-Lyn,-,-
-29.06. 12:00,Ull/Kisa 2,Lillestrom 2,-,-
-30.06. 18:00,Kongsvinger 2,Ham-Kam 2,-,-
-05.07. 11:00,Lillestrom 2,Assiden,-,-
-05.07. 11:00,Nordstrand,Ull/Kisa 2,-,-
-05.07. 11:00,SK Gjovik-Lyn,Kongsvinger 2,-,-
-05.07. 13:00,Elverum,Bjorkelangen,-,-
-05.07. 13:00,Skjetten,Lorenskog,-,-
-06.07. 13:00,Lillehammer,Stromsgodset 2,-,-
-07.07. 18:00,Ham-Kam 2,Skedsmo,-,-
-09.07. 17:30,Bjorkelangen,SK Gjovik-Lyn,-,-
-11.07. 16:00,Lorenskog,Lillestrom 2,-,-
-12.07. 12:00,Kongsvinger 2,Nordstrand,-,-
-12.07. 12:00,Ull/Kisa 2,Elverum,-,-
-12.07. 13:00,Skedsmo,Lillehammer,-,-
-14.07. 17:00,Assiden,Ham-Kam 2,-,-
-14.07. 17:30,Stromsgodset 2,Skjetten,-,-
-09.08. 12:00,Nordstrand,Assiden,-,-
-09.08. 12:00,SK Gjovik-Lyn,Skedsmo,-,-
-09.08. 13:00,Lillehammer,Lorenskog,-,-
-10.08. 11:00,Lillestrom 2,Bjorkelangen,-,-
-10.08. 12:00,Skjetten,Ull/Kisa 2,-,-
-11.08. 14:00,Ham-Kam 2,Stromsgodset 2,-,-
-11.08. 16:00,Elverum,Kongsvinger 2,-,-
-16.08. 13:00,Assiden,Elverum,-,-
-16.08. 13:00,Bjorkelangen,Lillehammer,-,-
-16.08. 13:00,Skedsmo,Lillestrom 2,-,-
-17.08. 12:00,Ull/Kisa 2,SK Gjovik-Lyn,-,-
-18.08. 17:00,Lorenskog,Ham-Kam 2,-,-
-18.08. 18:00,Stromsgodset 2,Nordstrand,-,-
-19.08. 18:00,Kongsvinger 2,Skjetten,-,-
-23.08. 12:00,SK Gjovik-Lyn,Lorenskog,-,-
-23.08. 13:00,Skjetten,Assiden,-,-
-24.08. 13:00,Lillehammer,Lillestrom 2,-,-
-24.08. 14:00,Bjorkelangen,Ull/Kisa 2,-,-
-25.08. 16:00,Elverum,Stromsgodset 2,-,-
-25.08. 18:00,Ham-Kam 2,Nordstrand,-,-
-25.08. 18:00,Kongsvinger 2,Skedsmo,-,-
-30.08. 13:00,Assiden,SK Gjovik-Lyn,-,-
-30.08. 13:00,Lorenskog,Bjorkelangen,-,-
-30.08. 13:00,Nordstrand,Elverum,-,-
-31.08. 12:00,Lillestrom 2,Skjetten,-,-
-31.08. 12:00,Ull/Kisa 2,Lillehammer,-,-
-01.09. 16:00,Skedsmo,Ham-Kam 2,-,-
-01.09. 16:00,Stromsgodset 2,Kongsvinger 2,-,-
-06.09. 13:00,Elverum,Skedsmo,-,-
-06.09. 13:00,Nordstrand,Lorenskog,-,-
-06.09. 13:00,SK Gjovik-Lyn,Lillehammer,-,-
-06.09. 13:00,Skjetten,Bjorkelangen,-,-
-06.09. 13:00,Stromsgodset 2,Assiden,-,-
-07.09. 12:00,Kongsvinger 2,Ull/Kisa 2,-,-
-08.09. 18:00,Ham-Kam 2,Lillestrom 2,-,-
-13.09. 13:00,Bjorkelangen,Elverum,-,-
-13.09. 13:00,Skedsmo,Skjetten,-,-
-14.09. 11:30,Lillestrom 2,SK Gjovik-Lyn,-,-
-14.09. 12:00,Ull/Kisa 2,Nordstrand,-,-
-15.09. 17:00,Assiden,Kongsvinger 2,-,-
-15.09. 17:00,Lillehammer,Ham-Kam 2,-,-
-15.09. 17:00,Lorenskog,Stromsgodset 2,-,-
-20.09. 13:00,Elverum,Lillehammer,-,-
-20.09. 13:00,Ham-Kam 2,Bjorkelangen,-,-
-20.09. 13:00,Skjetten,SK Gjovik-Lyn,-,-
-21.09. 11:00,Nordstrand,Lillestrom 2,-,-
-21.09. 16:00,Assiden,Skedsmo,-,-
-22.09. 16:00,Stromsgodset 2,Ull/Kisa 2,-,-
-22.09. 18:00,Kongsvinger 2,Lorenskog,-,-
-27.09. 13:00,Bjorkelangen,Nordstrand,-,-
-27.09. 13:00,Lorenskog,Skjetten,-,-
-27.09. 16:00,SK Gjovik-Lyn,Ham-Kam 2,-,-
-28.09. 12:00,Ull/Kisa 2,Assiden,-,-
-29.09. 17:00,Skedsmo,Stromsgodset 2,-,-
-30.09. 17:00,Lillehammer,Kongsvinger 2,-,-
-30.09. 17:00,Lillestrom 2,Elverum,-,-
-04.10. 13:00,Assiden,Lorenskog,-,-
-04.10. 13:00,Nordstrand,Skedsmo,-,-
-04.10. 13:00,Skjetten,Lillehammer,-,-
-05.10. 12:00,Elverum,SK Gjovik-Lyn,-,-
-06.10. 17:00,Stromsgodset 2,Lillestrom 2,-,-
-06.10. 17:30,Kongsvinger 2,Bjorkelangen,-,-
-06.10. 18:00,Ham-Kam 2,Ull/Kisa 2,-,-
-10.10. 17:00,SK Gjovik-Lyn,Stromsgodset 2,-,-
-10.10. 17:30,Ham-Kam 2,Skjetten,-,-
-11.10. 13:00,Bjorkelangen,Assiden,-,-
-11.10. 13:00,Lillehammer,Nordstrand,-,-
-11.10. 13:00,Lorenskog,Elverum,-,-
-12.10. 11:00,Lillestrom 2,Kongsvinger 2,-,-
-12.10. 12:00,Skedsmo,Ull/Kisa 2,-,-
+date,home,away
+02.04. 11:00,Gneist,Fana
+06.04. 11:00,Djerv 1919,Stord
+06.04. 12:00,Askoy,V. Haugesund
+06.04. 13:00,Fyllingsdalen,Forde
+06.04. 13:00,Sogndal 2,OS TF
+07.04. 16:00,Austevoll,Asane 2
+07.04. 17:00,Varegg,Brann 2
+11.04. 12:00,Fana,Varegg
+11.04. 12:00,OS TF,Gneist
+11.04. 12:00,Stord,Austevoll
+11.04. 13:00,V. Haugesund,Fyllingsdalen
+12.04. 12:00,Brann 2,Djerv 1919
+12.04. 13:00,Forde,Sogndal 2
+13.04. 16:00,Asane 2,Askoy
+18.04. 12:00,Fana,V. Haugesund
+18.04. 12:00,Gneist,Stord
+18.04. 12:00,Varegg,Fyllingsdalen
+18.04. 13:00,Askoy,Austevoll
+18.04. 13:00,Djerv 1919,OS TF
+19.04. 13:00,Brann 2,Forde
+20.04. 16:00,Sogndal 2,Asane 2
+25.04. 12:00,Fyllingsdalen,Askoy
+25.04. 12:00,OS TF,Fana
+25.04. 12:00,V. Haugesund,Gneist
+25.04. 13:00,Forde,Varegg
+26.04. 12:00,Asane 2,Djerv 1919
+26.04. 14:00,Austevoll,Sogndal 2
+26.04. 14:00,Stord,Brann 2
+01.05. 11:00,Djerv 1919,Forde
+01.05. 11:00,Fana,Stord
+02.05. 12:00,Gneist,Fyllingsdalen
+02.05. 13:00,OS TF,V. Haugesund
+02.05. 13:00,Sogndal 2,Askoy
+02.05. 13:00,Varegg,Austevoll
+03.05. 11:00,Brann 2,Asane 2
+09.05. 12:00,Askoy,Varegg
+09.05. 12:00,Austevoll,Djerv 1919
+09.05. 12:00,Stord,OS TF
+09.05. 13:00,Forde,Gneist
+11.05. 16:00,Asane 2,Fana
+11.05. 16:00,Fyllingsdalen,Sogndal 2
+11.05. 16:00,V. Haugesund,Brann 2
+14.05. 11:00,Stord,Forde
+14.05. 13:00,OS TF,Fyllingsdalen
+14.05. 17:00,Gneist,Austevoll
+15.05. 16:30,Djerv 1919,V. Haugesund
+16.05. 11:00,Varegg,Asane 2
+16.05. 13:00,Fana,Askoy
+19.05. 16:00,Brann 2,Sogndal 2
+22.05. 17:00,Austevoll,Fana
+22.05. 17:00,V. Haugesund,Stord
+23.05. 13:00,Forde,OS TF
+23.05. 13:00,Sogndal 2,Varegg
+25.05. 12:00,Askoy,Djerv 1919
+26.05. 16:30,Fyllingsdalen,Brann 2
+26.05. 17:00,Asane 2,Gneist
+29.05. 17:00,OS TF,Austevoll
+30.05. 12:00,Djerv 1919,Varegg
+30.05. 12:00,Stord,Fyllingsdalen
+30.05. 13:00,Fana,Forde
+01.06. 16:00,Brann 2,Askoy
+01.06. 16:00,V. Haugesund,Asane 2
+01.06. 16:30,Gneist,Sogndal 2
+13.06. 11:00,Forde,V. Haugesund
+13.06. 11:00,Sogndal 2,Djerv 1919
+13.06. 12:00,Asane 2,Stord
+13.06. 12:00,Askoy,OS TF
+13.06. 12:00,Varegg,Gneist
+13.06. 13:00,Fyllingsdalen,Fana
+14.06. 12:00,Austevoll,Brann 2
+20.06. 11:00,Fyllingsdalen,Djerv 1919
+20.06. 12:00,Gneist,Askoy
+20.06. 12:00,OS TF,Brann 2
+20.06. 12:00,Stord,Varegg
+20.06. 12:30,V. Haugesund,Austevoll
+22.06. 16:00,Fana,Sogndal 2
+22.06. 16:00,Forde,Asane 2
+25.06. 16:00,Asane 2,OS TF
+25.06. 17:00,Austevoll,Fyllingsdalen
+27.06. 11:00,Brann 2,Fana
+27.06. 11:00,Sogndal 2,Stord
+27.06. 12:00,Djerv 1919,Gneist
+27.06. 13:00,Askoy,Forde
+28.06. 12:00,Varegg,V. Haugesund
+25.07. 11:00,Forde,Austevoll
+25.07. 12:00,Fana,Djerv 1919
+25.07. 12:00,Stord,Askoy
+26.07. 12:00,OS TF,Varegg
+26.07. 13:00,Fyllingsdalen,Asane 2
+27.07. 15:00,Gneist,Brann 2
+27.07. 16:00,V. Haugesund,Sogndal 2
+01.08. 12:00,Askoy,Fyllingsdalen
+01.08. 12:00,Gneist,V. Haugesund
+01.08. 12:00,Varegg,Fana
+01.08. 14:00,Austevoll,OS TF
+03.08. 16:00,Djerv 1919,Asane 2
+03.08. 16:00,Sogndal 2,Forde
+03.08. 17:00,Brann 2,Stord
+08.08. 12:00,Fana,Gneist
+08.08. 12:00,OS TF,Stord
+08.08. 12:00,V. Haugesund,Djerv 1919
+08.08. 13:00,Forde,Brann 2
+08.08. 13:00,Fyllingsdalen,Varegg
+10.08. 16:00,Askoy,Sogndal 2
+10.08. 17:00,Asane 2,Austevoll

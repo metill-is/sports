@@ -1,22 +1,22 @@
-date,home,away,home_score,away_score
-07.03. 15:30,Hammarby,Kristianstad,-,-
-07.03. 17:00,Guif,Ystads IF,-,-
-08.03. 15:00,Skovde,Hallby,-,-
-08.03. 15:30,Malmo,Alingsas,-,-
-09.03. 18:00,Helsingborg,Karlskrona,-,-
-09.03. 18:00,Onnereds,Vasteras Irsta HF,-,-
-09.03. 18:00,Savehof,Amo HK,-,-
-12.03. 18:00,Kristianstad,Helsingborg,-,-
-12.03. 18:00,Savehof,Skovde,-,-
-13.03. 18:00,Alingsas,Onnereds,-,-
-13.03. 18:00,Hallby,Guif,-,-
-13.03. 18:00,Karlskrona,Amo HK,-,-
-13.03. 18:00,Vasteras Irsta HF,Malmo,-,-
-13.03. 18:00,Ystads IF,Hammarby,-,-
-25.03. 18:00,Amo HK,Alingsas,-,-
-25.03. 18:00,Guif,Karlskrona,-,-
-25.03. 18:00,Hammarby,Vasteras Irsta HF,-,-
-25.03. 18:00,Helsingborg,Ystads IF,-,-
-25.03. 18:00,Malmo,Hallby,-,-
-25.03. 18:00,Onnereds,Savehof,-,-
-25.03. 18:00,Skovde,Kristianstad,-,-
+date,home,away
+07.03. 15:30,Hammarby,Kristianstad
+07.03. 17:00,Guif,Ystads IF
+08.03. 15:00,Skovde,Hallby
+08.03. 15:30,Malmo,Alingsas
+09.03. 18:00,Helsingborg,Karlskrona
+09.03. 18:00,Onnereds,Vasteras Irsta HF
+09.03. 18:00,Savehof,Amo HK
+12.03. 18:00,Kristianstad,Helsingborg
+12.03. 18:00,Savehof,Skovde
+13.03. 18:00,Alingsas,Onnereds
+13.03. 18:00,Hallby,Guif
+13.03. 18:00,Karlskrona,Amo HK
+13.03. 18:00,Vasteras Irsta HF,Malmo
+13.03. 18:00,Ystads IF,Hammarby
+25.03. 18:00,Amo HK,Alingsas
+25.03. 18:00,Guif,Karlskrona
+25.03. 18:00,Hammarby,Vasteras Irsta HF
+25.03. 18:00,Helsingborg,Ystads IF
+25.03. 18:00,Malmo,Hallby
+25.03. 18:00,Onnereds,Savehof
+25.03. 18:00,Skovde,Kristianstad

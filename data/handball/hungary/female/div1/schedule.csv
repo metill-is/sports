@@ -1,70 +1,70 @@
-date,home,away,home_score,away_score
-14.03. 15:00,Esztergomi W,NEKA W,-,-
-14.03. 15:30,Alba Fehervar W,Mosonmagyarovar W,-,-
-14.03. 16:00,Budaors W,Ferencvaros W,-,-
-14.03. 16:00,Dunaujvarosi W,DVSC Schaeffler W,-,-
-14.03. 17:00,Kozarmisleny W,Kisvardai KC W,-,-
-14.03. 17:00,Vaci W,Gyor W,-,-
-14.03. 17:00,Vasas W,Szombathelyi W,-,-
-17.03. 17:00,DVSC Schaeffler W,Budaors W,-,-
-18.03. 17:00,Mosonmagyarovar W,Vasas W,-,-
-18.03. 18:30,Ferencvaros W,Gyor W,-,-
-21.03. 16:00,NEKA W,Dunaujvarosi W,-,-
-21.03. 17:00,Kisvardai KC W,Alba Fehervar W,-,-
-21.03. 17:00,Szombathelyi W,Esztergomi W,-,-
-21.03. 17:00,Vaci W,Kozarmisleny W,-,-
-25.03. 17:00,DVSC Schaeffler W,NEKA W,-,-
-25.03. 17:00,Kozarmisleny W,Ferencvaros W,-,-
-25.03. 17:00,Mosonmagyarovar W,Esztergomi W,-,-
-28.03. 15:30,Alba Fehervar W,Vaci W,-,-
-28.03. 16:00,Dunaujvarosi W,Szombathelyi W,-,-
-28.03. 17:00,Vasas W,Kisvardai KC W,-,-
-28.03. 17:30,Budaors W,Gyor W,-,-
-02.04. 16:00,Kozarmisleny W,Gyor W,-,-
-02.04. 16:00,Mosonmagyarovar W,Dunaujvarosi W,-,-
-03.04. 15:00,NEKA W,Budaors W,-,-
-03.04. 16:00,Ferencvaros W,Alba Fehervar W,-,-
-03.04. 16:00,Kisvardai KC W,Esztergomi W,-,-
-04.04. 16:00,Szombathelyi W,DVSC Schaeffler W,-,-
-04.04. 16:00,Vasas W,Vaci W,-,-
-15.04. 16:00,Gyor W,Alba Fehervar W,-,-
-18.04. 14:00,Esztergomi W,Vaci W,-,-
-18.04. 15:00,Budaors W,Kozarmisleny W,-,-
-18.04. 15:00,Dunaujvarosi W,Kisvardai KC W,-,-
-18.04. 15:00,NEKA W,Szombathelyi W,-,-
-18.04. 16:00,DVSC Schaeffler W,Mosonmagyarovar W,-,-
-18.04. 16:00,Vasas W,Ferencvaros W,-,-
-25.04. 14:00,Esztergomi W,Ferencvaros W,-,-
-25.04. 14:00,NEKA W,Mosonmagyarovar W,-,-
-25.04. 16:00,Kisvardai KC W,DVSC Schaeffler W,-,-
-25.04. 16:00,Kozarmisleny W,Alba Fehervar W,-,-
-25.04. 16:00,Szombathelyi W,Budaors W,-,-
-25.04. 16:00,Vaci W,Dunaujvarosi W,-,-
-08.05. 15:00,Esztergomi W,Gyor W,-,-
-09.05. 15:00,Budaors W,Alba Fehervar W,-,-
-09.05. 15:00,Dunaujvarosi W,Ferencvaros W,-,-
-09.05. 15:00,NEKA W,Kisvardai KC W,-,-
-09.05. 16:00,Szombathelyi W,Mosonmagyarovar W,-,-
-09.05. 16:00,Vaci W,DVSC Schaeffler W,-,-
-09.05. 16:00,Vasas W,Kozarmisleny W,-,-
-15.05. 16:00,Gyor W,Dunaujvarosi W,-,-
-15.05. 16:00,Mosonmagyarovar W,Budaors W,-,-
-16.05. 14:30,Alba Fehervar W,Vasas W,-,-
-16.05. 15:00,Ferencvaros W,DVSC Schaeffler W,-,-
-16.05. 16:00,Kisvardai KC W,Szombathelyi W,-,-
-16.05. 16:00,Kozarmisleny W,Esztergomi W,-,-
-16.05. 16:00,Vaci W,NEKA W,-,-
-24.05. 16:00,Budaors W,Vasas W,-,-
-24.05. 16:00,Dunaujvarosi W,Kozarmisleny W,-,-
-24.05. 16:00,DVSC Schaeffler W,Gyor W,-,-
-24.05. 16:00,Esztergomi W,Alba Fehervar W,-,-
-24.05. 16:00,Mosonmagyarovar W,Kisvardai KC W,-,-
-24.05. 16:00,NEKA W,Ferencvaros W,-,-
-24.05. 16:00,Szombathelyi W,Vaci W,-,-
-31.05. 16:00,Alba Fehervar W,Dunaujvarosi W,-,-
-31.05. 16:00,Ferencvaros W,Szombathelyi W,-,-
-31.05. 16:00,Gyor W,NEKA W,-,-
-31.05. 16:00,Kisvardai KC W,Budaors W,-,-
-31.05. 16:00,Kozarmisleny W,DVSC Schaeffler W,-,-
-31.05. 16:00,Vaci W,Mosonmagyarovar W,-,-
-31.05. 16:00,Vasas W,Esztergomi W,-,-
+date,home,away
+14.03. 15:00,Esztergomi W,NEKA W
+14.03. 15:30,Alba Fehervar W,Mosonmagyarovar W
+14.03. 16:00,Budaors W,Ferencvaros W
+14.03. 16:00,Dunaujvarosi W,DVSC Schaeffler W
+14.03. 17:00,Kozarmisleny W,Kisvardai KC W
+14.03. 17:00,Vaci W,Gyor W
+14.03. 17:00,Vasas W,Szombathelyi W
+17.03. 17:00,DVSC Schaeffler W,Budaors W
+18.03. 17:00,Mosonmagyarovar W,Vasas W
+18.03. 18:30,Ferencvaros W,Gyor W
+21.03. 16:00,NEKA W,Dunaujvarosi W
+21.03. 17:00,Kisvardai KC W,Alba Fehervar W
+21.03. 17:00,Szombathelyi W,Esztergomi W
+21.03. 17:00,Vaci W,Kozarmisleny W
+25.03. 17:00,DVSC Schaeffler W,NEKA W
+25.03. 17:00,Kozarmisleny W,Ferencvaros W
+25.03. 17:00,Mosonmagyarovar W,Esztergomi W
+28.03. 15:30,Alba Fehervar W,Vaci W
+28.03. 16:00,Dunaujvarosi W,Szombathelyi W
+28.03. 17:00,Vasas W,Kisvardai KC W
+28.03. 17:30,Budaors W,Gyor W
+02.04. 16:00,Kozarmisleny W,Gyor W
+02.04. 16:00,Mosonmagyarovar W,Dunaujvarosi W
+03.04. 15:00,NEKA W,Budaors W
+03.04. 16:00,Ferencvaros W,Alba Fehervar W
+03.04. 16:00,Kisvardai KC W,Esztergomi W
+04.04. 16:00,Szombathelyi W,DVSC Schaeffler W
+04.04. 16:00,Vasas W,Vaci W
+15.04. 16:00,Gyor W,Alba Fehervar W
+18.04. 14:00,Esztergomi W,Vaci W
+18.04. 15:00,Budaors W,Kozarmisleny W
+18.04. 15:00,Dunaujvarosi W,Kisvardai KC W
+18.04. 15:00,NEKA W,Szombathelyi W
+18.04. 16:00,DVSC Schaeffler W,Mosonmagyarovar W
+18.04. 16:00,Vasas W,Ferencvaros W
+25.04. 14:00,Esztergomi W,Ferencvaros W
+25.04. 14:00,NEKA W,Mosonmagyarovar W
+25.04. 16:00,Kisvardai KC W,DVSC Schaeffler W
+25.04. 16:00,Kozarmisleny W,Alba Fehervar W
+25.04. 16:00,Szombathelyi W,Budaors W
+25.04. 16:00,Vaci W,Dunaujvarosi W
+08.05. 15:00,Esztergomi W,Gyor W
+09.05. 15:00,Budaors W,Alba Fehervar W
+09.05. 15:00,Dunaujvarosi W,Ferencvaros W
+09.05. 15:00,NEKA W,Kisvardai KC W
+09.05. 16:00,Szombathelyi W,Mosonmagyarovar W
+09.05. 16:00,Vaci W,DVSC Schaeffler W
+09.05. 16:00,Vasas W,Kozarmisleny W
+15.05. 16:00,Gyor W,Dunaujvarosi W
+15.05. 16:00,Mosonmagyarovar W,Budaors W
+16.05. 14:30,Alba Fehervar W,Vasas W
+16.05. 15:00,Ferencvaros W,DVSC Schaeffler W
+16.05. 16:00,Kisvardai KC W,Szombathelyi W
+16.05. 16:00,Kozarmisleny W,Esztergomi W
+16.05. 16:00,Vaci W,NEKA W
+24.05. 16:00,Budaors W,Vasas W
+24.05. 16:00,Dunaujvarosi W,Kozarmisleny W
+24.05. 16:00,DVSC Schaeffler W,Gyor W
+24.05. 16:00,Esztergomi W,Alba Fehervar W
+24.05. 16:00,Mosonmagyarovar W,Kisvardai KC W
+24.05. 16:00,NEKA W,Ferencvaros W
+24.05. 16:00,Szombathelyi W,Vaci W
+31.05. 16:00,Alba Fehervar W,Dunaujvarosi W
+31.05. 16:00,Ferencvaros W,Szombathelyi W
+31.05. 16:00,Gyor W,NEKA W
+31.05. 16:00,Kisvardai KC W,Budaors W
+31.05. 16:00,Kozarmisleny W,DVSC Schaeffler W
+31.05. 16:00,Vaci W,Mosonmagyarovar W
+31.05. 16:00,Vasas W,Esztergomi W

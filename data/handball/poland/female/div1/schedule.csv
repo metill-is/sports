@@ -1,33 +1,33 @@
-date,home,away,home_score,away_score
-11.03. 19:30,Piotrcovia W,Gniezno W,-,-
-14.03. 17:00,Start Elblag W,Galychanka Lviv W,-,-
-15.03. 15:00,MKS Lublin W,Kobierzyce W,-,-
-15.03. 15:00,Zaglebie W,Koszalin W,-,-
-16.03. 17:00,Sosnica Gliwice W,Ruch Kalisz W,-,-
-18.03. 19:30,Zaglebie W,Piotrcovia W,-,-
-19.03. 17:00,Koszalin W,Kobierzyce W,-,-
-21.03. 17:00,Start Elblag W,Sosnica Gliwice W,-,-
-21.03. 17:00,Gniezno W,MKS Lublin W,-,-
-22.03. 17:00,Ruch Kalisz W,Galychanka Lviv W,-,-
-25.03. 19:30,MKS Lublin W,Zaglebie W,-,-
-28.03. 15:00,Sosnica Gliwice W,Galychanka Lviv W,-,-
-28.03. 17:00,Gniezno W,Kobierzyce W,-,-
-28.03. 17:00,Koszalin W,Piotrcovia W,-,-
-29.03. 16:00,Start Elblag W,Ruch Kalisz W,-,-
-18.04. 16:00,MKS Lublin W,Koszalin W,-,-
-18.04. 16:00,Zaglebie W,Gniezno W,-,-
-19.04. 16:00,Galychanka Lviv W,Start Elblag W,-,-
-19.04. 16:00,Ruch Kalisz W,Sosnica Gliwice W,-,-
-19.04. 16:00,Kobierzyce W,Piotrcovia W,-,-
-25.04. 16:00,Gniezno W,Piotrcovia W,-,-
-25.04. 16:00,Koszalin W,Zaglebie W,-,-
-26.04. 16:00,Kobierzyce W,MKS Lublin W,-,-
-02.05. 16:00,Gniezno W,Koszalin W,-,-
-03.05. 16:00,Piotrcovia W,MKS Lublin W,-,-
-03.05. 16:00,Zaglebie W,Kobierzyce W,-,-
-16.05. 16:00,Kobierzyce W,Koszalin W,-,-
-16.05. 16:00,MKS Lublin W,Gniezno W,-,-
-17.05. 16:00,Piotrcovia W,Zaglebie W,-,-
-23.05. 16:00,Kobierzyce W,Gniezno W,-,-
-23.05. 16:00,Piotrcovia W,Koszalin W,-,-
-24.05. 16:00,Zaglebie W,MKS Lublin W,-,-
+date,home,away
+11.03. 19:30,Piotrcovia W,Gniezno W
+14.03. 17:00,Start Elblag W,Galychanka Lviv W
+15.03. 15:00,MKS Lublin W,Kobierzyce W
+15.03. 15:00,Zaglebie W,Koszalin W
+16.03. 17:00,Sosnica Gliwice W,Ruch Kalisz W
+18.03. 19:30,Zaglebie W,Piotrcovia W
+19.03. 17:00,Koszalin W,Kobierzyce W
+21.03. 17:00,Start Elblag W,Sosnica Gliwice W
+21.03. 17:00,Gniezno W,MKS Lublin W
+22.03. 17:00,Ruch Kalisz W,Galychanka Lviv W
+25.03. 19:30,MKS Lublin W,Zaglebie W
+28.03. 15:00,Sosnica Gliwice W,Galychanka Lviv W
+28.03. 17:00,Gniezno W,Kobierzyce W
+28.03. 17:00,Koszalin W,Piotrcovia W
+29.03. 16:00,Start Elblag W,Ruch Kalisz W
+18.04. 16:00,MKS Lublin W,Koszalin W
+18.04. 16:00,Zaglebie W,Gniezno W
+19.04. 16:00,Galychanka Lviv W,Start Elblag W
+19.04. 16:00,Ruch Kalisz W,Sosnica Gliwice W
+19.04. 16:00,Kobierzyce W,Piotrcovia W
+25.04. 16:00,Gniezno W,Piotrcovia W
+25.04. 16:00,Koszalin W,Zaglebie W
+26.04. 16:00,Kobierzyce W,MKS Lublin W
+02.05. 16:00,Gniezno W,Koszalin W
+03.05. 16:00,Piotrcovia W,MKS Lublin W
+03.05. 16:00,Zaglebie W,Kobierzyce W
+16.05. 16:00,Kobierzyce W,Koszalin W
+16.05. 16:00,MKS Lublin W,Gniezno W
+17.05. 16:00,Piotrcovia W,Zaglebie W
+23.05. 16:00,Kobierzyce W,Gniezno W
+23.05. 16:00,Piotrcovia W,Koszalin W
+24.05. 16:00,Zaglebie W,MKS Lublin W

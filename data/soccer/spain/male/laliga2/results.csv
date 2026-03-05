@@ -1,4 +1,301 @@
 date,home,away,home_score,away_score
+02.03. 19:30,Cordoba,Andorra,1,4
+02.03. 19:00,Gijon,Leganes,0,0
+01.03. 20:00,Eibar,Cadiz CF,3,1
+01.03. 17:30,Cultural Leonesa,Las Palmas,0,3
+01.03. 15:15,Mirandes,Ceuta,0,1
+01.03. 13:00,Real Sociedad B,Dep. La Coruna,2,3
+28.02. 20:00,Castellon,Racing Santander,1,3
+28.02. 17:30,Granada CF,Malaga,0,1
+28.02. 17:30,Valladolid,Huesca,1,0
+28.02. 15:15,Zaragoza,Burgos CF,0,1
+27.02. 19:30,Albacete,Almeria,1,1
+25.02. 18:00,Ceuta,Cordoba,3,2
+23.02. 19:30,Cadiz CF,Real Sociedad B,0,2
+22.02. 20:00,Malaga,Albacete,1,0
+22.02. 17:30,Racing Santander,Burgos CF,1,0
+22.02. 15:15,Andorra,Zaragoza,2,1
+22.02. 13:00,Gijon,Valladolid,2,2
+21.02. 20:00,Las Palmas,Castellon,1,1
+21.02. 17:30,Almeria,Cordoba,2,1
+21.02. 15:15,Dep. La Coruna,Eibar,1,0
+21.02. 15:15,Huesca,Mirandes,1,2
+21.02. 13:00,Leganes,Cultural Leonesa,1,1
+20.02. 19:30,Ceuta,Granada CF,2,1
+16.02. 19:30,Real Sociedad B,Malaga,2,1
+15.02. 20:00,Castellon,Dep. La Coruna,2,0
+15.02. 17:30,Albacete,Gijon,1,1
+15.02. 15:15,Eibar,Racing Santander,2,1
+15.02. 15:15,Huesca,Ceuta,2,0
+15.02. 13:00,Mirandes,Las Palmas,1,1
+14.02. 20:00,Granada CF,Valladolid,5,1
+14.02. 17:30,Cultural Leonesa,Zaragoza,0,0
+14.02. 15:15,Burgos CF,Cadiz CF,1,1
+14.02. 13:00,Cordoba,Leganes,2,1
+13.02. 19:30,Almeria,Andorra,3,2
+09.02. 19:30,Racing Santander,Mirandes,1,0
+08.02. 20:00,Malaga,Cultural Leonesa,2,1
+08.02. 17:30,Gijon,Huesca,2,1
+08.02. 15:15,Cadiz CF,Almeria,1,2
+08.02. 15:15,Dep. La Coruna,Albacete,2,1
+08.02. 13:00,Valladolid,Castellon,0,4
+07.02. 17:30,Zaragoza,Eibar,1,1
+07.02. 15:15,Las Palmas,Burgos CF,0,0
+07.02. 13:00,Andorra,Real Sociedad B,1,2
+06.02. 19:30,Leganes,Granada CF,1,0
+02.02. 19:30,Mirandes,Malaga,2,1
+01.02. 20:00,Granada CF,Racing Santander,1,0
+01.02. 17:30,Castellon,Andorra,2,0
+01.02. 17:30,Huesca,Cadiz CF,1,0
+01.02. 15:15,Eibar,Gijon,1,0
+01.02. 13:00,Almeria,Ceuta,4,2
+31.01. 20:00,Cordoba,Valladolid,3,1
+31.01. 17:30,Cultural Leonesa,Dep. La Coruna,0,1
+31.01. 15:15,Albacete,Zaragoza,2,0
+31.01. 15:15,Burgos CF,Leganes,2,1
+30.01. 19:30,Real Sociedad B,Las Palmas,1,1
+26.01. 19:30,Ceuta,Cultural Leonesa,3,1
+25.01. 20:00,Dep. La Coruna,Racing Santander,0,1
+25.01. 17:30,Zaragoza,Castellon,0,0
+25.01. 15:15,Eibar,Almeria,1,0
+25.01. 13:00,Andorra,Huesca,1,1
+24.01. 20:00,Cadiz CF,Granada CF,1,2
+24.01. 17:30,Gijon,Mirandes,3,0
+24.01. 17:30,Las Palmas,Cordoba,1,2
+24.01. 15:15,Leganes,Real Sociedad B,2,0
+24.01. 13:00,Valladolid,Albacete,0,1
+23.01. 19:30,Malaga,Burgos CF,3,0
+19.01. 19:30,Granada CF,Eibar,0,0
+18.01. 20:00,Cordoba,Malaga,0,1
+18.01. 17:30,Albacete,Cadiz CF,1,0
+18.01. 17:30,Burgos CF,Huesca,1,0
+18.01. 15:15,Racing Santander,Las Palmas,4,1
+18.01. 13:00,Mirandes,Andorra,1,2
+17.01. 20:00,Almeria,Dep. La Coruna,1,2
+17.01. 17:30,Zaragoza,Real Sociedad B,1,1
+17.01. 15:15,Cultural Leonesa,Gijon,2,4
+17.01. 13:00,Ceuta,Valladolid,0,3
+16.01. 19:30,Castellon,Leganes,2,0
+12.01. 19:30,Huesca,Cordoba,1,2
+11.01. 15:15,Granada CF,Castellon,0,0
+11.01. 15:15,Malaga,Ceuta,2,1
+11.01. 13:00,Leganes,Valladolid,3,0
+10.01. 20:00,Racing Santander,Zaragoza,2,3
+10.01. 17:30,Andorra,Cultural Leonesa,1,1
+10.01. 17:30,Burgos CF,Eibar,1,0
+10.01. 17:30,Las Palmas,Dep. La Coruna,1,1
+10.01. 15:15,Real Sociedad B,Albacete,0,0
+10.01. 13:00,Mirandes,Almeria,2,2
+09.01. 19:30,Cadiz CF,Gijon,3,2
+04.01. 20:00,Dep. La Coruna,Cadiz CF,2,2
+04.01. 17:30,Albacete,Leganes,1,3
+04.01. 17:30,Zaragoza,Las Palmas,1,2
+04.01. 15:15,Ceuta,Andorra,2,1
+04.01. 13:00,Gijon,Malaga,1,3
+03.01. 20:00,Cordoba,Burgos CF,2,0
+03.01. 17:30,Valladolid,Racing Santander,1,1
+03.01. 15:15,Almeria,Granada CF,3,2
+03.01. 15:15,Castellon,Huesca,4,1
+03.01. 13:00,Cultural Leonesa,Real Sociedad B,1,1
+02.01. 19:30,Eibar,Mirandes,2,1
+21.12. 20:00,Cadiz CF,Castellon,2,0
+21.12. 17:30,Burgos CF,Zaragoza,1,1
+21.12. 17:30,Granada CF,Albacete,1,1
+21.12. 15:15,Mirandes,Cordoba,1,2
+21.12. 15:15,Real Sociedad B,Ceuta,1,3
+21.12. 13:00,Malaga,Almeria,2,1
+20.12. 20:00,Las Palmas,Cultural Leonesa,4,0
+20.12. 17:30,Leganes,Gijon,0,1
+20.12. 15:15,Huesca,Racing Santander,1,1
+20.12. 13:00,Andorra,Dep. La Coruna,1,0
+19.12. 19:30,Eibar,Valladolid,3,0
+15.12. 19:30,Castellon,Mirandes,3,1
+14.12. 20:00,Ceuta,Las Palmas,1,1
+14.12. 17:30,Almeria,Burgos CF,1,2
+14.12. 15:15,Albacete,Malaga,1,3
+13.12. 20:00,Dep. La Coruna,Real Sociedad B,0,3
+13.12. 20:00,Zaragoza,Cadiz CF,1,2
+13.12. 17:30,Racing Santander,Leganes,1,1
+13.12. 15:15,Gijon,Granada CF,1,0
+13.12. 15:15,Valladolid,Andorra,0,1
+13.12. 13:00,Cordoba,Eibar,0,0
+12.12. 19:30,Cultural Leonesa,Huesca,0,2
+08.12. 19:30,Malaga,Zaragoza,1,1
+08.12. 17:30,Las Palmas,Mirandes,0,0
+08.12. 15:15,Burgos CF,Albacete,0,1
+07.12. 20:00,Granada CF,Ceuta,1,1
+07.12. 17:30,Dep. La Coruna,Castellon,1,3
+07.12. 17:30,Eibar,Cultural Leonesa,1,2
+07.12. 15:15,Leganes,Cordoba,0,0
+07.12. 13:00,Cadiz CF,Racing Santander,2,3
+06.12. 17:30,Real Sociedad B,Gijon,0,1
+06.12. 15:15,Huesca,Valladolid,1,4
+06.12. 13:00,Andorra,Almeria,1,2
+30.11. 20:00,Castellon,Las Palmas,1,0
+30.11. 17:30,Cordoba,Cadiz CF,1,2
+30.11. 17:30,Mirandes,Real Sociedad B,1,0
+30.11. 15:15,Racing Santander,Eibar,4,0
+30.11. 13:00,Zaragoza,Leganes,3,2
+29.11. 20:00,Valladolid,Malaga,1,1
+29.11. 17:30,Albacete,Dep. La Coruna,0,2
+29.11. 17:30,Almeria,Huesca,0,0
+29.11. 15:15,Cultural Leonesa,Granada CF,0,1
+29.11. 13:00,Ceuta,Burgos CF,1,0
+28.11. 19:30,Gijon,Andorra,1,1
+26.11. 18:00,Ceuta,Almeria,3,2
+24.11. 19:30,Real Sociedad B,Valladolid,1,0
+23.11. 20:00,Malaga,Mirandes,3,2
+23.11. 17:30,Burgos CF,Racing Santander,0,2
+23.11. 15:15,Cadiz CF,Cultural Leonesa,1,2
+23.11. 15:15,Huesca,Gijon,2,0
+23.11. 13:00,Dep. La Coruna,Ceuta,2,1
+22.11. 20:00,Granada CF,Cordoba,1,1
+22.11. 17:30,Eibar,Zaragoza,1,2
+22.11. 17:30,Leganes,Almeria,0,3
+22.11. 15:15,Andorra,Castellon,1,3
+21.11. 19:30,Las Palmas,Albacete,2,1
+17.11. 19:30,Cultural Leonesa,Malaga,1,0
+16.11. 20:00,Zaragoza,Huesca,1,0
+16.11. 17:30,Cordoba,Dep. La Coruna,1,3
+16.11. 17:30,Mirandes,Burgos CF,0,2
+16.11. 15:15,Almeria,Cadiz CF,3,0
+16.11. 15:15,Gijon,Eibar,1,1
+16.11. 13:00,Ceuta,Leganes,1,2
+15.11. 20:00,Racing Santander,Granada CF,2,2
+15.11. 15:00,Albacete,Andorra,1,0
+15.11. 15:00,Castellon,Real Sociedad B,5,4
+14.11. 19:30,Valladolid,Las Palmas,0,1
+10.11. 19:30,Burgos CF,Castellon,0,0
+09.11. 20:00,Cadiz CF,Valladolid,0,0
+09.11. 17:30,Granada CF,Zaragoza,3,1
+09.11. 13:00,Las Palmas,Racing Santander,3,1
+08.11. 20:00,Malaga,Cordoba,2,2
+08.11. 17:30,Dep. La Coruna,Cultural Leonesa,3,0
+08.11. 15:15,Eibar,Albacete,3,2
+08.11. 15:15,Huesca,Andorra,2,2
+08.11. 13:00,Real Sociedad B,Leganes,2,1
+07.11. 19:30,Mirandes,Gijon,2,1
+05.11. 19:00,Real Sociedad B,Huesca,2,0
+03.11. 19:30,Valladolid,Granada CF,2,1
+02.11. 20:00,Zaragoza,Dep. La Coruna,0,2
+02.11. 17:30,Castellon,Malaga,2,1
+02.11. 15:15,Cordoba,Ceuta,2,0
+02.11. 15:15,Gijon,Las Palmas,0,0
+02.11. 13:00,Andorra,Cadiz CF,0,0
+01.11. 20:00,Almeria,Eibar,3,1
+01.11. 17:30,Albacete,Huesca,2,1
+01.11. 17:30,Leganes,Burgos CF,1,2
+01.11. 15:15,Cultural Leonesa,Mirandes,3,2
+31.10. 19:30,Racing Santander,Real Sociedad B,1,0
+26.10. 20:00,Dep. La Coruna,Valladolid,1,1
+26.10. 17:30,Almeria,Castellon,1,0
+26.10. 17:30,Gijon,Zaragoza,1,0
+26.10. 13:00,Malaga,Andorra,4,1
+25.10. 19:00,Mirandes,Racing Santander,1,3
+25.10. 16:30,Burgos CF,Real Sociedad B,1,0
+25.10. 16:30,Granada CF,Cadiz CF,0,0
+25.10. 14:15,Albacete,Cordoba,1,3
+25.10. 14:15,Eibar,Leganes,0,0
+25.10. 12:00,Cultural Leonesa,Ceuta,0,1
+24.10. 18:30,Huesca,Las Palmas,1,1
+20.10. 18:30,Cadiz CF,Burgos CF,1,3
+19.10. 19:00,Las Palmas,Eibar,3,1
+19.10. 16:30,Cordoba,Almeria,1,1
+19.10. 16:30,Racing Santander,Dep. La Coruna,2,1
+19.10. 14:15,Castellon,Albacete,0,1
+19.10. 14:15,Valladolid,Gijon,2,3
+19.10. 12:00,Leganes,Malaga,2,0
+18.10. 16:30,Zaragoza,Cultural Leonesa,0,5
+18.10. 14:15,Ceuta,Mirandes,2,0
+17.10. 18:30,Andorra,Granada CF,0,0
+13.10. 18:30,Cordoba,Cultural Leonesa,1,0
+12.10. 19:00,Malaga,Dep. La Coruna,3,0
+12.10. 16:30,Burgos CF,Valladolid,0,1
+12.10. 16:30,Cadiz CF,Huesca,1,0
+12.10. 14:15,Eibar,Castellon,0,0
+12.10. 14:15,Gijon,Racing Santander,2,1
+12.10. 12:00,Albacete,Ceuta,0,0
+11.10. 16:30,Almeria,Zaragoza,4,2
+11.10. 16:30,Real Sociedad B,Andorra,3,0
+11.10. 14:15,Mirandes,Leganes,0,0
+10.10. 18:30,Granada CF,Las Palmas,0,0
+06.10. 18:30,Cultural Leonesa,Albacete,0,0
+05.10. 19:00,Las Palmas,Cadiz CF,1,0
+05.10. 16:30,Racing Santander,Malaga,3,0
+05.10. 16:30,Valladolid,Mirandes,1,1
+05.10. 14:15,Castellon,Gijon,3,1
+05.10. 12:00,Zaragoza,Cordoba,0,1
+04.10. 19:00,Granada CF,Real Sociedad B,5,2
+04.10. 16:30,Andorra,Leganes,1,2
+04.10. 16:30,Huesca,Burgos CF,2,1
+04.10. 14:15,Dep. La Coruna,Almeria,1,1
+03.10. 18:30,Ceuta,Eibar,1,0
+29.09. 18:30,Leganes,Castellon,0,1
+28.09. 19:00,Huesca,Granada CF,0,1
+28.09. 16:30,Gijon,Albacete,3,4
+28.09. 16:30,Valladolid,Cultural Leonesa,0,1
+28.09. 14:15,Burgos CF,Malaga,2,1
+28.09. 14:15,Cadiz CF,Ceuta,0,0
+28.09. 12:00,Real Sociedad B,Cordoba,1,1
+27.09. 19:00,Las Palmas,Almeria,0,1
+27.09. 16:30,Eibar,Dep. La Coruna,1,1
+27.09. 16:30,Racing Santander,Andorra,1,2
+26.09. 18:30,Mirandes,Zaragoza,0,1
+22.09. 18:30,Burgos CF,Granada CF,1,1
+21.09. 19:00,Cordoba,Racing Santander,2,2
+21.09. 16:30,Eibar,Real Sociedad B,2,1
+21.09. 16:30,Malaga,Cadiz CF,0,1
+21.09. 14:15,Albacete,Valladolid,2,0
+21.09. 12:00,Ceuta,Zaragoza,1,0
+20.09. 19:00,Almeria,Gijon,2,1
+20.09. 16:30,Andorra,Mirandes,1,1
+20.09. 16:30,Leganes,Las Palmas,0,1
+20.09. 14:15,Cultural Leonesa,Castellon,1,3
+19.09. 18:30,Dep. La Coruna,Huesca,4,0
+15.09. 18:30,Zaragoza,Albacete,0,0
+14.09. 19:00,Granada CF,Leganes,0,2
+14.09. 16:30,Castellon,Ceuta,3,3
+14.09. 16:30,Gijon,Burgos CF,2,3
+14.09. 14:15,Racing Santander,Cultural Leonesa,2,4
+14.09. 12:00,Andorra,Cordoba,3,1
+13.09. 19:00,Valladolid,Almeria,3,1
+13.09. 16:30,Huesca,Malaga,1,0
+13.09. 14:15,Cadiz CF,Eibar,1,0
+13.09. 14:15,Mirandes,Dep. La Coruna,1,5
+12.09. 18:30,Las Palmas,Real Sociedad B,2,1
+08.09. 18:30,Eibar,Andorra,2,0
+07.09. 16:30,Almeria,Racing Santander,2,3
+07.09. 16:30,Cultural Leonesa,Leganes,0,0
+07.09. 14:15,Burgos CF,Las Palmas,0,0
+07.09. 14:15,Real Sociedad B,Cadiz CF,3,3
+07.09. 12:00,Ceuta,Huesca,2,1
+06.09. 19:00,Malaga,Granada CF,2,2
+06.09. 16:30,Zaragoza,Valladolid,1,1
+06.09. 14:15,Dep. La Coruna,Gijon,1,0
+05.09. 19:30,Cordoba,Castellon,2,1
+05.09. 17:30,Albacete,Mirandes,1,4
+01.09. 19:30,Leganes,Dep. La Coruna,2,2
+01.09. 17:30,Huesca,Eibar,2,1
+31.08. 19:30,Granada CF,Mirandes,1,2
+31.08. 17:30,Las Palmas,Malaga,0,1
+31.08. 15:00,Andorra,Burgos CF,2,1
+31.08. 15:00,Cadiz CF,Albacete,2,1
+30.08. 19:30,Castellon,Zaragoza,1,1
+30.08. 17:00,Valladolid,Cordoba,0,0
+30.08. 15:00,Racing Santander,Ceuta,4,1
+29.08. 19:30,Gijon,Cultural Leonesa,1,0
+29.08. 17:30,Real Sociedad B,Almeria,2,2
+25.08. 19:30,Cordoba,Las Palmas,1,3
+25.08. 17:30,Albacete,Racing Santander,2,3
+24.08. 19:30,Malaga,Real Sociedad B,1,0
+24.08. 17:30,Cultural Leonesa,Almeria,0,1
+24.08. 15:00,Dep. La Coruna,Burgos CF,0,0
+23.08. 19:30,Zaragoza,Andorra,1,3
+23.08. 17:00,Ceuta,Gijon,0,1
+23.08. 15:00,Mirandes,Huesca,0,1
+22.08. 19:30,Castellon,Valladolid,0,1
+22.08. 19:30,Leganes,Cadiz CF,1,1
+22.08. 17:30,Eibar,Granada CF,3,0
 18.08. 19:30,Almeria,Albacete,4,4
 18.08. 17:00,Gijon,Cordoba,2,1
 17.08. 19:30,Huesca,Leganes,1,1

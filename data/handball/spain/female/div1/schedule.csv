@@ -1,37 +1,37 @@
-date,home,away,home_score,away_score
-10.03. 18:00,Beti-Onak W,Guardes W,-,-
-14.03. 17:00,Bera Bera W,Elda Prestigia W,-,-
-14.03. 17:00,BM Granollers W,Beti-Onak W,-,-
-14.03. 18:00,Sporting La Rioja W,San Jose Obrero W,-,-
-14.03. 18:30,Gran Canaria W,Elche-Mustang W,-,-
-14.03. 18:30,Morvedre W,Aula Valladolid W,-,-
-14.03. 20:00,Lanzarote Zonzamas W,Malaga W,-,-
-15.03. 12:45,Guardes W,Porrino W,-,-
-18.03. 19:00,Elche-Mustang W,Guardes W,-,-
-21.03. 17:00,Beti-Onak W,Sporting La Rioja W,-,-
-21.03. 17:00,Elda Prestigia W,Gran Canaria W,-,-
-21.03. 17:15,Porrino W,Morvedre W,-,-
-21.03. 18:00,Aula Valladolid W,Lanzarote Zonzamas W,-,-
-21.03. 18:00,Malaga W,BM Granollers W,-,-
-21.03. 19:30,San Jose Obrero W,Bera Bera W,-,-
-28.03. 17:00,BM Granollers W,Aula Valladolid W,-,-
-29.03. 10:00,Bera Bera W,Beti-Onak W,-,-
-29.03. 11:30,San Jose Obrero W,Elda Prestigia W,-,-
-29.03. 12:30,Lanzarote Zonzamas W,Porrino W,-,-
-31.03. 18:30,Guardes W,Gran Canaria W,-,-
-01.04. 18:00,Morvedre W,Elche-Mustang W,-,-
-01.04. 18:00,Sporting La Rioja W,Malaga W,-,-
-04.04. 17:00,Aula Valladolid W,Sporting La Rioja W,-,-
-04.04. 17:00,Beti-Onak W,San Jose Obrero W,-,-
-04.04. 17:00,Elche-Mustang W,Lanzarote Zonzamas W,-,-
-04.04. 17:00,Gran Canaria W,Morvedre W,-,-
-04.04. 17:00,Guardes W,Elda Prestigia W,-,-
-04.04. 17:00,Malaga W,Bera Bera W,-,-
-04.04. 17:00,Porrino W,BM Granollers W,-,-
-18.04. 17:00,Bera Bera W,Aula Valladolid W,-,-
-18.04. 17:00,BM Granollers W,Elche-Mustang W,-,-
-18.04. 17:00,Elda Prestigia W,Beti-Onak W,-,-
-18.04. 17:00,Lanzarote Zonzamas W,Gran Canaria W,-,-
-18.04. 17:00,Morvedre W,Guardes W,-,-
-18.04. 17:00,San Jose Obrero W,Malaga W,-,-
-18.04. 17:00,Sporting La Rioja W,Porrino W,-,-
+date,home,away
+10.03. 18:00,Beti-Onak W,Guardes W
+14.03. 17:00,Bera Bera W,Elda Prestigia W
+14.03. 17:00,BM Granollers W,Beti-Onak W
+14.03. 18:00,Sporting La Rioja W,San Jose Obrero W
+14.03. 18:30,Gran Canaria W,Elche-Mustang W
+14.03. 18:30,Morvedre W,Aula Valladolid W
+14.03. 20:00,Lanzarote Zonzamas W,Malaga W
+15.03. 12:45,Guardes W,Porrino W
+18.03. 19:00,Elche-Mustang W,Guardes W
+21.03. 17:00,Beti-Onak W,Sporting La Rioja W
+21.03. 17:00,Elda Prestigia W,Gran Canaria W
+21.03. 17:15,Porrino W,Morvedre W
+21.03. 18:00,Aula Valladolid W,Lanzarote Zonzamas W
+21.03. 18:00,Malaga W,BM Granollers W
+21.03. 19:30,San Jose Obrero W,Bera Bera W
+28.03. 17:00,BM Granollers W,Aula Valladolid W
+29.03. 10:00,Bera Bera W,Beti-Onak W
+29.03. 11:30,San Jose Obrero W,Elda Prestigia W
+29.03. 12:30,Lanzarote Zonzamas W,Porrino W
+31.03. 18:30,Guardes W,Gran Canaria W
+01.04. 18:00,Morvedre W,Elche-Mustang W
+01.04. 18:00,Sporting La Rioja W,Malaga W
+04.04. 17:00,Aula Valladolid W,Sporting La Rioja W
+04.04. 17:00,Beti-Onak W,San Jose Obrero W
+04.04. 17:00,Elche-Mustang W,Lanzarote Zonzamas W
+04.04. 17:00,Gran Canaria W,Morvedre W
+04.04. 17:00,Guardes W,Elda Prestigia W
+04.04. 17:00,Malaga W,Bera Bera W
+04.04. 17:00,Porrino W,BM Granollers W
+18.04. 17:00,Bera Bera W,Aula Valladolid W
+18.04. 17:00,BM Granollers W,Elche-Mustang W
+18.04. 17:00,Elda Prestigia W,Beti-Onak W
+18.04. 17:00,Lanzarote Zonzamas W,Gran Canaria W
+18.04. 17:00,Morvedre W,Guardes W
+18.04. 17:00,San Jose Obrero W,Malaga W
+18.04. 17:00,Sporting La Rioja W,Porrino W

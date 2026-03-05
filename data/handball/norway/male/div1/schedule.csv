@@ -1,36 +1,36 @@
-date,home,away,home_score,away_score
-07.03. 15:15,Runar,Elverum,-,-
-08.03. 16:00,Arendal,Follo,-,-
-08.03. 16:00,Naerbo,Halden,-,-
-08.03. 17:00,Fjellhammer,Sandefjord TIF,-,-
-08.03. 17:00,Kristiansand,Baekkelaget,-,-
-08.03. 17:00,Sandnes,Kolstad,-,-
-11.03. 16:30,Drammen,Bergen,-,-
-11.03. 17:15,Sandefjord TIF,Runar,-,-
-15.03. 16:00,Arendal,Halden,-,-
-15.03. 16:00,Drammen,Naerbo,-,-
-15.03. 16:00,Runar,Baekkelaget,-,-
-15.03. 16:00,Sandnes,Sandefjord TIF,-,-
-15.03. 17:00,Fjellhammer,Follo,-,-
-15.03. 17:00,Kristiansand,Bergen,-,-
-15.03. 18:15,Elverum,Kolstad,-,-
-25.03. 17:00,Halden,Drammen,-,-
-27.03. 17:30,Elverum,Sandnes,-,-
-28.03. 15:00,Follo,Kristiansand,-,-
-28.03. 15:15,Kolstad,Drammen,-,-
-28.03. 17:00,Baekkelaget,Fjellhammer,-,-
-28.03. 17:00,Bergen,Arendal,-,-
-03.04. 17:00,Kristiansand,Elverum,-,-
-08.04. 15:30,Halden,Bergen,-,-
-08.04. 16:30,Arendal,Sandefjord TIF,-,-
-08.04. 16:30,Drammen,Baekkelaget,-,-
-08.04. 17:00,Fjellhammer,Sandnes,-,-
-08.04. 17:00,Naerbo,Follo,-,-
-08.04. 18:15,Runar,Kolstad,-,-
-11.04. 16:15,Baekkelaget,Arendal,-,-
-11.04. 16:15,Bergen,Naerbo,-,-
-11.04. 16:15,Elverum,Fjellhammer,-,-
-11.04. 16:15,Follo,Drammen,-,-
-11.04. 16:15,Kolstad,Halden,-,-
-11.04. 16:15,Sandefjord TIF,Kristiansand,-,-
-11.04. 16:15,Sandnes,Runar,-,-
+date,home,away
+07.03. 15:15,Runar,Elverum
+08.03. 16:00,Arendal,Follo
+08.03. 16:00,Naerbo,Halden
+08.03. 17:00,Fjellhammer,Sandefjord TIF
+08.03. 17:00,Kristiansand,Baekkelaget
+08.03. 17:00,Sandnes,Kolstad
+11.03. 16:30,Drammen,Bergen
+11.03. 17:15,Sandefjord TIF,Runar
+15.03. 16:00,Arendal,Halden
+15.03. 16:00,Drammen,Naerbo
+15.03. 16:00,Runar,Baekkelaget
+15.03. 16:00,Sandnes,Sandefjord TIF
+15.03. 17:00,Fjellhammer,Follo
+15.03. 17:00,Kristiansand,Bergen
+15.03. 18:15,Elverum,Kolstad
+25.03. 17:00,Halden,Drammen
+27.03. 17:30,Elverum,Sandnes
+28.03. 15:00,Follo,Kristiansand
+28.03. 15:15,Kolstad,Drammen
+28.03. 17:00,Baekkelaget,Fjellhammer
+28.03. 17:00,Bergen,Arendal
+03.04. 17:00,Kristiansand,Elverum
+08.04. 15:30,Halden,Bergen
+08.04. 16:30,Arendal,Sandefjord TIF
+08.04. 16:30,Drammen,Baekkelaget
+08.04. 17:00,Fjellhammer,Sandnes
+08.04. 17:00,Naerbo,Follo
+08.04. 18:15,Runar,Kolstad
+11.04. 16:15,Baekkelaget,Arendal
+11.04. 16:15,Bergen,Naerbo
+11.04. 16:15,Elverum,Fjellhammer
+11.04. 16:15,Follo,Drammen
+11.04. 16:15,Kolstad,Halden
+11.04. 16:15,Sandefjord TIF,Kristiansand
+11.04. 16:15,Sandnes,Runar

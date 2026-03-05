@@ -1,89 +1,89 @@
-date,home,away,home_score,away_score
-06.03. 18:00,Horneo Alicante,Cuenca,-,-
-06.03. 19:30,Huesca,CD Bidasoa Irun,-,-
-07.03. 15:30,Nava,Caserio Ciudad Real,-,-
-07.03. 17:00,Ademar,Puente Genil,-,-
-07.03. 18:30,Quabit Guadalajara,Morrazo Cangas,-,-
-07.03. 19:30,La Rioja,Atl. Valladolid,-,-
-08.03. 11:15,Barcelona,Granollers,-,-
-08.03. 17:30,Torrelavega,Villa de Aranda,-,-
-13.03. 18:00,Puente Genil,Nava,-,-
-13.03. 19:30,Cuenca,Ademar,-,-
-14.03. 16:30,Morrazo Cangas,Torrelavega,-,-
-14.03. 18:00,Atl. Valladolid,Horneo Alicante,-,-
-14.03. 19:30,CD Bidasoa Irun,Barcelona,-,-
-15.03. 11:30,Granollers,Quabit Guadalajara,-,-
-15.03. 15:30,Caserio Ciudad Real,Huesca,-,-
-15.03. 16:30,Villa de Aranda,La Rioja,-,-
-28.03. 17:00,Atl. Valladolid,Cuenca,-,-
-28.03. 17:00,Barcelona,Caserio Ciudad Real,-,-
-28.03. 17:00,Horneo Alicante,Villa de Aranda,-,-
-28.03. 17:00,Huesca,Puente Genil,-,-
-28.03. 17:00,La Rioja,Morrazo Cangas,-,-
-28.03. 17:00,Nava,Ademar,-,-
-28.03. 17:00,Quabit Guadalajara,CD Bidasoa Irun,-,-
-28.03. 17:00,Torrelavega,Granollers,-,-
-04.04. 16:00,Ademar,Huesca,-,-
-04.04. 16:00,Caserio Ciudad Real,Quabit Guadalajara,-,-
-04.04. 16:00,CD Bidasoa Irun,Torrelavega,-,-
-04.04. 16:00,Cuenca,Nava,-,-
-04.04. 16:00,Granollers,La Rioja,-,-
-04.04. 16:00,Morrazo Cangas,Horneo Alicante,-,-
-04.04. 16:00,Puente Genil,Barcelona,-,-
-04.04. 16:00,Villa de Aranda,Atl. Valladolid,-,-
-11.04. 16:00,Atl. Valladolid,Morrazo Cangas,-,-
-11.04. 16:00,Barcelona,Ademar,-,-
-11.04. 16:00,Horneo Alicante,Granollers,-,-
-11.04. 16:00,Huesca,Nava,-,-
-11.04. 16:00,La Rioja,CD Bidasoa Irun,-,-
-11.04. 16:00,Quabit Guadalajara,Puente Genil,-,-
-11.04. 16:00,Torrelavega,Caserio Ciudad Real,-,-
-11.04. 16:00,Villa de Aranda,Cuenca,-,-
-18.04. 16:00,Ademar,Quabit Guadalajara,-,-
-18.04. 16:00,Caserio Ciudad Real,La Rioja,-,-
-18.04. 16:00,CD Bidasoa Irun,Horneo Alicante,-,-
-18.04. 16:00,Cuenca,Huesca,-,-
-18.04. 16:00,Granollers,Atl. Valladolid,-,-
-18.04. 16:00,Morrazo Cangas,Villa de Aranda,-,-
-18.04. 16:00,Nava,Barcelona,-,-
-18.04. 16:00,Puente Genil,Torrelavega,-,-
-25.04. 16:00,Atl. Valladolid,CD Bidasoa Irun,-,-
-25.04. 16:00,Barcelona,Huesca,-,-
-25.04. 16:00,Horneo Alicante,Caserio Ciudad Real,-,-
-25.04. 16:00,La Rioja,Puente Genil,-,-
-25.04. 16:00,Morrazo Cangas,Cuenca,-,-
-25.04. 16:00,Quabit Guadalajara,Nava,-,-
-25.04. 16:00,Torrelavega,Ademar,-,-
-25.04. 16:00,Villa de Aranda,Granollers,-,-
-02.05. 16:00,Ademar,La Rioja,-,-
-02.05. 16:00,Caserio Ciudad Real,Atl. Valladolid,-,-
-02.05. 16:00,CD Bidasoa Irun,Villa de Aranda,-,-
-02.05. 16:00,Cuenca,Barcelona,-,-
-02.05. 16:00,Granollers,Morrazo Cangas,-,-
-02.05. 16:00,Huesca,Quabit Guadalajara,-,-
-02.05. 16:00,Nava,Torrelavega,-,-
-02.05. 16:00,Puente Genil,Horneo Alicante,-,-
-09.05. 16:00,Atl. Valladolid,Puente Genil,-,-
-09.05. 16:00,Granollers,Cuenca,-,-
-09.05. 16:00,Horneo Alicante,Ademar,-,-
-09.05. 16:00,La Rioja,Nava,-,-
-09.05. 16:00,Morrazo Cangas,CD Bidasoa Irun,-,-
-09.05. 16:00,Quabit Guadalajara,Barcelona,-,-
-09.05. 16:00,Torrelavega,Huesca,-,-
-09.05. 16:00,Villa de Aranda,Caserio Ciudad Real,-,-
-23.05. 16:00,Ademar,Atl. Valladolid,-,-
-23.05. 16:00,Barcelona,Torrelavega,-,-
-23.05. 16:00,Caserio Ciudad Real,Morrazo Cangas,-,-
-23.05. 16:00,CD Bidasoa Irun,Granollers,-,-
-23.05. 16:00,Huesca,La Rioja,-,-
-23.05. 16:00,Nava,Horneo Alicante,-,-
-23.05. 16:00,Puente Genil,Villa de Aranda,-,-
-23.05. 16:00,Quabit Guadalajara,Cuenca,-,-
-30.05. 16:00,Atl. Valladolid,Nava,-,-
-30.05. 16:00,Cuenca,CD Bidasoa Irun,-,-
-30.05. 16:00,Granollers,Caserio Ciudad Real,-,-
-30.05. 16:00,Horneo Alicante,Huesca,-,-
-30.05. 16:00,La Rioja,Barcelona,-,-
-30.05. 16:00,Morrazo Cangas,Puente Genil,-,-
-30.05. 16:00,Torrelavega,Quabit Guadalajara,-,-
-30.05. 16:00,Villa de Aranda,Ademar,-,-
+date,home,away
+06.03. 18:00,Horneo Alicante,Cuenca
+06.03. 19:30,Huesca,CD Bidasoa Irun
+07.03. 15:30,Nava,Caserio Ciudad Real
+07.03. 17:00,Ademar,Puente Genil
+07.03. 18:30,Quabit Guadalajara,Morrazo Cangas
+07.03. 19:30,La Rioja,Atl. Valladolid
+08.03. 11:15,Barcelona,Granollers
+08.03. 17:30,Torrelavega,Villa de Aranda
+13.03. 18:00,Puente Genil,Nava
+13.03. 19:30,Cuenca,Ademar
+14.03. 16:30,Morrazo Cangas,Torrelavega
+14.03. 18:00,Atl. Valladolid,Horneo Alicante
+14.03. 19:30,CD Bidasoa Irun,Barcelona
+15.03. 11:30,Granollers,Quabit Guadalajara
+15.03. 15:30,Caserio Ciudad Real,Huesca
+15.03. 16:30,Villa de Aranda,La Rioja
+28.03. 17:00,Atl. Valladolid,Cuenca
+28.03. 17:00,Barcelona,Caserio Ciudad Real
+28.03. 17:00,Horneo Alicante,Villa de Aranda
+28.03. 17:00,Huesca,Puente Genil
+28.03. 17:00,La Rioja,Morrazo Cangas
+28.03. 17:00,Nava,Ademar
+28.03. 17:00,Quabit Guadalajara,CD Bidasoa Irun
+28.03. 17:00,Torrelavega,Granollers
+04.04. 16:00,Ademar,Huesca
+04.04. 16:00,Caserio Ciudad Real,Quabit Guadalajara
+04.04. 16:00,CD Bidasoa Irun,Torrelavega
+04.04. 16:00,Cuenca,Nava
+04.04. 16:00,Granollers,La Rioja
+04.04. 16:00,Morrazo Cangas,Horneo Alicante
+04.04. 16:00,Puente Genil,Barcelona
+04.04. 16:00,Villa de Aranda,Atl. Valladolid
+11.04. 16:00,Atl. Valladolid,Morrazo Cangas
+11.04. 16:00,Barcelona,Ademar
+11.04. 16:00,Horneo Alicante,Granollers
+11.04. 16:00,Huesca,Nava
+11.04. 16:00,La Rioja,CD Bidasoa Irun
+11.04. 16:00,Quabit Guadalajara,Puente Genil
+11.04. 16:00,Torrelavega,Caserio Ciudad Real
+11.04. 16:00,Villa de Aranda,Cuenca
+18.04. 16:00,Ademar,Quabit Guadalajara
+18.04. 16:00,Caserio Ciudad Real,La Rioja
+18.04. 16:00,CD Bidasoa Irun,Horneo Alicante
+18.04. 16:00,Cuenca,Huesca
+18.04. 16:00,Granollers,Atl. Valladolid
+18.04. 16:00,Morrazo Cangas,Villa de Aranda
+18.04. 16:00,Nava,Barcelona
+18.04. 16:00,Puente Genil,Torrelavega
+25.04. 16:00,Atl. Valladolid,CD Bidasoa Irun
+25.04. 16:00,Barcelona,Huesca
+25.04. 16:00,Horneo Alicante,Caserio Ciudad Real
+25.04. 16:00,La Rioja,Puente Genil
+25.04. 16:00,Morrazo Cangas,Cuenca
+25.04. 16:00,Quabit Guadalajara,Nava
+25.04. 16:00,Torrelavega,Ademar
+25.04. 16:00,Villa de Aranda,Granollers
+02.05. 16:00,Ademar,La Rioja
+02.05. 16:00,Caserio Ciudad Real,Atl. Valladolid
+02.05. 16:00,CD Bidasoa Irun,Villa de Aranda
+02.05. 16:00,Cuenca,Barcelona
+02.05. 16:00,Granollers,Morrazo Cangas
+02.05. 16:00,Huesca,Quabit Guadalajara
+02.05. 16:00,Nava,Torrelavega
+02.05. 16:00,Puente Genil,Horneo Alicante
+09.05. 16:00,Atl. Valladolid,Puente Genil
+09.05. 16:00,Granollers,Cuenca
+09.05. 16:00,Horneo Alicante,Ademar
+09.05. 16:00,La Rioja,Nava
+09.05. 16:00,Morrazo Cangas,CD Bidasoa Irun
+09.05. 16:00,Quabit Guadalajara,Barcelona
+09.05. 16:00,Torrelavega,Huesca
+09.05. 16:00,Villa de Aranda,Caserio Ciudad Real
+23.05. 16:00,Ademar,Atl. Valladolid
+23.05. 16:00,Barcelona,Torrelavega
+23.05. 16:00,Caserio Ciudad Real,Morrazo Cangas
+23.05. 16:00,CD Bidasoa Irun,Granollers
+23.05. 16:00,Huesca,La Rioja
+23.05. 16:00,Nava,Horneo Alicante
+23.05. 16:00,Puente Genil,Villa de Aranda
+23.05. 16:00,Quabit Guadalajara,Cuenca
+30.05. 16:00,Atl. Valladolid,Nava
+30.05. 16:00,Cuenca,CD Bidasoa Irun
+30.05. 16:00,Granollers,Caserio Ciudad Real
+30.05. 16:00,Horneo Alicante,Huesca
+30.05. 16:00,La Rioja,Barcelona
+30.05. 16:00,Morrazo Cangas,Puente Genil
+30.05. 16:00,Torrelavega,Quabit Guadalajara
+30.05. 16:00,Villa de Aranda,Ademar

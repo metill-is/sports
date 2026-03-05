@@ -1,109 +1,111 @@
-date,home,away,home_score,away_score
-14.06. 12:00,KFUM-Kameratene Oslo 2,Ullern,-,-
-14.06. 12:00,Ulfstind,Funnefoss/Vormsund,-,-
-14.06. 14:00,Harstad,Floya,-,-
-14.06. 15:00,Tromso 2,Skjervoy,-,-
-15.06. 08:00,Alta 2,Baerum Sportsklubb,-,-
-15.06. 14:00,Frigg,Junkeren,-,-
-15.06. 14:00,Gamle Oslo,Sortland,-,-
-21.06. 10:45,Sortland,Ulfstind,-,-
-21.06. 11:00,Junkeren,Harstad,-,-
-21.06. 11:30,Floya,Frigg,-,-
-22.06. 10:00,Baerum Sportsklubb,Tromso 2,-,-
-22.06. 10:00,Ullern,Gamle Oslo,-,-
-22.06. 13:30,Skjervoy,Alta 2,-,-
-23.06. 17:00,Funnefoss/Vormsund,KFUM-Kameratene Oslo 2,-,-
-28.06. 12:00,Gamle Oslo,Funnefoss/Vormsund,-,-
-28.06. 13:00,Frigg,Baerum Sportsklubb,-,-
-29.06. 11:00,Alta 2,Floya,-,-
-29.06. 11:00,Tromso 2,Junkeren,-,-
-29.06. 13:00,Harstad,Ullern,-,-
-29.06. 14:00,KFUM-Kameratene Oslo 2,Sortland,-,-
-30.06. 17:15,Ulfstind,Skjervoy,-,-
-05.07. 10:30,Skjervoy,KFUM-Kameratene Oslo 2,-,-
-05.07. 11:00,Frigg,Alta 2,-,-
-05.07. 13:00,Floya,Gamle Oslo,-,-
-06.07. 11:00,Ullern,Tromso 2,-,-
-06.07. 11:30,Junkeren,Ulfstind,-,-
-06.07. 14:00,Baerum Sportsklubb,Harstad,-,-
-06.07. 14:00,Funnefoss/Vormsund,Sortland,-,-
-09.07. 17:00,KFUM-Kameratene Oslo 2,Frigg,-,-
-10.07. 16:00,Tromso 2,Floya,-,-
-12.07. 12:30,Sortland,Baerum Sportsklubb,-,-
-12.07. 14:00,Harstad,Skjervoy,-,-
-13.07. 13:00,Alta 2,Funnefoss/Vormsund,-,-
-13.07. 13:00,Ulfstind,Ullern,-,-
-13.07. 14:00,Gamle Oslo,Junkeren,-,-
-09.08. 10:00,Baerum Sportsklubb,Alta 2,-,-
-09.08. 11:00,Funnefoss/Vormsund,Ulfstind,-,-
-09.08. 11:00,Skjervoy,Gamle Oslo,-,-
-09.08. 12:15,Frigg,Tromso 2,-,-
-09.08. 13:30,Floya,Harstad,-,-
-10.08. 14:00,Junkeren,Sortland,-,-
-11.08. 16:00,Ullern,KFUM-Kameratene Oslo 2,-,-
-16.08. 11:00,Gamle Oslo,Ullern,-,-
-16.08. 11:00,Sortland,Floya,-,-
-16.08. 11:30,Ulfstind,Frigg,-,-
-16.08. 13:00,Tromso 2,Baerum Sportsklubb,-,-
-16.08. 14:00,Harstad,Junkeren,-,-
-16.08. 14:30,Alta 2,Skjervoy,-,-
-18.08. 17:00,KFUM-Kameratene Oslo 2,Funnefoss/Vormsund,-,-
-23.08. 13:00,Funnefoss/Vormsund,Gamle Oslo,-,-
-23.08. 13:00,Ulfstind,KFUM-Kameratene Oslo 2,-,-
-24.08. 10:00,Floya,Alta 2,-,-
-24.08. 11:00,Baerum Sportsklubb,Junkeren,-,-
-24.08. 13:00,Skjervoy,Tromso 2,-,-
-24.08. 14:00,Frigg,Sortland,-,-
-24.08. 14:00,Ullern,Harstad,-,-
-30.08. 11:30,Gamle Oslo,Ulfstind,-,-
-30.08. 12:00,Sortland,Funnefoss/Vormsund,-,-
-30.08. 12:00,Tromso 2,Ullern,-,-
-30.08. 13:00,Harstad,Baerum Sportsklubb,-,-
-31.08. 08:00,Alta 2,Frigg,-,-
-31.08. 11:15,KFUM-Kameratene Oslo 2,Skjervoy,-,-
-31.08. 14:30,Junkeren,Floya,-,-
-06.09. 12:00,Gamle Oslo,KFUM-Kameratene Oslo 2,-,-
-06.09. 13:00,Floya,Baerum Sportsklubb,-,-
-07.09. 09:00,Skjervoy,Junkeren,-,-
-07.09. 10:00,Ulfstind,Alta 2,-,-
-07.09. 12:00,Funnefoss/Vormsund,Tromso 2,-,-
-07.09. 14:00,Frigg,Harstad,-,-
-07.09. 14:00,Ullern,Sortland,-,-
-12.09. 17:15,Floya,Skjervoy,-,-
-13.09. 13:00,Baerum Sportsklubb,Frigg,-,-
-13.09. 13:00,Harstad,Funnefoss/Vormsund,-,-
-13.09. 13:00,Junkeren,Ullern,-,-
-13.09. 13:00,Tromso 2,Ulfstind,-,-
-14.09. 10:15,Alta 2,Gamle Oslo,-,-
-14.09. 13:00,Sortland,KFUM-Kameratene Oslo 2,-,-
-20.09. 10:00,Ullern,Alta 2,-,-
-20.09. 11:00,Frigg,Floya,-,-
-20.09. 13:30,Ulfstind,Sortland,-,-
-21.09. 10:30,Skjervoy,Baerum Sportsklubb,-,-
-21.09. 12:00,Funnefoss/Vormsund,Junkeren,-,-
-21.09. 12:00,KFUM-Kameratene Oslo 2,Tromso 2,-,-
-21.09. 13:30,Gamle Oslo,Harstad,-,-
-27.09. 11:00,Sortland,Skjervoy,-,-
-27.09. 12:00,Harstad,Ulfstind,-,-
-27.09. 12:00,Junkeren,Frigg,-,-
-27.09. 12:30,Tromso 2,Gamle Oslo,-,-
-27.09. 13:00,Baerum Sportsklubb,Funnefoss/Vormsund,-,-
-28.09. 13:00,Floya,Ullern,-,-
-29.09. 17:00,Alta 2,KFUM-Kameratene Oslo 2,-,-
-02.10. 17:00,Ulfstind,Floya,-,-
-04.10. 11:00,Ullern,Frigg,-,-
-04.10. 12:00,Skjervoy,Funnefoss/Vormsund,-,-
-04.10. 13:00,Gamle Oslo,Baerum Sportsklubb,-,-
-04.10. 13:30,Tromso 2,Sortland,-,-
-05.10. 10:00,Alta 2,Junkeren,-,-
-05.10. 14:00,KFUM-Kameratene Oslo 2,Harstad,-,-
-10.10. 14:00,Junkeren,Tromso 2,-,-
-11.10. 11:00,Baerum Sportsklubb,Ulfstind,-,-
-11.10. 12:00,Funnefoss/Vormsund,Ullern,-,-
-11.10. 13:00,Floya,KFUM-Kameratene Oslo 2,-,-
-11.10. 13:00,Sortland,Gamle Oslo,-,-
-11.10. 14:00,Frigg,Skjervoy,-,-
-12.10. 09:30,Harstad,Alta 2,-,-
-18.10. 11:30,Ullern,Skjervoy,-,-
-18.10. 13:00,Funnefoss/Vormsund,Frigg,-,-
-18.10. 13:00,Sortland,Harstad,-,-
+date,home,away
+04.04. 11:00,Heming,Nordstrand
+06.04. 12:00,Gamle Oslo,KFUM-Kameratene Oslo 2
+06.04. 13:00,Frigg,Union Carl Berner
+06.04. 13:00,Ready,Lokomotiv Oslo
+06.04. 14:00,Ullern,Baerum Sportsklubb
+06.04. 16:00,Asker,Konnerud
+06.04. 17:30,Valerenga 2,Grei
+10.04. 17:00,Union Carl Berner,Ready
+11.04. 11:00,Grei,Frigg
+11.04. 11:00,Nordstrand,Ullern
+11.04. 12:00,Baerum Sportsklubb,Gamle Oslo
+11.04. 16:00,Lokomotiv Oslo,Heming
+13.04. 17:00,KFUM-Kameratene Oslo 2,Asker
+13.04. 17:30,Konnerud,Valerenga 2
+18.04. 11:00,Frigg,Valerenga 2
+18.04. 11:00,Heming,Konnerud
+18.04. 11:00,Nordstrand,Baerum Sportsklubb
+18.04. 11:00,Ullern,Lokomotiv Oslo
+18.04. 12:00,Asker,Grei
+18.04. 12:00,Gamle Oslo,Ready
+20.04. 17:00,KFUM-Kameratene Oslo 2,Union Carl Berner
+25.04. 10:30,Lokomotiv Oslo,Nordstrand
+25.04. 11:00,Grei,Ullern
+25.04. 11:00,Konnerud,Frigg
+25.04. 12:00,Baerum Sportsklubb,Heming
+25.04. 12:00,Union Carl Berner,Gamle Oslo
+25.04. 14:00,Valerenga 2,Asker
+27.04. 17:00,Ready,KFUM-Kameratene Oslo 2
+02.05. 11:00,Frigg,Asker
+02.05. 11:00,Gamle Oslo,Valerenga 2
+02.05. 11:00,Heming,Grei
+02.05. 11:00,Nordstrand,Union Carl Berner
+02.05. 11:00,Ullern,Ready
+02.05. 12:00,Baerum Sportsklubb,Lokomotiv Oslo
+04.05. 17:00,KFUM-Kameratene Oslo 2,Konnerud
+09.05. 11:00,Grei,Lokomotiv Oslo
+09.05. 11:00,Ready,Nordstrand
+09.05. 12:00,Asker,Heming
+09.05. 12:00,Konnerud,Gamle Oslo
+09.05. 16:00,Valerenga 2,Ullern
+10.05. 13:00,Union Carl Berner,Baerum Sportsklubb
+11.05. 17:00,Frigg,KFUM-Kameratene Oslo 2
+14.05. 13:00,Lokomotiv Oslo,Union Carl Berner
+14.05. 16:00,Gamle Oslo,Grei
+15.05. 17:00,KFUM-Kameratene Oslo 2,Valerenga 2
+16.05. 11:00,Heming,Ready
+16.05. 11:00,Nordstrand,Konnerud
+16.05. 11:00,Ullern,Frigg
+16.05. 13:00,Baerum Sportsklubb,Asker
+23.05. 11:00,Frigg,Nordstrand
+23.05. 11:00,Grei,KFUM-Kameratene Oslo 2
+23.05. 11:00,Ready,Baerum Sportsklubb
+25.05. 12:00,Valerenga 2,Heming
+25.05. 13:00,Konnerud,Lokomotiv Oslo
+25.05. 16:00,Asker,Gamle Oslo
+25.05. 16:00,Union Carl Berner,Ullern
+30.05. 11:00,Heming,Union Carl Berner
+30.05. 11:00,Nordstrand,KFUM-Kameratene Oslo 2
+30.05. 11:00,Ready,Asker
+30.05. 11:00,Ullern,Konnerud
+30.05. 12:00,Baerum Sportsklubb,Grei
+30.05. 12:00,Gamle Oslo,Frigg
+31.05. 12:00,Lokomotiv Oslo,Valerenga 2
+13.06. 10:00,Grei,Ready
+13.06. 11:00,Asker,Lokomotiv Oslo
+13.06. 11:00,Gamle Oslo,Ullern
+13.06. 11:00,Konnerud,Union Carl Berner
+13.06. 12:00,Valerenga 2,Nordstrand
+13.06. 13:00,Frigg,Heming
+14.06. 14:00,KFUM-Kameratene Oslo 2,Baerum Sportsklubb
+20.06. 11:00,Heming,Gamle Oslo
+20.06. 11:00,Nordstrand,Asker
+20.06. 11:00,Ullern,KFUM-Kameratene Oslo 2
+20.06. 11:00,Union Carl Berner,Grei
+20.06. 12:00,Baerum Sportsklubb,Konnerud
+20.06. 18:00,Lokomotiv Oslo,Frigg
+21.06. 11:00,Ready,Valerenga 2
+24.06. 17:00,Gamle Oslo,Lokomotiv Oslo
+25.06. 17:30,Konnerud,Ready
+26.06. 16:00,Valerenga 2,Union Carl Berner
+27.06. 11:00,Grei,Nordstrand
+27.06. 12:00,Asker,Ullern
+27.06. 12:00,Frigg,Baerum Sportsklubb
+28.06. 14:00,KFUM-Kameratene Oslo 2,Heming
+25.07. 11:00,Grei,Konnerud
+25.07. 11:00,Nordstrand,Gamle Oslo
+25.07. 11:00,Ullern,Heming
+25.07. 12:00,Baerum Sportsklubb,Valerenga 2
+27.07. 17:00,Lokomotiv Oslo,KFUM-Kameratene Oslo 2
+27.07. 17:00,Ready,Frigg
+27.07. 17:00,Union Carl Berner,Asker
+31.07. 17:00,Gamle Oslo,Union Carl Berner
+01.08. 10:30,Frigg,Ullern
+01.08. 11:00,Konnerud,Nordstrand
+01.08. 12:00,Asker,Ready
+01.08. 12:00,Heming,Baerum Sportsklubb
+01.08. 12:00,Valerenga 2,Lokomotiv Oslo
+03.08. 17:00,KFUM-Kameratene Oslo 2,Grei
+07.08. 17:30,Union Carl Berner,Konnerud
+08.08. 11:00,Lokomotiv Oslo,Grei
+08.08. 11:00,Nordstrand,Frigg
+08.08. 11:00,Ready,Heming
+08.08. 11:00,Ullern,Gamle Oslo
+08.08. 12:00,Asker,Valerenga 2
+10.08. 17:00,Baerum Sportsklubb,KFUM-Kameratene Oslo 2
+15.08. 11:00,Frigg,Lokomotiv Oslo
+15.08. 11:00,Grei,Baerum Sportsklubb
+15.08. 11:00,Heming,Asker
+15.08. 11:00,Ullern,Union Carl Berner
+15.08. 12:00,Gamle Oslo,Konnerud

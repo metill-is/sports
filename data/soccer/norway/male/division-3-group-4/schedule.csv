@@ -1,106 +1,106 @@
-date,home,away,home_score,away_score
-14.06. 11:00,Fana,Asane 2,-,-
-14.06. 12:00,Bjarg,Gneist,-,-
-14.06. 13:00,Loddefjord,Forde,-,-
-14.06. 13:00,Valerenga 2,Askoy,-,-
-14.06. 14:30,Fjora,Lyngbo,-,-
-15.06. 13:00,Lyn 2,OS TF,-,-
-15.06. 13:00,Sandefjord 2,Fyllingsdalen,-,-
-18.06. 16:00,Lyngbo,Bjarg,-,-
-19.06. 18:00,Asane 2,Loddefjord,-,-
-20.06. 16:00,OS TF,Fana,-,-
-21.06. 11:00,Forde,Sandefjord 2,-,-
-21.06. 13:00,Askoy,Fjora,-,-
-21.06. 13:00,Gneist,Valerenga 2,-,-
-22.06. 13:00,Fyllingsdalen,Lyn 2,-,-
-19.07. 12:00,Askoy,Fyllingsdalen,-,-
-19.07. 13:00,Fana,Forde,-,-
-19.07. 13:00,Fjora,OS TF,-,-
-19.07. 13:00,Sandefjord 2,Lyngbo,-,-
-20.07. 12:00,Bjarg,Lyn 2,-,-
-21.07. 16:00,Valerenga 2,Asane 2,-,-
-22.07. 17:00,Loddefjord,Gneist,-,-
-26.07. 12:00,Fyllingsdalen,Bjarg,-,-
-26.07. 12:00,Lyngbo,Fana,-,-
-26.07. 13:00,Gneist,Fjora,-,-
-26.07. 13:00,Lyn 2,Loddefjord,-,-
-27.07. 11:00,Asane 2,Askoy,-,-
-27.07. 14:00,Forde,Valerenga 2,-,-
-28.07. 15:00,OS TF,Sandefjord 2,-,-
-02.08. 12:00,Askoy,Gneist,-,-
-02.08. 12:00,Bjarg,Forde,-,-
-02.08. 12:00,Fana,Fyllingsdalen,-,-
-02.08. 13:00,Fjora,Asane 2,-,-
-02.08. 13:00,Loddefjord,Lyngbo,-,-
-02.08. 13:00,Valerenga 2,OS TF,-,-
-04.08. 17:00,Sandefjord 2,Lyn 2,-,-
-09.08. 11:00,Gneist,Sandefjord 2,-,-
-09.08. 12:00,Asane 2,Bjarg,-,-
-09.08. 12:00,OS TF,Loddefjord,-,-
-09.08. 13:00,Forde,Askoy,-,-
-09.08. 13:00,Fyllingsdalen,Valerenga 2,-,-
-09.08. 13:00,Lyngbo,Fjora,-,-
-10.08. 11:00,Lyn 2,Fana,-,-
-16.08. 11:00,Sandefjord 2,Forde,-,-
-16.08. 12:00,Bjarg,Lyngbo,-,-
-16.08. 13:00,Fjora,Fyllingsdalen,-,-
-16.08. 13:00,Valerenga 2,Gneist,-,-
-16.08. 14:30,Fana,OS TF,-,-
-17.08. 12:00,Askoy,Lyn 2,-,-
-17.08. 13:00,Loddefjord,Asane 2,-,-
-23.08. 12:00,Gneist,Loddefjord,-,-
-23.08. 12:00,Valerenga 2,Fana,-,-
-23.08. 13:00,Asane 2,Forde,-,-
-23.08. 13:00,Fyllingsdalen,Askoy,-,-
-23.08. 13:00,OS TF,Fjora,-,-
-24.08. 12:00,Lyn 2,Bjarg,-,-
-25.08. 15:00,Lyngbo,Sandefjord 2,-,-
-29.08. 17:00,Bjarg,OS TF,-,-
-30.08. 12:00,Askoy,Lyngbo,-,-
-30.08. 12:00,Fana,Gneist,-,-
-30.08. 13:00,Forde,Loddefjord,-,-
-31.08. 13:00,Fjora,Lyn 2,-,-
-01.09. 16:00,Fyllingsdalen,Asane 2,-,-
-01.09. 17:00,Sandefjord 2,Valerenga 2,-,-
-06.09. 11:00,Loddefjord,Sandefjord 2,-,-
-06.09. 11:00,Valerenga 2,Fjora,-,-
-06.09. 12:00,Asane 2,Fana,-,-
-06.09. 12:00,Gneist,Bjarg,-,-
-06.09. 12:00,OS TF,Askoy,-,-
-06.09. 13:00,Lyn 2,Fyllingsdalen,-,-
-06.09. 13:00,Lyngbo,Forde,-,-
-13.09. 12:00,Bjarg,Loddefjord,-,-
-13.09. 12:00,Fyllingsdalen,Gneist,-,-
-13.09. 13:00,Askoy,Valerenga 2,-,-
-13.09. 13:00,Fana,Fjora,-,-
-13.09. 13:00,Sandefjord 2,OS TF,-,-
-14.09. 13:00,Forde,Lyn 2,-,-
-15.09. 16:00,Asane 2,Lyngbo,-,-
-20.09. 11:00,Fjora,Bjarg,-,-
-20.09. 12:00,Gneist,Forde,-,-
-20.09. 13:00,Loddefjord,Askoy,-,-
-20.09. 13:00,OS TF,Fyllingsdalen,-,-
-20.09. 13:00,Valerenga 2,Lyngbo,-,-
-22.09. 15:00,Fana,Sandefjord 2,-,-
-22.09. 16:00,Lyn 2,Asane 2,-,-
-27.09. 11:00,Sandefjord 2,Fjora,-,-
-27.09. 12:00,Askoy,Fana,-,-
-27.09. 12:00,Lyngbo,Gneist,-,-
-27.09. 13:00,Asane 2,OS TF,-,-
-27.09. 13:00,Bjarg,Valerenga 2,-,-
-27.09. 13:00,Forde,Fyllingsdalen,-,-
-28.09. 13:00,Loddefjord,Lyn 2,-,-
-04.10. 12:00,Fana,Bjarg,-,-
-04.10. 12:00,Gneist,Asane 2,-,-
-04.10. 13:00,Fjora,Askoy,-,-
-04.10. 13:00,OS TF,Forde,-,-
-04.10. 13:00,Valerenga 2,Loddefjord,-,-
-05.10. 13:00,Lyn 2,Lyngbo,-,-
-06.10. 16:00,Fyllingsdalen,Sandefjord 2,-,-
-11.10. 12:00,Bjarg,Fyllingsdalen,-,-
-11.10. 13:00,Asane 2,Valerenga 2,-,-
-11.10. 13:00,Forde,Fana,-,-
-11.10. 13:00,Loddefjord,Fjora,-,-
-11.10. 13:00,Lyngbo,OS TF,-,-
-12.10. 11:00,Lyn 2,Gneist,-,-
-12.10. 14:00,Sandefjord 2,Askoy,-,-
+date,home,away
+01.04. 17:00,Varhaug,Akra
+06.04. 12:00,Brodd,Madla IL
+06.04. 12:00,Mandalskameratene,Hinna
+06.04. 13:00,Staal Jorpeland,Flekkeroy
+07.04. 11:00,Stabaek 2,Odd 2
+07.04. 16:00,Vag,Vindbjart
+07.04. 16:00,Viking 2,Haugesund 2
+11.04. 11:00,Akra,Vag
+11.04. 12:00,Madla IL,Varhaug
+11.04. 13:00,Vindbjart,Brodd
+12.04. 12:00,Haugesund 2,Staal Jorpeland
+12.04. 12:00,Odd 2,Mandalskameratene
+12.04. 13:00,Flekkeroy,Viking 2
+13.04. 14:00,Hinna,Stabaek 2
+18.04. 11:00,Mandalskameratene,Haugesund 2
+18.04. 12:00,Staal Jorpeland,Madla IL
+18.04. 13:00,Brodd,Flekkeroy
+18.04. 13:00,Vag,Hinna
+18.04. 13:00,Varhaug,Vindbjart
+19.04. 11:00,Stabaek 2,Akra
+20.04. 15:00,Viking 2,Odd 2
+25.04. 12:00,Akra,Staal Jorpeland
+25.04. 12:00,Brodd,Varhaug
+25.04. 13:00,Flekkeroy,Mandalskameratene
+25.04. 13:00,Madla IL,Vag
+26.04. 13:00,Hinna,Odd 2
+26.04. 13:00,Vindbjart,Viking 2
+27.04. 11:00,Haugesund 2,Stabaek 2
+01.05. 11:30,Varhaug,Flekkeroy
+01.05. 12:00,Mandalskameratene,Akra
+02.05. 11:00,Viking 2,Hinna
+02.05. 12:00,Staal Jorpeland,Brodd
+02.05. 12:00,Vag,Haugesund 2
+02.05. 13:00,Odd 2,Vindbjart
+02.05. 14:00,Stabaek 2,Madla IL
+07.05. 15:00,Haugesund 2,Odd 2
+07.05. 17:00,Akra,Hinna
+09.05. 13:00,Vindbjart,Staal Jorpeland
+10.05. 13:00,Brodd,Vag
+10.05. 13:00,Varhaug,Mandalskameratene
+11.05. 16:00,Flekkeroy,Stabaek 2
+11.05. 16:00,Madla IL,Viking 2
+14.05. 12:00,Hinna,Haugesund 2
+14.05. 12:00,Odd 2,Madla IL
+14.05. 12:00,Staal Jorpeland,Varhaug
+14.05. 12:00,Stabaek 2,Brodd
+14.05. 12:00,Viking 2,Akra
+16.05. 11:00,Vag,Flekkeroy
+16.05. 13:00,Mandalskameratene,Vindbjart
+23.05. 13:00,Mandalskameratene,Viking 2
+25.05. 13:00,Flekkeroy,Vindbjart
+25.05. 13:00,Varhaug,Vag
+25.05. 16:00,Madla IL,Hinna
+26.05. 16:00,Akra,Haugesund 2
+26.05. 16:00,Brodd,Odd 2
+26.05. 16:00,Staal Jorpeland,Stabaek 2
+29.05. 16:30,Hinna,Varhaug
+30.05. 11:00,Odd 2,Akra
+30.05. 13:00,Haugesund 2,Flekkeroy
+30.05. 13:00,Vag,Staal Jorpeland
+30.05. 13:00,Vindbjart,Madla IL
+31.05. 11:00,Viking 2,Brodd
+31.05. 12:00,Stabaek 2,Mandalskameratene
+12.06. 17:00,Varhaug,Viking 2
+13.06. 11:00,Vindbjart,Haugesund 2
+13.06. 12:00,Brodd,Mandalskameratene
+13.06. 12:00,Madla IL,Akra
+14.06. 13:00,Flekkeroy,Hinna
+15.06. 16:00,Staal Jorpeland,Odd 2
+15.06. 16:00,Vag,Stabaek 2
+19.06. 16:00,Hinna,Brodd
+21.06. 12:00,Stabaek 2,Varhaug
+21.06. 13:00,Viking 2,Staal Jorpeland
+21.06. 14:00,Akra,Vindbjart
+21.06. 14:00,Mandalskameratene,Vag
+22.06. 16:00,Haugesund 2,Madla IL
+22.06. 17:00,Odd 2,Flekkeroy
+26.06. 16:00,Staal Jorpeland,Hinna
+26.06. 16:00,Vag,Viking 2
+27.06. 11:00,Flekkeroy,Akra
+27.06. 13:00,Madla IL,Mandalskameratene
+29.06. 15:00,Varhaug,Odd 2
+29.06. 16:00,Brodd,Haugesund 2
+29.06. 16:00,Vindbjart,Stabaek 2
+25.07. 13:00,Hinna,Vindbjart
+25.07. 13:00,Madla IL,Flekkeroy
+25.07. 13:00,Mandalskameratene,Staal Jorpeland
+26.07. 12:00,Akra,Brodd
+27.07. 13:00,Stabaek 2,Viking 2
+27.07. 16:00,Odd 2,Vag
+27.07. 17:00,Haugesund 2,Varhaug
+31.07. 17:00,Varhaug,Hinna
+01.08. 11:00,Flekkeroy,Haugesund 2
+01.08. 12:00,Staal Jorpeland,Akra
+01.08. 13:00,Vag,Madla IL
+02.08. 12:00,Viking 2,Mandalskameratene
+03.08. 16:00,Brodd,Stabaek 2
+03.08. 16:00,Vindbjart,Odd 2
+07.08. 17:00,Akra,Varhaug
+08.08. 11:00,Odd 2,Staal Jorpeland
+08.08. 13:00,Hinna,Flekkeroy
+08.08. 13:00,Madla IL,Vindbjart
+08.08. 13:00,Mandalskameratene,Brodd
+09.08. 13:00,Stabaek 2,Vag
+10.08. 16:00,Haugesund 2,Viking 2

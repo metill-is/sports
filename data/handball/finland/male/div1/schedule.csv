@@ -1,12 +1,12 @@
-date,home,away,home_score,away_score
-05.03. 17:00,HIFK,Cocks,-,-
-07.03. 14:00,GrIFK,AIFK,-,-
-07.03. 15:30,SIF,EIF,-,-
-07.03. 17:00,BK-46,Dicken,-,-
-10.03. 17:00,Dicken,HIFK,-,-
-10.03. 17:30,Cocks,GrIFK,-,-
-11.03. 17:00,AIFK,SIF,-,-
-14.03. 14:00,AIFK,EIF,-,-
-14.03. 14:00,GrIFK,Dicken,-,-
-14.03. 14:00,HIFK,BK-46,-,-
-14.03. 14:00,SIF,Cocks,-,-
+date,home,away
+05.03. 17:00,HIFK,Cocks
+07.03. 14:00,GrIFK,AIFK
+07.03. 15:30,SIF,EIF
+07.03. 17:00,BK-46,Dicken
+10.03. 17:00,Dicken,HIFK
+10.03. 17:30,Cocks,GrIFK
+11.03. 17:00,AIFK,SIF
+14.03. 14:00,AIFK,EIF
+14.03. 14:00,GrIFK,Dicken
+14.03. 14:00,HIFK,BK-46
+14.03. 14:00,SIF,Cocks
