@@ -11,6 +11,22 @@ library(readr)
 sports_dir <- here::here()
 source(file.path(sports_dir, "R", "storage", "store.R"))
 
+# Clean stale Parquet partitions with non-standard sex values
+stale_patterns <- c("sex=kk", "sex=kvk", "sex=NA")
+store_bets_dir <- file.path(sports_dir, "store", "bets")
+if (dir.exists(store_bets_dir)) {
+  all_sex_dirs <- list.dirs(store_bets_dir, recursive = TRUE, full.names = TRUE)
+  stale_dirs <- all_sex_dirs[basename(all_sex_dirs) %in% stale_patterns]
+  if (length(stale_dirs) > 0) {
+    cat("Removing", length(stale_dirs), "stale partition(s):\n")
+    for (d in stale_dirs) {
+      cat("  ", d, "\n")
+      unlink(d, recursive = TRUE)
+    }
+    cat("\n")
+  }
+}
+
 logs <- Sys.glob(file.path(sports_dir, "*", "*", "history", "bets_log.csv"))
 cat("Found", length(logs), "bets_log.csv file(s)\n\n")
 

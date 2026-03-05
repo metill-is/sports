@@ -61,8 +61,10 @@ Rscript R/bets/update_kelly.R --dry-run    # Preview proposed values without wri
 ### Cross-league summary
 
 ```bash
-Rscript R/summary/pnl.R              # Full PnL breakdown by sport/country
-Rscript R/summary/pnl.R --settled    # Only settled bets
+Rscript R/summary/pnl.R                       # Current-era detail + historical summary
+Rscript R/summary/pnl.R --settled              # Only settled bets
+Rscript R/summary/pnl.R --all                  # Full detail for both eras
+Rscript R/summary/pnl.R --since 2026-02-01     # Custom era cutoff date
 ```
 
 ### Legacy scripts (still functional, Iceland only)

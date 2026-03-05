@@ -1,11 +1,13 @@
 #' Cross-league PnL summary using Parquet store
 #'
-#' Reads all bets from the centralised store and produces a summary table
-#' broken down by sport/country and overall.
+#' Splits output into current pipeline era and historical (pre-pipeline) bets.
+#' Current era gets full per-league detail; historical gets a compact summary.
 #'
 #' Usage:
-#'   Rscript R/summary/pnl.R
-#'   Rscript R/summary/pnl.R --settled    # Only show settled bets
+#'   Rscript R/summary/pnl.R                    # Current detail + historical summary
+#'   Rscript R/summary/pnl.R --settled           # Only settled bets
+#'   Rscript R/summary/pnl.R --since 2026-02-01  # Custom era cutoff
+#'   Rscript R/summary/pnl.R --all               # Full detail for both eras
 
 library(dplyr, warn.conflicts = FALSE)
 library(arrow, warn.conflicts = FALSE)
@@ -13,8 +15,17 @@ library(arrow, warn.conflicts = FALSE)
 sports_dir <- here::here()
 source(file.path(sports_dir, "R", "storage", "store.R"))
 
+# Parse CLI args
 args <- commandArgs(trailingOnly = TRUE)
 settled_only <- "--settled" %in% args
+show_all <- "--all" %in% args
+
+since_idx <- which(args == "--since")
+cutoff_date <- if (length(since_idx) > 0 && since_idx < length(args)) {
+  as.Date(args[since_idx + 1])
+} else {
+  as.Date("2026-03-01")
+}
 
 # Read all bets, excluding sex=all duplicates
 bets <- read_bets(sports_dir) |>
@@ -39,7 +50,11 @@ bets <- bets |>
 
 if (settled_only) bets <- filter(bets, settled)
 
-# Per-league summary
+# Split into eras
+current_bets <- bets |> filter(as.Date(date_recommended) >= cutoff_date)
+historical_bets <- bets |> filter(as.Date(date_recommended) < cutoff_date)
+
+# Per-league summary helper
 summarise_bets <- function(df) {
   n_settled <- sum(df$settled)
   n_wins <- sum(df$won, na.rm = TRUE)
@@ -61,62 +76,109 @@ summarise_bets <- function(df) {
   )
 }
 
-league_summary <- bets |>
-  group_by(sport, country) |>
-  group_modify(~ summarise_bets(.x)) |>
-  ungroup() |>
-  arrange(sport, country)
-
-overall <- summarise_bets(bets) |>
-  mutate(sport = "TOTAL", country = "")
-
-summary_table <- bind_rows(league_summary, overall)
-
-# Display
-cat("\n")
-cat("══════════════════════════════════════════════════════════════\n")
-cat("  Cross-League PnL Summary\n")
-cat("══════════════════════════════════════════════════════════════\n\n")
-
-for (i in seq_len(nrow(summary_table))) {
-  row <- summary_table[i, ]
-
-  if (row$sport == "TOTAL") {
-    cat("──────────────────────────────────────────────────────────────\n")
+# Display a full per-league summary table
+display_league_table <- function(df, show_total = TRUE) {
+  if (nrow(df) == 0) {
+    cat("  No bets in this period.\n\n")
+    return(invisible())
   }
 
-  label <- if (row$sport == "TOTAL") "TOTAL" else paste0(row$sport, "/", row$country)
-  cat(sprintf("  %-25s", label))
+  league_summary <- df |>
+    group_by(sport, country) |>
+    group_modify(~ summarise_bets(.x)) |>
+    ungroup() |>
+    arrange(sport, country)
 
-  cat(sprintf("%d bets (%d/%d/%d W/L/P)",
-    row$total_bets, row$wins, row$losses, row$total_bets - row$settled))
-
-  if (row$settled > 0) {
-    cat(sprintf("  Win: %4.1f%%", row$win_pct))
-  }
-  cat("\n")
-
-  cat(sprintf("  %-25s", ""))
-  cat(sprintf("Wagered: %s kr", format(round(row$total_wagered), big.mark = ",")))
-
-  if (row$outstanding > 0) {
-    cat(sprintf("  Outstanding: %s kr", format(round(row$outstanding), big.mark = ",")))
+  if (show_total) {
+    overall <- summarise_bets(df) |>
+      mutate(sport = "TOTAL", country = "")
+    summary_table <- bind_rows(league_summary, overall)
+  } else {
+    summary_table <- league_summary
   }
 
-  if (row$settled > 0) {
-    pnl_sign <- if (row$pnl >= 0) "+" else ""
-    cat(sprintf("  PnL: %s%s kr (ROI: %s%.1f%%)",
-      pnl_sign, format(round(row$pnl), big.mark = ","),
-      pnl_sign, row$roi))
-  }
-  cat("\n")
+  for (i in seq_len(nrow(summary_table))) {
+    row <- summary_table[i, ]
 
-  cat(sprintf("  %-25s", ""))
-  cat(sprintf("Avg odds: %.2f  Avg EV: %.1f%%", row$avg_odds, row$avg_ev))
-  cat("\n\n")
+    if (row$sport == "TOTAL") {
+      cat("  ............................................................\n")
+    }
+
+    label <- if (row$sport == "TOTAL") "TOTAL" else paste0(row$sport, "/", row$country)
+    cat(sprintf("  %-25s", label))
+
+    cat(sprintf("%d bets (%d/%d/%d W/L/P)",
+      row$total_bets, row$wins, row$losses, row$total_bets - row$settled))
+
+    if (row$settled > 0) {
+      cat(sprintf("  Win: %4.1f%%", row$win_pct))
+    }
+    cat("\n")
+
+    cat(sprintf("  %-25s", ""))
+    cat(sprintf("Wagered: %s kr", format(round(row$total_wagered), big.mark = ",")))
+
+    if (row$outstanding > 0) {
+      cat(sprintf("  Outstanding: %s kr", format(round(row$outstanding), big.mark = ",")))
+    }
+
+    if (row$settled > 0) {
+      pnl_sign <- if (row$pnl >= 0) "+" else ""
+      cat(sprintf("  PnL: %s%s kr (ROI: %s%.1f%%)",
+        pnl_sign, format(round(row$pnl), big.mark = ","),
+        pnl_sign, row$roi))
+    }
+    cat("\n")
+
+    cat(sprintf("  %-25s", ""))
+    cat(sprintf("Avg odds: %.2f  Avg EV: %.1f%%", row$avg_odds, row$avg_ev))
+    cat("\n\n")
+  }
 }
 
-# Bankroll status
+# Display a compact one-line summary
+display_compact_summary <- function(df) {
+  if (nrow(df) == 0) {
+    cat("  No bets in this period.\n")
+    return(invisible())
+  }
+
+  s <- summarise_bets(df)
+  pnl_sign <- if (!is.na(s$pnl) && s$pnl >= 0) "+" else ""
+
+  cat(sprintf("  %d bets (%d/%d/%d W/L/P)",
+    s$total_bets, s$wins, s$losses, s$pending))
+
+  if (s$settled > 0) {
+    cat(sprintf("  PnL: %s%s kr  ROI: %s%.1f%%",
+      pnl_sign, format(round(s$pnl), big.mark = ","),
+      pnl_sign, s$roi))
+  }
+  cat("\n")
+}
+
+# === Output ===
+
+cat("\n")
+cat("══════════════════════════════════════════════════════════════\n")
+cat(sprintf("  Current Pipeline (since %s)\n", format(cutoff_date)))
+cat("══════════════════════════════════════════════════════════════\n\n")
+
+display_league_table(current_bets)
+
+cat("──────────────────────────────────────────────────────────────\n")
+cat(sprintf("  Historical (before %s)\n", format(cutoff_date)))
+cat("──────────────────────────────────────────────────────────────\n")
+
+if (show_all) {
+  cat("\n")
+  display_league_table(historical_bets)
+} else {
+  display_compact_summary(historical_bets)
+  cat("\n")
+}
+
+# Bankroll status (always uses ALL bets)
 initial_pool <- 10973
 current <- initial_pool - sum(bets$bet_amount[!bets$settled], na.rm = TRUE) +
   sum(bets$pnl_actual, na.rm = TRUE)

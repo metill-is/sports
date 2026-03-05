@@ -4,10 +4,6 @@ sex:
 - male
 - female
 
-sex_map:
-  male: kk
-  female: kvk
-
 leagues:
   1: Olís deild
   2: Grill 66 deild

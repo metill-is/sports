@@ -86,8 +86,8 @@ compute_settlement <- function(bets) {
         market == "outcome" & outcome == "away" ~ away_score > home_score,
         market == "outcome" & outcome == "tie"  ~ home_score == away_score,
 
-        # Handicap: add line to home, then compare
-        # info = change value (positive = home advantage)
+        # Handicap: add line to home, then compare (skip if info missing)
+        market == "handicap" & is.na(info_num) ~ NA,
         market == "handicap" & outcome == "home" ~
           (home_score - away_score) + info_num > 0,
         market == "handicap" & outcome == "away" ~
@@ -95,7 +95,8 @@ compute_settlement <- function(bets) {
         market == "handicap" & outcome == "tie" ~
           (home_score - away_score) + info_num == 0,
 
-        # Totals: compare sum to limit
+        # Totals: compare sum to limit (skip if info missing)
+        market == "totals" & is.na(info_num) ~ NA,
         market == "totals" & outcome == "over" ~
           (home_score + away_score) > info_num,
         market == "totals" & outcome == "under" ~
@@ -129,6 +130,10 @@ settle_league <- function(league_dir, sexes = c("male", "female"), sport = NULL,
       date_match = as.Date(date_match),
       info = as.character(info)
     )
+
+  # Normalise sex values (guard against stale kk/kvk codes)
+  sex_norm <- c(kk = "male", kvk = "female")
+  log <- log |> mutate(sex = coalesce(sex_norm[sex], sex))
 
   # Only process unsettled bets (win is NA)
   unsettled <- log |> filter(is.na(win) | win == "NA")
@@ -172,6 +177,20 @@ settle_league <- function(league_dir, sexes = c("male", "female"), sport = NULL,
   # Settle
   settled <- compute_settlement(has_result) |>
     select(-home_score, -away_score)
+
+  # Separate: fully settled vs unsettleable (NA win, e.g. missing info for handicap/totals)
+  unsettleable <- settled |> filter(is.na(win))
+  settled <- settled |> filter(!is.na(win))
+
+  if (nrow(unsettleable) > 0) {
+    cat(sprintf("    %d bet(s) have results but missing info — cannot settle.\n", nrow(unsettleable)))
+  }
+
+  if (nrow(settled) == 0) {
+    n_pending <- nrow(no_result)
+    if (n_pending > 0) cat(sprintf("    %d unsettled bet(s), no results yet.\n", n_pending))
+    return(invisible(0L))
+  }
 
   # Print settled bets
   for (i in seq_len(nrow(settled))) {

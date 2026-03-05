@@ -4,10 +4,6 @@ sex:
 - male
 - female
 
-sex_map:
-  male: kk
-  female: kvk
-
 leagues:
   1: Bónusdeild
   2: 1. Deild
