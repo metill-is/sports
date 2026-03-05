@@ -2,6 +2,9 @@
 #'
 #' Functions to place individual bets on Lengjan via chromote.
 #' Supports 1x2 (outcome), handicap (forgjöf), and totals (yfir eða undir).
+#'
+#' Implements placement rules P3 (live Kelly recalculation) and P4 (+EV check).
+#' See: ~/Obsidian/Metill/Sports/betting-system-rules.md
 
 box::use(
   cli[cli_alert_info, cli_alert_success, cli_alert_warning, cli_alert_danger]
@@ -40,30 +43,64 @@ cdp_select_all_and_type <- function(session, text) {
   session$Input$insertText(text = text)
 }
 
+# ── Kelly helpers (P3/P4) ───────────────────────────────────────────────────
+
+#' Recalculate Kelly bet amount at live odds (rule P3)
+#'
+#' When Lengjan's actual odds differ from the recommendation, recompute
+#' the optimal stake using the Kelly criterion at the new odds.
+#'
+#' @param p Model probability
+#' @param actual_odds Live odds from Lengjan
+#' @param kelly_frac Calibrated Kelly fraction for this league
+#' @param bankroll Current available bankroll
+#' @return Rounded bet amount in kr
+#' @export
+recalculate_kelly_amount <- function(p, actual_odds, kelly_frac, bankroll) {
+  raw_kelly <- (p * actual_odds - 1) / (actual_odds - 1)
+  raw_kelly <- max(0, raw_kelly)
+  scaled <- raw_kelly * kelly_frac
+  round(scaled * bankroll, 0)
+}
+
+#' Check if a bet has positive expected value (rule P4)
+#'
+#' @param p Model probability
+#' @param odds Decimal odds
+#' @return TRUE if +EV
+#' @export
+is_positive_ev <- function(p, odds) {
+  p * (odds - 1) - (1 - p) > 0
+}
+
 # ── Main entry point ──────────────────────────────────────────────────────────
 
 #' Place a single bet on Lengjan
 #'
+#' Navigates to the match page, clicks the odds button, reads live odds,
+#' validates via P3/P4 rules, then enters stake and confirms.
+#'
 #' @param session ChromoteSession (authenticated)
-#' @param bet A single-row data.frame/tibble from bets_log.csv
+#' @param bet A single-row data.frame/tibble with recommendation fields
 #' @param match_id Lengjan match ID (from extract_matches)
 #' @param sport_id Lengjan sport ID
 #' @param dry_run If TRUE, stop before clicking "Kaupa" (default FALSE)
-#' @param odds_tolerance Maximum relative difference between pipeline odds
-#'   and Lengjan odds to accept (default 0.05 = 5%)
-#' @return List with status ("placed", "skipped", "dry_run", "error") and details
+#' @param bankroll Current bankroll for live Kelly recalculation (P3).
+#'   NULL skips recalculation and uses the recommended bet_amount.
+#' @return List with status ("placed", "skipped", "dry_run", "error"),
+#'   actual_odds (from Lengjan DOM), and amount (stake entered)
 place_bet <- function(session, bet, match_id, sport_id,
-                      dry_run = FALSE, odds_tolerance = 0.05) {
+                      dry_run = FALSE, bankroll = NULL) {
 
   market <- bet$market
   result <- tryCatch(
     {
       if (market == "outcome") {
-        place_outcome_bet(session, bet, match_id, sport_id, dry_run, odds_tolerance)
+        place_outcome_bet(session, bet, match_id, sport_id, dry_run, bankroll)
       } else if (market == "handicap") {
-        place_handicap_bet(session, bet, match_id, sport_id, dry_run, odds_tolerance)
+        place_handicap_bet(session, bet, match_id, sport_id, dry_run, bankroll)
       } else if (market == "totals") {
-        place_totals_bet(session, bet, match_id, sport_id, dry_run, odds_tolerance)
+        place_totals_bet(session, bet, match_id, sport_id, dry_run, bankroll)
       } else {
         list(status = "skipped", reason = paste("Unknown market:", market))
       }
@@ -77,10 +114,52 @@ place_bet <- function(session, bet, match_id, sport_id,
   result
 }
 
+# ── Placement rules (P3/P4) ────────────────────────────────────────────────
+
+#' Validate live odds and recalculate stake if needed
+#'
+#' Called after clicking the odds button (which adds the selection to the
+#' bet slip) but BEFORE entering stake and clicking "Kaupa".
+#'
+#' P4: Reject if no longer +EV at actual odds.
+#' P3: Recalculate Kelly amount if odds drifted >1%.
+#'
+#' @return On rejection: list(status, reason, actual_odds).
+#'   On success: list(ok = TRUE, amount = <stake to enter>).
+check_live_odds <- function(session, bet, actual_odds, bankroll) {
+  # P4: Must still be +EV at live odds
+  if (!is_positive_ev(bet$probability, actual_odds)) {
+    cli_alert_warning(
+      "No longer +EV at live odds {actual_odds} (p={bet$probability}) \u2014 skipping."
+    )
+    clear_bet_slip(session)
+    return(list(status = "skipped", reason = "not_positive_ev", actual_odds = actual_odds))
+  }
+
+  # P3: Recalculate Kelly if odds drifted >1%
+  amount <- bet$bet_amount
+  if (!is.null(bankroll) && abs(actual_odds - bet$odds) / bet$odds > 0.01) {
+    amount <- recalculate_kelly_amount(
+      bet$probability, actual_odds, bet$kelly_frac, bankroll
+    )
+    if (amount < 1) {
+      cli_alert_warning("Kelly amount < 1 kr at live odds \u2014 skipping.")
+      clear_bet_slip(session)
+      return(list(status = "skipped", reason = "kelly_too_small", actual_odds = actual_odds))
+    }
+    cli_alert_info(
+      "Odds drifted {bet$odds} \u2192 {actual_odds}: stake {bet$bet_amount} \u2192 {amount} kr"
+    )
+  }
+
+  # All checks passed
+  list(ok = TRUE, amount = amount)
+}
+
 # ── Outcome (1x2) bets ────────────────────────────────────────────────────────
 
 place_outcome_bet <- function(session, bet, match_id, sport_id,
-                              dry_run, odds_tolerance) {
+                              dry_run, bankroll) {
   url <- paste0(
     "https://games.lotto.is/getraunaleikir/lengjan/leikur?id=",
     match_id, "&sport=", sport_id
@@ -98,22 +177,26 @@ place_outcome_bet <- function(session, bet, match_id, sport_id,
     stop("Invalid outcome for 1x2: ", bet$outcome)
   )
 
-  # Section label varies by sport: "Úrslit" (football) or "Úrslit leiksins" (handball)
-  click_market_button(
+  # Click odds button — returns actual odds from the DOM
+  actual_odds <- click_market_button(
     session,
     section_label = "\u00darslit",
-    btn_index = btn_index,
-    expected_odds = bet$odds,
-    odds_tolerance = odds_tolerance
+    btn_index = btn_index
   )
 
-  enter_stake_and_confirm(session, bet$bet_amount, dry_run)
+  # P3/P4 validation
+  check <- check_live_odds(session, bet, actual_odds, bankroll)
+  if (!isTRUE(check$ok)) return(check)
+
+  result <- enter_stake_and_confirm(session, check$amount, dry_run)
+  result$actual_odds <- actual_odds
+  result
 }
 
 # ── Handicap bets ─────────────────────────────────────────────────────────────
 
 place_handicap_bet <- function(session, bet, match_id, sport_id,
-                               dry_run, odds_tolerance) {
+                               dry_run, bankroll) {
   url <- paste0(
     "https://games.lotto.is/getraunaleikir/lengjan/leikur?id=",
     match_id, "&sport=", sport_id
@@ -139,22 +222,25 @@ place_handicap_bet <- function(session, bet, match_id, sport_id,
     stop("Invalid outcome for handicap: ", bet$outcome)
   )
 
-  click_table_button(
+  actual_odds <- click_table_button(
     session,
     section_label = "Forgj\u00f6f",
     line_label = line_label,
-    btn_index = btn_index,
-    expected_odds = bet$odds,
-    odds_tolerance = odds_tolerance
+    btn_index = btn_index
   )
 
-  enter_stake_and_confirm(session, bet$bet_amount, dry_run)
+  check <- check_live_odds(session, bet, actual_odds, bankroll)
+  if (!isTRUE(check$ok)) return(check)
+
+  result <- enter_stake_and_confirm(session, check$amount, dry_run)
+  result$actual_odds <- actual_odds
+  result
 }
 
 # ── Totals bets ───────────────────────────────────────────────────────────────
 
 place_totals_bet <- function(session, bet, match_id, sport_id,
-                             dry_run, odds_tolerance) {
+                             dry_run, bankroll) {
   url <- paste0(
     "https://games.lotto.is/getraunaleikir/lengjan/leikur?id=",
     match_id, "&sport=", sport_id
@@ -177,16 +263,19 @@ place_totals_bet <- function(session, bet, match_id, sport_id,
     stop("Invalid outcome for totals: ", bet$outcome)
   )
 
-  click_table_button(
+  actual_odds <- click_table_button(
     session,
     section_label = "Yfir e\u00f0a undir",
     line_label = line_label,
-    btn_index = btn_index,
-    expected_odds = bet$odds,
-    odds_tolerance = odds_tolerance
+    btn_index = btn_index
   )
 
-  enter_stake_and_confirm(session, bet$bet_amount, dry_run)
+  check <- check_live_odds(session, bet, actual_odds, bankroll)
+  if (!isTRUE(check$ok)) return(check)
+
+  result <- enter_stake_and_confirm(session, check$amount, dry_run)
+  result$actual_odds <- actual_odds
+  result
 }
 
 # ── Shared helpers ────────────────────────────────────────────────────────────
@@ -224,11 +313,15 @@ expand_market_section <- function(session, section_label) {
 }
 
 #' Click an odds button in a list-based market section (1x2)
-click_market_button <- function(session, section_label, btn_index,
-                                expected_odds, odds_tolerance) {
+#'
+#' Returns the actual odds found on the DOM so the caller can run
+#' P3/P4 checks before confirming the bet.
+#'
+#' @return Numeric: actual odds from Lengjan
+click_market_button <- function(session, section_label, btn_index) {
   js <- sprintf("
     (() => {
-      // Find section by label (supports startsWith for variants like 'Úrslit leiksins')
+      // Find section by label (supports startsWith for variants like '\u00darslit leiksins')
       const allElements = document.querySelectorAll('*');
       let section = null;
       for (const el of allElements) {
@@ -252,7 +345,6 @@ click_market_button <- function(session, section_label, btn_index,
           oddsButtons.push({element: btn, odds: parseFloat(labelMatch[1])});
         } else {
           // Fallback: button text may have label prefix like '11.69', 'X7.80', '22.39'
-          // The actual odds are inside a child <p> or <div> with class containing 'h7cub57'
           const oddsEl = btn.querySelector('[class*=\"h7cub5\"] p, [class*=\"h7cub5\"]');
           const oddsText = oddsEl ? oddsEl.textContent.trim() : btn.textContent.trim();
           // Strip leading 1/X/2 prefix if present
@@ -286,18 +378,13 @@ click_market_button <- function(session, section_label, btn_index,
   }
 
   actual_odds <- parsed$odds
-  if (abs(actual_odds - expected_odds) / expected_odds > odds_tolerance) {
-    stop(sprintf(
-      "Odds mismatch: expected %.2f, found %.2f (%.1f%% difference)",
-      expected_odds, actual_odds,
-      abs(actual_odds - expected_odds) / expected_odds * 100
-    ))
-  }
 
   # Use CDP trusted click at the button coordinates
   cdp_click(session, parsed$x, parsed$y)
   cli_alert_success("Clicked odds button: {actual_odds}")
   Sys.sleep(sample_delay(c(0.5, 1.5)))
+
+  actual_odds
 }
 
 #' Click an odds button in a table-based market section (handicap/totals)
@@ -312,8 +399,9 @@ click_market_button <- function(session, section_label, btn_index,
 #'       </tr>
 #'     </tbody>
 #'   </table>
-click_table_button <- function(session, section_label, line_label, btn_index,
-                               expected_odds, odds_tolerance) {
+#'
+#' @return Numeric: actual odds from Lengjan
+click_table_button <- function(session, section_label, line_label, btn_index) {
   js <- sprintf("
     (() => {
       // Find section by label (supports partial match for variants)
@@ -387,18 +475,13 @@ click_table_button <- function(session, section_label, line_label, btn_index,
   }
 
   actual_odds <- parsed$odds
-  if (abs(actual_odds - expected_odds) / expected_odds > odds_tolerance) {
-    stop(sprintf(
-      "Odds mismatch: expected %.2f, found %.2f (%.1f%% difference)",
-      expected_odds, actual_odds,
-      abs(actual_odds - expected_odds) / expected_odds * 100
-    ))
-  }
 
   # Use CDP trusted click
   cdp_click(session, parsed$x, parsed$y)
   cli_alert_success("Clicked odds button: {actual_odds} (line {line_label})")
   Sys.sleep(sample_delay(c(0.5, 1.5)))
+
+  actual_odds
 }
 
 #' Enter stake amount and optionally confirm the bet
@@ -452,7 +535,7 @@ enter_stake_and_confirm <- function(session, amount, dry_run = FALSE) {
   Sys.sleep(sample_delay(c(0.5, 1)))
 
   if (dry_run) {
-    cli_alert_warning("[DRY RUN] Would click 'Kaupa' — stopping here.")
+    cli_alert_warning("[DRY RUN] Would click 'Kaupa' \u2014 stopping here.")
     return(list(status = "dry_run", amount = amount))
   }
 
@@ -530,7 +613,7 @@ expand_bet_slip <- function(session) {
     cli_alert_info("Expanded bet slip.")
     Sys.sleep(sample_delay(c(0.5, 1)))
   } else if (status == "no_slip") {
-    cli_alert_warning("No bet slip found on page — odds click may have failed.")
+    cli_alert_warning("No bet slip found on page \u2014 odds click may have failed.")
   }
   invisible(status)
 }

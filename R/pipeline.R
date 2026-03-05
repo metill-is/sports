@@ -1,12 +1,15 @@
 #' Lengjan Bet Placement Pipeline
 #'
-#' Reads pending bets from bets_log.csv across all active leagues,
-#' resolves match IDs, and places bets on Lengjan.
+#' Reads recommendations from Sports/recommendations.csv, places bets on
+#' Lengjan via chromote, and writes placed bets to per-league bets_log.csv.
+#'
+#' The pipeline is the ONLY writer to the ledger (bets_log.csv).
+#' See: ~/Obsidian/Metill/Sports/betting-system-rules.md
 
 box::use(
-  dplyr[filter, mutate, left_join, pull, bind_rows, select, arrange, distinct],
+  dplyr[filter, mutate, bind_rows, select, case_when, anti_join],
   readr[read_csv, write_csv, read_file],
-  purrr[map, map_dfr, walk, imap],
+  purrr[map_dfr],
   cli[
     cli_alert_info, cli_alert_success, cli_alert_warning,
     cli_alert_danger, cli_h1, cli_h2, cli_rule
@@ -25,8 +28,10 @@ box::use(
 
 #' Run the bet placement pipeline
 #'
+#' Reads recommendations, places them on Lengjan, and logs to the ledger.
+#'
 #' @param leagues Character vector of league keys (e.g., "football_england").
-#'   NULL = all leagues with pending bets.
+#'   NULL = all leagues with pending recommendations.
 #' @param dry_run If TRUE, navigate and select odds but don't click "Kaupa"
 #' @param interactive If TRUE, prompt for confirmation before each bet
 #' @param sports_dir Path to the Sports project root
@@ -43,25 +48,29 @@ run_bets <- function(
   cli_h1("Lengjan Bet Placement Pipeline")
 
   if (dry_run) {
-    cli_alert_warning("DRY RUN mode — no bets will be placed.")
+    cli_alert_warning("DRY RUN mode \u2014 no bets will be placed.")
   }
 
   # ── 1. Load competitions config ──
   # read_yaml() corrupts Icelandic UTF-8 — use readr + yaml.load instead
   competitions <- yaml.load(read_file(file.path(odds_dir, "config", "competitions.yml")))
 
-  # ── 2. Find pending bets across all leagues ──
-  cli_h2("Loading pending bets")
-  pending <- load_pending_bets(sports_dir, leagues)
+  # ── 2. Load recommendations (from Sports pipeline output) ──
+  cli_h2("Loading recommendations")
+  pending <- load_recommendations(sports_dir, leagues)
 
   if (nrow(pending) == 0) {
-    cli_alert_info("No pending bets found.")
+    cli_alert_info("No pending recommendations found.")
     return(invisible(tibble::tibble()))
   }
 
-  cli_alert_info("Found {nrow(pending)} pending bet(s) across {length(unique(pending$league_key))} league(s).")
+  cli_alert_info("Found {nrow(pending)} recommendation(s) across {length(unique(pending$league_key))} league(s).")
 
-  # ── 3. Print summary ──
+  # ── 3. Compute bankroll for live Kelly recalculation ──
+  bankroll <- compute_placement_bankroll(sports_dir)
+  cli_alert_info("Current bankroll: {bankroll} kr")
+
+  # ── 4. Print summary ──
   for (lk in unique(pending$league_key)) {
     league_bets <- filter(pending, league_key == lk)
     cli_alert_info("  {lk}: {nrow(league_bets)} bet(s)")
@@ -73,7 +82,7 @@ run_bets <- function(
     }
   }
 
-  # ── 4. Confirm ──
+  # ── 5. Confirm ──
   if (interactive && !dry_run) {
     answer <- readline("Place these bets? (y/n): ")
     if (!tolower(answer) %in% c("y", "yes")) {
@@ -82,12 +91,12 @@ run_bets <- function(
     }
   }
 
-  # ── 5. Login (always visible so user can see the browser) ──
+  # ── 6. Login (always visible so user can see the browser) ──
   cli_h2("Logging in to Lengjan")
   session <- lengjan_login(headless = FALSE)
   on.exit(tryCatch(session$close(), error = function(e) NULL))
 
-  # ── 6. Process each league ──
+  # ── 7. Process each league ──
   results <- tibble::tibble()
 
   for (lk in unique(pending$league_key)) {
@@ -96,7 +105,7 @@ run_bets <- function(
     comp_config <- competitions[[lk]]
 
     if (is.null(comp_config)) {
-      cli_alert_warning("No competition config for {lk} — skipping.")
+      cli_alert_warning("No competition config for {lk} \u2014 skipping.")
       next
     }
 
@@ -112,7 +121,7 @@ run_bets <- function(
 
       if (is.null(mid)) {
         cli_alert_warning(
-          "Could not find match ID for {bet$home} vs {bet$away} — skipping."
+          "Could not find match ID for {bet$home} vs {bet$away} \u2014 skipping."
         )
         results <- bind_rows(results, mutate(bet, placement_status = "no_match_id"))
         next
@@ -139,12 +148,18 @@ run_bets <- function(
         bet = bet,
         match_id = mid,
         sport_id = comp_config$sport,
-        dry_run = dry_run
+        dry_run = dry_run,
+        bankroll = bankroll
       )
 
-      # Write placed_at timestamp back to bets_log.csv after successful placement
+      # L1: Write to ledger ONLY after confirmed placement
       if (result$status == "placed") {
-        mark_bet_placed(bet)
+        log_placed_bet(
+          bet = bet,
+          actual_odds = result$actual_odds %||% bet$odds,
+          actual_amount = result$amount %||% bet$bet_amount,
+          sports_dir = sports_dir
+        )
       }
 
       results <- bind_rows(
@@ -156,7 +171,7 @@ run_bets <- function(
     }
   }
 
-  # ── 7. Summary ──
+  # ── 8. Summary ──
   cli_rule()
   cli_h2("Summary")
   if (nrow(results) > 0) {
@@ -169,63 +184,192 @@ run_bets <- function(
   invisible(results)
 }
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
+# ── Data loading ──────────────────────────────────────────────────────────────
 
-#' Load pending bets from bets_log.csv files
+#' Load recommendations from Sports/recommendations.csv
 #'
-#' Filters for pipeline bets that haven't been placed yet (no placed_at timestamp)
-#' and whose matches haven't started.
-load_pending_bets <- function(sports_dir, leagues = NULL) {
+#' Reads the ephemeral recommendations file, maps schema to placement format,
+#' and deduplicates against the ledger (already-placed bets).
+#'
+#' @param sports_dir Path to Sports/ root
+#' @param leagues Optional character vector of league keys to filter
+#' @return Tibble ready for placement
+load_recommendations <- function(sports_dir, leagues = NULL) {
+  recs_path <- file.path(sports_dir, "recommendations.csv")
+
+  if (!file.exists(recs_path)) {
+    cli_alert_warning("No recommendations.csv found at {recs_path}")
+    return(tibble::tibble())
+  }
+
+  recs <- read_csv(recs_path, show_col_types = FALSE) |>
+    filter(as.Date(date) >= Sys.Date()) |>
+    mutate(
+      league_key = paste(sport, country, sep = "_"),
+      home = heima,
+      away = gestir,
+      odds = o,
+      probability = p,
+      kelly_frac = kelly,
+      date_match = as.Date(date),
+      info = case_when(
+        market == "handicap" ~ as.character(change),
+        market == "totals" ~ as.character(limit),
+        TRUE ~ NA_character_
+      )
+    )
+
+  if (!is.null(leagues)) {
+    recs <- filter(recs, league_key %in% leagues)
+  }
+
+  if (nrow(recs) == 0) return(tibble::tibble())
+
+  # P1: Deduplicate against ledger (already-placed bets)
+  dedup_against_ledger(recs, sports_dir)
+}
+
+#' Remove recommendations already in the ledger
+#'
+#' Rule P1: Placement is idempotent — re-running must not double-place.
+dedup_against_ledger <- function(recs, sports_dir) {
+  if (nrow(recs) == 0) return(recs)
+
   log_files <- list.files(
     sports_dir,
-    pattern = "bets_log\\.csv$",
+    pattern = "bets_log[.]csv$",
     recursive = TRUE,
     full.names = TRUE
   )
+  if (length(log_files) == 0) return(recs)
 
-  all_bets <- map_dfr(log_files, function(f) {
-    parts <- strsplit(f, "/")[[1]]
-    history_idx <- which(parts == "history")
-    if (length(history_idx) == 0) return(tibble::tibble())
-
-    sport <- parts[history_idx - 2]
-    country <- parts[history_idx - 1]
-    league_key <- paste(sport, country, sep = "_")
-
+  all_logs <- map_dfr(log_files, function(f) {
     tryCatch(
-      {
-        read_csv(f, show_col_types = FALSE) |>
-          mutate(
-            league_key = league_key,
-            bets_log_path = f,
-            info = as.character(info)
-          )
-      },
+      read_csv(f, show_col_types = FALSE) |>
+        mutate(info = replace(as.character(info), is.na(info), "")),
       error = function(e) tibble::tibble()
     )
   })
 
-  if (nrow(all_bets) == 0) return(tibble::tibble())
+  if (nrow(all_logs) == 0) return(recs)
 
-  # Filter for pending pipeline bets
-  pending <- all_bets |>
-    filter(
-      source == "pipeline",
-      is.na(win),
-      date_match >= Sys.Date()
-    )
+  recs_dedup <- recs |>
+    mutate(.info_key = replace(as.character(info), is.na(info), ""))
 
-  # If placed_at column exists, exclude already-placed bets
-  if ("placed_at" %in% names(pending)) {
-    pending <- filter(pending, is.na(placed_at))
+  out <- anti_join(
+    recs_dedup,
+    all_logs |> mutate(.info_key = replace(as.character(info), is.na(info), "")),
+    by = c("date_match" = "date_match", "home", "away",
+           "market", "outcome", ".info_key")
+  )
+  out$.info_key <- NULL
+
+  n_removed <- nrow(recs) - nrow(out)
+  if (n_removed > 0) {
+    cli_alert_info("  ({n_removed} already-placed bet(s) filtered out)")
   }
 
-  if (!is.null(leagues)) {
-    pending <- filter(pending, league_key %in% leagues)
-  }
-
-  pending
+  out
 }
+
+# ── Bankroll ──────────────────────────────────────────────────────────────────
+
+#' Compute current bankroll for Kelly recalculation at live odds
+#'
+#' Rule B2: bankroll = initial_pool + settled_pnl - unsettled_exposure
+compute_placement_bankroll <- function(sports_dir) {
+  bankroll_yml <- file.path(sports_dir, "config", "bankroll.yml")
+  if (!file.exists(bankroll_yml)) {
+    cli_alert_warning("No bankroll.yml found — using default 5000")
+    return(5000)
+  }
+
+  cfg <- yaml.load(read_file(bankroll_yml))
+  initial_pool <- cfg$initial_pool %||% 5000
+
+  # Load all ledger files
+  logs <- Sys.glob(file.path(sports_dir, "*", "*", "history", "bets_log.csv"))
+  if (length(logs) == 0) return(initial_pool)
+
+  all_bets <- do.call(rbind, lapply(logs, \(f) {
+    read_csv(f, show_col_types = FALSE)
+  })) |> filter(sex != "all")
+
+  if (nrow(all_bets) == 0) return(initial_pool)
+
+  settled_pnl <- sum(all_bets$pnl[!is.na(all_bets$pnl)], na.rm = TRUE)
+  outstanding <- sum(all_bets$bet_amount[is.na(all_bets$win)], na.rm = TRUE)
+
+  initial_pool + settled_pnl - outstanding
+}
+
+# ── Ledger write ──────────────────────────────────────────────────────────────
+
+#' Write a placed bet to the per-league bets_log.csv
+#'
+#' L1: Creates a NEW row — this is the only path that writes to the ledger.
+#' P2: Records actual Lengjan odds, not recommended odds.
+#'
+#' @param bet Recommendation row (from load_recommendations)
+#' @param actual_odds The odds confirmed from Lengjan
+#' @param actual_amount The stake actually entered
+#' @param sports_dir Path to Sports/ root
+log_placed_bet <- function(bet, actual_odds, actual_amount, sports_dir) {
+  history_dir <- file.path(sports_dir, bet$sport, bet$country, "history")
+  if (!dir.exists(history_dir)) dir.create(history_dir, recursive = TRUE)
+
+  log_path <- file.path(history_dir, "bets_log.csv")
+
+  # Recalculate EV at actual odds (P2)
+  actual_ev <- round(bet$probability * (actual_odds - 1) - (1 - bet$probability), 4)
+
+  log_row <- tibble::tibble(
+    date_recommended = Sys.Date(),
+    date_match       = bet$date_match,
+    sport            = bet$sport,
+    country          = bet$country,
+    sex              = bet$sex,
+    market           = bet$market,
+    home             = bet$home,
+    away             = bet$away,
+    outcome          = bet$outcome,
+    odds             = actual_odds,
+    probability      = bet$probability,
+    ev               = actual_ev,
+    kelly_frac       = bet$kelly_frac,
+    bet_amount       = actual_amount,
+    info             = bet$info %||% NA_character_,
+    win              = NA,
+    pnl              = NA_real_,
+    source           = "pipeline"
+  )
+
+  # Append (write header only if file doesn't exist)
+  write_csv(
+    log_row, log_path,
+    append = file.exists(log_path),
+    col_names = !file.exists(log_path)
+  )
+
+  cli_alert_success("Logged to {basename(log_path)}: {bet$home} v {bet$away} [{bet$market} {bet$outcome}] @ {actual_odds}")
+
+  # Dual-write to Parquet store
+  tryCatch({
+    store_script <- file.path(sports_dir, "R", "storage", "store.R")
+    if (file.exists(store_script)) {
+      env <- new.env(parent = baseenv())
+      source(store_script, local = env)
+      full_log <- read_csv(log_path, show_col_types = FALSE)
+      env$store_bets(full_log, bet$sport, bet$country, bet$sex, sports_dir)
+    }
+  }, error = function(e) {
+    cli_alert_warning("Parquet store sync failed: {e$message}")
+  })
+
+  invisible(log_row)
+}
+
+# ── Match ID resolution ──────────────────────────────────────────────────────
 
 #' Resolve Lengjan match IDs for a set of bets
 resolve_match_ids <- function(session, comp_config, bets, odds_dir, league_key) {
@@ -271,49 +415,4 @@ resolve_match_ids <- function(session, comp_config, bets, odds_dir, league_key) 
   }
 
   all_match_ids
-}
-
-#' Mark a bet as placed by writing placed_at timestamp to its bets_log.csv
-#'
-#' Reads the source CSV, finds the matching row (by match+market+outcome+info),
-#' adds a placed_at timestamp, and writes back. This prevents the bet from
-#' being re-processed on subsequent runs.
-mark_bet_placed <- function(bet) {
-  log_path <- bet$bets_log_path
-  if (is.null(log_path) || !file.exists(log_path)) {
-    cli_alert_warning("Cannot mark bet as placed — no bets_log_path.")
-    return(invisible(NULL))
-  }
-
-  log <- read_csv(log_path, show_col_types = FALSE) |>
-    mutate(info = as.character(info))
-
-  # Add placed_at column if it doesn't exist yet
-  if (!"placed_at" %in% names(log)) {
-    log$placed_at <- NA_character_
-  }
-
-  # Find the matching row: same match + market + outcome + line
-  match_idx <- which(
-    log$date_match == bet$date_match &
-    log$home == bet$home &
-    log$away == bet$away &
-    log$market == bet$market &
-    log$outcome == bet$outcome &
-    replace(as.character(log$info), is.na(log$info), "") ==
-      replace(as.character(bet$info), is.na(bet$info), "") &
-    is.na(log$placed_at)
-  )
-
-  if (length(match_idx) == 0) {
-    cli_alert_warning("Could not find matching row in {basename(log_path)} to mark as placed.")
-    return(invisible(NULL))
-  }
-
-  # Mark only the first matching unplaced row
-  log$placed_at[match_idx[1]] <- format(Sys.time(), "%Y-%m-%d %H:%M:%S")
-  write_csv(log, log_path)
-  cli_alert_success("Marked bet as placed in {basename(log_path)}")
-
-  invisible(TRUE)
 }
