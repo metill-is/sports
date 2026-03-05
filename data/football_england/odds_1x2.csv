@@ -25,6 +25,7 @@ date,league,home,away,o_home,o_draw,o_away,scraped_at
 2026-03-04,Premier League,Newcastle,Manchester Utd,2.53,3.41,2.37,2026-03-04T07:07:45Z
 2026-03-04,Premier League,Newcastle,Manchester Utd,2.48,3.48,2.38,2026-03-04T14:59:35Z
 2026-03-05,Premier League,Tottenham,Crystal Palace,2.26,3.15,2.85,2026-03-04T20:51:06Z
+2026-03-05,Premier League,Tottenham,Crystal Palace,2.29,3.13,2.82,2026-03-05T08:59:58Z
 2026-03-06,Championship,Preston,Oxford Utd,1.99,3.14,3.47,2026-03-03T21:14:25Z
 2026-03-06,League 2,Cheltenham,Barrow,2.28,3.02,2.7,2026-03-04T13:26:24Z
 2026-03-06,League 2,Cheltenham,Barrow,2.32,3.04,2.63,2026-03-03T21:14:25Z
@@ -58,21 +59,28 @@ date,league,home,away,o_home,o_draw,o_away,scraped_at
 2026-03-07,League 2,Grimsby,Bromley,2.12,3.08,2.91,2026-03-04T08:56:38Z
 2026-03-07,League 2,Grimsby,Bromley,2.07,3.13,2.96,2026-03-04T20:51:06Z
 2026-03-07,League 2,MK Dons,Harrogate,1.31,4.39,6.71,2026-03-03T21:14:25Z
+2026-03-07,League 2,MK Dons,Harrogate,1.29,4.48,6.91,2026-03-05T08:59:58Z
 2026-03-07,League 2,Newport,Colchester,3.81,3.15,1.78,2026-03-04T07:07:45Z
 2026-03-07,League 2,Newport,Colchester,3.93,3.2,1.74,2026-03-03T21:14:25Z
 2026-03-07,League 2,Newport,Colchester,4.01,3.23,1.72,2026-03-04T13:26:24Z
+2026-03-07,League 2,Newport,Colchester,3.88,3.23,1.75,2026-03-05T08:59:58Z
 2026-03-07,League 2,Salford,Barnet,2.24,3.11,2.69,2026-03-03T21:14:25Z
 2026-03-07,League 2,Salford,Barnet,2.34,3.15,2.53,2026-03-04T07:07:45Z
 2026-03-07,League 2,Tranmere,Oldham,2.76,3.05,2.22,2026-03-04T07:07:45Z
 2026-03-07,League 2,Tranmere,Oldham,2.83,3.07,2.16,2026-03-04T13:56:01Z
 2026-03-07,League 2,Tranmere,Oldham,2.92,3.02,2.14,2026-03-03T21:14:25Z
 2026-03-07,League 2,Tranmere,Oldham,2.89,3.12,2.11,2026-03-04T20:51:06Z
+2026-03-07,League 2,Tranmere,Oldham,3.32,3.2,1.9,2026-03-05T08:59:58Z
 2026-03-07,League 2,Walsall,Notts Co,2.99,2.94,2.15,2026-03-03T21:14:25Z
 2026-03-07,League 2,Walsall,Notts Co,3.05,2.98,2.1,2026-03-04T13:26:24Z
 2026-03-10,League 2,Barrow,Bristol Rovers,2.28,3.06,2.67,2026-03-04T07:07:45Z
 2026-03-10,League 2,Gillingham,MK Dons,2.68,3.14,2.23,2026-03-04T07:07:45Z
 2026-03-10,League 2,Salford,Walsall,1.73,3.34,3.8,2026-03-04T07:07:45Z
 2026-03-14,Premier League,Arsenal,Everton,1.26,4.9,8.83,2026-03-04T20:51:06Z
+2026-03-14,Premier League,Arsenal,Everton,1.26,4.84,8.91,2026-03-05T08:59:58Z
 2026-03-14,Premier League,Burnley,Bournemouth,3.43,3.44,1.89,2026-03-04T20:51:06Z
+2026-03-14,Premier League,Burnley,Bournemouth,3.56,3.47,1.85,2026-03-05T08:59:58Z
 2026-03-14,Premier League,Chelsea,Newcastle,1.78,3.72,3.56,2026-03-04T20:51:06Z
+2026-03-14,Premier League,Chelsea,Newcastle,1.76,3.78,3.6,2026-03-05T08:59:58Z
 2026-03-14,Premier League,Sunderland,Brighton,3.12,3.24,2.08,2026-03-04T20:51:06Z
+2026-03-14,Premier League,Sunderland,Brighton,3.13,3.21,2.09,2026-03-05T08:59:58Z
