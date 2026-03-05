@@ -37,34 +37,57 @@ recs <- read_csv(recs_path, show_col_types = FALSE) |>
   ) |>
   arrange(desc(profit))
 
-# Display table
-display_recs <- function(d) {
-  cat(sprintf("\n%-4s %-12s %-7s %-20s %-10s %-6s %6s %6s %7s %7s\n",
+# Display helpers
+table_header <- function() {
+  cat(sprintf("%-4s %-12s %-7s %-20s %-10s %5s %6s %6s %7s %7s\n",
     "#", "League", "Market", "Match", "Bet", "Odds", "Prob", "EV", "Amount", "E[PnL]"))
   cat(strrep("-", 96), "\n")
-  for (i in seq_len(nrow(d))) {
-    r <- d[i, ]
-    match_str <- paste0(substr(r$heima, 1, 9), " v ", substr(r$gestir, 1, 9))
-    league_str <- paste0(r$sport, "/", r$country)
-    info <- if (r$market == "totals" && !is.na(r$limit)) {
-      paste0(r$outcome, " ", r$limit)
-    } else if (r$market == "handicap" && !is.na(r$change)) {
-      paste0(r$outcome, " ", r$change)
-    } else {
-      r$outcome
-    }
-    cat(sprintf("%-4d %-12s %-7s %-20s %-10s %5.2f %5.1f%% %5.1f%% %6.0f %+6.0f\n",
-      r$row_id, substr(league_str, 1, 12), substr(r$market, 1, 7),
-      substr(match_str, 1, 20), substr(info, 1, 10),
-      r$o, r$p * 100, r$ev * 100, r$bet_amount, r$profit))
+}
+
+table_row <- function(r) {
+  match_str <- paste0(substr(r$heima, 1, 9), " v ", substr(r$gestir, 1, 9))
+  league_str <- paste0(r$sport, "/", r$country)
+  info <- if (r$market == "totals" && !is.na(r$limit)) {
+    paste0(r$outcome, " ", r$limit)
+  } else if (r$market == "handicap" && !is.na(r$change)) {
+    paste0(r$outcome, " ", r$change)
+  } else {
+    r$outcome
   }
+  cat(sprintf("%-4d %-12s %-7s %-20s %-10s %5.2f %5.1f%% %5.1f%% %6.0f %+6.0f\n",
+    r$row_id, substr(league_str, 1, 12), substr(r$market, 1, 7),
+    substr(match_str, 1, 20), substr(info, 1, 10),
+    r$o, r$p * 100, r$ev * 100, r$bet_amount, r$profit))
+}
+
+table_total <- function(d) {
   cat(strrep("-", 96), "\n")
   cat(sprintf("%-71s %6.0f %+6.0f\n", "TOTAL",
     sum(d$bet_amount), sum(d$profit)))
+}
+
+# Display grouped by date, sorted by profit within each day
+dates <- sort(unique(as.Date(recs$date)))
+for (dt in dates) {
+  day_recs <- recs |> filter(as.Date(date) == as.Date(dt))
+  days_away <- as.integer(as.Date(dt) - Sys.Date())
+  day_label <- if (days_away == 0) "TODAY"
+               else if (days_away == 1) "TOMORROW"
+               else format(as.Date(dt), "%A")
+  cat(sprintf("\n=== %s — %s (%d bets, %s kr stake) ===\n",
+    format(as.Date(dt), "%a %d %b"), day_label,
+    nrow(day_recs), format(sum(day_recs$bet_amount), big.mark = ",")))
+  table_header()
+  for (i in seq_len(nrow(day_recs))) table_row(day_recs[i, ])
+  table_total(day_recs)
   cat("\n")
 }
 
-display_recs(recs)
+# Grand total
+if (length(dates) > 1) {
+  cat(sprintf("=== ALL DAYS: %d bets, %s kr stake, %+.0f kr expected ===\n\n",
+    nrow(recs), format(sum(recs$bet_amount), big.mark = ","), sum(recs$profit)))
+}
 
 if ("--show" %in% args) quit(status = 0)
 
