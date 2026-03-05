@@ -124,7 +124,7 @@ match_extraction_js <- function() {
       const buttons = container ? container.querySelectorAll('button') : [];
       buttons.forEach(btn => {
         const label = btn.getAttribute('aria-label') || '';
-        const oddsMatch = label.match(/stuðull:\\s*(\\d+\\.\\d+)/);
+        const oddsMatch = label.match(/stu\\u00f0ull:\\s*(\\d+\\.\\d+)/);
         if (!oddsMatch) return;
         const odds = parseFloat(oddsMatch[1]);
         if (label.startsWith('1,')) oddsHome = odds;

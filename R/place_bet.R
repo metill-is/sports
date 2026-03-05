@@ -10,14 +10,34 @@ box::use(
 # ── CDP click helper ──────────────────────────────────────────────────────────
 
 #' Click at given x,y coordinates using CDP Input.dispatchMouseEvent
-#' This creates trusted events that React/Lengjan will recognise
+#' This creates trusted events that React/Lengjan will recognise.
+#' Dispatches mouseMoved → mousePressed → mouseReleased to mimic a real click.
 cdp_click <- function(session, x, y) {
+  x <- round(x)
+  y <- round(y)
+  session$Input$dispatchMouseEvent(
+    type = "mouseMoved", x = x, y = y, button = "none"
+  )
   session$Input$dispatchMouseEvent(
     type = "mousePressed", x = x, y = y, button = "left", clickCount = 1
   )
   session$Input$dispatchMouseEvent(
     type = "mouseReleased", x = x, y = y, button = "left", clickCount = 1
   )
+}
+
+#' Select all text in a focused input and type a replacement value.
+#' Uses JS focus+select to select existing text, then CDP Input.insertText
+#' to type the replacement (triggers React's synthetic input events).
+cdp_select_all_and_type <- function(session, text) {
+  # Use JS to select all text in the focused/active element
+  session$Runtime$evaluate(
+    expression = "document.activeElement && document.activeElement.select()",
+    returnByValue = TRUE
+  )
+  Sys.sleep(0.1)
+  # Insert text via CDP — this replaces the selection and fires proper events
+  session$Input$insertText(text = text)
 }
 
 # ── Main entry point ──────────────────────────────────────────────────────────
@@ -225,9 +245,9 @@ click_market_button <- function(session, section_label, btn_index,
       const buttons = section.querySelectorAll('li button, button');
       const oddsButtons = [];
       for (const btn of buttons) {
-        // Try aria-label first ('1, stuðull: 2.28')
+        // Try aria-label first ('1, stu\u00f0ull: 2.28')
         const label = btn.getAttribute('aria-label') || '';
-        const labelMatch = label.match(/stuðull:\\s*(\\d+\\.\\d+)/);
+        const labelMatch = label.match(/stu\\u00f0ull:\\s*(\\d+\\.\\d+)/);
         if (labelMatch) {
           oddsButtons.push({element: btn, odds: parseFloat(labelMatch[1])});
         } else {
@@ -386,40 +406,47 @@ enter_stake_and_confirm <- function(session, amount, dry_run = FALSE) {
   # Wait for bet slip to appear after clicking an odds button
   Sys.sleep(sample_delay(c(1.5, 2.5)))
 
-  js_set_stake <- sprintf("
+  # First expand the bet slip if it's minimised
+  expand_bet_slip(session)
+  Sys.sleep(sample_delay(c(0.5, 1)))
+
+  # Find the stake input and get its coordinates
+  js_find_input <- "
     (() => {
-      // Try all input types — bet slip input might be text, number, or tel
       const inputs = document.querySelectorAll('input');
       for (const input of inputs) {
-        // Look for a visible input with a numeric value (default stake)
-        if (input.offsetParent !== null && /^\\d+$/.test(input.value)) {
-          const setter = Object.getOwnPropertyDescriptor(
-            window.HTMLInputElement.prototype, 'value'
-          ).set;
-          setter.call(input, '%s');
-          input.dispatchEvent(new Event('input', { bubbles: true }));
-          input.dispatchEvent(new Event('change', { bubbles: true }));
-          return JSON.stringify({found: true, oldValue: input.value, type: input.type});
+        if (input.offsetParent !== null && /^\\d*$/.test(input.value)) {
+          const rect = input.getBoundingClientRect();
+          return JSON.stringify({
+            found: true,
+            currentValue: input.value,
+            x: rect.x + rect.width / 2,
+            y: rect.y + rect.height / 2
+          });
         }
       }
-      // Debug: report what inputs exist
       const allInputs = Array.from(inputs).map(i => ({
         type: i.type, value: i.value.substring(0, 20),
-        visible: i.offsetParent !== null, name: i.name
+        visible: i.offsetParent !== null
       }));
       return JSON.stringify({found: false, inputs: allInputs});
     })()
-  ", as.character(as.integer(amount)))
+  "
 
   result <- session$Runtime$evaluate(
-    expression = js_set_stake, returnByValue = TRUE
+    expression = js_find_input, returnByValue = TRUE
   )
-
   parsed <- jsonlite::fromJSON(result$result$value)
+
   if (!isTRUE(parsed$found)) {
     cli_alert_warning("Stake input debug: {result$result$value}")
-    stop("Could not find or set stake input.")
+    stop("Could not find stake input.")
   }
+
+  # Click the input to focus it, then select-all and type the new amount
+  cdp_click(session, parsed$x, parsed$y)
+  Sys.sleep(0.2)
+  cdp_select_all_and_type(session, as.character(as.integer(amount)))
 
   cli_alert_info("Set stake to {amount} kr.")
   Sys.sleep(sample_delay(c(0.5, 1)))
@@ -476,6 +503,85 @@ click_show_all <- function(session) {
     cli_alert_info("Clicked 'Birta allt' to show all lines.")
     Sys.sleep(sample_delay(c(1, 2)))
   }
+}
+
+# ── Bet slip interaction ──────────────────────────────────────────────────────
+
+#' Expand the bet slip if it's minimised (click the "Opna" button)
+expand_bet_slip <- function(session) {
+  js <- "
+    (() => {
+      // The bet slip region contains a button with aria text 'Opna' (Open)
+      const region = document.querySelector('[aria-label*=\"se\\u00f0il\"]');
+      if (!region) return 'no_slip';
+      const btn = region.querySelector('button');
+      if (!btn) return 'no_button';
+      // Check if the slip is already expanded (has a visible input)
+      const input = region.querySelector('input');
+      if (input && input.offsetParent !== null) return 'already_open';
+      // Click to expand
+      btn.click();
+      return 'expanded';
+    })()
+  "
+  result <- session$Runtime$evaluate(expression = js, returnByValue = TRUE)
+  status <- result$result$value
+  if (status == "expanded") {
+    cli_alert_info("Expanded bet slip.")
+    Sys.sleep(sample_delay(c(0.5, 1)))
+  } else if (status == "no_slip") {
+    cli_alert_warning("No bet slip found on page — odds click may have failed.")
+  }
+  invisible(status)
+}
+
+#' Verify the bet slip appeared and contains the expected selection
+#' @return TRUE if bet slip is visible with a selection, FALSE otherwise
+verify_bet_slip <- function(session) {
+  js <- "
+    (() => {
+      const region = document.querySelector('[aria-label*=\"se\\u00f0il\"]');
+      if (!region) return JSON.stringify({visible: false, reason: 'no region'});
+      const odds = region.querySelector('[aria-label*=\"Heildarstu\\u00f0ull\"], [class*=\"stu\\u00f0ull\"]');
+      const text = region.textContent;
+      const hasOdds = /\\d+[,.]\\d+/.test(text);
+      return JSON.stringify({visible: true, hasOdds: hasOdds, snippet: text.substring(0, 100)});
+    })()
+  "
+  result <- session$Runtime$evaluate(expression = js, returnByValue = TRUE)
+  parsed <- jsonlite::fromJSON(result$result$value)
+  isTRUE(parsed$visible) && isTRUE(parsed$hasOdds)
+}
+
+#' Clear the bet slip by clicking "Hreinsa raðir"
+clear_bet_slip <- function(session) {
+  js <- "
+    (() => {
+      const region = document.querySelector('[aria-label*=\"se\\u00f0il\"]');
+      if (!region) return false;
+      const buttons = region.querySelectorAll('button');
+      for (const btn of buttons) {
+        if (btn.textContent.includes('Hreinsa')) {
+          btn.click();
+          return true;
+        }
+      }
+      // Try the individual delete button (X on each selection)
+      for (const btn of buttons) {
+        const label = btn.textContent.trim();
+        if (label.includes('Ey\\u00f0a') || label === '') {
+          const aria = btn.querySelector('[aria-label]');
+          if (aria) { btn.click(); return true; }
+        }
+      }
+      return false;
+    })()
+  "
+  result <- session$Runtime$evaluate(expression = js, returnByValue = TRUE)
+  if (isTRUE(result$result$value)) {
+    cli_alert_info("Cleared bet slip.")
+  }
+  invisible(result$result$value)
 }
 
 # ── Handicap line conversion ──────────────────────────────────────────────────

@@ -5,13 +5,13 @@
 
 box::use(
   dplyr[filter, mutate, left_join, pull, bind_rows, select, arrange, distinct],
-  readr[read_csv, write_csv],
+  readr[read_csv, write_csv, read_file],
   purrr[map, map_dfr, walk, imap],
   cli[
     cli_alert_info, cli_alert_success, cli_alert_warning,
     cli_alert_danger, cli_h1, cli_h2, cli_rule
   ],
-  yaml[read_yaml],
+  yaml[yaml.load],
   here[here]
 )
 
@@ -47,7 +47,8 @@ run_bets <- function(
   }
 
   # ── 1. Load competitions config ──
-  competitions <- read_yaml(file.path(odds_dir, "config", "competitions.yml"))
+  # read_yaml() corrupts Icelandic UTF-8 — use readr + yaml.load instead
+  competitions <- yaml.load(read_file(file.path(odds_dir, "config", "competitions.yml")))
 
   # ── 2. Find pending bets across all leagues ──
   cli_h2("Loading pending bets")
@@ -140,6 +141,11 @@ run_bets <- function(
         sport_id = comp_config$sport,
         dry_run = dry_run
       )
+
+      # Write placed_at timestamp back to bets_log.csv after successful placement
+      if (result$status == "placed") {
+        mark_bet_placed(bet)
+      }
 
       results <- bind_rows(
         results,
@@ -265,4 +271,49 @@ resolve_match_ids <- function(session, comp_config, bets, odds_dir, league_key) 
   }
 
   all_match_ids
+}
+
+#' Mark a bet as placed by writing placed_at timestamp to its bets_log.csv
+#'
+#' Reads the source CSV, finds the matching row (by match+market+outcome+info),
+#' adds a placed_at timestamp, and writes back. This prevents the bet from
+#' being re-processed on subsequent runs.
+mark_bet_placed <- function(bet) {
+  log_path <- bet$bets_log_path
+  if (is.null(log_path) || !file.exists(log_path)) {
+    cli_alert_warning("Cannot mark bet as placed — no bets_log_path.")
+    return(invisible(NULL))
+  }
+
+  log <- read_csv(log_path, show_col_types = FALSE) |>
+    mutate(info = as.character(info))
+
+  # Add placed_at column if it doesn't exist yet
+  if (!"placed_at" %in% names(log)) {
+    log$placed_at <- NA_character_
+  }
+
+  # Find the matching row: same match + market + outcome + line
+  match_idx <- which(
+    log$date_match == bet$date_match &
+    log$home == bet$home &
+    log$away == bet$away &
+    log$market == bet$market &
+    log$outcome == bet$outcome &
+    replace(as.character(log$info), is.na(log$info), "") ==
+      replace(as.character(bet$info), is.na(bet$info), "") &
+    is.na(log$placed_at)
+  )
+
+  if (length(match_idx) == 0) {
+    cli_alert_warning("Could not find matching row in {basename(log_path)} to mark as placed.")
+    return(invisible(NULL))
+  }
+
+  # Mark only the first matching unplaced row
+  log$placed_at[match_idx[1]] <- format(Sys.time(), "%Y-%m-%d %H:%M:%S")
+  write_csv(log, log_path)
+  cli_alert_success("Marked bet as placed in {basename(log_path)}")
+
+  invisible(TRUE)
 }
