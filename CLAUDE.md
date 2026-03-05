@@ -42,7 +42,7 @@ Rscript run.R --stale --step data,fit,results,bet         # Full pipeline on sta
 **Selectors** (pick one): `--sport`, `--country`, `--league`, `--all`, `--active`, `--stale`
 **Steps**: `--step data,fit,results,bet,settle` (default: all five)
 **Modifiers**: `--stale` (filter to leagues with upcoming odds + stale/missing fit)
-**Overrides**: `--sex male|female`, `--iter <n>`, `--no-plots`, `--dry-run`
+**Overrides**: `--sex male|female`, `--iter <n>`, `--no-plots`, `--sync`, `--dry-run`
 
 **Step execution order**: Steps run in phases — all data first, then all fit, then all results, then all bet, then all settle. No per-league interleaving.
 

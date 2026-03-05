@@ -20,6 +20,7 @@
 #   --log              Log bets to history CSV (default: recommend only, no logging)
 #   --stale            Filter to leagues with upcoming odds + stale/missing fit
 #   --no-plots         Skip plot generation (posterior CSV still written)
+#   --sync             Git-pull livesport-data and lengjan-odds before running
 #   --dry-run          Print plan without executing
 
 library(here)
@@ -52,6 +53,29 @@ arg_stale    <- has_flag("--stale")
 arg_dry_run  <- has_flag("--dry-run")
 arg_log      <- has_flag("--log")
 arg_no_plots <- has_flag("--no-plots")
+arg_sync     <- has_flag("--sync")
+
+# ── Sync upstream data repos ────────────────────────────────────────────────
+
+if (arg_sync) {
+  sync_repos <- list(
+    list(name = "livesport-data", path = file.path(dirname(sports_dir), "livesport-data")),
+    list(name = "lengjan-odds",   path = file.path(dirname(sports_dir), "lengjan-odds"))
+  )
+  for (repo in sync_repos) {
+    if (dir.exists(file.path(repo$path, ".git"))) {
+      cat(sprintf("Syncing %s... ", repo$name))
+      res <- system2("git", c("-C", repo$path, "pull", "--ff-only", "-q"), stdout = TRUE, stderr = TRUE)
+      status <- attr(res, "status")
+      if (is.null(status) || status == 0L) {
+        cat("OK\n")
+      } else {
+        cat(sprintf("WARN: %s\n", paste(res, collapse = " ")))
+      }
+    }
+  }
+  cat("\n")
+}
 
 # Validate: at least one selector
 if (is.null(arg_sport) && is.null(arg_country) && is.null(arg_league) &&
@@ -76,6 +100,7 @@ if (has_flag("--help")) {
   cat("  --iter <n>         Override sampling iterations\n")
   cat("  --log              Log bets to history (default: recommend only)\n")
   cat("  --no-plots         Skip plot generation (posterior CSV still written)\n")
+  cat("  --sync             Git-pull livesport-data and lengjan-odds first\n")
   cat("  --dry-run          Print plan, don't execute\n")
   quit(status = 0)
 }
