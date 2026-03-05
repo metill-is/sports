@@ -95,7 +95,8 @@ fit_shared <- function(league, sex, sports_dir, iter_warmup, iter_sampling, do_f
       config = config,
       sex = sex,
       end_date = end_date,
-      make_plots = make_plots
+      make_plots = make_plots,
+      sports_dir = sports_dir
     ))
 
     # Dual-write to Parquet store
@@ -154,7 +155,8 @@ fit_football <- function(league, sex, sports_dir, iter_warmup, iter_sampling, do
         league_labels = list(
           division_names = league$division_names %||% "D1",
           league_name = league$league_name %||% "League"
-        )
+        ),
+        sports_dir = sports_dir
       )
 
       # Dual-write to Parquet store
@@ -212,7 +214,8 @@ fit_handball_other <- function(league, sex, sports_dir, iter_warmup, iter_sampli
         country = league$country,
         sex = sex,
         end_date = Sys.Date(),
-        make_plots = make_plots
+        make_plots = make_plots,
+        sports_dir = sports_dir
       )
 
       # Dual-write to Parquet store

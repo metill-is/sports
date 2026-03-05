@@ -12,7 +12,7 @@ Sports/
 ├── R/
 │   ├── pipeline/                  # Unified dispatchers (config, step_data, step_fit, step_bet)
 │   ├── config/                    # Per-sport config objects (get_config())
-│   ├── shared/                    # Shared pipeline (prep_data, model_fitting, get_model_results, football variants, plot_utils)
+│   ├── shared/                    # Shared pipeline (prep_data, model_fitting, get_model_results, extract_posterior)
 │   ├── bets/                      # Betting modules (kelly, markets, odds, output, history)
 │   ├── storage/                   # Centralised Parquet store (store.R, migrate_history.R)
 │   ├── schedule/                  # Schedule scanner (scan.R)
@@ -48,7 +48,7 @@ Rscript run.R --stale --step data,fit,results,bet         # Full pipeline on sta
 
 **Step semantics**:
 - `fit` = Stan sampling only (saves `.rds`), no results generation
-- `results` = generate posterior CSVs + plots from existing `.rds`
+- `results` = generate posterior CSVs from existing `.rds` (plots removed — will be rebuilt for Ghost)
 - If `bet` is requested without `results`, `results` is auto-injected (bet needs posterior CSVs)
 
 ### Kelly fraction tuning
@@ -110,7 +110,7 @@ Both use time-varying team strengths (random walk), separate offensive/defensive
 ```
 data/{sex}/data.csv + schedule.csv
     → results/{sex}/fit.rds
-    → results/{sex}/posterior_goals.csv + figures/*.png
+    → results/{sex}/posterior_goals.csv
     → Website via raw.githubusercontent.com URLs
     → store/ (Hive-partitioned Parquet, dual-write)
 ```
