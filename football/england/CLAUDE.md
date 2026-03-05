@@ -14,7 +14,7 @@ football_england/
 │   │   ├── download_data.R          # Historical data downloader
 │   │   ├── lengjan_info.R           # Lengjan competition IDs per league
 │   │   ├── leagues.R                # League definitions
-│   │   ├── model_fitting.R          # Stan model compilation & MCMC
+│   │   ├── (model_fitting.R removed — fitting centralised in R/shared/model_fitting.R)
 │   │   ├── prep_data.R              # Data preparation for Stan
 │   │   ├── process_data.R           # Historical data aggregation
 │   │   ├── scrape_1x2.R             # Thin wrapper → shared R/lengjan/ modules

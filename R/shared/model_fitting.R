@@ -1,14 +1,4 @@
 #### Model Fitting Utilities ####
-box::use(
-  cmdstanr[cmdstan_model],
-  here[here],
-  metill[theme_metill],
-  ggplot2[theme_set],
-  R / shared / prep_data[prepare_data]
-)
-
-theme_set(theme_metill())
-Sys.setlocale("LC_ALL", "is_IS.UTF-8")
 
 # Detect whether cmdstanr supports progressr-based progress bars (PR #1138)
 has_progress_bar <- function(model) {
@@ -26,11 +16,13 @@ format_expected <- function(secs) {
   paste0("~", mins, "m ", remaining, "s")
 }
 
-#' Fit model for specified sport and sex
+#' Fit a Stan model and save the result
 #'
-#' @param config Config list from sport-specific config file
-#' @param sex Character string, either "male" or "female"
-#' @param end_date Date for filtering data
+#' Pure function: stan_data in, fit.rds out. No config coupling, no prep_data.
+#'
+#' @param stan_data Pre-computed list for Stan
+#' @param stan_model_path Absolute path to .stan file
+#' @param output_path Absolute path for fit.rds
 #' @param chains Number of MCMC chains (default: 4)
 #' @param parallel_chains Number of parallel chains (default: 4)
 #' @param iter_warmup Number of warmup iterations (default: 1000)
@@ -38,12 +30,10 @@ format_expected <- function(secs) {
 #' @param init Initial values (default: 0)
 #' @param expected_duration Expected duration in seconds (from timing cache),
 #'   displayed before fitting starts. NULL to suppress.
-#'
-#' @export
 fit_model <- function(
-  config,
-  sex = "male",
-  end_date = Sys.Date(),
+  stan_data,
+  stan_model_path,
+  output_path,
   chains = 4,
   parallel_chains = 4,
   iter_warmup = 1000,
@@ -51,10 +41,6 @@ fit_model <- function(
   init = 0,
   expected_duration = NULL
 ) {
-  if (!sex %in% c("male", "female")) {
-    stop("Sex must be either 'male' or 'female'")
-  }
-
   # Show cached expected duration
   dur_label <- format_expected(expected_duration)
   if (!is.null(dur_label)) {
@@ -62,16 +48,8 @@ fit_model <- function(
     utils::flush.console()
   }
 
-  sport_dir <- config$sport_dir
-  model_name <- config$stan_model
-
-  # Prepare data (suppress readr column messages)
-  stan_data <- suppressMessages(prepare_data(config, sex, end_date))
-
   # Compile model
-  model <- cmdstan_model(
-    here(sport_dir, "Stan", model_name)
-  )
+  model <- cmdstanr::cmdstan_model(stan_model_path)
 
   # Fit model — use progressr progress bar if available (cmdstanr PR #1138)
   # refresh controls how often Stan emits progress updates; 20 gives ~5% granularity
@@ -104,8 +82,12 @@ fit_model <- function(
     )
   }
 
+  # Ensure output directory exists
+  output_dir <- dirname(output_path)
+  if (!dir.exists(output_dir)) {
+    dir.create(output_dir, recursive = TRUE)
+  }
+
   # Save results
-  results$save_object(
-    file = here(sport_dir, "results", sex, "fit.rds")
-  )
+  results$save_object(file = output_path)
 }

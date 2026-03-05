@@ -205,6 +205,7 @@ for (sp in sports) {
     if (!"win" %in% names(existing)) existing$win <- NA
     if (!"pnl" %in% names(existing)) existing$pnl <- NA_real_
     if (!"source" %in% names(existing)) existing$source <- "pipeline"
+    if ("info" %in% names(existing)) existing$info <- as.character(existing$info)
     cat("  Found", nrow(existing), "existing pipeline bets\n")
   } else {
     existing <- NULL

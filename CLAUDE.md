@@ -92,9 +92,9 @@ step_bet.R → load odds → Kelly criterion → output bets (per-league config/
 
 | Pipeline | Used by | Fit handler |
 |---|---|---|
-| `shared` | basketball/iceland, handball/iceland | `R/shared/model_fitting.R` via config object |
-| `football` | football/* | Per-league `R/update_model.R` via `withr::with_dir()` |
-| `handball_other` | handball/{dk,fr,de,no,es,se,…} | `handball/other/R/utils/model_fitting.R` |
+| `shared` | basketball/iceland, handball/iceland | `R/shared/model_fitting.R` (centralised) |
+| `football` | football/* | `R/shared/model_fitting.R` via `withr::with_dir()` + per-league `prep_data.R` |
+| `handball_other` | handball/{dk,fr,de,no,es,se,…} | `R/shared/model_fitting.R` via `withr::with_dir()` + `handball/other/R/utils/prep_data.R` |
 
 ### Stan models
 

@@ -135,21 +135,21 @@ generate_model_results <- function(
   #### Data Prep ####
   results <- read_rds(here("results", country, sex, "fit.rds"))
 
-  d <- read_csv(here("results", country, sex, "d.csv"))
-  teams <- read_csv(here("results", country, sex, "teams.csv"))
+  d <- read_csv(here("results", country, sex, "d.csv"), show_col_types = FALSE)
+  teams <- read_csv(here("results", country, sex, "teams.csv"), show_col_types = FALSE)
   next_games <- read_csv(here(
     "results",
     country,
     sex,
     "next_games.csv"
-  ))
+  ), show_col_types = FALSE)
   top_teams <- read_csv(here(
     "results",
     country,
     sex,
     "top_teams.csv"
-  ))
-  pred_d <- read_csv(here("results", country, sex, "pred_d.csv"))
+  ), show_col_types = FALSE)
+  pred_d <- read_csv(here("results", country, sex, "pred_d.csv"), show_col_types = FALSE)
 
   #### Next-Round Predictions ####
 

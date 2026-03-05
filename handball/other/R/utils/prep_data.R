@@ -51,7 +51,8 @@ prepare_data <- function(country, sex, end_date = Sys.Date()) {
 
   # Read historical data
   d <- read_csv(
-    here("data", country, sex, "results.csv")
+    here("data", country, sex, "results.csv"),
+    show_col_types = FALSE
   ) |>
     select(
       season,
@@ -89,7 +90,8 @@ prepare_data <- function(country, sex, end_date = Sys.Date()) {
 
   # Read and prepare next games for prediction
   next_games <- read_csv(
-    here("data", country, sex, "schedule.csv")
+    here("data", country, sex, "schedule.csv"),
+    show_col_types = FALSE
   ) |>
     filter(
       date >= end_date,
@@ -194,13 +196,16 @@ prepare_data <- function(country, sex, end_date = Sys.Date()) {
   # Prepare model data
   model_d <- d |>
     inner_join(
-      timediffs
+      timediffs,
+      by = join_by(date, game_nr)
     ) |>
     inner_join(
-      rounds
+      rounds,
+      by = join_by(date, game_nr)
     ) |>
     inner_join(
-      season_rounds
+      season_rounds,
+      by = join_by(date, game_nr)
     ) |>
     inner_join(
       teams |> rename(home_nr = team_nr),
@@ -258,7 +263,8 @@ prepare_data <- function(country, sex, end_date = Sys.Date()) {
 
   time_to_next_games <- next_game_dates |>
     inner_join(
-      latest_game_dates
+      latest_game_dates,
+      by = join_by(team)
     ) |>
     mutate(
       timediff = as.numeric(next_date - latest_date)
@@ -270,7 +276,7 @@ prepare_data <- function(country, sex, end_date = Sys.Date()) {
     pivot_longer(c(home, away)) |>
     distinct(value) |>
     rename(team = value) |>
-    inner_join(teams)
+    inner_join(teams, by = join_by(team))
 
   write_csv(
     top_teams,
@@ -282,7 +288,8 @@ prepare_data <- function(country, sex, end_date = Sys.Date()) {
       next_games |>
         pivot_longer(c(home, away), values_to = "team") |>
         inner_join(
-          latest_game_dates
+          latest_game_dates,
+          by = join_by(team)
         ) |>
         mutate(
           team_game = row_number(),
@@ -297,7 +304,8 @@ prepare_data <- function(country, sex, end_date = Sys.Date()) {
         rename(
           home_timediff = home,
           away_timediff = away
-        )
+        ),
+      by = join_by(game_nr)
     ) |>
     mutate_at(
       vars(home_timediff, away_timediff),

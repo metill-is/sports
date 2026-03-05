@@ -66,12 +66,22 @@ fit_shared <- function(league, sex, sports_dir, iter_warmup, iter_sampling, do_f
   end_date <- Sys.Date()
 
   if (do_fit) {
+    # Prep data
     env <- new.env(parent = globalenv())
-    source(file.path(sports_dir, "R", "shared", "model_fitting.R"), local = env)
-    env$fit_model(
-      config = config,
-      sex = sex,
-      end_date = end_date,
+    source(file.path(sports_dir, "R", "shared", "prep_data.R"), local = env)
+    stan_data <- suppressMessages(env$prepare_data(config, sex, end_date))
+
+    # Resolve paths
+    stan_model_path <- file.path(sports_dir, config$sport_dir, "Stan", config$stan_model)
+    output_path <- file.path(sports_dir, config$sport_dir, "results", sex, "fit.rds")
+
+    # Fit
+    fit_env <- new.env(parent = globalenv())
+    source(file.path(sports_dir, "R", "shared", "model_fitting.R"), local = fit_env)
+    fit_env$fit_model(
+      stan_data = stan_data,
+      stan_model_path = stan_model_path,
+      output_path = output_path,
       iter_warmup = iter_warmup,
       iter_sampling = iter_sampling,
       expected_duration = expected_duration
@@ -103,7 +113,7 @@ fit_shared <- function(league, sex, sports_dir, iter_warmup, iter_sampling, do_f
 
 # ── Pipeline: football (football/{country}) ──────────────────────────────────
 #
-# Each football league has its own R/common/ with fit_football_model(sex, ...).
+# Each football league has its own R/common/prep_data.R for data preparation.
 # Must run from inside the league directory with here::i_am() set.
 
 fit_football <- function(league, sex, sports_dir, iter_warmup, iter_sampling, do_fit, do_results, make_plots = TRUE, expected_duration = NULL) {
@@ -112,14 +122,26 @@ fit_football <- function(league, sex, sports_dir, iter_warmup, iter_sampling, do
   withr::with_dir(league_dir, {
     quiet_here(league$rproj %||% ".here")
 
-    # box::use() resolves from calling file's dir, not cwd — use source() instead
     if (do_fit) {
+      # Prep data
       env <- new.env(parent = globalenv())
-      source(here::here("R", "common", "model_fitting.R"), local = env)
-      env$fit_football_model(
-        sex = sex,
+      source(here::here("R", "common", "prep_data.R"), local = env)
+      stan_data <- suppressMessages(env$prepare_football_data(sex))
+
+      # Resolve paths
+      stan_model_path <- here::here("Stan", "bivariate_poisson_inflated_diagonal_corrmodel.stan")
+      output_path <- here::here("results", sex, "fit.rds")
+
+      # Fit
+      fit_env <- new.env(parent = globalenv())
+      source(file.path(sports_dir, "R", "shared", "model_fitting.R"), local = fit_env)
+      fit_env$fit_model(
+        stan_data = stan_data,
+        stan_model_path = stan_model_path,
+        output_path = output_path,
         iter_warmup = iter_warmup,
-        iter_sampling = iter_sampling
+        iter_sampling = iter_sampling,
+        expected_duration = expected_duration
       )
     }
 
@@ -144,7 +166,7 @@ fit_football <- function(league, sex, sports_dir, iter_warmup, iter_sampling, do
 
 # ── Pipeline: handball_other (European handball via handball/other/) ──────────
 #
-# handball/other/ has its own model_fitting.R that takes country + sex args.
+# handball/other/ has its own R/utils/prep_data.R for country-based data prep.
 # Must run from handball/other/ directory.
 
 fit_handball_other <- function(league, sex, sports_dir, iter_warmup, iter_sampling, do_fit, do_results, make_plots = TRUE, expected_duration = NULL) {
@@ -154,14 +176,25 @@ fit_handball_other <- function(league, sex, sports_dir, iter_warmup, iter_sampli
     quiet_here("handball_other.Rproj")
 
     if (do_fit) {
+      # Prep data
       env <- new.env(parent = globalenv())
-      source(here::here("R", "utils", "model_fitting.R"), local = env)
-      env$fit_model(
-        country = league$country,
-        sex = sex,
-        end_date = Sys.Date(),
+      source(here::here("R", "utils", "prep_data.R"), local = env)
+      stan_data <- suppressMessages(env$prepare_data(league$country, sex, Sys.Date()))
+
+      # Resolve paths
+      stan_model_path <- here::here("Stan", "2d_student_t.stan")
+      output_path <- here::here("results", league$country, sex, "fit.rds")
+
+      # Fit
+      fit_env <- new.env(parent = globalenv())
+      source(file.path(sports_dir, "R", "shared", "model_fitting.R"), local = fit_env)
+      fit_env$fit_model(
+        stan_data = stan_data,
+        stan_model_path = stan_model_path,
+        output_path = output_path,
         iter_warmup = iter_warmup,
-        iter_sampling = iter_sampling
+        iter_sampling = iter_sampling,
+        expected_duration = expected_duration
       )
     }
 
