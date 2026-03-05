@@ -39,6 +39,10 @@ jobs:
           key: targets-${{ hashFiles('_targets.R', 'R/**') }}
           restore-keys: targets-
 
+      - name: Check active competitions
+        run: |
+          Rscript R/check_schedules.R
+
       - name: Run pipeline
         env:
           CHROMOTE_CHROME: ${{ steps.setup-chrome.outputs.chrome-path }}
@@ -50,6 +54,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/
+          git add data/ config/active_competitions.json
           git diff --cached --quiet || git commit -m "data: $(date -u +%Y-%m-%dT%H:%M)"
           git push

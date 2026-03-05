@@ -5,6 +5,7 @@ Daily scraper for match results and schedules from livesport.com. Runs on GitHub
 ## Architecture
 
 ```
+R/check_schedules.R      → config/active_competitions.json (pre-filter)
 config/competitions.yml  → R/pipeline.R → per-competition targets
                            R/scrape.R   → headless Chrome via rvest::read_html_live()
                                         → data/{sport}/{country}/{sex}/{league}/
@@ -96,7 +97,14 @@ Falls back to direct Chromote scraping if livesport-data is not cloned.
 
 ## Schedule-aware filtering
 
-Optional: place `config/active_competitions.json` (same format as lengjan-odds) to skip off-season competitions.
+`R/check_schedules.R` scans existing `schedule.csv` files and writes `config/active_competitions.json`. A competition is **active** if it has scheduled matches within the next 14 days (configurable via `--lookahead N`).
+
+CI runs this before `tar_make()`. Cold-start safe: if no schedule files exist, the JSON is not written and all competitions are scraped.
+
+```bash
+Rscript R/check_schedules.R              # Default 14-day lookahead
+Rscript R/check_schedules.R --lookahead 7 # Custom lookahead
+```
 
 ## Dependencies
 
