@@ -1,4 +1,5 @@
-initial_pool: 10973
+initial_pool: 11514
 currency: "kr"
 min_bet_amount: 200
 bet_digits: 0
+bankroll_since: "2026-03-01"

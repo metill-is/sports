@@ -11,23 +11,35 @@ box::use(
   clipr[write_clip]
 )
 
-#' Compute current bankroll from initial pool and bet history
+#' Compute current bankroll from initial pool and pipeline-era bet history
 #'
-#' Scans all bets_log.csv files under sports_dir, computes:
-#'   cur_pool = initial_pool + sum(settled_pnl) - sum(outstanding_stakes)
+#' Only counts bets from the pipeline era (source = "pipeline", since
+#' bankroll_since date). Historical GSheets bets on other bookers are excluded.
 #'
 #' @param initial_pool Starting bankroll amount
 #' @param sports_dir Absolute path to Sports/ root
+#' @param since Only count bets recommended on or after this date (default: 2026-03-01)
 #' @return Current available bankroll
 #' @export
-compute_bankroll <- function(initial_pool, sports_dir) {
+compute_bankroll <- function(initial_pool, sports_dir, since = "2026-03-01") {
+  since_date <- as.Date(since)
+
+  filter_bets <- function(bets) {
+    bets |>
+      dplyr::filter(
+        sex != "all",
+        source == "pipeline",
+        as.Date(date_recommended) >= since_date
+      )
+  }
+
   # Try Parquet store first (faster for many leagues)
   store_path <- file.path(sports_dir, "store", "bets")
   if (dir.exists(store_path) && requireNamespace("arrow", quietly = TRUE)) {
     result <- tryCatch({
       all_bets <- arrow::open_dataset(store_path) |>
-        dplyr::filter(sex != "all") |>
-        dplyr::collect()
+        dplyr::collect() |>
+        filter_bets()
       if (nrow(all_bets) > 0) {
         settled_pnl <- sum(all_bets$pnl[!is.na(all_bets$pnl)], na.rm = TRUE)
         outstanding <- sum(all_bets$bet_amount[is.na(all_bets$win)], na.rm = TRUE)
@@ -45,7 +57,9 @@ compute_bankroll <- function(initial_pool, sports_dir) {
 
   all_bets <- do.call(rbind, lapply(logs, \(f) {
     read_csv(f, show_col_types = FALSE)
-  }))
+  })) |> filter_bets()
+
+  if (nrow(all_bets) == 0) return(initial_pool)
 
   settled_pnl <- sum(all_bets$pnl[!is.na(all_bets$pnl)], na.rm = TRUE)
   outstanding <- sum(all_bets$bet_amount[is.na(all_bets$win)], na.rm = TRUE)

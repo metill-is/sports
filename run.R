@@ -422,8 +422,23 @@ n_fail <- sum(!vapply(all_results, `[[`, logical(1), "ok"))
 # ── Write combined recommendations ────────────────────────────────────────────
 
 if ("bet" %in% steps && length(all_recommendations) > 0) {
-  recs <- do.call(rbind, all_recommendations)
+  new_recs <- do.call(rbind, all_recommendations)
   recs_path <- here("recommendations.csv")
+
+  # Merge with existing: replace leagues that were re-run, keep others
+  if (file.exists(recs_path)) {
+    old_recs <- readr::read_csv(recs_path, show_col_types = FALSE)
+    rerun_leagues <- unique(paste(new_recs$sport, new_recs$country))
+    kept <- old_recs |>
+      dplyr::filter(!paste(sport, country) %in% rerun_leagues)
+    recs <- dplyr::bind_rows(kept, new_recs)
+  } else {
+    recs <- new_recs
+  }
+
+  # Drop recommendations for past matches
+  recs <- recs |> dplyr::filter(as.Date(date) >= Sys.Date())
+
   readr::write_csv(recs, recs_path)
   cat(sprintf("\nWrote %d recommendation(s) to %s\n", nrow(recs), recs_path))
 }
