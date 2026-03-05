@@ -1,0 +1,121 @@
+date,home,away
+07.03. 15:15,Arenteiro,Real Madrid B
+07.03. 15:15,Tenerife,Lugo
+07.03. 17:30,Ponferradina,Osasuna B
+07.03. 20:00,AD Merida,CF Talavera
+08.03. 11:00,Real Aviles,Zamora
+08.03. 15:00,Ath Bilbao B,Arenas Getxo
+08.03. 15:00,Guadalajara,Celta Vigo B
+08.03. 15:00,Pontevedra,Unionistas
+08.03. 17:30,Barakaldo,Ourense CF
+08.03. 19:30,Racing Club Ferrol,Cacereno
+13.03. 18:00,AD Merida,Guadalajara
+13.03. 20:15,Celta Vigo B,Tenerife
+14.03. 15:15,Arenas Getxo,Pontevedra
+14.03. 15:15,Ourense CF,Racing Club Ferrol
+14.03. 15:15,Zamora,Arenteiro
+14.03. 17:30,Lugo,Real Madrid B
+14.03. 20:00,CF Talavera,Real Aviles
+15.03. 11:00,Osasuna B,Ath Bilbao B
+15.03. 15:00,Cacereno,Ponferradina
+15.03. 19:30,Unionistas,Barakaldo
+20.03. 18:00,Ath Bilbao B,AD Merida
+20.03. 19:30,Arenteiro,Celta Vigo B
+21.03. 13:00,Real Madrid B,Zamora
+21.03. 15:15,Pontevedra,Ourense CF
+21.03. 20:00,Ponferradina,Unionistas
+22.03. 11:00,Guadalajara,CF Talavera
+22.03. 15:00,Lugo,Arenas Getxo
+22.03. 16:00,Tenerife,Osasuna B
+22.03. 17:15,Racing Club Ferrol,Barakaldo
+22.03. 17:15,Real Aviles,Cacereno
+27.03. 20:15,Barakaldo,Real Madrid B
+28.03. 15:15,Zamora,Pontevedra
+28.03. 17:30,AD Merida,Racing Club Ferrol
+28.03. 17:30,Arenas Getxo,Real Aviles
+28.03. 17:30,Unionistas,Arenteiro
+28.03. 20:00,CF Talavera,Tenerife
+29.03. 10:00,Celta Vigo B,Ath Bilbao B
+29.03. 10:00,Osasuna B,Guadalajara
+29.03. 10:00,Ourense CF,Ponferradina
+29.03. 19:00,Cacereno,Lugo
+05.04. 16:00,Arenteiro,Arenas Getxo
+05.04. 16:00,Ath Bilbao B,CF Talavera
+05.04. 16:00,Guadalajara,Racing Club Ferrol
+05.04. 16:00,Lugo,Osasuna B
+05.04. 16:00,Ponferradina,AD Merida
+05.04. 16:00,Pontevedra,Barakaldo
+05.04. 16:00,Real Aviles,Ourense CF
+05.04. 16:00,Real Madrid B,Celta Vigo B
+05.04. 16:00,Tenerife,Cacereno
+05.04. 16:00,Zamora,Unionistas
+12.04. 16:00,AD Merida,Tenerife
+12.04. 16:00,Arenas Getxo,Celta Vigo B
+12.04. 16:00,Barakaldo,Arenteiro
+12.04. 16:00,Cacereno,Ath Bilbao B
+12.04. 16:00,CF Talavera,Zamora
+12.04. 16:00,Osasuna B,Real Aviles
+12.04. 16:00,Ourense CF,Lugo
+12.04. 16:00,Pontevedra,Ponferradina
+12.04. 16:00,Racing Club Ferrol,Real Madrid B
+12.04. 16:00,Unionistas,Guadalajara
+19.04. 16:00,Arenteiro,AD Merida
+19.04. 16:00,Ath Bilbao B,Racing Club Ferrol
+19.04. 16:00,Celta Vigo B,Cacereno
+19.04. 16:00,Guadalajara,Pontevedra
+19.04. 16:00,Lugo,CF Talavera
+19.04. 16:00,Ponferradina,Barakaldo
+19.04. 16:00,Real Aviles,Unionistas
+19.04. 16:00,Real Madrid B,Ourense CF
+19.04. 16:00,Tenerife,Arenas Getxo
+19.04. 16:00,Zamora,Osasuna B
+26.04. 16:00,Arenas Getxo,AD Merida
+26.04. 16:00,Barakaldo,Lugo
+26.04. 16:00,Cacereno,Guadalajara
+26.04. 16:00,CF Talavera,Real Madrid B
+26.04. 16:00,Osasuna B,Arenteiro
+26.04. 16:00,Ourense CF,Zamora
+26.04. 16:00,Ponferradina,Tenerife
+26.04. 16:00,Pontevedra,Celta Vigo B
+26.04. 16:00,Racing Club Ferrol,Real Aviles
+26.04. 16:00,Unionistas,Ath Bilbao B
+03.05. 16:00,AD Merida,Lugo
+03.05. 16:00,Arenteiro,Cacereno
+03.05. 16:00,Ath Bilbao B,Ourense CF
+03.05. 16:00,Celta Vigo B,Osasuna B
+03.05. 16:00,CF Talavera,Arenas Getxo
+03.05. 16:00,Racing Club Ferrol,Pontevedra
+03.05. 16:00,Real Aviles,Guadalajara
+03.05. 16:00,Real Madrid B,Unionistas
+03.05. 16:00,Tenerife,Barakaldo
+03.05. 16:00,Zamora,Ponferradina
+10.05. 16:00,Arenas Getxo,Racing Club Ferrol
+10.05. 16:00,Barakaldo,AD Merida
+10.05. 16:00,Cacereno,Real Madrid B
+10.05. 16:00,Guadalajara,Arenteiro
+10.05. 16:00,Lugo,Zamora
+10.05. 16:00,Osasuna B,CF Talavera
+10.05. 16:00,Ourense CF,Celta Vigo B
+10.05. 16:00,Ponferradina,Real Aviles
+10.05. 16:00,Pontevedra,Ath Bilbao B
+10.05. 16:00,Unionistas,Tenerife
+17.05. 16:00,AD Merida,Unionistas
+17.05. 16:00,Arenteiro,Ponferradina
+17.05. 16:00,Ath Bilbao B,Guadalajara
+17.05. 16:00,Celta Vigo B,Lugo
+17.05. 16:00,CF Talavera,Ourense CF
+17.05. 16:00,Racing Club Ferrol,Osasuna B
+17.05. 16:00,Real Aviles,Barakaldo
+17.05. 16:00,Real Madrid B,Arenas Getxo
+17.05. 16:00,Tenerife,Pontevedra
+17.05. 16:00,Zamora,Cacereno
+24.05. 16:00,Arenas Getxo,Zamora
+24.05. 16:00,Barakaldo,Celta Vigo B
+24.05. 16:00,Cacereno,CF Talavera
+24.05. 16:00,Guadalajara,Real Madrid B
+24.05. 16:00,Lugo,Arenteiro
+24.05. 16:00,Osasuna B,AD Merida
+24.05. 16:00,Ourense CF,Tenerife
+24.05. 16:00,Ponferradina,Ath Bilbao B
+24.05. 16:00,Pontevedra,Real Aviles
+24.05. 16:00,Unionistas,Racing Club Ferrol

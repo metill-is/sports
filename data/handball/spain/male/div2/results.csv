@@ -1,0 +1,106 @@
+date,home,away,home_score,away_score
+01.03. 11:30,Contazara Zaragoza,Balonmano Soria,26,25
+28.02. 19:00,Cisne,Agustinos Alicante,28,26
+28.02. 18:30,Anaitasuna,Oviedo,29,23
+28.02. 18:30,Proin Triana,Eivissa,28,33
+28.02. 18:00,OAR Coruna,Barcelona II,32,35
+28.02. 17:30,Alcobendas,Malaga,29,22
+28.02. 17:30,Puerto Sagunto,Burgos,28,24
+28.02. 17:00,Benidorm,BM Sinfin,32,32
+22.02. 11:00,Burgos,Anaitasuna,22,21
+21.02. 18:30,Eivissa,OAR Coruna,36,24
+21.02. 18:00,Cisne,Puerto Sagunto,21,19
+21.02. 17:30,Oviedo,Alcobendas,29,19
+21.02. 17:00,Agustinos Alicante,BM Sinfin,28,27
+21.02. 17:00,Balonmano Soria,Proin Triana,25,31
+21.02. 16:30,Malaga,Contazara Zaragoza,28,29
+21.02. 15:30,Barcelona II,Benidorm,24,32
+15.02. 11:30,Benidorm,Eivissa,29,38
+14.02. 18:30,Anaitasuna,Cisne,30,25
+14.02. 18:30,Contazara Zaragoza,Oviedo,21,25
+14.02. 18:30,Proin Triana,Malaga,31,21
+14.02. 18:00,OAR Coruna,Balonmano Soria,30,29
+14.02. 17:30,Alcobendas,Burgos,30,29
+14.02. 17:00,BM Sinfin,Barcelona II,31,29
+08.02. 11:00,Burgos,Contazara Zaragoza,37,32
+07.02. 19:00,Cisne,Alcobendas,34,21
+07.02. 19:00,Oviedo,Proin Triana,27,29
+07.02. 18:30,Eivissa,BM Sinfin,29,25
+07.02. 17:30,Puerto Sagunto,Anaitasuna,25,24
+07.02. 17:00,Agustinos Alicante,Barcelona II,31,26
+07.02. 17:00,Balonmano Soria,Benidorm,23,22
+07.02. 17:00,Malaga,OAR Coruna,25,30
+01.02. 16:00,Benidorm,Malaga,36,23
+01.02. 11:30,Anaitasuna,Agustinos Alicante,27,31
+01.02. 11:30,Contazara Zaragoza,Cisne,28,26
+31.01. 19:30,Proin Triana,Burgos,28,23
+31.01. 18:00,OAR Coruna,Oviedo,26,21
+31.01. 17:30,Alcobendas,Puerto Sagunto,26,27
+31.01. 17:00,BM Sinfin,Balonmano Soria,38,26
+31.01. 15:30,Barcelona II,Eivissa,32,25
+28.01. 19:00,Puerto Sagunto,Benidorm,26,23
+25.01. 12:00,Burgos,OAR Coruna,24,23
+24.01. 19:00,Cisne,Proin Triana,25,26
+24.01. 18:30,Anaitasuna,Alcobendas,27,21
+24.01. 17:30,Oviedo,Benidorm,28,28
+24.01. 17:30,Puerto Sagunto,Contazara Zaragoza,34,25
+24.01. 17:00,Agustinos Alicante,Eivissa,30,19
+24.01. 17:00,Balonmano Soria,Barcelona II,28,30
+24.01. 17:00,Malaga,BM Sinfin,24,25
+18.01. 11:30,Contazara Zaragoza,Anaitasuna,16,30
+17.01. 19:30,Proin Triana,Puerto Sagunto,30,16
+17.01. 19:00,Eivissa,Balonmano Soria,33,26
+17.01. 18:00,OAR Coruna,Cisne,28,20
+17.01. 17:30,Alcobendas,Agustinos Alicante,26,29
+17.01. 17:00,BM Sinfin,Oviedo,28,28
+17.01. 16:00,Barcelona II,Malaga,36,28
+21.12. 11:30,BM Sinfin,Burgos,28,28
+21.12. 11:30,Contazara Zaragoza,Alcobendas,34,23
+20.12. 19:00,Eivissa,Malaga,28,25
+20.12. 18:30,Barcelona II,Oviedo,29,30
+20.12. 18:30,Proin Triana,Anaitasuna,33,24
+20.12. 18:00,Benidorm,Cisne,26,26
+20.12. 18:00,OAR Coruna,Puerto Sagunto,24,25
+20.12. 17:00,Balonmano Soria,Agustinos Alicante,23,36
+17.12. 19:00,OAR Coruna,BM Sinfin,26,31
+14.12. 11:30,Burgos,Barcelona II,32,29
+13.12. 19:00,Cisne,BM Sinfin,28,34
+13.12. 19:00,Oviedo,Eivissa,20,21
+13.12. 18:30,Anaitasuna,OAR Coruna,38,29
+13.12. 18:00,Agustinos Alicante,Contazara Zaragoza,31,24
+13.12. 17:00,Malaga,Balonmano Soria,23,26
+13.12. 16:30,Alcobendas,Proin Triana,26,32
+10.12. 18:00,Malaga,Puerto Sagunto,23,27
+07.12. 16:00,Benidorm,Anaitasuna,34,29
+06.12. 19:00,Eivissa,Burgos,27,39
+06.12. 18:30,Proin Triana,Contazara Zaragoza,36,27
+06.12. 18:00,Agustinos Alicante,Malaga,28,31
+06.12. 18:00,OAR Coruna,Alcobendas,39,20
+06.12. 17:00,Balonmano Soria,Oviedo,24,21
+06.12. 17:00,BM Sinfin,Puerto Sagunto,28,28
+05.12. 16:00,Barcelona II,Cisne,33,28
+30.11. 11:00,Anaitasuna,BM Sinfin,33,27
+30.11. 11:00,Burgos,Balonmano Soria,36,28
+29.11. 19:30,Contazara Zaragoza,OAR Coruna,33,37
+29.11. 19:00,Cisne,Eivissa,30,34
+29.11. 18:30,Proin Triana,Agustinos Alicante,26,23
+29.11. 17:30,Alcobendas,Benidorm,25,33
+29.11. 17:30,Oviedo,Malaga,30,29
+29.11. 17:30,Puerto Sagunto,Barcelona II,31,25
+23.11. 11:30,Benidorm,Contazara Zaragoza,35,29
+23.11. 11:30,BM Sinfin,Alcobendas,31,21
+22.11. 19:00,Agustinos Alicante,Oviedo,27,22
+22.11. 19:00,Eivissa,Puerto Sagunto,30,31
+22.11. 18:00,OAR Coruna,Proin Triana,23,25
+22.11. 17:00,Balonmano Soria,Cisne,31,32
+22.11. 17:00,Malaga,Burgos,26,32
+22.11. 15:30,Barcelona II,Anaitasuna,34,31
+19.11. 19:00,Benidorm,Agustinos Alicante,26,25
+16.11. 11:30,Agustinos Alicante,OAR Coruna,24,37
+16.11. 11:30,Contazara Zaragoza,BM Sinfin,33,33
+16.11. 11:00,Anaitasuna,Eivissa,29,28
+16.11. 11:00,Burgos,Oviedo,26,17
+15.11. 19:00,Cisne,Malaga,30,25
+15.11. 18:30,Proin Triana,Benidorm,25,23
+15.11. 17:30,Alcobendas,Barcelona II,28,37
+15.11. 17:30,Puerto Sagunto,Balonmano Soria,34,29

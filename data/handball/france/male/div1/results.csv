@@ -1,0 +1,107 @@
+date,home,away,home_score,away_score
+01.03. 15:00,Nantes,Nimes,36,34
+01.03. 14:00,Dijon,PSG,27,34
+28.02. 19:00,Limoges,St. Raphael,31,32
+27.02. 19:30,Chambery Savoie,Montpellier,31,35
+27.02. 19:30,Tremblay,Dunkerque,28,29
+27.02. 19:00,Istres,Chartres,26,28
+27.02. 19:00,Provence Aix,Cesson Rennes-Metropole,35,28
+26.02. 19:30,Toulouse,Selestat,38,32
+22.02. 15:00,PSG,Provence Aix,32,28
+22.02. 15:00,Tremblay,Nantes,27,33
+21.02. 19:30,Cesson Rennes-Metropole,Dijon,36,32
+21.02. 19:00,Dunkerque,Chartres,25,24
+21.02. 19:00,Nimes,St. Raphael,33,27
+20.02. 19:30,Selestat,Limoges,32,38
+20.02. 19:00,Montpellier,Istres,33,28
+20.02. 19:00,Toulouse,Chambery Savoie,30,30
+15.02. 16:00,St. Raphael,Nantes,32,33
+14.02. 19:00,Chartres,Selestat,33,39
+14.02. 19:00,Nimes,Cesson Rennes-Metropole,31,28
+13.02. 19:30,Dijon,Tremblay,31,36
+13.02. 19:00,Chambery Savoie,Provence Aix,31,29
+13.02. 19:00,Dunkerque,PSG,25,29
+13.02. 19:00,Istres,Toulouse,19,29
+13.02. 19:00,Limoges,Montpellier,31,30
+10.02. 19:00,Chartres,Nantes,27,41
+04.02. 19:30,Cesson Rennes-Metropole,Toulouse,34,26
+21.12. 16:00,Provence Aix,Istres,28,24
+20.12. 19:00,Toulouse,Nimes,27,22
+19.12. 19:30,Selestat,Dijon,33,28
+19.12. 19:30,Tremblay,Chambery Savoie,33,40
+19.12. 19:00,Montpellier,St. Raphael,44,34
+18.12. 19:30,Cesson Rennes-Metropole,Dunkerque,33,25
+18.12. 19:30,Nantes,PSG,31,31
+18.12. 19:00,Limoges,Chartres,36,29
+14.12. 14:30,PSG,Limoges,40,25
+13.12. 19:45,Nantes,Cesson Rennes-Metropole,43,30
+13.12. 19:30,Dijon,Toulouse,29,31
+13.12. 19:00,Nimes,Chambery Savoie,35,34
+12.12. 19:00,Chartres,Tremblay,28,34
+12.12. 19:00,Istres,Selestat,23,33
+12.12. 18:00,Dunkerque,Montpellier,28,36
+12.12. 18:00,St. Raphael,Provence Aix,27,26
+07.12. 16:00,Selestat,Nantes,33,41
+07.12. 16:00,Toulouse,Montpellier,27,33
+06.12. 19:30,Tremblay,PSG,31,38
+06.12. 18:30,St. Raphael,Dunkerque,35,27
+05.12. 19:30,Cesson Rennes-Metropole,Limoges,30,31
+05.12. 19:30,Dijon,Istres,39,31
+05.12. 19:00,Chambery Savoie,Chartres,33,30
+05.12. 18:00,Provence Aix,Nimes,32,26
+30.11. 15:00,PSG,Chambery Savoie,33,26
+29.11. 19:00,Dunkerque,Nantes,30,34
+29.11. 19:00,Selestat,Provence Aix,24,31
+28.11. 19:00,Chartres,St. Raphael,24,24
+28.11. 19:00,Limoges,Toulouse,30,35
+28.11. 19:00,Montpellier,Tremblay,36,31
+28.11. 19:00,Nimes,Dijon,24,21
+26.11. 17:00,Istres,Cesson Rennes-Metropole,32,27
+23.11. 16:00,Chambery Savoie,Cesson Rennes-Metropole,29,27
+23.11. 15:30,Nantes,Provence Aix,34,28
+22.11. 19:30,St. Raphael,Istres,35,34
+22.11. 16:00,PSG,Montpellier,34,31
+21.11. 20:00,Limoges,Nimes,33,33
+21.11. 19:30,Dijon,Chartres,29,28
+21.11. 19:30,Toulouse,Dunkerque,36,27
+21.11. 19:30,Tremblay,Selestat,34,32
+16.11. 16:00,Nantes,Chartres,40,27
+16.11. 15:00,Istres,PSG,29,39
+15.11. 19:00,Nimes,Montpellier,30,29
+14.11. 19:30,Dijon,St. Raphael,27,32
+14.11. 19:30,Selestat,Chambery Savoie,33,33
+14.11. 19:00,Dunkerque,Tremblay,27,27
+14.11. 19:00,Provence Aix,Limoges,30,32
+09.11. 16:00,Chartres,Istres,27,28
+09.11. 15:00,Limoges,Nantes,35,40
+08.11. 19:00,Chambery Savoie,Dijon,30,28
+08.11. 19:00,Toulouse,PSG,33,36
+07.11. 19:30,Tremblay,Cesson Rennes-Metropole,34,32
+07.11. 19:00,Montpellier,Selestat,35,30
+07.11. 19:00,St. Raphael,Nimes,31,28
+06.11. 19:00,Dunkerque,Provence Aix,25,30
+26.10. 16:00,PSG,Cesson Rennes-Metropole,38,33
+26.10. 15:00,Provence Aix,Montpellier,29,30
+25.10. 18:30,Nantes,Tremblay,41,32
+25.10. 18:30,St. Raphael,Limoges,29,31
+24.10. 18:30,Dijon,Dunkerque,31,24
+24.10. 18:30,Istres,Chambery Savoie,27,33
+24.10. 18:30,Selestat,Toulouse,26,28
+24.10. 18:00,Nimes,Chartres,25,29
+19.10. 15:00,Chartres,PSG,26,34
+18.10. 18:00,Chambery Savoie,St. Raphael,35,33
+18.10. 18:00,Montpellier,Nantes,31,31
+18.10. 18:00,Toulouse,Istres,35,23
+17.10. 18:30,Cesson Rennes-Metropole,Nimes,35,31
+17.10. 18:00,Dunkerque,Selestat,26,27
+17.10. 18:00,Limoges,Dijon,32,31
+17.10. 18:00,Tremblay,Provence Aix,32,32
+12.10. 15:00,Nimes,Nantes,31,38
+12.10. 15:00,PSG,Selestat,36,28
+11.10. 18:00,St. Raphael,Toulouse,33,28
+10.10. 18:30,Dijon,Cesson Rennes-Metropole,33,33
+10.10. 18:00,Chartres,Dunkerque,24,25
+10.10. 18:00,Istres,Montpellier,27,34
+10.10. 18:00,Limoges,Tremblay,38,34
+09.10. 18:00,Provence Aix,Chambery Savoie,32,32
+05.10. 15:00,Nantes,St. Raphael,46,32

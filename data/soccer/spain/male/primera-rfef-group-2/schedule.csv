@@ -1,0 +1,123 @@
+date,home,away
+06.03. 18:00,Murcia,Sanluqueno
+06.03. 20:15,Betis B,Sevilla FC B
+07.03. 13:00,Sabadell,Algeciras
+07.03. 15:15,Marbella,CE Europa
+07.03. 17:30,Antequera,UD Ibiza
+07.03. 17:30,Eldense,Gimnastic
+08.03. 11:00,Teruel,Villarreal B
+08.03. 11:00,Torremolinos,Alcorcon
+08.03. 15:00,Tarazona,FC Cartagena SAD
+08.03. 17:15,Atl. Madrid B,Hercules
+11.03. 18:00,Antequera,Algeciras
+11.03. 18:00,Murcia,Marbella
+13.03. 19:30,Gimnastic,Sabadell
+14.03. 13:00,CE Europa,Betis B
+14.03. 15:15,Villarreal B,Torremolinos
+14.03. 17:30,FC Cartagena SAD,Teruel
+14.03. 17:30,Sanluqueno,Eldense
+15.03. 11:00,Alcorcon,Algeciras
+15.03. 11:00,Sevilla FC B,Antequera
+15.03. 15:00,Tarazona,Atl. Madrid B
+15.03. 17:15,Hercules,Murcia
+15.03. 17:15,UD Ibiza,Marbella
+20.03. 20:15,Betis B,Hercules
+21.03. 15:15,Sabadell,CE Europa
+21.03. 17:30,Antequera,Villarreal B
+21.03. 17:30,Atl. Madrid B,FC Cartagena SAD
+21.03. 17:30,Teruel,Alcorcon
+21.03. 17:30,Torremolinos,Sanluqueno
+22.03. 11:00,Algeciras,Gimnastic
+22.03. 11:00,Eldense,UD Ibiza
+22.03. 11:00,Marbella,Sevilla FC B
+22.03. 19:30,Murcia,Tarazona
+28.03. 13:00,CE Europa,Algeciras
+28.03. 15:15,Betis B,Teruel
+28.03. 15:15,Gimnastic,Torremolinos
+28.03. 17:30,FC Cartagena SAD,Sanluqueno
+29.03. 10:00,UD Ibiza,Alcorcon
+29.03. 12:15,Atl. Madrid B,Antequera
+29.03. 14:00,Villarreal B,Sabadell
+29.03. 14:30,Sevilla FC B,Murcia
+29.03. 14:30,Tarazona,Eldense
+29.03. 16:45,Hercules,Marbella
+05.04. 16:00,Alcorcon,Hercules
+05.04. 16:00,Algeciras,UD Ibiza
+05.04. 16:00,Antequera,Tarazona
+05.04. 16:00,Eldense,CE Europa
+05.04. 16:00,Marbella,Villarreal B
+05.04. 16:00,Murcia,Atl. Madrid B
+05.04. 16:00,Sabadell,Betis B
+05.04. 16:00,Sanluqueno,Sevilla FC B
+05.04. 16:00,Teruel,Gimnastic
+05.04. 16:00,Torremolinos,FC Cartagena SAD
+12.04. 16:00,Atl. Madrid B,Marbella
+12.04. 16:00,Betis B,Eldense
+12.04. 16:00,CE Europa,Teruel
+12.04. 16:00,FC Cartagena SAD,Antequera
+12.04. 16:00,Gimnastic,Murcia
+12.04. 16:00,Hercules,Sanluqueno
+12.04. 16:00,Sevilla FC B,Sabadell
+12.04. 16:00,Tarazona,Alcorcon
+12.04. 16:00,UD Ibiza,Torremolinos
+12.04. 16:00,Villarreal B,Algeciras
+19.04. 16:00,Alcorcon,Villarreal B
+19.04. 16:00,Algeciras,Tarazona
+19.04. 16:00,Eldense,FC Cartagena SAD
+19.04. 16:00,Marbella,Gimnastic
+19.04. 16:00,Murcia,Antequera
+19.04. 16:00,Sabadell,Hercules
+19.04. 16:00,Sanluqueno,CE Europa
+19.04. 16:00,Teruel,Atl. Madrid B
+19.04. 16:00,Torremolinos,Betis B
+19.04. 16:00,UD Ibiza,Sevilla FC B
+26.04. 16:00,Antequera,Eldense
+26.04. 16:00,Atl. Madrid B,Betis B
+26.04. 16:00,CE Europa,Murcia
+26.04. 16:00,FC Cartagena SAD,Gimnastic
+26.04. 16:00,Hercules,Teruel
+26.04. 16:00,Marbella,Sabadell
+26.04. 16:00,Sanluqueno,Alcorcon
+26.04. 16:00,Sevilla FC B,Algeciras
+26.04. 16:00,Tarazona,Torremolinos
+26.04. 16:00,Villarreal B,UD Ibiza
+03.05. 16:00,Alcorcon,CE Europa
+03.05. 16:00,Algeciras,FC Cartagena SAD
+03.05. 16:00,Betis B,Antequera
+03.05. 16:00,Eldense,Marbella
+03.05. 16:00,Gimnastic,Sevilla FC B
+03.05. 16:00,Sabadell,Murcia
+03.05. 16:00,Teruel,Tarazona
+03.05. 16:00,Torremolinos,Atl. Madrid B
+03.05. 16:00,UD Ibiza,Sanluqueno
+03.05. 16:00,Villarreal B,Hercules
+10.05. 16:00,Antequera,Teruel
+10.05. 16:00,Atl. Madrid B,Sabadell
+10.05. 16:00,CE Europa,Villarreal B
+10.05. 16:00,FC Cartagena SAD,Alcorcon
+10.05. 16:00,Hercules,UD Ibiza
+10.05. 16:00,Marbella,Torremolinos
+10.05. 16:00,Murcia,Betis B
+10.05. 16:00,Sanluqueno,Algeciras
+10.05. 16:00,Sevilla FC B,Eldense
+10.05. 16:00,Tarazona,Gimnastic
+17.05. 16:00,Alcorcon,Marbella
+17.05. 16:00,Algeciras,Hercules
+17.05. 16:00,Betis B,Tarazona
+17.05. 16:00,Eldense,Atl. Madrid B
+17.05. 16:00,Gimnastic,CE Europa
+17.05. 16:00,Sabadell,Antequera
+17.05. 16:00,Teruel,Sanluqueno
+17.05. 16:00,Torremolinos,Murcia
+17.05. 16:00,UD Ibiza,FC Cartagena SAD
+17.05. 16:00,Villarreal B,Sevilla FC B
+24.05. 16:00,Antequera,Torremolinos
+24.05. 16:00,Atl. Madrid B,Algeciras
+24.05. 16:00,CE Europa,UD Ibiza
+24.05. 16:00,FC Cartagena SAD,Betis B
+24.05. 16:00,Hercules,Gimnastic
+24.05. 16:00,Marbella,Teruel
+24.05. 16:00,Murcia,Eldense
+24.05. 16:00,Sanluqueno,Villarreal B
+24.05. 16:00,Sevilla FC B,Alcorcon
+24.05. 16:00,Tarazona,Sabadell

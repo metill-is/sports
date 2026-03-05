@@ -1,0 +1,109 @@
+date,home,away,home_score,away_score
+14.06. 10:00,Ready,Grei,-,-
+14.06. 12:00,Flint,Oppsal,-,-
+14.06. 13:00,Fram,Sarpsborg 08 2,-,-
+15.06. 12:00,Orn,Pors 2,-,-
+15.06. 13:00,Stabaek 2,Kvik Halden,-,-
+16.06. 16:00,Lokomotiv Oslo,Odd 2,-,-
+16.06. 17:00,Fredrikstad 2,Drobak-Frogn,-,-
+21.06. 12:00,Kvik Halden,Lokomotiv Oslo,-,-
+21.06. 12:00,Oppsal,Fram,-,-
+21.06. 13:00,Drobak-Frogn,Flint,-,-
+22.06. 12:00,Grei,Stabaek 2,-,-
+22.06. 13:00,Odd 2,Pors 2,-,-
+23.06. 17:00,Sarpsborg 08 2,Orn,-,-
+23.06. 18:00,Fredrikstad 2,Ready,-,-
+19.07. 11:00,Ready,Drobak-Frogn,-,-
+19.07. 12:00,Flint,Grei,-,-
+19.07. 13:00,Fram,Odd 2,-,-
+19.07. 13:00,Orn,Kvik Halden,-,-
+19.07. 13:00,Pors 2,Oppsal,-,-
+21.07. 12:00,Stabaek 2,Fredrikstad 2,-,-
+21.07. 17:00,Lokomotiv Oslo,Sarpsborg 08 2,-,-
+26.07. 12:00,Grei,Fram,-,-
+26.07. 12:00,Kvik Halden,Flint,-,-
+26.07. 13:00,Drobak-Frogn,Orn,-,-
+27.07. 13:00,Odd 2,Oppsal,-,-
+27.07. 15:00,Stabaek 2,Ready,-,-
+28.07. 17:00,Sarpsborg 08 2,Pors 2,-,-
+28.07. 17:30,Fredrikstad 2,Lokomotiv Oslo,-,-
+02.08. 12:00,Lokomotiv Oslo,Grei,-,-
+02.08. 13:00,Fram,Kvik Halden,-,-
+02.08. 13:00,Pors 2,Drobak-Frogn,-,-
+03.08. 12:00,Oppsal,Stabaek 2,-,-
+03.08. 12:00,Orn,Odd 2,-,-
+04.08. 17:00,Ready,Sarpsborg 08 2,-,-
+04.08. 18:00,Flint,Fredrikstad 2,-,-
+09.08. 12:00,Grei,Ready,-,-
+09.08. 12:00,Kvik Halden,Pors 2,-,-
+09.08. 13:00,Drobak-Frogn,Oppsal,-,-
+10.08. 12:00,Fredrikstad 2,Orn,-,-
+10.08. 13:00,Odd 2,Flint,-,-
+10.08. 17:00,Stabaek 2,Lokomotiv Oslo,-,-
+11.08. 17:00,Sarpsborg 08 2,Fram,-,-
+16.08. 11:00,Ready,Fredrikstad 2,-,-
+16.08. 12:00,Orn,Grei,-,-
+16.08. 13:00,Fram,Drobak-Frogn,-,-
+17.08. 14:00,Lokomotiv Oslo,Kvik Halden,-,-
+18.08. 17:00,Oppsal,Sarpsborg 08 2,-,-
+19.08. 16:00,Flint,Stabaek 2,-,-
+19.08. 17:00,Pors 2,Odd 2,-,-
+23.08. 13:00,Drobak-Frogn,Ready,-,-
+24.08. 12:00,Fram,Pors 2,-,-
+24.08. 13:00,Odd 2,Lokomotiv Oslo,-,-
+24.08. 14:00,Kvik Halden,Oppsal,-,-
+24.08. 14:00,Stabaek 2,Orn,-,-
+25.08. 17:00,Fredrikstad 2,Grei,-,-
+25.08. 17:30,Sarpsborg 08 2,Flint,-,-
+30.08. 12:00,Flint,Fram,-,-
+30.08. 12:00,Grei,Kvik Halden,-,-
+30.08. 12:00,Orn,Drobak-Frogn,-,-
+31.08. 14:00,Oppsal,Odd 2,-,-
+31.08. 15:00,Ready,Stabaek 2,-,-
+01.09. 16:00,Lokomotiv Oslo,Fredrikstad 2,-,-
+01.09. 17:00,Pors 2,Sarpsborg 08 2,-,-
+06.09. 12:00,Kvik Halden,Orn,-,-
+06.09. 12:00,Odd 2,Ready,-,-
+06.09. 13:00,Fram,Oppsal,-,-
+06.09. 13:00,Sarpsborg 08 2,Lokomotiv Oslo,-,-
+06.09. 13:00,Stabaek 2,Grei,-,-
+07.09. 12:00,Drobak-Frogn,Fredrikstad 2,-,-
+07.09. 12:00,Pors 2,Flint,-,-
+13.09. 12:00,Flint,Drobak-Frogn,-,-
+13.09. 12:00,Lokomotiv Oslo,Fram,-,-
+13.09. 12:00,Ready,Kvik Halden,-,-
+14.09. 12:00,Oppsal,Pors 2,-,-
+14.09. 13:00,Grei,Odd 2,-,-
+14.09. 15:00,Fredrikstad 2,Stabaek 2,-,-
+15.09. 16:00,Orn,Sarpsborg 08 2,-,-
+20.09. 12:00,Oppsal,Flint,-,-
+20.09. 13:00,Drobak-Frogn,Lokomotiv Oslo,-,-
+20.09. 13:00,Fram,Orn,-,-
+21.09. 12:00,Pors 2,Ready,-,-
+22.09. 15:00,Kvik Halden,Fredrikstad 2,-,-
+22.09. 15:00,Odd 2,Stabaek 2,-,-
+22.09. 17:00,Sarpsborg 08 2,Grei,-,-
+27.09. 12:00,Flint,Kvik Halden,-,-
+27.09. 12:00,Grei,Drobak-Frogn,-,-
+27.09. 12:00,Orn,Oppsal,-,-
+27.09. 12:00,Ready,Fram,-,-
+27.09. 13:00,Lokomotiv Oslo,Pors 2,-,-
+29.09. 16:00,Fredrikstad 2,Odd 2,-,-
+30.09. 11:30,Stabaek 2,Sarpsborg 08 2,-,-
+04.10. 12:00,Oppsal,Lokomotiv Oslo,-,-
+04.10. 12:00,Ready,Flint,-,-
+04.10. 13:00,Fram,Grei,-,-
+05.10. 12:00,Kvik Halden,Stabaek 2,-,-
+05.10. 12:00,Pors 2,Orn,-,-
+05.10. 13:00,Drobak-Frogn,Odd 2,-,-
+06.10. 17:00,Sarpsborg 08 2,Fredrikstad 2,-,-
+11.10. 11:00,Lokomotiv Oslo,Ready,-,-
+11.10. 12:00,Flint,Orn,-,-
+11.10. 12:00,Fredrikstad 2,Oppsal,-,-
+11.10. 12:00,Grei,Pors 2,-,-
+11.10. 13:00,Odd 2,Fram,-,-
+11.10. 13:00,Stabaek 2,Drobak-Frogn,-,-
+12.10. 12:00,Sarpsborg 08 2,Kvik Halden,-,-
+18.10. 12:00,Flint,Lokomotiv Oslo,-,-
+18.10. 12:00,Oppsal,Grei,-,-
+18.10. 12:00,Orn,Ready,-,-

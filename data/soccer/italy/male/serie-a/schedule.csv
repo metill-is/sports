@@ -1,0 +1,111 @@
+date,home,away
+06.03. 19:45,Napoli,Torino
+07.03. 14:00,Cagliari,Como
+07.03. 17:00,Atalanta,Udinese
+07.03. 19:45,Juventus,Pisa
+08.03. 11:30,Lecce,Cremonese
+08.03. 14:00,Bologna,Verona
+08.03. 14:00,Fiorentina,Parma
+08.03. 17:00,Genoa,AS Roma
+08.03. 19:45,AC Milan,Inter
+09.03. 19:45,Lazio,Sassuolo
+13.03. 19:45,Torino,Parma
+14.03. 14:00,Inter,Atalanta
+14.03. 17:00,Napoli,Lecce
+14.03. 19:45,Udinese,Juventus
+15.03. 11:30,Verona,Genoa
+15.03. 14:00,Pisa,Cagliari
+15.03. 14:00,Sassuolo,Bologna
+15.03. 17:00,Como,AS Roma
+15.03. 19:45,Lazio,AC Milan
+16.03. 19:45,Cremonese,Fiorentina
+20.03. 17:30,Cagliari,Napoli
+20.03. 19:45,Genoa,Udinese
+21.03. 14:00,Parma,Cremonese
+21.03. 17:00,AC Milan,Torino
+21.03. 19:45,Juventus,Sassuolo
+22.03. 11:30,Como,Pisa
+22.03. 14:00,Atalanta,Verona
+22.03. 14:00,Bologna,Lazio
+22.03. 17:00,AS Roma,Lecce
+22.03. 19:45,Fiorentina,Inter
+04.04. 13:00,Cremonese,Bologna
+04.04. 13:00,Inter,AS Roma
+04.04. 13:00,Juventus,Genoa
+04.04. 13:00,Lazio,Parma
+04.04. 13:00,Lecce,Atalanta
+04.04. 13:00,Napoli,AC Milan
+04.04. 13:00,Pisa,Torino
+04.04. 13:00,Sassuolo,Cagliari
+04.04. 13:00,Udinese,Como
+04.04. 13:00,Verona,Fiorentina
+12.04. 13:00,AC Milan,Udinese
+12.04. 13:00,AS Roma,Pisa
+12.04. 13:00,Atalanta,Juventus
+12.04. 13:00,Bologna,Lecce
+12.04. 13:00,Cagliari,Cremonese
+12.04. 13:00,Como,Inter
+12.04. 13:00,Fiorentina,Lazio
+12.04. 13:00,Genoa,Sassuolo
+12.04. 13:00,Parma,Napoli
+12.04. 13:00,Torino,Verona
+19.04. 13:00,AS Roma,Atalanta
+19.04. 13:00,Cremonese,Torino
+19.04. 13:00,Inter,Cagliari
+19.04. 13:00,Juventus,Bologna
+19.04. 13:00,Lecce,Fiorentina
+19.04. 13:00,Napoli,Lazio
+19.04. 13:00,Pisa,Genoa
+19.04. 13:00,Sassuolo,Como
+19.04. 13:00,Udinese,Parma
+19.04. 13:00,Verona,AC Milan
+26.04. 13:00,AC Milan,Juventus
+26.04. 13:00,Bologna,AS Roma
+26.04. 13:00,Cagliari,Atalanta
+26.04. 13:00,Fiorentina,Sassuolo
+26.04. 13:00,Genoa,Como
+26.04. 13:00,Lazio,Udinese
+26.04. 13:00,Napoli,Cremonese
+26.04. 13:00,Parma,Pisa
+26.04. 13:00,Torino,Inter
+26.04. 13:00,Verona,Lecce
+03.05. 13:00,AS Roma,Fiorentina
+03.05. 13:00,Atalanta,Genoa
+03.05. 13:00,Bologna,Cagliari
+03.05. 13:00,Como,Napoli
+03.05. 13:00,Cremonese,Lazio
+03.05. 13:00,Inter,Parma
+03.05. 13:00,Juventus,Verona
+03.05. 13:00,Pisa,Lecce
+03.05. 13:00,Sassuolo,AC Milan
+03.05. 13:00,Udinese,Torino
+10.05. 13:00,AC Milan,Atalanta
+10.05. 13:00,Cagliari,Udinese
+10.05. 13:00,Cremonese,Pisa
+10.05. 13:00,Fiorentina,Genoa
+10.05. 13:00,Lazio,Inter
+10.05. 13:00,Lecce,Juventus
+10.05. 13:00,Napoli,Bologna
+10.05. 13:00,Parma,AS Roma
+10.05. 13:00,Torino,Sassuolo
+10.05. 13:00,Verona,Como
+17.05. 13:00,AS Roma,Lazio
+17.05. 13:00,Atalanta,Bologna
+17.05. 13:00,Cagliari,Torino
+17.05. 13:00,Como,Parma
+17.05. 13:00,Genoa,AC Milan
+17.05. 13:00,Inter,Verona
+17.05. 13:00,Juventus,Fiorentina
+17.05. 13:00,Pisa,Napoli
+17.05. 13:00,Sassuolo,Lecce
+17.05. 13:00,Udinese,Cremonese
+24.05. 13:00,AC Milan,Cagliari
+24.05. 13:00,Bologna,Inter
+24.05. 13:00,Cremonese,Como
+24.05. 13:00,Fiorentina,Atalanta
+24.05. 13:00,Lazio,Pisa
+24.05. 13:00,Lecce,Genoa
+24.05. 13:00,Napoli,Udinese
+24.05. 13:00,Parma,Sassuolo
+24.05. 13:00,Torino,Juventus
+24.05. 13:00,Verona,AS Roma

@@ -1,0 +1,106 @@
+date,home,away,home_score,away_score
+14.06. 11:00,Fana,Asane 2,-,-
+14.06. 12:00,Bjarg,Gneist,-,-
+14.06. 13:00,Loddefjord,Forde,-,-
+14.06. 13:00,Valerenga 2,Askoy,-,-
+14.06. 14:30,Fjora,Lyngbo,-,-
+15.06. 13:00,Lyn 2,OS TF,-,-
+15.06. 13:00,Sandefjord 2,Fyllingsdalen,-,-
+18.06. 16:00,Lyngbo,Bjarg,-,-
+19.06. 18:00,Asane 2,Loddefjord,-,-
+20.06. 16:00,OS TF,Fana,-,-
+21.06. 11:00,Forde,Sandefjord 2,-,-
+21.06. 13:00,Askoy,Fjora,-,-
+21.06. 13:00,Gneist,Valerenga 2,-,-
+22.06. 13:00,Fyllingsdalen,Lyn 2,-,-
+19.07. 12:00,Askoy,Fyllingsdalen,-,-
+19.07. 13:00,Fana,Forde,-,-
+19.07. 13:00,Fjora,OS TF,-,-
+19.07. 13:00,Sandefjord 2,Lyngbo,-,-
+20.07. 12:00,Bjarg,Lyn 2,-,-
+21.07. 16:00,Valerenga 2,Asane 2,-,-
+22.07. 17:00,Loddefjord,Gneist,-,-
+26.07. 12:00,Fyllingsdalen,Bjarg,-,-
+26.07. 12:00,Lyngbo,Fana,-,-
+26.07. 13:00,Gneist,Fjora,-,-
+26.07. 13:00,Lyn 2,Loddefjord,-,-
+27.07. 11:00,Asane 2,Askoy,-,-
+27.07. 14:00,Forde,Valerenga 2,-,-
+28.07. 15:00,OS TF,Sandefjord 2,-,-
+02.08. 12:00,Askoy,Gneist,-,-
+02.08. 12:00,Bjarg,Forde,-,-
+02.08. 12:00,Fana,Fyllingsdalen,-,-
+02.08. 13:00,Fjora,Asane 2,-,-
+02.08. 13:00,Loddefjord,Lyngbo,-,-
+02.08. 13:00,Valerenga 2,OS TF,-,-
+04.08. 17:00,Sandefjord 2,Lyn 2,-,-
+09.08. 11:00,Gneist,Sandefjord 2,-,-
+09.08. 12:00,Asane 2,Bjarg,-,-
+09.08. 12:00,OS TF,Loddefjord,-,-
+09.08. 13:00,Forde,Askoy,-,-
+09.08. 13:00,Fyllingsdalen,Valerenga 2,-,-
+09.08. 13:00,Lyngbo,Fjora,-,-
+10.08. 11:00,Lyn 2,Fana,-,-
+16.08. 11:00,Sandefjord 2,Forde,-,-
+16.08. 12:00,Bjarg,Lyngbo,-,-
+16.08. 13:00,Fjora,Fyllingsdalen,-,-
+16.08. 13:00,Valerenga 2,Gneist,-,-
+16.08. 14:30,Fana,OS TF,-,-
+17.08. 12:00,Askoy,Lyn 2,-,-
+17.08. 13:00,Loddefjord,Asane 2,-,-
+23.08. 12:00,Gneist,Loddefjord,-,-
+23.08. 12:00,Valerenga 2,Fana,-,-
+23.08. 13:00,Asane 2,Forde,-,-
+23.08. 13:00,Fyllingsdalen,Askoy,-,-
+23.08. 13:00,OS TF,Fjora,-,-
+24.08. 12:00,Lyn 2,Bjarg,-,-
+25.08. 15:00,Lyngbo,Sandefjord 2,-,-
+29.08. 17:00,Bjarg,OS TF,-,-
+30.08. 12:00,Askoy,Lyngbo,-,-
+30.08. 12:00,Fana,Gneist,-,-
+30.08. 13:00,Forde,Loddefjord,-,-
+31.08. 13:00,Fjora,Lyn 2,-,-
+01.09. 16:00,Fyllingsdalen,Asane 2,-,-
+01.09. 17:00,Sandefjord 2,Valerenga 2,-,-
+06.09. 11:00,Loddefjord,Sandefjord 2,-,-
+06.09. 11:00,Valerenga 2,Fjora,-,-
+06.09. 12:00,Asane 2,Fana,-,-
+06.09. 12:00,Gneist,Bjarg,-,-
+06.09. 12:00,OS TF,Askoy,-,-
+06.09. 13:00,Lyn 2,Fyllingsdalen,-,-
+06.09. 13:00,Lyngbo,Forde,-,-
+13.09. 12:00,Bjarg,Loddefjord,-,-
+13.09. 12:00,Fyllingsdalen,Gneist,-,-
+13.09. 13:00,Askoy,Valerenga 2,-,-
+13.09. 13:00,Fana,Fjora,-,-
+13.09. 13:00,Sandefjord 2,OS TF,-,-
+14.09. 13:00,Forde,Lyn 2,-,-
+15.09. 16:00,Asane 2,Lyngbo,-,-
+20.09. 11:00,Fjora,Bjarg,-,-
+20.09. 12:00,Gneist,Forde,-,-
+20.09. 13:00,Loddefjord,Askoy,-,-
+20.09. 13:00,OS TF,Fyllingsdalen,-,-
+20.09. 13:00,Valerenga 2,Lyngbo,-,-
+22.09. 15:00,Fana,Sandefjord 2,-,-
+22.09. 16:00,Lyn 2,Asane 2,-,-
+27.09. 11:00,Sandefjord 2,Fjora,-,-
+27.09. 12:00,Askoy,Fana,-,-
+27.09. 12:00,Lyngbo,Gneist,-,-
+27.09. 13:00,Asane 2,OS TF,-,-
+27.09. 13:00,Bjarg,Valerenga 2,-,-
+27.09. 13:00,Forde,Fyllingsdalen,-,-
+28.09. 13:00,Loddefjord,Lyn 2,-,-
+04.10. 12:00,Fana,Bjarg,-,-
+04.10. 12:00,Gneist,Asane 2,-,-
+04.10. 13:00,Fjora,Askoy,-,-
+04.10. 13:00,OS TF,Forde,-,-
+04.10. 13:00,Valerenga 2,Loddefjord,-,-
+05.10. 13:00,Lyn 2,Lyngbo,-,-
+06.10. 16:00,Fyllingsdalen,Sandefjord 2,-,-
+11.10. 12:00,Bjarg,Fyllingsdalen,-,-
+11.10. 13:00,Asane 2,Valerenga 2,-,-
+11.10. 13:00,Forde,Fana,-,-
+11.10. 13:00,Loddefjord,Fjora,-,-
+11.10. 13:00,Lyngbo,OS TF,-,-
+12.10. 11:00,Lyn 2,Gneist,-,-
+12.10. 14:00,Sandefjord 2,Askoy,-,-

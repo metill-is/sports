@@ -1,0 +1,106 @@
+date,home,away,home_score,away_score
+01.03. 17:00,Szeged,Tatabanya,41,32
+28.02. 18:00,NEKA,Budakalasz,31,24
+28.02. 17:00,Balatonfuredi,Gyongyosi,29,24
+28.02. 17:00,Gyor,Ferencvaros,32,34
+28.02. 17:00,Komloi,PLER,28,31
+28.02. 16:00,Csurgoi,Szigetszentmiklosi,37,19
+27.02. 17:00,Veszprem,Budai Farkasok,33,22
+25.02. 17:00,Tatabanya,Szigetszentmiklosi,29,25
+21.02. 17:00,Ferencvaros,Komloi,35,28
+21.02. 17:00,Gyongyosi,Szeged,25,34
+21.02. 17:00,NEKA,Csurgoi,30,27
+21.02. 17:00,PLER,Veszprem,23,36
+21.02. 16:00,Budakalasz,Gyor,29,29
+18.02. 17:30,Budai Farkasok,Balatonfuredi,26,28
+14.02. 17:00,Komloi,Budakalasz,25,23
+14.02. 17:00,NEKA,Gyor,25,25
+14.02. 17:00,Szeged,Budai Farkasok,39,25
+14.02. 17:00,Szigetszentmiklosi,Gyongyosi,28,24
+13.02. 17:00,Veszprem,Ferencvaros,43,29
+11.02. 17:00,Balatonfuredi,PLER,27,21
+11.02. 17:00,Tatabanya,Csurgoi,26,27
+07.02. 18:00,NEKA,Komloi,27,25
+07.02. 17:30,Budai Farkasok,Szigetszentmiklosi,22,23
+07.02. 17:00,Gyongyosi,Tatabanya,26,31
+07.02. 17:00,PLER,Szeged,25,26
+07.02. 16:00,Csurgoi,Gyor,25,20
+07.02. 13:30,Ferencvaros,Balatonfuredi,30,22
+05.02. 17:00,Veszprem,Budakalasz,43,19
+13.12. 17:00,Budai Farkasok,Tatabanya,26,28
+13.12. 15:00,Veszprem,Balatonfuredi,47,25
+11.12. 17:00,Gyor,Komloi,32,29
+11.12. 17:00,PLER,Szigetszentmiklosi,22,20
+11.12. 16:00,Budakalasz,Balatonfuredi,24,25
+11.12. 16:00,Csurgoi,Gyongyosi,20,23
+10.12. 17:00,Ferencvaros,Szeged,30,33
+09.12. 17:45,Veszprem,Tatabanya,39,27
+07.12. 17:00,Szeged,Budakalasz,41,23
+07.12. 16:30,Veszprem,Gyor,47,36
+06.12. 17:00,Balatonfuredi,NEKA,29,24
+06.12. 17:00,Komloi,Csurgoi,26,26
+06.12. 17:00,Szigetszentmiklosi,Ferencvaros,21,37
+05.12. 17:30,Budai Farkasok,Gyongyosi,27,30
+05.12. 17:00,Tatabanya,PLER,28,22
+30.11. 17:00,Gyor,Balatonfuredi,28,25
+30.11. 17:00,Komloi,Veszprem,24,32
+29.11. 17:00,NEKA,Szeged,31,36
+29.11. 16:00,Budakalasz,Szigetszentmiklosi,24,29
+29.11. 16:00,Csurgoi,Budai Farkasok,31,30
+29.11. 16:00,Ferencvaros,Tatabanya,31,25
+28.11. 17:00,PLER,Gyongyosi,22,20
+26.11. 17:30,Budai Farkasok,Budakalasz,30,27
+23.11. 17:00,Budai Farkasok,PLER,17,27
+23.11. 17:00,Szeged,Gyor,42,32
+22.11. 16:00,Csurgoi,Veszprem,27,35
+21.11. 17:00,Szigetszentmiklosi,NEKA,26,28
+19.11. 17:00,Balatonfuredi,Komloi,31,27
+19.11. 17:00,Tatabanya,Budakalasz,40,36
+15.11. 17:00,Gyor,Szigetszentmiklosi,28,25
+15.11. 17:00,Komloi,Szeged,26,42
+15.11. 17:00,Veszprem,NEKA,38,31
+15.11. 16:00,Budakalasz,Gyongyosi,26,30
+15.11. 16:00,Csurgoi,PLER,33,25
+15.11. 15:00,Ferencvaros,Budai Farkasok,32,32
+12.11. 17:00,NEKA,Tatabanya,25,31
+08.11. 19:30,Tatabanya,Gyor,37,29
+08.11. 17:00,Balatonfuredi,Csurgoi,32,30
+08.11. 17:00,Gyongyosi,NEKA,28,29
+08.11. 17:00,PLER,Ferencvaros,31,33
+08.11. 17:00,Szigetszentmiklosi,Komloi,30,27
+08.11. 15:45,Szeged,Veszprem,31,32
+26.10. 17:00,Balatonfuredi,Szeged,21,35
+25.10. 16:00,Komloi,Tatabanya,26,31
+25.10. 16:00,NEKA,Budai Farkasok,29,32
+25.10. 16:00,Veszprem,Szigetszentmiklosi,49,32
+25.10. 15:00,Csurgoi,Ferencvaros,27,22
+24.10. 16:00,Gyor,Gyongyosi,34,29
+22.10. 15:00,Budakalasz,PLER,33,33
+18.10. 16:00,Ferencvaros,Budakalasz,39,29
+18.10. 16:00,Gyongyosi,Komloi,28,19
+18.10. 15:45,Szeged,Csurgoi,30,27
+17.10. 17:15,Budai Farkasok,Gyor,26,25
+17.10. 16:00,PLER,NEKA,25,25
+15.10. 16:30,Szigetszentmiklosi,Balatonfuredi,25,19
+11.10. 16:00,Csurgoi,Budakalasz,34,28
+11.10. 16:00,Szeged,Szigetszentmiklosi,28,21
+11.10. 16:00,Veszprem,Gyongyosi,36,28
+10.10. 16:00,Ferencvaros,NEKA,31,34
+10.10. 16:00,Gyor,PLER,26,29
+10.10. 16:00,Komloi,Budai Farkasok,25,25
+05.10. 16:00,Budai Farkasok,Veszprem,26,45
+04.10. 15:00,Csurgoi,Szeged,25,25
+04.10. 14:30,Balatonfuredi,Tatabanya,24,29
+03.10. 16:00,Ferencvaros,Gyongyosi,42,31
+28.09. 16:00,Tatabanya,Szeged,34,30
+28.09. 14:30,Ferencvaros,Gyor,33,32
+27.09. 16:00,Gyongyosi,Balatonfuredi,25,21
+27.09. 16:00,Szigetszentmiklosi,Csurgoi,32,28
+27.09. 15:00,Budakalasz,NEKA,27,23
+26.09. 16:00,PLER,Komloi,31,30
+21.09. 16:00,Balatonfuredi,Budai Farkasok,30,30
+20.09. 16:00,Csurgoi,NEKA,27,27
+20.09. 16:00,Komloi,Ferencvaros,38,36
+20.09. 16:00,Veszprem,PLER,42,21
+19.09. 16:00,Gyor,Budakalasz,34,26
+19.09. 16:00,Szigetszentmiklosi,Tatabanya,26,34

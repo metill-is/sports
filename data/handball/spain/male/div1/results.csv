@@ -1,0 +1,104 @@
+date,home,away,home_score,away_score
+01.03. 19:00,Morrazo Cangas,Barcelona,22,35
+01.03. 11:30,Horneo Alicante,La Rioja,31,29
+28.02. 17:00,Villa de Aranda,Quabit Guadalajara,36,32
+28.02. 15:30,Caserio Ciudad Real,Ademar,27,33
+27.02. 19:30,CD Bidasoa Irun,Nava,26,27
+27.02. 19:30,Cuenca,Puente Genil,29,27
+27.02. 18:00,Granollers,Huesca,36,29
+26.02. 19:00,Atl. Valladolid,Torrelavega,27,29
+22.02. 17:30,Huesca,Morrazo Cangas,30,31
+22.02. 11:30,Quabit Guadalajara,Atl. Valladolid,31,25
+21.02. 19:30,Nava,Granollers,27,35
+21.02. 18:30,Puente Genil,Caserio Ciudad Real,27,27
+21.02. 17:00,Ademar,CD Bidasoa Irun,28,30
+21.02. 15:30,Torrelavega,Horneo Alicante,29,28
+20.02. 19:30,Barcelona,Villa de Aranda,41,27
+20.02. 18:00,La Rioja,Cuenca,32,31
+15.02. 17:30,Morrazo Cangas,Nava,26,28
+15.02. 16:00,Horneo Alicante,Quabit Guadalajara,32,28
+15.02. 11:30,Cuenca,Caserio Ciudad Real,31,30
+14.02. 19:45,La Rioja,Torrelavega,30,29
+14.02. 16:00,Atl. Valladolid,Barcelona,28,39
+14.02. 15:30,Villa de Aranda,Huesca,30,34
+13.02. 19:30,CD Bidasoa Irun,Puente Genil,32,27
+13.02. 18:00,Granollers,Ademar,30,29
+11.02. 19:30,Quabit Guadalajara,La Rioja,32,36
+11.02. 19:00,Huesca,Atl. Valladolid,30,30
+10.02. 19:00,Barcelona,Horneo Alicante,51,32
+10.02. 19:00,Caserio Ciudad Real,CD Bidasoa Irun,33,30
+08.02. 16:30,Nava,Villa de Aranda,32,32
+08.02. 11:30,Puente Genil,Granollers,23,28
+07.02. 18:00,Torrelavega,Cuenca,32,29
+07.02. 16:30,Ademar,Morrazo Cangas,25,19
+21.12. 17:30,Huesca,Horneo Alicante,30,32
+21.12. 11:30,Caserio Ciudad Real,Granollers,26,24
+20.12. 19:00,CD Bidasoa Irun,Cuenca,32,30
+20.12. 18:00,Puente Genil,Morrazo Cangas,28,34
+20.12. 17:00,Nava,Atl. Valladolid,29,30
+20.12. 16:00,Ademar,Villa de Aranda,37,32
+20.12. 16:00,Barcelona,La Rioja,43,30
+20.12. 15:00,Quabit Guadalajara,Torrelavega,30,44
+18.12. 19:00,La Rioja,Huesca,33,28
+17.12. 20:00,Granollers,CD Bidasoa Irun,32,29
+17.12. 19:00,Atl. Valladolid,Ademar,30,30
+17.12. 18:30,Horneo Alicante,Nava,38,35
+16.12. 19:30,Morrazo Cangas,Caserio Ciudad Real,34,25
+16.12. 19:30,Torrelavega,Barcelona,27,35
+16.12. 19:00,Villa de Aranda,Puente Genil,26,24
+16.12. 18:30,Cuenca,Quabit Guadalajara,33,33
+14.12. 17:00,Ademar,Horneo Alicante,29,28
+14.12. 11:30,Nava,La Rioja,21,17
+13.12. 19:30,Huesca,Torrelavega,32,31
+13.12. 18:30,Puente Genil,Atl. Valladolid,25,30
+13.12. 17:00,Caserio Ciudad Real,Villa de Aranda,22,19
+13.12. 11:30,Barcelona,Quabit Guadalajara,40,20
+12.12. 19:30,CD Bidasoa Irun,Morrazo Cangas,30,27
+12.12. 18:00,Cuenca,Granollers,28,32
+11.12. 19:30,Ademar,Nava,32,29
+10.12. 19:30,Villa de Aranda,Barcelona,28,34
+07.12. 17:00,Torrelavega,Nava,28,25
+07.12. 15:30,Quabit Guadalajara,Huesca,36,30
+07.12. 11:30,Atl. Valladolid,Caserio Ciudad Real,34,30
+06.12. 19:30,La Rioja,Ademar,33,33
+06.12. 18:15,Villa de Aranda,CD Bidasoa Irun,32,36
+06.12. 17:00,Morrazo Cangas,Granollers,27,33
+06.12. 16:00,Barcelona,Cuenca,42,22
+05.12. 19:30,Horneo Alicante,Puente Genil,39,35
+30.11. 17:00,Huesca,Barcelona,29,40
+30.11. 11:30,Puente Genil,La Rioja,39,42
+29.11. 19:30,CD Bidasoa Irun,Atl. Valladolid,34,24
+29.11. 18:15,Cuenca,Morrazo Cangas,31,31
+29.11. 17:00,Ademar,Torrelavega,28,28
+29.11. 15:30,Caserio Ciudad Real,Horneo Alicante,33,23
+29.11. 15:30,Granollers,Villa de Aranda,28,22
+28.11. 19:30,Nava,Quabit Guadalajara,29,30
+23.11. 18:00,Huesca,Cuenca,30,25
+23.11. 16:30,Torrelavega,Puente Genil,32,27
+22.11. 19:30,La Rioja,Caserio Ciudad Real,38,35
+22.11. 18:00,Villa de Aranda,Morrazo Cangas,28,25
+22.11. 16:30,Horneo Alicante,CD Bidasoa Irun,32,33
+21.11. 20:00,Atl. Valladolid,Granollers,29,26
+21.11. 19:30,Barcelona,Nava,45,25
+21.11. 18:00,Quabit Guadalajara,Ademar,26,26
+16.11. 18:00,Ademar,Barcelona,28,38
+16.11. 16:00,Cuenca,Villa de Aranda,24,22
+15.11. 19:30,Morrazo Cangas,Atl. Valladolid,29,30
+15.11. 18:00,Granollers,Horneo Alicante,29,31
+15.11. 16:30,CD Bidasoa Irun,La Rioja,28,32
+15.11. 15:00,Puente Genil,Quabit Guadalajara,33,29
+14.11. 19:30,Nava,Huesca,41,33
+14.11. 18:00,Caserio Ciudad Real,Torrelavega,29,37
+09.11. 16:00,Quabit Guadalajara,Caserio Ciudad Real,28,30
+09.11. 11:30,Atl. Valladolid,Villa de Aranda,36,30
+08.11. 19:00,La Rioja,Granollers,33,29
+08.11. 18:00,Huesca,Ademar,35,30
+08.11. 17:30,Torrelavega,CD Bidasoa Irun,32,31
+08.11. 17:00,Nava,Cuenca,33,32
+08.11. 15:45,Barcelona,Puente Genil,41,29
+07.11. 19:30,Horneo Alicante,Morrazo Cangas,34,24
+26.10. 18:00,Granollers,Torrelavega,32,31
+26.10. 16:30,Morrazo Cangas,La Rioja,26,30
+26.10. 11:30,Caserio Ciudad Real,Barcelona,27,37
+25.10. 17:30,CD Bidasoa Irun,Quabit Guadalajara,34,31
+25.10. 16:00,Villa de Aranda,Horneo Alicante,30,26

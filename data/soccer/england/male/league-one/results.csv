@@ -1,0 +1,404 @@
+date,home,away,home_score,away_score
+28.02. 15:00,Doncaster,Cardiff,0,4
+28.02. 15:00,Exeter,Bolton,1,5
+28.02. 15:00,Lincoln,Blackpool,4,0
+28.02. 15:00,Mansfield,AFC Wimbledon,2,2
+28.02. 15:00,Port Vale,Luton,1,1
+28.02. 15:00,Reading,Bradford City,2,1
+28.02. 15:00,Rotherham,Plymouth,1,0
+28.02. 15:00,Stevenage,Stockport County,2,1
+28.02. 15:00,Wigan,Huddersfield,1,0
+28.02. 15:00,Wycombe,Burton,3,0
+28.02. 12:30,Leyton Orient,Barnsley,1,3
+28.02. 12:30,Northampton,Peterborough,1,1
+24.02. 19:45,Bradford City,Rotherham,1,0
+24.02. 19:45,Burton,Stockport County,3,0
+24.02. 19:45,Northampton,Port Vale,0,1
+21.02. 15:00,AFC Wimbledon,Bradford City,3,1
+21.02. 15:00,Bolton,Blackpool,2,2
+21.02. 15:00,Huddersfield,Barnsley,2,1
+21.02. 15:00,Luton,Burton,1,1
+21.02. 15:00,Mansfield,Lincoln,0,2
+21.02. 15:00,Northampton,Leyton Orient,1,2
+21.02. 15:00,Peterborough,Exeter,3,3
+21.02. 15:00,Port Vale,Reading,1,1
+21.02. 15:00,Stockport County,Wigan,4,2
+21.02. 12:30,Plymouth,Cardiff,5,2
+21.02. 12:30,Rotherham,Doncaster,1,2
+21.02. 12:30,Wycombe,Stevenage,3,1
+18.02. 19:45,Wigan,Luton,1,0
+17.02. 20:00,Blackpool,Mansfield,1,0
+17.02. 20:00,Reading,Bolton,1,1
+17.02. 19:45,Barnsley,Peterborough,2,1
+17.02. 19:45,Bradford City,Stockport County,1,0
+17.02. 19:45,Burton,Rotherham,1,0
+17.02. 19:45,Cardiff,AFC Wimbledon,4,1
+17.02. 19:45,Doncaster,Huddersfield,1,0
+17.02. 19:45,Exeter,Wycombe,1,1
+17.02. 19:45,Leyton Orient,Plymouth,1,3
+17.02. 19:45,Lincoln,Northampton,4,0
+17.02. 19:45,Stevenage,Port Vale,2,1
+14.02. 15:00,Barnsley,AFC Wimbledon,3,3
+14.02. 15:00,Blackpool,Plymouth,0,4
+14.02. 15:00,Bradford City,Peterborough,2,0
+14.02. 15:00,Cardiff,Luton,3,1
+14.02. 15:00,Exeter,Northampton,0,0
+14.02. 15:00,Lincoln,Bolton,1,1
+14.02. 12:30,Reading,Wycombe,3,2
+14.02. 12:30,Stevenage,Huddersfield,1,0
+10.02. 19:45,Mansfield,Peterborough,1,2
+10.02. 19:45,Wigan,Reading,1,2
+07.02. 15:01,AFC Wimbledon,Reading,3,2
+07.02. 15:01,Bolton,Barnsley,3,2
+07.02. 15:01,Huddersfield,Blackpool,2,2
+07.02. 15:01,Mansfield,Exeter,0,0
+07.02. 15:01,Northampton,Stevenage,3,1
+07.02. 15:01,Peterborough,Wigan,6,1
+07.02. 15:01,Plymouth,Lincoln,1,4
+07.02. 15:01,Rotherham,Cardiff,0,3
+07.02. 15:01,Stockport County,Leyton Orient,0,0
+07.02. 15:01,Wycombe,Doncaster,4,0
+07.02. 12:31,Luton,Bradford City,2,1
+07.02. 12:31,Port Vale,Burton,2,2
+03.02. 19:45,Barnsley,Northampton,2,2
+03.02. 19:45,Burton,Doncaster,1,2
+03.02. 19:00,Port Vale,AFC Wimbledon,0,1
+31.01. 15:00,Barnsley,Stevenage,3,1
+31.01. 15:00,Burton,Cardiff,2,2
+31.01. 15:00,Exeter,Rotherham,0,4
+31.01. 15:00,Leyton Orient,Port Vale,0,1
+31.01. 15:00,Luton,Blackpool,1,0
+31.01. 15:00,Mansfield,Wycombe,0,0
+31.01. 15:00,Peterborough,Huddersfield,2,3
+31.01. 15:00,Stockport County,Plymouth,2,1
+31.01. 15:00,Wigan,Lincoln,0,1
+31.01. 14:00,Northampton,Reading,0,2
+31.01. 12:30,AFC Wimbledon,Bolton,0,1
+31.01. 12:30,Bradford City,Doncaster,1,0
+27.01. 20:00,Doncaster,Leyton Orient,3,0
+27.01. 20:00,Reading,Exeter,2,2
+27.01. 19:45,Blackpool,Stockport County,1,2
+27.01. 19:45,Bolton,Burton,2,1
+27.01. 19:45,Cardiff,Barnsley,4,0
+27.01. 19:45,Huddersfield,Luton,1,0
+27.01. 19:45,Lincoln,Bradford City,3,0
+27.01. 19:45,Plymouth,Mansfield,1,1
+27.01. 19:45,Rotherham,Northampton,2,1
+27.01. 19:45,Stevenage,Peterborough,1,0
+27.01. 19:45,Wycombe,Wigan,2,0
+24.01. 15:00,Blackpool,Northampton,2,0
+24.01. 15:00,Bolton,Leyton Orient,2,1
+24.01. 15:00,Doncaster,Wigan,3,3
+24.01. 15:00,Port Vale,Exeter,1,3
+24.01. 15:00,Reading,Barnsley,2,2
+24.01. 15:00,Rotherham,AFC Wimbledon,1,1
+24.01. 15:00,Stevenage,Mansfield,1,1
+24.01. 15:00,Wycombe,Peterborough,0,2
+24.01. 12:30,Cardiff,Stockport County,1,1
+24.01. 12:30,Huddersfield,Bradford City,1,0
+24.01. 12:30,Plymouth,Luton,1,0
+22.01. 20:00,Lincoln,Burton,2,1
+20.01. 19:45,Stevenage,Bolton,0,0
+17.01. 15:00,AFC Wimbledon,Doncaster,0,1
+17.01. 15:00,Barnsley,Blackpool,2,1
+17.01. 15:00,Burton,Huddersfield,3,1
+17.01. 15:00,Exeter,Stevenage,3,0
+17.01. 15:00,Leyton Orient,Reading,3,1
+17.01. 15:00,Luton,Lincoln,2,2
+17.01. 15:00,Mansfield,Port Vale,3,0
+17.01. 15:00,Northampton,Wycombe,1,2
+17.01. 15:00,Peterborough,Plymouth,0,1
+17.01. 15:00,Stockport County,Rotherham,3,2
+17.01. 12:30,Bradford City,Cardiff,1,2
+17.01. 12:30,Wigan,Bolton,0,1
+10.01. 15:00,Leyton Orient,Cardiff,1,1
+10.01. 15:00,Peterborough,Bolton,3,1
+10.01. 12:30,Luton,Stevenage,2,1
+10.01. 12:30,Stockport County,Huddersfield,1,0
+04.01. 15:00,Blackpool,Bradford City,1,2
+04.01. 15:00,Cardiff,Wigan,1,0
+04.01. 15:00,Huddersfield,Exeter,2,2
+04.01. 15:00,Plymouth,Burton,3,0
+04.01. 15:00,Reading,Stockport County,1,0
+04.01. 15:00,Wycombe,AFC Wimbledon,2,0
+04.01. 12:00,Bolton,Northampton,0,0
+04.01. 12:00,Lincoln,Peterborough,5,2
+01.01. 15:00,Doncaster,Bolton,1,1
+01.01. 15:00,Exeter,Luton,1,0
+01.01. 15:00,Leyton Orient,AFC Wimbledon,1,3
+01.01. 15:00,Lincoln,Huddersfield,1,1
+01.01. 15:00,Mansfield,Bradford City,3,0
+01.01. 15:00,Northampton,Stockport County,0,0
+01.01. 15:00,Port Vale,Blackpool,5,1
+01.01. 15:00,Reading,Burton,2,0
+01.01. 15:00,Rotherham,Peterborough,0,2
+01.01. 15:00,Stevenage,Plymouth,1,1
+01.01. 15:00,Wigan,Barnsley,1,1
+01.01. 15:00,Wycombe,Cardiff,1,1
+29.12. 19:45,AFC Wimbledon,Exeter,0,1
+29.12. 19:45,Barnsley,Lincoln,0,2
+29.12. 19:45,Blackpool,Rotherham,4,0
+29.12. 19:45,Bolton,Mansfield,0,1
+29.12. 19:45,Bradford City,Port Vale,1,0
+29.12. 19:45,Burton,Wigan,0,2
+29.12. 19:45,Cardiff,Stevenage,2,1
+29.12. 19:45,Huddersfield,Northampton,2,0
+29.12. 19:45,Luton,Leyton Orient,3,0
+29.12. 19:45,Peterborough,Reading,1,1
+29.12. 19:45,Plymouth,Wycombe,1,1
+29.12. 19:45,Stockport County,Doncaster,4,2
+26.12. 15:00,AFC Wimbledon,Stevenage,0,0
+26.12. 15:00,Barnsley,Mansfield,2,3
+26.12. 15:00,Blackpool,Doncaster,1,0
+26.12. 15:00,Bolton,Rotherham,2,1
+26.12. 15:00,Bradford City,Wigan,2,1
+26.12. 15:00,Burton,Northampton,5,1
+26.12. 15:00,Cardiff,Exeter,1,0
+26.12. 15:00,Huddersfield,Port Vale,5,0
+26.12. 15:00,Luton,Wycombe,4,0
+26.12. 15:00,Peterborough,Leyton Orient,1,0
+26.12. 15:00,Plymouth,Reading,1,4
+26.12. 15:00,Stockport County,Lincoln,1,2
+20.12. 15:00,Doncaster,Plymouth,1,5
+20.12. 15:00,Exeter,Barnsley,3,0
+20.12. 15:00,Leyton Orient,Bradford City,2,1
+20.12. 15:00,Lincoln,Cardiff,2,1
+20.12. 15:00,Mansfield,Stockport County,1,2
+20.12. 15:00,Port Vale,Peterborough,0,1
+20.12. 15:00,Rotherham,Huddersfield,1,3
+20.12. 15:00,Wycombe,Bolton,2,1
+20.12. 12:30,Stevenage,Burton,2,2
+20.12. 12:30,Wigan,Blackpool,0,2
+19.12. 19:45,Northampton,AFC Wimbledon,3,1
+18.12. 20:00,Reading,Luton,3,2
+13.12. 15:00,Barnsley,Leyton Orient,3,2
+13.12. 15:00,Blackpool,Lincoln,2,2
+13.12. 15:00,Bolton,Exeter,2,1
+13.12. 15:00,Bradford City,Reading,2,0
+13.12. 15:00,Burton,Wycombe,0,0
+13.12. 15:00,Cardiff,Doncaster,4,3
+13.12. 15:00,Luton,Port Vale,2,2
+13.12. 15:00,Peterborough,Northampton,2,1
+13.12. 15:00,Plymouth,Rotherham,1,0
+13.12. 15:00,Stockport County,Stevenage,1,3
+13.12. 12:30,AFC Wimbledon,Mansfield,0,0
+13.12. 12:30,Huddersfield,Wigan,1,1
+10.12. 19:45,Rotherham,Blackpool,0,3
+09.12. 20:00,Reading,Peterborough,1,2
+09.12. 20:00,Stevenage,Cardiff,0,1
+09.12. 19:45,Doncaster,Stockport County,0,2
+09.12. 19:45,Exeter,AFC Wimbledon,1,0
+09.12. 19:45,Leyton Orient,Luton,1,1
+09.12. 19:45,Lincoln,Barnsley,3,1
+09.12. 19:45,Mansfield,Bolton,0,1
+09.12. 19:45,Northampton,Huddersfield,1,1
+09.12. 19:45,Wycombe,Plymouth,0,1
+06.12. 12:30,Cardiff,Huddersfield,3,2
+06.12. 12:30,Plymouth,Bradford City,0,1
+02.12. 19:45,Wigan,Burton,1,0
+29.11. 15:00,Bradford City,Exeter,1,0
+29.11. 15:00,Burton,Leyton Orient,0,4
+29.11. 15:00,Cardiff,Mansfield,3,0
+29.11. 15:00,Doncaster,Peterborough,2,1
+29.11. 15:00,Huddersfield,AFC Wimbledon,3,3
+29.11. 15:00,Lincoln,Port Vale,1,0
+29.11. 15:00,Luton,Bolton,1,1
+29.11. 15:00,Plymouth,Northampton,0,3
+29.11. 15:00,Rotherham,Wycombe,1,1
+29.11. 15:00,Wigan,Stevenage,0,0
+29.11. 12:30,Blackpool,Reading,0,3
+29.11. 12:30,Stockport County,Barnsley,1,1
+25.11. 19:45,Luton,Huddersfield,2,1
+25.11. 19:45,Peterborough,Stevenage,0,1
+22.11. 15:00,AFC Wimbledon,Wigan,1,2
+22.11. 15:00,Barnsley,Luton,5,0
+22.11. 15:00,Bolton,Bradford City,0,0
+22.11. 15:00,Leyton Orient,Blackpool,1,1
+22.11. 15:00,Mansfield,Huddersfield,1,3
+22.11. 15:00,Northampton,Cardiff,1,3
+22.11. 15:00,Reading,Rotherham,1,1
+22.11. 15:00,Stevenage,Doncaster,0,0
+22.11. 15:00,Wycombe,Lincoln,3,2
+22.11. 12:30,Port Vale,Plymouth,0,1
+20.11. 20:00,Peterborough,Stockport County,3,0
+15.11. 15:00,Burton,Blackpool,1,0
+15.11. 15:00,Leyton Orient,Exeter,2,1
+15.11. 15:00,Lincoln,Doncaster,2,1
+15.11. 15:00,Luton,Rotherham,0,0
+15.11. 15:00,Port Vale,Wycombe,0,0
+08.11. 15:00,Blackpool,Cardiff,3,1
+08.11. 15:00,Bolton,Port Vale,4,0
+08.11. 15:00,Bradford City,Burton,1,2
+08.11. 15:00,Doncaster,Barnsley,1,2
+08.11. 15:00,Exeter,Wigan,1,1
+08.11. 15:00,Huddersfield,Plymouth,3,1
+08.11. 15:00,Peterborough,AFC Wimbledon,5,0
+08.11. 15:00,Rotherham,Lincoln,3,0
+08.11. 15:00,Stockport County,Luton,0,3
+08.11. 12:30,Northampton,Mansfield,2,1
+08.11. 12:30,Wycombe,Leyton Orient,4,1
+06.11. 20:00,Reading,Stevenage,1,0
+04.11. 19:45,Rotherham,Burton,2,2
+28.10. 19:45,Bradford City,Lincoln,0,0
+28.10. 19:45,Mansfield,Plymouth,2,0
+27.10. 20:00,Port Vale,Stockport County,0,3
+25.10. 14:00,AFC Wimbledon,Burton,0,1
+25.10. 14:00,Barnsley,Rotherham,0,1
+25.10. 14:00,Leyton Orient,Lincoln,1,0
+25.10. 14:00,Northampton,Luton,0,1
+25.10. 14:00,Peterborough,Blackpool,1,2
+25.10. 14:00,Reading,Doncaster,1,1
+25.10. 14:00,Stevenage,Bradford City,1,1
+25.10. 14:00,Wycombe,Huddersfield,3,0
+25.10. 11:30,Bolton,Cardiff,1,0
+25.10. 11:30,Mansfield,Wigan,1,1
+23.10. 19:00,Exeter,Plymouth,2,0
+21.10. 19:00,Reading,Northampton,1,0
+18.10. 14:00,Blackpool,Wycombe,1,1
+18.10. 14:00,Bradford City,Barnsley,2,2
+18.10. 14:00,Cardiff,Reading,2,1
+18.10. 14:00,Doncaster,Northampton,1,2
+18.10. 14:00,Luton,Mansfield,0,2
+18.10. 14:00,Plymouth,AFC Wimbledon,1,2
+18.10. 14:00,Rotherham,Leyton Orient,1,0
+18.10. 14:00,Stockport County,Exeter,1,0
+18.10. 14:00,Wigan,Port Vale,1,0
+18.10. 11:30,Burton,Peterborough,0,1
+18.10. 11:30,Lincoln,Stevenage,1,0
+16.10. 19:00,Huddersfield,Bolton,1,2
+11.10. 14:00,AFC Wimbledon,Port Vale,1,1
+11.10. 14:00,Burton,Bolton,3,0
+11.10. 14:00,Exeter,Reading,1,1
+11.10. 14:00,Leyton Orient,Doncaster,4,0
+11.10. 14:00,Stockport County,Blackpool,1,0
+11.10. 14:00,Wigan,Wycombe,0,1
+11.10. 13:00,Northampton,Rotherham,1,2
+04.10. 14:00,Blackpool,AFC Wimbledon,0,2
+04.10. 14:00,Bolton,Peterborough,2,1
+04.10. 14:00,Cardiff,Leyton Orient,4,3
+04.10. 14:00,Huddersfield,Stockport County,1,2
+04.10. 14:00,Lincoln,Exeter,0,1
+04.10. 14:00,Plymouth,Wigan,1,1
+04.10. 14:00,Port Vale,Northampton,0,0
+04.10. 14:00,Reading,Mansfield,1,1
+04.10. 14:00,Stevenage,Luton,2,0
+04.10. 11:30,Doncaster,Burton,1,1
+04.10. 11:30,Wycombe,Barnsley,2,2
+02.10. 19:00,Rotherham,Bradford City,2,2
+30.09. 18:45,Blackpool,Luton,2,2
+30.09. 18:45,Cardiff,Burton,0,1
+27.09. 14:00,Barnsley,Port Vale,0,2
+27.09. 14:00,Bradford City,Blackpool,1,0
+27.09. 14:00,Burton,Plymouth,0,4
+27.09. 14:00,Exeter,Huddersfield,0,1
+27.09. 14:00,Luton,Doncaster,1,0
+27.09. 14:00,Mansfield,Rotherham,2,1
+27.09. 14:00,Northampton,Bolton,2,0
+27.09. 14:00,Peterborough,Lincoln,0,3
+27.09. 14:00,Stockport County,Reading,1,1
+27.09. 14:00,Wigan,Cardiff,0,2
+27.09. 11:30,AFC Wimbledon,Wycombe,2,1
+27.09. 11:30,Leyton Orient,Stevenage,2,3
+20.09. 14:00,Cardiff,Bradford City,1,3
+20.09. 14:00,Doncaster,AFC Wimbledon,1,2
+20.09. 14:00,Huddersfield,Burton,0,0
+20.09. 14:00,Plymouth,Peterborough,0,1
+20.09. 14:00,Port Vale,Mansfield,2,1
+20.09. 14:00,Reading,Leyton Orient,2,1
+20.09. 14:00,Rotherham,Stockport County,0,1
+20.09. 14:00,Stevenage,Exeter,2,1
+20.09. 14:00,Wycombe,Northampton,2,0
+20.09. 11:30,Blackpool,Barnsley,1,0
+20.09. 11:30,Bolton,Wigan,4,1
+20.09. 11:30,Lincoln,Luton,3,1
+13.09. 14:00,AFC Wimbledon,Rotherham,2,1
+13.09. 14:00,Barnsley,Reading,3,2
+13.09. 14:00,Burton,Lincoln,0,1
+13.09. 14:00,Exeter,Port Vale,0,2
+13.09. 14:00,Leyton Orient,Bolton,1,1
+13.09. 14:00,Luton,Plymouth,2,3
+13.09. 14:00,Mansfield,Stevenage,1,1
+13.09. 14:00,Peterborough,Wycombe,2,1
+13.09. 14:00,Stockport County,Cardiff,1,1
+13.09. 14:00,Wigan,Doncaster,3,0
+13.09. 11:30,Bradford City,Huddersfield,3,1
+13.09. 11:30,Northampton,Blackpool,1,0
+06.09. 14:00,Bolton,AFC Wimbledon,3,0
+06.09. 14:00,Doncaster,Bradford City,3,1
+06.09. 14:00,Huddersfield,Peterborough,3,2
+06.09. 14:00,Lincoln,Wigan,2,2
+06.09. 14:00,Plymouth,Stockport County,4,2
+06.09. 14:00,Port Vale,Leyton Orient,2,3
+06.09. 14:00,Rotherham,Exeter,1,0
+06.09. 14:00,Wycombe,Mansfield,2,0
+30.08. 14:00,Barnsley,Huddersfield,3,1
+30.08. 14:00,Blackpool,Bolton,1,1
+30.08. 14:00,Bradford City,AFC Wimbledon,3,2
+30.08. 14:00,Burton,Luton,0,3
+30.08. 14:00,Exeter,Peterborough,3,0
+30.08. 14:00,Leyton Orient,Northampton,0,1
+30.08. 14:00,Lincoln,Mansfield,1,1
+30.08. 14:00,Reading,Port Vale,1,0
+30.08. 14:00,Stevenage,Wycombe,1,0
+30.08. 14:00,Wigan,Stockport County,1,1
+30.08. 11:30,Cardiff,Plymouth,4,0
+30.08. 11:30,Doncaster,Rotherham,1,0
+23.08. 14:00,AFC Wimbledon,Barnsley,2,0
+23.08. 14:00,Bolton,Lincoln,1,1
+23.08. 14:00,Huddersfield,Stevenage,1,0
+23.08. 14:00,Mansfield,Leyton Orient,4,1
+23.08. 14:00,Northampton,Exeter,2,0
+23.08. 14:00,Peterborough,Bradford City,1,1
+23.08. 14:00,Plymouth,Blackpool,1,0
+23.08. 14:00,Port Vale,Doncaster,0,1
+23.08. 14:00,Stockport County,Burton,2,1
+23.08. 14:00,Wycombe,Reading,2,2
+23.08. 11:30,Luton,Cardiff,0,1
+23.08. 11:30,Rotherham,Wigan,2,2
+20.08. 19:00,Bolton,Reading,1,1
+19.08. 18:45,AFC Wimbledon,Cardiff,0,1
+19.08. 18:45,Huddersfield,Doncaster,2,0
+19.08. 18:45,Luton,Wigan,1,0
+19.08. 18:45,Mansfield,Blackpool,2,0
+19.08. 18:45,Northampton,Lincoln,0,1
+19.08. 18:45,Peterborough,Barnsley,0,1
+19.08. 18:45,Plymouth,Leyton Orient,0,1
+19.08. 18:45,Port Vale,Stevenage,1,2
+19.08. 18:45,Stockport County,Bradford City,1,2
+19.08. 18:45,Wycombe,Exeter,0,1
+16.08. 14:00,Barnsley,Bolton,1,1
+16.08. 14:00,Blackpool,Huddersfield,3,2
+16.08. 14:00,Bradford City,Luton,2,1
+16.08. 14:00,Cardiff,Rotherham,3,0
+16.08. 14:00,Doncaster,Wycombe,1,1
+16.08. 14:00,Leyton Orient,Stockport County,2,2
+16.08. 14:00,Lincoln,Plymouth,3,2
+16.08. 14:00,Reading,AFC Wimbledon,1,2
+16.08. 14:00,Stevenage,Northampton,2,0
+16.08. 14:00,Wigan,Peterborough,2,0
+16.08. 11:30,Burton,Port Vale,0,0
+16.08. 11:30,Exeter,Mansfield,1,2
+09.08. 14:00,AFC Wimbledon,Lincoln,2,0
+09.08. 14:00,Barnsley,Burton,3,2
+09.08. 14:00,Bolton,Plymouth,2,0
+09.08. 14:00,Exeter,Blackpool,4,1
+09.08. 14:00,Leyton Orient,Wigan,2,0
+09.08. 14:00,Mansfield,Doncaster,1,2
+09.08. 14:00,Northampton,Bradford City,0,0
+09.08. 14:00,Stevenage,Rotherham,1,0
+09.08. 14:00,Wycombe,Stockport County,1,2
+09.08. 11:30,Peterborough,Luton,0,2
+09.08. 11:30,Reading,Huddersfield,0,2
+07.08. 19:00,Port Vale,Cardiff,0,0
+03.08. 11:00,Stockport County,Bolton,2,0
+02.08. 14:00,Blackpool,Stevenage,2,3
+02.08. 14:00,Bradford City,Wycombe,2,1
+02.08. 14:00,Burton,Mansfield,2,1
+02.08. 14:00,Doncaster,Exeter,1,0
+02.08. 14:00,Huddersfield,Leyton Orient,3,0
+02.08. 14:00,Lincoln,Reading,2,0
+02.08. 14:00,Plymouth,Barnsley,1,3
+02.08. 14:00,Rotherham,Port Vale,2,1
+02.08. 14:00,Wigan,Northampton,3,1
+02.08. 11:30,Cardiff,Peterborough,2,1
+01.08. 19:00,Luton,AFC Wimbledon,1,0

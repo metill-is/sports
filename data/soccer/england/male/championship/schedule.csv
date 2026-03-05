@@ -1,0 +1,133 @@
+date,home,away
+06.03. 20:00,Preston,Oxford Utd
+07.03. 12:30,Blackburn,Portsmouth
+07.03. 12:30,Hull,Millwall
+07.03. 15:00,Bristol City,Coventry
+07.03. 15:00,Charlton,Birmingham
+07.03. 15:00,Derby,Sheffield Wed
+07.03. 15:00,Ipswich,Leicester
+07.03. 15:00,Sheffield Utd,West Brom
+07.03. 15:00,Swansea,Stoke
+08.03. 16:30,QPR,Middlesbrough
+10.03. 19:45,Leicester,Bristol City
+10.03. 19:45,Millwall,Derby
+10.03. 19:45,Portsmouth,Swansea
+10.03. 19:45,Sheffield Wed,Watford
+10.03. 19:45,Wrexham,Hull
+10.03. 20:00,Stoke,Ipswich
+11.03. 19:45,Birmingham,QPR
+11.03. 19:45,Middlesbrough,Charlton
+11.03. 19:45,Norwich,Sheffield Utd
+11.03. 19:45,Oxford Utd,Blackburn
+11.03. 19:45,West Brom,Southampton
+11.03. 20:00,Coventry,Preston
+13.03. 20:00,Wrexham,Swansea
+14.03. 12:30,Coventry,Southampton
+14.03. 12:30,Middlesbrough,Bristol City
+14.03. 12:30,Oxford Utd,Charlton
+14.03. 15:00,Birmingham,Sheffield Utd
+14.03. 15:00,Leicester,QPR
+14.03. 15:00,Millwall,Blackburn
+14.03. 15:00,Norwich,Preston
+14.03. 15:00,Sheffield Wed,Ipswich
+14.03. 15:00,Stoke,Watford
+14.03. 15:00,West Brom,Hull
+16.03. 20:00,Portsmouth,Derby
+17.03. 19:45,Watford,Wrexham
+18.03. 19:45,Southampton,Norwich
+20.03. 20:00,Preston,Stoke
+21.03. 12:30,Blackburn,Middlesbrough
+21.03. 12:30,Derby,Birmingham
+21.03. 12:30,Ipswich,Millwall
+21.03. 15:00,Bristol City,West Brom
+21.03. 15:00,Charlton,Norwich
+21.03. 15:00,Hull,Sheffield Wed
+21.03. 15:00,QPR,Portsmouth
+21.03. 15:00,Sheffield Utd,Wrexham
+21.03. 15:00,Southampton,Oxford Utd
+21.03. 15:00,Watford,Leicester
+21.03. 17:15,Swansea,Coventry
+03.04. 11:30,Middlesbrough,Millwall
+03.04. 14:00,Birmingham,Blackburn
+03.04. 14:00,Charlton,Bristol City
+03.04. 14:00,Leicester,Preston
+03.04. 14:00,Norwich,Portsmouth
+03.04. 14:00,Oxford Utd,Hull
+03.04. 14:00,QPR,Watford
+03.04. 14:00,Sheffield Utd,Swansea
+03.04. 14:00,Stoke,Sheffield Wed
+03.04. 14:00,West Brom,Wrexham
+03.04. 16:30,Southampton,Ipswich
+03.04. 19:00,Coventry,Derby
+06.04. 11:30,Portsmouth,Oxford Utd
+06.04. 12:00,Millwall,Norwich
+06.04. 14:00,Blackburn,West Brom
+06.04. 14:00,Bristol City,Sheffield Utd
+06.04. 14:00,Derby,Stoke
+06.04. 14:00,Ipswich,Birmingham
+06.04. 14:00,Preston,QPR
+06.04. 14:00,Sheffield Wed,Leicester
+06.04. 14:00,Watford,Charlton
+06.04. 14:00,Wrexham,Southampton
+06.04. 16:30,Swansea,Middlesbrough
+06.04. 19:00,Hull,Coventry
+11.04. 11:30,Norwich,Ipswich
+11.04. 14:00,Birmingham,Wrexham
+11.04. 14:00,Charlton,Preston
+11.04. 14:00,Coventry,Sheffield Wed
+11.04. 14:00,Leicester,Swansea
+11.04. 14:00,Middlesbrough,Portsmouth
+11.04. 14:00,Oxford Utd,Watford
+11.04. 14:00,QPR,Bristol City
+11.04. 14:00,Sheffield Utd,Hull
+11.04. 14:00,Southampton,Derby
+11.04. 14:00,Stoke,Blackburn
+11.04. 14:00,West Brom,Millwall
+18.04. 14:00,Blackburn,Coventry
+18.04. 14:00,Bristol City,Norwich
+18.04. 14:00,Derby,Oxford Utd
+18.04. 14:00,Hull,Birmingham
+18.04. 14:00,Ipswich,Middlesbrough
+18.04. 14:00,Millwall,QPR
+18.04. 14:00,Portsmouth,Leicester
+18.04. 14:00,Preston,West Brom
+18.04. 14:00,Sheffield Wed,Charlton
+18.04. 14:00,Swansea,Southampton
+18.04. 14:00,Watford,Sheffield Utd
+18.04. 14:00,Wrexham,Stoke
+21.04. 18:45,Coventry,Portsmouth
+21.04. 18:45,Middlesbrough,Sheffield Wed
+21.04. 18:45,Norwich,Derby
+21.04. 18:45,Oxford Utd,Wrexham
+21.04. 18:45,QPR,Swansea
+21.04. 18:45,Southampton,Bristol City
+21.04. 18:45,Stoke,Millwall
+21.04. 18:45,West Brom,Watford
+22.04. 18:45,Birmingham,Preston
+22.04. 18:45,Charlton,Ipswich
+22.04. 18:45,Leicester,Hull
+22.04. 18:45,Sheffield Utd,Blackburn
+25.04. 14:00,Birmingham,Bristol City
+25.04. 14:00,Charlton,Hull
+25.04. 14:00,Coventry,Wrexham
+25.04. 14:00,Leicester,Millwall
+25.04. 14:00,Middlesbrough,Watford
+25.04. 14:00,Norwich,Swansea
+25.04. 14:00,Oxford Utd,Sheffield Wed
+25.04. 14:00,QPR,Derby
+25.04. 14:00,Sheffield Utd,Preston
+25.04. 14:00,Southampton,Blackburn
+25.04. 14:00,Stoke,Portsmouth
+25.04. 14:00,West Brom,Ipswich
+02.05. 11:30,Blackburn,Leicester
+02.05. 11:30,Bristol City,Stoke
+02.05. 11:30,Derby,Sheffield Utd
+02.05. 11:30,Hull,Norwich
+02.05. 11:30,Ipswich,QPR
+02.05. 11:30,Millwall,Oxford Utd
+02.05. 11:30,Portsmouth,Birmingham
+02.05. 11:30,Preston,Southampton
+02.05. 11:30,Sheffield Wed,West Brom
+02.05. 11:30,Swansea,Charlton
+02.05. 11:30,Watford,Coventry
+02.05. 11:30,Wrexham,Middlesbrough

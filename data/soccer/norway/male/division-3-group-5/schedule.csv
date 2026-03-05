@@ -1,0 +1,106 @@
+date,home,away,home_score,away_score
+13.06. 17:00,Brodd,Sola,-,-
+14.06. 12:00,Staal Jorpeland,Hinna,-,-
+14.06. 12:00,Stord,Viking 2,-,-
+14.06. 13:00,Madla IL,Vag,-,-
+14.06. 13:00,Vindbjart,Torvastad,-,-
+15.06. 12:00,Vidar,Sandnes Ulf 2,-,-
+16.06. 17:00,Djerv 1919,Haugesund 2,-,-
+19.06. 17:00,Sandnes Ulf 2,Staal Jorpeland,-,-
+19.06. 17:00,Torvastad,Madla IL,-,-
+20.06. 16:00,Sola,Vindbjart,-,-
+21.06. 11:00,Vag,Djerv 1919,-,-
+21.06. 12:00,Hinna,Stord,-,-
+21.06. 16:00,Viking 2,Brodd,-,-
+23.06. 18:00,Haugesund 2,Vidar,-,-
+19.07. 12:00,Brodd,Hinna,-,-
+19.07. 12:00,Stord,Sandnes Ulf 2,-,-
+19.07. 12:00,Vidar,Staal Jorpeland,-,-
+19.07. 13:00,Vindbjart,Vag,-,-
+21.07. 17:00,Djerv 1919,Viking 2,-,-
+21.07. 17:00,Madla IL,Sola,-,-
+21.07. 17:00,Torvastad,Haugesund 2,-,-
+25.07. 17:00,Sola,Torvastad,-,-
+26.07. 12:00,Sandnes Ulf 2,Djerv 1919,-,-
+26.07. 12:00,Staal Jorpeland,Stord,-,-
+26.07. 13:00,Vag,Brodd,-,-
+26.07. 13:00,Viking 2,Vindbjart,-,-
+28.07. 16:30,Hinna,Vidar,-,-
+28.07. 18:00,Haugesund 2,Madla IL,-,-
+01.08. 17:00,Djerv 1919,Sola,-,-
+01.08. 17:00,Torvastad,Hinna,-,-
+02.08. 11:00,Stord,Vag,-,-
+02.08. 11:00,Vindbjart,Haugesund 2,-,-
+02.08. 12:00,Brodd,Sandnes Ulf 2,-,-
+02.08. 12:00,Madla IL,Staal Jorpeland,-,-
+02.08. 13:00,Vidar,Viking 2,-,-
+07.08. 16:00,Sola,Vidar,-,-
+09.08. 12:00,Staal Jorpeland,Brodd,-,-
+09.08. 13:00,Hinna,Vindbjart,-,-
+09.08. 13:00,Vag,Madla IL,-,-
+10.08. 12:00,Sandnes Ulf 2,Torvastad,-,-
+10.08. 12:00,Viking 2,Stord,-,-
+11.08. 18:00,Haugesund 2,Djerv 1919,-,-
+16.08. 12:00,Brodd,Torvastad,-,-
+16.08. 12:00,Djerv 1919,Staal Jorpeland,-,-
+16.08. 12:00,Stord,Hinna,-,-
+16.08. 13:00,Vindbjart,Sola,-,-
+17.08. 12:00,Madla IL,Sandnes Ulf 2,-,-
+18.08. 16:00,Vag,Viking 2,-,-
+18.08. 16:00,Vidar,Haugesund 2,-,-
+22.08. 16:00,Sola,Madla IL,-,-
+22.08. 17:00,Torvastad,Djerv 1919,-,-
+23.08. 12:00,Brodd,Vidar,-,-
+23.08. 12:00,Staal Jorpeland,Vag,-,-
+24.08. 13:00,Sandnes Ulf 2,Vindbjart,-,-
+25.08. 16:00,Viking 2,Hinna,-,-
+25.08. 17:00,Haugesund 2,Stord,-,-
+30.08. 12:00,Vidar,Torvastad,-,-
+30.08. 13:00,Stord,Sola,-,-
+30.08. 13:00,Vag,Hinna,-,-
+30.08. 13:00,Vindbjart,Brodd,-,-
+01.09. 16:00,Viking 2,Staal Jorpeland,-,-
+01.09. 17:00,Djerv 1919,Sandnes Ulf 2,-,-
+01.09. 17:00,Madla IL,Haugesund 2,-,-
+05.09. 16:00,Hinna,Madla IL,-,-
+06.09. 12:00,Brodd,Djerv 1919,-,-
+06.09. 12:00,Haugesund 2,Viking 2,-,-
+06.09. 12:00,Sandnes Ulf 2,Stord,-,-
+06.09. 12:00,Staal Jorpeland,Vidar,-,-
+06.09. 13:00,Sola,Vag,-,-
+06.09. 14:00,Torvastad,Vindbjart,-,-
+11.09. 16:30,Vidar,Hinna,-,-
+13.09. 11:00,Vag,Haugesund 2,-,-
+13.09. 11:00,Vindbjart,Djerv 1919,-,-
+13.09. 12:00,Madla IL,Brodd,-,-
+13.09. 12:00,Stord,Staal Jorpeland,-,-
+13.09. 13:00,Sola,Sandnes Ulf 2,-,-
+15.09. 17:00,Viking 2,Torvastad,-,-
+19.09. 16:30,Hinna,Sola,-,-
+20.09. 12:00,Brodd,Vag,-,-
+20.09. 12:00,Djerv 1919,Madla IL,-,-
+20.09. 12:00,Torvastad,Stord,-,-
+21.09. 16:00,Sandnes Ulf 2,Vidar,-,-
+22.09. 16:00,Staal Jorpeland,Haugesund 2,-,-
+22.09. 16:00,Vindbjart,Viking 2,-,-
+26.09. 17:00,Madla IL,Torvastad,-,-
+27.09. 11:00,Stord,Vindbjart,-,-
+27.09. 12:00,Sola,Brodd,-,-
+27.09. 13:00,Vag,Vidar,-,-
+28.09. 12:00,Staal Jorpeland,Sandnes Ulf 2,-,-
+29.09. 17:00,Haugesund 2,Hinna,-,-
+29.09. 17:00,Viking 2,Djerv 1919,-,-
+03.10. 16:30,Hinna,Staal Jorpeland,-,-
+04.10. 11:00,Djerv 1919,Vag,-,-
+04.10. 12:00,Vidar,Stord,-,-
+04.10. 13:00,Torvastad,Sola,-,-
+04.10. 13:00,Vindbjart,Madla IL,-,-
+06.10. 16:00,Sandnes Ulf 2,Haugesund 2,-,-
+06.10. 16:30,Brodd,Viking 2,-,-
+11.10. 12:00,Stord,Brodd,-,-
+11.10. 12:00,Vidar,Djerv 1919,-,-
+11.10. 13:00,Staal Jorpeland,Vindbjart,-,-
+11.10. 13:00,Vag,Torvastad,-,-
+11.10. 13:00,Viking 2,Madla IL,-,-
+12.10. 13:00,Haugesund 2,Sola,-,-
+13.10. 17:00,Hinna,Sandnes Ulf 2,-,-

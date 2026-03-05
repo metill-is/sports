@@ -1,0 +1,104 @@
+date,home,away,home_score,away_score
+04.03. 18:00,Alingsas,Helsingborg,28,25
+04.03. 18:00,Karlskrona,Hammarby,31,28
+04.03. 18:00,Skovde,Amo HK,32,25
+02.03. 18:00,Hallby,Onnereds,26,28
+28.02. 15:15,Savehof,Malmo,29,32
+28.02. 15:00,Kristianstad,Guif,24,18
+28.02. 14:00,Vasteras Irsta HF,Ystads IF,18,25
+27.02. 18:00,Karlskrona,Alingsas,33,33
+25.02. 18:00,Hammarby,Hallby,33,31
+25.02. 18:00,Helsingborg,Savehof,29,35
+22.02. 15:00,Malmo,Amo HK,35,35
+21.02. 15:00,Guif,Alingsas,21,29
+21.02. 15:00,Onnereds,Skovde,25,33
+21.02. 15:00,Vasteras Irsta HF,Karlskrona,31,33
+20.02. 18:00,Ystads IF,Kristianstad,35,32
+16.02. 18:00,Hallby,Helsingborg,31,30
+16.02. 18:00,Skovde,Malmo,26,32
+14.02. 15:00,Karlskrona,Ystads IF,33,29
+13.02. 18:00,Alingsas,Hammarby,29,24
+13.02. 18:00,Amo HK,Onnereds,27,32
+13.02. 18:00,Malmo,Kristianstad,29,33
+13.02. 17:00,Savehof,Guif,31,22
+10.02. 18:00,Kristianstad,Vasteras Irsta HF,38,31
+09.02. 18:00,Guif,Amo HK,28,31
+09.02. 18:00,Malmo,Onnereds,39,35
+08.02. 15:00,Helsingborg,Skovde,34,35
+07.02. 16:00,Hammarby,Savehof,33,26
+07.02. 15:30,Ystads IF,Hallby,24,24
+07.02. 13:00,Karlskrona,Kristianstad,29,33
+07.02. 13:00,Vasteras Irsta HF,Alingsas,31,33
+04.02. 19:00,Onnereds,Karlskrona,35,27
+04.02. 18:00,Amo HK,Helsingborg,29,32
+04.02. 18:00,Hallby,Vasteras Irsta HF,36,29
+04.02. 18:00,Malmo,Guif,41,28
+04.02. 18:00,Savehof,Kristianstad,25,28
+04.02. 18:00,Skovde,Hammarby,25,28
+03.02. 18:00,Alingsas,Ystads IF,22,27
+30.12. 18:00,Guif,Skovde,24,25
+30.12. 18:00,Hammarby,Malmo,31,31
+30.12. 18:00,Helsingborg,Onnereds,29,33
+30.12. 18:00,Kristianstad,Alingsas,29,24
+30.12. 18:00,Ystads IF,Savehof,27,28
+29.12. 18:45,Vasteras Irsta HF,Amo HK,34,32
+29.12. 18:00,Karlskrona,Hallby,30,28
+27.12. 17:00,Amo HK,Hammarby,28,25
+27.12. 14:00,Skovde,Ystads IF,36,33
+27.12. 13:00,Onnereds,Guif,31,30
+26.12. 18:00,Malmo,Helsingborg,37,27
+26.12. 16:00,Hallby,Kristianstad,30,35
+26.12. 15:00,Alingsas,Karlskrona,27,25
+26.12. 12:15,Savehof,Vasteras Irsta HF,34,31
+19.12. 18:00,Hammarby,Onnereds,36,29
+19.12. 18:00,Helsingborg,Guif,33,20
+19.12. 18:00,Kristianstad,Malmo,40,28
+18.12. 18:00,Ystads IF,Amo HK,30,32
+17.12. 18:45,Vasteras Irsta HF,Skovde,22,25
+17.12. 18:00,Alingsas,Hallby,32,30
+17.12. 18:00,Savehof,Karlskrona,39,36
+14.12. 15:00,Kristianstad,Hammarby,35,27
+12.12. 18:30,Savehof,Alingsas,20,29
+12.12. 18:00,Amo HK,Hallby,32,32
+12.12. 18:00,Guif,Vasteras Irsta HF,30,19
+11.12. 18:00,Helsingborg,Hammarby,33,35
+11.12. 18:00,Karlskrona,Skovde,30,24
+11.12. 18:00,Malmo,Ystads IF,35,31
+10.12. 18:00,Onnereds,Kristianstad,31,31
+09.12. 18:00,Vasteras Irsta HF,Savehof,29,35
+07.12. 15:30,Alingsas,Skovde,33,24
+07.12. 15:00,Kristianstad,Amo HK,38,29
+06.12. 16:00,Hammarby,Guif,32,31
+06.12. 14:00,Hallby,Savehof,31,31
+05.12. 18:00,Karlskrona,Malmo,29,29
+04.12. 18:00,Vasteras Irsta HF,Helsingborg,32,33
+04.12. 18:00,Ystads IF,Onnereds,39,26
+01.12. 18:00,Alingsas,Guif,29,22
+30.11. 15:00,Malmo,Vasteras Irsta HF,32,28
+29.11. 16:00,Amo HK,Kristianstad,32,30
+29.11. 16:00,Hallby,Hammarby,27,32
+28.11. 18:00,Karlskrona,Savehof,30,33
+28.11. 18:00,Onnereds,Ystads IF,28,29
+27.11. 18:00,Skovde,Alingsas,28,21
+26.11. 18:00,Guif,Helsingborg,35,21
+22.11. 15:30,Ystads IF,Guif,27,22
+21.11. 18:00,Alingsas,Savehof,26,29
+21.11. 18:00,Hammarby,Amo HK,33,26
+21.11. 18:00,Kristianstad,Onnereds,38,26
+21.11. 18:00,Skovde,Karlskrona,37,28
+20.11. 18:00,Vasteras Irsta HF,Hallby,28,37
+19.11. 18:00,Helsingborg,Malmo,27,31
+15.11. 15:00,Guif,Kristianstad,22,28
+15.11. 15:00,Savehof,Ystads IF,33,37
+14.11. 19:00,Onnereds,Helsingborg,32,29
+14.11. 18:00,Amo HK,Karlskrona,30,37
+14.11. 18:00,Hallby,Alingsas,32,30
+13.11. 18:00,Skovde,Vasteras Irsta HF,29,28
+12.11. 18:00,Malmo,Hammarby,37,32
+05.11. 18:00,Guif,Onnereds,25,30
+05.11. 18:00,Hammarby,Skovde,32,30
+05.11. 18:00,Helsingborg,Amo HK,40,28
+05.11. 18:00,Kristianstad,Hallby,35,21
+05.11. 18:00,Ystads IF,Malmo,29,31
+23.10. 17:00,Hallby,Karlskrona,25,28
+22.10. 17:00,Alingsas,Vasteras Irsta HF,38,28
