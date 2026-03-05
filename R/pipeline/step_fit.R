@@ -87,6 +87,16 @@ fit_shared <- function(league, sex, sports_dir, iter_warmup, iter_sampling, do_f
       end_date = end_date,
       make_plots = make_plots
     ))
+
+    # Dual-write to Parquet store
+    tryCatch({
+      source(file.path(sports_dir, "R", "storage", "store.R"), local = TRUE)
+      csv_path <- file.path(sports_dir, config$sport_dir, "results", sex, "posterior_goals.csv")
+      if (file.exists(csv_path)) {
+        df <- readr::read_csv(csv_path, show_col_types = FALSE)
+        store_predictions(df, league$sport, league$country, sex, sports_dir)
+      }
+    }, error = function(e) warning("Store write failed: ", e$message))
   }
 }
 
@@ -117,6 +127,16 @@ fit_football <- function(league, sex, sports_dir, iter_warmup, iter_sampling, do
       env <- new.env(parent = globalenv())
       source(here::here("R", "common", "get_model_results.R"), local = env)
       env$generate_model_results(sex, make_plots = make_plots)
+
+      # Dual-write to Parquet store
+      tryCatch({
+        source(file.path(sports_dir, "R", "storage", "store.R"), local = TRUE)
+        csv_path <- here::here("results", sex, "posterior_goals.csv")
+        if (file.exists(csv_path)) {
+          df <- readr::read_csv(csv_path, show_col_types = FALSE)
+          store_predictions(df, league$sport, league$country, sex, sports_dir)
+        }
+      }, error = function(e) warning("Store write failed: ", e$message))
     }
   })
 }
@@ -154,6 +174,16 @@ fit_handball_other <- function(league, sex, sports_dir, iter_warmup, iter_sampli
         end_date = Sys.Date(),
         make_plots = make_plots
       )
+
+      # Dual-write to Parquet store
+      tryCatch({
+        source(file.path(sports_dir, "R", "storage", "store.R"), local = TRUE)
+        csv_path <- here::here("results", league$country, sex, "posterior_goals.csv")
+        if (file.exists(csv_path)) {
+          df <- readr::read_csv(csv_path, show_col_types = FALSE)
+          store_predictions(df, league$sport, league$country, sex, sports_dir)
+        }
+      }, error = function(e) warning("Store write failed: ", e$message))
     }
   })
 }

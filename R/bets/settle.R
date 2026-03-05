@@ -120,7 +120,7 @@ compute_settlement <- function(bets) {
 #' @param sexes Character vector of sexes to check (e.g., c("male", "female"))
 #' @return Number of bets settled (invisibly)
 #' @export
-settle_league <- function(league_dir, sexes = c("male", "female")) {
+settle_league <- function(league_dir, sexes = c("male", "female"), sport = NULL, country = NULL, sports_dir = NULL) {
   log_path <- file.path(league_dir, "history", "bets_log.csv")
   if (!file.exists(log_path)) return(invisible(0L))
 
@@ -205,6 +205,14 @@ settle_league <- function(league_dir, sexes = c("male", "female")) {
     select(-win_new, -pnl_new)
 
   write_csv(log, log_path)
+
+  # Dual-write full log to Parquet store
+  if (!is.null(sports_dir)) {
+    tryCatch({
+      source(file.path(sports_dir, "R", "storage", "store.R"), local = TRUE)
+      store_bets(log, sport, country, sex = "all", sports_dir)
+    }, error = function(e) warning("Store settle sync failed: ", e$message))
+  }
 
   n_settled <- nrow(settled)
   total_pnl <- sum(settled$pnl)

@@ -21,6 +21,23 @@ box::use(
 #' @return Current available bankroll
 #' @export
 compute_bankroll <- function(initial_pool, sports_dir) {
+  # Try Parquet store first (faster for many leagues)
+  store_path <- file.path(sports_dir, "store", "bets")
+  if (dir.exists(store_path) && requireNamespace("arrow", quietly = TRUE)) {
+    result <- tryCatch({
+      all_bets <- arrow::open_dataset(store_path) |> dplyr::collect()
+      if (nrow(all_bets) > 0) {
+        settled_pnl <- sum(all_bets$pnl[!is.na(all_bets$pnl)], na.rm = TRUE)
+        outstanding <- sum(all_bets$bet_amount[is.na(all_bets$win)], na.rm = TRUE)
+        initial_pool + settled_pnl - outstanding
+      } else {
+        NULL
+      }
+    }, error = function(e) NULL)
+    if (!is.null(result)) return(result)
+  }
+
+  # Fall back to CSV glob
   logs <- Sys.glob(file.path(sports_dir, "*", "*", "history", "bets_log.csv"))
   if (length(logs) == 0) return(initial_pool)
 
@@ -184,7 +201,7 @@ dedup <- function(results, existing_bets, market_type) {
 #' @param market Market label (e.g., "outcome", "handicap", "totals")
 #' @param info_col Column name for extra info (e.g., "change", "limit"), or NULL
 #' @export
-log_bets <- function(results, cfg, sport_dir, sex, market, info_col = NULL) {
+log_bets <- function(results, cfg, sport_dir, sex, market, info_col = NULL, sports_dir = NULL) {
   if (!isTRUE(cfg$history$enabled)) return(invisible(NULL))
   if (is.null(results) || nrow(results) == 0) return(invisible(NULL))
 
@@ -254,5 +271,15 @@ log_bets <- function(results, cfg, sport_dir, sex, market, info_col = NULL) {
   )
 
   cat("  Logged", nrow(log_rows), market, "bet(s) to", log_path, "\n")
+
+  # Dual-write full log to Parquet store
+  if (!is.null(sports_dir)) {
+    tryCatch({
+      source(file.path(sports_dir, "R", "storage", "store.R"), local = TRUE)
+      full_log <- read_csv(log_path, show_col_types = FALSE)
+      store_bets(full_log, cfg$sport, cfg$country, sex, sports_dir)
+    }, error = function(e) warning("Store bet write failed: ", e$message))
+  }
+
   invisible(log_rows)
 }

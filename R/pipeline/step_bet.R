@@ -53,5 +53,5 @@ run_bet_step <- function(league, sports_dir, log = FALSE) {
         cfg$bankroll$cur_pool, cfg$bankroll$currency, cfg$bankroll$initial_pool))
   }
 
-  run_betting_pipeline(cfg, sport_dir = league_dir, log = log)
+  run_betting_pipeline(cfg, sport_dir = league_dir, log = log, sports_dir = sports_dir)
 }

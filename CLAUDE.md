@@ -14,6 +14,7 @@ Sports/
 │   ├── config/                    # Per-sport config objects (get_config())
 │   ├── shared/                    # Shared pipeline (prep_data, model_fitting, get_model_results)
 │   ├── bets/                      # Betting modules (kelly, markets, odds, output, history)
+│   ├── storage/                   # Centralised Parquet store (store.R, migrate_history.R)
 │   ├── schedule/                  # Schedule scanner (scan.R)
 │   └── lengjan/                   # Legacy Lengjan scraping (superseded by lengjan-odds/)
 ├── basketball/{iceland,international}/
@@ -103,6 +104,29 @@ data/{sex}/data.csv + schedule.csv
     → results/{sex}/fit.rds
     → results/{sex}/posterior_goals.csv + figures/*.png
     → Website via raw.githubusercontent.com URLs
+    → store/ (Hive-partitioned Parquet, dual-write)
+```
+
+### Parquet store (`store/`)
+
+Hive-partitioned Parquet store for cross-league queries. Dual-write layer — CSV remains source of truth, Parquet mirrors it. Failures never break the pipeline.
+
+```
+store/
+├── predictions/sport={X}/country={Y}/sex={Z}/predictions.parquet
+└── bets/sport={X}/country={Y}/sex={Z}/bets.parquet
+```
+
+Query across leagues:
+```r
+source("R/storage/store.R")
+read_bets(here::here())                              # All bets
+read_predictions(here::here(), sport = "football")    # All football predictions
+```
+
+Backfill from existing CSV history:
+```bash
+Rscript R/storage/migrate_history.R
 ```
 
 ## Cross-references

@@ -28,5 +28,5 @@ run_settle_step <- function(league, sports_dir) {
     return(invisible(NULL))
   }
 
-  settle_league(league_dir, sexes = league$sex)
+  settle_league(league_dir, sexes = league$sex, sport = league$sport, country = league$country, sports_dir = sports_dir)
 }

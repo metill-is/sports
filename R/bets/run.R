@@ -36,7 +36,7 @@ find_latest_posterior <- function(base_path, sex) {
 #' @param log Whether to log bets to history CSV. Default FALSE —
 #'   bets should only be logged after explicit user confirmation.
 #' @export
-run_betting_pipeline <- function(cfg, sport_dir, log = FALSE) {
+run_betting_pipeline <- function(cfg, sport_dir, log = FALSE, sports_dir = NULL) {
   Sys.setlocale("LC_ALL", "is_IS.UTF-8")
 
   cat("=== Betting pipeline:", cfg$sport, "/", cfg$country, "===\n\n")
@@ -147,9 +147,9 @@ run_betting_pipeline <- function(cfg, sport_dir, log = FALSE) {
 
     # 6. Log bets to history (only when explicitly confirmed)
     if (isTRUE(log)) {
-      log_bets(res_1x2, cfg_sex, sport_dir, sex, "outcome")
-      log_bets(res_hc, cfg_sex, sport_dir, sex, "handicap", info_col = "change")
-      log_bets(res_tot, cfg_sex, sport_dir, sex, "totals", info_col = "limit")
+      log_bets(res_1x2, cfg_sex, sport_dir, sex, "outcome", sports_dir = sports_dir)
+      log_bets(res_hc, cfg_sex, sport_dir, sex, "handicap", info_col = "change", sports_dir = sports_dir)
+      log_bets(res_tot, cfg_sex, sport_dir, sex, "totals", info_col = "limit", sports_dir = sports_dir)
     }
 
     # 7. Collect results with metadata
