@@ -205,6 +205,56 @@ dedup <- function(results, existing_bets, market_type) {
   results |> anti_join(type_bets, by = c("date", "heima", "gestir"))
 }
 
+#' Remove bets already recorded in bets_log.csv
+#'
+#' Prevents re-recommending (and re-logging) bets that were logged in a
+#' previous pipeline run. Uses the same dedup keys as log_bets().
+#'
+#' @param results Tibble from a market module (or NULL)
+#' @param cfg Config list (from bets.yml)
+#' @param sport_dir Root directory of the sport project
+#' @param sex Sex label
+#' @param market Market label ("outcome", "handicap", "totals")
+#' @param info_col Column in results holding the line info (e.g., "change", "limit")
+#' @return Filtered results with already-logged bets removed
+#' @export
+dedup_against_log <- function(results, cfg, sport_dir, sex, market, info_col = NULL) {
+  if (is.null(results) || nrow(results) == 0) return(results)
+  if (!isTRUE(cfg$history$enabled)) return(results)
+
+  log_path <- file.path(sport_dir, cfg$history$path, "bets_log.csv")
+  if (!file.exists(log_path)) return(results)
+
+  existing <- read_csv(log_path, show_col_types = FALSE) |>
+    filter(market == !!market, sex == !!sex) |>
+    mutate(info = replace(as.character(info), is.na(info), ""))
+
+  if (nrow(existing) == 0) return(results)
+
+  # Build info key from results to match against CSV's info column
+  if (!is.null(info_col) && info_col %in% names(results)) {
+    info_vals <- as.character(results[[info_col]])
+  } else {
+    info_vals <- rep(NA_character_, nrow(results))
+  }
+  info_vals <- replace(info_vals, is.na(info_vals), "")
+
+  results$.dedup_info <- info_vals
+  out <- anti_join(
+    results, existing,
+    by = c("date" = "date_match", "heima" = "home", "gestir" = "away",
+           "outcome", ".dedup_info" = "info")
+  )
+  out$.dedup_info <- NULL
+
+  n_removed <- nrow(results) - nrow(out)
+  if (n_removed > 0) {
+    cat("  (", n_removed, "already-logged", market, "bet(s) filtered out)\n")
+  }
+
+  out
+}
+
 #' Log bet recommendations for future kelly_frac analysis
 #'
 #' Appends recommended bets to a CSV history file. Each run appends new rows

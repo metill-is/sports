@@ -14,7 +14,7 @@ box::use(
   ./market_totals[run_totals],
   ./kelly_joint[run_joint_kelly],
   ./odds[load_odds],
-  ./output[print_market, load_existing_bets, dedup, log_bets],
+  ./output[print_market, load_existing_bets, dedup, dedup_against_log, log_bets],
   readr[read_csv, write_csv],
   dplyr[filter, bind_rows, mutate, select, any_of, arrange, desc]
 )
@@ -140,19 +140,24 @@ run_betting_pipeline <- function(cfg, sport_dir, log = FALSE, sports_dir = NULL)
       }
     }
 
-    # 5. Display
+    # 5. Remove bets already logged in previous runs
+    res_1x2 <- dedup_against_log(res_1x2, cfg_sex, sport_dir, sex, "outcome")
+    res_hc  <- dedup_against_log(res_hc, cfg_sex, sport_dir, sex, "handicap", "change")
+    res_tot <- dedup_against_log(res_tot, cfg_sex, sport_dir, sex, "totals", "limit")
+
+    # 6. Display
     print_market(res_1x2, paste0("1x2 (Niðurstaða) [", sex, "]"))
     print_market(res_hc, paste0("Handicap (Forgjöf) [", sex, "]"))
     print_market(res_tot, paste0("Totals (Markafjöldi) [", sex, "]"))
 
-    # 6. Log bets to history (only when explicitly confirmed)
+    # 7. Log bets to history (only when explicitly confirmed)
     if (isTRUE(log)) {
       log_bets(res_1x2, cfg_sex, sport_dir, sex, "outcome", sports_dir = sports_dir)
       log_bets(res_hc, cfg_sex, sport_dir, sex, "handicap", info_col = "change", sports_dir = sports_dir)
       log_bets(res_tot, cfg_sex, sport_dir, sex, "totals", info_col = "limit", sports_dir = sports_dir)
     }
 
-    # 7. Collect results with metadata
+    # 8. Collect results with metadata
     tag <- function(d, mkt) {
       if (is.null(d) || nrow(d) == 0) return(NULL)
       d |> mutate(
@@ -169,7 +174,7 @@ run_betting_pipeline <- function(cfg, sport_dir, log = FALSE, sports_dir = NULL)
     cat("\n")
   }
 
-  # 8. Combine results
+  # 9. Combine results
   combined <- bind_rows(all_results)
   if (nrow(combined) > 0) {
     combined <- combined |>
