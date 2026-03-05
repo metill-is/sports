@@ -33,4 +33,3 @@ deduplication:
 history:
   enabled: true
   path: "history"
-

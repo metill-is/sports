@@ -9,8 +9,8 @@ leagues:
   2: Grill 66 deild
 
 bankroll:
-  kelly_frac: 0.34
-  kelly_frac_male: 0.28
+  kelly_frac: 0.30
+  kelly_frac_male: 0.21
   kelly_frac_female: 0.40
   kelly_frac_joint: 0.50
   kelly_mode: joint
@@ -47,4 +47,3 @@ deduplication:
 history:
   enabled: true
   path: history
-

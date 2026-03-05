@@ -16,7 +16,7 @@ scoring:
   tie_threshold: 0
 
 markets:
-  outcome: true
+  outcome: false       # Disabled: -38.7% ROI on 60 settled bets (2025)
   handicap: true
   totals: true
 

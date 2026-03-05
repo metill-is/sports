@@ -3,7 +3,7 @@ country: "france"
 sex: ["male", "female"]
 
 bankroll:
-  kelly_frac: 0.04
+  kelly_frac: 0.03
   kelly_frac_male: 0.01
   kelly_frac_joint: 0.50
   kelly_mode: joint
@@ -32,5 +32,3 @@ deduplication:
 history:
   enabled: true
   path: "history"
-
-
