@@ -303,6 +303,11 @@ plot_ev_calibration <- function(bets, n_bins = 10) {
 
 #' Estimate optimal kelly_frac from historical performance
 #'
+#' @note **Deprecated for runtime use.** The pipeline now uses
+#'   `R/bets/calibration.R::compute_calibration()` (adaptive Kelly from
+#'   `sum(win)/sum(p)` ratio) at runtime. This function remains useful for
+#'   offline analysis and the EV regression slope diagnostic.
+#'
 #' The model predicts edge (EV) per bet. If the model is perfectly calibrated,
 #' kelly_frac = 1.0 is optimal. If overconfident, a fraction < 1 is better.
 #'

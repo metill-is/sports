@@ -13,7 +13,7 @@ Sports/
 │   ├── pipeline/                  # Unified dispatchers (config, step_data, step_fit, step_bet)
 │   ├── config/                    # Per-sport config objects (get_config())
 │   ├── shared/                    # Shared pipeline (prep_data, model_fitting, get_model_results, extract_posterior)
-│   ├── bets/                      # Betting modules (kelly, markets, odds, output, history)
+│   ├── bets/                      # Betting modules (kelly, markets, odds, calibration, output, history)
 │   ├── storage/                   # Centralised Parquet store (store.R, migrate_history.R)
 │   ├── schedule/                  # Schedule scanner (scan.R)
 │   └── lengjan/                   # Legacy Lengjan scraping (superseded by lengjan-odds/)
@@ -44,6 +44,9 @@ Rscript run.R --stale --step data,fit,results,bet         # Full pipeline on sta
 **Modifiers**: `--stale` (filter to leagues with upcoming odds + stale/missing fit)
 **Overrides**: `--sex male|female`, `--iter <n>`, `--no-plots`, `--sync`, `--dry-run`
 
+> **Note:** The pipeline generates `recommendations.csv` but never writes to `bets_log.csv`.
+> Bet placement and ledger writes are the exclusive responsibility of `lengjan-bets/`.
+
 **Step execution order**: Steps run in phases — all data first, then all fit, then all results, then all bet, then all settle. No per-league interleaving.
 
 **Step semantics**:
@@ -53,6 +56,11 @@ Rscript run.R --stale --step data,fit,results,bet         # Full pipeline on sta
 
 ### Kelly fraction tuning
 
+At runtime, `step_bet.R` calls `compute_calibration()` which adaptively sets `kelly_frac` per league
+from `sum(win)/sum(probability)` — see `R/bets/calibration.R`. Static `bets.yml` values are used
+as fallback when <30 settled bets exist.
+
+For offline analysis:
 ```bash
 Rscript R/bets/update_kelly.R              # Compute optimal per-sex kelly_frac and update bets.yml
 Rscript R/bets/update_kelly.R --dry-run    # Preview proposed values without writing
@@ -87,7 +95,7 @@ step_data.R → sync/download data (4 sources: baskethotel, hsi, livesport_footb
     ↓
 step_fit.R → fit Stan model (3 pipelines: shared, football, handball_other)
     ↓
-step_bet.R → load odds → Kelly criterion → output bets (per-league config/bets.yml)
+step_bet.R → calibration → load odds → Kelly criterion → recommendations.csv
 ```
 
 ### Three pipeline types

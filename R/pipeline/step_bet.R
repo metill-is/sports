@@ -3,6 +3,9 @@
 #' Reads the per-league config/bets.yml and delegates to the
 #' shared run_betting_pipeline() which handles sex iteration internally.
 #'
+#' Calibration: kelly_frac values are overridden at runtime from
+#' historical performance via compute_calibration() (rules K1–K6).
+#'
 #' @usage
 #' box::use(R/pipeline/step_bet[run_bet_step])
 #' run_bet_step(league, sports_dir)
@@ -10,15 +13,15 @@
 box::use(
   R/bets/run[run_betting_pipeline],
   R/bets/output[compute_bankroll],
+  R/bets/calibration[compute_calibration],
   yaml[yaml.load],
   readr[read_file]
 )
 
 #' @param league League config list from leagues.yml
 #' @param sports_dir Absolute path to Sports/ root
-#' @param log Whether to log bets to history (default FALSE — recommend only)
 #' @export
-run_bet_step <- function(league, sports_dir, log = FALSE) {
+run_bet_step <- function(league, sports_dir) {
   if (!isTRUE(league$has_bets)) {
     cat("  Skipping bets (has_bets: false)\n")
     return(invisible(NULL))
@@ -46,13 +49,26 @@ run_bet_step <- function(league, sports_dir, log = FALSE) {
     cfg$bankroll <- merged
   }
 
-  # Compute cur_pool dynamically from initial_pool and pipeline-era bet history
+  # Compute cur_pool dynamically from initial_pool and bet history
   if (!is.null(cfg$bankroll$initial_pool)) {
-    since <- cfg$bankroll$bankroll_since %||% "2026-03-01"
-    cfg$bankroll$cur_pool <- compute_bankroll(cfg$bankroll$initial_pool, sports_dir, since = since)
-    cat(sprintf("  Bankroll: %s %s (initial: %s, since: %s)\n",
-        cfg$bankroll$cur_pool, cfg$bankroll$currency, cfg$bankroll$initial_pool, since))
+    cfg$bankroll$cur_pool <- compute_bankroll(cfg$bankroll$initial_pool, sports_dir)
+    cat(sprintf("  Bankroll: %s %s (initial: %s)\n",
+        cfg$bankroll$cur_pool, cfg$bankroll$currency, cfg$bankroll$initial_pool))
   }
 
-  run_betting_pipeline(cfg, sport_dir = league_dir, log = log, sports_dir = sports_dir)
+  # Override kelly_frac with live calibration from settled bets (K1–K6)
+  cal <- compute_calibration(
+    sports_dir = sports_dir,
+    sport = cfg$sport,
+    country = cfg$country,
+    sexes = cfg$sex
+  )
+  for (sex in cfg$sex) {
+    sex_key <- paste0("kelly_frac_", sex)
+    if (!is.null(cal[[sex_key]])) {
+      cfg$bankroll[[sex_key]] <- cal[[sex_key]]
+    }
+  }
+
+  run_betting_pipeline(cfg, sport_dir = league_dir)
 }

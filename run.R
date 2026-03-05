@@ -17,7 +17,6 @@
 #   --step <steps>     Comma-separated: data, fit, results, bet, settle (default: all)
 #   --sex <sex>        Override sex filter (male, female)
 #   --iter <n>         Override sampling iterations
-#   --log              Log bets to history CSV (default: recommend only, no logging)
 #   --stale            Filter to leagues with upcoming odds + stale/missing fit
 #   --no-plots         Skip plot generation (posterior CSV still written)
 #   --sync             Git-pull livesport-data and lengjan-odds before running
@@ -51,7 +50,6 @@ arg_sex     <- parse_arg("--sex")
 arg_iter    <- parse_arg("--iter")
 arg_stale    <- has_flag("--stale")
 arg_dry_run  <- has_flag("--dry-run")
-arg_log      <- has_flag("--log")
 arg_no_plots <- has_flag("--no-plots")
 arg_sync     <- has_flag("--sync")
 
@@ -98,7 +96,6 @@ if (has_flag("--help")) {
   cat("  --step <steps>     data,fit,results,bet,settle (default: all)\n")
   cat("  --sex <sex>        Override: male or female\n")
   cat("  --iter <n>         Override sampling iterations\n")
-  cat("  --log              Log bets to history (default: recommend only)\n")
   cat("  --no-plots         Skip plot generation (posterior CSV still written)\n")
   cat("  --sync             Git-pull livesport-data and lengjan-odds first\n")
   cat("  --dry-run          Print plan, don't execute\n")
@@ -378,8 +375,7 @@ if ("bet" %in% steps) {
     ok <- tryCatch({
       bet_res <- run_bet_step(
         league = league,
-        sports_dir = sports_dir,
-        log = arg_log
+        sports_dir = sports_dir
       )
       TRUE
     }, error = function(e) {

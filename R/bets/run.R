@@ -1,12 +1,15 @@
 #' Shared betting pipeline orchestrator
 #'
 #' Entry point for all sports. Reads config, finds the latest posterior,
-#' loads odds, runs market modules, deduplicates, displays, and logs.
+#' loads odds, runs market modules, deduplicates against the ledger,
+#' and displays recommendations.
 #'
-#' Usage from a sport-specific run_bets.R:
-#'   box::use(../../R/bets/run[run_betting_pipeline])
-#'   cfg <- yaml::read_yaml(here::here("config", "bets.yml"))
-#'   run_betting_pipeline(cfg, sport_dir = here::here())
+#' The pipeline NEVER writes to bets_log.csv — that is the exclusive
+#' responsibility of the bet placer (lengjan-bets). See betting-system-rules.md.
+#'
+#' Usage from step_bet.R:
+#'   box::use(R/bets/run[run_betting_pipeline])
+#'   run_betting_pipeline(cfg, sport_dir = league_dir)
 
 box::use(
   ./market_1x2[run_1x2],
@@ -14,7 +17,7 @@ box::use(
   ./market_totals[run_totals],
   ./kelly_joint[run_joint_kelly],
   ./odds[load_odds],
-  ./output[print_market, load_existing_bets, dedup, dedup_against_log, log_bets],
+  ./output[print_market, dedup_against_log],
   readr[read_csv, write_csv],
   dplyr[filter, bind_rows, mutate, select, any_of, arrange, desc]
 )
@@ -31,18 +34,17 @@ find_latest_posterior <- function(base_path, sex) {
 
 #' Run the full betting pipeline for one sport
 #'
+#' Generates recommendations only — does not write to the ledger.
+#' Returns a tibble of recommendations that gets written to
+#' recommendations.csv by the caller (run.R).
+#'
 #' @param cfg Config list from bets.yml
 #' @param sport_dir Root directory of the sport project (absolute path)
-#' @param log Whether to log bets to history CSV. Default FALSE —
-#'   bets should only be logged after explicit user confirmation.
 #' @export
-run_betting_pipeline <- function(cfg, sport_dir, log = FALSE, sports_dir = NULL) {
+run_betting_pipeline <- function(cfg, sport_dir) {
   Sys.setlocale("LC_ALL", "is_IS.UTF-8")
 
   cat("=== Betting pipeline:", cfg$sport, "/", cfg$country, "===\n\n")
-
-  # Load existing bets for dedup (once, shared across sexes)
-  existing_bets <- load_existing_bets(cfg)
 
   # Collect all results across sexes for return
   all_results <- list()
@@ -120,44 +122,29 @@ run_betting_pipeline <- function(cfg, sport_dir, log = FALSE, sports_dir = NULL)
         if (nrow(res_hc) == 0)  res_hc  <- NULL
         if (nrow(res_tot) == 0) res_tot <- NULL
       }
-      res_1x2 <- dedup(res_1x2, existing_bets, "Niðurstaða")
-      res_hc  <- dedup(res_hc, existing_bets, "Forgjöf")
-      res_tot <- dedup(res_tot, existing_bets, "Markafjöldi")
     } else {
       if (isTRUE(cfg_sex$markets$outcome)) {
         res_1x2 <- run_1x2(post, odds$outcome, cfg_sex)
-        res_1x2 <- dedup(res_1x2, existing_bets, "Niðurstaða")
       }
-
       if (isTRUE(cfg_sex$markets$handicap)) {
         res_hc <- run_handicap(post, odds$handicap, cfg_sex)
-        res_hc <- dedup(res_hc, existing_bets, "Forgjöf")
       }
-
       if (isTRUE(cfg_sex$markets$totals)) {
         res_tot <- run_totals(post, odds$totals, cfg_sex)
-        res_tot <- dedup(res_tot, existing_bets, "Markafjöldi")
       }
     }
 
-    # 5. Remove bets already logged in previous runs
+    # 5. Remove bets already placed (in the ledger)
     res_1x2 <- dedup_against_log(res_1x2, cfg_sex, sport_dir, sex, "outcome")
     res_hc  <- dedup_against_log(res_hc, cfg_sex, sport_dir, sex, "handicap", "change")
     res_tot <- dedup_against_log(res_tot, cfg_sex, sport_dir, sex, "totals", "limit")
 
     # 6. Display
-    print_market(res_1x2, paste0("1x2 (Niðurstaða) [", sex, "]"))
-    print_market(res_hc, paste0("Handicap (Forgjöf) [", sex, "]"))
-    print_market(res_tot, paste0("Totals (Markafjöldi) [", sex, "]"))
+    print_market(res_1x2, paste0("1x2 (Ni\u00f0ursta\u00f0a) [", sex, "]"))
+    print_market(res_hc, paste0("Handicap (Forgj\u00f6f) [", sex, "]"))
+    print_market(res_tot, paste0("Totals (Markafj\u00f6ldi) [", sex, "]"))
 
-    # 7. Log bets to history (only when explicitly confirmed)
-    if (isTRUE(log)) {
-      log_bets(res_1x2, cfg_sex, sport_dir, sex, "outcome", sports_dir = sports_dir)
-      log_bets(res_hc, cfg_sex, sport_dir, sex, "handicap", info_col = "change", sports_dir = sports_dir)
-      log_bets(res_tot, cfg_sex, sport_dir, sex, "totals", info_col = "limit", sports_dir = sports_dir)
-    }
-
-    # 8. Collect results with metadata
+    # 7. Collect results with metadata
     tag <- function(d, mkt) {
       if (is.null(d) || nrow(d) == 0) return(NULL)
       d |> mutate(
@@ -174,7 +161,7 @@ run_betting_pipeline <- function(cfg, sport_dir, log = FALSE, sports_dir = NULL)
     cat("\n")
   }
 
-  # 9. Combine results
+  # 8. Combine results
   combined <- bind_rows(all_results)
   if (nrow(combined) > 0) {
     combined <- combined |>
