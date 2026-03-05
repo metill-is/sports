@@ -39,19 +39,18 @@ process_leagues_historical_data <- function(
   )
 
   league_list <- list(
-    "serie-a" = 1,
-    "serie-b" = 2,
-    "serie-c-group-a" = 3,
-    "serie-c-group-b" = 4,
-    "serie-c-group-c" = 5,
-    "serie-c-promotion-play-offs" = 6,
-    "serie-c-promotion-play-out" = 7,
-    "coppa-italia" = 8,
-    "coppa-italia-serie-c" = 9
+    "laliga" = 1,
+    "laliga2" = 2,
+    "primera-rfef-group-1" = 3,
+    "primera-rfef-group-2" = 4,
+    "primera-rfef-play-offs" = 5,
+    "primera-rfef-promotion-play-offs" = 6,
+    "copa-del-rey" = 7,
+    "super-cup" = 8
   )
 
   # Which sexes are available?
-  sexes <- list.files(here("data"), full.names = TRUE)
+  sexes <- list.files(here("data"), full.names = TRUE, pattern = "male")
 
   for (sex in sexes) {
     # Which leagues are available?
@@ -192,17 +191,19 @@ process_schedule <- function() {
 
   # Which sexes are available?
   sexes <- list.files(here("data"), full.names = TRUE)
-  # League list in alphabetical order
+  # League list in alphabetical order of directory names:
+  # copa-del-rey, laliga, laliga2, primera-rfef-group-1,
+  # primera-rfef-group-2, primera-rfef-play-offs,
+  # primera-rfef-promotion-play-offs, super-cup
   league_list <- c(
-    8,
-    9,
+    7,
     1,
     2,
     3,
     4,
     5,
     6,
-    7
+    8
   )
 
   for (sex in sexes) {
@@ -210,7 +211,7 @@ process_schedule <- function() {
     leagues <- list.files(
       sex,
       full.names = TRUE,
-      pattern = "^coppa|^serie"
+      pattern = "^copa|^laliga|^primera|^super"
     )
 
     files <- here(leagues, "schedule.csv")
