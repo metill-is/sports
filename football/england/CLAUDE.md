@@ -14,11 +14,9 @@ football_england/
 │   │   ├── download_data.R          # Historical data downloader
 │   │   ├── lengjan_info.R           # Lengjan competition IDs per league
 │   │   ├── leagues.R                # League definitions
-│   │   ├── (model_fitting.R removed — fitting centralised in R/shared/model_fitting.R)
-│   │   ├── prep_data.R              # Data preparation for Stan
 │   │   ├── process_data.R           # Historical data aggregation
-│   │   ├── scrape_1x2.R             # Thin wrapper → shared R/lengjan/ modules
-│   │   └── get_model_results.R      # Posterior extraction & figures
+│   │   └── scrape_1x2.R             # Thin wrapper → shared R/lengjan/ modules
+│   │   # prep_data + get_model_results + model_fitting → centralised in R/shared/
 │   ├── bets/                        # Unified betting pipeline (box::use modules)
 │   │   ├── kelly.R                  # get_kelly() + format_bet_text()
 │   │   ├── market_1x2.R             # 1x2 market: posterior summary → Kelly
@@ -27,7 +25,7 @@ football_england/
 │   │   └── output.R                 # Display pivot, clipboard, GSheets dedup
 │   ├── run_bets.R                   # Entry point: all 3 markets
 │   ├── get_odds.R                   # Main odds scraper (all 3 market types)
-│   ├── update_model.R               # Fit model & generate results
+│   │   # update_model.R removed — use run.R from Sports/
 │   ├── lengjan -> ../../R/lengjan/  # Symlink to shared scraping modules
 │   └── ...
 ├── Stan/
@@ -57,8 +55,8 @@ Rscript R/run_bets.R --scrape     # scrape fresh odds first, then run
 # Scrape all Lengjan odds (1x2 + handicap + totals, all 4 leagues)
 Rscript R/get_odds.R
 
-# Fit model and generate predictions
-Rscript -e 'source("R/update_model.R")'
+# Fit model and generate predictions (from Sports/ root)
+# Rscript run.R --league football_england --step fit,results
 
 ```
 

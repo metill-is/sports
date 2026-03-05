@@ -2,7 +2,7 @@
 box::use(
   stats[median, quantile],
   readr[read_rds, read_csv, write_csv, parse_number],
-  dplyr[mutate, select, filter, arrange, count, summarise, distinct, pull, 
+  dplyr[mutate, select, filter, arrange, count, summarise, distinct, pull,
         inner_join, left_join, semi_join, bind_rows, reframe, mutate_at, vars,
         if_else, case_when, row_number, coalesce, join_by],
   tidyr[pivot_longer, pivot_wider],
@@ -11,8 +11,8 @@ box::use(
   lubridate[today],
   tibble[as_tibble],
   ggplot2[ggplot, aes, geom_segment, geom_vline, geom_hline, geom_point, geom_col,
-          scale_x_continuous, scale_y_continuous, scale_y_discrete, 
-          scale_colour_manual, scale_colour_brewer, scale_fill_manual, 
+          scale_x_continuous, scale_y_continuous, scale_y_discrete,
+          scale_colour_manual, scale_colour_brewer, scale_fill_manual,
           scale_alpha_continuous, coord_cartesian, facet_wrap, labs, theme,
           element_text, element_blank, margin, expansion, guide_axis, guide_none,
           sec_axis, ggsave, theme_set],
@@ -27,31 +27,41 @@ box::use(
 theme_set(theme_metill())
 Sys.setlocale("LC_ALL", "is_IS.UTF-8")
 
-#' Generate model results and visualizations
+#' Generate model results and visualisations for football leagues
 #'
 #' @param sex Character string, either "male" or "female"
 #' @param from_season Integer, starting season for analysis (default: 2021)
-#'
+#' @param make_plots Logical, whether to generate plots
+#' @param league_labels List with division_names (character vector) and league_name (string)
 #' @export
-generate_model_results <- function(sex = "male", from_season = 2021, make_plots = TRUE) {
-  sex <- "male"
-  # Validate input
+generate_model_results <- function(
+  sex = "male",
+  from_season = 2021,
+  make_plots = TRUE,
+  league_labels = list(
+    division_names = "PL",
+    league_name = "Premier League"
+  )
+) {
   if (!sex %in% c("male", "female")) {
     stop("Sex must be either 'male' or 'female'")
   }
-  
+
+  division_names <- league_labels$division_names
+  league_name <- league_labels$league_name
+
   #### Data Prep ####
   results <- read_rds(here("results", sex, "fit.rds"))
-  
+
   d <- read_csv(here("results", sex, "d.csv"))
   teams <- read_csv(here("results", sex, "teams.csv"))
   next_games <- read_csv(here("results", sex, "next_games.csv"))
   top_teams <- read_csv(here("results", sex, "top_teams.csv"))
   pred_d <- read_csv(here("results", sex, "pred_d.csv"))
-  
-  
+
+
   #### Next-Round Predictions ####
-  
+
   posterior_goals <- results$draws(c("goals1_pred", "goals2_pred")) |>
     as_draws_df() |>
     as_tibble() |>
@@ -81,21 +91,13 @@ generate_model_results <- function(sex = "male", from_season = 2021, make_plots 
       home_goals,
       away_goals
     )
-  
+
   posterior_goals |>
     write_csv(
       here("results", sex, "posterior_goals.csv")
     )
 
   if (!make_plots) return(invisible(NULL))
-
-  posterior_goals |>
-    mutate(
-      goal_diff = abs(away_goals - home_goals),
-      .by = c(home, away)
-    ) |>
-    arrange(desc(goal_diff)) |>
-    filter(goal_diff > 12)
 
   predictions <- posterior_goals |>
     mutate(
@@ -113,7 +115,7 @@ generate_model_results <- function(sex = "male", from_season = 2021, make_plots 
       home_win = sum(p[goal_diff < 0]),
       away_win = sum(p[goal_diff > 0]),
       draw = sum(p[goal_diff == 0]),
-      p = p / max(p), # Normalize for visualization
+      p = p / max(p),
       .by = c(home, away)
     ) |>
     mutate(
@@ -121,7 +123,7 @@ generate_model_results <- function(sex = "male", from_season = 2021, make_plots 
       game_nr = max(game_nr) - game_nr + 1,
       match = str_c(home, " - ", away) |>
         fct_reorder(game_nr),
-      division = c("PL")[division]
+      division = division_names[division]
     ) |>
     mutate(
       home = glue(
@@ -140,15 +142,15 @@ generate_model_results <- function(sex = "male", from_season = 2021, make_plots 
       ),
       .by = c(home, away)
     )
-  
-  
+
+
   tie_color <- "#252525"
   home_win_color <- "#377eb8"
   away_win_color <- "#e41a1c"
-  
+
   plot <- predictions |>
     filter(
-      abs(goal_diff) <= 8 # Limit to reasonable goal differences
+      abs(goal_diff) <= 8
     ) |>
     ggplot(aes(y = game_nr)) +
     geom_segment(
@@ -248,9 +250,7 @@ generate_model_results <- function(sex = "male", from_season = 2021, make_plots 
       x = "Markamismunur",
       y = NULL,
       colour = NULL,
-      title = paste0(
-        "Vikuleg fótboltaspá Metils fyrir Premier League"
-      ),
+      title = glue("Vikuleg fótboltaspá Metils fyrir {league_name}"),
       subtitle = str_c(
         "Líkindadreifing spár fyrir komandi leiki",
         " | ",
@@ -262,15 +262,15 @@ generate_model_results <- function(sex = "male", from_season = 2021, make_plots 
       ),
       caption = "metill.is"
     )
-  
-  
+
+
   n_games <- predictions |>
     distinct(game_nr) |>
     pull(game_nr) |>
     length()
-  
+
   ratio <- 0.6 + 0.3 * n_games / 10
-  
+
   ggsave(
     plot = plot,
     filename = here(
@@ -283,9 +283,9 @@ generate_model_results <- function(sex = "male", from_season = 2021, make_plots 
     height = ratio * 8,
     scale = 1.7
   )
-  
+
   #### League Result Prediction ####
-  
+
   posterior_goals <- results$draws(c("goals1_pred", "goals2_pred")) |>
     as_draws_df() |>
     as_tibble() |>
@@ -314,13 +314,13 @@ generate_model_results <- function(sex = "male", from_season = 2021, make_plots 
       home_goals,
       away_goals
     )
-  
+
   posterior_goals |>
     pivot_longer(c(home, away)) |>
     count(iteration, value, sort = TRUE)
-  
+
   base_points <- d |>
-    filter(season == 2025, division == 1) |>
+    filter(season == max(season), division == 1) |>
     mutate(
       result = case_when(
         home_goals > away_goals ~ "home",
@@ -341,7 +341,7 @@ generate_model_results <- function(sex = "male", from_season = 2021, make_plots 
       .by = c(team)
     ) |>
     arrange(desc(base_points))
-  
+
   p_top <- posterior_goals |>
     mutate(
       result = case_when(
@@ -379,7 +379,7 @@ generate_model_results <- function(sex = "male", from_season = 2021, make_plots 
       .by = team
     ) |>
     arrange(desc(p_top))
-  
+
   plot_dat <- posterior_goals |>
     mutate(
       result = case_when(
@@ -421,8 +421,8 @@ generate_model_results <- function(sex = "male", from_season = 2021, make_plots 
       team = fct_reorder(team, mean),
       team_nr = as.numeric(team)
     )
-  
-  
+
+
   plot_dat |>
     ggplot(aes(y = team_nr)) +
     geom_segment(
@@ -460,7 +460,9 @@ generate_model_results <- function(sex = "male", from_season = 2021, make_plots 
       expand = expansion()
     ) +
     labs(
-      title = "Líkindadreifing yfir stigafjölda liða í Premier League undir lok tímabils",
+      title = glue(
+        "Líkindadreifing yfir stigafjölda liða í {league_name} undir lok tímabils"
+      ),
       subtitle = str_c(
         "Líkindadreifing spár um stigafjölda liða í lok deildar",
         " | ",
@@ -472,16 +474,16 @@ generate_model_results <- function(sex = "male", from_season = 2021, make_plots 
       x = "Stigafjöldi í lok tímabils",
       y = NULL
     )
-  
+
   ggsave(
     filename = here("results", sex, "figures", "umspil_top.png"),
     width = 8,
     height = 0.6 * 8,
     scale = 1.6
   )
-  
+
   #### League Winner ####
-  
+
   plot_dat <- posterior_goals |>
     mutate(
       result = case_when(
@@ -526,9 +528,9 @@ generate_model_results <- function(sex = "male", from_season = 2021, make_plots 
       team = fct_reorder(team, mean),
       team_nr = as.numeric(team)
     )
-  
-  
-  
+
+
+
   plot_dat |>
     mutate(
       p = n / sum(n),
@@ -557,20 +559,20 @@ generate_model_results <- function(sex = "male", from_season = 2021, make_plots 
     labs(
       x = NULL,
       y = NULL,
-      title = "Líkindadreifing yfir lokasæti í Premier League"
+      title = glue("Líkindadreifing yfir lokasæti í {league_name}")
     )
-  
+
   ggsave(
     filename = here("results", sex, "figures", "deild_top.png"),
     width = 8,
     height = 0.6 * 8,
     scale = 1.2
   )
-  
+
   #### Posterior Results ####
-  
+
   #### Current Strengths ####
-  
+
   plot_dat_away <- results$draws("cur_strength_away") |>
     as_draws_df() |>
     as_tibble() |>
@@ -614,7 +616,7 @@ generate_model_results <- function(sex = "male", from_season = 2021, make_plots 
         levels = unique(team)[order(unique(median[type == "Samtals"]))]
       )
     )
-  
+
   plot_dat_home <- results$draws("cur_strength_home") |>
     as_draws_df() |>
     as_tibble() |>
@@ -658,7 +660,7 @@ generate_model_results <- function(sex = "male", from_season = 2021, make_plots 
         levels = unique(team)[order(unique(median[type == "Samtals"]))]
       )
     )
-  
+
   plot_dat <- plot_dat_away |>
     mutate(
       loc = "Gestir"
@@ -675,13 +677,13 @@ generate_model_results <- function(sex = "male", from_season = 2021, make_plots 
     ) |>
     semi_join(
       d |>
-        filter(season == 2025, division == 1) |>
+        filter(season == max(season), division == 1) |>
         pivot_longer(c(home, away), values_to = "team") |>
         distinct(team)
     )
-  
+
   dodge <- 0.3
-  
+
   plot_dat |>
     semi_join(
       next_games |>
@@ -738,20 +740,20 @@ generate_model_results <- function(sex = "male", from_season = 2021, make_plots 
       x = NULL,
       y = NULL,
       colour = NULL,
-      title = "Styrkur félagsliða í Premier League",
+      title = glue("Styrkur félagsliða í {league_name}"),
       subtitle = "Metið með fótboltalíkani Metils"
     )
-  
+
   ggsave(
     filename = here("results", sex, "figures", "styrkur.png"),
     width = 8,
     height = 0.6 * 8,
     scale = 1.1
   )
-  
-  
+
+
   #### Home Advantages ####
-  
+
   results$draws("home_advantage_tot") |>
     as_draws_df() |>
     as_tibble() |>
@@ -787,7 +789,7 @@ generate_model_results <- function(sex = "male", from_season = 2021, make_plots 
     ) |>
     semi_join(
       d |>
-        filter(season == 2025, division == 1) |>
+        filter(season == max(season), division == 1) |>
         select(home, away) |>
         pivot_longer(c(everything()), values_to = "team") |>
         distinct(team)
@@ -858,7 +860,6 @@ generate_model_results <- function(sex = "male", from_season = 2021, make_plots 
       guide = guide_axis(cap = "both"),
       breaks = c(1, 1.25, 1.5, 1.75, 2, 2.5),
       labels = \(x) paste0("+", label_hlutf(accuracy = 1)(x - 1)),
-      # trans = "log"
     ) +
     scale_y_discrete(
       guide = guide_axis(cap = "both")
@@ -875,10 +876,10 @@ generate_model_results <- function(sex = "male", from_season = 2021, make_plots 
       x = NULL,
       y = NULL,
       colour = NULL,
-      title = "Heimavallaráhrif í Premier League",
+      title = glue("Heimavallaráhrif í {league_name}"),
       subtitle = "Hlutfallsleg áhrif heimavallar á sóknar- varnar- og heildarstyrk félagsliða"
     )
-  
+
   ggsave(
     filename = here(
       "results",
@@ -890,10 +891,5 @@ generate_model_results <- function(sex = "male", from_season = 2021, make_plots 
     height = 0.35 * 8,
     scale = 1.4
   )
-  
-}
 
-# If file is sourced directly as script, run with default parameters
-if (!exists("box_loaded", where = globalenv())) {
-  generate_model_results("male")
 }

@@ -113,7 +113,7 @@ fit_shared <- function(league, sex, sports_dir, iter_warmup, iter_sampling, do_f
 
 # ── Pipeline: football (football/{country}) ──────────────────────────────────
 #
-# Each football league has its own R/common/prep_data.R for data preparation.
+# Uses R/shared/prep_data_football.R and R/shared/get_model_results_football.R.
 # Must run from inside the league directory with here::i_am() set.
 
 fit_football <- function(league, sex, sports_dir, iter_warmup, iter_sampling, do_fit, do_results, make_plots = TRUE, expected_duration = NULL) {
@@ -123,9 +123,9 @@ fit_football <- function(league, sex, sports_dir, iter_warmup, iter_sampling, do
     quiet_here(league$rproj %||% ".here")
 
     if (do_fit) {
-      # Prep data
+      # Prep data (shared across all football leagues)
       env <- new.env(parent = globalenv())
-      source(here::here("R", "common", "prep_data.R"), local = env)
+      source(file.path(sports_dir, "R", "shared", "prep_data_football.R"), local = env)
       stan_data <- suppressMessages(env$prepare_football_data(sex))
 
       # Resolve paths
@@ -147,8 +147,15 @@ fit_football <- function(league, sex, sports_dir, iter_warmup, iter_sampling, do
 
     if (do_results) {
       env <- new.env(parent = globalenv())
-      source(here::here("R", "common", "get_model_results.R"), local = env)
-      env$generate_model_results(sex, make_plots = make_plots)
+      source(file.path(sports_dir, "R", "shared", "get_model_results_football.R"), local = env)
+      env$generate_model_results(
+        sex = sex,
+        make_plots = make_plots,
+        league_labels = list(
+          division_names = league$division_names %||% "D1",
+          league_name = league$league_name %||% "League"
+        )
+      )
 
       # Dual-write to Parquet store
       tryCatch({

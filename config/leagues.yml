@@ -55,6 +55,8 @@ football_england:
   data_source: livesport_football
   has_bets: true
   rproj: football_england.Rproj
+  league_name: "Premier League"
+  division_names: ["PL", "CH", "L1", "L2"]
 
 football_italy:
   sport: football
@@ -66,6 +68,8 @@ football_italy:
   data_source: livesport_football
   has_bets: true
   rproj: football_italy.Rproj
+  league_name: "Serie A"
+  division_names: ["SA"]
 
 football_spain:
   sport: football
@@ -77,6 +81,8 @@ football_spain:
   data_source: livesport_football
   has_bets: false
   rproj: football_spain.Rproj
+  league_name: "La Liga"
+  division_names: ["LL"]
 
 # ── Handball European (with betting) ───────────────────────────────────────
 

@@ -1,7 +1,7 @@
 #### Packages ####
 box::use(
   readr[read_csv, write_csv],
-  dplyr[select, filter, arrange, mutate, tibble, row_number, rename, 
+  dplyr[select, filter, arrange, mutate, tibble, row_number, rename,
         semi_join, inner_join, pull, distinct, lag, join_by, mutate_at, vars,
         if_else],
   tidyr[pivot_longer, pivot_wider],
@@ -22,7 +22,7 @@ Sys.setlocale("LC_ALL", "is_IS.UTF-8")
 #' @return List containing prepared data for Stan model
 #' @export
 prepare_football_data <- function(sex, from_season = 2021) {
-  
+
   # Validate input
   if (!sex %in% c("male", "female")) {
     stop("Sex must be either 'male' or 'female'")
@@ -80,10 +80,10 @@ next_games <- read_csv(
   filter(
     home %in% teams$team,
     away %in% teams$team
-  ) |> 
+  ) |>
   mutate(
     game_nr = row_number()
-  ) 
+  )
 
 # Get current teams in the top league
 cur_top_teams <- teams |>

@@ -12,7 +12,7 @@ Sports/
 ├── R/
 │   ├── pipeline/                  # Unified dispatchers (config, step_data, step_fit, step_bet)
 │   ├── config/                    # Per-sport config objects (get_config())
-│   ├── shared/                    # Shared pipeline (prep_data, model_fitting, get_model_results)
+│   ├── shared/                    # Shared pipeline (prep_data, model_fitting, get_model_results, football variants, plot_utils)
 │   ├── bets/                      # Betting modules (kelly, markets, odds, output, history)
 │   ├── storage/                   # Centralised Parquet store (store.R, migrate_history.R)
 │   ├── schedule/                  # Schedule scanner (scan.R)
@@ -93,7 +93,7 @@ step_bet.R → load odds → Kelly criterion → output bets (per-league config/
 | Pipeline | Used by | Fit handler |
 |---|---|---|
 | `shared` | basketball/iceland, handball/iceland | `R/shared/model_fitting.R` (centralised) |
-| `football` | football/* | `R/shared/model_fitting.R` via `withr::with_dir()` + per-league `prep_data.R` |
+| `football` | football/* | `R/shared/prep_data_football.R` + `R/shared/get_model_results_football.R` (league labels from `leagues.yml`) |
 | `handball_other` | handball/{dk,fr,de,no,es,se,…} | `R/shared/model_fitting.R` via `withr::with_dir()` + `handball/other/R/utils/prep_data.R` |
 
 ### Stan models
