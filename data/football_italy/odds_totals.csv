@@ -33,6 +33,8 @@ date,league,home,away,limit,o_over,o_under,scraped_at
 2026-03-06,Serie A,Napoli,Torino,2.5,1.9,1.63,2026-03-05T15:06:24Z
 2026-03-06,Serie A,Napoli,Torino,1.5,1.3,2.7,2026-03-05T20:57:36Z
 2026-03-06,Serie A,Napoli,Torino,2.5,1.94,1.6,2026-03-05T20:57:36Z
+2026-03-06,Serie A,Napoli,Torino,1.5,1.31,2.65,2026-03-06T14:59:16Z
+2026-03-06,Serie A,Napoli,Torino,2.5,1.97,1.58,2026-03-06T14:59:16Z
 2026-03-07,Serie A,Atalanta,Udinese,1.5,1.22,3.1,2026-03-04T07:07:45Z
 2026-03-07,Serie A,Atalanta,Udinese,2.5,1.73,1.78,2026-03-04T07:07:45Z
 2026-03-07,Serie A,Atalanta,Udinese,3.5,2.74,1.29,2026-03-04T07:07:45Z
@@ -42,6 +44,9 @@ date,league,home,away,limit,o_over,o_under,scraped_at
 2026-03-07,Serie A,Atalanta,Udinese,3.5,2.77,1.28,2026-03-05T20:57:36Z
 2026-03-07,Serie A,Atalanta,Udinese,1.5,1.23,3.07,2026-03-06T08:59:19Z
 2026-03-07,Serie A,Atalanta,Udinese,3.5,2.76,1.29,2026-03-06T08:59:19Z
+2026-03-07,Serie A,Atalanta,Udinese,1.5,1.23,3.05,2026-03-06T14:59:16Z
+2026-03-07,Serie A,Atalanta,Udinese,2.5,1.76,1.75,2026-03-06T14:59:16Z
+2026-03-07,Serie A,Atalanta,Udinese,3.5,2.79,1.28,2026-03-06T14:59:16Z
 2026-03-07,Serie A,Cagliari,Como,1.5,1.26,2.87,2026-03-04T08:56:38Z
 2026-03-07,Serie A,Cagliari,Como,1.5,1.27,2.86,2026-03-04T13:26:24Z
 2026-03-07,Serie A,Cagliari,Como,2.5,1.83,1.68,2026-03-04T08:56:38Z
@@ -71,6 +76,9 @@ date,league,home,away,limit,o_over,o_under,scraped_at
 2026-03-07,Serie B,Modena,Cesena,3.5,2.74,1.29,2026-03-04T17:50:44Z
 2026-03-07,Serie B,Modena,Cesena,1.5,1.22,3.13,2026-03-05T15:06:24Z
 2026-03-07,Serie B,Modena,Cesena,3.5,2.7,1.3,2026-03-05T15:06:24Z
+2026-03-07,Serie B,Modena,Cesena,1.5,1.24,3.02,2026-03-06T14:59:16Z
+2026-03-07,Serie B,Modena,Cesena,2.5,1.8,1.71,2026-03-06T14:59:16Z
+2026-03-07,Serie B,Modena,Cesena,3.5,2.82,1.27,2026-03-06T14:59:16Z
 2026-03-07,Serie B,Spezia,Monza,1.5,1.33,2.58,2026-03-04T07:07:45Z
 2026-03-07,Serie B,Spezia,Monza,2.5,2.03,1.54,2026-03-04T07:07:45Z
 2026-03-07,Serie B,Spezia,Monza,1.5,1.33,2.57,2026-03-05T15:06:24Z
@@ -106,6 +114,9 @@ date,league,home,away,limit,o_over,o_under,scraped_at
 2026-03-08,Serie B,Frosinone,Sampdoria,1.5,1.23,3.05,2026-03-05T15:06:24Z
 2026-03-08,Serie B,Frosinone,Sampdoria,2.5,1.76,1.75,2026-03-05T15:06:24Z
 2026-03-08,Serie B,Frosinone,Sampdoria,3.5,2.78,1.28,2026-03-05T15:06:24Z
+2026-03-08,Serie B,Frosinone,Sampdoria,1.5,1.22,3.11,2026-03-06T14:59:16Z
+2026-03-08,Serie B,Frosinone,Sampdoria,2.5,1.73,1.78,2026-03-06T14:59:16Z
+2026-03-08,Serie B,Frosinone,Sampdoria,3.5,2.72,1.29,2026-03-06T14:59:16Z
 2026-03-08,Serie B,Mantova,SS Juve Stabia,1.5,1.3,2.68,2026-03-04T07:07:45Z
 2026-03-08,Serie B,Mantova,SS Juve Stabia,2.5,1.96,1.59,2026-03-04T07:07:45Z
 2026-03-08,Serie B,Mantova,SS Juve Stabia,1.5,1.31,2.67,2026-03-04T17:50:44Z
