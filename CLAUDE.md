@@ -38,11 +38,13 @@ Rscript run.R --all --step fit --iter 200             # Quick test fit (200 iter
 Rscript run.R --league basketball_iceland --step results  # Re-generate posteriors from .rds
 Rscript run.R --stale --dry-run                          # Preview stale leagues
 Rscript run.R --stale --step data,fit,results,bet         # Full pipeline on stale leagues only
+Rscript run.R --due --dry-run                             # Preview leagues due for refresh
+Rscript run.R --due                                       # Auto-runs data,fit,results,bet on due leagues
 ```
 
-**Selectors** (pick one): `--sport`, `--country`, `--league`, `--all`, `--active`, `--stale`
+**Selectors** (pick one): `--sport`, `--country`, `--league`, `--all`, `--active`, `--stale`, `--due`
 **Steps**: `--step data,fit,results,bet,settle` (default: all five)
-**Modifiers**: `--stale` (filter to leagues with upcoming odds + stale/missing fit)
+**Modifiers**: `--stale` (filter to leagues with upcoming odds + stale/missing fit), `--due` (unbetted matches today/tomorrow + fit >48h old; auto-selects data,fit,results,bet)
 **Overrides**: `--sex male|female`, `--iter <n>`, `--no-plots`, `--sync`, `--dry-run`
 
 > **Note:** The pipeline generates `recommendations.csv` but never writes to `bets_log.csv`.
