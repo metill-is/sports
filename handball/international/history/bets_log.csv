@@ -1,0 +1,62 @@
+date_recommended,date_match,sport,country,sex,market,home,away,outcome,odds,probability,ev,kelly_frac,bet_amount,info,win,pnl,source
+2026-01-19,2026-01-19,handball,international,male,handicap,Austria,Serbia,away,1.8,0.62775,0.7577,NA,690,0.5,FALSE,-690,gsheets
+2026-01-19,2026-01-19,handball,international,male,handicap,Netherlands,Croatia,away,2.07,0.6665,1.0461549999999995,NA,1500,2.5,TRUE,1605,gsheets
+2026-01-19,2026-01-19,handball,international,male,handicap,Norway,France,home,1.97,0.79525,1.3618925,NA,2460,3.5,FALSE,-2460,gsheets
+2026-01-19,2026-01-19,handball,international,male,outcome,Austria,Serbia,away,1.85,0.62775,0.7890875000000002,NA,795,NA,FALSE,-795,gsheets
+2026-01-19,2026-01-19,handball,international,male,outcome,Czech Republic,Ukraine,home,1.18,0.87625,0.9102249999999998,NA,795,NA,TRUE,143,gsheets
+2026-01-19,2026-01-19,handball,international,male,outcome,Netherlands,Croatia,away,1.55,0.78775,1.0087625,NA,1695,NA,TRUE,932,gsheets
+2026-01-19,2026-01-19,handball,international,male,outcome,Norway,France,home,4.7,0.5255,1.99535,NA,1665,NA,FALSE,-1665,gsheets
+2026-01-19,2026-01-19,handball,international,male,totals,Czech Republic,Ukraine,under,1.82,0.62525,0.763205,NA,705,59.5,FALSE,-705,gsheets
+2026-01-19,2026-01-19,handball,international,male,totals,Germany,Spain,over,1.93,0.69975,1.0502675,NA,1590,56.5,TRUE,1479,gsheets
+2026-01-19,2026-01-19,handball,international,male,totals,Netherlands,Croatia,over,2,0.616,0.848,NA,975,61.5,TRUE,975,gsheets
+2026-01-19,2026-01-19,handball,international,male,totals,Norway,France,under,1.72,0.63625,0.7305999999999999,NA,555,64.5,FALSE,-555,gsheets
+2026-01-19,2026-01-19,handball,international,male,totals,Sweden,Georgia,under,1.77,0.651,0.8032700000000002,NA,825,62.5,FALSE,-825,gsheets
+2026-01-20,2026-01-20,handball,international,male,handicap,Denmark,Portugal,home,1.87,0.60875,0.7471125000000002,NA,675,-7.5,FALSE,-675,gsheets
+2026-01-20,2026-01-20,handball,international,male,handicap,Hungary,Iceland,home,2.02,0.57925,0.7493350000000001,NA,705,2.5,TRUE,719,gsheets
+2026-01-20,2026-01-20,handball,international,male,handicap,Montenegro,Switzerland,home,1.88,0.7775,1.2392,NA,2205,5.5,FALSE,-2205,gsheets
+2026-01-20,2026-01-20,handball,international,male,handicap,North Macedonia,Romania,away,1.79,0.75625,1.1099375,NA,1890,-5.5,TRUE,1493,gsheets
+2026-01-20,2026-01-20,handball,international,male,handicap,Poland,Italy,home,1.8,0.67725,0.8963,NA,1155,1.5,TRUE,924,gsheets
+2026-01-20,2026-01-20,handball,international,male,handicap,Slovenia,Faroe Islands,home,1.81,0.86325,1.4257325,NA,675,0.5,TRUE,547,gsheets
+2026-01-20,2026-01-20,handball,international,male,outcome,Denmark,Portugal,home,1.06,0.952,0.96112,NA,645,NA,FALSE,-645,gsheets
+2026-01-20,2026-01-20,handball,international,male,outcome,Hungary,Iceland,home,3.89,0.3385,0.6552650000000002,NA,465,NA,FALSE,-465,gsheets
+2026-01-20,2026-01-20,handball,international,male,outcome,Montenegro,Switzerland,home,7.25,0.31775,1.6214374999999996,NA,885,NA,FALSE,-885,gsheets
+2026-01-20,2026-01-20,handball,international,male,outcome,North Macedonia,Romania,away,6.68,0.29125,1.2368,NA,705,NA,FALSE,-705,gsheets
+2026-01-20,2026-01-20,handball,international,male,outcome,Poland,Italy,home,2.76,0.5255,0.9758799999999996,NA,1080,NA,FALSE,-1080,gsheets
+2026-01-20,2026-01-20,handball,international,male,outcome,Slovenia,Faroe Islands,home,2.22,0.82625,1.6605250000000005,NA,1230,NA,TRUE,1501,gsheets
+2026-01-20,2026-01-20,handball,international,male,totals,Montenegro,Switzerland,under,1.9,0.59475,0.7247750000000001,NA,615,63.5,FALSE,-615,gsheets
+2026-01-20,2026-01-20,handball,international,male,totals,North Macedonia,Romania,under,1.79,0.72625,1.0262374999999997,NA,1605,62.5,TRUE,1268,gsheets
+2026-01-20,2026-01-20,handball,international,male,totals,Slovenia,Faroe Islands,under,1.77,0.89525,1.4798425000000002,NA,3195,67.5,TRUE,2460,gsheets
+2026-01-21,2026-01-21,handball,international,male,handicap,Netherlands,Georgia,away,1.92,0.6495,0.8965399999999999,NA,1125,-5.5,TRUE,1035,gsheets
+2026-01-21,2026-01-21,handball,international,male,totals,Netherlands,Georgia,under,1.88,0.713,1.0534399999999997,NA,1635,66.5,TRUE,1439,gsheets
+2026-01-21,2026-01-21,handball,international,male,totals,Sweden,Croatia,over,1.84,0.6225,0.7679000000000002,NA,735,59.5,FALSE,-735,gsheets
+2026-01-22,2026-01-22,handball,international,male,handicap,Denmark,France,home,2.03,0.6405,0.940715,NA,1230,-2.5,TRUE,1267,gsheets
+2026-01-22,2026-01-22,handball,international,male,handicap,Norway,Spain,home,1.71,0.81075,1.1971325,NA,2295,0.5,TRUE,1629,gsheets
+2026-01-22,2026-01-22,handball,international,male,outcome,Denmark,France,home,1.55,0.78225,0.9947375,NA,1620,NA,TRUE,891,gsheets
+2026-01-22,2026-01-22,handball,international,male,outcome,Norway,Spain,home,2.2,0.755,1.4160000000000004,NA,2325,NA,TRUE,2790,gsheets
+2026-01-22,2026-01-22,handball,international,male,totals,Denmark,France,over,1.81,0.657,0.8461700000000001,NA,990,63.5,FALSE,-990,gsheets
+2026-01-22,2026-01-22,handball,international,male,totals,Germany,Portugal,over,1.97,0.63175,0.8762975000000002,NA,1065,61.5,TRUE,1033,gsheets
+2026-01-23,2026-01-23,handball,international,male,handicap,Switzerland,Hungary,away,1.85,0.607,0.7299500000000001,NA,615,2.5,FALSE,-615,gsheets
+2026-01-23,2026-01-23,handball,international,male,outcome,Switzerland,Hungary,away,1.42,0.76075,0.8410150000000001,NA,810,NA,FALSE,-810,gsheets
+2026-01-23,2026-01-23,handball,international,male,totals,Switzerland,Hungary,over,1.97,0.573,0.7018099999999998,NA,555,57.5,TRUE,538,gsheets
+2026-01-24,2026-01-24,handball,international,male,handicap,Denmark,Spain,home,1.9,0.69875,1.0263749999999998,NA,1530,-5.5,FALSE,-1530,gsheets
+2026-01-24,2026-01-24,handball,international,male,handicap,Norway,Germany,home,1.9,0.8785,1.54765,NA,3135,2.5,TRUE,2821,gsheets
+2026-01-24,2026-01-24,handball,international,male,outcome,Denmark,Spain,home,1.14,0.9305,0.99127,NA,1830,NA,TRUE,256,gsheets
+2026-01-24,2026-01-24,handball,international,male,outcome,France,Portugal,home,1.45,0.73975,0.8123874999999999,NA,675,NA,TRUE,304,gsheets
+2026-01-24,2026-01-24,handball,international,male,outcome,Norway,Germany,home,3.45,0.714,2.1773,NA,2520,NA,FALSE,-2520,gsheets
+2026-01-24,2026-01-24,handball,international,male,totals,France,Portugal,over,2.02,0.60675,0.832385,NA,930,64.5,TRUE,949,gsheets
+2026-01-24,2026-01-24,handball,international,male,totals,Norway,Germany,under,1.76,0.6215,0.7153400000000002,NA,525,62.5,TRUE,399,gsheets
+2026-01-26,2026-01-26,handball,international,male,handicap,Denmark,Germany,home,1.91,0.699,1.03409,NA,1545,-4.5,TRUE,1406,gsheets
+2026-01-26,2026-01-26,handball,international,male,handicap,Norway,Portugal,home,1.9,0.82875,1.403375,NA,2685,0.5,TRUE,2416,gsheets
+2026-01-26,2026-01-26,handball,international,male,handicap,Spain,France,home,1.92,0.58225,0.7001700000000001,NA,540,4.5,TRUE,497,gsheets
+2026-01-26,2026-01-26,handball,international,male,outcome,Denmark,Germany,home,1.25,0.90125,1.0278125,NA,2130,NA,TRUE,533,gsheets
+2026-01-26,2026-01-26,handball,international,male,outcome,Norway,Portugal,home,2.45,0.77275,1.6659875000000004,NA,2595,NA,FALSE,-2595,gsheets
+2026-01-26,2026-01-26,handball,international,male,totals,Norway,Portugal,under,1.81,0.62025,0.7429025,NA,630,64.5,FALSE,-630,gsheets
+2026-01-27,2026-01-27,handball,international,male,handicap,Switzerland,Iceland,away,2.02,0.5965,0.8014300000000001,NA,840,4.5,FALSE,-840,gsheets
+2026-01-27,2026-01-27,handball,international,male,outcome,Switzerland,Iceland,away,1.26,0.84825,0.917045,NA,1110,NA,FALSE,-1110,gsheets
+2026-01-27,2026-01-27,handball,international,male,totals,Switzerland,Iceland,under,1.96,0.6045,0.78932,NA,810,59.5,FALSE,-810,gsheets
+2026-01-29,2026-01-30,handball,international,male,handicap,Germany,Croatia,away,1.88,0.6305,0.8158399999999998,NA,885,-2.5,FALSE,-885,gsheets
+2026-01-29,2026-01-30,handball,international,male,handicap,Sweden,Portugal,home,1.89,0.69975,1.0222775,NA,1530,-1.5,FALSE,-1530,gsheets
+2026-01-29,2026-01-30,handball,international,male,outcome,Denmark,Iceland,home,1.2,0.88325,0.9431499999999998,NA,1260,NA,TRUE,252,gsheets
+2026-01-29,2026-01-30,handball,international,male,outcome,Germany,Croatia,away,3.6,0.38025,0.74915,NA,600,NA,FALSE,-600,gsheets
+2026-01-29,2026-01-30,handball,international,male,outcome,Sweden,Portugal,home,1.7,0.763,1.0600999999999998,NA,1785,NA,FALSE,-1785,gsheets
+2026-01-29,2026-01-30,handball,international,male,totals,Sweden,Portugal,over,2.04,0.5565,0.6917599999999999,NA,540,64.5,TRUE,562,gsheets

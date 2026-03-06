@@ -1,0 +1,50 @@
+date_recommended,date_match,sport,country,sex,market,home,away,outcome,odds,probability,ev,kelly_frac,bet_amount,info,win,pnl,source
+2025-03-18,2025-03-19,handball,norway,female,handicap,Byasen,Larvik,away,1.85,0.59625,0.10306249999999995,NA,420,3.5,TRUE,357,gsheets
+2025-03-18,2025-03-19,handball,norway,female,outcome,Byasen,Larvik,away,1.33,0.80625,0.07231250000000011,NA,750,NA,TRUE,248,gsheets
+2025-03-18,2025-03-19,handball,norway,female,outcome,Romerike Ravens,Molde,away,1.17,0.86825,0.01585249999999991,NA,315,NA,TRUE,54,gsheets
+2025-03-18,2025-03-19,handball,norway,female,totals,Byasen,Larvik,over,1.85,0.68125,0.26031250000000006,NA,1050,58.5,FALSE,-1050,gsheets
+2025-03-18,2025-03-19,handball,norway,female,totals,Sola,Oppsal,under,1.85,0.708,0.30979999999999996,NA,1260,60.5,FALSE,-1260,gsheets
+2025-03-19,2025-03-19,handball,norway,male,totals,Fjellhammer,Runar,under,1.89,0.59175,0.11840749999999989,NA,465,58.5,FALSE,-465,gsheets
+2025-03-18,2025-03-20,handball,norway,female,outcome,Follo,Haslum,away,3.25,0.38975,0.26668749999999997,NA,405,NA,FALSE,-405,gsheets
+2025-03-18,2025-03-20,handball,norway,female,totals,Follo,Haslum,over,1.85,0.63175,0.1687375000000001,NA,690,51.5,TRUE,586,gsheets
+2025-02-22,2025-03-22,handball,norway,male,handicap,Follo,Elverum,home,1.87,0.564,0.05467999999999995,NA,390,8.5,FALSE,-390,gsheets
+2025-02-22,2025-03-22,handball,norway,male,totals,Follo,Elverum,under,1.95,0.539,0.05105000000000004,NA,345,60.5,TRUE,328,gsheets
+2025-03-23,2025-03-23,handball,norway,female,handicap,Fana,Romerike Ravens,away,1.8,0.63972,0.15149599999999996,NA,1485,-6.5,TRUE,1188,gsheets
+2025-03-23,2025-03-23,handball,norway,female,handicap,Fredrikstad,Gjerpen,away,1.85,0.61175,0.13173750000000006,NA,1215,-1.5,FALSE,-1215,gsheets
+2025-03-23,2025-03-23,handball,norway,female,handicap,Molde,Tert,home,1.8,0.6125,0.10250000000000009,NA,1005,-2.5,TRUE,804,gsheets
+2025-03-23,2025-03-23,handball,norway,female,outcome,Molde,Ternes,home,1.4,0.76625,0.07274999999999993,NA,1425,NA,TRUE,570,gsheets
+2025-03-23,2025-03-23,handball,norway,female,totals,Fana,Romerike Ravens,under,1.85,0.8025,0.4846250000000001,NA,4485,60.5,FALSE,-4485,gsheets
+2025-03-23,2025-03-23,handball,norway,female,totals,Fredrikstad,Gjerpen,under,1.8,0.61875,0.11375000000000007,NA,1125,56.5,FALSE,-1125,gsheets
+2025-03-23,2025-03-23,handball,norway,female,totals,Oppsal,Follo,over,1.85,0.5995,0.10907500000000014,NA,1005,57.5,FALSE,-1005,gsheets
+2025-02-22,2025-03-23,handball,norway,male,handicap,Drammen,Arendal,away,1.95,0.56375,0.09931249999999991,NA,660,-2.5,TRUE,627,gsheets
+2025-02-22,2025-03-23,handball,norway,male,handicap,Haslum HK,Sandnes,home,1.95,0.64075,0.24946250000000003,NA,1650,2.5,FALSE,-1650,gsheets
+2025-02-22,2025-03-23,handball,norway,male,handicap,Kristiansand,Kolstad,home,1.87,0.55825,0.04392750000000012,NA,315,7.5,TRUE,274,gsheets
+2025-02-22,2025-03-23,handball,norway,male,outcome,Drammen,Arendal,away,4,0.37275,0.4910000000000002,NA,1035,NA,TRUE,3105,gsheets
+2025-02-22,2025-03-23,handball,norway,male,outcome,Halden,Bergen,home,2.2,0.51225,0.12695,NA,660,NA,FALSE,-660,gsheets
+2025-02-22,2025-03-23,handball,norway,male,outcome,Haslum HK,Sandnes,home,4,0.453,0.812,NA,1710,NA,FALSE,-1710,gsheets
+2025-02-22,2025-03-23,handball,norway,male,totals,Drammen,Arendal,under,2,0.545,0.09000000000000008,NA,570,61.5,FALSE,-570,gsheets
+2025-02-22,2025-03-23,handball,norway,male,totals,Halden,Bergen,over,1.95,0.57175,0.11491249999999997,NA,765,57.5,TRUE,727,gsheets
+2025-02-22,2025-03-23,handball,norway,male,totals,Haslum HK,Sandnes,over,1.95,0.6,0.16999999999999993,NA,1125,58.5,FALSE,-1125,gsheets
+2025-02-22,2025-03-23,handball,norway,male,totals,Kristiansand,Kolstad,over,1.85,0.6225,0.15162500000000012,NA,1125,58.5,TRUE,956,gsheets
+2025-03-26,2025-03-26,handball,norway,male,handicap,Runar,Sandnes,home,1.75,0.68,0.19000000000000006,NA,1335,-3.5,TRUE,1001,gsheets
+2025-03-26,2025-03-26,handball,norway,male,outcome,Runar,Sandnes,home,1.25,0.8635,0.07937500000000006,NA,1665,NA,TRUE,416,gsheets
+2025-03-26,2025-03-26,handball,norway,male,totals,Fjellhammer,Naerbo,under,1.8,0.69275,0.24695,NA,1620,57.5,TRUE,1296,gsheets
+2025-03-27,2025-03-27,handball,norway,female,totals,Fjellhammer,Nordstrand,under,1.75,0.69325,0.21318750000000009,NA,1710,58.5,TRUE,1282,gsheets
+2025-04-11,2025-04-12,handball,norway,male,handicap,Arendal,Runar,home,1.9,0.592,0.12479999999999991,NA,735,1.5,TRUE,662,gsheets
+2025-04-11,2025-04-12,handball,norway,male,handicap,Halden,Kolstad,home,1.85,0.648,0.1988000000000001,NA,1245,7.5,FALSE,-1245,gsheets
+2025-04-11,2025-04-12,handball,norway,male,outcome,Arendal,Runar,home,3,0.48575,0.45725000000000005,NA,1530,NA,TRUE,3060,gsheets
+2025-04-11,2025-04-12,handball,norway,male,outcome,Viking TIF,Baekkelaget,home,2.4,0.63575,0.5258,NA,2010,NA,FALSE,-2010,gsheets
+2025-04-11,2025-04-12,handball,norway,male,totals,Drammen,Elverum,under,1.85,0.62225,0.15116249999999998,NA,945,61.5,FALSE,-945,gsheets
+2025-04-11,2025-04-12,handball,norway,male,totals,Naerbo,Bergen,over,1.95,0.6655,0.2977249999999999,NA,1680,59.5,FALSE,-1680,gsheets
+2025-09-28,2025-09-28,handball,norway,male,handicap,Elverum,Halden,home,1.85,0.82025,0.5174625000000002,NA,825,-6.5,FALSE,-825,gsheets
+2025-09-28,2025-09-28,handball,norway,male,outcome,Elverum,Halden,home,1.06,0.97125,0.029524999999999996,NA,660,NA,TRUE,40,gsheets
+2025-09-28,2025-09-28,handball,norway,male,outcome,Fjellhammer,Arendal,home,2.2,0.52975,0.1654500000000002,NA,180,NA,FALSE,-180,gsheets
+2025-09-28,2025-09-28,handball,norway,male,outcome,Viking TIF,Tiller,home,1.14,0.9065,0.033409999999999884,NA,330,NA,TRUE,46,gsheets
+2025-09-28,2025-09-28,handball,norway,male,totals,Elverum,Halden,under,1.85,0.68975,0.27603750000000005,NA,435,59.5,TRUE,370,gsheets
+2025-09-28,2025-09-28,handball,norway,male,totals,Fjellhammer,Arendal,under,1.85,0.70425,0.30286250000000015,NA,480,58.5,TRUE,408,gsheets
+2025-09-28,2025-09-28,handball,norway,male,totals,Sandefjord TIF,Bergen,under,1.91,0.5825,0.11257499999999998,NA,165,57.5,FALSE,-165,gsheets
+2025-09-28,2025-09-28,handball,norway,male,totals,Sandnes,Naerbo,under,1.85,0.632,0.16920000000000002,NA,270,57.5,TRUE,230,gsheets
+2025-10-01,2025-10-01,handball,norway,female,handicap,Fana,Gjerpen,home,1.53,0.764,0.16892000000000001,NA,435,1.5,TRUE,231,gsheets
+2025-10-01,2025-10-01,handball,norway,female,handicap,Fredrikstad,Sola,home,1.89,0.609,0.15100999999999987,NA,225,4.5,TRUE,200,gsheets
+2025-10-01,2025-10-01,handball,norway,female,outcome,Fana,Gjerpen,home,2.12,0.66125,0.40185000000000004,NA,480,NA,TRUE,538,gsheets
+2025-10-01,2025-10-01,handball,norway,female,outcome,Fredrikstad,Sola,home,6.04,0.28375,0.7138499999999999,NA,195,NA,FALSE,-195,gsheets

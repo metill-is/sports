@@ -1,0 +1,131 @@
+date_recommended,date_match,sport,country,sex,market,home,away,outcome,odds,probability,ev,kelly_frac,bet_amount,info,win,pnl,source
+2025-03-19,2025-03-20,handball,germany,male,handicap,Rhein-Neckar,Hannover-Burgdorf,home,1.85,0.59375,0.09843750000000008,NA,405,0.5,FALSE,-405,gsheets
+2025-03-19,2025-03-20,handball,germany,male,outcome,Hamburg,MT Melsungen,away,1.55,0.68225,0.05748750000000008,NA,360,NA,FALSE,-360,gsheets
+2025-03-17,2025-03-20,handball,germany,male,outcome,Rhein-Neckar,Hannover-Burgdorf,home,2.24,0.54975,0.23144,NA,645,NA,FALSE,-645,gsheets
+2025-03-19,2025-03-20,handball,germany,male,totals,Hamburg,MT Melsungen,over,1.88,0.6545,0.2304599999999999,NA,900,57.5,TRUE,792,gsheets
+2025-03-20,2025-03-20,handball,germany,male,totals,Rhein-Neckar,Hannover-Burgdorf,over,1.65,0.67375,0.11168749999999988,NA,780,58.5,TRUE,507,gsheets
+2025-03-20,2025-03-21,handball,germany,male,handicap,SC Magdeburg,Fuchse Berlin,away,1.62,0.65725,0.06474500000000005,NA,465,-2.5,TRUE,288,gsheets
+2025-03-21,2025-03-21,handball,germany,male,outcome,Dormagen,Konstanz,home,1.2,0.8715,0.04580000000000003,NA,1035,NA,TRUE,207,gsheets
+2025-03-19,2025-03-21,handball,germany,male,outcome,SC Magdeburg,Fuchse Berlin,away,2.8,0.425,0.18999999999999995,NA,360,NA,TRUE,648,gsheets
+2025-03-21,2025-03-21,handball,germany,male,totals,Essen,Minden,under,1.85,0.637,0.1784500000000001,NA,945,57.5,FALSE,-945,gsheets
+2025-03-21,2025-03-21,handball,germany,male,totals,Hagen,Grosswallstadt,over,1.85,0.67025,0.23996250000000008,NA,1275,57.5,FALSE,-1275,gsheets
+2025-03-20,2025-03-21,handball,germany,male,totals,SC Magdeburg,Fuchse Berlin,over,1.68,0.73075,0.22765999999999997,NA,1500,59.5,TRUE,1020,gsheets
+2025-03-19,2025-03-21,handball,germany,male,totals,SC Magdeburg,Fuchse Berlin,over,1.88,0.61275,0.15196999999999994,NA,615,61.5,TRUE,541,gsheets
+2025-03-22,2025-03-22,handball,germany,female,handicap,Kurpfalz Baren Ketsch,Leipzig,under,1.85,0.6305,0.1664249999999999,NA,885,55.5,FALSE,-885,gsheets
+2025-03-22,2025-03-22,handball,germany,female,handicap,Mainz-Bretzenheim,Fuchse Berlin,under,1.85,0.634,0.17290000000000005,NA,915,49.5,FALSE,-915,gsheets
+2025-03-22,2025-03-22,handball,germany,female,handicap,Nurtingen,Werder Bremen,under,1.75,0.6035,0.05612500000000009,NA,330,58.5,FALSE,-330,gsheets
+2025-03-22,2025-03-22,handball,germany,female,handicap,Regensburg,Bergischer,home,1.85,0.60175,0.1132375000000001,NA,600,-1.5,TRUE,510,gsheets
+2025-03-22,2025-03-22,handball,germany,female,handicap,Rosengarten-Buchholz,Bad Wildungen,away,1.9,0.56825,0.07967500000000005,NA,405,-2.5,FALSE,-405,gsheets
+2025-03-22,2025-03-22,handball,germany,female,totals,Regensburg,Bergischer,under,1.85,0.599,0.10814999999999995,NA,570,56.5,TRUE,485,gsheets
+2025-03-20,2025-03-22,handball,germany,male,handicap,Erlangen,Gummersbach,away,1.9,0.604,0.14759999999999995,NA,570,0.5,TRUE,513,gsheets
+2025-03-20,2025-03-22,handball,germany,male,outcome,Bietigheim-Metterzimmern,Potsdam,away,5,0.247,0.235,NA,210,NA,FALSE,-210,gsheets
+2025-03-20,2025-03-22,handball,germany,male,outcome,Erlangen,Gummersbach,away,1.95,0.64875,0.2650625000000001,NA,960,NA,TRUE,912,gsheets
+2025-03-20,2025-03-22,handball,germany,male,outcome,Flensburg-H.,Kiel,home,1.73,0.60675,0.04967749999999998,NA,240,NA,TRUE,175,gsheets
+2025-03-20,2025-03-22,handball,germany,male,totals,Bietigheim-Metterzimmern,Potsdam,under,1.78,0.679,0.20862000000000017,NA,930,54.5,FALSE,-930,gsheets
+2025-03-21,2025-03-22,handball,germany,male,totals,Ferndorf,Hamm-Westfalen,under,1.85,0.6015,0.11277500000000008,NA,600,58.5,FALSE,-600,gsheets
+2025-03-20,2025-03-22,handball,germany,male,totals,Flensburg-H.,Kiel,under,1.88,0.58,0.0903999999999998,NA,360,62.5,FALSE,-360,gsheets
+2025-03-21,2025-03-22,handball,germany,male,totals,Lubeck-Schwartau,Elbflorenz,under,1.85,0.68625,0.26956250000000015,NA,1425,60.5,FALSE,-1425,gsheets
+2025-03-23,2025-03-23,handball,germany,male,handicap,HSG Wetzlar,Goppingen,home,1.58,0.68925,0.08901500000000012,NA,1035,1.5,TRUE,600,gsheets
+2025-03-23,2025-03-23,handball,germany,male,outcome,HSG Wetzlar,Goppingen,home,2.15,0.56375,0.21206249999999993,NA,1245,NA,TRUE,1432,gsheets
+2025-03-23,2025-03-23,handball,germany,male,outcome,Stuttgart,Eisenach,away,1.85,0.59075,0.0928875,NA,735,NA,FALSE,-735,gsheets
+2025-03-23,2025-03-23,handball,germany,male,totals,Stuttgart,Eisenach,over,1.53,0.72875,0.11498750000000002,NA,1470,56.5,TRUE,779,gsheets
+2025-03-24,2025-03-25,handball,germany,male,totals,Minden,Dormagen,over,1.85,0.57775,0.06883750000000005,NA,540,61.5,TRUE,459,gsheets
+2025-03-25,2025-03-26,handball,germany,male,handicap,Dessauer,Hagen,away,1.85,0.61725,0.1419125,NA,1125,-1.5,TRUE,956,gsheets
+2025-03-25,2025-03-26,handball,germany,male,handicap,Grosswallstadt,Coburg 2000,away,1.68,0.649,0.09032,NA,900,-1.5,FALSE,-900,gsheets
+2025-03-24,2025-03-26,handball,germany,male,outcome,Dessauer,Hagen,away,2.8,0.49,0.3719999999999999,NA,465,NA,TRUE,837,gsheets
+2025-03-24,2025-03-26,handball,germany,male,outcome,Grosswallstadt,Coburg 2000,away,2.5,0.522,0.30500000000000005,NA,465,NA,FALSE,-465,gsheets
+2025-03-24,2025-03-26,handball,germany,male,outcome,HBW Balingen-Weilstetten,Lubeck-Schwartau,home,1.2,0.84775,0.01729999999999995,NA,585,NA,TRUE,117,gsheets
+2025-03-24,2025-03-26,handball,germany,male,outcome,Konstanz,Bergischer,away,1.18,0.8955,0.05668999999999991,NA,2130,NA,TRUE,383,gsheets
+2025-03-24,2025-03-26,handball,germany,male,outcome,N-Lubbecke,Essen,home,1.67,0.658,0.09886,NA,990,NA,FALSE,-990,gsheets
+2025-03-27,2025-03-27,handball,germany,male,totals,Gummersbach,HSG Wetzlar,over,1.78,0.596,0.06087999999999999,NA,465,57.5,FALSE,-465,gsheets
+2025-03-27,2025-03-27,handball,germany,male,totals,Hannover-Burgdorf,Bietigheim-Metterzimmern,over,1.65,0.71675,0.18263749999999995,NA,1665,57.5,FALSE,-1665,gsheets
+2025-03-27,2025-03-28,handball,germany,male,outcome,Eisenach,Rhein-Neckar,away,2.2,0.5255,0.15610000000000002,NA,780,NA,TRUE,936,gsheets
+2025-03-27,2025-03-28,handball,germany,male,outcome,Goppingen,Leipzig,home,2,0.55475,0.10949999999999992,NA,660,NA,TRUE,660,gsheets
+2025-03-27,2025-03-28,handball,germany,male,totals,Eisenach,Rhein-Neckar,over,1.8,0.572,0.02959999999999996,NA,585,60.5,TRUE,468,gsheets
+2025-03-27,2025-03-29,handball,germany,male,totals,Lemgo,Flensburg-H.,under,1.88,0.68375,0.28544999999999987,NA,1950,60.5,FALSE,-1950,gsheets
+2025-03-27,2025-03-29,handball,germany,male,totals,Potsdam,Erlangen,over,1.88,0.69525,0.30706999999999995,NA,2100,51.5,FALSE,-2100,gsheets
+2025-04-04,2025-04-04,handball,germany,male,handicap,HSG Wetzlar,Stuttgart,home,1.8,0.59075,0.06335000000000002,NA,480,-1.5,FALSE,-480,gsheets
+2025-04-04,2025-04-04,handball,germany,male,outcome,HSG Wetzlar,Stuttgart,home,1.53,0.70625,0.08056250000000009,NA,915,NA,FALSE,-915,gsheets
+2025-04-04,2025-04-04,handball,germany,male,totals,HSG Wetzlar,Stuttgart,over,1.95,0.56625,0.1041875,NA,660,55.5,FALSE,-660,gsheets
+2025-04-04,2025-04-05,handball,germany,female,handicap,Goppingen,Blomberg-Lippe,away,1.97,0.5415,0.0667549999999999,NA,420,2.5,TRUE,407,gsheets
+2025-04-04,2025-04-05,handball,germany,female,handicap,Leverkusen,Buxtehuder SV,away,1.97,0.53425,0.05247250000000003,NA,330,3.5,TRUE,320,gsheets
+2025-04-04,2025-04-05,handball,germany,female,handicap,Ludwigsburg,Neckarsulmer,home,1.85,0.6045,0.11832500000000012,NA,840,-11.5,FALSE,-840,gsheets
+2025-04-04,2025-04-05,handball,germany,female,outcome,Goppingen,Blomberg-Lippe,away,1.53,0.72375,0.10733750000000004,NA,1215,NA,TRUE,644,gsheets
+2025-04-04,2025-04-05,handball,germany,female,outcome,Leverkusen,Buxtehuder SV,away,1.36,0.78675,0.06997999999999999,NA,1170,NA,TRUE,421,gsheets
+2025-04-04,2025-04-05,handball,germany,female,outcome,Metzingen,Bensheim-Auerbach,home,2.2,0.51325,0.1291500000000001,NA,645,NA,FALSE,-645,gsheets
+2025-04-04,2025-04-05,handball,germany,female,totals,Ludwigsburg,Neckarsulmer,over,1.85,0.58325,0.07901250000000015,NA,555,59.5,TRUE,472,gsheets
+2025-04-04,2025-04-05,handball,germany,female,totals,Metzingen,Bensheim-Auerbach,over,1.8,0.70875,0.27575000000000005,NA,2070,58.5,FALSE,-2070,gsheets
+2025-04-04,2025-04-05,handball,germany,male,outcome,Erlangen,Fuchse Berlin,away,1.18,0.89475,0.05580499999999999,NA,1860,NA,FALSE,-1860,gsheets
+2025-04-04,2025-04-05,handball,germany,male,totals,Bietigheim-Metterzimmern,Melsungen,over,1.95,0.616,0.2011999999999999,NA,1275,57.5,TRUE,1211,gsheets
+2025-04-04,2025-04-05,handball,germany,male,totals,Kiel,Gummersbach,over,1.88,0.58525,0.10027000000000008,NA,525,59.5,FALSE,-525,gsheets
+2025-04-04,2025-04-05,handball,germany,male,totals,Rhein-Neckar,Lemgo,over,1.88,0.5895,0.10826000000000002,NA,885,57.5,TRUE,779,gsheets
+2025-04-04,2025-04-06,handball,germany,male,outcome,Flensburg-H.,Eisenach,home,1.13,0.928,0.04863999999999996,NA,2250,NA,FALSE,-2250,gsheets
+2025-04-04,2025-04-06,handball,germany,male,outcome,Leipzig,SC Magdeburg,away,1.36,0.7815,0.06284000000000006,NA,1050,NA,TRUE,378,gsheets
+2025-04-07,2025-04-07,handball,germany,male,handicap,Ludwigshafen,Nordhorn-Lingen,away,1.63,0.67825,0.10554749999999996,NA,525,-1.5,TRUE,331,gsheets
+2025-04-07,2025-04-07,handball,germany,male,outcome,Ludwigshafen,Nordhorn-Lingen,away,2.3,0.55075,0.26672499999999977,NA,645,NA,FALSE,-645,gsheets
+2025-04-07,2025-04-07,handball,germany,male,totals,Ludwigshafen,Nordhorn-Lingen,over,1.91,0.58175,0.11114249999999992,NA,390,56.5,FALSE,-390,gsheets
+2025-04-10,2025-04-11,handball,germany,male,totals,Dormagen,Hamm-Westfalen,under,1.95,0.74,0.4429999999999999,NA,390,63.5,TRUE,371,gsheets
+2025-09-16,2025-09-17,handball,germany,male,handicap,Ludwigshafen,Dessauer,home,2,0.594,0.18799999999999992,NA,255,-1.5,FALSE,-255,gsheets
+2025-09-16,2025-09-17,handball,germany,male,outcome,Ludwigshafen,Dessauer,home,1.73,0.66775,0.1552074999999999,NA,285,NA,FALSE,-285,gsheets
+2025-09-16,2025-09-18,handball,germany,male,outcome,Stuttgart,Goppingen,away,5,0.3505,0.7525,NA,255,NA,FALSE,-255,gsheets
+2025-09-16,2025-09-18,handball,germany,male,totals,Stuttgart,Goppingen,over,1.88,0.6225,0.1703,NA,255,56.5,FALSE,-255,gsheets
+2025-09-16,2025-09-19,handball,germany,male,outcome,Hamburg,Lemgo,away,2.75,0.555,0.5262500000000001,NA,405,NA,FALSE,-405,gsheets
+2025-09-16,2025-09-19,handball,germany,male,outcome,Minden,Gummersbach,away,1.25,0.88625,0.10781249999999998,NA,585,NA,TRUE,146,gsheets
+2025-09-20,2025-09-20,handball,germany,male,handicap,Dormagen,Ludwigshafen,home,1.95,0.597,0.1641499999999999,NA,240,-1.5,FALSE,-240,gsheets
+2025-09-20,2025-09-20,handball,germany,male,handicap,Eisenach,HSG Wetzlar,home,1.85,0.6765,0.251525,NA,405,-1.5,TRUE,344,gsheets
+2025-09-20,2025-09-20,handball,germany,male,handicap,Oppenweiler/Backnang,Ferndorf,home,1.95,0.63775,0.2436125,NA,345,1.5,FALSE,-345,gsheets
+2025-09-20,2025-09-20,handball,germany,male,outcome,Dormagen,Ludwigshafen,home,1.67,0.6725,0.12307499999999992,NA,255,NA,FALSE,-255,gsheets
+2025-09-20,2025-09-20,handball,germany,male,outcome,Eisenach,HSG Wetzlar,home,1.6,0.75,0.20000000000000007,NA,450,NA,TRUE,270,gsheets
+2025-09-20,2025-09-20,handball,germany,male,outcome,Krefeld,Essen,home,2,0.78525,0.5705,NA,765,NA,FALSE,-765,gsheets
+2025-09-20,2025-09-20,handball,germany,male,outcome,Oppenweiler/Backnang,Ferndorf,home,3.5,0.503,0.7605000000000001,NA,405,NA,FALSE,-405,gsheets
+2025-09-20,2025-09-20,handball,germany,male,totals,Eisenach,HSG Wetzlar,under,1.83,0.6135,0.12270500000000018,NA,195,57.5,TRUE,162,gsheets
+2025-09-20,2025-09-20,handball,germany,male,totals,Krefeld,Essen,over,1.8,0.83025,0.49445000000000017,NA,840,58.5,TRUE,672,gsheets
+2025-09-20,2025-09-20,handball,germany,male,totals,Oppenweiler/Backnang,Ferndorf,under,1.83,0.7355,0.3459650000000001,NA,570,52.5,FALSE,-570,gsheets
+2025-09-20,2025-09-21,handball,germany,male,handicap,Bergischer,Flensburg-H.,home,1.85,0.805,0.4892500000000002,NA,780,7.5,FALSE,-780,gsheets
+2025-09-20,2025-09-21,handball,germany,male,handicap,Leipzig,Kiel,home,1.93,0.5865,0.13194499999999998,NA,195,3.5,FALSE,-195,gsheets
+2025-09-20,2025-09-21,handball,germany,male,outcome,Bergischer,Flensburg-H.,home,13,0.22075,1.86975,NA,210,NA,FALSE,-210,gsheets
+2025-09-20,2025-09-21,handball,germany,male,outcome,Dessauer,Nordhorn-Lingen,home,1.6,0.7095,0.1352000000000001,NA,300,NA,FALSE,-300,gsheets
+2025-09-20,2025-09-21,handball,germany,male,totals,Hannover-Burgdorf,Rhein-Neckar,under,1.83,0.62125,0.13688749999999994,NA,225,61.5,TRUE,187,gsheets
+2025-09-23,2025-09-25,handball,germany,male,handicap,Gummersbach,Stuttgart,home,1.88,0.76,0.4288,NA,660,-3.5,TRUE,581,gsheets
+2025-09-23,2025-09-25,handball,germany,male,handicap,Lemgo,Bergischer,home,1.88,0.6965,0.3094199999999999,NA,480,-5.5,FALSE,-480,gsheets
+2025-09-23,2025-09-25,handball,germany,male,outcome,Gummersbach,Stuttgart,home,1.3,0.90625,0.17812500000000003,NA,810,NA,TRUE,243,gsheets
+2025-09-23,2025-09-25,handball,germany,male,outcome,Lemgo,Bergischer,home,1.13,0.932,0.05315999999999996,NA,555,NA,TRUE,72,gsheets
+2025-09-23,2025-09-25,handball,germany,male,totals,Kiel,Minden,over,1.88,0.59275,0.11436999999999996,NA,180,60.5,FALSE,-180,gsheets
+2025-09-25,2025-09-26,handball,germany,male,handicap,Hannover-Burgdorf,Erlangen,away,1.8,0.723,0.3014,NA,510,-4.5,TRUE,408,gsheets
+2025-09-25,2025-09-26,handball,germany,male,handicap,MT Melsungen,Hamburg,home,1.93,0.6085,0.17440500000000003,NA,255,-1.5,TRUE,237,gsheets
+2025-09-25,2025-09-26,handball,germany,male,outcome,Hannover-Burgdorf,Erlangen,away,6,0.3275,0.9650000000000002,NA,255,NA,TRUE,1275,gsheets
+2025-09-25,2025-09-26,handball,germany,male,outcome,MT Melsungen,Hamburg,home,1.7,0.684,0.16280000000000006,NA,315,NA,TRUE,220,gsheets
+2025-09-25,2025-09-26,handball,germany,male,totals,Hannover-Burgdorf,Erlangen,under,1.93,0.60425,0.16620249999999992,NA,240,57.5,FALSE,-240,gsheets
+2025-09-27,2025-09-28,handball,germany,male,handicap,Flensburg-H.,Goppingen,away,1.88,0.61925,0.16418999999999984,NA,255,-6.5,TRUE,224,gsheets
+2025-09-27,2025-09-28,handball,germany,male,outcome,Fuchse Berlin,Eisenach,home,1.13,0.8995,0.01643499999999986,NA,165,NA,TRUE,21,gsheets
+2025-09-27,2025-09-28,handball,germany,male,totals,Fuchse Berlin,Eisenach,over,1.93,0.627,0.21011,NA,300,61.5,FALSE,-300,gsheets
+2025-09-27,2025-09-28,handball,germany,male,totals,HSG Wetzlar,Minden,over,1.85,0.59425,0.09936249999999992,NA,165,54.5,TRUE,140,gsheets
+2025-10-01,2025-10-01,handball,germany,female,handicap,Bensheim-Auerbach,BVB Dortmund,home,1.83,0.72925,0.3345275,NA,540,1.5,TRUE,448,gsheets
+2025-10-01,2025-10-01,handball,germany,female,outcome,Bensheim-Auerbach,BVB Dortmund,home,2.88,0.60175,0.7330399999999999,NA,525,NA,TRUE,987,gsheets
+2025-10-01,2025-10-01,handball,germany,female,outcome,Halle-Neustadt,Oldenburg,home,3,0.436,0.30799999999999994,NA,210,NA,FALSE,-210,gsheets
+2025-10-01,2025-10-01,handball,germany,female,totals,Bensheim-Auerbach,BVB Dortmund,over,1.83,0.80175,0.4672025,NA,765,60.5,TRUE,635,gsheets
+2025-10-01,2025-10-01,handball,germany,female,totals,Halle-Neustadt,Oldenburg,under,1.85,0.60275,0.11508750000000012,NA,180,57.5,FALSE,-180,gsheets
+2025-10-04,2025-10-04,handball,germany,female,totals,Thuringer,Neckarsulmer,over,1.8,0.63125,0.13624999999999998,NA,225,59.5,TRUE,180,gsheets
+2025-10-04,2025-10-04,handball,germany,female,totals,Zwickau,Blomberg-Lippe,under,1.91,0.70125,0.33938750000000006,NA,510,59.5,FALSE,-510,gsheets
+2025-10-03,2025-10-04,handball,germany,male,handicap,Erlangen,Fuchse Berlin,home,1.93,0.719,0.38766999999999985,NA,570,4.5,TRUE,530,gsheets
+2025-10-03,2025-10-04,handball,germany,male,handicap,Goppingen,Hannover-Burgdorf,home,1.8,0.65525,0.17945,NA,300,1.5,TRUE,240,gsheets
+2025-10-03,2025-10-04,handball,germany,male,handicap,Leipzig,Flensburg-H.,home,1.95,0.6515,0.2704249999999999,NA,390,4.5,FALSE,-390,gsheets
+2025-10-03,2025-10-04,handball,germany,male,outcome,Erlangen,Fuchse Berlin,home,6,0.30975,0.8585,NA,225,NA,FALSE,-225,gsheets
+2025-10-03,2025-10-04,handball,germany,male,outcome,Goppingen,Hannover-Burgdorf,home,2.75,0.488,0.34199999999999997,NA,270,NA,TRUE,473,gsheets
+2025-10-04,2025-10-04,handball,germany,male,totals,Leipzig,Flensburg-H.,over,1.93,0.577,0.11360999999999988,NA,165,61.5,TRUE,153,gsheets
+2025-10-03,2025-10-04,handball,germany,male,totals,Minden,Lemgo,over,1.88,0.64175,0.2064900000000001,NA,315,56.5,TRUE,277,gsheets
+2025-10-03,2025-10-05,handball,germany,male,handicap,Eisenach,Gummersbach,home,1.93,0.60825,0.17392249999999987,NA,255,2.5,TRUE,237,gsheets
+2025-10-03,2025-10-05,handball,germany,male,handicap,Hamburg,SC Magdeburg,away,2,0.65775,0.3154999999999999,NA,420,3.5,FALSE,-420,gsheets
+2025-10-03,2025-10-05,handball,germany,male,handicap,Stuttgart,MT Melsungen,away,2.45,0.4955,0.21397500000000017,NA,195,1.5,FALSE,-195,gsheets
+2025-10-03,2025-10-05,handball,germany,male,outcome,Eisenach,Gummersbach,home,3.75,0.365,0.3687499999999999,NA,180,NA,TRUE,495,gsheets
+2025-10-03,2025-10-05,handball,germany,male,outcome,Hamburg,SC Magdeburg,away,1.36,0.85,0.15600000000000003,NA,585,NA,TRUE,211,gsheets
+2025-10-03,2025-10-05,handball,germany,male,outcome,Stuttgart,MT Melsungen,away,2.1,0.5795,0.2169500000000001,NA,270,NA,FALSE,-270,gsheets
+2025-10-03,2025-10-05,handball,germany,male,totals,Hamburg,SC Magdeburg,over,1.88,0.7595,0.4278599999999998,NA,660,60.5,FALSE,-660,gsheets
+2025-10-04,2025-10-05,handball,germany,male,totals,Kiel,Rhein-Neckar,over,1.88,0.591,0.11107999999999985,NA,165,60.5,TRUE,145,gsheets
+2026-03-05,2026-03-05,handball,germany,male,outcome,Gummersbach,Lemgo,home,1.51,0.75175,0.14,0.1,508,NA,TRUE,259.08,pipeline
+2026-03-05,2026-03-05,handball,germany,male,outcome,Stuttgart,Kiel,home,3.92,0.319,0.25,0.04,213,NA,TRUE,621.96,pipeline
+2026-03-05,2026-03-05,handball,germany,male,totals,Gummersbach,Lemgo,over,1.67,0.73625,0.23,0.05,257,56.5,FALSE,-257,pipeline
+2026-03-05,2026-03-05,handball,germany,male,totals,Gummersbach,Lemgo,over,2.06,0.63475,0.31,0.1,506,58.5,FALSE,-506,pipeline
+2026-03-05,2026-03-05,handball,germany,male,totals,Stuttgart,Kiel,under,1.74,0.659,0.15,0.05,230,61.5,TRUE,170.2,pipeline
+2026-03-05,2026-03-05,handball,germany,male,totals,Stuttgart,Kiel,under,1.59,0.713,0.13,0.07,335,62.5,TRUE,197.65,pipeline
+2026-03-05,2026-03-08,handball,germany,male,outcome,SC Magdeburg,Hannover-Burgdorf,home,1.14,0.93325,0.0639,0.23,808,NA,NA,NA,pipeline

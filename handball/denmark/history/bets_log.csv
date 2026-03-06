@@ -1,0 +1,87 @@
+date_recommended,date_match,sport,country,sex,market,home,away,outcome,odds,probability,ev,kelly_frac,bet_amount,info,win,pnl,source
+2025-03-17,2025-03-18,handball,denmark,female,totals,NFH,Viborg,over,1.58,0.6855,0.08309000000000005,NA,495,56.5,TRUE,287,gsheets
+2025-03-17,2025-03-18,handball,denmark,female,totals,NFH,Viborg,under,1.88,0.61925,0.16418999999999984,NA,645,57.5,TRUE,568,gsheets
+2025-03-17,2025-03-18,handball,denmark,female,totals,Odense,Silkeborg-Voel,under,1.95,0.57875,0.1285624999999999,NA,465,60.5,TRUE,442,gsheets
+2025-03-19,2025-03-19,handball,denmark,female,outcome,Ringkobing,Aarhus Handbold,away,2.75,0.4065,0.11787499999999997,NA,225,NA,FALSE,-225,gsheets
+2025-03-19,2025-03-19,handball,denmark,female,totals,Esbjerg,Sonderjyske,over,1.85,0.5845,0.08132500000000009,NA,330,57.5,TRUE,280,gsheets
+2025-03-20,2025-03-20,handball,denmark,female,totals,Horsens,Bjerringbro,under,1.88,0.6625,0.2454999999999999,NA,1260,55.5,TRUE,1109,gsheets
+2025-03-20,2025-03-20,handball,denmark,male,handicap,Bjerringbro/Silkeborg,Ribe-Esbjerg,away,1.9,0.6095,0.15805000000000002,NA,600,-4.5,TRUE,540,gsheets
+2025-03-21,2025-03-21,handball,denmark,male,totals,Lemvig,Norddjurs,under,1.85,0.60925,0.12711249999999996,NA,675,61.5,FALSE,-675,gsheets
+2025-03-21,2025-03-21,handball,denmark,male,totals,Raekker Molle,Faaborg,under,1.85,0.65825,0.21776250000000008,NA,1155,59.5,TRUE,982,gsheets
+2025-03-21,2025-03-22,handball,denmark,male,totals,FIF,Odense,over,1.85,0.67975,0.2575375,NA,1365,60.5,TRUE,1160,gsheets
+2025-03-20,2025-03-22,handball,denmark,male,totals,GOG,Nordsjaelland,over,1.88,0.59075,0.11061,NA,570,61.5,TRUE,502,gsheets
+2025-03-20,2025-03-22,handball,denmark,male,totals,Skjern,Aalborg,over,1.88,0.6665,0.2530199999999999,NA,1290,58.5,TRUE,1135,gsheets
+2025-03-24,2025-03-25,handball,denmark,female,totals,Silkeborg-Voel,Skanderborg,over,1.88,0.6205,0.16654000000000002,NA,1485,57.5,TRUE,1307,gsheets
+2025-03-26,2025-03-26,handball,denmark,female,handicap,Ringkobing,Odense,home,1.95,0.7085,0.381575,NA,1500,8.5,TRUE,1425,gsheets
+2025-03-28,2025-03-28,handball,denmark,male,totals,Ribe-Esbjerg,GOG,over,1.95,0.58,0.1309999999999999,NA,825,62.5,FALSE,-825,gsheets
+2025-03-28,2025-03-29,handball,denmark,male,totals,Ringsted,Bjerringbro/Silkeborg,under,1.88,0.56675,0.06548999999999988,NA,450,61.5,TRUE,396,gsheets
+2025-03-28,2025-03-30,handball,denmark,male,totals,Fredericia,Mors,over,1.88,0.57825,0.08711000000000002,NA,600,58.5,TRUE,528,gsheets
+2025-03-28,2025-03-30,handball,denmark,male,totals,Nordsjaelland,Skanderborg AGF,over,1.88,0.60175,0.1312899999999999,NA,900,57.5,TRUE,792,gsheets
+2025-04-04,2025-04-04,handball,denmark,male,handicap,Holstebro,Nordsjaelland,away,1.88,0.5755,0.08194000000000001,NA,555,-3.5,FALSE,-555,gsheets
+2025-04-04,2025-04-04,handball,denmark,male,totals,Holstebro,Nordsjaelland,over,1.85,0.5995,0.10907500000000014,NA,1530,61.5,FALSE,-1530,gsheets
+2025-04-04,2025-04-05,handball,denmark,female,handicap,Aarhus Handbold,Odense,home,1.93,0.61375,0.1845375,NA,1185,11.5,TRUE,1102,gsheets
+2025-04-04,2025-04-05,handball,denmark,female,handicap,EH Aalborg,Sonderjyske,away,1.88,0.55925,0.05138999999999999,NA,345,1.5,FALSE,-345,gsheets
+2025-04-04,2025-04-05,handball,denmark,female,handicap,Ikast Handbold,Esbjerg,home,1.75,0.756,0.32299999999999995,NA,2580,5.5,TRUE,1935,gsheets
+2025-04-04,2025-04-05,handball,denmark,female,outcome,EH Aalborg,Sonderjyske,away,1.6,0.662,0.05920000000000008,NA,1170,NA,FALSE,-1170,gsheets
+2025-04-04,2025-04-05,handball,denmark,female,totals,Aarhus Handbold,Odense,under,1.78,0.825,0.4684999999999999,NA,3600,60.5,FALSE,-3600,gsheets
+2025-04-04,2025-04-05,handball,denmark,female,totals,Bjerringbro,Skanderborg,over,1.88,0.60475,0.13693,NA,930,55.5,TRUE,818,gsheets
+2025-04-04,2025-04-05,handball,denmark,female,totals,Copenhagen,Ringkobing,under,1.85,0.57225,0.05866250000000012,NA,405,63.5,FALSE,-405,gsheets
+2025-04-04,2025-04-05,handball,denmark,female,totals,EH Aalborg,Sonderjyske,under,1.88,0.565,0.06219999999999986,NA,420,60.5,FALSE,-420,gsheets
+2025-04-04,2025-04-05,handball,denmark,female,totals,Ikast Handbold,Esbjerg,over,1.85,0.66075,0.22238749999999996,NA,1575,58.5,FALSE,-1575,gsheets
+2025-04-04,2025-04-05,handball,denmark,female,totals,Silkeborg-Voel,NFH,over,1.88,0.5595,0.05185999999999996,NA,360,58.5,TRUE,317,gsheets
+2025-04-04,2025-04-05,handball,denmark,female,totals,Viborg,Horsens,over,1.78,0.633,0.12674000000000002,NA,975,54.5,TRUE,760,gsheets
+2025-04-04,2025-04-05,handball,denmark,male,totals,Aalborg,Kolding,over,1.89,0.586,0.10753999999999986,NA,1500,60.5,TRUE,1335,gsheets
+2025-04-07,2025-04-09,handball,denmark,male,totals,Grindsted,Kolding,over,1.78,0.74,0.31720000000000004,NA,2250,54.5,TRUE,1755,gsheets
+2025-04-11,2025-04-12,handball,denmark,male,handicap,GOG,Mors,away,1.8,0.58525,0.05345000000000011,NA,675,-2.5,TRUE,540,gsheets
+2025-04-11,2025-04-12,handball,denmark,male,handicap,Odder,HOJ,home,1.85,0.62225,0.15116249999999998,NA,1815,6.5,FALSE,-1815,gsheets
+2025-04-11,2025-04-12,handball,denmark,male,handicap,Roskilde,FIF,home,1.85,0.66825,0.23626250000000004,NA,2835,5.5,TRUE,2410,gsheets
+2025-04-11,2025-04-12,handball,denmark,male,handicap,Skjern,Ribe-Esbjerg,away,1.87,0.57825,0.08132750000000011,NA,960,-3.5,TRUE,835,gsheets
+2025-04-11,2025-04-12,handball,denmark,male,handicap,Sydhavsoerne,Faaborg,away,1.91,0.5555,0.06100499999999997,NA,690,-4.5,TRUE,628,gsheets
+2025-04-11,2025-04-12,handball,denmark,male,handicap,Tonder,Aarhus Handbold,home,1.8,0.59025,0.06245000000000011,NA,795,1.5,TRUE,636,gsheets
+2025-04-11,2025-04-12,handball,denmark,male,outcome,Kolding,Sonderjyske,away,2.38,0.71,0.6897999999999999,NA,2550,NA,FALSE,-2550,gsheets
+2025-04-11,2025-04-12,handball,denmark,male,outcome,Tonder,Aarhus Handbold,home,2.63,0.4645,0.22163500000000003,NA,885,NA,FALSE,-885,gsheets
+2025-04-11,2025-04-12,handball,denmark,male,totals,Aalborg,Nordsjaelland,over,1.87,0.63025,0.1785675,NA,2100,60.5,FALSE,-2100,gsheets
+2025-04-11,2025-04-12,handball,denmark,male,totals,Bjerringbro/Silkeborg,Grindsted,under,1.95,0.56025,0.09248750000000006,NA,990,60.5,FALSE,-990,gsheets
+2025-04-11,2025-04-12,handball,denmark,male,totals,GOG,Mors,over,1.85,0.6105,0.12942500000000012,NA,1560,63.5,FALSE,-1560,gsheets
+2025-04-11,2025-04-12,handball,denmark,male,totals,Kolding,Sonderjyske,over,1.95,0.53375,0.04081249999999992,NA,435,58.5,FALSE,-435,gsheets
+2025-04-11,2025-04-12,handball,denmark,male,totals,Odder,HOJ,under,1.85,0.61575,0.13913750000000014,NA,1665,59.5,TRUE,1415,gsheets
+2025-04-11,2025-04-12,handball,denmark,male,totals,Roskilde,FIF,under,1.85,0.60125,0.11231249999999993,NA,1350,60.5,FALSE,-1350,gsheets
+2025-04-11,2025-04-12,handball,denmark,male,totals,Sydhavsoerne,Faaborg,under,1.85,0.7095,0.31257500000000005,NA,3750,59.5,TRUE,3188,gsheets
+2025-09-11,2025-09-12,handball,denmark,female,totals,Ringkobing,EH Aalborg,over,1.75,0.74475,0.3033125000000001,NA,540,55.5,TRUE,405,gsheets
+2025-09-11,2025-09-12,handball,denmark,female,totals,Sonderjyske,Viborg,under,1.97,0.677,0.33369000000000004,NA,465,61.5,TRUE,451,gsheets
+2025-09-11,2025-09-12,handball,denmark,male,handicap,Fredericia,Skanderborg AGF,home,2.1,0.55275,0.160775,NA,195,-1.5,FALSE,-195,gsheets
+2025-09-11,2025-09-12,handball,denmark,male,handicap,HOJ,Ringsted,away,1.9,0.697,0.3242999999999998,NA,495,-2.5,FALSE,-495,gsheets
+2025-09-11,2025-09-12,handball,denmark,male,handicap,Mors,Sonderjyske,home,2.35,0.60725,0.4270375,NA,435,-1.5,TRUE,587,gsheets
+2025-09-11,2025-09-12,handball,denmark,male,outcome,Fredericia,Skanderborg AGF,home,1.8,0.62875,0.13175000000000003,NA,225,NA,FALSE,-225,gsheets
+2025-09-11,2025-09-12,handball,denmark,male,outcome,HOJ,Ringsted,away,3.75,0.45425,0.7034374999999999,NA,345,NA,FALSE,-345,gsheets
+2025-09-11,2025-09-12,handball,denmark,male,outcome,Mors,Sonderjyske,home,1.91,0.68525,0.30882750000000003,NA,465,NA,TRUE,423,gsheets
+2025-09-11,2025-09-12,handball,denmark,male,totals,Fredericia,Skanderborg AGF,under,1.95,0.60425,0.17828749999999993,NA,255,58.5,FALSE,-255,gsheets
+2025-09-11,2025-09-12,handball,denmark,male,totals,HOJ,Ringsted,over,1.87,0.711,0.32957000000000003,NA,510,58.5,TRUE,444,gsheets
+2025-09-11,2025-09-13,handball,denmark,male,handicap,Aalborg,GOG,away,1.83,0.64775,0.18538250000000012,NA,300,-5.5,FALSE,-300,gsheets
+2025-09-11,2025-09-13,handball,denmark,male,totals,Aalborg,GOG,over,1.87,0.7105,0.3286350000000001,NA,510,63.5,TRUE,444,gsheets
+2025-09-14,2025-09-14,handball,denmark,male,totals,Holstebro,Skjern,over,1.95,0.598,0.16609999999999991,NA,240,60.5,FALSE,-240,gsheets
+2025-09-16,2025-09-18,handball,denmark,male,outcome,Skanderborg AGF,HOJ,home,1.5,0.81025,0.21537500000000004,NA,870,NA,TRUE,435,gsheets
+2025-09-16,2025-09-18,handball,denmark,male,totals,Skanderborg AGF,HOJ,over,1.87,0.5805,0.08553500000000014,NA,195,57.5,TRUE,170,gsheets
+2025-09-18,2025-09-19,handball,denmark,male,totals,GOG,Grindsted,over,1.89,0.6025,0.138725,NA,210,60.5,TRUE,187,gsheets
+2025-09-18,2025-09-19,handball,denmark,male,totals,Sonderjyske,Holstebro,over,1.75,0.63,0.10250000000000004,NA,180,60.5,FALSE,-180,gsheets
+2025-09-20,2025-09-20,handball,denmark,male,handicap,Kolding,Norddjurs,home,1.83,0.69125,0.26498750000000015,NA,435,-5.5,FALSE,-435,gsheets
+2025-09-20,2025-09-20,handball,denmark,male,outcome,HC Kobenhavn,Lemvig,home,2.1,0.5805,0.21905000000000008,NA,270,NA,FALSE,-270,gsheets
+2025-09-20,2025-09-20,handball,denmark,male,outcome,Kolding,Norddjurs,home,1.17,0.931,0.08926999999999999,NA,705,NA,TRUE,120,gsheets
+2025-09-18,2025-09-20,handball,denmark,male,outcome,Ringsted,Ribe-Esbjerg,home,2.6,0.5705,0.48330000000000006,NA,405,NA,FALSE,-405,gsheets
+2025-09-21,2025-09-21,handball,denmark,male,outcome,Skjern,Aalborg,home,3.85,0.449,0.7286500000000002,NA,304,NA,FALSE,-304,gsheets
+2025-09-27,2025-09-28,handball,denmark,male,totals,Aalborg,Holstebro,over,1.89,0.59875,0.13163749999999996,NA,195,61.5,TRUE,173.55,gsheets
+2025-10-01,2025-10-01,handball,denmark,female,handicap,Esbjerg,Skanderborg,away,1.8,0.63125,0.13624999999999998,NA,225,-12.5,FALSE,-225,gsheets
+2025-10-01,2025-10-01,handball,denmark,female,handicap,Horsens,Silkeborg-Voel,home,1.62,0.69175,0.12063500000000003,NA,270,1.5,TRUE,167,gsheets
+2025-10-01,2025-10-01,handball,denmark,female,outcome,Horsens,Silkeborg-Voel,home,2.38,0.5465,0.3006699999999999,NA,300,NA,TRUE,414,gsheets
+2025-10-01,2025-10-01,handball,denmark,female,totals,Esbjerg,Skanderborg,over,1.8,0.69175,0.24515,NA,420,60.5,TRUE,336,gsheets
+2025-10-02,2025-10-02,handball,denmark,male,totals,Holstebro,Grindsted,over,1.95,0.58925,0.14903750000000004,NA,210,59.5,FALSE,-210,gsheets
+2025-10-03,2025-10-03,handball,denmark,female,handicap,Bjerringbro,HOJ,home,2.05,0.636,0.30379999999999996,NA,390,-1.5,FALSE,-390,gsheets
+2025-10-03,2025-10-03,handball,denmark,female,outcome,Bjerringbro,HOJ,home,1.8,0.7045,0.2681,NA,450,NA,FALSE,-450,gsheets
+2025-10-03,2025-10-03,handball,denmark,female,totals,Bjerringbro,HOJ,over,1.95,0.6535,0.27432499999999993,NA,390,58.5,TRUE,371,gsheets
+2025-10-03,2025-10-04,handball,denmark,male,handicap,Ringsted,Bjerringbro/Silkeborg,home,1.9,0.616,0.17039999999999988,NA,255,2.5,FALSE,-255,gsheets
+2025-10-03,2025-10-04,handball,denmark,male,handicap,Skanderborg AGF,Mors,home,1.9,0.612,0.16279999999999994,NA,240,-2.5,FALSE,-240,gsheets
+2025-10-03,2025-10-04,handball,denmark,male,handicap,Skjern,Fredericia,home,1.95,0.688,0.3415999999999999,NA,480,-1.5,TRUE,456,gsheets
+2025-10-03,2025-10-04,handball,denmark,male,outcome,Ringsted,Bjerringbro/Silkeborg,home,3.6,0.378,0.3608,NA,195,NA,FALSE,-195,gsheets
+2025-10-03,2025-10-04,handball,denmark,male,outcome,Skanderborg AGF,Mors,home,1.44,0.73975,0.06523999999999996,NA,195,NA,FALSE,-195,gsheets
+2025-10-03,2025-10-04,handball,denmark,male,outcome,Skjern,Fredericia,home,1.67,0.7535,0.2583449999999998,NA,525,NA,TRUE,352,gsheets
+2025-10-03,2025-10-04,handball,denmark,male,totals,Skanderborg AGF,Mors,over,1.89,0.6205,0.17274500000000004,NA,270,61.5,FALSE,-270,gsheets
