@@ -37,6 +37,10 @@ Sports/recommendations.csv     (ephemeral output from Sports pipeline)
 ## Usage
 
 ```bash
+# Preview pending bets (no browser, just reads data)
+Rscript preview.R
+Rscript preview.R --league football_england
+
 # Dry run — navigates and selects but doesn't click "Kaupa"
 Rscript run.R
 
@@ -71,6 +75,7 @@ LENGJAN_PASS=your_password
 
 | File | Purpose |
 |------|---------|
+| `preview.R` | Lightweight pending-bet preview (no browser) — deduplicates against ledger |
 | `run.R` | CLI entry point |
 | `R/pipeline.R` | Main pipeline: load recs, dedup, compute bankroll, orchestrate placement, write ledger |
 | `R/login.R` | Authenticate to Lengjan (click "Minar sidur", fill form, click "Innskra") |
