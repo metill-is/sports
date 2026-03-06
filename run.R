@@ -419,6 +419,35 @@ n_fail <- sum(!vapply(all_results, `[[`, logical(1), "ok"))
 
 if ("bet" %in% steps && length(all_recommendations) > 0) {
   new_recs <- do.call(rbind, all_recommendations)
+
+  # Daily bankroll budget: cap total exposure across simultaneous matches
+  # Reads max_daily_exposure from bankroll.yml (default 0.75 = 75% of bankroll)
+  bankroll_yml <- here("config", "bankroll.yml")
+  if (file.exists(bankroll_yml)) {
+    global_bankroll <- yaml::yaml.load(readr::read_file(bankroll_yml))
+    max_daily <- global_bankroll$max_daily_exposure %||% 0.75
+    cur_pool <- global_bankroll$initial_pool  # fallback; step_bet computes actual
+
+    if ("kelly" %in% names(new_recs) && "date" %in% names(new_recs)) {
+      for (d in unique(as.character(new_recs$date))) {
+        day_idx <- as.character(new_recs$date) == d
+        total_kelly <- sum(new_recs$kelly[day_idx], na.rm = TRUE)
+        if (total_kelly > max_daily) {
+          scale_factor <- max_daily / total_kelly
+          new_recs$kelly[day_idx] <- new_recs$kelly[day_idx] * scale_factor
+          new_recs$bet_amount[day_idx] <- round(
+            new_recs$bet_amount[day_idx] * scale_factor,
+            global_bankroll$bet_digits %||% 0
+          )
+          cat(sprintf(
+            "  Daily budget: %s total kelly=%.2f > %.2f, scaled by %.2f\n",
+            d, total_kelly, max_daily, scale_factor
+          ))
+        }
+      }
+    }
+  }
+
   recs_path <- here("recommendations.csv")
 
   # Merge with existing: replace leagues that were re-run, keep others
@@ -434,6 +463,12 @@ if ("bet" %in% steps && length(all_recommendations) > 0) {
 
   # Drop recommendations for past matches
   recs <- recs |> dplyr::filter(as.Date(date) >= Sys.Date())
+
+  # Re-apply min_bet_amount after daily budget scaling
+  if (exists("global_bankroll")) {
+    min_bet <- global_bankroll$min_bet_amount %||% 200
+    recs <- recs |> dplyr::filter(is.na(bet_amount) | bet_amount >= min_bet)
+  }
 
   readr::write_csv(recs, recs_path)
   cat(sprintf("\nWrote %d recommendation(s) to %s\n", nrow(recs), recs_path))

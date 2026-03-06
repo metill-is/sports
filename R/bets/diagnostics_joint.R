@@ -10,7 +10,7 @@
 #'   diag <- run_diagnostics(post, odds, cfg)
 
 box::use(
-  ./kelly_joint[build_indicators, get_kelly_joint, collect_match_bets],
+  ./kelly_joint[build_return_matrix, get_kelly_joint, collect_match_bets],
   ./kelly[get_kelly],
   ./market_handicap[parse_handicap],
   dplyr[filter, mutate, distinct, select, bind_rows, summarise, arrange, tibble,
@@ -73,8 +73,8 @@ run_diagnostics <- function(post, odds, cfg) {
     bets <- collect_match_bets(m_1x2, m_hc, m_tot, cfg)
     if (is.null(bets) || nrow(bets) == 0) next
 
-    indicators <- build_indicators(draws, bets)
-    bets$p <- colMeans(indicators)
+    ret_mat <- build_return_matrix(draws, bets)
+    bets$p <- colMeans(ret_mat > 0)
     bets$implied_p <- 1 / bets$o
     bets$ev_edge <- bets$p - bets$implied_p
     bets$ev <- bets$p * (bets$o - 1) - (1 - bets$p)
@@ -84,17 +84,19 @@ run_diagnostics <- function(post, odds, cfg) {
     if (!any(keep)) next
 
     bets_filt <- bets[keep, ]
-    ind_filt <- indicators[, keep, drop = FALSE]
+    ret_filt <- ret_mat[, keep, drop = FALSE]
+    ind_filt <- matrix(as.integer(ret_filt > 0), nrow = nrow(ret_filt))
     B <- nrow(bets_filt)
 
     # ── Joint Kelly ──
-    fracs_joint <- get_kelly_joint(ind_filt, bets_filt$o, max_stake = max_match_stake)
+    kelly_result <- get_kelly_joint(net_return = ret_filt, max_stake = max_match_stake)
+    fracs_joint <- kelly_result$solution
 
     # ── Independent Kelly (point-estimate, per-outcome) ──
     fracs_indep <- get_kelly(bets_filt$p, bets_filt$o)
 
     # ── Wealth diagnostics (joint) ──
-    net_return <- sweep(ind_filt, 2, bets_filt$o, `*`) - 1
+    net_return <- ret_filt
     wealth_joint <- 1 + as.vector(net_return %*% fracs_joint)
     growth_joint <- mean(log(pmax(wealth_joint, 1e-10)))
     worst_joint <- min(wealth_joint)

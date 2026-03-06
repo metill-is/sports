@@ -17,23 +17,30 @@ box::use(
   tidyr[crossing]
 )
 
-# ── Indicator matrix construction ────────────────────────────────────────────
+# ── Return matrix construction ───────────────────────────────────────────────
 
-#' Build binary indicator matrix from posterior draws
+#' Build net return matrix from posterior draws
+#'
+#' Produces an S x B matrix of net returns per unit staked:
+#'   win  -> odds - 1 (net profit)
+#'   push -> 0        (stake returned)
+#'   loss -> -1       (stake lost)
+#'
+#' Handles half-point lines (no push), integer lines (push at exact value),
+#' and quarter lines (half-push via split bet).
+#'
+#' For backward compatibility, build_indicators() is retained as a wrapper
+#' that returns the binary win indicator (1/0) for probability estimation.
 #'
 #' @param draws Tibble of posterior draws for one match (home_goals, away_goals).
-#'   Must have S rows (one per draw).
 #' @param bets Tibble describing each bet with columns:
-#'   bet_type ("1x2_home", "hc_home", "over", etc.),
-#'   change (for handicap bets, NA otherwise),
-#'   limit (for totals bets, NA otherwise),
-#'   tie_threshold, hc_threshold (for European HC).
-#' @return Integer matrix S x B: 1 if bet j wins in draw s, 0 otherwise
+#'   bet_type, change, limit, tie_threshold, hc_threshold, o (decimal odds).
+#' @return Numeric matrix S x B of net returns
 #' @export
-build_indicators <- function(draws, bets) {
+build_return_matrix <- function(draws, bets) {
   S <- nrow(draws)
   B <- nrow(bets)
-  indicators <- matrix(0L, nrow = S, ncol = B)
+  returns <- matrix(-1, nrow = S, ncol = B)
 
   hg <- draws$home_goals
   ag <- draws$away_goals
@@ -43,32 +50,83 @@ build_indicators <- function(draws, bets) {
   for (j in seq_len(B)) {
     bt <- bets$bet_type[j]
     tt <- bets$tie_threshold[j]
-    indicators[, j] <- switch(bt,
-      "1x2_home"  = as.integer(diff > tt),
-      "1x2_tie"   = as.integer(abs(diff) <= tt),
-      "1x2_away"  = as.integer(diff < -tt),
-      "hc_home"   = {
+    o <- bets$o[j]
+
+    # Compute win/push/loss state for each draw
+    # state: 1 = win, 0 = push, -1 = loss
+    state <- switch(bt,
+      "1x2_home" = ifelse(diff > tt, 1L, -1L),
+      "1x2_tie"  = ifelse(abs(diff) <= tt, 1L, -1L),
+      "1x2_away" = ifelse(diff < -tt, 1L, -1L),
+      "hc_home"  = {
         adj <- diff + bets$change[j]
         ht <- bets$hc_threshold[j]
-        as.integer(adj > ht)
+        is_half <- (bets$change[j] != round(bets$change[j]))
+        if (is_half || ht > 0) {
+          # Half-point or European 3-way: no push on this outcome
+          ifelse(adj > ht, 1L, -1L)
+        } else {
+          # Integer Asian HC: push when adj == 0
+          ifelse(adj > 0, 1L, ifelse(adj == 0, 0L, -1L))
+        }
       },
-      "hc_tie"    = {
+      "hc_tie"   = {
         adj <- diff + bets$change[j]
         ht <- bets$hc_threshold[j]
-        as.integer(abs(adj) <= ht)
+        # European 3-way HC tie: this IS the push outcome (bettable), no push on it
+        ifelse(abs(adj) <= ht, 1L, -1L)
       },
-      "hc_away"   = {
+      "hc_away"  = {
         adj <- diff + bets$change[j]
         ht <- bets$hc_threshold[j]
-        as.integer(adj < -ht)
+        is_half <- (bets$change[j] != round(bets$change[j]))
+        if (is_half || ht > 0) {
+          ifelse(adj < -ht, 1L, -1L)
+        } else {
+          ifelse(adj < 0, 1L, ifelse(adj == 0, 0L, -1L))
+        }
       },
-      "over"      = as.integer(total > bets$limit[j]),
-      "under"     = as.integer(total <= bets$limit[j]),
+      "over"     = {
+        lim <- bets$limit[j]
+        is_half <- (lim != round(lim))
+        if (is_half) {
+          ifelse(total > lim, 1L, -1L)
+        } else {
+          # Integer line: push when total == limit
+          ifelse(total > lim, 1L, ifelse(total == lim, 0L, -1L))
+        }
+      },
+      "under"    = {
+        lim <- bets$limit[j]
+        is_half <- (lim != round(lim))
+        if (is_half) {
+          ifelse(total < lim, 1L, -1L)
+        } else {
+          ifelse(total < lim, 1L, ifelse(total == lim, 0L, -1L))
+        }
+      },
       stop("Unknown bet_type: ", bt)
     )
+
+    # Convert state to net return
+    returns[, j] <- ifelse(state == 1L, o - 1, ifelse(state == 0L, 0, -1))
   }
 
-  indicators
+  returns
+}
+
+#' Build binary indicator matrix (backward-compatible wrapper)
+#'
+#' Returns 1 for wins, 0 for push/loss. Used for probability estimation
+#' (colMeans gives posterior win probability).
+#'
+#' @inheritParams build_return_matrix
+#' @return Integer matrix S x B: 1 if bet j wins in draw s, 0 otherwise
+#' @export
+build_indicators <- function(draws, bets) {
+  returns <- build_return_matrix(draws, bets)
+  # Win = positive return, push/loss = 0
+  matrix(as.integer(returns > 0), nrow = nrow(returns), ncol = ncol(returns))
 }
 
 # ── Joint optimiser ──────────────────────────────────────────────────────────
@@ -77,31 +135,37 @@ build_indicators <- function(draws, bets) {
 #'
 #' Maximises posterior expected log-growth:
 #'   G(f) = (1/S) * sum_s log(1 + sum_j net_return_sj * f_j)
-#' where net_return_sj = indicators_sj * (odds_j - 1) - (1 - indicators_sj)
-#'                     = indicators_sj * odds_j - 1
+#'
+#' The net_return matrix encodes win/push/loss per draw per bet:
+#'   win  -> odds - 1, push -> 0, loss -> -1
 #'
 #' Uses SLSQP with analytic gradients.
 #'
-#' @param indicators S x B integer matrix (from build_indicators)
-#' @param odds Numeric vector of length B (decimal odds)
+#' @param net_return S x B numeric matrix of net returns (from build_return_matrix).
+#'   If NULL, computed from indicators and odds (backward compat).
+#' @param indicators S x B integer matrix (deprecated, use net_return).
+#' @param odds Numeric vector of length B (deprecated, use net_return).
 #' @param max_stake Max total fraction to wager (default 0.50)
-#' @return Numeric vector of length B: optimal raw fractions
+#' @return List with `solution` (numeric vector of optimal fractions) and
+#'   `diagnostics` (growth_rate, worst_case_wealth, n_effective_bets).
 #' @export
-get_kelly_joint <- function(indicators, odds, max_stake = 0.50) {
-  S <- nrow(indicators)
-  B <- ncol(indicators)
+get_kelly_joint <- function(net_return = NULL, indicators = NULL, odds = NULL,
+                            max_stake = 0.50) {
+  # Backward compatibility: compute net_return from indicators + odds
 
-  if (B == 0) return(numeric(0))
+  if (is.null(net_return)) {
+    if (is.null(indicators) || is.null(odds)) {
+      stop("Either net_return or both indicators and odds must be provided")
+    }
+    net_return <- sweep(indicators, 2, odds, `*`) - 1
+  }
 
-  # Net return matrix: S x B
-  # If bet j wins: return = odds_j - 1 (net profit per unit)
-  # If bet j loses: return = -1 (lose stake)
-  # net_return_sj = indicators_sj * odds_j - 1
-  # But we only lose what we staked on bet j, so:
-  # Wealth = 1 + sum_j f_j * (indicators_sj * odds_j - 1)
-  #        = 1 + sum_j f_j * indicators_sj * odds_j - sum_j f_j
-  #        = 1 - sum(f) + sum_j f_j * indicators_sj * odds_j
-  net_return <- sweep(indicators, 2, odds, `*`) - 1  # S x B
+  S <- nrow(net_return)
+  B <- ncol(net_return)
+
+  if (B == 0) return(list(solution = numeric(0), diagnostics = list(
+    growth_rate = 0, worst_case_wealth = 1, n_effective_bets = 0
+  )))
 
   # Objective: negative expected log-growth (minimise)
   eval_f <- function(f) {
@@ -141,7 +205,17 @@ get_kelly_joint <- function(indicators, odds, max_stake = 0.50) {
     )
   )
 
-  result$solution
+  f_opt <- result$solution
+
+  # Diagnostics: growth rate, worst-case wealth, effective bet count
+  wealth_opt <- 1 + as.vector(net_return %*% f_opt)
+  diagnostics <- list(
+    growth_rate = mean(log(pmax(wealth_opt, 1e-10))),
+    worst_case_wealth = min(wealth_opt),
+    n_effective_bets = sum(f_opt > 1e-6)
+  )
+
+  list(solution = f_opt, diagnostics = diagnostics)
 }
 
 # ── Bet collection ───────────────────────────────────────────────────────────
@@ -351,9 +425,11 @@ run_joint_kelly <- function(post, odds_1x2, odds_hc, odds_tot, cfg) {
     bets <- collect_match_bets(m_1x2, m_hc, m_tot, cfg)
     if (is.null(bets) || nrow(bets) == 0) next
 
-    # Compute posterior probabilities for pre-filtering
-    indicators <- build_indicators(draws, bets)
-    bets$p <- colMeans(indicators)
+    # Build return matrix (handles push/void correctly)
+    net_return <- build_return_matrix(draws, bets)
+
+    # Compute posterior win probabilities for pre-filtering and display
+    bets$p <- colMeans(net_return > 0)
     bets$implied_p <- 1 / bets$o
 
     # Pre-filter: only keep positive-EV bets (posterior prob > implied + threshold)
@@ -362,10 +438,16 @@ run_joint_kelly <- function(post, odds_1x2, odds_hc, odds_tot, cfg) {
     if (!any(keep)) next
 
     bets <- bets[keep, ]
-    indicators <- indicators[, keep, drop = FALSE]
+    net_return <- net_return[, keep, drop = FALSE]
 
-    # Optimise joint Kelly
-    fracs <- get_kelly_joint(indicators, bets$o, max_stake = max_match_stake)
+    # Optimise joint Kelly using return matrix directly
+    kelly_result <- get_kelly_joint(net_return = net_return, max_stake = max_match_stake)
+    fracs <- kelly_result$solution
+    diag <- kelly_result$diagnostics
+
+    cat(sprintf("  %s v %s: G=%.4f, W_min=%.3f, n_bets=%d\n",
+        match_home, match_away,
+        diag$growth_rate, diag$worst_case_wealth, diag$n_effective_bets))
 
     # Filter to non-trivial allocations
     nontrivial <- fracs > 1e-4
