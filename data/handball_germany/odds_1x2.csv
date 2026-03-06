@@ -13,9 +13,11 @@ date,league,home,away,o_home,o_draw,o_away,scraped_at
 2026-03-07,2. Bundesliga,Coburg,Vfl Potsdam,1.65,9.49,2.33,2026-03-05T15:06:24Z
 2026-03-07,2. Bundesliga,Coburg,Vfl Potsdam,1.62,7.43,2.58,2026-03-06T08:59:19Z
 2026-03-07,2. Bundesliga,Coburg,Vfl Potsdam,1.66,7.72,2.45,2026-03-06T14:59:16Z
+2026-03-07,2. Bundesliga,Coburg,Vfl Potsdam,1.73,7.49,2.33,2026-03-06T20:49:20Z
 2026-03-07,2. Bundesliga,Ferndorf,Dessau-Rosslauer HV 2006,1.66,9.15,2.33,2026-03-05T15:06:24Z
 2026-03-07,2. Bundesliga,Ferndorf,Dessau-Rosslauer HV 2006,1.63,7.31,2.55,2026-03-06T08:59:19Z
 2026-03-07,2. Bundesliga,Ferndorf,Dessau-Rosslauer HV 2006,1.73,7.46,2.34,2026-03-06T14:59:16Z
+2026-03-07,2. Bundesliga,Ferndorf,Dessau-Rosslauer HV 2006,1.75,7.42,2.31,2026-03-06T20:49:20Z
 2026-03-07,2. Bundesliga,HSG Krefeld,TV Grosswallstadt,1.72,10.44,2.15,2026-03-05T15:06:24Z
 2026-03-07,2. Bundesliga,HSG Krefeld,TV Grosswallstadt,1.98,6.71,2.05,2026-03-06T08:59:19Z
 2026-03-07,2. Bundesliga,HSG Krefeld,TV Grosswallstadt,1.95,7.03,2.06,2026-03-06T14:59:16Z
@@ -28,6 +30,7 @@ date,league,home,away,o_home,o_draw,o_away,scraped_at
 2026-03-08,2. Bundesliga,Hc Oppenweiler/backnang,Dormagen,3.32,10.17,1.35,2026-03-06T08:59:19Z
 2026-03-08,2. Bundesliga,Ludwigshafen,Bietigheim,3.24,11.18,1.35,2026-03-05T15:06:24Z
 2026-03-08,2. Bundesliga,Ludwigshafen,Bietigheim,3.32,10.16,1.35,2026-03-05T20:57:36Z
+2026-03-08,2. Bundesliga,Ludwigshafen,Bietigheim,3.31,10.45,1.35,2026-03-06T20:49:20Z
 2026-03-08,2. Bundesliga,Nordhorn,Balingen,1.84,9.54,2.04,2026-03-05T15:06:24Z
 2026-03-08,2. Bundesliga,Nordhorn,Balingen,1.85,9.21,2.04,2026-03-05T20:57:36Z
 2026-03-08,2. Bundesliga,Nordhorn,Balingen,1.84,9.19,2.05,2026-03-06T08:59:19Z
@@ -36,11 +39,14 @@ date,league,home,away,o_home,o_draw,o_away,scraped_at
 2026-03-08,Bundesliga,HSG Wetzlar,MT Melsungen,3.17,8.05,1.43,2026-03-04T17:50:44Z
 2026-03-08,Bundesliga,HSG Wetzlar,MT Melsungen,3.48,7.67,1.38,2026-03-05T15:06:24Z
 2026-03-08,Bundesliga,HSG Wetzlar,MT Melsungen,3.62,7.75,1.36,2026-03-06T08:59:19Z
+2026-03-08,Bundesliga,HSG Wetzlar,MT Melsungen,3.64,7.78,1.36,2026-03-06T20:49:20Z
 2026-03-08,Bundesliga,Magdeburg,Hannover,1.13,10.86,6.27,2026-03-04T14:01:22Z
 2026-03-08,Bundesliga,RN Löwen,Bergischer,1.15,10.19,5.75,2026-03-05T20:57:36Z
+2026-03-08,Bundesliga,RN Löwen,Bergischer,1.15,10.18,5.74,2026-03-06T20:49:20Z
 2026-03-08,Bundesliga,SC Magdeburg,Hannover-Burgdorf,1.13,10.86,6.27,2026-03-04T17:50:44Z
 2026-03-08,Bundesliga,SC Magdeburg,Hannover-Burgdorf,1.14,10.4,5.99,2026-03-05T15:06:24Z
 2026-03-08,Bundesliga,SC Magdeburg,Hannover-Burgdorf,1.13,10.67,6.07,2026-03-06T08:59:19Z
+2026-03-08,Bundesliga,SC Magdeburg,Hannover-Burgdorf,1.14,10.4,5.97,2026-03-06T20:49:20Z
 2026-03-08,Bundesliga,Wetzlar,Melsungen,3.17,8.05,1.43,2026-03-04T14:01:22Z
 2026-03-09,2. Bundesliga,N-Lubbecke,HC Elbflorenz Dresden,2.98,10.4,1.41,2026-03-05T15:06:24Z
 2026-03-09,2. Bundesliga,N-Lubbecke,HC Elbflorenz Dresden,2.98,10.86,1.4,2026-03-06T08:59:19Z
