@@ -1,4 +1,6 @@
 date,home,away,home_score,away_score
+05.03. 19:00,Dunkerque,Toulouse,27,31
+05.03. 19:00,Provence Aix,Selestat,31,29
 01.03. 15:00,Nantes,Nimes,36,34
 01.03. 14:00,Dijon,PSG,27,34
 28.02. 19:00,Limoges,St. Raphael,31,32
@@ -103,5 +105,3 @@ date,home,away,home_score,away_score
 10.10. 18:00,Chartres,Dunkerque,24,25
 10.10. 18:00,Istres,Montpellier,27,34
 10.10. 18:00,Limoges,Tremblay,38,34
-09.10. 18:00,Provence Aix,Chambery Savoie,32,32
-05.10. 15:00,Nantes,St. Raphael,46,32
