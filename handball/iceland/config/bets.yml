@@ -12,9 +12,6 @@ bankroll:
   kelly_frac: 0.30
   kelly_frac_male: 0.21
   kelly_frac_female: 0.40
-  kelly_frac_joint: 0.50
-  kelly_mode: joint
-  max_match_stake: 0.50
   ev_threshold: 0.00
 
 scoring:

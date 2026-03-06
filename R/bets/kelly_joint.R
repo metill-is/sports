@@ -162,7 +162,7 @@ build_indicators <- function(draws, bets) {
 #'   `diagnostics` (growth_rate, worst_case_wealth, n_effective_bets).
 #' @export
 get_kelly_joint <- function(net_return = NULL, indicators = NULL, odds = NULL,
-                            max_stake = 0.50) {
+                            max_stake = 1.0) {
   # Backward compatibility: compute net_return from indicators + odds
 
   if (is.null(net_return)) {
@@ -378,7 +378,7 @@ collect_match_bets <- function(match_odds_1x2, match_odds_hc, match_odds_tot, cf
 run_joint_kelly <- function(post, odds_1x2, odds_hc, odds_tot, cfg) {
   leagues <- cfg$leagues
   divisions <- cfg$predictions$divisions
-  max_match_stake <- cfg$bankroll$max_match_stake %||% 0.50
+  max_match_stake <- cfg$bankroll$max_match_kelly %||% 1.0
   ev_threshold <- cfg$bankroll$ev_threshold %||% 0.00
 
   # Filter posterior to configured divisions

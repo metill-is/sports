@@ -12,8 +12,6 @@ bankroll:
   kelly_frac: 0.10
   kelly_frac_male: 0.19
   kelly_frac_female: 0.01
-  kelly_frac_joint: 0.50
-  kelly_mode: joint
 
 scoring:
   has_ties: false

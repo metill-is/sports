@@ -48,7 +48,7 @@ run_diagnostics <- function(post, odds, cfg) {
   }
 
   matches <- post |> distinct(date, division, home, away)
-  max_match_stake <- cfg$bankroll$max_match_stake %||% 0.50
+  max_match_stake <- cfg$bankroll$max_match_kelly %||% 1.0
   ev_threshold <- cfg$bankroll$ev_threshold %||% 0.00
   kelly_frac <- cfg$bankroll$kelly_frac
   cur_pool <- cfg$bankroll$cur_pool

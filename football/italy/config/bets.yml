@@ -8,9 +8,6 @@ leagues:
 
 bankroll:
   kelly_frac: 0.10
-  kelly_frac_joint: 0.50
-  kelly_mode: joint
-  max_match_stake: 0.50
   ev_threshold: 0.00
 
 scoring:

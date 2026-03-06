@@ -35,7 +35,7 @@ portfolio_optimize <- function(packages, max_daily, mode = "proportional") {
   # Under budget: no scaling needed
   if (total_eff <= max_daily) {
     return(list(
-      lambdas = setNames(rep(1.0, M), match_keys),
+      lambdas = stats::setNames(rep(1.0, M), match_keys),
       diagnostics = list(budget_binding = FALSE, total_stake = total_eff)
     ))
   }
@@ -48,7 +48,7 @@ portfolio_optimize <- function(packages, max_daily, mode = "proportional") {
       scale, total_eff, max_daily
     ))
     return(list(
-      lambdas = setNames(rep(scale, M), match_keys),
+      lambdas = stats::setNames(rep(scale, M), match_keys),
       diagnostics = list(
         budget_binding = TRUE, total_stake = max_daily, scale_factor = scale
       )
@@ -115,12 +115,12 @@ portfolio_optimize <- function(packages, max_daily, mode = "proportional") {
   if (is.null(result)) {
     scale <- max_daily / total_eff
     return(list(
-      lambdas = setNames(rep(scale, M), match_keys),
+      lambdas = stats::setNames(rep(scale, M), match_keys),
       diagnostics = list(budget_binding = TRUE, fallback = TRUE)
     ))
   }
 
-  lambdas <- setNames(result$solution, match_keys)
+  lambdas <- stats::setNames(result$solution, match_keys)
   optimal_growth <- -result$objective
 
   # Compare to proportional baseline

@@ -5,8 +5,6 @@ sex: ["male", "female"]
 bankroll:
   kelly_frac: 0.25
   kelly_frac_male: 0.25
-  kelly_frac_joint: 0.50
-  kelly_mode: joint
 
 scoring:
   has_ties: true

@@ -50,11 +50,9 @@ run_betting_pipeline <- function(cfg, sport_dir) {
   for (sex in cfg$sex) {
     cat("--- Sex:", sex, "---\n\n")
 
-    # Resolve kelly_frac: per-sex overrides, then joint default, then base
-    sex_key <- paste0("kelly_frac_joint_", sex)
-    base_key <- "kelly_frac_joint"
+    # Resolve kelly_frac: per-sex calibrated value, then base
+    sex_key <- paste0("kelly_frac_", sex)
     effective_kf <- cfg$bankroll[[sex_key]] %||%
-      cfg$bankroll[[base_key]] %||%
       cfg$bankroll$kelly_frac
     cfg_sex <- cfg
     cfg_sex$bankroll$kelly_frac <- effective_kf
