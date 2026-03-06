@@ -252,14 +252,16 @@ collect_match_bets <- function(match_odds_1x2, match_odds_hc, match_odds_tot, cf
   if (!is.null(match_odds_1x2) && nrow(match_odds_1x2) > 0) {
     for (i in seq_len(nrow(match_odds_1x2))) {
       row <- match_odds_1x2[i, ]
-      bets <- c(bets, list(
-        tibble(
-          bet_type = "1x2_home", outcome = "home", market = "outcome",
-          o = row$o_home, booker = row$booker,
-          change = NA_real_, limit = NA_real_,
-          tie_threshold = tie_threshold, hc_threshold = NA_real_
-        )
-      ))
+      if (!is.na(row$o_home)) {
+        bets <- c(bets, list(
+          tibble(
+            bet_type = "1x2_home", outcome = "home", market = "outcome",
+            o = row$o_home, booker = row$booker,
+            change = NA_real_, limit = NA_real_,
+            tie_threshold = tie_threshold, hc_threshold = NA_real_
+          )
+        ))
+      }
       if (has_ties && "o_draw" %in% names(row) && !is.na(row$o_draw)) {
         bets <- c(bets, list(
           tibble(
@@ -270,14 +272,16 @@ collect_match_bets <- function(match_odds_1x2, match_odds_hc, match_odds_tot, cf
           )
         ))
       }
-      bets <- c(bets, list(
-        tibble(
-          bet_type = "1x2_away", outcome = "away", market = "outcome",
-          o = row$o_away, booker = row$booker,
-          change = NA_real_, limit = NA_real_,
-          tie_threshold = tie_threshold, hc_threshold = NA_real_
-        )
-      ))
+      if (!is.na(row$o_away)) {
+        bets <- c(bets, list(
+          tibble(
+            bet_type = "1x2_away", outcome = "away", market = "outcome",
+            o = row$o_away, booker = row$booker,
+            change = NA_real_, limit = NA_real_,
+            tie_threshold = tie_threshold, hc_threshold = NA_real_
+          )
+        ))
+      }
     }
   }
 
@@ -295,14 +299,16 @@ collect_match_bets <- function(match_odds_1x2, match_odds_hc, match_odds_tot, cf
         ht <- 0
       }
 
-      bets <- c(bets, list(
-        tibble(
-          bet_type = "hc_home", outcome = "home", market = "handicap",
-          o = row$o_home, booker = row$booker,
-          change = change_val, limit = NA_real_,
-          tie_threshold = tie_threshold, hc_threshold = ht
-        )
-      ))
+      if (!is.na(row$o_home)) {
+        bets <- c(bets, list(
+          tibble(
+            bet_type = "hc_home", outcome = "home", market = "handicap",
+            o = row$o_home, booker = row$booker,
+            change = change_val, limit = NA_real_,
+            tie_threshold = tie_threshold, hc_threshold = ht
+          )
+        ))
+      }
 
       if (is_european && "o_draw" %in% names(row) && !is.na(row$o_draw)) {
         bets <- c(bets, list(
@@ -315,14 +321,16 @@ collect_match_bets <- function(match_odds_1x2, match_odds_hc, match_odds_tot, cf
         ))
       }
 
-      bets <- c(bets, list(
-        tibble(
-          bet_type = "hc_away", outcome = "away", market = "handicap",
-          o = row$o_away, booker = row$booker,
-          change = change_val, limit = NA_real_,
-          tie_threshold = tie_threshold, hc_threshold = ht
-        )
-      ))
+      if (!is.na(row$o_away)) {
+        bets <- c(bets, list(
+          tibble(
+            bet_type = "hc_away", outcome = "away", market = "handicap",
+            o = row$o_away, booker = row$booker,
+            change = change_val, limit = NA_real_,
+            tie_threshold = tie_threshold, hc_threshold = ht
+          )
+        ))
+      }
     }
   }
 
@@ -330,20 +338,26 @@ collect_match_bets <- function(match_odds_1x2, match_odds_hc, match_odds_tot, cf
   if (!is.null(match_odds_tot) && nrow(match_odds_tot) > 0) {
     for (i in seq_len(nrow(match_odds_tot))) {
       row <- match_odds_tot[i, ]
-      bets <- c(bets, list(
-        tibble(
-          bet_type = "over", outcome = "over", market = "totals",
-          o = row$o_over, booker = row$booker,
-          change = NA_real_, limit = row$limit,
-          tie_threshold = tie_threshold, hc_threshold = NA_real_
-        ),
-        tibble(
-          bet_type = "under", outcome = "under", market = "totals",
-          o = row$o_under, booker = row$booker,
-          change = NA_real_, limit = row$limit,
-          tie_threshold = tie_threshold, hc_threshold = NA_real_
-        )
-      ))
+      if (!is.na(row$o_over)) {
+        bets <- c(bets, list(
+          tibble(
+            bet_type = "over", outcome = "over", market = "totals",
+            o = row$o_over, booker = row$booker,
+            change = NA_real_, limit = row$limit,
+            tie_threshold = tie_threshold, hc_threshold = NA_real_
+          )
+        ))
+      }
+      if (!is.na(row$o_under)) {
+        bets <- c(bets, list(
+          tibble(
+            bet_type = "under", outcome = "under", market = "totals",
+            o = row$o_under, booker = row$booker,
+            change = NA_real_, limit = row$limit,
+            tie_threshold = tie_threshold, hc_threshold = NA_real_
+          )
+        ))
+      }
     }
   }
 
@@ -386,14 +400,14 @@ run_joint_kelly <- function(post, odds_1x2, odds_hc, odds_tot, cfg) {
   matches <- post_filtered |>
     distinct(date, division, home, away)
 
-  # Map division numbers to league names
+  # Map division numbers to league names (always character)
+  matches <- matches |> mutate(division = as.character(division))
   if (!is.null(leagues)) {
     league_vec <- unlist(leagues)
     matches <- matches |>
-      mutate(division = {
-        d <- as.character(division)
-        ifelse(d %in% names(league_vec), league_vec[d], d)
-      })
+      mutate(division = ifelse(
+        division %in% names(league_vec), league_vec[division], division
+      ))
   }
 
   all_results <- list()
@@ -448,6 +462,7 @@ run_joint_kelly <- function(post, odds_1x2, odds_hc, odds_tot, cfg) {
     # Pre-filter: only keep positive-EV bets (posterior prob > implied + threshold)
     ev_edge <- bets$p - bets$implied_p
     keep <- ev_edge > ev_threshold
+    keep[is.na(keep)] <- FALSE
     if (!any(keep)) next
 
     bets <- bets[keep, ]
