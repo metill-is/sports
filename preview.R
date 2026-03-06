@@ -112,10 +112,10 @@ recs <- recs |>
 
 header <- function() {
   cat(sprintf(
-    "  %-4s %-14s %-7s %-22s %-10s %5s %5s %5s %7s %7s\n",
-    "#", "League", "Market", "Match", "Bet", "Odds", "Prob", "EV", "Stake", "E[PnL]"
+    "  %-4s %-14s %-7s %-22s %-10s %5s %5s %5s %5s %7s %7s\n",
+    "#", "League", "Market", "Match", "Bet", "Odds", "Impl", "Model", "EV", "Stake", "E[PnL]"
   ))
-  cat("  ", strrep("\u2500", 94), "\n", sep = "")
+  cat("  ", strrep("\u2500", 104), "\n", sep = "")
 }
 
 row_fmt <- function(r) {
@@ -129,15 +129,15 @@ row_fmt <- function(r) {
     r$outcome
   }
   cat(sprintf(
-    "  %-4d %-14s %-7s %-22s %-10s %5.2f %4.0f%% %4.0f%% %6.0f %+6.0f\n",
+    "  %-4d %-14s %-7s %-22s %-10s %5.2f %4.0f%% %4.0f%% %4.0f%% %6.0f %+6.0f\n",
     r$row_id, substr(league_str, 1, 14), substr(r$market, 1, 7),
     substr(match_str, 1, 22), substr(bet_str, 1, 10),
-    r$o, r$p * 100, r$ev * 100, r$bet_amount, r$profit
+    r$o, 100 / r$o, r$p * 100, r$ev * 100, r$bet_amount, r$profit
   ))
 }
 
 subtotal <- function(d, label) {
-  cat("  ", strrep("\u2500", 94), "\n", sep = "")
+  cat("  ", strrep("\u2500", 104), "\n", sep = "")
   cat(sprintf(
     "  %-62s %6s %7s %+7s\n",
     label, "", format(sum(d$bet_amount), big.mark = ","), format(sum(d$profit), big.mark = ",")
