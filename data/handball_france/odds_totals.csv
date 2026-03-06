@@ -22,6 +22,9 @@ date,league,home,away,limit,o_over,o_under,scraped_at
 2026-03-06,Starligue,Cesson Rennes-Metropole,Chambery Savoie,60.5,1.54,2.04,2026-03-05T15:06:24Z
 2026-03-06,Starligue,Cesson Rennes-Metropole,Chambery Savoie,61.5,1.67,1.84,2026-03-05T15:06:24Z
 2026-03-06,Starligue,Cesson Rennes-Metropole,Chambery Savoie,62.5,1.85,1.67,2026-03-05T15:06:24Z
+2026-03-06,Starligue,Cesson Rennes-Metropole,Chambery Savoie,60.5,1.54,2.03,2026-03-06T08:59:19Z
+2026-03-06,Starligue,Cesson Rennes-Metropole,Chambery Savoie,61.5,1.68,1.84,2026-03-06T08:59:19Z
+2026-03-06,Starligue,Cesson Rennes-Metropole,Chambery Savoie,62.5,1.86,1.66,2026-03-06T08:59:19Z
 2026-03-06,Starligue,Istres,Tremblay,60.5,1.6,1.95,2026-03-04T17:50:44Z
 2026-03-06,Starligue,Istres,Tremblay,61.5,1.75,1.76,2026-03-04T17:50:44Z
 2026-03-06,Starligue,Istres,Tremblay,62.5,1.94,1.6,2026-03-04T17:50:44Z
@@ -36,9 +39,15 @@ date,league,home,away,limit,o_over,o_under,scraped_at
 2026-03-06,Starligue,St. Raphael,Dijon,62.5,1.67,1.85,2026-03-05T15:06:24Z
 2026-03-06,Starligue,St. Raphael,Dijon,63.5,1.83,1.68,2026-03-05T15:06:24Z
 2026-03-06,Starligue,St. Raphael,Dijon,64.5,2.03,1.54,2026-03-05T15:06:24Z
+2026-03-06,Starligue,St. Raphael,Dijon,63.5,1.84,1.68,2026-03-06T08:59:19Z
+2026-03-06,Starligue,St. Raphael,Dijon,64.5,2.04,1.54,2026-03-06T08:59:19Z
 2026-03-07,Starligue,Montpellier,PSG,61.5,1.57,1.99,2026-03-05T15:06:24Z
 2026-03-07,Starligue,Montpellier,PSG,62.5,1.72,1.79,2026-03-05T15:06:24Z
 2026-03-07,Starligue,Montpellier,PSG,63.5,1.89,1.64,2026-03-05T15:06:24Z
+2026-03-07,Starligue,Montpellier,PSG,63.5,1.9,1.63,2026-03-06T08:59:19Z
 2026-03-08,Starligue,Nimes,Limoges,60.5,1.58,1.98,2026-03-05T20:57:36Z
 2026-03-08,Starligue,Nimes,Limoges,61.5,1.72,1.79,2026-03-05T20:57:36Z
 2026-03-08,Starligue,Nimes,Limoges,62.5,1.91,1.62,2026-03-05T20:57:36Z
+2026-03-08,Starligue,Nimes,Limoges,60.5,1.55,2.02,2026-03-06T08:59:19Z
+2026-03-08,Starligue,Nimes,Limoges,61.5,1.71,1.81,2026-03-06T08:59:19Z
+2026-03-08,Starligue,Nimes,Limoges,62.5,1.89,1.64,2026-03-06T08:59:19Z
