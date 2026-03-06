@@ -85,8 +85,8 @@ load_local <- function(cfg, sport_dir, sex = NULL) {
 
 #' Apply team name mapping to home/away columns
 #'
-#' If cfg$odds$team_names points to a CSV with (out, in) columns,
-#' maps Lengjan names (in) to model names (out). This avoids needing
+#' If cfg$odds$team_names points to a CSV with (pipeline, lengjan) columns,
+#' maps Lengjan names to pipeline/model names. This avoids needing
 #' to re-scrape when names differ between Lengjan and the model.
 apply_team_names <- function(d, cfg, sport_dir) {
   if (is.null(d) || nrow(d) == 0) return(d)
@@ -97,16 +97,21 @@ apply_team_names <- function(d, cfg, sport_dir) {
   if (!file.exists(tn_path)) return(d)
 
   mapping <- read_csv(tn_path, show_col_types = FALSE)
+
+  # Support both old (out/in) and new (pipeline/lengjan) column names
+  lengjan_col <- if ("lengjan" %in% names(mapping)) "lengjan" else "in"
+  pipeline_col <- if ("pipeline" %in% names(mapping)) "pipeline" else "out"
+
   # Map home
   d <- d |>
-    left_join(mapping, by = c("home" = "in")) |>
-    mutate(home = coalesce(out, home)) |>
-    select(-out)
+    left_join(mapping, by = stats::setNames(lengjan_col, "home")) |>
+    mutate(home = coalesce(.data[[pipeline_col]], home)) |>
+    select(-all_of(pipeline_col))
   # Map away
   d <- d |>
-    left_join(mapping, by = c("away" = "in")) |>
-    mutate(away = coalesce(out, away)) |>
-    select(-out)
+    left_join(mapping, by = stats::setNames(lengjan_col, "away")) |>
+    mutate(away = coalesce(.data[[pipeline_col]], away)) |>
+    select(-all_of(pipeline_col))
   d
 }
 
