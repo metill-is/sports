@@ -28,6 +28,13 @@ leagues <- if (length(league_idx) > 0 && league_idx < length(args)) {
   NULL
 }
 
+date_idx <- which(args == "--date")
+target_date <- if (length(date_idx) > 0 && date_idx < length(args)) {
+  as.Date(args[date_idx + 1])
+} else {
+  NULL
+}
+
 # Run the pipeline
 box::use(R/pipeline[run_bets])
 
@@ -36,6 +43,7 @@ results <- run_bets(
   dry_run = dry_run,
   interactive = interactive,
   today_only = today_only,
+  target_date = target_date,
   sports_dir = here("../Sports"),
   odds_dir = here("../lengjan-odds")
 )

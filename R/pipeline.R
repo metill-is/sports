@@ -42,6 +42,7 @@ run_bets <- function(
   dry_run = TRUE,
   interactive = TRUE,
   today_only = FALSE,
+  target_date = NULL,
   sports_dir = here::here("../Sports"),
   odds_dir = here::here("../lengjan-odds")
 ) {
@@ -58,7 +59,7 @@ run_bets <- function(
 
   # ── 2. Load recommendations (from Sports pipeline output) ──
   cli_h2("Loading recommendations")
-  pending <- load_recommendations(sports_dir, leagues, today_only)
+  pending <- load_recommendations(sports_dir, leagues, today_only, target_date)
 
   if (nrow(pending) == 0) {
     cli_alert_info("No pending recommendations found.")
@@ -67,7 +68,7 @@ run_bets <- function(
 
   cli_alert_info("Found {nrow(pending)} recommendation(s) across {length(unique(pending$league_key))} league(s).")
 
-  # ── 3. Compute bankroll for live Kelly recalculation ──
+  # ── 3. Compute bankroll (display only — P3 uses proportional scaling) ──
   bankroll <- compute_placement_bankroll(sports_dir)
   cli_alert_info("Current bankroll: {bankroll} kr")
 
@@ -149,8 +150,7 @@ run_bets <- function(
         bet = bet,
         match_id = mid,
         sport_id = comp_config$sport,
-        dry_run = dry_run,
-        bankroll = bankroll
+        dry_run = dry_run
       )
 
       # L1: Write to ledger ONLY after confirmed placement
@@ -197,7 +197,7 @@ run_bets <- function(
 #' @param sports_dir Path to Sports/ root
 #' @param leagues Optional character vector of league keys to filter
 #' @return Tibble ready for placement
-load_recommendations <- function(sports_dir, leagues = NULL, today_only = FALSE) {
+load_recommendations <- function(sports_dir, leagues = NULL, today_only = FALSE, target_date = NULL) {
   recs_path <- file.path(sports_dir, "recommendations.csv")
 
   if (!file.exists(recs_path)) {
@@ -208,7 +208,9 @@ load_recommendations <- function(sports_dir, leagues = NULL, today_only = FALSE)
   recs <- read_csv(recs_path, show_col_types = FALSE) |>
     filter(
       as.Date(date) >= Sys.Date(),
-      if (today_only) as.Date(date) == Sys.Date() else TRUE
+      if (!is.null(target_date)) as.Date(date) == target_date
+      else if (today_only) as.Date(date) == Sys.Date()
+      else TRUE
     ) |>
     mutate(
       league_key = paste(sport, country, sep = "_"),

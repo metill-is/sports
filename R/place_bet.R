@@ -45,22 +45,24 @@ cdp_select_all_and_type <- function(session, text) {
 
 # ── Kelly helpers (P3/P4) ───────────────────────────────────────────────────
 
-#' Recalculate Kelly bet amount at live odds (rule P3)
+#' Proportionally adjust bet amount for odds drift (rule P3)
 #'
-#' When Lengjan's actual odds differ from the recommendation, recompute
-#' the optimal stake using the Kelly criterion at the new odds.
+#' When Lengjan's actual odds differ from the recommendation, scale the
+#' original bet_amount by the ratio of simple Kelly at new vs old odds.
+#' This preserves the joint Kelly optimiser's baseline.
 #'
 #' @param p Model probability
 #' @param actual_odds Live odds from Lengjan
-#' @param kelly_frac Calibrated Kelly fraction for this league
-#' @param bankroll Current available bankroll
+#' @param original_odds Recommended odds (from pipeline)
+#' @param original_amount Recommended bet amount (from joint Kelly)
 #' @return Rounded bet amount in kr
 #' @export
-recalculate_kelly_amount <- function(p, actual_odds, kelly_frac, bankroll) {
-  raw_kelly <- (p * actual_odds - 1) / (actual_odds - 1)
-  raw_kelly <- max(0, raw_kelly)
-  scaled <- raw_kelly * kelly_frac
-  round(scaled * bankroll, 0)
+recalculate_kelly_amount <- function(p, actual_odds, original_odds, original_amount) {
+  old_raw <- (p * original_odds - 1) / (original_odds - 1)
+  new_raw <- (p * actual_odds - 1) / (actual_odds - 1)
+  new_raw <- max(0, new_raw)
+  if (old_raw <= 0) return(0L)
+  round(min(original_amount * (new_raw / old_raw), original_amount * 2), 0)
 }
 
 #' Check if a bet has positive expected value (rule P4)
@@ -85,23 +87,20 @@ is_positive_ev <- function(p, odds) {
 #' @param match_id Lengjan match ID (from extract_matches)
 #' @param sport_id Lengjan sport ID
 #' @param dry_run If TRUE, stop before clicking "Kaupa" (default FALSE)
-#' @param bankroll Current bankroll for live Kelly recalculation (P3).
-#'   NULL skips recalculation and uses the recommended bet_amount.
 #' @return List with status ("placed", "skipped", "dry_run", "error"),
 #'   actual_odds (from Lengjan DOM), and amount (stake entered)
 #' @export
-place_bet <- function(session, bet, match_id, sport_id,
-                      dry_run = FALSE, bankroll = NULL) {
+place_bet <- function(session, bet, match_id, sport_id, dry_run = FALSE) {
 
   market <- bet$market
   result <- tryCatch(
     {
       if (market == "outcome") {
-        place_outcome_bet(session, bet, match_id, sport_id, dry_run, bankroll)
+        place_outcome_bet(session, bet, match_id, sport_id, dry_run)
       } else if (market == "handicap") {
-        place_handicap_bet(session, bet, match_id, sport_id, dry_run, bankroll)
+        place_handicap_bet(session, bet, match_id, sport_id, dry_run)
       } else if (market == "totals") {
-        place_totals_bet(session, bet, match_id, sport_id, dry_run, bankroll)
+        place_totals_bet(session, bet, match_id, sport_id, dry_run)
       } else {
         list(status = "skipped", reason = paste("Unknown market:", market))
       }
@@ -127,7 +126,7 @@ place_bet <- function(session, bet, match_id, sport_id,
 #'
 #' @return On rejection: list(status, reason, actual_odds).
 #'   On success: list(ok = TRUE, amount = <stake to enter>).
-check_live_odds <- function(session, bet, actual_odds, bankroll) {
+check_live_odds <- function(session, bet, actual_odds) {
   # P4: Must still be +EV at live odds
   if (!is_positive_ev(bet$probability, actual_odds)) {
     cli_alert_warning(
@@ -137,11 +136,11 @@ check_live_odds <- function(session, bet, actual_odds, bankroll) {
     return(list(status = "skipped", reason = "not_positive_ev", actual_odds = actual_odds))
   }
 
-  # P3: Recalculate Kelly if odds drifted >1%
+  # P3: Proportionally adjust stake if odds drifted >1%
   amount <- bet$bet_amount
-  if (!is.null(bankroll) && abs(actual_odds - bet$odds) / bet$odds > 0.01) {
+  if (abs(actual_odds - bet$odds) / bet$odds > 0.01) {
     amount <- recalculate_kelly_amount(
-      bet$probability, actual_odds, bet$kelly_frac, bankroll
+      bet$probability, actual_odds, bet$odds, bet$bet_amount
     )
     if (amount < 1) {
       cli_alert_warning("Kelly amount < 1 kr at live odds \u2014 skipping.")
@@ -159,8 +158,7 @@ check_live_odds <- function(session, bet, actual_odds, bankroll) {
 
 # ── Outcome (1x2) bets ────────────────────────────────────────────────────────
 
-place_outcome_bet <- function(session, bet, match_id, sport_id,
-                              dry_run, bankroll) {
+place_outcome_bet <- function(session, bet, match_id, sport_id, dry_run) {
   url <- paste0(
     "https://games.lotto.is/getraunaleikir/lengjan/leikur?id=",
     match_id, "&sport=", sport_id
@@ -186,7 +184,7 @@ place_outcome_bet <- function(session, bet, match_id, sport_id,
   )
 
   # P3/P4 validation
-  check <- check_live_odds(session, bet, actual_odds, bankroll)
+  check <- check_live_odds(session, bet, actual_odds)
   if (!isTRUE(check$ok)) return(check)
 
   result <- enter_stake_and_confirm(session, check$amount, dry_run)
@@ -196,8 +194,7 @@ place_outcome_bet <- function(session, bet, match_id, sport_id,
 
 # ── Handicap bets ─────────────────────────────────────────────────────────────
 
-place_handicap_bet <- function(session, bet, match_id, sport_id,
-                               dry_run, bankroll) {
+place_handicap_bet <- function(session, bet, match_id, sport_id, dry_run) {
   url <- paste0(
     "https://games.lotto.is/getraunaleikir/lengjan/leikur?id=",
     match_id, "&sport=", sport_id
@@ -230,7 +227,7 @@ place_handicap_bet <- function(session, bet, match_id, sport_id,
     btn_index = btn_index
   )
 
-  check <- check_live_odds(session, bet, actual_odds, bankroll)
+  check <- check_live_odds(session, bet, actual_odds)
   if (!isTRUE(check$ok)) return(check)
 
   result <- enter_stake_and_confirm(session, check$amount, dry_run)
@@ -240,8 +237,7 @@ place_handicap_bet <- function(session, bet, match_id, sport_id,
 
 # ── Totals bets ───────────────────────────────────────────────────────────────
 
-place_totals_bet <- function(session, bet, match_id, sport_id,
-                             dry_run, bankroll) {
+place_totals_bet <- function(session, bet, match_id, sport_id, dry_run) {
   url <- paste0(
     "https://games.lotto.is/getraunaleikir/lengjan/leikur?id=",
     match_id, "&sport=", sport_id
@@ -271,7 +267,7 @@ place_totals_bet <- function(session, bet, match_id, sport_id,
     btn_index = btn_index
   )
 
-  check <- check_live_odds(session, bet, actual_odds, bankroll)
+  check <- check_live_odds(session, bet, actual_odds)
   if (!isTRUE(check$ok)) return(check)
 
   result <- enter_stake_and_confirm(session, check$amount, dry_run)
