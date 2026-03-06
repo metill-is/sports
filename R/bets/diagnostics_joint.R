@@ -10,9 +10,7 @@
 #'   diag <- run_diagnostics(post, odds, cfg)
 
 box::use(
-  ./kelly_joint[build_return_matrix, get_kelly_joint, collect_match_bets],
-  ./kelly[get_kelly],
-  ./market_handicap[parse_handicap],
+  ./kelly_joint[build_return_matrix, get_kelly_joint, collect_match_bets, parse_handicap],
   dplyr[filter, mutate, distinct, select, bind_rows, summarise, arrange, tibble,
         group_by, ungroup, across, any_of, n, row_number],
   tidyr[pivot_wider],
@@ -92,20 +90,11 @@ run_diagnostics <- function(post, odds, cfg) {
     kelly_result <- get_kelly_joint(net_return = ret_filt, max_stake = max_match_stake)
     fracs_joint <- kelly_result$solution
 
-    # ── Independent Kelly (point-estimate, per-outcome) ──
-    fracs_indep <- get_kelly(bets_filt$p, bets_filt$o)
-
-    # ── Wealth diagnostics (joint) ──
+    # ── Wealth diagnostics ──
     net_return <- ret_filt
     wealth_joint <- 1 + as.vector(net_return %*% fracs_joint)
     growth_joint <- mean(log(pmax(wealth_joint, 1e-10)))
     worst_joint <- min(wealth_joint)
-
-    # ── Wealth diagnostics (independent, capped at max_stake) ──
-    fracs_indep_capped <- fracs_indep * min(1, max_match_stake / max(sum(fracs_indep), 1e-10))
-    wealth_indep <- 1 + as.vector(net_return %*% fracs_indep_capped)
-    growth_indep <- mean(log(pmax(wealth_indep, 1e-10)))
-    worst_indep <- min(wealth_indep)
 
     # ── Correlation ──
     max_cor <- NA_real_
@@ -123,14 +112,10 @@ run_diagnostics <- function(post, odds, cfg) {
       n_draws = nrow(draws),
       n_bets_total = nrow(bets),
       n_bets_ev = B,
-      n_bets_joint = sum(fracs_joint > 1e-4),
-      n_bets_indep = sum(fracs_indep > 1e-4),
-      total_stake_joint = sum(fracs_joint),
-      total_stake_indep = sum(fracs_indep_capped),
-      growth_joint = growth_joint,
-      growth_indep = growth_indep,
-      worst_wealth_joint = worst_joint,
-      worst_wealth_indep = worst_indep,
+      n_bets_effective = sum(fracs_joint > 1e-4),
+      total_stake = sum(fracs_joint),
+      growth_rate = growth_joint,
+      worst_wealth = worst_joint,
       max_indicator_cor = max_cor
     )))
 
@@ -151,12 +136,9 @@ run_diagnostics <- function(post, odds, cfg) {
         p_implied = b$implied_p,
         ev_edge = b$ev_edge,
         ev = b$ev,
-        f_joint = fracs_joint[j],
-        f_indep = fracs_indep[j],
-        f_indep_capped = fracs_indep_capped[j],
-        amt_joint_raw = round(fracs_joint[j] * cur_pool, 0),
-        amt_joint_scaled = round(fracs_joint[j] * kelly_frac * cur_pool, 0),
-        amt_indep_scaled = round(fracs_indep[j] * kelly_frac * cur_pool, 0)
+        f_kelly = fracs_joint[j],
+        amt_raw = round(fracs_joint[j] * cur_pool, 0),
+        amt_scaled = round(fracs_joint[j] * kelly_frac * cur_pool, 0)
       )))
     }
   }
@@ -189,7 +171,7 @@ print_diagnostics <- function(diag, cfg) {
   min_bet <- cfg$bankroll$min_bet_amount
 
   cat("\n══════════════════════════════════════════════════════════\n")
-  cat(" JOINT vs INDEPENDENT KELLY — COMPARISON REPORT\n")
+  cat(" JOINT KELLY — DIAGNOSTICS REPORT\n")
   cat("══════════════════════════════════════════════════════════\n\n")
 
   cat(sprintf("  kelly_frac: %.2f | pool: %d | min_bet: %d\n",
@@ -198,24 +180,18 @@ print_diagnostics <- function(diag, cfg) {
               kelly_frac, min_bet / (cur_pool * kelly_frac)))
   cat(sprintf("  Matches with +EV bets: %d\n\n", nrow(ms)))
 
-  # Aggregate comparison
+  # Aggregate
   cat("── Aggregate ──\n")
-  cat(sprintf("  %-30s  %8s  %8s\n", "", "Joint", "Indep"))
-  cat(sprintf("  %-30s  %8d  %8d\n", "Total effective bets",
-              sum(ms$n_bets_joint), sum(ms$n_bets_indep)))
-  cat(sprintf("  %-30s  %8.4f  %8.4f\n", "Mean log-growth per match",
-              mean(ms$growth_joint), mean(ms$growth_indep)))
-  cat(sprintf("  %-30s  %8.4f  %8.4f\n", "Total log-growth",
-              sum(ms$growth_joint), sum(ms$growth_indep)))
-  cat(sprintf("  %-30s  %8.4f  %8.4f\n", "Min worst-case wealth",
-              min(ms$worst_wealth_joint), min(ms$worst_wealth_indep)))
-  cat(sprintf("  %-30s  %8.4f  %8.4f\n", "Mean worst-case wealth",
-              mean(ms$worst_wealth_joint), mean(ms$worst_wealth_indep)))
+  cat(sprintf("  %-30s  %8d\n", "Total effective bets", sum(ms$n_bets_effective)))
+  cat(sprintf("  %-30s  %8.4f\n", "Mean log-growth per match", mean(ms$growth_rate)))
+  cat(sprintf("  %-30s  %8.4f\n", "Total log-growth", sum(ms$growth_rate)))
+  cat(sprintf("  %-30s  %8.4f\n", "Min worst-case wealth", min(ms$worst_wealth)))
+  cat(sprintf("  %-30s  %8.4f\n", "Mean worst-case wealth", mean(ms$worst_wealth)))
 
   # Bets that would pass at various kelly_frac levels
   if (nrow(bd) > 0) {
     for (kf in c(0.10, 0.25, 0.50, 0.75, 1.00)) {
-      n_pass <- sum(bd$f_joint * kf * cur_pool >= min_bet)
+      n_pass <- sum(bd$f_kelly * kf * cur_pool >= min_bet)
       cat(sprintf("  Bets passing at kelly_frac=%.2f:  %d\n", kf, n_pass))
     }
   }
@@ -225,19 +201,16 @@ print_diagnostics <- function(diag, cfg) {
     m <- ms[i, ]
     cat(sprintf("\n  %s vs %s (%s, div %s)\n",
                 m$home, m$away, m$date, m$division))
-    cat(sprintf("    +EV bets: %d | Joint: %d effective | Indep: %d effective\n",
-                m$n_bets_ev, m$n_bets_joint, m$n_bets_indep))
-    cat(sprintf("    Stake: joint=%.3f, indep=%.3f | Max corr: %.3f\n",
-                m$total_stake_joint, m$total_stake_indep,
+    cat(sprintf("    +EV bets: %d | Effective: %d | Stake: %.3f | Max corr: %.3f\n",
+                m$n_bets_ev, m$n_bets_effective, m$total_stake,
                 ifelse(is.na(m$max_indicator_cor), 0, m$max_indicator_cor)))
-    cat(sprintf("    Growth: joint=%.6f, indep=%.6f | Worst: j=%.4f, i=%.4f\n",
-                m$growth_joint, m$growth_indep,
-                m$worst_wealth_joint, m$worst_wealth_indep))
+    cat(sprintf("    Growth: %.6f | Worst-case wealth: %.4f\n",
+                m$growth_rate, m$worst_wealth))
 
     # Show bets for this match
     match_bets <- bd |>
       filter(date == m$date, home == m$home, away == m$away) |>
-      filter(f_joint > 1e-4 | f_indep > 1e-4)
+      filter(f_kelly > 1e-4)
 
     if (nrow(match_bets) > 0) {
       for (j in seq_len(nrow(match_bets))) {
@@ -245,8 +218,8 @@ print_diagnostics <- function(diag, cfg) {
         label <- paste0(b$bet_type,
                         if (!is.na(b$change)) paste0("[", b$change, "]") else "",
                         if (!is.na(b$limit)) paste0("[", b$limit, "]") else "")
-        cat(sprintf("      %-18s odds=%5.2f  edge=%+.3f  f_j=%.4f  f_i=%.4f\n",
-                    label, b$odds, b$ev_edge, b$f_joint, b$f_indep))
+        cat(sprintf("      %-18s odds=%5.2f  edge=%+.3f  f=%.4f  amt=%d\n",
+                    label, b$odds, b$ev_edge, b$f_kelly, b$amt_scaled))
       }
     }
   }

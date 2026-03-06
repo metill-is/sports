@@ -5,17 +5,30 @@
 #' - Mutually exclusive outcomes within a market (1x2)
 #' - Cross-market correlation (home win + home -0.5 handicap)
 #' - Full posterior uncertainty (no collapse to point probabilities)
-#'
-#' Activated by setting `kelly_mode: joint` in bets.yml.
 
 box::use(
   ./kelly[format_bet_text],
-  ./market_handicap[parse_handicap],
   nloptr[nloptr],
   dplyr[filter, mutate, select, any_of, bind_rows, inner_join, distinct,
         summarise, arrange, tibble, rename],
-  tidyr[crossing]
+  tidyr[crossing],
+  stringr[str_split_fixed]
 )
+
+#' Parse Lengjan handicap strings to signed numeric
+#'
+#' "0-1" -> -1 (away gets 1-goal head start)
+#' "1-0" -> +1 (home gets 1-goal head start)
+#' @export
+parse_handicap <- function(change_str) {
+  parts <- str_split_fixed(change_str, "-", n = 2)
+  result <- as.numeric(parts[, 1]) - as.numeric(parts[, 2])
+  if (any(is.na(result))) {
+    warning("Could not parse handicap values: ",
+            paste(change_str[is.na(result)], collapse = ", "))
+  }
+  result
+}
 
 # ── Return matrix construction ───────────────────────────────────────────────
 

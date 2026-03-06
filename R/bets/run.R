@@ -12,9 +12,6 @@
 #'   run_betting_pipeline(cfg, sport_dir = league_dir)
 
 box::use(
-  ./market_1x2[run_1x2],
-  ./market_handicap[run_handicap],
-  ./market_totals[run_totals],
   ./kelly_joint[run_joint_kelly],
   ./odds[load_odds],
   ./output[print_market, dedup_against_log],
@@ -52,21 +49,15 @@ run_betting_pipeline <- function(cfg, sport_dir) {
   for (sex in cfg$sex) {
     cat("--- Sex:", sex, "---\n\n")
 
-    # Resolve kelly_frac: joint mode has its own scale, with per-sex overrides
-    kelly_mode <- cfg$bankroll$kelly_mode %||% "independent"
-    if (kelly_mode == "joint") {
-      sex_key <- paste0("kelly_frac_joint_", sex)
-      base_key <- "kelly_frac_joint"
-      effective_kf <- cfg$bankroll[[sex_key]] %||%
-        cfg$bankroll[[base_key]] %||%
-        cfg$bankroll$kelly_frac
-    } else {
-      sex_key <- paste0("kelly_frac_", sex)
-      effective_kf <- cfg$bankroll[[sex_key]] %||% cfg$bankroll$kelly_frac
-    }
+    # Resolve kelly_frac: per-sex overrides, then joint default, then base
+    sex_key <- paste0("kelly_frac_joint_", sex)
+    base_key <- "kelly_frac_joint"
+    effective_kf <- cfg$bankroll[[sex_key]] %||%
+      cfg$bankroll[[base_key]] %||%
+      cfg$bankroll$kelly_frac
     cfg_sex <- cfg
     cfg_sex$bankroll$kelly_frac <- effective_kf
-    cat("  Kelly fraction:", effective_kf, "(", kelly_mode, ")\n")
+    cat("  Kelly fraction:", effective_kf, "\n")
 
     # 1. Find latest posterior
     base_path <- file.path(sport_dir, cfg$predictions$path)
@@ -102,36 +93,21 @@ run_betting_pipeline <- function(cfg, sport_dir) {
     # 3. Load odds
     odds <- load_odds(cfg, sport_dir, sex = sex)
 
-    # 4. Run enabled markets
+    # 4. Run joint Kelly across all enabled markets
     res_1x2 <- NULL
     res_hc <- NULL
     res_tot <- NULL
 
-    kelly_mode <- cfg_sex$bankroll$kelly_mode %||% "independent"
-
-    if (kelly_mode == "joint") {
-      cat("  Using joint Kelly optimisation\n")
-      joint_res <- run_joint_kelly(
-        post, odds$outcome, odds$handicap, odds$totals, cfg_sex
-      )
-      if (!is.null(joint_res)) {
-        res_1x2 <- joint_res |> filter(market == "outcome")
-        res_hc  <- joint_res |> filter(market == "handicap")
-        res_tot <- joint_res |> filter(market == "totals")
-        if (nrow(res_1x2) == 0) res_1x2 <- NULL
-        if (nrow(res_hc) == 0)  res_hc  <- NULL
-        if (nrow(res_tot) == 0) res_tot <- NULL
-      }
-    } else {
-      if (isTRUE(cfg_sex$markets$outcome)) {
-        res_1x2 <- run_1x2(post, odds$outcome, cfg_sex)
-      }
-      if (isTRUE(cfg_sex$markets$handicap)) {
-        res_hc <- run_handicap(post, odds$handicap, cfg_sex)
-      }
-      if (isTRUE(cfg_sex$markets$totals)) {
-        res_tot <- run_totals(post, odds$totals, cfg_sex)
-      }
+    joint_res <- run_joint_kelly(
+      post, odds$outcome, odds$handicap, odds$totals, cfg_sex
+    )
+    if (!is.null(joint_res)) {
+      res_1x2 <- joint_res |> filter(market == "outcome")
+      res_hc  <- joint_res |> filter(market == "handicap")
+      res_tot <- joint_res |> filter(market == "totals")
+      if (nrow(res_1x2) == 0) res_1x2 <- NULL
+      if (nrow(res_hc) == 0)  res_hc  <- NULL
+      if (nrow(res_tot) == 0) res_tot <- NULL
     }
 
     # 5. Remove bets already placed (in the ledger)
