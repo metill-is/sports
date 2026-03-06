@@ -13,6 +13,7 @@ Sports/
 │   ├── pipeline/                  # Unified dispatchers (config, step_data, step_fit, step_bet)
 │   ├── config/                    # Per-sport config objects (get_config())
 │   ├── shared/                    # Shared pipeline (prep_data, model_fitting, get_model_results, extract_posterior)
+│   ├── backtest/                  # Model comparison backtesting (backtest_football.R, plot_backtest.R)
 │   ├── bets/                      # Betting modules (kelly, markets, odds, calibration, output, history)
 │   ├── storage/                   # Centralised Parquet store (store.R, migrate_history.R)
 │   ├── schedule/                  # Schedule scanner (scan.R)
@@ -53,6 +54,17 @@ Rscript run.R --stale --step data,fit,results,bet         # Full pipeline on sta
 - `fit` = Stan sampling only (saves `.rds`), no results generation
 - `results` = generate posterior CSVs from existing `.rds` (plots removed — will be rebuilt for Ghost)
 - If `bet` is requested without `results`, `results` is auto-injected (bet needs posterior CSVs)
+
+### Model backtesting
+
+```bash
+# Compare Poisson vs Student-t on held-out data (60/40 train/test split)
+Rscript R/backtest/backtest_football.R --league football_england --iter 500 --chains 4
+Rscript R/backtest/backtest_football.R --league football_england --iter 50 --chains 2  # Quick test
+```
+
+**Args**: `--league` (required), `--iter` (default 500), `--chains` (default 2), `--train-frac` (default 0.6)
+**Output**: `{league_dir}/results/backtest/` — summary.csv, comparison PNGs, per-model posteriors
 
 ### Kelly fraction tuning
 

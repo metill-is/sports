@@ -21,7 +21,7 @@ Sys.setlocale("LC_ALL", "is_IS.UTF-8")
 #'
 #' @return List containing prepared data for Stan model
 #' @export
-prepare_football_data <- function(sex, from_season = 2021) {
+prepare_football_data <- function(sex, from_season = 2021, test_date_cutoff = NULL) {
 
   # Validate input
   if (!sex %in% c("male", "female")) {
@@ -51,6 +51,15 @@ d <- read_csv(
     game_nr = row_number()
   )
 
+# Backtest mode: split into train/test and keep test for predictions
+test_data <- NULL
+if (!is.null(test_date_cutoff)) {
+  test_date_cutoff <- as.Date(test_date_cutoff)
+  test_data <- d |> filter(date >= test_date_cutoff)
+  d <- d |> filter(date < test_date_cutoff)
+  d <- d |> mutate(game_nr = row_number())
+}
+
 write_csv(
   d,
   here("results", sex, "d.csv")
@@ -68,22 +77,35 @@ write_csv(
   here("results", sex, "teams.csv")
 )
 
-# Read and prepare next games for prediction
-next_games <- read_csv(
-  here("data", sex, "schedule.csv")
-) |>
-  filter(
-    date >= today(),
-    (date <= today() + 14) | (division == 1)
+if (!is.null(test_data)) {
+  # Backtest mode: test data becomes prediction targets
+  next_games <- test_data |>
+    filter(
+      home %in% teams$team,
+      away %in% teams$team
+    ) |>
+    arrange(date) |>
+    mutate(
+      game_nr = row_number()
+    )
+} else {
+  # Production mode: read schedule
+  next_games <- read_csv(
+    here("data", sex, "schedule.csv")
   ) |>
-  arrange(date) |>
-  filter(
-    home %in% teams$team,
-    away %in% teams$team
-  ) |>
-  mutate(
-    game_nr = row_number()
-  )
+    filter(
+      date >= today(),
+      (date <= today() + 14) | (division == 1)
+    ) |>
+    arrange(date) |>
+    filter(
+      home %in% teams$team,
+      away %in% teams$team
+    ) |>
+    mutate(
+      game_nr = row_number()
+    )
+}
 
 # Get current teams in the top league
 cur_top_teams <- teams |>
@@ -318,6 +340,11 @@ write_csv(
   here("results", sex, "pred_d.csv")
 )
 
+# Student-t model fields: season index and division
+season_int <- as.integer(as.factor(model_d$season))
+division_int <- as.integer(model_d$division)
+pred_division_int <- if (nrow(pred_d) > 0) as.integer(pred_d$division) else integer(0)
+
 # Prepare Stan data
 stan_data <- list(
   K = nrow(teams),
@@ -338,8 +365,21 @@ stan_data <- list(
   pred_timediff2 = pred_d$away_timediff,
   time_to_next_games = time_to_next_games,
   top_teams = top_teams$team_nr,
-  N_top_teams = nrow(top_teams)
+  N_top_teams = nrow(top_teams),
+  # Student-t model fields (ignored by Poisson model)
+  season = season_int,
+  N_seasons = max(season_int),
+  division = division_int,
+  pred_division = pred_division_int
 )
 
+  if (!is.null(test_data)) {
+    return(list(
+      stan_data = stan_data,
+      teams = teams,
+      pred_d = pred_d,
+      test_actuals = next_games
+    ))
+  }
   return(stan_data)
 }
