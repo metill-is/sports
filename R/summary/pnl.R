@@ -1,4 +1,4 @@
-#' Cross-league PnL summary using Parquet store
+#' Cross-league PnL summary from CSV bet logs (source of truth)
 #'
 #' Splits output into current pipeline era and historical (pre-pipeline) bets.
 #' Current era gets full per-league detail; historical gets a compact summary.
@@ -10,10 +10,9 @@
 #'   Rscript R/summary/pnl.R --all               # Full detail for both eras
 
 library(dplyr, warn.conflicts = FALSE)
-library(arrow, warn.conflicts = FALSE)
+library(readr, warn.conflicts = FALSE)
 
 sports_dir <- here::here()
-source(file.path(sports_dir, "R", "storage", "store.R"))
 
 # Parse CLI args
 args <- commandArgs(trailingOnly = TRUE)
@@ -27,9 +26,11 @@ cutoff_date <- if (length(since_idx) > 0 && since_idx < length(args)) {
   as.Date("2026-03-01")
 }
 
-# Read all bets, excluding sex=all duplicates
-bets <- read_bets(sports_dir) |>
-  filter(sex != "all")
+# Read all bets from CSV logs (source of truth)
+log_files <- Sys.glob(file.path(sports_dir, "*", "*", "history", "bets_log.csv"))
+bets <- lapply(log_files, \(f) {
+  read_csv(f, show_col_types = FALSE, col_types = cols(info = "c", pnl = "d", win = "l"))
+}) |> bind_rows()
 
 if (is.null(bets) || nrow(bets) == 0) {
   cat("No bets found in store.\n")
@@ -178,10 +179,13 @@ if (show_all) {
   cat("\n")
 }
 
-# Bankroll status (always uses ALL bets)
-initial_pool <- 10973
-current <- initial_pool - sum(bets$bet_amount[!bets$settled], na.rm = TRUE) +
-  sum(bets$pnl_actual, na.rm = TRUE)
+# Bankroll status (epoch-filtered, consistent with compute_bankroll)
+bankroll_cfg <- yaml::yaml.load(readr::read_file(file.path(sports_dir, "config", "bankroll.yml")))
+initial_pool <- bankroll_cfg$initial_pool %||% 11514
+epoch_bets <- current_bets  # already filtered to >= cutoff_date
+current <- initial_pool -
+  sum(epoch_bets$bet_amount[!epoch_bets$settled], na.rm = TRUE) +
+  sum(epoch_bets$pnl_actual, na.rm = TRUE)
 cat(sprintf("  Bankroll: %s kr / %s kr initial (%.1f%%)\n",
   format(round(current), big.mark = ","),
   format(initial_pool, big.mark = ","),

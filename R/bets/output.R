@@ -19,10 +19,14 @@ box::use(
 #' @param sports_dir Absolute path to Sports/ root
 #' @return Current available bankroll
 #' @export
-compute_bankroll <- function(initial_pool, sports_dir) {
+compute_bankroll <- function(initial_pool, sports_dir, epoch = NULL) {
 
   filter_bets <- function(bets) {
-    bets |> dplyr::filter(sex != "all")
+    out <- bets |> dplyr::filter(sex != "all")
+    if (!is.null(epoch)) {
+      out <- out |> dplyr::filter(as.Date(date_recommended) >= as.Date(epoch))
+    }
+    out
   }
 
   # Try Parquet store first (faster for many leagues)

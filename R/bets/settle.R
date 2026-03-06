@@ -225,10 +225,13 @@ settle_league <- function(league_dir, sexes = c("male", "female"), sport = NULL,
 
   write_csv(log, log_path)
 
-  # Dual-write full log to Parquet store
+  # Dual-write full log to Parquet store (per-sex + "all" partitions)
   if (!is.null(sports_dir)) {
     tryCatch({
       source(file.path(sports_dir, "R", "storage", "store.R"), local = TRUE)
+      for (s in unique(log$sex)) {
+        store_bets(log[log$sex == s, ], sport, country, sex = s, sports_dir)
+      }
       store_bets(log, sport, country, sex = "all", sports_dir)
     }, error = function(e) warning("Store settle sync failed: ", e$message))
   }
