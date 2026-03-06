@@ -19,11 +19,13 @@ args <- commandArgs(trailingOnly = TRUE)
 settled_only <- "--settled" %in% args
 show_all <- "--all" %in% args
 
+bankroll_cfg <- yaml::yaml.load(readr::read_file(file.path(sports_dir, "config", "bankroll.yml")))
+
 since_idx <- which(args == "--since")
 cutoff_date <- if (length(since_idx) > 0 && since_idx < length(args)) {
   as.Date(args[since_idx + 1])
 } else {
-  as.Date("2026-03-01")
+  as.Date(bankroll_cfg$epoch)
 }
 
 # Read all bets from CSV logs (source of truth)
@@ -180,8 +182,7 @@ if (show_all) {
 }
 
 # Bankroll status (epoch-filtered, consistent with compute_bankroll)
-bankroll_cfg <- yaml::yaml.load(readr::read_file(file.path(sports_dir, "config", "bankroll.yml")))
-initial_pool <- bankroll_cfg$initial_pool %||% 11514
+initial_pool <- bankroll_cfg$initial_pool
 epoch_bets <- current_bets  # already filtered to >= cutoff_date
 current <- initial_pool -
   sum(epoch_bets$bet_amount[!epoch_bets$settled], na.rm = TRUE) +
