@@ -419,11 +419,13 @@ resolve_match_ids <- function(session, comp_config, bets, odds_dir, league_key) 
       key_lengjan <- paste(m$home, m$away, sep = " - ")
       all_match_ids[[key_lengjan]] <- m$match_id
 
-      # Also store with pipeline names
+      # Also store with pipeline names (unmapped teams keep their Lengjan name)
       pipeline_home <- lengjan_to_pipeline[m$home]
+      if (is.na(pipeline_home)) pipeline_home <- m$home
       pipeline_away <- lengjan_to_pipeline[m$away]
-      if (!is.na(pipeline_home) && !is.na(pipeline_away)) {
-        key_pipeline <- paste(pipeline_home, pipeline_away, sep = " - ")
+      if (is.na(pipeline_away)) pipeline_away <- m$away
+      key_pipeline <- paste(pipeline_home, pipeline_away, sep = " - ")
+      if (key_pipeline != key_lengjan) {
         all_match_ids[[key_pipeline]] <- m$match_id
       }
     }
