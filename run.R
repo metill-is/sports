@@ -288,11 +288,15 @@ tracked_step <- function(step_fn, label, step_key, ...) {
 # Load step modules lazily
 if ("data" %in% steps) box::use(R/pipeline/step_data[run_data_step])
 if ("fit" %in% steps || "results" %in% steps) box::use(R/pipeline/step_fit[run_fit_step])
-if ("bet" %in% steps) box::use(R/pipeline/step_bet[run_bet_step])
+if ("bet" %in% steps) {
+  box::use(R/pipeline/step_bet[run_bet_step])
+  box::use(R/bets/portfolio[portfolio_optimize])
+}
 if ("settle" %in% steps) box::use(R/pipeline/step_settle[run_settle_step])
 
 all_results <- list()
 all_recommendations <- list()
+all_bet_packages <- list()
 
 # Phase 1: All data steps
 if ("data" %in% steps) {
@@ -384,8 +388,13 @@ if ("bet" %in% steps) {
     })
     tracker$end_step(if (ok) "OK" else "FAILED")
     all_results[[length(all_results) + 1]] <- list(step = "bet", league = key, sex = NA, ok = ok)
-    if (!is.null(bet_res) && nrow(bet_res) > 0) {
-      all_recommendations <- c(all_recommendations, list(bet_res))
+    if (!is.null(bet_res)) {
+      if (!is.null(bet_res$recommendations) && nrow(bet_res$recommendations) > 0) {
+        all_recommendations <- c(all_recommendations, list(bet_res$recommendations))
+      }
+      if (!is.null(bet_res$bet_packages)) {
+        all_bet_packages <- c(all_bet_packages, bet_res$bet_packages)
+      }
     }
     quiet_here(".here")
   }
@@ -420,31 +429,62 @@ n_fail <- sum(!vapply(all_results, `[[`, logical(1), "ok"))
 if ("bet" %in% steps && length(all_recommendations) > 0) {
   new_recs <- do.call(rbind, all_recommendations)
 
-  # Daily bankroll budget: cap total exposure across simultaneous matches
-  # Reads max_daily_exposure from bankroll.yml (default 0.75 = 75% of bankroll)
+  # Cross-match portfolio optimisation + bet formatting
   bankroll_yml <- here("config", "bankroll.yml")
   if (file.exists(bankroll_yml)) {
     global_bankroll <- yaml::yaml.load(readr::read_file(bankroll_yml))
     max_daily <- global_bankroll$max_daily_exposure %||% 0.75
-    cur_pool <- global_bankroll$initial_pool  # fallback; step_bet computes actual
+    portfolio_mode <- global_bankroll$portfolio_mode %||% "proportional"
+    bet_digits <- global_bankroll$bet_digits %||% 0
+    min_bet <- global_bankroll$min_bet_amount %||% 200
 
-    if ("kelly" %in% names(new_recs) && "date" %in% names(new_recs)) {
-      for (d in unique(as.character(new_recs$date))) {
-        day_idx <- as.character(new_recs$date) == d
-        total_kelly <- sum(new_recs$kelly[day_idx], na.rm = TRUE)
-        if (total_kelly > max_daily) {
-          scale_factor <- max_daily / total_kelly
-          new_recs$kelly[day_idx] <- new_recs$kelly[day_idx] * scale_factor
-          new_recs$bet_amount[day_idx] <- round(
-            new_recs$bet_amount[day_idx] * scale_factor,
-            global_bankroll$bet_digits %||% 0
-          )
-          cat(sprintf(
-            "  Daily budget: %s total kelly=%.2f > %.2f, scaled by %.2f\n",
-            d, total_kelly, max_daily, scale_factor
-          ))
-        }
+    # Portfolio optimisation: scale per-match kelly fractions across daily matches
+    if (length(all_bet_packages) > 0 &&
+        "kelly" %in% names(new_recs) && "date" %in% names(new_recs)) {
+
+      # Build match keys for packages and recommendations
+      for (i in seq_along(all_bet_packages)) {
+        p <- all_bet_packages[[i]]
+        all_bet_packages[[i]]$match_key <- paste(
+          p$date, p$sex, p$home, p$away, sep = "|"
+        )
       }
+      new_recs$.match_key <- paste(
+        new_recs$date, new_recs$sex, new_recs$heima, new_recs$gestir, sep = "|"
+      )
+
+      # Group packages by date and optimise per day
+      pkg_dates <- vapply(
+        all_bet_packages, function(p) as.character(p$date), character(1)
+      )
+      lambda_map <- numeric(0)
+
+      for (d in unique(pkg_dates)) {
+        day_pkgs <- all_bet_packages[pkg_dates == d]
+        port_res <- portfolio_optimize(day_pkgs, max_daily, mode = portfolio_mode)
+        lambda_map <- c(lambda_map, port_res$lambdas)
+      }
+
+      # Apply lambdas to raw kelly fractions
+      matched_lambdas <- lambda_map[new_recs$.match_key]
+      matched_lambdas[is.na(matched_lambdas)] <- 1.0
+      new_recs$kelly <- new_recs$kelly * matched_lambdas
+      new_recs$.match_key <- NULL
+    }
+
+    # Apply kelly_frac and compute bet amounts (replaces format_bet_text)
+    if ("kelly_frac_cfg" %in% names(new_recs)) {
+      new_recs <- new_recs |>
+        dplyr::mutate(
+          kelly = kelly * kelly_frac_cfg,
+          bet_amount = round(kelly * cur_pool, bet_digits),
+          kelly = round(kelly, 2)
+        )
+      new_recs$kelly_frac_cfg <- NULL
+      new_recs$cur_pool <- NULL
+
+      # Filter by min bet amount
+      new_recs <- new_recs |> dplyr::filter(bet_amount >= min_bet)
     }
   }
 

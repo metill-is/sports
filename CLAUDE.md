@@ -14,7 +14,7 @@ Sports/
 │   ├── config/                    # Per-sport config objects (get_config())
 │   ├── shared/                    # Shared pipeline (prep_data, model_fitting, get_model_results, extract_posterior)
 │   ├── backtest/                  # Model comparison backtesting (backtest_football.R, plot_backtest.R)
-│   ├── bets/                      # Betting modules (kelly, markets, odds, calibration, output, history)
+│   ├── bets/                      # Betting modules (kelly, portfolio, markets, odds, calibration, output, history)
 │   ├── storage/                   # Centralised Parquet store (store.R, migrate_history.R)
 │   ├── schedule/                  # Schedule scanner (scan.R)
 │   └── lengjan/                   # Legacy Lengjan scraping (superseded by lengjan-odds/)
@@ -107,7 +107,9 @@ step_data.R → sync/download data (4 sources: baskethotel, hsi, livesport_footb
     ↓
 step_fit.R → fit Stan model (3 pipelines: shared, football, handball_other)
     ↓
-step_bet.R → calibration → load odds → Kelly criterion → recommendations.csv
+step_bet.R → calibration → load odds → Kelly criterion → bet packages
+    ↓
+run.R → cross-match portfolio optimisation → format + filter → recommendations.csv
 ```
 
 ### Three pipeline types

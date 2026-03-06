@@ -4,3 +4,4 @@ currency: "kr"
 min_bet_amount: 200
 bet_digits: 0
 max_daily_exposure: 0.75
+portfolio_mode: "proportional"

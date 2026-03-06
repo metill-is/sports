@@ -45,6 +45,7 @@ run_betting_pipeline <- function(cfg, sport_dir) {
 
   # Collect all results across sexes for return
   all_results <- list()
+  all_sex_packages <- list()
 
   for (sex in cfg$sex) {
     cat("--- Sex:", sex, "---\n\n")
@@ -98,10 +99,20 @@ run_betting_pipeline <- function(cfg, sport_dir) {
     res_hc <- NULL
     res_tot <- NULL
 
-    joint_res <- run_joint_kelly(
+    joint_out <- run_joint_kelly(
       post, odds$outcome, odds$handicap, odds$totals, cfg_sex
     )
-    if (!is.null(joint_res)) {
+    sex_packages <- list()
+    if (!is.null(joint_out)) {
+      joint_res <- joint_out$recommendations
+      sex_packages <- joint_out$bet_packages
+
+      # Annotate packages with sex and kelly_frac for portfolio optimisation
+      for (i in seq_along(sex_packages)) {
+        sex_packages[[i]]$sex <- sex
+        sex_packages[[i]]$kelly_frac <- cfg_sex$bankroll$kelly_frac
+      }
+
       res_1x2 <- joint_res |> filter(market == "outcome")
       res_hc  <- joint_res |> filter(market == "handicap")
       res_tot <- joint_res |> filter(market == "totals")
@@ -125,7 +136,9 @@ run_betting_pipeline <- function(cfg, sport_dir) {
       if (is.null(d) || nrow(d) == 0) return(NULL)
       d |> mutate(
         sport = cfg$sport, country = cfg$country, sex = sex,
-        market = if ("market" %in% names(d)) market else mkt
+        market = if ("market" %in% names(d)) market else mkt,
+        kelly_frac_cfg = cfg_sex$bankroll$kelly_frac,
+        cur_pool = cfg_sex$bankroll$cur_pool
       )
     }
     all_results <- c(all_results, list(
@@ -133,6 +146,7 @@ run_betting_pipeline <- function(cfg, sport_dir) {
       tag(res_hc, "handicap"),
       tag(res_tot, "totals")
     ))
+    all_sex_packages <- c(all_sex_packages, sex_packages)
 
     cat("\n")
   }
@@ -146,12 +160,13 @@ run_betting_pipeline <- function(cfg, sport_dir) {
         "sport", "country", "sex", "date", "division",
         "heima", "gestir", "market", "outcome",
         "o", "p", "ev", "kelly", "bet_amount",
-        "change", "limit", "booker"
+        "change", "limit", "booker",
+        "kelly_frac_cfg", "cur_pool"
       )))
     cat("\n", nrow(combined), "recommendation(s) generated.\n")
   } else {
     cat("\nNo value bets found.\n")
   }
 
-  invisible(combined)
+  invisible(list(recommendations = combined, bet_packages = all_sex_packages))
 }

@@ -7,7 +7,6 @@
 #' - Full posterior uncertainty (no collapse to point probabilities)
 
 box::use(
-  ./kelly[format_bet_text],
   nloptr[nloptr],
   dplyr[filter, mutate, select, any_of, bind_rows, inner_join, distinct,
         summarise, arrange, tibble, rename],
@@ -411,6 +410,7 @@ run_joint_kelly <- function(post, odds_1x2, odds_hc, odds_tot, cfg) {
   }
 
   all_results <- list()
+  all_packages <- list()
 
   for (m in seq_len(nrow(matches))) {
     match <- matches[m, ]
@@ -484,6 +484,10 @@ run_joint_kelly <- function(post, odds_1x2, odds_hc, odds_tot, cfg) {
     bets <- bets[nontrivial, ]
     fracs <- fracs[nontrivial]
 
+    # Compute match PnL vector for portfolio optimisation (Stage 2)
+    net_return_kept <- net_return[, nontrivial, drop = FALSE]
+    match_pnl <- as.vector(net_return_kept %*% fracs)
+
     # Build output rows matching market module schema
     result <- bets |>
       mutate(
@@ -491,26 +495,36 @@ run_joint_kelly <- function(post, odds_1x2, odds_hc, odds_tot, cfg) {
         division = match_div,
         heima = match_home,
         gestir = match_away,
-        kelly = fracs
+        kelly = fracs,
+        ev = round(p * (o - 1) - (1 - p), 2),
+        pred = round(p, 3),
+        p_o = round(1 / o, 3),
+        text = sprintf("@%.2f (f=%.4f, ev=%.2f)", o, kelly, ev)
       ) |>
       select(
         date, division, booker, heima, gestir,
         market, outcome, change, limit,
-        p, o, kelly
+        p, o, kelly, ev, pred, p_o, text
       )
 
+    # Build bet package for portfolio optimisation
+    bet_package <- list(
+      date = match_date,
+      home = match_home,
+      away = match_away,
+      match_pnl = match_pnl,
+      raw_kelly_sum = sum(fracs),
+      growth_rate = diag$growth_rate
+    )
+
     all_results <- c(all_results, list(result))
+    all_packages <- c(all_packages, list(bet_package))
   }
 
   if (length(all_results) == 0) return(NULL)
 
   combined <- bind_rows(all_results)
-
-  # Apply format_bet_text (scales kelly by kelly_frac, adds ev/bet_amount/text)
-  combined <- combined |>
-    format_bet_text(cfg) |>
-    filter(bet_amount >= cfg$bankroll$min_bet_amount)
-
   if (nrow(combined) == 0) return(NULL)
-  combined
+
+  list(recommendations = combined, bet_packages = all_packages)
 }
