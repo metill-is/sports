@@ -21,7 +21,7 @@ box::use(
 box::use(
   ./login[lengjan_login, is_authenticated],
   ./navigate[extract_matches, competition_url, match_url],
-  ./place_bet[place_bet]
+  ./place_bet[place_bet, clear_bet_slip]
 )
 
 # ── Main pipeline ─────────────────────────────────────────────────────────────
@@ -167,6 +167,8 @@ run_bets <- function(
         mutate(bet, placement_status = result$status)
       )
 
+      # Safety: always clear the bet slip before the next bet to prevent compounds
+      tryCatch(clear_bet_slip(session), error = function(e) NULL)
       Sys.sleep(stats::runif(1, 2, 4))
     }
   }
@@ -286,6 +288,7 @@ compute_placement_bankroll <- function(sports_dir) {
 
   cfg <- yaml.load(read_file(bankroll_yml))
   initial_pool <- cfg$initial_pool %||% 5000
+  epoch <- cfg$epoch
 
   # Load all ledger files
   logs <- Sys.glob(file.path(sports_dir, "*", "*", "history", "bets_log.csv"))
@@ -294,6 +297,10 @@ compute_placement_bankroll <- function(sports_dir) {
   all_bets <- do.call(rbind, lapply(logs, \(f) {
     read_csv(f, show_col_types = FALSE)
   })) |> filter(sex != "all")
+
+  if (!is.null(epoch)) {
+    all_bets <- all_bets |> filter(as.Date(date_recommended) >= as.Date(epoch))
+  }
 
   if (nrow(all_bets) == 0) return(initial_pool)
 

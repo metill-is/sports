@@ -89,6 +89,7 @@ is_positive_ev <- function(p, odds) {
 #'   NULL skips recalculation and uses the recommended bet_amount.
 #' @return List with status ("placed", "skipped", "dry_run", "error"),
 #'   actual_odds (from Lengjan DOM), and amount (stake entered)
+#' @export
 place_bet <- function(session, bet, match_id, sport_id,
                       dry_run = FALSE, bankroll = NULL) {
 
@@ -536,6 +537,7 @@ enter_stake_and_confirm <- function(session, amount, dry_run = FALSE) {
 
   if (dry_run) {
     cli_alert_warning("[DRY RUN] Would click 'Kaupa' \u2014 stopping here.")
+    clear_bet_slip(session)
     return(list(status = "dry_run", amount = amount))
   }
 
@@ -560,6 +562,36 @@ enter_stake_and_confirm <- function(session, amount, dry_run = FALSE) {
     stop(buy_parsed$error)
   }
   cdp_click(session, buy_parsed$x, buy_parsed$y)
+  cli_alert_info("Clicked 'Kaupa' — waiting for confirmation dialog...")
+
+  Sys.sleep(sample_delay(c(1.5, 2.5)))
+
+  # Lengjan shows a "Staðfesta Kaup" (Confirm Purchase) button after "Kaupa"
+  js_find_confirm <- "
+    (() => {
+      const buttons = document.querySelectorAll('button');
+      for (const btn of buttons) {
+        const t = btn.textContent.trim();
+        if ((t.includes('Sta\\u00f0festa') || t.includes('sta\\u00f0festa')) &&
+            btn.offsetParent !== null) {
+          const rect = btn.getBoundingClientRect();
+          return JSON.stringify({x: rect.x + rect.width / 2, y: rect.y + rect.height / 2});
+        }
+      }
+      return JSON.stringify({error: 'Confirm button not found'});
+    })()
+  "
+
+  confirm_result <- session$Runtime$evaluate(
+    expression = js_find_confirm, returnByValue = TRUE
+  )
+  confirm_parsed <- jsonlite::fromJSON(confirm_result$result$value)
+  if (!is.null(confirm_parsed$error)) {
+    cli_alert_warning("No confirmation dialog found — bet may already be placed or failed.")
+  } else {
+    cdp_click(session, confirm_parsed$x, confirm_parsed$y)
+    cli_alert_success("Clicked 'Staðfesta Kaup' — bet confirmed.")
+  }
 
   Sys.sleep(sample_delay(c(2, 3)))
   cli_alert_success("Bet placed: {amount} kr.")
@@ -637,6 +669,7 @@ verify_bet_slip <- function(session) {
 }
 
 #' Clear the bet slip by clicking "Hreinsa raðir"
+#' @export
 clear_bet_slip <- function(session) {
   js <- "
     (() => {
