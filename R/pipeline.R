@@ -41,6 +41,7 @@ run_bets <- function(
   leagues = NULL,
   dry_run = TRUE,
   interactive = TRUE,
+  today_only = FALSE,
   sports_dir = here::here("../Sports"),
   odds_dir = here::here("../lengjan-odds")
 ) {
@@ -57,7 +58,7 @@ run_bets <- function(
 
   # ── 2. Load recommendations (from Sports pipeline output) ──
   cli_h2("Loading recommendations")
-  pending <- load_recommendations(sports_dir, leagues)
+  pending <- load_recommendations(sports_dir, leagues, today_only)
 
   if (nrow(pending) == 0) {
     cli_alert_info("No pending recommendations found.")
@@ -196,7 +197,7 @@ run_bets <- function(
 #' @param sports_dir Path to Sports/ root
 #' @param leagues Optional character vector of league keys to filter
 #' @return Tibble ready for placement
-load_recommendations <- function(sports_dir, leagues = NULL) {
+load_recommendations <- function(sports_dir, leagues = NULL, today_only = FALSE) {
   recs_path <- file.path(sports_dir, "recommendations.csv")
 
   if (!file.exists(recs_path)) {
@@ -205,7 +206,10 @@ load_recommendations <- function(sports_dir, leagues = NULL) {
   }
 
   recs <- read_csv(recs_path, show_col_types = FALSE) |>
-    filter(as.Date(date) >= Sys.Date()) |>
+    filter(
+      as.Date(date) >= Sys.Date(),
+      if (today_only) as.Date(date) == Sys.Date() else TRUE
+    ) |>
     mutate(
       league_key = paste(sport, country, sep = "_"),
       home = heima,
@@ -382,7 +386,7 @@ log_placed_bet <- function(bet, actual_odds, actual_amount, sports_dir) {
 resolve_match_ids <- function(session, comp_config, bets, odds_dir, league_key) {
 
   # Load team name mapping
-  # CSV columns: "out" = pipeline name, "in" = Lengjan name
+  # CSV columns: "pipeline" = pipeline name, "lengjan" = Lengjan name
   team_names_file <- file.path(
     odds_dir, "config", comp_config$team_names %||% ""
   )
@@ -391,11 +395,15 @@ resolve_match_ids <- function(session, comp_config, bets, odds_dir, league_key) 
     read_csv(team_names_file, show_col_types = FALSE)
   } else {
     cli_alert_warning("No team names file for {league_key}.")
-    tibble::tibble(out = character(), `in` = character())
+    tibble::tibble(pipeline = character(), lengjan = character())
   }
 
+  # Support both old (out/in) and new (pipeline/lengjan) column names
+  lengjan_col <- if ("lengjan" %in% names(name_map)) "lengjan" else "in"
+  pipeline_col <- if ("pipeline" %in% names(name_map)) "pipeline" else "out"
+
   # Lengjan name -> pipeline name
-  lengjan_to_pipeline <- stats::setNames(name_map$out, name_map$`in`)
+  lengjan_to_pipeline <- stats::setNames(name_map[[pipeline_col]], name_map[[lengjan_col]])
 
   all_match_ids <- list()
 

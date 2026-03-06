@@ -7,6 +7,7 @@
 #'   Rscript run.R --live --no-confirm      # Place bets (no confirmation prompts)
 #'   Rscript run.R --league football_england  # Specific league only
 #'   Rscript run.R --dry-run --league handball_iceland
+#'   Rscript run.R --live --today              # Only today's matches
 #'
 #' Environment:
 #'   LENGJAN_USER and LENGJAN_PASS must be set in .Renviron
@@ -16,8 +17,9 @@ library(here)
 # Parse CLI arguments
 args <- commandArgs(trailingOnly = TRUE)
 
-dry_run <- !("--live" %in% args)
-interactive <- !("--no-confirm" %in% args)
+today_only <- "--today" %in% args
+dry_run <- !("--live" %in% args) && !today_only
+interactive <- !("--no-confirm" %in% args) && !today_only
 
 league_idx <- which(args == "--league")
 leagues <- if (length(league_idx) > 0 && league_idx < length(args)) {
@@ -33,11 +35,12 @@ results <- run_bets(
   leagues = leagues,
   dry_run = dry_run,
   interactive = interactive,
+  today_only = today_only,
   sports_dir = here("../Sports"),
   odds_dir = here("../lengjan-odds")
 )
 
-if (nrow(results) > 0) {
+if (nrow(results) > 0 && "placement_status" %in% names(results)) {
   cat("\n=== Results ===\n")
   print(results[, c("home", "away", "market", "outcome", "odds",
                      "bet_amount", "placement_status")])

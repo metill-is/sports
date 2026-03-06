@@ -7,6 +7,7 @@
 #' Usage:
 #'   Rscript preview.R                # Show all pending bets
 #'   Rscript preview.R --league football_england  # Filter to one league
+#'   Rscript preview.R --today        # Only today's matches
 
 library(readr)
 library(dplyr, warn.conflicts = FALSE)
@@ -16,6 +17,7 @@ here::i_am(".here")
 sports_dir <- here("../Sports")
 
 args <- commandArgs(trailingOnly = TRUE)
+today_only <- "--today" %in% args
 league_idx <- which(args == "--league")
 league_filter <- if (length(league_idx) > 0 && league_idx < length(args)) {
   args[league_idx + 1]
@@ -32,7 +34,10 @@ if (!file.exists(recs_path)) {
 }
 
 recs <- read_csv(recs_path, show_col_types = FALSE) |>
-  filter(as.Date(date) >= Sys.Date()) |>
+  filter(
+    as.Date(date) >= Sys.Date(),
+    if (today_only) as.Date(date) == Sys.Date() else TRUE
+  ) |>
   mutate(
     league_key = paste(sport, country, sep = "_"),
     home = heima,

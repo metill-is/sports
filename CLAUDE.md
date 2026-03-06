@@ -40,6 +40,7 @@ Sports/recommendations.csv     (ephemeral output from Sports pipeline)
 # Preview pending bets (no browser, just reads data)
 Rscript preview.R
 Rscript preview.R --league football_england
+Rscript preview.R --today
 
 # Dry run — navigates and selects but doesn't click "Kaupa"
 Rscript run.R
@@ -49,6 +50,9 @@ Rscript run.R --live
 
 # Live, no prompts (fully automatic)
 Rscript run.R --live --no-confirm
+
+# Today's bets only (implies --live --no-confirm)
+Rscript run.R --today
 
 # Specific league
 Rscript run.R --live --league football_england
@@ -118,8 +122,8 @@ CDP `Input.dispatchMouseEvent` used for clicks (trusted events for React).
 ## Team name mapping
 
 Uses `lengjan-odds/config/team_names_*.csv` files:
-- `out` column = pipeline/standardised name
-- `in` column = Lengjan display name
+- `pipeline` column = pipeline/standardised name
+- `lengjan` column = Lengjan display name
 - Lookup direction: Lengjan name -> pipeline name (for matching extracted matches to bets)
 
 ## Sport-specific differences
