@@ -1,5 +1,4 @@
 date,home,away
-06.03. 19:45,Napoli,Torino
 07.03. 14:00,Cagliari,Como
 07.03. 17:00,Atalanta,Udinese
 07.03. 19:45,Juventus,Pisa
@@ -29,16 +28,16 @@ date,home,away
 22.03. 14:00,Bologna,Lazio
 22.03. 17:00,AS Roma,Lecce
 22.03. 19:45,Fiorentina,Inter
-04.04. 13:00,Cremonese,Bologna
-04.04. 13:00,Inter,AS Roma
-04.04. 13:00,Juventus,Genoa
-04.04. 13:00,Lazio,Parma
 04.04. 13:00,Lecce,Atalanta
-04.04. 13:00,Napoli,AC Milan
-04.04. 13:00,Pisa,Torino
 04.04. 13:00,Sassuolo,Cagliari
-04.04. 13:00,Udinese,Como
-04.04. 13:00,Verona,Fiorentina
+04.04. 16:00,Verona,Fiorentina
+04.04. 18:45,Lazio,Parma
+05.04. 13:00,Cremonese,Bologna
+05.04. 16:00,Pisa,Torino
+05.04. 18:45,Inter,AS Roma
+06.04. 13:00,Udinese,Como
+06.04. 16:00,Juventus,Genoa
+06.04. 18:45,Napoli,AC Milan
 12.04. 13:00,AC Milan,Udinese
 12.04. 13:00,AS Roma,Pisa
 12.04. 13:00,Atalanta,Juventus

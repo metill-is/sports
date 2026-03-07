@@ -39,63 +39,63 @@ date,home,away
 22.03. 14:00,Sudtirol,Frosinone
 22.03. 16:15,Sampdoria,Avellino
 22.03. 18:30,Entella,Reggiana
-06.04. 18:30,Bari,Modena
-06.04. 18:30,Carrarese,Spezia
-06.04. 18:30,Catanzaro,Monza
-06.04. 18:30,Cesena,Sudtirol
-06.04. 18:30,Frosinone,Padova
-06.04. 18:30,Mantova,Entella
-06.04. 18:30,Palermo,Avellino
-06.04. 18:30,Reggiana,Pescara
-06.04. 18:30,Sampdoria,Empoli
-06.04. 18:30,Venezia,Juve Stabia
-11.04. 13:00,Avellino,Catanzaro
+05.04. 15:15,Frosinone,Padova
+05.04. 17:30,Palermo,Avellino
+06.04. 10:30,Cesena,Sudtirol
+06.04. 13:00,Bari,Modena
+06.04. 13:00,Catanzaro,Monza
+06.04. 13:00,Mantova,Entella
+06.04. 13:00,Reggiana,Pescara
+06.04. 13:00,Venezia,Juve Stabia
+06.04. 15:15,Sampdoria,Empoli
+06.04. 17:30,Carrarese,Spezia
+10.04. 18:30,Frosinone,Palermo
 11.04. 13:00,Entella,Venezia
-11.04. 13:00,Frosinone,Palermo
 11.04. 13:00,Juve Stabia,Cesena
-11.04. 13:00,Monza,Bari
-11.04. 13:00,Padova,Empoli
 11.04. 13:00,Pescara,Sampdoria
-11.04. 13:00,Reggiana,Carrarese
-11.04. 13:00,Spezia,Mantova
 11.04. 13:00,Sudtirol,Modena
+11.04. 15:15,Avellino,Catanzaro
+11.04. 17:30,Monza,Bari
+12.04. 13:00,Padova,Empoli
+12.04. 15:15,Spezia,Mantova
+12.04. 17:30,Reggiana,Carrarese
+17.04. 18:30,Sampdoria,Monza
 18.04. 13:00,Bari,Venezia
-18.04. 13:00,Carrarese,Pescara
-18.04. 13:00,Empoli,Entella
-18.04. 13:00,Juve Stabia,Catanzaro
 18.04. 13:00,Mantova,Avellino
 18.04. 13:00,Modena,Frosinone
-18.04. 13:00,Padova,Reggiana
-18.04. 13:00,Palermo,Cesena
-18.04. 13:00,Sampdoria,Monza
 18.04. 13:00,Spezia,Sudtirol
-25.04. 13:00,Avellino,Bari
-25.04. 13:00,Catanzaro,Spezia
-25.04. 13:00,Cesena,Sampdoria
+18.04. 15:15,Palermo,Cesena
+18.04. 17:30,Juve Stabia,Catanzaro
+19.04. 13:00,Carrarese,Pescara
+19.04. 15:15,Padova,Reggiana
+19.04. 17:30,Empoli,Entella
+24.04. 17:00,Monza,Modena
+24.04. 19:00,Avellino,Bari
+25.04. 10:30,Catanzaro,Spezia
 25.04. 13:00,Entella,Padova
 25.04. 13:00,Frosinone,Carrarese
-25.04. 13:00,Monza,Modena
 25.04. 13:00,Pescara,Juve Stabia
 25.04. 13:00,Reggiana,Palermo
 25.04. 13:00,Sudtirol,Mantova
-25.04. 13:00,Venezia,Empoli
-01.05. 18:30,Bari,Entella
-01.05. 18:30,Carrarese,Cesena
-01.05. 18:30,Empoli,Avellino
-01.05. 18:30,Juve Stabia,Frosinone
-01.05. 18:30,Mantova,Monza
-01.05. 18:30,Modena,Reggiana
-01.05. 18:30,Padova,Pescara
-01.05. 18:30,Palermo,Catanzaro
-01.05. 18:30,Sampdoria,Sudtirol
-01.05. 18:30,Spezia,Venezia
-09.05. 13:00,Avellino,Modena
-09.05. 13:00,Catanzaro,Bari
-09.05. 13:00,Cesena,Padova
-09.05. 13:00,Entella,Carrarese
-09.05. 13:00,Frosinone,Mantova
-09.05. 13:00,Monza,Empoli
-09.05. 13:00,Pescara,Spezia
-09.05. 13:00,Reggiana,Sampdoria
-09.05. 13:00,Sudtirol,Juve Stabia
-09.05. 13:00,Venezia,Palermo
+25.04. 15:15,Venezia,Empoli
+25.04. 17:30,Cesena,Sampdoria
+01.05. 13:00,Bari,Entella
+01.05. 13:00,Carrarese,Cesena
+01.05. 13:00,Empoli,Avellino
+01.05. 13:00,Juve Stabia,Frosinone
+01.05. 13:00,Mantova,Monza
+01.05. 13:00,Modena,Reggiana
+01.05. 13:00,Padova,Pescara
+01.05. 13:00,Palermo,Catanzaro
+01.05. 13:00,Sampdoria,Sudtirol
+01.05. 13:00,Spezia,Venezia
+08.05. 18:30,Avellino,Modena
+08.05. 18:30,Catanzaro,Bari
+08.05. 18:30,Cesena,Padova
+08.05. 18:30,Entella,Carrarese
+08.05. 18:30,Frosinone,Mantova
+08.05. 18:30,Monza,Empoli
+08.05. 18:30,Pescara,Spezia
+08.05. 18:30,Reggiana,Sampdoria
+08.05. 18:30,Sudtirol,Juve Stabia
+08.05. 18:30,Venezia,Palermo
