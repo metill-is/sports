@@ -71,9 +71,13 @@ Rscript R/backtest/backtest_football.R --league football_england --iter 50 --cha
 
 ### Kelly fraction tuning
 
-At runtime, `step_bet.R` calls `compute_calibration()` which adaptively sets `kelly_frac` per league
-from `sum(win)/sum(probability)` — see `R/bets/calibration.R`. Static `bets.yml` values are used
-as fallback when <30 settled bets exist.
+At runtime, `step_bet.R` calls `compute_calibration()` which computes a Bayesian calibration
+multiplier per league from settled bet history — see `R/bets/calibration.R`. The multiplier
+scales the base `kelly_frac` from `bets.yml`: `effective = base × multiplier`. Updates from
+bet 1 (no hard cutoff); prior strength controlled by `calibration.prior_weight` in `bankroll.yml`.
+
+A per-league daily exposure cap (`max_league_exposure` in `bankroll.yml`) prevents any single
+league from consuming too much of the daily budget on quiet days.
 
 For offline analysis:
 ```bash

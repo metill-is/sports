@@ -530,8 +530,40 @@ if ("bet" %in% steps && length(all_recommendations) > 0) {
     # Apply kelly_frac and compute bet amounts (replaces format_bet_text)
     if ("kelly_frac_cfg" %in% names(new_recs)) {
       new_recs <- new_recs |>
+        dplyr::mutate(kelly = kelly * kelly_frac_cfg)
+
+      # Per-league daily exposure cap: prevent any single league from
+      # consuming too much of the daily budget on quiet days
+      max_league_exp <- global_bankroll$max_league_exposure
+      if (!is.null(max_league_exp)) {
+        new_recs <- new_recs |>
+          dplyr::group_by(sport, country, date) |>
+          dplyr::mutate(
+            .league_total = sum(kelly),
+            .league_scale = ifelse(.league_total > max_league_exp,
+                                   max_league_exp / .league_total, 1.0),
+            kelly = kelly * .league_scale
+          ) |>
+          dplyr::ungroup()
+
+        # Report when cap binds
+        capped <- new_recs |>
+          dplyr::filter(.league_scale < 1.0) |>
+          dplyr::distinct(sport, country, date, .league_total, .league_scale)
+        if (nrow(capped) > 0) {
+          for (i in seq_len(nrow(capped))) {
+            r <- capped[i, ]
+            cat(sprintf("  League cap: %s/%s %s: %.3f → %.3f (scale=%.2f)\n",
+                r$sport, r$country, r$date, r$.league_total, max_league_exp, r$.league_scale))
+          }
+        }
+
+        new_recs <- new_recs |>
+          dplyr::select(-.league_total, -.league_scale)
+      }
+
+      new_recs <- new_recs |>
         dplyr::mutate(
-          kelly = kelly * kelly_frac_cfg,
           bet_amount = round(kelly * cur_pool, bet_digits),
           kelly = round(kelly, 2)
         )

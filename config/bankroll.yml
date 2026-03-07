@@ -4,4 +4,10 @@ currency: "kr"
 min_bet_amount: 200
 bet_digits: 0
 max_daily_exposure: 0.75
+max_league_exposure: 0.20
 portfolio_mode: "proportional"
+calibration:
+  prior_weight: 10
+  prior_ratio: 1.0
+  floor: 0.5
+  ceiling: 1.5

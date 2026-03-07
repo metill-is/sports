@@ -1,59 +1,64 @@
-#' Adaptive Kelly fraction via calibration ratio
+#' Bayesian adaptive calibration for Kelly fraction scaling
 #'
-#' Computes kelly_frac per league from historical performance using
-#' the ratio cumsum(win) / cumsum(p). This replaces static bets.yml
-#' values with data-driven fractions at pipeline runtime.
+#' Uses a Beta-Binomial inspired pseudo-count model to estimate a
+#' calibration multiplier from settled bet history. The multiplier
+#' adjusts the static kelly_frac from bets.yml based on observed
+#' win rates vs model probabilities.
 #'
-#' See: ~/Obsidian/Metill/Sports/betting-system-rules.md (rules K1–K6)
+#' Unlike the previous frequentist approach (min_sample=30 hard cutoff),
+#' this starts updating immediately from bet 1, with configurable
+#' prior strength controlling how quickly data overwhelms the prior.
+#'
+#' Multiplier = (prior_weight * prior_ratio + sum(win)) / (prior_weight + sum(p))
 #'
 #' Usage:
 #'   box::use(R/bets/calibration[compute_calibration])
 #'   cal <- compute_calibration(sports_dir, "handball", "iceland", c("male", "female"))
-#'   # Returns list(kelly_frac_male = 0.18, kelly_frac_female = NULL)
+#'   # Returns list(male = 0.95, female = 1.02)
 
 box::use(
   readr[read_csv],
   dplyr[filter, mutate]
 )
 
-#' Calibration ratio: realised wins per expected win
+#' Compute Bayesian calibration multiplier per sex for a league
 #'
-#' @param win Logical vector of outcomes
-#' @param prob Numeric vector of model probabilities
-#' @return Numeric ratio (> 1 = underconfident, < 1 = overconfident)
-#' @export
-calibration_ratio <- function(win, prob) {
-  if (length(win) == 0 || sum(prob) == 0) return(NA_real_)
-  sum(win, na.rm = TRUE) / sum(prob, na.rm = TRUE)
-}
-
-#' Compute adaptive kelly_frac per sex for a league
+#' Reads settled bets from bets_log.csv and computes a calibration
+#' multiplier using pseudo-count smoothing. The multiplier scales
+#' the base kelly_frac from bets.yml:
 #'
-#' Reads settled bets from bets_log.csv, computes the calibration ratio,
-#' and returns clamped kelly_frac values. Returns NULL for a sex when
-#' insufficient data exists (caller keeps the static bets.yml value).
+#'   effective_kelly = base_kelly * multiplier
+#'
+#' Returns prior_ratio (default 1.0 = no adjustment) when no history exists.
 #'
 #' @param sports_dir Absolute path to Sports/ root
 #' @param sport Sport name (e.g., "handball")
 #' @param country Country name (e.g., "iceland")
 #' @param sexes Character vector (e.g., c("male", "female"))
-#' @param floor Minimum kelly_frac — ensures exploration (K4). Default 0.02
-#' @param ceiling Maximum kelly_frac — prevents overbet (K5). Default 0.25
-#' @param min_sample Minimum settled bets for data-driven fraction (K3). Default 30
-#' @return Named list: e.g. list(kelly_frac_male = 0.18, kelly_frac_female = NULL)
+#' @param prior_weight Pseudo-count strength — equivalent expected wins of
+#'   prior data. Higher = slower adaptation. Default 10.
+#' @param prior_ratio Prior belief about calibration ratio. 1.0 = model is
+#'   well-calibrated. Default 1.0.
+#' @param floor Minimum multiplier (prevents over-correction). Default 0.5.
+#' @param ceiling Maximum multiplier (prevents runaway scaling). Default 1.5.
+#' @return Named list keyed by sex: e.g. list(male = 0.95, female = 1.02)
 #' @export
 compute_calibration <- function(
   sports_dir, sport, country, sexes,
-  floor = 0.02, ceiling = 0.25,
-  min_sample = 30
+  prior_weight = 10, prior_ratio = 1.0,
+  floor = 0.5, ceiling = 1.5
 ) {
   log_path <- file.path(sports_dir, sport, country, "history", "bets_log.csv")
 
   if (!file.exists(log_path)) {
     result <- stats::setNames(
-      as.list(rep(NA, length(sexes))),
-      paste0("kelly_frac_", sexes)
+      as.list(rep(prior_ratio, length(sexes))),
+      sexes
     )
+    for (sex in sexes) {
+      cat(sprintf("  Calibration %s/%s [%s]: no history \u2014 multiplier=%.2f (prior)\n",
+                  sport, country, sex, prior_ratio))
+    }
     return(result)
   }
 
@@ -67,25 +72,36 @@ compute_calibration <- function(
   result <- list()
 
   for (sex in sexes) {
-    sex_key <- paste0("kelly_frac_", sex)
     sex_bets <- log |> filter(sex == !!sex)
     n_settled <- nrow(sex_bets)
 
-    if (n_settled < min_sample) {
-      # K3: insufficient data — return NULL so caller keeps bets.yml value
-      cat(sprintf("  Calibration %s/%s [%s]: %d settled (< %d min) — using config default\n",
-                  sport, country, sex, n_settled, min_sample))
-      result[[sex_key]] <- NULL
+    if (n_settled == 0) {
+      cat(sprintf("  Calibration %s/%s [%s]: 0 settled \u2014 multiplier=%.2f (prior)\n",
+                  sport, country, sex, prior_ratio))
+      result[[sex]] <- prior_ratio
       next
     }
 
-    ratio <- calibration_ratio(sex_bets$win, sex_bets$probability)
-    clamped <- max(floor, min(ceiling, ratio))
+    actual_wins <- sum(sex_bets$win, na.rm = TRUE)
+    expected_wins <- sum(sex_bets$probability, na.rm = TRUE)
 
-    cat(sprintf("  Calibration %s/%s [%s]: ratio=%.3f → kelly_frac=%.3f (%d bets)\n",
-                sport, country, sex, ratio, clamped, n_settled))
+    # Beta-Binomial pseudo-count update:
+    # multiplier = (prior_wins + actual_wins) / (prior_expected + expected_wins)
+    # where prior_wins = prior_weight * prior_ratio, prior_expected = prior_weight
+    multiplier <- (prior_weight * prior_ratio + actual_wins) /
+                  (prior_weight + expected_wins)
+    clamped <- max(floor, min(ceiling, multiplier))
 
-    result[[sex_key]] <- round(clamped, 3)
+    cat(sprintf(
+      "  Calibration %s/%s [%s]: %d/%d wins (exp %.1f) \u2192 multiplier=%.3f%s (%d bets)\n",
+      sport, country, sex,
+      actual_wins, n_settled, expected_wins,
+      multiplier,
+      if (abs(multiplier - clamped) > 0.001) sprintf(" [clamped\u2192%.3f]", clamped) else "",
+      n_settled
+    ))
+
+    result[[sex]] <- round(clamped, 3)
   }
 
   result
