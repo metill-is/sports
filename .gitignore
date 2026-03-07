@@ -36,6 +36,7 @@
 # ── Documentation ──
 !CLAUDE.md
 !**/CLAUDE.md
+!R/status/README.md
 !.gitignore
 
 # ── Claude Code config ──

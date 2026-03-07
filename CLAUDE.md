@@ -17,6 +17,7 @@ Sports/
 │   ├── bets/                      # Betting modules (kelly, portfolio, markets, odds, calibration, output, history)
 │   ├── storage/                   # Centralised Parquet store (store.R, migrate_history.R)
 │   ├── schedule/                  # Schedule scanner (scan.R)
+│   ├── status/                    # JSON status endpoints for Raycast monitor (pipeline_status.R, settle_now.R)
 │   └── lengjan/                   # Legacy Lengjan scraping (superseded by lengjan-odds/)
 ├── basketball/{iceland,international}/
 ├── football/{iceland,england,italy,spain,norway}/
@@ -88,6 +89,18 @@ Rscript R/summary/pnl.R --settled              # Only settled bets
 Rscript R/summary/pnl.R --all                  # Full detail for both eras
 Rscript R/summary/pnl.R --since 2026-02-01     # Custom era cutoff date
 ```
+
+### Pipeline status (JSON endpoints for Raycast)
+
+```bash
+Rscript R/status/pipeline_status.R              # Full status JSON (~0.9s)
+Rscript R/status/pipeline_status.R --quick       # Skip settleable check (~0.8s)
+Rscript R/status/settle_now.R                    # Settle all leagues (JSON output)
+Rscript R/status/settle_now.R --dry-run           # Preview settlement only
+Rscript R/status/settle_now.R --league football_england  # Settle one league
+```
+
+See `R/status/README.md` for full JSON schema documentation.
 
 ### Legacy scripts (still functional, Iceland only)
 
