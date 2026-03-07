@@ -53,6 +53,9 @@ date,league,home,away,limit,o_over,o_under,scraped_at
 2026-03-07,2. Bundesliga,Ferndorf,Dessau-Rosslauer HV 2006,57.5,1.88,1.65,2026-03-06T20:49:20Z
 2026-03-07,2. Bundesliga,Ferndorf,Dessau-Rosslauer HV 2006,55.5,1.54,2.03,2026-03-07T08:48:40Z
 2026-03-07,2. Bundesliga,Ferndorf,Dessau-Rosslauer HV 2006,56.5,1.7,1.81,2026-03-07T08:48:40Z
+2026-03-07,2. Bundesliga,Ferndorf,Dessau-Rosslauer HV 2006,55.5,1.56,2.01,2026-03-07T14:46:17Z
+2026-03-07,2. Bundesliga,Ferndorf,Dessau-Rosslauer HV 2006,56.5,1.72,1.79,2026-03-07T14:46:17Z
+2026-03-07,2. Bundesliga,Ferndorf,Dessau-Rosslauer HV 2006,57.5,1.83,1.68,2026-03-07T14:46:17Z
 2026-03-07,2. Bundesliga,HSG Krefeld,TV Grosswallstadt,62.5,1.56,2,2026-03-06T08:59:19Z
 2026-03-07,2. Bundesliga,HSG Krefeld,TV Grosswallstadt,63.5,1.7,1.81,2026-03-06T08:59:19Z
 2026-03-07,2. Bundesliga,HSG Krefeld,TV Grosswallstadt,62.5,1.67,1.84,2026-03-06T14:59:16Z
@@ -72,6 +75,15 @@ date,league,home,away,limit,o_over,o_under,scraped_at
 2026-03-07,Bundesliga,Flensburg-H.,Leipzig,63.5,1.77,1.74,2026-03-06T14:59:16Z
 2026-03-07,Bundesliga,Flensburg-H.,Leipzig,64.5,1.96,1.59,2026-03-06T14:59:16Z
 2026-03-07,Bundesliga,Flensburg-H.,Leipzig,63.5,1.74,1.76,2026-03-07T08:48:40Z
+2026-03-08,2. Bundesliga,Hc Oppenweiler/backnang,Dormagen,58.5,1.58,1.97,2026-03-07T14:46:17Z
+2026-03-08,2. Bundesliga,Hc Oppenweiler/backnang,Dormagen,59.5,1.74,1.77,2026-03-07T14:46:17Z
+2026-03-08,2. Bundesliga,Hc Oppenweiler/backnang,Dormagen,60.5,1.93,1.61,2026-03-07T14:46:17Z
+2026-03-08,2. Bundesliga,Ludwigshafen,Bietigheim,56.5,1.58,1.97,2026-03-07T14:46:17Z
+2026-03-08,2. Bundesliga,Ludwigshafen,Bietigheim,57.5,1.74,1.77,2026-03-07T14:46:17Z
+2026-03-08,2. Bundesliga,Ludwigshafen,Bietigheim,58.5,1.93,1.61,2026-03-07T14:46:17Z
+2026-03-08,2. Bundesliga,Nordhorn,Balingen,57.5,1.59,1.96,2026-03-07T14:46:17Z
+2026-03-08,2. Bundesliga,Nordhorn,Balingen,58.5,1.75,1.76,2026-03-07T14:46:17Z
+2026-03-08,2. Bundesliga,Nordhorn,Balingen,59.5,1.94,1.6,2026-03-07T14:46:17Z
 2026-03-08,Bundesliga,Erlangen,Minden,56.5,1.6,1.94,2026-03-05T20:57:36Z
 2026-03-08,Bundesliga,Erlangen,Minden,57.5,1.76,1.75,2026-03-05T20:57:36Z
 2026-03-08,Bundesliga,Erlangen,Minden,58.5,1.96,1.59,2026-03-05T20:57:36Z
@@ -80,6 +92,9 @@ date,league,home,away,limit,o_over,o_under,scraped_at
 2026-03-08,Bundesliga,Erlangen,Minden,55.5,1.58,1.97,2026-03-07T08:48:40Z
 2026-03-08,Bundesliga,Erlangen,Minden,56.5,1.75,1.76,2026-03-07T08:48:40Z
 2026-03-08,Bundesliga,Erlangen,Minden,57.5,1.94,1.6,2026-03-07T08:48:40Z
+2026-03-08,Bundesliga,Erlangen,Minden,55.5,1.56,2.01,2026-03-07T14:46:17Z
+2026-03-08,Bundesliga,Erlangen,Minden,56.5,1.72,1.79,2026-03-07T14:46:17Z
+2026-03-08,Bundesliga,Erlangen,Minden,57.5,1.9,1.63,2026-03-07T14:46:17Z
 2026-03-08,Bundesliga,HSG Wetzlar,MT Melsungen,54.5,1.58,1.97,2026-03-05T20:57:36Z
 2026-03-08,Bundesliga,HSG Wetzlar,MT Melsungen,55.5,1.74,1.77,2026-03-05T20:57:36Z
 2026-03-08,Bundesliga,HSG Wetzlar,MT Melsungen,56.5,1.94,1.6,2026-03-05T20:57:36Z
@@ -90,10 +105,14 @@ date,league,home,away,limit,o_over,o_under,scraped_at
 2026-03-08,Bundesliga,HSG Wetzlar,MT Melsungen,54.5,1.53,2.06,2026-03-07T08:48:40Z
 2026-03-08,Bundesliga,HSG Wetzlar,MT Melsungen,55.5,1.67,1.84,2026-03-07T08:48:40Z
 2026-03-08,Bundesliga,HSG Wetzlar,MT Melsungen,56.5,1.86,1.66,2026-03-07T08:48:40Z
+2026-03-08,Bundesliga,HSG Wetzlar,MT Melsungen,54.5,1.52,2.07,2026-03-07T14:46:17Z
+2026-03-08,Bundesliga,HSG Wetzlar,MT Melsungen,55.5,1.67,1.85,2026-03-07T14:46:17Z
+2026-03-08,Bundesliga,HSG Wetzlar,MT Melsungen,56.5,1.85,1.67,2026-03-07T14:46:17Z
 2026-03-08,Bundesliga,RN Löwen,Bergischer,59.5,1.75,1.76,2026-03-05T20:57:36Z
 2026-03-08,Bundesliga,RN Löwen,Bergischer,59.5,1.66,1.86,2026-03-07T08:48:40Z
 2026-03-08,Bundesliga,RN Löwen,Bergischer,60.5,1.84,1.68,2026-03-07T08:48:40Z
 2026-03-08,Bundesliga,RN Löwen,Bergischer,61.5,2.05,1.54,2026-03-07T08:48:40Z
+2026-03-08,Bundesliga,RN Löwen,Bergischer,61.5,2.04,1.54,2026-03-07T14:46:17Z
 2026-03-08,Bundesliga,SC Magdeburg,Hannover-Burgdorf,58.5,1.59,1.96,2026-03-05T20:57:36Z
 2026-03-08,Bundesliga,SC Magdeburg,Hannover-Burgdorf,59.5,1.74,1.77,2026-03-05T20:57:36Z
 2026-03-08,Bundesliga,SC Magdeburg,Hannover-Burgdorf,60.5,1.93,1.61,2026-03-05T20:57:36Z
@@ -103,3 +122,5 @@ date,league,home,away,limit,o_over,o_under,scraped_at
 2026-03-08,Bundesliga,SC Magdeburg,Hannover-Burgdorf,58.5,1.55,2.02,2026-03-07T08:48:40Z
 2026-03-08,Bundesliga,SC Magdeburg,Hannover-Burgdorf,59.5,1.7,1.81,2026-03-07T08:48:40Z
 2026-03-08,Bundesliga,SC Magdeburg,Hannover-Burgdorf,60.5,1.88,1.64,2026-03-07T08:48:40Z
+2026-03-08,Bundesliga,SC Magdeburg,Hannover-Burgdorf,58.5,1.56,2.01,2026-03-07T14:46:17Z
+2026-03-08,Bundesliga,SC Magdeburg,Hannover-Burgdorf,60.5,1.89,1.64,2026-03-07T14:46:17Z

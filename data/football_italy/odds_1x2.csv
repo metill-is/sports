@@ -27,6 +27,7 @@ date,league,home,away,o_home,o_draw,o_away,scraped_at
 2026-03-07,Serie A,Atalanta,Udinese,1.61,3.55,4.82,2026-03-06T14:59:16Z
 2026-03-07,Serie A,Atalanta,Udinese,1.61,3.55,4.83,2026-03-06T20:49:20Z
 2026-03-07,Serie A,Atalanta,Udinese,1.65,3.52,4.56,2026-03-07T08:48:40Z
+2026-03-07,Serie A,Atalanta,Udinese,1.64,3.51,4.66,2026-03-07T14:46:16Z
 2026-03-07,Serie A,Cagliari,Como,4.9,3.62,1.59,2026-03-04T07:07:45Z
 2026-03-07,Serie A,Cagliari,Como,4.98,3.64,1.58,2026-03-05T15:06:24Z
 2026-03-07,Serie A,Cagliari,Como,4.88,3.63,1.59,2026-03-05T20:57:36Z
@@ -37,12 +38,14 @@ date,league,home,away,o_home,o_draw,o_away,scraped_at
 2026-03-07,Serie A,Juventus,Pisa,1.21,5.44,10.14,2026-03-04T07:07:45Z
 2026-03-07,Serie A,Juventus,Pisa,1.21,5.46,10.23,2026-03-06T08:59:19Z
 2026-03-07,Serie A,Juventus,Pisa,1.19,5.64,11.12,2026-03-07T08:48:40Z
+2026-03-07,Serie A,Juventus,Pisa,1.18,5.75,11.63,2026-03-07T14:46:16Z
 2026-03-07,Serie B,Avellino,Padova,2.1,2.83,3.23,2026-03-04T07:07:45Z
 2026-03-07,Serie B,Avellino,Padova,2.04,2.75,3.5,2026-03-05T15:06:24Z
 2026-03-07,Serie B,Modena,Cesena,1.71,3.2,4.14,2026-03-04T07:07:45Z
 2026-03-07,Serie B,Modena,Cesena,1.74,3.12,4.09,2026-03-04T08:56:38Z
 2026-03-07,Serie B,Modena,Cesena,1.73,3.2,3.98,2026-03-04T17:50:44Z
 2026-03-07,Serie B,Modena,Cesena,1.74,3.04,4.25,2026-03-05T15:06:24Z
+2026-03-07,Serie B,Modena,Cesena,1.83,3.01,3.85,2026-03-07T14:46:16Z
 2026-03-07,Serie B,Spezia,Monza,3.57,3.02,1.89,2026-03-04T07:07:45Z
 2026-03-07,Serie B,Spezia,Monza,3.46,3.03,1.92,2026-03-04T17:50:44Z
 2026-03-07,Serie B,Spezia,Monza,3.36,3.03,1.95,2026-03-05T15:06:24Z
@@ -57,8 +60,11 @@ date,league,home,away,o_home,o_draw,o_away,scraped_at
 2026-03-07,Serie B,Venezia,Reggiana,1.31,4.36,6.81,2026-03-05T15:06:24Z
 2026-03-07,Serie B,Venezia,Reggiana,1.28,4.5,7.38,2026-03-06T14:59:16Z
 2026-03-07,Serie B,Venezia,Reggiana,1.25,4.69,7.82,2026-03-07T08:48:40Z
+2026-03-07,Serie B,Venezia,Reggiana,1.24,4.79,8.02,2026-03-07T14:46:16Z
 2026-03-08,Serie A,Bologna,Verona,1.51,3.68,5.63,2026-03-06T20:49:20Z
 2026-03-08,Serie A,Bologna,Verona,1.52,3.68,5.59,2026-03-07T08:48:40Z
+2026-03-08,Serie A,Bologna,Verona,1.52,3.66,5.65,2026-03-07T14:46:16Z
+2026-03-08,Serie A,Fiorentina,Parma,1.66,3.39,4.71,2026-03-07T14:46:16Z
 2026-03-08,Serie A,Lecce,Cremonese,2.07,2.84,3.63,2026-03-04T07:07:45Z
 2026-03-08,Serie A,Lecce,Cremonese,2.05,2.83,3.71,2026-03-05T15:06:24Z
 2026-03-08,Serie A,Lecce,Cremonese,2.05,2.82,3.74,2026-03-06T08:59:19Z
@@ -71,6 +77,7 @@ date,league,home,away,o_home,o_draw,o_away,scraped_at
 2026-03-08,Serie B,Catanzaro,Empoli,2.11,3.03,2.98,2026-03-05T15:06:24Z
 2026-03-08,Serie B,Frosinone,Sampdoria,1.83,3.3,3.44,2026-03-04T07:07:45Z
 2026-03-08,Serie B,Frosinone,Sampdoria,1.77,3.3,3.66,2026-03-05T15:06:24Z
+2026-03-08,Serie B,Frosinone,Sampdoria,1.82,3.25,3.56,2026-03-07T14:46:16Z
 2026-03-08,Serie B,Mantova,SS Juve Stabia,2.55,2.99,2.42,2026-03-04T07:07:45Z
 2026-03-08,Serie B,Mantova,SS Juve Stabia,2.47,3.03,2.47,2026-03-04T17:50:44Z
 2026-03-08,Serie B,Mantova,SS Juve Stabia,2.28,3.05,2.67,2026-03-05T15:06:24Z
