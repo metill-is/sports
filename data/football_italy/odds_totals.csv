@@ -47,6 +47,9 @@ date,league,home,away,limit,o_over,o_under,scraped_at
 2026-03-07,Serie A,Atalanta,Udinese,1.5,1.23,3.05,2026-03-06T14:59:16Z
 2026-03-07,Serie A,Atalanta,Udinese,2.5,1.76,1.75,2026-03-06T14:59:16Z
 2026-03-07,Serie A,Atalanta,Udinese,3.5,2.79,1.28,2026-03-06T14:59:16Z
+2026-03-07,Serie A,Atalanta,Udinese,1.5,1.21,3.21,2026-03-07T08:48:40Z
+2026-03-07,Serie A,Atalanta,Udinese,2.5,1.69,1.82,2026-03-07T08:48:40Z
+2026-03-07,Serie A,Atalanta,Udinese,3.5,2.63,1.32,2026-03-07T08:48:40Z
 2026-03-07,Serie A,Cagliari,Como,1.5,1.26,2.87,2026-03-04T08:56:38Z
 2026-03-07,Serie A,Cagliari,Como,1.5,1.27,2.86,2026-03-04T13:26:24Z
 2026-03-07,Serie A,Cagliari,Como,2.5,1.83,1.68,2026-03-04T08:56:38Z
@@ -60,9 +63,13 @@ date,league,home,away,limit,o_over,o_under,scraped_at
 2026-03-07,Serie A,Juventus,Pisa,3.5,2.32,1.41,2026-03-04T07:07:45Z
 2026-03-07,Serie A,Juventus,Pisa,2.5,1.53,2.06,2026-03-05T15:06:24Z
 2026-03-07,Serie A,Juventus,Pisa,3.5,2.3,1.42,2026-03-05T15:06:24Z
+2026-03-07,Serie A,Juventus,Pisa,2.5,1.52,2.08,2026-03-07T08:48:40Z
+2026-03-07,Serie A,Juventus,Pisa,3.5,2.28,1.43,2026-03-07T08:48:40Z
 2026-03-07,Serie B,Avellino,Padova,1.5,1.32,2.6,2026-03-04T07:07:45Z
 2026-03-07,Serie B,Avellino,Padova,2.5,2.04,1.54,2026-03-04T07:07:45Z
 2026-03-07,Serie B,Avellino,Padova,1.5,1.32,2.62,2026-03-05T15:06:24Z
+2026-03-07,Serie B,Avellino,Padova,1.5,1.33,2.58,2026-03-07T08:48:40Z
+2026-03-07,Serie B,Avellino,Padova,2.5,2.07,1.52,2026-03-07T08:48:40Z
 2026-03-07,Serie B,Modena,Cesena,1.5,1.22,3.12,2026-03-04T13:26:24Z
 2026-03-07,Serie B,Modena,Cesena,1.5,1.23,3.06,2026-03-04T08:56:38Z
 2026-03-07,Serie B,Modena,Cesena,1.5,1.25,2.96,2026-03-04T07:07:45Z
@@ -88,13 +95,18 @@ date,league,home,away,limit,o_over,o_under,scraped_at
 2026-03-07,Serie B,Sudtirol,Virtus Entella,1.5,1.34,2.54,2026-03-04T14:59:35Z
 2026-03-07,Serie B,Sudtirol,Virtus Entella,2.5,2.11,1.5,2026-03-04T14:59:35Z
 2026-03-07,Serie B,Sudtirol,Virtus Entella,1.5,1.33,2.57,2026-03-04T17:50:44Z
+2026-03-07,Serie B,Sudtirol,Virtus Entella,1.5,1.33,2.56,2026-03-07T08:48:40Z
 2026-03-07,Serie B,Venezia,Reggiana,2.5,1.6,1.95,2026-03-04T07:07:45Z
 2026-03-07,Serie B,Venezia,Reggiana,3.5,2.44,1.37,2026-03-04T07:07:45Z
 2026-03-07,Serie B,Venezia,Reggiana,3.5,2.45,1.37,2026-03-04T17:50:44Z
 2026-03-07,Serie B,Venezia,Reggiana,3.5,2.46,1.36,2026-03-05T15:06:24Z
+2026-03-07,Serie B,Venezia,Reggiana,2.5,1.54,2.04,2026-03-07T08:48:40Z
+2026-03-07,Serie B,Venezia,Reggiana,3.5,2.32,1.41,2026-03-07T08:48:40Z
 2026-03-08,Serie A,Bologna,Verona,1.5,1.27,2.84,2026-03-06T20:49:20Z
 2026-03-08,Serie A,Bologna,Verona,2.5,1.86,1.66,2026-03-06T20:49:20Z
 2026-03-08,Serie A,Bologna,Verona,3.5,3.01,1.24,2026-03-06T20:49:20Z
+2026-03-08,Serie A,Bologna,Verona,1.5,1.28,2.81,2026-03-07T08:48:40Z
+2026-03-08,Serie A,Bologna,Verona,2.5,1.87,1.65,2026-03-07T08:48:40Z
 2026-03-08,Serie A,Lecce,Cremonese,1.5,1.45,2.22,2026-03-04T07:07:45Z
 2026-03-08,Serie A,Lecce,Cremonese,2.5,2.38,1.39,2026-03-04T07:07:45Z
 2026-03-08,Serie A,Lecce,Cremonese,1.5,1.46,2.2,2026-03-05T15:06:24Z

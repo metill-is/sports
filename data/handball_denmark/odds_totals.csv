@@ -9,6 +9,9 @@ date,league,home,away,limit,o_over,o_under,scraped_at
 2026-03-07,Håndboldligaen,Fredericia,Sonderjyske,62.5,1.95,1.6,2026-03-05T15:06:24Z
 2026-03-07,Håndboldligaen,Fredericia,Sonderjyske,60.5,1.6,1.95,2026-03-06T08:59:19Z
 2026-03-07,Håndboldligaen,Fredericia,Sonderjyske,62.5,1.94,1.6,2026-03-06T08:59:19Z
+2026-03-07,Håndboldligaen,Fredericia,Sonderjyske,60.5,1.62,1.91,2026-03-07T08:48:40Z
+2026-03-07,Håndboldligaen,Fredericia,Sonderjyske,61.5,1.78,1.73,2026-03-07T08:48:40Z
+2026-03-07,Håndboldligaen,Fredericia,Sonderjyske,62.5,1.97,1.58,2026-03-07T08:48:40Z
 2026-03-07,Håndboldligaen,Mors,Holstebro,62.5,1.61,1.92,2026-03-05T15:06:24Z
 2026-03-07,Håndboldligaen,Mors,Holstebro,63.5,1.76,1.75,2026-03-05T15:06:24Z
 2026-03-07,Håndboldligaen,Mors,Holstebro,64.5,1.96,1.59,2026-03-05T15:06:24Z
@@ -19,6 +22,9 @@ date,league,home,away,limit,o_over,o_under,scraped_at
 2026-03-07,Håndboldligaen,Mors,Holstebro,63.5,1.78,1.73,2026-03-06T14:59:16Z
 2026-03-07,Håndboldligaen,Mors,Holstebro,64.5,1.97,1.58,2026-03-06T14:59:16Z
 2026-03-07,Håndboldligaen,Mors,Holstebro,62.5,1.63,1.89,2026-03-06T20:49:20Z
+2026-03-07,Håndboldligaen,Mors,Holstebro,62.5,1.66,1.86,2026-03-07T08:48:40Z
+2026-03-07,Håndboldligaen,Mors,Holstebro,63.5,1.83,1.69,2026-03-07T08:48:40Z
+2026-03-07,Håndboldligaen,Mors,Holstebro,64.5,2.03,1.55,2026-03-07T08:48:40Z
 2026-03-07,Håndboldligaen,Ribe-Esbjerg,Aalborg,62.5,1.6,1.94,2026-03-05T15:06:24Z
 2026-03-07,Håndboldligaen,Ribe-Esbjerg,Aalborg,63.5,1.75,1.75,2026-03-05T15:06:24Z
 2026-03-07,Håndboldligaen,Ribe-Esbjerg,Aalborg,64.5,1.94,1.6,2026-03-05T15:06:24Z
@@ -29,12 +35,22 @@ date,league,home,away,limit,o_over,o_under,scraped_at
 2026-03-07,Håndboldligaen,Ribe-Esbjerg,Aalborg,61.5,1.54,2.03,2026-03-06T14:59:16Z
 2026-03-07,Håndboldligaen,Ribe-Esbjerg,Aalborg,62.5,1.69,1.83,2026-03-06T14:59:16Z
 2026-03-07,Håndboldligaen,Ribe-Esbjerg,Aalborg,63.5,1.86,1.66,2026-03-06T14:59:16Z
+2026-03-07,Håndboldligaen,Ribe-Esbjerg,Aalborg,61.5,1.57,1.98,2026-03-07T08:48:40Z
+2026-03-07,Håndboldligaen,Ribe-Esbjerg,Aalborg,62.5,1.72,1.79,2026-03-07T08:48:40Z
+2026-03-07,Håndboldligaen,Ribe-Esbjerg,Aalborg,63.5,1.9,1.63,2026-03-07T08:48:40Z
 2026-03-07,Håndboldligaen,Skanderborg AGF,Nordsjaelland,61.5,1.75,1.75,2026-03-05T15:06:24Z
 2026-03-07,Håndboldligaen,Skanderborg AGF,Nordsjaelland,61.5,1.75,1.76,2026-03-06T08:59:19Z
+2026-03-07,Håndboldligaen,Skanderborg AGF,Nordsjaelland,61.5,1.78,1.73,2026-03-07T08:48:40Z
 2026-03-08,Håndboldligaen,HOJ,Grindsted,59.5,1.75,1.75,2026-03-05T20:57:36Z
+2026-03-08,Håndboldligaen,HOJ,Grindsted,58.5,1.57,1.99,2026-03-07T08:48:40Z
+2026-03-08,Håndboldligaen,HOJ,Grindsted,59.5,1.72,1.79,2026-03-07T08:48:40Z
+2026-03-08,Håndboldligaen,HOJ,Grindsted,60.5,1.91,1.63,2026-03-07T08:48:40Z
 2026-03-08,Håndboldligaen,Ringsted,GOG,62.5,1.61,1.93,2026-03-06T08:59:19Z
 2026-03-08,Håndboldligaen,Ringsted,GOG,63.5,1.76,1.75,2026-03-06T08:59:19Z
 2026-03-08,Håndboldligaen,Ringsted,GOG,64.5,1.95,1.6,2026-03-06T08:59:19Z
 2026-03-08,Håndboldligaen,Ringsted,GOG,62.5,1.6,1.94,2026-03-06T20:49:20Z
 2026-03-08,Håndboldligaen,Ringsted,GOG,63.5,1.75,1.76,2026-03-06T20:49:20Z
 2026-03-08,Håndboldligaen,Ringsted,GOG,64.5,1.94,1.6,2026-03-06T20:49:20Z
+2026-03-08,Håndboldligaen,Ringsted,GOG,61.5,1.57,1.98,2026-03-07T08:48:40Z
+2026-03-08,Håndboldligaen,Ringsted,GOG,62.5,1.73,1.78,2026-03-07T08:48:40Z
+2026-03-08,Håndboldligaen,Ringsted,GOG,63.5,1.9,1.63,2026-03-07T08:48:40Z
