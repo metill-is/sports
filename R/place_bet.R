@@ -142,8 +142,8 @@ check_live_odds <- function(session, bet, actual_odds) {
     amount <- recalculate_kelly_amount(
       bet$probability, actual_odds, bet$odds, bet$bet_amount
     )
-    if (amount < 1) {
-      cli_alert_warning("Kelly amount < 1 kr at live odds \u2014 skipping.")
+    if (amount < 200) {
+      cli_alert_warning("Kelly amount {amount} kr < 200 kr minimum at live odds \u2014 skipping.")
       clear_bet_slip(session)
       return(list(status = "skipped", reason = "kelly_too_small", actual_odds = actual_odds))
     }
