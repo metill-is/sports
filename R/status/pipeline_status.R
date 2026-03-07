@@ -37,8 +37,48 @@ quick_mode <- "--quick" %in% args
 now <- Sys.time()
 today <- Sys.Date()
 
+# Auto-sync livesport-data (need fresh results for settleable check)
+ls_path <- file.path(dirname(sports_dir), "livesport-data")
+if (!quick_mode && dir.exists(file.path(ls_path, ".git"))) {
+  system2("git", c("-C", ls_path, "pull", "--ff-only", "-q"),
+          stdout = FALSE, stderr = FALSE)
+}
+
 msg <- function(...) message(sprintf(...))
 
+# ── Livesport-data direct reader (bypasses step_data processing) ─────────────
+
+ls_data_dir <- file.path(dirname(sports_dir), "livesport-data", "data")
+
+parse_ls_date <- function(x) {
+  m <- regmatches(x, regexpr("^\\d{2}\\.\\d{2}\\.", x))
+  day <- as.integer(substr(m, 1, 2))
+  mon <- as.integer(substr(m, 4, 5))
+  cur_yr <- as.integer(format(Sys.Date(), "%Y"))
+  cur_mon <- as.integer(format(Sys.Date(), "%m"))
+  yr <- ifelse(mon >= 8 & cur_mon <= 7, cur_yr - 1L, cur_yr)
+  as.Date(sprintf("%04d-%02d-%02d", yr, mon, day))
+}
+
+load_livesport_results <- function(sport, country, sex) {
+  ls_sport <- if (sport == "football") "soccer" else sport
+  base <- file.path(ls_data_dir, ls_sport, country, sex)
+  if (!dir.exists(base)) return(NULL)
+  divs <- list.dirs(base, full.names = TRUE, recursive = FALSE)
+  results <- lapply(divs, function(d) {
+    f <- file.path(d, "results.csv")
+    if (!file.exists(f)) return(NULL)
+    tryCatch({
+      r <- read_csv(f, show_col_types = FALSE,
+                    col_types = cols(home_score = "i", away_score = "i"))
+      if (!all(c("date", "home", "away", "home_score", "away_score") %in% names(r))) return(NULL)
+      r |>
+        filter(!is.na(home_score), !is.na(away_score)) |>
+        mutate(date = parse_ls_date(date))
+    }, error = function(e) NULL)
+  })
+  bind_rows(Filter(Negate(is.null), results))
+}
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # 1. Recommendations
@@ -155,7 +195,7 @@ check_settleable <- function() {
 
     sexes <- if (is.list(lcfg$sex)) unlist(lcfg$sex) else lcfg$sex
 
-    # Load results for each sex
+    # Load results for each sex (processed data.csv + fresh livesport-data)
     all_results <- NULL
     for (sex in sexes) {
       for (candidate in c("data.csv", "results.csv")) {
@@ -179,6 +219,19 @@ check_settleable <- function() {
           select(date, home, away, home_score, away_score, sex)
         all_results <- bind_rows(all_results, d)
         break
+      }
+
+      # Supplement: fresh livesport-data (may have newer results not yet processed)
+      ls_results <- tryCatch(
+        load_livesport_results(lcfg$sport, lcfg$country, sex),
+        error = function(e) NULL
+      )
+      if (!is.null(ls_results) && nrow(ls_results) > 0) {
+        ls_results <- ls_results |>
+          mutate(sex = sex) |>
+          select(date, home, away, home_score, away_score, sex)
+        all_results <- bind_rows(all_results, ls_results) |>
+          distinct(date, home, away, sex, .keep_all = TRUE)
       }
     }
 

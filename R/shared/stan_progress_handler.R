@@ -37,8 +37,8 @@ stan_progress_handler <- function(width = 25, tracker = NULL) {
       make_bar <- function(frac, w = width) {
         filled <- round(w * frac)
         paste0(
-          strrep("\u2588", filled),
-          strrep("\u2591", w - filled)
+          strrep("#", filled),
+          strrep("-", w - filled)
         )
       }
 

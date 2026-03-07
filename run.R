@@ -57,7 +57,14 @@ arg_sync     <- has_flag("--sync")
 
 # ── Sync upstream data repos ────────────────────────────────────────────────
 
-if (arg_sync) {
+# Auto-sync when data or settle steps are requested (need fresh upstream data),
+# or when --sync is explicitly passed
+needs_sync <- arg_sync || {
+  requested <- if (!is.null(arg_step)) strsplit(arg_step, ",")[[1]] else c("data", "settle")
+  any(c("data", "settle") %in% requested)
+}
+
+if (needs_sync) {
   sync_repos <- list(
     list(name = "livesport-data", path = file.path(dirname(sports_dir), "livesport-data")),
     list(name = "lengjan-odds",   path = file.path(dirname(sports_dir), "lengjan-odds"))
@@ -100,7 +107,7 @@ if (has_flag("--help")) {
   cat("  --sex <sex>        Override: male or female\n")
   cat("  --iter <n>         Override sampling iterations\n")
   cat("  --no-plots         Skip plot generation (posterior CSV still written)\n")
-  cat("  --sync             Git-pull livesport-data and lengjan-odds first\n")
+  cat("  --sync             Git-pull livesport-data and lengjan-odds (auto for data/settle)\n")
   cat("  --dry-run          Print plan, don't execute\n")
   quit(status = 0)
 }
@@ -224,9 +231,9 @@ if (arg_due) {
 # ── Dry-run: print plan and exit ──────────────────────────────────────────────
 
 cat("\n")
-cat(strrep("\u2500", 60), "\n")
+cat(strrep("-", 60), "\n")
 cat(" Sports Pipeline", if (arg_dry_run) " [DRY RUN]" else "", "\n")
-cat(strrep("\u2500", 60), "\n\n")
+cat(strrep("-", 60), "\n\n")
 
 cat("Steps:", paste(steps, collapse = ", "), "\n")
 if (!is.null(iter_override)) cat("Iterations override:", iter_override, "\n")

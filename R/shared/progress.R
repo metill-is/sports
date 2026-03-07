@@ -103,8 +103,8 @@ create_tracker <- function(step_keys, cache = list()) {
     width <- 20
     filled <- round(width * done / total)
     bar <- paste0(
-      strrep("\u2588", filled),
-      strrep("\u2591", width - filled)
+      strrep("#", filled),
+      strrep("-", width - filled)
     )
     pct <- round(100 * done / total)
     paste0("[", bar, "] ", pct, "%")
@@ -147,7 +147,7 @@ create_tracker <- function(step_keys, cache = list()) {
       }
     }
 
-    icon <- if (status == "OK") "\u2713" else "\u2717"
+    icon <- if (status == "OK") "OK" else "FAIL"
     cat(sprintf(" %s %s\n", icon, format_duration(step_elapsed)))
 
     # Progress bar + ETA
@@ -169,7 +169,7 @@ create_tracker <- function(step_keys, cache = list()) {
     )
 
     cat("\n")
-    cat(strrep("\u2500", 60))
+    cat(strrep("-", 60))
     cat("\n")
 
     n_ok <- sum(vapply(env$results, function(r) r$status == "OK", logical(1)))
@@ -189,7 +189,7 @@ create_tracker <- function(step_keys, cache = list()) {
       }
     }
 
-    cat(strrep("\u2500", 60))
+    cat(strrep("-", 60))
     cat("\n")
   }
 

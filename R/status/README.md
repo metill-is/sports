@@ -7,7 +7,8 @@ JSON endpoints for the Raycast betting pipeline monitor extension.
 ### `pipeline_status.R` — Full pipeline status
 
 Returns a single JSON object with all monitoring signals. Designed to be polled
-every ~15 minutes by a Raycast menu bar extension.
+every ~15 minutes by a Raycast menu bar extension. Auto-syncs `livesport-data`
+(git pull) in full mode to detect settleable bets from fresh results.
 
 ```bash
 cd Sports/
@@ -102,8 +103,9 @@ Rscript R/status/pipeline_status.R --quick       # Skip settleable check (~0.8s)
 
 ### `settle_now.R` — Run settlement
 
-Settles all unsettled bets that have results available. Writes to `bets_log.csv`
-and Parquet store.
+Settles all unsettled bets that have results available. Auto-syncs `livesport-data`
+(git pull) and reads results directly from it, so settlement works even without
+running `step_data` first. Writes to `bets_log.csv` and Parquet store.
 
 ```bash
 Rscript R/status/settle_now.R                           # Settle all leagues
