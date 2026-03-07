@@ -40,7 +40,9 @@ today <- Sys.Date()
 # Auto-sync livesport-data (need fresh results for settleable check)
 ls_path <- file.path(dirname(sports_dir), "livesport-data")
 if (!quick_mode && dir.exists(file.path(ls_path, ".git"))) {
-  system2("git", c("-C", ls_path, "pull", "--ff-only", "-q"),
+  branch <- trimws(system2("git", c("-C", ls_path, "rev-parse", "--abbrev-ref", "HEAD"), stdout = TRUE))
+  system2("git", c("-C", ls_path, "fetch", "origin", "-q"), stdout = FALSE, stderr = FALSE)
+  system2("git", c("-C", ls_path, "reset", "--hard", paste0("origin/", branch)),
           stdout = FALSE, stderr = FALSE)
 }
 

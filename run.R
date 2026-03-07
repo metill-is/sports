@@ -72,7 +72,10 @@ if (needs_sync) {
   for (repo in sync_repos) {
     if (dir.exists(file.path(repo$path, ".git"))) {
       cat(sprintf("Syncing %s... ", repo$name))
-      res <- system2("git", c("-C", repo$path, "pull", "--ff-only", "-q"), stdout = TRUE, stderr = TRUE)
+      branch <- trimws(system2("git", c("-C", repo$path, "rev-parse", "--abbrev-ref", "HEAD"), stdout = TRUE))
+      system2("git", c("-C", repo$path, "fetch", "origin", "-q"), stdout = TRUE, stderr = TRUE)
+      res <- system2("git", c("-C", repo$path, "reset", "--hard", paste0("origin/", branch)),
+                      stdout = TRUE, stderr = TRUE)
       status <- attr(res, "status")
       if (is.null(status) || status == 0L) {
         cat("OK\n")

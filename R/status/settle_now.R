@@ -36,7 +36,9 @@ dry_run <- "--dry-run" %in% args
 # Auto-sync livesport-data (settlement needs fresh results)
 ls_path <- file.path(dirname(sports_dir), "livesport-data")
 if (dir.exists(file.path(ls_path, ".git"))) {
-  res <- system2("git", c("-C", ls_path, "pull", "--ff-only", "-q"),
+  branch <- trimws(system2("git", c("-C", ls_path, "rev-parse", "--abbrev-ref", "HEAD"), stdout = TRUE))
+  system2("git", c("-C", ls_path, "fetch", "origin", "-q"), stdout = TRUE, stderr = TRUE)
+  res <- system2("git", c("-C", ls_path, "reset", "--hard", paste0("origin/", branch)),
                   stdout = TRUE, stderr = TRUE)
   status <- attr(res, "status")
   if (is.null(status) || status == 0L) {
