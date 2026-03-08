@@ -64,6 +64,7 @@ date,league,home,away,o_home,o_draw,o_away,scraped_at
 2026-03-08,Serie A,AC Milan,Inter,3.25,2.98,2.14,2026-03-07T19:58:05Z
 2026-03-08,Serie A,AC Milan,Inter,3.12,2.97,2.21,2026-03-08T08:47:59Z
 2026-03-08,Serie A,AC Milan,Inter,3.12,2.94,2.23,2026-03-08T11:02:10Z
+2026-03-08,Serie A,AC Milan,Inter,3.09,2.92,2.25,2026-03-08T14:42:00Z
 2026-03-08,Serie A,Bologna,Verona,1.51,3.68,5.63,2026-03-06T20:49:20Z
 2026-03-08,Serie A,Bologna,Verona,1.52,3.68,5.59,2026-03-07T08:48:40Z
 2026-03-08,Serie A,Bologna,Verona,1.52,3.66,5.65,2026-03-07T14:46:16Z
@@ -84,6 +85,7 @@ date,league,home,away,o_home,o_draw,o_away,scraped_at
 2026-03-08,Serie A,Genoa,Roma,4.11,2.96,1.89,2026-03-08T11:02:10Z
 2026-03-08,Serie A,Genoa,Roma,4.05,2.98,1.89,2026-03-08T11:56:07Z
 2026-03-08,Serie A,Genoa,Roma,4.02,2.98,1.9,2026-03-08T12:18:45Z
+2026-03-08,Serie A,Genoa,Roma,3.93,2.98,1.92,2026-03-08T14:42:00Z
 2026-03-08,Serie A,Lecce,Cremonese,2.07,2.84,3.63,2026-03-04T07:07:45Z
 2026-03-08,Serie A,Lecce,Cremonese,2.05,2.83,3.71,2026-03-05T15:06:24Z
 2026-03-08,Serie A,Lecce,Cremonese,2.05,2.82,3.74,2026-03-06T08:59:19Z
@@ -116,10 +118,14 @@ date,league,home,away,o_home,o_draw,o_away,scraped_at
 2026-03-08,Serie B,Pescara Calcio,Bari,2.03,2.97,3.23,2026-03-08T08:47:59Z
 2026-03-08,Serie B,Pescara Calcio,Bari,2.07,2.89,3.21,2026-03-08T11:02:10Z
 2026-03-09,Serie A,Lazio,Sassuolo,2.09,3.07,3.27,2026-03-08T11:56:07Z
+2026-03-13,Serie A,Torino,Parma,2.03,NA,3.52,2026-03-08T14:42:00Z
 2026-03-13,Serie B,Modena,Spezia,1.67,3.25,4.27,2026-03-07T08:48:40Z
 2026-03-13,Serie B,Modena,Spezia,1.64,3.28,4.47,2026-03-07T19:58:05Z
 2026-03-13,Serie B,Modena,Spezia,1.61,3.33,4.59,2026-03-08T08:47:59Z
+2026-03-14,Serie A,Inter,Atalanta,1.51,3.94,5.14,2026-03-08T14:42:00Z
 2026-03-14,Serie B,Monza,Palermo,2.06,3.04,3.08,2026-03-08T08:47:59Z
 2026-03-14,Serie B,Padova,Catanzaro,2.75,2.95,2.28,2026-03-08T08:47:59Z
+2026-03-14,Serie B,Padova,Catanzaro,2.73,2.9,2.34,2026-03-08T14:42:00Z
 2026-03-14,Serie B,SS Juve Stabia,Carrarese,2.06,3.03,3.08,2026-03-08T08:47:59Z
 2026-03-14,Serie B,Sampdoria,Venezia,3.46,3.17,1.87,2026-03-08T08:47:59Z
+2026-03-14,Serie B,Sampdoria,Venezia,3.73,2.9,1.9,2026-03-08T14:42:00Z
