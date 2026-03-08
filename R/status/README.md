@@ -191,6 +191,43 @@ cd Sports/ && Rscript run.R --active --step data,fit,results,bet
 - Git repos at `../livesport-data/` and `../lengjan-odds/` (optional — freshness will be null)
 - `gh` CLI for CI status checks (optional — called by extension, not R scripts)
 
+## Fit Progress File
+
+When `run.R` executes fit steps, it writes live progress to
+`~/.cache/raycast-pipeline/fit-progress.json`. This lets Raycast render
+per-league fit progress bars without parsing stderr.
+
+Written atomically (`.tmp` + `file.rename`) — safe to poll at any frequency.
+Throttled to at most one write per 5 seconds during Stan sampling.
+
+### JSON contract
+
+| Status | When | Key fields |
+|--------|------|------------|
+| `starting` | Before first league | `leagues`, `total_leagues`, `started_at` |
+| `fitting` | During Stan sampling | `league`, `league_index`, `total_leagues`, `phase`, `iteration`, `total_iterations`, `completed_leagues` |
+| `complete` | All fits done | `total_leagues`, `started_at`, `finished_at`, `completed_leagues` |
+| `error` | Fit crashed | `error`, `league`, `completed_leagues` |
+
+**`phase`** values: `"starting"` (step just began), `"warmup"`, `"sampling"`, `"done"` (step finished).
+
+**`chain`** is always `null` — cmdstanr's progressr reports aggregate iteration counts, not per-chain.
+
+**`completed_leagues`**: Array of `{ league, status, duration }` objects.
+
+### Lifecycle
+
+1. `init_fit_progress()` writes `"starting"` status with league list
+2. `start_step()` writes `"fitting"` with `phase: "starting"` per league
+3. Stan handler writes `"fitting"` with iteration counts (throttled)
+4. `end_step()` appends to `completed_leagues`, writes `"fitting"` with `phase: "done"`
+5. `finish_fit_progress()` writes `"complete"` (or `"error"` via `on.exit`)
+
+### No fit progress when
+
+- `--step` doesn't include `fit`
+- `--dry-run` exits before execution
+
 ## File locations
 
 | File | Role | Updated by |
@@ -201,3 +238,4 @@ cd Sports/ && Rscript run.R --active --step data,fit,results,bet
 | `config/leagues.yml` | League registry | Manual |
 | `*/results/*/fit.rds` | Stan model fits | `run.R --step fit` |
 | `store/` | Hive-partitioned Parquet mirror | `settle_now.R`, `step_fit.R`, `lengjan-bets` |
+| `~/.cache/raycast-pipeline/fit-progress.json` | Live fit progress | `run.R --step fit` (transient) |

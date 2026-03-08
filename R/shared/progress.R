@@ -1,14 +1,17 @@
 #### Pipeline Progress Tracker ####
 #
 # Compact progress display with timing cache and ETA estimation.
+# Optionally writes fit progress to JSON for external consumers (Raycast).
 #
 # Usage:
 #   cache <- load_timing_cache("config/timing_cache.json")
-#   tracker <- create_tracker(step_keys, cache)
+#   tracker <- create_tracker(step_keys, cache, progress_path = "~/.cache/raycast-pipeline/fit-progress.json")
+#   tracker$init_fit_progress(fit_leagues)  # before fit phase
 #   tracker$start_step("fit: football_england male")
 #   # ... do work ...
 #   tracker$end_step()           # marks success
 #   tracker$end_step("FAILED")   # marks failure
+#   tracker$finish_fit_progress() # after fit phase
 #   tracker$summary()            # print final summary
 #   tracker$save_cache("config/timing_cache.json")
 
@@ -35,6 +38,20 @@ save_timing_cache <- function(cache, path) {
   jsonlite::write_json(cache, path, auto_unbox = TRUE, pretty = TRUE)
 }
 
+#' Atomically write fit progress JSON
+#'
+#' Writes to a .tmp file then renames, preventing partial reads by consumers.
+#' @param data List to serialise as JSON
+#' @param path Destination path
+#' @export
+write_fit_progress <- function(data, path = "~/.cache/raycast-pipeline/fit-progress.json") {
+  path <- path.expand(path)
+  dir.create(dirname(path), showWarnings = FALSE, recursive = TRUE)
+  tmp <- paste0(path, ".tmp")
+  jsonlite::write_json(data, tmp, auto_unbox = TRUE, pretty = FALSE)
+  file.rename(tmp, path)
+}
+
 #' Create a pipeline progress tracker
 #'
 #' @param step_keys Character vector of ordered step keys
@@ -42,7 +59,7 @@ save_timing_cache <- function(cache, path) {
 #' @param cache Named list from load_timing_cache() (optional)
 #' @return List of functions: start_step, end_step, summary, save_cache, get_cache
 #' @export
-create_tracker <- function(step_keys, cache = list()) {
+create_tracker <- function(step_keys, cache = list(), progress_path = NULL) {
   env <- new.env(parent = emptyenv())
   env$step_keys <- step_keys
   env$total <- length(step_keys)
@@ -53,6 +70,12 @@ create_tracker <- function(step_keys, cache = list()) {
   env$step_key <- ""
   env$results <- list()
   env$cache <- cache
+  env$progress_path <- if (!is.null(progress_path)) path.expand(progress_path) else NULL
+  env$fit_leagues <- NULL
+  env$fit_started_at <- NULL
+  env$completed_fits <- list()
+  env$fit_offset <- 0L  # tracker$current value before first fit step
+  env$fit_finished <- FALSE
 
   format_duration <- function(secs) {
     secs <- round(secs)
@@ -121,6 +144,24 @@ create_tracker <- function(step_keys, cache = list()) {
       env$current, env$total, label
     ))
     utils::flush.console()
+
+    # Write fit progress JSON when starting a fit step
+    if (!is.null(env$progress_path) && !is.null(env$fit_leagues) &&
+        startsWith(env$step_key, "fit_")) {
+      fit_idx <- env$current - env$fit_offset
+      write_fit_progress(list(
+        status = "fitting",
+        league = sub("^fit_", "", env$step_key),
+        league_index = fit_idx,
+        total_leagues = length(env$fit_leagues),
+        phase = "starting",
+        iteration = 0L,
+        total_iterations = 0L,
+        started_at = format(env$fit_started_at, "%Y-%m-%dT%H:%M:%S%z"),
+        league_started_at = format(env$step_start, "%Y-%m-%dT%H:%M:%S%z"),
+        completed_leagues = env$completed_fits
+      ), env$progress_path)
+    }
   }
 
   end_step <- function(status = "OK") {
@@ -145,6 +186,28 @@ create_tracker <- function(step_keys, cache = list()) {
       } else {
         0.7 * step_elapsed + 0.3 * old
       }
+    }
+
+    # Track completed fit steps for JSON progress
+    if (!is.null(env$progress_path) && !is.null(env$fit_leagues) &&
+        startsWith(env$step_key, "fit_")) {
+      env$completed_fits[[length(env$completed_fits) + 1]] <- list(
+        league = sub("^fit_", "", env$step_key),
+        status = status,
+        duration = round(step_elapsed, 1)
+      )
+      fit_idx <- env$current - env$fit_offset
+      write_fit_progress(list(
+        status = "fitting",
+        league = sub("^fit_", "", env$step_key),
+        league_index = fit_idx,
+        total_leagues = length(env$fit_leagues),
+        phase = "done",
+        iteration = 0L,
+        total_iterations = 0L,
+        started_at = format(env$fit_started_at, "%Y-%m-%dT%H:%M:%S%z"),
+        completed_leagues = env$completed_fits
+      ), env$progress_path)
     }
 
     icon <- if (status == "OK") "OK" else "FAIL"
@@ -204,10 +267,47 @@ create_tracker <- function(step_keys, cache = list()) {
     total = env$total,
     pipeline_start = env$pipeline_start,
     step_key = env$step_key,
+    step_start = env$step_start,
     step_keys = env$step_keys,
     cache = env$cache,
-    results = env$results
+    results = env$results,
+    fit_leagues = env$fit_leagues,
+    fit_started_at = env$fit_started_at,
+    fit_offset = env$fit_offset,
+    completed_fits = env$completed_fits
   )
+
+  init_fit_progress <- function(fit_leagues) {
+    if (is.null(env$progress_path)) return(invisible(NULL))
+    env$fit_leagues <- fit_leagues
+    env$fit_started_at <- Sys.time()
+    env$completed_fits <- list()
+    env$fit_offset <- env$current  # steps completed before fit phase
+    write_fit_progress(list(
+      status = "starting",
+      leagues = fit_leagues,
+      total_leagues = length(fit_leagues),
+      started_at = format(env$fit_started_at, "%Y-%m-%dT%H:%M:%S%z")
+    ), env$progress_path)
+  }
+
+  finish_fit_progress <- function(error_msg = NULL) {
+    if (is.null(env$progress_path) || is.null(env$fit_leagues)) return(invisible(NULL))
+    if (isTRUE(env$fit_finished)) return(invisible(NULL))  # idempotent
+    env$fit_finished <- TRUE
+    status <- if (!is.null(error_msg)) "error" else "complete"
+    payload <- list(
+      status = status,
+      total_leagues = length(env$fit_leagues),
+      started_at = format(env$fit_started_at, "%Y-%m-%dT%H:%M:%S%z"),
+      finished_at = format(Sys.time(), "%Y-%m-%dT%H:%M:%S%z"),
+      completed_leagues = env$completed_fits
+    )
+    if (!is.null(error_msg)) payload$error <- error_msg
+    write_fit_progress(payload, env$progress_path)
+  }
+
+  get_completed_fits <- function() env$completed_fits
 
   list(
     start_step = start_step,
@@ -215,6 +315,9 @@ create_tracker <- function(step_keys, cache = list()) {
     summary = summary,
     get_cache = get_cache,
     save_cache = save_cache_fn,
-    get_state = get_state
+    get_state = get_state,
+    init_fit_progress = init_fit_progress,
+    finish_fit_progress = finish_fit_progress,
+    get_completed_fits = get_completed_fits
   )
 }

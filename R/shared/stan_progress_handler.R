@@ -12,12 +12,13 @@
 #   progressr::handlers(global = TRUE)
 #   progressr::handlers(stan_progress_handler(tracker = tracker))
 
-stan_progress_handler <- function(width = 25, tracker = NULL) {
+stan_progress_handler <- function(width = 25, tracker = NULL, progress_path = NULL) {
   progressr::make_progression_handler(
     "stan_eta",
     reporter = local({
       start_time <- NULL
       has_tracker <- !is.null(tracker)
+      last_json_write <- NULL
 
       fmt_duration <- function(secs) {
         if (is.na(secs) || secs < 0) return("?")
@@ -125,6 +126,36 @@ stan_progress_handler <- function(width = 25, tracker = NULL) {
               render_combined(state$step, config$max_steps)
             } else {
               render_single(state$step, config$max_steps)
+            }
+
+            # Write iteration-level progress to JSON (throttled to every ~5s)
+            if (!is.null(progress_path) && has_tracker) {
+              now <- Sys.time()
+              if (is.null(last_json_write) ||
+                  as.numeric(difftime(now, last_json_write, units = "secs")) >= 5) {
+                tracker_state <- tracker$get_state()
+                fit_offset <- if (!is.null(tracker_state$fit_offset)) {
+                  tracker_state$fit_offset
+                } else 0L
+                # Determine warmup vs sampling phase
+                warmup_iters <- config$max_steps %/% 2
+                phase <- if (state$step <= warmup_iters) "warmup" else "sampling"
+                write_fit_progress(list(
+                  status = "fitting",
+                  league = sub("^fit_", "", tracker_state$step_key),
+                  league_index = tracker_state$current - fit_offset,
+                  total_leagues = length(tracker_state$fit_leagues),
+                  phase = phase,
+                  chain = NULL,
+                  total_chains = 4L,
+                  iteration = state$step,
+                  total_iterations = config$max_steps,
+                  started_at = format(tracker_state$fit_started_at, "%Y-%m-%dT%H:%M:%S%z"),
+                  league_started_at = format(tracker_state$step_start, "%Y-%m-%dT%H:%M:%S%z"),
+                  completed_leagues = tracker_state$completed_fits
+                ), progress_path)
+                last_json_write <<- now
+              }
             }
           }
         },

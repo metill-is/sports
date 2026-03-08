@@ -310,7 +310,10 @@ source(here("R", "shared", "progress.R"), local = TRUE)
 
 timing_cache_path <- here("config", "timing_cache.json")
 cache <- load_timing_cache(timing_cache_path)
-tracker <- create_tracker(step_keys, cache)
+progress_path <- if ("fit" %in% steps) {
+  "~/.cache/raycast-pipeline/fit-progress.json"
+} else NULL
+tracker <- create_tracker(step_keys, cache, progress_path = progress_path)
 
 # Register progressr handler for cmdstanr progress bars (PR #1138) — must be
 # done once at top level, not inside tryCatch/handlers.
@@ -321,7 +324,10 @@ if ("fit" %in% steps && requireNamespace("cmdstanr", quietly = TRUE) &&
   options(progressr.enable = TRUE)
   source(here("R", "shared", "stan_progress_handler.R"), local = TRUE)
   progressr::handlers(global = TRUE)
-  progressr::handlers(stan_progress_handler(tracker = tracker))
+  progressr::handlers(stan_progress_handler(
+    tracker = tracker,
+    progress_path = progress_path
+  ))
 }
 
 # Helpers
@@ -376,6 +382,18 @@ if ("data" %in% steps) {
 
 # Phase 2: All fit steps (fit only, no results)
 if ("fit" %in% steps) {
+  # Collect fit league keys and initialise progress file
+  fit_league_keys <- character(0)
+  for (key in names(selected)) {
+    for (sex in resolve_sexes(key, selected[[key]])) {
+      fit_league_keys <- c(fit_league_keys, paste(key, sex, sep = "_"))
+    }
+  }
+  tracker$init_fit_progress(fit_league_keys)
+
+  # Ensure progress file is finalised even on crash (idempotent — safe if already called)
+  on.exit(tracker$finish_fit_progress(error_msg = "pipeline crashed"), add = TRUE)
+
   for (key in names(selected)) {
     league <- selected[[key]]
     sexes <- resolve_sexes(key, league)
@@ -398,6 +416,9 @@ if ("fit" %in% steps) {
       quiet_here(".here")
     }
   }
+
+  # Mark fit progress as complete (idempotent — on.exit won't overwrite)
+  tracker$finish_fit_progress()
 }
 
 # Phase 3: All results steps (generate posterior CSVs + plots from .rds)
