@@ -56,6 +56,8 @@ date,league,home,away,limit,o_over,o_under,scraped_at
 2026-03-08,Allsvenskan,IFK Tumba,Vinslöv,60.5,1.58,1.98,2026-03-08T08:47:59Z
 2026-03-08,Allsvenskan,IFK Tumba,Vinslöv,61.5,1.72,1.79,2026-03-08T08:47:59Z
 2026-03-08,Allsvenskan,IFK Tumba,Vinslöv,62.5,1.91,1.62,2026-03-08T08:47:59Z
+2026-03-08,Allsvenskan,IFK Tumba,Vinslöv,60.5,1.58,1.97,2026-03-08T11:02:09Z
+2026-03-08,Allsvenskan,IFK Tumba,Vinslöv,61.5,1.73,1.78,2026-03-08T11:02:09Z
 2026-03-08,Handbollsligan,HK Malmö,Alingsas,59.5,1.56,2.01,2026-03-07T14:46:16Z
 2026-03-08,Handbollsligan,HK Malmö,Alingsas,60.5,1.71,1.8,2026-03-07T14:46:16Z
 2026-03-08,Handbollsligan,HK Malmö,Alingsas,61.5,1.88,1.64,2026-03-07T14:46:16Z
@@ -71,6 +73,9 @@ date,league,home,away,limit,o_over,o_under,scraped_at
 2026-03-08,Handbollsligan,Skovde,IF Hallby HK,56.5,1.55,2.02,2026-03-07T19:58:05Z
 2026-03-08,Handbollsligan,Skovde,IF Hallby HK,57.5,1.7,1.81,2026-03-07T19:58:05Z
 2026-03-08,Handbollsligan,Skovde,IF Hallby HK,58.5,1.89,1.64,2026-03-07T19:58:05Z
+2026-03-09,Allsvenskan,Lugi,Redbergslid,61.5,1.58,1.98,2026-03-08T11:02:09Z
+2026-03-09,Allsvenskan,Lugi,Redbergslid,62.5,1.73,1.78,2026-03-08T11:02:09Z
+2026-03-09,Allsvenskan,Lugi,Redbergslid,63.5,1.91,1.62,2026-03-08T11:02:09Z
 2026-03-09,Handbollsligan,Helsingborg,IFK Karlskrona,61.5,1.6,1.94,2026-03-08T08:47:59Z
 2026-03-09,Handbollsligan,Helsingborg,IFK Karlskrona,62.5,1.76,1.75,2026-03-08T08:47:59Z
 2026-03-09,Handbollsligan,Helsingborg,IFK Karlskrona,63.5,1.94,1.6,2026-03-08T08:47:59Z
