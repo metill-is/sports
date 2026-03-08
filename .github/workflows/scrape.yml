@@ -56,4 +56,5 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/ config/active_competitions.json
           git diff --cached --quiet || git commit -m "data: $(date -u +%Y-%m-%dT%H:%M)"
+          git pull --rebase
           git push
