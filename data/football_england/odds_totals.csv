@@ -282,6 +282,9 @@ date,league,home,away,limit,o_over,o_under,scraped_at
 2026-03-10,League 1,Exeter,Lincoln,2.5,1.85,1.67,2026-03-08T08:47:59Z
 2026-03-10,League 1,Exeter,Lincoln,3.5,2.99,1.24,2026-03-08T08:47:59Z
 2026-03-10,League 1,Exeter,Lincoln,3.5,3,1.24,2026-03-08T11:02:10Z
+2026-03-10,League 1,Mansfield,Reading,1.5,1.23,3.08,2026-03-08T12:18:45Z
+2026-03-10,League 1,Mansfield,Reading,2.5,1.74,1.77,2026-03-08T12:18:45Z
+2026-03-10,League 1,Mansfield,Reading,3.5,2.75,1.29,2026-03-08T12:18:45Z
 2026-03-10,League 1,Stevenage,Leyton Orient,1.5,1.31,2.65,2026-03-07T19:58:05Z
 2026-03-10,League 1,Stevenage,Leyton Orient,2.5,1.99,1.57,2026-03-07T19:58:05Z
 2026-03-10,League 1,Stevenage,Leyton Orient,1.5,1.37,2.44,2026-03-08T08:47:59Z
@@ -354,6 +357,7 @@ date,league,home,away,limit,o_over,o_under,scraped_at
 2026-03-14,Premier League,Arsenal,Everton,1.5,1.21,3.18,2026-03-08T08:47:59Z
 2026-03-14,Premier League,Arsenal,Everton,2.5,1.68,1.83,2026-03-08T08:47:59Z
 2026-03-14,Premier League,Arsenal,Everton,3.5,2.66,1.31,2026-03-08T08:47:59Z
+2026-03-14,Premier League,Arsenal,Everton,2.5,1.69,1.83,2026-03-08T12:18:45Z
 2026-03-14,Premier League,Burnley,Bournemouth,2.5,1.61,1.93,2026-03-05T15:06:24Z
 2026-03-14,Premier League,Burnley,Bournemouth,3.5,2.45,1.37,2026-03-05T15:06:24Z
 2026-03-14,Premier League,Burnley,Bournemouth,3.5,2.45,1.36,2026-03-06T08:59:19Z
