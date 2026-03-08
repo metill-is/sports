@@ -262,6 +262,9 @@ date,league,home,away,limit,o_over,o_under,scraped_at
 2026-03-08,League 1,AFC Wimbledon,Northampton,1.5,1.27,2.82,2026-03-08T11:02:10Z
 2026-03-08,League 1,AFC Wimbledon,Northampton,2.5,1.87,1.65,2026-03-08T11:02:10Z
 2026-03-08,League 1,AFC Wimbledon,Northampton,1.5,1.27,2.83,2026-03-08T11:56:07Z
+2026-03-10,Championship,Leicester,Bristol City,1.5,1.23,3.08,2026-03-08T20:39:23Z
+2026-03-10,Championship,Leicester,Bristol City,2.5,1.74,1.77,2026-03-08T20:39:23Z
+2026-03-10,Championship,Leicester,Bristol City,3.5,2.75,1.29,2026-03-08T20:39:23Z
 2026-03-10,Championship,Millwall,Derby,1.5,1.28,2.8,2026-03-07T19:58:05Z
 2026-03-10,Championship,Millwall,Derby,2.5,1.89,1.64,2026-03-07T19:58:05Z
 2026-03-10,Championship,Portsmouth,Swansea,1.5,1.31,2.67,2026-03-07T19:58:05Z
@@ -367,6 +370,9 @@ date,league,home,away,limit,o_over,o_under,scraped_at
 2026-03-14,Premier League,Arsenal,Everton,2.5,1.68,1.83,2026-03-08T08:47:59Z
 2026-03-14,Premier League,Arsenal,Everton,3.5,2.66,1.31,2026-03-08T08:47:59Z
 2026-03-14,Premier League,Arsenal,Everton,2.5,1.69,1.83,2026-03-08T12:18:45Z
+2026-03-14,Premier League,Arsenal,Everton,1.5,1.21,3.16,2026-03-08T20:39:23Z
+2026-03-14,Premier League,Arsenal,Everton,2.5,1.69,1.82,2026-03-08T20:39:23Z
+2026-03-14,Premier League,Arsenal,Everton,3.5,2.68,1.3,2026-03-08T20:39:23Z
 2026-03-14,Premier League,Burnley,Bournemouth,2.5,1.61,1.93,2026-03-05T15:06:24Z
 2026-03-14,Premier League,Burnley,Bournemouth,3.5,2.45,1.37,2026-03-05T15:06:24Z
 2026-03-14,Premier League,Burnley,Bournemouth,3.5,2.45,1.36,2026-03-06T08:59:19Z

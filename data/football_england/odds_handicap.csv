@@ -741,6 +741,11 @@ date,league,home,away,change,o_home,o_draw,o_away,scraped_at
 2026-03-08,League 1,AFC Wimbledon,Northampton,2-0,1.04,6.54,15.67,2026-03-08T11:56:07Z
 2026-03-08,League 1,AFC Wimbledon,Northampton,0-2,6.9,4.81,1.21,2026-03-08T11:56:07Z
 2026-03-08,League 1,AFC Wimbledon,Northampton,3-0,1.01,7.22,22.48,2026-03-08T11:56:07Z
+2026-03-10,Championship,Leicester,Bristol City,1-0,1.33,4.36,5.88,2026-03-08T20:39:23Z
+2026-03-10,Championship,Leicester,Bristol City,0-1,4.01,3.83,1.56,2026-03-08T20:39:23Z
+2026-03-10,Championship,Leicester,Bristol City,2-0,1.08,6.68,13.06,2026-03-08T20:39:23Z
+2026-03-10,Championship,Leicester,Bristol City,0-2,8.63,5.58,1.17,2026-03-08T20:39:23Z
+2026-03-10,Championship,Leicester,Bristol City,3-0,1.01,8.61,22.18,2026-03-08T20:39:23Z
 2026-03-10,Championship,Millwall,Derby,1-0,1.22,4.8,8.25,2026-03-07T19:58:05Z
 2026-03-10,Championship,Millwall,Derby,0-1,3.4,3.56,1.74,2026-03-07T19:58:05Z
 2026-03-10,Championship,Millwall,Derby,2-0,1.04,7.4,18.35,2026-03-07T19:58:05Z
@@ -826,6 +831,11 @@ date,league,home,away,change,o_home,o_draw,o_away,scraped_at
 2026-03-10,League 1,Stevenage,Leyton Orient,2-0,1.03,6.58,18.48,2026-03-08T08:47:59Z
 2026-03-10,League 1,Stevenage,Leyton Orient,0-2,7.37,4.73,1.2,2026-03-08T08:47:59Z
 2026-03-10,League 1,Stevenage,Leyton Orient,3-0,1.01,7.01,25.6,2026-03-08T08:47:59Z
+2026-03-10,League 1,Stevenage,Leyton Orient,1-0,1.17,4.62,9.49,2026-03-08T20:39:23Z
+2026-03-10,League 1,Stevenage,Leyton Orient,0-1,3.23,3.26,1.77,2026-03-08T20:39:23Z
+2026-03-10,League 1,Stevenage,Leyton Orient,2-0,1.02,6.65,19.6,2026-03-08T20:39:23Z
+2026-03-10,League 1,Stevenage,Leyton Orient,0-2,6.92,4.61,1.22,2026-03-08T20:39:23Z
+2026-03-10,League 1,Stevenage,Leyton Orient,3-0,1.01,6.96,26.65,2026-03-08T20:39:23Z
 2026-03-10,League 1,Wigan,Plymouth,1-0,1.37,3.91,5.19,2026-03-07T19:58:05Z
 2026-03-10,League 1,Wigan,Plymouth,0-1,4.67,3.78,1.43,2026-03-07T19:58:05Z
 2026-03-10,League 1,Wigan,Plymouth,0-2,10.12,5.58,1.11,2026-03-07T19:58:05Z
@@ -995,6 +1005,11 @@ date,league,home,away,change,o_home,o_draw,o_away,scraped_at
 2026-03-14,Premier League,Arsenal,Everton,0-2,3.24,3.78,1.74,2026-03-08T12:18:45Z
 2026-03-14,Premier League,Arsenal,Everton,2-0,1.01,8.1,34.01,2026-03-08T12:18:45Z
 2026-03-14,Premier League,Arsenal,Everton,0-3,6.33,5.22,1.25,2026-03-08T12:18:45Z
+2026-03-14,Premier League,Arsenal,Everton,1-0,1.05,6.78,19.94,2026-03-08T20:39:23Z
+2026-03-14,Premier League,Arsenal,Everton,0-1,1.88,3.4,3.08,2026-03-08T20:39:23Z
+2026-03-14,Premier League,Arsenal,Everton,0-2,3.31,3.79,1.71,2026-03-08T20:39:23Z
+2026-03-14,Premier League,Arsenal,Everton,2-0,1.01,8.11,33.36,2026-03-08T20:39:23Z
+2026-03-14,Premier League,Arsenal,Everton,0-3,6.52,5.28,1.24,2026-03-08T20:39:23Z
 2026-03-14,Premier League,Burnley,Bournemouth,0-1,7.43,4.97,1.23,2026-03-05T15:06:24Z
 2026-03-14,Premier League,Burnley,Bournemouth,1-0,1.78,3.75,3.11,2026-03-05T15:06:24Z
 2026-03-14,Premier League,Burnley,Bournemouth,0-2,15.82,7.43,1.05,2026-03-05T15:06:24Z
@@ -1074,3 +1089,8 @@ date,league,home,away,change,o_home,o_draw,o_away,scraped_at
 2026-03-14,Premier League,West Ham,Manchester City,2-0,1.43,4.54,4.32,2026-03-08T08:47:59Z
 2026-03-14,Premier League,West Ham,Manchester City,0-2,17.68,8.03,1.03,2026-03-08T08:47:59Z
 2026-03-14,Premier League,West Ham,Manchester City,3-0,1.15,6.37,8.31,2026-03-08T08:47:59Z
+2026-03-14,Premier League,West Ham,Manchester City,1-0,2.15,3.77,2.38,2026-03-08T20:39:23Z
+2026-03-14,Premier League,West Ham,Manchester City,0-1,9.06,5.7,1.16,2026-03-08T20:39:23Z
+2026-03-14,Premier League,West Ham,Manchester City,2-0,1.44,4.52,4.28,2026-03-08T20:39:23Z
+2026-03-14,Premier League,West Ham,Manchester City,0-2,17.84,8.05,1.03,2026-03-08T20:39:23Z
+2026-03-14,Premier League,West Ham,Manchester City,3-0,1.15,6.34,8.24,2026-03-08T20:39:23Z
