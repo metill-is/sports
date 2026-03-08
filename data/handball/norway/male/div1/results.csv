@@ -1,4 +1,9 @@
 date,home,away,home_score,away_score
+08.03. 17:00,Fjellhammer,Sandefjord TIF,29,30
+08.03. 17:00,Kristiansand,Baekkelaget,38,29
+08.03. 17:00,Sandnes,Kolstad,16,40
+08.03. 16:00,Arendal,Follo,29,24
+08.03. 16:00,Naerbo,Halden,27,23
 07.03. 15:15,Runar,Elverum,27,38
 04.03. 17:30,Naerbo,Arendal,33,29
 04.03. 17:00,Halden,Kristiansand,20,23
@@ -98,9 +103,3 @@ date,home,away,home_score,away_score
 26.10. 16:00,Runar,Follo,40,32
 25.10. 15:00,Arendal,Naerbo,30,35
 25.10. 15:00,Sandefjord TIF,Elverum,15,43
-22.10. 16:30,Naerbo,Kristiansand,28,27
-22.10. 16:00,Bergen,Runar,36,36
-19.10. 16:00,Drammen,Arendal,29,27
-19.10. 16:00,Follo,Sandnes,29,28
-19.10. 16:00,Halden,Fjellhammer,22,26
-19.10. 15:00,Kolstad,Sandefjord TIF,37,28
