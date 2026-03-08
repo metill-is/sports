@@ -78,6 +78,8 @@ date,league,home,away,limit,o_over,o_under,scraped_at
 2026-03-08,2. Bundesliga,Hc Oppenweiler/backnang,Dormagen,58.5,1.58,1.97,2026-03-07T14:46:17Z
 2026-03-08,2. Bundesliga,Hc Oppenweiler/backnang,Dormagen,59.5,1.74,1.77,2026-03-07T14:46:17Z
 2026-03-08,2. Bundesliga,Hc Oppenweiler/backnang,Dormagen,60.5,1.93,1.61,2026-03-07T14:46:17Z
+2026-03-08,2. Bundesliga,Hc Oppenweiler/backnang,Dormagen,58.5,1.59,1.96,2026-03-08T08:47:59Z
+2026-03-08,2. Bundesliga,Hc Oppenweiler/backnang,Dormagen,60.5,1.94,1.6,2026-03-08T08:47:59Z
 2026-03-08,2. Bundesliga,Ludwigshafen,Bietigheim,56.5,1.58,1.97,2026-03-07T14:46:17Z
 2026-03-08,2. Bundesliga,Ludwigshafen,Bietigheim,57.5,1.74,1.77,2026-03-07T14:46:17Z
 2026-03-08,2. Bundesliga,Ludwigshafen,Bietigheim,58.5,1.93,1.61,2026-03-07T14:46:17Z
@@ -103,6 +105,8 @@ date,league,home,away,limit,o_over,o_under,scraped_at
 2026-03-08,Bundesliga,Erlangen,Minden,55.5,1.61,1.93,2026-03-07T20:41:02Z
 2026-03-08,Bundesliga,Erlangen,Minden,56.5,1.78,1.73,2026-03-07T20:41:02Z
 2026-03-08,Bundesliga,Erlangen,Minden,57.5,1.98,1.58,2026-03-07T20:41:02Z
+2026-03-08,Bundesliga,Erlangen,Minden,55.5,1.61,1.92,2026-03-08T08:47:59Z
+2026-03-08,Bundesliga,Erlangen,Minden,57.5,1.98,1.57,2026-03-08T08:47:59Z
 2026-03-08,Bundesliga,HSG Wetzlar,MT Melsungen,54.5,1.58,1.97,2026-03-05T20:57:36Z
 2026-03-08,Bundesliga,HSG Wetzlar,MT Melsungen,55.5,1.74,1.77,2026-03-05T20:57:36Z
 2026-03-08,Bundesliga,HSG Wetzlar,MT Melsungen,56.5,1.94,1.6,2026-03-05T20:57:36Z
@@ -119,6 +123,9 @@ date,league,home,away,limit,o_over,o_under,scraped_at
 2026-03-08,Bundesliga,HSG Wetzlar,MT Melsungen,55.5,1.65,1.87,2026-03-07T19:58:05Z
 2026-03-08,Bundesliga,HSG Wetzlar,MT Melsungen,56.5,1.83,1.68,2026-03-07T19:58:05Z
 2026-03-08,Bundesliga,HSG Wetzlar,MT Melsungen,57.5,2.05,1.54,2026-03-07T19:58:05Z
+2026-03-08,Bundesliga,HSG Wetzlar,MT Melsungen,55.5,1.65,1.88,2026-03-08T08:47:59Z
+2026-03-08,Bundesliga,HSG Wetzlar,MT Melsungen,56.5,1.83,1.69,2026-03-08T08:47:59Z
+2026-03-08,Bundesliga,HSG Wetzlar,MT Melsungen,57.5,2.04,1.54,2026-03-08T08:47:59Z
 2026-03-08,Bundesliga,RN Löwen,Bergischer,59.5,1.75,1.76,2026-03-05T20:57:36Z
 2026-03-08,Bundesliga,RN Löwen,Bergischer,59.5,1.66,1.86,2026-03-07T08:48:40Z
 2026-03-08,Bundesliga,RN Löwen,Bergischer,60.5,1.84,1.68,2026-03-07T08:48:40Z
@@ -127,6 +134,7 @@ date,league,home,away,limit,o_over,o_under,scraped_at
 2026-03-08,Bundesliga,RN Löwen,Bergischer,59.5,1.65,1.87,2026-03-07T19:58:05Z
 2026-03-08,Bundesliga,RN Löwen,Bergischer,60.5,1.82,1.69,2026-03-07T19:58:05Z
 2026-03-08,Bundesliga,RN Löwen,Bergischer,61.5,2.02,1.55,2026-03-07T19:58:05Z
+2026-03-08,Bundesliga,RN Löwen,Bergischer,60.5,1.82,1.7,2026-03-08T08:47:59Z
 2026-03-08,Bundesliga,SC Magdeburg,Hannover-Burgdorf,58.5,1.59,1.96,2026-03-05T20:57:36Z
 2026-03-08,Bundesliga,SC Magdeburg,Hannover-Burgdorf,59.5,1.74,1.77,2026-03-05T20:57:36Z
 2026-03-08,Bundesliga,SC Magdeburg,Hannover-Burgdorf,60.5,1.93,1.61,2026-03-05T20:57:36Z
@@ -141,6 +149,14 @@ date,league,home,away,limit,o_over,o_under,scraped_at
 2026-03-08,Bundesliga,SC Magdeburg,Hannover-Burgdorf,58.5,1.56,2,2026-03-07T19:58:05Z
 2026-03-08,Bundesliga,SC Magdeburg,Hannover-Burgdorf,59.5,1.71,1.8,2026-03-07T19:58:05Z
 2026-03-08,Bundesliga,SC Magdeburg,Hannover-Burgdorf,60.5,1.89,1.63,2026-03-07T19:58:05Z
+2026-03-08,Bundesliga,SC Magdeburg,Hannover-Burgdorf,59.5,1.72,1.8,2026-03-08T08:47:59Z
+2026-03-08,Bundesliga,SC Magdeburg,Hannover-Burgdorf,60.5,1.9,1.63,2026-03-08T08:47:59Z
+2026-03-09,2. Bundesliga,N-Lubbecke,HC Elbflorenz Dresden,59.5,1.59,1.96,2026-03-08T08:47:59Z
+2026-03-09,2. Bundesliga,N-Lubbecke,HC Elbflorenz Dresden,60.5,1.75,1.76,2026-03-08T08:47:59Z
+2026-03-09,2. Bundesliga,N-Lubbecke,HC Elbflorenz Dresden,61.5,1.93,1.61,2026-03-08T08:47:59Z
 2026-03-09,Bundesliga,Göppingen,Eisenach,55.5,1.59,1.96,2026-03-07T19:58:05Z
 2026-03-09,Bundesliga,Göppingen,Eisenach,56.5,1.75,1.76,2026-03-07T19:58:05Z
 2026-03-09,Bundesliga,Göppingen,Eisenach,57.5,1.95,1.6,2026-03-07T19:58:05Z
+2026-03-09,Bundesliga,Göppingen,Eisenach,55.5,1.56,2.01,2026-03-08T08:47:59Z
+2026-03-09,Bundesliga,Göppingen,Eisenach,56.5,1.72,1.79,2026-03-08T08:47:59Z
+2026-03-09,Bundesliga,Göppingen,Eisenach,57.5,1.9,1.63,2026-03-08T08:47:59Z
