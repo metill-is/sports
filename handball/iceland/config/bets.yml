@@ -10,7 +10,7 @@ leagues:
 
 bankroll:
   kelly_frac: 0.30
-  kelly_frac_male: 0.21
+  kelly_frac_male: 0.22
   kelly_frac_female: 0.40
   ev_threshold: 0.00
 

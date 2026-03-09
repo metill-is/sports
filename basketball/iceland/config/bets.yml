@@ -10,7 +10,7 @@ leagues:
 
 bankroll:
   kelly_frac: 0.10
-  kelly_frac_male: 0.19
+  kelly_frac_male: 0.18
   kelly_frac_female: 0.01
 
 scoring:

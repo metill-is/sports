@@ -3,9 +3,7 @@ country: "denmark"
 sex: ["male", "female"]
 
 bankroll:
-  kelly_frac: 0.13
-  kelly_frac_male: 0.01
-  kelly_frac_female: 0.25
+  kelly_frac: 0.05
 
 scoring:
   has_ties: true

@@ -7,7 +7,7 @@ leagues:
   2: "Serie B"
 
 bankroll:
-  kelly_frac: 0.10
+  kelly_frac: 0.05
   ev_threshold: 0.00
 
 scoring:

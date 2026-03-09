@@ -3,8 +3,7 @@ country: "england"
 sex: ["male"]
 
 bankroll:
-  kelly_frac: 0.20
-  kelly_frac_male: 0.01
+  kelly_frac: 0.05
   min_bet_amount: 200
   bet_digits: 0
   currency: "kr"
