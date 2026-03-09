@@ -83,6 +83,7 @@ date,league,home,away,o_home,o_draw,o_away,scraped_at
 2026-03-09,2. Bundesliga,N-Lubbecke,HC Elbflorenz Dresden,2.99,10.56,1.41,2026-03-07T08:48:40Z
 2026-03-09,2. Bundesliga,N-Lubbecke,HC Elbflorenz Dresden,2.97,10.81,1.41,2026-03-07T14:46:17Z
 2026-03-09,2. Bundesliga,N-Lubbecke,HC Elbflorenz Dresden,3.18,8.99,1.4,2026-03-08T08:47:59Z
+2026-03-09,2. Bundesliga,N-Lubbecke,HC Elbflorenz Dresden,3.18,9.08,1.4,2026-03-09T15:11:01Z
 2026-03-09,Bundesliga,Göppingen,Eisenach,1.61,8.06,2.53,2026-03-07T19:58:05Z
 2026-03-09,Bundesliga,Göppingen,Eisenach,1.64,7.32,2.54,2026-03-08T08:47:59Z
 2026-03-09,Bundesliga,Göppingen,Eisenach,1.69,7.17,2.45,2026-03-08T11:56:07Z
@@ -90,3 +91,8 @@ date,league,home,away,o_home,o_draw,o_away,scraped_at
 2026-03-09,Bundesliga,Göppingen,Eisenach,1.73,7.65,2.31,2026-03-08T14:42:00Z
 2026-03-09,Bundesliga,Göppingen,Eisenach,1.84,7.66,2.14,2026-03-08T20:39:24Z
 2026-03-09,Bundesliga,Göppingen,Eisenach,1.82,7.29,2.2,2026-03-09T08:59:58Z
+2026-03-09,Bundesliga,Göppingen,Eisenach,1.76,7.29,2.29,2026-03-09T15:11:01Z
+2026-03-13,Bundesliga,Eisenach,RN Löwen,3.07,8.19,1.44,2026-03-09T15:11:01Z
+2026-03-13,Bundesliga,Hannover-Burgdorf,HSV Hamburg,1.43,8.24,3.13,2026-03-09T15:11:01Z
+2026-03-13,Bundesliga,MT Melsungen,Gummersbach,1.88,7.52,2.1,2026-03-09T15:11:01Z
+2026-03-14,Bundesliga,Minden,HSG Wetzlar,2.1,7.52,1.88,2026-03-09T15:11:01Z

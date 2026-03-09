@@ -137,6 +137,7 @@ date,league,home,away,o_home,o_draw,o_away,scraped_at
 2026-03-10,Championship,Leicester,Bristol City,2.21,3.26,2.85,2026-03-09T08:59:58Z
 2026-03-10,Championship,Millwall,Derby,1.9,3.23,3.65,2026-03-07T19:58:05Z
 2026-03-10,Championship,Portsmouth,Swansea,2.02,3.27,3.22,2026-03-07T19:58:05Z
+2026-03-10,Championship,Portsmouth,Swansea,2.07,3.19,3.2,2026-03-09T15:11:01Z
 2026-03-10,Championship,Sheffield Wed,Watford,6.28,4.15,1.41,2026-03-07T19:58:05Z
 2026-03-10,Championship,Wrexham,Hull,1.83,3.46,3.65,2026-03-07T19:58:05Z
 2026-03-10,Championship,Wrexham,Hull,1.79,3.52,3.73,2026-03-07T20:41:02Z
@@ -184,6 +185,7 @@ date,league,home,away,o_home,o_draw,o_away,scraped_at
 2026-03-14,League 2,Notts Co,Chesterfield,1.95,3.2,3.19,2026-03-07T19:58:05Z
 2026-03-14,League 2,Oldham,Grimsby,2.42,NA,2.54,2026-03-07T19:58:05Z
 2026-03-14,League 2,Shrewsbury,Cheltenham,1.82,3.08,3.79,2026-03-07T19:58:05Z
+2026-03-14,League 2,Shrewsbury,Cheltenham,1.78,3.11,3.9,2026-03-09T15:11:01Z
 2026-03-14,League 2,Swindon,MK Dons,2.46,3.18,2.38,2026-03-07T19:58:05Z
 2026-03-14,Premier League,Arsenal,Everton,1.26,4.84,8.91,2026-03-05T15:06:24Z
 2026-03-14,Premier League,Arsenal,Everton,1.29,4.67,8.33,2026-03-06T14:59:16Z
