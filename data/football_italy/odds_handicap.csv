@@ -741,6 +741,11 @@ date,league,home,away,change,o_home,o_draw,o_away,scraped_at
 2026-03-13,Serie A,Torino,Parma,0-2,8.98,5.47,1.17,2026-03-11T15:05:33Z
 2026-03-13,Serie A,Torino,Parma,2-0,1.05,7.22,17.75,2026-03-11T15:05:33Z
 2026-03-13,Serie A,Torino,Parma,3-0,1.01,8.49,27.37,2026-03-11T15:05:33Z
+2026-03-13,Serie A,Torino,Parma,0-1,4.06,3.69,1.58,2026-03-11T20:55:32Z
+2026-03-13,Serie A,Torino,Parma,1-0,1.25,4.59,7.73,2026-03-11T20:55:32Z
+2026-03-13,Serie A,Torino,Parma,0-2,9.04,5.48,1.17,2026-03-11T20:55:32Z
+2026-03-13,Serie A,Torino,Parma,2-0,1.05,7.21,17.63,2026-03-11T20:55:32Z
+2026-03-13,Serie A,Torino,Parma,3-0,1.01,8.5,27.27,2026-03-11T20:55:32Z
 2026-03-13,Serie B,Modena,Spezia,1-0,1.13,4.99,10.31,2026-03-07T19:58:05Z
 2026-03-13,Serie B,Modena,Spezia,0-1,2.74,3.31,1.95,2026-03-07T19:58:05Z
 2026-03-13,Serie B,Modena,Spezia,2-0,1.02,6.83,20.01,2026-03-07T19:58:05Z
@@ -795,6 +800,11 @@ date,league,home,away,change,o_home,o_draw,o_away,scraped_at
 2026-03-14,Serie A,Inter,Atalanta,3-0,1.01,8.45,30.95,2026-03-11T08:59:49Z
 2026-03-14,Serie A,Inter,Atalanta,2-0,1.02,8.17,23.2,2026-03-11T15:05:33Z
 2026-03-14,Serie A,Inter,Atalanta,3-0,1.01,8.44,30.96,2026-03-11T15:05:33Z
+2026-03-14,Serie A,Inter,Atalanta,0-1,2.3,3.52,2.32,2026-03-11T20:55:32Z
+2026-03-14,Serie A,Inter,Atalanta,1-0,1.12,5.9,11.96,2026-03-11T20:55:32Z
+2026-03-14,Serie A,Inter,Atalanta,0-2,4.25,4.25,1.47,2026-03-11T20:55:32Z
+2026-03-14,Serie A,Inter,Atalanta,2-0,1.02,8.16,23.25,2026-03-11T20:55:32Z
+2026-03-14,Serie A,Inter,Atalanta,3-0,1.01,8.44,31.03,2026-03-11T20:55:32Z
 2026-03-14,Serie A,Napoli,Lecce,1-0,1.05,6.56,23.69,2026-03-08T20:39:23Z
 2026-03-14,Serie A,Napoli,Lecce,0-1,2.07,3.13,2.89,2026-03-08T20:39:23Z
 2026-03-14,Serie A,Napoli,Lecce,2-0,1.01,7.85,40.12,2026-03-08T20:39:23Z
@@ -830,6 +840,10 @@ date,league,home,away,change,o_home,o_draw,o_away,scraped_at
 2026-03-14,Serie A,Napoli,Lecce,0-2,3.73,3.73,1.63,2026-03-11T08:59:49Z
 2026-03-14,Serie A,Napoli,Lecce,2-0,1.01,7.86,39.86,2026-03-11T08:59:49Z
 2026-03-14,Serie A,Napoli,Lecce,0-3,7.74,5.47,1.19,2026-03-11T08:59:49Z
+2026-03-14,Serie A,Napoli,Lecce,0-1,2,3.18,2.97,2026-03-11T20:55:32Z
+2026-03-14,Serie A,Napoli,Lecce,1-0,1.04,6.66,23.61,2026-03-11T20:55:32Z
+2026-03-14,Serie A,Napoli,Lecce,0-2,3.74,3.74,1.62,2026-03-11T20:55:32Z
+2026-03-14,Serie A,Napoli,Lecce,0-3,7.75,5.48,1.19,2026-03-11T20:55:32Z
 2026-03-14,Serie A,Udinese,Juventus,1-0,2.15,3.35,2.59,2026-03-08T20:39:23Z
 2026-03-14,Serie A,Udinese,Juventus,0-1,12.8,5.62,1.12,2026-03-08T20:39:23Z
 2026-03-14,Serie A,Udinese,Juventus,2-0,1.38,4.34,5.16,2026-03-08T20:39:23Z
@@ -867,6 +881,8 @@ date,league,home,away,change,o_home,o_draw,o_away,scraped_at
 2026-03-14,Serie A,Udinese,Juventus,1-0,2.32,3.37,2.37,2026-03-11T15:05:33Z
 2026-03-14,Serie A,Udinese,Juventus,0-2,26.67,8.09,1.01,2026-03-11T15:05:33Z
 2026-03-14,Serie A,Udinese,Juventus,2-0,1.45,4.19,4.55,2026-03-11T15:05:33Z
+2026-03-14,Serie A,Udinese,Juventus,0-1,13.75,5.89,1.1,2026-03-11T20:55:32Z
+2026-03-14,Serie A,Udinese,Juventus,0-2,26.66,8.08,1.01,2026-03-11T20:55:32Z
 2026-03-14,Serie B,Bari,Reggiana,1-0,1.26,4.19,6.76,2026-03-08T20:39:23Z
 2026-03-14,Serie B,Bari,Reggiana,0-1,4.12,3.56,1.52,2026-03-08T20:39:23Z
 2026-03-14,Serie B,Bari,Reggiana,0-2,9,5.23,1.14,2026-03-08T20:39:23Z
