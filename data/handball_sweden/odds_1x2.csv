@@ -66,12 +66,14 @@ date,league,home,away,o_home,o_draw,o_away,scraped_at
 2026-03-12,Handbollsligan,IFK Kristianstad,Helsingborg,1.03,14.7,9.63,2026-03-12T15:11:43Z
 2026-03-12,Handbollsligan,Sävehof,Skovde,1.76,6.72,2.37,2026-03-11T15:05:33Z
 2026-03-12,Handbollsligan,Sävehof,Skovde,1.8,7.79,2.2,2026-03-11T20:55:32Z
+2026-03-13,Allsvenskan,Lund,Lugi,2.74,8.86,1.51,2026-03-12T20:56:02Z
 2026-03-13,Handbollsligan,Alingsas,Onnered,1.59,8.45,2.56,2026-03-11T15:05:33Z
 2026-03-13,Handbollsligan,Alingsas,Onnered,1.58,8.3,2.58,2026-03-12T09:14:54Z
 2026-03-13,Handbollsligan,Alingsas,Onnered,1.62,8.02,2.51,2026-03-12T15:11:43Z
 2026-03-13,Handbollsligan,IF Hallby HK,Eskilstuna Guif,1.38,8.41,3.4,2026-03-11T15:05:33Z
 2026-03-13,Handbollsligan,IF Hallby HK,Eskilstuna Guif,1.37,8.41,3.45,2026-03-12T09:14:54Z
 2026-03-13,Handbollsligan,IF Hallby HK,Eskilstuna Guif,1.22,10.21,4.46,2026-03-12T15:11:43Z
+2026-03-13,Handbollsligan,IF Hallby HK,Eskilstuna Guif,1.18,10.86,5.01,2026-03-12T20:56:02Z
 2026-03-13,Handbollsligan,IFK Karlskrona,Amo HK,1.33,9.36,3.58,2026-03-11T15:05:33Z
 2026-03-13,Handbollsligan,IFK Karlskrona,Amo HK,1.32,8.93,3.68,2026-03-11T20:55:32Z
 2026-03-13,Handbollsligan,IFK Karlskrona,Amo HK,1.32,8.96,3.72,2026-03-12T09:14:54Z
@@ -83,3 +85,8 @@ date,league,home,away,o_home,o_draw,o_away,scraped_at
 2026-03-13,Handbollsligan,Ystads IF HF,Hammarby,1.78,8.42,2.18,2026-03-11T15:05:33Z
 2026-03-13,Handbollsligan,Ystads IF HF,Hammarby,1.8,7.89,2.19,2026-03-12T09:14:54Z
 2026-03-13,Handbollsligan,Ystads IF HF,Hammarby,1.83,7.42,2.18,2026-03-12T15:11:43Z
+2026-03-14,Allsvenskan,Aranas,Ystads IF HS,1.6,8.13,2.56,2026-03-12T20:56:02Z
+2026-03-14,Allsvenskan,Kroppskultur,IFK Tumba,1.47,8.13,2.96,2026-03-12T20:56:02Z
+2026-03-14,Allsvenskan,Redbergslid,Vinslöv,1.32,9.02,3.67,2026-03-12T20:56:02Z
+2026-03-14,Allsvenskan,Skanela,Drott,1.04,14.11,9.01,2026-03-12T20:56:02Z
+2026-03-14,Allsvenskan,Torslanda,Tyresö,1.47,8.13,2.96,2026-03-12T20:56:02Z
