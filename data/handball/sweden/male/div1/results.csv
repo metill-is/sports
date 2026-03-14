@@ -1,4 +1,9 @@
 date,home,away,home_score,away_score
+13.03. 18:00,Alingsas,Onnereds,33,26
+13.03. 18:00,Hallby,Guif,32,22
+13.03. 18:00,Karlskrona,Amo HK,34,39
+13.03. 18:00,Vasteras Irsta HF,Malmo,32,39
+13.03. 18:00,Ystads IF,Hammarby,29,34
 12.03. 18:00,Kristianstad,Helsingborg,32,33
 12.03. 18:00,Savehof,Skovde,28,31
 09.03. 18:00,Helsingborg,Karlskrona,35,36
@@ -97,10 +102,3 @@ date,home,away,home_score,away_score
 21.11. 18:00,Skovde,Karlskrona,37,28
 20.11. 18:00,Vasteras Irsta HF,Hallby,28,37
 19.11. 18:00,Helsingborg,Malmo,27,31
-15.11. 15:00,Guif,Kristianstad,22,28
-15.11. 15:00,Savehof,Ystads IF,33,37
-14.11. 19:00,Onnereds,Helsingborg,32,29
-14.11. 18:00,Amo HK,Karlskrona,30,37
-14.11. 18:00,Hallby,Alingsas,32,30
-13.11. 18:00,Skovde,Vasteras Irsta HF,29,28
-12.11. 18:00,Malmo,Hammarby,37,32

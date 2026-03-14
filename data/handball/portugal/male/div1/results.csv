@@ -11,6 +11,7 @@ date,home,away,home_score,away_score
 28.02. 15:00,ABC Braga,Benfica,30,35
 28.02. 15:00,Belenenses,Aguas Santas,21,33
 28.02. 15:00,Gaia,Avanca,28,28
+28.02. 15:00Awrd,Porto,Maritimo,15,0
 25.02. 20:30,Vitoria SC,Maritimo,26,28
 22.02. 18:00,Avanca,Sporting,30,40
 21.02. 20:00,Arsenal,Benfica,23,43
@@ -105,9 +106,3 @@ date,home,away,home_score,away_score
 01.10. 19:00,Belenenses,Sporting,26,43
 01.10. 19:00,Porto,Gaia,48,26
 01.10. 17:30,Maritimo,Vitoria SC,34,23
-27.09. 17:00,Arsenal,Belenenses,18,31
-27.09. 17:00,Gaia,ABC Braga,28,30
-27.09. 17:00,Povoa,Benfica,33,38
-27.09. 17:00,Sporting,Porto,30,29
-27.09. 15:00,Avanca,Maritimo,27,34
-27.09. 14:00,Vitoria SC,Aguas Santas,28,25

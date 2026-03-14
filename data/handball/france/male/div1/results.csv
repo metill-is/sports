@@ -1,4 +1,9 @@
 date,home,away,home_score,away_score
+13.03. 19:30,Dijon,Chambery Savoie,30,34
+13.03. 19:30,Selestat,Montpellier,33,38
+13.03. 19:00,Chartres,Provence Aix,30,30
+13.03. 19:00,Limoges,Istres,30,26
+13.03. 19:00,Tremblay,Nimes,36,29
 08.03. 17:30,Nimes,Limoges,28,31
 07.03. 19:00,Montpellier,PSG,30,32
 06.03. 19:00,Cesson Rennes-Metropole,Chambery Savoie,35,31
@@ -99,9 +104,3 @@ date,home,away,home_score,away_score
 18.10. 18:00,Chambery Savoie,St. Raphael,35,33
 18.10. 18:00,Montpellier,Nantes,31,31
 18.10. 18:00,Toulouse,Istres,35,23
-17.10. 18:30,Cesson Rennes-Metropole,Nimes,35,31
-17.10. 18:00,Dunkerque,Selestat,26,27
-17.10. 18:00,Limoges,Dijon,32,31
-17.10. 18:00,Tremblay,Provence Aix,32,32
-12.10. 15:00,Nimes,Nantes,31,38
-12.10. 15:00,PSG,Selestat,36,28
