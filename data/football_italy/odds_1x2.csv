@@ -210,7 +210,10 @@ date,league,home,away,o_home,o_draw,o_away,scraped_at
 2026-03-14,Serie B,Sampdoria,Venezia,3.71,NA,1.86,2026-03-08T20:39:23Z
 2026-03-14,Serie B,Sampdoria,Venezia,3.83,2.97,1.84,2026-03-09T15:11:01Z
 2026-03-14,Serie B,Sampdoria,Venezia,4.31,3.05,1.72,2026-03-14T08:54:33Z
+2026-03-15,Serie A,Como,Roma,NA,3.13,3.44,2026-03-14T20:45:12Z
+2026-03-15,Serie A,Lazio,AC Milan,3.8,3.19,1.88,2026-03-14T20:45:12Z
 2026-03-15,Serie A,Pisa,Cagliari,2.43,2.85,2.88,2026-03-14T14:49:20Z
+2026-03-15,Serie A,Pisa,Cagliari,2.43,2.81,2.92,2026-03-14T20:45:12Z
 2026-03-15,Serie A,Sassuolo,Bologna,2.35,3.1,2.77,2026-03-13T20:53:48Z
 2026-03-15,Serie A,Sassuolo,Bologna,2.36,3.08,2.77,2026-03-14T08:54:33Z
 2026-03-15,Serie A,Sassuolo,Bologna,2.35,3.05,2.8,2026-03-14T14:49:20Z
@@ -225,12 +228,20 @@ date,league,home,away,o_home,o_draw,o_away,scraped_at
 2026-03-15,Serie B,Virtus Entella,Avellino,2.17,2.79,3.13,2026-03-08T20:39:23Z
 2026-03-15,Serie B,Virtus Entella,Avellino,2.12,2.75,3.28,2026-03-09T15:11:01Z
 2026-03-17,Serie B,Catanzaro,Modena,2.86,3.01,2.19,2026-03-11T08:59:49Z
+2026-03-17,Serie B,Catanzaro,Modena,2.75,2.88,2.33,2026-03-14T20:45:12Z
 2026-03-17,Serie B,Mantova,Cesena,2.43,3.14,2.44,2026-03-11T08:59:49Z
+2026-03-17,Serie B,Mantova,Cesena,2.34,3.09,2.57,2026-03-14T20:45:12Z
 2026-03-17,Serie B,Palermo,SS Juve Stabia,1.65,3.34,4.27,2026-03-11T08:59:49Z
+2026-03-17,Serie B,Palermo,SS Juve Stabia,1.54,3.46,5.01,2026-03-14T20:45:12Z
 2026-03-17,Serie B,Reggiana,Monza,3.83,3.12,1.79,2026-03-11T08:59:49Z
+2026-03-17,Serie B,Reggiana,Monza,4.24,3.2,1.69,2026-03-14T20:45:12Z
 2026-03-17,Serie B,Spezia,Empoli,2.14,3.05,2.9,2026-03-11T08:59:49Z
+2026-03-17,Serie B,Spezia,Empoli,2.31,2.66,3.02,2026-03-14T20:45:12Z
 2026-03-17,Serie B,Venezia,Padova,1.28,4.45,7.53,2026-03-11T08:59:49Z
+2026-03-17,Serie B,Venezia,Padova,1.24,4.71,8.08,2026-03-14T20:45:12Z
 2026-03-18,Serie B,Avellino,Sudtirol,2.48,2.98,2.49,2026-03-12T09:14:54Z
 2026-03-18,Serie B,Carrarese,Sampdoria,2.3,2.96,2.72,2026-03-12T09:14:54Z
+2026-03-18,Serie B,Carrarese,Sampdoria,2.39,2.66,2.89,2026-03-14T20:45:12Z
 2026-03-18,Serie B,Frosinone,Bari,1.5,3.7,4.89,2026-03-12T09:14:54Z
+2026-03-18,Serie B,Frosinone,Bari,1.48,3.83,4.91,2026-03-14T20:45:12Z
 2026-03-18,Serie B,Pescara Calcio,Virtus Entella,2.26,3.1,2.67,2026-03-12T09:14:54Z
