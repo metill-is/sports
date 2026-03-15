@@ -1,4 +1,8 @@
 date,home,away,home_score,away_score
+14.03. 17:00,Jicin,Dukla Prague,28,31
+14.03. 17:00,Koprivnice,Zubri,32,35
+14.03. 17:00,Lovosice,Brno,38,22
+14.03. 17:00,Strakonice,Nove Veseli,33,34
 13.03. 18:30,Plzen,Frydek-Mistek,25,23
 07.03. 17:00,Brno,Koprivnice,31,27
 07.03. 17:00,Frydek-Mistek,Strakonice,37,25
@@ -98,10 +102,3 @@ date,home,away,home_score,away_score
 08.10. 16:30,Frydek-Mistek,Karvina,27,35
 07.10. 15:30,Jicin,Zlin,24,24
 05.10. 16:00,Zlin,Plzen,24,40
-04.10. 16:00,Karvina,Dukla Prague,29,22
-04.10. 16:00,Koprivnice,Strakonice,26,24
-04.10. 16:00,Lovosice,Jicin,36,28
-04.10. 15:00,Nove Veseli,Frydek-Mistek,27,25
-30.09. 15:00,Brno,Zubri,29,26
-28.09. 15:00,Frydek-Mistek,Zlin,34,26
-28.09. 08:30,Plzen,Lovosice,39,29
