@@ -212,8 +212,10 @@ date,league,home,away,o_home,o_draw,o_away,scraped_at
 2026-03-14,Serie B,Sampdoria,Venezia,4.31,3.05,1.72,2026-03-14T08:54:33Z
 2026-03-15,Serie A,Como,Roma,NA,3.13,3.44,2026-03-14T20:45:12Z
 2026-03-15,Serie A,Como,Roma,1.98,3.08,3.57,2026-03-15T08:54:04Z
+2026-03-15,Serie A,Como,Roma,1.96,3.07,3.67,2026-03-15T14:49:56Z
 2026-03-15,Serie A,Lazio,AC Milan,3.8,3.19,1.88,2026-03-14T20:45:12Z
 2026-03-15,Serie A,Lazio,AC Milan,3.92,3.22,1.83,2026-03-15T08:54:04Z
+2026-03-15,Serie A,Lazio,AC Milan,4.03,3.24,1.81,2026-03-15T14:49:56Z
 2026-03-15,Serie A,Pisa,Cagliari,2.43,2.85,2.88,2026-03-14T14:49:20Z
 2026-03-15,Serie A,Pisa,Cagliari,2.43,2.81,2.92,2026-03-14T20:45:12Z
 2026-03-15,Serie A,Pisa,Cagliari,2.46,2.77,2.92,2026-03-15T08:54:04Z
@@ -230,9 +232,11 @@ date,league,home,away,o_home,o_draw,o_away,scraped_at
 2026-03-15,Serie B,Sudtirol,Pescara Calcio,1.67,3.33,4.13,2026-03-09T08:59:58Z
 2026-03-15,Serie B,Sudtirol,Pescara Calcio,1.7,3.31,4.01,2026-03-09T15:11:01Z
 2026-03-15,Serie B,Sudtirol,Pescara Calcio,1.73,3.28,3.87,2026-03-13T20:53:48Z
+2026-03-15,Serie B,Sudtirol,Pescara Calcio,1.76,3.26,3.75,2026-03-15T14:49:56Z
 2026-03-15,Serie B,Virtus Entella,Avellino,2.17,2.79,3.13,2026-03-08T20:39:23Z
 2026-03-15,Serie B,Virtus Entella,Avellino,2.12,2.75,3.28,2026-03-09T15:11:01Z
 2026-03-15,Serie B,Virtus Entella,Avellino,2.2,2.7,3.17,2026-03-15T08:54:04Z
+2026-03-16,Serie A,Cremonese,Fiorentina,3.66,3.33,1.86,2026-03-15T14:49:56Z
 2026-03-17,Serie B,Catanzaro,Modena,2.86,3.01,2.19,2026-03-11T08:59:49Z
 2026-03-17,Serie B,Catanzaro,Modena,2.75,2.88,2.33,2026-03-14T20:45:12Z
 2026-03-17,Serie B,Mantova,Cesena,2.43,3.14,2.44,2026-03-11T08:59:49Z
@@ -255,6 +259,8 @@ date,league,home,away,o_home,o_draw,o_away,scraped_at
 2026-03-18,Serie B,Frosinone,Bari,1.48,3.83,4.91,2026-03-14T20:45:12Z
 2026-03-18,Serie B,Frosinone,Bari,1.46,3.87,5.06,2026-03-15T08:54:04Z
 2026-03-18,Serie B,Pescara Calcio,Virtus Entella,2.26,3.1,2.67,2026-03-12T09:14:54Z
+2026-03-20,Serie A,Cagliari,Napoli,5.42,3.42,1.58,2026-03-15T14:49:56Z
+2026-03-20,Serie A,Genoa,Udinese,2.09,2.96,3.39,2026-03-15T14:49:56Z
 2026-03-21,Serie B,Cesena,Catanzaro,2.07,3.1,2.99,2026-03-15T08:54:04Z
 2026-03-21,Serie B,Modena,Mantova,1.47,3.74,5.18,2026-03-15T08:54:04Z
 2026-03-21,Serie B,Monza,Venezia,2.3,3.04,2.66,2026-03-15T08:54:04Z
