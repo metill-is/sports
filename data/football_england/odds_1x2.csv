@@ -506,6 +506,7 @@ date,league,home,away,o_home,o_draw,o_away,scraped_at
 2026-03-21,Championship,Blackburn,Middlesbrough,3.76,3.36,1.83,2026-03-14T20:45:12Z
 2026-03-21,Championship,Blackburn,Middlesbrough,3.99,3.45,1.76,2026-03-15T20:43:00Z
 2026-03-21,Championship,Derby,Birmingham,2.68,3.18,2.37,2026-03-17T20:55:20Z
+2026-03-21,Championship,Hull,Sheffield Wed,1.32,4.75,7.14,2026-03-18T20:47:34Z
 2026-03-21,Championship,Ipswich,Millwall,1.68,3.58,4.27,2026-03-16T21:13:13Z
 2026-03-21,League 1,AFC Wimbledon,Peterborough,1.99,3.32,2.98,2026-03-17T20:55:20Z
 2026-03-21,League 1,AFC Wimbledon,Peterborough,1.92,3.29,3.16,2026-03-18T09:06:46Z
@@ -545,6 +546,7 @@ date,league,home,away,o_home,o_draw,o_away,scraped_at
 2026-03-21,League 2,Oldham,Harrogate,1.48,3.73,5.05,2026-03-17T20:55:20Z
 2026-03-21,League 2,Oldham,Harrogate,1.53,3.66,4.72,2026-03-18T09:06:46Z
 2026-03-21,League 2,Oldham,Harrogate,1.56,3.5,4.71,2026-03-18T15:18:08Z
+2026-03-21,League 2,Oldham,Harrogate,1.58,3.44,4.59,2026-03-18T20:47:34Z
 2026-03-21,League 2,Shrewsbury,Crewe,2.24,3.04,2.74,2026-03-14T20:45:12Z
 2026-03-21,League 2,Shrewsbury,Crewe,2.37,3.07,2.55,2026-03-18T09:06:46Z
 2026-03-21,League 2,Tranmere,Swindon,3.25,3.28,1.9,2026-03-14T20:45:12Z
@@ -556,6 +558,7 @@ date,league,home,away,o_home,o_draw,o_away,scraped_at
 2026-03-21,Premier League,Brighton,Liverpool,2.91,3.45,2.1,2026-03-16T15:17:05Z
 2026-03-21,Premier League,Brighton,Liverpool,2.86,3.39,2.15,2026-03-16T21:13:13Z
 2026-03-21,Premier League,Brighton,Liverpool,2.88,3.39,2.14,2026-03-17T15:15:15Z
+2026-03-21,Premier League,Brighton,Liverpool,2.9,3.37,2.13,2026-03-18T20:47:34Z
 2026-03-21,Premier League,Everton,Chelsea,3.29,3.39,1.96,2026-03-15T20:43:00Z
 2026-03-21,Premier League,Everton,Chelsea,3.27,3.38,1.97,2026-03-16T15:17:05Z
 2026-03-21,Premier League,Everton,Chelsea,3.25,3.38,1.98,2026-03-16T21:13:13Z
