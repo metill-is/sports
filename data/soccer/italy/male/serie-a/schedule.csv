@@ -1,6 +1,4 @@
 date,home,away
-20.03. 17:30,Cagliari,Napoli
-20.03. 19:45,Genoa,Udinese
 21.03. 14:00,Parma,Cremonese
 21.03. 17:00,AC Milan,Torino
 21.03. 19:45,Juventus,Sassuolo
@@ -19,36 +17,36 @@ date,home,away
 06.04. 13:00,Lecce,Atalanta
 06.04. 16:00,Juventus,Genoa
 06.04. 18:45,Napoli,AC Milan
-12.04. 13:00,AC Milan,Udinese
-12.04. 13:00,AS Roma,Pisa
-12.04. 13:00,Atalanta,Juventus
-12.04. 13:00,Bologna,Lecce
-12.04. 13:00,Cagliari,Cremonese
-12.04. 13:00,Como,Inter
-12.04. 13:00,Fiorentina,Lazio
-12.04. 13:00,Genoa,Sassuolo
+10.04. 18:45,AS Roma,Pisa
+11.04. 13:00,Cagliari,Cremonese
+11.04. 13:00,Torino,Verona
+11.04. 16:00,AC Milan,Udinese
+11.04. 18:45,Atalanta,Juventus
+12.04. 10:30,Genoa,Sassuolo
 12.04. 13:00,Parma,Napoli
-12.04. 13:00,Torino,Verona
-19.04. 13:00,AS Roma,Atalanta
-19.04. 13:00,Cremonese,Torino
-19.04. 13:00,Inter,Cagliari
-19.04. 13:00,Juventus,Bologna
-19.04. 13:00,Lecce,Fiorentina
-19.04. 13:00,Napoli,Lazio
-19.04. 13:00,Pisa,Genoa
-19.04. 13:00,Sassuolo,Como
-19.04. 13:00,Udinese,Parma
+12.04. 16:00,Bologna,Lecce
+12.04. 18:45,Como,Inter
+13.04. 18:45,Fiorentina,Lazio
+17.04. 16:30,Sassuolo,Como
+17.04. 18:45,Inter,Cagliari
+18.04. 13:00,Udinese,Parma
+18.04. 16:00,Napoli,Lazio
+18.04. 18:45,AS Roma,Atalanta
+19.04. 10:30,Cremonese,Torino
 19.04. 13:00,Verona,AC Milan
-26.04. 13:00,AC Milan,Juventus
-26.04. 13:00,Bologna,AS Roma
-26.04. 13:00,Cagliari,Atalanta
-26.04. 13:00,Fiorentina,Sassuolo
+19.04. 16:00,Pisa,Genoa
+19.04. 18:45,Juventus,Bologna
+20.04. 18:45,Lecce,Fiorentina
+24.04. 18:45,Napoli,Cremonese
+25.04. 13:00,Parma,Pisa
+25.04. 16:00,Bologna,AS Roma
+25.04. 18:45,Verona,Lecce
+26.04. 10:30,Fiorentina,Sassuolo
 26.04. 13:00,Genoa,Como
-26.04. 13:00,Lazio,Udinese
-26.04. 13:00,Napoli,Cremonese
-26.04. 13:00,Parma,Pisa
-26.04. 13:00,Torino,Inter
-26.04. 13:00,Verona,Lecce
+26.04. 16:00,Torino,Inter
+26.04. 18:45,AC Milan,Juventus
+27.04. 16:30,Cagliari,Atalanta
+27.04. 18:45,Lazio,Udinese
 03.05. 13:00,AS Roma,Fiorentina
 03.05. 13:00,Atalanta,Genoa
 03.05. 13:00,Bologna,Cagliari

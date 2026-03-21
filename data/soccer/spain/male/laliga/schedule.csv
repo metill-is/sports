@@ -1,5 +1,4 @@
 date,home,away
-20.03. 20:00,Villarreal,Real Sociedad
 21.03. 13:00,Elche,Mallorca
 21.03. 15:15,Espanyol,Getafe
 21.03. 17:30,Levante,Oviedo
@@ -12,23 +11,23 @@ date,home,away
 03.04. 19:00,Rayo Vallecano,Elche
 04.04. 12:00,Real Sociedad,Levante
 04.04. 14:15,Mallorca,Real Madrid
-04.04. 16:30,Alaves,Osasuna
+04.04. 16:30,Betis,Espanyol
 04.04. 19:00,Atl. Madrid,Barcelona
 05.04. 12:00,Getafe,Ath Bilbao
 05.04. 14:15,Valencia,Celta Vigo
 05.04. 16:30,Oviedo,Sevilla
-05.04. 19:00,Betis,Espanyol
+05.04. 19:00,Alaves,Osasuna
 06.04. 19:00,Girona,Villarreal
-12.04. 16:00,Ath Bilbao,Villarreal
-12.04. 16:00,Barcelona,Espanyol
-12.04. 16:00,Celta Vigo,Oviedo
-12.04. 16:00,Elche,Valencia
-12.04. 16:00,Levante,Getafe
-12.04. 16:00,Mallorca,Rayo Vallecano
-12.04. 16:00,Osasuna,Betis
-12.04. 16:00,Real Madrid,Girona
-12.04. 16:00,Real Sociedad,Alaves
-12.04. 16:00,Sevilla,Atl. Madrid
+10.04. 19:00,Real Madrid,Girona
+11.04. 12:00,Real Sociedad,Alaves
+11.04. 14:15,Elche,Valencia
+11.04. 16:30,Barcelona,Espanyol
+11.04. 19:00,Sevilla,Atl. Madrid
+12.04. 12:00,Osasuna,Betis
+12.04. 14:15,Mallorca,Rayo Vallecano
+12.04. 16:30,Celta Vigo,Oviedo
+12.04. 19:00,Ath Bilbao,Villarreal
+13.04. 19:00,Levante,Getafe
 22.04. 16:00,Ath Bilbao,Osasuna
 22.04. 16:00,Barcelona,Celta Vigo
 22.04. 16:00,Elche,Atl. Madrid
