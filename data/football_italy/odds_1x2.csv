@@ -322,6 +322,7 @@ date,league,home,away,o_home,o_draw,o_away,scraped_at
 2026-03-21,Serie A,AC Milan,Torino,1.34,4.46,7.16,2026-03-18T20:47:34Z
 2026-03-21,Serie A,AC Milan,Torino,1.34,4.46,7.1,2026-03-20T08:54:26Z
 2026-03-21,Serie A,AC Milan,Torino,1.35,4.41,7.04,2026-03-20T20:46:10Z
+2026-03-21,Serie A,AC Milan,Torino,1.32,4.5,7.59,2026-03-21T14:41:40Z
 2026-03-21,Serie A,Juventus,Sassuolo,1.31,4.62,7.61,2026-03-16T21:13:13Z
 2026-03-21,Serie A,Juventus,Sassuolo,1.3,4.73,7.83,2026-03-17T15:15:15Z
 2026-03-21,Serie A,Juventus,Sassuolo,1.29,4.75,8.05,2026-03-18T09:06:46Z
@@ -331,6 +332,7 @@ date,league,home,away,o_home,o_draw,o_away,scraped_at
 2026-03-21,Serie A,Juventus,Sassuolo,1.29,4.82,7.71,2026-03-20T08:54:26Z
 2026-03-21,Serie A,Juventus,Sassuolo,1.25,5.16,8.52,2026-03-20T14:55:45Z
 2026-03-21,Serie A,Juventus,Sassuolo,1.25,5.21,8.47,2026-03-20T20:46:10Z
+2026-03-21,Serie A,Juventus,Sassuolo,1.26,5.15,8.03,2026-03-21T14:41:40Z
 2026-03-21,Serie A,Parma,Cremonese,2.02,3.01,3.55,2026-03-15T20:43:00Z
 2026-03-21,Serie A,Parma,Cremonese,2.03,2.99,3.54,2026-03-16T09:16:04Z
 2026-03-21,Serie A,Parma,Cremonese,2.03,2.98,3.56,2026-03-16T21:13:13Z
@@ -353,6 +355,7 @@ date,league,home,away,o_home,o_draw,o_away,scraped_at
 2026-03-21,Serie B,Modena,Mantova,1.59,3.54,4.41,2026-03-17T20:55:20Z
 2026-03-21,Serie B,Modena,Mantova,1.57,3.5,4.58,2026-03-18T09:06:46Z
 2026-03-21,Serie B,Modena,Mantova,1.6,3.46,4.39,2026-03-18T15:18:08Z
+2026-03-21,Serie B,Modena,Mantova,1.57,3.46,4.67,2026-03-21T14:41:40Z
 2026-03-21,Serie B,Monza,Venezia,2.3,3.04,2.66,2026-03-15T08:54:04Z
 2026-03-21,Serie B,Monza,Venezia,2.51,2.72,2.67,2026-03-17T20:55:20Z
 2026-03-21,Serie B,Monza,Venezia,2.46,2.88,2.59,2026-03-18T09:06:46Z
@@ -368,8 +371,10 @@ date,league,home,away,o_home,o_draw,o_away,scraped_at
 2026-03-21,Serie B,SS Juve Stabia,Spezia,2.23,2.85,2.94,2026-03-17T20:55:20Z
 2026-03-21,Serie B,SS Juve Stabia,Spezia,2.17,2.88,3.01,2026-03-18T20:47:34Z
 2026-03-21,Serie B,SS Juve Stabia,Spezia,2.11,2.83,3.18,2026-03-21T08:44:36Z
+2026-03-22,Serie A,Atalanta,Verona,1.36,4.3,6.99,2026-03-21T14:41:40Z
 2026-03-22,Serie A,Bologna,Lazio,2.23,2.88,3.18,2026-03-20T20:46:10Z
 2026-03-22,Serie A,Como,Pisa,1.22,5.2,9.89,2026-03-20T20:46:10Z
+2026-03-22,Serie A,Como,Pisa,1.22,5.2,9.88,2026-03-21T14:41:40Z
 2026-03-22,Serie B,Bari,Carrarese,2.66,NA,2.32,2026-03-16T09:16:04Z
 2026-03-22,Serie B,Bari,Carrarese,2.64,2.84,2.45,2026-03-18T20:47:34Z
 2026-03-22,Serie B,Bari,Carrarese,2.7,2.78,2.44,2026-03-20T14:55:45Z
