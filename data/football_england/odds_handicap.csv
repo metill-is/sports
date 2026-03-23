@@ -3918,6 +3918,11 @@ date,league,home,away,change,o_home,o_draw,o_away,scraped_at
 2026-03-28,League 1,Wycombe,Port Vale,0-2,4.33,4.09,1.42,2026-03-21T20:36:38Z
 2026-03-28,League 1,Wycombe,Port Vale,2-0,1.01,6.96,20.77,2026-03-21T20:36:38Z
 2026-03-28,League 1,Wycombe,Port Vale,0-3,8.48,5.8,1.12,2026-03-21T20:36:38Z
+2026-03-28,League 1,Wycombe,Port Vale,0-1,2.29,3.36,2.24,2026-03-23T09:08:14Z
+2026-03-28,League 1,Wycombe,Port Vale,1-0,1.1,5.45,11.81,2026-03-23T09:08:14Z
+2026-03-28,League 1,Wycombe,Port Vale,0-2,4.25,4.07,1.43,2026-03-23T09:08:14Z
+2026-03-28,League 1,Wycombe,Port Vale,2-0,1.01,6.97,21.15,2026-03-23T09:08:14Z
+2026-03-28,League 1,Wycombe,Port Vale,0-3,8.3,5.76,1.13,2026-03-23T09:08:14Z
 2026-03-28,League 2,Barnet,Cambridge Utd,0-1,5.41,3.93,1.35,2026-03-21T20:36:38Z
 2026-03-28,League 2,Barnet,Cambridge Utd,1-0,1.45,3.7,4.5,2026-03-21T20:36:38Z
 2026-03-28,League 2,Barnet,Cambridge Utd,0-2,11.81,5.89,1.08,2026-03-21T20:36:38Z
@@ -4008,6 +4013,11 @@ date,league,home,away,change,o_home,o_draw,o_away,scraped_at
 2026-04-03,Championship,Norwich,Portsmouth,2-0,1.03,7.63,20.06,2026-03-22T20:37:19Z
 2026-04-03,Championship,Norwich,Portsmouth,0-2,6.3,4.76,1.28,2026-03-22T20:37:19Z
 2026-04-03,Championship,Norwich,Portsmouth,3-0,1.01,8.49,29.08,2026-03-22T20:37:19Z
+2026-04-03,Championship,Norwich,Portsmouth,1-0,1.2,4.9,8.64,2026-03-23T09:08:14Z
+2026-04-03,Championship,Norwich,Portsmouth,0-1,3.17,3.51,1.82,2026-03-23T09:08:14Z
+2026-04-03,Championship,Norwich,Portsmouth,2-0,1.04,7.52,19.06,2026-03-23T09:08:14Z
+2026-04-03,Championship,Norwich,Portsmouth,0-2,6.64,4.86,1.26,2026-03-23T09:08:14Z
+2026-04-03,Championship,Norwich,Portsmouth,3-0,1.01,8.52,28.14,2026-03-23T09:08:14Z
 2026-04-03,Championship,QPR,Watford,0-1,5.15,4.04,1.41,2026-03-22T08:45:31Z
 2026-04-03,Championship,QPR,Watford,1-0,1.43,3.99,4.95,2026-03-22T08:45:31Z
 2026-04-03,Championship,QPR,Watford,0-2,11.61,6.22,1.11,2026-03-22T08:45:31Z
@@ -4028,3 +4038,8 @@ date,league,home,away,change,o_home,o_draw,o_away,scraped_at
 2026-04-03,Championship,West Brom,Wrexham,2-0,1.06,6.97,15.79,2026-03-22T20:37:19Z
 2026-04-03,Championship,West Brom,Wrexham,0-2,8.86,5.45,1.17,2026-03-22T20:37:19Z
 2026-04-03,Championship,West Brom,Wrexham,3-0,1.01,8.53,25.41,2026-03-22T20:37:19Z
+2026-04-03,Championship,West Brom,Wrexham,1-0,1.27,4.48,7.14,2026-03-23T09:08:14Z
+2026-04-03,Championship,West Brom,Wrexham,0-1,3.9,3.65,1.61,2026-03-23T09:08:14Z
+2026-04-03,Championship,West Brom,Wrexham,2-0,1.06,7.06,16.33,2026-03-23T09:08:14Z
+2026-04-03,Championship,West Brom,Wrexham,0-2,8.59,5.38,1.18,2026-03-23T09:08:14Z
+2026-04-03,Championship,West Brom,Wrexham,3-0,1.01,8.53,25.9,2026-03-23T09:08:14Z
