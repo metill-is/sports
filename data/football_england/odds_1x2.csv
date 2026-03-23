@@ -680,6 +680,7 @@ date,league,home,away,o_home,o_draw,o_away,scraped_at
 2026-03-28,League 1,Wycombe,Port Vale,1.48,3.66,5.28,2026-03-23T09:08:14Z
 2026-03-28,League 1,Wycombe,Port Vale,1.48,3.7,5.1,2026-03-23T15:09:00Z
 2026-03-28,League 2,Barnet,Cambridge Utd,2.64,3.07,2.3,2026-03-21T20:36:38Z
+2026-03-28,League 2,Barnet,Cambridge Utd,2.55,NA,2.41,2026-03-23T20:51:54Z
 2026-03-28,League 2,Barrow,Bromley,2.98,3.08,2.09,2026-03-21T20:36:38Z
 2026-03-28,League 2,Barrow,Bromley,2.99,3.06,2.09,2026-03-22T14:39:58Z
 2026-03-28,League 2,Bristol Rovers,Accrington,1.73,3.24,3.95,2026-03-21T20:36:38Z
@@ -694,6 +695,7 @@ date,league,home,away,o_home,o_draw,o_away,scraped_at
 2026-03-28,League 2,Newport,Shrewsbury,2.53,3.04,2.41,2026-03-23T15:09:00Z
 2026-03-28,League 2,Salford,MK Dons,2.65,3.1,2.27,2026-03-21T20:36:38Z
 2026-03-28,League 2,Swindon,Fleetwood,1.91,3.28,3.23,2026-03-21T20:36:38Z
+2026-03-28,League 2,Swindon,Fleetwood,1.94,3.23,3.17,2026-03-23T20:51:54Z
 2026-04-03,Championship,Birmingham,Blackburn,1.65,3.35,4.91,2026-03-22T08:45:31Z
 2026-04-03,Championship,Birmingham,Blackburn,1.7,3.4,4.4,2026-03-22T20:37:19Z
 2026-04-03,Championship,Middlesbrough,Millwall,1.59,3.61,4.88,2026-03-22T08:45:31Z
