@@ -1,18 +1,4 @@
 date,home,away
-27.03. 18:00,Cordoba,Mirandes
-28.03. 13:00,Ceuta,Cadiz CF
-28.03. 15:15,Granada CF,Huesca
-28.03. 15:15,Valladolid,Burgos CF
-28.03. 17:30,Malaga,Leganes
-28.03. 20:00,Albacete,Castellon
-28.03. 20:00,Gijon,Dep. La Coruna
-29.03. 12:00,Eibar,Las Palmas
-29.03. 14:15,Cultural Leonesa,Andorra
-29.03. 16:30,Zaragoza,Racing Santander
-29.03. 19:00,Almeria,Real Sociedad B
-31.03. 17:00,Mirandes,Albacete
-31.03. 18:00,Dep. La Coruna,Cordoba
-31.03. 19:30,Valladolid,Cadiz CF
 01.04. 17:00,Andorra,Malaga
 01.04. 18:00,Burgos CF,Ceuta
 01.04. 18:00,Huesca,Cultural Leonesa
@@ -43,17 +29,17 @@ date,home,away
 12.04. 16:30,Mirandes,Castellon
 12.04. 19:00,Racing Santander,Almeria
 13.04. 18:30,Valladolid,Eibar
-19.04. 16:00,Albacete,Granada CF
-19.04. 16:00,Almeria,Malaga
-19.04. 16:00,Andorra,Valladolid
-19.04. 16:00,Castellon,Burgos CF
-19.04. 16:00,Cultural Leonesa,Cordoba
-19.04. 16:00,Dep. La Coruna,Mirandes
-19.04. 16:00,Eibar,Huesca
-19.04. 16:00,Gijon,Cadiz CF
-19.04. 16:00,Las Palmas,Leganes
-19.04. 16:00,Real Sociedad B,Racing Santander
-19.04. 16:00,Zaragoza,Ceuta
+17.04. 18:30,Real Sociedad B,Racing Santander
+17.04. 19:00,Las Palmas,Leganes
+18.04. 14:15,Zaragoza,Ceuta
+18.04. 16:30,Castellon,Burgos CF
+18.04. 16:30,Cultural Leonesa,Cordoba
+19.04. 12:00,Andorra,Valladolid
+19.04. 14:15,Gijon,Cadiz CF
+19.04. 16:30,Albacete,Granada CF
+19.04. 16:30,Eibar,Huesca
+19.04. 19:00,Almeria,Malaga
+20.04. 18:30,Dep. La Coruna,Mirandes
 26.04. 16:00,Albacete,Eibar
 26.04. 16:00,Burgos CF,Dep. La Coruna
 26.04. 16:00,Cadiz CF,Las Palmas
