@@ -423,6 +423,7 @@ date,league,home,away,o_home,o_draw,o_away,scraped_at
 2026-04-04,Serie A,Lazio,Parma,1.73,3.24,4.49,2026-04-02T20:54:37Z
 2026-04-04,Serie A,Lazio,Parma,1.72,3.25,4.53,2026-04-03T09:15:54Z
 2026-04-04,Serie A,Lazio,Parma,1.73,3.24,4.46,2026-04-03T14:59:20Z
+2026-04-04,Serie A,Lazio,Parma,1.73,3.22,4.51,2026-04-03T20:52:57Z
 2026-04-04,Serie A,Sassuolo,Cagliari,1.91,3.06,3.84,2026-03-22T14:39:58Z
 2026-04-04,Serie A,Sassuolo,Cagliari,1.91,3.03,3.88,2026-03-23T09:08:14Z
 2026-04-04,Serie A,Sassuolo,Cagliari,1.91,3.03,3.91,2026-03-23T15:08:59Z
@@ -435,6 +436,7 @@ date,league,home,away,o_home,o_draw,o_away,scraped_at
 2026-04-04,Serie A,Sassuolo,Cagliari,1.91,2.99,3.97,2026-04-02T20:54:37Z
 2026-04-04,Serie A,Sassuolo,Cagliari,1.92,3.01,3.9,2026-04-03T09:15:54Z
 2026-04-04,Serie A,Sassuolo,Cagliari,1.91,3.01,3.95,2026-04-03T14:59:20Z
+2026-04-04,Serie A,Sassuolo,Cagliari,1.9,3.07,3.88,2026-04-03T20:52:57Z
 2026-04-04,Serie A,Verona,Fiorentina,3.95,3.23,1.83,2026-03-22T14:39:58Z
 2026-04-04,Serie A,Verona,Fiorentina,3.89,3.22,1.84,2026-03-23T09:08:14Z
 2026-04-04,Serie A,Verona,Fiorentina,3.78,3.2,1.88,2026-04-01T09:31:52Z
@@ -443,6 +445,7 @@ date,league,home,away,o_home,o_draw,o_away,scraped_at
 2026-04-04,Serie A,Verona,Fiorentina,3.83,3.24,1.85,2026-04-02T15:16:59Z
 2026-04-04,Serie A,Verona,Fiorentina,3.81,3.24,1.86,2026-04-03T09:15:54Z
 2026-04-04,Serie A,Verona,Fiorentina,3.87,3.24,1.84,2026-04-03T14:59:20Z
+2026-04-04,Serie A,Verona,Fiorentina,3.8,3.22,1.86,2026-04-03T20:52:57Z
 2026-04-05,Serie A,Cremonese,Bologna,3.75,3.28,1.86,2026-03-22T20:37:19Z
 2026-04-05,Serie A,Cremonese,Bologna,3.72,3.3,1.86,2026-03-23T09:08:14Z
 2026-04-05,Serie A,Cremonese,Bologna,3.69,3.29,1.87,2026-03-23T15:08:59Z
@@ -464,6 +467,7 @@ date,league,home,away,o_home,o_draw,o_away,scraped_at
 2026-04-06,Serie B,Carrarese,Spezia,1.92,2.96,3.56,2026-04-01T15:21:22Z
 2026-04-06,Serie B,Catanzaro,Monza,2.64,3.15,2.26,2026-04-01T09:31:52Z
 2026-04-06,Serie B,Catanzaro,Monza,2.59,3.12,2.31,2026-04-02T09:16:12Z
+2026-04-06,Serie B,Catanzaro,Monza,2.6,3.11,2.3,2026-04-03T20:52:57Z
 2026-04-06,Serie B,Cesena,Sudtirol,2.03,NA,3.2,2026-04-01T09:31:52Z
 2026-04-06,Serie B,Mantova,Virtus Entella,1.82,3.11,3.72,2026-04-01T09:31:52Z
 2026-04-06,Serie B,Mantova,Virtus Entella,1.84,3.02,3.75,2026-04-02T09:16:12Z
