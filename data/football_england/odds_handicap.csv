@@ -4520,6 +4520,11 @@ date,league,home,away,change,o_home,o_draw,o_away,scraped_at
 2026-04-06,Championship,Ipswich,Birmingham,2-0,1.02,8.03,22.32,2026-04-03T20:52:58Z
 2026-04-06,Championship,Ipswich,Birmingham,0-2,4.82,4.4,1.4,2026-04-03T20:52:58Z
 2026-04-06,Championship,Ipswich,Birmingham,3-0,1.01,8.44,30.36,2026-04-03T20:52:58Z
+2026-04-06,Championship,Ipswich,Birmingham,1-0,1.14,5.56,10.98,2026-04-04T08:54:35Z
+2026-04-06,Championship,Ipswich,Birmingham,0-1,2.55,3.48,2.13,2026-04-04T08:54:35Z
+2026-04-06,Championship,Ipswich,Birmingham,2-0,1.02,7.98,22.34,2026-04-04T08:54:35Z
+2026-04-06,Championship,Ipswich,Birmingham,0-2,4.94,4.41,1.39,2026-04-04T08:54:35Z
+2026-04-06,Championship,Ipswich,Birmingham,3-0,1.01,8.43,30.52,2026-04-04T08:54:35Z
 2026-04-06,Championship,Millwall,Norwich,1-0,1.3,4.51,6.37,2026-04-03T20:52:58Z
 2026-04-06,Championship,Millwall,Norwich,0-1,3.81,3.8,1.6,2026-04-03T20:52:58Z
 2026-04-06,Championship,Millwall,Norwich,0-2,8.09,5.45,1.19,2026-04-03T20:52:58Z
@@ -4530,21 +4535,41 @@ date,league,home,away,change,o_home,o_draw,o_away,scraped_at
 2026-04-06,Championship,Portsmouth,Oxford Utd,0-2,6.18,4.61,1.3,2026-04-03T20:52:58Z
 2026-04-06,Championship,Portsmouth,Oxford Utd,2-0,1.02,7.81,23.77,2026-04-03T20:52:58Z
 2026-04-06,Championship,Portsmouth,Oxford Utd,3-0,1.01,8.27,32.73,2026-04-03T20:52:58Z
+2026-04-06,Championship,Portsmouth,Oxford Utd,0-1,3.36,3.46,1.77,2026-04-04T08:54:35Z
+2026-04-06,Championship,Portsmouth,Oxford Utd,1-0,1.2,4.83,9.02,2026-04-04T08:54:35Z
+2026-04-06,Championship,Portsmouth,Oxford Utd,0-2,7.27,4.95,1.23,2026-04-04T08:54:35Z
+2026-04-06,Championship,Portsmouth,Oxford Utd,2-0,1.03,7.5,20.22,2026-04-04T08:54:35Z
+2026-04-06,Championship,Portsmouth,Oxford Utd,3-0,1.01,8.44,29.69,2026-04-04T08:54:35Z
 2026-04-06,Championship,Preston,QPR,1-0,1.33,4.25,6.11,2026-04-03T20:52:58Z
 2026-04-06,Championship,Preston,QPR,0-1,4.35,3.79,1.52,2026-04-03T20:52:58Z
 2026-04-06,Championship,Preston,QPR,2-0,1.08,6.66,13.96,2026-04-03T20:52:58Z
 2026-04-06,Championship,Preston,QPR,0-2,9.73,5.71,1.15,2026-04-03T20:52:58Z
 2026-04-06,Championship,Preston,QPR,3-0,1.01,8.53,23.6,2026-04-03T20:52:58Z
+2026-04-06,Championship,Preston,QPR,1-0,1.35,4.18,5.91,2026-04-04T08:54:35Z
+2026-04-06,Championship,Preston,QPR,0-1,4.45,3.79,1.51,2026-04-04T08:54:35Z
+2026-04-06,Championship,Preston,QPR,2-0,1.08,6.56,13.56,2026-04-04T08:54:35Z
+2026-04-06,Championship,Preston,QPR,0-2,9.99,5.75,1.14,2026-04-04T08:54:35Z
+2026-04-06,Championship,Preston,QPR,3-0,1.01,8.51,23.27,2026-04-04T08:54:35Z
 2026-04-06,Championship,Sheffield Wed,Leicester,1-0,2.35,3.47,2.29,2026-04-03T20:52:58Z
 2026-04-06,Championship,Sheffield Wed,Leicester,0-1,12.78,5.94,1.11,2026-04-03T20:52:58Z
 2026-04-06,Championship,Sheffield Wed,Leicester,2-0,1.47,4.21,4.27,2026-04-03T20:52:58Z
 2026-04-06,Championship,Sheffield Wed,Leicester,0-2,24.69,8.16,1.01,2026-04-03T20:52:58Z
 2026-04-06,Championship,Sheffield Wed,Leicester,3-0,1.15,6.1,8.59,2026-04-03T20:52:58Z
+2026-04-06,Championship,Sheffield Wed,Leicester,1-0,2.41,3.46,2.25,2026-04-04T08:54:35Z
+2026-04-06,Championship,Sheffield Wed,Leicester,0-1,13.27,6.02,1.1,2026-04-04T08:54:35Z
+2026-04-06,Championship,Sheffield Wed,Leicester,2-0,1.49,4.16,4.16,2026-04-04T08:54:35Z
+2026-04-06,Championship,Sheffield Wed,Leicester,0-2,25.34,8.18,1.01,2026-04-04T08:54:35Z
+2026-04-06,Championship,Sheffield Wed,Leicester,3-0,1.16,6.01,8.36,2026-04-04T08:54:35Z
 2026-04-06,League 1,AFC Wimbledon,Luton,1-0,1.46,3.78,4.39,2026-04-03T20:52:58Z
 2026-04-06,League 1,AFC Wimbledon,Luton,0-1,5.23,4,1.35,2026-04-03T20:52:58Z
 2026-04-06,League 1,AFC Wimbledon,Luton,0-2,11.19,5.89,1.09,2026-04-03T20:52:58Z
 2026-04-06,League 1,AFC Wimbledon,Luton,2-0,1.12,5.49,9.35,2026-04-03T20:52:58Z
 2026-04-06,League 1,AFC Wimbledon,Luton,3-0,1.02,7.22,16.33,2026-04-03T20:52:58Z
+2026-04-06,League 1,AFC Wimbledon,Luton,1-0,1.51,3.68,4.05,2026-04-04T08:54:35Z
+2026-04-06,League 1,AFC Wimbledon,Luton,0-1,5.69,4.11,1.31,2026-04-04T08:54:35Z
+2026-04-06,League 1,AFC Wimbledon,Luton,0-2,12.15,6.06,1.07,2026-04-04T08:54:35Z
+2026-04-06,League 1,AFC Wimbledon,Luton,2-0,1.14,5.29,8.58,2026-04-04T08:54:35Z
+2026-04-06,League 1,AFC Wimbledon,Luton,3-0,1.03,7.14,15.45,2026-04-04T08:54:35Z
 2026-04-06,League 1,Barnsley,Plymouth,1-0,1.5,3.93,3.87,2026-04-03T20:52:58Z
 2026-04-06,League 1,Barnsley,Plymouth,0-1,4.87,4.22,1.36,2026-04-03T20:52:58Z
 2026-04-06,League 1,Barnsley,Plymouth,2-0,1.16,5.41,7.72,2026-04-03T20:52:58Z
@@ -4555,26 +4580,51 @@ date,league,home,away,change,o_home,o_draw,o_away,scraped_at
 2026-04-06,League 1,Northampton,Wigan,0-2,11.85,5.83,1.08,2026-04-03T20:52:58Z
 2026-04-06,League 1,Northampton,Wigan,2-0,1.1,5.59,10.62,2026-04-03T20:52:58Z
 2026-04-06,League 1,Northampton,Wigan,3-0,1.01,7.2,18.13,2026-04-03T20:52:58Z
+2026-04-06,League 1,Northampton,Wigan,1-0,1.44,3.68,4.63,2026-04-04T08:54:35Z
+2026-04-06,League 1,Northampton,Wigan,0-1,5.59,3.92,1.34,2026-04-04T08:54:35Z
+2026-04-06,League 1,Northampton,Wigan,0-2,12.33,5.91,1.08,2026-04-04T08:54:35Z
+2026-04-06,League 1,Northampton,Wigan,2-0,1.11,5.5,10.22,2026-04-04T08:54:35Z
+2026-04-06,League 1,Northampton,Wigan,3-0,1.02,7.19,17.73,2026-04-04T08:54:35Z
 2026-04-06,League 1,Peterborough,Cardiff,1-0,1.96,3.67,2.51,2026-04-03T20:52:58Z
 2026-04-06,League 1,Peterborough,Cardiff,0-1,7.64,5.12,1.17,2026-04-03T20:52:58Z
 2026-04-06,League 1,Peterborough,Cardiff,0-2,14.42,6.94,1.03,2026-04-03T20:52:58Z
 2026-04-06,League 1,Peterborough,Cardiff,2-0,1.36,4.48,4.53,2026-04-03T20:52:58Z
 2026-04-06,League 1,Peterborough,Cardiff,3-0,1.11,6.16,8.46,2026-04-03T20:52:58Z
+2026-04-06,League 1,Peterborough,Cardiff,1-0,1.92,3.7,2.57,2026-04-04T08:54:35Z
+2026-04-06,League 1,Peterborough,Cardiff,0-1,7.44,5.08,1.18,2026-04-04T08:54:35Z
+2026-04-06,League 1,Peterborough,Cardiff,0-2,14.14,6.92,1.04,2026-04-04T08:54:35Z
+2026-04-06,League 1,Peterborough,Cardiff,2-0,1.34,4.54,4.65,2026-04-04T08:54:35Z
+2026-04-06,League 1,Peterborough,Cardiff,3-0,1.11,6.24,8.68,2026-04-04T08:54:35Z
 2026-04-06,League 1,Reading,Lincoln,1-0,1.69,3.44,3.35,2026-04-03T20:52:58Z
 2026-04-06,League 1,Reading,Lincoln,0-1,7.67,4.49,1.21,2026-04-03T20:52:58Z
 2026-04-06,League 1,Reading,Lincoln,0-2,16.02,6.55,1.04,2026-04-03T20:52:58Z
 2026-04-06,League 1,Reading,Lincoln,2-0,1.21,4.8,6.98,2026-04-03T20:52:58Z
 2026-04-06,League 1,Reading,Lincoln,3-0,1.04,6.8,13.38,2026-04-03T20:52:58Z
+2026-04-06,League 1,Reading,Lincoln,1-0,1.73,3.4,3.26,2026-04-04T08:54:35Z
+2026-04-06,League 1,Reading,Lincoln,0-1,7.91,4.52,1.2,2026-04-04T08:54:35Z
+2026-04-06,League 1,Reading,Lincoln,0-2,16.46,6.57,1.03,2026-04-04T08:54:35Z
+2026-04-06,League 1,Reading,Lincoln,2-0,1.22,4.72,6.78,2026-04-04T08:54:35Z
+2026-04-06,League 1,Reading,Lincoln,3-0,1.05,6.74,13.09,2026-04-04T08:54:35Z
 2026-04-06,League 2,Barrow,Chesterfield,1-0,1.61,3.55,3.59,2026-04-03T20:52:58Z
 2026-04-06,League 2,Barrow,Chesterfield,0-1,6.61,4.32,1.25,2026-04-03T20:52:58Z
 2026-04-06,League 2,Barrow,Chesterfield,2-0,1.18,5,7.49,2026-04-03T20:52:58Z
 2026-04-06,League 2,Barrow,Chesterfield,0-2,13.99,6.36,1.05,2026-04-03T20:52:58Z
 2026-04-06,League 2,Barrow,Chesterfield,3-0,1.04,6.94,13.97,2026-04-03T20:52:58Z
+2026-04-06,League 2,Barrow,Chesterfield,1-0,1.61,3.53,3.61,2026-04-04T08:54:35Z
+2026-04-06,League 2,Barrow,Chesterfield,0-1,6.68,4.3,1.25,2026-04-04T08:54:35Z
+2026-04-06,League 2,Barrow,Chesterfield,2-0,1.18,4.99,7.6,2026-04-04T08:54:35Z
+2026-04-06,League 2,Barrow,Chesterfield,0-2,14.17,6.34,1.05,2026-04-04T08:54:35Z
+2026-04-06,League 2,Barrow,Chesterfield,3-0,1.04,6.95,14.21,2026-04-04T08:54:35Z
 2026-04-06,League 2,Cheltenham,Cambridge Utd,1-0,2.11,3.23,2.52,2026-04-03T20:52:58Z
 2026-04-06,League 2,Cheltenham,Cambridge Utd,0-1,11.79,5.2,1.11,2026-04-03T20:52:58Z
 2026-04-06,League 2,Cheltenham,Cambridge Utd,0-2,21.98,6.86,1.01,2026-04-03T20:52:58Z
 2026-04-06,League 2,Cheltenham,Cambridge Utd,2-0,1.36,4.14,4.94,2026-04-03T20:52:58Z
 2026-04-06,League 2,Cheltenham,Cambridge Utd,3-0,1.1,6.02,9.88,2026-04-03T20:52:58Z
+2026-04-06,League 2,Cheltenham,Cambridge Utd,1-0,2.16,3.23,2.46,2026-04-04T08:54:35Z
+2026-04-06,League 2,Cheltenham,Cambridge Utd,0-1,12.31,5.27,1.1,2026-04-04T08:54:35Z
+2026-04-06,League 2,Cheltenham,Cambridge Utd,0-2,22.6,6.86,1.01,2026-04-04T08:54:35Z
+2026-04-06,League 2,Cheltenham,Cambridge Utd,2-0,1.38,4.1,4.79,2026-04-04T08:54:35Z
+2026-04-06,League 2,Cheltenham,Cambridge Utd,3-0,1.1,5.95,9.59,2026-04-04T08:54:35Z
 2026-04-06,League 2,Crawley,Grimsby,1-0,1.56,3.74,3.67,2026-04-03T20:52:58Z
 2026-04-06,League 2,Crawley,Grimsby,0-1,5.67,4.29,1.3,2026-04-03T20:52:58Z
 2026-04-06,League 2,Crawley,Grimsby,0-2,11.73,6.19,1.07,2026-04-03T20:52:58Z
@@ -4595,6 +4645,11 @@ date,league,home,away,change,o_home,o_draw,o_away,scraped_at
 2026-04-06,League 2,Gillingham,Accrington,2-0,1.04,6.52,15.88,2026-04-03T20:52:58Z
 2026-04-06,League 2,Gillingham,Accrington,0-2,7.11,4.83,1.2,2026-04-03T20:52:58Z
 2026-04-06,League 2,Gillingham,Accrington,3-0,1.01,7.19,22.78,2026-04-03T20:52:58Z
+2026-04-06,League 2,Gillingham,Accrington,0-1,3.49,3.49,1.65,2026-04-04T08:54:35Z
+2026-04-06,League 2,Gillingham,Accrington,1-0,1.22,4.43,7.36,2026-04-04T08:54:35Z
+2026-04-06,League 2,Gillingham,Accrington,2-0,1.04,6.49,15.49,2026-04-04T08:54:35Z
+2026-04-06,League 2,Gillingham,Accrington,0-2,7.31,4.89,1.19,2026-04-04T08:54:35Z
+2026-04-06,League 2,Gillingham,Accrington,3-0,1.01,7.2,22.37,2026-04-04T08:54:35Z
 2026-04-06,League 2,Harrogate,Bristol Rovers,1-0,1.45,3.73,4.49,2026-04-03T20:52:58Z
 2026-04-06,League 2,Harrogate,Bristol Rovers,0-1,5.25,3.92,1.36,2026-04-03T20:52:58Z
 2026-04-06,League 2,Harrogate,Bristol Rovers,0-2,11.39,5.85,1.09,2026-04-03T20:52:58Z
@@ -4605,6 +4660,11 @@ date,league,home,away,change,o_home,o_draw,o_away,scraped_at
 2026-04-06,League 2,Notts Co,Newport,2-0,1.01,7.01,19.58,2026-04-03T20:52:58Z
 2026-04-06,League 2,Notts Co,Newport,0-2,4.13,4.1,1.44,2026-04-03T20:52:58Z
 2026-04-06,League 2,Notts Co,Newport,0-3,7.97,5.74,1.14,2026-04-03T20:52:58Z
+2026-04-06,League 2,Notts Co,Newport,1-0,1.11,5.41,10.96,2026-04-04T08:54:35Z
+2026-04-06,League 2,Notts Co,Newport,0-1,2.27,3.39,2.25,2026-04-04T08:54:35Z
+2026-04-06,League 2,Notts Co,Newport,2-0,1.01,7,19.82,2026-04-04T08:54:35Z
+2026-04-06,League 2,Notts Co,Newport,0-2,4.17,4.09,1.44,2026-04-04T08:54:35Z
+2026-04-06,League 2,Notts Co,Newport,0-3,8.09,5.75,1.13,2026-04-04T08:54:35Z
 2026-04-06,League 2,Oldham,MK Dons,0-1,5.16,3.89,1.37,2026-04-03T20:52:58Z
 2026-04-06,League 2,Oldham,MK Dons,1-0,1.44,3.74,4.6,2026-04-03T20:52:58Z
 2026-04-06,League 2,Oldham,MK Dons,2-0,1.11,5.53,9.99,2026-04-03T20:52:58Z
@@ -4620,6 +4680,11 @@ date,league,home,away,change,o_home,o_draw,o_away,scraped_at
 2026-04-06,League 2,Tranmere,Colchester,2-0,1.18,4.97,7.44,2026-04-03T20:52:58Z
 2026-04-06,League 2,Tranmere,Colchester,0-2,14.11,6.37,1.05,2026-04-03T20:52:58Z
 2026-04-06,League 2,Tranmere,Colchester,3-0,1.04,6.94,13.94,2026-04-03T20:52:58Z
+2026-04-06,League 2,Tranmere,Colchester,1-0,1.62,3.52,3.58,2026-04-04T08:54:35Z
+2026-04-06,League 2,Tranmere,Colchester,0-1,6.73,4.31,1.25,2026-04-04T08:54:35Z
+2026-04-06,League 2,Tranmere,Colchester,2-0,1.18,4.97,7.53,2026-04-04T08:54:35Z
+2026-04-06,League 2,Tranmere,Colchester,0-2,14.29,6.36,1.05,2026-04-04T08:54:35Z
+2026-04-06,League 2,Tranmere,Colchester,3-0,1.04,6.93,14.12,2026-04-04T08:54:35Z
 2026-04-07,League 2,Bromley,Shrewsbury,1-0,1.13,5.05,10.51,2026-04-03T20:52:58Z
 2026-04-07,League 2,Bromley,Shrewsbury,0-1,2.65,3.3,2,2026-04-03T20:52:58Z
 2026-04-07,League 2,Bromley,Shrewsbury,0-2,5.23,4.28,1.32,2026-04-03T20:52:58Z
@@ -4640,6 +4705,11 @@ date,league,home,away,change,o_home,o_draw,o_away,scraped_at
 2026-04-10,Premier League,West Ham,Wolves,2-0,1.03,7.71,18.68,2026-04-02T15:17:00Z
 2026-04-10,Premier League,West Ham,Wolves,0-2,5.68,4.73,1.31,2026-04-02T15:17:00Z
 2026-04-10,Premier League,West Ham,Wolves,3-0,1.01,8.62,27.11,2026-04-02T15:17:00Z
+2026-04-10,Premier League,West Ham,Wolves,1-0,1.19,5.14,8.6,2026-04-04T08:54:35Z
+2026-04-10,Premier League,West Ham,Wolves,0-1,2.93,3.62,1.88,2026-04-04T08:54:35Z
+2026-04-10,Premier League,West Ham,Wolves,2-0,1.04,7.66,18.24,2026-04-04T08:54:35Z
+2026-04-10,Premier League,West Ham,Wolves,0-2,5.82,4.79,1.3,2026-04-04T08:54:35Z
+2026-04-10,Premier League,West Ham,Wolves,3-0,1.01,8.61,26.65,2026-04-04T08:54:35Z
 2026-04-11,Premier League,Arsenal,Bournemouth,0-1,2,3.59,2.69,2026-04-01T09:31:52Z
 2026-04-11,Premier League,Arsenal,Bournemouth,1-0,1.08,6.45,14.3,2026-04-01T09:31:52Z
 2026-04-11,Premier League,Arsenal,Bournemouth,2-0,1.01,8.31,25.63,2026-04-01T09:31:52Z
