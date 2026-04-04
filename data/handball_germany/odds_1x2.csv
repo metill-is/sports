@@ -201,6 +201,7 @@ date,league,home,away,o_home,o_draw,o_away,scraped_at
 2026-04-04,2. Bundesliga,TV Grosswallstadt,Dormagen,1.39,7.75,3.4,2026-04-03T09:15:54Z
 2026-04-04,2. Bundesliga,TV Grosswallstadt,Dormagen,1.56,8.01,2.66,2026-04-03T14:59:21Z
 2026-04-04,2. Bundesliga,TV Grosswallstadt,Dormagen,1.6,7.94,2.58,2026-04-04T08:54:35Z
+2026-04-04,2. Bundesliga,TV Grosswallstadt,Dormagen,1.62,NA,2.5,2026-04-04T14:50:32Z
 2026-04-04,2. Bundesliga,Vfl Potsdam,Ferndorf,1.21,10.99,4.45,2026-04-02T09:16:12Z
 2026-04-04,2. Bundesliga,Vfl Potsdam,Ferndorf,1.21,11.02,4.45,2026-04-02T15:17:00Z
 2026-04-04,2. Bundesliga,Vfl Potsdam,Ferndorf,1.21,10.45,4.63,2026-04-03T09:15:54Z
@@ -213,6 +214,7 @@ date,league,home,away,o_home,o_draw,o_away,scraped_at
 2026-04-04,Bundesliga,Hannover-Burgdorf,Flensburg-H.,3.1,7.64,1.46,2026-04-03T14:59:21Z
 2026-04-04,Bundesliga,Hannover-Burgdorf,Flensburg-H.,2.79,8.64,1.5,2026-04-03T20:52:58Z
 2026-04-04,Bundesliga,Hannover-Burgdorf,Flensburg-H.,2.8,8.8,1.5,2026-04-04T08:54:35Z
+2026-04-04,Bundesliga,Hannover-Burgdorf,Flensburg-H.,2.89,8.88,1.47,2026-04-04T14:50:32Z
 2026-04-04,Bundesliga,Kiel,Eisenach,1.06,12.46,8.61,2026-04-01T09:31:52Z
 2026-04-04,Bundesliga,Kiel,Eisenach,1.06,12.27,8.93,2026-04-01T15:21:23Z
 2026-04-04,Bundesliga,Kiel,Eisenach,1.07,11.73,8.55,2026-04-02T09:16:12Z
@@ -225,6 +227,7 @@ date,league,home,away,o_home,o_draw,o_away,scraped_at
 2026-04-04,Bundesliga,Lemgo,MT Melsungen,1.43,8.54,3.07,2026-04-03T09:15:54Z
 2026-04-04,Bundesliga,Lemgo,MT Melsungen,1.44,8.54,3.04,2026-04-03T14:59:21Z
 2026-04-04,Bundesliga,Lemgo,MT Melsungen,1.44,8.69,3.03,2026-04-03T20:52:58Z
+2026-04-04,Bundesliga,Lemgo,MT Melsungen,1.44,8.61,3.04,2026-04-04T14:50:32Z
 2026-04-05,2. Bundesliga,Balingen,Hc Oppenweiler/backnang,1.05,15.32,8.23,2026-04-02T15:17:00Z
 2026-04-05,2. Bundesliga,Balingen,Hc Oppenweiler/backnang,1.05,16.35,7.92,2026-04-03T09:15:54Z
 2026-04-05,2. Bundesliga,Balingen,Hc Oppenweiler/backnang,1.04,17.19,8.29,2026-04-04T08:54:35Z
@@ -241,3 +244,4 @@ date,league,home,away,o_home,o_draw,o_away,scraped_at
 2026-04-05,Bundesliga,Fuchse Berlin,Leipzig,1.02,12.52,12.86,2026-04-03T14:59:21Z
 2026-04-05,Bundesliga,Fuchse Berlin,Leipzig,1.01,14.98,11.62,2026-04-03T20:52:58Z
 2026-04-05,Bundesliga,Fuchse Berlin,Leipzig,1.01,15.11,11.35,2026-04-04T08:54:35Z
+2026-04-05,Bundesliga,Minden,HSV Hamburg,2.97,8.94,1.45,2026-04-04T14:50:32Z
