@@ -526,21 +526,31 @@ date,league,home,away,o_home,o_draw,o_away,scraped_at
 2026-04-06,Serie B,Venezia,SS Juve Stabia,1.38,3.99,6.04,2026-04-04T08:54:34Z
 2026-04-10,Serie A,Roma,Pisa,1.31,4.49,8.18,2026-04-05T20:50:27Z
 2026-04-10,Serie A,Roma,Pisa,1.31,4.47,8.03,2026-04-06T09:24:34Z
+2026-04-10,Serie A,Roma,Pisa,1.31,4.49,8.1,2026-04-06T20:54:27Z
 2026-04-10,Serie B,Frosinone,Palermo,2.37,3.33,2.39,2026-04-04T08:54:34Z
 2026-04-10,Serie B,Frosinone,Palermo,2.23,3.24,2.6,2026-04-05T20:50:27Z
+2026-04-11,Serie A,AC Milan,Udinese,1.35,4.4,6.93,2026-04-06T20:54:27Z
+2026-04-11,Serie A,Atalanta,Juventus,2.88,3.21,2.22,2026-04-06T20:54:27Z
 2026-04-11,Serie A,Cagliari,Cremonese,2.12,2.98,3.31,2026-04-06T15:03:28Z
+2026-04-11,Serie A,Cagliari,Cremonese,2.1,2.98,3.37,2026-04-06T20:54:27Z
 2026-04-11,Serie A,Torino,Verona,1.82,3.14,4.11,2026-04-06T15:03:28Z
+2026-04-11,Serie A,Torino,Verona,1.83,3.13,4.08,2026-04-06T20:54:27Z
 2026-04-11,Serie B,Avellino,Catanzaro,2.44,3.13,2.44,2026-04-05T08:57:38Z
 2026-04-11,Serie B,Avellino,Catanzaro,2.45,2.93,2.56,2026-04-06T15:03:28Z
 2026-04-11,Serie B,Monza,Bari,1.36,3.97,6.52,2026-04-05T08:57:38Z
 2026-04-11,Serie B,Monza,Bari,1.29,4.37,7.3,2026-04-06T15:03:28Z
 2026-04-11,Serie B,Pescara Calcio,Sampdoria,2.44,3.06,2.48,2026-04-05T08:57:38Z
+2026-04-11,Serie B,Pescara Calcio,Sampdoria,2.13,3.1,2.88,2026-04-06T20:54:27Z
 2026-04-11,Serie B,SS Juve Stabia,Cesena,2.15,3.02,2.91,2026-04-05T08:57:38Z
 2026-04-11,Serie B,SS Juve Stabia,Cesena,2.07,2.95,3.15,2026-04-06T15:03:28Z
 2026-04-11,Serie B,Sudtirol,Modena,2.9,2.95,2.19,2026-04-05T08:57:38Z
 2026-04-11,Serie B,Sudtirol,Modena,2.85,2.78,2.33,2026-04-06T15:03:28Z
 2026-04-11,Serie B,Virtus Entella,Venezia,4.25,3.45,1.63,2026-04-05T08:57:38Z
 2026-04-11,Serie B,Virtus Entella,Venezia,4.12,3.38,1.66,2026-04-06T15:03:28Z
+2026-04-11,Serie B,Virtus Entella,Venezia,4.12,3.49,1.64,2026-04-06T20:54:27Z
 2026-04-12,Serie B,Padova,Empoli,2.58,3.02,2.37,2026-04-06T09:24:34Z
+2026-04-12,Serie B,Padova,Empoli,3.06,2.87,2.15,2026-04-06T20:54:27Z
 2026-04-12,Serie B,Reggiana,Carrarese,2.71,2.95,2.31,2026-04-06T09:24:34Z
+2026-04-12,Serie B,Reggiana,Carrarese,2.9,2.9,2.22,2026-04-06T20:54:27Z
 2026-04-12,Serie B,Spezia,Mantova,2.02,3.16,3.04,2026-04-06T09:24:34Z
+2026-04-12,Serie B,Spezia,Mantova,2.13,2.98,NA,2026-04-06T20:54:27Z
