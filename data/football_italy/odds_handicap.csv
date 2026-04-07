@@ -2952,6 +2952,7 @@ date,league,home,away,change,o_home,o_draw,o_away,scraped_at
 2026-04-11,Serie A,Torino,Verona,2-0,1.03,7.59,22.54,2026-04-06T20:54:27Z
 2026-04-11,Serie A,Torino,Verona,0-2,7.4,4.88,1.23,2026-04-06T20:54:27Z
 2026-04-11,Serie A,Torino,Verona,0-3,15.48,7.48,1.05,2026-04-06T20:54:27Z
+2026-04-11,Serie A,Torino,Verona,3-0,1.01,8.31,32.18,2026-04-07T15:27:55Z
 2026-04-11,Serie B,Avellino,Catanzaro,1-0,1.37,3.96,5.07,2026-04-06T15:03:28Z
 2026-04-11,Serie B,Avellino,Catanzaro,0-1,4.77,3.89,1.4,2026-04-06T15:03:28Z
 2026-04-11,Serie B,Avellino,Catanzaro,2-0,1.09,5.82,10.87,2026-04-06T15:03:28Z
@@ -3037,3 +3038,58 @@ date,league,home,away,change,o_home,o_draw,o_away,scraped_at
 2026-04-12,Serie B,Spezia,Mantova,2-0,1.07,6.17,12.63,2026-04-07T09:38:42Z
 2026-04-12,Serie B,Spezia,Mantova,0-2,8.36,5.26,1.15,2026-04-07T09:38:42Z
 2026-04-12,Serie B,Spezia,Mantova,3-0,1.01,7.33,19.64,2026-04-07T09:38:42Z
+2026-04-14,Serie B,Catanzaro,Modena,0-1,5.19,4.13,1.34,2026-04-07T15:27:55Z
+2026-04-14,Serie B,Catanzaro,Modena,1-0,1.47,3.85,4.16,2026-04-07T15:27:55Z
+2026-04-14,Serie B,Catanzaro,Modena,0-2,10.82,5.97,1.09,2026-04-07T15:27:55Z
+2026-04-14,Serie B,Catanzaro,Modena,2-0,1.14,5.46,8.61,2026-04-07T15:27:55Z
+2026-04-14,Serie B,Catanzaro,Modena,3-0,1.02,7.24,15.18,2026-04-07T15:27:55Z
+2026-04-17,Serie B,Sampdoria,Monza,0-1,6.27,4.14,1.28,2026-04-07T15:27:55Z
+2026-04-17,Serie B,Sampdoria,Monza,1-0,1.51,3.61,4.13,2026-04-07T15:27:55Z
+2026-04-17,Serie B,Sampdoria,Monza,0-2,13.6,6.18,1.06,2026-04-07T15:27:55Z
+2026-04-17,Serie B,Sampdoria,Monza,2-0,1.14,5.27,8.93,2026-04-07T15:27:55Z
+2026-04-17,Serie B,Sampdoria,Monza,3-0,1.02,7.12,16.11,2026-04-07T15:27:55Z
+2026-04-18,Serie B,Bari,Venezia,0-1,12.76,5.95,1.07,2026-04-07T15:27:55Z
+2026-04-18,Serie B,Bari,Venezia,1-0,2.5,3.59,2,2026-04-07T15:27:55Z
+2026-04-18,Serie B,Bari,Venezia,0-2,21.13,7.14,1.01,2026-04-07T15:27:55Z
+2026-04-18,Serie B,Bari,Venezia,2-0,1.57,4,3.41,2026-04-07T15:27:55Z
+2026-04-18,Serie B,Bari,Venezia,3-0,1.2,5.34,6.34,2026-04-07T15:27:55Z
+2026-04-18,Serie B,Mantova,Avellino,0-1,4.27,3.69,1.48,2026-04-07T15:27:55Z
+2026-04-18,Serie B,Mantova,Avellino,1-0,1.33,4.02,5.59,2026-04-07T15:27:55Z
+2026-04-18,Serie B,Mantova,Avellino,0-2,9.19,5.38,1.13,2026-04-07T15:27:55Z
+2026-04-18,Serie B,Mantova,Avellino,2-0,1.07,5.99,12.09,2026-04-07T15:27:55Z
+2026-04-18,Serie B,Mantova,Avellino,3-0,1.01,7.3,19.35,2026-04-07T15:27:55Z
+2026-04-18,Serie B,Modena,Frosinone,0-1,3.4,3.76,1.61,2026-04-07T15:27:55Z
+2026-04-18,Serie B,Modena,Frosinone,1-0,1.28,4.44,5.76,2026-04-07T15:27:55Z
+2026-04-18,Serie B,Modena,Frosinone,0-2,6.71,5.07,1.2,2026-04-07T15:27:55Z
+2026-04-18,Serie B,Modena,Frosinone,2-0,1.07,6.31,11.67,2026-04-07T15:27:55Z
+2026-04-18,Serie B,Modena,Frosinone,3-0,1.01,7.47,18.02,2026-04-07T15:27:55Z
+2026-04-18,Serie B,Palermo,Cesena,0-1,2.35,3.49,2.13,2026-04-07T15:27:55Z
+2026-04-18,Serie B,Palermo,Cesena,1-0,1.12,5.38,10.13,2026-04-07T15:27:55Z
+2026-04-18,Serie B,Palermo,Cesena,0-2,4.3,4.22,1.41,2026-04-07T15:27:55Z
+2026-04-18,Serie B,Palermo,Cesena,2-0,1.02,7.03,18.52,2026-04-07T15:27:55Z
+2026-04-18,Serie B,Palermo,Cesena,3-0,1.01,7.15,24.2,2026-04-07T15:27:55Z
+2026-04-18,Serie B,SS Juve Stabia,Catanzaro,0-1,3.55,3.59,1.61,2026-04-07T15:27:55Z
+2026-04-18,Serie B,SS Juve Stabia,Catanzaro,1-0,1.25,4.37,6.57,2026-04-07T15:27:55Z
+2026-04-18,Serie B,SS Juve Stabia,Catanzaro,0-2,7.33,5,1.19,2026-04-07T15:27:55Z
+2026-04-18,Serie B,SS Juve Stabia,Catanzaro,2-0,1.05,6.38,13.78,2026-04-07T15:27:55Z
+2026-04-18,Serie B,SS Juve Stabia,Catanzaro,3-0,1.01,7.31,20.57,2026-04-07T15:27:55Z
+2026-04-18,Serie B,Spezia,Sudtirol,0-1,4.17,3.58,1.51,2026-04-07T15:27:55Z
+2026-04-18,Serie B,Spezia,Sudtirol,1-0,1.3,4.05,6.09,2026-04-07T15:27:55Z
+2026-04-18,Serie B,Spezia,Sudtirol,0-2,9.08,5.26,1.14,2026-04-07T15:27:55Z
+2026-04-18,Serie B,Spezia,Sudtirol,2-0,1.06,6.1,13.32,2026-04-07T15:27:55Z
+2026-04-18,Serie B,Spezia,Sudtirol,3-0,1.01,7.23,20.68,2026-04-07T15:27:55Z
+2026-04-19,Serie B,Carrarese,Pescara Calcio,0-1,3.1,3.66,1.71,2026-04-07T15:27:55Z
+2026-04-19,Serie B,Carrarese,Pescara Calcio,1-0,1.23,4.65,6.7,2026-04-07T15:27:55Z
+2026-04-19,Serie B,Carrarese,Pescara Calcio,0-2,6.03,4.83,1.24,2026-04-07T15:27:55Z
+2026-04-19,Serie B,Carrarese,Pescara Calcio,2-0,1.05,6.58,13.44,2026-04-07T15:27:55Z
+2026-04-19,Serie B,Carrarese,Pescara Calcio,3-0,1.01,7.43,19.67,2026-04-07T15:27:55Z
+2026-04-19,Serie B,Empoli,Virtus Entella,0-1,3.3,3.41,1.71,2026-04-07T15:27:55Z
+2026-04-19,Serie B,Empoli,Virtus Entella,1-0,1.2,4.55,8.07,2026-04-07T15:27:55Z
+2026-04-19,Serie B,Empoli,Virtus Entella,0-2,6.88,4.74,1.21,2026-04-07T15:27:55Z
+2026-04-19,Serie B,Empoli,Virtus Entella,2-0,1.03,6.59,16.77,2026-04-07T15:27:55Z
+2026-04-19,Serie B,Empoli,Virtus Entella,3-0,1.01,7.14,23.6,2026-04-07T15:27:55Z
+2026-04-19,Serie B,Padova,Reggiana,0-1,3.41,3.46,1.67,2026-04-07T15:27:55Z
+2026-04-19,Serie B,Padova,Reggiana,1-0,1.21,4.46,7.53,2026-04-07T15:27:55Z
+2026-04-19,Serie B,Padova,Reggiana,0-2,7.14,4.84,1.2,2026-04-07T15:27:55Z
+2026-04-19,Serie B,Padova,Reggiana,2-0,1.04,6.51,15.77,2026-04-07T15:27:55Z
+2026-04-19,Serie B,Padova,Reggiana,3-0,1.01,7.2,22.71,2026-04-07T15:27:55Z
