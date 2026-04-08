@@ -1,5 +1,4 @@
 date,home,away
-07.04. 19:00,Wrexham,Southampton
 10.04. 19:00,West Brom,Millwall
 11.04. 11:30,Coventry,Sheffield Wed
 11.04. 11:30,Norwich,Ipswich
@@ -13,6 +12,7 @@ date,home,away
 11.04. 14:00,Stoke,Blackburn
 12.04. 11:00,Birmingham,Wrexham
 14.04. 19:00,Portsmouth,Ipswich
+14.04. 19:00,Southampton,Blackburn
 17.04. 19:00,Blackburn,Coventry
 18.04. 11:30,Derby,Oxford Utd
 18.04. 11:30,Millwall,QPR
@@ -47,7 +47,6 @@ date,home,away
 25.04. 14:00,QPR,Derby
 25.04. 14:00,Sheffield Utd,Preston
 25.04. 14:00,Stoke,Portsmouth
-25.04. 16:15,Southampton,Blackburn
 26.04. 11:00,Coventry,Wrexham
 28.04. 18:45,Southampton,Ipswich
 02.05. 11:30,Blackburn,Leicester
