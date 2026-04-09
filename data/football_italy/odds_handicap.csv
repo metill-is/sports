@@ -2922,6 +2922,10 @@ date,league,home,away,change,o_home,o_draw,o_away,scraped_at
 2026-04-10,Serie A,Roma,Pisa,2-0,1.01,8.05,35,2026-04-08T21:00:16Z
 2026-04-10,Serie A,Roma,Pisa,0-2,3.4,3.77,1.69,2026-04-08T21:00:16Z
 2026-04-10,Serie A,Roma,Pisa,0-3,6.77,5.31,1.23,2026-04-08T21:00:16Z
+2026-04-10,Serie A,Roma,Pisa,0-1,1.9,3.35,3.07,2026-04-09T09:30:12Z
+2026-04-10,Serie A,Roma,Pisa,1-0,1.05,6.75,20.75,2026-04-09T09:30:12Z
+2026-04-10,Serie A,Roma,Pisa,2-0,1.01,8.06,34.74,2026-04-09T09:30:12Z
+2026-04-10,Serie A,Roma,Pisa,0-3,6.75,5.31,1.23,2026-04-09T09:30:12Z
 2026-04-10,Serie B,Frosinone,Palermo,1-0,1.36,4.29,4.75,2026-04-05T20:50:27Z
 2026-04-10,Serie B,Frosinone,Palermo,0-1,3.89,4.04,1.48,2026-04-05T20:50:27Z
 2026-04-10,Serie B,Frosinone,Palermo,0-2,7.64,5.49,1.15,2026-04-05T20:50:27Z
@@ -2932,6 +2936,11 @@ date,league,home,away,change,o_home,o_draw,o_away,scraped_at
 2026-04-10,Serie B,Frosinone,Palermo,0-2,7.79,5.48,1.15,2026-04-08T09:20:46Z
 2026-04-10,Serie B,Frosinone,Palermo,2-0,1.1,5.97,9.63,2026-04-08T09:20:46Z
 2026-04-10,Serie B,Frosinone,Palermo,3-0,1.02,7.47,15.85,2026-04-08T09:20:46Z
+2026-04-10,Serie B,Frosinone,Palermo,0-1,3.94,3.99,1.48,2026-04-09T09:30:12Z
+2026-04-10,Serie B,Frosinone,Palermo,1-0,1.36,4.25,4.81,2026-04-09T09:30:12Z
+2026-04-10,Serie B,Frosinone,Palermo,0-2,7.83,5.48,1.15,2026-04-09T09:30:12Z
+2026-04-10,Serie B,Frosinone,Palermo,2-0,1.1,5.96,9.67,2026-04-09T09:30:12Z
+2026-04-10,Serie B,Frosinone,Palermo,3-0,1.02,7.46,15.91,2026-04-09T09:30:12Z
 2026-04-11,Serie A,AC Milan,Udinese,1-0,1.07,6.48,16.58,2026-04-06T20:54:27Z
 2026-04-11,Serie A,AC Milan,Udinese,0-1,2,3.43,2.78,2026-04-06T20:54:27Z
 2026-04-11,Serie A,AC Milan,Udinese,2-0,1.01,8.2,29.36,2026-04-06T20:54:27Z
@@ -2946,6 +2955,11 @@ date,league,home,away,change,o_home,o_draw,o_away,scraped_at
 2026-04-11,Serie A,AC Milan,Udinese,0-1,2.05,3.44,2.68,2026-04-08T09:20:46Z
 2026-04-11,Serie A,AC Milan,Udinese,0-2,3.7,3.98,1.59,2026-04-08T09:20:46Z
 2026-04-11,Serie A,AC Milan,Udinese,0-3,7.33,5.64,1.2,2026-04-08T09:20:46Z
+2026-04-11,Serie A,AC Milan,Udinese,0-1,2.07,3.44,2.66,2026-04-09T09:30:12Z
+2026-04-11,Serie A,AC Milan,Udinese,1-0,1.08,6.34,15.45,2026-04-09T09:30:12Z
+2026-04-11,Serie A,AC Milan,Udinese,0-2,3.74,3.99,1.58,2026-04-09T09:30:12Z
+2026-04-11,Serie A,AC Milan,Udinese,2-0,1.01,8.2,28.02,2026-04-09T09:30:12Z
+2026-04-11,Serie A,AC Milan,Udinese,0-3,7.43,5.67,1.19,2026-04-09T09:30:12Z
 2026-04-11,Serie A,Atalanta,Juventus,1-0,1.54,3.92,4.09,2026-04-06T20:54:27Z
 2026-04-11,Serie A,Atalanta,Juventus,0-1,5.82,4.4,1.33,2026-04-06T20:54:27Z
 2026-04-11,Serie A,Atalanta,Juventus,2-0,1.16,5.68,8.75,2026-04-06T20:54:27Z
@@ -2991,6 +3005,11 @@ date,league,home,away,change,o_home,o_draw,o_away,scraped_at
 2026-04-11,Serie A,Cagliari,Cremonese,2-0,1.05,7.19,17.96,2026-04-08T15:30:02Z
 2026-04-11,Serie A,Cagliari,Cremonese,0-2,8.86,5.37,1.17,2026-04-08T15:30:02Z
 2026-04-11,Serie A,Cagliari,Cremonese,3-0,1.01,8.46,27.7,2026-04-08T15:30:02Z
+2026-04-11,Serie A,Cagliari,Cremonese,0-1,3.97,3.6,1.61,2026-04-09T09:30:12Z
+2026-04-11,Serie A,Cagliari,Cremonese,1-0,1.25,4.55,7.87,2026-04-09T09:30:12Z
+2026-04-11,Serie A,Cagliari,Cremonese,2-0,1.05,7.2,18.15,2026-04-09T09:30:12Z
+2026-04-11,Serie A,Cagliari,Cremonese,0-2,8.92,5.38,1.17,2026-04-09T09:30:12Z
+2026-04-11,Serie A,Cagliari,Cremonese,3-0,1.01,8.48,28.02,2026-04-09T09:30:12Z
 2026-04-11,Serie A,Torino,Verona,1-0,1.18,4.93,10.12,2026-04-06T15:03:28Z
 2026-04-11,Serie A,Torino,Verona,0-1,3.33,3.38,1.81,2026-04-06T15:03:28Z
 2026-04-11,Serie A,Torino,Verona,2-0,1.03,7.62,22.62,2026-04-06T15:03:28Z
@@ -3007,6 +3026,11 @@ date,league,home,away,change,o_home,o_draw,o_away,scraped_at
 2026-04-11,Serie A,Torino,Verona,2-0,1.03,7.63,22.86,2026-04-08T09:20:46Z
 2026-04-11,Serie A,Torino,Verona,0-2,7.32,4.85,1.24,2026-04-08T09:20:46Z
 2026-04-11,Serie A,Torino,Verona,0-3,15.31,7.44,1.05,2026-04-08T09:20:46Z
+2026-04-11,Serie A,Torino,Verona,0-1,3.36,3.36,1.8,2026-04-09T09:30:12Z
+2026-04-11,Serie A,Torino,Verona,1-0,1.18,4.9,10.17,2026-04-09T09:30:12Z
+2026-04-11,Serie A,Torino,Verona,0-2,7.41,4.86,1.24,2026-04-09T09:30:12Z
+2026-04-11,Serie A,Torino,Verona,2-0,1.03,7.6,22.82,2026-04-09T09:30:12Z
+2026-04-11,Serie A,Torino,Verona,3-0,1.01,8.29,32.47,2026-04-09T09:30:12Z
 2026-04-11,Serie B,Avellino,Catanzaro,1-0,1.37,3.96,5.07,2026-04-06T15:03:28Z
 2026-04-11,Serie B,Avellino,Catanzaro,0-1,4.77,3.89,1.4,2026-04-06T15:03:28Z
 2026-04-11,Serie B,Avellino,Catanzaro,2-0,1.09,5.82,10.87,2026-04-06T15:03:28Z
@@ -3126,6 +3150,7 @@ date,league,home,away,change,o_home,o_draw,o_away,scraped_at
 2026-04-17,Serie B,Sampdoria,Monza,2-0,1.13,5.35,9.15,2026-04-07T21:07:31Z
 2026-04-17,Serie B,Sampdoria,Monza,0-2,13.29,6.15,1.06,2026-04-07T21:07:31Z
 2026-04-17,Serie B,Sampdoria,Monza,0-3,20.52,7.25,1.01,2026-04-07T21:07:31Z
+2026-04-17,Serie B,Sampdoria,Monza,3-0,1.02,7.15,16.33,2026-04-09T09:30:12Z
 2026-04-18,Serie B,Bari,Venezia,0-1,12.76,5.95,1.07,2026-04-07T15:27:55Z
 2026-04-18,Serie B,Bari,Venezia,1-0,2.5,3.59,2,2026-04-07T15:27:55Z
 2026-04-18,Serie B,Bari,Venezia,0-2,21.13,7.14,1.01,2026-04-07T15:27:55Z
@@ -3136,6 +3161,11 @@ date,league,home,away,change,o_home,o_draw,o_away,scraped_at
 2026-04-18,Serie B,Bari,Venezia,2-0,1.54,4.03,3.55,2026-04-07T21:07:31Z
 2026-04-18,Serie B,Bari,Venezia,0-2,20.28,7.12,1.01,2026-04-07T21:07:31Z
 2026-04-18,Serie B,Bari,Venezia,3-0,1.18,5.43,6.64,2026-04-07T21:07:31Z
+2026-04-18,Serie B,Bari,Venezia,0-1,11.55,5.72,1.09,2026-04-09T09:30:12Z
+2026-04-18,Serie B,Bari,Venezia,1-0,2.41,3.52,2.08,2026-04-09T09:30:12Z
+2026-04-18,Serie B,Bari,Venezia,0-2,19.89,7.11,1.01,2026-04-09T09:30:12Z
+2026-04-18,Serie B,Bari,Venezia,2-0,1.52,4.03,3.63,2026-04-09T09:30:12Z
+2026-04-18,Serie B,Bari,Venezia,3-0,1.18,5.47,6.82,2026-04-09T09:30:12Z
 2026-04-18,Serie B,Mantova,Avellino,0-1,4.27,3.69,1.48,2026-04-07T15:27:55Z
 2026-04-18,Serie B,Mantova,Avellino,1-0,1.33,4.02,5.59,2026-04-07T15:27:55Z
 2026-04-18,Serie B,Mantova,Avellino,0-2,9.19,5.38,1.13,2026-04-07T15:27:55Z
@@ -3156,6 +3186,11 @@ date,league,home,away,change,o_home,o_draw,o_away,scraped_at
 2026-04-18,Serie B,Palermo,Cesena,2-0,1.02,7.04,18.19,2026-04-07T21:07:31Z
 2026-04-18,Serie B,Palermo,Cesena,0-2,4.39,4.28,1.39,2026-04-07T21:07:31Z
 2026-04-18,Serie B,Palermo,Cesena,3-0,1.01,7.18,23.87,2026-04-07T21:07:31Z
+2026-04-18,Serie B,Palermo,Cesena,0-1,2.41,3.49,2.09,2026-04-09T09:30:12Z
+2026-04-18,Serie B,Palermo,Cesena,1-0,1.13,5.27,9.64,2026-04-09T09:30:12Z
+2026-04-18,Serie B,Palermo,Cesena,0-2,4.45,4.26,1.39,2026-04-09T09:30:12Z
+2026-04-18,Serie B,Palermo,Cesena,2-0,1.02,6.99,17.91,2026-04-09T09:30:12Z
+2026-04-18,Serie B,Palermo,Cesena,3-0,1.01,7.19,23.7,2026-04-09T09:30:12Z
 2026-04-18,Serie B,SS Juve Stabia,Catanzaro,0-1,3.55,3.59,1.61,2026-04-07T15:27:55Z
 2026-04-18,Serie B,SS Juve Stabia,Catanzaro,1-0,1.25,4.37,6.57,2026-04-07T15:27:55Z
 2026-04-18,Serie B,SS Juve Stabia,Catanzaro,0-2,7.33,5,1.19,2026-04-07T15:27:55Z
