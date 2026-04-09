@@ -126,6 +126,7 @@ date,league,home,away,o_home,o_draw,o_away,scraped_at
 2026-04-10,Starligue,Dijon,Limoges,3.52,9.36,1.34,2026-04-07T15:27:55Z
 2026-04-10,Starligue,Dijon,Limoges,3.67,9.35,1.31,2026-04-07T21:07:31Z
 2026-04-10,Starligue,Dijon,Limoges,3.75,NA,1.34,2026-04-08T21:00:16Z
+2026-04-10,Starligue,Dijon,Limoges,3.24,9.1,1.39,2026-04-09T15:44:15Z
 2026-04-10,Starligue,Nimes,Aix,1.56,8.09,2.67,2026-04-07T09:38:42Z
 2026-04-10,Starligue,Nimes,Aix,1.79,6.92,2.29,2026-04-07T21:07:31Z
 2026-04-10,Starligue,Nimes,Aix,1.54,7.48,2.81,2026-04-08T09:20:47Z
@@ -137,12 +138,16 @@ date,league,home,away,o_home,o_draw,o_away,scraped_at
 2026-04-10,Starligue,Selestat,Istres,1.5,7.65,2.92,2026-04-08T09:20:47Z
 2026-04-10,Starligue,Selestat,Istres,1.53,7.68,2.82,2026-04-08T21:00:16Z
 2026-04-10,Starligue,Selestat,Istres,1.52,7.45,2.86,2026-04-09T09:30:12Z
+2026-04-10,Starligue,Selestat,Istres,1.52,7.69,2.83,2026-04-09T15:44:15Z
 2026-04-11,Starligue,Montpellier,Dunkerque,1.04,14.47,9.26,2026-04-08T21:00:16Z
 2026-04-12,Starligue,Cesson Rennes-Metropole,Chartres,1.31,8.39,3.88,2026-04-07T09:38:42Z
 2026-04-12,Starligue,Cesson Rennes-Metropole,Chartres,1.31,8.98,3.76,2026-04-07T21:07:31Z
 2026-04-12,Starligue,Cesson Rennes-Metropole,Chartres,1.31,8.99,3.76,2026-04-08T15:30:03Z
 2026-04-12,Starligue,Cesson Rennes-Metropole,Chartres,1.29,7.88,4.26,2026-04-09T09:30:12Z
+2026-04-12,Starligue,Cesson Rennes-Metropole,Chartres,1.23,8.67,4.71,2026-04-09T15:44:15Z
 2026-04-12,Starligue,PSG,St. Raphael,1.04,13.77,9.25,2026-04-07T09:38:42Z
 2026-04-12,Starligue,PSG,St. Raphael,1.04,13.76,9.23,2026-04-07T15:27:55Z
 2026-04-12,Starligue,PSG,St. Raphael,1.04,13.76,9.24,2026-04-07T21:07:31Z
 2026-04-12,Starligue,PSG,St. Raphael,1.06,11.78,9.14,2026-04-09T09:30:12Z
+2026-04-12,Starligue,PSG,St. Raphael,1.05,14.16,8.85,2026-04-09T15:44:15Z
+2026-04-12,Starligue,Toulouse,Nantes,4.16,10.09,1.25,2026-04-09T15:44:15Z
