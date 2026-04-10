@@ -37,9 +37,10 @@ date_recommended,date_match,sport,country,sex,market,home,away,outcome,odds,prob
 2025-10-03,2025-10-04,handball,spain,male,handicap,Nava,CD Bidasoa Irun,home,1.8,0.69975,0.25954999999999995,NA,435,3.5,FALSE,-435,gsheets
 2025-10-03,2025-10-04,handball,spain,male,outcome,Ademar,Caserio Ciudad Real,home,1.17,0.9425,0.10272499999999991,NA,825,NA,TRUE,140,gsheets
 2025-10-03,2025-10-04,handball,spain,male,outcome,Nava,CD Bidasoa Irun,home,4,0.38825,0.5529999999999999,NA,255,NA,FALSE,-255,gsheets
-2026-03-05,2026-03-07,handball,spain,male,outcome,Quabit Guadalajara,Morrazo Cangas,home,2.28,0.576,0.31,0.12,622,NA,NA,NA,pipeline
+2026-03-05,2026-03-07,handball,spain,male,outcome,Quabit Guadalajara,Morrazo Cangas,home,2.28,0.576,0.31,0.12,622,NA,FALSE,-622,pipeline
 2026-03-05,2026-03-06,handball,spain,male,totals,Huesca,CD Bidasoa Irun,over,1.59,0.70375,0.12,0.06,283,58.5,FALSE,-283,pipeline
-2026-03-05,2026-03-07,handball,spain,male,totals,Quabit Guadalajara,Morrazo Cangas,under,1.61,0.6855,0.1037,0.07,245,61.5,NA,NA,pipeline
+2026-03-05,2026-03-07,handball,spain,male,totals,Quabit Guadalajara,Morrazo Cangas,under,1.61,0.6855,0.1037,0.07,245,61.5,FALSE,-245,pipeline
 2026-03-06,2026-03-06,handball,spain,male,outcome,Huesca,CD Bidasoa Irun,home,3.87,0.49525,0.9166,0.08,1147,NA,FALSE,-1147,pipeline
 2026-03-06,2026-03-06,handball,spain,male,outcome,Horneo Alicante,Cuenca,home,1.46,0.789,0.1519,0.08,1164,NA,FALSE,-1164,pipeline
 2026-03-06,2026-03-06,handball,spain,male,totals,Horneo Alicante,Cuenca,over,1.75,0.63925,0.1187,0.02,340,59.5,FALSE,-340,pipeline
+2026-03-07,2026-03-08,handball,spain,male,totals,Barcelona,Granollers,over,1.6,0.71575,0.1452,0.03,271,64.5,TRUE,162.60000000000002,pipeline

@@ -128,4 +128,5 @@ date_recommended,date_match,sport,country,sex,market,home,away,outcome,odds,prob
 2026-03-05,2026-03-05,handball,germany,male,totals,Gummersbach,Lemgo,over,2.06,0.63475,0.31,0.1,506,58.5,FALSE,-506,pipeline
 2026-03-05,2026-03-05,handball,germany,male,totals,Stuttgart,Kiel,under,1.74,0.659,0.15,0.05,230,61.5,TRUE,170.2,pipeline
 2026-03-05,2026-03-05,handball,germany,male,totals,Stuttgart,Kiel,under,1.59,0.713,0.13,0.07,335,62.5,TRUE,197.65,pipeline
-2026-03-05,2026-03-08,handball,germany,male,outcome,SC Magdeburg,Hannover-Burgdorf,home,1.14,0.93325,0.0639,0.23,808,NA,NA,NA,pipeline
+2026-03-05,2026-03-08,handball,germany,male,outcome,SC Magdeburg,Hannover-Burgdorf,home,1.14,0.93325,0.0639,0.23,808,NA,TRUE,113.11999999999989,pipeline
+2026-03-07,2026-03-08,handball,germany,male,outcome,Erlangen,Minden,home,1.37,0.84975,0.1642,0.1,833,NA,TRUE,308.21000000000004,pipeline
