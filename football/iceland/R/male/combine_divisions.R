@@ -8,7 +8,7 @@ results <- here(
   "male",
   "div1.csv"
 ) |>
-  read_csv() |>
+  read_csv(show_col_types = FALSE) |>
   mutate(
     division = 1
   ) |>
@@ -18,7 +18,7 @@ results <- here(
       "male",
       "div1_lower_playoffs.csv"
     ) |>
-      read_csv() |>
+      read_csv(show_col_types = FALSE) |>
       mutate(
         division = 1
       )
@@ -29,7 +29,7 @@ results <- here(
       "male",
       "div1_upper_playoffs.csv"
     ) |>
-      read_csv() |>
+      read_csv(show_col_types = FALSE) |>
       mutate(
         division = 1
       )
@@ -40,7 +40,7 @@ results <- here(
       "male",
       "div2.csv"
     ) |>
-      read_csv() |>
+      read_csv(show_col_types = FALSE) |>
       mutate(
         division = 2
       )
@@ -51,7 +51,7 @@ results <- here(
       "male",
       "div3.csv"
     ) |>
-      read_csv() |>
+      read_csv(show_col_types = FALSE) |>
       mutate(
         division = 3
       )
@@ -62,7 +62,7 @@ results <- here(
       "male",
       "div4.csv"
     ) |>
-      read_csv() |>
+      read_csv(show_col_types = FALSE) |>
       mutate(
         division = 4
       )
@@ -73,7 +73,7 @@ results <- here(
       "male",
       "div5.csv"
     ) |>
-      read_csv() |>
+      read_csv(show_col_types = FALSE) |>
       mutate(
         division = 5
       )
@@ -102,7 +102,7 @@ cup_games <- here(
   "male",
   "cup.csv"
 ) |>
-  read_csv() |>
+  read_csv(show_col_types = FALSE) |>
   mutate(
     division = max(results$division) + 1
   ) |>
@@ -112,7 +112,7 @@ cup_games <- here(
       "male",
       "cup2.csv"
     ) |>
-      read_csv() |>
+      read_csv(show_col_types = FALSE) |>
       mutate(
         division = max(results$division) + 2
       )
@@ -135,12 +135,14 @@ results |>
     here("data", "male", "data.csv")
   )
 
+schedule_col_types <- cols(dags = col_date(), heima = col_character(), gestir = col_character())
+
 schedule <- here(
   "data",
   "male",
   "schedule_div1.csv"
 ) |>
-  read_csv() |>
+  read_csv(col_types = schedule_col_types) |>
   mutate(
     division = 1
   ) |>
@@ -150,29 +152,29 @@ schedule <- here(
       "male",
       "schedule_div1_upper_playoffs.csv"
     ) |>
-      read_csv() |>
+      read_csv(col_types = schedule_col_types) |>
       mutate(
         division = 1
       )
-  ) |> 
+  ) |>
   bind_rows(
     here(
       "data",
       "male",
       "schedule_div1_lower_playoffs.csv"
     ) |>
-      read_csv() |>
+      read_csv(col_types = schedule_col_types) |>
       mutate(
         division = 1
       )
-  ) |> 
+  ) |>
   bind_rows(
     here(
       "data",
       "male",
       "schedule_div2.csv"
     ) |>
-      read_csv() |>
+      read_csv(col_types = schedule_col_types) |>
       mutate(
         division = 2
       )
@@ -183,7 +185,7 @@ schedule <- here(
       "male",
       "schedule_div3.csv"
     ) |>
-      read_csv() |>
+      read_csv(col_types = schedule_col_types) |>
       mutate(
         division = 3
       )
@@ -194,7 +196,7 @@ schedule <- here(
       "male",
       "schedule_div4.csv"
     ) |>
-      read_csv() |>
+      read_csv(col_types = schedule_col_types) |>
       mutate(
         division = 4
       )
@@ -205,7 +207,7 @@ schedule <- here(
       "male",
       "schedule_div5.csv"
     ) |>
-      read_csv() |>
+      read_csv(col_types = schedule_col_types) |>
       mutate(
         division = 5
       )
@@ -216,7 +218,7 @@ cup_schedule <- here(
   "male",
   "schedule_cup.csv"
 ) |>
-  read_csv() |>
+  read_csv(col_types = schedule_col_types) |>
   mutate(
     division = max(results$division) + 1
   ) |>
