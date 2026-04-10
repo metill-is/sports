@@ -145,6 +145,7 @@ stan_progress_handler <- function(width = 25, tracker = NULL, progress_path = NU
                   league = sub("^fit_", "", tracker_state$step_key),
                   league_index = tracker_state$current - fit_offset,
                   total_leagues = length(tracker_state$fit_leagues),
+                  leagues = tracker_state$fit_leagues,
                   phase = phase,
                   chain = NULL,
                   total_chains = 4L,

@@ -33,7 +33,21 @@ prepare_football_data <- function(sex, from_season = 2021, test_date_cutoff = NU
 # Read historical data
 d <- read_csv(
   here("data", sex, "data.csv")
-) |>
+)
+
+# Support Icelandic column names (football/iceland uses these)
+if ("timabil" %in% names(d)) {
+  d <- d |> rename(
+    season = timabil,
+    date = dags,
+    home = heima,
+    away = gestir,
+    home_goals = stig_heima,
+    away_goals = stig_gestir
+  )
+}
+
+d <- d |>
   select(
     season,
     division,
@@ -246,6 +260,45 @@ for (i in 1:nrow(model_d)) {
   ] <- model_d$away_timediff[i]
 }
 
+
+# Handle empty prediction set (e.g., off-season or in-sample-only mode)
+if (nrow(next_games) == 0) {
+  stan_data <- list(
+    K = nrow(teams),
+    N = nrow(model_d),
+    N_pred = 0L,
+    N_rounds = n_rounds,
+    season_first = model_d$season_first,
+    team1 = model_d$home_nr,
+    team2 = model_d$away_nr,
+    round1 = model_d$home_round,
+    round2 = model_d$away_round,
+    time_between_matches = time_between_matches,
+    goals1 = model_d$home_goals,
+    goals2 = model_d$away_goals,
+    team1_pred = integer(0),
+    team2_pred = integer(0),
+    pred_timediff1 = numeric(0),
+    pred_timediff2 = numeric(0),
+    time_to_next_games = numeric(0),
+    top_teams = integer(0),
+    N_top_teams = 0L,
+    season = as.integer(as.factor(model_d$season)),
+    N_seasons = max(as.integer(as.factor(model_d$season))),
+    division = as.integer(model_d$division),
+    pred_division = integer(0)
+  )
+
+  if (!is.null(test_data)) {
+    return(list(
+      stan_data = stan_data,
+      teams = teams,
+      pred_d = tibble(),
+      test_actuals = tibble()
+    ))
+  }
+  return(stan_data)
+}
 
 next_game_dates <- next_games |>
   filter(division == 1) |>

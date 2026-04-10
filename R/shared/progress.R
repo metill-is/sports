@@ -154,6 +154,7 @@ create_tracker <- function(step_keys, cache = list(), progress_path = NULL) {
         league = sub("^fit_", "", env$step_key),
         league_index = fit_idx,
         total_leagues = length(env$fit_leagues),
+        leagues = env$fit_leagues,
         phase = "starting",
         iteration = 0L,
         total_iterations = 0L,
@@ -194,7 +195,7 @@ create_tracker <- function(step_keys, cache = list(), progress_path = NULL) {
       env$completed_fits[[length(env$completed_fits) + 1]] <- list(
         league = sub("^fit_", "", env$step_key),
         status = status,
-        duration = round(step_elapsed, 1)
+        duration_s = round(step_elapsed, 1)
       )
       fit_idx <- env$current - env$fit_offset
       write_fit_progress(list(
@@ -202,6 +203,7 @@ create_tracker <- function(step_keys, cache = list(), progress_path = NULL) {
         league = sub("^fit_", "", env$step_key),
         league_index = fit_idx,
         total_leagues = length(env$fit_leagues),
+        leagues = env$fit_leagues,
         phase = "done",
         iteration = 0L,
         total_iterations = 0L,
@@ -287,7 +289,8 @@ create_tracker <- function(step_keys, cache = list(), progress_path = NULL) {
       status = "starting",
       leagues = fit_leagues,
       total_leagues = length(fit_leagues),
-      started_at = format(env$fit_started_at, "%Y-%m-%dT%H:%M:%S%z")
+      started_at = format(env$fit_started_at, "%Y-%m-%dT%H:%M:%S%z"),
+      completed_leagues = list()
     ), env$progress_path)
   }
 

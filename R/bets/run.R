@@ -149,7 +149,7 @@ run_betting_pipeline <- function(cfg, sport_dir) {
     cat("\n")
   }
 
-  # 8. Combine results
+  # 8. Combine results and pre-filter by min bet amount
   combined <- bind_rows(all_results)
   if (nrow(combined) > 0) {
     combined <- combined |>
@@ -161,7 +161,23 @@ run_betting_pipeline <- function(cfg, sport_dir) {
         "change", "limit", "booker",
         "kelly_frac_cfg", "cur_pool"
       )))
-    cat("\n", nrow(combined), "recommendation(s) generated.\n")
+
+    # Pre-filter: estimate bet_amount from kelly * cur_pool and drop sub-minimum
+    min_bet <- cfg$bankroll$min_bet_amount %||% 200
+    if (all(c("kelly", "cur_pool") %in% names(combined))) {
+      est_amount <- combined$kelly * combined$cur_pool
+      n_dropped <- sum(est_amount < min_bet, na.rm = TRUE)
+      combined <- combined |> filter(kelly * cur_pool >= min_bet)
+      if (n_dropped > 0) {
+        cat(sprintf("  Dropped %d bet(s) below minimum (%d kr).\n", n_dropped, min_bet))
+      }
+    }
+
+    if (nrow(combined) > 0) {
+      cat("\n", nrow(combined), "recommendation(s) generated.\n")
+    } else {
+      cat("\nNo value bets found (all below minimum stake).\n")
+    }
   } else {
     cat("\nNo value bets found.\n")
   }

@@ -54,10 +54,14 @@ build_return_matrix <- function(draws, bets) {
   B <- nrow(bets)
   returns <- matrix(-1, nrow = S, ncol = B)
 
-  hg <- draws$home_goals
-  ag <- draws$away_goals
-  diff <- hg - ag
-  total <- hg + ag
+  # Accept either (home_goals, away_goals) or (goal_diff, total_goals) directly
+  if ("goal_diff" %in% names(draws) && "total_goals" %in% names(draws)) {
+    diff <- draws$goal_diff
+    total <- draws$total_goals
+  } else {
+    diff <- draws$home_goals - draws$away_goals
+    total <- draws$home_goals + draws$away_goals
+  }
 
   for (j in seq_len(B)) {
     bt <- bets$bet_type[j]

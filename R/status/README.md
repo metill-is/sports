@@ -204,8 +204,8 @@ Throttled to at most one write per 5 seconds during Stan sampling.
 
 | Status | When | Key fields |
 |--------|------|------------|
-| `starting` | Before first league | `leagues`, `total_leagues`, `started_at` |
-| `fitting` | During Stan sampling | `league`, `league_index`, `total_leagues`, `phase`, `iteration`, `total_iterations`, `completed_leagues` |
+| `starting` | Before first league | `leagues`, `total_leagues`, `started_at`, `completed_leagues` |
+| `fitting` | During Stan sampling | `league`, `league_index`, `total_leagues`, `leagues`, `phase`, `iteration`, `total_iterations`, `completed_leagues` |
 | `complete` | All fits done | `total_leagues`, `started_at`, `finished_at`, `completed_leagues` |
 | `error` | Fit crashed | `error`, `league`, `completed_leagues` |
 
@@ -213,7 +213,7 @@ Throttled to at most one write per 5 seconds during Stan sampling.
 
 **`chain`** is always `null` — cmdstanr's progressr reports aggregate iteration counts, not per-chain.
 
-**`completed_leagues`**: Array of `{ league, status, duration }` objects.
+**`completed_leagues`**: Array of `{ league, status, duration_s }` objects.
 
 ### Lifecycle
 

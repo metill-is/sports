@@ -37,13 +37,18 @@ quick_mode <- "--quick" %in% args
 now <- Sys.time()
 today <- Sys.Date()
 
-# Auto-sync livesport-data (need fresh results for settleable check)
-ls_path <- file.path(dirname(sports_dir), "livesport-data")
-if (!quick_mode && dir.exists(file.path(ls_path, ".git"))) {
-  branch <- trimws(system2("git", c("-C", ls_path, "rev-parse", "--abbrev-ref", "HEAD"), stdout = TRUE))
-  system2("git", c("-C", ls_path, "fetch", "origin", "-q"), stdout = FALSE, stderr = FALSE)
-  system2("git", c("-C", ls_path, "reset", "--hard", paste0("origin/", branch)),
+# Auto-sync external repos (need fresh data for freshness + settleable checks)
+sync_repo <- function(repo_path) {
+  if (!dir.exists(file.path(repo_path, ".git"))) return(invisible())
+  branch <- trimws(system2("git", c("-C", repo_path, "rev-parse", "--abbrev-ref", "HEAD"), stdout = TRUE))
+  system2("git", c("-C", repo_path, "fetch", "origin", "-q"), stdout = FALSE, stderr = FALSE)
+  system2("git", c("-C", repo_path, "reset", "--hard", paste0("origin/", branch)),
           stdout = FALSE, stderr = FALSE)
+}
+
+if (!quick_mode) {
+  sync_repo(file.path(dirname(sports_dir), "livesport-data"))
+  sync_repo(file.path(dirname(sports_dir), "lengjan-odds"))
 }
 
 msg <- function(...) message(sprintf(...))
