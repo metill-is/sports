@@ -46,6 +46,8 @@ cat(sprintf(
 #### Compute cutoff date ####
 sex <- "male"
 d <- read_csv(file.path(league_dir, "data", sex, "data.csv"), show_col_types = FALSE)
+# Support Icelandic column names
+if ("dags" %in% names(d)) d <- rename(d, date = dags)
 n_train <- floor(nrow(d) * train_frac)
 cutoff_date <- sort(d$date)[n_train]
 
@@ -58,7 +60,16 @@ cat(sprintf(
 sports_dir <- getwd()
 old_wd <- setwd(league_dir)
 on.exit(setwd(old_wd))
-suppressMessages(here::i_am(paste0(league, ".Rproj")))
+
+# Resolve project root — prefer .Rproj, fall back to .here
+rproj <- paste0(league, ".Rproj")
+if (file.exists(rproj)) {
+  suppressMessages(here::i_am(rproj))
+} else if (file.exists(".here")) {
+  suppressMessages(here::i_am(".here"))
+} else {
+  stop("No .Rproj or .here file found in ", league_dir)
+}
 
 #### Prepare data with backtest split ####
 env <- new.env(parent = globalenv())
@@ -82,7 +93,7 @@ cat(sprintf(
 #### Define models ####
 models <- list(
   poisson = here::here("Stan", "bivariate_poisson_inflated_diagonal_corrmodel.stan"),
-  student_t = here::here("Stan", "2d_student_t.stan")
+  student_t = here::here("Stan", "2d_student_t_totalgoals-v-goaldiff.stan")
 )
 
 for (nm in names(models)) {
@@ -291,9 +302,14 @@ for (nm in names(metrics)) {
   )
 }
 
-#### Generate plots ####
-cat("\n=== Generating plots ===\n")
+#### Generate calibration plots ####
+cat("\n=== Generating calibration plots ===\n")
 source(file.path(sports_dir, "R", "backtest", "plot_backtest.R"))
 plot_backtest(metrics, out_dir)
+
+#### Generate model comparison plots ####
+cat("\n=== Generating model comparison plots ===\n")
+source(file.path(sports_dir, "R", "backtest", "plot_model_comparison.R"))
+plot_model_comparison(posteriors, fits, metrics, test_actuals, teams, out_dir)
 
 cat(sprintf("\nDone. Results in %s\n", out_dir))
