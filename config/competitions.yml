@@ -3,6 +3,17 @@
 #
 # Sport IDs: 1=Football, 2=Basketball, 6=Handball
 
+football_iceland:
+  sport: 1
+  country: "IS"
+  leagues:
+    Besta Deildin:
+      competition: "746"
+    Besta Deildin Efri Hluti:
+      competition: "20443"
+    Besta Deildin Neðri Hluti:
+      competition: "20442"
+
 football_england:
   sport: 1
   country: "ENG"
