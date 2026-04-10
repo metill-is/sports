@@ -1,0 +1,43 @@
+sport: football
+country: iceland
+sex:
+  - male
+  - female
+
+leagues:
+  1: Besta Deildin
+
+bankroll:
+  kelly_frac: 0.15
+  ev_threshold: 0.00
+
+scoring:
+  has_ties: true
+  tie_threshold: 0
+
+markets:
+  outcome: true
+  handicap: true
+  totals: true
+
+predictions:
+  path: results
+  max_age_hours: 48
+  divisions:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+
+odds:
+  source: lengjan-odds
+  lengjan_odds_path: "../../../lengjan-odds/data/football_iceland"
+  booker: "Lengjan"
+
+deduplication:
+  use_gsheets: false
+
+history:
+  enabled: true
+  path: history

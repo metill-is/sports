@@ -26,10 +26,9 @@ run_fit_step <- function(
   generate_plots = TRUE,
   expected_duration = NULL
 ) {
-  handler <- switch(
-    league$pipeline,
-    shared        = fit_shared,
-    football      = fit_football,
+  handler <- switch(league$pipeline,
+    shared = fit_shared,
+    football = fit_football,
     handball_other = fit_handball_other,
     stop("Unknown pipeline: ", league$pipeline)
   )
@@ -100,14 +99,17 @@ fit_shared <- function(league, sex, sports_dir, iter_warmup, iter_sampling, do_f
     ))
 
     # Dual-write to Parquet store
-    tryCatch({
-      source(file.path(sports_dir, "R", "storage", "store.R"), local = TRUE)
-      csv_path <- file.path(sports_dir, config$sport_dir, "results", sex, "posterior_goals.csv")
-      if (file.exists(csv_path)) {
-        df <- readr::read_csv(csv_path, show_col_types = FALSE)
-        store_predictions(df, league$sport, league$country, sex, sports_dir)
-      }
-    }, error = function(e) warning("Store write failed: ", e$message))
+    tryCatch(
+      {
+        source(file.path(sports_dir, "R", "storage", "store.R"), local = TRUE)
+        csv_path <- file.path(sports_dir, config$sport_dir, "results", sex, "posterior_goals.csv")
+        if (file.exists(csv_path)) {
+          df <- readr::read_csv(csv_path, show_col_types = FALSE)
+          store_predictions(df, league$sport, league$country, sex, sports_dir)
+        }
+      },
+      error = function(e) warning("Store write failed: ", e$message)
+    )
   }
 }
 
@@ -130,7 +132,7 @@ fit_football <- function(league, sex, sports_dir, iter_warmup, iter_sampling, do
       stan_data <- suppressMessages(env$prepare_football_data(sex))
 
       # Resolve paths
-      stan_model_path <- here::here("Stan", "bivariate_poisson_inflated_diagonal_corrmodel.stan")
+      stan_model_path <- here::here("Stan", league$stan_model)
       output_path <- here::here("results", sex, "fit.rds")
 
       # Fit
@@ -160,14 +162,17 @@ fit_football <- function(league, sex, sports_dir, iter_warmup, iter_sampling, do
       )
 
       # Dual-write to Parquet store
-      tryCatch({
-        source(file.path(sports_dir, "R", "storage", "store.R"), local = TRUE)
-        csv_path <- here::here("results", sex, "posterior_goals.csv")
-        if (file.exists(csv_path)) {
-          df <- readr::read_csv(csv_path, show_col_types = FALSE)
-          store_predictions(df, league$sport, league$country, sex, sports_dir)
-        }
-      }, error = function(e) warning("Store write failed: ", e$message))
+      tryCatch(
+        {
+          source(file.path(sports_dir, "R", "storage", "store.R"), local = TRUE)
+          csv_path <- here::here("results", sex, "posterior_goals.csv")
+          if (file.exists(csv_path)) {
+            df <- readr::read_csv(csv_path, show_col_types = FALSE)
+            store_predictions(df, league$sport, league$country, sex, sports_dir)
+          }
+        },
+        error = function(e) warning("Store write failed: ", e$message)
+      )
     }
   })
 }
@@ -219,14 +224,17 @@ fit_handball_other <- function(league, sex, sports_dir, iter_warmup, iter_sampli
       )
 
       # Dual-write to Parquet store
-      tryCatch({
-        source(file.path(sports_dir, "R", "storage", "store.R"), local = TRUE)
-        csv_path <- here::here("results", league$country, sex, "posterior_goals.csv")
-        if (file.exists(csv_path)) {
-          df <- readr::read_csv(csv_path, show_col_types = FALSE)
-          store_predictions(df, league$sport, league$country, sex, sports_dir)
-        }
-      }, error = function(e) warning("Store write failed: ", e$message))
+      tryCatch(
+        {
+          source(file.path(sports_dir, "R", "storage", "store.R"), local = TRUE)
+          csv_path <- here::here("results", league$country, sex, "posterior_goals.csv")
+          if (file.exists(csv_path)) {
+            df <- readr::read_csv(csv_path, show_col_types = FALSE)
+            store_predictions(df, league$sport, league$country, sex, sports_dir)
+          }
+        },
+        error = function(e) warning("Store write failed: ", e$message)
+      )
     }
   })
 }

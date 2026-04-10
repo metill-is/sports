@@ -13,18 +13,21 @@ box::use(
 #' Load leagues.yml and merge defaults into each league entry
 #'
 #' Uses readr::read_file() + yaml::yaml.load() to handle UTF-8 correctly.
+#' By default, leagues with `active: false` are excluded. Pass
+#' `include_inactive = TRUE` to load all leagues regardless.
 #'
 #' @param path Path to leagues.yml
+#' @param include_inactive If TRUE, include leagues with `active: false`
 #' @return Named list of league configs
 #' @export
-load_leagues <- function(path) {
+load_leagues <- function(path, include_inactive = FALSE) {
   raw <- read_file(path)
   cfg <- read_yaml(raw)
 
   defaults <- cfg$defaults %||% list()
   cfg$defaults <- NULL
 
-  lapply(cfg, function(league) {
+  leagues <- lapply(cfg, function(league) {
     # defaults first, then league-specific overrides
     merged <- defaults
     for (nm in names(league)) {
@@ -32,6 +35,12 @@ load_leagues <- function(path) {
     }
     merged
   })
+
+  if (!include_inactive) {
+    leagues <- Filter(function(l) !identical(l$active, FALSE), leagues)
+  }
+
+  leagues
 }
 
 

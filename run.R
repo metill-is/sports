@@ -34,26 +34,28 @@ args <- commandArgs(trailingOnly = TRUE)
 
 parse_arg <- function(flag) {
   idx <- which(args == flag)
-  if (length(idx) == 0) return(NULL)
+  if (length(idx) == 0) {
+    return(NULL)
+  }
   if (idx == length(args)) stop(paste(flag, "requires a value"))
   args[idx + 1]
 }
 
 has_flag <- function(flag) flag %in% args
 
-arg_sport   <- parse_arg("--sport")
+arg_sport <- parse_arg("--sport")
 arg_country <- parse_arg("--country")
-arg_league  <- parse_arg("--league")
-arg_all     <- has_flag("--all")
-arg_active  <- has_flag("--active")
-arg_step    <- parse_arg("--step")
-arg_sex     <- parse_arg("--sex")
-arg_iter    <- parse_arg("--iter")
-arg_stale    <- has_flag("--stale")
-arg_due      <- has_flag("--due")
-arg_dry_run  <- has_flag("--dry-run")
+arg_league <- parse_arg("--league")
+arg_all <- has_flag("--all")
+arg_active <- has_flag("--active")
+arg_step <- parse_arg("--step")
+arg_sex <- parse_arg("--sex")
+arg_iter <- parse_arg("--iter")
+arg_stale <- has_flag("--stale")
+arg_due <- has_flag("--due")
+arg_dry_run <- has_flag("--dry-run")
 arg_no_plots <- has_flag("--no-plots")
-arg_sync     <- has_flag("--sync")
+arg_sync <- has_flag("--sync")
 
 # ── Sync upstream data repos ────────────────────────────────────────────────
 
@@ -67,7 +69,7 @@ needs_sync <- arg_sync || {
 if (needs_sync) {
   sync_repos <- list(
     list(name = "livesport-data", path = file.path(dirname(sports_dir), "livesport-data")),
-    list(name = "lengjan-odds",   path = file.path(dirname(sports_dir), "lengjan-odds"))
+    list(name = "lengjan-odds", path = file.path(dirname(sports_dir), "lengjan-odds"))
   )
   for (repo in sync_repos) {
     if (dir.exists(file.path(repo$path, ".git"))) {
@@ -75,7 +77,8 @@ if (needs_sync) {
       branch <- trimws(system2("git", c("-C", repo$path, "rev-parse", "--abbrev-ref", "HEAD"), stdout = TRUE))
       system2("git", c("-C", repo$path, "fetch", "origin", "-q"), stdout = TRUE, stderr = TRUE)
       res <- system2("git", c("-C", repo$path, "reset", "--hard", paste0("origin/", branch)),
-                      stdout = TRUE, stderr = TRUE)
+        stdout = TRUE, stderr = TRUE
+      )
       status <- attr(res, "status")
       if (is.null(status) || status == 0L) {
         cat("OK\n")
@@ -89,7 +92,7 @@ if (needs_sync) {
 
 # Validate: at least one selector
 if (is.null(arg_sport) && is.null(arg_country) && is.null(arg_league) &&
-    !arg_all && !arg_active && !arg_stale && !arg_due) {
+  !arg_all && !arg_active && !arg_stale && !arg_due) {
   cat("Error: specify --sport, --country, --league, --all, --active, --stale, or --due\n")
   cat("Run 'Rscript run.R --help' for usage.\n")
   quit(status = 1)
@@ -137,14 +140,18 @@ iter_override <- if (!is.null(arg_iter)) as.integer(arg_iter) else NULL
 
 # ── Load and filter leagues ───────────────────────────────────────────────────
 
-box::use(R/pipeline/config[load_leagues, filter_leagues, schedule_to_league_keys])
+box::use(R / pipeline / config[load_leagues, filter_leagues, schedule_to_league_keys])
 
-leagues <- load_leagues(here("config", "leagues.yml"))
+# Explicit --league overrides active filter (allows running inactive leagues)
+leagues <- load_leagues(
+  here("config", "leagues.yml"),
+  include_inactive = !is.null(arg_league)
+)
 
 # Apply --active filter via schedule scanner
 active_keys <- NULL
 if (arg_active) {
-  box::use(R/schedule/scan[scan_schedules])
+  box::use(R / schedule / scan[scan_schedules])
   scan_result <- scan_schedules(sports_dir, lookahead_days = 7)
   schedule_active <- scan_result$summary$key[scan_result$summary$status == "active"]
   active_keys <- schedule_to_league_keys(schedule_active, names(leagues))
@@ -165,13 +172,13 @@ selected <- filter_leagues(
 
 # Apply --stale filter: select all betting leagues when used standalone
 if (arg_stale && is.null(arg_sport) && is.null(arg_country) &&
-    is.null(arg_league) && !arg_all && !arg_active) {
+  is.null(arg_league) && !arg_all && !arg_active) {
   selected <- filter_leagues(leagues, has_bets_only = TRUE)
 }
 
 # Apply --due filter: select all betting leagues when used standalone
 if (arg_due && is.null(arg_sport) && is.null(arg_country) &&
-    is.null(arg_league) && !arg_all && !arg_active) {
+  is.null(arg_league) && !arg_all && !arg_active) {
   selected <- filter_leagues(leagues, has_bets_only = TRUE)
 }
 
@@ -183,7 +190,7 @@ if (length(selected) == 0) {
 # Apply --stale filter: narrow to stale league×sex combos
 stale_sex_map <- NULL
 if (arg_stale) {
-  box::use(R/pipeline/staleness[find_stale_league_sexes])
+  box::use(R / pipeline / staleness[find_stale_league_sexes])
   stale <- find_stale_league_sexes(selected, sports_dir)
 
   if (length(stale) == 0) {
@@ -206,7 +213,7 @@ if (arg_stale) {
 # Apply --due filter: narrow to due league×sex combos
 due_sex_map <- NULL
 if (arg_due) {
-  box::use(R/pipeline/staleness[find_due_league_sexes])
+  box::use(R / pipeline / staleness[find_due_league_sexes])
   due <- find_due_league_sexes(selected, sports_dir)
 
   if (length(due) == 0) {
@@ -248,20 +255,32 @@ cat("Leagues:", length(selected), "\n\n")
 
 for (key in names(selected)) {
   league <- selected[[key]]
-  sexes <- if (!is.null(arg_sex)) arg_sex
-           else if (!is.null(due_sex_map)) due_sex_map[[key]]
-           else if (!is.null(stale_sex_map)) stale_sex_map[[key]]
-           else league$sex
+  sexes <- if (!is.null(arg_sex)) {
+    arg_sex
+  } else if (!is.null(due_sex_map)) {
+    due_sex_map[[key]]
+  } else if (!is.null(stale_sex_map)) {
+    stale_sex_map[[key]]
+  } else {
+    league$sex
+  }
   for (sex in sexes) {
     reason <- if (!is.null(due_sex_map)) {
       due_reason_map[[paste(key, sex)]]
     } else if (!is.null(stale_sex_map)) {
       stale_reason_map[[paste(key, sex)]]
-    } else NULL
-    filter_label <- if (!is.null(due_sex_map)) "due"
-                     else if (!is.null(stale_sex_map)) "stale"
-                     else NULL
-    cat(sprintf("  %-30s %-7s [%s]%s\n",
+    } else {
+      NULL
+    }
+    filter_label <- if (!is.null(due_sex_map)) {
+      "due"
+    } else if (!is.null(stale_sex_map)) {
+      "stale"
+    } else {
+      NULL
+    }
+    cat(sprintf(
+      "  %-30s %-7s [%s]%s\n",
       key, sex, league$pipeline,
       if (!is.null(reason)) paste0("  [", filter_label, ": ", reason, "]") else ""
     ))
@@ -271,9 +290,15 @@ cat("\n")
 
 # Helper: resolve sexes for a league key
 resolve_sexes <- function(key, league) {
-  if (!is.null(arg_sex)) return(arg_sex)
-  if (!is.null(due_sex_map)) return(due_sex_map[[key]] %||% league$sex)
-  if (!is.null(stale_sex_map)) return(stale_sex_map[[key]] %||% league$sex)
+  if (!is.null(arg_sex)) {
+    return(arg_sex)
+  }
+  if (!is.null(due_sex_map)) {
+    return(due_sex_map[[key]] %||% league$sex)
+  }
+  if (!is.null(stale_sex_map)) {
+    return(stale_sex_map[[key]] %||% league$sex)
+  }
   league$sex
 }
 
@@ -312,15 +337,17 @@ timing_cache_path <- here("config", "timing_cache.json")
 cache <- load_timing_cache(timing_cache_path)
 progress_path <- if ("fit" %in% steps) {
   "~/.cache/raycast-pipeline/fit-progress.json"
-} else NULL
+} else {
+  NULL
+}
 tracker <- create_tracker(step_keys, cache, progress_path = progress_path)
 
 # Register progressr handler for cmdstanr progress bars (PR #1138) — must be
 # done once at top level, not inside tryCatch/handlers.
 # Custom handler writes to stderr (unbuffered) with live ETA from iteration rate.
 if ("fit" %in% steps && requireNamespace("cmdstanr", quietly = TRUE) &&
-    exists("register_default_progress_handler", where = asNamespace("cmdstanr")) &&
-    requireNamespace("progressr", quietly = TRUE)) {
+  exists("register_default_progress_handler", where = asNamespace("cmdstanr")) &&
+  requireNamespace("progressr", quietly = TRUE)) {
   options(progressr.enable = TRUE)
   source(here("R", "shared", "stan_progress_handler.R"), local = TRUE)
   progressr::handlers(global = TRUE)
@@ -336,7 +363,10 @@ quiet_here <- function(...) suppressMessages(here::i_am(...))
 tracked_step <- function(step_fn, label, step_key, ...) {
   tracker$start_step(label, key = step_key)
   ok <- tryCatch(
-    { step_fn(...); TRUE },
+    {
+      step_fn(...)
+      TRUE
+    },
     error = function(e) {
       cat(sprintf("\n         %s\n", conditionMessage(e)))
       FALSE
@@ -347,13 +377,13 @@ tracked_step <- function(step_fn, label, step_key, ...) {
 }
 
 # Load step modules lazily
-if ("data" %in% steps) box::use(R/pipeline/step_data[run_data_step])
-if ("fit" %in% steps || "results" %in% steps) box::use(R/pipeline/step_fit[run_fit_step])
+if ("data" %in% steps) box::use(R / pipeline / step_data[run_data_step])
+if ("fit" %in% steps || "results" %in% steps) box::use(R / pipeline / step_fit[run_fit_step])
 if ("bet" %in% steps) {
-  box::use(R/pipeline/step_bet[run_bet_step])
-  box::use(R/bets/portfolio[portfolio_optimize])
+  box::use(R / pipeline / step_bet[run_bet_step])
+  box::use(R / bets / portfolio[portfolio_optimize])
 }
-if ("settle" %in% steps) box::use(R/pipeline/step_settle[run_settle_step])
+if ("settle" %in% steps) box::use(R / pipeline / step_settle[run_settle_step])
 
 all_results <- list()
 all_recommendations <- list()
@@ -452,16 +482,19 @@ if ("bet" %in% steps) {
     step_key <- paste("bet", key, sep = "_")
     bet_res <- NULL
     tracker$start_step(paste("bet:", key), key = step_key)
-    ok <- tryCatch({
-      bet_res <- run_bet_step(
-        league = league,
-        sports_dir = sports_dir
-      )
-      TRUE
-    }, error = function(e) {
-      cat(sprintf("\n         %s\n", conditionMessage(e)))
-      FALSE
-    })
+    ok <- tryCatch(
+      {
+        bet_res <- run_bet_step(
+          league = league,
+          sports_dir = sports_dir
+        )
+        TRUE
+      },
+      error = function(e) {
+        cat(sprintf("\n         %s\n", conditionMessage(e)))
+        FALSE
+      }
+    )
     tracker$end_step(if (ok) "OK" else "FAILED")
     all_results[[length(all_results) + 1]] <- list(step = "bet", league = key, sex = NA, ok = ok)
     if (!is.null(bet_res)) {
@@ -516,17 +549,18 @@ if ("bet" %in% steps && length(all_recommendations) > 0) {
 
     # Portfolio optimisation: scale per-match kelly fractions across daily matches
     if (length(all_bet_packages) > 0 &&
-        "kelly" %in% names(new_recs) && "date" %in% names(new_recs)) {
-
+      "kelly" %in% names(new_recs) && "date" %in% names(new_recs)) {
       # Build match keys for packages and recommendations
       for (i in seq_along(all_bet_packages)) {
         p <- all_bet_packages[[i]]
         all_bet_packages[[i]]$match_key <- paste(
-          p$date, p$sex, p$home, p$away, sep = "|"
+          p$date, p$sex, p$home, p$away,
+          sep = "|"
         )
       }
       new_recs$.match_key <- paste(
-        new_recs$date, new_recs$sex, new_recs$heima, new_recs$gestir, sep = "|"
+        new_recs$date, new_recs$sex, new_recs$heima, new_recs$gestir,
+        sep = "|"
       )
 
       # Group packages by date and optimise per day
@@ -562,7 +596,8 @@ if ("bet" %in% steps && length(all_recommendations) > 0) {
           dplyr::mutate(
             .league_total = sum(kelly),
             .league_scale = ifelse(.league_total > max_league_exp,
-                                   max_league_exp / .league_total, 1.0),
+              max_league_exp / .league_total, 1.0
+            ),
             kelly = kelly * .league_scale
           ) |>
           dplyr::ungroup()
@@ -574,8 +609,10 @@ if ("bet" %in% steps && length(all_recommendations) > 0) {
         if (nrow(capped) > 0) {
           for (i in seq_len(nrow(capped))) {
             r <- capped[i, ]
-            cat(sprintf("  League cap: %s/%s %s: %.3f → %.3f (scale=%.2f)\n",
-                r$sport, r$country, r$date, r$.league_total, max_league_exp, r$.league_scale))
+            cat(sprintf(
+              "  League cap: %s/%s %s: %.3f → %.3f (scale=%.2f)\n",
+              r$sport, r$country, r$date, r$.league_total, max_league_exp, r$.league_scale
+            ))
           }
         }
 

@@ -6,8 +6,10 @@
 #
 # Key fields:
 #   pipeline:    shared | football | handball_other
-#   data_source: baskethotel | hsi | livesport_football | livesport_handball
+#   data_source: baskethotel | hsi | iceland_ksi | livesport_football | livesport_handball
 #   has_bets:    whether this league has a config/bets.yml
+#   active:      true/false — inactive leagues are excluded from --all, --active, --stale, --due
+#                (explicit --league overrides this)
 
 defaults:
   iter_warmup: 1000
@@ -27,6 +29,7 @@ basketball_iceland:
   config_module: R/config/basketball_iceland.R
   data_source: baskethotel
   has_bets: true
+  active: true
   rproj: basketball_iceland.Rproj
 
 # ── Handball Iceland ────────────────────────────────────────────────────────
@@ -41,9 +44,26 @@ handball_iceland:
   config_module: R/config/handball_iceland.R
   data_source: hsi
   has_bets: true
+  active: true
   rproj: handball_iceland.Rproj
 
-# ── Football ────────────────────────────────────────────────────────────────
+# ── Football Iceland ─────────────────────────────────────────────────────────
+
+football_iceland:
+  sport: football
+  country: iceland
+  dir: football/iceland
+  sex: [male, female]
+  stan_model: bivariate_poisson_inflated_diagonal_corrmodel.stan
+  pipeline: football
+  data_source: iceland_ksi
+  has_bets: true
+  active: true
+  rproj: football_iceland.Rproj
+  league_name: "Úrvalsdeild"
+  division_names: ["BD", "LD1", "LD2", "LD3", "LD4"]
+
+# ── Football (paused) ──────────────────────────────────────────────────────
 
 football_england:
   sport: football
@@ -54,6 +74,7 @@ football_england:
   pipeline: football
   data_source: livesport_football
   has_bets: true
+  active: false
   rproj: football_england.Rproj
   league_name: "Premier League"
   division_names: ["PL", "CH", "L1", "L2"]
@@ -67,6 +88,7 @@ football_italy:
   pipeline: football
   data_source: livesport_football
   has_bets: true
+  active: false
   rproj: football_italy.Rproj
   league_name: "Serie A"
   division_names: ["SA"]
@@ -80,11 +102,12 @@ football_spain:
   pipeline: football
   data_source: livesport_football
   has_bets: false
+  active: false
   rproj: football_spain.Rproj
   league_name: "La Liga"
   division_names: ["LL"]
 
-# ── Handball European (with betting) ───────────────────────────────────────
+# ── Handball European (paused) ─────────────────────────────────────────────
 
 handball_denmark:
   sport: handball
@@ -95,6 +118,7 @@ handball_denmark:
   pipeline: handball_other
   data_source: livesport_handball
   has_bets: true
+  active: false
 
 handball_france:
   sport: handball
@@ -105,6 +129,7 @@ handball_france:
   pipeline: handball_other
   data_source: livesport_handball
   has_bets: true
+  active: false
 
 handball_germany:
   sport: handball
@@ -115,6 +140,7 @@ handball_germany:
   pipeline: handball_other
   data_source: livesport_handball
   has_bets: true
+  active: false
 
 handball_norway:
   sport: handball
@@ -125,6 +151,7 @@ handball_norway:
   pipeline: handball_other
   data_source: livesport_handball
   has_bets: true
+  active: false
 
 handball_spain:
   sport: handball
@@ -135,6 +162,7 @@ handball_spain:
   pipeline: handball_other
   data_source: livesport_handball
   has_bets: true
+  active: false
 
 handball_sweden:
   sport: handball
@@ -145,8 +173,9 @@ handball_sweden:
   pipeline: handball_other
   data_source: livesport_handball
   has_bets: true
+  active: false
 
-# ── Handball European (model only, no betting) ─────────────────────────────
+# ── Handball European model-only (paused) ──────────────────────────────────
 
 handball_austria:
   sport: handball
@@ -157,6 +186,7 @@ handball_austria:
   pipeline: handball_other
   data_source: livesport_handball
   has_bets: false
+  active: false
 
 handball_czech_republic:
   sport: handball
@@ -167,6 +197,7 @@ handball_czech_republic:
   pipeline: handball_other
   data_source: livesport_handball
   has_bets: false
+  active: false
 
 handball_finland:
   sport: handball
@@ -177,6 +208,7 @@ handball_finland:
   pipeline: handball_other
   data_source: livesport_handball
   has_bets: false
+  active: false
 
 handball_hungary:
   sport: handball
@@ -187,6 +219,7 @@ handball_hungary:
   pipeline: handball_other
   data_source: livesport_handball
   has_bets: false
+  active: false
 
 handball_poland:
   sport: handball
@@ -197,6 +230,7 @@ handball_poland:
   pipeline: handball_other
   data_source: livesport_handball
   has_bets: false
+  active: false
 
 handball_portugal:
   sport: handball
@@ -207,3 +241,4 @@ handball_portugal:
   pipeline: handball_other
   data_source: livesport_handball
   has_bets: false
+  active: false

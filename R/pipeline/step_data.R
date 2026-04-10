@@ -13,10 +13,10 @@
 #' @param sports_dir Absolute path to Sports/ root
 #' @export
 run_data_step <- function(league, sex, sports_dir) {
-  handler <- switch(
-    league$data_source,
+  handler <- switch(league$data_source,
     baskethotel        = data_baskethotel,
     hsi                = data_hsi,
+    iceland_ksi        = data_iceland_ksi,
     livesport_football = data_livesport_football,
     livesport_handball = data_livesport_handball,
     stop("Unknown data_source: ", league$data_source)
@@ -62,6 +62,17 @@ data_hsi <- function(league, sex, sports_dir) {
     quiet_source(here::here("R", "utils", sex, "download_newest_data_div1.R"))
     quiet_source(here::here("R", "utils", sex, "download_newest_data_div2.R"))
     quiet_source(here::here("R", "utils", sex, "process_data.R"))
+  })
+}
+
+
+# ── Data source: iceland_ksi (football/iceland) ─────────────────────────────
+
+data_iceland_ksi <- function(league, sex, sports_dir) {
+  league_dir <- file.path(sports_dir, league$dir)
+  withr::with_dir(league_dir, {
+    quiet_here(league$rproj %||% ".here")
+    quiet_source(here::here("R", sex, "update_data.R"))
   })
 }
 
@@ -157,7 +168,9 @@ sync_livesport_handball <- function(league, sex, sports_dir, ls_dir) {
   other_dir <- file.path(sports_dir, "handball", "other")
   season <- current_season_year()
 
-  if (!dir.exists(src_base)) return(invisible(NULL))
+  if (!dir.exists(src_base)) {
+    return(invisible(NULL))
+  }
 
   # Copy all sex/division combos
   sexes <- list.dirs(src_base, full.names = FALSE, recursive = FALSE)
