@@ -44,6 +44,18 @@ registry <- list(
   ),
 
   # Football
+  football_iceland_m = list(
+    path = "football/iceland/data/male/schedule.csv",
+    date_col = "dags",
+    sport_label = "Football Iceland (M)",
+    lengjan_key = "football_iceland"
+  ),
+  football_iceland_f = list(
+    path = "football/iceland/data/female/schedule.csv",
+    date_col = "dags",
+    sport_label = "Football Iceland (F)",
+    lengjan_key = NULL
+  ),
   football_england = list(
     path = "football/england/data/male/schedule.csv",
     date_col = "date",

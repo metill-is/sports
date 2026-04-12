@@ -33,6 +33,7 @@ predictions:
 odds:
   source: lengjan-odds
   lengjan_odds_path: "../../../lengjan-odds/data/football_iceland"
+  team_names: "../../../lengjan-odds/config/team_names_football_iceland.csv"
   booker: "Lengjan"
 
 deduplication:
