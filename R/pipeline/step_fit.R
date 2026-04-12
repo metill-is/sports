@@ -11,6 +11,7 @@
 #' @param sports_dir Absolute path to Sports/ root
 #' @param iter_warmup Warmup iterations (from leagues.yml defaults or CLI override)
 #' @param iter_sampling Sampling iterations
+#' @param method Inference method: "sample", "pathfinder", or "variational"
 #' @param fit_model Whether to fit the model (default TRUE)
 #' @param generate_results Whether to generate results after fitting (default TRUE)
 #' @param expected_duration Expected fit duration in seconds (from timing cache), or NULL
@@ -21,6 +22,7 @@ run_fit_step <- function(
   sports_dir,
   iter_warmup = 1000,
   iter_sampling = 1000,
+  method = "sample",
   fit_model = TRUE,
   generate_results = TRUE,
   generate_plots = TRUE,
@@ -36,6 +38,7 @@ run_fit_step <- function(
     league, sex, sports_dir,
     iter_warmup = iter_warmup,
     iter_sampling = iter_sampling,
+    method = method,
     do_fit = fit_model,
     do_results = generate_results,
     make_plots = generate_plots,
@@ -54,7 +57,7 @@ quiet_here <- function(...) suppressMessages(here::i_am(...))
 # Uses R/config/{sport}_iceland.R config objects + R/shared/ modules.
 # These modules use here::here() relative to Sports/ root.
 
-fit_shared <- function(league, sex, sports_dir, iter_warmup, iter_sampling, do_fit, do_results, make_plots = TRUE, expected_duration = NULL) {
+fit_shared <- function(league, sex, sports_dir, iter_warmup, iter_sampling, method = "sample", do_fit, do_results, make_plots = TRUE, expected_duration = NULL) {
   # Load the config module to get the rich config object
   # config_module is relative to Sports/ (e.g., "R/config/basketball_iceland.R")
   config_path <- file.path(sports_dir, league$config_module)
@@ -81,6 +84,7 @@ fit_shared <- function(league, sex, sports_dir, iter_warmup, iter_sampling, do_f
       stan_data = stan_data,
       stan_model_path = stan_model_path,
       output_path = output_path,
+      method = method,
       iter_warmup = iter_warmup,
       iter_sampling = iter_sampling,
       expected_duration = expected_duration
@@ -119,7 +123,7 @@ fit_shared <- function(league, sex, sports_dir, iter_warmup, iter_sampling, do_f
 # Uses R/shared/prep_data_football.R and R/shared/get_model_results_football.R.
 # Must run from inside the league directory with here::i_am() set.
 
-fit_football <- function(league, sex, sports_dir, iter_warmup, iter_sampling, do_fit, do_results, make_plots = TRUE, expected_duration = NULL) {
+fit_football <- function(league, sex, sports_dir, iter_warmup, iter_sampling, method = "sample", do_fit, do_results, make_plots = TRUE, expected_duration = NULL) {
   league_dir <- file.path(sports_dir, league$dir)
 
   withr::with_dir(league_dir, {
@@ -142,6 +146,7 @@ fit_football <- function(league, sex, sports_dir, iter_warmup, iter_sampling, do
         stan_data = stan_data,
         stan_model_path = stan_model_path,
         output_path = output_path,
+        method = method,
         iter_warmup = iter_warmup,
         iter_sampling = iter_sampling,
         expected_duration = expected_duration
@@ -183,7 +188,7 @@ fit_football <- function(league, sex, sports_dir, iter_warmup, iter_sampling, do
 # handball/other/ has its own R/utils/prep_data.R for country-based data prep.
 # Must run from handball/other/ directory.
 
-fit_handball_other <- function(league, sex, sports_dir, iter_warmup, iter_sampling, do_fit, do_results, make_plots = TRUE, expected_duration = NULL) {
+fit_handball_other <- function(league, sex, sports_dir, iter_warmup, iter_sampling, method = "sample", do_fit, do_results, make_plots = TRUE, expected_duration = NULL) {
   other_dir <- file.path(sports_dir, "handball", "other")
 
   withr::with_dir(other_dir, {
@@ -206,6 +211,7 @@ fit_handball_other <- function(league, sex, sports_dir, iter_warmup, iter_sampli
         stan_data = stan_data,
         stan_model_path = stan_model_path,
         output_path = output_path,
+        method = method,
         iter_warmup = iter_warmup,
         iter_sampling = iter_sampling,
         expected_duration = expected_duration

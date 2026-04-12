@@ -16,6 +16,7 @@ defaults:
   iter_sampling: 1000
   chains: 4
   parallel_chains: 4
+  method: sample
 
 # ── Basketball ──────────────────────────────────────────────────────────────
 
