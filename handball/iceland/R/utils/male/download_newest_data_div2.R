@@ -22,7 +22,7 @@ remove_colnames_from_fields <- function(table) {
 }
 
 results <- tables[[2]]
-schedule <- tables[[3]]
+has_schedule <- length(tables) >= 3
 
 page$session$close()
 Sys.sleep(3)
@@ -61,23 +61,30 @@ results |>
     here("data", "male", "current_div2.csv")
   )
 
-schedule |>
-  remove_colnames_from_fields() |>
-  janitor::clean_names() |>
-  select(
-    dagsetning,
-    lid
-  ) |>
-  separate(
-    lid,
-    into = c("home", "away"),
-    sep = " - "
-  ) |>
-  mutate(
-    dagsetning = str_sub(dagsetning, 6, -1) |>
-      dmy(locale = "IS_is"),
-    division = 2
-  ) |>
-  write_csv(
-    here("data", "male", "schedule_div2.csv")
-  )
+if (has_schedule) {
+  tables[[3]] |>
+    remove_colnames_from_fields() |>
+    janitor::clean_names() |>
+    select(
+      dagsetning,
+      lid
+    ) |>
+    separate(
+      lid,
+      into = c("home", "away"),
+      sep = " - "
+    ) |>
+    mutate(
+      dagsetning = str_sub(dagsetning, 6, -1) |>
+        dmy(locale = "IS_is"),
+      division = 2
+    ) |>
+    write_csv(
+      here("data", "male", "schedule_div2.csv")
+    )
+} else {
+  tibble(dagsetning = Date(), home = character(), away = character(), division = integer()) |>
+    write_csv(
+      here("data", "male", "schedule_div2.csv")
+    )
+}

@@ -23,7 +23,7 @@ remove_colnames_from_fields <- function(table) {
 }
 
 results <- tables[[2]]
-schedule <- tables[[3]]
+has_schedule <- length(tables) >= 3
 
 page$session$close()
 Sys.sleep(3)
@@ -52,7 +52,7 @@ results |>
       str_replace_all("\\.", "") |>
       str_replace("Sept", "09") |>
       str_replace("okt", "10") |>
-      str_replace("nóv", "11") |>
+      str_replace("n<U+00F3>v", "11") |>
       str_replace("des", "12") |>
       str_replace("jan", "01") |>
       dmy(locale = "IS_is"),
@@ -62,23 +62,30 @@ results |>
     here("data", "male", "current_div1.csv")
   )
 
-schedule |>
-  remove_colnames_from_fields() |>
-  janitor::clean_names() |>
-  select(
-    dagsetning,
-    lid
-  ) |>
-  separate(
-    lid,
-    into = c("home", "away"),
-    sep = " - "
-  ) |>
-  mutate(
-    dagsetning = str_sub(dagsetning, 6, -1) |>
-      dmy(locale = "IS_is"),
-    division = 1
-  ) |>
-  write_csv(
-    here("data", "male", "schedule_div1.csv")
-  )
+if (has_schedule) {
+  tables[[3]] |>
+    remove_colnames_from_fields() |>
+    janitor::clean_names() |>
+    select(
+      dagsetning,
+      lid
+    ) |>
+    separate(
+      lid,
+      into = c("home", "away"),
+      sep = " - "
+    ) |>
+    mutate(
+      dagsetning = str_sub(dagsetning, 6, -1) |>
+        dmy(locale = "IS_is"),
+      division = 1
+    ) |>
+    write_csv(
+      here("data", "male", "schedule_div1.csv")
+    )
+} else {
+  tibble(dagsetning = Date(), home = character(), away = character(), division = integer()) |>
+    write_csv(
+      here("data", "male", "schedule_div1.csv")
+    )
+}
