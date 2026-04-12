@@ -160,6 +160,25 @@ all_bets <- if (length(log_files) > 0) {
   tibble()
 }
 
+# Filter bets to active leagues only
+active_filter <- tryCatch(
+  {
+    raw <- read_file(file.path(sports_dir, "config", "leagues.yml"))
+    ly <- yaml::yaml.load(raw)
+    ly$defaults <- NULL
+    active <- Filter(function(l) isTRUE(l$active), ly)
+    unique(vapply(active, function(l) paste(l$sport, l$country, sep = "_"), character(1)))
+  },
+  error = function(e) NULL
+)
+
+if (!is.null(active_filter) && nrow(all_bets) > 0) {
+  all_bets <- all_bets |>
+    mutate(.league_key = paste(sport, country, sep = "_")) |>
+    filter(.league_key %in% active_filter) |>
+    select(-.league_key)
+}
+
 unsettled <- if (nrow(all_bets) > 0) filter(all_bets, is.na(win)) else tibble()
 
 # ── Recent settled bets ──────────────────────────────────────
@@ -395,6 +414,7 @@ model_freshness <- tryCatch(
     for (league_key in names(leagues_yml)) {
       lcfg <- leagues_yml[[league_key]]
       if (!isTRUE(lcfg$has_bets)) next
+      if (!isTRUE(lcfg$active)) next
 
       league_dir <- file.path(sports_dir, lcfg$dir)
       sexes <- if (is.list(lcfg$sex)) unlist(lcfg$sex) else lcfg$sex

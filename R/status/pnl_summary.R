@@ -45,6 +45,25 @@ all_bets <- tryCatch(
   error = function(e) tibble()
 )
 
+# Filter to active leagues only
+active_filter <- tryCatch(
+  {
+    raw <- read_file(file.path(sports_dir, "config", "leagues.yml"))
+    ly <- yaml::yaml.load(raw)
+    ly$defaults <- NULL
+    active <- Filter(function(l) isTRUE(l$active), ly)
+    unique(vapply(active, function(l) paste(l$sport, l$country, sep = "_"), character(1)))
+  },
+  error = function(e) NULL
+)
+
+if (!is.null(active_filter) && !is.null(all_bets) && nrow(all_bets) > 0) {
+  all_bets <- all_bets |>
+    mutate(.league_key = paste(sport, country, sep = "_")) |>
+    filter(.league_key %in% active_filter) |>
+    select(-.league_key)
+}
+
 if (is.null(all_bets) || nrow(all_bets) == 0) {
   cat(toJSON(list(
     overview = list(
