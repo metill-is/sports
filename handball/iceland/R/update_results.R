@@ -15,6 +15,7 @@ update_data_for_sex <- function(sex) {
   # Source the data download scripts for the specified sex
   source(here::here("R", "utils", sex, "download_newest_data_div1.R"))
   source(here::here("R", "utils", sex, "download_newest_data_div2.R"))
+  source(here::here("R", "utils", sex, "download_newest_data_playoffs.R"))
 
   # Process the data
   source(here::here("R", "utils", sex, "process_data.R"))
