@@ -17,6 +17,7 @@
 #   --step <steps>     Comma-separated: data, fit, results, bet, settle (default: all)
 #   --sex <sex>        Override sex filter (male, female)
 #   --iter <n>         Override sampling iterations
+#   --method <m>       Inference method: sample (default), pathfinder, variational
 #   --stale            Filter to leagues with upcoming odds + stale/missing fit
 #   --due              Filter to leagues with unbetted today/tomorrow matches + fit >48h
 #   --no-plots         Skip plot generation (posterior CSV still written)
@@ -51,6 +52,7 @@ arg_active <- has_flag("--active")
 arg_step <- parse_arg("--step")
 arg_sex <- parse_arg("--sex")
 arg_iter <- parse_arg("--iter")
+arg_method <- parse_arg("--method")
 arg_stale <- has_flag("--stale")
 arg_due <- has_flag("--due")
 arg_dry_run <- has_flag("--dry-run")
@@ -112,6 +114,7 @@ if (has_flag("--help")) {
   cat("  --step <steps>     data,fit,results,bet,settle (default: all)\n")
   cat("  --sex <sex>        Override: male or female\n")
   cat("  --iter <n>         Override sampling iterations\n")
+  cat("  --method <m>       Inference method: sample, pathfinder, variational\n")
   cat("  --no-plots         Skip plot generation (posterior CSV still written)\n")
   cat("  --sync             Git-pull livesport-data and lengjan-odds (auto for data/settle)\n")
   cat("  --dry-run          Print plan, don't execute\n")
@@ -137,6 +140,13 @@ if ("bet" %in% steps && !"results" %in% steps) {
 
 # Parse iterations override
 iter_override <- if (!is.null(arg_iter)) as.integer(arg_iter) else NULL
+
+# Parse method override
+method_override <- if (!is.null(arg_method)) {
+  match.arg(arg_method, c("sample", "pathfinder", "variational"))
+} else {
+  NULL
+}
 
 # ── Load and filter leagues ───────────────────────────────────────────────────
 
@@ -247,6 +257,7 @@ cat(strrep("-", 60), "\n\n")
 
 cat("Steps:", paste(steps, collapse = ", "), "\n")
 if (!is.null(iter_override)) cat("Iterations override:", iter_override, "\n")
+if (!is.null(method_override)) cat("Method override:", method_override, "\n")
 if (!is.null(arg_sex)) cat("Sex override:", arg_sex, "\n")
 if (arg_stale) cat("Filter: --stale (upcoming odds + stale fit)\n")
 if (arg_due) cat("Filter: --due (unbetted matches today/tomorrow + fit >48h)\n")
@@ -382,6 +393,7 @@ if ("fit" %in% steps || "results" %in% steps) box::use(R / pipeline / step_fit[r
 if ("bet" %in% steps) {
   box::use(R / pipeline / step_bet[run_bet_step])
   box::use(R / bets / portfolio[portfolio_optimize])
+  box::use(R / bets / output[dedup_recommendations])
 }
 if ("settle" %in% steps) box::use(R / pipeline / step_settle[run_settle_step])
 
@@ -438,6 +450,7 @@ if ("fit" %in% steps) {
         sports_dir = sports_dir,
         iter_warmup = iter_override %||% league$iter_warmup,
         iter_sampling = iter_override %||% league$iter_sampling,
+        method = method_override %||% league$method,
         generate_results = FALSE,
         generate_plots = FALSE,
         expected_duration = cache[[step_key]]
@@ -649,6 +662,9 @@ if ("bet" %in% steps && length(all_recommendations) > 0) {
   # Drop recommendations for past matches
   recs <- recs |> dplyr::filter(as.Date(date) >= Sys.Date())
 
+  # Global dedup: remove bets placed since the last run of each league
+  recs <- dedup_recommendations(recs, sports_dir)
+
   # Re-apply min_bet_amount after daily budget scaling
   if (exists("global_bankroll")) {
     min_bet <- global_bankroll$min_bet_amount %||% 200
@@ -657,6 +673,16 @@ if ("bet" %in% steps && length(all_recommendations) > 0) {
 
   readr::write_csv(recs, recs_path)
   cat(sprintf("\nWrote %d recommendation(s) to %s\n", nrow(recs), recs_path))
+} else if ("bet" %in% steps) {
+  # No new recommendations, but still clean up stale entries in existing file
+  recs_path <- here("recommendations.csv")
+  if (file.exists(recs_path)) {
+    recs <- readr::read_csv(recs_path, show_col_types = FALSE) |>
+      dplyr::filter(as.Date(date) >= Sys.Date())
+    recs <- dedup_recommendations(recs, sports_dir)
+    readr::write_csv(recs, recs_path)
+    cat(sprintf("\nCleaned recommendations.csv: %d recommendation(s) remaining.\n", nrow(recs)))
+  }
 }
 
 if (n_fail > 0) quit(status = 1)
