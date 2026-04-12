@@ -19,9 +19,9 @@ box::use(
 )
 
 box::use(
-  ./login[lengjan_login, is_authenticated],
-  ./navigate[extract_matches, competition_url, match_url],
-  ./place_bet[place_bet, clear_bet_slip]
+  . / login[lengjan_login, is_authenticated],
+  . / navigate[extract_matches, competition_url, match_url],
+  . / place_bet[place_bet, clear_bet_slip]
 )
 
 # ── Main pipeline ─────────────────────────────────────────────────────────────
@@ -46,7 +46,6 @@ run_bets <- function(
   sports_dir = here::here("../Sports"),
   odds_dir = here::here("../lengjan-odds")
 ) {
-
   cli_h1("Lengjan Bet Placement Pipeline")
 
   if (dry_run) {
@@ -208,9 +207,13 @@ load_recommendations <- function(sports_dir, leagues = NULL, today_only = FALSE,
   recs <- read_csv(recs_path, show_col_types = FALSE) |>
     filter(
       as.Date(date) >= Sys.Date(),
-      if (!is.null(target_date)) as.Date(date) == target_date
-      else if (today_only) as.Date(date) == Sys.Date()
-      else TRUE
+      if (!is.null(target_date)) {
+        as.Date(date) == target_date
+      } else if (today_only) {
+        as.Date(date) == Sys.Date()
+      } else {
+        TRUE
+      }
     ) |>
     mutate(
       league_key = paste(sport, country, sep = "_"),
@@ -231,7 +234,9 @@ load_recommendations <- function(sports_dir, leagues = NULL, today_only = FALSE,
     recs <- filter(recs, league_key %in% leagues)
   }
 
-  if (nrow(recs) == 0) return(tibble::tibble())
+  if (nrow(recs) == 0) {
+    return(tibble::tibble())
+  }
 
   # P1: Deduplicate against ledger (already-placed bets)
   dedup_against_ledger(recs, sports_dir)
@@ -241,7 +246,9 @@ load_recommendations <- function(sports_dir, leagues = NULL, today_only = FALSE,
 #'
 #' Rule P1: Placement is idempotent — re-running must not double-place.
 dedup_against_ledger <- function(recs, sports_dir) {
-  if (nrow(recs) == 0) return(recs)
+  if (nrow(recs) == 0) {
+    return(recs)
+  }
 
   log_files <- list.files(
     sports_dir,
@@ -249,7 +256,9 @@ dedup_against_ledger <- function(recs, sports_dir) {
     recursive = TRUE,
     full.names = TRUE
   )
-  if (length(log_files) == 0) return(recs)
+  if (length(log_files) == 0) {
+    return(recs)
+  }
 
   all_logs <- map_dfr(log_files, function(f) {
     tryCatch(
@@ -259,7 +268,9 @@ dedup_against_ledger <- function(recs, sports_dir) {
     )
   })
 
-  if (nrow(all_logs) == 0) return(recs)
+  if (nrow(all_logs) == 0) {
+    return(recs)
+  }
 
   recs_dedup <- recs |>
     mutate(.info_key = replace(as.character(info), is.na(info), ""))
@@ -267,8 +278,10 @@ dedup_against_ledger <- function(recs, sports_dir) {
   out <- anti_join(
     recs_dedup,
     all_logs |> mutate(.info_key = replace(as.character(info), is.na(info), "")),
-    by = c("date_match" = "date_match", "home", "away",
-           "market", "outcome", ".info_key")
+    by = c(
+      "date_match" = "date_match", "home", "away",
+      "market", "outcome", ".info_key"
+    )
   )
   out$.info_key <- NULL
 
@@ -298,7 +311,9 @@ compute_placement_bankroll <- function(sports_dir) {
 
   # Load all ledger files
   logs <- Sys.glob(file.path(sports_dir, "*", "*", "history", "bets_log.csv"))
-  if (length(logs) == 0) return(initial_pool)
+  if (length(logs) == 0) {
+    return(initial_pool)
+  }
 
   all_bets <- do.call(rbind, lapply(logs, \(f) {
     read_csv(f, show_col_types = FALSE)
@@ -308,7 +323,9 @@ compute_placement_bankroll <- function(sports_dir) {
     all_bets <- all_bets |> filter(as.Date(date_recommended) >= as.Date(epoch))
   }
 
-  if (nrow(all_bets) == 0) return(initial_pool)
+  if (nrow(all_bets) == 0) {
+    return(initial_pool)
+  }
 
   settled_pnl <- sum(all_bets$pnl[!is.na(all_bets$pnl)], na.rm = TRUE)
   outstanding <- sum(all_bets$bet_amount[is.na(all_bets$win)], na.rm = TRUE)
@@ -367,17 +384,20 @@ log_placed_bet <- function(bet, actual_odds, actual_amount, sports_dir) {
   cli_alert_success("Logged to {basename(log_path)}: {bet$home} v {bet$away} [{bet$market} {bet$outcome}] @ {actual_odds}")
 
   # Dual-write to Parquet store
-  tryCatch({
-    store_script <- file.path(sports_dir, "R", "storage", "store.R")
-    if (file.exists(store_script)) {
-      env <- new.env(parent = baseenv())
-      source(store_script, local = env)
-      full_log <- read_csv(log_path, show_col_types = FALSE)
-      env$store_bets(full_log, bet$sport, bet$country, bet$sex, sports_dir)
+  tryCatch(
+    {
+      store_script <- file.path(sports_dir, "R", "storage", "store.R")
+      if (file.exists(store_script)) {
+        env <- new.env(parent = baseenv())
+        source(store_script, local = env)
+        full_log <- read_csv(log_path, show_col_types = FALSE)
+        env$store_bets(full_log, bet$sport, bet$country, bet$sex, sports_dir)
+      }
+    },
+    error = function(e) {
+      cli_alert_warning("Parquet store sync failed: {e$message}")
     }
-  }, error = function(e) {
-    cli_alert_warning("Parquet store sync failed: {e$message}")
-  })
+  )
 
   invisible(log_row)
 }
@@ -386,14 +406,15 @@ log_placed_bet <- function(bet, actual_odds, actual_amount, sports_dir) {
 
 #' Resolve Lengjan match IDs for a set of bets
 resolve_match_ids <- function(session, comp_config, bets, odds_dir, league_key) {
-
   # Load team name mapping
   # CSV columns: "pipeline" = pipeline name, "lengjan" = Lengjan name
-  team_names_file <- file.path(
-    odds_dir, "config", comp_config$team_names %||% ""
-  )
+  team_names_file <- if (!is.null(comp_config$team_names)) {
+    file.path(odds_dir, "config", comp_config$team_names)
+  } else {
+    NULL
+  }
 
-  name_map <- if (file.exists(team_names_file)) {
+  name_map <- if (!is.null(team_names_file) && file.exists(team_names_file)) {
     read_csv(team_names_file, show_col_types = FALSE)
   } else {
     cli_alert_warning("No team names file for {league_key}.")
