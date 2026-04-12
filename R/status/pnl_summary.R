@@ -2,6 +2,8 @@
 # PnL summary for Raycast extension
 # Usage: Rscript R/status/pnl_summary.R [--days N]
 
+invisible(Sys.setlocale("LC_ALL", "is_IS.UTF-8"))
+
 suppressPackageStartupMessages({
   library(dplyr)
   library(readr)

@@ -25,6 +25,8 @@
 #'     bankroll: { initial_pool, current_pool, outstanding, settled_pnl, week_pnl }
 #'   }
 
+invisible(Sys.setlocale("LC_ALL", "is_IS.UTF-8"))
+
 suppressPackageStartupMessages({
   library(dplyr)
   library(readr)

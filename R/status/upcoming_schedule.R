@@ -2,6 +2,8 @@
 # Upcoming schedule for Raycast extension
 # Usage: Rscript R/status/upcoming_schedule.R
 
+invisible(Sys.setlocale("LC_ALL", "is_IS.UTF-8"))
+
 suppressPackageStartupMessages({
   library(dplyr)
   library(readr)
