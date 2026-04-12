@@ -157,9 +157,9 @@ summary_data <- split(all_games, all_games$date) |>
   lapply(function(day) {
     sports <- table(day$sport)
     list(
-      basketball = as.integer(sports["basketball"] %||% 0L),
-      handball = as.integer(sports["handball"] %||% 0L),
-      football = as.integer(sports["football"] %||% 0L),
+      basketball = as.integer(ifelse(is.na(sports["basketball"]), 0L, sports["basketball"])),
+      handball = as.integer(ifelse(is.na(sports["handball"]), 0L, sports["handball"])),
+      football = as.integer(ifelse(is.na(sports["football"]), 0L, sports["football"])),
       total = nrow(day),
       no_odds = sum(!day$has_odds)
     )
