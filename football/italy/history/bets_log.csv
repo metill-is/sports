@@ -45,6 +45,6 @@ NA,2025-03-16,football,italy,male,outcome,Venezia,Napoli,away,1.56,0.711,0.10915
 2026-03-08,2026-03-13,football,italy,male,handicap,Modena,Spezia,away,1.31,0.82425,0.0798,0.02,292,-2,FALSE,-292,pipeline
 2026-03-08,2026-03-09,football,italy,male,handicap,Lazio,Sassuolo,home,1.27,0.8125,0.0319,0.05,546,1,TRUE,147.41999999999996,pipeline
 2026-03-08,2026-03-14,football,italy,male,handicap,Inter,Atalanta,away,1.46,0.69225,0.0107,0.03,394,-2,TRUE,181.24,pipeline
-2026-03-18,2026-03-22,football,italy,male,handicap,Bari,Carrarese,home,1.45,0.77975,0.1306,0.02,342,1,NA,NA,pipeline
+2026-03-18,2026-03-22,football,italy,male,handicap,Bari,Carrarese,home,1.45,0.77975,0.1306,0.02,342,1,FALSE,-342,pipeline
 2026-03-18,2026-03-21,football,italy,male,handicap,Padova,Palermo,home,1.89,0.57725,0.091,0.01,260,1,FALSE,-260,pipeline
-2026-03-18,2026-03-22,football,italy,male,handicap,Sudtirol,Frosinone,away,1.44,0.6965,0.003,0.02,317,-1,NA,NA,pipeline
+2026-03-18,2026-03-22,football,italy,male,handicap,Sudtirol,Frosinone,away,1.44,0.6965,0.003,0.02,317,-1,TRUE,139.47999999999996,pipeline

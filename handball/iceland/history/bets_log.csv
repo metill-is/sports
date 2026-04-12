@@ -418,6 +418,6 @@ date_recommended,date_match,sport,country,sex,market,home,away,outcome,odds,prob
 2026-03-04,2026-03-05,handball,iceland,male,totals,FH,Afturelding,under,1.9,0.685,0.3,0.13,528,59.5,TRUE,475.19999999999993,pipeline
 2026-03-05,2026-03-05,handball,iceland,male,totals,FH,Afturelding,under,1.57,0.781,0.23,0.06,228,61.5,TRUE,129.96000000000004,pipeline
 2026-03-05,2026-03-05,handball,iceland,male,totals,ÍBV,ÍR,over,1.84,0.72475,0.3335,0.11,386,63.5,TRUE,324.24,pipeline
-2026-03-05,2026-03-06,handball,iceland,male,outcome,Stjarnan,KA,home,3.17,0.414,0.3124,0.07,255,NA,NA,NA,pipeline
+2026-03-05,2026-03-06,handball,iceland,male,outcome,Stjarnan,KA,home,3.17,0.414,0.3124,0.07,255,NA,FALSE,-255,pipeline
 2026-03-05,2026-03-05,handball,iceland,male,totals,ÍBV,ÍR,over,1.53,0.8165,0.2492,0.07,249,61.5,TRUE,131.97000000000003,pipeline
 2026-03-05,2026-03-05,handball,iceland,male,outcome,Valur,Fram,home,1.45,0.7415,0.0752,0.08,296,NA,FALSE,-296,pipeline
