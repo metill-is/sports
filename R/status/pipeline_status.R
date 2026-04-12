@@ -39,11 +39,14 @@ today <- Sys.Date()
 
 # Auto-sync external repos (need fresh data for freshness + settleable checks)
 sync_repo <- function(repo_path) {
-  if (!dir.exists(file.path(repo_path, ".git"))) return(invisible())
+  if (!dir.exists(file.path(repo_path, ".git"))) {
+    return(invisible())
+  }
   branch <- trimws(system2("git", c("-C", repo_path, "rev-parse", "--abbrev-ref", "HEAD"), stdout = TRUE))
   system2("git", c("-C", repo_path, "fetch", "origin", "-q"), stdout = FALSE, stderr = FALSE)
   system2("git", c("-C", repo_path, "reset", "--hard", paste0("origin/", branch)),
-          stdout = FALSE, stderr = FALSE)
+    stdout = FALSE, stderr = FALSE
+  )
 }
 
 if (!quick_mode) {
@@ -70,19 +73,30 @@ parse_ls_date <- function(x) {
 load_livesport_results <- function(sport, country, sex) {
   ls_sport <- if (sport == "football") "soccer" else sport
   base <- file.path(ls_data_dir, ls_sport, country, sex)
-  if (!dir.exists(base)) return(NULL)
+  if (!dir.exists(base)) {
+    return(NULL)
+  }
   divs <- list.dirs(base, full.names = TRUE, recursive = FALSE)
   results <- lapply(divs, function(d) {
     f <- file.path(d, "results.csv")
-    if (!file.exists(f)) return(NULL)
-    tryCatch({
-      r <- read_csv(f, show_col_types = FALSE,
-                    col_types = cols(home_score = "i", away_score = "i"))
-      if (!all(c("date", "home", "away", "home_score", "away_score") %in% names(r))) return(NULL)
-      r |>
-        filter(!is.na(home_score), !is.na(away_score)) |>
-        mutate(date = parse_ls_date(date))
-    }, error = function(e) NULL)
+    if (!file.exists(f)) {
+      return(NULL)
+    }
+    tryCatch(
+      {
+        r <- read_csv(f,
+          show_col_types = FALSE,
+          col_types = cols(home_score = "i", away_score = "i")
+        )
+        if (!all(c("date", "home", "away", "home_score", "away_score") %in% names(r))) {
+          return(NULL)
+        }
+        r |>
+          filter(!is.na(home_score), !is.na(away_score)) |>
+          mutate(date = parse_ls_date(date))
+      },
+      error = function(e) NULL
+    )
   })
   bind_rows(Filter(Negate(is.null), results))
 }
@@ -96,7 +110,10 @@ recs_path <- file.path(sports_dir, "recommendations.csv")
 recs <- if (file.exists(recs_path)) {
   tryCatch(
     read_csv(recs_path, show_col_types = FALSE),
-    error = function(e) { msg("Failed to read recommendations: %s", e$message); tibble() }
+    error = function(e) {
+      msg("Failed to read recommendations: %s", e$message)
+      tibble()
+    }
   )
 } else {
   tibble()
@@ -131,7 +148,10 @@ all_bets <- if (length(log_files) > 0) {
   lapply(log_files, function(f) {
     tryCatch(
       read_csv(f, show_col_types = FALSE, col_types = cols(info = "c", pnl = "d", win = "l")),
-      error = function(e) { msg("Failed to read %s: %s", f, e$message); NULL }
+      error = function(e) {
+        msg("Failed to read %s: %s", f, e$message)
+        NULL
+      }
     )
   }) |>
     Filter(Negate(is.null), x = _) |>
@@ -141,6 +161,21 @@ all_bets <- if (length(log_files) > 0) {
 }
 
 unsettled <- if (nrow(all_bets) > 0) filter(all_bets, is.na(win)) else tibble()
+
+# ── Recent settled bets ──────────────────────────────────────
+recent_settled <- if (nrow(all_bets) > 0) {
+  all_bets |>
+    filter(!is.na(win)) |>
+    arrange(desc(date_match)) |>
+    head(10) |>
+    select(
+      date_match, sport, country, sex, home, away,
+      market, outcome, odds, bet_amount, win, pnl
+    ) |>
+    mutate(pnl = round(pnl))
+} else {
+  tibble()
+}
 
 unsettled_by_league <- if (nrow(unsettled) > 0) {
   unsettled |>
@@ -167,18 +202,24 @@ check_settleable <- function() {
   }
 
   # Load leagues.yml
-  leagues_yml <- tryCatch({
-    raw <- read_file(file.path(sports_dir, "config", "leagues.yml"))
-    yaml::yaml.load(raw)
-  }, error = function(e) { msg("Failed to read leagues.yml: %s", e$message); list() })
+  leagues_yml <- tryCatch(
+    {
+      raw <- read_file(file.path(sports_dir, "config", "leagues.yml"))
+      yaml::yaml.load(raw)
+    },
+    error = function(e) {
+      msg("Failed to read leagues.yml: %s", e$message)
+      list()
+    }
+  )
   leagues_yml$defaults <- NULL
 
   # Column name normalisation map (same as settle.R)
   col_map <- c(
-    dagsetning  = "date",  dags = "date",
-    heima       = "home",  gestir = "away",
-    home_goals  = "home_score", away_goals = "away_score",
-    stig_heima  = "home_score", stig_gestir = "away_score"
+    dagsetning = "date", dags = "date",
+    heima = "home", gestir = "away",
+    home_goals = "home_score", away_goals = "away_score",
+    stig_heima = "home_score", stig_gestir = "away_score"
   )
 
   all_settleable <- list()
@@ -259,7 +300,7 @@ check_settleable <- function() {
         win = case_when(
           market == "outcome" & outcome == "home" ~ home_score > away_score,
           market == "outcome" & outcome == "away" ~ away_score > home_score,
-          market == "outcome" & outcome == "tie"  ~ home_score == away_score,
+          market == "outcome" & outcome == "tie" ~ home_score == away_score,
           market == "handicap" & !is.na(info_num) & outcome == "home" ~
             (home_score - away_score) + info_num > 0,
           market == "handicap" & !is.na(info_num) & outcome == "away" ~
@@ -287,11 +328,11 @@ check_settleable <- function() {
   if (length(all_settleable) > 0) {
     combined <- bind_rows(all_settleable)
     list(
-      count   = nrow(combined),
-      wins    = sum(combined$win, na.rm = TRUE),
-      losses  = sum(!combined$win, na.rm = TRUE),
+      count = nrow(combined),
+      wins = sum(combined$win, na.rm = TRUE),
+      losses = sum(!combined$win, na.rm = TRUE),
       total_pnl = round(sum(combined$pnl, na.rm = TRUE)),
-      bets    = combined
+      bets = combined
     )
   } else {
     list(count = 0L, wins = 0L, losses = 0L, total_pnl = 0, bets = list())
@@ -313,12 +354,16 @@ settleable <- if (quick_mode) {
 # ═══════════════════════════════════════════════════════════════════════════════
 
 git_last_commit <- function(repo_path) {
-  if (!dir.exists(repo_path)) return(NULL)
+  if (!dir.exists(repo_path)) {
+    return(NULL)
+  }
   ts <- tryCatch(
     system2("git", c("-C", repo_path, "log", "-1", "--format=%cI"), stdout = TRUE, stderr = FALSE),
     error = function(e) NULL
   )
-  if (is.null(ts) || length(ts) == 0 || ts == "") return(NULL)
+  if (is.null(ts) || length(ts) == 0 || ts == "") {
+    return(NULL)
+  }
   # Replace trailing Z with +0000 for strptime compatibility on macOS
   ts <- sub("Z$", "+0000", ts)
   as.POSIXct(ts, format = "%Y-%m-%dT%H:%M:%S%z")
@@ -331,7 +376,9 @@ livesport_commit <- git_last_commit(livesport_path)
 odds_commit <- git_last_commit(odds_path)
 
 format_freshness <- function(commit_time) {
-  if (is.null(commit_time)) return(list(last_commit = NA, age_hours = NA))
+  if (is.null(commit_time)) {
+    return(list(last_commit = NA, age_hours = NA))
+  }
   list(
     last_commit = format(commit_time, "%Y-%m-%dT%H:%M:%S%z"),
     age_hours = round(as.numeric(difftime(now, commit_time, units = "hours")), 1)
@@ -339,104 +386,245 @@ format_freshness <- function(commit_time) {
 }
 
 # Model freshness: find fit.rds for each betting league
-model_freshness <- tryCatch({
-  leagues_yml <- yaml::yaml.load(read_file(file.path(sports_dir, "config", "leagues.yml")))
-  leagues_yml$defaults <- NULL
+model_freshness <- tryCatch(
+  {
+    leagues_yml <- yaml::yaml.load(read_file(file.path(sports_dir, "config", "leagues.yml")))
+    leagues_yml$defaults <- NULL
 
-  model_info <- list()
-  for (league_key in names(leagues_yml)) {
-    lcfg <- leagues_yml[[league_key]]
-    if (!isTRUE(lcfg$has_bets)) next
+    model_info <- list()
+    for (league_key in names(leagues_yml)) {
+      lcfg <- leagues_yml[[league_key]]
+      if (!isTRUE(lcfg$has_bets)) next
 
-    league_dir <- file.path(sports_dir, lcfg$dir)
-    sexes <- if (is.list(lcfg$sex)) unlist(lcfg$sex) else lcfg$sex
+      league_dir <- file.path(sports_dir, lcfg$dir)
+      sexes <- if (is.list(lcfg$sex)) unlist(lcfg$sex) else lcfg$sex
 
-    # Find newest fit.rds across sexes
-    fit_files <- file.path(league_dir, "results", sexes, "fit.rds")
-    fit_exists <- file.exists(fit_files)
+      # Find newest fit.rds across sexes
+      fit_files <- file.path(league_dir, "results", sexes, "fit.rds")
+      fit_exists <- file.exists(fit_files)
 
-    if (any(fit_exists)) {
-      newest <- max(file.mtime(fit_files[fit_exists]))
-      model_info[[length(model_info) + 1]] <- list(
-        league = league_key,
-        fit_time = format(newest, "%Y-%m-%dT%H:%M:%S"),
-        age_hours = round(as.numeric(difftime(now, newest, units = "hours")), 1)
-      )
-    } else {
-      model_info[[length(model_info) + 1]] <- list(
-        league = league_key,
-        fit_time = NA,
-        age_hours = NA
-      )
+      if (any(fit_exists)) {
+        newest <- max(file.mtime(fit_files[fit_exists]))
+        model_info[[length(model_info) + 1]] <- list(
+          league = league_key,
+          fit_time = format(newest, "%Y-%m-%dT%H:%M:%S"),
+          age_hours = round(as.numeric(difftime(now, newest, units = "hours")), 1)
+        )
+      } else {
+        model_info[[length(model_info) + 1]] <- list(
+          league = league_key,
+          fit_time = NA,
+          age_hours = NA
+        )
+      }
     }
+    model_info
+  },
+  error = function(e) {
+    msg("Model freshness check failed: %s", e$message)
+    list()
   }
-  model_info
-}, error = function(e) { msg("Model freshness check failed: %s", e$message); list() })
+)
 
 # Check if livesport-data has newer data than Sports data dirs
-data_sync_stale <- tryCatch({
-  if (is.null(livesport_commit)) FALSE
-  else {
-    # Find newest data file in Sports/
-    data_files <- Sys.glob(file.path(sports_dir, "*", "*", "data", "*", "data.csv"))
-    if (length(data_files) == 0) TRUE
-    else {
-      newest_data <- max(file.mtime(data_files))
-      livesport_commit > newest_data
+data_sync_stale <- tryCatch(
+  {
+    if (is.null(livesport_commit)) {
+      FALSE
+    } else {
+      # Find newest data file in Sports/
+      data_files <- Sys.glob(file.path(sports_dir, "*", "*", "data", "*", "data.csv"))
+      if (length(data_files) == 0) {
+        TRUE
+      } else {
+        newest_data <- max(file.mtime(data_files))
+        livesport_commit > newest_data
+      }
     }
-  }
-}, error = function(e) FALSE)
+  },
+  error = function(e) FALSE
+)
 
 freshness <- list(
   livesport_data = format_freshness(livesport_commit),
-  lengjan_odds   = format_freshness(odds_commit),
-  models         = model_freshness,
+  lengjan_odds = format_freshness(odds_commit),
+  models = model_freshness,
   data_sync_stale = data_sync_stale
 )
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# 5. Bankroll
+# 5. Active Leagues & Schedule
 # ═══════════════════════════════════════════════════════════════════════════════
 
-bankroll <- tryCatch({
-  cfg <- yaml::yaml.load(read_file(file.path(sports_dir, "config", "bankroll.yml")))
-  initial <- cfg$initial_pool
-  epoch <- as.Date(cfg$epoch)
+# Top-level leagues.yml parse (needed for active_leagues + schedule_summary)
+leagues_yml <- tryCatch(
+  {
+    raw <- read_file(file.path(sports_dir, "config", "leagues.yml"))
+    parsed <- yaml::yaml.load(raw)
+    parsed$defaults <- NULL
+    parsed
+  },
+  error = function(e) {
+    msg("Failed to read leagues.yml: %s", e$message)
+    list()
+  }
+)
 
-  epoch_bets <- all_bets |>
-    mutate(date_recommended = as.Date(date_recommended)) |>
-    filter(date_recommended >= epoch)
-
-  settled_pnl <- epoch_bets |>
-    filter(!is.na(win)) |>
-    mutate(pnl_actual = ifelse(win, odds * bet_amount - bet_amount, -bet_amount)) |>
-    pull(pnl_actual) |>
-    sum(na.rm = TRUE)
-
-  outstanding <- epoch_bets |>
-    filter(is.na(win)) |>
-    pull(bet_amount) |>
-    sum(na.rm = TRUE)
-
-  # Week PnL (last 7 days of settled bets)
-  week_pnl <- epoch_bets |>
-    filter(!is.na(win), as.Date(date_match) >= today - 7) |>
-    mutate(pnl_actual = ifelse(win, odds * bet_amount - bet_amount, -bet_amount)) |>
-    pull(pnl_actual) |>
-    sum(na.rm = TRUE)
-
+# ── Active leagues metadata ──────────────────────────────────
+active_leagues <- lapply(names(leagues_yml), function(key) {
+  l <- leagues_yml[[key]]
+  if (!isTRUE(l$active)) {
+    return(NULL)
+  }
   list(
-    initial_pool = initial,
-    current_pool = round(initial + settled_pnl - outstanding),
-    outstanding  = round(outstanding),
-    settled_pnl  = round(settled_pnl),
-    week_pnl     = round(week_pnl)
+    key = key,
+    sport = l$sport,
+    country = l$country,
+    label = paste0(
+      toupper(substr(l$country, 1, 1)), substr(l$country, 2, nchar(l$country)),
+      "ic ", toupper(substr(l$sport, 1, 1)), substr(l$sport, 2, nchar(l$sport))
+    ),
+    has_bets = isTRUE(l$has_bets)
   )
-}, error = function(e) {
-  msg("Bankroll calculation failed: %s", e$message)
-  list(error = e$message)
-})
+}) |> Filter(Negate(is.null), x = _)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 6. Bankroll
+# ═══════════════════════════════════════════════════════════════════════════════
+
+bankroll <- tryCatch(
+  {
+    cfg <- yaml::yaml.load(read_file(file.path(sports_dir, "config", "bankroll.yml")))
+    initial <- cfg$initial_pool
+    epoch <- as.Date(cfg$epoch)
+
+    epoch_bets <- all_bets |>
+      mutate(date_recommended = as.Date(date_recommended)) |>
+      filter(date_recommended >= epoch)
+
+    settled_pnl <- epoch_bets |>
+      filter(!is.na(win)) |>
+      mutate(pnl_actual = ifelse(win, odds * bet_amount - bet_amount, -bet_amount)) |>
+      pull(pnl_actual) |>
+      sum(na.rm = TRUE)
+
+    outstanding <- epoch_bets |>
+      filter(is.na(win)) |>
+      pull(bet_amount) |>
+      sum(na.rm = TRUE)
+
+    # Week PnL (last 7 days of settled bets)
+    week_pnl <- epoch_bets |>
+      filter(!is.na(win), as.Date(date_match) >= today - 7) |>
+      mutate(pnl_actual = ifelse(win, odds * bet_amount - bet_amount, -bet_amount)) |>
+      pull(pnl_actual) |>
+      sum(na.rm = TRUE)
+
+    list(
+      initial_pool = initial,
+      current_pool = round(initial + settled_pnl - outstanding),
+      outstanding  = round(outstanding),
+      settled_pnl  = round(settled_pnl),
+      week_pnl     = round(week_pnl)
+    )
+  },
+  error = function(e) {
+    msg("Bankroll calculation failed: %s", e$message)
+    list(error = e$message)
+  }
+)
+
+
+# ── Schedule summary (next 7 days) ──────────────────────────
+schedule_summary <- tryCatch(
+  {
+    today <- Sys.Date()
+    horizon <- today + 7
+
+    active_dirs <- vapply(
+      Filter(function(l) isTRUE(l$active), leagues_yml),
+      function(l) l$dir,
+      character(1)
+    )
+
+    all_games <- lapply(active_dirs, function(dir) {
+      league_cfg <- leagues_yml[[
+        names(which(vapply(leagues_yml, function(l) identical(l$dir, dir), logical(1))))
+      ]]
+      sexes <- if (is.list(league_cfg$sex)) unlist(league_cfg$sex) else league_cfg$sex
+
+      do.call(rbind, lapply(sexes, function(sex) {
+        ng_path <- file.path(sports_dir, dir, "results", sex, "next_games.csv")
+        if (!file.exists(ng_path)) {
+          return(NULL)
+        }
+        tryCatch(
+          {
+            d <- readr::read_csv(ng_path, show_col_types = FALSE)
+            if (nrow(d) == 0) {
+              return(NULL)
+            }
+            d$sport <- league_cfg$sport
+            d$date <- as.Date(d$date)
+            d <- d[d$date >= today & d$date <= horizon, ]
+            if (nrow(d) == 0) {
+              return(NULL)
+            }
+            d
+          },
+          error = function(e) NULL
+        )
+      }))
+    }) |> do.call(what = rbind)
+
+    if (is.null(all_games) || nrow(all_games) == 0) {
+      list()
+    } else {
+      # Check odds coverage
+      odds_path <- file.path(dirname(sports_dir), "lengjan-odds", "data")
+
+      split(all_games, all_games$date) |>
+        lapply(function(day_games) {
+          sports <- table(day_games$sport)
+          has_odds <- vapply(seq_len(nrow(day_games)), function(i) {
+            g <- day_games[i, ]
+            league_odds_dir <- file.path(odds_path, paste0(g$sport, "_", "iceland"))
+            if (!dir.exists(league_odds_dir)) {
+              return(FALSE)
+            }
+            odds_files <- list.files(league_odds_dir, pattern = "odds_.*\\.csv$", full.names = TRUE)
+            if (length(odds_files) == 0) {
+              return(FALSE)
+            }
+            any(vapply(odds_files, function(f) {
+              tryCatch(
+                {
+                  od <- readr::read_csv(f, show_col_types = FALSE)
+                  any(od$date == as.character(g$date) &
+                    (od$home == g$home | od$away == g$away))
+                },
+                error = function(e) FALSE
+              )
+            }, logical(1)))
+          }, logical(1))
+
+          list(
+            basketball = as.integer(sports["basketball"] %||% 0L),
+            handball = as.integer(sports["handball"] %||% 0L),
+            football = as.integer(sports["football"] %||% 0L),
+            total = nrow(day_games),
+            no_odds = sum(!has_odds)
+          )
+        })
+    }
+  },
+  error = function(e) {
+    msg("Schedule summary failed: %s", e$message)
+    list()
+  }
+)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -452,7 +640,10 @@ status <- list(
     settleable = settleable
   ),
   freshness = freshness,
-  bankroll = bankroll
+  bankroll = bankroll,
+  recent_settled = if (nrow(recent_settled) > 0) recent_settled else list(),
+  schedule_summary = schedule_summary,
+  active_leagues = active_leagues
 )
 
 cat(toJSON(status, auto_unbox = TRUE, pretty = TRUE, na = "null"))
