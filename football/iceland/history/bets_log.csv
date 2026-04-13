@@ -3,9 +3,9 @@ date_recommended,date_match,sport,country,sex,market,home,away,outcome,odds,prob
 2025-04-07,2025-04-07,football,iceland,male,handicap,Víkingur R.,ÍBV,away,1.57,0.85925,0.3490225,NA,150,-2.5,TRUE,86,gsheets
 2025-04-07,2025-04-07,football,iceland,male,outcome,Víkingur R.,ÍBV,away,12,0.50275,5.033,NA,150,NA,FALSE,-150,gsheets
 2025-04-07,2025-04-07,football,iceland,male,totals,Víkingur R.,ÍBV,under,3.7,0.44975,0.6640750000000001,NA,465,2.5,TRUE,1256,gsheets
-2025-04-10,2025-04-13,football,iceland,male,btts,Fram,Breiðablik,no,2.52,0.4915,0.23858000000000001,NA,465,NA,FALSE,-465,gsheets
+2025-04-10,2025-04-13,football,iceland,male,btts,Fram,Breiðablik,no,2.52,0.4915,0.23858,NA,465,NA,FALSE,-465,gsheets
 2025-04-10,2025-04-13,football,iceland,male,btts,Víkingur R.,KA,no,2.41,0.47825,0.15258250000000018,NA,330,NA,TRUE,465,gsheets
-2025-04-10,2025-04-13,football,iceland,male,handicap,Fram,Breiðablik,home,1.59,0.75,0.19250000000000006,NA,975,1.5,TRUE,575,gsheets
+2025-04-10,2025-04-13,football,iceland,male,handicap,Fram,Breiðablik,home,1.59,0.75,0.1925000000000001,NA,975,1.5,TRUE,575,gsheets
 2025-04-10,2025-04-13,football,iceland,male,handicap,Víkingur R.,KA,away,1.83,0.59225,0.08381750000000016,NA,300,-1.5,FALSE,-300,gsheets
 2025-04-10,2025-04-13,football,iceland,male,totals,Fram,Breiðablik,under,1.77,0.709,0.25493,NA,990,3.5,FALSE,-990,gsheets
 2025-04-10,2025-04-13,football,iceland,male,totals,Víkingur R.,KA,under,1.88,0.6,0.1279999999999999,NA,435,3.5,FALSE,-435,gsheets
@@ -16,8 +16,8 @@ date_recommended,date_match,sport,country,sex,market,home,away,outcome,odds,prob
 2025-04-10,2025-04-14,football,iceland,male,totals,KR,Valur,under,2.22,0.523,0.1610600000000002,NA,390,3.5,FALSE,-390,gsheets
 2025-04-15,2025-04-15,football,iceland,female,btts,Þróttur R.,Fram,no,1.68,0.69575,0.1688599999999999,NA,750,NA,FALSE,-750,gsheets
 2025-04-15,2025-04-15,football,iceland,female,handicap,Þróttur R.,Fram,away,1.45,0.836,0.2121999999999999,NA,1410,-2.5,TRUE,635,gsheets
-2025-04-15,2025-04-15,football,iceland,female,outcome,Þróttur R.,Fram,tie,7,0.3,1.0999999999999999,NA,555,NA,FALSE,-555,gsheets
-2025-04-15,2025-04-15,football,iceland,female,totals,Breiðablik,Stjarnan,under,1.57,0.7135,0.12019500000000011,NA,630,3.5,FALSE,-630,gsheets
+2025-04-15,2025-04-15,football,iceland,female,outcome,Þróttur R.,Fram,tie,7,0.3,1.1,NA,555,NA,FALSE,-555,gsheets
+2025-04-15,2025-04-15,football,iceland,female,totals,Breiðablik,Stjarnan,under,1.57,0.7135,0.12019500000000012,NA,630,3.5,FALSE,-630,gsheets
 2025-04-15,2025-04-15,football,iceland,female,totals,Þróttur R.,Fram,under,1.74,0.7885,0.37198999999999993,NA,1515,3.5,FALSE,-1515,gsheets
 2025-04-15,2025-04-16,football,iceland,female,handicap,Tindastóll,FHL,home,2.18,0.60025,0.30854499999999996,NA,795,-0.5,TRUE,938,gsheets
 2025-04-15,2025-04-16,football,iceland,female,handicap,Valur,FH,away,2.25,0.518,0.16549999999999998,NA,30,-1.5,TRUE,38,gsheets
@@ -28,7 +28,7 @@ date_recommended,date_match,sport,country,sex,market,home,away,outcome,odds,prob
 2025-04-15,2025-04-16,football,iceland,female,totals,Víkingur R.,Þór/KA,under,1.59,0.73725,0.17222749999999998,NA,870,3.5,FALSE,-870,gsheets
 2025-04-17,2025-04-17,football,iceland,female,handicap,ÍH,Grótta,home,1.85,0.654,0.2099000000000001,NA,150,3.5,FALSE,-150,gsheets
 2025-04-16,2025-04-17,football,iceland,male,handicap,Afturelding,Höttur/Huginn,away,1.77,0.672,0.18944000000000005,NA,150,-3.5,FALSE,-150,gsheets
-2025-04-16,2025-04-17,football,iceland,male,handicap,ÍBV,Víkingur R.,away,2.14,0.51775,0.10798500000000011,NA,60,1.5,FALSE,-60,gsheets
+2025-04-16,2025-04-17,football,iceland,male,handicap,ÍBV,Víkingur R.,away,2.14,0.51775,0.10798500000000012,NA,60,1.5,FALSE,-60,gsheets
 2025-04-16,2025-04-17,football,iceland,male,outcome,ÍBV,Víkingur R.,away,1.6,0.7345,0.17520000000000013,NA,180,NA,FALSE,-180,gsheets
 2025-04-16,2025-04-18,football,iceland,male,handicap,Breiðablik,Fjölnir,away,1.83,0.63725,0.16616750000000002,NA,120,-2.5,FALSE,-120,gsheets
 2025-04-16,2025-04-18,football,iceland,male,handicap,Grótta,ÍA,home,1.69,0.68125,0.15131250000000002,NA,135,2.5,FALSE,-135,gsheets
@@ -49,9 +49,9 @@ date_recommended,date_match,sport,country,sex,market,home,away,outcome,odds,prob
 2025-04-21,2025-04-22,football,iceland,female,totals,Þróttur R.,Breiðablik,over,3.4,NA,-1,NA,75,4.5,FALSE,-75,gsheets
 2025-04-22,2025-04-23,football,iceland,male,handicap,Breiðablik,Stjarnan,away,1.57,0.68275,0.07191749999999997,NA,75,-1.5,TRUE,43,gsheets
 2025-04-22,2025-04-23,football,iceland,male,handicap,FH,KR,away,1.2,0.8815,0.05779999999999991,NA,180,-1.5,TRUE,36,gsheets
-2025-04-22,2025-04-23,football,iceland,male,handicap,ÍA,Vestri,away,1.43,0.71825,0.027097500000000052,NA,45,-1.5,TRUE,19,gsheets
+2025-04-22,2025-04-23,football,iceland,male,handicap,ÍA,Vestri,away,1.43,0.71825,0.02709750000000005,NA,45,-1.5,TRUE,19,gsheets
 2025-04-22,2025-04-23,football,iceland,male,outcome,FH,KR,away,2.6,0.53775,0.3981499999999999,NA,150,NA,FALSE,-150,gsheets
-2025-04-22,2025-04-23,football,iceland,male,totals,Breiðablik,Stjarnan,under,3.1,0.339,0.050900000000000056,NA,15,2.5,FALSE,-15,gsheets
+2025-04-22,2025-04-23,football,iceland,male,totals,Breiðablik,Stjarnan,under,3.1,0.339,0.05090000000000005,NA,15,2.5,FALSE,-15,gsheets
 2025-04-22,2025-04-23,football,iceland,male,totals,ÍA,Vestri,under,1.53,0.6795,0.03963500000000003,NA,45,3.5,TRUE,24,gsheets
 2025-04-22,2025-04-24,football,iceland,male,outcome,Afturelding,Víkingur R.,away,1.4,0.763,0.06819999999999993,NA,105,NA,FALSE,-105,gsheets
 2025-04-22,2025-04-24,football,iceland,male,totals,Afturelding,Víkingur R.,over,1.47,0.73725,0.08375749999999993,NA,105,2.5,FALSE,-105,gsheets
@@ -59,9 +59,9 @@ date_recommended,date_match,sport,country,sex,market,home,away,outcome,odds,prob
 2025-05-04,2025-05-04,football,iceland,male,outcome,FH,Valur,away,1.95,0.62175,0.2124125,NA,135,NA,FALSE,-135,gsheets
 2025-05-04,2025-05-04,football,iceland,male,outcome,ÍA,KA,away,3.25,0.4225,0.37312499999999993,NA,105,NA,FALSE,-105,gsheets
 2025-05-04,2025-05-04,football,iceland,male,outcome,ÍBV,Vestri,away,3.7,0.2895,0.07114999999999994,NA,15,NA,TRUE,40,gsheets
-2025-05-04,2025-05-05,football,iceland,male,outcome,Afturelding,Stjarnan,away,2.05,0.5365,0.09982499999999983,NA,60,NA,FALSE,-60,gsheets
+2025-05-04,2025-05-05,football,iceland,male,outcome,Afturelding,Stjarnan,away,2.05,0.5365,0.09982499999999984,NA,60,NA,FALSE,-60,gsheets
 2025-05-04,2025-05-05,football,iceland,male,outcome,Breiðablik,KR,away,4.2,0.32075,0.34714999999999996,NA,60,NA,FALSE,-60,gsheets
-2025-05-04,2025-05-05,football,iceland,male,outcome,Víkingur R.,Fram,tie,5.52,0.20325,0.12193999999999983,NA,15,NA,FALSE,-15,gsheets
+2025-05-04,2025-05-05,football,iceland,male,outcome,Víkingur R.,Fram,tie,5.52,0.20325,0.12193999999999984,NA,15,NA,FALSE,-15,gsheets
 2025-05-15,2025-05-16,football,iceland,female,handicap,Afturelding,Keflavík,away,2.3,0.51025,0.1735749999999998,NA,75,1.5,FALSE,-75,gsheets
 2025-05-15,2025-05-16,football,iceland,female,outcome,Afturelding,Keflavík,away,1.5,0.71475,0.072125,NA,90,NA,TRUE,45,gsheets
 2025-05-15,2025-05-16,football,iceland,female,outcome,Haukar,ÍBV,home,4.5,0.31,0.395,NA,75,NA,FALSE,-75,gsheets
@@ -93,20 +93,20 @@ date_recommended,date_match,sport,country,sex,market,home,away,outcome,odds,prob
 2025-05-15,2025-05-19,football,iceland,male,outcome,ÍA,FH,home,2.4,0.494,0.1856,NA,75,NA,FALSE,-75,gsheets
 2025-05-28,2025-05-29,football,iceland,male,handicap,Elliði,KÁ,home,1.28,0.81375,0.0416,NA,90,1.5,TRUE,25,gsheets
 2025-05-28,2025-05-29,football,iceland,male,handicap,Árbær,KFK,home,2.72,0.58625,0.5946000000000004,NA,210,-1.5,TRUE,361,gsheets
-2025-05-27,2025-05-29,football,iceland,male,handicap,ÍBV,FH,home,1.2,0.86625,0.039499999999999924,NA,120,1.5,TRUE,24,gsheets
+2025-05-27,2025-05-29,football,iceland,male,handicap,ÍBV,FH,home,1.2,0.86625,0.03949999999999992,NA,120,1.5,TRUE,24,gsheets
 2025-05-28,2025-05-29,football,iceland,male,outcome,Elliði,KÁ,home,2.85,0.467,0.3309500000000002,NA,105,NA,FALSE,-105,gsheets
 2025-05-28,2025-05-29,football,iceland,male,outcome,Kría,KFS,away,6.5,0.2645,0.71925,NA,75,NA,FALSE,-75,gsheets
 2025-05-28,2025-05-29,football,iceland,male,outcome,Árbær,KFK,home,1.8,0.7415,0.3347000000000001,NA,255,NA,TRUE,204,gsheets
 2025-05-27,2025-05-29,football,iceland,male,outcome,ÍBV,FH,home,2.75,0.4545,0.24987500000000007,NA,90,NA,TRUE,157,gsheets
 2025-05-28,2025-05-29,football,iceland,male,totals,Hafnir,Árborg,over,2.4,0.584,0.40159999999999985,NA,165,4.5,TRUE,231,gsheets
 2025-05-28,2025-05-29,football,iceland,male,totals,Kría,KFS,over,1.55,0.7475,0.15862500000000013,NA,180,3.5,TRUE,99,gsheets
-2025-05-27,2025-05-29,football,iceland,male,totals,Stjarnan,KR,over,1.75,0.68325,0.19568750000000001,NA,150,3.5,TRUE,112,gsheets
+2025-05-27,2025-05-29,football,iceland,male,totals,Stjarnan,KR,over,1.75,0.68325,0.1956875,NA,150,3.5,TRUE,112,gsheets
 2025-05-28,2025-05-29,football,iceland,male,totals,Álftanes,KH,under,1.62,0.70875,0.14817500000000006,NA,150,4.5,FALSE,-150,gsheets
 2025-05-28,2025-05-29,football,iceland,male,totals,Árbær,KFK,over,1.48,0.723,0.07003999999999994,NA,90,3.5,TRUE,43,gsheets
 2025-05-27,2025-05-29,football,iceland,male,totals,ÍBV,FH,under,1.8,0.65025,0.17045,NA,135,3.5,TRUE,108,gsheets
 2025-05-30,2025-05-30,football,iceland,male,handicap,Selfoss,Njarðvík,home,1.45,0.73175,0.06103749999999997,NA,75,1.5,FALSE,-75,gsheets
 2025-05-30,2025-05-30,football,iceland,male,outcome,Þór,Fylkir,home,2.55,0.5015,0.27882499999999977,NA,105,NA,TRUE,163,gsheets
-2025-05-30,2025-05-30,football,iceland,male,totals,Fjölnir,ÍR,under,1.23,0.83675,0.029202499999999965,NA,75,4.5,TRUE,17,gsheets
+2025-05-30,2025-05-30,football,iceland,male,totals,Fjölnir,ÍR,under,1.23,0.83675,0.02920249999999996,NA,75,4.5,TRUE,17,gsheets
 2025-05-30,2025-05-30,football,iceland,male,totals,Keflavík,HK,over,2.2,0.5225,0.14949999999999997,NA,75,3.5,FALSE,-75,gsheets
 2025-05-30,2025-05-30,football,iceland,male,totals,Leiknir R.,Grindavík,over,1.15,0.91175,0.04851249999999985,NA,195,1.5,TRUE,29,gsheets
 2025-05-30,2025-05-31,football,iceland,male,outcome,Hvíti riddarinn,Sindri,away,4.75,0.2705,0.284875,NA,45,NA,FALSE,-45,gsheets
@@ -117,7 +117,7 @@ date_recommended,date_match,sport,country,sex,market,home,away,outcome,odds,prob
 2025-05-30,2025-05-31,football,iceland,male,totals,KFA,Þróttur V.,over,2.07,0.57725,0.1949075,NA,105,3.5,FALSE,-105,gsheets
 2025-05-30,2025-05-31,football,iceland,male,totals,KFG,Höttur/Huginn,over,1.76,0.602,0.05951999999999996,NA,45,3.5,TRUE,34,gsheets
 2025-05-30,2025-05-31,football,iceland,male,totals,Víðir,Grótta,under,1.64,0.76425,0.2533699999999999,NA,240,3.5,TRUE,154,gsheets
-2025-05-30,2025-06-01,football,iceland,male,totals,KA,Stjarnan,under,1.3,0.7895,0.026350000000000012,NA,60,4.5,TRUE,18,gsheets
+2025-05-30,2025-06-01,football,iceland,male,totals,KA,Stjarnan,under,1.3,0.7895,0.02635000000000001,NA,60,4.5,TRUE,18,gsheets
 2025-06-04,2025-06-04,football,iceland,male,outcome,Grótta,KFG,home,1.6,0.72525,0.1604,NA,165,NA,TRUE,99,gsheets
 2025-06-04,2025-06-04,football,iceland,male,outcome,Kormákur/Hvöt,Dalvík/Reynir,away,3.65,0.47625,0.7383124999999999,NA,165,NA,TRUE,437,gsheets
 2025-06-04,2025-06-04,football,iceland,male,outcome,Kári,Víðir,home,2.1,0.5455,0.14555000000000007,NA,75,NA,TRUE,82,gsheets
@@ -139,7 +139,7 @@ date_recommended,date_match,sport,country,sex,market,home,away,outcome,odds,prob
 2025-06-06,2025-06-06,football,iceland,female,totals,Tindastóll,Valur,under,1.68,0.675,0.134,NA,120,3.5,FALSE,-120,gsheets
 2025-06-06,2025-06-06,football,iceland,female,totals,Álftanes,ÍR,away,2.25,0.53525,0.2043125,NA,105,NA,TRUE,131,gsheets
 2025-06-06,2025-06-07,football,iceland,female,handicap,Breiðablik,FHL,home,1.53,0.84975,0.30011750000000004,NA,345,-3.5,TRUE,183,gsheets
-2025-06-06,2025-06-07,football,iceland,female,totals,Breiðablik,FHL,home,1.02,0.98875,0.008525000000000036,NA,255,NA,TRUE,5,gsheets
+2025-06-06,2025-06-07,football,iceland,female,totals,Breiðablik,FHL,home,1.02,0.98875,0.00852500000000003,NA,255,NA,TRUE,5,gsheets
 2025-06-06,2025-06-07,football,iceland,female,totals,Fram,Stjarnan,home,3.5,0.3505,0.22675,NA,60,NA,TRUE,150,gsheets
 2025-06-08,2025-06-09,football,iceland,female,totals,Tindastóll,ÍBV,over,2.18,0.51325,0.11888500000000002,NA,90,3.5,TRUE,106,gsheets
 2025-06-08,2025-06-09,football,iceland,male,outcome,Fjölnir,Selfoss,home,2.05,0.60525,0.24076249999999977,NA,210,NA,FALSE,-210,gsheets
@@ -150,7 +150,7 @@ date_recommended,date_match,sport,country,sex,market,home,away,outcome,odds,prob
 2025-06-08,2025-06-09,football,iceland,male,outcome,Leiknir R.,Völsungur,home,2.88,0.60125,0.7315999999999997,NA,345,NA,TRUE,649,gsheets
 2025-06-08,2025-06-09,football,iceland,male,outcome,Reynir S.,Hvíti riddarinn,home,6.5,0.3885,1.5252500000000002,NA,255,NA,TRUE,1402,gsheets
 2025-06-08,2025-06-09,football,iceland,male,outcome,Víðir,Dalvík/Reynir,home,2.95,0.42025,0.23973750000000016,NA,105,NA,TRUE,205,gsheets
-2025-06-08,2025-06-09,football,iceland,male,outcome,Ægir,Höttur/Huginn,away,6.6,0.2105,0.38929999999999987,NA,60,NA,FALSE,-60,gsheets
+2025-06-08,2025-06-09,football,iceland,male,outcome,Ægir,Höttur/Huginn,away,6.6,0.2105,0.3892999999999998,NA,60,NA,FALSE,-60,gsheets
 2025-06-08,2025-06-09,football,iceland,male,totals,Fjölnir,Selfoss,over,2.2,0.497,0.09340000000000004,NA,75,3.5,FALSE,-75,gsheets
 2025-06-08,2025-06-09,football,iceland,male,totals,Grindavík,HK,over,2.1,0.6125,0.2862500000000001,NA,240,3.5,FALSE,-240,gsheets
 2025-06-08,2025-06-09,football,iceland,male,totals,Haukar,Kormákur/Hvöt,over,2.4,0.522,0.2528,NA,165,3.5,FALSE,-165,gsheets
@@ -162,7 +162,7 @@ date_recommended,date_match,sport,country,sex,market,home,away,outcome,odds,prob
 2025-06-08,2025-06-09,football,iceland,male,totals,Leiknir R.,Völsungur,over,2.15,0.51725,0.1120874999999999,NA,90,3.5,TRUE,103,gsheets
 2025-06-08,2025-06-09,football,iceland,male,totals,Víðir,Dalvík/Reynir,under,1.46,0.7525,0.0986499999999999,NA,195,3.5,TRUE,90,gsheets
 2025-06-08,2025-06-09,football,iceland,male,totals,Þór,ÍR,under,1.55,0.6755,0.04702500000000004,NA,75,3.5,TRUE,41,gsheets
-2025-06-08,2025-06-10,football,iceland,male,outcome,Árbær,ÍH,home,1.25,0.816,0.019999999999999934,NA,75,NA,FALSE,-75,gsheets
+2025-06-08,2025-06-10,football,iceland,male,outcome,Árbær,ÍH,home,1.25,0.816,0.01999999999999993,NA,75,NA,FALSE,-75,gsheets
 2025-06-08,2025-06-10,football,iceland,male,totals,Árbær,ÍH,over,1.78,0.8005,0.42489,NA,495,4.5,TRUE,386,gsheets
 2025-06-11,2025-06-11,football,iceland,female,totals,Valur,Þróttur R.,under,1.91,0.72875,0.3919125,NA,390,3.5,TRUE,355,gsheets
 2025-06-10,2025-06-12,football,iceland,female,outcome,Haukar,ÍA,away,2.6,0.52125,0.35525000000000007,NA,195,NA,FALSE,-195,gsheets
@@ -171,9 +171,9 @@ date_recommended,date_match,sport,country,sex,market,home,away,outcome,odds,prob
 2025-06-10,2025-06-12,football,iceland,female,totals,Keflavík,Fylkir,under,1.68,0.75,0.26,NA,345,3.5,FALSE,-345,gsheets
 2025-06-12,2025-06-12,football,iceland,male,handicap,Hafnir,KH,home,1.82,0.595,0.08289999999999997,NA,90,1.5,FALSE,-90,gsheets
 2025-06-12,2025-06-12,football,iceland,male,handicap,Kría,Hamar,away,1.75,0.61575,0.07756250000000003,NA,90,-1.5,FALSE,-90,gsheets
-2025-06-12,2025-06-12,football,iceland,male,handicap,Árborg,KÁ,home,1.17,0.8775,0.026674999999999865,NA,135,1.5,TRUE,23,gsheets
+2025-06-12,2025-06-12,football,iceland,male,handicap,Árborg,KÁ,home,1.17,0.8775,0.02667499999999986,NA,135,1.5,TRUE,23,gsheets
 2025-06-12,2025-06-12,football,iceland,male,outcome,Hafnir,KH,home,5.3,0.292,0.5475999999999999,NA,120,NA,FALSE,-120,gsheets
-2025-06-12,2025-06-12,football,iceland,male,outcome,Kría,Hamar,away,5.5,0.2655,0.46025000000000005,NA,90,NA,FALSE,-90,gsheets
+2025-06-12,2025-06-12,football,iceland,male,outcome,Kría,Hamar,away,5.5,0.2655,0.4602500000000001,NA,90,NA,FALSE,-90,gsheets
 2025-06-12,2025-06-12,football,iceland,male,outcome,Árborg,KÁ,home,2.05,0.535,0.09675,NA,90,NA,FALSE,-90,gsheets
 2025-06-12,2025-06-12,football,iceland,male,totals,Hafnir,KH,over,2.36,0.55275,0.3044899999999998,NA,195,5.5,FALSE,-195,gsheets
 2025-06-12,2025-06-12,football,iceland,male,totals,Kría,Hamar,over,2.1,0.54625,0.14712500000000006,NA,120,4.5,FALSE,-120,gsheets
@@ -191,28 +191,28 @@ date_recommended,date_match,sport,country,sex,market,home,away,outcome,odds,prob
 2025-06-12,2025-06-14,football,iceland,male,handicap,Völsungur,Keflavík,away,2.48,0.5,0.24,NA,150,1.5,FALSE,-150,gsheets
 2025-06-12,2025-06-14,football,iceland,male,outcome,Njarðvík,Þór,home,1.93,0.5575,0.0759749999999999,NA,75,NA,TRUE,70,gsheets
 2025-06-10,2025-06-14,football,iceland,male,outcome,Stjarnan,Valur,home,3.75,0.36125,0.35468750000000016,NA,120,NA,TRUE,330,gsheets
-2025-06-12,2025-06-14,football,iceland,male,outcome,Völsungur,Keflavík,away,1.6,0.70275,0.12440000000000007,NA,180,NA,FALSE,-180,gsheets
+2025-06-12,2025-06-14,football,iceland,male,outcome,Völsungur,Keflavík,away,1.6,0.70275,0.12440000000000008,NA,180,NA,FALSE,-180,gsheets
 2025-06-13,2025-06-14,football,iceland,male,outcome,ÍH,KV,home,4,0.32475,0.29899999999999993,NA,90,NA,FALSE,-90,gsheets
 2025-06-13,2025-06-14,football,iceland,male,outcome,Ýmir,Magni,home,3,0.43675,0.31025,NA,135,NA,FALSE,-135,gsheets
 2025-06-12,2025-06-14,football,iceland,male,totals,Njarðvík,Þór,over,1.5,0.61575,-0.07637499999999997,NA,135,2.5,TRUE,68,gsheets
 2025-06-13,2025-06-14,football,iceland,male,totals,Njarðvík,Þór,over,2.17,0.5155,0.11863499999999982,NA,90,3.5,TRUE,105,gsheets
-2025-06-12,2025-06-14,football,iceland,male,totals,Völsungur,Keflavík,over,2.2,0.5085,0.11870000000000003,NA,90,3.5,FALSE,-90,gsheets
+2025-06-12,2025-06-14,football,iceland,male,totals,Völsungur,Keflavík,over,2.2,0.5085,0.11870000000000004,NA,90,3.5,FALSE,-90,gsheets
 2025-06-13,2025-06-14,football,iceland,male,totals,ÍH,KV,over,2.01,0.65125,0.3090124999999998,NA,270,4.5,TRUE,273,gsheets
 2025-06-13,2025-06-14,football,iceland,male,totals,Ýmir,Magni,under,1.88,0.60825,0.1435099999999998,NA,150,3.5,TRUE,132,gsheets
 2025-06-10,2025-06-15,football,iceland,male,handicap,Fram,FH,home,1.2,0.862,0.03439999999999996,NA,150,1.5,TRUE,30,gsheets
-2025-06-10,2025-06-15,football,iceland,male,handicap,Vestri,KA,home,1.16,0.8895,0.031819999999999876,NA,180,1.5,TRUE,29,gsheets
+2025-06-10,2025-06-15,football,iceland,male,handicap,Vestri,KA,home,1.16,0.8895,0.03181999999999987,NA,180,1.5,TRUE,29,gsheets
 2025-06-10,2025-06-15,football,iceland,male,handicap,ÍBV,Breiðablik,home,1.34,0.788,0.05592000000000008,NA,150,1.5,FALSE,-150,gsheets
 2025-06-10,2025-06-15,football,iceland,male,outcome,Afturelding,ÍA,home,2.55,0.459,0.17045,NA,105,NA,TRUE,163,gsheets
 2025-06-10,2025-06-15,football,iceland,male,outcome,Fram,FH,home,2.95,0.45775,0.3503625,NA,165,NA,TRUE,322,gsheets
 2025-06-10,2025-06-15,football,iceland,male,outcome,Vestri,KA,home,2.95,0.4495,0.3260250000000001,NA,150,NA,TRUE,292,gsheets
-2025-06-10,2025-06-15,football,iceland,male,outcome,ÍBV,Breiðablik,home,4.2,0.3555,0.49309999999999987,NA,135,NA,FALSE,-135,gsheets
+2025-06-10,2025-06-15,football,iceland,male,outcome,ÍBV,Breiðablik,home,4.2,0.3555,0.4930999999999998,NA,135,NA,FALSE,-135,gsheets
 2025-06-10,2025-06-15,football,iceland,male,totals,Vestri,KA,under,2.1,0.544,0.14240000000000008,NA,120,2.5,TRUE,132,gsheets
 2025-06-10,2025-06-15,football,iceland,male,totals,ÍBV,Breiðablik,under,1.71,0.61325,0.04865749999999991,NA,60,3.5,TRUE,43,gsheets
 2025-06-10,2025-06-16,football,iceland,male,totals,Víkingur R.,KR,over,1.61,0.66925,0.07749250000000008,NA,120,3.5,TRUE,73,gsheets
 2025-06-16,2025-06-22,football,iceland,male,handicap,FH,Vestri,away,1.41,0.784,0.10543999999999998,NA,225,-1.5,FALSE,-225,gsheets
 2025-06-16,2025-06-22,football,iceland,male,outcome,FH,Vestri,away,4.75,0.29175,0.3858124999999999,NA,90,NA,FALSE,-90,gsheets
 2025-06-16,2025-06-22,football,iceland,male,outcome,ÍA,Stjarnan,home,2.45,0.44425,0.08841250000000012,NA,60,NA,FALSE,-60,gsheets
-2025-06-16,2025-06-22,football,iceland,male,totals,FH,Vestri,under,1.5,0.7385,0.10775000000000007,NA,195,3.5,TRUE,98,gsheets
+2025-06-16,2025-06-22,football,iceland,male,totals,FH,Vestri,under,1.5,0.7385,0.10775000000000008,NA,195,3.5,TRUE,98,gsheets
 2025-07-24,2025-07-24,football,iceland,female,outcome,Breiðablik,Þróttur R.,home,1.72,NA,-1,NA,225,NA,TRUE,162,gsheets
 2025-07-24,2025-07-24,football,iceland,female,outcome,Fylkir,Grótta,home,4.45,NA,-1,NA,255,NA,FALSE,-255,gsheets
 2025-07-24,2025-07-24,football,iceland,female,outcome,HK,KR,home,1.73,NA,-1,NA,120,NA,TRUE,88,gsheets
@@ -227,9 +227,9 @@ date_recommended,date_match,sport,country,sex,market,home,away,outcome,odds,prob
 2025-07-24,2025-07-24,football,iceland,male,totals,Þróttur V.,Víðir,under,1.9,NA,-1,NA,240,3.5,TRUE,216,gsheets
 2025-07-25,2025-07-25,football,iceland,female,handicap,FH,Fram,home,2.15,0.53275,0.14541249999999983,NA,120,-1.5,TRUE,138,gsheets
 2025-07-25,2025-07-25,football,iceland,female,outcome,FH,Fram,home,1.46,0.74225,0.0836849999999999,NA,165,NA,TRUE,76,gsheets
-2025-07-25,2025-07-25,football,iceland,female,totals,FH,Fram,under,1.89,0.55775,0.054147499999999904,NA,60,3.5,FALSE,-60,gsheets
+2025-07-25,2025-07-25,football,iceland,female,totals,FH,Fram,under,1.89,0.55775,0.0541474999999999,NA,60,3.5,FALSE,-60,gsheets
 2025-07-25,2025-07-25,football,iceland,male,handicap,Grótta,Kári,away,2,0.5765,0.15300000000000002,NA,135,-1.5,TRUE,135,gsheets
-2025-07-25,2025-07-25,football,iceland,male,handicap,Höttur/Huginn,Dalvík/Reynir,home,1.29,0.849,0.09520999999999999,NA,300,1.5,FALSE,-300,gsheets
+2025-07-25,2025-07-25,football,iceland,male,handicap,Höttur/Huginn,Dalvík/Reynir,home,1.29,0.849,0.09521,NA,300,1.5,FALSE,-300,gsheets
 2025-07-25,2025-07-25,football,iceland,male,handicap,KFS,Vængir Júpiters,home,1.44,0.80225,0.15524,NA,315,1.5,FALSE,-315,gsheets
 2025-07-25,2025-07-25,football,iceland,male,handicap,Keflavík,Þór,home,3.4,0.47025,0.5988500000000001,NA,225,-1.5,FALSE,-225,gsheets
 2025-07-25,2025-07-25,football,iceland,male,handicap,ÍH,Reynir S.,home,1.72,0.83825,0.44179,NA,555,2.5,TRUE,400,gsheets
@@ -239,7 +239,7 @@ date_recommended,date_match,sport,country,sex,market,home,away,outcome,odds,prob
 2025-07-25,2025-07-25,football,iceland,male,outcome,Haukar,KFG,away,5,0.259,0.29500000000000004,NA,60,NA,TRUE,240,gsheets
 2025-07-25,2025-07-25,football,iceland,male,outcome,Höttur/Huginn,Dalvík/Reynir,home,3.2,0.4715,0.5088000000000001,NA,210,NA,FALSE,-210,gsheets
 2025-07-25,2025-07-25,football,iceland,male,outcome,KFS,Vængir Júpiters,home,3.33,0.45475,0.5143175,NA,195,NA,FALSE,-195,gsheets
-2025-07-25,2025-07-25,football,iceland,male,outcome,Keflavík,Þór,home,2.1,0.68975,0.44847499999999996,NA,360,NA,FALSE,-360,gsheets
+2025-07-25,2025-07-25,football,iceland,male,outcome,Keflavík,Þór,home,2.1,0.68975,0.448475,NA,360,NA,FALSE,-360,gsheets
 2025-07-25,2025-07-25,football,iceland,male,outcome,ÍH,Reynir S.,away,7.5,0.195,0.46250000000000013,NA,60,NA,TRUE,390,gsheets
 2025-07-25,2025-07-25,football,iceland,male,outcome,ÍR,Njarðvík,home,2.95,0.5765,0.7006750000000002,NA,330,NA,FALSE,-330,gsheets
 2025-07-25,2025-07-25,football,iceland,male,totals,HK,Leiknir R.,over,2,0.56425,0.12850000000000006,NA,120,3.5,FALSE,-120,gsheets
@@ -260,15 +260,15 @@ date_recommended,date_match,sport,country,sex,market,home,away,outcome,odds,prob
 2025-07-25,2025-07-26,football,iceland,male,totals,Víkingur Ó.,KFA,under,1.49,0.71,0.05789999999999995,NA,105,4.5,FALSE,-105,gsheets
 2025-07-25,2025-07-26,football,iceland,male,totals,Árbær,KF,over,1.95,0.6215,0.21192500000000003,NA,195,3.5,FALSE,-195,gsheets
 2025-07-25,2025-07-26,football,iceland,male,totals,Ýmir,Sindri,over,2.25,0.6175,0.38937500000000014,NA,285,3.5,TRUE,356,gsheets
-2025-07-25,2025-07-27,football,iceland,male,handicap,Valur,FH,home,2.8,0.50175,0.40490000000000004,NA,195,-1.5,TRUE,351,gsheets
-2025-07-25,2025-07-27,football,iceland,male,handicap,Vestri,ÍBV,home,1.17,0.894,0.045979999999999965,NA,240,1.5,TRUE,41,gsheets
+2025-07-25,2025-07-27,football,iceland,male,handicap,Valur,FH,home,2.8,0.50175,0.4049,NA,195,-1.5,TRUE,351,gsheets
+2025-07-25,2025-07-27,football,iceland,male,handicap,Vestri,ÍBV,home,1.17,0.894,0.04597999999999996,NA,240,1.5,TRUE,41,gsheets
 2025-07-25,2025-07-27,football,iceland,male,outcome,Valur,FH,home,1.72,0.70575,0.2138899999999999,NA,270,NA,TRUE,194,gsheets
 2025-07-25,2025-07-27,football,iceland,male,outcome,Vestri,ÍBV,home,2.88,0.427,0.22975999999999996,NA,105,NA,TRUE,197,gsheets
-2025-07-25,2025-07-27,football,iceland,male,totals,Valur,FH,over,2.15,0.5185,0.11477499999999985,NA,90,3.5,TRUE,103,gsheets
+2025-07-25,2025-07-27,football,iceland,male,totals,Valur,FH,over,2.15,0.5185,0.11477499999999984,NA,90,3.5,TRUE,103,gsheets
 2025-07-25,2025-07-27,football,iceland,male,totals,Vestri,ÍBV,under,1.95,0.60575,0.1812125,NA,165,2.5,TRUE,157,gsheets
-2025-07-29,2025-07-29,football,iceland,female,handicap,Haukar,Fylkir,away,1.27,0.81225,0.031557500000000044,NA,105,-1.5,FALSE,-105,gsheets
+2025-07-29,2025-07-29,football,iceland,female,handicap,Haukar,Fylkir,away,1.27,0.81225,0.03155750000000004,NA,105,-1.5,FALSE,-105,gsheets
 2025-07-29,2025-07-29,football,iceland,female,outcome,Haukar,Fylkir,away,2.88,0.47125,0.35719999999999985,NA,165,NA,FALSE,-165,gsheets
-2025-07-29,2025-07-29,football,iceland,female,totals,Afturelding,HK,over,1.86,0.59225,0.10158500000000015,NA,105,3.5,TRUE,90,gsheets
+2025-07-29,2025-07-29,football,iceland,female,totals,Afturelding,HK,over,1.86,0.59225,0.10158500000000016,NA,105,3.5,TRUE,90,gsheets
 2025-07-29,2025-07-29,football,iceland,female,totals,Haukar,Fylkir,over,1.74,0.60375,0.05052499999999999,NA,60,3.5,TRUE,44,gsheets
 2025-07-29,2025-07-29,football,iceland,male,handicap,Vængir Júpiters,Hamar,home,1.86,0.71875,0.33687500000000004,NA,360,-1.5,FALSE,-360,gsheets
 2025-07-29,2025-07-29,football,iceland,male,handicap,Þór,Grindavík,away,1.87,0.6095,0.13976500000000014,NA,150,-1.5,FALSE,-150,gsheets
@@ -289,13 +289,13 @@ date_recommended,date_match,sport,country,sex,market,home,away,outcome,odds,prob
 2025-08-18,2025-08-18,football,iceland,male,outcome,Fram,KR,home,2.6,0.42875,0.11475000000000002,NA,60,NA,FALSE,-60,gsheets
 2025-08-18,2025-08-18,football,iceland,male,totals,Fram,KR,over,1.87,0.58425,0.09254750000000012,NA,90,3.5,FALSE,-90,gsheets
 2025-08-18,2025-08-19,football,iceland,male,handicap,Kría,KÁ,home,2.34,0.7195,0.68363,NA,465,1.5,FALSE,-465,gsheets
-2025-08-18,2025-08-19,football,iceland,male,outcome,Kría,KÁ,home,9.15,0.39,2.5685000000000002,NA,285,NA,FALSE,-285,gsheets
-2025-08-18,2025-08-19,football,iceland,male,totals,Kría,KÁ,over,2.42,0.49325,0.19366499999999998,NA,120,5.5,FALSE,-120,gsheets
+2025-08-18,2025-08-19,football,iceland,male,outcome,Kría,KÁ,home,9.15,0.39,2.5685,NA,285,NA,FALSE,-285,gsheets
+2025-08-18,2025-08-19,football,iceland,male,totals,Kría,KÁ,over,2.42,0.49325,0.193665,NA,120,5.5,FALSE,-120,gsheets
 2025-08-20,2025-08-20,football,iceland,female,outcome,Fram,Víkingur R.,home,3.5,0.32975,0.15412499999999996,NA,60,NA,FALSE,-60,gsheets
 2025-08-20,2025-08-20,football,iceland,female,outcome,Þróttur R.,Valur,home,2.02,0.52625,0.063025,NA,60,NA,FALSE,-60,gsheets
 2025-08-20,2025-08-20,football,iceland,female,totals,Þróttur R.,Valur,under,1.58,0.72425,0.14431499999999997,NA,225,3.5,TRUE,131,gsheets
-2025-08-20,2025-08-20,football,iceland,male,handicap,Augnablik,Ýmir,home,2.37,0.51875,0.22943750000000018,NA,150,-1.5,TRUE,206,gsheets
-2025-08-20,2025-08-20,football,iceland,male,handicap,Hvíti riddarinn,KFK,away,1.65,0.72875,0.20243749999999994,NA,285,-2.5,TRUE,185,gsheets
+2025-08-20,2025-08-20,football,iceland,male,handicap,Augnablik,Ýmir,home,2.37,0.51875,0.22943750000000016,NA,150,-1.5,TRUE,206,gsheets
+2025-08-20,2025-08-20,football,iceland,male,handicap,Hvíti riddarinn,KFK,away,1.65,0.72875,0.2024374999999999,NA,285,-2.5,TRUE,185,gsheets
 2025-08-20,2025-08-20,football,iceland,male,handicap,Magni,ÍH,away,1.81,0.794,0.4371400000000001,NA,480,-3.5,FALSE,-480,gsheets
 2025-08-20,2025-08-20,football,iceland,male,handicap,Árbær,KV,home,1.42,0.907,0.28794,NA,615,1.5,TRUE,258,gsheets
 2025-08-20,2025-08-20,football,iceland,male,outcome,Augnablik,Ýmir,home,1.59,0.72025,0.14519749999999998,NA,225,NA,TRUE,133,gsheets
@@ -306,18 +306,18 @@ date_recommended,date_match,sport,country,sex,market,home,away,outcome,odds,prob
 2025-08-20,2025-08-20,football,iceland,male,totals,Augnablik,Ýmir,over,1.86,0.57325,0.06624500000000011,NA,75,3.5,FALSE,-75,gsheets
 2025-08-20,2025-08-20,football,iceland,male,totals,KF,Tindastóll,under,1.88,0.66825,0.2563099999999999,NA,255,3.5,FALSE,-255,gsheets
 2025-08-20,2025-08-20,football,iceland,male,totals,Magni,ÍH,under,2.42,0.481,0.16401999999999994,NA,105,4.5,FALSE,-105,gsheets
-2025-08-20,2025-08-20,football,iceland,male,totals,Reynir S.,Sindri,over,1.8,0.616,0.10880000000000001,NA,120,3.5,TRUE,96,gsheets
+2025-08-20,2025-08-20,football,iceland,male,totals,Reynir S.,Sindri,over,1.8,0.616,0.1088,NA,120,3.5,TRUE,96,gsheets
 2025-08-20,2025-08-21,football,iceland,female,handicap,Grótta,KR,home,3.44,0.377,0.29688000000000003,NA,105,-1.5,TRUE,256,gsheets
 2025-08-20,2025-08-21,football,iceland,female,handicap,ÍBV,HK,away,1.58,0.76375,0.2067250000000001,NA,315,-1.5,FALSE,-315,gsheets
 2025-08-20,2025-08-21,football,iceland,female,handicap,Þór/KA,FHL,home,1.75,0.75275,0.3173125000000001,NA,375,-1.5,TRUE,281,gsheets
 2025-08-20,2025-08-21,football,iceland,female,outcome,Grótta,KR,home,2.07,0.56525,0.17006749999999993,NA,150,NA,TRUE,160,gsheets
 2025-08-20,2025-08-21,football,iceland,female,outcome,ÍA,Haukar,home,2.36,0.75275,0.7764899999999999,NA,510,NA,TRUE,694,gsheets
 2025-08-20,2025-08-21,football,iceland,female,outcome,ÍBV,HK,away,4.7,0.36075,0.6955250000000001,NA,165,NA,FALSE,-165,gsheets
-2025-08-20,2025-08-21,football,iceland,female,outcome,Þór/KA,FHL,home,1.29,0.88625,0.14326250000000001,NA,450,NA,TRUE,131,gsheets
+2025-08-20,2025-08-21,football,iceland,female,outcome,Þór/KA,FHL,home,1.29,0.88625,0.1432625,NA,450,NA,TRUE,131,gsheets
 2025-08-20,2025-08-21,football,iceland,female,totals,Fylkir,Keflavík,under,1.75,0.62675,0.09681250000000008,NA,120,3.5,TRUE,90,gsheets
 2025-08-20,2025-08-21,football,iceland,female,totals,Grótta,KR,over,1.82,0.6535,0.18937000000000004,NA,210,3.5,FALSE,-210,gsheets
 2025-08-20,2025-08-21,football,iceland,female,totals,ÍA,Haukar,over,2.11,0.68025,0.4353275,NA,360,3.5,FALSE,-360,gsheets
-2025-08-20,2025-08-21,football,iceland,female,totals,Þór/KA,FHL,over,1.77,0.616,0.09032000000000001,NA,105,3.5,TRUE,81,gsheets
+2025-08-20,2025-08-21,football,iceland,female,totals,Þór/KA,FHL,over,1.77,0.616,0.09032,NA,105,3.5,TRUE,81,gsheets
 2025-08-20,2025-08-22,football,iceland,female,handicap,Breiðablik,Tindastóll,home,2.17,0.698,0.5146599999999999,NA,390,-3.5,TRUE,456,gsheets
 2025-08-20,2025-08-22,football,iceland,female,outcome,Breiðablik,Tindastóll,home,1.05,0.967,0.01535000000000001,NA,270,NA,TRUE,14,gsheets
 2025-08-20,2025-08-22,football,iceland,female,totals,Breiðablik,Tindastóll,over,1.99,0.6975,0.38802500000000006,NA,360,4.5,TRUE,356,gsheets
@@ -325,17 +325,17 @@ date_recommended,date_match,sport,country,sex,market,home,away,outcome,odds,prob
 2025-08-20,2025-08-24,football,iceland,male,outcome,KA,Fram,home,2.1,0.54425,0.14292500000000008,NA,120,NA,TRUE,132,gsheets
 2025-08-20,2025-08-25,football,iceland,male,handicap,KR,Stjarnan,home,3.15,0.373,0.17494999999999994,NA,75,-1.5,FALSE,-75,gsheets
 2025-08-20,2025-08-25,football,iceland,male,outcome,KR,Stjarnan,home,1.95,0.62775,0.22411250000000005,NA,210,NA,FALSE,-210,gsheets
-2025-08-20,2025-08-25,football,iceland,male,totals,KR,Stjarnan,under,1.65,0.866,0.42889999999999995,NA,600,4.5,TRUE,390,gsheets
+2025-08-20,2025-08-25,football,iceland,male,totals,KR,Stjarnan,under,1.65,0.866,0.4288999999999999,NA,600,4.5,TRUE,390,gsheets
 2025-08-20,2025-08-26,football,iceland,male,handicap,Valur,Afturelding,away,1.8,0.816,0.4688,NA,525,-1.5,TRUE,420,gsheets
 2025-08-20,2025-08-26,football,iceland,male,handicap,Víkingur R.,Vestri,home,1.87,0.61025,0.1411675,NA,150,-1.5,TRUE,131,gsheets
-2025-08-20,2025-08-26,football,iceland,male,outcome,Valur,Afturelding,away,7.5,0.38275,1.8706249999999998,NA,255,NA,FALSE,-255,gsheets
+2025-08-20,2025-08-26,football,iceland,male,outcome,Valur,Afturelding,away,7.5,0.38275,1.870625,NA,255,NA,FALSE,-255,gsheets
 2025-08-20,2025-08-26,football,iceland,male,outcome,Valur,Afturelding,tie,5.5,0.24625,0.354375,NA,75,NA,FALSE,-75,gsheets
 2025-08-20,2025-08-26,football,iceland,male,outcome,Víkingur R.,Vestri,home,1.33,0.78225,0.04039250000000005,NA,105,NA,TRUE,35,gsheets
 2025-08-20,2025-08-26,football,iceland,male,totals,Valur,Afturelding,under,1.75,0.61425,0.07493749999999993,NA,90,3.5,FALSE,-90,gsheets
 2025-08-20,2025-08-26,football,iceland,male,totals,Víkingur R.,Vestri,over,2.2,0.60425,0.32935000000000003,NA,240,3.5,TRUE,288,gsheets
 2025-09-21,2025-09-21,football,iceland,male,handicap,Víkingur R.,Fram,away,1.8,0.59875,0.07775000000000004,NA,90,-1.5,TRUE,72,gsheets
 2025-09-21,2025-09-21,football,iceland,male,outcome,Stjarnan,FH,home,2.3,0.5635,0.2960499999999999,NA,210,NA,FALSE,-210,gsheets
-2025-09-21,2025-09-21,football,iceland,male,totals,KA,KR,over,1.82,0.57675,0.049685000000000035,NA,60,3.5,TRUE,49,gsheets
+2025-09-21,2025-09-21,football,iceland,male,totals,KA,KR,over,1.82,0.57675,0.04968500000000003,NA,60,3.5,TRUE,49,gsheets
 2025-09-21,2025-09-21,football,iceland,male,totals,Stjarnan,FH,over,2.2,0.51625,0.13575000000000004,NA,105,3.5,FALSE,-105,gsheets
 2025-09-21,2025-09-21,football,iceland,male,totals,Víkingur R.,Fram,under,1.82,0.6305,0.14750999999999992,NA,165,3.5,TRUE,135,gsheets
 2025-09-21,2025-09-21,football,iceland,male,totals,ÍBV,Afturelding,under,1.57,0.693,0.08800999999999998,NA,135,3.5,TRUE,77,gsheets
@@ -350,10 +350,10 @@ date_recommended,date_match,sport,country,sex,market,home,away,outcome,odds,prob
 2025-09-23,2025-09-28,football,iceland,male,outcome,ÍA,KR,home,2.8,0.45975,0.2872999999999999,NA,150,NA,TRUE,270,gsheets
 2025-09-23,2025-09-29,football,iceland,male,handicap,Stjarnan,Víkingur R.,home,1.37,0.75,0.02750000000000008,NA,60,1.5,TRUE,22,gsheets
 2025-09-23,2025-09-29,football,iceland,male,outcome,Stjarnan,Víkingur R.,home,3.75,0.341,0.27875000000000005,NA,90,NA,FALSE,-90,gsheets
-2026-04-11,2026-04-12,football,iceland,male,handicap,Valur,Þór,home,4.42,0.55,1.431,0.03,394,-2,NA,NA,pipeline
-2026-04-11,2026-04-12,football,iceland,male,handicap,Valur,Þór,home,2.54,0.72725,0.8472,0.03,359,-1,NA,NA,pipeline
-2026-04-11,2026-04-12,football,iceland,male,handicap,Valur,Þór,home,1.22,0.95675,0.1672,0.02,270,1,NA,NA,pipeline
-2026-04-11,2026-04-12,football,iceland,male,handicap,KR,Keflavík,away,1.43,0.742,0.0611,0.02,273,-3,NA,NA,pipeline
-2026-04-11,2026-04-12,football,iceland,male,handicap,ÍBV,FH,home,1.46,0.6975,0.0183,0.04,495,1,NA,NA,pipeline
-2026-04-11,2026-04-12,football,iceland,male,handicap,KA,Stjarnan,away,1.53,0.65675,0.0048,0.04,489,-1,NA,NA,pipeline
-2026-04-12,2026-04-12,football,iceland,male,handicap,KR,Keflavík,away,1.94,0.5755,0.1165,0.03,275,-2,NA,NA,pipeline
+2026-04-11,2026-04-12,football,iceland,male,handicap,Valur,Þór,home,4.42,0.55,1.431,0.03,394,-2,FALSE,-394,pipeline
+2026-04-11,2026-04-12,football,iceland,male,handicap,Valur,Þór,home,2.54,0.72725,0.8472,0.03,359,-1,FALSE,-359,pipeline
+2026-04-11,2026-04-12,football,iceland,male,handicap,Valur,Þór,home,1.22,0.95675,0.1672,0.02,270,1,FALSE,-270,pipeline
+2026-04-11,2026-04-12,football,iceland,male,handicap,KR,Keflavík,away,1.43,0.742,0.0611,0.02,273,-3,TRUE,117.38999999999999,pipeline
+2026-04-11,2026-04-12,football,iceland,male,handicap,ÍBV,FH,home,1.46,0.6975,0.0183,0.04,495,1,TRUE,227.69999999999993,pipeline
+2026-04-11,2026-04-12,football,iceland,male,handicap,KA,Stjarnan,away,1.53,0.65675,0.0048,0.04,489,-1,TRUE,259.16999999999996,pipeline
+2026-04-12,2026-04-12,football,iceland,male,handicap,KR,Keflavík,away,1.94,0.5755,0.1165,0.03,275,-2,TRUE,258.5,pipeline

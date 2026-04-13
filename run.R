@@ -651,10 +651,15 @@ if ("bet" %in% steps && length(all_recommendations) > 0) {
   # Merge with existing: replace leagues that were re-run, keep others
   if (file.exists(recs_path)) {
     old_recs <- readr::read_csv(recs_path, show_col_types = FALSE)
-    rerun_leagues <- unique(paste(new_recs$sport, new_recs$country))
-    kept <- old_recs |>
-      dplyr::filter(!paste(sport, country) %in% rerun_leagues)
-    recs <- dplyr::bind_rows(kept, new_recs)
+    if (nrow(old_recs) > 0) {
+      old_recs <- old_recs |> dplyr::mutate(date = as.Date(date))
+      rerun_leagues <- unique(paste(new_recs$sport, new_recs$country))
+      kept <- old_recs |>
+        dplyr::filter(!paste(sport, country) %in% rerun_leagues)
+      recs <- dplyr::bind_rows(kept, new_recs)
+    } else {
+      recs <- new_recs
+    }
   } else {
     recs <- new_recs
   }

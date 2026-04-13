@@ -7,10 +7,16 @@ url <- "https://www.hsi.is/olis-deild-karla-2025-26"
 
 page <- read_html_live(url)
 
-Sys.sleep(2)
-
-tables <- page |>
-  html_table()
+tables <- list()
+for (attempt in 1:5) {
+  Sys.sleep(2)
+  tables <- page |> html_table()
+  if (length(tables) >= 2) break
+}
+if (length(tables) < 2) {
+  page$session$close()
+  stop("HS<U+00CD> page returned ", length(tables), " table(s), expected >= 2: ", url)
+}
 
 remove_colnames_from_fields <- function(table) {
   nms <- names(table)
