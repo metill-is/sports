@@ -1,19 +1,19 @@
 #' Core Lengjan scraping functions with rate limiting
 #'
 #' Two-stage approach:
-#'   1. scrape_competition() — loads competition list page, extracts 1x2 odds + match hrefs
-#'   2. scrape_match_detail() — loads individual match page, extracts handicap + total odds
+#'   1. scrape_competition() -- loads competition list page, extracts 1x2 odds + match hrefs
+#'   2. scrape_match_detail() -- loads individual match page, extracts handicap + total odds
 #'
-#' CSS class mapping (hashed by Lengjan's CSS Modules build — may change on deploy):
+#' CSS class mapping (hashed by Lengjan's CSS Modules build -- may change on deploy):
 #'   Competition page:
 #'     lj1n6v0  = match container (div)
-#'     lj1n6v1  = match link (a) — href to detail page
+#'     lj1n6v1  = match link (a) -- href to detail page
 #'     lj1n6v9  = team names (div > span, span, span)
 #'     lj1n6vb  = odds container (div)
 #'     lj1n6vd  = 1x2 odds list (ol)
 #'     lj1n6ve  = "more markets" link (a)
 #'   Detail page:
-#'     zh0raz0  = market section (section) — identified by heading text
+#'     zh0raz0  = market section (section) -- identified by inner button aria-controls
 #'     h7cub57  = odds value display (div > p)
 #'   Shared:
 #'     uazl1c1  = odds button (button)
@@ -80,19 +80,22 @@ scrape_competition <- function(sport, country, competition = NULL) {
   sleep_after_click()
 
   # Click "Sja allt" button if present (expands truncated match list)
-  tryCatch({
-    show_all_candidates <- page$html_elements("button")
-    for (btn_idx in seq_along(show_all_candidates)) {
-      btn_text <- show_all_candidates[[btn_idx]] |>
-        rvest::html_text() |>
-        stringr::str_trim()
-      if (stringr::str_detect(btn_text, "(?i)sj\u00e1 allt")) {
-        page$click(stringr::str_c("button:nth-of-type(", btn_idx, ")"))
-        sleep_after_click()
-        break
+  tryCatch(
+    {
+      show_all_candidates <- page$html_elements("button")
+      for (btn_idx in seq_along(show_all_candidates)) {
+        btn_text <- show_all_candidates[[btn_idx]] |>
+          rvest::html_text() |>
+          stringr::str_trim()
+        if (stringr::str_detect(btn_text, "(?i)sj\u00e1 allt")) {
+          page$click(stringr::str_c("button:nth-of-type(", btn_idx, ")"))
+          sleep_after_click()
+          break
+        }
       }
-    }
-  }, error = function(e) NULL)
+    },
+    error = function(e) NULL
+  )
 
   # --- Extract match data from containers ---
   containers <- page |> rvest::html_elements(selectors$match_container)
@@ -117,7 +120,9 @@ scrape_competition <- function(sport, country, competition = NULL) {
     # --- Teams ---
     team_div <- container |> rvest::html_elements(selectors$teams)
     if (length(team_div) > 0) {
-      spans <- team_div[[1]] |> rvest::html_elements("span") |> rvest::html_text()
+      spans <- team_div[[1]] |>
+        rvest::html_elements("span") |>
+        rvest::html_text()
       if (length(spans) >= 3) {
         home[i] <- stringr::str_trim(spans[1])
         away[i] <- stringr::str_trim(spans[3])
@@ -180,7 +185,7 @@ scrape_competition <- function(sport, country, competition = NULL) {
 
   odds_1x2 <- odds_1x2[
     !is.na(odds_1x2$home) & nchar(odds_1x2$home) > 0 &
-    !is.na(odds_1x2$away) & nchar(odds_1x2$away) > 0,
+      !is.na(odds_1x2$away) & nchar(odds_1x2$away) > 0,
   ]
 
   match_urls <- match_hrefs[nchar(match_hrefs) > 0]
@@ -226,7 +231,9 @@ scrape_match_detail <- function(match_url, home = NA_character_, away = NA_chara
     if (attempt < rate_limit_config$max_retries) sleep_backoff(attempt)
   }
 
-  if (is.null(page)) return(result)
+  if (is.null(page)) {
+    return(result)
+  }
 
   # Wait for React hydration
   Sys.sleep(3)
@@ -241,39 +248,49 @@ scrape_match_detail <- function(match_url, home = NA_character_, away = NA_chara
     market_id <- market_ids[[market_name]]
     btn_selector <- stringr::str_c("button[aria-controls=\"", market_id, "\"]")
 
-    tryCatch({
-      btns <- page$html_elements(btn_selector)
-      if (length(btns) > 0) {
-        page$click(btn_selector)
-        Sys.sleep(stats::runif(1, 1.5, 2.5))
+    tryCatch(
+      {
+        btns <- page$html_elements(btn_selector)
+        if (length(btns) > 0) {
+          page$click(btn_selector)
+          Sys.sleep(stats::runif(1, 1.5, 2.5))
+        }
+      },
+      error = function(e) {
+        message("  Could not expand ", market_name, " section: ", e$message)
       }
-    }, error = function(e) {
-      message("  Could not expand ", market_name, " section: ", e$message)
-    })
+    )
   }
 
   # --- Extract table data from expanded sections ---
+  # Match sections by aria-controls on the expand button (stable across heading
+  # renames -- Lengjan has shipped both "Yfir e<U+00F0>a undir" and "Yfir/Undir").
   sections <- page$html_elements(selectors$market_section)
 
   for (sec in sections) {
-    heading_p <- sec |> rvest::html_elements("p")
-    if (length(heading_p) == 0) next
-    heading_text <- heading_p[[1]] |> rvest::html_text() |> stringr::str_trim()
+    btn <- sec |> rvest::html_elements("button[aria-controls]")
+    if (length(btn) == 0) next
+    aria_controls <- btn[[1]] |> rvest::html_attr("aria-controls")
+    if (is.na(aria_controls)) next
 
-    if (heading_text == "Yfir e\u00f0a undir") {
-      tryCatch({
-        result$totals <- extract_table_market(sec, match_date, home, away, type = "totals")
-      }, error = function(e) {
-        message("  Totals extraction failed for ", home, " v ", away, ": ", e$message)
-      })
-    }
-
-    if (heading_text == "Forgj\u00f6f") {
-      tryCatch({
-        result$handicap <- extract_table_market(sec, match_date, home, away, type = "handicap")
-      }, error = function(e) {
-        message("  Handicap extraction failed for ", home, " v ", away, ": ", e$message)
-      })
+    if (identical(aria_controls, "row-OU_FT")) {
+      tryCatch(
+        {
+          result$totals <- extract_table_market(sec, match_date, home, away, type = "totals")
+        },
+        error = function(e) {
+          message("  Totals extraction failed for ", home, " v ", away, ": ", e$message)
+        }
+      )
+    } else if (identical(aria_controls, "row-HC_FT")) {
+      tryCatch(
+        {
+          result$handicap <- extract_table_market(sec, match_date, home, away, type = "handicap")
+        },
+        error = function(e) {
+          message("  Handicap extraction failed for ", home, " v ", away, ": ", e$message)
+        }
+      )
     }
   }
 
@@ -284,15 +301,21 @@ scrape_match_detail <- function(match_url, home = NA_character_, away = NA_chara
 
 extract_table_market <- function(section_node, match_date, home, away, type) {
   table_node <- section_node |> rvest::html_elements("table")
-  if (length(table_node) == 0) return(NULL)
+  if (length(table_node) == 0) {
+    return(NULL)
+  }
 
   rows <- table_node[[1]] |> rvest::html_elements("tbody tr")
-  if (length(rows) == 0) return(NULL)
+  if (length(rows) == 0) {
+    return(NULL)
+  }
 
   row_list <- lapply(rows, function(row) {
     th <- row |> rvest::html_elements("th")
     line_text <- if (length(th) > 0) {
-      th[[1]] |> rvest::html_text() |> stringr::str_trim()
+      th[[1]] |>
+        rvest::html_text() |>
+        stringr::str_trim()
     } else {
       NA_character_
     }
@@ -301,11 +324,15 @@ extract_table_market <- function(section_node, match_date, home, away, type) {
     odds_vals <- vapply(tds, function(td) {
       p_els <- td |> rvest::html_elements(".h7cub57 p")
       if (length(p_els) > 0) {
-        p_els[[1]] |> rvest::html_text() |> stringr::str_trim()
+        p_els[[1]] |>
+          rvest::html_text() |>
+          stringr::str_trim()
       } else {
         btn <- td |> rvest::html_elements("button")
         if (length(btn) > 0) {
-          label <- btn[[1]] |> rvest::html_text() |> stringr::str_trim()
+          label <- btn[[1]] |>
+            rvest::html_text() |>
+            stringr::str_trim()
           stringr::str_extract(label, "[0-9]+\\.[0-9]+")
         } else {
           NA_character_
@@ -350,6 +377,8 @@ extract_table_market <- function(section_node, match_date, home, away, type) {
   })
 
   result <- dplyr::bind_rows(row_list)
-  if (nrow(result) == 0) return(NULL)
+  if (nrow(result) == 0) {
+    return(NULL)
+  }
   result
 }
