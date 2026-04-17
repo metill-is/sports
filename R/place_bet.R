@@ -61,7 +61,9 @@ recalculate_kelly_amount <- function(p, actual_odds, original_odds, original_amo
   old_raw <- (p * original_odds - 1) / (original_odds - 1)
   new_raw <- (p * actual_odds - 1) / (actual_odds - 1)
   new_raw <- max(0, new_raw)
-  if (old_raw <= 0) return(0L)
+  if (old_raw <= 0) {
+    return(0L)
+  }
   round(min(original_amount * (new_raw / old_raw), original_amount * 2), 0)
 }
 
@@ -91,7 +93,6 @@ is_positive_ev <- function(p, odds) {
 #'   actual_odds (from Lengjan DOM), and amount (stake entered)
 #' @export
 place_bet <- function(session, bet, match_id, sport_id, dry_run = FALSE) {
-
   market <- bet$market
   result <- tryCatch(
     {
@@ -185,7 +186,9 @@ place_outcome_bet <- function(session, bet, match_id, sport_id, dry_run) {
 
   # P3/P4 validation
   check <- check_live_odds(session, bet, actual_odds)
-  if (!isTRUE(check$ok)) return(check)
+  if (!isTRUE(check$ok)) {
+    return(check)
+  }
 
   result <- enter_stake_and_confirm(session, check$amount, dry_run)
   result$actual_odds <- actual_odds
@@ -228,7 +231,9 @@ place_handicap_bet <- function(session, bet, match_id, sport_id, dry_run) {
   )
 
   check <- check_live_odds(session, bet, actual_odds)
-  if (!isTRUE(check$ok)) return(check)
+  if (!isTRUE(check$ok)) {
+    return(check)
+  }
 
   result <- enter_stake_and_confirm(session, check$amount, dry_run)
   result$actual_odds <- actual_odds
@@ -249,7 +254,7 @@ place_totals_bet <- function(session, bet, match_id, sport_id, dry_run) {
   session$Page$navigate(url)
   Sys.sleep(sample_delay(c(2.5, 4)))
 
-  expand_market_section(session, "Yfir e\u00f0a undir")
+  expand_market_section(session, "Yfir/Undir")
   Sys.sleep(sample_delay(c(1, 2)))
 
   line_label <- as.character(bet$info)
@@ -262,13 +267,15 @@ place_totals_bet <- function(session, bet, match_id, sport_id, dry_run) {
 
   actual_odds <- click_table_button(
     session,
-    section_label = "Yfir e\u00f0a undir",
+    section_label = "Yfir/Undir",
     line_label = line_label,
     btn_index = btn_index
   )
 
   check <- check_live_odds(session, bet, actual_odds)
-  if (!isTRUE(check$ok)) return(check)
+  if (!isTRUE(check$ok)) {
+    return(check)
+  }
 
   result <- enter_stake_and_confirm(session, check$amount, dry_run)
   result$actual_odds <- actual_odds
@@ -399,7 +406,8 @@ click_market_button <- function(session, section_label, btn_index) {
 #'
 #' @return Numeric: actual odds from Lengjan
 click_table_button <- function(session, section_label, line_label, btn_index) {
-  js <- sprintf("
+  js <- sprintf(
+    "
     (() => {
       // Find section by label (supports partial match for variants)
       const allElements = document.querySelectorAll('*');
@@ -462,7 +470,8 @@ click_table_button <- function(session, section_label, line_label, btn_index) {
       });
     })()
   ", section_label, section_label, section_label, line_label, line_label,
-     btn_index, line_label, btn_index)
+    btn_index, line_label, btn_index
+  )
 
   result <- session$Runtime$evaluate(expression = js, returnByValue = TRUE)
   parsed <- jsonlite::fromJSON(result$result$value)
