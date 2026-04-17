@@ -28,16 +28,22 @@ lengjan_login <- function(headless = TRUE) {
   session <- ChromoteSession$new()
   if (!headless) session$view()
 
+  # Patch navigator.webdriver before any page loads - this is the primary
+  # signal checked by anti-bot systems when Chrome is driven via CDP.
+  session$Page$addScriptToEvaluateOnNewDocument(
+    source = "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
+  )
+
   session$Page$navigate("https://games.lotto.is")
   Sys.sleep(4)
 
-  # Click "Mínar síður" to open login modal
+  # Click "Minar sidur" (M\u00ednar s\u00ed\u00f0ur) to open login modal
   cli::cli_alert_info("Opening login modal...")
   js_open_login <- "
     (() => {
       const buttons = document.querySelectorAll('button');
       for (const btn of buttons) {
-        if (btn.textContent.trim() === 'Mínar síður') {
+        if (btn.textContent.trim() === 'M\u00ednar s\u00ed\u00f0ur') {
           btn.click();
           return true;
         }
@@ -47,12 +53,16 @@ lengjan_login <- function(headless = TRUE) {
   "
   result <- session$Runtime$evaluate(expression = js_open_login, returnByValue = TRUE)
   if (!isTRUE(result$result$value)) {
-    stop("Could not find 'Mínar síður' button.")
+    stop("Could not find 'M\u00ednar s\u00ed\u00f0ur' button.")
   }
   Sys.sleep(2)
 
-  # Fill in credentials using the form inputs
+  # Fill in credentials using the form inputs.
+  # jsonlite::toJSON produces a safely-escaped JSON string, avoiding breakage
+  # if the password contains single quotes, backslashes, or other JS-special chars.
   cli::cli_alert_info("Entering credentials...")
+  user_js <- jsonlite::toJSON(user, auto_unbox = TRUE)
+  pass_js <- jsonlite::toJSON(pass, auto_unbox = TRUE)
   js_fill <- sprintf("
     (() => {
       const userInput = document.getElementById('username');
@@ -68,11 +78,11 @@ lengjan_login <- function(headless = TRUE) {
         el.dispatchEvent(new Event('change', { bubbles: true }));
       };
 
-      setNativeValue(userInput, '%s');
-      setNativeValue(passInput, '%s');
+      setNativeValue(userInput, %s);
+      setNativeValue(passInput, %s);
       return true;
     })()
-  ", user, pass)
+  ", user_js, pass_js)
 
   fill_result <- session$Runtime$evaluate(expression = js_fill, returnByValue = TRUE)
   if (!isTRUE(fill_result$result$value)) {
@@ -80,12 +90,12 @@ lengjan_login <- function(headless = TRUE) {
   }
   Sys.sleep(0.5)
 
-  # Click "Innskrá" submit button
+  # Click "Innskra" (Innskr\u00e1) submit button
   js_submit <- "
     (() => {
       const buttons = document.querySelectorAll('button');
       for (const btn of buttons) {
-        if (btn.textContent.trim() === 'Innskrá' && btn.type === 'submit') {
+        if (btn.textContent.trim() === 'Innskr\u00e1' && btn.type === 'submit') {
           btn.click();
           return true;
         }
@@ -103,9 +113,7 @@ lengjan_login <- function(headless = TRUE) {
   )$result$value
 
   if (!grepl("kr\\.", page_text, ignore.case = TRUE)) {
-    cli::cli_alert_warning(
-      "Login may have failed — no balance detected in page text."
-    )
+    cli::cli_alert_warning("Login may have failed - no balance detected in page text.")
   } else {
     cli::cli_alert_success("Logged in to Lengjan successfully.")
   }
