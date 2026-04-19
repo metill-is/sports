@@ -486,6 +486,79 @@ fit3 <- get_kelly_joint(net_return = R_exact[idx, , drop = FALSE], max_stake = 1
   }
 }
 
+
+# ═══════════════════════════════════════════════════════════════════════════
+# GROUP 9: CVXR parity (skipped if CVXR not installed)
+#
+# Verifies that the optional CVXR-based solver (R/bets/kelly_cvxr.R) agrees
+# with SLSQP on canonical problems.  When CVXR is absent this group is
+# skipped — the pipeline never depends on CVXR.
+# ═══════════════════════════════════════════════════════════════════════════
+
+section("CVXR parity (optional)")
+
+if (requireNamespace("CVXR", quietly = TRUE)) {
+  box::use(. / kelly_cvxr[get_kelly_cvxr])
+
+  set.seed(401)
+  win <- rbinom(4000, 1, 0.60)
+  R_bin <- matrix(win * 2.0 - 1, ncol = 1)
+  fit_slsqp <- get_kelly_joint(net_return = R_bin, max_stake = 1.0)
+  fit_cvxr <- get_kelly_cvxr(R_bin, max_stake = 1.0)
+  d <- abs(fit_slsqp$solution - fit_cvxr$solution)
+  if (max(d) < 1e-4) {
+    .pass_count <- .pass_count + 1
+    cat(sprintf(
+      "  PASS [cvxr-binary]: SLSQP=%.6f, CVXR=%.6f, |diff|=%.2e\n",
+      fit_slsqp$solution, fit_cvxr$solution, max(d)
+    ))
+  } else {
+    .fail_count <- .fail_count + 1
+    cat(sprintf(
+      "  FAIL [cvxr-binary]: |diff|=%.2e exceeds 1e-4\n", max(d)
+    ))
+  }
+
+  # 3-way horse race
+  p <- c(0.55, 0.25, 0.20)
+  o <- c(2.0, 3.5, 5.0)
+  R_exact <- diag(o - 1) - (1 - diag(3))
+  idx <- sample(3, 4000, replace = TRUE, prob = p)
+  R_3 <- R_exact[idx, , drop = FALSE]
+  fit_slsqp <- get_kelly_joint(net_return = R_3, max_stake = 1.0)
+  fit_cvxr <- get_kelly_cvxr(R_3, max_stake = 1.0)
+  d <- abs(fit_slsqp$solution - fit_cvxr$solution)
+  if (max(d) < 1e-3) {
+    .pass_count <- .pass_count + 1
+    cat(sprintf(
+      "  PASS [cvxr-3way]: max |diff|=%.2e\n", max(d)
+    ))
+  } else {
+    .fail_count <- .fail_count + 1
+    cat(sprintf(
+      "  FAIL [cvxr-3way]: max |diff|=%.2e exceeds 1e-3\n", max(d)
+    ))
+  }
+
+  # Risk-constrained Kelly should stake LESS than unconstrained
+  fit_rc <- get_kelly_cvxr(R_3, max_stake = 1.0, risk_lambda = 2.0)
+  if (sum(fit_rc$solution) < sum(fit_cvxr$solution) + 1e-6) {
+    .pass_count <- .pass_count + 1
+    cat(sprintf(
+      "  PASS [cvxr-rc]: RC stake %.4f < unconstrained %.4f (lambda=2)\n",
+      sum(fit_rc$solution), sum(fit_cvxr$solution)
+    ))
+  } else {
+    .fail_count <- .fail_count + 1
+    cat(sprintf(
+      "  FAIL [cvxr-rc]: RC stake %.4f NOT less than unconstrained %.4f\n",
+      sum(fit_rc$solution), sum(fit_cvxr$solution)
+    ))
+  }
+} else {
+  cat("  SKIP: CVXR not installed — install with install.packages('CVXR')\n")
+}
+
 cat(sprintf(
   "\n──────────────────────────────────────\n  %d passed, %d failed\n",
   .pass_count, .fail_count
