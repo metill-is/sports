@@ -283,14 +283,6 @@ parameters {
 
   
 
-  // Prediction parameters
-  vector[N_pred] z_off_pred;
-  vector[N_pred] z_def_pred;
-
-  // Top team strength parameters
-  vector[N_top_teams] z_off_top;
-  vector[N_top_teams] z_def_top;
-
   // Diagonal inflation parameters
   real tie_alpha;
   real tie_beta;
@@ -349,11 +341,6 @@ model {
     z_def[i] ~ std_normal();
   }
 
-  z_off_top ~ std_normal();
-  z_def_top ~ std_normal();
-  z_off_pred ~ std_normal();
-  z_def_pred ~ std_normal();
-  
   // Priors for volatility parameters
   z_sigma_off ~ std_normal();
   scale_sigma_off ~ exponential(2);
@@ -410,8 +397,6 @@ model {
     // Expected goals
     mu[1] = mean_log_goals + off[1] - def[2];
     mu[2] = mean_log_goals + off[2] - def[1];
-    
-    vector[2] lambda = exp(mu);
 
     // Strength difference
     real strength_diff = abs(off[1] + def[1] - off[2] - def[2]);
@@ -488,8 +473,6 @@ generated quantities {
 
     mu[1] = mean_log_goals + off[1] - def[2];
     mu[2] = mean_log_goals + off[2] - def[1];
-    
-    vector[2] lambda = exp(mu);
 
     real strength_diff = abs(off[1] + def[1] - off[2] - def[2]);
 

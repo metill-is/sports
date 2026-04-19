@@ -200,7 +200,10 @@ model {
   mean_sigma_team ~ normal(2, 2);
 
   // Prior for mean goals
-  mean_goals0 ~ normal(30, 10);
+  // Iceland basketball means: male 90.1, female 74.8 (computed from data.csv 2026-04-19).
+  // Previous prior N(30, 10) was 4.5-6.0 prior-sigma from observed means,
+  // wasting warmup. Re-centred per audit-stan-models-2026-04-19.md §10.1.
+  mean_goals0 ~ normal(80, 15);
   delta_mean_goals ~ normal(0, 10);
   sigma_mean_goals ~ exponential(2);
   z_mean_goals ~ std_normal();
