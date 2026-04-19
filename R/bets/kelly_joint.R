@@ -8,8 +8,10 @@
 
 box::use(
   nloptr[nloptr],
-  dplyr[filter, mutate, select, any_of, bind_rows, inner_join, distinct,
-        summarise, arrange, tibble, rename],
+  dplyr[
+    filter, mutate, select, any_of, bind_rows, inner_join, distinct,
+    summarise, arrange, tibble, rename
+  ],
   tidyr[crossing],
   stringr[str_split_fixed]
 )
@@ -23,8 +25,10 @@ parse_handicap <- function(change_str) {
   parts <- str_split_fixed(change_str, "-", n = 2)
   result <- as.numeric(parts[, 1]) - as.numeric(parts[, 2])
   if (any(is.na(result))) {
-    warning("Could not parse handicap values: ",
-            paste(change_str[is.na(result)], collapse = ", "))
+    warning(
+      "Could not parse handicap values: ",
+      paste(change_str[is.na(result)], collapse = ", ")
+    )
   }
   result
 }
@@ -72,37 +76,40 @@ build_return_matrix <- function(draws, bets) {
     # state: 1 = win, 0 = push, -1 = loss
     state <- switch(bt,
       "1x2_home" = ifelse(diff > tt, 1L, -1L),
-      "1x2_tie"  = ifelse(abs(diff) <= tt, 1L, -1L),
+      "1x2_tie" = ifelse(abs(diff) <= tt, 1L, -1L),
       "1x2_away" = ifelse(diff < -tt, 1L, -1L),
-      "hc_home"  = {
+      "hc_home" = {
         adj <- diff + bets$change[j]
         ht <- bets$hc_threshold[j]
         is_half <- (bets$change[j] != round(bets$change[j]))
-        if (is_half || ht > 0) {
-          # Half-point or European 3-way: no push on this outcome
+        variant <- if ("market_variant" %in% names(bets)) bets$market_variant[j] else NA_character_
+        if (isTRUE(variant == "european_3way") || is_half) {
+          # European 3-way (tie zone bettable separately) OR half-point:
+          # hc_home loses inside tie zone, no push on this side.
           ifelse(adj > ht, 1L, -1L)
         } else {
-          # Integer Asian HC: push when adj == 0
+          # Asian 2-way integer: push when adj == 0.
           ifelse(adj > 0, 1L, ifelse(adj == 0, 0L, -1L))
         }
       },
-      "hc_tie"   = {
+      "hc_tie" = {
         adj <- diff + bets$change[j]
         ht <- bets$hc_threshold[j]
-        # European 3-way HC tie: this IS the push outcome (bettable), no push on it
+        # European 3-way HC tie: wins iff adj within tie zone |adj| <= ht.
         ifelse(abs(adj) <= ht, 1L, -1L)
       },
-      "hc_away"  = {
+      "hc_away" = {
         adj <- diff + bets$change[j]
         ht <- bets$hc_threshold[j]
         is_half <- (bets$change[j] != round(bets$change[j]))
-        if (is_half || ht > 0) {
+        variant <- if ("market_variant" %in% names(bets)) bets$market_variant[j] else NA_character_
+        if (isTRUE(variant == "european_3way") || is_half) {
           ifelse(adj < -ht, 1L, -1L)
         } else {
           ifelse(adj < 0, 1L, ifelse(adj == 0, 0L, -1L))
         }
       },
-      "over"     = {
+      "over" = {
         lim <- bets$limit[j]
         is_half <- (lim != round(lim))
         if (is_half) {
@@ -112,7 +119,7 @@ build_return_matrix <- function(draws, bets) {
           ifelse(total > lim, 1L, ifelse(total == lim, 0L, -1L))
         }
       },
-      "under"    = {
+      "under" = {
         lim <- bets$limit[j]
         is_half <- (lim != round(lim))
         if (is_half) {
@@ -179,13 +186,15 @@ get_kelly_joint <- function(net_return = NULL, indicators = NULL, odds = NULL,
   S <- nrow(net_return)
   B <- ncol(net_return)
 
-  if (B == 0) return(list(solution = numeric(0), diagnostics = list(
-    growth_rate = 0, worst_case_wealth = 1, n_effective_bets = 0
-  )))
+  if (B == 0) {
+    return(list(solution = numeric(0), diagnostics = list(
+      growth_rate = 0, worst_case_wealth = 1, n_effective_bets = 0
+    )))
+  }
 
   # Objective: negative expected log-growth (minimise)
   eval_f <- function(f) {
-    wealth <- 1 + as.vector(net_return %*% f)  # length S
+    wealth <- 1 + as.vector(net_return %*% f) # length S
     wealth <- pmax(wealth, 1e-10)
     -mean(log(wealth))
   }
@@ -194,8 +203,8 @@ get_kelly_joint <- function(net_return = NULL, indicators = NULL, odds = NULL,
   eval_grad_f <- function(f) {
     wealth <- 1 + as.vector(net_return %*% f)
     wealth <- pmax(wealth, 1e-10)
-    inv_w <- 1 / wealth  # length S
-    -as.vector(crossprod(net_return, inv_w)) / S  # length B
+    inv_w <- 1 / wealth # length S
+    -as.vector(crossprod(net_return, inv_w)) / S # length B
   }
 
   # Constraint: sum(f) <= max_stake
@@ -289,14 +298,25 @@ collect_match_bets <- function(match_odds_1x2, match_odds_hc, match_odds_tot, cf
   }
 
   # Handicap bets
+  #
+  # `market_variant` disambiguates settlement semantics on integer lines:
+  #   - european_3way: tie zone is bettable AND priced by Lengjan (o_draw
+  #     present). hc_home/hc_away LOSE inside the tie zone, hc_tie wins.
+  #   - asian_2way:    no tie bet priced. hc_home/hc_away PUSH when adj == 0
+  #     on integer lines and have no push on half-point lines.
+  # Using `o_draw` presence (rather than has_ties alone) keeps the pipeline
+  # faithful to what Lengjan actually offers on each row.
   if (!is.null(match_odds_hc) && nrow(match_odds_hc) > 0) {
     for (i in seq_len(nrow(match_odds_hc))) {
       row <- match_odds_hc[i, ]
       change_val <- row$change
       is_whole <- (change_val == round(change_val))
       is_european <- has_ties && is_whole
+      hc_tie_priced <- is_european &&
+        "o_draw" %in% names(row) && !is.na(row$o_draw)
+      variant <- if (hc_tie_priced) "european_3way" else "asian_2way"
 
-      if (is_european) {
+      if (hc_tie_priced) {
         ht <- tie_threshold
       } else {
         ht <- 0
@@ -306,6 +326,7 @@ collect_match_bets <- function(match_odds_1x2, match_odds_hc, match_odds_tot, cf
         bets <- c(bets, list(
           tibble(
             bet_type = "hc_home", outcome = "home", market = "handicap",
+            market_variant = variant,
             o = row$o_home, booker = row$booker,
             change = change_val, limit = NA_real_,
             tie_threshold = tie_threshold, hc_threshold = ht
@@ -313,10 +334,11 @@ collect_match_bets <- function(match_odds_1x2, match_odds_hc, match_odds_tot, cf
         ))
       }
 
-      if (is_european && "o_draw" %in% names(row) && !is.na(row$o_draw)) {
+      if (hc_tie_priced) {
         bets <- c(bets, list(
           tibble(
             bet_type = "hc_tie", outcome = "tie", market = "handicap",
+            market_variant = variant,
             o = row$o_draw, booker = row$booker,
             change = change_val, limit = NA_real_,
             tie_threshold = tie_threshold, hc_threshold = ht
@@ -328,6 +350,7 @@ collect_match_bets <- function(match_odds_1x2, match_odds_hc, match_odds_tot, cf
         bets <- c(bets, list(
           tibble(
             bet_type = "hc_away", outcome = "away", market = "handicap",
+            market_variant = variant,
             o = row$o_away, booker = row$booker,
             change = change_val, limit = NA_real_,
             tie_threshold = tie_threshold, hc_threshold = ht
@@ -364,7 +387,9 @@ collect_match_bets <- function(match_odds_1x2, match_odds_hc, match_odds_tot, cf
     }
   }
 
-  if (length(bets) == 0) return(NULL)
+  if (length(bets) == 0) {
+    return(NULL)
+  }
   bind_rows(bets)
 }
 
@@ -477,9 +502,11 @@ run_joint_kelly <- function(post, odds_1x2, odds_hc, odds_tot, cfg) {
     fracs <- kelly_result$solution
     diag <- kelly_result$diagnostics
 
-    cat(sprintf("  %s v %s: G=%.4f, W_min=%.3f, n_bets=%d\n",
-        match_home, match_away,
-        diag$growth_rate, diag$worst_case_wealth, diag$n_effective_bets))
+    cat(sprintf(
+      "  %s v %s: G=%.4f, W_min=%.3f, n_bets=%d\n",
+      match_home, match_away,
+      diag$growth_rate, diag$worst_case_wealth, diag$n_effective_bets
+    ))
 
     # Filter to non-trivial allocations
     nontrivial <- fracs > 1e-4
@@ -525,10 +552,14 @@ run_joint_kelly <- function(post, odds_1x2, odds_hc, odds_tot, cfg) {
     all_packages <- c(all_packages, list(bet_package))
   }
 
-  if (length(all_results) == 0) return(NULL)
+  if (length(all_results) == 0) {
+    return(NULL)
+  }
 
   combined <- bind_rows(all_results)
-  if (nrow(combined) == 0) return(NULL)
+  if (nrow(combined) == 0) {
+    return(NULL)
+  }
 
   list(recommendations = combined, bet_packages = all_packages)
 }
