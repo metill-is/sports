@@ -162,14 +162,19 @@ roi_md_table <- function(tbl, key_cols) {
 #' @param today reference date for trailing windows (defaults to Sys.Date())
 #' @param write_obsidian if TRUE, upsert a Metill-vault note summarising the
 #'   output (requires Obsidian MCP — not used by unit tests).
+#' @param with_clv if TRUE, compute closing-line-value (CLV) from the
+#'   `../lengjan-odds/` scrape history and add a `clv_summary` entry to
+#'   the return list. Coverage is limited to bets placed after the odds
+#'   scraper started (~2026-03); set FALSE for offline / test runs.
 #' @return named list with `overall`, `by_country`, `by_sport_country`,
 #'   `by_sport_country_sex`, `by_market`, `by_sport_country_market`,
 #'   `monthly`, `trailing`, `iceland_vs_rest`, `pending`, `top_wins`,
-#'   `top_losses`.
+#'   `top_losses`, and optionally `clv`.
 #' @export
 roi_report <- function(sports_dir = getwd(),
                        today = Sys.Date(),
-                       write_obsidian = FALSE) {
+                       write_obsidian = FALSE,
+                       with_clv = TRUE) {
   all_bets <- load_bets_logs(sports_dir)
   if (nrow(all_bets) == 0) {
     message("No bets_log.csv files found under ", sports_dir)
@@ -207,6 +212,16 @@ roi_report <- function(sports_dir = getwd(),
     top_losses = settled |> slice_min(.data$pnl, n = 10)
   )
 
+  if (isTRUE(with_clv)) {
+    out$clv <- tryCatch(
+      attach_clv(sports_dir),
+      error = function(e) {
+        message("CLV compute failed: ", conditionMessage(e))
+        NULL
+      }
+    )
+  }
+
   if (write_obsidian) {
     message(
       "--write-obsidian set; caller should use MCP write_note. ",
@@ -215,6 +230,19 @@ roi_report <- function(sports_dir = getwd(),
   }
 
   out
+}
+
+#' Helper that lazily sources clv_tracker.R and returns its summary tables.
+#' Kept separate so roi_report can be exercised in unit tests without
+#' needing the lengjan-odds tree on disk.
+attach_clv <- function(sports_dir) {
+  lo_dir <- file.path(sports_dir, "..", "lengjan-odds", "data")
+  if (!dir.exists(lo_dir)) {
+    return(NULL)
+  }
+  env <- new.env()
+  source(file.path(sports_dir, "R/bets/clv_tracker.R"), local = env)
+  env$clv_report(sports_dir, lengjan_odds_dir = lo_dir)
 }
 
 # ─── CLI ──────────────────────────────────────────────────────────────────
@@ -240,6 +268,14 @@ if (sys.nframe() == 0L && identical(Sys.getenv("R_MAIN"), "")) {
   print(as.data.frame(res$monthly))
   cat("\n=== Pending exposure ===\n")
   print(as.data.frame(res$pending))
+  if (!is.null(res$clv)) {
+    cat("\n=== CLV coverage ===\n")
+    print(as.data.frame(res$clv$coverage))
+    cat("\n=== CLV by sport x country ===\n")
+    print(as.data.frame(res$clv$by_sport_country))
+    cat("\n=== CLV by market ===\n")
+    print(as.data.frame(res$clv$by_market))
+  }
   if (write_obs) {
     cat(
       "\n--write-obsidian: assemble markdown and call MCP write_note ",
