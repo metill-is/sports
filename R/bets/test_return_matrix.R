@@ -540,19 +540,37 @@ if (requireNamespace("CVXR", quietly = TRUE)) {
     ))
   }
 
-  # Risk-constrained Kelly should stake LESS than unconstrained
-  fit_rc <- get_kelly_cvxr(R_3, max_stake = 1.0, risk_lambda = 2.0)
-  if (sum(fit_rc$solution) < sum(fit_cvxr$solution) + 1e-6) {
+  # Risk-constrained Kelly: on a scenario where unconstrained doesn't
+  # saturate max_stake, increasing lambda must strictly shrink total stake.
+  # Use a moderate-edge binary bet so unconstrained Kelly is well inside
+  # the budget.
+  set.seed(402)
+  win <- rbinom(4000, 1, 0.60)
+  R_bin2 <- matrix(win * 2.0 - 1, ncol = 1)
+  fit_uc <- get_kelly_cvxr(R_bin2, max_stake = 1.0)
+  fit_rc_small <- get_kelly_cvxr(R_bin2, max_stake = 1.0, risk_lambda = 0.5)
+  fit_rc_big <- get_kelly_cvxr(R_bin2, max_stake = 1.0, risk_lambda = 5.0)
+  # Non-increasing in lambda (up to CLARABEL's ~1e-5 tolerance when the
+  # risk constraint is slack), AND strict shrinkage once lambda is large
+  # enough to actually bind.
+  solver_tol <- 1e-4
+  non_incr <-
+    sum(fit_rc_big$solution) <= sum(fit_rc_small$solution) + solver_tol &&
+      sum(fit_rc_small$solution) <= sum(fit_uc$solution) + solver_tol
+  binds <- sum(fit_rc_big$solution) < sum(fit_uc$solution) - 1e-3
+  if (non_incr && binds) {
     .pass_count <- .pass_count + 1
     cat(sprintf(
-      "  PASS [cvxr-rc]: RC stake %.4f < unconstrained %.4f (lambda=2)\n",
-      sum(fit_rc$solution), sum(fit_cvxr$solution)
+      "  PASS [cvxr-rc]: uc=%.4f  l=0.5 -> %.4f  l=5 -> %.4f  (lambda=5 binds)\n",
+      sum(fit_uc$solution), sum(fit_rc_small$solution),
+      sum(fit_rc_big$solution)
     ))
   } else {
     .fail_count <- .fail_count + 1
     cat(sprintf(
-      "  FAIL [cvxr-rc]: RC stake %.4f NOT less than unconstrained %.4f\n",
-      sum(fit_rc$solution), sum(fit_cvxr$solution)
+      "  FAIL [cvxr-rc]: uc=%.4f  l=0.5=%.4f  l=5=%.4f  (non_incr=%s, binds=%s)\n",
+      sum(fit_uc$solution), sum(fit_rc_small$solution),
+      sum(fit_rc_big$solution), non_incr, binds
     ))
   }
 } else {

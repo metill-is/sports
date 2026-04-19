@@ -53,9 +53,10 @@ box::use(
 #' @param risk_lambda Risk-aversion parameter λ ≥ 0. If NULL (default) the
 #'   unconstrained Kelly is solved. A positive value adds the drawdown
 #'   bound; larger λ → tighter bound → smaller stakes.
-#' @param solver CVXR solver name. "ECOS" is the default (conic) solver; "SCS"
-#'   is the first-order fallback. Both handle the exponential cone required
-#'   by log terms.
+#' @param solver CVXR solver name. "CLARABEL" (modern interior-point, the
+#'   default in CVXR 1.8+) handles the exponential cone required by log
+#'   terms; "SCS" is a first-order fallback; "ECOS" is available if
+#'   ECOSolveR is installed separately.
 #' @return List with the same shape as `get_kelly_joint()`:
 #'   - `solution`: numeric vector of optimal fractions (length B)
 #'   - `diagnostics`: growth_rate, worst_case_wealth, n_effective_bets,
@@ -65,7 +66,7 @@ get_kelly_cvxr <- function(
   net_return,
   max_stake = 1.0,
   risk_lambda = NULL,
-  solver = "ECOS"
+  solver = "CLARABEL"
 ) {
   .require_cvxr()
   S <- nrow(net_return)
@@ -81,38 +82,54 @@ get_kelly_cvxr <- function(
     ))
   }
 
-  # Access CVXR functions without attaching the namespace.
-  Variable <- CVXR::Variable
-  Maximize <- CVXR::Maximize
-  Problem <- CVXR::Problem
-  solve_cvxr <- CVXR::solve # avoid clashing with base::solve
+  # Attach CVXR: most of its disciplined-convex grammar (log, log_sum_exp,
+  # Maximize, etc.) relies on S4 method dispatch which requires the package
+  # to be on the search path rather than accessed via ::.
+  suppressPackageStartupMessages(requireNamespace("CVXR", quietly = TRUE))
+  # Use attachNamespace for the session (idempotent if already attached).
+  if (!"package:CVXR" %in% search()) {
+    suppressPackageStartupMessages(attachNamespace("CVXR"))
+  }
 
-  f <- Variable(B, nonneg = TRUE)
+  f <- CVXR::Variable(B, nonneg = TRUE)
   wealth <- 1 + net_return %*% f
-  # CVXR recognises `log` on an affine-transformed variable as concave and
-  # routes it through the exponential cone — this is the critical piece.
-  log_wealth <- CVXR::log(wealth)
+  # log() on a CVXR expression dispatches to CVXR::Log via S4; it is
+  # concave and routed through the exponential cone by the solver.
+  log_wealth <- log(wealth)
 
-  objective <- Maximize(sum(log_wealth) / S)
-
-  constraints <- list(
-    sum(f) <= max_stake
-  )
+  objective <- CVXR::Maximize(sum(log_wealth) / S)
+  constraints <- list(sum(f) <= max_stake)
 
   # Optional Busseti-Ryu-Boyd risk constraint.
   # LSE(-λ log W_s) ≤ log S  ⇔  (1/S) Σ exp(-λ log W_s) ≤ 1
-  # which bounds the probability of a large drawdown (see their eq. 7-8).
+  # bounds drawdown probability (their eq. 7-8). Convex because
+  # -λ log_wealth is convex for λ > 0 and LSE is convex & monotone.
   if (!is.null(risk_lambda) && risk_lambda > 0) {
-    # log_sum_exp is convex; -λ log_wealth is convex when λ > 0.
-    # CVXR allows LSE(convex) ≤ constant as a valid convex constraint.
     lse_term <- CVXR::log_sum_exp(-risk_lambda * log_wealth)
     constraints <- c(constraints, list(lse_term <= log(S)))
   }
 
-  prob <- Problem(objective, constraints)
-  result <- solve_cvxr(prob, solver = solver)
+  prob <- CVXR::Problem(objective, constraints)
+  # CVXR 1.8 `psolve()` returns the scalar optimal objective value, not a
+  # list; status and variable values are queried via `status(prob)` and
+  # `value(x)`. For pre-1.8 installs, fall back to the old solve() list
+  # return. Detect by presence of the `psolve` symbol.
+  cvxr_ns <- asNamespace("CVXR")
+  has_new_api <- exists("psolve", envir = cvxr_ns, inherits = FALSE)
 
-  f_opt <- as.numeric(result$getValue(f))
+  if (has_new_api) {
+    psolve_fn <- utils::getFromNamespace("psolve", "CVXR")
+    value_fn <- utils::getFromNamespace("value", "CVXR")
+    status_fn <- utils::getFromNamespace("status", "CVXR")
+    obj_val <- psolve_fn(prob, solver = solver)
+    solver_status <- status_fn(prob)
+    f_opt <- as.numeric(value_fn(f))
+  } else {
+    result <- solve(prob, solver = solver)
+    obj_val <- result$value
+    solver_status <- result$status
+    f_opt <- as.numeric(result$getValue(f))
+  }
   # Defensive: clip any tiny numerical negatives from solver tolerance
   f_opt <- pmax(f_opt, 0)
 
@@ -124,12 +141,8 @@ get_kelly_cvxr <- function(
     worst_case_wealth = min(wealth_opt),
     n_effective_bets = sum(f_opt > 1e-6),
     floor_triggered = floor_triggered,
-    solver_status = result$status,
-    solver_duality_gap = if (!is.null(result$solver_stats$solve_time)) {
-      result$value - result$value
-    } else {
-      NA_real_
-    }
+    solver_status = solver_status,
+    solver_objective = obj_val
   )
   list(solution = f_opt, diagnostics = diagnostics)
 }
