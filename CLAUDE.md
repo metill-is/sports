@@ -55,6 +55,18 @@ Rscript R/backtest/compare_methods.R --league basketball_iceland --sex male
 > **Note:** The pipeline generates `recommendations.csv` but never writes to `bets_log.csv`.
 > Bet placement and ledger writes are the exclusive responsibility of `lengjan-bets/`.
 
+### Pre-filter recommendations log
+
+`history/recommendations_log.csv` is an append-only log of every candidate bet the model produced, at every pipeline stage — _not_ just the ones that survive every gate. Written by `R/bets/recommendations_log.R`, called from `run.R` during the bet phase.
+
+Each row carries:
+
+- `run_id` — one pipeline run's ISO timestamp (groups all stages of that run)
+- `stage` — one of `candidate`, `post_portfolio`, `kept`, `dropped_min_bet`, `dropped_stale`, `dropped_dedup`
+- All standard recommendation fields (`sport`, `country`, `sex`, `date`, `heima`, `gestir`, `market`, `outcome`, `o`, `p`, `ev`, `kelly`, `bet_amount`, `limit`, `booker`)
+
+**Why it exists:** `recommendations.csv` is lossy for back-testing — it only holds survivors, so you can never evaluate the cost of a filter rule after the fact. The log keeps everything so back-tests can replay the candidate set against alternative policies (lower EV threshold, different min_bet, tweaked Kelly floor). Pair it with `predictions_archive/` to make lookahead-free counterfactuals possible.
+
 **Step execution order**: Steps run in phases — all data first, then all fit, then all results, then all bet, then all settle. No per-league interleaving.
 
 **Step semantics**:
@@ -114,8 +126,12 @@ Hive-partitioned Parquet store for cross-league queries. Dual-write layer — CS
 ```
 store/
 ├── predictions/sport={X}/country={Y}/sex={Z}/predictions.parquet
+├── predictions_archive/sport={X}/country={Y}/sex={Z}/fit_date={YYYY-MM-DD}/predictions.parquet
 └── bets/sport={X}/country={Y}/sex={Z}/bets.parquet
 ```
+
+`predictions/` holds only the latest posterior per bucket (overwritten every run).
+`predictions_archive/` is a zstd-compressed, date-partitioned snapshot tier — every fit is preserved, so counterfactual back-tests can reconstruct "what did the model believe at time T?" without lookahead bias. Start collecting now; retroactive reconstruction is impossible once `fit.rds` is overwritten. Read with `read_predictions_archive(sports_dir, fit_date_from = ..., fit_date_to = ...)` from `R/storage/store.R`.
 
 Query across leagues:
 

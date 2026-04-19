@@ -394,8 +394,24 @@ if ("bet" %in% steps) {
   box::use(R / pipeline / step_bet[run_bet_step])
   box::use(R / bets / portfolio[portfolio_optimize])
   box::use(R / bets / output[dedup_recommendations])
+  # Pre-filter recommendations log: captures every candidate the model
+  # produced at each pipeline stage, not just the ones that ended up in
+  # recommendations.csv. Required for counterfactual back-tests of the
+  # filter rules (EV threshold, Kelly floor, min bet, portfolio cap).
+  # Without this, you can only ever evaluate tightening the gates —
+  # loosening them needs the bets that were thrown away.
+  box::use(
+    R / bets / recommendations_log[
+      new_run_id,
+      log_candidates
+    ]
+  )
 }
 if ("settle" %in% steps) box::use(R / pipeline / step_settle[run_settle_step])
+
+# Run ID is generated once per run.R invocation and shared across every
+# log_candidates() call so that all stages of the same run can be grouped.
+run_id <- if ("bet" %in% steps) new_run_id() else NULL
 
 all_results <- list()
 all_recommendations <- list()
@@ -551,6 +567,11 @@ n_fail <- sum(!vapply(all_results, `[[`, logical(1), "ok"))
 if ("bet" %in% steps && length(all_recommendations) > 0) {
   new_recs <- do.call(rbind, all_recommendations)
 
+  # Log raw candidates before any filter or scaling touches them. This is
+  # the pre-filter set that the back-test will replay against alternative
+  # policies. `stage = "candidate"` on every row; run_id groups the batch.
+  log_candidates(new_recs, stage = "candidate", run_id = run_id, sports_dir = sports_dir)
+
   # Cross-match portfolio optimisation + bet formatting
   bankroll_yml <- here("config", "bankroll.yml")
   if (file.exists(bankroll_yml)) {
@@ -641,7 +662,24 @@ if ("bet" %in% steps && length(all_recommendations) > 0) {
       new_recs$kelly_frac_cfg <- NULL
       new_recs$cur_pool <- NULL
 
-      # Filter by min bet amount
+      # Log the post-portfolio state so the back-test can evaluate
+      # "what bet size would we have taken under this set of scaling
+      # rules?" independently of the min_bet / dedup / stale-date gates.
+      log_candidates(
+        new_recs,
+        stage = "post_portfolio", run_id = run_id,
+        sports_dir = sports_dir
+      )
+
+      # Filter by min bet amount. Track the drop so the back-test can
+      # quantify how much of the policy's throttling comes from bet-size
+      # flooring versus the calibration/EV gates upstream.
+      below_min <- new_recs |> dplyr::filter(bet_amount < min_bet)
+      log_candidates(
+        below_min,
+        stage = "dropped_min_bet", run_id = run_id,
+        sports_dir = sports_dir
+      )
       new_recs <- new_recs |> dplyr::filter(bet_amount >= min_bet)
     }
   }
@@ -665,16 +703,43 @@ if ("bet" %in% steps && length(all_recommendations) > 0) {
   }
 
   # Drop recommendations for past matches
+  stale <- recs |> dplyr::filter(as.Date(date) < Sys.Date())
+  log_candidates(
+    stale,
+    stage = "dropped_stale", run_id = run_id,
+    sports_dir = sports_dir
+  )
   recs <- recs |> dplyr::filter(as.Date(date) >= Sys.Date())
 
-  # Global dedup: remove bets placed since the last run of each league
+  # Global dedup: remove bets placed since the last run of each league.
+  # Diff before/after so the back-test can see which candidates were
+  # killed by the "already placed" ledger-join.
+  before_dedup <- recs
   recs <- dedup_recommendations(recs, sports_dir)
+  if (nrow(before_dedup) > nrow(recs)) {
+    removed_by_dedup <- dplyr::anti_join(
+      before_dedup, recs,
+      by = intersect(names(before_dedup), names(recs))
+    )
+    log_candidates(
+      removed_by_dedup,
+      stage = "dropped_dedup", run_id = run_id,
+      sports_dir = sports_dir
+    )
+  }
 
   # Re-apply min_bet_amount after daily budget scaling
   if (exists("global_bankroll")) {
     min_bet <- global_bankroll$min_bet_amount %||% 200
     recs <- recs |> dplyr::filter(is.na(bet_amount) | bet_amount >= min_bet)
   }
+
+  # Everything that survives all gates — the final "kept" set.
+  log_candidates(
+    recs,
+    stage = "kept", run_id = run_id,
+    sports_dir = sports_dir
+  )
 
   readr::write_csv(recs, recs_path)
   cat(sprintf("\nWrote %d recommendation(s) to %s\n", nrow(recs), recs_path))

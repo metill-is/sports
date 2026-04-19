@@ -102,7 +102,10 @@ fit_shared <- function(league, sex, sports_dir, iter_warmup, iter_sampling, meth
       sports_dir = sports_dir
     ))
 
-    # Dual-write to Parquet store
+    # Dual-write to Parquet store + date-partitioned archive. The archive
+    # is the only way to reconstruct "what did the model believe at time
+    # T?" for later counterfactual back-tests — fits cannot be reproduced
+    # retroactively once the RDS is overwritten.
     tryCatch(
       {
         source(file.path(sports_dir, "R", "storage", "store.R"), local = TRUE)
@@ -110,6 +113,7 @@ fit_shared <- function(league, sex, sports_dir, iter_warmup, iter_sampling, meth
         if (file.exists(csv_path)) {
           df <- readr::read_csv(csv_path, show_col_types = FALSE)
           store_predictions(df, league$sport, league$country, sex, sports_dir)
+          archive_predictions(df, league$sport, league$country, sex, sports_dir)
         }
       },
       error = function(e) warning("Store write failed: ", e$message)
@@ -166,7 +170,7 @@ fit_football <- function(league, sex, sports_dir, iter_warmup, iter_sampling, me
         sports_dir = sports_dir
       )
 
-      # Dual-write to Parquet store
+      # Dual-write to Parquet store + date-partitioned archive (see store.R).
       tryCatch(
         {
           source(file.path(sports_dir, "R", "storage", "store.R"), local = TRUE)
@@ -174,6 +178,7 @@ fit_football <- function(league, sex, sports_dir, iter_warmup, iter_sampling, me
           if (file.exists(csv_path)) {
             df <- readr::read_csv(csv_path, show_col_types = FALSE)
             store_predictions(df, league$sport, league$country, sex, sports_dir)
+            archive_predictions(df, league$sport, league$country, sex, sports_dir)
           }
         },
         error = function(e) warning("Store write failed: ", e$message)
@@ -229,7 +234,7 @@ fit_handball_other <- function(league, sex, sports_dir, iter_warmup, iter_sampli
         sports_dir = sports_dir
       )
 
-      # Dual-write to Parquet store
+      # Dual-write to Parquet store + date-partitioned archive (see store.R).
       tryCatch(
         {
           source(file.path(sports_dir, "R", "storage", "store.R"), local = TRUE)
@@ -237,6 +242,7 @@ fit_handball_other <- function(league, sex, sports_dir, iter_warmup, iter_sampli
           if (file.exists(csv_path)) {
             df <- readr::read_csv(csv_path, show_col_types = FALSE)
             store_predictions(df, league$sport, league$country, sex, sports_dir)
+            archive_predictions(df, league$sport, league$country, sex, sports_dir)
           }
         },
         error = function(e) warning("Store write failed: ", e$message)
