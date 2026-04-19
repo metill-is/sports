@@ -8,7 +8,8 @@ leagues:
   1: Besta Deildin
 
 bankroll:
-  kelly_frac: 0.15
+  kelly_frac: 0.15 # male default
+  kelly_frac_female: 0.075 # 2026-04-19: half stake after 80 settled bets at -0.43 % ROI (calib 0.993)
   ev_threshold: 0.00
 
 scoring:
