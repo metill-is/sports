@@ -108,7 +108,15 @@ football_spain:
   league_name: "La Liga"
   division_names: ["LL"]
 
-# ── Handball European (paused) ─────────────────────────────────────────────
+# ── Handball European ──────────────────────────────────────────────────────
+# 2026-04-19: denmark + sweden re-activated.
+#   denmark: +8.43 % ROI over 86 settled (calib 0.854)
+#   sweden:  +6.63 % ROI over 78 settled (calib 0.839)
+# france/germany/norway/italy stay paused — calibration 0.68-0.87 on 80+
+# bets is model misspecification, not variance. Needs Stan work before
+# any further re-activation. Spain thin at 45 settled — revisit after
+# Denmark/Sweden prove out. See Knowledge/Betting Optimisation/
+# roadmap-2026-04-19.md for data support.
 
 handball_denmark:
   sport: handball
@@ -119,7 +127,7 @@ handball_denmark:
   pipeline: handball_other
   data_source: livesport_handball
   has_bets: true
-  active: false
+  active: true # re-activated 2026-04-19
 
 handball_france:
   sport: handball
@@ -174,7 +182,7 @@ handball_sweden:
   pipeline: handball_other
   data_source: livesport_handball
   has_bets: true
-  active: false
+  active: true # re-activated 2026-04-19
 
 # ── Handball European model-only (paused) ──────────────────────────────────
 
