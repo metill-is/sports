@@ -188,7 +188,8 @@ get_kelly_joint <- function(net_return = NULL, indicators = NULL, odds = NULL,
 
   if (B == 0) {
     return(list(solution = numeric(0), diagnostics = list(
-      growth_rate = 0, worst_case_wealth = 1, n_effective_bets = 0
+      growth_rate = 0, worst_case_wealth = 1, n_effective_bets = 0,
+      floor_triggered = FALSE
     )))
   }
 
@@ -232,12 +233,28 @@ get_kelly_joint <- function(net_return = NULL, indicators = NULL, odds = NULL,
 
   f_opt <- result$solution
 
-  # Diagnostics: growth rate, worst-case wealth, effective bet count
+  # Diagnostics: growth rate, worst-case wealth, effective bet count.
+  #
+  # `floor_triggered` surfaces the defensive clip: eval_f/eval_grad_f use
+  # `pmax(wealth, 1e-10)` to prevent log(0) during SLSQP line searches
+  # that briefly over-shoot sum(f) <= max_stake. At the converged optimum
+  # this should always be FALSE for a well-behaved problem — if TRUE, the
+  # optimiser converged to a point on or past the wealth-collapse boundary,
+  # indicating either a pathological input or max_stake too close to 1.
   wealth_opt <- 1 + as.vector(net_return %*% f_opt)
+  floor_eps <- 1e-10
+  floor_triggered <- min(wealth_opt) < floor_eps
+  if (floor_triggered) {
+    warning(sprintf(
+      "get_kelly_joint: wealth floor active at optimum (min=%.3e, sum(f)=%.4f, max_stake=%.4f)",
+      min(wealth_opt), sum(f_opt), max_stake
+    ))
+  }
   diagnostics <- list(
-    growth_rate = mean(log(pmax(wealth_opt, 1e-10))),
+    growth_rate = mean(log(pmax(wealth_opt, floor_eps))),
     worst_case_wealth = min(wealth_opt),
-    n_effective_bets = sum(f_opt > 1e-6)
+    n_effective_bets = sum(f_opt > 1e-6),
+    floor_triggered = floor_triggered
   )
 
   list(solution = f_opt, diagnostics = diagnostics)

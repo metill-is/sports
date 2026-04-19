@@ -428,6 +428,64 @@ curve_3 <- fractional_growth_curve(R_3way, f_star_3, c(0.5, 1.0))
   }
 }
 
+# ═══════════════════════════════════════════════════════════════════════════
+# GROUP 8: Wealth-floor diagnostics
+#
+# The eval_f / eval_grad_f closures inside get_kelly_joint defensively clip
+# wealth at 1e-10 to prevent log(0) = -Inf during SLSQP's intermediate
+# iterates (which may briefly violate sum(f) <= max_stake). At the converged
+# optimum the floor should NEVER be active. The diagnostics now surface a
+# `floor_triggered` boolean so callers can see if this invariant held.
+# ═══════════════════════════════════════════════════════════════════════════
+
+section("Wealth-floor diagnostics")
+
+set.seed(301)
+win <- rbinom(40000, 1, 0.6)
+R_bin <- matrix(win * 2.0 - 1, ncol = 1)
+fit <- get_kelly_joint(net_return = R_bin, max_stake = 1.0)
+
+# Diagnostics should include a `floor_triggered` boolean
+{
+  if ("floor_triggered" %in% names(fit$diagnostics)) {
+    .pass_count <- .pass_count + 1
+  } else {
+    .fail_count <- .fail_count + 1
+    cat("  FAIL [diag-schema]: diagnostics missing 'floor_triggered'\n")
+  }
+}
+
+# For well-behaved problem at f* = 0.2 (binary), floor must NOT trigger
+{
+  if (isFALSE(fit$diagnostics$floor_triggered)) {
+    .pass_count <- .pass_count + 1
+  } else {
+    .fail_count <- .fail_count + 1
+    cat(sprintf(
+      "  FAIL [floor-binary]: floor triggered unexpectedly (min wealth=%.3e)\n",
+      fit$diagnostics$worst_case_wealth
+    ))
+  }
+}
+
+# 3-way horse race: floor must NOT trigger at converged optimum either
+p <- c(0.55, 0.25, 0.20)
+o <- c(2.0, 3.5, 5.0)
+R_exact <- diag(o - 1) - (1 - diag(3))
+idx <- sample(3, 40000, replace = TRUE, prob = p)
+fit3 <- get_kelly_joint(net_return = R_exact[idx, , drop = FALSE], max_stake = 1.0)
+{
+  if (isFALSE(fit3$diagnostics$floor_triggered)) {
+    .pass_count <- .pass_count + 1
+  } else {
+    .fail_count <- .fail_count + 1
+    cat(sprintf(
+      "  FAIL [floor-3way]: floor triggered at optimum (worst=%.3e)\n",
+      fit3$diagnostics$worst_case_wealth
+    ))
+  }
+}
+
 cat(sprintf(
   "\n──────────────────────────────────────\n  %d passed, %d failed\n",
   .pass_count, .fail_count
