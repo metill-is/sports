@@ -10,9 +10,14 @@
 #'   diag <- run_diagnostics(post, odds, cfg)
 
 box::use(
-  ./kelly_joint[build_return_matrix, get_kelly_joint, collect_match_bets, parse_handicap],
-  dplyr[filter, mutate, distinct, select, bind_rows, summarise, arrange, tibble,
-        group_by, ungroup, across, any_of, n, row_number],
+  . / kelly_joint[
+    build_return_matrix, get_kelly_joint, collect_match_bets, parse_handicap,
+    fractional_growth_curve
+  ],
+  dplyr[
+    filter, mutate, distinct, select, bind_rows, summarise, arrange, tibble,
+    group_by, ungroup, across, any_of, n, row_number
+  ],
   tidyr[pivot_wider],
   stats[cor]
 )
@@ -65,8 +70,8 @@ run_diagnostics <- function(post, odds, cfg) {
 
     # Collect odds for this match
     m_1x2 <- get_match_odds(odds$outcome, match, cfg$markets$outcome)
-    m_hc   <- get_match_odds(odds_hc, match, cfg$markets$handicap)
-    m_tot  <- get_match_odds(odds$totals, match, cfg$markets$totals)
+    m_hc <- get_match_odds(odds_hc, match, cfg$markets$handicap)
+    m_tot <- get_match_odds(odds$totals, match, cfg$markets$totals)
 
     bets <- collect_match_bets(m_1x2, m_hc, m_tot, cfg)
     if (is.null(bets) || nrow(bets) == 0) next
@@ -103,6 +108,19 @@ run_diagnostics <- function(post, odds, cfg) {
       max_cor <- max(abs(cor_mat[upper.tri(cor_mat)]))
     }
 
+    # ── Fractional-Kelly growth curve ──
+    # Samples α ∈ {0.1, 0.25, 0.5, 0.75, 1.0}. The alpha*(2-alpha) rule is
+    # only exact for single binary bets; joint multi-bet settings drop
+    # faster. Flatten to scalar columns for summary/printing.
+    curve <- fractional_growth_curve(
+      ret_filt, fracs_joint,
+      alphas = c(0.1, 0.25, 0.5, 0.75, 1.0)
+    )
+    curve_named <- stats::setNames(
+      curve$ratio_to_full,
+      paste0("frac_growth_", sub("\\.", "p", sprintf("%.2f", curve$alpha)))
+    )
+
     # ── Match summary ──
     match_rows <- c(match_rows, list(tibble(
       date = match$date,
@@ -116,7 +134,11 @@ run_diagnostics <- function(post, odds, cfg) {
       total_stake = sum(fracs_joint),
       growth_rate = growth_joint,
       worst_wealth = worst_joint,
-      max_indicator_cor = max_cor
+      max_indicator_cor = max_cor,
+      frac_growth_0p10 = curve_named[["frac_growth_0p10"]],
+      frac_growth_0p25 = curve_named[["frac_growth_0p25"]],
+      frac_growth_0p50 = curve_named[["frac_growth_0p50"]],
+      frac_growth_0p75 = curve_named[["frac_growth_0p75"]]
     )))
 
     # ── Per-bet details ──
@@ -174,10 +196,14 @@ print_diagnostics <- function(diag, cfg) {
   cat(" JOINT KELLY — DIAGNOSTICS REPORT\n")
   cat("══════════════════════════════════════════════════════════\n\n")
 
-  cat(sprintf("  kelly_frac: %.2f | pool: %d | min_bet: %d\n",
-              kelly_frac, cur_pool, min_bet))
-  cat(sprintf("  Raw f needed (at kelly_frac=%.2f): %.4f\n",
-              kelly_frac, min_bet / (cur_pool * kelly_frac)))
+  cat(sprintf(
+    "  kelly_frac: %.2f | pool: %d | min_bet: %d\n",
+    kelly_frac, cur_pool, min_bet
+  ))
+  cat(sprintf(
+    "  Raw f needed (at kelly_frac=%.2f): %.4f\n",
+    kelly_frac, min_bet / (cur_pool * kelly_frac)
+  ))
   cat(sprintf("  Matches with +EV bets: %d\n\n", nrow(ms)))
 
   # Aggregate
@@ -196,16 +222,42 @@ print_diagnostics <- function(diag, cfg) {
     }
   }
 
+  # Fractional-Kelly growth curve (averaged across matches).
+  # The alpha*(2-alpha) column is exact only for a single binary bet.
+  # Large negative `dev` values ⇒ the binary heuristic over-promises growth.
+  cat("\n── Fractional-Kelly growth vs. alpha*(2-alpha) heuristic ──\n")
+  cat(sprintf(
+    "  %-6s  %-10s  %-10s  %-10s\n",
+    "alpha", "mean_ratio", "alpha(2-a)", "deviation"
+  ))
+  for (col_alpha in c(0.10, 0.25, 0.50, 0.75)) {
+    col <- paste0("frac_growth_", sub("\\.", "p", sprintf("%.2f", col_alpha)))
+    if (col %in% names(ms)) {
+      mean_r <- mean(ms[[col]], na.rm = TRUE)
+      pred <- col_alpha * (2 - col_alpha)
+      cat(sprintf(
+        "  %-6.2f  %-10.4f  %-10.4f  %+.4f\n",
+        col_alpha, mean_r, pred, mean_r - pred
+      ))
+    }
+  }
+
   cat("\n── Per-match ──\n")
   for (i in seq_len(nrow(ms))) {
     m <- ms[i, ]
-    cat(sprintf("\n  %s vs %s (%s, div %s)\n",
-                m$home, m$away, m$date, m$division))
-    cat(sprintf("    +EV bets: %d | Effective: %d | Stake: %.3f | Max corr: %.3f\n",
-                m$n_bets_ev, m$n_bets_effective, m$total_stake,
-                ifelse(is.na(m$max_indicator_cor), 0, m$max_indicator_cor)))
-    cat(sprintf("    Growth: %.6f | Worst-case wealth: %.4f\n",
-                m$growth_rate, m$worst_wealth))
+    cat(sprintf(
+      "\n  %s vs %s (%s, div %s)\n",
+      m$home, m$away, m$date, m$division
+    ))
+    cat(sprintf(
+      "    +EV bets: %d | Effective: %d | Stake: %.3f | Max corr: %.3f\n",
+      m$n_bets_ev, m$n_bets_effective, m$total_stake,
+      ifelse(is.na(m$max_indicator_cor), 0, m$max_indicator_cor)
+    ))
+    cat(sprintf(
+      "    Growth: %.6f | Worst-case wealth: %.4f\n",
+      m$growth_rate, m$worst_wealth
+    ))
 
     # Show bets for this match
     match_bets <- bd |>
@@ -215,11 +267,15 @@ print_diagnostics <- function(diag, cfg) {
     if (nrow(match_bets) > 0) {
       for (j in seq_len(nrow(match_bets))) {
         b <- match_bets[j, ]
-        label <- paste0(b$bet_type,
-                        if (!is.na(b$change)) paste0("[", b$change, "]") else "",
-                        if (!is.na(b$limit)) paste0("[", b$limit, "]") else "")
-        cat(sprintf("      %-18s odds=%5.2f  edge=%+.3f  f=%.4f  amt=%d\n",
-                    label, b$odds, b$ev_edge, b$f_kelly, b$amt_scaled))
+        label <- paste0(
+          b$bet_type,
+          if (!is.na(b$change)) paste0("[", b$change, "]") else "",
+          if (!is.na(b$limit)) paste0("[", b$limit, "]") else ""
+        )
+        cat(sprintf(
+          "      %-18s odds=%5.2f  edge=%+.3f  f=%.4f  amt=%d\n",
+          label, b$odds, b$ev_edge, b$f_kelly, b$amt_scaled
+        ))
       }
     }
   }
@@ -231,7 +287,9 @@ print_diagnostics <- function(diag, cfg) {
 # ── Helper ──
 
 get_match_odds <- function(odds_tbl, match, enabled) {
-  if (!isTRUE(enabled) || is.null(odds_tbl) || nrow(odds_tbl) == 0) return(NULL)
+  if (!isTRUE(enabled) || is.null(odds_tbl) || nrow(odds_tbl) == 0) {
+    return(NULL)
+  }
   out <- odds_tbl |>
     filter(date == match$date, home == match$home, away == match$away)
   if (nrow(out) == 0) NULL else out

@@ -10,7 +10,10 @@
 Sys.setlocale("LC_ALL", "is_IS.UTF-8")
 
 box::use(
-  . / kelly_joint[build_return_matrix, collect_match_bets, get_kelly_joint],
+  . / kelly_joint[
+    build_return_matrix, collect_match_bets, get_kelly_joint,
+    fractional_growth_curve
+  ],
   dplyr[tibble]
 )
 
@@ -341,6 +344,86 @@ fit <- get_kelly_joint(net_return = R, max_stake = 1.0)
     cat(sprintf(
       "  FAIL [smoke-hc-euro]: f = %s, sum = %.4f\n",
       paste(fit$solution, collapse = ", "), sum(fit$solution)
+    ))
+  }
+}
+
+# ═══════════════════════════════════════════════════════════════════════════
+# GROUP 7: Fractional-growth curve
+# ═══════════════════════════════════════════════════════════════════════════
+
+section("Fractional-growth curve")
+
+# Binary bet: α(2-α) should be exact (up to SAA noise at large S).
+set.seed(201)
+S <- 200000
+win <- rbinom(S, 1, 0.60)
+R_bin <- matrix(win * 2.0 - 1, ncol = 1)
+f_star <- get_kelly_joint(net_return = R_bin, max_stake = 1.0)$solution
+curve_bin <- fractional_growth_curve(R_bin, f_star, c(0.25, 0.5, 0.75, 1.0))
+for (i in seq_len(nrow(curve_bin))) {
+  a <- curve_bin$alpha[i]
+  pred <- a * (2 - a)
+  diff <- abs(curve_bin$ratio_to_full[i] - pred)
+  ok <- diff < 5e-3 # α(2-α) should be exact for binary ± SAA noise
+  if (ok) {
+    .pass_count <- .pass_count + 1
+  } else {
+    .fail_count <- .fail_count + 1
+    cat(sprintf(
+      "  FAIL [binary α=%.2f]: ratio=%.4f, α(2-α)=%.4f, diff=%.4f\n",
+      a, curve_bin$ratio_to_full[i], pred, diff
+    ))
+  }
+}
+
+# Ratio at α=1 is exactly 1 by definition
+{
+  r1 <- curve_bin$ratio_to_full[curve_bin$alpha == 1]
+  if (abs(r1 - 1) < 1e-9) {
+    .pass_count <- .pass_count + 1
+  } else {
+    .fail_count <- .fail_count + 1
+    cat(sprintf("  FAIL [ratio at α=1]: got %.6f, expected 1\n", r1))
+  }
+}
+
+# 3-way market: ratio at α=0.5 should be materially less than 0.75
+# (per audit V12 finding, empirically ~0.56).
+set.seed(202)
+p <- c(0.55, 0.25, 0.20)
+o <- c(2.0, 3.5, 5.0)
+R_exact <- diag(o - 1) - (1 - diag(3))
+idx <- sample(3, S, replace = TRUE, prob = p)
+R_3way <- R_exact[idx, , drop = FALSE]
+f_star_3 <- get_kelly_joint(net_return = R_3way, max_stake = 1.0)$solution
+curve_3 <- fractional_growth_curve(R_3way, f_star_3, c(0.5, 1.0))
+{
+  r50 <- curve_3$ratio_to_full[curve_3$alpha == 0.5]
+  if (r50 < 0.70 && r50 > 0.40) {
+    # Within the regime where the α(2-α) heuristic is noticeably wrong.
+    .pass_count <- .pass_count + 1
+    cat(sprintf(
+      "  PASS [3-way α=0.5]: ratio=%.3f (< 0.75 binary prediction)\n", r50
+    ))
+  } else {
+    .fail_count <- .fail_count + 1
+    cat(sprintf(
+      "  FAIL [3-way α=0.5]: ratio=%.3f, expected 0.40 < r < 0.70\n", r50
+    ))
+  }
+}
+
+# Schema: should have alpha, G_at_alpha_f, ratio_to_full, binary_prediction
+{
+  req <- c("alpha", "G_at_alpha_f", "ratio_to_full", "binary_prediction")
+  if (all(req %in% names(curve_bin))) {
+    .pass_count <- .pass_count + 1
+  } else {
+    .fail_count <- .fail_count + 1
+    cat(sprintf(
+      "  FAIL [schema]: missing %s\n",
+      paste(setdiff(req, names(curve_bin)), collapse = ", ")
     ))
   }
 }

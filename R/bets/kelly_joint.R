@@ -243,6 +243,48 @@ get_kelly_joint <- function(net_return = NULL, indicators = NULL, odds = NULL,
   list(solution = f_opt, diagnostics = diagnostics)
 }
 
+# ── Fractional-Kelly growth curve ────────────────────────────────────────────
+
+#' Fractional-Kelly growth curve G(alpha * f*) / G(f*)
+#'
+#' For each alpha, computes the posterior expected log-growth at fraction
+#' alpha of the optimal Kelly stakes, plus the ratio to full-Kelly growth
+#' and the alpha*(2-alpha) "binary Kelly" prediction.
+#'
+#' The alpha*(2-alpha) rule (often quoted as "half-Kelly gives 3/4 of
+#' full-Kelly growth") is the second-order expansion of G around the
+#' optimum and holds *exactly* only for a single binary bet. In joint
+#' multi-bet settings it is a loose upper bound: the actual ratio drops
+#' faster with decreasing alpha. See the 2026-04-19 numerical audit (V12)
+#' for quantitative examples.
+#'
+#' @param net_return S x B net-return matrix (same form as get_kelly_joint).
+#' @param f_star Numeric vector of length B with the optimal Kelly stakes.
+#' @param alphas Numeric vector of fractions to evaluate.
+#' @return Tibble with columns: alpha, G_at_alpha_f, ratio_to_full,
+#'   binary_prediction, deviation.
+#' @export
+fractional_growth_curve <- function(
+  net_return, f_star,
+  alphas = c(0.1, 0.25, 0.5, 0.75, 1.0, 1.25)
+) {
+  G <- function(a) {
+    w <- 1 + as.vector(net_return %*% (a * f_star))
+    mean(log(pmax(w, 1e-10)))
+  }
+  Gs <- vapply(alphas, G, numeric(1))
+  G_star <- G(1)
+  ratio <- if (abs(G_star) > 1e-12) Gs / G_star else rep(NA_real_, length(alphas))
+  binary <- alphas * (2 - alphas)
+  tibble(
+    alpha = alphas,
+    G_at_alpha_f = Gs,
+    ratio_to_full = ratio,
+    binary_prediction = binary,
+    deviation = ratio - binary
+  )
+}
+
 # ── Bet collection ───────────────────────────────────────────────────────────
 
 #' Collect all available bets for one match across enabled markets
