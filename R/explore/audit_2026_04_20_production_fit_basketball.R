@@ -20,7 +20,7 @@ suppressPackageStartupMessages({
   library(here)
 })
 
-stopifnot(basename(getwd()) == "Sports-audit")
+stopifnot(basename(getwd()) %in% c("Sports", "Sports-audit"))
 
 # -------- Prep data via shared pipeline ---------------------------------
 cat("--- Preparing Stan data ---\n")

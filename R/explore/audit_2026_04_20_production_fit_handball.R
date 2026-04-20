@@ -18,7 +18,7 @@ suppressPackageStartupMessages({
   library(here)
 })
 
-stopifnot(basename(getwd()) == "Sports-audit")
+stopifnot(basename(getwd()) %in% c("Sports", "Sports-audit"))
 
 cat("--- Preparing Stan data ---\n")
 box::use(
