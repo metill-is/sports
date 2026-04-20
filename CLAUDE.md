@@ -108,9 +108,13 @@ run.R → cross-match portfolio optimisation → format + filter → recommendat
 | Handball Iceland   | 2D Student's t (per-team sigma)     | `2d_student_t.stan`                                  |
 | Football           | Diagonal-inflated bivariate Poisson | `bivariate_poisson_inflated_diagonal_corrmodel.stan` |
 
-Both 2D Student's t variants use time-varying team strengths (random walk), separate offensive/defensive parameters, and home advantage effects. The scalar-sigma variant replaces per-team observation-noise scale with a single scalar; see `Knowledge/Sports Models/next-actions.md` in the Metill Obsidian vault for the audit evidence. Handball still uses per-team sigma as of 2026-04-20; a swap was evaluated but deferred (gate ambiguous).
+Both 2D Student's t variants use time-varying team strengths (random walk), separate offensive/defensive parameters, and home advantage effects. The scalar-sigma variant replaces per-team observation-noise scale with a single scalar; see `Knowledge/Sports Models/next-actions.md` in the Metill Obsidian vault for the audit evidence.
 
-All active Stan files emit `vector[N] log_lik` in `generated quantities` for `loo::loo` PSIS-LOO comparisons.
+**Handball Iceland** stays on per-team sigma as of 2026-04-20 evening — a full diagnostic + adapt_delta=0.95 refit showed neither variant passes the strict-no-worse gate. The handball ~1% divergence rate at default adapt_delta is an inverse funnel at the right tail of `scale_sigma_def` (Σ stiffens, leapfrog misses); cleared by adapt_delta=0.95 but at the cost of flipping the ESS ranking (tier1 wins min ESS at the cleaner geometry).
+
+**Football Iceland** still uses the inflated-diagonal model in production, but a 2026-04-20 evening loo comparison favours `bivariate_poisson_no_inflation.stan` by 4.3 SE elpd. The new no-inflation variant exists at `football/iceland/Stan/bivariate_poisson_no_inflation.stan`; production swap (one yaml line at `config/leagues.yml:58`) pending user nod since the original pre-authorization required Iceland AND England confirmation. England audit not yet run (~2-3h compute, paused league).
+
+All active Stan files emit `vector[N] log_lik` in `generated quantities` for `loo::loo` PSIS-LOO comparisons (basketball + handball Iceland: morning 2026-04-20; football Iceland inflated + no-inflation: evening 2026-04-20).
 
 ### Data flow
 
