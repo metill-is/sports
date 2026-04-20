@@ -102,12 +102,15 @@ run.R → cross-match portfolio optimisation → format + filter → recommendat
 
 ### Stan models
 
-| Sport                | Model                               | File                                                 |
-| -------------------- | ----------------------------------- | ---------------------------------------------------- |
-| Basketball, Handball | 2D Student's t                      | `2d_student_t.stan`                                  |
-| Football             | Diagonal-inflated bivariate Poisson | `bivariate_poisson_inflated_diagonal_corrmodel.stan` |
+| Sport              | Model                               | File                                                 |
+| ------------------ | ----------------------------------- | ---------------------------------------------------- |
+| Basketball Iceland | 2D Student's t (scalar sigma)       | `2d_student_t_scalarsigma.stan`                      |
+| Handball Iceland   | 2D Student's t (per-team sigma)     | `2d_student_t.stan`                                  |
+| Football           | Diagonal-inflated bivariate Poisson | `bivariate_poisson_inflated_diagonal_corrmodel.stan` |
 
-Both use time-varying team strengths (random walk), separate offensive/defensive parameters, and home advantage effects.
+Both 2D Student's t variants use time-varying team strengths (random walk), separate offensive/defensive parameters, and home advantage effects. The scalar-sigma variant replaces per-team observation-noise scale with a single scalar; see `Knowledge/Sports Models/next-actions.md` in the Metill Obsidian vault for the audit evidence. Handball still uses per-team sigma as of 2026-04-20; a swap was evaluated but deferred (gate ambiguous).
+
+All active Stan files emit `vector[N] log_lik` in `generated quantities` for `loo::loo` PSIS-LOO comparisons.
 
 ### Data flow
 

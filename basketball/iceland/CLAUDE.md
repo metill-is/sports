@@ -30,12 +30,12 @@ Downloads Excel files from `widgets.baskethotel.com` for divisions 1 and 2, proc
 
 **Season IDs** (hardcoded, must update each season):
 
-| Sex | Division | season_id | File |
-|-----|----------|-----------|------|
-| Male | Div 1 | 130403 | `R/prep_data_kk.R` |
-| Male | Div 2 | 130402 | `R/prep_data_kk.R` |
-| Female | Div 1 | 130422 | `R/prep_data_kvk.R` |
-| Female | Div 2 | 130421 | `R/prep_data_kvk.R` |
+| Sex    | Division | season_id | File                |
+| ------ | -------- | --------- | ------------------- |
+| Male   | Div 1    | 130403    | `R/prep_data_kk.R`  |
+| Male   | Div 2    | 130402    | `R/prep_data_kk.R`  |
+| Female | Div 1    | 130422    | `R/prep_data_kvk.R` |
+| Female | Div 2    | 130421    | `R/prep_data_kvk.R` |
 
 To find new season IDs: go to baskethotel.com, navigate to the league, inspect the widget export URL.
 
@@ -46,15 +46,17 @@ source("R/update_model.R")
 ```
 
 Runs for both male and female:
+
 1. Prepares Stan data via `R/common/prep_data.R`
-2. Compiles and samples `Stan/2d_student_t.stan` (4 chains, 1000 warmup + 1000 sampling)
-3. Saves `results/{sex}/{date}/fit.rds` (~200+ MB)
+2. Compiles and samples `Stan/2d_student_t_scalarsigma.stan` (4 chains, 1000 warmup + 1000 sampling). The tier1 `Stan/2d_student_t.stan` is kept for reference and loo comparisons.
+3. Saves `results/{sex}/fit.rds` (~500+ MB)
 
 **Time**: ~5-10 minutes per sex on modern hardware.
 
 ### Step 3: Generate Results
 
 Also handled by `update_model.R` — calls `generate_model_results()` after fitting:
+
 - Writes `posterior_goals.csv` (used by betting pipeline)
 - Generates 7 PNG figures in `results/{sex}/{date}/figures/`
 
@@ -70,7 +72,8 @@ Uses the shared pipeline at `Sports/R/bets/`. Config at `config/bets.yml`. Reads
 
 ```
 basketball/iceland/
-├── Stan/2d_student_t.stan          # Bayesian model (shared across sports)
+├── Stan/2d_student_t_scalarsigma.stan   # Production model (scalar observation sigma)
+├── Stan/2d_student_t.stan               # Tier1 variant — per-team sigma; kept for loo comparisons
 ├── R/
 │   ├── update_model.R              # Entry point: fit + results for both sexes
 │   ├── prep_data_kk.R              # Download male data from Baskethotel
@@ -96,15 +99,20 @@ basketball/iceland/
 
 ## Stan Model
 
-`Stan/2d_student_t.stan` — multivariate Student's t with:
+`Stan/2d_student_t_scalarsigma.stan` (production, swapped 2026-04-20) — multivariate Student's t with:
+
 - **Time-varying** offensive/defensive strengths (random walk scaled by sqrt(rest days))
-- **Hierarchical** volatility (team-specific sigma for strength evolution)
+- **Hierarchical** volatility (team-specific sigma for strength _evolution_ — `sigma_off`, `sigma_def`)
+- **Scalar observation noise** (`sigma`) — the per-team `sigma_team` of the tier1 variant was found unidentifiable (posterior CV 1.0 %) and collapsed to one scalar. See Metill vault `Knowledge/Sports Models/audit-stan-models-2026-04-19.md` §10.1.
 - **Heavy tails** (Student's t with estimated degrees of freedom)
-- **Correlated** home/away scores (estimated rho)
+- **Correlated** home/away scores (match-dependent rho via 4-parameter logit)
 - **Home advantage** (separate offensive/defensive components per team)
 - **Season-level** mean goals trend
+- **Per-match `log_lik`** in generated quantities for loo comparisons
 
 Non-centred parameterisation for efficient sampling.
+
+`Stan/2d_student_t.stan` (tier1 baseline) is kept for A/B comparisons and documents the pre-audit per-team-sigma parameterisation.
 
 ## Data Schema
 
@@ -134,6 +142,7 @@ Non-centred parameterisation for efficient sampling.
 ## Betting Config
 
 See `config/bets.yml`:
+
 - **No ties** (`has_ties: false`, `tie_threshold: 0.5`)
 - **kelly_frac**: 0.04 (4% of optimal Kelly)
 - **Pool**: 995 EUR
