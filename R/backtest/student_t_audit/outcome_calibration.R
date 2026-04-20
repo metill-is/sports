@@ -46,7 +46,11 @@ suppressPackageStartupMessages({
 #' Extract per-match, per-draw mu_D values from a direct_SD fit.
 #' Uses transformed parameters `offense[round, team]`, `defense[...]`,
 #' `home_advantage_off/def[team]`. Returns a [n_draws x N] matrix.
-direct_SD_mu_D_matrix <- function(fit, stan_data, n_draws = 200) {
+#'
+#' @param scalar_home_adv If TRUE, treat `home_advantage_off` and `_def`
+#'   as scalar per draw (matches barebones variants). Otherwise K-dim.
+direct_SD_mu_D_matrix <- function(fit, stan_data, n_draws = 200,
+                                  scalar_home_adv = FALSE) {
   offense <- fit$draws("offense", format = "draws_array")
   defense <- fit$draws("defense", format = "draws_array")
   ha_off <- fit$draws("home_advantage_off", format = "draws_matrix")
@@ -57,15 +61,9 @@ direct_SD_mu_D_matrix <- function(fit, stan_data, n_draws = 200) {
   ha_off <- ha_off[draw_idx, , drop = FALSE]
   ha_def <- ha_def[draw_idx, , drop = FALSE]
 
-  # offense / defense come back as [iteration, chain, variable]. The
-  # variable ordering is offense[1,1], offense[1,2], ..., offense[round, team].
-  # Flatten to [draw, round, team]. Each saved fit has chains x iter_sampling
-  # draws; we already sub-sampled ha_off / ha_def along the concatenated
-  # axis; apply the same index to offense/defense.
   off_flat <- posterior::as_draws_matrix(offense)[draw_idx, , drop = FALSE]
   def_flat <- posterior::as_draws_matrix(defense)[draw_idx, , drop = FALSE]
 
-  # Map variable names to [round, team] indices.
   off_names <- colnames(off_flat)
   rt <- regmatches(off_names, regexec("offense\\[(\\d+),(\\d+)\\]", off_names))
   off_round <- as.integer(vapply(rt, `[`, character(1), 2L))
@@ -77,11 +75,9 @@ direct_SD_mu_D_matrix <- function(fit, stan_data, n_draws = 200) {
   team1 <- stan_data$team1
   team2 <- stan_data$team2
 
-  # Build mu_D for each (draw, match).
   n_used <- length(draw_idx)
   mu_D <- matrix(NA_real_, nrow = n_used, ncol = N)
   for (s in seq_len(n_used)) {
-    # Reshape off/def to [round x team] for this draw.
     off_s <- matrix(NA_real_, stan_data$N_rounds, stan_data$K)
     def_s <- matrix(NA_real_, stan_data$N_rounds, stan_data$K)
     for (i in seq_along(off_round)) {
@@ -89,8 +85,10 @@ direct_SD_mu_D_matrix <- function(fit, stan_data, n_draws = 200) {
       def_s[off_round[i], off_team[i]] <- def_flat[s, i]
     }
     for (n in seq_len(N)) {
-      off_h <- off_s[round1[n], team1[n]] + ha_off[s, team1[n]]
-      def_h <- def_s[round1[n], team1[n]] + ha_def[s, team1[n]]
+      ha_o <- if (scalar_home_adv) ha_off[s, 1] else ha_off[s, team1[n]]
+      ha_d <- if (scalar_home_adv) ha_def[s, 1] else ha_def[s, team1[n]]
+      off_h <- off_s[round1[n], team1[n]] + ha_o
+      def_h <- def_s[round1[n], team1[n]] + ha_d
       off_a <- off_s[round2[n], team2[n]]
       def_a <- def_s[round2[n], team2[n]]
       mu_D[s, n] <- (off_h + def_h) - (off_a + def_a)
@@ -99,25 +97,40 @@ direct_SD_mu_D_matrix <- function(fit, stan_data, n_draws = 200) {
   list(mu_D = mu_D, draw_idx = draw_idx)
 }
 
-#' Compute analytical per-match 1x2 probabilities for direct_SD.
-#' Returns a data.frame with columns home_win, draw, away_win.
-direct_SD_outcome_probs <- function(fit, stan_data, threshold = 0.5, n_draws = 200) {
-  mu_info <- direct_SD_mu_D_matrix(fit, stan_data, n_draws = n_draws)
+#' Analytical per-match 1x2 probabilities for a continuous (S, D) model.
+#' Supports both Student-t (needs `nu` in the fit) and Gaussian (no `nu`).
+#'
+#' @param family "student_t" (default) or "gaussian"
+#' @param scalar_home_adv If TRUE, home advantage is treated as a scalar
+#'   per draw (matches barebones variants). Otherwise K-dimensional.
+direct_SD_outcome_probs <- function(fit, stan_data,
+                                    threshold = 0.5, n_draws = 200,
+                                    family = c("student_t", "gaussian"),
+                                    scalar_home_adv = FALSE) {
+  family <- match.arg(family)
+  mu_info <- direct_SD_mu_D_matrix(fit, stan_data,
+    n_draws = n_draws,
+    scalar_home_adv = scalar_home_adv
+  )
   mu_D <- mu_info$mu_D
 
   sigma_D <- as.numeric(fit$draws("sigma_D", format = "draws_matrix")[mu_info$draw_idx, ])
-  nu <- as.numeric(fit$draws("nu", format = "draws_matrix")[mu_info$draw_idx, ])
 
-  # Per-match probability, averaged over posterior draws.
+  if (family == "student_t") {
+    nu <- as.numeric(fit$draws("nu", format = "draws_matrix")[mu_info$draw_idx, ])
+    tail_fn <- function(z) pt(z, df = nu)
+  } else {
+    tail_fn <- pnorm
+  }
+
   N <- ncol(mu_D)
-  n_used <- nrow(mu_D)
   p_home <- p_draw <- p_away <- numeric(N)
   for (n in seq_len(N)) {
     z_up <- (threshold - mu_D[, n]) / sigma_D
     z_dn <- (-threshold - mu_D[, n]) / sigma_D
-    p_home[n] <- mean(1 - pt(z_up, df = nu))
-    p_draw[n] <- mean(pt(z_up, df = nu) - pt(z_dn, df = nu))
-    p_away[n] <- mean(pt(z_dn, df = nu))
+    p_home[n] <- mean(1 - tail_fn(z_up))
+    p_draw[n] <- mean(tail_fn(z_up) - tail_fn(z_dn))
+    p_away[n] <- mean(tail_fn(z_dn))
   }
   data.frame(home_win = p_home, draw = p_draw, away_win = p_away)
 }
