@@ -159,6 +159,27 @@ model {
 }
 
 generated quantities {
+  // Per-match log-likelihood for loo::loo / PSIS-LOO. Added 2026-04-20 for
+  // the scalarsigma vs tier1 elpd comparison (audit follow-up).
+  vector[N] log_lik;
+  for (n in 1:N) {
+    vector[2] off_ll;
+    vector[2] def_ll;
+    vector[2] mu_ll;
+    matrix[2, 2] Sigma_ll;
+    off_ll[1] = offense[round1[n], team1[n]] + home_advantage_off[team1[n]];
+    def_ll[1] = defense[round1[n], team1[n]] + home_advantage_def[team1[n]];
+    off_ll[2] = offense[round2[n], team2[n]];
+    def_ll[2] = defense[round2[n], team2[n]];
+    mu_ll[1] = mean_goals[season[n]] + off_ll[1] - def_ll[2];
+    mu_ll[2] = mean_goals[season[n]] + off_ll[2] - def_ll[1];
+    Sigma_ll[1,1] = square(sigma);
+    Sigma_ll[2,2] = square(sigma);
+    Sigma_ll[1,2] = rho * square(sigma);
+    Sigma_ll[2,1] = Sigma_ll[1,2];
+    log_lik[n] = multi_student_t_lpdf([goals1[n], goals2[n]]' | nu, mu_ll, Sigma_ll);
+  }
+
   vector[K] home_advantage_tot = home_advantage_off + home_advantage_def;
 
   vector[K] cur_offense_away = offense[N_rounds];

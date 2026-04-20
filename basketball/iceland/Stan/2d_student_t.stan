@@ -263,6 +263,32 @@ model {
  */
 generated quantities {
 
+  // Per-match log-likelihood for loo::loo / PSIS-LOO. Recomputes the same
+  // multi_student_t density as the model block. Added 2026-04-20 as part of
+  // the scalarsigma vs tier1 elpd comparison (audit follow-up).
+  vector[N] log_lik;
+  for (n in 1:N) {
+    vector[2] off_ll;
+    vector[2] def_ll;
+    vector[2] mu_ll;
+    matrix[2, 2] Sigma_ll;
+    off_ll[1] = offense[round1[n], team1[n]] + home_advantage_off[team1[n]];
+    def_ll[1] = defense[round1[n], team1[n]] + home_advantage_def[team1[n]];
+    off_ll[2] = offense[round2[n], team2[n]];
+    def_ll[2] = defense[round2[n], team2[n]];
+    mu_ll[1] = mean_goals[season[n]] + off_ll[1] - def_ll[2];
+    mu_ll[2] = mean_goals[season[n]] + off_ll[2] - def_ll[1];
+    real sdiff_ll = abs(off_ll[1] + def_ll[1] - off_ll[2] - def_ll[2]);
+    real stot_ll  = abs(off_ll[1] + def_ll[1] + off_ll[2] + def_ll[2]);
+    real lrho_ll  = alpha_rho + beta_rho * sdiff_ll + beta2_rho * stot_ll + beta3_rho * stot_ll * sdiff_ll;
+    real rho_ll   = 2 * inv_logit(lrho_ll) - 1;
+    Sigma_ll[1,1] = square(sigma_team[team1[n]]);
+    Sigma_ll[2,2] = square(sigma_team[team2[n]]);
+    Sigma_ll[1,2] = rho_ll * sigma_team[team1[n]] * sigma_team[team2[n]];
+    Sigma_ll[2,1] = Sigma_ll[1,2];
+    log_lik[n] = multi_student_t_lpdf([goals1[n], goals2[n]]' | nu, mu_ll, Sigma_ll);
+  }
+
   // Total home advantage
   vector[K] home_advantage_tot = home_advantage_off + home_advantage_def;
 
