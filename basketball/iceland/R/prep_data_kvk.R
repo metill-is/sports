@@ -103,7 +103,7 @@ bind_rows(
 
 
 schedule_div1 <- here("data", "female", "div1", "next_games.xlsx") |>
-  read_excel(sheet = 1, skip = 1) |>
+  read_excel(sheet = 1, skip = 1, col_types = "text") |>
   janitor::clean_names() |>
   select(
     dags,
@@ -117,7 +117,7 @@ schedule_div1 <- here("data", "female", "div1", "next_games.xlsx") |>
   )
 
 schedule_div2 <- here("data", "female", "div2", "next_games.xlsx") |>
-  read_excel(sheet = 1, skip = 1) |>
+  read_excel(sheet = 1, skip = 1, col_types = "text") |>
   janitor::clean_names() |>
   select(
     dags,
