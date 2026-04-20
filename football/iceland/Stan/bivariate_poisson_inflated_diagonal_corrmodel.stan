@@ -432,6 +432,31 @@ model {
  */
 generated quantities {
 
+  // Per-match log-likelihood for loo::loo / PSIS-LOO. Added 2026-04-20 for
+  // the no-inflation vs inflated elpd comparison (audit follow-up). Mirrors
+  // the model-block likelihood exactly.
+  vector[N] log_lik;
+  for (n in 1:N) {
+    vector[2] off_ll;
+    vector[2] def_ll;
+    vector[2] mu_ll;
+    off_ll[1] = offense[round1[n], team1[n]] + home_advantage_off[team1[n]];
+    def_ll[1] = defense[round1[n], team1[n]] + home_advantage_def[team1[n]];
+    off_ll[2] = offense[round2[n], team2[n]];
+    def_ll[2] = defense[round2[n], team2[n]];
+    mu_ll[1] = mean_log_goals + off_ll[1] - def_ll[2];
+    mu_ll[2] = mean_log_goals + off_ll[2] - def_ll[1];
+    real strength_diff_ll = abs(off_ll[1] + def_ll[1] - off_ll[2] - def_ll[2]);
+    real logit_rho_ll = alpha_mu3 + beta_mu3_strength_diff * strength_diff_ll;
+    real mu3_ll = log_inv_logit(logit_rho_ll) + 0.5 * (mu_ll[1] + mu_ll[2]);
+    real logit_p_ll = logit_p0 + beta_logit_p_strength_diff * strength_diff_ll;
+    real p_ll = inv_logit(logit_p_ll);
+    real lambda_tie_ll = tie_alpha + (1 + tie_beta) * (mu_ll[1] + mu_ll[2]) / 2;
+    log_lik[n] = poisson_2d_log_inflated_lpmf(
+      goals1_2[, n] | mu_ll[1], mu_ll[2], mu3_ll, p_ll, lambda_tie_ll
+    );
+  }
+
   // Total home advantage
   vector[K] home_advantage_tot = home_advantage_off + home_advantage_def;
 
