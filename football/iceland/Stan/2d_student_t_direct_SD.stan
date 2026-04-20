@@ -31,10 +31,6 @@ data {
   array[N] int<lower=0> goals2;
 
   // Prediction data
-  int<lower=0> N_top_teams;
-  array[N_top_teams] int<lower=0> top_teams;
-  vector[N_top_teams] time_to_next_games;
-
   int<lower=0> N_pred;
   array[N_pred] int<lower=1, upper=K> team1_pred;
   array[N_pred] int<lower=1, upper=K> team2_pred;
@@ -77,7 +73,11 @@ parameters {
   real<lower=0> sigma_mean_goals;
   array[N_seasons - 1] real z_mean_goals;
 
-  // Home advantage
+  // Home advantage. Kept <lower=0> for sampling stability — freeing
+  // this caused warmup to get stuck on Sigma overflow on 2026-04-20
+  // (bvp_no_inflation uses unconstrained home_adv; the two Stan files
+  // now differ in this one parameterisation choice, acknowledged for
+  // the Phase 1 comparison).
   vector<lower=0>[K] home_advantage_off;
   vector<lower=0>[K] home_advantage_def;
 
@@ -188,6 +188,14 @@ generated quantities {
   array[N] int<lower=0> total_goals_rep;
   vector[N] goal_diff_rep;
 
+  // Per-match log-likelihood for loo::loo / PSIS-LOO.
+  // Continuous density evaluated at the observed integer (S, D).
+  // NOTE: this is a LOG DENSITY, not a log probability. Comparing against
+  // the BVP's log_lik (which is a log probability mass) via loo_compare is
+  // an implicit cell-volume-of-1 convention. For strictly comparable metrics
+  // use common-observable-space evaluation (1x2, totals, handicap) downstream.
+  vector[N] log_lik;
+
   for (n in 1:N) {
     real off_h = offense[round1[n], team1[n]] + home_advantage_off[team1[n]];
     real def_h = defense[round1[n], team1[n]] + home_advantage_def[team1[n]];
@@ -197,6 +205,8 @@ generated quantities {
     vector[2] mu_sd;
     mu_sd[1] = 2 * mean_goals[season[n]] + (off_h + off_a) - (def_h + def_a);
     mu_sd[2] = (off_h + def_h) - (off_a + def_a);
+
+    log_lik[n] = multi_student_t_lpdf([obs_total[n], obs_diff[n]]' | nu, mu_sd, Sigma);
 
     vector[2] sd_draw = multi_student_t_rng(nu, mu_sd, Sigma);
 
