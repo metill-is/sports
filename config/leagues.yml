@@ -55,7 +55,7 @@ football_iceland:
   country: iceland
   dir: football/iceland
   sex: [male, female]
-  stan_model: bivariate_poisson_inflated_diagonal_corrmodel.stan
+  stan_model: bivariate_poisson_no_inflation.stan
   pipeline: football
   data_source: iceland_ksi
   has_bets: true

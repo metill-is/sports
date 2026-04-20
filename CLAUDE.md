@@ -106,13 +106,14 @@ run.R → cross-match portfolio optimisation → format + filter → recommendat
 | ------------------ | ----------------------------------- | ---------------------------------------------------- |
 | Basketball Iceland | 2D Student's t (scalar sigma)       | `2d_student_t_scalarsigma.stan`                      |
 | Handball Iceland   | 2D Student's t (per-team sigma)     | `2d_student_t.stan`                                  |
-| Football           | Diagonal-inflated bivariate Poisson | `bivariate_poisson_inflated_diagonal_corrmodel.stan` |
+| Football Iceland   | No-inflation bivariate Poisson      | `bivariate_poisson_no_inflation.stan`                |
+| Football (others)  | Diagonal-inflated bivariate Poisson | `bivariate_poisson_inflated_diagonal_corrmodel.stan` |
 
 Both 2D Student's t variants use time-varying team strengths (random walk), separate offensive/defensive parameters, and home advantage effects. The scalar-sigma variant replaces per-team observation-noise scale with a single scalar; see `Knowledge/Sports Models/next-actions.md` in the Metill Obsidian vault for the audit evidence.
 
 **Handball Iceland** stays on per-team sigma as of 2026-04-20 evening — a full diagnostic + adapt_delta=0.95 refit showed neither variant passes the strict-no-worse gate. The handball ~1% divergence rate at default adapt_delta is an inverse funnel at the right tail of `scale_sigma_def` (Σ stiffens, leapfrog misses); cleared by adapt_delta=0.95 but at the cost of flipping the ESS ranking (tier1 wins min ESS at the cleaner geometry).
 
-**Football Iceland** still uses the inflated-diagonal model in production, but a 2026-04-20 evening loo comparison favours `bivariate_poisson_no_inflation.stan` by 4.3 SE elpd. The new no-inflation variant exists at `football/iceland/Stan/bivariate_poisson_no_inflation.stan`; production swap (one yaml line at `config/leagues.yml:58`) pending user nod since the original pre-authorization required Iceland AND England confirmation. England audit not yet run (~2-3h compute, paused league).
+**Football Iceland** swapped to `bivariate_poisson_no_inflation.stan` on 2026-04-20 evening after the loo comparison favoured no-inflation by 4.3 SE elpd. Known seed-dependence caveat: production refit at default `adapt_delta=0.8` came in at 4.78% divergences + min ESS_tail 120, vs 1.45% + 573 on the fixed-seed audit fit; both pass on identifiable parameters (posterior means match within MC SE), but the sampler is at the edge of production-hygiene gates on `scale_sigma_def` — same inverse-funnel geometry handball's 2026-04-20 diagnostic identified. `adapt_delta=0.95` plumbing is the queued fix (see next-actions.md). England audit (~2-3h, paused league) also still pending.
 
 All active Stan files emit `vector[N] log_lik` in `generated quantities` for `loo::loo` PSIS-LOO comparisons (basketball + handball Iceland: morning 2026-04-20; football Iceland inflated + no-inflation: evening 2026-04-20).
 
