@@ -25,7 +25,7 @@ basketball_iceland:
   country: iceland
   dir: basketball/iceland
   sex: [male, female]
-  stan_model: 2d_student_t.stan
+  stan_model: 2d_student_t_scalarsigma.stan
   pipeline: shared
   config_module: R/config/basketball_iceland.R
   data_source: baskethotel

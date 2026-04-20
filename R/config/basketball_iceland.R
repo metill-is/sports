@@ -3,8 +3,7 @@ get_config <- function() {
   list(
     sport = "basketball",
     sport_dir = "basketball/iceland",
-    stan_model = "2d_student_t.stan",
-
+    stan_model = "2d_student_t_scalarsigma.stan",
     columns = list(
       data = c(
         season = "timabil",
@@ -20,13 +19,11 @@ get_config <- function() {
         away = "gestir"
       )
     ),
-
     divisions = list(
       filter_top_teams = FALSE,
       filter_next_games = FALSE,
       schedule_filter = NULL
     ),
-
     scoring = list(
       has_ties = FALSE,
       win_points = 2,
@@ -34,7 +31,6 @@ get_config <- function() {
       loss_points = 0,
       tie_threshold = 0.5
     ),
-
     labels = list(
       prediction_name = "Körfuboltaspá",
       league_name = "Bónusdeild",
@@ -44,7 +40,6 @@ get_config <- function() {
       goal_diff_label = "Stigamismunur",
       division_labels = c("BD", "1D")
     ),
-
     plots = list(
       next_round = list(
         xlim = c(-50, 50),
@@ -78,7 +73,6 @@ get_config <- function() {
         scale = 1.4
       )
     ),
-
     team_colors = c(
       "Stjarnan" = "#08519c",
       "Tindastóll" = "#08306b",
