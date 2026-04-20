@@ -127,7 +127,7 @@ handball_denmark:
   pipeline: handball_other
   data_source: livesport_handball
   has_bets: true
-  active: true # re-activated 2026-04-19
+  active: false # 2026-04-20 season finished — last match 2026-03-14 (M) / 2026-03-20 (F); no upcoming fixtures on livesport, no Lengjan markets
 
 handball_france:
   sport: handball
@@ -182,7 +182,7 @@ handball_sweden:
   pipeline: handball_other
   data_source: livesport_handball
   has_bets: true
-  active: true # re-activated 2026-04-19
+  active: false # 2026-04-20 season finished — last match 2026-03-13 (M) / 2026-03-21 (F); no upcoming fixtures on livesport, no Lengjan markets
 
 # ── Handball European model-only (paused) ──────────────────────────────────
 
