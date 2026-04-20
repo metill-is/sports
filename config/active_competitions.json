@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-04-20T12:00:00",
+  "generated_at": "2026-04-20T18:00:00",
   "lookahead_days": 7,
-  "note": "Handball Denmark and Sweden re-activated 2026-04-20",
+  "note": "Handball Denmark/Sweden paused again 2026-04-20 — seasons finished, no upcoming fixtures",
   "active": {
     "football_iceland": true,
     "football_england": false,
@@ -9,8 +9,8 @@
     "football_spain": false,
     "handball_iceland": true,
     "handball_germany": false,
-    "handball_denmark": true,
-    "handball_sweden": true,
+    "handball_denmark": false,
+    "handball_sweden": false,
     "handball_france": false,
     "handball_norway": false,
     "handball_spain": false,
