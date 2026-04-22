@@ -245,3 +245,4 @@ NA,2025-03-14,basketball,iceland,male,totals,Keflavík,Stjarnan,over,1.87,0.5755
 2026-01-30,2026-01-30,basketball,iceland,male,totals,Þór Þ.,Keflavík,over,1.96,0.55925,0.09613000000000003,NA,600,191.5,FALSE,-600,gsheets
 2026-03-04,2026-03-04,basketball,iceland,female,outcome,Keflavík,Tindastóll,away,3.45,0.428,0.48,0.1,383,NA,FALSE,-383,pipeline
 2026-03-04,2026-03-04,basketball,iceland,female,outcome,Ármann,Stjarnan,home,2.96,0.405,0.2,0.05,200,NA,FALSE,-200,pipeline
+2026-04-20,2026-04-21,basketball,iceland,male,totals,Tindastóll,Stjarnan,over,1.65,0.72725,0.2,0.05,526,195.5,FALSE,-526,pipeline

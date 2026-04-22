@@ -357,3 +357,5 @@ date_recommended,date_match,sport,country,sex,market,home,away,outcome,odds,prob
 2026-04-11,2026-04-12,football,iceland,male,handicap,ÍBV,FH,home,1.46,0.6975,0.0183,0.04,495,1,TRUE,227.69999999999993,pipeline
 2026-04-11,2026-04-12,football,iceland,male,handicap,KA,Stjarnan,away,1.53,0.65675,0.0048,0.04,489,-1,TRUE,259.16999999999996,pipeline
 2026-04-12,2026-04-12,football,iceland,male,handicap,KR,Keflavík,away,1.94,0.5755,0.1165,0.03,275,-2,TRUE,258.5,pipeline
+2026-04-22,2026-04-23,football,iceland,male,handicap,Valur,FH,home,1.41,0.846,0.1929,0.03,296,1,NA,NA,pipeline
+2026-04-22,2026-04-23,football,iceland,male,outcome,Þór,Fram,home,3.14,0.479,0.5041,0.02,244,NA,NA,NA,pipeline
