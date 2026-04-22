@@ -56,6 +56,9 @@ Rscript run.R --today
 
 # Specific league
 Rscript run.R --live --league football_england
+
+# Watch the browser click through (default: headless)
+Rscript run.R --live --show-browser
 ```
 
 ## Dependencies
@@ -70,6 +73,7 @@ Rscript run.R --live --league football_england
 ## Credentials
 
 Set in `.Renviron` (gitignored):
+
 ```
 LENGJAN_USER=your_username
 LENGJAN_PASS=your_password
@@ -77,23 +81,23 @@ LENGJAN_PASS=your_password
 
 ## Key files
 
-| File | Purpose |
-|------|---------|
-| `preview.R` | Lightweight pending-bet preview (no browser) — deduplicates against ledger |
-| `run.R` | CLI entry point |
-| `R/pipeline.R` | Main pipeline: load recs, dedup, compute bankroll, orchestrate placement, write ledger |
-| `R/login.R` | Authenticate to Lengjan (click "Minar sidur", fill form, click "Innskra") |
-| `R/navigate.R` | Navigate to competitions, extract match listings + IDs via JS |
-| `R/place_bet.R` | Place individual bets with P3/P4 validation (outcome, handicap, totals) |
+| File            | Purpose                                                                                |
+| --------------- | -------------------------------------------------------------------------------------- |
+| `preview.R`     | Lightweight pending-bet preview (no browser) — deduplicates against ledger             |
+| `run.R`         | CLI entry point                                                                        |
+| `R/pipeline.R`  | Main pipeline: load recs, dedup, compute bankroll, orchestrate placement, write ledger |
+| `R/login.R`     | Authenticate to Lengjan (click "Minar sidur", fill form, click "Innskra")              |
+| `R/navigate.R`  | Navigate to competitions, extract match listings + IDs via JS                          |
+| `R/place_bet.R` | Place individual bets with P3/P4 validation (outcome, handicap, totals)                |
 
 ## Placement rules (P1–P4)
 
-| Rule | Description | Implemented in |
-|------|-------------|----------------|
-| P1 | Placement is idempotent — re-running must not double-place | `dedup_against_ledger()` |
-| P2 | Ledger records actual Lengjan odds, not recommended odds | `log_placed_bet()` |
-| P3 | If live odds drifted >1%, recalculate Kelly stake at new odds | `check_live_odds()` |
-| P4 | Reject bets no longer +EV at live odds | `check_live_odds()` |
+| Rule | Description                                                   | Implemented in           |
+| ---- | ------------------------------------------------------------- | ------------------------ |
+| P1   | Placement is idempotent — re-running must not double-place    | `dedup_against_ledger()` |
+| P2   | Ledger records actual Lengjan odds, not recommended odds      | `log_placed_bet()`       |
+| P3   | If live odds drifted >1%, recalculate Kelly stake at new odds | `check_live_odds()`      |
+| P4   | Reject bets no longer +EV at live odds                        | `check_live_odds()`      |
 
 ## Selector strategy
 
@@ -117,23 +121,24 @@ CDP `Input.dispatchMouseEvent` used for clicks (trusted events for React).
 - **Ledger deduplication** — anti-join against all `bets_log.csv` files before placing
 - **Rate limiting** — randomised delays between page loads (2-4s) and actions (0.5-1.5s)
 - **Match-level isolation** — one bet failing doesn't block others
-- **Browser always visible** — `headless = FALSE` so user can monitor
+- **Browser headless by default** — pass `--show-browser` to watch the automation click through (useful for debugging)
 
 ## Team name mapping
 
 Uses `lengjan-odds/config/team_names_*.csv` files:
+
 - `pipeline` column = pipeline/standardised name
 - `lengjan` column = Lengjan display name
 - Lookup direction: Lengjan name -> pipeline name (for matching extracted matches to bets)
 
 ## Sport-specific differences
 
-| Feature | Football | Handball |
-|---------|----------|----------|
-| Outcome section | "Urslit" | "Urslit leiksins" |
-| Odds aria-label | "1, studull: 2.28" | (none) |
-| Button text | "12.28" (prefix + odds) | "11.69" (prefix + odds) |
-| Totals lines | 0.5, 1.5, 2.5, 3.5 | 55.5, 59.5, 60.5 |
+| Feature         | Football                | Handball                |
+| --------------- | ----------------------- | ----------------------- |
+| Outcome section | "Urslit"                | "Urslit leiksins"       |
+| Odds aria-label | "1, studull: 2.28"      | (none)                  |
+| Button text     | "12.28" (prefix + odds) | "11.69" (prefix + odds) |
+| Totals lines    | 0.5, 1.5, 2.5, 3.5      | 55.5, 59.5, 60.5        |
 
 ## Relationship to other projects
 

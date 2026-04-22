@@ -12,7 +12,7 @@ box::use(
   purrr[map_dfr],
   cli[
     cli_alert_info, cli_alert_success, cli_alert_warning,
-    cli_alert_danger, cli_h1, cli_h2, cli_rule
+    cli_alert_danger, cli_abort, cli_h1, cli_h2, cli_rule
   ],
   yaml[yaml.load],
   here[here]
@@ -21,7 +21,8 @@ box::use(
 box::use(
   . / login[lengjan_login, is_authenticated],
   . / navigate[extract_matches, competition_url, match_url],
-  . / place_bet[place_bet, clear_bet_slip]
+  . / place_bet[place_bet, clear_bet_slip],
+  . / validate[validate_team_names_config]
 )
 
 # ── Main pipeline ─────────────────────────────────────────────────────────────
@@ -34,6 +35,8 @@ box::use(
 #'   NULL = all leagues with pending recommendations.
 #' @param dry_run If TRUE, navigate and select odds but don't click "Kaupa"
 #' @param interactive If TRUE, prompt for confirmation before each bet
+#' @param headless If TRUE (default), run Chrome headlessly. Pass FALSE to
+#'   watch the automation click through the site (useful for debugging).
 #' @param sports_dir Path to the Sports project root
 #' @param odds_dir Path to the lengjan-odds project root
 #' @return A tibble summarising all bet placement results
@@ -43,6 +46,7 @@ run_bets <- function(
   interactive = TRUE,
   today_only = FALSE,
   target_date = NULL,
+  headless = TRUE,
   sports_dir = here::here("../Sports"),
   odds_dir = here::here("../lengjan-odds")
 ) {
@@ -51,6 +55,10 @@ run_bets <- function(
   if (dry_run) {
     cli_alert_warning("DRY RUN mode \u2014 no bets will be placed.")
   }
+
+  # ── 0. Pre-flight: cross-check team_names_*.csv against competitions.yml ──
+  # Fails fast on misconfigured leagues before Chrome ever launches.
+  validate_team_names_config(odds_dir)
 
   # ── 1. Load competitions config ──
   # read_yaml() corrupts Icelandic UTF-8 — use readr + yaml.load instead
@@ -92,9 +100,9 @@ run_bets <- function(
     }
   }
 
-  # ── 6. Login (always visible so user can see the browser) ──
+  # ── 6. Login (headless by default; pass --show-browser to watch) ──
   cli_h2("Logging in to Lengjan")
-  session <- lengjan_login(headless = FALSE)
+  session <- lengjan_login(headless = headless)
   on.exit(tryCatch(session$close(), error = function(e) NULL))
 
   # ── 7. Process each league ──
@@ -414,10 +422,23 @@ resolve_match_ids <- function(session, comp_config, bets, odds_dir, league_key) 
     NULL
   }
 
+  # Defence-in-depth: pre-flight validator (validate_team_names_config)
+  # should have caught this, but also abort here for callers that bypass run.R.
+  # If a CSV matching this league_key exists on disk but the comp entry has no
+  # team_names: wiring, that's a misconfiguration — fail loud.
+  conventional_csv <- file.path(odds_dir, "config", paste0("team_names_", league_key, ".csv"))
+  if (is.null(team_names_file) && file.exists(conventional_csv)) {
+    cli_abort(c(
+      "Misconfigured team_names for '{league_key}':",
+      "x" = "File '{basename(conventional_csv)}' exists but competitions.yml['{league_key}'] has no 'team_names:' key.",
+      "i" = "Add `team_names: \"{basename(conventional_csv)}\"` under the '{league_key}' entry in lengjan-odds/config/competitions.yml."
+    ))
+  }
+
   name_map <- if (!is.null(team_names_file) && file.exists(team_names_file)) {
     read_csv(team_names_file, show_col_types = FALSE)
   } else {
-    cli_alert_warning("No team names file for {league_key}.")
+    cli_alert_warning("No team names file for {league_key} (no CSV on disk — this is only OK if DOM names match pipeline names exactly).")
     tibble::tibble(pipeline = character(), lengjan = character())
   }
 
