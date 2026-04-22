@@ -89,6 +89,7 @@ LENGJAN_PASS=your_password
 | `R/login.R`     | Authenticate to Lengjan (click "Minar sidur", fill form, click "Innskra")              |
 | `R/navigate.R`  | Navigate to competitions, extract match listings + IDs via JS                          |
 | `R/place_bet.R` | Place individual bets with P3/P4 validation (outcome, handicap, totals)                |
+| `R/validate.R`  | Pre-flight config validator — cross-checks `team_names_*.csv` files against `competitions.yml` in both directions, aborts before login on any misconfig |
 
 ## Placement rules (P1–P4)
 
@@ -114,6 +115,7 @@ CDP `Input.dispatchMouseEvent` used for clicks (trusted events for React).
 
 ## Safety features
 
+- **Pre-flight config validation** — `validate_team_names_config()` scans `lengjan-odds/config/team_names_*.csv` against `competitions.yml` before login and aborts on dead / unwired / mismatched / dangling entries (fails fast before Chrome launches)
 - **Dry run by default** — must pass `--live` to actually place bets
 - **Per-bet confirmation** — interactive mode prompts before each bet
 - **P4 +EV guard** — rejects bets that are no longer profitable at live odds
