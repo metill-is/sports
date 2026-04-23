@@ -78,9 +78,14 @@ archive_df <- joined |>
   mutate(
     home_goals = (total_goals + goal_diff) / 2,
     away_goals = (total_goals - goal_diff) / 2,
-    iteration = as.integer(.draw)
+    iteration = as.integer(.draw),
+    # String date for cross-fit schema consistency with Phase 2 shadow writer.
+    date = as.character(as.Date(date)),
+    # Phase 2 compatibility: all Phase 1 backfill rows are OOS (upcoming matches
+    # at fit time), so stamp scope explicitly.
+    scope = "oos"
   ) |>
-  select(iteration, game_nr, division, date, home, away, home_goals, away_goals)
+  select(iteration, game_nr, division, date, home, away, home_goals, away_goals, scope)
 
 cat(
   "Archive frame:", nrow(archive_df), "rows;", length(unique(archive_df$game_nr)),

@@ -25,10 +25,17 @@ classify_disagreement <- function(df, variants) {
       values_fill = list(stake = 0, pass = FALSE)
     )
 
+  # Ensure both variants have columns even if one is entirely absent from the
+  # input frame (happens when e.g. one variant has no archive for a given mode).
   stake_v1_col <- paste0("stake_", v1)
   stake_v2_col <- paste0("stake_", v2)
   pass_v1_col <- paste0("pass_", v1)
   pass_v2_col <- paste0("pass_", v2)
+
+  if (!stake_v1_col %in% names(wide)) wide[[stake_v1_col]] <- 0
+  if (!stake_v2_col %in% names(wide)) wide[[stake_v2_col]] <- 0
+  if (!pass_v1_col %in% names(wide)) wide[[pass_v1_col]] <- FALSE
+  if (!pass_v2_col %in% names(wide)) wide[[pass_v2_col]] <- FALSE
 
   out_stake_v1 <- paste0(v1, "_stake")
   out_stake_v2 <- paste0(v2, "_stake")

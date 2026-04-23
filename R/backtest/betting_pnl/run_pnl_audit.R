@@ -4,6 +4,7 @@
 #
 # Outputs (under football/iceland/results/male/audits/betting_pnl/):
 #   - compare_pnl.txt              ranked summary tables per variant x mode x market
+#   - disagreement_in_sample.csv   bet-level tags + stakes for in-sample universe
 #   - disagreement_oos.csv         bet-level tags + stakes for OOS universe
 #   - pnl_ledger.csv               appended each run for longitudinal tracking
 #   - cumulative_pnl.png           cumulative-PnL line plot (if matches were settled)
@@ -58,29 +59,40 @@ cat(
   "| unplayed:", sum(!odds$played), "\n"
 )
 
-# ---- 2. Variant predictions ----------------------------------------------
+# ---- 2. Variant predictions for both modes ------------------------------
 variants <- c("bvp_noinflation", "v3_free_nu")
 
-probs_oos <- load_variant_predictions(
+probs_oos <- suppressWarnings(load_variant_predictions(
   sports_dir = sports_dir,
   variants = variants,
   mode = "oos"
-)
+))
 
-cat("OOS prediction rows:", nrow(probs_oos), "\n")
+probs_in_sample <- suppressWarnings(load_variant_predictions(
+  sports_dir = sports_dir,
+  variants = variants,
+  mode = "in_sample"
+))
+
+cat(
+  "OOS prediction rows:", nrow(probs_oos),
+  "| In-sample prediction rows:", nrow(probs_in_sample), "\n"
+)
 
 # ---- 3. Join odds x probs, compute EV/Kelly ------------------------------
 make_bets_frame <- function(probs, odds, mode_label) {
+  empty <- tibble::tibble(
+    variant = character(), match_id = character(), market = character(),
+    outcome = character(), line = numeric(), p_model = numeric(),
+    odds = numeric(), won = logical(), played = logical(),
+    date = character(), home = character(), away = character(),
+    ev = numeric(), kelly_f = numeric(), stake = numeric(), pass = logical(),
+    mode = character()
+  )
   if (nrow(probs) == 0) {
-    return(tibble::tibble(
-      variant = character(), match_id = character(), market = character(),
-      outcome = character(), line = numeric(), p_model = numeric(),
-      odds = numeric(), won = logical(), played = logical(),
-      date = character(), home = character(), away = character(),
-      ev = numeric(), kelly_f = numeric(), stake = numeric(), pass = logical(),
-      mode = character()
-    ))
+    return(empty)
   }
+
   probs |>
     inner_join(
       odds |> select(match_id, market, outcome, line, odds, won, played, date, home, away),
@@ -94,24 +106,38 @@ make_bets_frame <- function(probs, odds, mode_label) {
 }
 
 bets_oos <- make_bets_frame(probs_oos, odds, "oos")
+bets_in_sample <- make_bets_frame(probs_in_sample, odds, "in_sample")
+
 cat(
   "OOS bets joined:", nrow(bets_oos),
-  "| passing filter:", sum(bets_oos$pass), "\n"
+  "| passing filter:", sum(bets_oos$pass, na.rm = TRUE), "\n"
+)
+cat(
+  "In-sample bets joined:", nrow(bets_in_sample),
+  "| passing filter:", sum(bets_in_sample$pass, na.rm = TRUE), "\n"
 )
 
+all_bets <- bind_rows(bets_oos, bets_in_sample)
+
 # ---- 4. Simulate PnL + aggregate -----------------------------------------
-bets_with_pnl <- bets_oos |> compute_pnl()
+bets_with_pnl <- if (nrow(all_bets) > 0) compute_pnl(all_bets) else all_bets
 summary_pnl <- if (nrow(bets_with_pnl) > 0) summarise_pnl(bets_with_pnl) else tibble::tibble()
 
-# ---- 5. Disagreement tables ---------------------------------------------
+# ---- 5. Disagreement tables (per mode) -----------------------------------
 disagree_oos <- if (nrow(bets_oos) > 0) {
   classify_disagreement(bets_oos, variants = variants)
+} else {
+  tibble::tibble()
+}
+disagree_in_sample <- if (nrow(bets_in_sample) > 0) {
+  classify_disagreement(bets_in_sample, variants = variants)
 } else {
   tibble::tibble()
 }
 
 # ---- 6. Write artefacts --------------------------------------------------
 readr::write_csv(disagree_oos, file.path(out_dir, "disagreement_oos.csv"))
+readr::write_csv(disagree_in_sample, file.path(out_dir, "disagreement_in_sample.csv"))
 
 # compare_pnl.txt - human-readable summary
 sink(file.path(out_dir, "compare_pnl.txt"))
@@ -121,14 +147,16 @@ cat("======================================================================\n\n"
 cat("Run parameters:\n")
 cat("  bankroll=50000  kelly_frac=0.10  min_ev=0.03  min_bet=200\n")
 cat("  variants:", paste(variants, collapse = ", "), "\n")
-cat("  mode:     oos only (Phase 1)\n\n")
+cat("  modes:    in_sample, oos (Phase 2)\n\n")
 
 cat("Data universe:\n")
-cat("  odds rows:    ", nrow(odds), "\n")
-cat("  OOS prob rows:", nrow(probs_oos), "\n")
-cat("  joined bets:  ", nrow(bets_oos), "\n")
-cat("  passing filter:", sum(bets_oos$pass), "\n")
-cat("  played bets:  ", sum(bets_oos$pass & !is.na(bets_oos$won)), "\n\n")
+cat("  odds rows:            ", nrow(odds), "\n")
+cat("  OOS prob rows:        ", nrow(probs_oos), "\n")
+cat("  in-sample prob rows:  ", nrow(probs_in_sample), "\n")
+cat("  OOS bets joined:      ", nrow(bets_oos), "\n")
+cat("  in-sample bets joined:", nrow(bets_in_sample), "\n")
+cat("  total passing filter: ", sum(all_bets$pass, na.rm = TRUE), "\n")
+cat("  played bets passing:  ", sum(all_bets$pass & !is.na(all_bets$won), na.rm = TRUE), "\n\n")
 
 cat("Summary PnL table (per variant x mode x market):\n")
 if (nrow(summary_pnl) > 0) {
@@ -138,18 +166,24 @@ if (nrow(summary_pnl) > 0) {
 }
 cat("\n")
 
-cat("Disagreement tag counts (OOS):\n")
+cat("Disagreement tag counts:\n")
 if (nrow(disagree_oos) > 0) {
+  cat("  OOS:\n")
   print(disagree_oos |> count(tag))
-} else {
+}
+if (nrow(disagree_in_sample) > 0) {
+  cat("  in_sample:\n")
+  print(disagree_in_sample |> count(tag))
+}
+if (nrow(disagree_oos) == 0 && nrow(disagree_in_sample) == 0) {
   cat("  (no bets where at least one variant passes)\n")
 }
 cat("\n")
 
 cat("Per-variant bet counts (passing filter, by market):\n")
-if (sum(bets_oos$pass) > 0) {
+if (sum(all_bets$pass, na.rm = TRUE) > 0) {
   print(
-    bets_oos |>
+    all_bets |>
       filter(pass) |>
       count(variant, mode, market, name = "n_bets")
   )

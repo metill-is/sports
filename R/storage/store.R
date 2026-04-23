@@ -150,13 +150,26 @@ read_predictions_archive <- function(sports_dir,
     return(NULL)
   }
 
+  # Narrow the scan path when partition filters are provided. This avoids
+  # cross-variant schema unification issues (e.g. BVP writes iteration as
+  # double, v3 writes it as int32 - unioning the two errors). unify_schemas
+  # still handles in-variant column differences (Phase 1 v3 backfill lacks a
+  # scope column that Phase 2 v3 shadow writes).
+  scan_path <- store_path
+  if (!is.null(sport)) scan_path <- file.path(scan_path, paste0("sport=", sport))
+  if (!is.null(country)) scan_path <- file.path(scan_path, paste0("country=", country))
+  if (!is.null(sex)) scan_path <- file.path(scan_path, paste0("sex=", sex))
+  if (!is.null(variant)) scan_path <- file.path(scan_path, paste0("variant=", variant))
+
+  if (!dir.exists(scan_path)) {
+    return(NULL)
+  }
+
   tryCatch(
     {
-      ds <- arrow::open_dataset(store_path)
-      if (!is.null(sport)) ds <- ds |> dplyr::filter(sport == !!sport)
-      if (!is.null(country)) ds <- ds |> dplyr::filter(country == !!country)
-      if (!is.null(sex)) ds <- ds |> dplyr::filter(sex == !!sex)
-      if (!is.null(variant)) ds <- ds |> dplyr::filter(variant == !!variant)
+      # unify_schemas=TRUE handles in-variant column differences (e.g. Phase 1
+      # backfill without scope column coexisting with Phase 2 writes that have it).
+      ds <- arrow::open_dataset(scan_path, unify_schemas = TRUE)
       if (!is.null(fit_date_from)) {
         ds <- ds |> dplyr::filter(fit_date >= !!as.character(as.Date(fit_date_from)))
       }
