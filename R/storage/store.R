@@ -50,10 +50,10 @@ store_predictions <- function(df, sport, country, sex, sports_dir) {
   invisible(NULL)
 }
 
-#' Archive a posterior prediction snapshot keyed by fit date
+#' Archive a posterior prediction snapshot keyed by (variant, fit_date).
 #'
 #' Writes a zstd-compressed Parquet under
-#'   store/predictions_archive/sport={X}/country={Y}/sex={Z}/fit_date={YYYY-MM-DD}/predictions.parquet
+#'   store/predictions_archive/sport={X}/country={Y}/sex={Z}/variant={V}/fit_date={YYYY-MM-DD}/predictions.parquet
 #'
 #' Unlike `store_predictions()` — which overwrites each run so the "current
 #' posterior" is always a single file per bucket — this function preserves
@@ -63,17 +63,22 @@ store_predictions <- function(df, sport, country, sex, sports_dir) {
 #' yesterday's odds). Fit retroactively cannot be recreated, so start
 #' writing these now even if you are not yet querying them.
 #'
-#' File sizes: a typical league fit is roughly 150k prediction rows at 0.5–1
-#' MB zstd-compressed. At ~weekly refits across six active buckets this
-#' grows at ~0.3 GB/year — small enough to keep in-repo indefinitely.
+#' The `variant` partition was added 2026-04-23 for the betting-PnL audit
+#' (see Knowledge/Sports Models/betting-pnl-harness-design-2026-04-23.md).
+#' Production writes default to variant = "bvp_noinflation" for football_iceland
+#' (matching the active Stan file); shadow audit variants share the partition
+#' prefix and coexist on disk.
 #'
 #' @param df Data frame of posterior draws (posterior_goals.csv schema)
 #' @param sport Sport name (e.g., "basketball")
 #' @param country Country name (e.g., "iceland")
 #' @param sex Sex label (e.g., "male")
 #' @param sports_dir Absolute path to Sports/ root
+#' @param variant Model variant tag (default "bvp_noinflation" - the current production
+#'                model for football_iceland). Audit variants use e.g. "v3_free_nu".
 #' @param fit_date Snapshot date (default: today). ISO-format string or Date.
 archive_predictions <- function(df, sport, country, sex, sports_dir,
+                                variant = "bvp_noinflation",
                                 fit_date = Sys.Date()) {
   if (!requireNamespace("arrow", quietly = TRUE)) {
     warning("arrow package not available — skipping archive write")
@@ -89,6 +94,7 @@ archive_predictions <- function(df, sport, country, sex, sports_dir,
         paste0("sport=", sport),
         paste0("country=", country),
         paste0("sex=", sex),
+        paste0("variant=", variant),
         paste0("fit_date=", fit_date)
       )
       if (!dir.exists(partition_dir)) dir.create(partition_dir, recursive = TRUE)
@@ -108,20 +114,23 @@ archive_predictions <- function(df, sport, country, sex, sports_dir,
   invisible(NULL)
 }
 
-#' Read archived predictions across one or more fit dates
+#' Read archived predictions across one or more fit dates, optionally filtered by variant.
 #'
-#' Returns a long data frame with a `fit_date` column. Useful for
-#' "as-of" back-tests — filter to the latest fit_date <= decision_time.
+#' Returns a long data frame with fit_date and variant columns. Useful for
+#' "as-of" back-tests — filter to the latest fit_date <= decision_time, and
+#' optionally to a specific model variant.
 #'
 #' @param sports_dir Absolute path to Sports/ root
 #' @param sport Filter by sport (NULL = all)
 #' @param country Filter by country (NULL = all)
 #' @param sex Filter by sex (NULL = all)
+#' @param variant Filter by model variant (NULL = all; e.g. "v3_free_nu" or "bvp_noinflation")
 #' @param fit_date_from Keep fits from this date onwards (Date or string)
 #' @param fit_date_to Keep fits up to this date (Date or string)
 #' @return Tibble or NULL if store does not exist
 read_predictions_archive <- function(sports_dir,
                                      sport = NULL, country = NULL, sex = NULL,
+                                     variant = NULL,
                                      fit_date_from = NULL, fit_date_to = NULL) {
   if (!requireNamespace("arrow", quietly = TRUE)) {
     return(NULL)
@@ -138,6 +147,7 @@ read_predictions_archive <- function(sports_dir,
       if (!is.null(sport)) ds <- ds |> dplyr::filter(sport == !!sport)
       if (!is.null(country)) ds <- ds |> dplyr::filter(country == !!country)
       if (!is.null(sex)) ds <- ds |> dplyr::filter(sex == !!sex)
+      if (!is.null(variant)) ds <- ds |> dplyr::filter(variant == !!variant)
       if (!is.null(fit_date_from)) {
         ds <- ds |> dplyr::filter(fit_date >= !!as.character(as.Date(fit_date_from)))
       }
