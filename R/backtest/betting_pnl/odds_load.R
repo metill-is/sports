@@ -132,6 +132,9 @@ join_results <- function(odds_long, results) {
 
 #' End-to-end odds loader.
 #'
+#' Drops rows with NA odds - the Lengjan scraper occasionally records a match with
+#' NA across all odds columns (announced match, odds not yet posted at scrape time).
+#'
 #' @param football_iceland_dir Path to lengjan-odds/data/football_iceland/.
 #' @param results Frame with match_id, home_goals, away_goals.
 load_all_odds <- function(football_iceland_dir, results) {
@@ -140,5 +143,6 @@ load_all_odds <- function(football_iceland_dir, results) {
     load_odds_totals(file.path(football_iceland_dir, "odds_totals.csv")),
     load_odds_handicap(file.path(football_iceland_dir, "odds_handicap.csv"))
   ) |>
+    filter(!is.na(odds)) |>
     join_results(results)
 }
