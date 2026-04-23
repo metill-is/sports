@@ -77,6 +77,11 @@ store_predictions <- function(df, sport, country, sex, sports_dir) {
 #' @param variant Model variant tag (default "bvp_noinflation" - the current production
 #'                model for football_iceland). Audit variants use e.g. "v3_free_nu".
 #' @param fit_date Snapshot date (default: today). ISO-format string or Date.
+#'
+#' Starting Phase 2 (2026-04-23), df SHOULD include a `scope` column with
+#' values in {"in_sample", "oos"}. Legacy callers that omit the column produce
+#' files without it; read_predictions_archive() treats such files as all-OOS
+#' for backwards compatibility.
 archive_predictions <- function(df, sport, country, sex, sports_dir,
                                 variant = "bvp_noinflation",
                                 fit_date = Sys.Date()) {
@@ -125,12 +130,16 @@ archive_predictions <- function(df, sport, country, sex, sports_dir,
 #' @param country Filter by country (NULL = all)
 #' @param sex Filter by sex (NULL = all)
 #' @param variant Filter by model variant (NULL = all; e.g. "v3_free_nu" or "bvp_noinflation")
+#' @param scope Filter by scope ("in_sample" or "oos"). NULL returns all. Legacy
+#'              files without a scope column are treated as "oos" (Phase 1
+#'              backfills all predate the column).
 #' @param fit_date_from Keep fits from this date onwards (Date or string)
 #' @param fit_date_to Keep fits up to this date (Date or string)
 #' @return Tibble or NULL if store does not exist
 read_predictions_archive <- function(sports_dir,
                                      sport = NULL, country = NULL, sex = NULL,
                                      variant = NULL,
+                                     scope = NULL,
                                      fit_date_from = NULL, fit_date_to = NULL) {
   if (!requireNamespace("arrow", quietly = TRUE)) {
     return(NULL)
@@ -154,7 +163,24 @@ read_predictions_archive <- function(sports_dir,
       if (!is.null(fit_date_to)) {
         ds <- ds |> dplyr::filter(fit_date <= !!as.character(as.Date(fit_date_to)))
       }
-      dplyr::collect(ds)
+      df <- dplyr::collect(ds)
+
+      # Scope filter applied post-collect so legacy files (without a scope column)
+      # can be treated as "oos". arrow's filter on a column that doesn't exist in
+      # some underlying files is fragile; post-collect guarantees correct NA
+      # handling across the schema union.
+      if (!is.null(scope)) {
+        if (!"scope" %in% names(df)) {
+          df$scope <- NA_character_
+        }
+        if (scope == "oos") {
+          df <- df |> dplyr::filter(scope == "oos" | is.na(scope))
+        } else {
+          df <- df |> dplyr::filter(scope == !!scope)
+        }
+      }
+
+      df
     },
     error = function(e) {
       warning("Archive read failed: ", e$message)
