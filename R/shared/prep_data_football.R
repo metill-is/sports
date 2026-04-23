@@ -403,6 +403,14 @@ prepare_football_data <- function(sex, from_season = 2021, test_date_cutoff = NU
     here("results", sex, "pred_d.csv")
   )
 
+  write_csv(
+    model_d |> dplyr::select(
+      date, home, away, division, home_goals, away_goals,
+      home_nr, away_nr, home_round, away_round, season
+    ),
+    here("results", sex, "model_d.csv")
+  )
+
   # Student-t model fields: season index and division
   season_int <- as.integer(as.factor(model_d$season))
   division_int <- as.integer(model_d$division)
