@@ -183,6 +183,28 @@ fit_football <- function(league, sex, sports_dir, iter_warmup, iter_sampling, me
         },
         error = function(e) warning("Store write failed: ", e$message)
       )
+
+      # Phase 2 hook: shadow-fit v3 alongside production BVP for football_iceland
+      # male, so the betting-PnL audit's in-sample + OOS windows grow each cycle.
+      # tryCatch keeps shadow failures non-fatal for production. See plan doc
+      # Knowledge/Sports Models/betting-pnl-harness-phase2-plan-2026-04-23.md.
+      if (league$country == "iceland" && sex == "male") {
+        tryCatch(
+          {
+            source(file.path(sports_dir, "R", "backtest", "betting_pnl", "fit_v3_shadow.R"),
+              local = TRUE
+            )
+            fit_v3_shadow(
+              sports_dir = sports_dir, sex = sex,
+              iter_warmup = iter_warmup,
+              iter_sampling = iter_sampling
+            )
+          },
+          error = function(e) {
+            warning("v3 shadow fit failed (non-fatal for production): ", conditionMessage(e))
+          }
+        )
+      }
     }
   })
 }
