@@ -20,7 +20,12 @@ for (f in test_files) {
   cat("\n== Running", basename(f), "==\n")
   result <- tryCatch(
     {
-      testthat::test_file(f, reporter = testthat::SummaryReporter$new())
+      testthat::test_file(
+        f,
+        reporter = testthat::SummaryReporter$new(),
+        stop_on_failure = TRUE,
+        stop_on_warning = FALSE
+      )
       TRUE
     },
     error = function(e) {
