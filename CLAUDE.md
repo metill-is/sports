@@ -11,7 +11,7 @@ Mid-migration. End-state design: [`docs/superpowers/specs/2026-04-24-sports-pipe
 | Plan | Scope | Status |
 |---|---|---|
 | **1: Foundation + Storage + ETL** | Monorepo init, storage layer, ETL for odds + ledger | ✅ Complete |
-| **2: Ingest (federation scrapers) + historical backfill** | `R/ingest/` dispatcher + 3 federation scrapers (KSÍ / KKÍ / HSÍ), historical match-data backfill | ✅ Complete — 7,680 rows in `data/facts/results/` |
+| **2: Ingest (federation scrapers) + historical backfill** | `R/ingest/` dispatcher + 3 federation scrapers (KSÍ / KKÍ / HSÍ) with `upsert_table` safe-merge semantics, historical match-data backfill | ✅ Complete — 9,914 rows in `data/facts/results/` |
 | 3: Model layer | `prepare_data()` + `fit()` + posteriors for 3 leagues (golden-output tests vs `_legacy/*/results/*/fit.rds`) | Pending |
 | 4: Decide + Placer + Publish | Kelly, portfolio, bet placement, website JSON | Pending |
 | 5: Orchestration + CI + cutover | `{targets}` DAG, CI workflows (scrape + fit + publish), metill-platform pull, cutover, archive `_legacy/` remotes | Pending |
@@ -36,7 +36,7 @@ sports/
 ├── data/                           # Parquet stores (git-tracked, hive-partitioned)
 │   ├── facts/
 │   │   ├── odds/                   # Lengjan odds snapshots (1,433 rows)
-│   │   ├── results/                # Match history (7,680 rows across 3 sports, up to 6 seasons)
+│   │   ├── results/                # Match history (9,914 rows across 3 sports, up to 6 seasons)
 │   │   └── schedules/              # (Plan 3+ uses upcoming fixtures via ingest)
 │   ├── beliefs/                    # (Plan 3 populates: latest/ + archive/)
 │   └── decisions/
@@ -48,7 +48,7 @@ sports/
 │   │   ├── 03_etl_odds.R
 │   │   └── 04_etl_ledger.R
 │   └── backfill_ingest.R           # Single-command re-run of all 3 scrapers
-├── tests/testthat/                 # 144 passing assertions across config, storage*, duckdb-views, etl-validation, ingest-*
+├── tests/testthat/                 # 169 passing assertions across config, storage*, duckdb-views, etl-validation, ingest-*
 ├── sports.duckdb                   # Gitignored; rebuildable via rebuild_duckdb()
 ├── docs/superpowers/               # Specs + plans
 └── _legacy/                        # Subtree-merged histories of the 4 predecessor repos
