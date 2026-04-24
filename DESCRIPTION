@@ -20,6 +20,7 @@ Imports:
     jsonlite,
     jsonvalidate,
     lubridate,
+    posterior,
     purrr,
     readr,
     readxl,
@@ -31,7 +32,6 @@ Imports:
     yaml
 Suggests:
     cmdstanr,
-    posterior,
     testthat (>= 3.0.0),
     withr
 Config/testthat/edition: 3

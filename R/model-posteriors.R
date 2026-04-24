@@ -47,20 +47,33 @@ extract_posteriors <- function(fit, pred_d, league, sex,
     return(empty_out())
   }
 
+  pred_re <- "^goals([12])_pred\\[(\\d+)\\]$"
   long <- draws_df |>
     tidyr::pivot_longer(
       cols = -c(".chain", ".iteration", ".draw"),
       names_to = "parameter", values_to = "value"
     ) |>
+    dplyr::filter(stringr::str_detect(.data$parameter, pred_re)) |>
     dplyr::mutate(
       type = dplyr::if_else(
-        stringr::str_detect(.data$parameter, "^goals1_pred"),
+        stringr::str_detect(.data$parameter, "^goals1_pred\\["),
         "home_goals", "away_goals"
       ),
       game_nr = as.integer(
-        stringr::str_match(.data$parameter, "\\[(\\d+)\\]$")[, 2]
+        stringr::str_match(.data$parameter, pred_re)[, 3]
       )
-    ) |>
+    )
+
+  if (any(is.na(long$game_nr))) {
+    stop(
+      "extract_posteriors: failed to parse game_nr from some draws. ",
+      "Offending parameters: ",
+      paste(head(unique(long$parameter[is.na(long$game_nr)]), 5), collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  long <- long |>
     dplyr::select(
       draw_id = ".draw", "type", "game_nr", "value"
     ) |>
