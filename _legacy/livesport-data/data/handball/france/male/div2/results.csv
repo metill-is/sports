@@ -1,0 +1,106 @@
+date,home,away,home_score,away_score
+04.03. 19:30,Pontault,Caen,37,32
+03.03. 19:30,Angers,Saintes,32,36
+03.03. 19:30,Cournon d'Auvergne,Saran,41,44
+03.03. 19:30,Creteil,Pau Billere,37,46
+03.03. 19:30,Frontignan,Cherbourg,32,29
+03.03. 19:30,Valence,Ivry,34,41
+03.03. 19:00,Sarrebourg,Massy Essonne,30,39
+27.02. 19:30,Caen,Creteil,31,33
+27.02. 19:30,Cherbourg,Angers,32,23
+27.02. 19:30,Ivry,Sarrebourg,37,30
+27.02. 19:30,Massy Essonne,Besancon,36,35
+27.02. 19:30,Pau Billere,Valence,39,31
+27.02. 19:00,Saran,Pontault,32,31
+21.02. 19:30,Sarrebourg,Caen,28,32
+21.02. 19:00,Creteil,Cournon d'Auvergne,37,34
+20.02. 19:30,Angers,Pau Billere,25,41
+20.02. 19:30,Besancon,Saran,32,42
+20.02. 19:30,Cherbourg,Saintes,34,24
+20.02. 19:30,Frontignan,Ivry,29,33
+20.02. 19:30,Pontault,Massy Essonne,38,24
+13.02. 19:30,Cournon d'Auvergne,Pontault,19,27
+13.02. 19:30,Massy Essonne,Valence,31,38
+13.02. 19:30,Pau Billere,Sarrebourg,30,22
+13.02. 19:30,Saintes,Creteil,31,34
+13.02. 19:00,Ivry,Angers,36,27
+13.02. 19:00,Saran,Frontignan,40,32
+12.02. 19:30,Caen,Besancon,42,32
+06.02. 19:30,Besancon,Pau Billere,33,35
+06.02. 19:30,Cherbourg,Caen,35,36
+06.02. 19:30,Cournon d'Auvergne,Massy Essonne,28,29
+06.02. 19:30,Creteil,Saran,31,30
+06.02. 19:30,Frontignan,Saintes,30,33
+06.02. 19:30,Pontault,Ivry,26,35
+06.02. 19:30,Valence,Sarrebourg,31,25
+20.12. 17:00,Sarrebourg,Angers,30,28
+19.12. 19:30,Caen,Cherbourg,31,30
+19.12. 19:30,Ivry,Valence,32,27
+19.12. 19:30,Massy Essonne,Pontault,25,30
+19.12. 19:30,Pau Billere,Creteil,37,33
+19.12. 19:30,Saintes,Frontignan,31,30
+19.12. 19:00,Saran,Cournon d'Auvergne,30,29
+13.12. 19:00,Frontignan,Sarrebourg,25,23
+13.12. 19:00,Saran,Pau Billere,36,29
+13.12. 18:30,Valence,Saintes,29,29
+12.12. 19:30,Angers,Massy Essonne,32,37
+12.12. 19:30,Besancon,Caen,32,33
+12.12. 19:30,Cournon d'Auvergne,Ivry,40,40
+12.12. 19:30,Creteil,Pontault,31,30
+06.12. 19:30,Sarrebourg,Valence,25,32
+06.12. 17:30,Angers,Saran,35,42
+05.12. 19:30,Ivry,Frontignan,36,30
+05.12. 19:30,Massy Essonne,Caen,35,36
+05.12. 19:30,Pau Billere,Cherbourg,31,28
+05.12. 19:30,Pontault,Cournon d'Auvergne,34,28
+05.12. 19:30,Saintes,Besancon,30,33
+28.11. 19:30,Besancon,Sarrebourg,31,29
+28.11. 19:30,Cherbourg,Massy Essonne,30,24
+28.11. 19:30,Cournon d'Auvergne,Pau Billere,36,37
+28.11. 19:30,Creteil,Angers,36,20
+28.11. 19:30,Pontault,Saran,36,36
+28.11. 19:30,Saintes,Ivry,34,36
+28.11. 19:30,Valence,Frontignan,26,24
+22.11. 19:30,Sarrebourg,Saintes,26,25
+21.11. 19:30,Angers,Pontault,35,30
+21.11. 19:30,Frontignan,Besancon,29,31
+21.11. 19:30,Ivry,Cherbourg,23,32
+21.11. 19:30,Massy Essonne,Cournon d'Auvergne,31,33
+21.11. 19:30,Pau Billere,Caen,38,32
+21.11. 19:00,Saran,Creteil,42,34
+14.11. 19:30,Besancon,Massy Essonne,36,29
+14.11. 19:30,Caen,Frontignan,39,37
+14.11. 19:30,Cherbourg,Valence,25,26
+14.11. 19:30,Cournon d'Auvergne,Angers,41,32
+14.11. 19:30,Creteil,Ivry,32,36
+14.11. 19:30,Pau Billere,Saintes,36,29
+14.11. 19:30,Pontault,Sarrebourg,39,33
+08.11. 19:30,Sarrebourg,Saran,27,37
+07.11. 19:30,Angers,Caen,32,36
+07.11. 19:30,Frontignan,Creteil,33,32
+07.11. 19:30,Ivry,Pontault,29,28
+07.11. 19:30,Massy Essonne,Pau Billere,28,29
+07.11. 19:30,Saintes,Cherbourg,20,31
+07.11. 19:30,Valence,Besancon,29,27
+24.10. 18:30,Besancon,Ivry,28,27
+24.10. 18:30,Caen,Sarrebourg,42,35
+24.10. 18:30,Cherbourg,Frontignan,37,36
+24.10. 18:30,Cournon d'Auvergne,Saintes,34,25
+24.10. 18:30,Creteil,Valence,33,35
+24.10. 18:30,Pau Billere,Angers,33,36
+24.10. 18:00,Saran,Massy Essonne,37,30
+18.10. 18:30,Sarrebourg,Cherbourg,23,25
+17.10. 18:30,Besancon,Cournon d'Auvergne,33,36
+17.10. 18:30,Frontignan,Angers,37,31
+17.10. 18:30,Ivry,Caen,35,27
+17.10. 18:30,Massy Essonne,Creteil,25,35
+17.10. 18:30,Saintes,Pontault,25,35
+17.10. 18:30,Valence,Saran,28,35
+10.10. 18:30,Angers,Cherbourg,29,36
+10.10. 18:30,Cournon d'Auvergne,Sarrebourg,29,29
+10.10. 18:30,Creteil,Saintes,37,31
+10.10. 18:30,Pau Billere,Ivry,27,31
+10.10. 18:30,Pontault,Frontignan,32,29
+10.10. 18:00,Saran,Besancon,35,37
+09.10. 18:30,Caen,Valence,37,33
+04.10. 18:30,Sarrebourg,Pau Billere,26,26

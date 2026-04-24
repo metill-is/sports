@@ -1,0 +1,106 @@
+date,home,away
+01.04. 17:00,Varhaug,Akra
+06.04. 12:00,Brodd,Madla IL
+06.04. 12:00,Mandalskameratene,Hinna
+06.04. 13:00,Staal Jorpeland,Flekkeroy
+07.04. 11:00,Stabaek 2,Odd 2
+07.04. 16:00,Vag,Vindbjart
+07.04. 16:00,Viking 2,Haugesund 2
+11.04. 11:00,Akra,Vag
+11.04. 12:00,Madla IL,Varhaug
+11.04. 13:00,Vindbjart,Brodd
+12.04. 12:00,Haugesund 2,Staal Jorpeland
+12.04. 12:00,Odd 2,Mandalskameratene
+12.04. 13:00,Flekkeroy,Viking 2
+13.04. 14:00,Hinna,Stabaek 2
+18.04. 11:00,Mandalskameratene,Haugesund 2
+18.04. 12:00,Staal Jorpeland,Madla IL
+18.04. 13:00,Brodd,Flekkeroy
+18.04. 13:00,Vag,Hinna
+18.04. 13:00,Varhaug,Vindbjart
+19.04. 11:00,Stabaek 2,Akra
+20.04. 15:00,Viking 2,Odd 2
+25.04. 12:00,Akra,Staal Jorpeland
+25.04. 12:00,Brodd,Varhaug
+25.04. 13:00,Flekkeroy,Mandalskameratene
+25.04. 13:00,Madla IL,Vag
+26.04. 13:00,Hinna,Odd 2
+26.04. 13:00,Vindbjart,Viking 2
+27.04. 11:00,Haugesund 2,Stabaek 2
+01.05. 11:30,Varhaug,Flekkeroy
+01.05. 12:00,Mandalskameratene,Akra
+02.05. 11:00,Viking 2,Hinna
+02.05. 12:00,Staal Jorpeland,Brodd
+02.05. 12:00,Vag,Haugesund 2
+02.05. 13:00,Odd 2,Vindbjart
+02.05. 14:00,Stabaek 2,Madla IL
+07.05. 15:00,Haugesund 2,Odd 2
+07.05. 17:00,Akra,Hinna
+09.05. 13:00,Vindbjart,Staal Jorpeland
+10.05. 13:00,Brodd,Vag
+10.05. 13:00,Varhaug,Mandalskameratene
+11.05. 16:00,Flekkeroy,Stabaek 2
+11.05. 16:00,Madla IL,Viking 2
+14.05. 12:00,Hinna,Haugesund 2
+14.05. 12:00,Odd 2,Madla IL
+14.05. 12:00,Staal Jorpeland,Varhaug
+14.05. 12:00,Stabaek 2,Brodd
+14.05. 12:00,Viking 2,Akra
+16.05. 11:00,Vag,Flekkeroy
+16.05. 13:00,Mandalskameratene,Vindbjart
+23.05. 13:00,Mandalskameratene,Viking 2
+25.05. 13:00,Flekkeroy,Vindbjart
+25.05. 13:00,Varhaug,Vag
+25.05. 16:00,Madla IL,Hinna
+26.05. 16:00,Akra,Haugesund 2
+26.05. 16:00,Brodd,Odd 2
+26.05. 16:00,Staal Jorpeland,Stabaek 2
+29.05. 16:30,Hinna,Varhaug
+30.05. 11:00,Odd 2,Akra
+30.05. 13:00,Haugesund 2,Flekkeroy
+30.05. 13:00,Vag,Staal Jorpeland
+30.05. 13:00,Vindbjart,Madla IL
+31.05. 11:00,Viking 2,Brodd
+31.05. 12:00,Stabaek 2,Mandalskameratene
+12.06. 17:00,Varhaug,Viking 2
+13.06. 11:00,Vindbjart,Haugesund 2
+13.06. 12:00,Brodd,Mandalskameratene
+13.06. 12:00,Madla IL,Akra
+14.06. 13:00,Flekkeroy,Hinna
+15.06. 16:00,Staal Jorpeland,Odd 2
+15.06. 16:00,Vag,Stabaek 2
+19.06. 16:00,Hinna,Brodd
+21.06. 12:00,Stabaek 2,Varhaug
+21.06. 13:00,Viking 2,Staal Jorpeland
+21.06. 14:00,Akra,Vindbjart
+21.06. 14:00,Mandalskameratene,Vag
+22.06. 16:00,Haugesund 2,Madla IL
+22.06. 17:00,Odd 2,Flekkeroy
+26.06. 16:00,Staal Jorpeland,Hinna
+26.06. 16:00,Vag,Viking 2
+27.06. 11:00,Flekkeroy,Akra
+27.06. 13:00,Madla IL,Mandalskameratene
+29.06. 15:00,Varhaug,Odd 2
+29.06. 16:00,Brodd,Haugesund 2
+29.06. 16:00,Vindbjart,Stabaek 2
+25.07. 13:00,Hinna,Vindbjart
+25.07. 13:00,Madla IL,Flekkeroy
+25.07. 13:00,Mandalskameratene,Staal Jorpeland
+26.07. 12:00,Akra,Brodd
+27.07. 13:00,Stabaek 2,Viking 2
+27.07. 16:00,Odd 2,Vag
+27.07. 17:00,Haugesund 2,Varhaug
+31.07. 17:00,Varhaug,Hinna
+01.08. 11:00,Flekkeroy,Haugesund 2
+01.08. 12:00,Staal Jorpeland,Akra
+01.08. 13:00,Vag,Madla IL
+02.08. 12:00,Viking 2,Mandalskameratene
+03.08. 16:00,Brodd,Stabaek 2
+03.08. 16:00,Vindbjart,Odd 2
+07.08. 17:00,Akra,Varhaug
+08.08. 11:00,Odd 2,Staal Jorpeland
+08.08. 13:00,Hinna,Flekkeroy
+08.08. 13:00,Madla IL,Vindbjart
+08.08. 13:00,Mandalskameratene,Brodd
+09.08. 13:00,Stabaek 2,Vag
+10.08. 16:00,Haugesund 2,Viking 2

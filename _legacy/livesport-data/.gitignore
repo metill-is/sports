@@ -1,0 +1,11 @@
+# R
+.Rproj.user
+.Rhistory
+.RData
+.Rprofile
+
+# targets
+_targets/
+
+# OS
+.DS_Store

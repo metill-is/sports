@@ -1,0 +1,106 @@
+date,home,away,home_score,away_score
+15.03. 17:00,Fuchse Berlin,Erlangen,45,29
+15.03. 15:30,Bergischer,SC Magdeburg,25,27
+15.03. 15:30,Leipzig,Stuttgart,29,29
+15.03. 14:00,Lemgo,Goppingen,27,30
+14.03. 19:00,Kiel,Flensburg-H.,37,33
+14.03. 18:00,Minden,HSG Wetzlar,31,33
+13.03. 19:00,MT Melsungen,Gummersbach,24,31
+13.03. 18:00,Eisenach,Rhein-Neckar,29,29
+13.03. 18:00,Hannover-Burgdorf,Hamburg,35,37
+09.03. 18:00,Goppingen,Eisenach,26,23
+08.03. 17:00,Rhein-Neckar,Bergischer,28,25
+08.03. 15:30,Erlangen,Minden,36,31
+08.03. 15:30,HSG Wetzlar,MT Melsungen,32,38
+08.03. 14:00,SC Magdeburg,Hannover-Burgdorf,35,30
+07.03. 18:00,Flensburg-H.,Leipzig,36,28
+05.03. 18:00,Gummersbach,Lemgo,28,27
+05.03. 18:00,Stuttgart,Kiel,32,27
+01.03. 17:00,Fuchse Berlin,Rhein-Neckar,35,28
+01.03. 15:30,Hannover-Burgdorf,Goppingen,22,28
+01.03. 15:30,Leipzig,Bergischer,28,35
+01.03. 14:00,Minden,Stuttgart,32,32
+28.02. 19:00,Kiel,Gummersbach,26,34
+28.02. 19:00,MT Melsungen,SC Magdeburg,23,34
+27.02. 18:00,Flensburg-H.,HSG Wetzlar,35,31
+26.02. 18:00,Eisenach,Erlangen,25,25
+26.02. 18:00,Lemgo,Hamburg,39,32
+22.02. 17:00,Bergischer,Fuchse Berlin,28,35
+22.02. 15:30,Stuttgart,Hannover-Burgdorf,35,34
+22.02. 14:30,Hamburg,MT Melsungen,25,23
+22.02. 14:00,SC Magdeburg,Minden,38,21
+21.02. 19:00,Erlangen,Flensburg-H.,29,34
+21.02. 18:00,Goppingen,Kiel,24,28
+20.02. 19:00,Rhein-Neckar,Lemgo,32,30
+20.02. 18:00,HSG Wetzlar,Leipzig,26,26
+19.02. 18:00,Gummersbach,Eisenach,35,27
+16.02. 18:00,Eisenach,Bergischer,33,31
+15.02. 17:00,Kiel,SC Magdeburg,31,29
+15.02. 15:30,Fuchse Berlin,Stuttgart,37,32
+15.02. 15:30,Hamburg,Flensburg-H.,35,38
+15.02. 14:00,Lemgo,Erlangen,27,21
+14.02. 19:00,Minden,Rhein-Neckar,28,34
+14.02. 19:00,MT Melsungen,Goppingen,31,23
+14.02. 18:00,Hannover-Burgdorf,HSG Wetzlar,30,25
+11.02. 19:30,Bergischer,MT Melsungen,26,29
+11.02. 19:00,SC Magdeburg,Lemgo,36,32
+11.02. 18:00,HSG Wetzlar,Fuchse Berlin,27,41
+11.02. 18:00,Rhein-Neckar,Kiel,27,28
+10.02. 19:00,Erlangen,Hannover-Burgdorf,29,30
+10.02. 19:00,Gummersbach,Flensburg-H.,33,26
+10.02. 18:00,Goppingen,Minden,28,28
+10.02. 18:00,Hamburg,Leipzig,33,35
+10.02. 18:00,Stuttgart,Eisenach,33,31
+27.12. 19:00,Hannover-Burgdorf,Minden,26,26
+27.12. 18:00,Fuchse Berlin,Goppingen,42,29
+27.12. 18:00,Leipzig,Rhein-Neckar,26,30
+27.12. 17:00,Eisenach,SC Magdeburg,25,30
+27.12. 17:00,Gummersbach,Hamburg,33,27
+26.12. 16:30,Flensburg-H.,Bergischer,36,29
+26.12. 16:30,Kiel,Erlangen,28,25
+26.12. 16:30,Lemgo,HSG Wetzlar,28,25
+26.12. 16:30,MT Melsungen,Stuttgart,33,28
+23.12. 19:00,Hamburg,Fuchse Berlin,28,36
+23.12. 18:00,SC Magdeburg,Kiel,26,26
+21.12. 17:00,HSG Wetzlar,Eisenach,33,27
+21.12. 17:00,Minden,Fuchse Berlin,28,39
+21.12. 15:30,SC Magdeburg,Leipzig,29,28
+21.12. 15:30,Stuttgart,Gummersbach,22,28
+21.12. 14:00,Rhein-Neckar,Hamburg,35,29
+20.12. 19:00,Kiel,Hannover-Burgdorf,29,29
+20.12. 18:00,Bergischer,Lemgo,27,28
+20.12. 17:00,Erlangen,MT Melsungen,26,26
+20.12. 17:00,Goppingen,Flensburg-H.,32,33
+14.12. 18:00,Flensburg-H.,Rhein-Neckar,33,29
+14.12. 17:00,Gummersbach,SC Magdeburg,31,32
+14.12. 17:00,Hamburg,Minden,32,26
+14.12. 15:30,Fuchse Berlin,HSG Wetzlar,35,28
+14.12. 15:30,Hannover-Burgdorf,Stuttgart,28,22
+14.12. 15:30,MT Melsungen,Bergischer,33,28
+14.12. 14:00,Lemgo,Kiel,23,23
+13.12. 19:00,Eisenach,Goppingen,31,27
+13.12. 18:00,Erlangen,Leipzig,30,26
+11.12. 19:30,Rhein-Neckar,Gummersbach,34,32
+11.12. 18:00,Bergischer,Eisenach,27,26
+11.12. 18:00,Flensburg-H.,Fuchse Berlin,40,39
+10.12. 19:00,HSG Wetzlar,Hannover-Burgdorf,28,38
+10.12. 19:00,Leipzig,Hamburg,29,27
+10.12. 19:00,SC Magdeburg,MT Melsungen,31,27
+10.12. 18:00,Goppingen,Lemgo,26,33
+10.12. 18:00,Kiel,Stuttgart,33,32
+10.12. 18:00,Minden,Erlangen,30,29
+07.12. 17:00,SC Magdeburg,Goppingen,37,26
+07.12. 17:00,Stuttgart,Leipzig,33,32
+07.12. 15:30,Hamburg,Eisenach,33,29
+07.12. 15:30,MT Melsungen,HSG Wetzlar,33,32
+07.12. 14:00,Hannover-Burgdorf,Fuchse Berlin,28,32
+06.12. 18:00,Rhein-Neckar,Erlangen,35,27
+05.12. 19:00,Gummersbach,Bergischer,29,29
+04.12. 18:00,Lemgo,Flensburg-H.,34,33
+04.12. 18:00,Stuttgart,HSG Wetzlar,30,27
+30.11. 15:30,Bergischer,Hamburg,35,32
+30.11. 15:30,Fuchse Berlin,Lemgo,33,34
+30.11. 14:00,Leipzig,Hannover-Burgdorf,27,27
+29.11. 19:00,Flensburg-H.,Gummersbach,37,37
+29.11. 18:00,Goppingen,MT Melsungen,26,26
+29.11. 18:00,Minden,SC Magdeburg,21,36

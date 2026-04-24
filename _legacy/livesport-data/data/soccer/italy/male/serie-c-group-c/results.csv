@@ -1,0 +1,291 @@
+date,home,away,home_score,away_score
+01.03. 13:30,Cosenza,Sorrento,3,2
+01.03. 13:30,Giugliano,Latina,1,1
+01.03. 13:30,Monopoli,Crotone,1,1
+01.03. 13:30,Salernitana,Catania,0,0
+01.03. 11:30,Potenza,Benevento,0,1
+01.03. 11:30,Siracusa,Casertana,4,0
+28.02. 16:30,Foggia,Casarano,1,2
+28.02. 16:30,Picerno,Altamura,0,0
+28.02. 13:30,Cavese,Audace Cerignola,2,0
+28.02. 13:30,Trapani,Atalanta U23,0,2
+22.02. 16:30,Crotone,Foggia,3,1
+22.02. 16:30,Sorrento,Siracusa,2,0
+22.02. 13:30,Altamura,Benevento,1,2
+22.02. 13:30,Catania,Giugliano,1,0
+22.02. 13:30,Salernitana,Monopoli,0,1
+22.02. 11:30,Atalanta U23,Cosenza,0,0
+21.02. 16:30,Casertana,Picerno,2,1
+21.02. 13:30,Latina,Potenza,0,1
+21.02. 13:30,Trapani,Cavese,2,0
+20.02. 19:30,Audace Cerignola,Casarano,2,1
+18.02. 19:30,Catania,Trapani,4,0
+15.02. 19:30,Potenza,Altamura,3,0
+14.02. 16:30,Foggia,Atalanta U23,0,1
+14.02. 16:30,Picerno,Crotone,3,1
+14.02. 16:30,Siracusa,Catania,1,1
+14.02. 13:30,Benevento,Latina,1,1
+14.02. 13:30,Casarano,Casertana,3,2
+14.02. 13:30,Cavese,Salernitana,1,1
+14.02. 13:30,Cosenza,Audace Cerignola,3,0
+14.02. 13:30,Giugliano,Trapani,3,1
+14.02. 13:30,Monopoli,Sorrento,1,0
+10.02. 19:30,Atalanta U23,Potenza,2,2
+10.02. 19:30,Casertana,Crotone,2,2
+10.02. 19:30,Catania,Audace Cerignola,0,0
+10.02. 19:30,Cosenza,Siracusa,1,0
+10.02. 19:30,Foggia,Picerno,1,2
+10.02. 19:30,Salernitana,Casarano,3,0
+10.02. 17:00,Altamura,Latina,1,0
+10.02. 17:00,Cavese,Monopoli,1,0
+10.02. 17:00,Sorrento,Giugliano,1,0
+10.02. 17:00,Trapani,Benevento,0,5
+07.02. 16:30,Potenza,Siracusa,2,2
+07.02. 13:30,Casarano,Sorrento,2,0
+07.02. 13:30,Casertana,Foggia,3,2
+07.02. 13:30,Crotone,Atalanta U23,1,0
+07.02. 13:30,Giugliano,Cosenza,3,0
+06.02. 19:30,Altamura,Monopoli,2,0
+06.02. 19:30,Audace Cerignola,Salernitana,1,0
+06.02. 19:30,Benevento,Picerno,1,0
+06.02. 19:30,Latina,Cavese,0,0
+01.02. 19:30,Foggia,Audace Cerignola,1,3
+01.02. 19:30,Salernitana,Giugliano,1,1
+01.02. 16:30,Cosenza,Casertana,3,1
+01.02. 16:30,Picerno,Potenza,2,0
+01.02. 16:30,Siracusa,Crotone,1,3
+01.02. 13:30,Atalanta U23,Benevento,3,4
+01.02. 13:30,Monopoli,Latina,1,0
+01.02. 13:30,Trapani,Altamura,0,1
+31.01. 13:30,Cavese,Casarano,1,1
+31.01. 13:30,Sorrento,Catania,3,1
+25.01. 19:30,Audace Cerignola,Monopoli,0,0
+25.01. 13:30,Casertana,Trapani,0,1
+25.01. 13:30,Catania,Cosenza,2,0
+25.01. 13:30,Sorrento,Salernitana,0,2
+25.01. 11:30,Altamura,Atalanta U23,1,1
+24.01. 16:30,Casarano,Picerno,2,2
+24.01. 16:30,Crotone,Potenza,2,0
+24.01. 13:30,Benevento,Siracusa,3,2
+24.01. 13:30,Latina,Foggia,2,0
+23.01. 19:30,Giugliano,Cavese,0,0
+19.01. 19:30,Cosenza,Crotone,0,2
+18.01. 19:30,Foggia,Giugliano,2,1
+18.01. 19:30,Monopoli,Catania,1,2
+18.01. 16:30,Picerno,Latina,0,0
+18.01. 13:30,Potenza,Casertana,2,0
+18.01. 13:30,Siracusa,Audace Cerignola,0,1
+18.01. 13:30,Trapani,Sorrento,4,0
+18.01. 11:30,Atalanta U23,Salernitana,0,1
+17.01. 13:30,Benevento,Casarano,3,0
+16.01. 19:30,Cavese,Altamura,1,2
+12.01. 19:30,Giugliano,Picerno,0,1
+12.01. 19:30,Salernitana,Cosenza,0,0
+11.01. 16:30,Casertana,Benevento,0,0
+11.01. 13:30,Catania,Cavese,2,0
+11.01. 13:30,Monopoli,Siracusa,1,0
+11.01. 11:30,Casarano,Atalanta U23,0,1
+10.01. 16:30,Crotone,Altamura,0,1
+10.01. 16:30,Sorrento,Foggia,2,1
+10.01. 13:30,Latina,Trapani,2,1
+09.01. 19:30,Audace Cerignola,Potenza,4,0
+05.01. 19:30,Altamura,Casertana,0,2
+05.01. 19:30,Benevento,Crotone,2,1
+05.01. 19:30,Cosenza,Monopoli,0,2
+04.01. 16:30,Trapani,Casarano,1,0
+04.01. 13:30,Potenza,Giugliano,0,0
+04.01. 13:30,Siracusa,Salernitana,3,1
+04.01. 11:30,Atalanta U23,Latina,1,2
+04.01. 11:30,Foggia,Catania,1,1
+03.01. 19:30,Cavese,Sorrento,1,0
+03.01. 16:30,Picerno,Audace Cerignola,1,1
+21.12. 19:30,Casarano,Altamura,1,0
+21.12. 19:30,Siracusa,Trapani,3,0
+21.12. 16:30,Monopoli,Potenza,2,1
+21.12. 13:30,Catania,Atalanta U23,2,0
+21.12. 13:30,Latina,Crotone,1,1
+20.12. 13:30,Salernitana,Foggia,2,1
+20.12. 13:30,Sorrento,Picerno,1,1
+19.12. 19:30,Audace Cerignola,Benevento,0,4
+19.12. 19:30,Cosenza,Cavese,2,1
+19.12. 19:30,Giugliano,Casertana,0,3
+15.12. 19:30,Crotone,Casarano,2,0
+15.12. 19:30,Foggia,Monopoli,2,1
+14.12. 19:30,Altamura,Audace Cerignola,1,1
+14.12. 16:30,Benevento,Giugliano,4,0
+14.12. 16:30,Casertana,Latina,3,1
+14.12. 13:30,Potenza,Catania,1,1
+14.12. 11:30,Atalanta U23,Sorrento,1,2
+13.12. 13:30,Cavese,Siracusa,1,1
+13.12. 13:30,Picerno,Salernitana,1,2
+13.12. 13:30,Trapani,Cosenza,1,1
+07.12. 16:30,Audace Cerignola,Casertana,1,1
+07.12. 16:30,Cavese,Benevento,0,1
+07.12. 16:30,Cosenza,Picerno,1,0
+07.12. 13:30,Monopoli,Atalanta U23,1,1
+07.12. 13:30,Salernitana,Trapani,1,1
+06.12. 16:30,Giugliano,Altamura,0,1
+06.12. 13:30,Casarano,Latina,1,1
+06.12. 13:30,Siracusa,Foggia,2,2
+06.12. 13:30,Sorrento,Potenza,2,2
+05.12. 19:30,Catania,Crotone,2,0
+03.12. 16:30,Casertana,Atalanta U23,1,0
+01.12. 19:30,Benevento,Salernitana,5,1
+30.11. 19:30,Latina,Audace Cerignola,0,2
+30.11. 19:30,Potenza,Casarano,3,1
+30.11. 16:30,Foggia,Cosenza,2,1
+30.11. 13:30,Atalanta U23,Siracusa,3,1
+30.11. 13:30,Trapani,Monopoli,1,1
+29.11. 16:30,Altamura,Sorrento,1,2
+29.11. 16:30,Crotone,Giugliano,1,0
+29.11. 13:30,Casertana,Cavese,3,1
+29.11. 13:30,Picerno,Catania,0,1
+23.11. 16:30,Salernitana,Potenza,1,1
+23.11. 13:30,Catania,Latina,1,0
+23.11. 13:30,Cosenza,Benevento,2,1
+23.11. 11:30,Cavese,Atalanta U23,2,2
+22.11. 16:30,Monopoli,Picerno,0,2
+22.11. 13:30,Giugliano,Casarano,1,3
+22.11. 13:30,Siracusa,Altamura,1,1
+22.11. 13:30,Sorrento,Casertana,1,2
+22.11. 13:30,Trapani,Foggia,3,1
+21.11. 19:30,Audace Cerignola,Crotone,2,0
+17.11. 19:30,Foggia,Cavese,0,0
+16.11. 13:30,Altamura,Salernitana,1,2
+16.11. 13:30,Giugliano,Audace Cerignola,0,1
+16.11. 13:30,Potenza,Trapani,2,1
+16.11. 11:30,Benevento,Monopoli,3,1
+15.11. 13:30,Casarano,Catania,1,0
+15.11. 13:30,Crotone,Sorrento,3,1
+15.11. 13:30,Latina,Cosenza,0,1
+15.11. 13:30,Picerno,Siracusa,1,2
+10.11. 19:30,Salernitana,Crotone,0,0
+09.11. 19:30,Foggia,Benevento,0,3
+09.11. 16:30,Monopoli,Casertana,1,1
+09.11. 16:30,Sorrento,Audace Cerignola,1,2
+09.11. 13:30,Catania,Altamura,2,0
+09.11. 13:30,Siracusa,Latina,3,1
+08.11. 16:30,Cosenza,Casarano,4,1
+08.11. 13:30,Atalanta U23,Giugliano,0,1
+08.11. 13:30,Trapani,Picerno,2,1
+07.11. 19:30,Cavese,Potenza,3,0
+02.11. 19:30,Benevento,Sorrento,1,1
+02.11. 16:30,Giugliano,Siracusa,2,1
+02.11. 16:30,Latina,Salernitana,0,0
+02.11. 13:30,Crotone,Trapani,1,2
+02.11. 13:30,Potenza,Foggia,3,0
+01.11. 13:30,Altamura,Cosenza,1,1
+01.11. 13:30,Audace Cerignola,Atalanta U23,2,4
+01.11. 13:30,Casarano,Monopoli,1,3
+31.10. 19:30,Casertana,Catania,2,2
+31.10. 19:30,Picerno,Cavese,2,2
+26.10. 19:30,Salernitana,Casertana,2,1
+26.10. 16:30,Monopoli,Giugliano,3,1
+26.10. 16:30,Sorrento,Latina,2,2
+26.10. 13:30,Catania,Benevento,1,0
+26.10. 13:30,Cosenza,Potenza,3,0
+26.10. 11:30,Trapani,Audace Cerignola,2,1
+25.10. 15:30,Siracusa,Casarano,4,1
+25.10. 12:30,Atalanta U23,Picerno,6,2
+25.10. 12:30,Cavese,Crotone,1,0
+24.10. 18:30,Foggia,Altamura,0,1
+19.10. 18:30,Altamura,Picerno,3,1
+19.10. 15:30,Audace Cerignola,Cavese,1,3
+19.10. 12:30,Atalanta U23,Trapani,2,0
+19.10. 12:30,Benevento,Potenza,2,0
+19.10. 12:30,Catania,Salernitana,2,0
+19.10. 10:30,Casertana,Siracusa,1,0
+18.10. 15:30,Latina,Giugliano,0,1
+18.10. 12:30,Casarano,Foggia,0,2
+18.10. 12:30,Crotone,Monopoli,0,1
+18.10. 12:30,Sorrento,Cosenza,2,2
+12.10. 15:30,Benevento,Altamura,4,0
+12.10. 12:30,Casarano,Audace Cerignola,3,0
+12.10. 12:30,Cavese,Trapani,0,1
+12.10. 12:30,Cosenza,Atalanta U23,1,2
+12.10. 12:30,Potenza,Latina,0,0
+12.10. 12:30,Siracusa,Sorrento,0,1
+12.10. 10:30,Monopoli,Salernitana,0,1
+11.10. 12:30,Foggia,Crotone,0,3
+11.10. 12:30,Giugliano,Catania,0,3
+11.10. 12:30,Picerno,Casertana,0,2
+05.10. 18:30,Audace Cerignola,Cosenza,1,2
+05.10. 15:30,Altamura,Potenza,2,2
+05.10. 15:30,Sorrento,Monopoli,0,0
+05.10. 12:30,Casertana,Casarano,0,3
+05.10. 12:30,Catania,Siracusa,2,0
+05.10. 12:30,Salernitana,Cavese,3,2
+05.10. 12:30,Trapani,Giugliano,1,1
+04.10. 15:30,Crotone,Picerno,3,0
+04.10. 12:30,Atalanta U23,Foggia,1,1
+03.10. 18:30,Latina,Benevento,1,0
+29.09. 18:30,Giugliano,Sorrento,0,1
+29.09. 18:30,Picerno,Foggia,2,1
+28.09. 18:30,Monopoli,Cavese,0,2
+28.09. 15:30,Audace Cerignola,Catania,0,0
+28.09. 15:30,Latina,Altamura,0,0
+28.09. 15:30,Siracusa,Cosenza,0,1
+28.09. 13:00,Benevento,Trapani,2,0
+28.09. 13:00,Casarano,Salernitana,2,2
+28.09. 13:00,Crotone,Casertana,0,1
+28.09. 10:30,Potenza,Atalanta U23,1,0
+24.09. 18:45,Atalanta U23,Crotone,1,2
+24.09. 18:45,Monopoli,Altamura,1,1
+24.09. 18:45,Picerno,Benevento,2,2
+24.09. 18:30,Trapani,Catania,1,1
+24.09. 16:30,Cavese,Latina,0,2
+24.09. 16:30,Cosenza,Giugliano,4,1
+24.09. 16:30,Foggia,Casertana,1,1
+24.09. 16:30,Salernitana,Audace Cerignola,2,3
+24.09. 16:30,Siracusa,Potenza,2,1
+24.09. 16:30,Sorrento,Casarano,3,3
+21.09. 15:30,Giugliano,Salernitana,1,2
+21.09. 15:30,Potenza,Picerno,2,0
+21.09. 15:00,Benevento,Atalanta U23,2,0
+21.09. 13:00,Altamura,Trapani,1,1
+21.09. 13:00,Casarano,Cavese,3,0
+20.09. 15:30,Audace Cerignola,Foggia,0,0
+20.09. 15:30,Casertana,Cosenza,1,1
+20.09. 15:30,Catania,Sorrento,0,0
+20.09. 15:30,Crotone,Siracusa,2,0
+20.09. 15:30,Latina,Monopoli,0,1
+17.09. 18:00,Salernitana,Atalanta U23,1,0
+15.09. 18:30,Cavese,Giugliano,2,2
+14.09. 18:30,Salernitana,Sorrento,2,1
+14.09. 15:30,Trapani,Casertana,2,0
+14.09. 13:00,Atalanta U23,Altamura,0,0
+14.09. 13:00,Cosenza,Catania,4,1
+13.09. 15:30,Picerno,Casarano,1,2
+13.09. 15:30,Siracusa,Benevento,0,3
+12.09. 18:30,Foggia,Latina,1,1
+12.09. 18:30,Monopoli,Audace Cerignola,2,0
+12.09. 18:30,Potenza,Crotone,3,3
+07.09. 18:30,Altamura,Cavese,2,1
+07.09. 18:30,Audace Cerignola,Siracusa,3,1
+07.09. 18:30,Latina,Picerno,1,2
+07.09. 15:30,Crotone,Cosenza,0,0
+06.09. 18:30,Casarano,Benevento,1,0
+06.09. 18:30,Casertana,Potenza,3,2
+06.09. 18:30,Catania,Monopoli,4,0
+06.09. 15:30,Giugliano,Foggia,1,0
+06.09. 15:30,Sorrento,Trapani,1,2
+31.08. 19:00,Benevento,Casertana,2,1
+31.08. 19:00,Cosenza,Salernitana,1,2
+31.08. 19:00,Siracusa,Monopoli,1,2
+31.08. 16:00,Altamura,Crotone,0,4
+31.08. 16:00,Picerno,Giugliano,2,2
+30.08. 19:00,Foggia,Sorrento,1,0
+30.08. 19:00,Potenza,Audace Cerignola,0,0
+30.08. 19:00,Trapani,Latina,6,0
+30.08. 16:00,Cavese,Catania,0,1
+29.08. 19:00,Atalanta U23,Casarano,6,2
+25.08. 19:00,Audace Cerignola,Picerno,2,2
+25.08. 19:00,Casertana,Altamura,3,1
+25.08. 19:00,Crotone,Benevento,1,2
+25.08. 19:00,Salernitana,Siracusa,1,0
+24.08. 19:00,Casarano,Trapani,0,0
+24.08. 19:00,Catania,Foggia,6,0
+24.08. 19:00,Monopoli,Cosenza,2,2
+24.08. 16:00,Giugliano,Potenza,2,3
+24.08. 16:00,Latina,Atalanta U23,1,0
+24.08. 16:00,Sorrento,Cavese,0,0

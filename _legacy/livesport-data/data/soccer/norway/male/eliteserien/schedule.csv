@@ -1,0 +1,116 @@
+date,home,away
+14.03. 13:00,Sarpsborg 08,Bodo/Glimt
+14.03. 15:00,HamKam,Viking
+14.03. 17:00,Molde,Rosenborg
+15.03. 13:30,Kristiansund,Brann
+15.03. 16:00,Aalesund,Lillestrom
+15.03. 16:00,KFUM Oslo,Start
+15.03. 16:00,Valerenga,Sandefjord
+15.03. 18:15,Tromso,Fredrikstad
+21.03. 15:00,Start,Aalesund
+21.03. 17:00,Viking,Molde
+22.03. 13:30,Rosenborg,Valerenga
+22.03. 16:00,Brann,Tromso
+22.03. 16:00,Fredrikstad,KFUM Oslo
+22.03. 16:00,Lillestrom,Kristiansund
+22.03. 16:00,Sandefjord,Sarpsborg 08
+22.03. 18:15,Bodo/Glimt,HamKam
+06.04. 12:30,Valerenga,Viking
+06.04. 15:00,HamKam,Brann
+06.04. 15:00,Kristiansund,Bodo/Glimt
+06.04. 15:00,Molde,Lillestrom
+06.04. 15:00,Sarpsborg 08,Start
+06.04. 17:15,Tromso,Rosenborg
+07.04. 17:00,Aalesund,Fredrikstad
+07.04. 17:00,KFUM Oslo,Sandefjord
+11.04. 12:00,Lillestrom,Start
+11.04. 14:00,Tromso,Kristiansund
+11.04. 16:00,Viking,Bodo/Glimt
+12.04. 12:30,Rosenborg,Sarpsborg 08
+12.04. 15:00,Aalesund,KFUM Oslo
+12.04. 15:00,Fredrikstad,Valerenga
+12.04. 15:00,Molde,HamKam
+12.04. 17:15,Brann,Sandefjord
+15.04. 17:00,Tromso,Lillestrom
+18.04. 12:00,Bodo/Glimt,Aalesund
+18.04. 14:00,Sandefjord,Rosenborg
+18.04. 16:00,Viking,Brann
+19.04. 12:30,Valerenga,Lillestrom
+19.04. 15:00,HamKam,KFUM Oslo
+19.04. 15:00,Kristiansund,Fredrikstad
+19.04. 15:00,Sarpsborg 08,Tromso
+19.04. 17:15,Start,Molde
+25.04. 14:00,Fredrikstad,Viking
+25.04. 16:00,Rosenborg,Brann
+26.04. 12:30,Molde,Valerenga
+26.04. 15:00,Aalesund,Kristiansund
+26.04. 15:00,HamKam,Start
+26.04. 15:00,KFUM Oslo,Sarpsborg 08
+26.04. 15:00,Tromso,Sandefjord
+26.04. 17:15,Lillestrom,Bodo/Glimt
+29.04. 17:00,Tromso,Brann
+30.04. 17:00,Bodo/Glimt,Start
+01.05. 16:00,Viking,Rosenborg
+02.05. 16:00,Brann,Fredrikstad
+03.05. 12:30,Lillestrom,Sarpsborg 08
+03.05. 15:00,Kristiansund,HamKam
+03.05. 15:00,Sandefjord,Aalesund
+03.05. 15:00,Start,Tromso
+03.05. 17:15,Valerenga,KFUM Oslo
+04.05. 17:00,Bodo/Glimt,Molde
+08.05. 17:00,HamKam,Valerenga
+09.05. 12:00,Sarpsborg 08,Fredrikstad
+10.05. 12:30,Rosenborg,Lillestrom
+10.05. 15:00,KFUM Oslo,Viking
+10.05. 15:00,Sandefjord,Kristiansund
+10.05. 15:00,Start,Bodo/Glimt
+10.05. 15:00,Tromso,Molde
+10.05. 17:15,Aalesund,Brann
+16.05. 12:00,Brann,KFUM Oslo
+16.05. 14:00,Fredrikstad,HamKam
+16.05. 14:00,Lillestrom,Sandefjord
+16.05. 14:00,Molde,Kristiansund
+16.05. 14:00,Rosenborg,Aalesund
+16.05. 14:00,Viking,Start
+16.05. 16:00,Bodo/Glimt,Tromso
+16.05. 18:00,Valerenga,Sarpsborg 08
+25.05. 15:00,Bodo/Glimt,Brann
+25.05. 15:00,HamKam,Lillestrom
+25.05. 15:00,KFUM Oslo,Rosenborg
+25.05. 15:00,Kristiansund,Viking
+25.05. 15:00,Sandefjord,Fredrikstad
+25.05. 15:00,Sarpsborg 08,Molde
+25.05. 15:00,Start,Valerenga
+25.05. 15:00,Tromso,Aalesund
+29.05. 17:00,Aalesund,HamKam
+29.05. 17:00,Brann,Sarpsborg 08
+29.05. 17:00,Fredrikstad,Start
+29.05. 17:00,KFUM Oslo,Tromso
+29.05. 17:00,Lillestrom,Viking
+29.05. 17:00,Molde,Sandefjord
+29.05. 17:00,Rosenborg,Bodo/Glimt
+29.05. 17:00,Valerenga,Kristiansund
+05.07. 15:00,Bodo/Glimt,Valerenga
+05.07. 15:00,HamKam,Rosenborg
+05.07. 15:00,Kristiansund,KFUM Oslo
+05.07. 15:00,Lillestrom,Brann
+05.07. 15:00,Molde,Fredrikstad
+05.07. 15:00,Sarpsborg 08,Aalesund
+05.07. 15:00,Start,Sandefjord
+05.07. 15:00,Viking,Tromso
+12.07. 15:00,Aalesund,Molde
+12.07. 15:00,Brann,Start
+12.07. 15:00,Fredrikstad,Lillestrom
+12.07. 15:00,KFUM Oslo,Bodo/Glimt
+12.07. 15:00,Rosenborg,Kristiansund
+12.07. 15:00,Sandefjord,HamKam
+12.07. 15:00,Sarpsborg 08,Viking
+12.07. 15:00,Tromso,Valerenga
+18.07. 14:00,Bodo/Glimt,Fredrikstad
+18.07. 14:00,HamKam,Tromso
+18.07. 14:00,Kristiansund,Sarpsborg 08
+18.07. 14:00,Lillestrom,KFUM Oslo
+18.07. 14:00,Molde,Brann
+18.07. 14:00,Start,Rosenborg
+18.07. 14:00,Valerenga,Aalesund
+18.07. 14:00,Viking,Sandefjord

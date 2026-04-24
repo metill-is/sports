@@ -1,0 +1,106 @@
+date,home,away
+06.04. 12:00,Orkla,Strindheim
+06.04. 13:00,FK Kvik,Nardo
+06.04. 13:00,Ntnui,Spjelkavik
+06.04. 14:00,Volda TI,Aalesund 2
+07.04. 16:00,Herd,Molde 2
+07.04. 17:00,Byasen,Rosenborg 2
+07.04. 17:00,Ranheim 2,Melhus
+11.04. 11:00,Nardo,Volda TI
+11.04. 12:00,Strindheim,Byasen
+11.04. 13:00,Aalesund 2,FK Kvik
+12.04. 12:00,Spjelkavik,Herd
+13.04. 12:00,Molde 2,Ranheim 2
+13.04. 17:00,Melhus,Ntnui
+13.04. 17:00,Rosenborg 2,Orkla
+18.04. 11:00,Volda TI,Melhus
+18.04. 12:00,Orkla,Byasen
+18.04. 13:00,Ntnui,Strindheim
+18.04. 13:00,Ranheim 2,Spjelkavik
+19.04. 14:00,Herd,Rosenborg 2
+19.04. 16:00,Nardo,Aalesund 2
+20.04. 16:00,FK Kvik,Molde 2
+25.04. 12:00,Orkla,Ranheim 2
+25.04. 12:00,Spjelkavik,Volda TI
+25.04. 13:00,Byasen,Ntnui
+25.04. 13:00,Molde 2,Nardo
+25.04. 13:30,Strindheim,Herd
+27.04. 17:00,Melhus,FK Kvik
+27.04. 17:00,Rosenborg 2,Aalesund 2
+01.05. 14:00,Herd,Byasen
+02.05. 12:00,Nardo,Orkla
+02.05. 12:00,Ranheim 2,Strindheim
+02.05. 13:00,Aalesund 2,Melhus
+02.05. 13:00,FK Kvik,Spjelkavik
+02.05. 13:00,Ntnui,Rosenborg 2
+05.05. 16:00,Volda TI,Molde 2
+08.05. 17:00,Melhus,Nardo
+09.05. 11:00,Strindheim,Volda TI
+09.05. 12:30,Orkla,Herd
+09.05. 13:00,Byasen,Ranheim 2
+09.05. 13:00,Molde 2,Ntnui
+11.05. 16:00,Spjelkavik,Aalesund 2
+11.05. 17:00,Rosenborg 2,FK Kvik
+14.05. 12:00,Nardo,Byasen
+14.05. 12:00,Ntnui,Orkla
+14.05. 13:00,Aalesund 2,Molde 2
+14.05. 13:00,FK Kvik,Strindheim
+14.05. 13:00,Spjelkavik,Melhus
+15.05. 17:00,Ranheim 2,Rosenborg 2
+16.05. 13:00,Volda TI,Herd
+21.05. 17:00,Ntnui,Ranheim 2
+22.05. 16:30,Molde 2,Spjelkavik
+22.05. 17:00,Byasen,FK Kvik
+22.05. 17:00,Orkla,Melhus
+23.05. 11:00,Rosenborg 2,Volda TI
+25.05. 12:00,Strindheim,Nardo
+26.05. 16:00,Herd,Aalesund 2
+30.05. 12:00,FK Kvik,Orkla
+30.05. 12:00,Nardo,Rosenborg 2
+30.05. 12:00,Volda TI,Ntnui
+30.05. 13:00,Spjelkavik,Byasen
+30.05. 13:30,Ranheim 2,Herd
+31.05. 14:00,Aalesund 2,Strindheim
+01.06. 16:00,Melhus,Molde 2
+03.06. 17:00,Ntnui,FK Kvik
+13.06. 11:00,Orkla,Volda TI
+13.06. 13:00,Rosenborg 2,Molde 2
+13.06. 13:00,Strindheim,Spjelkavik
+13.06. 13:30,Herd,Nardo
+13.06. 16:30,Ntnui,Aalesund 2
+14.06. 12:00,Byasen,Melhus
+15.06. 17:00,Ranheim 2,FK Kvik
+19.06. 17:00,Melhus,Rosenborg 2
+20.06. 11:00,Volda TI,Byasen
+20.06. 12:00,Nardo,Ntnui
+20.06. 13:30,FK Kvik,Herd
+20.06. 13:30,Spjelkavik,Orkla
+21.06. 13:00,Molde 2,Strindheim
+22.06. 16:00,Aalesund 2,Ranheim 2
+25.06. 17:00,Strindheim,Melhus
+27.06. 11:00,FK Kvik,Volda TI
+27.06. 13:00,Herd,Ntnui
+27.06. 13:00,Orkla,Molde 2
+27.06. 13:00,Ranheim 2,Nardo
+27.06. 13:00,Rosenborg 2,Spjelkavik
+29.06. 17:00,Byasen,Aalesund 2
+25.07. 13:00,Molde 2,Byasen
+25.07. 13:00,Spjelkavik,Nardo
+25.07. 13:30,Melhus,Herd
+25.07. 14:00,Aalesund 2,Orkla
+27.07. 16:00,Volda TI,Ranheim 2
+27.07. 17:00,Rosenborg 2,Strindheim
+31.07. 17:00,Herd,Volda TI
+01.08. 13:00,Byasen,Spjelkavik
+03.08. 16:00,Nardo,Molde 2
+03.08. 16:00,Strindheim,Aalesund 2
+03.08. 17:00,FK Kvik,Melhus
+03.08. 17:00,Orkla,Rosenborg 2
+05.08. 17:00,Ranheim 2,Ntnui
+08.08. 10:00,Ntnui,Byasen
+08.08. 11:00,Volda TI,Nardo
+08.08. 12:00,Melhus,Orkla
+08.08. 13:00,Molde 2,FK Kvik
+08.08. 14:00,Spjelkavik,Strindheim
+10.08. 16:30,Aalesund 2,Herd
+10.08. 17:00,Rosenborg 2,Ranheim 2

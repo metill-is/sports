@@ -1,0 +1,105 @@
+date,home,away,home_score,away_score
+15.03. 15:00,Kielce,Chrobry Glogow,37,25
+15.03. 11:30,Zaglebie,Stal Mielec,31,33
+14.03. 17:00,Piotrkowianin Piotrkow,Wybrzeze Gdansk,28,35
+14.03. 15:00,Wisla Plock,Legionowo,34,18
+13.03. 17:00,MMTS Kwidzyn,Kalisz,30,29
+13.03. 17:00,Ostrow Wielkopolski,Puławy,38,23
+09.03. 19:30,Stal Mielec,MMTS Kwidzyn,27,30
+09.03. 17:00,Gwardia Opole,Chrobry Glogow,22,26
+08.03. 17:00,Kalisz,Piotrkowianin Piotrkow,32,23
+08.03. 11:30,Kielce,Ostrow Wielkopolski,37,30
+07.03. 19:00,Legionowo,Zaglebie,36,22
+06.03. 17:00,Puławy,Wisla Plock,23,41
+02.03. 17:00,Gwardia Opole,Wybrzeze Gdansk,34,36
+01.03. 11:30Pen,Wisla Plock,Kielce,32,31
+28.02. 17:00,MMTS Kwidzyn,Legionowo,31,26
+28.02. 17:00,Piotrkowianin Piotrkow,Stal Mielec,27,31
+28.02. 14:00,Ostrow Wielkopolski,Chrobry Glogow,30,26
+27.02. 17:00Pen,Zaglebie,Puławy,31,33
+23.02. 19:30,Chrobry Glogow,Wybrzeze Gdansk,25,26
+22.02. 17:00,Kalisz,Gwardia Opole,29,31
+21.02. 15:00,Kielce,Zaglebie,43,26
+21.02. 15:00,Legionowo,Piotrkowianin Piotrkow,32,24
+21.02. 15:00,Puławy,MMTS Kwidzyn,35,43
+21.02. 14:00,Ostrow Wielkopolski,Wisla Plock,25,29
+16.02. 19:30,Wybrzeze Gdansk,Kalisz,31,35
+15.02. 17:00,Zaglebie,Ostrow Wielkopolski,23,28
+14.02. 17:00,Piotrkowianin Piotrkow,Puławy,34,31
+14.02. 15:00,MMTS Kwidzyn,Kielce,25,38
+14.02. 15:00,Wisla Plock,Chrobry Glogow,36,24
+14.02. 14:00,Gwardia Opole,Stal Mielec,25,20
+09.02. 19:30,Legionowo,Gwardia Opole,40,35
+09.02. 17:00,Stal Mielec,Wybrzeze Gdansk,30,37
+08.02. 17:00,Zaglebie,Wisla Plock,22,37
+08.02. 15:00,Ostrow Wielkopolski,MMTS Kwidzyn,30,28
+08.02. 15:00,Piotrkowianin Piotrkow,Kielce,22,41
+08.02. 11:30,Chrobry Glogow,Kalisz,27,25
+22.12. 19:30,Gwardia Opole,Puławy,38,27
+21.12. 11:30,Kalisz,Stal Mielec,27,24
+20.12. 17:00,Wybrzeze Gdansk,Legionowo,34,26
+20.12. 15:00,Piotrkowianin Piotrkow,Ostrow Wielkopolski,21,29
+19.12. 19:00,Zaglebie,Chrobry Glogow,28,30
+17.12. 19:00,Puławy,Kielce,30,46
+17.12. 17:00,Wisla Plock,MMTS Kwidzyn,38,28
+15.12. 19:30Pen,Legionowo,Kalisz,28,27
+15.12. 17:00Pen,Zaglebie,MMTS Kwidzyn,34,32
+14.12. 17:00,Chrobry Glogow,Stal Mielec,30,25
+14.12. 11:30,Puławy,Wybrzeze Gdansk,31,42
+13.12. 17:00,Wisla Plock,Piotrkowianin Piotrkow,34,21
+13.12. 15:00,Kielce,Gwardia Opole,48,26
+11.12. 19:30,Stal Mielec,Legionowo,27,23
+10.12. 19:30,Wybrzeze Gdansk,Kielce,22,38
+10.12. 19:00,Kalisz,Puławy,37,27
+10.12. 17:00,Gwardia Opole,Ostrow Wielkopolski,21,29
+10.12. 17:00,MMTS Kwidzyn,Chrobry Glogow,27,26
+10.12. 17:00Pen,Piotrkowianin Piotrkow,Zaglebie,36,38
+08.12. 19:30,Wisla Plock,Gwardia Opole,36,22
+07.12. 11:30,Puławy,Stal Mielec,28,31
+06.12. 17:00,MMTS Kwidzyn,Piotrkowianin Piotrkow,36,32
+06.12. 15:00,Kielce,Kalisz,43,26
+05.12. 16:30,Ostrow Wielkopolski,Wybrzeze Gdansk,28,27
+04.12. 17:00,Chrobry Glogow,Legionowo,31,27
+30.11. 11:30,Zaglebie,Gwardia Opole,30,36
+29.11. 17:00,Piotrkowianin Piotrkow,Chrobry Glogow,29,36
+29.11. 17:00,Wisla Plock,Wybrzeze Gdansk,35,30
+29.11. 15:00,Kielce,Stal Mielec,41,25
+29.11. 14:00,Ostrow Wielkopolski,Kalisz,25,23
+28.11. 17:00,Puławy,Legionowo,26,36
+24.11. 19:30,Gwardia Opole,MMTS Kwidzyn,31,34
+23.11. 15:00,Legionowo,Kielce,21,34
+23.11. 15:00,Wybrzeze Gdansk,Zaglebie,35,30
+22.11. 15:00,Kalisz,Wisla Plock,28,41
+22.11. 14:00,Chrobry Glogow,Puławy,39,28
+22.11. 14:00,Stal Mielec,Ostrow Wielkopolski,21,28
+17.11. 19:30,Piotrkowianin Piotrkow,Gwardia Opole,27,26
+16.11. 11:30Pen,MMTS Kwidzyn,Wybrzeze Gdansk,35,34
+15.11. 17:00,Wisla Plock,Stal Mielec,38,24
+15.11. 15:00,Kielce,Puławy,49,29
+15.11. 13:00,Zaglebie,Kalisz,30,26
+14.11. 17:00,Ostrow Wielkopolski,Legionowo,28,24
+10.11. 19:30,Kalisz,MMTS Kwidzyn,32,31
+09.11. 15:00,Wybrzeze Gdansk,Piotrkowianin Piotrkow,34,18
+09.11. 11:30,Legionowo,Wisla Plock,21,33
+08.11. 17:00,Chrobry Glogow,Kielce,23,37
+08.11. 15:00,Puławy,Ostrow Wielkopolski,32,36
+07.11. 17:00,Stal Mielec,Zaglebie,27,26
+26.10. 15:00,Piotrkowianin Piotrkow,Kalisz,22,30
+26.10. 11:30,MMTS Kwidzyn,Stal Mielec,29,30
+25.10. 16:00,Chrobry Glogow,Gwardia Opole,28,27
+25.10. 16:00,Wisla Plock,Puławy,42,25
+25.10. 13:00,Ostrow Wielkopolski,Kielce,24,38
+23.10. 18:00,Zaglebie,Legionowo,24,31
+19.10. 14:00Pen,Stal Mielec,Piotrkowianin Piotrkow,32,34
+19.10. 14:00,Wybrzeze Gdansk,Gwardia Opole,28,25
+19.10. 10:30,Kielce,Wisla Plock,27,32
+18.10. 16:00,Legionowo,MMTS Kwidzyn,26,24
+18.10. 16:00,Puławy,Zaglebie,32,31
+17.10. 18:00,Chrobry Glogow,Ostrow Wielkopolski,32,31
+13.10. 18:30,MMTS Kwidzyn,Puławy,35,30
+12.10. 14:00,Gwardia Opole,Kalisz,23,25
+12.10. 14:00,Piotrkowianin Piotrkow,Legionowo,30,33
+12.10. 13:00,Zaglebie,Kielce,24,45
+12.10. 10:30,Wybrzeze Gdansk,Chrobry Glogow,37,30
+06.10. 18:30,Stal Mielec,Gwardia Opole,25,31
+06.10. 16:00,Puławy,Piotrkowianin Piotrkow,30,29

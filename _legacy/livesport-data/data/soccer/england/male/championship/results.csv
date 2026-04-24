@@ -1,0 +1,468 @@
+date,home,away,home_score,away_score
+21.03. 17:15,Swansea,Coventry,0,3
+21.03. 15:00,Bristol City,West Brom,0,1
+21.03. 15:00,Charlton,Norwich,0,1
+21.03. 15:00,Hull,Sheffield Wed,3,1
+21.03. 15:00,QPR,Portsmouth,6,1
+21.03. 15:00,Sheffield Utd,Wrexham,1,2
+21.03. 15:00,Southampton,Oxford Utd,2,0
+21.03. 15:00,Watford,Leicester,0,0
+21.03. 12:30,Blackburn,Middlesbrough,0,0
+21.03. 12:30,Derby,Birmingham,1,0
+21.03. 12:30,Ipswich,Millwall,1,1
+20.03. 20:00,Preston,Stoke,3,1
+18.03. 19:45,Southampton,Norwich,1,0
+17.03. 19:45,Watford,Wrexham,3,1
+16.03. 20:00,Portsmouth,Derby,0,1
+14.03. 15:00,Birmingham,Sheffield Utd,1,1
+14.03. 15:00,Leicester,QPR,1,3
+14.03. 15:00,Millwall,Blackburn,1,2
+14.03. 15:00,Norwich,Preston,2,0
+14.03. 15:00,Sheffield Wed,Ipswich,0,2
+14.03. 15:00,Stoke,Watford,3,1
+14.03. 15:00,West Brom,Hull,3,0
+14.03. 12:30,Coventry,Southampton,1,2
+14.03. 12:30,Middlesbrough,Bristol City,1,1
+14.03. 12:30,Oxford Utd,Charlton,1,1
+13.03. 20:00,Wrexham,Swansea,2,0
+11.03. 20:00,Coventry,Preston,3,0
+11.03. 19:45,Birmingham,QPR,1,0
+11.03. 19:45,Middlesbrough,Charlton,0,1
+11.03. 19:45,Norwich,Sheffield Utd,2,1
+11.03. 19:45,Oxford Utd,Blackburn,1,0
+11.03. 19:45,West Brom,Southampton,1,1
+10.03. 20:00,Stoke,Ipswich,3,3
+10.03. 19:45,Leicester,Bristol City,2,0
+10.03. 19:45,Millwall,Derby,1,0
+10.03. 19:45,Portsmouth,Swansea,1,2
+10.03. 19:45,Sheffield Wed,Watford,1,1
+10.03. 19:45,Wrexham,Hull,1,2
+08.03. 16:30,QPR,Middlesbrough,0,4
+07.03. 15:00,Bristol City,Coventry,0,2
+07.03. 15:00,Charlton,Birmingham,1,0
+07.03. 15:00,Derby,Sheffield Wed,2,1
+07.03. 15:00,Ipswich,Leicester,1,1
+07.03. 15:00,Sheffield Utd,West Brom,1,1
+07.03. 15:00,Swansea,Stoke,2,0
+07.03. 12:30,Blackburn,Portsmouth,1,1
+07.03. 12:30,Hull,Millwall,1,3
+06.03. 20:00,Preston,Oxford Utd,1,3
+03.03. 19:45,Ipswich,Hull,1,0
+02.03. 20:00,Birmingham,Middlesbrough,1,3
+28.02. 15:00,Charlton,Wrexham,0,1
+28.02. 15:00,Coventry,Stoke,2,1
+28.02. 15:00,Ipswich,Swansea,3,0
+28.02. 15:00,Oxford Utd,West Brom,2,1
+28.02. 15:00,Preston,Millwall,0,2
+28.02. 15:00,QPR,Sheffield Utd,0,2
+28.02. 15:00,Sheffield Wed,Southampton,1,3
+28.02. 12:30,Derby,Blackburn,3,1
+28.02. 12:30,Leicester,Norwich,0,2
+28.02. 12:30,Portsmouth,Hull,0,1
+27.02. 20:00,Bristol City,Watford,1,2
+25.02. 20:00,Stoke,Oxford Utd,2,1
+25.02. 19:45,Millwall,Birmingham,3,0
+25.02. 19:45,Norwich,Sheffield Wed,2,0
+25.02. 19:45,Sheffield Utd,Coventry,1,2
+24.02. 20:00,Southampton,QPR,5,0
+24.02. 19:45,Blackburn,Bristol City,1,2
+24.02. 19:45,Hull,Derby,4,2
+24.02. 19:45,Middlesbrough,Leicester,1,1
+24.02. 19:45,Swansea,Preston,1,1
+24.02. 19:45,Watford,Ipswich,0,2
+24.02. 19:45,West Brom,Charlton,1,1
+24.02. 19:45,Wrexham,Portsmouth,2,1
+22.02. 12:00,Sheffield Utd,Sheffield Wed,2,1
+21.02. 15:00,Middlesbrough,Oxford Utd,0,0
+21.02. 15:00,Millwall,Portsmouth,1,3
+21.02. 15:00,Norwich,Birmingham,1,2
+21.02. 15:00,Southampton,Charlton,1,1
+21.02. 15:00,Watford,Derby,2,0
+21.02. 15:00,Wrexham,Ipswich,5,3
+21.02. 12:30,Hull,QPR,1,3
+21.02. 12:30,Stoke,Leicester,2,2
+21.02. 12:30,Swansea,Bristol City,1,0
+21.02. 12:30,West Brom,Coventry,0,2
+20.02. 20:00,Blackburn,Preston,1,0
+17.02. 19:45,Bristol City,Wrexham,2,2
+17.02. 19:45,Charlton,Portsmouth,1,3
+16.02. 20:00,Coventry,Middlesbrough,3,1
+14.02. 15:00,Derby,Swansea,2,0
+14.02. 15:00,Portsmouth,Sheffield Utd,0,1
+14.02. 15:00,Preston,Watford,2,2
+14.02. 15:00,QPR,Blackburn,1,3
+14.02. 15:00,Sheffield Wed,Millwall,1,2
+11.02. 19:45,Charlton,Stoke,1,0
+10.02. 20:00,Birmingham,West Brom,0,0
+10.02. 19:45,Leicester,Southampton,3,4
+10.02. 19:45,Oxford Utd,Norwich,0,3
+09.02. 20:01,Sheffield Utd,Middlesbrough,1,2
+08.02. 12:01,Swansea,Sheffield Wed,4,0
+07.02. 15:01,Birmingham,Leicester,2,1
+07.02. 15:01,Coventry,Oxford Utd,0,0
+07.02. 15:01,Hull,Bristol City,2,3
+07.02. 15:01,Preston,Portsmouth,1,0
+07.02. 15:01,West Brom,Stoke,0,0
+07.02. 15:01,Wrexham,Millwall,0,2
+07.02. 12:31,Derby,Ipswich,1,2
+07.02. 12:31,Norwich,Blackburn,2,0
+07.02. 12:31,Southampton,Watford,1,0
+06.02. 20:01,Charlton,QPR,0,0
+03.02. 19:45,Blackburn,Sheffield Wed,1,0
+03.02. 19:45,Hull,Watford,0,0
+03.02. 19:45,Sheffield Utd,Oxford Utd,3,1
+31.01. 15:00,Blackburn,Hull,0,1
+31.01. 15:00,Ipswich,Preston,1,1
+31.01. 15:00,Middlesbrough,Norwich,1,0
+31.01. 15:00,Millwall,Sheffield Utd,1,1
+31.01. 15:00,Oxford Utd,Birmingham,0,2
+31.01. 15:00,Portsmouth,West Brom,3,0
+31.01. 15:00,QPR,Coventry,2,1
+31.01. 15:00,Watford,Swansea,0,2
+31.01. 12:30,Leicester,Charlton,0,2
+31.01. 12:30,Sheffield Wed,Wrexham,0,1
+31.01. 12:30,Stoke,Southampton,0,2
+30.01. 20:00,Bristol City,Derby,0,5
+26.01. 20:00,Norwich,Coventry,2,1
+25.01. 12:00,Portsmouth,Southampton,1,1
+24.01. 15:00,Birmingham,Stoke,1,1
+24.01. 15:00,Blackburn,Watford,1,1
+24.01. 15:00,Bristol City,Sheffield Wed,2,0
+24.01. 15:00,Hull,Swansea,2,1
+24.01. 15:00,Leicester,Oxford Utd,1,2
+24.01. 15:00,QPR,Wrexham,2,3
+24.01. 15:00,Sheffield Utd,Ipswich,3,1
+24.01. 12:30,Middlesbrough,Preston,4,0
+24.01. 12:30,Millwall,Charlton,4,0
+23.01. 20:00,Derby,West Brom,1,1
+21.01. 20:00,Stoke,Middlesbrough,1,2
+21.01. 19:45,Southampton,Sheffield Utd,1,0
+21.01. 19:45,Watford,Portsmouth,1,1
+20.01. 20:00,Wrexham,Leicester,1,1
+20.01. 19:45,Charlton,Derby,1,2
+20.01. 19:45,Coventry,Millwall,2,1
+20.01. 19:45,Ipswich,Bristol City,2,0
+20.01. 19:45,Oxford Utd,QPR,0,0
+20.01. 19:45,Preston,Hull,0,3
+20.01. 19:45,Sheffield Wed,Birmingham,0,2
+20.01. 19:45,Swansea,Blackburn,3,1
+20.01. 19:45,West Brom,Norwich,0,5
+17.01. 17:30,Swansea,Birmingham,1,1
+17.01. 15:00,Charlton,Sheffield Utd,1,0
+17.01. 15:00,Oxford Utd,Bristol City,0,0
+17.01. 15:00,Preston,Derby,0,1
+17.01. 15:00,Sheffield Wed,Portsmouth,0,1
+17.01. 15:00,Southampton,Hull,1,2
+17.01. 15:00,Stoke,QPR,0,0
+17.01. 15:00,Wrexham,Norwich,1,2
+17.01. 12:30,Coventry,Leicester,2,1
+17.01. 12:30,Ipswich,Blackburn,3,0
+17.01. 12:30,Watford,Millwall,0,2
+16.01. 20:00,West Brom,Middlesbrough,2,3
+05.01. 20:00,Leicester,West Brom,2,1
+04.01. 15:00,Blackburn,Charlton,2,2
+04.01. 15:00,Bristol City,Preston,0,2
+04.01. 15:00,Derby,Wrexham,1,2
+04.01. 15:00,Middlesbrough,Southampton,4,0
+04.01. 15:00,Millwall,Swansea,2,1
+04.01. 15:00,Norwich,Stoke,0,2
+04.01. 12:00,Birmingham,Coventry,3,2
+04.01. 12:00,QPR,Sheffield Wed,3,0
+01.01. 17:30,Sheffield Utd,Leicester,3,1
+01.01. 15:00,Bristol City,Portsmouth,5,0
+01.01. 15:00,Charlton,Coventry,1,1
+01.01. 15:00,Derby,Middlesbrough,1,0
+01.01. 15:00,Hull,Stoke,0,1
+01.01. 15:00,Ipswich,Oxford Utd,2,1
+01.01. 15:00,Preston,Sheffield Wed,3,0
+01.01. 15:00,QPR,Norwich,1,2
+01.01. 15:00,Southampton,Millwall,0,0
+01.01. 15:00,Swansea,West Brom,1,0
+01.01. 15:00,Watford,Birmingham,3,0
+01.01. 12:30,Blackburn,Wrexham,0,2
+29.12. 20:15,Birmingham,Southampton,1,1
+29.12. 19:45,Leicester,Derby,2,1
+29.12. 19:45,Middlesbrough,Hull,0,1
+29.12. 19:45,Millwall,Bristol City,2,1
+29.12. 19:45,Norwich,Watford,0,1
+29.12. 19:45,Oxford Utd,Swansea,0,1
+29.12. 19:45,Portsmouth,Charlton,2,1
+29.12. 19:45,Sheffield Wed,Blackburn,0,0
+29.12. 19:45,Stoke,Sheffield Utd,1,2
+29.12. 19:45,West Brom,QPR,2,1
+29.12. 19:45,Wrexham,Preston,2,1
+29.12. 18:00,Coventry,Ipswich,0,2
+26.12. 17:30,Wrexham,Sheffield Utd,5,3
+26.12. 15:00,Coventry,Swansea,1,0
+26.12. 15:00,Leicester,Watford,1,2
+26.12. 15:00,Middlesbrough,Blackburn,0,0
+26.12. 15:00,Norwich,Charlton,1,0
+26.12. 15:00,Oxford Utd,Southampton,2,1
+26.12. 15:00,Portsmouth,QPR,1,1
+26.12. 15:00,Sheffield Wed,Hull,2,2
+26.12. 15:00,Stoke,Preston,0,0
+26.12. 15:00,West Brom,Bristol City,1,2
+26.12. 13:00,Millwall,Ipswich,0,0
+26.12. 12:30,Birmingham,Derby,1,1
+20.12. 15:00,Bristol City,Middlesbrough,2,0
+20.12. 15:00,Charlton,Oxford Utd,1,0
+20.12. 15:00,Derby,Portsmouth,1,1
+20.12. 15:00,Hull,West Brom,1,0
+20.12. 15:00,Ipswich,Sheffield Wed,3,1
+20.12. 15:00,QPR,Leicester,4,1
+20.12. 15:00,Sheffield Utd,Birmingham,3,0
+20.12. 15:00,Watford,Stoke,1,0
+20.12. 12:30,Blackburn,Millwall,2,0
+20.12. 12:30,Preston,Norwich,1,1
+20.12. 12:30,Southampton,Coventry,1,1
+19.12. 20:00,Swansea,Wrexham,2,1
+15.12. 20:00,Sheffield Wed,Derby,0,3
+13.12. 15:00,Birmingham,Charlton,1,1
+13.12. 15:00,Coventry,Bristol City,1,0
+13.12. 15:00,Leicester,Ipswich,3,1
+13.12. 15:00,Middlesbrough,QPR,3,1
+13.12. 15:00,Millwall,Hull,1,3
+13.12. 15:00,Portsmouth,Blackburn,2,1
+13.12. 15:00,Wrexham,Watford,2,2
+13.12. 12:30,Norwich,Southampton,2,1
+13.12. 12:30,Oxford Utd,Preston,1,2
+13.12. 12:30,Stoke,Swansea,2,1
+12.12. 20:00,West Brom,Sheffield Utd,2,0
+10.12. 20:00,Hull,Wrexham,2,0
+10.12. 19:45,Bristol City,Leicester,2,2
+10.12. 19:45,Derby,Millwall,1,1
+10.12. 19:45,Ipswich,Stoke,1,0
+09.12. 20:00,QPR,Birmingham,2,1
+09.12. 19:45,Blackburn,Oxford Utd,1,1
+09.12. 19:45,Charlton,Middlesbrough,1,2
+09.12. 19:45,Preston,Coventry,1,1
+09.12. 19:45,Sheffield Utd,Norwich,1,1
+09.12. 19:45,Southampton,West Brom,3,2
+09.12. 19:45,Swansea,Portsmouth,1,0
+09.12. 19:45,Watford,Sheffield Wed,1,1
+06.12. 15:00,Bristol City,Millwall,0,1
+06.12. 15:00,Ipswich,Coventry,3,0
+06.12. 15:00,Preston,Wrexham,1,1
+06.12. 15:00,QPR,West Brom,3,1
+06.12. 15:00,Sheffield Utd,Stoke,4,0
+06.12. 15:00,Southampton,Birmingham,3,1
+06.12. 15:00,Swansea,Oxford Utd,2,0
+06.12. 12:30,Derby,Leicester,1,3
+06.12. 12:30,Watford,Norwich,3,2
+05.12. 20:00,Hull,Middlesbrough,1,4
+02.12. 19:45,Blackburn,Ipswich,1,1
+01.12. 20:00,Birmingham,Watford,2,1
+29.11. 15:00,Coventry,Charlton,3,1
+29.11. 15:00,Middlesbrough,Derby,2,1
+29.11. 15:00,Millwall,Southampton,3,2
+29.11. 15:00,Norwich,QPR,3,1
+29.11. 15:00,Sheffield Wed,Preston,2,3
+29.11. 15:00,West Brom,Swansea,3,2
+29.11. 15:00,Wrexham,Blackburn,1,1
+29.11. 12:30,Leicester,Sheffield Utd,2,3
+29.11. 12:30,Portsmouth,Bristol City,0,1
+29.11. 12:30,Stoke,Hull,1,2
+28.11. 20:00,Oxford Utd,Ipswich,2,1
+26.11. 20:00,West Brom,Birmingham,1,1
+26.11. 19:45,Blackburn,QPR,0,1
+26.11. 19:45,Millwall,Sheffield Wed,1,0
+26.11. 19:45,Sheffield Utd,Portsmouth,3,0
+26.11. 19:45,Wrexham,Bristol City,2,0
+25.11. 20:00,Southampton,Leicester,3,0
+25.11. 19:45,Hull,Ipswich,0,2
+25.11. 19:45,Middlesbrough,Coventry,2,4
+25.11. 19:45,Norwich,Oxford Utd,1,1
+25.11. 19:45,Stoke,Charlton,3,0
+25.11. 19:45,Swansea,Derby,1,2
+25.11. 19:45,Watford,Preston,1,1
+23.11. 12:00,Sheffield Wed,Sheffield Utd,0,3
+22.11. 15:00,Birmingham,Norwich,4,1
+22.11. 15:00,Derby,Watford,2,3
+22.11. 15:00,Ipswich,Wrexham,0,0
+22.11. 15:00,Leicester,Stoke,2,1
+22.11. 15:00,Oxford Utd,Middlesbrough,1,1
+22.11. 15:00,Portsmouth,Millwall,3,1
+22.11. 15:00,QPR,Hull,3,2
+22.11. 12:30,Bristol City,Swansea,3,0
+22.11. 12:30,Charlton,Southampton,1,5
+22.11. 12:30,Coventry,West Brom,3,2
+21.11. 20:00,Preston,Blackburn,1,2
+08.11. 15:00,Middlesbrough,Birmingham,2,1
+08.11. 15:00,Norwich,Leicester,1,2
+08.11. 15:00,Sheffield Utd,QPR,0,0
+08.11. 15:00,Southampton,Sheffield Wed,3,1
+08.11. 15:00,Stoke,Coventry,0,1
+08.11. 15:00,Swansea,Ipswich,1,4
+08.11. 15:00,West Brom,Oxford Utd,2,1
+08.11. 15:00,Wrexham,Charlton,1,0
+08.11. 12:30,Blackburn,Derby,1,2
+08.11. 12:30,Hull,Portsmouth,3,2
+08.11. 12:30,Millwall,Preston,1,1
+07.11. 20:00,Watford,Bristol City,1,1
+05.11. 20:00,Portsmouth,Wrexham,0,0
+05.11. 19:45,Preston,Swansea,2,1
+05.11. 19:45,QPR,Southampton,1,2
+05.11. 19:45,Sheffield Wed,Norwich,1,1
+04.11. 20:00,Coventry,Sheffield Utd,3,1
+04.11. 19:45,Birmingham,Millwall,4,0
+04.11. 19:45,Bristol City,Blackburn,0,1
+04.11. 19:45,Charlton,West Brom,1,0
+04.11. 19:45,Derby,Hull,2,1
+04.11. 19:45,Ipswich,Watford,1,1
+04.11. 19:45,Leicester,Middlesbrough,1,1
+04.11. 19:45,Oxford Utd,Stoke,0,3
+01.11. 15:00,Birmingham,Portsmouth,4,0
+01.11. 15:00,Charlton,Swansea,1,1
+01.11. 15:00,Oxford Utd,Millwall,2,2
+01.11. 15:00,QPR,Ipswich,1,4
+01.11. 15:00,Sheffield Utd,Derby,1,3
+01.11. 15:00,Southampton,Preston,0,2
+01.11. 15:00,Stoke,Bristol City,5,1
+01.11. 15:00,Watford,Middlesbrough,3,0
+01.11. 12:30,Leicester,Blackburn,0,2
+01.11. 12:30,Norwich,Hull,0,2
+01.11. 12:30,West Brom,Sheffield Wed,0,0
+31.10. 20:00,Wrexham,Coventry,3,2
+25.10. 14:00,Blackburn,Southampton,2,1
+25.10. 14:00,Bristol City,Birmingham,1,0
+25.10. 14:00,Derby,QPR,1,0
+25.10. 14:00,Hull,Charlton,1,1
+25.10. 14:00,Middlesbrough,Wrexham,1,1
+25.10. 14:00,Millwall,Leicester,1,0
+25.10. 14:00,Sheffield Wed,Oxford Utd,1,2
+25.10. 14:00,Swansea,Norwich,2,1
+25.10. 11:30,Coventry,Watford,3,1
+25.10. 11:30,Ipswich,West Brom,1,0
+25.10. 11:30,Portsmouth,Stoke,0,1
+24.10. 19:00,Preston,Sheffield Utd,3,2
+22.10. 19:00,Sheffield Wed,Middlesbrough,0,1
+22.10. 18:45,Swansea,QPR,0,1
+22.10. 18:45,Watford,West Brom,2,1
+22.10. 18:45,Wrexham,Oxford Utd,1,0
+21.10. 19:00,Bristol City,Southampton,3,1
+21.10. 18:45,Blackburn,Sheffield Utd,1,3
+21.10. 18:45,Derby,Norwich,1,0
+21.10. 18:45,Hull,Leicester,2,1
+21.10. 18:45,Ipswich,Charlton,0,3
+21.10. 18:45,Millwall,Stoke,2,0
+21.10. 18:45,Portsmouth,Coventry,1,2
+21.10. 18:45,Preston,Birmingham,0,1
+18.10. 18:45,Leicester,Portsmouth,1,1
+18.10. 14:00,Birmingham,Hull,2,3
+18.10. 14:00,Charlton,Sheffield Wed,2,1
+18.10. 14:00,Coventry,Blackburn,2,0
+18.10. 14:00,Norwich,Bristol City,0,1
+18.10. 14:00,Sheffield Utd,Watford,1,0
+18.10. 14:00,Stoke,Wrexham,1,0
+18.10. 14:00,West Brom,Preston,2,1
+18.10. 11:30,Oxford Utd,Derby,1,0
+18.10. 11:30,QPR,Millwall,1,2
+18.10. 11:30,Southampton,Swansea,0,0
+17.10. 19:00,Middlesbrough,Ipswich,2,1
+05.10. 11:00,Ipswich,Norwich,3,1
+04.10. 14:00,Bristol City,QPR,1,2
+04.10. 14:00,Derby,Southampton,1,1
+04.10. 14:00,Millwall,West Brom,3,0
+04.10. 14:00,Portsmouth,Middlesbrough,1,0
+04.10. 14:00,Preston,Charlton,2,0
+04.10. 14:00,Swansea,Leicester,1,3
+04.10. 14:00,Watford,Oxford Utd,2,1
+04.10. 11:30,Blackburn,Stoke,1,1
+04.10. 11:30,Hull,Sheffield Utd,1,0
+04.10. 11:30,Sheffield Wed,Coventry,0,5
+03.10. 19:00,Wrexham,Birmingham,1,1
+01.10. 19:00,QPR,Oxford Utd,0,0
+01.10. 18:45,Millwall,Coventry,0,4
+01.10. 18:45,Norwich,West Brom,0,1
+01.10. 18:45,Portsmouth,Watford,2,2
+30.09. 19:00,Derby,Charlton,1,1
+30.09. 18:45,Birmingham,Sheffield Wed,2,2
+30.09. 18:45,Blackburn,Swansea,1,2
+30.09. 18:45,Bristol City,Ipswich,1,1
+30.09. 18:45,Hull,Preston,2,2
+30.09. 18:45,Leicester,Wrexham,1,1
+30.09. 18:45,Middlesbrough,Stoke,0,0
+30.09. 18:45,Sheffield Utd,Southampton,1,2
+27.09. 14:00,Charlton,Blackburn,3,0
+27.09. 14:00,Ipswich,Portsmouth,2,1
+27.09. 14:00,Oxford Utd,Sheffield Utd,0,1
+27.09. 14:00,Preston,Bristol City,0,0
+27.09. 14:00,Sheffield Wed,QPR,1,1
+27.09. 14:00,Southampton,Middlesbrough,1,1
+27.09. 14:00,Stoke,Norwich,1,1
+27.09. 14:00,Watford,Hull,2,1
+27.09. 11:30,Coventry,Birmingham,3,0
+27.09. 11:30,Swansea,Millwall,1,1
+27.09. 11:30,Wrexham,Derby,1,1
+26.09. 19:00,West Brom,Leicester,1,1
+22.09. 19:00,Millwall,Watford,1,0
+21.09. 14:00,Bristol City,Oxford Utd,1,3
+20.09. 14:00,Derby,Preston,0,1
+20.09. 14:00,Hull,Southampton,3,1
+20.09. 14:00,Norwich,Wrexham,2,3
+20.09. 14:00,Portsmouth,Sheffield Wed,0,2
+20.09. 14:00,Sheffield Utd,Charlton,0,1
+20.09. 11:30,Birmingham,Swansea,1,0
+20.09. 11:30,Leicester,Coventry,0,0
+20.09. 11:30,QPR,Stoke,1,0
+19.09. 19:00,Middlesbrough,West Brom,2,1
+14.09. 11:00,Southampton,Portsmouth,0,0
+13.09. 14:00,Coventry,Norwich,1,1
+13.09. 14:00,Sheffield Wed,Bristol City,0,3
+13.09. 14:00,Stoke,Birmingham,1,0
+13.09. 14:00,Swansea,Hull,2,2
+13.09. 14:00,Watford,Blackburn,0,1
+13.09. 14:00,West Brom,Derby,0,1
+13.09. 14:00,Wrexham,QPR,1,3
+13.09. 11:30,Charlton,Millwall,1,1
+13.09. 11:30,Oxford Utd,Leicester,2,2
+13.09. 11:30,Preston,Middlesbrough,2,2
+12.09. 19:00,Ipswich,Sheffield Utd,5,0
+30.08. 14:00,Blackburn,Norwich,0,2
+30.08. 14:00,Bristol City,Hull,4,2
+30.08. 14:00,Ipswich,Derby,2,2
+30.08. 14:00,Millwall,Wrexham,0,2
+30.08. 14:00,Oxford Utd,Coventry,2,2
+30.08. 14:00,Portsmouth,Preston,1,0
+30.08. 14:00,Sheffield Wed,Swansea,0,2
+30.08. 14:00,Watford,Southampton,2,2
+30.08. 11:30,Middlesbrough,Sheffield Utd,1,0
+30.08. 11:30,QPR,Charlton,3,1
+30.08. 11:30,Stoke,West Brom,0,1
+29.08. 19:00,Leicester,Birmingham,2,0
+23.08. 14:00,Birmingham,Oxford Utd,1,0
+23.08. 14:00,Coventry,QPR,7,1
+23.08. 14:00,Norwich,Middlesbrough,1,2
+23.08. 14:00,Preston,Ipswich,1,0
+23.08. 14:00,Sheffield Utd,Millwall,0,1
+23.08. 14:00,Southampton,Stoke,1,2
+23.08. 14:00,West Brom,Portsmouth,1,1
+23.08. 14:00,Wrexham,Sheffield Wed,2,2
+23.08. 11:30,Charlton,Leicester,0,1
+23.08. 11:30,Hull,Blackburn,0,3
+23.08. 11:30,Swansea,Watford,1,1
+22.08. 19:00,Derby,Bristol City,1,1
+17.08. 14:00,Hull,Oxford Utd,3,2
+17.08. 11:00,Ipswich,Southampton,1,1
+16.08. 14:00,Blackburn,Birmingham,1,2
+16.08. 14:00,Bristol City,Charlton,0,0
+16.08. 14:00,Millwall,Middlesbrough,0,3
+16.08. 14:00,Preston,Leicester,2,1
+16.08. 14:00,Sheffield Wed,Stoke,0,3
+16.08. 14:00,Swansea,Sheffield Utd,1,0
+16.08. 14:00,Watford,QPR,2,1
+16.08. 11:30,Derby,Coventry,3,5
+16.08. 11:30,Portsmouth,Norwich,1,2
+16.08. 11:30,Wrexham,West Brom,2,3
+10.08. 15:30,Leicester,Sheffield Wed,2,1
+09.08. 16:30,Sheffield Utd,Bristol City,1,4
+09.08. 14:00,Middlesbrough,Swansea,1,0
+09.08. 14:00,Norwich,Millwall,1,2
+09.08. 14:00,Oxford Utd,Portsmouth,0,1
+09.08. 14:00,QPR,Preston,1,1
+09.08. 14:00,Stoke,Derby,3,1
+09.08. 14:00,West Brom,Blackburn,1,0
+09.08. 11:30,Charlton,Watford,1,0
+09.08. 11:30,Coventry,Hull,0,0
+09.08. 11:30,Southampton,Wrexham,2,1
+08.08. 19:00,Birmingham,Ipswich,1,1

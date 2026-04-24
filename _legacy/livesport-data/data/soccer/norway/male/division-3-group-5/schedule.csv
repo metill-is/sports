@@ -1,0 +1,106 @@
+date,home,away
+05.04. 13:00,Tromso 2,Skjetten
+06.04. 11:00,Alta,Harstad
+06.04. 11:00,Skedsmo,Bossekop
+06.04. 12:30,Fauske Sprint,Ulfstind
+06.04. 13:30,Lillestrom 2,Skjervoy
+06.04. 14:00,Finnsnes,Floya
+07.04. 16:00,Stromsgodset 2,Kongsvinger 2
+11.04. 13:00,Floya,Alta
+12.04. 09:30,Bossekop,Fauske Sprint
+12.04. 12:00,Skjetten,Stromsgodset 2
+12.04. 12:00,Ulfstind,Skedsmo
+12.04. 13:00,Harstad,Finnsnes
+12.04. 14:00,Skjervoy,Tromso 2
+14.04. 18:00,Kongsvinger 2,Lillestrom 2
+18.04. 13:00,Alta,Ulfstind
+18.04. 14:00,Skjervoy,Finnsnes
+19.04. 11:30,Stromsgodset 2,Bossekop
+19.04. 12:00,Fauske Sprint,Kongsvinger 2
+19.04. 13:00,Tromso 2,Floya
+19.04. 14:00,Skedsmo,Harstad
+20.04. 17:00,Lillestrom 2,Skjetten
+25.04. 10:30,Kongsvinger 2,Alta
+25.04. 11:00,Skjetten,Ulfstind
+25.04. 14:00,Floya,Skjervoy
+26.04. 10:00,Bossekop,Lillestrom 2
+26.04. 10:30,Harstad,Tromso 2
+26.04. 12:00,Stromsgodset 2,Fauske Sprint
+26.04. 13:00,Finnsnes,Skedsmo
+02.05. 09:00,Skjervoy,Skjetten
+02.05. 11:00,Ulfstind,Kongsvinger 2
+02.05. 12:00,Skedsmo,Stromsgodset 2
+02.05. 13:00,Floya,Harstad
+03.05. 10:00,Alta,Fauske Sprint
+03.05. 14:30,Lillestrom 2,Finnsnes
+03.05. 14:30,Tromso 2,Bossekop
+09.05. 10:00,Stromsgodset 2,Alta
+09.05. 11:30,Harstad,Lillestrom 2
+09.05. 12:00,Bossekop,Ulfstind
+09.05. 12:00,Kongsvinger 2,Skjervoy
+09.05. 12:30,Skjetten,Floya
+10.05. 12:00,Fauske Sprint,Skedsmo
+10.05. 13:00,Finnsnes,Tromso 2
+14.05. 11:00,Skjervoy,Harstad
+14.05. 11:30,Finnsnes,Skjetten
+14.05. 12:00,Tromso 2,Fauske Sprint
+14.05. 13:00,Floya,Kongsvinger 2
+14.05. 14:00,Ulfstind,Stromsgodset 2
+16.05. 13:00,Alta,Bossekop
+18.05. 17:00,Lillestrom 2,Skedsmo
+22.05. 14:00,Kongsvinger 2,Tromso 2
+23.05. 11:00,Bossekop,Floya
+23.05. 11:00,Skedsmo,Alta
+25.05. 13:00,Fauske Sprint,Skjervoy
+25.05. 13:00,Ulfstind,Finnsnes
+25.05. 14:00,Skjetten,Harstad
+26.05. 16:00,Stromsgodset 2,Lillestrom 2
+30.05. 11:00,Harstad,Bossekop
+30.05. 11:00,Lillestrom 2,Alta
+30.05. 12:00,Skjervoy,Ulfstind
+30.05. 13:00,Floya,Skedsmo
+31.05. 15:00,Finnsnes,Kongsvinger 2
+31.05. 15:00,Skjetten,Fauske Sprint
+01.06. 11:00,Tromso 2,Stromsgodset 2
+11.06. 17:00,Ulfstind,Floya
+12.06. 16:30,Alta,Tromso 2
+13.06. 12:30,Skedsmo,Skjervoy
+14.06. 13:00,Fauske Sprint,Lillestrom 2
+14.06. 14:00,Stromsgodset 2,Harstad
+14.06. 16:30,Bossekop,Finnsnes
+15.06. 18:00,Kongsvinger 2,Skjetten
+20.06. 09:00,Lillestrom 2,Ulfstind
+20.06. 11:00,Finnsnes,Fauske Sprint
+20.06. 11:00,Skjetten,Alta
+20.06. 13:00,Skjervoy,Bossekop
+21.06. 11:00,Tromso 2,Skedsmo
+21.06. 13:00,Floya,Stromsgodset 2
+21.06. 13:00,Harstad,Kongsvinger 2
+27.06. 10:00,Fauske Sprint,Floya
+27.06. 12:00,Skedsmo,Skjetten
+27.06. 14:00,Bossekop,Kongsvinger 2
+27.06. 14:00,Ulfstind,Harstad
+28.06. 10:00,Stromsgodset 2,Skjervoy
+28.06. 11:00,Alta,Finnsnes
+28.06. 15:00,Lillestrom 2,Tromso 2
+25.07. 12:00,Harstad,Fauske Sprint
+25.07. 13:00,Skjervoy,Alta
+25.07. 13:00,Tromso 2,Ulfstind
+25.07. 14:30,Finnsnes,Stromsgodset 2
+26.07. 10:00,Skjetten,Bossekop
+26.07. 14:00,Floya,Lillestrom 2
+27.07. 17:00,Kongsvinger 2,Skedsmo
+30.07. 17:00,Ulfstind,Skjervoy
+01.08. 11:00,Alta,Floya
+01.08. 11:00,Fauske Sprint,Skjetten
+02.08. 11:00,Bossekop,Harstad
+02.08. 14:30,Skedsmo,Finnsnes
+02.08. 15:00,Stromsgodset 2,Tromso 2
+03.08. 17:00,Lillestrom 2,Kongsvinger 2
+06.08. 17:00,Floya,Ulfstind
+08.08. 09:30,Skedsmo,Fauske Sprint
+08.08. 11:00,Finnsnes,Bossekop
+08.08. 13:00,Tromso 2,Alta
+08.08. 14:00,Harstad,Skjervoy
+10.08. 17:00,Skjetten,Lillestrom 2
+10.08. 18:00,Kongsvinger 2,Stromsgodset 2

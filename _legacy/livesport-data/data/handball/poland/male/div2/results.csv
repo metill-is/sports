@@ -1,0 +1,107 @@
+date,home,away,home_score,away_score
+04.03. 18:00,Krakow,ZPRP Kielce,35,33
+28.02. 18:00,UW Warszawa,Biala Podlaska,26,35
+28.02. 17:00,Szczecin,Grunwald Poznan,28,26
+28.02. 16:00,Gwardia Koszalin,Legnica,28,26
+28.02. 16:00,Zamosc,Ciechanow,28,27
+28.02. 14:00,Anilana Lodz,Stal Gorzow,35,38
+28.02. 14:00,ZPRP Kielce,Wagrowiec,34,43
+27.02. 18:00,Slask Wroclaw,Krakow,35,32
+21.02. 18:00,Ciechanow,Anilana Lodz,29,30
+21.02. 18:00,Grunwald Poznan,Zamosc,27,22
+21.02. 16:00,Biala Podlaska,Szczecin,35,33
+21.02. 16:00,Legnica,Slask Wroclaw,25,33
+21.02. 14:00,Stal Gorzow,Gwardia Koszalin,29,25
+21.02. 14:00,Wagrowiec,UW Warszawa,35,41
+15.02. 14:00,Legnica,Stal Gorzow,30,40
+15.02. 14:00,Slask Wroclaw,ZPRP Kielce,37,34
+14.02. 18:00,UW Warszawa,Krakow,27,41
+14.02. 18:00,Zamosc,Biala Podlaska,36,27
+14.02. 16:00,Gwardia Koszalin,Ciechanow,24,26
+14.02. 16:00,Szczecin,Wagrowiec,34,25
+14.02. 14:00,Anilana Lodz,Grunwald Poznan,26,32
+08.02. 14:00,Grunwald Poznan,Gwardia Koszalin,27,20
+07.02. 16:00,Biala Podlaska,Anilana Lodz,33,23
+07.02. 16:00,Wagrowiec,Zamosc,34,32
+07.02. 14:00,ZPRP Kielce,UW Warszawa,32,21
+06.02. 18:00,Ciechanow,Legnica,35,26
+06.02. 18:00,Krakow,Szczecin,35,26
+06.02. 18:00,Stal Gorzow,Slask Wroclaw,26,28
+20.12. 18:00,Zamosc,Krakow,32,34
+20.12. 16:00,Slask Wroclaw,UW Warszawa,47,25
+20.12. 16:00,Stal Gorzow,Ciechanow,30,28
+20.12. 14:00,Legnica,Grunwald Poznan,28,25
+20.12. 14:00,Szczecin,ZPRP Kielce,34,25
+19.12. 18:00,Anilana Lodz,Wagrowiec,33,34
+19.12. 18:00,Gwardia Koszalin,Biala Podlaska,26,33
+14.12. 18:00,Legnica,Biala Podlaska,29,27
+13.12. 18:00,Ciechanow,Slask Wroclaw,26,27
+13.12. 18:00,Stal Gorzow,Grunwald Poznan,34,31
+13.12. 17:00,Szczecin,UW Warszawa,30,29
+13.12. 12:00Pen,Anilana Lodz,Krakow,33,32
+12.12. 18:00,Gwardia Koszalin,Wagrowiec,27,32
+12.12. 18:00,Zamosc,ZPRP Kielce,33,24
+06.12. 18:00,Krakow,Gwardia Koszalin,25,23
+06.12. 18:00,Wagrowiec,Legnica,44,38
+06.12. 16:00,Biala Podlaska,Stal Gorzow,34,35
+06.12. 16:00,Grunwald Poznan,Ciechanow,30,29
+05.12. 18:00,Slask Wroclaw,Szczecin,28,22
+05.12. 18:00,UW Warszawa,Zamosc,25,34
+05.12. 18:00Pen,ZPRP Kielce,Anilana Lodz,42,43
+30.11. 16:00,Zamosc,Szczecin,28,31
+29.11. 16:00,Ciechanow,Biala Podlaska,32,27
+29.11. 16:00,Stal Gorzow,Wagrowiec,34,28
+29.11. 14:00,Grunwald Poznan,Slask Wroclaw,29,27
+29.11. 14:00,Legnica,Krakow,25,38
+28.11. 18:00,Anilana Lodz,UW Warszawa,27,25
+28.11. 18:00,Gwardia Koszalin,ZPRP Kielce,23,27
+23.11. 14:10,Slask Wroclaw,Zamosc,24,25
+22.11. 18:00,Biala Podlaska,Grunwald Poznan,25,28
+22.11. 18:00,UW Warszawa,Gwardia Koszalin,24,32
+22.11. 16:00,Wagrowiec,Ciechanow,38,33
+22.11. 14:00,Szczecin,Anilana Lodz,38,23
+22.11. 14:00,ZPRP Kielce,Legnica,32,31
+21.11. 18:00,Krakow,Stal Gorzow,34,35
+16.11. 18:00,Legnica,UW Warszawa,38,32
+15.11. 18:00,Anilana Lodz,Zamosc,26,28
+15.11. 18:00,Biala Podlaska,Slask Wroclaw,30,32
+15.11. 16:00,Ciechanow,Krakow,38,33
+15.11. 16:00Pen,Grunwald Poznan,Wagrowiec,26,29
+15.11. 14:00,Stal Gorzow,ZPRP Kielce,35,32
+14.11. 18:00,Gwardia Koszalin,Szczecin,26,24
+12.11. 17:00,ZPRP Kielce,Biala Podlaska,25,30
+09.11. 14:00,Wagrowiec,Biala Podlaska,30,36
+08.11. 18:00,Krakow,Grunwald Poznan,32,22
+08.11. 18:00,UW Warszawa,Stal Gorzow,30,33
+08.11. 16:00,Szczecin,Legnica,39,35
+08.11. 14:00,Anilana Lodz,Slask Wroclaw,28,25
+07.11. 18:00Pen,Zamosc,Gwardia Koszalin,34,35
+07.11. 18:00,ZPRP Kielce,Ciechanow,34,35
+31.10. 18:00,Ciechanow,Gwardia Koszalin,37,21
+26.10. 17:00,Stal Gorzow,Szczecin,23,29
+26.10. 14:00,Wagrowiec,Slask Wroclaw,30,32
+25.10. 17:00,Legnica,Zamosc,37,35
+25.10. 17:00,UW Warszawa,Ciechanow,37,48
+25.10. 15:00,Grunwald Poznan,ZPRP Kielce,29,25
+24.10. 17:00,Biala Podlaska,Krakow,33,36
+24.10. 17:00Pen,Gwardia Koszalin,Anilana Lodz,30,32
+19.10. 13:00,Krakow,Wagrowiec,35,25
+18.10. 17:00,UW Warszawa,Grunwald Poznan,27,31
+18.10. 17:00,Zamosc,Stal Gorzow,42,28
+18.10. 15:00,Anilana Lodz,Legnica,29,31
+17.10. 16:00,Szczecin,Ciechanow,38,33
+16.10. 17:00,Slask Wroclaw,Gwardia Koszalin,31,14
+11.10. 17:00,Krakow,Slask Wroclaw,25,31
+11.10. 17:00,Legnica,Gwardia Koszalin,32,24
+11.10. 15:00,Stal Gorzow,Anilana Lodz,34,28
+11.10. 15:00,Wagrowiec,ZPRP Kielce,43,36
+11.10. 13:00,Biala Podlaska,UW Warszawa,38,33
+11.10. 13:00,Grunwald Poznan,Szczecin,28,29
+10.10. 15:00,Ciechanow,Zamosc,37,30
+05.10. 15:00,Slask Wroclaw,Legnica,35,26
+05.10. 13:00,Anilana Lodz,Ciechanow,31,28
+05.10. 13:00,ZPRP Kielce,Krakow,23,36
+04.10. 17:00,UW Warszawa,Wagrowiec,34,41
+04.10. 17:00,Zamosc,Grunwald Poznan,27,23
+04.10. 15:00,Gwardia Koszalin,Stal Gorzow,25,29
+04.10. 13:00,Szczecin,Biala Podlaska,33,31

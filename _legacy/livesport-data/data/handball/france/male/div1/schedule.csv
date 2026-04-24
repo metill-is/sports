@@ -1,0 +1,81 @@
+date,home,away
+27.03. 19:00,Dunkerque,Dijon
+27.03. 19:00,Istres,St. Raphael
+27.03. 19:00,Montpellier,Chartres
+27.03. 19:00,Nimes,PSG
+27.03. 19:30,Toulouse,Limoges
+28.03. 19:00,Cesson Rennes-Metropole,Tremblay
+28.03. 19:00,Provence Aix,Nantes
+29.03. 15:00,Chambery Savoie,Selestat
+03.04. 18:00,Chartres,Toulouse
+03.04. 18:00,Limoges,Cesson Rennes-Metropole
+03.04. 18:00,Provence Aix,Dunkerque
+03.04. 18:30,Dijon,Nimes
+04.04. 18:00,Tremblay,Montpellier
+04.04. 18:30,Nantes,Selestat
+05.04. 14:00,PSG,Istres
+05.04. 15:00,St. Raphael,Chambery Savoie
+10.04. 18:00,Chambery Savoie,Tremblay
+10.04. 18:00,Nimes,Provence Aix
+10.04. 18:30,Dijon,Limoges
+10.04. 18:30,Selestat,Istres
+11.04. 18:00,Montpellier,Dunkerque
+12.04. 15:00,PSG,St. Raphael
+12.04. 15:00,Toulouse,Nantes
+12.04. 16:00,Cesson Rennes-Metropole,Chartres
+17.04. 18:00,Chartres,Chambery Savoie
+17.04. 18:00,Dunkerque,Cesson Rennes-Metropole
+17.04. 18:00,Istres,Nimes
+17.04. 18:00,Provence Aix,St. Raphael
+17.04. 18:30,Selestat,Tremblay
+17.04. 18:30,Toulouse,Dijon
+18.04. 17:00,Limoges,PSG
+19.04. 15:00,Nantes,Montpellier
+24.04. 18:00,Chartres,Dijon
+24.04. 18:00,Istres,Nantes
+24.04. 18:00,Montpellier,Provence Aix
+24.04. 18:30,Cesson Rennes-Metropole,PSG
+24.04. 18:30,Chambery Savoie,Dunkerque
+24.04. 18:30,Tremblay,Limoges
+25.04. 18:00,Nimes,Toulouse
+26.04. 15:00,St. Raphael,Selestat
+30.04. 18:30,Cesson Rennes-Metropole,Istres
+01.05. 18:00,Dunkerque,St. Raphael
+01.05. 18:00,Selestat,Nimes
+01.05. 18:00,Toulouse,Tremblay
+01.05. 18:30,Dijon,Montpellier
+01.05. 18:30,PSG,Chartres
+02.05. 18:00,Limoges,Provence Aix
+03.05. 15:00,Nantes,Chambery Savoie
+07.05. 18:00,Chambery Savoie,Nimes
+07.05. 18:00,Dunkerque,Istres
+08.05. 18:00,Chartres,Limoges
+08.05. 18:00,Toulouse,St. Raphael
+08.05. 18:30,Montpellier,Cesson Rennes-Metropole
+09.05. 17:00,Provence Aix,Tremblay
+09.05. 18:30,Nantes,Dijon
+10.05. 15:00,Selestat,PSG
+26.05. 18:30,Cesson Rennes-Metropole,Selestat
+26.05. 18:30,Istres,Dijon
+26.05. 18:30,Limoges,Chambery Savoie
+26.05. 18:30,Nimes,Dunkerque
+26.05. 18:30,Provence Aix,Toulouse
+26.05. 18:30,St. Raphael,Montpellier
+26.05. 18:30,Tremblay,Chartres
+27.05. 18:30,PSG,Nantes
+02.06. 18:30,Cesson Rennes-Metropole,Nantes
+02.06. 18:30,Chambery Savoie,PSG
+02.06. 18:30,Chartres,Nimes
+02.06. 18:30,Dijon,Selestat
+02.06. 18:30,Dunkerque,Limoges
+02.06. 18:30,Istres,Provence Aix
+02.06. 18:30,Montpellier,Toulouse
+02.06. 18:30,Tremblay,St. Raphael
+06.06. 18:30,Chambery Savoie,Istres
+06.06. 18:30,Montpellier,Nimes
+06.06. 18:30,Nantes,Limoges
+06.06. 18:30,Provence Aix,Dijon
+06.06. 18:30,PSG,Tremblay
+06.06. 18:30,Selestat,Dunkerque
+06.06. 18:30,St. Raphael,Chartres
+06.06. 18:30,Toulouse,Cesson Rennes-Metropole

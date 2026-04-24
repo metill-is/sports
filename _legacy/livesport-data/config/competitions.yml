@@ -1,0 +1,274 @@
+# Livesport Data Scraper — Competition Registry
+#
+# Each entry defines a competition group scraped from livesport.com.
+# The scraper fetches current-season results + schedule for each league.
+#
+# Two-tier scraping:
+#   leagues / divisions           — scraped daily (CI)
+#   historical_leagues / historical_divisions — scraped in "full" mode only (preseason)
+#
+# Set LIVESPORT_MODE=full to include historical leagues (default: daily).
+#
+# Fields:
+#   livesport_sport: URL path segment (soccer, handball)
+#   country:         URL path segment
+#   url_type:        season_range ({name}-{start}-{end}) or single_year ({name}-{year})
+#   team_selectors:  CSS selectors for team names (football vs handball differ)
+#   pagination:      CSS selector for "show more" button
+#   sex:             list of sexes (for flat league lists)
+#   leagues:         flat list of league URL slugs (football) — daily
+#   historical_leagues: additional leagues scraped in full mode only
+#   divisions:       nested by sex → list of {name, label} (handball) — daily
+#   historical_divisions: additional divisions scraped in full mode only
+
+defaults:
+  page_wait: 10       # seconds after page load
+  click_wait: 5        # seconds between pagination clicks
+  between_pages: 5     # seconds between different pages
+
+# ── Football ──────────────────────────────────────────────────────────────────
+
+football_england:
+  livesport_sport: soccer
+  country: england
+  url_type: season_range
+  team_selectors: football
+  pagination: ".wclButtonLink"
+  sex: [male]
+  leagues:
+    - premier-league
+    - championship
+  historical_leagues:
+    - league-one
+    - league-two
+    - fa-cup
+    - efl-cup
+
+football_italy:
+  livesport_sport: soccer
+  country: italy
+  url_type: season_range
+  team_selectors: football
+  pagination: ".wclButtonLink"
+  sex: [male]
+  leagues:
+    - serie-a
+    - serie-b
+
+football_spain:
+  livesport_sport: soccer
+  country: spain
+  url_type: season_range
+  team_selectors: football
+  pagination: ".wclButtonLink"
+  sex: [male]
+  leagues:
+    - laliga
+    - laliga2
+
+# ── Handball ──────────────────────────────────────────────────────────────────
+
+handball_austria:
+  livesport_sport: handball
+  country: austria
+  url_type: season_range
+  team_selectors: handball
+  pagination: ".event__more"
+  divisions:
+    male:
+      - name: hla
+        label: div1
+
+handball_czech_republic:
+  livesport_sport: handball
+  country: czech-republic
+  url_type: season_range
+  team_selectors: handball
+  pagination: ".event__more"
+  divisions:
+    male:
+      - name: extraliga
+        label: div1
+
+handball_denmark:
+  livesport_sport: handball
+  country: denmark
+  url_type: season_range
+  team_selectors: handball
+  pagination: ".event__more"
+  divisions:
+    male:
+      - name: herre-handbold-ligaen
+        label: div1
+    female:
+      - name: kvindeligaen-women
+        label: div1
+  historical_divisions:
+    male:
+      - name: 1-division
+        label: div2
+    female:
+      - name: 1-division-women
+        label: div2
+
+handball_finland:
+  livesport_sport: handball
+  country: finland
+  url_type: season_range
+  team_selectors: handball
+  pagination: ".event__more"
+  divisions:
+    male:
+      - name: aktialiiga
+        label: div1
+    female:
+      - name: aktialiiga-women
+        label: div1
+
+handball_france:
+  livesport_sport: handball
+  country: france
+  url_type: season_range
+  team_selectors: handball
+  pagination: ".event__more"
+  divisions:
+    male:
+      - name: starligue
+        label: div1
+    female:
+      - name: division-1-women
+        label: div1
+  historical_divisions:
+    male:
+      - name: proligue
+        label: div2
+
+handball_germany:
+  livesport_sport: handball
+  country: germany
+  url_type: season_range
+  team_selectors: handball
+  pagination: ".event__more"
+  divisions:
+    male:
+      - name: bundesliga
+        label: div1
+    female:
+      - name: 1-bundesliga-women
+        label: div1
+  historical_divisions:
+    male:
+      - name: 2-bundesliga
+        label: div2
+    female:
+      - name: 2-bundesliga-women
+        label: div2
+
+handball_hungary:
+  livesport_sport: handball
+  country: hungary
+  url_type: season_range
+  team_selectors: handball
+  pagination: ".event__more"
+  divisions:
+    male:
+      - name: nb-i
+        label: div1
+    female:
+      - name: nb-i-women
+        label: div1
+
+handball_norway:
+  livesport_sport: handball
+  country: norway
+  url_type: season_range
+  team_selectors: handball
+  pagination: ".event__more"
+  divisions:
+    male:
+      - name: rema-1000-ligaen
+        label: div1
+    female:
+      - name: rema-1000-ligaen-women
+        label: div1
+  historical_divisions:
+    male:
+      - name: 1-division
+        label: div2
+    female:
+      - name: 1-division-women
+        label: div2
+
+handball_poland:
+  livesport_sport: handball
+  country: poland
+  url_type: season_range
+  team_selectors: handball
+  pagination: ".event__more"
+  divisions:
+    male:
+      - name: superliga
+        label: div1
+    female:
+      - name: superliga-women
+        label: div1
+  historical_divisions:
+    male:
+      - name: central-league
+        label: div2
+    female:
+      - name: central-league-women
+        label: div2
+
+handball_portugal:
+  livesport_sport: handball
+  country: portugal
+  url_type: season_range
+  team_selectors: handball
+  pagination: ".event__more"
+  divisions:
+    male:
+      - name: andebol-1
+        label: div1
+    female:
+      - name: 1a-divisao-women
+        label: div1
+
+handball_spain:
+  livesport_sport: handball
+  country: spain
+  url_type: season_range
+  team_selectors: handball
+  pagination: ".event__more"
+  divisions:
+    male:
+      - name: liga-asobal
+        label: div1
+    female:
+      - name: division-de-honor-women
+        label: div1
+  historical_divisions:
+    male:
+      - name: division-de-honor-plata
+        label: div2
+
+handball_sweden:
+  livesport_sport: handball
+  country: sweden
+  url_type: season_range
+  team_selectors: handball
+  pagination: ".event__more"
+  divisions:
+    male:
+      - name: handbollsligan
+        label: div1
+    female:
+      - name: handbollsligan-women
+        label: div1
+  historical_divisions:
+    male:
+      - name: allsvenskan
+        label: div2
+    female:
+      - name: allsvenskan-women
+        label: div2

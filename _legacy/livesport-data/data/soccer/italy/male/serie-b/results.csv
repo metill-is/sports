@@ -1,0 +1,320 @@
+date,home,away,home_score,away_score
+22.03. 18:30,Entella,Reggiana,3,0
+22.03. 16:15,Sampdoria,Avellino,2,1
+22.03. 14:00,Bari,Carrarese,0,3
+22.03. 14:00,Empoli,Pescara,4,2
+22.03. 14:00,Sudtirol,Frosinone,1,3
+21.03. 18:30,Modena,Mantova,2,1
+21.03. 16:15,Monza,Venezia,1,1
+21.03. 14:00,Cesena,Catanzaro,3,1
+21.03. 14:00,Juve Stabia,Spezia,3,1
+21.03. 14:00,Padova,Palermo,0,1
+18.03. 19:00,Avellino,Sudtirol,3,2
+18.03. 19:00,Carrarese,Sampdoria,2,0
+18.03. 19:00,Pescara,Entella,3,0
+18.03. 18:00,Frosinone,Bari,2,1
+17.03. 19:00,Mantova,Cesena,3,0
+17.03. 19:00,Reggiana,Monza,0,0
+17.03. 19:00,Spezia,Empoli,1,1
+17.03. 19:00,Venezia,Padova,3,1
+17.03. 18:00,Palermo,Juve Stabia,2,2
+15.03. 16:15,Sudtirol,Pescara,0,0
+15.03. 14:00,Entella,Avellino,1,2
+14.03. 18:30,Sampdoria,Venezia,0,0
+14.03. 16:15,Monza,Palermo,3,0
+14.03. 14:00,Bari,Reggiana,4,1
+14.03. 14:00,Cesena,Frosinone,2,2
+14.03. 14:00,Empoli,Mantova,2,2
+14.03. 14:00,Juve Stabia,Carrarese,1,1
+14.03. 14:00,Padova,Catanzaro,1,3
+13.03. 19:30,Modena,Spezia,3,0
+08.03. 18:30,Pescara,Bari,4,0
+08.03. 16:15,Carrarese,Palermo,0,1
+08.03. 14:00,Catanzaro,Empoli,3,2
+08.03. 14:00,Frosinone,Sampdoria,3,0
+08.03. 14:00,Mantova,Juve Stabia,2,0
+07.03. 18:30,Modena,Cesena,0,0
+07.03. 16:15,Venezia,Reggiana,2,0
+07.03. 14:00,Avellino,Padova,1,0
+07.03. 14:00,Spezia,Monza,4,2
+07.03. 14:00,Sudtirol,Entella,0,1
+04.03. 19:00,Bari,Empoli,2,1
+04.03. 19:00,Frosinone,Pescara,2,2
+04.03. 19:00,Juve Stabia,Sampdoria,1,1
+04.03. 19:00,Palermo,Mantova,2,1
+04.03. 18:00,Carrarese,Catanzaro,3,3
+03.03. 19:00,Cesena,Monza,1,3
+03.03. 19:00,Entella,Modena,2,1
+03.03. 19:00,Reggiana,Sudtirol,0,4
+03.03. 19:00,Venezia,Avellino,4,0
+03.03. 18:00,Padova,Spezia,2,2
+01.03. 16:15,Mantova,Carrarese,1,1
+01.03. 14:00,Catanzaro,Frosinone,2,2
+01.03. 14:00,Pescara,Palermo,2,1
+28.02. 18:30,Avellino,Juve Stabia,0,0
+28.02. 16:15,Spezia,Reggiana,0,1
+28.02. 14:00,Empoli,Cesena,1,1
+28.02. 14:00,Modena,Padova,1,2
+28.02. 14:00,Sudtirol,Venezia,1,1
+27.02. 20:00,Sampdoria,Bari,0,2
+27.02. 18:00,Monza,Entella,2,0
+22.02. 16:15,Reggiana,Avellino,1,1
+22.02. 14:00,Juve Stabia,Modena,1,2
+21.02. 18:30,Carrarese,Monza,0,1
+21.02. 16:15,Cesena,Spezia,2,3
+21.02. 14:00,Entella,Catanzaro,1,3
+21.02. 14:00,Mantova,Sampdoria,2,1
+21.02. 14:00,Padova,Bari,1,1
+21.02. 14:00,Palermo,Sudtirol,3,0
+21.02. 14:00,Venezia,Pescara,3,2
+20.02. 19:30,Frosinone,Empoli,2,2
+15.02. 18:30,Avellino,Pescara,0,1
+15.02. 16:15,Empoli,Reggiana,1,1
+15.02. 14:00,Bari,Sudtirol,1,2
+15.02. 14:00,Monza,Juve Stabia,2,1
+15.02. 14:00,Spezia,Frosinone,0,2
+14.02. 18:30,Cesena,Venezia,0,4
+14.02. 16:15,Catanzaro,Mantova,2,0
+14.02. 14:00,Modena,Carrarese,2,0
+14.02. 14:00,Palermo,Entella,3,0
+14.02. 14:00,Sampdoria,Padova,1,0
+11.02. 19:00,Avellino,Frosinone,1,3
+11.02. 19:00,Bari,Spezia,0,0
+11.02. 19:00,Empoli,Juve Stabia,1,2
+11.02. 18:00,Sudtirol,Monza,0,0
+10.02. 19:00,Entella,Cesena,3,1
+10.02. 19:00,Padova,Carrarese,1,0
+10.02. 19:00,Pescara,Catanzaro,0,2
+10.02. 19:00,Reggiana,Mantova,1,0
+10.02. 19:00,Venezia,Modena,0,2
+10.02. 18:00,Sampdoria,Palermo,3,3
+08.02. 14:00,Monza,Avellino,2,1
+07.02. 18:30,Spezia,Entella,1,1
+07.02. 16:15,Palermo,Empoli,3,2
+07.02. 14:00,Carrarese,Sudtirol,0,0
+07.02. 14:00,Catanzaro,Reggiana,2,0
+07.02. 14:00,Frosinone,Venezia,1,2
+07.02. 14:00,Juve Stabia,Padova,3,3
+07.02. 14:00,Mantova,Bari,2,1
+07.02. 14:00,Modena,Sampdoria,1,2
+06.02. 19:30,Cesena,Pescara,2,0
+01.02. 16:15,Padova,Monza,1,2
+01.02. 14:00,Reggiana,Juve Stabia,1,1
+31.01. 18:30,Sampdoria,Spezia,1,0
+31.01. 16:15,Pescara,Mantova,2,2
+31.01. 14:00,Avellino,Cesena,3,1
+31.01. 14:00,Empoli,Modena,0,0
+31.01. 14:00,Entella,Frosinone,1,1
+31.01. 14:00,Sudtirol,Catanzaro,2,1
+31.01. 14:00,Venezia,Carrarese,2,1
+30.01. 19:30,Bari,Palermo,0,3
+25.01. 16:15,Catanzaro,Sampdoria,0,0
+25.01. 14:00,Sudtirol,Padova,3,0
+24.01. 18:30,Spezia,Avellino,1,0
+24.01. 16:15,Modena,Palermo,0,0
+24.01. 14:00,Cesena,Bari,1,2
+24.01. 14:00,Frosinone,Reggiana,1,0
+24.01. 14:00,Juve Stabia,Entella,1,0
+24.01. 14:00,Mantova,Venezia,2,5
+24.01. 14:00,Monza,Pescara,3,0
+23.01. 19:30,Carrarese,Empoli,3,0
+18.01. 16:15,Palermo,Spezia,1,0
+18.01. 14:00,Pescara,Modena,0,2
+17.01. 18:30,Bari,Juve Stabia,0,1
+17.01. 16:15,Reggiana,Cesena,1,2
+17.01. 14:00,Avellino,Carrarese,1,2
+17.01. 14:00,Empoli,Sudtirol,0,1
+17.01. 14:00,Monza,Frosinone,2,2
+17.01. 14:00,Padova,Mantova,1,2
+17.01. 14:00,Venezia,Catanzaro,3,1
+16.01. 19:30,Sampdoria,Entella,1,1
+11.01. 16:15,Padova,Modena,2,0
+11.01. 14:00,Mantova,Palermo,1,1
+10.01. 18:30,Cesena,Empoli,0,1
+10.01. 16:15,Juve Stabia,Pescara,2,2
+10.01. 14:00,Avellino,Sampdoria,2,1
+10.01. 14:00,Carrarese,Bari,1,0
+10.01. 14:00,Entella,Monza,1,0
+10.01. 14:00,Frosinone,Catanzaro,2,0
+10.01. 14:00,Reggiana,Venezia,1,3
+10.01. 14:00,Sudtirol,Spezia,2,1
+27.12. 18:30,Bari,Avellino,1,1
+27.12. 16:15,Palermo,Padova,1,0
+27.12. 14:00,Carrarese,Mantova,0,0
+27.12. 14:00,Catanzaro,Cesena,2,0
+27.12. 14:00,Empoli,Frosinone,1,1
+27.12. 14:00,Juve Stabia,Sudtirol,1,0
+27.12. 14:00,Sampdoria,Reggiana,2,1
+27.12. 14:00,Venezia,Entella,1,0
+27.12. 11:30,Spezia,Pescara,2,1
+26.12. 16:15,Modena,Monza,1,2
+21.12. 16:15,Mantova,Empoli,0,1
+21.12. 14:00,Entella,Sudtirol,1,1
+20.12. 18:30,Pescara,Reggiana,2,1
+20.12. 16:15,Avellino,Palermo,2,2
+20.12. 14:00,Cesena,Juve Stabia,1,1
+20.12. 14:00,Frosinone,Spezia,2,1
+20.12. 14:00,Modena,Venezia,1,2
+20.12. 14:00,Monza,Carrarese,4,1
+20.12. 14:00,Padova,Sampdoria,1,1
+19.12. 19:30,Bari,Catanzaro,1,2
+14.12. 16:15,Pescara,Frosinone,1,2
+14.12. 14:00,Carrarese,Entella,3,1
+13.12. 18:30,Cesena,Mantova,3,2
+13.12. 16:15,Catanzaro,Avellino,1,0
+13.12. 14:00,Juve Stabia,Empoli,2,0
+13.12. 14:00,Reggiana,Padova,1,2
+13.12. 14:00,Spezia,Modena,0,2
+13.12. 14:00,Sudtirol,Bari,0,0
+13.12. 14:00,Venezia,Monza,2,0
+12.12. 19:30,Palermo,Sampdoria,1,0
+08.12. 18:30,Entella,Spezia,0,1
+08.12. 16:15,Bari,Pescara,1,1
+08.12. 14:00,Avellino,Venezia,1,1
+08.12. 14:00,Frosinone,Juve Stabia,3,0
+08.12. 14:00,Mantova,Reggiana,0,1
+08.12. 14:00,Monza,Sudtirol,1,1
+08.12. 14:00,Padova,Cesena,1,1
+08.12. 11:30,Modena,Catanzaro,1,2
+07.12. 18:30,Sampdoria,Carrarese,3,2
+07.12. 16:15,Empoli,Palermo,1,3
+04.12. 18:30,Juve Stabia,Bari,0,0
+30.11. 16:15,Spezia,Sampdoria,1,0
+30.11. 14:00,Juve Stabia,Monza,2,2
+29.11. 18:30,Palermo,Carrarese,5,0
+29.11. 16:15,Catanzaro,Entella,3,2
+29.11. 14:00,Empoli,Bari,5,0
+29.11. 14:00,Pescara,Padova,0,1
+29.11. 14:00,Reggiana,Frosinone,0,1
+29.11. 14:00,Sudtirol,Avellino,0,1
+29.11. 14:00,Venezia,Mantova,3,0
+28.11. 19:30,Cesena,Modena,1,0
+24.11. 19:30,Sampdoria,Juve Stabia,1,0
+23.11. 16:15,Monza,Cesena,1,0
+23.11. 14:00,Mantova,Spezia,4,1
+23.11. 14:00,Modena,Sudtirol,0,0
+22.11. 18:30,Bari,Frosinone,2,3
+22.11. 16:15,Padova,Venezia,0,2
+22.11. 14:00,Avellino,Empoli,0,3
+22.11. 14:00,Carrarese,Reggiana,0,0
+22.11. 14:00,Entella,Palermo,1,1
+21.11. 19:30,Catanzaro,Pescara,3,3
+09.11. 16:15,Pescara,Monza,0,2
+09.11. 14:00,Cesena,Avellino,3,0
+08.11. 18:30,Venezia,Sampdoria,3,1
+08.11. 16:15,Juve Stabia,Palermo,1,0
+08.11. 14:00,Empoli,Catanzaro,1,0
+08.11. 14:00,Frosinone,Modena,2,2
+08.11. 14:00,Mantova,Padova,1,0
+08.11. 14:00,Reggiana,Entella,0,0
+08.11. 14:00,Sudtirol,Carrarese,1,1
+07.11. 19:30,Spezia,Bari,1,1
+02.11. 18:30,Sampdoria,Mantova,0,1
+02.11. 16:15,Monza,Spezia,1,0
+02.11. 14:00,Bari,Cesena,1,0
+02.11. 14:00,Catanzaro,Venezia,2,1
+02.11. 14:00,Modena,Juve Stabia,3,0
+01.11. 18:30,Palermo,Pescara,5,0
+01.11. 16:15,Entella,Empoli,1,0
+01.11. 14:00,Carrarese,Frosinone,0,2
+01.11. 14:00,Padova,Sudtirol,1,1
+01.11. 11:30,Avellino,Reggiana,4,3
+29.10. 19:30,Mantova,Catanzaro,1,3
+29.10. 19:30,Spezia,Padova,1,1
+29.10. 19:30,Venezia,Sudtirol,3,0
+28.10. 19:30,Cesena,Carrarese,2,1
+28.10. 19:30,Empoli,Sampdoria,1,1
+28.10. 19:30,Frosinone,Entella,4,0
+28.10. 19:30,Palermo,Monza,0,3
+28.10. 19:30,Pescara,Avellino,1,1
+28.10. 19:30,Reggiana,Modena,1,0
+26.10. 16:15,Bari,Mantova,1,0
+26.10. 14:00,Padova,Juve Stabia,2,2
+25.10. 17:30,Catanzaro,Palermo,1,0
+25.10. 15:15,Carrarese,Venezia,3,2
+25.10. 13:00,Avellino,Spezia,0,4
+25.10. 13:00,Entella,Pescara,1,1
+25.10. 13:00,Monza,Reggiana,3,1
+25.10. 13:00,Sampdoria,Frosinone,1,1
+25.10. 13:00,Sudtirol,Cesena,0,1
+24.10. 18:30,Modena,Empoli,2,1
+19.10. 17:30,Catanzaro,Padova,0,1
+19.10. 15:15,Empoli,Venezia,1,1
+19.10. 13:00,Palermo,Modena,1,1
+18.10. 17:30,Spezia,Cesena,1,2
+18.10. 15:15,Juve Stabia,Avellino,2,0
+18.10. 13:00,Frosinone,Monza,0,1
+18.10. 13:00,Mantova,Sudtirol,1,1
+18.10. 13:00,Pescara,Carrarese,2,2
+18.10. 13:00,Reggiana,Bari,3,1
+17.10. 18:30,Entella,Sampdoria,3,1
+05.10. 17:30,Modena,Entella,2,0
+05.10. 15:15,Sampdoria,Pescara,4,1
+05.10. 13:00,Carrarese,Juve Stabia,3,0
+05.10. 13:00,Sudtirol,Empoli,1,2
+04.10. 17:30,Cesena,Reggiana,1,2
+04.10. 15:15,Spezia,Palermo,1,2
+04.10. 13:00,Avellino,Mantova,0,0
+04.10. 13:00,Bari,Padova,2,1
+04.10. 13:00,Monza,Catanzaro,2,1
+04.10. 13:00,Venezia,Frosinone,3,0
+01.10. 18:30,Carrarese,Modena,0,0
+01.10. 18:30,Empoli,Monza,1,1
+01.10. 18:30,Pescara,Sudtirol,1,1
+01.10. 18:30,Sampdoria,Catanzaro,0,0
+30.09. 18:30,Entella,Bari,2,2
+30.09. 18:30,Frosinone,Cesena,3,1
+30.09. 18:30,Juve Stabia,Mantova,2,1
+30.09. 18:30,Padova,Avellino,2,2
+30.09. 18:30,Palermo,Venezia,0,0
+30.09. 18:30,Reggiana,Spezia,1,1
+28.09. 17:30,Empoli,Carrarese,2,2
+28.09. 15:15,Modena,Pescara,2,1
+27.09. 17:30,Bari,Sampdoria,1,1
+27.09. 15:15,Monza,Padova,0,1
+27.09. 13:00,Avellino,Entella,2,0
+27.09. 13:00,Cesena,Palermo,1,1
+27.09. 13:00,Mantova,Frosinone,1,5
+27.09. 13:00,Sudtirol,Reggiana,3,1
+27.09. 13:00,Venezia,Spezia,2,0
+26.09. 18:30,Catanzaro,Juve Stabia,2,2
+21.09. 17:30,Padova,Entella,2,1
+21.09. 15:15,Pescara,Empoli,4,0
+21.09. 13:00,Carrarese,Avellino,3,4
+20.09. 17:30,Mantova,Modena,1,3
+20.09. 15:15,Monza,Sampdoria,1,0
+20.09. 13:00,Reggiana,Catanzaro,2,2
+20.09. 13:00,Spezia,Juve Stabia,1,3
+20.09. 13:00,Venezia,Cesena,1,2
+19.09. 19:00,Palermo,Bari,2,0
+19.09. 17:00,Frosinone,Sudtirol,2,2
+14.09. 17:30,Empoli,Spezia,1,1
+14.09. 15:15,Sudtirol,Palermo,0,2
+14.09. 13:00,Entella,Mantova,1,0
+13.09. 17:30,Sampdoria,Cesena,1,2
+13.09. 15:15,Catanzaro,Carrarese,1,1
+13.09. 13:00,Juve Stabia,Reggiana,0,0
+13.09. 13:00,Modena,Bari,3,0
+13.09. 13:00,Padova,Frosinone,0,1
+13.09. 13:00,Pescara,Venezia,2,2
+12.09. 18:30,Avellino,Monza,2,1
+31.08. 19:00,Bari,Monza,1,1
+31.08. 19:00,Modena,Avellino,1,1
+31.08. 17:00,Carrarese,Padova,0,0
+31.08. 17:00,Sudtirol,Sampdoria,3,1
+30.08. 19:00,Cesena,Entella,1,1
+30.08. 19:00,Palermo,Frosinone,0,0
+30.08. 19:00,Spezia,Catanzaro,0,0
+30.08. 17:00,Juve Stabia,Venezia,0,0
+30.08. 17:00,Mantova,Pescara,2,1
+29.08. 18:30,Reggiana,Empoli,3,1
+25.08. 18:30,Sampdoria,Modena,0,2
+24.08. 19:00,Catanzaro,Sudtirol,1,1
+24.08. 19:00,Frosinone,Avellino,2,0
+24.08. 17:00,Spezia,Carrarese,0,2
+24.08. 17:00,Venezia,Bari,2,1
+23.08. 19:00,Monza,Mantova,1,0
+23.08. 19:00,Palermo,Reggiana,2,1
+23.08. 17:00,Empoli,Padova,3,1
+23.08. 17:00,Entella,Juve Stabia,1,1
+22.08. 18:30,Pescara,Cesena,1,3

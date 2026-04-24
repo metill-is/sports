@@ -1,0 +1,20 @@
+Type: project
+Package: livesport.data
+Title: Livesport Match Data Scraper
+Version: 0.1.0
+Description: Automated daily scraping of match results and schedules from
+    livesport.com for football and handball leagues. Data committed to git
+    for consumption by the Sports betting pipeline.
+License: MIT
+Depends:
+    R (>= 4.1.0)
+Imports:
+    dplyr,
+    glue,
+    here,
+    jsonlite,
+    readr,
+    rvest,
+    stats,
+    targets,
+    yaml

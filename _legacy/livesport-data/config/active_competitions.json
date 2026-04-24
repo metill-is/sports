@@ -1,0 +1,21 @@
+{
+  "generated_at": "2026-04-24T07:58:44",
+  "lookahead_days": 14,
+  "active": {
+    "football_england": true,
+    "football_italy": true,
+    "football_spain": true,
+    "handball_austria": false,
+    "handball_czech_republic": false,
+    "handball_denmark": false,
+    "handball_finland": false,
+    "handball_france": true,
+    "handball_germany": true,
+    "handball_hungary": true,
+    "handball_norway": false,
+    "handball_poland": true,
+    "handball_portugal": true,
+    "handball_spain": true,
+    "handball_sweden": false
+  }
+}

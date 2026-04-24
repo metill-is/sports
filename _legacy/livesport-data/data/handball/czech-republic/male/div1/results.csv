@@ -1,0 +1,104 @@
+date,home,away,home_score,away_score
+14.03. 17:00,Jicin,Dukla Prague,28,31
+14.03. 17:00,Koprivnice,Zubri,32,35
+14.03. 17:00,Lovosice,Brno,38,22
+14.03. 17:00,Strakonice,Nove Veseli,33,34
+13.03. 18:30,Plzen,Frydek-Mistek,25,23
+07.03. 17:00,Brno,Koprivnice,31,27
+07.03. 17:00,Frydek-Mistek,Strakonice,37,25
+07.03. 17:00,Nove Veseli,Zlin,28,20
+07.03. 17:00,Zubri,Jicin,40,22
+06.03. 18:00,Dukla Prague,Plzen,26,29
+03.03. 16:30,Karvina,Lovosice,29,24
+01.03. 15:30,Frydek-Mistek,Nove Veseli,26,27
+25.02. 18:00,Jicin,Brno,28,29
+25.02. 17:00,Frydek-Mistek,Dukla Prague,29,40
+22.02. 09:30,Plzen,Zubri,40,29
+21.02. 17:00,Lovosice,Nove Veseli,30,28
+21.02. 16:00,Strakonice,Zlin,26,27
+18.02. 17:00,Koprivnice,Karvina,26,36
+14.02. 17:00,Zlin,Lovosice,30,33
+14.02. 17:00,Zubri,Frydek-Mistek,26,22
+14.02. 16:00,Nove Veseli,Koprivnice,24,23
+11.02. 17:30,Karvina,Jicin,32,29
+11.02. 17:00,Brno,Plzen,28,28
+08.02. 16:00,Dukla Prague,Zubri,38,27
+08.02. 15:30,Frydek-Mistek,Brno,30,28
+08.02. 09:30,Plzen,Karvina,34,28
+07.02. 17:00,Jicin,Nove Veseli,25,30
+07.02. 16:00,Strakonice,Lovosice,28,37
+07.02. 15:00,Koprivnice,Zlin,33,31
+04.02. 17:00,Lovosice,Koprivnice,33,30
+04.02. 17:00,Zubri,Strakonice,44,24
+04.02. 16:00,Brno,Dukla Prague,29,31
+04.02. 16:00,Zlin,Jicin,30,30
+03.02. 16:00,Karvina,Frydek-Mistek,30,20
+01.02. 18:00,Brno,Frydek-Mistek,27,25
+31.01. 16:00,Dukla Prague,Strakonice,38,22
+30.01. 18:00,Nove Veseli,Plzen,30,28
+20.12. 17:00,Strakonice,Koprivnice,31,33
+20.12. 17:00,Zubri,Brno,31,30
+20.12. 16:00,Dukla Prague,Karvina,24,34
+20.12. 16:00,Jicin,Lovosice,27,35
+16.12. 17:00,Plzen,Zlin,28,23
+14.12. 17:00,Zlin,Frydek-Mistek,28,28
+13.12. 17:00,Karvina,Zubri,34,30
+13.12. 17:00,Koprivnice,Jicin,29,30
+13.12. 17:00,Lovosice,Plzen,31,34
+13.12. 16:00,Nove Veseli,Dukla Prague,31,38
+13.12. 14:00,Strakonice,Brno,29,29
+10.12. 17:00,Dukla Prague,Zlin,34,28
+10.12. 17:00,Frydek-Mistek,Lovosice,23,28
+10.12. 17:00,Plzen,Koprivnice,41,27
+10.12. 17:00,Strakonice,Jicin,27,33
+10.12. 17:00,Zubri,Nove Veseli,34,32
+10.12. 16:00,Brno,Karvina,29,30
+07.12. 17:00,Zlin,Zubri,28,32
+06.12. 17:00,Jicin,Plzen,23,29
+06.12. 17:00,Karvina,Strakonice,31,22
+06.12. 17:00,Lovosice,Dukla Prague,32,33
+06.12. 16:00,Nove Veseli,Brno,37,32
+05.12. 18:00,Frydek-Mistek,Koprivnice,29,26
+03.12. 17:00,Dukla Prague,Jicin,40,28
+03.12. 17:00,Karvina,Plzen,31,27
+02.12. 18:00,Koprivnice,Brno,24,29
+30.11. 15:30,Frydek-Mistek,Jicin,27,27
+29.11. 17:00,Zubri,Lovosice,38,35
+29.11. 16:00,Brno,Zlin,37,26
+29.11. 16:00,Strakonice,Plzen,27,34
+28.11. 18:00,Dukla Prague,Koprivnice,36,29
+25.11. 16:30,Karvina,Nove Veseli,36,27
+23.11. 15:30,Frydek-Mistek,Plzen,28,31
+22.11. 17:00,Zubri,Koprivnice,36,27
+22.11. 16:00,Nove Veseli,Strakonice,32,29
+19.11. 17:00,Karvina,Zlin,41,24
+18.11. 15:00,Brno,Lovosice,37,23
+16.11. 17:00,Zlin,Nove Veseli,21,22
+15.11. 17:00,Jicin,Zubri,31,30
+15.11. 16:00,Strakonice,Frydek-Mistek,31,30
+12.11. 17:00,Plzen,Dukla Prague,23,24
+11.11. 17:00,Lovosice,Karvina,30,34
+09.11. 16:00,Dukla Prague,Frydek-Mistek,32,29
+08.11. 17:00,Brno,Jicin,36,31
+08.11. 17:00,Karvina,Koprivnice,41,23
+08.11. 16:00,Nove Veseli,Lovosice,34,37
+08.11. 14:00,Zlin,Strakonice,35,28
+06.11. 17:00,Dukla Prague,Lovosice,33,29
+04.11. 16:30,Zubri,Plzen,34,39
+26.10. 09:30,Plzen,Brno,31,24
+25.10. 16:00,Jicin,Karvina,17,29
+25.10. 16:00,Koprivnice,Nove Veseli,29,28
+25.10. 16:00,Lovosice,Frydek-Mistek,37,26
+25.10. 15:00,Strakonice,Dukla Prague,31,32
+22.10. 16:00,Zubri,Dukla Prague,32,27
+21.10. 15:30,Lovosice,Zlin,35,25
+18.10. 16:00,Zlin,Koprivnice,24,25
+18.10. 15:00,Nove Veseli,Jicin,28,28
+17.10. 17:00,Lovosice,Strakonice,34,27
+17.10. 16:30,Frydek-Mistek,Zubri,27,28
+12.10. 08:30,Plzen,Nove Veseli,32,23
+11.10. 16:00,Koprivnice,Lovosice,27,38
+11.10. 15:00,Strakonice,Zubri,22,33
+08.10. 16:30,Frydek-Mistek,Karvina,27,35
+07.10. 15:30,Jicin,Zlin,24,24
+05.10. 16:00,Zlin,Plzen,24,40

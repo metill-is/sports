@@ -1,0 +1,107 @@
+date,home,away,home_score,away_score
+15.03. 18:15,Elverum,Kolstad,24,26
+15.03. 17:00,Fjellhammer,Follo,33,32
+15.03. 17:00,Kristiansand,Bergen,28,30
+15.03. 16:00,Arendal,Halden,29,31
+15.03. 16:00,Drammen,Naerbo,33,29
+15.03. 16:00,Runar,Baekkelaget,33,27
+15.03. 16:00,Sandnes,Sandefjord TIF,34,28
+11.03. 17:15,Sandefjord TIF,Runar,30,26
+11.03. 16:30,Drammen,Bergen,31,36
+08.03. 17:00,Fjellhammer,Sandefjord TIF,29,30
+08.03. 17:00,Kristiansand,Baekkelaget,38,29
+08.03. 17:00,Sandnes,Kolstad,16,40
+08.03. 16:00,Arendal,Follo,29,24
+08.03. 16:00,Naerbo,Halden,27,23
+07.03. 15:15,Runar,Elverum,27,38
+04.03. 17:30,Naerbo,Arendal,33,29
+04.03. 17:00,Halden,Kristiansand,20,23
+01.03. 17:00,Follo,Runar,38,32
+01.03. 17:00,Kolstad,Naerbo,35,33
+01.03. 15:00,Bergen,Fjellhammer,28,34
+28.02. 15:00,Baekkelaget,Sandnes,32,15
+27.02. 17:30,Elverum,Sandefjord TIF,34,26
+25.02. 17:15,Runar,Bergen,38,39
+22.02. 17:00,Fjellhammer,Halden,25,23
+22.02. 17:00,Kristiansand,Naerbo,28,24
+22.02. 17:00,Sandnes,Follo,33,37
+22.02. 16:00,Arendal,Drammen,31,31
+22.02. 16:00,Sandefjord TIF,Kolstad,22,24
+20.02. 18:00,Elverum,Baekkelaget,33,26
+18.02. 17:00,Drammen,Kristiansand,46,35
+18.02. 17:00,Halden,Runar,30,33
+15.02. 17:00,Bergen,Sandnes,31,23
+15.02. 17:00,Naerbo,Fjellhammer,31,29
+14.02. 17:00,Baekkelaget,Sandefjord TIF,20,26
+14.02. 15:00,Follo,Elverum,26,30
+14.02. 15:00,Kolstad,Arendal,30,31
+12.02. 18:00,Fjellhammer,Drammen,24,30
+11.02. 19:15,Kristiansand,Arendal,27,28
+11.02. 17:30,Baekkelaget,Kolstad,29,35
+11.02. 17:30,Runar,Naerbo,32,28
+11.02. 17:15,Elverum,Bergen,33,29
+11.02. 17:00,Sandefjord TIF,Follo,41,31
+11.02. 16:15,Sandnes,Halden,29,23
+08.02. 17:00,Arendal,Fjellhammer,37,33
+08.02. 17:00,Bergen,Sandefjord TIF,34,29
+08.02. 17:00,Drammen,Runar,28,34
+08.02. 17:00,Follo,Baekkelaget,30,30
+08.02. 17:00,Halden,Elverum,26,35
+08.02. 17:00,Naerbo,Sandnes,33,21
+07.02. 14:00,Kolstad,Kristiansand,38,28
+05.02. 18:00,Fjellhammer,Kristiansand,27,27
+05.02. 17:30,Runar,Arendal,35,30
+05.02. 17:15,Elverum,Naerbo,34,28
+05.02. 16:30,Sandnes,Drammen,26,33
+04.02. 17:00,Baekkelaget,Bergen,32,36
+04.02. 17:00,Follo,Kolstad,29,29
+04.02. 17:00,Sandefjord TIF,Halden,26,28
+20.12. 16:00,Arendal,Sandnes,29,28
+20.12. 16:00,Bergen,Follo,31,30
+20.12. 15:45,Drammen,Elverum,31,37
+20.12. 15:00,Fjellhammer,Kolstad,31,25
+20.12. 15:00,Halden,Baekkelaget,26,29
+20.12. 15:00,Kristiansand,Runar,38,44
+20.12. 15:00,Naerbo,Sandefjord TIF,32,33
+13.12. 18:15,Kolstad,Bergen,30,21
+13.12. 17:00,Sandnes,Kristiansand,30,29
+13.12. 16:00,Elverum,Arendal,37,27
+13.12. 16:00,Runar,Fjellhammer,32,23
+13.12. 15:00,Baekkelaget,Naerbo,29,29
+13.12. 14:00,Sandefjord TIF,Drammen,28,32
+13.12. 13:00,Follo,Halden,24,27
+10.12. 17:15,Naerbo,Kolstad,26,36
+10.12. 17:00,Sandnes,Fjellhammer,26,25
+07.12. 17:00,Follo,Naerbo,31,24
+07.12. 16:30,Bergen,Halden,36,27
+07.12. 16:00,Elverum,Kristiansand,43,33
+07.12. 16:00,Sandefjord TIF,Arendal,30,25
+07.12. 15:15,Kolstad,Runar,37,31
+06.12. 17:00,Baekkelaget,Drammen,26,31
+30.11. 17:00,Kristiansand,Sandefjord TIF,28,33
+30.11. 16:00,Arendal,Baekkelaget,22,27
+30.11. 16:00,Runar,Sandnes,35,29
+30.11. 15:00,Halden,Kolstad,23,29
+29.11. 17:00,Drammen,Follo,34,27
+29.11. 17:00,Fjellhammer,Elverum,23,31
+29.11. 15:00,Naerbo,Bergen,35,28
+26.11. 17:00,Bergen,Drammen,44,34
+26.11. 17:00,Follo,Arendal,40,39
+26.11. 17:00,Halden,Naerbo,36,28
+23.11. 17:00,Kolstad,Sandnes,47,30
+22.11. 17:00,Baekkelaget,Kristiansand,35,36
+22.11. 16:00,Sandefjord TIF,Fjellhammer,25,25
+19.11. 17:30,Runar,Sandefjord TIF,35,29
+19.11. 17:00,Drammen,Halden,28,27
+16.11. 17:00,Kristiansand,Follo,31,30
+16.11. 16:00,Arendal,Bergen,26,35
+16.11. 14:00,Fjellhammer,Baekkelaget,28,29
+15.11. 14:00,Sandnes,Elverum,22,34
+12.11. 17:30,Runar,Kristiansand,39,34
+09.11. 19:00,Baekkelaget,Runar,28,33
+09.11. 18:15,Sandefjord TIF,Sandnes,33,30
+09.11. 17:00,Bergen,Kristiansand,33,33
+09.11. 17:00,Follo,Fjellhammer,29,30
+09.11. 17:00,Halden,Arendal,23,24
+08.11. 15:45,Kolstad,Elverum,23,31
+08.11. 15:00,Naerbo,Drammen,25,28
