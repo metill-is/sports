@@ -2,4 +2,6 @@
 
 export(filter_leagues)
 export(load_leagues)
+export(read_table)
 export(schemas)
+export(write_table)
