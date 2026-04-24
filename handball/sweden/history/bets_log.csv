@@ -76,7 +76,7 @@ date_recommended,date_match,sport,country,sex,market,home,away,outcome,odds,prob
 2025-10-02,2025-10-02,handball,sweden,male,outcome,Malmo,Savehof,home,2.2,0.6215,0.3673000000000002,NA,420,NA,TRUE,504,gsheets
 2025-10-02,2025-10-02,handball,sweden,male,totals,Malmo,Savehof,under,1.85,0.60875,0.12618750000000012,NA,195,61.5,FALSE,-195,gsheets
 2025-10-02,2025-10-02,handball,sweden,male,totals,Vasteras Irsta HF,Kristianstad,over,1.8,0.65675,0.18214999999999992,NA,315,57.5,TRUE,252,gsheets
-2026-03-06,2026-03-06,handball,sweden,male,totals,Tyreso,Enkoping,over,1.98,0.65275,0.2924,0.02,353,66.5,NA,NA,pipeline
-2026-03-06,2026-03-06,handball,sweden,male,totals,Tyreso,Enkoping,over,1.79,0.71175,0.274,0.03,428,65.5,NA,NA,pipeline
-2026-03-06,2026-03-06,handball,sweden,male,totals,Tyreso,Enkoping,over,1.64,0.75725,0.2419,0.04,596,64.5,NA,NA,pipeline
+2026-03-06,2026-03-06,handball,sweden,male,totals,Tyreso,Enkoping,over,1.98,0.65275,0.2924,0.02,353,66.5,FALSE,-353,pipeline
+2026-03-06,2026-03-06,handball,sweden,male,totals,Tyreso,Enkoping,over,1.79,0.71175,0.274,0.03,428,65.5,FALSE,-428,pipeline
+2026-03-06,2026-03-06,handball,sweden,male,totals,Tyreso,Enkoping,over,1.64,0.75725,0.2419,0.04,596,64.5,FALSE,-596,pipeline
 2026-03-06,2026-03-07,handball,sweden,male,outcome,Hammarby,Kristianstad,home,2.24,0.49825,0.1161,0.01,150,NA,FALSE,-150,pipeline
