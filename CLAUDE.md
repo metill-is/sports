@@ -10,10 +10,11 @@ Mid-migration. End-state design: [`docs/superpowers/specs/2026-04-24-sports-pipe
 
 | Plan | Scope | Status |
 |---|---|---|
-| **1: Foundation + Storage + ETL** | Monorepo init, storage layer, ETL for odds + ledger | ✅ Complete (Task 10 results/schedules deferred — legacy match-data CSVs were gitignored and lost; regenerating via scrapers moved to Plan 4) |
-| 2: Model layer | `prepare_data()` + `fit()` + posteriors for 3 leagues | Pending |
-| 3: Decide + Placer + Publish | Kelly, portfolio, bet placement, website JSON | Pending |
-| 4: Ingest + Orchestration + CI | Scrapers (federations + Lengjan), `{targets}` DAG, CI workflows, metill-platform pull, cutover. **Also backfills the deferred Task 10 ETL.** | Pending |
+| **1: Foundation + Storage + ETL** | Monorepo init, storage layer, ETL for odds + ledger | ✅ Complete |
+| **2: Ingest (federation scrapers) + historical backfill** | `R/ingest/` dispatcher + 3 federation scrapers (KSÍ / KKÍ / HSÍ), historical match-data backfill | ✅ Complete — 7,680 rows in `data/facts/results/` |
+| 3: Model layer | `prepare_data()` + `fit()` + posteriors for 3 leagues (golden-output tests vs `_legacy/*/results/*/fit.rds`) | Pending |
+| 4: Decide + Placer + Publish | Kelly, portfolio, bet placement, website JSON | Pending |
+| 5: Orchestration + CI + cutover | `{targets}` DAG, CI workflows (scrape + fit + publish), metill-platform pull, cutover, archive `_legacy/` remotes | Pending |
 
 ## Directory structure
 
@@ -26,22 +27,28 @@ sports/
 │   ├── config.R                    # load_leagues() + filter_leagues()
 │   ├── storage-schemas.R           # Arrow schemas for 8 tables
 │   ├── storage.R                   # write_table() + read_table() primitives
-│   └── duckdb-views.R              # rebuild_duckdb() — regenerable SQL view layer
-├── Stan/                           # (Plan 2 populates)
+│   ├── duckdb-views.R              # rebuild_duckdb() — regenerable SQL view layer
+│   ├── ingest.R                    # Source-registry dispatcher: ingest_league()
+│   ├── ingest-kki-basketball.R     # Baskethotel XLSX (2021-2026)
+│   ├── ingest-hsi-handball.R       # HSÍ (chromote; 2021-2025 male OD historical)
+│   └── ingest-ksi-football.R       # KSÍ (paginated server-rendered; 2021-2025 men's)
+├── Stan/                           # (Plan 3 populates)
 ├── data/                           # Parquet stores (git-tracked, hive-partitioned)
 │   ├── facts/
-│   │   ├── odds/                   # Lengjan odds snapshots (long-form, scraped_at, line, market)
-│   │   ├── results/                # (Plan 4 backfill)
-│   │   └── schedules/              # (Plan 4 backfill)
-│   ├── beliefs/                    # (Plan 2 populates: latest/ + archive/)
+│   │   ├── odds/                   # Lengjan odds snapshots (1,433 rows)
+│   │   ├── results/                # Match history (7,680 rows across 3 sports, up to 6 seasons)
+│   │   └── schedules/              # (Plan 3+ uses upcoming fixtures via ingest)
+│   ├── beliefs/                    # (Plan 3 populates: latest/ + archive/)
 │   └── decisions/
-│       ├── ledger/                 # Placed-bet history (13 legacy ledgers ETL'd, total 1,870 rows, PnL = 89,369 ISK)
-│       ├── candidates/             # (Plan 3 populates)
-│       └── recommendations/        # (Plan 3 populates)
-├── scripts/etl/                    # One-time legacy-CSV → Parquet migrations
-│   ├── 03_etl_odds.R               # Lengjan odds → facts/odds/
-│   └── 04_etl_ledger.R             # Legacy bets_log.csv → decisions/ledger/
-├── tests/testthat/                 # 64 passing assertions across test-config, test-storage*, test-duckdb-views, test-etl-validation
+│       ├── ledger/                 # Placed-bet history (1,870 rows, PnL = 89,369 ISK)
+│       ├── candidates/             # (Plan 4 populates)
+│       └── recommendations/        # (Plan 4 populates)
+├── scripts/
+│   ├── etl/                        # One-time legacy-CSV → Parquet migrations
+│   │   ├── 03_etl_odds.R
+│   │   └── 04_etl_ledger.R
+│   └── backfill_ingest.R           # Single-command re-run of all 3 scrapers
+├── tests/testthat/                 # 144 passing assertions across config, storage*, duckdb-views, etl-validation, ingest-*
 ├── sports.duckdb                   # Gitignored; rebuildable via rebuild_duckdb()
 ├── docs/superpowers/               # Specs + plans
 └── _legacy/                        # Subtree-merged histories of the 4 predecessor repos
