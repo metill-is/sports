@@ -11,14 +11,44 @@ load_leagues <- function(path = here::here("config", "leagues.yml"),
   raw <- readr::read_file(path)
   leagues <- yaml::yaml.load(raw)
 
-  if (isTRUE(validate) && file.exists(schema_path)) {
+  if (is.null(leagues)) {
+    stop(
+      "leagues.yml parsed to NULL (empty or malformed file): ", path,
+      call. = FALSE
+    )
+  }
+
+  if (isTRUE(validate)) {
+    if (!file.exists(schema_path)) {
+      stop("leagues.schema.json not found: ", schema_path, call. = FALSE)
+    }
     validate_leagues(leagues, schema_path)
   }
 
   leagues
 }
 
+# Coerce known-array fields to lists so that jsonlite::toJSON(auto_unbox = TRUE)
+# does not flatten single-element arrays into scalars (which would trip the
+# schema's "must be array" checks on e.g. `sexes: [male]` or
+# `betting.markets: [moneyline]`).
+coerce_array_fields <- function(leagues) {
+  for (key in names(leagues)) {
+    l <- leagues[[key]]
+    if (!is.null(l$sexes) && !is.list(l$sexes)) {
+      l$sexes <- as.list(l$sexes)
+    }
+    if (!is.null(l$betting$markets) && !is.list(l$betting$markets)) {
+      l$betting$markets <- as.list(l$betting$markets)
+    }
+    # lengjan$competitions is already a list-of-lists in yaml.load output; leave alone.
+    leagues[[key]] <- l
+  }
+  leagues
+}
+
 validate_leagues <- function(leagues, schema_path) {
+  leagues <- coerce_array_fields(leagues)
   json_text <- jsonlite::toJSON(leagues, auto_unbox = TRUE, null = "null", na = "null")
   schema_text <- readr::read_file(schema_path)
 

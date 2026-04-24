@@ -3,7 +3,7 @@
   "title": "sports/config/leagues.yml",
   "type": "object",
   "patternProperties": {
-    "^[a-z]+_[a-z]+$": {
+    "^[a-z]+_[a-z]+(_[a-z]+)*$": {
       "type": "object",
       "required": ["sport", "country", "sexes", "active", "data_source", "stan_model"],
       "properties": {
