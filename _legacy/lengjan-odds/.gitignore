@@ -1,0 +1,20 @@
+# R
+.Rhistory
+.Rdata
+.RData
+.Ruserdata
+
+# targets store (cached pipeline outputs — not needed in repo)
+_targets/
+
+# renv
+renv/library/
+renv/staging/
+renv/sandbox/
+
+# IDE
+.Rproj.user/
+*.Rproj
+
+# OS
+.DS_Store

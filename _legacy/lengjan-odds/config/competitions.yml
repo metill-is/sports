@@ -1,0 +1,123 @@
+# Lengjan competition registry
+# URL pattern: https://games.lotto.is/getraunaleikir/lengjan?sport={sport}&country={country}&competition={id}
+#
+# Sport IDs: 1=Football, 2=Basketball, 6=Handball
+
+football_iceland:
+  sport: 1
+  country: "IS"
+  leagues:
+    Besta Deildin:
+      competition: "746"
+    Besta Deildin Efri Hluti:
+      competition: "20443"
+    Besta Deildin Neðri Hluti:
+      competition: "20442"
+
+football_england:
+  sport: 1
+  country: "ENG"
+  team_names: "team_names_football_england.csv"
+  leagues:
+    Premier League:
+      competition: "296"
+    Championship:
+      competition: "291"
+    League 1:
+      competition: "294"
+    League 2:
+      competition: "295"
+
+football_italy:
+  sport: 1
+  country: "IT"
+  team_names: "team_names_football_italy.csv"
+  leagues:
+    Serie A:
+      competition: "474"
+    Serie B:
+      competition: "475"
+
+football_spain:
+  sport: 1
+  country: "ES"
+  team_names: "team_names_football_spain.csv"
+  leagues:
+    LaLiga:
+      competition: "551"
+    LaLiga2:
+      competition: "557"
+
+# --- Handball ---
+
+handball_iceland:
+  sport: 6
+  country: "IS"
+  team_names: "team_names_handball_iceland.csv"
+  leagues:
+    Olísdeild karla:
+      competition: "1269"
+
+handball_germany:
+  sport: 6
+  country: "DE"
+  team_names: "team_names_handball_germany.csv"
+  leagues:
+    Bundesliga:
+      competition: "494"
+    2. Bundesliga:
+      competition: "493"
+
+handball_denmark:
+  sport: 6
+  country: "DK"
+  team_names: "team_names_handball_denmark.csv"
+  leagues:
+    Håndboldligaen:
+      competition: "490"
+
+handball_sweden:
+  sport: 6
+  country: "SE"
+  team_names: "team_names_handball_sweden.csv"
+  leagues:
+    Handbollsligan:
+      competition: "455"
+    Allsvenskan:
+      competition: "454"
+
+handball_france:
+  sport: 6
+  country: "FR"
+  team_names: "team_names_handball_france.csv"
+  leagues:
+    Starligue:
+      competition: "492"
+
+handball_norway:
+  sport: 6
+  country: "NO"
+  team_names: "team_names_handball_norway.csv"
+  leagues:
+    REMA 1000-ligaen:
+      competition: "1126"
+
+handball_spain:
+  sport: 6
+  country: "ES"
+  team_names: "team_names_handball_spain.csv"
+  leagues:
+    Liga Asobal:
+      competition: "453"
+
+# --- Basketball ---
+
+basketball_iceland:
+  sport: 2
+  country: "IS"
+  team_names: "team_names_basketball_iceland.csv"
+  leagues:
+    Bónusdeild kvenna efri:
+      competition: "30774"
+    Bónusdeild kvenna neðri:
+      competition: "30773"

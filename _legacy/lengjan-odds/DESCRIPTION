@@ -1,0 +1,21 @@
+Type: project
+Package: lengjan.odds
+Title: Lengjan Odds Scraper
+Version: 0.1.0
+Description: Automated scraping of betting odds from Lengjan (games.lotto.is).
+    Uses {targets} for pipeline management and GitHub Actions for scheduled runs.
+License: MIT
+Depends:
+    R (>= 4.1.0)
+Imports:
+    dplyr,
+    glue,
+    here,
+    jsonlite,
+    lubridate,
+    readr,
+    rvest,
+    stringr,
+    targets,
+    tibble,
+    yaml

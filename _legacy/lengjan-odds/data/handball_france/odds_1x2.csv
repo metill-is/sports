@@ -1,0 +1,160 @@
+date,league,home,away,o_home,o_draw,o_away,scraped_at
+2026-03-05,Starligue,Aix,Selestat,1.24,10.21,4.25,2026-03-04T17:50:44Z
+2026-03-05,Starligue,Aix,Selestat,1.23,10.29,4.37,2026-03-05T15:06:24Z
+2026-03-05,Starligue,Dunkerque,Toulouse,3.14,8.85,1.41,2026-03-04T14:04:18Z
+2026-03-05,Starligue,Dunkerque,Toulouse,3.02,8.8,1.44,2026-03-04T17:50:44Z
+2026-03-05,Starligue,Pays Aix,Selestat Alsace,1.24,8.41,4.59,2026-03-04T14:04:18Z
+2026-03-06,Starligue,Cesson Rennes-Metropole,Chambery Savoie,2.28,6.99,1.79,2026-03-04T17:50:44Z
+2026-03-06,Starligue,Cesson Rennes-Metropole,Chambery Savoie,2.22,7.61,1.79,2026-03-05T15:06:24Z
+2026-03-06,Starligue,Istres,Tremblay,3.07,8.76,1.43,2026-03-04T17:50:44Z
+2026-03-06,Starligue,Istres,Tremblay,3.11,9.03,1.41,2026-03-05T15:06:24Z
+2026-03-06,Starligue,Istres,Tremblay,3.18,9.18,1.4,2026-03-06T14:59:16Z
+2026-03-06,Starligue,Istres Ouest Provence,Tremblay,3.07,8.76,1.43,2026-03-04T14:04:18Z
+2026-03-06,Starligue,Rennes,Chambery,2.28,6.99,1.79,2026-03-04T14:04:18Z
+2026-03-06,Starligue,Saint Raphael,Dijon Bourgogne H B,1.17,9.57,5.43,2026-03-04T14:04:18Z
+2026-03-06,Starligue,St. Raphael,Dijon,1.17,9.57,5.43,2026-03-04T17:50:44Z
+2026-03-06,Starligue,St. Raphael,Dijon,1.17,11.24,5.05,2026-03-05T15:06:24Z
+2026-03-07,Starligue,Montpellier,PSG,2.34,8.4,1.68,2026-03-04T14:04:18Z
+2026-03-07,Starligue,Montpellier,PSG,2.19,6.9,1.86,2026-03-05T15:06:24Z
+2026-03-07,Starligue,Montpellier,PSG,2.21,7.26,1.82,2026-03-06T14:59:16Z
+2026-03-07,Starligue,Montpellier,PSG,2.16,7.23,1.85,2026-03-07T14:46:16Z
+2026-03-08,Starligue,Nimes,Limoges,1.8,8.75,2.13,2026-03-04T17:50:44Z
+2026-03-08,Starligue,Nimes,Limoges,1.87,6.8,2.19,2026-03-05T15:06:24Z
+2026-03-08,Starligue,Nimes,Limoges,NA,6.83,2.03,2026-03-05T20:57:36Z
+2026-03-08,Starligue,Nimes,Limoges,1.99,6.9,2.03,2026-03-06T08:59:19Z
+2026-03-08,Starligue,Nimes,Limoges,1.95,6.9,2.08,2026-03-06T14:59:16Z
+2026-03-08,Starligue,Nimes,Limoges,1.94,6.9,2.08,2026-03-06T20:49:20Z
+2026-03-08,Starligue,Nimes,Limoges,1.94,6.86,2.09,2026-03-07T14:46:16Z
+2026-03-08,Starligue,Nimes,Limoges,1.92,7.22,2.08,2026-03-07T19:58:05Z
+2026-03-08,Starligue,Nimes,Limoges,1.92,7.25,2.07,2026-03-08T08:47:59Z
+2026-03-08,Starligue,Usam Nimes,Limoges Hand 87,1.8,8.75,2.13,2026-03-04T14:04:18Z
+2026-03-13,Starligue,Chartres,Aix,2.51,8.47,1.6,2026-03-10T09:00:05Z
+2026-03-13,Starligue,Chartres,Aix,2.54,7.66,1.62,2026-03-10T15:05:38Z
+2026-03-13,Starligue,Chartres,Aix,3.12,7.64,1.45,2026-03-11T08:59:49Z
+2026-03-13,Starligue,Chartres,Aix,3.03,8.83,1.43,2026-03-12T09:14:55Z
+2026-03-13,Starligue,Chartres,Aix,3.78,8.28,1.33,2026-03-13T09:04:56Z
+2026-03-13,Starligue,Dijon,Chambery Savoie,3.41,9.33,1.35,2026-03-10T09:00:05Z
+2026-03-13,Starligue,Dijon,Chambery Savoie,3.5,8.64,1.35,2026-03-10T15:05:38Z
+2026-03-13,Starligue,Dijon,Chambery Savoie,3.14,9.05,1.41,2026-03-10T20:51:05Z
+2026-03-13,Starligue,Dijon,Chambery Savoie,3.19,9.1,1.4,2026-03-12T09:14:55Z
+2026-03-13,Starligue,Limoges,Istres,1.07,12.72,7.83,2026-03-10T09:00:05Z
+2026-03-13,Starligue,Limoges,Istres,1.06,12.47,8.39,2026-03-10T15:05:38Z
+2026-03-13,Starligue,Limoges,Istres,1.07,12.5,7.99,2026-03-10T20:51:05Z
+2026-03-13,Starligue,Selestat,Montpellier,5.51,10.59,1.16,2026-03-10T09:00:05Z
+2026-03-13,Starligue,Selestat,Montpellier,5.79,10.21,1.15,2026-03-10T15:05:38Z
+2026-03-13,Starligue,Selestat,Montpellier,7.36,NA,1.09,2026-03-10T20:51:05Z
+2026-03-13,Starligue,Selestat,Montpellier,6.27,10.82,1.13,2026-03-12T09:14:55Z
+2026-03-13,Starligue,Selestat,Montpellier,5.99,11.71,1.13,2026-03-12T15:11:43Z
+2026-03-13,Starligue,Selestat,Montpellier,NA,11.91,1.1,2026-03-13T09:04:56Z
+2026-03-13,Starligue,Tremblay,Nimes,1.79,8.17,2.18,2026-03-10T09:00:05Z
+2026-03-13,Starligue,Tremblay,Nimes,1.82,7.58,2.19,2026-03-10T15:05:38Z
+2026-03-13,Starligue,Tremblay,Nimes,1.97,6.79,2.06,2026-03-10T20:51:05Z
+2026-03-13,Starligue,Tremblay,Nimes,1.94,7.05,2.08,2026-03-12T09:14:55Z
+2026-03-13,Starligue,Tremblay,Nimes,1.91,7.14,2.1,2026-03-13T15:07:42Z
+2026-03-14,Starligue,St. Raphael,Cesson Rennes-Metropole,1.23,10.27,4.31,2026-03-10T09:00:05Z
+2026-03-14,Starligue,St. Raphael,Cesson Rennes-Metropole,1.22,9.94,4.52,2026-03-10T15:05:38Z
+2026-03-14,Starligue,St. Raphael,Cesson Rennes-Metropole,1.23,10.06,4.4,2026-03-10T20:51:05Z
+2026-03-14,Starligue,St. Raphael,Cesson Rennes-Metropole,1.23,10.16,4.33,2026-03-11T08:59:49Z
+2026-03-14,Starligue,St. Raphael,Cesson Rennes-Metropole,1.31,9.07,3.75,2026-03-11T20:55:32Z
+2026-03-14,Starligue,St. Raphael,Cesson Rennes-Metropole,1.39,9.13,3.22,2026-03-12T15:11:43Z
+2026-03-14,Starligue,St. Raphael,Cesson Rennes-Metropole,1.34,9.04,3.56,2026-03-12T20:56:03Z
+2026-03-15,Starligue,Nantes,Dunkerque,1.02,14.64,11.1,2026-03-10T15:05:38Z
+2026-03-15,Starligue,Nantes,Dunkerque,1.01,14.25,12.08,2026-03-11T15:05:33Z
+2026-03-15,Starligue,Nantes,Dunkerque,1.01,14.25,12.16,2026-03-11T20:55:32Z
+2026-03-15,Starligue,Nantes,Dunkerque,1.01,14.24,12.75,2026-03-12T09:14:55Z
+2026-03-15,Starligue,Nantes,Dunkerque,1.01,14.22,12.79,2026-03-12T15:11:43Z
+2026-03-15,Starligue,Nantes,Dunkerque,1.01,14.17,12.16,2026-03-12T20:56:03Z
+2026-03-15,Starligue,PSG,Toulouse,1.08,13.3,7.31,2026-03-10T09:00:05Z
+2026-03-15,Starligue,PSG,Toulouse,1.07,12.61,7.86,2026-03-10T15:05:38Z
+2026-03-15,Starligue,PSG,Toulouse,1.07,13.24,7.68,2026-03-12T09:14:55Z
+2026-03-15,Starligue,PSG,Toulouse,1.07,12.55,7.94,2026-03-12T15:11:43Z
+2026-03-15,Starligue,PSG,Toulouse,1.08,11.98,7.67,2026-03-12T20:56:03Z
+2026-03-15,Starligue,PSG,Toulouse,1.06,12.82,8.14,2026-03-14T20:45:12Z
+2026-03-27,Starligue,Chambery Savoie,Selestat,1.26,8.76,4.29,2026-03-23T15:08:59Z
+2026-03-27,Starligue,Chambery Savoie,Selestat,1.29,9.81,3.79,2026-03-23T20:51:54Z
+2026-03-27,Starligue,Dunkerque,Dijon,1.33,8.86,3.63,2026-03-23T15:08:59Z
+2026-03-27,Starligue,Istres,St. Raphael,4.11,9.43,1.26,2026-03-23T15:08:59Z
+2026-03-27,Starligue,Istres,St. Raphael,4.06,9.29,1.27,2026-03-23T20:51:54Z
+2026-03-27,Starligue,Montpellier,Chartres,1.02,13.85,11.44,2026-03-23T15:08:59Z
+2026-03-27,Starligue,Montpellier,Chartres,1.03,13.67,10.15,2026-03-23T20:51:54Z
+2026-03-27,Starligue,Nimes,PSG,3.63,8.86,1.33,2026-03-23T15:08:59Z
+2026-03-27,Starligue,Toulouse,Limoges,1.42,8.88,3.07,2026-03-23T15:08:59Z
+2026-03-27,Starligue,Toulouse,Limoges,1.43,8.87,3.05,2026-03-23T20:51:54Z
+2026-03-28,Starligue,Aix,Nantes,5.07,10.98,1.17,2026-03-23T15:08:59Z
+2026-03-28,Starligue,Cesson Rennes-Metropole,Tremblay,1.58,8.98,2.53,2026-03-23T15:08:59Z
+2026-03-28,Starligue,Cesson Rennes-Metropole,Tremblay,1.59,8.77,2.52,2026-03-23T20:51:54Z
+2026-04-03,Starligue,Aix,Dunkerque,1.39,8.88,3.24,2026-04-01T09:31:52Z
+2026-04-03,Starligue,Aix,Dunkerque,1.33,8.03,3.79,2026-04-01T15:21:22Z
+2026-04-03,Starligue,Aix,Dunkerque,1.3,8.06,4.1,2026-04-02T09:16:12Z
+2026-04-03,Starligue,Aix,Dunkerque,1.29,9.66,3.79,2026-04-02T20:54:37Z
+2026-04-03,Starligue,Aix,Dunkerque,1.28,9.82,3.89,2026-04-03T09:15:54Z
+2026-04-03,Starligue,Chartres,Toulouse,2.6,7.2,1.62,2026-04-01T09:31:52Z
+2026-04-03,Starligue,Chartres,Toulouse,2.9,8.72,1.47,2026-04-02T15:17:00Z
+2026-04-03,Starligue,Chartres,Toulouse,2.91,8.89,1.46,2026-04-02T20:54:37Z
+2026-04-03,Starligue,Dijon,Nimes,3.29,9.07,1.38,2026-04-01T09:31:52Z
+2026-04-03,Starligue,Dijon,Nimes,3.25,9.03,1.39,2026-04-01T21:02:27Z
+2026-04-03,Starligue,Dijon,Nimes,3.1,9.01,1.42,2026-04-02T20:54:37Z
+2026-04-03,Starligue,Limoges,Cesson Rennes-Metropole,1.26,8.66,4.39,2026-04-01T09:31:52Z
+2026-04-03,Starligue,Limoges,Cesson Rennes-Metropole,1.26,8.59,4.36,2026-04-01T21:02:27Z
+2026-04-03,Starligue,Limoges,Cesson Rennes-Metropole,1.24,8.47,4.58,2026-04-02T09:16:12Z
+2026-04-03,Starligue,Limoges,Cesson Rennes-Metropole,1.23,8.74,4.67,2026-04-02T15:17:00Z
+2026-04-03,Starligue,Limoges,Cesson Rennes-Metropole,1.29,9.77,3.82,2026-04-02T20:54:37Z
+2026-04-04,Starligue,Nantes,Selestat,1.02,13.81,11.45,2026-04-01T15:21:22Z
+2026-04-04,Starligue,Nantes,Selestat,1.01,14.76,11.5,2026-04-01T21:02:27Z
+2026-04-04,Starligue,Nantes,Selestat,1.01,14.74,11.65,2026-04-02T09:16:12Z
+2026-04-04,Starligue,Nantes,Selestat,1.02,14.98,11.29,2026-04-04T08:54:34Z
+2026-04-04,Starligue,Tremblay,Montpellier,3.99,9.25,1.28,2026-04-01T09:31:52Z
+2026-04-04,Starligue,Tremblay,Montpellier,4.74,10.54,1.2,2026-04-01T21:02:27Z
+2026-04-04,Starligue,Tremblay,Montpellier,4.86,10.69,1.19,2026-04-02T15:17:00Z
+2026-04-04,Starligue,Tremblay,Montpellier,4.49,10.55,1.22,2026-04-03T14:59:21Z
+2026-04-05,Starligue,PSG,Istres,1.05,11.65,9.41,2026-04-03T09:15:54Z
+2026-04-05,Starligue,PSG,Istres,1.01,14.58,11.87,2026-04-03T20:52:58Z
+2026-04-05,Starligue,PSG,Istres,1.01,14.89,12.32,2026-04-04T08:54:34Z
+2026-04-05,Starligue,St. Raphael,Chambery Savoie,1.65,7.23,2.53,2026-04-03T09:15:54Z
+2026-04-05,Starligue,St. Raphael,Chambery Savoie,1.63,7.83,2.51,2026-04-03T14:59:21Z
+2026-04-05,Starligue,St. Raphael,Chambery Savoie,1.62,7.84,2.52,2026-04-03T20:52:58Z
+2026-04-05,Starligue,St. Raphael,Chambery Savoie,1.63,7.93,2.51,2026-04-04T08:54:34Z
+2026-04-05,Starligue,St. Raphael,Chambery Savoie,1.65,7.24,2.53,2026-04-04T14:50:32Z
+2026-04-05,Starligue,St. Raphael,Chambery Savoie,1.62,8.5,2.47,2026-04-04T20:44:34Z
+2026-04-05,Starligue,St. Raphael,Chambery Savoie,1.63,7.9,2.49,2026-04-05T08:57:38Z
+2026-04-05,Starligue,St. Raphael,Chambery Savoie,1.62,8.43,2.47,2026-04-05T14:52:48Z
+2026-04-10,Starligue,Chambery Savoie,Tremblay,1.47,8.41,2.93,2026-04-07T09:38:42Z
+2026-04-10,Starligue,Chambery Savoie,Tremblay,1.51,7.58,2.88,2026-04-07T21:07:31Z
+2026-04-10,Starligue,Chambery Savoie,Tremblay,1.53,8.43,2.72,2026-04-08T09:20:47Z
+2026-04-10,Starligue,Chambery Savoie,Tremblay,1.5,7.8,2.88,2026-04-08T15:30:03Z
+2026-04-10,Starligue,Chambery Savoie,Tremblay,1.5,7.81,2.89,2026-04-10T09:31:48Z
+2026-04-10,Starligue,Chambery Savoie,Tremblay,1.5,7.77,2.91,2026-04-10T15:10:25Z
+2026-04-10,Starligue,Dijon,Limoges,3.61,8.93,1.33,2026-04-07T09:38:42Z
+2026-04-10,Starligue,Dijon,Limoges,3.52,9.36,1.34,2026-04-07T15:27:55Z
+2026-04-10,Starligue,Dijon,Limoges,3.67,9.35,1.31,2026-04-07T21:07:31Z
+2026-04-10,Starligue,Dijon,Limoges,3.75,NA,1.34,2026-04-08T21:00:16Z
+2026-04-10,Starligue,Dijon,Limoges,3.24,9.1,1.39,2026-04-09T15:44:15Z
+2026-04-10,Starligue,Nimes,Aix,1.56,8.09,2.67,2026-04-07T09:38:42Z
+2026-04-10,Starligue,Nimes,Aix,1.79,6.92,2.29,2026-04-07T21:07:31Z
+2026-04-10,Starligue,Nimes,Aix,1.54,7.48,2.81,2026-04-08T09:20:47Z
+2026-04-10,Starligue,Nimes,Aix,1.76,7.28,2.31,2026-04-08T15:30:03Z
+2026-04-10,Starligue,Nimes,Aix,1.77,7.23,2.28,2026-04-08T21:00:16Z
+2026-04-10,Starligue,Nimes,Aix,1.76,7.31,2.3,2026-04-09T09:30:12Z
+2026-04-10,Starligue,Nimes,Aix,1.76,7.18,2.31,2026-04-10T15:10:25Z
+2026-04-10,Starligue,Selestat,Istres,1.54,8.07,2.71,2026-04-07T09:38:42Z
+2026-04-10,Starligue,Selestat,Istres,1.48,8.74,2.86,2026-04-07T21:07:31Z
+2026-04-10,Starligue,Selestat,Istres,1.5,7.65,2.92,2026-04-08T09:20:47Z
+2026-04-10,Starligue,Selestat,Istres,1.53,7.68,2.82,2026-04-08T21:00:16Z
+2026-04-10,Starligue,Selestat,Istres,1.52,7.45,2.86,2026-04-09T09:30:12Z
+2026-04-10,Starligue,Selestat,Istres,1.52,7.69,2.83,2026-04-09T15:44:15Z
+2026-04-11,Starligue,Montpellier,Dunkerque,1.04,14.47,9.26,2026-04-08T21:00:16Z
+2026-04-12,Starligue,Cesson Rennes-Metropole,Chartres,1.31,8.39,3.88,2026-04-07T09:38:42Z
+2026-04-12,Starligue,Cesson Rennes-Metropole,Chartres,1.31,8.98,3.76,2026-04-07T21:07:31Z
+2026-04-12,Starligue,Cesson Rennes-Metropole,Chartres,1.31,8.99,3.76,2026-04-08T15:30:03Z
+2026-04-12,Starligue,Cesson Rennes-Metropole,Chartres,1.29,7.88,4.26,2026-04-09T09:30:12Z
+2026-04-12,Starligue,Cesson Rennes-Metropole,Chartres,1.23,8.67,4.71,2026-04-09T15:44:15Z
+2026-04-12,Starligue,Cesson Rennes-Metropole,Chartres,1.38,9.05,3.3,2026-04-09T21:12:16Z
+2026-04-12,Starligue,PSG,St. Raphael,1.04,13.77,9.25,2026-04-07T09:38:42Z
+2026-04-12,Starligue,PSG,St. Raphael,1.04,13.76,9.23,2026-04-07T15:27:55Z
+2026-04-12,Starligue,PSG,St. Raphael,1.04,13.76,9.24,2026-04-07T21:07:31Z
+2026-04-12,Starligue,PSG,St. Raphael,1.06,11.78,9.14,2026-04-09T09:30:12Z
+2026-04-12,Starligue,PSG,St. Raphael,1.05,14.16,8.85,2026-04-09T15:44:15Z
+2026-04-12,Starligue,PSG,St. Raphael,1.04,14.15,8.93,2026-04-10T15:10:25Z
+2026-04-12,Starligue,Toulouse,Nantes,4.16,10.09,1.25,2026-04-09T15:44:15Z
+2026-04-12,Starligue,Toulouse,Nantes,4.63,9.1,1.23,2026-04-09T21:12:16Z
+2026-04-12,Starligue,Toulouse,Nantes,4.14,10.31,1.25,2026-04-10T09:31:48Z
