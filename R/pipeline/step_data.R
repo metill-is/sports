@@ -55,12 +55,28 @@ data_baskethotel <- function(league, sex, sports_dir) {
 
 # ── Data source: hsi (handball/iceland) ──────────────────────────────────────
 
+# Sources div1 + div2 (always), then playoffs (both sexes) and cup (male only)
+# inside tryCatch. The playoff/cup scrapers call stop() when their HSÍ
+# tournament page returns fewer than 2 tables — the normal off-season state.
+# Containing those failures here keeps the data step green year-round while
+# still refreshing data/{sex}/current_{playoffs,cup}.csv in-season (needed for
+# settlement of playoff/cup bets).
 data_hsi <- function(league, sex, sports_dir) {
   league_dir <- file.path(sports_dir, league$dir)
   withr::with_dir(league_dir, {
     quiet_here(league$rproj %||% ".here")
     quiet_source(here::here("R", "utils", sex, "download_newest_data_div1.R"))
     quiet_source(here::here("R", "utils", sex, "download_newest_data_div2.R"))
+    tryCatch(
+      quiet_source(here::here("R", "utils", sex, "download_newest_data_playoffs.R")),
+      error = function(e) message("  playoffs skipped (", sex, "): ", conditionMessage(e))
+    )
+    if (sex == "male") {
+      tryCatch(
+        quiet_source(here::here("R", "utils", sex, "download_newest_data_cup.R")),
+        error = function(e) message("  cup skipped (male): ", conditionMessage(e))
+      )
+    }
     quiet_source(here::here("R", "utils", sex, "process_data.R"))
   })
 }

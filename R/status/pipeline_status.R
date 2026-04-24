@@ -39,14 +39,16 @@ quick_mode <- "--quick" %in% args
 now <- Sys.time()
 today <- Sys.Date()
 
-# Auto-sync external repos (need fresh data for freshness + settleable checks)
+# Auto-sync external repos (need fresh data for freshness + settleable checks).
+# Path-scoped: only update data/ from origin. CLAUDE.md, config/, R/ etc are
+# human-owned — hard-resetting the whole tree clobbers local edits silently.
 sync_repo <- function(repo_path) {
   if (!dir.exists(file.path(repo_path, ".git"))) {
     return(invisible())
   }
   branch <- trimws(system2("git", c("-C", repo_path, "rev-parse", "--abbrev-ref", "HEAD"), stdout = TRUE))
   system2("git", c("-C", repo_path, "fetch", "origin", "-q"), stdout = FALSE, stderr = FALSE)
-  system2("git", c("-C", repo_path, "reset", "--hard", paste0("origin/", branch)),
+  system2("git", c("-C", repo_path, "checkout", paste0("origin/", branch), "--", "data/"),
     stdout = FALSE, stderr = FALSE
   )
 }
@@ -494,19 +496,47 @@ leagues_yml <- tryCatch(
 )
 
 # ── Active leagues metadata ──────────────────────────────────
+# Country → adjective map. The previous implementation composed labels with
+# paste0(country, "ic ", sport) which worked only for iceland (Iceland+ic →
+# "Icelandic") and produced "Englandic Football", "Italyic Football", etc.
+# for non-Iceland leagues. Add new countries here if they get activated.
+country_adjective <- c(
+  austria = "Austrian",
+  "czech-republic" = "Czech",
+  denmark = "Danish",
+  england = "English",
+  finland = "Finnish",
+  france = "French",
+  germany = "German",
+  hungary = "Hungarian",
+  iceland = "Icelandic",
+  italy = "Italian",
+  norway = "Norwegian",
+  poland = "Polish",
+  portugal = "Portuguese",
+  spain = "Spanish",
+  sweden = "Swedish"
+)
+
+title_case <- function(s) {
+  paste0(toupper(substr(s, 1, 1)), substr(s, 2, nchar(s)))
+}
+
 active_leagues <- lapply(names(leagues_yml), function(key) {
   l <- leagues_yml[[key]]
   if (!isTRUE(l$active)) {
     return(NULL)
   }
+  adj <- if (!is.null(country_adjective[[l$country]])) {
+    country_adjective[[l$country]]
+  } else {
+    title_case(l$country)
+  }
   list(
     key = key,
     sport = l$sport,
     country = l$country,
-    label = paste0(
-      toupper(substr(l$country, 1, 1)), substr(l$country, 2, nchar(l$country)),
-      "ic ", toupper(substr(l$sport, 1, 1)), substr(l$sport, 2, nchar(l$sport))
-    ),
+    label = paste0(adj, " ", title_case(l$sport)),
     has_bets = isTRUE(l$has_bets)
   )
 }) |> Filter(Negate(is.null), x = _)

@@ -33,16 +33,19 @@ sports_dir <- here::here()
 args <- commandArgs(trailingOnly = TRUE)
 dry_run <- "--dry-run" %in% args
 
-# Auto-sync livesport-data (settlement needs fresh results)
+# Auto-sync livesport-data (settlement needs fresh results).
+# Path-scoped: only update data/ from origin. Hard-resetting the whole tree
+# clobbers local edits to CLAUDE.md / config / etc silently.
 ls_path <- file.path(dirname(sports_dir), "livesport-data")
 if (dir.exists(file.path(ls_path, ".git"))) {
   branch <- trimws(system2("git", c("-C", ls_path, "rev-parse", "--abbrev-ref", "HEAD"), stdout = TRUE))
   system2("git", c("-C", ls_path, "fetch", "origin", "-q"), stdout = TRUE, stderr = TRUE)
-  res <- system2("git", c("-C", ls_path, "reset", "--hard", paste0("origin/", branch)),
-                  stdout = TRUE, stderr = TRUE)
+  res <- system2("git", c("-C", ls_path, "checkout", paste0("origin/", branch), "--", "data/"),
+    stdout = TRUE, stderr = TRUE
+  )
   status <- attr(res, "status")
   if (is.null(status) || status == 0L) {
-    message("Synced livesport-data")
+    message("Synced livesport-data data/")
   } else {
     message("livesport-data sync failed: ", paste(res, collapse = " "))
   }
@@ -60,10 +63,10 @@ msg <- function(...) message(sprintf(...))
 
 # Column name normalisation (same as settle.R)
 col_map <- c(
-  dagsetning  = "date",  dags = "date",
-  heima       = "home",  gestir = "away",
-  home_goals  = "home_score", away_goals = "away_score",
-  stig_heima  = "home_score", stig_gestir = "away_score"
+  dagsetning = "date", dags = "date",
+  heima = "home", gestir = "away",
+  home_goals = "home_score", away_goals = "away_score",
+  stig_heima = "home_score", stig_gestir = "away_score"
 )
 
 normalise_columns <- function(d) {
@@ -82,7 +85,7 @@ compute_settlement <- function(bets) {
       win = case_when(
         market == "outcome" & outcome == "home" ~ home_score > away_score,
         market == "outcome" & outcome == "away" ~ away_score > home_score,
-        market == "outcome" & outcome == "tie"  ~ home_score == away_score,
+        market == "outcome" & outcome == "tie" ~ home_score == away_score,
         market == "handicap" & !is.na(info_num) & outcome == "home" ~
           (home_score - away_score) + info_num > 0,
         market == "handicap" & !is.na(info_num) & outcome == "away" ~
@@ -125,20 +128,31 @@ load_livesport_results <- function(sport, country, sex) {
   # Map sport names: pipeline uses "football", livesport uses "soccer"
   ls_sport <- if (sport == "football") "soccer" else sport
   base <- file.path(ls_data_dir, ls_sport, country, sex)
-  if (!dir.exists(base)) return(NULL)
+  if (!dir.exists(base)) {
+    return(NULL)
+  }
 
   divs <- list.dirs(base, full.names = TRUE, recursive = FALSE)
   results <- lapply(divs, function(d) {
     f <- file.path(d, "results.csv")
-    if (!file.exists(f)) return(NULL)
-    tryCatch({
-      r <- read_csv(f, show_col_types = FALSE,
-                    col_types = cols(home_score = "i", away_score = "i"))
-      if (!all(c("date", "home", "away", "home_score", "away_score") %in% names(r))) return(NULL)
-      r |>
-        filter(!is.na(home_score), !is.na(away_score)) |>
-        mutate(date = parse_ls_date(date))
-    }, error = function(e) NULL)
+    if (!file.exists(f)) {
+      return(NULL)
+    }
+    tryCatch(
+      {
+        r <- read_csv(f,
+          show_col_types = FALSE,
+          col_types = cols(home_score = "i", away_score = "i")
+        )
+        if (!all(c("date", "home", "away", "home_score", "away_score") %in% names(r))) {
+          return(NULL)
+        }
+        r |>
+          filter(!is.na(home_score), !is.na(away_score)) |>
+          mutate(date = parse_ls_date(date))
+      },
+      error = function(e) NULL
+    )
   })
   bind_rows(Filter(Negate(is.null), results))
 }
@@ -172,8 +186,10 @@ for (league_key in names(leagues_yml)) {
 
   msg("Processing %s ...", league_key)
 
-  log <- read_csv(log_path, show_col_types = FALSE,
-                  col_types = cols(info = "c", pnl = "d", win = "l")) |>
+  log <- read_csv(log_path,
+    show_col_types = FALSE,
+    col_types = cols(info = "c", pnl = "d", win = "l")
+  ) |>
     mutate(date_match = as.Date(date_match), info = as.character(info))
 
   # Normalise sex values
@@ -235,7 +251,7 @@ for (league_key in names(leagues_yml)) {
     left_join(all_results, by = c("date_match" = "date", "home", "away", "sex"))
 
   has_result <- matched |> filter(!is.na(home_score))
-  no_result  <- matched |> filter(is.na(home_score))
+  no_result <- matched |> filter(is.na(home_score))
   total_pending <- total_pending + nrow(no_result)
 
   if (nrow(has_result) == 0) {
@@ -256,8 +272,10 @@ for (league_key in names(leagues_yml)) {
 
   # Write back if not dry run
   if (!dry_run) {
-    dedup_keys <- c("date_match", "sport", "country", "sex", "market",
-                    "home", "away", "outcome", "info")
+    dedup_keys <- c(
+      "date_match", "sport", "country", "sex", "market",
+      "home", "away", "outcome", "info"
+    )
 
     settled_slim <- settled |>
       select(all_of(dedup_keys), win_new = win, pnl_new = pnl)
@@ -274,13 +292,16 @@ for (league_key in names(leagues_yml)) {
     msg("  Wrote %s", log_path)
 
     # Dual-write to Parquet store
-    tryCatch({
-      source(file.path(sports_dir, "R", "storage", "store.R"), local = TRUE)
-      for (s in unique(log$sex)) {
-        store_bets(log[log$sex == s, ], lcfg$sport, lcfg$country, sex = s, sports_dir)
-      }
-      store_bets(log, lcfg$sport, lcfg$country, sex = "all", sports_dir)
-    }, error = function(e) msg("  Store sync failed: %s", e$message))
+    tryCatch(
+      {
+        source(file.path(sports_dir, "R", "storage", "store.R"), local = TRUE)
+        for (s in unique(log$sex)) {
+          store_bets(log[log$sex == s, ], lcfg$sport, lcfg$country, sex = s, sports_dir)
+        }
+        store_bets(log, lcfg$sport, lcfg$country, sex = "all", sports_dir)
+      },
+      error = function(e) msg("  Store sync failed: %s", e$message)
+    )
   }
 
   all_settled[[length(all_settled) + 1]] <- settled

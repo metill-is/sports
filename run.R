@@ -23,6 +23,7 @@
 #   --no-plots         Skip plot generation (posterior CSV still written)
 #   --sync             Git-pull livesport-data and lengjan-odds before running
 #   --dry-run          Print plan without executing
+#   --fit-parallel <n> Fit this many leagues concurrently (default: 1 = serial)
 
 library(here)
 here::i_am(".here")
@@ -58,6 +59,7 @@ arg_due <- has_flag("--due")
 arg_dry_run <- has_flag("--dry-run")
 arg_no_plots <- has_flag("--no-plots")
 arg_sync <- has_flag("--sync")
+arg_fit_parallel <- parse_arg("--fit-parallel")
 
 # ── Sync upstream data repos ────────────────────────────────────────────────
 
@@ -118,6 +120,7 @@ if (has_flag("--help")) {
   cat("  --no-plots         Skip plot generation (posterior CSV still written)\n")
   cat("  --sync             Git-pull livesport-data and lengjan-odds (auto for data/settle)\n")
   cat("  --dry-run          Print plan, don't execute\n")
+  cat("  --fit-parallel <n> Fit N leagues concurrently (default: 1 = serial)\n")
   quit(status = 0)
 }
 
@@ -146,6 +149,15 @@ method_override <- if (!is.null(arg_method)) {
   match.arg(arg_method, c("sample", "pathfinder", "variational"))
 } else {
   NULL
+}
+
+# Parse fit-parallel override (default 1 = serial; preserves bit-identical behaviour)
+fit_parallel <- if (!is.null(arg_fit_parallel)) {
+  n <- suppressWarnings(as.integer(arg_fit_parallel))
+  if (is.na(n) || n < 1) stop("--fit-parallel must be a positive integer")
+  n
+} else {
+  1L
 }
 
 # ── Load and filter leagues ───────────────────────────────────────────────────
@@ -262,6 +274,7 @@ if (!is.null(arg_sex)) cat("Sex override:", arg_sex, "\n")
 if (arg_stale) cat("Filter: --stale (upcoming odds + stale fit)\n")
 if (arg_due) cat("Filter: --due (unbetted matches today/tomorrow + fit >48h)\n")
 if (arg_no_plots) cat("Plots: disabled (--no-plots)\n")
+if (fit_parallel > 1) cat("Fit concurrency:", fit_parallel, "\n")
 cat("Leagues:", length(selected), "\n\n")
 
 for (key in names(selected)) {
@@ -356,7 +369,15 @@ tracker <- create_tracker(step_keys, cache, progress_path = progress_path)
 # Register progressr handler for cmdstanr progress bars (PR #1138) — must be
 # done once at top level, not inside tryCatch/handlers.
 # Custom handler writes to stderr (unbuffered) with live ETA from iteration rate.
-if ("fit" %in% steps && requireNamespace("cmdstanr", quietly = TRUE) &&
+#
+# Gated on fit_parallel == 1: in the parallel path the master doesn't fit
+# anything, workers write fragment files instead, and the master aggregates
+# them into fit-progress.json. Installing a global progressr handler here
+# would end up catching worker progressions that future::value relays back,
+# producing duplicate rendering + a "no longer listening to this progressor"
+# warning after each fit finishes.
+if ("fit" %in% steps && fit_parallel == 1L &&
+  requireNamespace("cmdstanr", quietly = TRUE) &&
   exists("register_default_progress_handler", where = asNamespace("cmdstanr")) &&
   requireNamespace("progressr", quietly = TRUE)) {
   options(progressr.enable = TRUE)
@@ -452,28 +473,52 @@ if ("fit" %in% steps) {
   # Ensure progress file is finalised even on crash (idempotent — safe if already called)
   on.exit(tracker$finish_fit_progress(error_msg = "pipeline crashed"), add = TRUE)
 
-  for (key in names(selected)) {
-    league <- selected[[key]]
-    sexes <- resolve_sexes(key, league)
-    for (sex in sexes) {
-      step_key <- paste("fit", key, sex, sep = "_")
-      ok <- tracked_step(
-        run_fit_step,
-        paste("fit:", key, sex),
-        step_key,
-        league = league,
-        sex = sex,
-        sports_dir = sports_dir,
-        iter_warmup = iter_override %||% league$iter_warmup,
-        iter_sampling = iter_override %||% league$iter_sampling,
-        method = method_override %||% league$method,
-        generate_results = FALSE,
-        generate_plots = FALSE,
-        expected_duration = cache[[step_key]]
-      )
-      all_results[[length(all_results) + 1]] <- list(step = "fit", league = key, sex = sex, ok = ok)
-      quiet_here(".here")
+  if (fit_parallel == 1L) {
+    # Serial path (bit-identical to pre-`--fit-parallel` behaviour).
+    for (key in names(selected)) {
+      league <- selected[[key]]
+      sexes <- resolve_sexes(key, league)
+      for (sex in sexes) {
+        step_key <- paste("fit", key, sex, sep = "_")
+        ok <- tracked_step(
+          run_fit_step,
+          paste("fit:", key, sex),
+          step_key,
+          league = league,
+          sex = sex,
+          sports_dir = sports_dir,
+          iter_warmup = iter_override %||% league$iter_warmup,
+          iter_sampling = iter_override %||% league$iter_sampling,
+          method = method_override %||% league$method,
+          generate_results = FALSE,
+          generate_plots = FALSE,
+          expected_duration = cache[[step_key]]
+        )
+        all_results[[length(all_results) + 1]] <- list(step = "fit", league = key, sex = sex, ok = ok)
+        quiet_here(".here")
+      }
     }
+  } else {
+    # Parallel path: dispatch fits via future::multisession, workers write
+    # per-fit progress fragments that the master aggregates into fit-progress.json.
+    source(here("R", "shared", "fit_parallel.R"), local = TRUE)
+    par_results <- run_fit_parallel(
+      selected = selected,
+      resolve_sexes = resolve_sexes,
+      sports_dir = sports_dir,
+      iter_override = iter_override,
+      method_override = method_override,
+      cache = cache,
+      tracker = tracker,
+      fit_parallel = fit_parallel,
+      fit_league_keys = fit_league_keys
+    )
+    for (r in par_results) {
+      all_results[[length(all_results) + 1]] <- list(
+        step = "fit", league = r$key, sex = r$sex, ok = isTRUE(r$ok)
+      )
+    }
+    quiet_here(".here")
   }
 
   # Mark fit progress as complete (idempotent — on.exit won't overwrite)
