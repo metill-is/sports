@@ -1,0 +1,57 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "sports/config/leagues.yml",
+  "type": "object",
+  "patternProperties": {
+    "^[a-z]+_[a-z]+$": {
+      "type": "object",
+      "required": ["sport", "country", "sexes", "active", "data_source", "stan_model"],
+      "properties": {
+        "sport":    { "type": "string", "enum": ["football", "basketball", "handball"] },
+        "country":  { "type": "string", "minLength": 2 },
+        "sexes":    { "type": "array", "items": { "type": "string", "enum": ["male", "female"] }, "minItems": 1 },
+        "active":   { "type": "boolean" },
+        "data_source": {
+          "type": "object",
+          "required": ["results", "schedule"],
+          "properties": {
+            "results":  { "type": "string" },
+            "schedule": { "type": "string" },
+            "odds":     { "type": ["string", "null"] }
+          }
+        },
+        "lengjan": {
+          "type": "object",
+          "properties": {
+            "competitions": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["id", "sex"],
+                "properties": {
+                  "id":   { "type": "string" },
+                  "name": { "type": "string" },
+                  "sex":  { "type": "string", "enum": ["male", "female"] }
+                }
+              }
+            },
+            "team_names": {
+              "type": "object",
+              "additionalProperties": { "type": "string" }
+            }
+          }
+        },
+        "stan_model": { "type": "string" },
+        "betting": {
+          "type": "object",
+          "properties": {
+            "kelly_fraction": { "type": "number", "minimum": 0, "maximum": 1 },
+            "markets":        { "type": "array", "items": { "type": "string", "enum": ["moneyline", "spread", "total"] } },
+            "min_bet":        { "type": "number", "minimum": 0 }
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}
