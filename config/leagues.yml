@@ -1,0 +1,88 @@
+# config/leagues.yml — single source of truth for league metadata.
+#
+# Currently configured for the three active Icelandic leagues (Plan 1 scope).
+# Non-Icelandic leagues are preserved in _legacy/ and will be re-added when
+# revived in later plans.
+#
+# team_names direction: {canonical: Lengjan_display_name}.
+# Migrated from _legacy/sports/config/leagues.yml +
+# _legacy/lengjan-odds/config/competitions.yml +
+# _legacy/lengjan-odds/config/team_names_{sport}_iceland.csv.
+
+basketball_iceland:
+  sport: basketball
+  country: iceland
+  sexes: [male, female]
+  active: true
+  data_source:
+    results: kki_basketball
+    schedule: kki_basketball
+    odds: lengjan_odds
+  lengjan:
+    competitions:
+      - { id: "30774", name: "Bónusdeild kvenna efri", sex: female }
+      - { id: "30773", name: "Bónusdeild kvenna neðri", sex: female }
+    team_names:
+      Grindavík: Grindavík kv
+      Valur: Valur kv
+      Njarðvík: Njarðvík kv
+      Haukar: Haukar kv
+      Keflavík: Keflavík kv
+      Tindastóll: UMF Tindastoll kv
+      Ármann: Ármann kv
+      Stjarnan: Stjarnan kv
+  stan_model: basketball_iceland/2d_student_t_scalarsigma.stan
+  betting:
+    kelly_fraction: 0.10
+    markets: [moneyline, spread, total]
+    min_bet: 200
+
+handball_iceland:
+  sport: handball
+  country: iceland
+  sexes: [male, female]
+  active: true
+  data_source:
+    results: hsi_handball
+    schedule: hsi_handball
+    odds: lengjan_odds
+  lengjan:
+    competitions:
+      - { id: "1269", name: "Olísdeild karla", sex: male }
+    team_names:
+      Þór: Þór Akureyri
+      HK: Handknattleiksfélag Kópavogs
+      ÍBV: ÍBV Vestmannaeyjar
+      ÍR: ÍR Reykjavík
+      FH: FH Hafnarfjörður
+      KA: KA Akureyri
+      ÍH: ÍH Keflavík
+      HBH: HB Hafnarfjörður
+  stan_model: handball_iceland/2d_student_t.stan
+  betting:
+    kelly_fraction: 0.10
+    markets: [moneyline, spread, total]
+    min_bet: 200
+
+football_iceland:
+  sport: football
+  country: iceland
+  sexes: [male, female]
+  active: true
+  data_source:
+    results: ksi_football
+    schedule: ksi_football
+    odds: lengjan_odds
+  lengjan:
+    competitions:
+      - { id: "746",   name: "Besta Deildin",            sex: male }
+      - { id: "20443", name: "Besta Deildin Efri Hluti", sex: male }
+      - { id: "20442", name: "Besta Deildin Neðri Hluti", sex: male }
+    team_names:
+      Þór: Þór Ak.
+      Víkingur R.: Víkingur Rvk
+  stan_model: football_iceland/bivariate_poisson_no_inflation.stan
+  betting:
+    kelly_fraction: 0.10
+    markets: [moneyline, spread, total]
+    min_bet: 200
