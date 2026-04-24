@@ -28,6 +28,8 @@ sports-backup-*/
 *.exe
 *.hpp
 **/*.stan.d
+Stan/*/*
+!Stan/*/*.stan
 
 # Personal Claude Code preferences (not shared)
 .claude/settings.local.json
