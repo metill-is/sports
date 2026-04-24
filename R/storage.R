@@ -1,3 +1,6 @@
+#' @include storage-schemas.R
+NULL
+
 #' Partitioning rules per table (spec §3.2)
 #' @noRd
 table_partitions <- function() {

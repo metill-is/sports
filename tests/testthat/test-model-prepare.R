@@ -22,7 +22,10 @@ test_that("prepare_data builds a stan_data list with all expected fields", {
     stan_model = "basketball_iceland/2d_student_t_scalarsigma.stan"
   )
 
-  out <- prepare_data(league, sex = "male", end_date = Sys.Date(), root = root)
+  out <- prepare_data(league,
+    sex = "male", end_date = as.Date("2026-04-24"),
+    schedule_horizon_days = 60L, root = root
+  )
 
   expect_type(out, "list")
   expect_named(out, c("stan_data", "pred_d", "teams"), ignore.order = TRUE)
@@ -61,7 +64,7 @@ test_that("prepare_data returns teams tibble with sequential team_nr", {
     stan_model = "basketball_iceland/2d_student_t_scalarsigma.stan"
   )
 
-  out <- prepare_data(league, sex = "male", end_date = Sys.Date(), root = root)
+  out <- prepare_data(league, sex = "male", end_date = as.Date("2026-04-24"), root = root)
 
   expect_equal(sort(out$teams$team), sort(c("Alpha", "Bravo", "Charlie", "Delta")))
   expect_equal(out$teams$team_nr, seq_len(nrow(out$teams)))
@@ -75,7 +78,7 @@ test_that("prepare_data pred_d has canonical columns and numeric team indices", 
     stan_model = "basketball_iceland/2d_student_t_scalarsigma.stan"
   )
 
-  out <- prepare_data(league, sex = "male", end_date = Sys.Date(), root = root)
+  out <- prepare_data(league, sex = "male", end_date = as.Date("2026-04-24"), root = root)
 
   expect_true(all(c(
     "game_nr", "match_date", "home_team", "away_team",
@@ -112,7 +115,7 @@ test_that("prepare_data respects from_season when supplied", {
 
   out <- prepare_data(league,
     sex = "male",
-    end_date = Sys.Date(), from_season = 2025L, root = root
+    end_date = as.Date("2026-04-24"), from_season = 2025L, root = root
   )
   expect_equal(out$stan_data$N, 4L) # drops the two 2024 matches
   expect_equal(out$stan_data$N_seasons, 2L)
@@ -128,7 +131,7 @@ test_that("prepare_data returns N_pred = 0 when no upcoming schedule matches", {
   # end_date far in future means schedule rows are all before end_date
   out <- prepare_data(league,
     sex = "male",
-    end_date = Sys.Date() + 30L, root = root
+    end_date = as.Date("2026-06-30"), root = root
   )
   expect_equal(out$stan_data$N_pred, 0L)
   expect_equal(nrow(out$pred_d), 0L)
