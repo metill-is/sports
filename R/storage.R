@@ -1,4 +1,5 @@
 #' Partitioning rules per table (spec §3.2)
+#' @noRd
 table_partitions <- function() {
   list(
     results         = c("sport", "country", "sex", "season"),
@@ -13,6 +14,7 @@ table_partitions <- function() {
 }
 
 #' Map each table to its subdirectory under `root` (spec §3.1)
+#' @noRd
 table_subdir <- function(table) {
   switch(table,
     results = c("facts", "results"),
@@ -29,6 +31,7 @@ table_subdir <- function(table) {
 
 #' Derive any virtual partition columns the table needs (e.g. scraped_date from
 #' scraped_at, run_date from run_id) before validation.
+#' @noRd
 add_virtual_partitions <- function(df, table) {
   if (table == "odds" && !("scraped_date" %in% names(df)) && "scraped_at" %in% names(df)) {
     df$scraped_date <- as.Date(df$scraped_at)
@@ -44,7 +47,11 @@ add_virtual_partitions <- function(df, table) {
 }
 
 #' Validate a data frame against a schema.
-#' Raises a diagnostic error on the first problem found.
+#' Raises a diagnostic error on the first problem found; returns `invisible(TRUE)`
+#' on success so the caller can keep using the original (augmented) data frame
+#' and does not have to round-trip through an Arrow Table that drops virtual
+#' partition columns.
+#' @noRd
 validate_against_schema <- function(df, table) {
   s <- schemas()[[table]]
   if (is.null(s)) stop("Unknown table: ", table, call. = FALSE)
@@ -61,7 +68,10 @@ validate_against_schema <- function(df, table) {
     )
   }
 
-  # Try materialising an Arrow Table; Arrow raises on type mismatch.
+  # Try materialising an Arrow Table; Arrow raises on type mismatch. The result
+  # is discarded — this function is validation-only, and the caller keeps the
+  # original augmented data frame (which may carry virtual partition columns
+  # that are not in the schema).
   df_ordered <- df[, required_cols]
   tryCatch(
     arrow::as_arrow_table(df_ordered, schema = s),
@@ -97,6 +107,7 @@ validate_against_schema <- function(df, table) {
       )
     }
   )
+  invisible(TRUE)
 }
 
 #' Write a data frame to the store as hive-partitioned Parquet.
@@ -105,6 +116,18 @@ validate_against_schema <- function(df, table) {
 #' @param table one of names(schemas()).
 #' @param root filesystem root (defaults to here::here("data")).
 #' @return invisible(NULL)
+#' @details
+#' Writes are hive-partitioned. Each call overwrites the existing `part-*.parquet`
+#' files for matching partitions — it does NOT append. Callers that need to grow
+#' a partition (notably the `ledger` table which has genuine append semantics)
+#' must read the existing partition, row-bind the new rows, and pass the full
+#' combined frame to `write_table()`.
+#'
+#' Some tables define virtual partition columns that are derived from a source
+#' column (e.g. `odds` partitions on `scraped_date` derived from `scraped_at`;
+#' `candidates` and `recommendations` partition on `run_date` derived from
+#' `run_id`). These are added by `add_virtual_partitions()` before validation
+#' and passed through to `arrow::write_dataset()` alongside the schema columns.
 #' @export
 write_table <- function(df, table, root = here::here("data")) {
   if (nrow(df) == 0) {
@@ -112,14 +135,14 @@ write_table <- function(df, table, root = here::here("data")) {
   }
 
   df <- add_virtual_partitions(df, table)
-  tbl <- validate_against_schema(df, table)
+  validate_against_schema(df, table)
   partitions <- table_partitions()[[table]]
 
   dest <- do.call(fs::path, c(list(root), table_subdir(table)))
   fs::dir_create(dest, recurse = TRUE)
 
   arrow::write_dataset(
-    tbl,
+    df,
     path = dest,
     format = "parquet",
     partitioning = partitions,
@@ -135,6 +158,7 @@ write_table <- function(df, table, root = here::here("data")) {
 #' @param root filesystem root.
 #' @param filter optional named list of column=value filters pushed down to Arrow.
 #' @return tibble
+#' @importFrom rlang .data
 #' @export
 read_table <- function(table, root = here::here("data"), filter = list()) {
   src <- do.call(fs::path, c(list(root), table_subdir(table)))

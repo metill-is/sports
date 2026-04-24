@@ -69,3 +69,77 @@ test_that("read_table with predicate filters before materialising", {
   expect_equal(nrow(b), 1L)
   expect_equal(b$sport, "basketball")
 })
+
+test_that("write_table round-trips odds via scraped_date virtual partition", {
+  tmp <- withr::local_tempdir()
+  row <- tibble::tibble(
+    sport = "basketball", country = "iceland",
+    scraped_at = as.POSIXct("2026-04-24 10:00:00", tz = "UTC"),
+    match_date = as.Date("2026-04-24"),
+    home_team = "KR", away_team = "Stjarnan",
+    market = "moneyline", outcome = "home",
+    line = NA_real_, odds = 2.10
+  )
+  write_table(row, "odds", root = tmp)
+  back <- read_table("odds", root = tmp)
+  expect_equal(nrow(back), 1L)
+  expect_equal(back$home_team, "KR")
+  expect_s3_class(back$scraped_at, "POSIXct")
+})
+
+test_that("write_table round-trips candidates via run_date virtual partition", {
+  tmp <- withr::local_tempdir()
+  row <- tibble::tibble(
+    run_id = as.POSIXct("2026-04-24 10:00:00", tz = "UTC"),
+    sport = "basketball", country = "iceland", sex = "male",
+    match_date = as.Date("2026-04-24"),
+    home_team = "KR", away_team = "Stjarnan",
+    market = "moneyline", outcome = "home",
+    line = NA_real_, p = 0.55, odds = 2.10,
+    ev = 0.155, kelly_raw = 0.02, stage = "candidate"
+  )
+  write_table(row, "candidates", root = tmp)
+  back <- read_table("candidates", root = tmp)
+  expect_equal(nrow(back), 1L)
+  expect_equal(back$home_team, "KR")
+  expect_s3_class(back$run_id, "POSIXct")
+})
+
+test_that("write_table round-trips recommendations via run_date virtual partition", {
+  tmp <- withr::local_tempdir()
+  row <- tibble::tibble(
+    run_id = as.POSIXct("2026-04-24 10:00:00", tz = "UTC"),
+    sport = "basketball", country = "iceland", sex = "male",
+    match_date = as.Date("2026-04-24"),
+    home_team = "KR", away_team = "Stjarnan",
+    market = "moneyline", outcome = "home",
+    line = NA_real_, p = 0.55, odds = 2.10,
+    ev = 0.155, kelly = 0.02, bet_amount = 500
+  )
+  write_table(row, "recommendations", root = tmp)
+  back <- read_table("recommendations", root = tmp)
+  expect_equal(nrow(back), 1L)
+  expect_equal(back$home_team, "KR")
+  expect_s3_class(back$run_id, "POSIXct")
+})
+
+test_that("write_table errors clearly on unknown table", {
+  expect_error(
+    write_table(tibble::tibble(x = 1), "unknown"),
+    regexp = "Unknown table"
+  )
+})
+
+test_that("beliefs_archive without fit_date errors", {
+  tmp <- withr::local_tempdir()
+  row <- tibble::tibble(
+    sport = "basketball", country = "iceland", sex = "male",
+    match_date = as.Date("2026-04-24"),
+    home_team = "KR", away_team = "Stjarnan",
+    draw_id = 1L, home_goals = 2.1, away_goals = 1.5
+  )
+  expect_error(
+    write_table(row, "beliefs_archive", root = tmp),
+    regexp = "fit_date"
+  )
+})

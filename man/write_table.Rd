@@ -19,3 +19,16 @@ invisible(NULL)
 \description{
 Write a data frame to the store as hive-partitioned Parquet.
 }
+\details{
+Writes are hive-partitioned. Each call overwrites the existing `part-*.parquet`
+files for matching partitions — it does NOT append. Callers that need to grow
+a partition (notably the `ledger` table which has genuine append semantics)
+must read the existing partition, row-bind the new rows, and pass the full
+combined frame to `write_table()`.
+
+Some tables define virtual partition columns that are derived from a source
+column (e.g. `odds` partitions on `scraped_date` derived from `scraped_at`;
+`candidates` and `recommendations` partition on `run_date` derived from
+`run_id`). These are added by `add_virtual_partitions()` before validation
+and passed through to `arrow::write_dataset()` alongside the schema columns.
+}
