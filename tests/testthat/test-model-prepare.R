@@ -55,6 +55,16 @@ test_that("prepare_data builds a stan_data list with all expected fields", {
   expect_equal(length(sd$goals2), sd$N)
   expect_equal(dim(sd$time_between_matches), c(sd$K, sd$N_rounds))
   expect_true(all(sd$time_between_matches >= 0))
+
+  # season_first flags the HOME team's first appearance in its season. Fixture
+  # order:
+  #   g1 2024 Alpha(H) v Bravo(A)   -> Alpha's first 2024 appearance => 1
+  #   g2 2024 Bravo(H) v Charlie(A) -> Bravo already appeared (g1 away) => 0
+  #   g3 2025 Charlie(H) v Alpha(A) -> Charlie's first 2025 appearance => 1
+  #   g4 2025 Alpha(H) v Delta(A)   -> Alpha already appeared (g3 away) => 0
+  #   g5 2026 Bravo(H) v Charlie(A) -> Bravo's first 2026 appearance => 1
+  #   g6 2026 Delta(H) v Alpha(A)   -> Delta's first 2026 appearance => 1
+  expect_equal(sd$season_first, c(1L, 0L, 1L, 0L, 1L, 1L))
 })
 
 test_that("prepare_data returns teams tibble with sequential team_nr", {

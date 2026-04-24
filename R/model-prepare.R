@@ -129,6 +129,7 @@ prepare_data <- function(league,
     )
   )
   season_first_long <- season_first_long |>
+    dplyr::arrange(.data$game_nr) |>
     dplyr::group_by(.data$team, .data$season) |>
     dplyr::mutate(
       season_round = dplyr::row_number(),
@@ -159,10 +160,8 @@ prepare_data <- function(league,
 
   N_rounds <- max(c(model_d$home_round, model_d$away_round))
   tbm <- matrix(0, nrow = nrow(teams), ncol = N_rounds)
-  for (i in seq_len(nrow(model_d))) {
-    tbm[model_d$home_nr[i], model_d$home_round[i]] <- model_d$home_timediff[i]
-    tbm[model_d$away_nr[i], model_d$away_round[i]] <- model_d$away_timediff[i]
-  }
+  tbm[cbind(model_d$home_nr, model_d$home_round)] <- model_d$home_timediff
+  tbm[cbind(model_d$away_nr, model_d$away_round)] <- model_d$away_timediff
 
   # -- Prediction tibble -----------------------------------------------------
   if (nrow(next_games) > 0L) {
@@ -193,7 +192,7 @@ prepare_data <- function(league,
     top_teams_df <- teams[teams$team %in% first_upcoming$team, , drop = FALSE]
 
     pred_timediffs <- upcoming_per_team |>
-      dplyr::left_join(latest_game_dates, by = "team") |>
+      dplyr::inner_join(latest_game_dates, by = "team") |>
       dplyr::group_by(.data$team) |>
       dplyr::arrange(.data$match_date) |>
       dplyr::mutate(
