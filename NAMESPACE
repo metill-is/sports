@@ -3,6 +3,7 @@
 export(filter_leagues)
 export(ingest_league)
 export(load_leagues)
+export(prepare_data)
 export(read_table)
 export(rebuild_duckdb)
 export(schemas)

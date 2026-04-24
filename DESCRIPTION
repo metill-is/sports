@@ -41,5 +41,6 @@ Collate:
     'ingest-hsi-handball.R'
     'ingest-kki-basketball.R'
     'ingest-ksi-football.R'
-    'storage-schemas.R'
     'storage.R'
+    'model-prepare.R'
+    'storage-schemas.R'
