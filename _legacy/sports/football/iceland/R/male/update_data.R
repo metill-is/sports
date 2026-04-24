@@ -1,0 +1,15 @@
+source("R/male/update_div1_data.R")
+source("R/male/update_div2_data.R")
+source("R/male/update_div3_data.R")
+source("R/male/update_div4_data.R")
+source("R/male/update_div5_data.R")
+source("R/male/update_cup_data.R")
+
+source("R/male/next_games_div1.R")
+source("R/male/next_games_div2.R")
+source("R/male/next_games_div3.R")
+source("R/male/next_games_div4.R")
+source("R/male/next_games_div5.R")
+source("R/male/next_games_cup.R")
+
+source("R/male/combine_divisions.R")

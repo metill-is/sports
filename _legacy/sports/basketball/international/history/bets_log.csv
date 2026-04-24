@@ -1,0 +1,103 @@
+date_recommended,date_match,sport,country,sex,market,home,away,outcome,odds,probability,ev,kelly_frac,bet_amount,info,win,pnl,source
+2025-08-27,2025-08-27,basketball,international,male,handicap,Latvia,Turkey,home,2,0.6275,0.8824999999999998,NA,990,-1.5,FALSE,-990,gsheets
+2025-08-27,2025-08-27,basketball,international,male,handicap,Montenegro,Germany,home,1.92,0.6575,0.9198999999999999,NA,1110,14.5,FALSE,-1110,gsheets
+2025-08-27,2025-08-27,basketball,international,male,handicap,Serbia,Estonia,away,1.95,0.71375,1.1055625,NA,1605,-30.5,FALSE,-1605,gsheets
+2025-08-27,2025-08-27,basketball,international,male,outcome,Latvia,Turkey,home,1.89,0.68,0.9652000000000002,NA,1245,NA,FALSE,-1245,gsheets
+2025-08-27,2025-08-27,basketball,international,male,outcome,Montenegro,Germany,home,7.1,0.25875,1.0958749999999997,NA,540,NA,FALSE,-540,gsheets
+2025-08-27,2025-08-27,basketball,international,male,totals,Czech Republic,Portugal,over,1.92,0.65875,0.9235499999999999,NA,1125,157.5,FALSE,-1125,gsheets
+2025-08-27,2025-08-27,basketball,international,male,totals,Finland,Sweden,under,1.87,0.611,0.7535700000000001,NA,645,170.5,FALSE,-645,gsheets
+2025-08-27,2025-08-27,basketball,international,male,totals,Montenegro,Germany,under,1.89,0.5975,0.7267750000000001,NA,570,169.5,FALSE,-570,gsheets
+2025-08-27,2025-08-27,basketball,international,male,totals,Serbia,Estonia,under,1.91,0.7075,1.058825,NA,1500,169.5,TRUE,1365,gsheets
+2025-08-27,2025-08-28,basketball,international,male,handicap,Belgium,France,home,1.89,0.74525,1.1537724999999999,NA,1785,18.5,FALSE,-1785,gsheets
+2025-08-27,2025-08-28,basketball,international,male,handicap,Greece,Italy,away,1.87,0.84425,1.4229975,NA,2595,-6.5,FALSE,-2595,gsheets
+2025-08-27,2025-08-28,basketball,international,male,handicap,Israel,Iceland,away,1.92,0.642,0.87464,NA,990,-11.5,FALSE,-990,gsheets
+2025-08-27,2025-08-28,basketball,international,male,outcome,Belgium,France,home,10.5,0.227,1.6105,NA,570,NA,FALSE,-570,gsheets
+2025-08-27,2025-08-28,basketball,international,male,outcome,Greece,Italy,away,3.03,0.6935,1.794805,NA,2115,NA,FALSE,-2115,gsheets
+2025-08-27,2025-08-28,basketball,international,male,outcome,Israel,Iceland,away,5.3,0.30175,0.901025,NA,540,NA,FALSE,-540,gsheets
+2025-08-27,2025-08-28,basketball,international,male,totals,Belgium,France,under,1.95,0.84525,1.4934874999999996,NA,2655,156.5,TRUE,2522,gsheets
+2025-08-27,2025-08-28,basketball,international,male,totals,Greece,Italy,under,1.91,0.7415,1.1577650000000002,NA,1785,163.5,TRUE,1624,gsheets
+2025-08-27,2025-08-28,basketball,international,male,totals,Israel,Iceland,under,1.95,0.57825,0.7058375,NA,525,166.5,TRUE,499,gsheets
+2025-08-27,2025-08-28,basketball,international,male,totals,Poland,Slovenia,under,1.95,0.64875,0.9138125,NA,1095,175.5,FALSE,-1095,gsheets
+2025-08-29,2025-08-29,basketball,international,male,handicap,Germany,Sweden,away,1.91,0.5995,0.7445450000000001,NA,465,-22.5,TRUE,423,gsheets
+2025-08-29,2025-08-29,basketball,international,male,handicap,Portugal,Serbia,home,1.95,0.64675,0.9079125,NA,810,29.5,TRUE,770,gsheets
+2025-08-29,2025-08-29,basketball,international,male,handicap,Turkey,Czech Republic,away,1.91,0.8025,1.335275,NA,1725,-21.5,TRUE,1570,gsheets
+2025-08-29,2025-08-29,basketball,international,male,outcome,Turkey,Czech Republic,away,14.5,0.22825,2.537875,NA,510,NA,FALSE,-510,gsheets
+2025-08-29,2025-08-29,basketball,international,male,totals,Germany,Sweden,under,1.95,0.7505,1.2139749999999998,NA,1440,171.5,FALSE,-1440,gsheets
+2025-08-29,2025-08-29,basketball,international,male,totals,Latvia,Estonia,under,1.91,0.66,0.9206,NA,840,168.5,TRUE,764,gsheets
+2025-08-29,2025-08-29,basketball,international,male,totals,Lithuania,Montenegro,under,1.89,0.645,0.86405,NA,720,166.5,TRUE,641,gsheets
+2025-08-29,2025-08-29,basketball,international,male,totals,Portugal,Serbia,under,1.92,0.7495,1.1885400000000002,NA,1410,165.5,TRUE,1297,gsheets
+2025-08-29,2025-08-29,basketball,international,male,totals,Turkey,Czech Republic,over,1.95,0.71275,1.1026125,NA,1215,159.5,TRUE,1154,gsheets
+2025-08-29,2025-08-30,basketball,international,male,handicap,Cyprus,Greece,home,1.95,0.7625,1.249375,NA,1785,35.5,TRUE,1696,gsheets
+2025-08-29,2025-08-30,basketball,international,male,handicap,Czech Republic,Estonia,away,1.91,0.71175,1.0711925,NA,1380,-1.5,TRUE,1256,gsheets
+2025-08-29,2025-08-30,basketball,international,male,handicap,Finland,Montenegro,home,1.96,0.60175,0.78118,NA,645,-5.5,TRUE,619,gsheets
+2025-08-29,2025-08-30,basketball,international,male,handicap,France,Slovenia,away,1.89,0.7155,1.067795,NA,1380,-14.5,TRUE,1228,gsheets
+2025-08-29,2025-08-30,basketball,international,male,handicap,Great Britain,Sweden,home,1.92,0.607,0.77244,NA,630,6.5,FALSE,-630,gsheets
+2025-08-29,2025-08-30,basketball,international,male,handicap,Iceland,Belgium,home,1.89,0.60875,0.7592875,NA,585,3.5,FALSE,-585,gsheets
+2025-08-29,2025-08-30,basketball,international,male,handicap,Latvia,Serbia,home,1.92,0.59625,0.7410499999999998,NA,555,12.5,TRUE,511,gsheets
+2025-08-29,2025-08-30,basketball,international,male,handicap,Spain,Bosnia & Herzegovina,away,1.89,0.7665,1.2151849999999997,NA,1755,-9.5,FALSE,-1755,gsheets
+2025-08-29,2025-08-30,basketball,international,male,handicap,Turkey,Portugal,away,1.92,0.76325,1.2286899999999998,NA,1755,-17.5,FALSE,-1755,gsheets
+2025-08-29,2025-08-30,basketball,international,male,outcome,Czech Republic,Estonia,away,2,0.67475,1.0242499999999999,NA,1215,NA,TRUE,1215,gsheets
+2025-08-29,2025-08-30,basketball,international,male,outcome,Finland,Montenegro,home,1.47,0.74575,0.8420025000000001,NA,720,NA,TRUE,338,gsheets
+2025-08-29,2025-08-30,basketball,international,male,outcome,France,Slovenia,away,7.1,0.293,1.3732999999999997,NA,615,NA,FALSE,-615,gsheets
+2025-08-29,2025-08-30,basketball,international,male,outcome,Great Britain,Sweden,home,3.1,0.4155,0.7035499999999999,NA,480,NA,FALSE,-480,gsheets
+2025-08-29,2025-08-30,basketball,international,male,outcome,Iceland,Belgium,home,2.45,0.50775,0.7517375000000003,NA,585,NA,FALSE,-585,gsheets
+2025-08-29,2025-08-30,basketball,international,male,outcome,Spain,Bosnia & Herzegovina,away,4.3,0.50675,1.6857750000000002,NA,1245,NA,FALSE,-1245,gsheets
+2025-08-29,2025-08-30,basketball,international,male,outcome,Turkey,Portugal,away,10.5,0.267,2.0705,NA,660,NA,FALSE,-660,gsheets
+2025-08-29,2025-08-30,basketball,international,male,totals,Cyprus,Greece,under,1.89,0.72175,1.0858575,NA,1425,158.5,TRUE,1268,gsheets
+2025-08-29,2025-08-30,basketball,international,male,totals,Czech Republic,Estonia,over,1.91,0.73325,1.1337574999999998,NA,1530,154.5,TRUE,1392,gsheets
+2025-08-29,2025-08-30,basketball,international,male,totals,France,Slovenia,under,1.91,0.77725,1.2617975,NA,1860,176.5,FALSE,-1860,gsheets
+2025-08-29,2025-08-30,basketball,international,male,totals,Great Britain,Sweden,under,1.89,0.79775,1.3054974999999998,NA,1980,165.5,TRUE,1762,gsheets
+2025-08-29,2025-08-30,basketball,international,male,totals,Iceland,Belgium,under,1.92,0.66925,0.9542099999999999,NA,1080,155.5,TRUE,994,gsheets
+2025-08-29,2025-08-30,basketball,international,male,totals,Italy,Georgia,under,1.91,0.58775,0.7103524999999999,NA,465,156.5,TRUE,423,gsheets
+2025-08-29,2025-08-30,basketball,international,male,totals,Lithuania,Germany,under,1.91,0.63275,0.8413025,NA,795,172.5,FALSE,-795,gsheets
+2025-08-29,2025-08-30,basketball,international,male,totals,Spain,Bosnia & Herzegovina,over,1.92,0.60475,0.7658699999999999,NA,615,161.5,FALSE,-615,gsheets
+2025-08-29,2025-08-30,basketball,international,male,totals,Turkey,Portugal,under,1.95,0.67575,0.9934624999999998,NA,1170,159.5,TRUE,1112,gsheets
+2025-08-31,2025-08-31,basketball,international,male,handicap,Bosnia & Herzegovina,Italy,home,1.91,0.69525,1.0231775,NA,1230,13.5,FALSE,-1230,gsheets
+2025-08-31,2025-08-31,basketball,international,male,handicap,Cyprus,Spain,home,1.95,0.67375,0.9875624999999998,NA,1125,35.5,FALSE,-1125,gsheets
+2025-08-31,2025-08-31,basketball,international,male,handicap,Georgia,Greece,home,1.96,0.76175,1.2547800000000002,NA,1755,12.5,FALSE,-1755,gsheets
+2025-08-31,2025-08-31,basketball,international,male,handicap,Israel,France,home,1.91,0.73625,1.1424874999999997,NA,1530,14.5,TRUE,1392,gsheets
+2025-08-31,2025-08-31,basketball,international,male,handicap,Poland,Iceland,away,1.96,0.624,0.8470399999999999,NA,795,-9.5,TRUE,763,gsheets
+2025-08-31,2025-08-31,basketball,international,male,handicap,Slovenia,Belgium,away,1.95,0.681,1.00895,NA,1185,-11.5,FALSE,-1185,gsheets
+2025-08-31,2025-08-31,basketball,international,male,outcome,Bosnia & Herzegovina,Italy,home,6.7,0.309,1.3793,NA,645,NA,FALSE,-645,gsheets
+2025-08-31,2025-08-31,basketball,international,male,outcome,Georgia,Greece,home,6.4,0.41175,2.0469500000000003,NA,1035,NA,FALSE,-1035,gsheets
+2025-08-31,2025-08-31,basketball,international,male,outcome,Israel,France,home,7.1,0.31375,1.5413749999999997,NA,690,NA,TRUE,4209,gsheets
+2025-08-31,2025-08-31,basketball,international,male,outcome,Poland,Iceland,away,4.6,0.34975,0.9585999999999999,NA,585,NA,FALSE,-585,gsheets
+2025-08-31,2025-08-31,basketball,international,male,outcome,Slovenia,Belgium,away,5.5,0.346,1.2489999999999997,NA,690,NA,FALSE,-690,gsheets
+2025-08-31,2025-08-31,basketball,international,male,totals,Cyprus,Spain,under,1.89,0.625,0.8062499999999999,NA,690,158.5,TRUE,614,gsheets
+2025-08-31,2025-08-31,basketball,international,male,totals,Georgia,Greece,under,1.89,0.59575,0.7217175,NA,480,157.5,TRUE,427,gsheets
+2025-08-31,2025-08-31,basketball,international,male,totals,Israel,France,under,1.92,0.68575,1.0023899999999997,NA,1170,163.5,TRUE,1076,gsheets
+2025-08-31,2025-08-31,basketball,international,male,totals,Slovenia,Belgium,under,1.87,0.84,1.4108,NA,2250,173.5,TRUE,1958,gsheets
+2025-08-31,2025-09-01,basketball,international,male,handicap,Estonia,Turkey,home,1.95,0.79225,1.3371374999999999,NA,1725,18.5,FALSE,-1725,gsheets
+2025-08-31,2025-09-01,basketball,international,male,handicap,Germany,Great Britain,home,1.91,0.72675,1.1148425,NA,1275,-26.5,TRUE,1160,gsheets
+2025-08-31,2025-09-01,basketball,international,male,handicap,Latvia,Portugal,home,1.92,0.616,0.79872,NA,600,-15.5,TRUE,552,gsheets
+2025-08-31,2025-09-01,basketball,international,male,handicap,Serbia,Czech Republic,home,1.95,0.61925,0.8267874999999999,NA,660,-25.5,FALSE,-660,gsheets
+2025-08-31,2025-09-01,basketball,international,male,handicap,Sweden,Montenegro,home,1.95,0.6155,0.8157250000000001,NA,630,1.5,FALSE,-630,gsheets
+2025-08-31,2025-09-01,basketball,international,male,outcome,Estonia,Turkey,home,11.5,0.28325,2.5406250000000004,NA,645,NA,FALSE,-645,gsheets
+2025-08-31,2025-09-01,basketball,international,male,outcome,Sweden,Montenegro,home,2.05,0.57875,0.7651874999999998,NA,540,NA,FALSE,-540,gsheets
+2025-08-31,2025-09-01,basketball,international,male,totals,Estonia,Turkey,under,1.89,0.67475,0.9500274999999998,NA,930,161.5,TRUE,828,gsheets
+2025-08-31,2025-09-01,basketball,international,male,totals,Finland,Lithuania,over,1.85,0.73675,1.0997375,NA,1275,176.5,FALSE,-1275,gsheets
+2025-08-31,2025-09-01,basketball,international,male,totals,Germany,Great Britain,under,1.87,0.63575,0.8246025000000001,NA,645,176.5,FALSE,-645,gsheets
+2025-08-31,2025-09-01,basketball,international,male,totals,Latvia,Portugal,under,1.89,0.6705,0.9377449999999999,NA,900,157.5,TRUE,801,gsheets
+2025-08-31,2025-09-01,basketball,international,male,totals,Serbia,Czech Republic,over,1.92,0.79,1.3068,NA,1680,165.5,FALSE,-1680,gsheets
+2025-09-01,2025-09-02,basketball,international,male,handicap,Belgium,Israel,home,1.92,0.64025,0.8695299999999999,NA,645,11.5,FALSE,-645,gsheets
+2025-09-01,2025-09-02,basketball,international,male,handicap,Cyprus,Georgia,home,1.95,0.787,1.32165,NA,1470,27.5,FALSE,-1470,gsheets
+2025-09-01,2025-09-02,basketball,international,male,handicap,Greece,Bosnia & Herzegovina,away,1.92,0.822,1.4002399999999997,NA,1635,-17.5,TRUE,1504,gsheets
+2025-09-01,2025-09-02,basketball,international,male,handicap,Italy,Spain,away,1.89,0.6605,0.9088449999999998,NA,735,-2.5,FALSE,-735,gsheets
+2025-09-01,2025-09-02,basketball,international,male,outcome,Greece,Bosnia & Herzegovina,away,10.5,0.3735,3.29525,NA,810,NA,TRUE,7695,gsheets
+2025-09-01,2025-09-02,basketball,international,male,outcome,Italy,Spain,away,2.12,0.585,0.8251999999999999,NA,555,NA,FALSE,-555,gsheets
+2025-09-01,2025-09-02,basketball,international,male,totals,Belgium,Israel,under,1.87,0.67725,0.9437075,NA,795,152.5,FALSE,-795,gsheets
+2025-09-01,2025-09-02,basketball,international,male,totals,Greece,Bosnia & Herzegovina,over,1.87,0.667,0.9142900000000003,NA,735,159.5,FALSE,-735,gsheets
+2025-09-01,2025-09-02,basketball,international,male,totals,Poland,France,over,1.87,0.634,0.8195800000000001,NA,555,156.5,TRUE,483,gsheets
+2025-09-02,2025-09-03,basketball,international,male,handicap,Finland,Germany,home,1.87,0.679,0.9487300000000003,NA,810,13.5,FALSE,-810,gsheets
+2025-09-02,2025-09-03,basketball,international,male,handicap,Latvia,Czech Republic,home,1.95,0.7115,1.098925,NA,1065,-16.5,TRUE,1012,gsheets
+2025-09-02,2025-09-03,basketball,international,male,handicap,Lithuania,Sweden,home,1.85,0.681,0.9408500000000002,NA,795,-8.5,FALSE,-795,gsheets
+2025-09-02,2025-09-03,basketball,international,male,handicap,Turkey,Serbia,away,1.95,0.66225,0.9536374999999999,NA,795,5.5,FALSE,-795,gsheets
+2025-09-02,2025-09-03,basketball,international,male,outcome,Finland,Germany,home,6.4,0.30625,1.2662500000000003,NA,465,NA,FALSE,-465,gsheets
+2025-09-02,2025-09-03,basketball,international,male,outcome,Latvia,Czech Republic,home,1.07,0.9575,0.9820250000000001,NA,915,NA,TRUE,64,gsheets
+2025-09-02,2025-09-03,basketball,international,male,outcome,Lithuania,Sweden,home,1.23,0.85975,0.9172425,NA,645,NA,TRUE,148,gsheets
+2025-09-02,2025-09-03,basketball,international,male,outcome,Turkey,Serbia,away,1.45,0.795,0.94775,NA,885,NA,FALSE,-885,gsheets
+2025-09-02,2025-09-03,basketball,international,male,totals,Estonia,Portugal,under,1.87,0.84725,1.4316075000000001,NA,1755,149.5,TRUE,1527,gsheets
+2025-09-02,2025-09-03,basketball,international,male,totals,Finland,Germany,over,1.95,0.723,1.13285,NA,1125,183.5,FALSE,-1125,gsheets
+2025-09-02,2025-09-03,basketball,international,male,totals,Latvia,Czech Republic,over,1.95,0.705,1.0797499999999998,NA,1035,163.5,TRUE,983,gsheets
+2025-09-02,2025-09-03,basketball,international,male,totals,Montenegro,Great Britain,under,1.87,0.63225,0.8145575,NA,540,159.5,FALSE,-540,gsheets
+2025-09-02,2025-09-03,basketball,international,male,totals,Turkey,Serbia,over,1.89,0.71175,1.0569574999999998,NA,1005,161.5,TRUE,894,gsheets

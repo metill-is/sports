@@ -1,0 +1,45 @@
+sport: football
+country: iceland
+sex:
+  - male
+  - female
+
+leagues:
+  1: Besta Deildin
+
+bankroll:
+  kelly_frac: 0.15 # male default
+  kelly_frac_female: 0.075 # 2026-04-19: half stake after 80 settled bets at -0.43 % ROI (calib 0.993)
+  ev_threshold: 0.00
+
+scoring:
+  has_ties: true
+  tie_threshold: 0
+
+markets:
+  outcome: true
+  handicap: true
+  totals: true
+
+predictions:
+  path: results
+  max_age_hours: 48
+  divisions:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+
+odds:
+  source: lengjan-odds
+  lengjan_odds_path: "../../../lengjan-odds/data/football_iceland"
+  team_names: "../../../lengjan-odds/config/team_names_football_iceland.csv"
+  booker: "Lengjan"
+
+deduplication:
+  use_gsheets: false
+
+history:
+  enabled: true
+  path: history

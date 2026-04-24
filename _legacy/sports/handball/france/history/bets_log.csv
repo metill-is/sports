@@ -1,0 +1,83 @@
+date_recommended,date_match,sport,country,sex,market,home,away,outcome,odds,probability,ev,kelly_frac,bet_amount,info,win,pnl,source
+2025-03-20,2025-03-20,handball,france,male,totals,Tremblay,Toulouse,over,1.9,0.59975,0.139525,NA,540,59.5,FALSE,-540,gsheets
+2025-03-21,2025-03-21,handball,france,male,handicap,Caen,Pontault,away,1.91,0.59775,0.14170249999999995,NA,540,-2.5,TRUE,491,gsheets
+2025-03-20,2025-03-21,handball,france,male,handicap,Ivry,PSG,home,1.9,0.60975,0.15852500000000003,NA,615,9.5,FALSE,-615,gsheets
+2025-03-21,2025-03-21,handball,france,male,totals,Angers,Sarrebourg,under,1.9,0.64525,0.22597499999999993,NA,870,59.5,TRUE,783,gsheets
+2025-03-20,2025-03-21,handball,france,male,totals,Cesson Rennes-Metropole,Montpellier,under,2,0.75175,0.5035000000000001,NA,1740,58.5,TRUE,1740,gsheets
+2025-03-20,2025-03-21,handball,france,male,totals,Creteil,Nimes,over,1.95,0.642,0.2519,NA,915,59.5,FALSE,-915,gsheets
+2025-03-21,2025-03-21,handball,france,male,totals,Frotignan,Valence,over,1.8,0.63675,0.1461500000000001,NA,630,63.5,TRUE,504,gsheets
+2025-03-20,2025-03-22,handball,france,male,totals,Nantes,Dunkerque,under,1.88,0.588,0.10543999999999988,NA,420,60.5,TRUE,370,gsheets
+2025-03-20,2025-03-23,handball,france,male,totals,Chambery Savoie,Istres,under,2,0.55225,0.10450000000000004,NA,360,61.5,TRUE,360,gsheets
+2025-03-27,2025-03-28,handball,france,female,handicap,Plan de Cuques,Sambre Avesnios,away,1.95,0.622,0.2129,NA,1350,-3.5,FALSE,-1350,gsheets
+2025-03-27,2025-03-28,handball,france,male,handicap,Toulouse,Cesson Rennes-Metropole,away,1.8,0.66325,0.19385000000000008,NA,1455,-5.5,FALSE,-1455,gsheets
+2025-03-27,2025-03-28,handball,france,male,outcome,Selestat,Angers,home,1.14,0.9365,0.06760999999999992,NA,2895,NA,TRUE,405,gsheets
+2025-03-27,2025-03-28,handball,france,male,outcome,Valence,Saran,away,1.4,0.792,0.1088,NA,1635,NA,FALSE,-1635,gsheets
+2025-03-27,2025-03-28,handball,france,male,totals,Montpellier,Tremblay,over,1.75,0.66325,0.16068749999999998,NA,1275,58.5,FALSE,-1275,gsheets
+2025-03-27,2025-03-28,handball,france,male,totals,Nimes,Ivry,under,1.68,0.6565,0.1029199999999999,NA,915,60.5,TRUE,622,gsheets
+2025-03-27,2025-03-28,handball,france,male,totals,Pontault,Dijon,under,1.85,0.64625,0.19556250000000008,NA,1380,57.5,TRUE,1173,gsheets
+2025-03-27,2025-03-28,handball,france,male,totals,Toulouse,Cesson Rennes-Metropole,under,1.75,0.6205,0.08587500000000009,NA,690,59.5,FALSE,-690,gsheets
+2025-03-27,2025-03-28,handball,france,male,totals,Valence,Saran,under,1.73,0.6165,0.06654500000000008,NA,540,59.5,FALSE,-540,gsheets
+2025-04-04,2025-04-04,handball,france,male,handicap,Caen,Cournon d'Auvergne,away,1.9,0.62975,0.19652499999999995,NA,1305,-3.5,FALSE,-1305,gsheets
+2025-04-04,2025-04-04,handball,france,male,handicap,St. Raphael,Montpellier,home,1.9,0.55175,0.04832499999999989,NA,315,3.5,FALSE,-315,gsheets
+2025-04-04,2025-04-04,handball,france,male,outcome,Creteil,Dunkerque,home,2.1,0.5065,0.06364999999999998,NA,345,NA,FALSE,-345,gsheets
+2025-04-04,2025-04-04,handball,france,male,totals,Chambery Savoie,Aix,over,1.89,0.66125,0.2497625,NA,1575,60.5,TRUE,1402,gsheets
+2025-04-04,2025-04-04,handball,france,male,totals,Cherbourg,Selestat,under,1.85,0.592,0.09519999999999997,NA,675,55.5,TRUE,574,gsheets
+2025-04-04,2025-04-04,handball,france,male,totals,Dijon,Nancy,under,1.91,0.57375,0.09586249999999996,NA,630,60.5,FALSE,-630,gsheets
+2025-04-04,2025-04-04,handball,france,male,totals,Pau Billere,Pontault,under,1.95,0.68075,0.3274624999999999,NA,1725,58.5,FALSE,-1725,gsheets
+2025-04-04,2025-04-04,handball,france,male,totals,Saran,Frontignan,over,1.91,0.606,0.15745999999999993,NA,1035,63.5,TRUE,942,gsheets
+2025-04-04,2025-04-05,handball,france,male,totals,Cesson Rennes-Metropole,Nimes,under,1.8,0.589,0.06019999999999997,NA,450,57.5,TRUE,360,gsheets
+2025-04-04,2025-04-06,handball,france,male,handicap,Chartres,PSG,home,2,0.5275,0.05499999999999994,NA,330,7.5,TRUE,330,gsheets
+2025-04-07,2025-04-08,handball,france,male,outcome,Besancon,Saran,away,1.36,0.84225,0.14546000000000014,NA,540,NA,FALSE,-540,gsheets
+2025-04-10,2025-04-11,handball,france,male,outcome,Dijon,Valence,home,1.2,0.869,0.04279999999999995,NA,390,NA,TRUE,78,gsheets
+2025-04-10,2025-04-11,handball,france,male,totals,Cherbourg,Pau Billere,under,1.91,0.70825,0.35275750000000006,NA,705,58.5,TRUE,642,gsheets
+2025-04-10,2025-04-11,handball,france,male,totals,Dijon,Valence,under,1.85,0.6515,0.205275,NA,450,59.5,TRUE,383,gsheets
+2025-04-10,2025-04-11,handball,france,male,totals,Dunkerque,Cesson Rennes-Metropole,under,1.89,0.65875,0.2450374999999998,NA,510,56.5,FALSE,-510,gsheets
+2025-04-10,2025-04-12,handball,france,male,outcome,Saran,Angers,home,1.06,0.9565,0.01389000000000006,NA,420,NA,TRUE,25,gsheets
+2025-09-14,2025-09-14,handball,france,male,handicap,Nantes,Toulouse,home,1.8,0.6945,0.2501,NA,420,-4.5,TRUE,336,gsheets
+2025-09-14,2025-09-14,handball,france,male,outcome,Nantes,Toulouse,home,1.17,0.91075,0.06557749999999987,NA,525,NA,TRUE,89,gsheets
+2025-09-18,2025-09-19,handball,france,male,outcome,Cherbourg,Creteil,away,1.67,0.69725,0.16440749999999998,NA,330,NA,TRUE,221,gsheets
+2025-09-18,2025-09-19,handball,france,male,outcome,Frontignan,Cournon d'Auvergne,home,1.44,0.7515,0.0821599999999999,NA,255,NA,FALSE,-255,gsheets
+2025-09-18,2025-09-19,handball,france,male,outcome,Saintes,Massy Essonne,home,2.1,0.6925,0.45425,NA,555,NA,TRUE,610,gsheets
+2025-09-18,2025-09-19,handball,france,male,outcome,Valence,Pau Billere,away,2.75,0.48925,0.34543749999999995,NA,270,NA,TRUE,473,gsheets
+2025-09-18,2025-09-19,handball,france,male,totals,Cesson Rennes-Metropole,Aix,under,1.87,0.652,0.2192400000000001,NA,345,60.5,TRUE,300,gsheets
+2025-09-18,2025-09-19,handball,france,male,totals,Saintes,Massy Essonne,under,1.85,0.5975,0.10537500000000012,NA,165,59.5,FALSE,-165,gsheets
+2025-09-18,2025-09-19,handball,france,male,totals,Tremblay,Dijon,over,1.87,0.6085,0.1378950000000001,NA,210,57.5,TRUE,183,gsheets
+2025-09-20,2025-09-20,handball,france,male,handicap,Montpellier,Chambery Savoie,away,1.83,0.67275,0.23113249999999996,NA,375,-5.5,FALSE,-375,gsheets
+2025-09-20,2025-09-21,handball,france,male,handicap,Nantes,Istres,home,1.8,0.658,0.18440000000000012,NA,315,-7.5,FALSE,-315,gsheets
+2025-09-20,2025-09-21,handball,france,male,outcome,Nantes,Istres,home,1.04,0.9695,0.00828000000000006,NA,285,NA,TRUE,11,gsheets
+2025-09-24,2025-09-24,handball,france,female,handicap,Brest Bretagne,Achenheim Truchtersheim,home,1.73,0.80625,0.3948125,NA,735,-11.5,TRUE,537,gsheets
+2025-09-24,2025-09-24,handball,france,female,handicap,Havre,Sambre Avesnois,home,2.05,0.646,0.3242999999999999,NA,420,1.5,FALSE,-420,gsheets
+2025-09-24,2025-09-24,handball,france,female,outcome,Havre,Sambre Avesnois,home,3.5,0.5215,0.8252499999999999,NA,450,NA,FALSE,-450,gsheets
+2025-09-24,2025-09-24,handball,france,female,totals,Brest Bretagne,Achenheim Truchtersheim,under,1.85,0.67625,0.2510625000000001,NA,405,54.5,FALSE,-405,gsheets
+2025-09-23,2025-09-24,handball,france,female,totals,Chambray Touraine,Nice,over,1.75,0.6475,0.13312499999999994,NA,240,55.5,FALSE,-240,gsheets
+2025-09-26,2025-09-26,handball,france,male,handicap,Creteil,Sarrebourg,home,1.83,0.6225,0.13917500000000016,NA,225,-3.5,FALSE,-225,gsheets
+2025-09-26,2025-09-26,handball,france,male,handicap,Istres,Dunkerque,home,2.35,0.52875,0.24256250000000013,NA,240,-1.5,FALSE,-240,gsheets
+2025-09-26,2025-09-26,handball,france,male,handicap,Pau Billere,Besancon,home,1.95,0.6365,0.24117499999999992,NA,345,-5.5,FALSE,-345,gsheets
+2025-09-26,2025-09-26,handball,france,male,outcome,Creteil,Sarrebourg,home,1.29,0.826,0.06553999999999996,NA,300,NA,FALSE,-300,gsheets
+2025-09-26,2025-09-26,handball,france,male,outcome,Istres,Dunkerque,home,1.91,0.6095,0.164145,NA,240,NA,FALSE,-240,gsheets
+2025-09-26,2025-09-26,handball,france,male,outcome,Pau Billere,Besancon,home,1.18,0.91025,0.07409499999999994,NA,555,NA,TRUE,100,gsheets
+2025-09-26,2025-09-26,handball,france,male,outcome,Saran,Cherbourg,home,1.5,0.7115,0.06725000000000003,NA,180,NA,FALSE,-180,gsheets
+2025-09-26,2025-09-26,handball,france,male,totals,Istres,Dunkerque,under,1.8,0.6455,0.16189999999999993,NA,270,61.5,FALSE,-270,gsheets
+2025-09-26,2025-09-26,handball,france,male,totals,Nimes,Selestat,under,1.87,0.651,0.2173700000000001,NA,345,57.5,TRUE,300,gsheets
+2025-09-26,2025-09-26,handball,france,male,totals,St. Raphael,Tremblay,over,1.85,0.61525,0.13821249999999996,NA,225,61.5,TRUE,191,gsheets
+2025-09-27,2025-09-28,handball,france,male,handicap,Chambery Savoie,Toulouse,home,2.35,0.58975,0.3859125,NA,390,-1.5,FALSE,-390,gsheets
+2025-09-27,2025-09-28,handball,france,male,outcome,Chambery Savoie,Toulouse,home,1.91,0.67325,0.2859075,NA,420,NA,FALSE,-420,gsheets
+2025-09-27,2025-09-28,handball,france,male,totals,Dijon,Nantes,under,1.87,0.6735,0.25944500000000004,NA,405,61.5,FALSE,-405,gsheets
+2025-10-03,2025-10-03,handball,france,male,handicap,Ivry,Massy Essonne,home,1.91,0.719,0.3732899999999999,NA,555,-4.5,FALSE,-555,gsheets
+2025-10-03,2025-10-03,handball,france,male,handicap,Saintes,Caen,home,1.91,0.70375,0.3441624999999999,NA,510,2.5,FALSE,-510,gsheets
+2025-10-03,2025-10-03,handball,france,male,handicap,Selestat,Chartres,home,1.5,0.80475,0.20712499999999995,NA,555,1.5,FALSE,-555,gsheets
+2025-10-03,2025-10-03,handball,france,male,handicap,Tremblay,Istres,home,1.87,0.69425,0.2982475000000001,NA,465,-3.5,TRUE,405,gsheets
+2025-10-03,2025-10-03,handball,france,male,handicap,Valence,Cournon d'Auvergne,home,1.95,0.63075,0.22996250000000007,NA,330,-1.5,TRUE,314,gsheets
+2025-10-03,2025-10-03,handball,france,male,outcome,Besancon,Creteil,home,3.2,0.40125,0.28400000000000003,NA,180,NA,TRUE,396,gsheets
+2025-10-03,2025-10-03,handball,france,male,outcome,Frontignan,Saran,home,2,0.568,0.1359999999999999,NA,180,NA,FALSE,-180,gsheets
+2025-10-03,2025-10-03,handball,france,male,outcome,Ivry,Massy Essonne,home,1.22,0.92875,0.13307499999999994,NA,825,NA,FALSE,-825,gsheets
+2025-10-03,2025-10-03,handball,france,male,outcome,Saintes,Caen,home,3.6,0.48775,0.7559000000000001,NA,390,NA,FALSE,-390,gsheets
+2025-10-03,2025-10-03,handball,france,male,outcome,Selestat,Chartres,home,2.1,0.66575,0.398075,NA,495,NA,FALSE,-495,gsheets
+2025-10-03,2025-10-03,handball,france,male,outcome,Tremblay,Istres,home,1.3,0.87375,0.13587500000000008,NA,615,NA,TRUE,185,gsheets
+2025-10-03,2025-10-03,handball,france,male,outcome,Valence,Cournon d'Auvergne,home,1.67,0.70825,0.18277750000000004,NA,375,NA,TRUE,251,gsheets
+2025-10-03,2025-10-03,handball,france,male,totals,Frontignan,Saran,over,1.91,0.6055,0.156505,NA,240,63.5,TRUE,218,gsheets
+2025-10-03,2025-10-03,handball,france,male,totals,Toulouse,Aix,over,1.95,0.57775,0.1266124999999999,NA,180,61.5,FALSE,-180,gsheets
+2026-03-05,2026-03-07,handball,france,male,totals,Montpellier,PSG,over,1.57,0.733,0.1508,0.1,343,61.5,TRUE,195.51,pipeline
+2026-03-05,2026-03-08,handball,france,male,outcome,Nimes,Limoges,home,1.87,0.60975,0.1402,0.08,285,NA,FALSE,-285,pipeline
+2026-03-06,2026-03-07,handball,france,male,totals,Montpellier,PSG,over,1.94,0.614,0.1912,0.03,63,63.5,FALSE,-63,pipeline
+2026-03-06,2026-03-07,handball,france,male,totals,Montpellier,PSG,over,1.76,0.6685,0.1766,0.04,96,62.5,FALSE,-96,pipeline

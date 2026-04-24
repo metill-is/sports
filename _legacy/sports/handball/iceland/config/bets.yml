@@ -1,0 +1,46 @@
+sport: handball
+country: iceland
+sex:
+- male
+- female
+
+leagues:
+  1: Olís deild
+  2: Grill 66 deild
+
+bankroll:
+  kelly_frac: 0.30
+  kelly_frac_male: 0.22
+  kelly_frac_female: 0.40
+  ev_threshold: 0.00
+
+scoring:
+  has_ties: true
+  tie_threshold: 0.5
+
+markets:
+  outcome: true
+  handicap: false
+  totals: true
+
+predictions:
+  path: results
+  max_age_hours: 48
+  divisions:
+  - 1
+  - 2
+
+odds:
+  source: lengjan-odds
+  lengjan_odds_path: "../../../lengjan-odds/data/handball_iceland"
+  booker: "Lengjan"
+  team_names: "config/team_names.csv"
+
+deduplication:
+  use_gsheets: false
+  gsheets_url: https://docs.google.com/spreadsheets/d/1Q2OIOTgKNZ1w-9Drgth6MT9OzI7LU6aD_OTfB0tr8WU/edit
+  gsheets_sheet: Bets_Lengjan
+
+history:
+  enabled: true
+  path: history

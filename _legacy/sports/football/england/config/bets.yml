@@ -1,0 +1,36 @@
+sport: "football"
+country: "england"
+sex: ["male"]
+
+bankroll:
+  kelly_frac: 0.05
+  min_bet_amount: 200
+  bet_digits: 0
+  currency: "kr"
+
+scoring:
+  has_ties: true
+  tie_threshold: 0
+
+markets:
+  outcome: false       # Disabled: -38.7% ROI on 60 settled bets (2025)
+  handicap: true
+  totals: true
+
+predictions:
+  path: "results"
+  max_age_hours: 48
+  divisions: [1, 2, 3, 4]
+
+odds:
+  source: "lengjan-odds"
+  lengjan_odds_path: "../../../lengjan-odds/data/football_england"
+  booker: "Lengjan"
+  team_names: "config/team_names.csv"
+
+deduplication:
+  use_gsheets: false
+
+history:
+  enabled: true
+  path: "history"

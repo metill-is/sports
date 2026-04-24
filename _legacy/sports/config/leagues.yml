@@ -1,0 +1,253 @@
+# Centralised league registry — Sports/config/leagues.yml
+#
+# Each entry defines a league with its pipeline type, data source,
+# Stan model, and per-league overrides. The `defaults` block is
+# merged into every league entry by R/pipeline/config.R.
+#
+# Key fields:
+#   pipeline:    shared | football | handball_other
+#   data_source: baskethotel | hsi | iceland_ksi | livesport_football | livesport_handball
+#   has_bets:    whether this league has a config/bets.yml
+#   active:      true/false — inactive leagues are excluded from --all, --active, --stale, --due
+#                (explicit --league overrides this)
+
+defaults:
+  iter_warmup: 1000
+  iter_sampling: 1000
+  chains: 4
+  parallel_chains: 4
+  method: sample
+
+# ── Basketball ──────────────────────────────────────────────────────────────
+
+basketball_iceland:
+  sport: basketball
+  country: iceland
+  dir: basketball/iceland
+  sex: [male, female]
+  stan_model: 2d_student_t_scalarsigma.stan
+  pipeline: shared
+  config_module: R/config/basketball_iceland.R
+  data_source: baskethotel
+  has_bets: true
+  active: true
+  rproj: basketball_iceland.Rproj
+
+# ── Handball Iceland ────────────────────────────────────────────────────────
+
+handball_iceland:
+  sport: handball
+  country: iceland
+  dir: handball/iceland
+  sex: [male, female]
+  stan_model: 2d_student_t.stan
+  pipeline: shared
+  config_module: R/config/handball_iceland.R
+  data_source: hsi
+  has_bets: true
+  active: true
+  rproj: handball_iceland.Rproj
+
+# ── Football Iceland ─────────────────────────────────────────────────────────
+
+football_iceland:
+  sport: football
+  country: iceland
+  dir: football/iceland
+  sex: [male, female]
+  stan_model: bivariate_poisson_no_inflation.stan
+  pipeline: football
+  data_source: iceland_ksi
+  has_bets: true
+  active: true
+  rproj: football_iceland.Rproj
+  league_name: "Úrvalsdeild"
+  division_names: ["BD", "LD1", "LD2", "LD3", "LD4"]
+
+# ── Football (paused) ──────────────────────────────────────────────────────
+
+football_england:
+  sport: football
+  country: england
+  dir: football/england
+  sex: [male]
+  stan_model: bivariate_poisson_inflated_diagonal_corrmodel.stan
+  pipeline: football
+  data_source: livesport_football
+  has_bets: true
+  active: false
+  rproj: football_england.Rproj
+  league_name: "Premier League"
+  division_names: ["PL", "CH", "L1", "L2"]
+
+football_italy:
+  sport: football
+  country: italy
+  dir: football/italy
+  sex: [male]
+  stan_model: bivariate_poisson_inflated_diagonal_corrmodel.stan
+  pipeline: football
+  data_source: livesport_football
+  has_bets: true
+  active: false
+  rproj: football_italy.Rproj
+  league_name: "Serie A"
+  division_names: ["SA"]
+
+football_spain:
+  sport: football
+  country: spain
+  dir: football/spain
+  sex: [male]
+  stan_model: bivariate_poisson_inflated_diagonal_corrmodel.stan
+  pipeline: football
+  data_source: livesport_football
+  has_bets: false
+  active: false
+  rproj: football_spain.Rproj
+  league_name: "La Liga"
+  division_names: ["LL"]
+
+# ── Handball European ──────────────────────────────────────────────────────
+# 2026-04-19: denmark + sweden re-activated.
+#   denmark: +8.43 % ROI over 86 settled (calib 0.854)
+#   sweden:  +6.63 % ROI over 78 settled (calib 0.839)
+# france/germany/norway/italy stay paused — calibration 0.68-0.87 on 80+
+# bets is model misspecification, not variance. Needs Stan work before
+# any further re-activation. Spain thin at 45 settled — revisit after
+# Denmark/Sweden prove out. See Knowledge/Betting Optimisation/
+# roadmap-2026-04-19.md for data support.
+
+handball_denmark:
+  sport: handball
+  country: denmark
+  dir: handball/denmark
+  sex: [male, female]
+  stan_model: 2d_student_t.stan
+  pipeline: handball_other
+  data_source: livesport_handball
+  has_bets: true
+  active: false # 2026-04-20 season finished — last match 2026-03-14 (M) / 2026-03-20 (F); no upcoming fixtures on livesport, no Lengjan markets
+
+handball_france:
+  sport: handball
+  country: france
+  dir: handball/france
+  sex: [male, female]
+  stan_model: 2d_student_t.stan
+  pipeline: handball_other
+  data_source: livesport_handball
+  has_bets: true
+  active: false
+
+handball_germany:
+  sport: handball
+  country: germany
+  dir: handball/germany
+  sex: [male, female]
+  stan_model: 2d_student_t.stan
+  pipeline: handball_other
+  data_source: livesport_handball
+  has_bets: true
+  active: false
+
+handball_norway:
+  sport: handball
+  country: norway
+  dir: handball/norway
+  sex: [male, female]
+  stan_model: 2d_student_t.stan
+  pipeline: handball_other
+  data_source: livesport_handball
+  has_bets: true
+  active: false
+
+handball_spain:
+  sport: handball
+  country: spain
+  dir: handball/spain
+  sex: [male, female]
+  stan_model: 2d_student_t.stan
+  pipeline: handball_other
+  data_source: livesport_handball
+  has_bets: true
+  active: false
+
+handball_sweden:
+  sport: handball
+  country: sweden
+  dir: handball/sweden
+  sex: [male, female]
+  stan_model: 2d_student_t.stan
+  pipeline: handball_other
+  data_source: livesport_handball
+  has_bets: true
+  active: false # 2026-04-20 season finished — last match 2026-03-13 (M) / 2026-03-21 (F); no upcoming fixtures on livesport, no Lengjan markets
+
+# ── Handball European model-only (paused) ──────────────────────────────────
+
+handball_austria:
+  sport: handball
+  country: austria
+  dir: handball/austria
+  sex: [male]
+  stan_model: 2d_student_t.stan
+  pipeline: handball_other
+  data_source: livesport_handball
+  has_bets: false
+  active: false
+
+handball_czech_republic:
+  sport: handball
+  country: czech-republic
+  dir: handball/czech-republic
+  sex: [male]
+  stan_model: 2d_student_t.stan
+  pipeline: handball_other
+  data_source: livesport_handball
+  has_bets: false
+  active: false
+
+handball_finland:
+  sport: handball
+  country: finland
+  dir: handball/finland
+  sex: [male, female]
+  stan_model: 2d_student_t.stan
+  pipeline: handball_other
+  data_source: livesport_handball
+  has_bets: false
+  active: false
+
+handball_hungary:
+  sport: handball
+  country: hungary
+  dir: handball/hungary
+  sex: [male, female]
+  stan_model: 2d_student_t.stan
+  pipeline: handball_other
+  data_source: livesport_handball
+  has_bets: false
+  active: false
+
+handball_poland:
+  sport: handball
+  country: poland
+  dir: handball/poland
+  sex: [male, female]
+  stan_model: 2d_student_t.stan
+  pipeline: handball_other
+  data_source: livesport_handball
+  has_bets: false
+  active: false
+
+handball_portugal:
+  sport: handball
+  country: portugal
+  dir: handball/portugal
+  sex: [male, female]
+  stan_model: 2d_student_t.stan
+  pipeline: handball_other
+  data_source: livesport_handball
+  has_bets: false
+  active: false
