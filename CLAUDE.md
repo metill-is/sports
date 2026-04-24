@@ -18,7 +18,7 @@ Sports/
 │   ├── storage/                   # Centralised Parquet store (store.R, migrate_history.R)
 │   ├── schedule/                  # Schedule scanner (scan.R)
 │   ├── status/                    # JSON status endpoints for Raycast monitor (pipeline_status.R, settle_now.R)
-│   └── lengjan/                   # Legacy Lengjan scraping (superseded by lengjan-odds/)
+│   └── lengjan/                   # Legacy Lengjan scraping (still live — used by football/england + handball/iceland; migrate callers to lengjan-odds/ then remove)
 ├── basketball/{iceland,international}/
 ├── football/{iceland,england,italy,spain,norway}/
 └── handball/{iceland,international,other,denmark,france,germany,norway,spain,sweden,...}/
@@ -41,7 +41,7 @@ Rscript run.R --stale --dry-run                          # Preview stale leagues
 Rscript run.R --stale --step data,fit,results,bet         # Full pipeline on stale leagues only
 Rscript run.R --due --dry-run                             # Preview leagues due for refresh
 Rscript run.R --due                                       # Auto-runs data,fit,results,bet on due leagues
-Rscript run.R --league basketball_iceland --method pathfinder --step fit,results  # Fast approximate fit
+Rscript run.R --league basketball_iceland --method sample --step fit,results  # Production fit (pathfinder/variational crash on current models — see Key gotchas)
 
 # Method comparison (MCMC vs Pathfinder vs Variational)
 Rscript R/backtest/compare_methods.R --league basketball_iceland --sex male
@@ -50,7 +50,19 @@ Rscript R/backtest/compare_methods.R --league basketball_iceland --sex male
 **Selectors** (pick one): `--sport`, `--country`, `--league`, `--all`, `--active`, `--stale`, `--due`
 **Steps**: `--step data,fit,results,bet,settle` (default: all five)
 **Modifiers**: `--stale` (filter to leagues with upcoming odds + stale/missing fit), `--due` (unbetted matches today/tomorrow + fit >48h old; auto-selects data,fit,results,bet)
-**Overrides**: `--sex male|female`, `--iter <n>`, `--method sample|pathfinder|variational`, `--no-plots`, `--sync` (auto for data/settle), `--dry-run`
+**Overrides**: `--sex male|female`, `--iter <n>`, `--method sample|pathfinder|variational`, `--no-plots`, `--sync` (auto for data/settle), `--dry-run`, `--fit-parallel <n>`
+
+### Fit parallelism (`--fit-parallel`)
+
+Fits are serial by default — each fit uses `parallel_chains: 4`, which on a 10-core machine leaves 6 cores idle. `--fit-parallel N` dispatches N fits concurrently via `future::multisession`, each still running 4 chains internally. On a 10-core Mac, `--fit-parallel 2` (= 8 cores utilised) is the intended value; higher N oversubscribes.
+
+- Default is `--fit-parallel 1`, which uses a bit-identical serial code path (no regression risk on existing runs).
+- Implementation in `R/shared/fit_parallel.R`; workers write per-fit progress fragments under `~/.cache/raycast-pipeline/fit-fragments/{pid}/`, master aggregates every second into `fit-progress.json`.
+- Only the `fit` phase is parallelised. `data` (chromote-bound, rate-limit risk), `results`, and `bet` stay sequential.
+- Errors are isolated per-fit via `future::value` + `tryCatch` — one failing league will not abort siblings.
+- `timing_cache.json` writes per-fit via the existing EMA; schema unchanged.
+
+Requires packages `future` and `progressr` (both already installed).
 
 > **Note:** The pipeline generates `recommendations.csv` but never writes to `bets_log.csv`.
 > Bet placement and ledger writes are the exclusive responsibility of `lengjan-bets/`.
@@ -102,12 +114,14 @@ run.R → cross-match portfolio optimisation → format + filter → recommendat
 
 ### Stan models
 
-| Sport              | Model                               | File                                                 |
-| ------------------ | ----------------------------------- | ---------------------------------------------------- |
-| Basketball Iceland | 2D Student's t (scalar sigma)       | `2d_student_t_scalarsigma.stan`                      |
-| Handball Iceland   | 2D Student's t (per-team sigma)     | `2d_student_t.stan`                                  |
-| Football Iceland   | No-inflation bivariate Poisson      | `bivariate_poisson_no_inflation.stan`                |
-| Football (others)  | Diagonal-inflated bivariate Poisson | `bivariate_poisson_inflated_diagonal_corrmodel.stan` |
+| Sport              | Model                               | File                                                 | Location                      |
+| ------------------ | ----------------------------------- | ---------------------------------------------------- | ----------------------------- |
+| Basketball Iceland | 2D Student's t (scalar sigma)       | `2d_student_t_scalarsigma.stan`                      | `basketball/iceland/Stan/`    |
+| Handball Iceland   | 2D Student's t (per-team sigma)     | `2d_student_t.stan`                                  | `handball/iceland/Stan/`      |
+| Football Iceland   | No-inflation bivariate Poisson      | `bivariate_poisson_no_inflation.stan`                | `football/iceland/Stan/`      |
+| Football (others)  | Diagonal-inflated bivariate Poisson | `bivariate_poisson_inflated_diagonal_corrmodel.stan` | `Sports/Stan/` (shared)       |
+
+`Sports/Stan/` holds only the shared football-others model plus an older copy of `2d_student_t.stan`. Per-league Stan files live under each league's own `Stan/` directory and are not mirrored here.
 
 Both 2D Student's t variants use time-varying team strengths (random walk), separate offensive/defensive parameters, and home advantage effects. The scalar-sigma variant replaces per-team observation-noise scale with a single scalar; see `Knowledge/Sports Models/next-actions.md` in the Metill Obsidian vault for the audit evidence.
 
@@ -115,7 +129,7 @@ Both 2D Student's t variants use time-varying team strengths (random walk), sepa
 
 **Football Iceland** swapped to `bivariate_poisson_no_inflation.stan` on 2026-04-20 evening after the loo comparison favoured no-inflation by 4.3 SE elpd. Known seed-dependence caveat: production refit at default `adapt_delta=0.8` came in at 4.78% divergences + min ESS_tail 120, vs 1.45% + 573 on the fixed-seed audit fit; both pass on identifiable parameters (posterior means match within MC SE), but the sampler is at the edge of production-hygiene gates on `scale_sigma_def` — same inverse-funnel geometry handball's 2026-04-20 diagnostic identified. `adapt_delta=0.95` plumbing is the queued fix (see next-actions.md). England audit (~2-3h, paused league) also still pending.
 
-All active Stan files emit `vector[N] log_lik` in `generated quantities` for `loo::loo` PSIS-LOO comparisons (basketball + handball Iceland: morning 2026-04-20; football Iceland inflated + no-inflation: evening 2026-04-20).
+The three Iceland Stan files emit `vector[N] log_lik` in `generated quantities` for `loo::loo` PSIS-LOO comparisons (basketball + handball Iceland: morning 2026-04-20; football Iceland inflated + no-inflation: evening 2026-04-20). The shared `Sports/Stan/bivariate_poisson_inflated_diagonal_corrmodel.stan` (football/others pipeline) does **not** yet emit `log_lik` — add it before running cross-model loo comparisons on the football/others leagues.
 
 ### Data flow
 
