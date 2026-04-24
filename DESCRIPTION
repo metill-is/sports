@@ -37,6 +37,7 @@ Collate:
     'config.R'
     'duckdb-views.R'
     'ingest.R'
+    'ingest-hsi-handball.R'
     'ingest-kki-basketball.R'
     'storage-schemas.R'
     'storage.R'
