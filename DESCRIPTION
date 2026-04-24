@@ -30,17 +30,20 @@ Imports:
     tidyr,
     yaml
 Suggests:
+    cmdstanr,
+    posterior,
     testthat (>= 3.0.0),
     withr
 Config/testthat/edition: 3
 RoxygenNote: 7.3.3
-Collate: 
+Collate:
     'config.R'
     'duckdb-views.R'
     'ingest.R'
     'ingest-hsi-handball.R'
     'ingest-kki-basketball.R'
     'ingest-ksi-football.R'
+    'model-fit.R'
     'storage-schemas.R'
     'storage.R'
     'model-prepare.R'
