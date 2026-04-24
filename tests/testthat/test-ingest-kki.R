@@ -36,3 +36,21 @@ test_that("kki_basketball registers itself as a source module", {
   expect_true(is.function(src$fetch_results))
   expect_true(is.function(src$fetch_schedule))
 })
+
+test_that("KKI_SEASON_IDS covers at least the current season for each (sex, div)", {
+  ids <- KKI_SEASON_IDS
+  expect_true(all(c("male", "female") %in% names(ids)))
+  expect_true(all(c("div1", "div2") %in% names(ids$male)))
+  expect_true(all(c("div1", "div2") %in% names(ids$female)))
+
+  # Each (sex, div) has at least one season mapped.
+  for (sex in names(ids)) {
+    for (div in names(ids[[sex]])) {
+      expect_gte(length(ids[[sex]][[div]]), 1L)
+    }
+  }
+
+  # All values are positive numeric IDs.
+  all_ids <- unlist(ids, use.names = FALSE)
+  expect_true(all(all_ids > 0))
+})

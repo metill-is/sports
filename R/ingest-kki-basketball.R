@@ -8,23 +8,46 @@ BASKETHOTEL_API <- "a0d07178160bf749eb6e5e761fc623fe42e2bb57"
 
 #' Nested season ID registry for KKI basketball.
 #'
-#' Layout: KKI_SEASON_IDS[[sex]][[div]][[as.character(season)]].
-#' Divisions: div1 = Bonusdeild (BD), div2 = 1. Deild (1D).
+#' Layout: `KKI_SEASON_IDS[[sex]][[div]][[as.character(season)]]`.
+#' Divisions: div1 = Bónusdeild (BD), div2 = 1. Deild (1D).
 #'
 #' Season ID values are the `season_id` query parameter on
 #' `widgets.baskethotel.com/widget-service/export/view/schedule_and_results`.
-#' Update at the start of each season — see legacy `prep_data_kk.R` /
-#' `prep_data_kvk.R` for how to look them up.
+#'
+#' Season convention: "2026" = the 2025–2026 season (i.e. the calendar year
+#' the season ends). All 24 IDs for 2021–2026 verified via XLSX download on
+#' 2026-04-24; see `Sports/Baskethotel Season IDs.md` in the Metill vault
+#' for the full reference (including the widget-500 discovery method for
+#' deeper history back to 2014-2015).
+#'
+#' No separate cup / playoffs season IDs: KKÍ packages post-season as extra
+#' rounds inside the regular-season `season_id` export ("Deildarkeppni").
+#'
+#' Caveat: the 2025 male div1 ID `190366` that appeared in legacy notes is
+#' **invalid** — the XLSX comes back header-only (6230 bytes). The correct
+#' 2024–2025 male div1 is `128582`.
 #' @keywords internal
 #' @noRd
 KKI_SEASON_IDS <- list(
   male = list(
-    div1 = list(`2025` = 190366, `2026` = 130403),
-    div2 = list(`2025` = 190359, `2026` = 130402)
+    div1 = list(
+      `2021` = 118319L, `2022` = 121197L, `2023` = 124655L,
+      `2024` = 127358L, `2025` = 128582L, `2026` = 130403L
+    ),
+    div2 = list(
+      `2021` = 118315L, `2022` = 121191L, `2023` = 124650L,
+      `2024` = 127380L, `2025` = 128589L, `2026` = 130402L
+    )
   ),
   female = list(
-    div1 = list(`2026` = 130422),
-    div2 = list(`2026` = 130421)
+    div1 = list(
+      `2021` = 118325L, `2022` = 121199L, `2023` = 124654L,
+      `2024` = 127289L, `2025` = 128585L, `2026` = 130422L
+    ),
+    div2 = list(
+      `2021` = 118317L, `2022` = 121195L, `2023` = 124651L,
+      `2024` = 127381L, `2025` = 128590L, `2026` = 130421L
+    )
   )
 )
 

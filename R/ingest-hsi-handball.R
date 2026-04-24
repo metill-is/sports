@@ -45,6 +45,81 @@ HSI_DIVISION_LABELS <- c(
   playoffs = "PO"
 )
 
+#' Historical HSÍ tournament IDs per (sex, division, season).
+#'
+#' Layout: `HSI_HISTORICAL_IDS[[sex]][[division]][[as.character(season)]]` →
+#' integer `mot_nr` used in `https://www.hsi.is/tournament/{mot_nr}`.
+#'
+#' Season labels follow the same convention as `hsi_current_season()` — the
+#' closing calendar year of the season span (e.g. 2025 = Sept 2024 – May 2025).
+#' Values extracted from legacy `_legacy/sports/handball/iceland/R/utils/
+#' {male,female}/download_historical_data_div{1,2,cup}.R`.
+#'
+#' Notes / caveats:
+#' - Male cup history is omitted: the legacy `download_historical_data_cup.R`
+#'   copy-pasted the div1 IDs for 2021–2024 (a bug — it would have scraped the
+#'   Olísdeild tournament and written rows labelled "cup"). The 2025–26 cup is
+#'   already the current tournament in `HSI_URLS[[male]][[cup]]`.
+#' - Female div2 2025 is omitted: the legacy file has "2025" = 7644, which is
+#'   a copy-paste from male div2 (same ID) — the genuine female Grill 66 2024–25
+#'   tournament ID is not recoverable from the legacy source.
+#' - Current-season tournament IDs live in `HSI_URLS` (league pages, not
+#'   tournament pages) and are handled separately.
+#' @keywords internal
+#' @noRd
+HSI_HISTORICAL_IDS <- list(
+  male = list(
+    div1 = list(
+      "2021" = 5260L,
+      "2022" = 5640L,
+      "2023" = 6149L,
+      "2024" = 6983L,
+      "2025" = 7641L
+    ),
+    div2 = list(
+      "2021" = 5262L,
+      "2022" = 5643L,
+      "2023" = 6143L,
+      "2024" = 6981L,
+      "2025" = 7644L
+    )
+  ),
+  female = list(
+    div1 = list(
+      "2021" = 5261L,
+      "2022" = 5641L,
+      "2023" = 6146L,
+      "2024" = 6982L,
+      "2025" = 7642L
+    ),
+    div2 = list(
+      "2021" = 5263L,
+      "2022" = 5642L,
+      "2023" = 6148L,
+      "2024" = 6980L
+    )
+  )
+)
+
+#' Build the tournament URL for a historical HSÍ (sex, division, season).
+#' @keywords internal
+#' @noRd
+hsi_historical_url <- function(sex, division, season) {
+  ids_sex <- HSI_HISTORICAL_IDS[[sex]]
+  if (is.null(ids_sex)) {
+    return(NULL)
+  }
+  ids_div <- ids_sex[[division]]
+  if (is.null(ids_div)) {
+    return(NULL)
+  }
+  mot_nr <- ids_div[[as.character(season)]]
+  if (is.null(mot_nr)) {
+    return(NULL)
+  }
+  sprintf("https://www.hsi.is/tournament/%d", as.integer(mot_nr))
+}
+
 #' Icelandic month-abbreviation → 2-digit month number map.
 #'
 #' HSÍ date strings look like "Fim. 12. mar. 26" — day, abbreviated month
@@ -392,59 +467,98 @@ hsi_current_season <- function(today = Sys.Date()) {
   if (mo >= 7L) yr + 1L else yr
 }
 
+#' Delay between consecutive HSÍ tournament-page fetches (seconds).
+#'
+#' Legacy `download_historical_data_*.R` used `Sys.sleep(15)` per page. Each
+#' `fetch_hsi_html()` call already spends ~10s in chromote boot + wait loop,
+#' so a 3-second inter-page sleep is adequate to avoid hammering HSÍ.
+#' @keywords internal
+#' @noRd
+HSI_HISTORICAL_SLEEP_SECS <- 3
+
+#' Fetch a single HSÍ page and parse into results rows.
+#'
+#' Factored out of `fetch_results_hsi` so the current-season league URL and
+#' per-season historical tournament URLs share the same fetch + parse + error
+#' handling path.
+#' @keywords internal
+#' @noRd
+hsi_fetch_and_parse <- function(url, sex, div, division_label, season) {
+  tryCatch(
+    {
+      html <- fetch_hsi_html(url)
+      parse_hsi_results_page(
+        html,
+        sport = "handball",
+        country = "iceland",
+        sex = sex,
+        division = division_label,
+        season = season
+      )
+    },
+    error = function(e) {
+      cli::cli_warn(c(
+        "HSI results fetch failed for {sex}/{div} season={season}",
+        "i" = "{conditionMessage(e)}"
+      ))
+      NULL
+    }
+  )
+}
+
 #' Source-module entrypoint: results for a (league, sex).
 #'
 #' Iterates over all configured divisions for the requested sex, fetching and
 #' parsing each HSÍ page, and combines into a single canonical tibble. Any
-#' per-division failure is logged via `cli::cli_warn` and skipped (so a
-#' tournament site glitch does not take down the league ingest).
+#' per-(division, season) failure is logged via `cli::cli_warn` and skipped so
+#' one tournament-page glitch does not take down the league ingest.
 #'
-#' The `seasons` filter is honoured only when it includes the current season;
-#' HSÍ pages do not expose historical-season data in a uniform URL scheme, so
-#' historical ingestion requires the separate tournament IDs in the legacy
-#' download_historical_* scripts (not yet ported).
+#' When `seasons` is `NULL`, hits only the current-season league pages in
+#' `HSI_URLS`. When `seasons` is specified, iterates over the requested seasons:
+#' - Current season → league URL from `HSI_URLS`
+#' - Past seasons → tournament URLs from `HSI_HISTORICAL_IDS`, with a short
+#'   inter-page sleep (`HSI_HISTORICAL_SLEEP_SECS`) to avoid overwhelming HSÍ.
+#'
+#' Historical tournament pages use the same table structure as current-season
+#' pages per the legacy `read_page()` implementations, so the existing
+#' `parse_hsi_results_page()` parser applies unchanged.
 #'
 #' @param league Unused (included for source-module signature parity); HSI
 #'   URL wiring is fixed internally.
 #' @param sex "male" or "female".
-#' @param seasons Optional integer vector restricting seasons.
+#' @param seasons Optional integer vector restricting seasons. When `NULL`,
+#'   only the current season is fetched.
 #' @keywords internal
 #' @noRd
 fetch_results_hsi <- function(league, sex, seasons = NULL) {
   current <- hsi_current_season()
-  if (!is.null(seasons) && !(current %in% as.integer(seasons))) {
-    return(hsi_empty_results())
-  }
-
   divisions <- hsi_divisions_for_sex(sex)
+
+  # Decide which seasons to hit, per division. Current-season pages live in
+  # HSI_URLS; historical pages live in HSI_HISTORICAL_IDS (no historical cup
+  # data — see HSI_HISTORICAL_IDS docstring).
+  requested <- if (is.null(seasons)) current else as.integer(seasons)
+
   frames <- list()
 
   for (div in divisions) {
     division_label <- HSI_DIVISION_LABELS[[div]]
-    url <- HSI_URLS[[sex]][[div]]
 
-    parsed <- tryCatch(
-      {
-        html <- fetch_hsi_html(url)
-        parse_hsi_results_page(
-          html,
-          sport = "handball",
-          country = "iceland",
-          sex = sex,
-          division = division_label,
-          season = current
-        )
-      },
-      error = function(e) {
-        cli::cli_warn(c(
-          "HSI results fetch failed for {sex}/{div}",
-          "i" = "{conditionMessage(e)}"
-        ))
-        NULL
+    for (season in requested) {
+      url <- NULL
+      if (season == current) {
+        url <- HSI_URLS[[sex]][[div]]
+      } else {
+        url <- hsi_historical_url(sex, div, season)
       }
-    )
-    if (is.null(parsed)) next
-    frames[[length(frames) + 1L]] <- parsed
+      if (is.null(url)) next # No mapping for this (sex, div, season).
+
+      parsed <- hsi_fetch_and_parse(url, sex, div, division_label, season)
+      if (!is.null(parsed)) frames[[length(frames) + 1L]] <- parsed
+
+      # Sleep between historical tournament fetches to avoid hammering HSÍ.
+      if (season != current) Sys.sleep(HSI_HISTORICAL_SLEEP_SECS)
+    }
   }
 
   if (length(frames) == 0L) {
