@@ -1,0 +1,33 @@
+# R
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+
+# Environment
+.Renviron
+
+# Derived artefacts (regenerable from Parquet)
+sports.duckdb
+sports.duckdb.wal
+
+# Testing/research
+research/results/
+.testthat/
+
+# Editor
+.DS_Store
+*.swp
+
+# Temporary
+*.tmp
+_legacy-tmp/
+sports-backup-*/
+
+# Stan build artefacts
+*.exe
+*.hpp
+**/*.stan.d
+
+# Personal Claude Code preferences (not shared)
+.claude/settings.local.json

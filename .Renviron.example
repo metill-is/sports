@@ -1,0 +1,5 @@
+# Placer credentials — only required on the laptop running R/placer/.
+# Copy to .Renviron and fill in. .Renviron is .gitignored.
+
+LENGJAN_USER=
+LENGJAN_PASS=
