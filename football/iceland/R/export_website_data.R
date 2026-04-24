@@ -8,6 +8,7 @@
 # Outputs (per sex):
 #   meta.json                 — generation metadata
 #   next_games.json           — posterior over goal diffs for upcoming matches
+#   standings.json            — current league table (male only, top division)
 #   team_strengths.json       — per-team home/away × offence/defence/total CIs
 #   final_positions.json      — placement probability matrix + top-six probs
 #   points_distribution.json  — per-team end-of-season points distribution
@@ -26,7 +27,72 @@ library(here)
 
 Sys.setlocale("LC_ALL", "is_IS.UTF-8")
 
+# Posterior-predictive aggregator for xG / xPts over played matches.
+# Self-contained: recomputes and overwrites the CSV on every export run,
+# so the exporter works whether `update_model_results.R` has been run
+# or not. See DESIGN-xpts-2026-04-23.md for the design.
+source(here("R", "utils", "played_match_expected.R"))
+
 division_labels <- c("BD", "LD", "ÖD", "ÞD", "FjD", "MB")
+
+# Static team -> home stadium lookup. Used to populate the `venue` field on
+# next_games.json and (eventually) standings rows. Covers the 12 Besta deild
+# karla clubs for the 2026 season; teams outside this list serialise as null
+# and the consumer renders date-only fixture cards.
+male_top_division_venues <- tibble::tribble(
+  ~team,           ~venue,
+  "Breiðablik",    "Kópavogsvöllur",
+  "FH",            "Kaplakrikavöllur",
+  "Fram",          "Laugardalsvöllur",
+  "KA",            "KA-völlurinn",
+  "KR",            "KR-völlur",
+  "Keflavík",      "Nettóvöllurinn",
+  "Stjarnan",      "Stjörnuvöllur",
+  "Valur",         "Hlíðarendi",
+  "Víkingur R.",   "Víkingsvöllur",
+  "ÍA",            "Norðurálsvöllurinn",
+  "ÍBV",           "Hásteinsvöllur",
+  "Þór",           "Þórsvöllur"
+)
+
+# Append `new_rows` to a history JSON file, dedup on `key_cols` keeping the
+# row with the most recent `generated_at`. Creates the file on first call.
+#
+# Stored shape (mirrors the snapshot files):
+#   { "schema_version": 1, "records": [ {…}, {…} ] }
+#
+# The file grows roughly linearly with the number of R runs. For karla
+# `team_strengths_history.json` at full lattice (22 rounds × 12 teams × 3
+# components × 2 locations × 3 coverage levels) = ~4.8K rows × ~130 B ≈ 600 KB
+# per season. Acceptable; season-rollover cleanup is a future concern.
+append_to_history <- function(path, new_rows, key_cols) {
+  existing <- if (file.exists(path)) {
+    tryCatch(
+      {
+        parsed <- jsonlite::fromJSON(path, simplifyDataFrame = TRUE)
+        records <- parsed$records
+        if (is.data.frame(records)) as_tibble(records) else tibble()
+      },
+      error = function(e) tibble()
+    )
+  } else {
+    tibble()
+  }
+
+  all_rows <- bind_rows(existing, new_rows) |>
+    arrange(desc(generated_at)) |>
+    distinct(across(all_of(key_cols)), .keep_all = TRUE) |>
+    arrange(across(all_of(key_cols)))
+
+  write_json(
+    list(schema_version = 1L, records = all_rows),
+    path,
+    auto_unbox = TRUE,
+    dataframe = "rows",
+    digits = 5,
+    na = "null"
+  )
+}
 
 extract_team_draws <- function(fit, var, teams, component, location) {
   fit$draws(var) |>
@@ -62,6 +128,21 @@ export_for_sex <- function(sex) {
   pred_d <- read_csv(here("results", sex, "pred_d.csv"), show_col_types = FALSE)
   top_teams <- read_csv(here("results", sex, "top_teams.csv"), show_col_types = FALSE)
 
+  # Compute per-team posterior-predictive xG / xPts for played current-season
+  # top-division matches. Writes results/{sex}/team_expected_by_draw.csv; we
+  # then summarise to posterior means for the standings row.
+  aggregate_played_match_expected(sex)
+  team_expected <- read_csv(
+    here("results", sex, "team_expected_by_draw.csv"),
+    show_col_types = FALSE
+  ) |>
+    summarise(
+      xg_for = mean(xg_for),
+      xg_against = mean(xg_against),
+      xpts = mean(xpts),
+      .by = team
+    )
+
   current_season <- max(d$season, na.rm = TRUE)
 
   current_top_teams <- d |>
@@ -72,12 +153,24 @@ export_for_sex <- function(sex) {
   # ---- meta ---------------------------------------------------------------
 
   fit_mtime <- file.info(here("results", sex, "fit.rds"))$mtime
+
+  # Current completed-round number in the top division. Min(played) across
+  # teams, so postponed fixtures don't overstate progress. Used by the
+  # website trajectory + rank-bump charts as the natural x-axis.
+  round_num <- d |>
+    filter(season == current_season, division == 1, !is.na(home_goals)) |>
+    pivot_longer(c(home, away), values_to = "team") |>
+    count(team) |>
+    pull(n) |>
+    (\(x) if (length(x) == 0L) 0L else min(x))()
+
   meta <- list(
     sex = sex,
     league = "Besta deild",
     season = current_season,
     generated_at = format(Sys.time(), "%Y-%m-%dT%H:%M:%S%z"),
     fit_date = format(fit_mtime, "%Y-%m-%d"),
+    round = round_num,
     n_draws = posterior::ndraws(fit$draws("home_advantage_tot"))
   )
   write_json(
@@ -128,12 +221,13 @@ export_for_sex <- function(sex) {
       .by = c(game_nr, division, date, home, away)
     ) |>
     arrange(date, game_nr) |>
+    left_join(male_top_division_venues, by = c("home" = "team")) |>
     mutate(
       division_code = division_labels[division],
       date = format(date, "%Y-%m-%d")
     ) |>
     select(
-      date, division, division_code, home, away,
+      date, venue, division, division_code, home, away,
       mean_home_goals, mean_away_goals, mean_goal_diff,
       p_home_win, p_draw, p_away_win,
       goal_diff_distribution
@@ -147,8 +241,110 @@ export_for_sex <- function(sex) {
     file.path(out_dir, "next_games.json"),
     auto_unbox = TRUE,
     dataframe = "rows",
-    digits = 5
+    digits = 5,
+    na = "null"
   )
+
+  # ---- standings.json (top division, current season) ---------------------
+
+  if (sex == "male") {
+    bd <- d |>
+      filter(season == current_season, division == 1, !is.na(home_goals))
+
+    long_bd <- bind_rows(
+      bd |> transmute(team = home, date, gf = home_goals, ga = away_goals),
+      bd |> transmute(team = away, date, gf = away_goals, ga = home_goals)
+    ) |>
+      mutate(
+        result = case_when(
+          gf > ga ~ "W",
+          gf < ga ~ "L",
+          TRUE ~ "D"
+        )
+      ) |>
+      arrange(team, date)
+
+    # Pad the form vector to length 5 with leading NA so jsonlite never
+    # encounters a single-element list-column entry — auto_unbox would
+    # otherwise collapse it from ["W"] to "W". Newest result stays last.
+    pad_form <- function(x, n = 5) {
+      tail(c(rep(NA_character_, n), x), n)
+    }
+
+    short_code <- function(team) {
+      team |>
+        str_remove_all("\\s|\\.") |>
+        str_to_upper() |>
+        str_sub(1, 3)
+    }
+
+    standings_rows <- long_bd |>
+      summarise(
+        played = n(),
+        wins = sum(result == "W"),
+        draws = sum(result == "D"),
+        losses = sum(result == "L"),
+        goals_for = sum(gf),
+        goals_against = sum(ga),
+        goal_diff = goals_for - goals_against,
+        points = 3L * wins + draws,
+        form = list(pad_form(tail(result, 5))),
+        xg_trend = list(numeric(0)),
+        .by = team
+      ) |>
+      arrange(desc(points), desc(goal_diff), desc(goals_for)) |>
+      mutate(
+        rank  = row_number(),
+        short = short_code(team)
+      ) |>
+      left_join(team_expected, by = "team") |>
+      select(
+        team, short, played, wins, draws, losses,
+        goals_for, goals_against, goal_diff, points,
+        xg_for, xg_against, xpts,
+        rank,
+        form, xg_trend
+      )
+
+    write_json(
+      list(
+        generated_at = meta$generated_at,
+        season       = current_season,
+        as_of        = format(max(bd$date), "%Y-%m-%d"),
+        rows         = standings_rows
+      ),
+      file.path(out_dir, "standings.json"),
+      auto_unbox = TRUE,
+      dataframe = "rows",
+      digits = 5,
+      na = "null"
+    )
+
+    # Append to history. One row per (team × run), dedup on (as_of, team)
+    # so re-running the script against the same played fixtures doesn't
+    # grow the history file. `form` and `xg_trend` are dropped — they live
+    # in the snapshot only; the history is for trajectory/rank charts.
+    standings_history_row <- standings_rows |>
+      mutate(
+        as_of        = format(max(bd$date), "%Y-%m-%d"),
+        generated_at = meta$generated_at,
+        round        = meta$round,
+        season       = current_season
+      ) |>
+      select(
+        as_of, generated_at, round, season,
+        team, short, played, wins, draws, losses,
+        goals_for, goals_against, goal_diff, points,
+        xg_for, xg_against, xpts,
+        rank
+      )
+
+    append_to_history(
+      file.path(out_dir, "standings_history.json"),
+      standings_history_row,
+      key_cols = c("as_of", "team")
+    )
+  }
 
   # ---- team_strengths.json -----------------------------------------------
 
@@ -172,6 +368,28 @@ export_for_sex <- function(sex) {
     auto_unbox = TRUE,
     dataframe = "rows",
     digits = 5
+  )
+
+  # Append to history. One row per (team × component × location × coverage
+  # × run). Dedup on fit_date so re-running against the same fit replaces
+  # the earlier row rather than duplicating it.
+  team_strengths_history_row <- team_strengths |>
+    mutate(
+      fit_date     = meta$fit_date,
+      generated_at = meta$generated_at,
+      round        = meta$round,
+      season       = current_season
+    ) |>
+    select(
+      fit_date, generated_at, round, season,
+      team, component, location, coverage,
+      median, lower, upper
+    )
+
+  append_to_history(
+    file.path(out_dir, "team_strengths_history.json"),
+    team_strengths_history_row,
+    key_cols = c("fit_date", "team", "component", "location", "coverage")
   )
 
   # ---- points + placements (top division only) ---------------------------
