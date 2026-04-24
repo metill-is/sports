@@ -2,6 +2,7 @@
 
 export(extract_posteriors)
 export(filter_leagues)
+export(fit_league)
 export(fit_model)
 export(ingest_league)
 export(load_leagues)
