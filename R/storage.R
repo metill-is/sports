@@ -152,6 +152,103 @@ write_table <- function(df, table, root = here::here("data")) {
   invisible(NULL)
 }
 
+#' Natural match-key columns per table (for upsert dedup).
+#'
+#' Unlike the partition columns, which identify which Parquet files to write,
+#' the natural key identifies one match within a partition. Re-ingests that
+#' return the same match with differing metadata (e.g. corrected scores) keep
+#' the newer row; re-ingests that return a strict subset of an earlier fetch
+#' keep the full union.
+#' @noRd
+natural_key_for <- function(table) {
+  switch(table,
+    results = c(
+      "sport", "country", "sex", "season", "match_date",
+      "home_team", "away_team"
+    ),
+    schedules = c(
+      "sport", "country", "sex", "season", "match_date",
+      "home_team", "away_team"
+    ),
+    stop("upsert_table not supported for table: ", table, call. = FALSE)
+  )
+}
+
+#' Write a frame into the store with per-partition merge semantics.
+#'
+#' Unlike [write_table()], which overwrites all Parquet files that match the
+#' partition columns of the incoming frame, `upsert_table()` reads the existing
+#' rows of each touched partition, row-binds the new rows, and deduplicates on
+#' the natural match key (see [natural_key_for()]). Partitions that the new
+#' frame does not touch are left on disk untouched.
+#'
+#' When the new frame collides with an existing row on the natural match key,
+#' the NEW row wins — this lets corrections (e.g. finalised scores) propagate.
+#'
+#' Currently supports `"results"` and `"schedules"`. Other tables fall through
+#' to `natural_key_for()` which raises a clear error.
+#'
+#' @param df A tibble or data frame matching the schema for `table`.
+#' @param table One of `"results"`, `"schedules"`.
+#' @param root Filesystem root (defaults to `here::here("data")`).
+#' @return invisible(NULL)
+#' @export
+upsert_table <- function(df, table, root = here::here("data")) {
+  if (nrow(df) == 0) {
+    return(invisible(NULL))
+  }
+
+  df <- add_virtual_partitions(df, table)
+  partitions <- table_partitions()[[table]]
+  nat_key <- natural_key_for(table)
+
+  missing <- setdiff(partitions, names(df))
+  if (length(missing) > 0) {
+    stop(
+      sprintf(
+        "upsert_table: frame missing partition column(s): %s",
+        paste(missing, collapse = ", ")
+      ),
+      call. = FALSE
+    )
+  }
+
+  # Distinct partition keys in the incoming frame determine which partitions
+  # we need to read, merge, and re-write.
+  partition_keys <- dplyr::distinct(df[, partitions, drop = FALSE])
+
+  for (i in seq_len(nrow(partition_keys))) {
+    part_filter <- as.list(partition_keys[i, , drop = FALSE])
+
+    # Mask: rows of df that belong to this partition.
+    mask <- rep(TRUE, nrow(df))
+    for (col in partitions) {
+      mask <- mask & (df[[col]] == partition_keys[[col]][i])
+    }
+    new_rows <- df[mask, , drop = FALSE]
+
+    existing <- tryCatch(
+      read_table(table, root = root, filter = part_filter),
+      error = function(e) tibble::tibble()
+    )
+
+    combined <- if (nrow(existing) > 0 &&
+      all(nat_key %in% names(existing))) {
+      # Put new rows first so row-wise dedup keeps the newer version on
+      # natural-key collisions.
+      bound <- dplyr::bind_rows(new_rows, existing)
+      dup <- duplicated(bound[, nat_key, drop = FALSE])
+      bound[!dup, , drop = FALSE]
+    } else {
+      new_rows
+    }
+
+    write_table(combined, table, root = root)
+  }
+
+  invisible(NULL)
+}
+
 #' Read a table back as a tibble.
 #'
 #' @param table one of names(schemas()).

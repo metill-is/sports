@@ -152,6 +152,55 @@ hsi_url <- function(sex, division, season = NULL,
   HSI_URLS[[sex]][[division]]
 }
 
+#' Poll a table-returning callback until the last table's row count is stable.
+#'
+#' HSÍ tournament pages render table shells (standings + results) quickly, but
+#' the results `tbody` is populated asynchronously as chromote continues the
+#' JS load. A naïve exit condition on `length(tables) >= min_tables` returns
+#' the page mid-hydration with partial rows. This helper instead counts rows
+#' in the LAST table (the results table) and exits once that count has not
+#' changed across two consecutive polls — tbody growth is monotonic during
+#' hydration, so stability implies fully-loaded.
+#'
+#' Pure function: network and Chromium live behind `get_tables`, which is why
+#' the unit tests in `tests/testthat/test-poll-tables.R` can exercise the
+#' decision logic with a simple stub.
+#'
+#' @param get_tables A zero-arg function returning a list of data frames. Each
+#'   call triggers a fresh `html_table()` read from the live page.
+#' @param min_tables Minimum table count before row-stability checks begin.
+#' @param min_rows Row count of the last table must meet this threshold before
+#'   stability counts as an acceptable exit. Default 1 rejects stable-empty.
+#'   Set to 0 to accept genuinely empty tournaments and exit early.
+#' @param max_attempts Hard cap on poll attempts.
+#' @param wait_seconds Seconds to wait before each poll.
+#' @param sleep_fn Sleep implementation (override for tests so they don't
+#'   actually sleep).
+#' @return The list of tables from the final poll.
+#' @keywords internal
+#' @noRd
+poll_hsi_tables <- function(get_tables,
+                            min_tables = 2L,
+                            min_rows = 1L,
+                            max_attempts = 12L,
+                            wait_seconds = 5,
+                            sleep_fn = Sys.sleep) {
+  tables <- list()
+  last_count <- -1L
+
+  for (attempt in seq_len(max_attempts)) {
+    sleep_fn(wait_seconds)
+    tables <- get_tables()
+    if (length(tables) < min_tables) next
+
+    current_count <- nrow(tables[[length(tables)]])
+    if (current_count >= min_rows && current_count == last_count) break
+    last_count <- current_count
+  }
+
+  tables
+}
+
 #' Fetch an HSÍ page via headless Chromium.
 #'
 #' HSÍ's website is a client-side-rendered Drupal + JS app. Plain `curl` /
@@ -160,27 +209,32 @@ hsi_url <- function(sex, division, season = NULL,
 #' fully rendered `outerHTML`. Returns an `xml_document` ready for
 #' `rvest::html_table()`.
 #'
-#' Implementation notes:
-#' - Waits up to ~5 attempts (2 s each) for tables to materialise.
-#' - Extracts `outerHTML` as raw UTF-8 bytes so Icelandic characters survive
-#'   downstream `janitor::make_clean_names()`; without explicit byte handling
-#'   rvest's string conversion drops non-ASCII.
+#' Retry policy: polls up to `max_attempts` times with `wait_seconds` between
+#' each poll (default 12 × 5 s = 60 s cap). Exits early once the LAST table's
+#' row count is stable across two consecutive polls — see [poll_hsi_tables()]
+#' for why element-count polling is insufficient.
+#'
+#' Icelandic-character preservation: extracts `outerHTML` as raw UTF-8 bytes
+#' so accented column headers survive downstream `janitor::make_clean_names()`;
+#' without explicit byte handling rvest's string conversion drops non-ASCII.
 #' @keywords internal
 #' @noRd
-fetch_hsi_html <- function(url, min_tables = 2L, max_attempts = 5L,
-                           wait_seconds = 2) {
+fetch_hsi_html <- function(url, min_tables = 2L, min_rows = 1L,
+                           max_attempts = 12L, wait_seconds = 5) {
   page <- rvest::read_html_live(url)
   on.exit(
     try(page$session$close(), silent = TRUE),
     add = TRUE
   )
 
-  tables <- list()
-  for (attempt in seq_len(max_attempts)) {
-    Sys.sleep(wait_seconds)
-    tables <- rvest::html_table(page)
-    if (length(tables) >= min_tables) break
-  }
+  tables <- poll_hsi_tables(
+    get_tables = function() rvest::html_table(page),
+    min_tables = min_tables,
+    min_rows = min_rows,
+    max_attempts = max_attempts,
+    wait_seconds = wait_seconds
+  )
+
   if (length(tables) < min_tables) {
     stop(
       "HSI page returned ", length(tables),

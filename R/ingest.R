@@ -56,8 +56,11 @@ ingest_league <- function(league, sex,
   results <- results_mod$fetch_results(league, sex, seasons = seasons)
   schedule <- schedule_mod$fetch_schedule(league, sex)
 
-  if (nrow(results) > 0) write_table(results, "results", root = root)
-  if (nrow(schedule) > 0) write_table(schedule, "schedules", root = root)
+  # Use upsert semantics so re-ingests that return a strict subset of an
+  # earlier fetch (e.g. HSI retry dropping G66 history) do not clobber the
+  # larger partition on disk. See R/storage.R::upsert_table().
+  if (nrow(results) > 0) upsert_table(results, "results", root = root)
+  if (nrow(schedule) > 0) upsert_table(schedule, "schedules", root = root)
 
   invisible(NULL)
 }
