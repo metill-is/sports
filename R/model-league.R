@@ -61,16 +61,16 @@ fit_league <- function(league_key = NULL,
   stopifnot(sex %in% c("male", "female"))
   stopifnot(!is.null(league$stan_model))
 
+  stan_path <- file.path(stan_dir, league$stan_model)
+  if (!file.exists(stan_path)) {
+    stop("Stan model missing: ", stan_path, call. = FALSE)
+  }
+
   prep <- prepare_data(league, sex,
     end_date = end_date, root = root,
     from_season = from_season,
     schedule_horizon_days = schedule_horizon_days
   )
-
-  stan_path <- file.path(stan_dir, league$stan_model)
-  if (!file.exists(stan_path)) {
-    stop("Stan model missing: ", stan_path, call. = FALSE)
-  }
 
   fit <- fit_model(
     stan_data       = prep$stan_data,

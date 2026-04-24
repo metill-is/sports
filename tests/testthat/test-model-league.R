@@ -110,3 +110,17 @@ test_that("fit_league errors when neither league_key nor league supplied", {
     "Exactly one of"
   )
 })
+
+test_that("fit_league errors when the Stan model file is missing", {
+  mini_league <- list(
+    sport = "basketball", country = "iceland", sexes = "male",
+    stan_model = "nonexistent/model.stan"
+  )
+  expect_error(
+    fit_league(
+      league = mini_league, sex = "male",
+      stan_dir = withr::local_tempdir()
+    ),
+    "Stan model missing"
+  )
+})
