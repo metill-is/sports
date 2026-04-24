@@ -55,6 +55,6 @@ test_that("fit_model errors clearly on unknown method", {
   skip_if_not_installed("cmdstanr")
   expect_error(
     fit_model(stan_data = list(), stan_model_path = "ignored", method = "foo"),
-    regexp = "method"
+    regexp = "should be one of"
   )
 })

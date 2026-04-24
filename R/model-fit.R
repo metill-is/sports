@@ -33,18 +33,26 @@ fit_model <- function(stan_data,
                       seed = NULL,
                       init = 0,
                       show_progress = TRUE) {
-  method <- tryCatch(
-    match.arg(method),
-    error = function(e) {
-      stop("method must be one of \"sample\", \"pathfinder\", or \"variational\"",
-        call. = FALSE
-      )
-    }
-  )
+  method <- match.arg(method)
 
   model <- cmdstanr::cmdstan_model(stan_model_path, quiet = TRUE)
 
   common_quiet <- list(show_messages = FALSE, show_exceptions = FALSE)
+
+  gq_or_explain <- function(fitted_params) {
+    tryCatch(
+      model$generate_quantities(fitted_params = fitted_params, data = stan_data),
+      error = function(e) {
+        stop(
+          "generate_quantities() failed after ", method, " fit: ",
+          conditionMessage(e),
+          "\n  Approximate posteriors can place mass on invalid parameter ",
+          "regions (e.g. non-PD covariance matrices). Use method = 'sample'.",
+          call. = FALSE
+        )
+      }
+    )
+  }
 
   if (method == "sample") {
     args <- c(list(
@@ -63,18 +71,21 @@ fit_model <- function(stan_data,
       num_paths = num_paths,
       draws     = draws,
       init      = init
-    ), if (!is.null(seed)) list(seed = seed))
+    ), if (!is.null(seed)) list(seed = seed), common_quiet)
     approx <- do.call(model$pathfinder, args)
+    # generate_quantities() does not accept CmdStanPathfinder directly;
+    # materialise the draws matrix so it's passed via fitted_params.
     pf_draws <- posterior::as_draws_matrix(approx$draws())
-    model$generate_quantities(fitted_params = pf_draws, data = stan_data)
+    gq_or_explain(pf_draws)
   } else {
     args <- c(list(
       data      = stan_data,
       algorithm = "fullrank",
       draws     = draws,
       init      = init
-    ), if (!is.null(seed)) list(seed = seed))
+    ), if (!is.null(seed)) list(seed = seed), common_quiet)
     approx <- do.call(model$variational, args)
-    model$generate_quantities(fitted_params = approx, data = stan_data)
+    # CmdStanVB is accepted by generate_quantities() directly.
+    gq_or_explain(approx)
   }
 }
