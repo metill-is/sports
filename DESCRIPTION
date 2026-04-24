@@ -1,0 +1,32 @@
+Package: sports
+Title: Bayesian Sports Prediction and Automated Betting
+Version: 0.1.0
+Authors@R: person("Brynjólfur Gauti", "Jónsson", email = "bgautijonsson@gmail.com", role = c("aut", "cre"))
+Description: Consolidated pipeline for ingesting Icelandic sports data,
+    fitting Bayesian Stan models, producing Kelly-optimal bets, and
+    publishing posterior summaries to metill.is.
+License: file LICENSE
+Encoding: UTF-8
+Depends: R (>= 4.0)
+Imports:
+    arrow,
+    cli,
+    DBI,
+    dplyr,
+    duckdb,
+    fs,
+    here,
+    jsonlite,
+    jsonvalidate,
+    lubridate,
+    purrr,
+    readr,
+    rlang,
+    stringr,
+    tibble,
+    tidyr,
+    yaml
+Suggests:
+    testthat (>= 3.0.0),
+    withr
+Config/testthat/edition: 3
