@@ -20,16 +20,45 @@ NULL
 #'
 #' @keywords internal
 #' @noRd
+#' @section Historical coverage:
+#' Men's 2021–2025 IDs verified against KSÍ on 2026-04-24; see
+#' `Sports/KSÍ Historical Match Scraping.md` in the Metill vault for the
+#' discovery notes. 2021 is a flat single-ID season (no Efri/Neðri hluti);
+#' 2022 onwards splits the top flight into regular + Efri + Neðri.
 KSI_IDS <- list(
   male = list(
-    div1 = list(`2025` = 190366L, `2026` = 7025510L),
-    div2 = list(`2025` = 190359L, `2026` = 7025540L),
-    div3 = list(`2025` = 190365L, `2026` = 7025548L),
-    div4 = list(`2025` = 190363L, `2026` = 7025551L),
-    div5 = list(`2025` = 190358L, `2026` = 7025560L),
-    cup = list(`2025` = 190367L, `2026` = 7059683L),
-    div1_upper_playoffs = list(`2026` = 7025527L),
-    div1_lower_playoffs = list(`2026` = 7025532L),
+    div1 = list(
+      `2021` = 190052L, `2022` = 190173L, `2023` = 190224L,
+      `2024` = 190265L, `2025` = 190366L, `2026` = 7025510L
+    ),
+    div2 = list(
+      `2021` = 190043L, `2022` = 190202L, `2023` = 190223L,
+      `2024` = 190134L, `2025` = 190359L, `2026` = 7025540L
+    ),
+    div3 = list(
+      `2021` = 190044L, `2022` = 190199L, `2023` = 190219L,
+      `2024` = 190124L, `2025` = 190365L, `2026` = 7025548L
+    ),
+    div4 = list(
+      `2021` = 189846L, `2022` = 190195L, `2023` = 190227L,
+      `2024` = 190139L, `2025` = 190363L, `2026` = 7025551L
+    ),
+    div5 = list(
+      `2023` = 190174L, `2024` = 190138L,
+      `2025` = 190358L, `2026` = 7025560L
+    ),
+    cup = list(
+      `2021` = 190049L, `2022` = 190201L, `2023` = 190230L,
+      `2024` = 190126L, `2025` = 190367L, `2026` = 7059683L
+    ),
+    div1_upper_playoffs = list(
+      `2022` = 190181L, `2023` = 190226L, `2024` = 190141L,
+      `2025` = 190373L, `2026` = 7025527L
+    ),
+    div1_lower_playoffs = list(
+      `2022` = 190167L, `2023` = 190220L, `2024` = 190129L,
+      `2025` = 190371L, `2026` = 7025532L
+    ),
     div2_playoffs = list(`2026` = 7025545L)
   ),
   female = list(
@@ -62,13 +91,20 @@ KSI_DIVISION_LABELS <- c(
 #' Build a KSÍ competition page URL.
 #'
 #' @param id Integer competition ID.
+#' @param page Integer page number (1-based). `pageSize` is silently capped
+#'   at ~10–12 rows by KSÍ, so we iterate `page=1..N` where `N` comes from
+#'   the "X af Y" label on page 1. See Sports/KSÍ Historical Match Scraping
+#'   in the Metill vault.
+#' @param toggle `"results"` shows past (played) matches; `"upcoming"` (or
+#'   omitting) shows next fixtures. Past seasons are empty under `upcoming`.
 #' @return Character URL.
 #' @keywords internal
 #' @noRd
-ksi_url <- function(id) {
+ksi_url <- function(id, page = 1L, toggle = c("results", "upcoming")) {
+  toggle <- match.arg(toggle)
   sprintf(
-    "https://www.ksi.is/oll-mot/mot?id=%s&banner-tab=matches-and-results",
-    id
+    "https://www.ksi.is/oll-mot/mot?id=%s&banner-tab=matches-and-results&toggle=%s&page=%d",
+    id, toggle, as.integer(page)
   )
 }
 
@@ -80,11 +116,13 @@ ksi_url <- function(id) {
 #' abbreviations survive the round-trip.
 #'
 #' @param id Integer competition ID.
+#' @param page,toggle See [ksi_url()].
 #' @return xml_document on success; NULL on HTTP failure (caller warns + skips).
 #' @keywords internal
 #' @noRd
-fetch_ksi_page <- function(id) {
-  url <- ksi_url(id)
+fetch_ksi_page <- function(id, page = 1L, toggle = c("results", "upcoming")) {
+  toggle <- match.arg(toggle)
+  url <- ksi_url(id, page = page, toggle = toggle)
   resp <- tryCatch(
     httr2::request(url) |>
       httr2::req_user_agent("sports-pipeline (+https://github.com/metill-is/sports)") |>
@@ -98,6 +136,22 @@ fetch_ksi_page <- function(id) {
   }
   body <- httr2::resp_body_raw(resp)
   rvest::read_html(body, encoding = "UTF-8")
+}
+
+#' Parse the "X af Y" pagination label on a KSÍ match-list page.
+#'
+#' KSÍ renders text like "1 af 9" next to the paginator. The second integer
+#' is the total number of pages. Returns 1 if no label found (single-page
+#' result set).
+#' @keywords internal
+#' @noRd
+extract_ksi_page_count <- function(page) {
+  text <- rvest::html_text(page)
+  m <- stringr::str_match(text, "([0-9]+)\\s+af\\s+([0-9]+)")
+  if (is.na(m[1, 1L])) {
+    return(1L)
+  }
+  as.integer(m[1, 3L])
 }
 
 #' Icelandic month-name → 2-digit month number map.
@@ -372,16 +426,81 @@ parse_ksi_schedule_page <- function(html, sport, country, sex, division, season)
   )]
 }
 
+#' Rate-limited sleep between KSÍ requests.
+#'
+#' Default: uniform 0.8–1.5 s per request. Honour the spec's "1 req/s or
+#' slower" guidance while adding jitter to avoid lockstep patterns that
+#' would trip simplistic rate-limiters.
+#' @keywords internal
+#' @noRd
+ksi_sleep <- function() {
+  Sys.sleep(stats::runif(1L, 0.8, 1.5))
+}
+
+#' Fetch all pages of a KSÍ tournament's match list, parsing each into the
+#' canonical results tibble.
+#'
+#' Reads "X af Y" on page 1 to determine total page count, then loops. Rate-
+#' limits between requests via `ksi_sleep()`. Returns an empty tibble on any
+#' network / parsing failure.
+#'
+#' @param id Tournament ID.
+#' @param sex,division,season,toggle Context. `toggle = "results"` for
+#'   played matches; `toggle = "upcoming"` for scheduled fixtures.
+#' @keywords internal
+#' @noRd
+fetch_ksi_all_pages <- function(id, sex, division, season,
+                                toggle = c("results", "upcoming")) {
+  toggle <- match.arg(toggle)
+
+  first <- fetch_ksi_page(id, page = 1L, toggle = toggle)
+  if (is.null(first)) {
+    return(ksi_empty_results())
+  }
+
+  n_pages <- extract_ksi_page_count(first)
+  frames <- list()
+  parsed <- parse_ksi_results_page(
+    first,
+    sport = "football", country = "iceland",
+    sex = sex, division = division, season = season,
+    played_only = FALSE
+  )
+  if (nrow(parsed) > 0L) frames[[1L]] <- parsed
+
+  if (n_pages > 1L) {
+    for (p in seq.int(2L, n_pages)) {
+      ksi_sleep()
+      pg <- fetch_ksi_page(id, page = p, toggle = toggle)
+      if (is.null(pg)) next
+      parsed <- parse_ksi_results_page(
+        pg,
+        sport = "football", country = "iceland",
+        sex = sex, division = division, season = season,
+        played_only = FALSE
+      )
+      if (nrow(parsed) > 0L) frames[[length(frames) + 1L]] <- parsed
+    }
+  }
+
+  if (length(frames) == 0L) {
+    return(ksi_empty_results())
+  }
+  dplyr::bind_rows(frames)
+}
+
 #' Iterate over all configured (division, season) pairs for one sex.
 #'
 #' @param sex "male" or "female".
 #' @param seasons Optional integer vector restricting seasons.
-#' @param sleep_seconds Polite delay between HTTP requests.
+#' @param toggle `"results"` or `"upcoming"`.
 #' @return Combined tibble (canonical results schema). Empty tibble if every
 #'   page failed or returned no matches.
 #' @keywords internal
 #' @noRd
-fetch_ksi_all <- function(sex, seasons = NULL, sleep_seconds = 1) {
+fetch_ksi_all <- function(sex, seasons = NULL,
+                          toggle = c("results", "upcoming")) {
+  toggle <- match.arg(toggle)
   stopifnot(sex %in% names(KSI_IDS))
 
   sex_map <- KSI_IDS[[sex]]
@@ -398,25 +517,14 @@ fetch_ksi_all <- function(sex, seasons = NULL, sleep_seconds = 1) {
     for (season_key in season_keys) {
       id <- season_map[[season_key]]
       season_int <- as.integer(season_key)
+      ksi_sleep()
 
       parsed <- tryCatch(
-        {
-          Sys.sleep(sleep_seconds)
-          page <- fetch_ksi_page(id)
-          if (is.null(page)) {
-            NULL
-          } else {
-            parse_ksi_results_page(
-              page,
-              sport = "football",
-              country = "iceland",
-              sex = sex,
-              division = division_label,
-              season = season_int,
-              played_only = FALSE
-            )
-          }
-        },
+        fetch_ksi_all_pages(
+          id = id, sex = sex,
+          division = division_label, season = season_int,
+          toggle = toggle
+        ),
         error = function(e) {
           cli::cli_warn(c(
             "KSI fetch failed for {sex}/{div}/{season_key}",
@@ -449,7 +557,7 @@ fetch_ksi_all <- function(sex, seasons = NULL, sleep_seconds = 1) {
 #' @keywords internal
 #' @noRd
 fetch_results_ksi <- function(league, sex, seasons = NULL) {
-  all_matches <- fetch_ksi_all(sex, seasons = seasons)
+  all_matches <- fetch_ksi_all(sex, seasons = seasons, toggle = "results")
   if (nrow(all_matches) == 0L) {
     return(ksi_empty_results())
   }
@@ -467,10 +575,9 @@ fetch_results_ksi <- function(league, sex, seasons = NULL) {
 fetch_schedule_ksi <- function(league, sex, seasons = NULL) {
   current_year <- as.integer(format(Sys.Date(), "%Y"))
   if (is.null(seasons)) {
-    # Upcoming matches only live on the current-or-next season page.
     seasons <- c(current_year, current_year + 1L)
   }
-  all_matches <- fetch_ksi_all(sex, seasons = seasons)
+  all_matches <- fetch_ksi_all(sex, seasons = seasons, toggle = "upcoming")
   if (nrow(all_matches) == 0L) {
     return(ksi_empty_schedule())
   }

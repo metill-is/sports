@@ -89,3 +89,53 @@ test_that("ksi_football registers itself as a source module", {
   expect_true(is.function(src$fetch_results))
   expect_true(is.function(src$fetch_schedule))
 })
+
+test_that("ksi_url includes toggle and page query params", {
+  u <- ksi_url(190366L, page = 3L, toggle = "results")
+  expect_match(u, "id=190366")
+  expect_match(u, "toggle=results")
+  expect_match(u, "page=3")
+})
+
+test_that("extract_ksi_page_count reads 'X af Y' label", {
+  skip_if_not(
+    file.exists(fixture("male_div1_2025_p1.html")),
+    "no ksi historical fixture captured"
+  )
+  html <- rvest::read_html(
+    fixture("male_div1_2025_p1.html"),
+    encoding = "UTF-8"
+  )
+  n <- extract_ksi_page_count(html)
+  expect_type(n, "integer")
+  expect_gt(n, 1L)
+})
+
+test_that("parse_ksi_results_page extracts played matches from historical page", {
+  skip_if_not(
+    file.exists(fixture("male_div1_2025_p1.html")),
+    "no ksi historical fixture captured"
+  )
+  html <- rvest::read_html(
+    fixture("male_div1_2025_p1.html"),
+    encoding = "UTF-8"
+  )
+  parsed <- parse_ksi_results_page(
+    html,
+    sport = "football", country = "iceland", sex = "male",
+    division = "BD", season = 2025L,
+    played_only = TRUE
+  )
+  expect_gt(nrow(parsed), 5L)
+  expect_true(all(!is.na(parsed$home_score)))
+  expect_true(all(!is.na(parsed$away_score)))
+  # Historical page should be tagged with the requested season, not the
+  # current year — dates come back as 2025 because season = 2025L.
+  expect_true(all(lubridate::year(parsed$match_date) == 2025L))
+})
+
+test_that("KSI_IDS covers men's 2021-2026 top flight", {
+  top_flight <- KSI_IDS$male$div1
+  expect_true(all(c("2021", "2022", "2023", "2024", "2025", "2026") %in%
+    names(top_flight)))
+})
