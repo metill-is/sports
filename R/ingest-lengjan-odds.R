@@ -59,7 +59,10 @@ parse_competition_page <- function(html, sport, country) {
       return(NULL)
     }
     teams <- rvest::html_text2(rvest::html_elements(teams_el, "span"))
-    teams <- teams[teams != "vs" & nzchar(teams)]
+    # Strip the separator span between the two teams. Lengjan flipped this
+    # from "vs" to "-" sometime around 2026-04-25; accept either to stay
+    # forward-compatible if they switch back.
+    teams <- teams[!teams %in% c("vs", "-") & nzchar(teams)]
     if (length(teams) < 2L) {
       return(NULL)
     }
@@ -249,8 +252,9 @@ ingest_lengjan_odds <- function(leagues, scraped_at = Sys.time(),
     for (comp in comps) {
       cli::cli_alert_info("Scraping {key}: {comp$name} (id={comp$id})")
       url <- sprintf(
-        "https://games.lotto.is/?sport=%d&competition=%s",
+        "https://games.lotto.is/getraunaleikir/lengjan?sport=%d&country=%s&competition=%s",
         .lengjan_sport_id(league$sport),
+        .lengjan_country_code(league$country),
         comp$id
       )
       html <- .lengjan_fetch(chromote_session, url)
@@ -321,6 +325,23 @@ ingest_lengjan_odds <- function(leagues, scraped_at = Sys.time(),
 
 .lengjan_sport_id <- function(sport) {
   c(football = 1L, basketball = 2L, handball = 6L)[[sport]]
+}
+
+.lengjan_country_code <- function(country) {
+  # Canonical (lowercase) -> Lengjan country query parameter.
+  # Mirrors `_legacy/lengjan-odds/config/competitions.yml`'s `country:` field.
+  codes <- c(
+    iceland = "IS", england = "ENG", italy = "IT", spain = "ES",
+    denmark = "DK", germany = "DE", sweden = "SE", norway = "NO",
+    france = "FR", international = "INT"
+  )
+  if (!country %in% names(codes)) {
+    stop(
+      "Unknown Lengjan country code for '", country,
+      "'. Add it to .lengjan_country_code() in R/ingest-lengjan-odds.R."
+    )
+  }
+  codes[[country]]
 }
 
 .lengjan_fetch <- function(session, url) {
