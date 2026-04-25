@@ -86,7 +86,7 @@ sports/
 
 ## Local-only subsystem
 
-`R/placer/` (added in Plan 3) places bets against Lengjan via browser automation using credentials in `.Renviron` (template: `.Renviron.example`). It is **never** executed on CI — no workflow invokes it and no GitHub Actions secret named `LENGJAN_*` is configured. Enforced by `.claude/rules/sports-betting.md` conventions.
+`R/placer/` (Plan 5) will place bets against Lengjan via browser automation using credentials in `.Renviron` (template: `.Renviron.example`). It is **never** executed on CI — no workflow invokes it and no GitHub Actions secret named `LENGJAN_*` is configured. Enforced by `.claude/rules/sports-betting.md` conventions.
 
 ## Quick reference
 
