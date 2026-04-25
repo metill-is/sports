@@ -14,7 +14,7 @@ Mid-migration. End-state design: [`docs/superpowers/specs/2026-04-24-sports-pipe
 | **2: Ingest (federation scrapers) + historical backfill** | `R/ingest/` dispatcher + 3 federation scrapers (KSÍ / KKÍ / HSÍ) with `upsert_table` safe-merge semantics, historical match-data backfill | ✅ Complete — 9,914 rows in `data/facts/results/` |
 | **3: Model layer** | `R/model-{prepare,fit,posteriors,league}.R` + 3 Stan models under `Stan/{league_key}/`, `beliefs/{latest,archive}/` snapshot + accretive tables, golden-output sanity gate vs `_legacy/*/results/*/fit.rds` backup | ✅ Complete |
 | **4: Decide + Publish** | Joint Kelly + portfolio + calibration → recommendations Parquet; football iceland 7-JSON publisher + basketball/handball 2-JSON scaffolds | ✅ Complete |
-| 5: Placer (local-only) | Lengjan browser automation, real-money | Pending |
+| **5: Placer (local-only)** | `R/placer-*.R` ports `_legacy/lengjan-bets/`, dual-writes ledger CSV+Parquet during cutover, CI safety gate enforces local-only | ✅ Complete |
 | 6: Orchestration + CI + cutover | `{targets}` DAG, CI workflows (scrape + fit + publish), metill-platform pull, cutover, archive `_legacy/` remotes | Pending |
 
 ## Directory structure
@@ -45,7 +45,15 @@ sports/
 │   ├── decide-pipeline.R           # decide_league() orchestrator
 │   ├── publish-football-iceland.R  # 7 JSONs per sex
 │   ├── publish-basketball-iceland.R # meta + next_games scaffold
-│   └── publish-handball-iceland.R  # meta + next_games scaffold
+│   ├── publish-handball-iceland.R  # meta + next_games scaffold
+│   ├── placer-validate.R           # validate_team_names_config + validate_recommendations_schema
+│   ├── placer-load.R               # load_recommendations + dedup_against_ledger
+│   ├── placer-ledger.R             # append_to_ledger (Parquet + CSV dual-write)
+│   ├── placer-login.R              # chromote_login (auth + 2FA)
+│   ├── placer-navigate.R           # extract_matches + find_match_in_extracted
+│   ├── placer-place.R              # place_bet + P3/P4 state machine (~810 lines)
+│   ├── placer-pipeline.R           # place_bets() top-level orchestrator
+│   └── placer-preview.R            # preview_pending() — dry-run, no browser
 ├── Stan/
 │   ├── basketball_iceland/2d_student_t_scalarsigma.stan
 │   ├── handball_iceland/2d_student_t.stan
@@ -71,10 +79,12 @@ sports/
 │   │   ├── 03_etl_odds.R
 │   │   └── 04_etl_ledger.R
 │   ├── backfill_ingest.R           # Single-command re-run of all 3 scrapers
-│   ├── fit_all.R                   # Fit all active (league × sex) combos → beliefs/
 │   ├── decide_all.R                # Per active (league, sex) -> recommendations
+│   ├── fit_all.R                   # Fit all active (league × sex) combos → beliefs/
+│   ├── place_bets.R                # CLI: dry-run by default, --live opts in
+│   ├── preview_bets.R              # CLI: pending-bet preview, no browser
 │   └── publish_all.R               # Per active (league, sex) -> publish/
-├── tests/testthat/                 # 360+ passing assertions across config, storage*, duckdb-views, etl-validation, ingest-*, model-*, decide-*, publish-*
+├── tests/testthat/                 # 450+ passing assertions across config, storage*, duckdb-views, etl-validation, ingest-*, model-*, decide-*, publish-*, placer-*
 ├── sports.duckdb                   # Gitignored; rebuildable via rebuild_duckdb()
 ├── docs/superpowers/               # Specs + plans
 └── _legacy/                        # Subtree-merged histories of the 4 predecessor repos
@@ -86,7 +96,15 @@ sports/
 
 ## Local-only subsystem
 
-`R/placer/` (Plan 5) will place bets against Lengjan via browser automation using credentials in `.Renviron` (template: `.Renviron.example`). It is **never** executed on CI — no workflow invokes it and no GitHub Actions secret named `LENGJAN_*` is configured. Enforced by `.claude/rules/sports-betting.md` conventions.
+`R/placer-*.R` (Plan 5) places bets against Lengjan via Chromote browser automation using `LENGJAN_USER` / `LENGJAN_PASS` from `.Renviron` (template at `.Renviron.example`). It is **never** executed on CI — no workflow invokes it and no GitHub Actions secret named `LENGJAN_*` is configured.
+
+**Enforcement:** `tests/testthat/test-placer-ci-isolation.R` greps every `.github/workflows/*.yml` and fails the build if any line references `R/placer-`, `place_bets`, `preview_bets`, `placer_pipeline`, or `LENGJAN_*`. The test skips when there are no workflow files yet (Plan 6 territory).
+
+**Cutover dual-write:** During Plan 5, every placement writes both the unified Parquet ledger (`data/decisions/ledger/`) and the legacy per-league CSV (`_legacy/sports/{sport}/{country}/history/bets_log.csv`). Plan 6 drops the CSV writes after a week of agreement.
+
+**P1–P4 placement rules** (only-writer, actual-odds, kelly-recompute, EV reject) are preserved verbatim from `_legacy/lengjan-bets/`. See `.claude/rules/sports-betting.md` for the full statement.
+
+**Known gap (deferred):** The DOM regex that parses live odds out of Lengjan's odds buttons lives inline in `R/placer-place.R::click_market_button` / `click_table_button`. A pure `parse_actual_odds_from_dom()` seam was specified in Plan 5 Task 6 but not extracted in the port — a Lengjan UI deploy that changes the odds-element structure would silently produce wrong odds rather than a unit-test failure. ~15-line refactor when next touching `placer-place.R`.
 
 ## Quick reference
 
@@ -169,6 +187,14 @@ Internal schemas use English throughout. Canonical column names: `home_team` / `
 ### Betting conventions
 
 `.claude/rules/sports-betting.md` — P1–P4 placement rules, bets.yml schema (Plan 3 adds).
+
+### Placer (local-only)
+
+- `Rscript scripts/place_bets.R` is the public entrypoint. Default is dry-run; `--live` actually places. Always reads `LENGJAN_USER` / `LENGJAN_PASS` from `.Renviron`.
+- `Rscript scripts/preview_bets.R` shows pending bets without opening a browser.
+- `R/placer-*.R` is **never** wired into CI; the `test-placer-ci-isolation.R` test enforces this.
+- The placer is the only writer to `data/decisions/ledger/`. During Plan 5, dual-writes also reach `_legacy/sports/{sport}/{country}/history/bets_log.csv` for cutover safety; Plan 6 drops the CSV side.
+- P1: idempotent (dedup against ledger). P2: ledger records actual Lengjan odds. P3: Kelly stake recomputed if odds drift. P4: bets no longer +EV are rejected.
 
 ## Skills
 
