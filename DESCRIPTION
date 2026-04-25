@@ -41,6 +41,7 @@ Collate:
     'config.R'
     'storage-schemas.R'
     'storage.R'
+    'decide-calibration.R'
     'decide-kelly.R'
     'decide-odds.R'
     'decide-portfolio.R'
