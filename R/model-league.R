@@ -100,3 +100,23 @@ fit_league <- function(league_key = NULL,
 
   invisible(beliefs)
 }
+
+#' tar_target wrapper: fit a single (league x sex) and return belief row count.
+#'
+#' Takes the leagues config + key + sex (rather than a league object) so it
+#' fits the (config, k, ...) signature pattern used by every DAG wrapper.
+#' `ingest_dep` is unused at runtime -- its only purpose is to declare the
+#' DAG dependency on the upstream ingest target without coupling fit_league()
+#' to one.
+#'
+#' @param leagues Output of `load_leagues()`.
+#' @param key League key (e.g. `"football_iceland"`).
+#' @param sex `"male"` or `"female"`.
+#' @param ingest_dep Pure DAG-dependency declaration; value is ignored.
+#' @return Integer count of belief rows written.
+#' @export
+fit_one <- function(leagues, key, sex, ingest_dep = NULL) {
+  league <- leagues[[key]]
+  beliefs <- fit_league(league = league, sex = sex)
+  nrow(beliefs)
+}

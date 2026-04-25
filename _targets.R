@@ -100,4 +100,23 @@ odds_targets <- lapply(lengjan_keys, function(key) {
   )
 })
 
-c(static_targets, ingest_targets, odds_targets)
+# Per-(league x sex) fit targets -- Stan posteriors. Depends on ingest_<key>
+# but fit only re-runs when the upstream actually changes (default cue,
+# unlike scrape targets which run on every invocation).
+fit_targets <- list()
+for (key in active_keys) {
+  league_def <- leagues_definition[[key]]
+  for (sex in league_def$sexes) {
+    target_name <- paste0("fit_", key, "_", sex)
+    ingest_dep <- as.symbol(paste0("ingest_", key))
+    fit_targets[[length(fit_targets) + 1L]] <- tar_target_raw(
+      name = target_name,
+      command = substitute(
+        fit_one(leagues_config, k, s, ingest_dep),
+        list(k = key, s = sex, ingest_dep = ingest_dep)
+      )
+    )
+  }
+}
+
+c(static_targets, ingest_targets, odds_targets, fit_targets)

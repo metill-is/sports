@@ -15,7 +15,10 @@ ingest_one_league(leagues, key, active_path)
 \item{active_path}{Path to `config/active_competitions.json`.}
 }
 \value{
-Total rows written across the league's sexes (integer).
+Integer count of rows fetched (results + schedule combined),
+  summed across the league's sexes. Not equal to rows newly written —
+  `upsert_table()` deduplicates on disk. Use only as a "did anything
+  happen" indicator.
 }
 \description{
 Wrapper used by `_targets.R`'s per-league `ingest_<key>` targets. Reads
