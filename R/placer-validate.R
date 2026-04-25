@@ -15,8 +15,22 @@ NULL
 #' @return Invisibly \code{TRUE} on success.
 #' @export
 validate_team_names_config <- function(leagues, recs) {
-  stopifnot(is.list(leagues))
-  stopifnot(all(c("sport", "country", "home_team", "away_team") %in% names(recs)))
+  if (!is.list(leagues)) {
+    stop(
+      "validate_team_names_config: `leagues` must be a named list ",
+      "from load_leagues()",
+      call. = FALSE
+    )
+  }
+  needed_cols <- c("sport", "country", "home_team", "away_team")
+  missing_input <- setdiff(needed_cols, names(recs))
+  if (length(missing_input) > 0L) {
+    stop(
+      "validate_team_names_config: `recs` missing column(s): ",
+      paste(missing_input, collapse = ", "),
+      call. = FALSE
+    )
+  }
 
   groups <- unique(recs[, c("sport", "country"), drop = FALSE])
   for (i in seq_len(nrow(groups))) {

@@ -67,3 +67,40 @@ test_that("validate_recommendations_schema errors on a missing column", {
     "missing|column"
   )
 })
+
+test_that("validate_team_names_config errors when league key is absent from leagues.yml", {
+  leagues <- list() # empty registry
+  recs <- tibble::tibble(
+    sport = "football", country = "iceland", sex = "male",
+    home_team = "KR", away_team = "FH"
+  )
+  expect_error(
+    validate_team_names_config(leagues, recs),
+    "football_iceland"
+  )
+})
+
+test_that("validate_team_names_config errors loudly on non-list leagues input", {
+  recs <- tibble::tibble(
+    sport = "football", country = "iceland", sex = "male",
+    home_team = "KR", away_team = "FH"
+  )
+  expect_error(
+    validate_team_names_config("not a list", recs),
+    "named list"
+  )
+})
+
+test_that("validate_team_names_config errors loudly on recs missing core columns", {
+  leagues <- list(
+    football_iceland = list(
+      sport = "football", country = "iceland",
+      lengjan = list(team_names = list("KR" = "KR"))
+    )
+  )
+  bad_recs <- tibble::tibble(sport = "football", country = "iceland")
+  expect_error(
+    validate_team_names_config(leagues, bad_recs),
+    "missing column"
+  )
+})
