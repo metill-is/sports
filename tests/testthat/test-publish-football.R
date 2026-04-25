@@ -1,9 +1,16 @@
+# Locate the legacy backup fit. Defaults to the developer's local path; can
+# be overridden with SPORTS_BACKUP_ROOT env var (or unset for CI to skip).
+backup_fit_path <- function(sex) {
+  root <- Sys.getenv(
+    "SPORTS_BACKUP_ROOT",
+    "/Users/brynjolfurjonsson/sports-backup-20260424-163153"
+  )
+  file.path(root, "Sports", "football", "iceland", "results", sex, "fit.rds")
+}
+
 test_that("publish_football_iceland: skip gracefully when backup fit absent", {
   skip_if_no_football_fit <- function(sex = "male") {
-    fit_path <- sprintf(
-      "/Users/brynjolfurjonsson/sports-backup-20260424-163153/Sports/football/iceland/results/%s/fit.rds",
-      sex
-    )
+    fit_path <- backup_fit_path(sex)
     if (!file.exists(fit_path)) {
       testthat::skip(paste("legacy football fit unavailable:", fit_path))
     }
@@ -14,11 +21,9 @@ test_that("publish_football_iceland: skip gracefully when backup fit absent", {
 
   skip_if_no_football_fit()
 
-  fit <- readRDS(
-    "/Users/brynjolfurjonsson/sports-backup-20260424-163153/Sports/football/iceland/results/male/fit.rds"
-  )
+  fit <- readRDS(backup_fit_path("male"))
   leagues <- load_leagues()
-  league  <- leagues[["football_iceland"]]
+  league <- leagues[["football_iceland"]]
 
   out <- withr::local_tempdir()
   # The backup fit was trained on an older data snapshot (N=3172, K=68).
@@ -29,13 +34,13 @@ test_that("publish_football_iceland: skip gracefully when backup fit absent", {
     publish_football_iceland(
       fit,
       league,
-      sex        = "male",
-      end_date   = as.Date("2026-04-25"),
+      sex = "male",
+      end_date = as.Date("2026-04-25"),
       output_root = out
     )
   )
 
-  out_dir  <- file.path(out, "football", "iceland", "karla")
+  out_dir <- file.path(out, "football", "iceland", "karla")
   expected <- c(
     "meta.json", "next_games.json", "standings.json",
     "team_strengths.json", "final_positions.json",
@@ -73,7 +78,7 @@ test_that("publish_football_iceland: skip gracefully when backup fit absent", {
 })
 
 test_that("publish_football_iceland female: produces 7 JSONs", {
-  fit_path <- "/Users/brynjolfurjonsson/sports-backup-20260424-163153/Sports/football/iceland/results/female/fit.rds"
+  fit_path <- backup_fit_path("female")
   if (!file.exists(fit_path)) {
     testthat::skip("legacy female football fit unavailable")
   }
@@ -83,20 +88,20 @@ test_that("publish_football_iceland female: produces 7 JSONs", {
 
   fit <- readRDS(fit_path)
   leagues <- load_leagues()
-  league  <- leagues[["football_iceland"]]
+  league <- leagues[["football_iceland"]]
 
   out <- withr::local_tempdir()
   suppressWarnings(
     publish_football_iceland(
       fit,
       league,
-      sex        = "female",
-      end_date   = as.Date("2026-04-25"),
+      sex = "female",
+      end_date = as.Date("2026-04-25"),
       output_root = out
     )
   )
 
-  out_dir  <- file.path(out, "football", "iceland", "kvenna")
+  out_dir <- file.path(out, "football", "iceland", "kvenna")
   expected <- c(
     "meta.json", "next_games.json", "standings.json",
     "team_strengths.json", "final_positions.json",
@@ -119,7 +124,7 @@ test_that("publish_football_iceland female: produces 7 JSONs", {
 })
 
 test_that("publish_football_iceland: output_root creates directory", {
-  fit_path <- "/Users/brynjolfurjonsson/sports-backup-20260424-163153/Sports/football/iceland/results/male/fit.rds"
+  fit_path <- backup_fit_path("male")
   if (!file.exists(fit_path)) {
     testthat::skip("legacy male football fit unavailable")
   }
@@ -129,15 +134,16 @@ test_that("publish_football_iceland: output_root creates directory", {
 
   fit <- readRDS(fit_path)
   leagues <- load_leagues()
-  league  <- leagues[["football_iceland"]]
+  league <- leagues[["football_iceland"]]
 
   out <- file.path(withr::local_tempdir(), "nested", "output", "root")
   # Directory does not exist yet -- function should create it
   expect_false(dir.exists(out))
   suppressWarnings(
     publish_football_iceland(
-      fit, league, sex = "male",
-      end_date    = as.Date("2026-04-25"),
+      fit, league,
+      sex = "male",
+      end_date = as.Date("2026-04-25"),
       output_root = out
     )
   )
