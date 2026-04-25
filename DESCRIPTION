@@ -45,6 +45,7 @@ Collate:
     'decide-kelly.R'
     'decide-odds.R'
     'decide-portfolio.R'
+    'decide-pipeline.R'
     'duckdb-views.R'
     'ingest.R'
     'ingest-hsi-handball.R'
