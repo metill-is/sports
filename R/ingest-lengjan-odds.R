@@ -11,8 +11,7 @@ NULL
   odds_list       = "ol.lj1n6vd",
   odds_button     = "button.uazl1c1",
   odds_value      = ".h7cub57 p",
-  market_section  = "section.zh0raz0",
-  date_text       = ".match-date"
+  market_section  = "section.zh0raz0"
 )
 
 #' Parse a Lengjan competition page (1x2 odds + match links).
@@ -40,8 +39,12 @@ parse_competition_page <- function(html, sport, country) {
   }
 
   date_strs <- vapply(matches, function(m) {
-    el <- rvest::html_element(m, .lengjan_selectors$date_text)
-    if (inherits(el, "xml_missing")) NA_character_ else rvest::html_text2(el)
+    link <- rvest::html_element(m, .lengjan_selectors$match_link)
+    if (inherits(link, "xml_missing")) {
+      return(NA_character_)
+    }
+    date_p <- rvest::html_element(link, "p")
+    if (inherits(date_p, "xml_missing")) NA_character_ else rvest::html_text2(date_p)
   }, character(1))
   match_dates <- parse_lengjan_dates(date_strs)
 
