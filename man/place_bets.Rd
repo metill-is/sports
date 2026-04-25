@@ -12,7 +12,7 @@ place_bets(
   target_date = NULL,
   headless = TRUE,
   root = here::here("data"),
-  dual_write_csv = TRUE
+  dual_write_csv = FALSE
 )
 }
 \arguments{
@@ -33,7 +33,9 @@ place_bets(
 \item{root}{Data root.}
 
 \item{dual_write_csv}{Mirror placed bets to legacy CSV ledgers.
-Default \code{TRUE}.}
+Default \code{FALSE} (Plan 6 cutover; Parquet at
+\code{data/decisions/ledger/} is canonical). Set \code{TRUE} only for
+opt-in regression-testing while the legacy CSV files exist on disk.}
 }
 \value{
 Tibble of per-bet results with at minimum columns: \code{sport},

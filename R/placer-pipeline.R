@@ -29,7 +29,9 @@ NULL
 #' @param headless Run Chrome headlessly. Default \code{TRUE}.
 #' @param root Data root.
 #' @param dual_write_csv Mirror placed bets to legacy CSV ledgers.
-#'   Default \code{TRUE}.
+#'   Default \code{FALSE} (Plan 6 cutover; Parquet at
+#'   \code{data/decisions/ledger/} is canonical). Set \code{TRUE} only for
+#'   opt-in regression-testing while the legacy CSV files exist on disk.
 #' @return Tibble of per-bet results with at minimum columns: \code{sport},
 #'   \code{country}, \code{sex}, \code{match_date}, \code{home_team},
 #'   \code{away_team}, \code{market}, \code{outcome}, \code{odds},
@@ -42,7 +44,7 @@ place_bets <- function(leagues = NULL,
                        target_date = NULL,
                        headless = TRUE,
                        root = here::here("data"),
-                       dual_write_csv = TRUE) {
+                       dual_write_csv = FALSE) {
   cli::cli_h1("Lengjan Bet Placement Pipeline")
 
   if (dry_run) {
