@@ -13,8 +13,9 @@ Mid-migration. End-state design: [`docs/superpowers/specs/2026-04-24-sports-pipe
 | **1: Foundation + Storage + ETL** | Monorepo init, storage layer, ETL for odds + ledger | ✅ Complete |
 | **2: Ingest (federation scrapers) + historical backfill** | `R/ingest/` dispatcher + 3 federation scrapers (KSÍ / KKÍ / HSÍ) with `upsert_table` safe-merge semantics, historical match-data backfill | ✅ Complete — 9,914 rows in `data/facts/results/` |
 | **3: Model layer** | `R/model-{prepare,fit,posteriors,league}.R` + 3 Stan models under `Stan/{league_key}/`, `beliefs/{latest,archive}/` snapshot + accretive tables, golden-output sanity gate vs `_legacy/*/results/*/fit.rds` backup | ✅ Complete |
-| 4: Decide + Placer + Publish | Kelly, portfolio, bet placement, website JSON | Pending |
-| 5: Orchestration + CI + cutover | `{targets}` DAG, CI workflows (scrape + fit + publish), metill-platform pull, cutover, archive `_legacy/` remotes | Pending |
+| **4: Decide + Publish** | Joint Kelly + portfolio + calibration → recommendations Parquet; football iceland 7-JSON publisher + basketball/handball 2-JSON scaffolds | ✅ Complete |
+| 5: Placer (local-only) | Lengjan browser automation, real-money | Pending |
+| 6: Orchestration + CI + cutover | `{targets}` DAG, CI workflows (scrape + fit + publish), metill-platform pull, cutover, archive `_legacy/` remotes | Pending |
 
 ## Directory structure
 
@@ -22,7 +23,8 @@ Mid-migration. End-state design: [`docs/superpowers/specs/2026-04-24-sports-pipe
 sports/
 ├── config/
 │   ├── leagues.yml                 # Single source of truth for league metadata
-│   └── leagues.schema.json         # JSON Schema validator
+│   ├── leagues.schema.json         # JSON Schema validator
+│   └── bankroll.yml                # Global Kelly cap + daily budget
 ├── R/                              # Package source
 │   ├── config.R                    # load_leagues() + filter_leagues()
 │   ├── storage-schemas.R           # Arrow schemas for 8 tables
@@ -35,7 +37,15 @@ sports/
 │   ├── model-prepare.R             # prepare_data(league, sex) → list(stan_data, pred_d, teams)
 │   ├── model-fit.R                 # fit_model() — pure cmdstanr wrapper
 │   ├── model-posteriors.R          # extract_posteriors() → beliefs_latest tibble
-│   └── model-league.R              # fit_league() — end-to-end orchestrator
+│   ├── model-league.R              # fit_league() — end-to-end orchestrator
+│   ├── decide-odds.R               # prepare_odds(league, sex)
+│   ├── decide-kelly.R              # kelly_joint(beliefs, bets)
+│   ├── decide-portfolio.R          # portfolio_optimise(packages)
+│   ├── decide-calibration.R        # compute_calibration(league, sex)
+│   ├── decide-pipeline.R           # decide_league() orchestrator
+│   ├── publish-football-iceland.R  # 7 JSONs per sex
+│   ├── publish-basketball-iceland.R # meta + next_games scaffold
+│   └── publish-handball-iceland.R  # meta + next_games scaffold
 ├── Stan/
 │   ├── basketball_iceland/2d_student_t_scalarsigma.stan
 │   ├── handball_iceland/2d_student_t.stan
@@ -48,17 +58,23 @@ sports/
 │   ├── beliefs/
 │   │   ├── latest/sport=X/country=Y/sex=Z/beliefs.parquet               # Snapshot per fit
 │   │   └── archive/sport=X/country=Y/sex=Z/fit_date=YYYY-MM-DD/…         # Accretive per fit_date
-│   └── decisions/
-│       ├── ledger/                 # Placed-bet history (1,870 rows, PnL = 89,369 ISK)
-│       ├── candidates/             # (Plan 4 populates)
-│       └── recommendations/        # (Plan 4 populates)
+│   ├── decisions/
+│   │   ├── candidates/sport=X/country=Y/run_date=YYYY-MM-DD/  # All stages
+│   │   ├── recommendations/sport=X/country=Y/run_date=YYYY-MM-DD/  # Post-filter
+│   │   └── ledger/                 # Placed-bet history (1,870 rows, PnL = 89,369 ISK)
+│   └── publish/
+│       ├── football/iceland/{karla,kvenna}/*.json
+│       ├── basketball/iceland/{karla,kvenna}/*.json
+│       └── handball/iceland/{karla,kvenna}/*.json
 ├── scripts/
 │   ├── etl/                        # One-time legacy-CSV → Parquet migrations
 │   │   ├── 03_etl_odds.R
 │   │   └── 04_etl_ledger.R
 │   ├── backfill_ingest.R           # Single-command re-run of all 3 scrapers
-│   └── fit_all.R                   # Fit all active (league × sex) combos → beliefs/
-├── tests/testthat/                 # 230+ passing assertions across config, storage*, duckdb-views, etl-validation, ingest-*, model-*
+│   ├── fit_all.R                   # Fit all active (league × sex) combos → beliefs/
+│   ├── decide_all.R                # Per active (league, sex) -> recommendations
+│   └── publish_all.R               # Per active (league, sex) -> publish/
+├── tests/testthat/                 # 360+ passing assertions across config, storage*, duckdb-views, etl-validation, ingest-*, model-*, decide-*, publish-*
 ├── sports.duckdb                   # Gitignored; rebuildable via rebuild_duckdb()
 ├── docs/superpowers/               # Specs + plans
 └── _legacy/                        # Subtree-merged histories of the 4 predecessor repos
@@ -127,6 +143,28 @@ Internal schemas use English throughout. Canonical column names: `home_team` / `
   ```
   nohup Rscript scripts/fit_all.R > /tmp/fit_all.log 2>&1 & disown
   ```
+
+### Decide layer
+
+- `decide_league(league_key, sex)` is the public entry — chains
+  prepare_odds + kelly_joint + portfolio_optimise + compute_calibration,
+  writes candidates (with stage column) + recommendations Parquet.
+- Joint Kelly is the only mode (per 2026-03-06 memory note).
+- Per-sex `kelly_frac` supported via object form in `betting:` config
+  (football_iceland uses male=0.15, female=0.075).
+- Backfill with `Rscript scripts/decide_all.R`. Wall-clock ~seconds.
+
+### Publish layer
+
+- `publish_<sport>_iceland(fit, league, sex)` produces JSON snapshots in
+  `data/publish/<sport>/iceland/{karla,kvenna}/`. Football has full
+  7-JSON port (meta, next_games, standings, team_strengths, final_positions,
+  points_distribution, home_advantage); basketball + handball are
+  scaffolds (meta + next_games only) until Plan 6 templates land.
+- Backfill with `Rscript scripts/publish_all.R`. Reads the legacy
+  backup fit at `SPORTS_BACKUP_ROOT` when available; Plan 6's targets DAG will
+  wire fresh-fit-on-demand.
+- The `SPORTS_BACKUP_ROOT` env var overrides the default backup path.
 
 ### Betting conventions
 
