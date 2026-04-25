@@ -55,6 +55,7 @@ Collate:
     'model-posteriors.R'
     'model-prepare.R'
     'model-league.R'
+    'placer-ledger.R'
     'placer-load.R'
     'placer-validate.R'
     'publish-basketball-iceland.R'
