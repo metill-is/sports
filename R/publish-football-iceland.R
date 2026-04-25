@@ -17,7 +17,9 @@ NULL
   lambda3 <- exp(log_lambda3)
 
   K <- min(g1, g2)
-  if (K < 0L) return(rep(-Inf, length(log_lambda1)))
+  if (K < 0L) {
+    return(rep(-Inf, length(log_lambda1)))
+  }
 
   n <- length(log_lambda1)
   log_terms <- matrix(NA_real_, nrow = n, ncol = K + 1L)
@@ -83,11 +85,15 @@ NULL
     dplyr::ungroup()
 
   home_long <- long[long$side == "home",
-    c("game_nr", "round", "is_first"), drop = FALSE]
+    c("game_nr", "round", "is_first"),
+    drop = FALSE
+  ]
   names(home_long) <- c("game_nr", "home_round", "season_first")
 
   away_long <- long[long$side == "away",
-    c("game_nr", "round"), drop = FALSE]
+    c("game_nr", "round"),
+    drop = FALSE
+  ]
   names(away_long) <- c("game_nr", "away_round")
 
   model_d <- results |>
@@ -157,20 +163,20 @@ NULL
     return(NULL)
   }
 
-  offense_dr  <- posterior::draws_of(rv$offense)   # [draws, N_rounds, K]
-  defense_dr  <- posterior::draws_of(rv$defense)
-  ha_off_dr   <- posterior::draws_of(rv$home_advantage_off)  # [draws, K]
-  ha_def_dr   <- posterior::draws_of(rv$home_advantage_def)
-  mlg_dr      <- as.numeric(posterior::draws_of(rv$mean_log_goals))
-  a_mu3_dr    <- as.numeric(posterior::draws_of(rv$alpha_mu3))
-  b_mu3_dr    <- as.numeric(posterior::draws_of(rv$beta_mu3_strength_diff))
+  offense_dr <- posterior::draws_of(rv$offense) # [draws, N_rounds, K]
+  defense_dr <- posterior::draws_of(rv$defense)
+  ha_off_dr <- posterior::draws_of(rv$home_advantage_off) # [draws, K]
+  ha_def_dr <- posterior::draws_of(rv$home_advantage_def)
+  mlg_dr <- as.numeric(posterior::draws_of(rv$mean_log_goals))
+  a_mu3_dr <- as.numeric(posterior::draws_of(rv$alpha_mu3))
+  b_mu3_dr <- as.numeric(posterior::draws_of(rv$beta_mu3_strength_diff))
 
-  check_n  <- as.integer(min(check_sample_size, nrow(matches)))
+  check_n <- as.integer(min(check_sample_size, nrow(matches)))
   check_idx <- integer(0)
-  recon_ll  <- NULL
+  recon_ll <- NULL
   if (check_n > 0L) {
     check_idx <- withr::with_seed(42L, sample.int(nrow(matches), check_n))
-    recon_ll  <- matrix(NA_real_, nrow = n_draws, ncol = check_n)
+    recon_ll <- matrix(NA_real_, nrow = n_draws, ncol = check_n)
   }
 
   team_per_match <- vector("list", nrow(matches))
@@ -183,9 +189,9 @@ NULL
     r2 <- mi$away_round
 
     off_home <- offense_dr[, r1, t1] + ha_off_dr[, t1]
-    def_home  <- defense_dr[, r1, t1] + ha_def_dr[, t1]
-    off_away  <- offense_dr[, r2, t2]
-    def_away  <- defense_dr[, r2, t2]
+    def_home <- defense_dr[, r1, t1] + ha_def_dr[, t1]
+    off_away <- offense_dr[, r2, t2]
+    def_away <- defense_dr[, r2, t2]
 
     mu1 <- mlg_dr + off_home - def_away
     mu2 <- mlg_dr + off_away - def_home
@@ -228,14 +234,14 @@ NULL
 
   # Log-likelihood cross-check
   if (check_n > 0L) {
-    stan_ll   <- loglik_dr[, matches$model_row[check_idx], drop = FALSE]
-    stan_mean  <- colMeans(stan_ll)
+    stan_ll <- loglik_dr[, matches$model_row[check_idx], drop = FALSE]
+    stan_mean <- colMeans(stan_ll)
     recon_mean <- colMeans(recon_ll)
-    pooled_sd  <- pmax(apply(stan_ll, 2, stats::sd), apply(recon_ll, 2, stats::sd))
-    mc_se      <- pooled_sd / sqrt(n_draws)
-    tol        <- 4 * mc_se
-    diff_      <- abs(stan_mean - recon_mean)
-    bad        <- diff_ > tol
+    pooled_sd <- pmax(apply(stan_ll, 2, stats::sd), apply(recon_ll, 2, stats::sd))
+    mc_se <- pooled_sd / sqrt(n_draws)
+    tol <- 4 * mc_se
+    diff_ <- abs(stan_mean - recon_mean)
+    bad <- diff_ > tol
     if (any(bad)) {
       warning(sprintf(
         paste0(
@@ -249,9 +255,9 @@ NULL
 
   team_expected_draw |>
     dplyr::summarise(
-      xg_for    = mean(.data$xg_for),
+      xg_for = mean(.data$xg_for),
       xg_against = mean(.data$xg_against),
-      xpts      = mean(.data$xpts),
+      xpts = mean(.data$xpts),
       .by = "team"
     )
 }
@@ -276,10 +282,10 @@ NULL
 .summarise_team_intervals_pfi <- function(draws, coverages = c(0.5, 0.8, 0.95)) {
   draws |>
     dplyr::reframe(
-      median   = stats::median(.data$value),
+      median = stats::median(.data$value),
       coverage = coverages,
-      lower    = stats::quantile(.data$value, 0.5 - coverages / 2),
-      upper    = stats::quantile(.data$value, 0.5 + coverages / 2),
+      lower = stats::quantile(.data$value, 0.5 - coverages / 2),
+      upper = stats::quantile(.data$value, 0.5 + coverages / 2),
       .by = c("team", "component", "location")
     )
 }
@@ -310,13 +316,14 @@ NULL
 #' @importFrom rlang .data
 #' @export
 publish_football_iceland <- function(fit,
-                                      league,
-                                      sex,
-                                      end_date    = Sys.Date(),
-                                      root        = here::here("data"),
-                                      output_root = here::here("data", "publish")) {
+                                     league,
+                                     sex,
+                                     end_date = Sys.Date(),
+                                     root = here::here("data"),
+                                     output_root = here::here("data", "publish")) {
   stopifnot(sex %in% c("male", "female"))
   stopifnot(!is.null(league$sport), !is.null(league$country))
+  stopifnot(league$sport == "football", league$country == "iceland")
   stopifnot(inherits(end_date, "Date"))
 
   # Icelandic sex folder names
@@ -326,8 +333,8 @@ publish_football_iceland <- function(fit,
 
   # -- Rebuild prep data -------------------------------------------------------
   prep <- prepare_data(league, sex, end_date = end_date, root = root)
-  teams   <- prep$teams
-  pred_d  <- prep$pred_d   # next-game matches with home_team / away_team / match_date / division
+  teams <- prep$teams
+  pred_d <- prep$pred_d # next-game matches with home_team / away_team / match_date / division
 
   # -- Training results --------------------------------------------------------
   results <- read_table(
@@ -368,7 +375,8 @@ publish_football_iceland <- function(fit,
 
   # -- xG / xPts per team (NULL if data-fit mismatch) ------------------------
   team_expected <- .aggregate_played_match_expected_pfi(
-    fit, model_d, teams, top_div = top_div
+    fit, model_d, teams,
+    top_div = top_div
   )
 
   # -- Posterior goals draws --------------------------------------------------
@@ -381,7 +389,7 @@ publish_football_iceland <- function(fit,
       values_to = "value"
     ) |>
     dplyr::mutate(
-      type    = dplyr::if_else(
+      type = dplyr::if_else(
         stringr::str_detect(.data$parameter, "goals1"), "home_goals", "away_goals"
       ),
       game_nr = as.integer(stringr::str_match(.data$parameter, "\\[(\\d+)\\]$")[, 2])
@@ -390,7 +398,7 @@ publish_football_iceland <- function(fit,
     tidyr::pivot_wider(names_from = "type", values_from = "value")
 
   # Validate pred dimension matches
-  n_pred_fit  <- max(posterior_goals_raw$game_nr, na.rm = TRUE)
+  n_pred_fit <- max(posterior_goals_raw$game_nr, na.rm = TRUE)
   n_pred_data <- nrow(pred_d)
   if (n_pred_fit != n_pred_data) {
     warning(sprintf(
@@ -448,26 +456,28 @@ publish_football_iceland <- function(fit,
   # ---- next_games.json ------------------------------------------------------
 
   male_top_division_venues <- tibble::tribble(
-    ~team,          ~venue,
-    "Brei\u00f0ablik",   "K\u00f3pavogsv\u00f6llur",
-    "FH",            "Kaplakrikav\u00f6llur",
-    "Fram",          "Laugardalsv\u00f6llur",
-    "KA",            "KA-v\u00f6llurinn",
-    "KR",            "KR-v\u00f6llur",
+    ~team, ~venue,
+    "Brei\u00f0ablik", "K\u00f3pavogsv\u00f6llur",
+    "FH", "Kaplakrikav\u00f6llur",
+    "Fram", "Laugardalsv\u00f6llur",
+    "KA", "KA-v\u00f6llurinn",
+    "KR", "KR-v\u00f6llur",
     "Keflav\u00edk", "Nettov\u00f6llurinn",
-    "Stjarnan",      "Stj\u00f6rnuv\u00f6llur",
-    "Valur",         "Hl\u00ed\u00f0arendi",
-    "V\u00edkingur R.",  "V\u00edkingsv\u00f6llur",
-    "\u00cdA",       "Nor\u00f0ur\u00e1lsv\u00f6llurinn",
-    "\u00cdBV",      "H\u00e1steinv\u00f6llur",
-    "\u00de\u00f3r",     "\u00de\u00f3rsv\u00f6llur"
+    "Stjarnan", "Stj\u00f6rnuv\u00f6llur",
+    "Valur", "Hl\u00ed\u00f0arendi",
+    "V\u00edkingur R.", "V\u00edkingsv\u00f6llur",
+    "\u00cdA", "Nor\u00f0ur\u00e1lsv\u00f6llurinn",
+    "\u00cdBV", "H\u00e1steinv\u00f6llur",
+    "\u00de\u00f3r", "\u00de\u00f3rsv\u00f6llur"
   )
 
   # Division display codes (BD = Besta deild = division 1)
-  division_labels <- c(BD = "BD", LD1 = "LD", LD2 = "\u00d6D", LD3 = "\u00deD",
-                       LD4 = "FjD", CUP = "MB",
-                       BD_UPPER_PO = "BD PO", BD_LOWER_PO = "BD N-PO",
-                       LD1_PO = "LD PO")
+  division_labels <- c(
+    BD = "BD", LD1 = "LD", LD2 = "\u00d6D", LD3 = "\u00deD",
+    LD4 = "FjD", CUP = "MB",
+    BD_UPPER_PO = "BD PO", BD_LOWER_PO = "BD N-PO",
+    LD1_PO = "LD PO"
+  )
 
   if (nrow(posterior_goals) > 0L) {
     next_games_out <- posterior_goals |>
@@ -479,10 +489,10 @@ publish_football_iceland <- function(fit,
       dplyr::summarise(
         mean_home_goals = mean(.data$home_goals),
         mean_away_goals = mean(.data$away_goals),
-        mean_goal_diff  = mean(.data$goal_diff),
-        p_home_win      = mean(.data$goal_diff > 0),
-        p_draw          = mean(.data$goal_diff == 0),
-        p_away_win      = mean(.data$goal_diff < 0),
+        mean_goal_diff = mean(.data$goal_diff),
+        p_home_win = mean(.data$goal_diff > 0),
+        p_draw = mean(.data$goal_diff == 0),
+        p_away_win = mean(.data$goal_diff < 0),
         goal_diff_distribution = list(
           tibble::tibble(diff = .data$goal_diff) |>
             dplyr::count(.data$diff) |>
@@ -563,20 +573,22 @@ publish_football_iceland <- function(fit,
 
       standings_rows <- long_bd |>
         dplyr::summarise(
-          played       = dplyr::n(),
-          wins         = sum(.data$result == "W"),
-          draws        = sum(.data$result == "D"),
-          losses       = sum(.data$result == "L"),
-          goals_for    = sum(.data$gf),
+          played = dplyr::n(),
+          wins = sum(.data$result == "W"),
+          draws = sum(.data$result == "D"),
+          losses = sum(.data$result == "L"),
+          goals_for = sum(.data$gf),
           goals_against = sum(.data$ga),
-          goal_diff    = .data$goals_for - .data$goals_against,
-          points       = 3L * .data$wins + .data$draws,
-          form         = list(pad_form(tail(.data$result, 5L))),
-          xg_trend     = list(numeric(0)),
+          goal_diff = .data$goals_for - .data$goals_against,
+          points = 3L * .data$wins + .data$draws,
+          form = list(pad_form(tail(.data$result, 5L))),
+          xg_trend = list(numeric(0)),
           .by = "team"
         ) |>
-        dplyr::arrange(dplyr::desc(.data$points), dplyr::desc(.data$goal_diff),
-                       dplyr::desc(.data$goals_for)) |>
+        dplyr::arrange(
+          dplyr::desc(.data$points), dplyr::desc(.data$goal_diff),
+          dplyr::desc(.data$goals_for)
+        ) |>
         dplyr::mutate(
           rank  = dplyr::row_number(),
           short = short_code(.data$team)
@@ -612,8 +624,10 @@ publish_football_iceland <- function(fit,
       )
     } else {
       jsonlite::write_json(
-        list(generated_at = generated_at, season = current_season,
-             as_of = format(end_date, "%Y-%m-%d"), rows = list()),
+        list(
+          generated_at = generated_at, season = current_season,
+          as_of = format(end_date, "%Y-%m-%d"), rows = list()
+        ),
         file.path(out_dir, "standings.json"),
         auto_unbox = TRUE, dataframe = "rows", digits = 5, na = "null"
       )
@@ -621,8 +635,10 @@ publish_football_iceland <- function(fit,
   } else {
     # kvenna: write an empty standings file so the file always exists
     jsonlite::write_json(
-      list(generated_at = generated_at, season = current_season,
-           as_of = format(end_date, "%Y-%m-%d"), rows = list()),
+      list(
+        generated_at = generated_at, season = current_season,
+        as_of = format(end_date, "%Y-%m-%d"), rows = list()
+      ),
       file.path(out_dir, "standings.json"),
       auto_unbox = TRUE, dataframe = "rows", digits = 5, na = "null"
     )
@@ -633,10 +649,10 @@ publish_football_iceland <- function(fit,
   team_strengths <- dplyr::bind_rows(
     .extract_team_draws_pfi(fit, "cur_offense_home", teams, "offence", "home"),
     .extract_team_draws_pfi(fit, "cur_defense_home", teams, "defence", "home"),
-    .extract_team_draws_pfi(fit, "cur_strength_home", teams, "total",  "home"),
+    .extract_team_draws_pfi(fit, "cur_strength_home", teams, "total", "home"),
     .extract_team_draws_pfi(fit, "cur_offense_away", teams, "offence", "away"),
     .extract_team_draws_pfi(fit, "cur_defense_away", teams, "defence", "away"),
-    .extract_team_draws_pfi(fit, "cur_strength_away", teams, "total",  "away")
+    .extract_team_draws_pfi(fit, "cur_strength_away", teams, "total", "away")
   ) |>
     .summarise_team_intervals_pfi() |>
     dplyr::semi_join(current_top_teams, by = "team")
@@ -664,11 +680,11 @@ publish_football_iceland <- function(fit,
       ) |>
       tidyr::pivot_longer(c("home_team", "away_team"), values_to = "team") |>
       dplyr::mutate(
-        name   = dplyr::if_else(.data$name == "home_team", "home", "away"),
+        name = dplyr::if_else(.data$name == "home_team", "home", "away"),
         points = dplyr::case_when(
-          .data$result == "tie"          ~ 1L,
-          .data$result == .data$name     ~ 3L,
-          TRUE                           ~ 0L
+          .data$result == "tie" ~ 1L,
+          .data$result == .data$name ~ 3L,
+          TRUE ~ 0L
         )
       ) |>
       dplyr::summarise(base_points = sum(.data$points), .by = "team")
@@ -685,11 +701,11 @@ publish_football_iceland <- function(fit,
       ) |>
       tidyr::pivot_longer(c("home_team", "away_team"), values_to = "team") |>
       dplyr::mutate(
-        name   = dplyr::if_else(.data$name == "home_team", "home", "away"),
+        name = dplyr::if_else(.data$name == "home_team", "home", "away"),
         points = dplyr::case_when(
-          .data$result == "tie"          ~ 1L,
-          .data$result == .data$name     ~ 3L,
-          TRUE                           ~ 0L
+          .data$result == "tie" ~ 1L,
+          .data$result == .data$name ~ 3L,
+          TRUE ~ 0L
         )
       ) |>
       dplyr::summarise(points = sum(.data$points), .by = c(".draw", "team")) |>
@@ -703,7 +719,9 @@ publish_football_iceland <- function(fit,
       dplyr::arrange(.data$.draw, dplyr::desc(.data$points)) |>
       dplyr::mutate(placement = dplyr::row_number(), .by = ".draw")
 
-    n_teams_top <- iter_positions |> dplyr::distinct(.data$team) |> nrow()
+    n_teams_top <- iter_positions |>
+      dplyr::distinct(.data$team) |>
+      nrow()
 
     final_positions <- iter_positions |>
       dplyr::count(.data$team, .data$placement) |>
@@ -721,8 +739,8 @@ publish_football_iceland <- function(fit,
 
     top_six <- iter_positions |>
       dplyr::summarise(
-        p_top_six   = mean(.data$placement <= 6L),
-        p_winner    = mean(.data$placement == 1L),
+        p_top_six = mean(.data$placement <= 6L),
+        p_winner = mean(.data$placement == 1L),
         p_relegation = mean(.data$placement >= n_teams_top - 1L),
         .by = "team"
       )
@@ -750,10 +768,10 @@ publish_football_iceland <- function(fit,
 
     points_summary <- iter_team_points |>
       dplyr::summarise(
-        mean_points   = mean(.data$points),
+        mean_points = mean(.data$points),
         median_points = stats::median(.data$points),
-        lower_80      = stats::quantile(.data$points, 0.1),
-        upper_80      = stats::quantile(.data$points, 0.9),
+        lower_80 = stats::quantile(.data$points, 0.1),
+        upper_80 = stats::quantile(.data$points, 0.9),
         .by = "team"
       ) |>
       dplyr::left_join(base_points, by = "team") |>
@@ -773,14 +791,18 @@ publish_football_iceland <- function(fit,
   } else {
     # Empty outputs when fit dimensions don't match
     jsonlite::write_json(
-      list(generated_at = generated_at, season = current_season,
-           n_teams = 0L, records = list(), summary = list()),
+      list(
+        generated_at = generated_at, season = current_season,
+        n_teams = 0L, records = list(), summary = list()
+      ),
       file.path(out_dir, "final_positions.json"),
       auto_unbox = TRUE, dataframe = "rows", digits = 5
     )
     jsonlite::write_json(
-      list(generated_at = generated_at, season = current_season,
-           records = list(), summary = list()),
+      list(
+        generated_at = generated_at, season = current_season,
+        records = list(), summary = list()
+      ),
       file.path(out_dir, "points_distribution.json"),
       auto_unbox = TRUE, dataframe = "rows", digits = 5
     )
@@ -808,10 +830,10 @@ publish_football_iceland <- function(fit,
   ) |>
     dplyr::mutate(multiplier = exp(.data$value)) |>
     dplyr::reframe(
-      median   = stats::median(.data$multiplier),
+      median = stats::median(.data$multiplier),
       coverage = c(0.5, 0.8, 0.95),
-      lower    = stats::quantile(.data$multiplier, 0.5 - .data$coverage / 2),
-      upper    = stats::quantile(.data$multiplier, 0.5 + .data$coverage / 2),
+      lower = stats::quantile(.data$multiplier, 0.5 - .data$coverage / 2),
+      upper = stats::quantile(.data$multiplier, 0.5 + .data$coverage / 2),
       .by = c("team", "component")
     ) |>
     dplyr::semi_join(top_teams_upcoming, by = "team")
