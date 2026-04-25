@@ -19,17 +19,17 @@ NULL
 #' @export
 append_to_ledger <- function(bet_row, root,
                              dual_write_csv = TRUE,
-                             legacy_root = file.path(
-                               root, "..", "_legacy", "sports"
+                             legacy_root = normalizePath(
+                               file.path(root, "..", "_legacy", "sports"),
+                               mustWork = FALSE
                              )) {
   stopifnot(nrow(bet_row) == 1L)
 
-  required <- c(
-    "placed_at", "match_date", "sport", "country", "sex",
-    "home_team", "away_team", "market", "outcome", "line",
-    "odds_placed", "p", "kelly", "bet_amount",
-    "settled", "win", "pnl"
-  )
+  # Pull the column list from the canonical Arrow schema so this guard tracks
+  # any future ledger-schema additions automatically. write_table() validates
+  # types in the same call; this hand-rolled check is purely for a clearer
+  # "missing column(s)" error message before the Arrow conversion.
+  required <- schemas()$ledger$names
   missing_cols <- setdiff(required, names(bet_row))
   if (length(missing_cols) > 0L) {
     stop(
@@ -41,7 +41,8 @@ append_to_ledger <- function(bet_row, root,
 
   # Read existing rows for this partition (sport + country), bind, re-write.
   # The ledger has no natural dedup key — every placed bet is a unique event —
-  # so we simply accumulate without deduplication.
+  # so we simply accumulate without deduplication. Sequential placer only:
+  # concurrent calls on the same partition would race on the read-modify-write.
   part_filter <- list(
     sport = bet_row$sport[[1]],
     country = bet_row$country[[1]]
@@ -68,6 +69,8 @@ append_to_ledger <- function(bet_row, root,
     dir.create(csv_dir, recursive = TRUE, showWarnings = FALSE)
     csv_path <- file.path(csv_dir, "bets_log.csv")
 
+    # No dedup on CSV — a retry would produce a duplicate row. Parquet is the
+    # canonical store; CSV is dropped in Plan 6 once agreement is confirmed.
     if (file.exists(csv_path)) {
       existing_csv <- readr::read_csv(csv_path, show_col_types = FALSE)
       combined_csv <- dplyr::bind_rows(existing_csv, bet_row)
