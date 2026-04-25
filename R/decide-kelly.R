@@ -30,15 +30,33 @@ build_return_matrix <- function(beliefs, bets) {
         draw = hg == ag,
         away = hg < ag
       ),
-      spread = if (bets$outcome[[j]] == "home") {
-        (hg + bets$line[[j]]) > ag
-      } else {
-        (ag + bets$line[[j]]) > hg
+      spread = {
+        if (!bets$outcome[[j]] %in% c("home", "away")) {
+          stop(
+            "Spread outcome must be 'home' or 'away', got: ",
+            bets$outcome[[j]],
+            call. = FALSE
+          )
+        }
+        if (bets$outcome[[j]] == "home") {
+          (hg + bets$line[[j]]) > ag
+        } else {
+          (ag + bets$line[[j]]) > hg
+        }
       },
-      total = if (bets$outcome[[j]] == "over") {
-        total > bets$line[[j]]
-      } else {
-        total < bets$line[[j]]
+      total = {
+        if (!bets$outcome[[j]] %in% c("over", "under")) {
+          stop(
+            "Total outcome must be 'over' or 'under', got: ",
+            bets$outcome[[j]],
+            call. = FALSE
+          )
+        }
+        if (bets$outcome[[j]] == "over") {
+          total > bets$line[[j]]
+        } else {
+          total < bets$line[[j]]
+        }
       },
       stop("Unknown market: ", bets$market[[j]], call. = FALSE)
     )
@@ -69,12 +87,12 @@ solve_kelly_joint <- function(net_return, max_stake) {
   }
 
   # Analytical gradient: d(-mean(log(1 + R%*%f))) / df_j = -mean(R[,j] / (1 + R%*%f))
+  # Project the denominator away from -1 to avoid passing NA into the C++
+  # nlopt layer (which silently returns NLOPT_ROUNDOFF_LIMITED on bad gradient).
   grad <- function(f) {
     Rf <- as.numeric(net_return %*% f)
-    if (any(Rf <= -1)) {
-      return(rep(NA_real_, length(f)))
-    }
-    -as.numeric(crossprod(net_return, 1 / (1 + Rf))) / nrow(net_return)
+    denom <- pmax(1 + Rf, 1e-8)
+    -as.numeric(crossprod(net_return, 1 / denom)) / nrow(net_return)
   }
 
   res <- nloptr::nloptr(
@@ -91,7 +109,10 @@ solve_kelly_joint <- function(net_return, max_stake) {
       maxeval   = 500L
     )
   )
-  pmax(res$solution, 0)
+  list(
+    solution = pmax(res$solution, 0), status = res$status,
+    iterations = res$iterations
+  )
 }
 
 #' Joint Kelly criterion across all bets in one match.
@@ -126,8 +147,13 @@ kelly_joint <- function(beliefs, bets,
   R_keep <- R[, keep, drop = FALSE]
 
   f <- numeric(nrow(bets))
+  solver_status <- NA_integer_
+  solver_iterations <- NA_integer_
   if (sum(keep) > 0L) {
-    f[keep] <- solve_kelly_joint(R_keep, max_stake = kelly_frac)
+    sol <- solve_kelly_joint(R_keep, max_stake = kelly_frac)
+    f[keep] <- sol$solution
+    solver_status <- sol$status
+    solver_iterations <- sol$iterations
   }
 
   match_pnl <- as.numeric(R %*% f)
@@ -145,9 +171,11 @@ kelly_joint <- function(beliefs, bets,
     match_pnl = match_pnl,
     match_kelly_sum = sum(f),
     diagnostics = list(
-      n_bets     = nrow(bets),
-      n_kept     = sum(keep),
-      kelly_frac = kelly_frac
+      n_bets        = nrow(bets),
+      n_kept        = sum(keep),
+      kelly_frac    = kelly_frac,
+      nloptr_status = solver_status,
+      nloptr_iter   = solver_iterations
     )
   )
 }
