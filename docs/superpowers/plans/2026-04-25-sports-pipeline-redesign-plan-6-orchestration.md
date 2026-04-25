@@ -90,7 +90,7 @@ parse_competition_page(html, sport, country) -> tibble (1x2 odds, long form)
 parse_match_detail(html, sport, country, match_meta) -> tibble (handicap+totals, long form)
 ```
 
-`leagues` is the filtered output of `load_leagues() |> filter_leagues(active = TRUE)` — only leagues with a non-empty `lengjan.competitions` block are scraped. `chromote_session = NULL` means create a fresh session; tests pass an existing one to keep mocks tractable.
+`leagues` is the filtered output of `load_leagues() |> filter_leagues(active_only = TRUE)` — only leagues with a non-empty `lengjan.competitions` block are scraped. `chromote_session = NULL` means create a fresh session; tests pass an existing one to keep mocks tractable.
 
 - [ ] **Step 1: Capture Lengjan HTML fixtures**
 
@@ -207,7 +207,7 @@ test_that("ingest_lengjan_odds skips chromote bits with skip_if", {
     "set LENGJAN_LIVE_TEST=1 to run live scraper integration"
   )
   leagues <- load_leagues()
-  active <- filter_leagues(leagues, active = TRUE, has_lengjan = TRUE)
+  active <- filter_leagues(leagues, active_only = TRUE, has_lengjan = TRUE)
   expect_gt(length(active), 0L)
 })
 ```
@@ -390,7 +390,7 @@ Append to `R/ingest-lengjan-odds.R`:
 #' pages yield handicap + totals. All odds rows go into one long-form tibble
 #' and a single `write_table("odds", ...)` append.
 #'
-#' @param leagues Filtered list (output of `filter_leagues(active = TRUE,
+#' @param leagues Filtered list (output of `filter_leagues(active_only = TRUE,
 #'   has_lengjan = TRUE)`).
 #' @param scraped_at Single timestamp for the entire run; recorded on every
 #'   row so a re-scrape is identifiable as one event.
@@ -530,7 +530,7 @@ In `tests/testthat/test-config.R`, add:
 ```r
 test_that("filter_leagues(has_lengjan = TRUE) keeps Icelandic leagues", {
   leagues <- load_leagues()
-  active <- filter_leagues(leagues, active = TRUE, has_lengjan = TRUE)
+  active <- filter_leagues(leagues, active_only = TRUE, has_lengjan = TRUE)
   expect_gt(length(active), 0L)
   for (l in active) {
     expect_true(length(l$lengjan$competitions %||% list()) > 0L)
@@ -808,7 +808,7 @@ test_that("ingest targets exist for every active league", {
     callr_function = NULL
   )
   leagues <- load_leagues()
-  active <- filter_leagues(leagues, active = TRUE)
+  active <- filter_leagues(leagues, active_only = TRUE)
   for (key in names(active)) {
     expect_true(
       paste0("ingest_", key) %in% manifest$name,
@@ -825,7 +825,7 @@ test_that("odds targets exist for every Lengjan-configured active league", {
     callr_function = NULL
   )
   leagues <- load_leagues()
-  active_lengjan <- filter_leagues(leagues, active = TRUE, has_lengjan = TRUE)
+  active_lengjan <- filter_leagues(leagues, active_only = TRUE, has_lengjan = TRUE)
   for (key in names(active_lengjan)) {
     expect_true(
       paste0("odds_", key) %in% manifest$name,
@@ -876,7 +876,7 @@ tar_source("R/")
 
 # Read leagues at DAG definition time so we can generate per-league targets.
 leagues_definition <- load_leagues()
-active_keys <- names(filter_leagues(leagues_definition, active = TRUE))
+active_keys <- names(filter_leagues(leagues_definition, active_only = TRUE))
 lengjan_keys <- names(filter_leagues(
   leagues_definition, active = TRUE, has_lengjan = TRUE
 ))
@@ -1029,7 +1029,7 @@ test_that("fit targets exist for every active (league x sex) combo", {
     callr_function = NULL
   )
   leagues <- load_leagues()
-  active <- filter_leagues(leagues, active = TRUE)
+  active <- filter_leagues(leagues, active_only = TRUE)
   for (key in names(active)) {
     for (sex in active[[key]]$sexes) {
       expect_true(
@@ -1150,7 +1150,7 @@ test_that("decide targets exist for every active (league x sex)", {
     callr_function = NULL
   )
   leagues <- load_leagues()
-  active <- filter_leagues(leagues, active = TRUE)
+  active <- filter_leagues(leagues, active_only = TRUE)
   for (key in names(active)) {
     for (sex in active[[key]]$sexes) {
       expect_true(
@@ -1169,7 +1169,7 @@ test_that("publish targets exist for every active (league x sex)", {
     callr_function = NULL
   )
   leagues <- load_leagues()
-  active <- filter_leagues(leagues, active = TRUE)
+  active <- filter_leagues(leagues, active_only = TRUE)
   for (key in names(active)) {
     for (sex in active[[key]]$sexes) {
       expect_true(
@@ -1488,7 +1488,7 @@ dry_run <- has_flag("dry-run")
 
 # Resolve target names
 leagues <- load_leagues()
-active <- filter_leagues(leagues, active = TRUE)
+active <- filter_leagues(leagues, active_only = TRUE)
 keys <- if (all_flag || is.null(league)) names(active) else league
 
 target_names <- character(0)
