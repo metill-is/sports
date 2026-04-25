@@ -320,3 +320,23 @@ annotate_market_off <- function(odds, league, sex, run_id) {
     stage = "dropped_market_off"
   )
 }
+
+#' tar_target wrapper: decide for a single (league x sex).
+#'
+#' fit_dep and odds_dep are pure dependency declarations -- their values are
+#' ignored. decide_league() reads its inputs from data/ Parquet, but listing
+#' the deps here keeps the DAG honest about staleness.
+#'
+#' @param leagues Output of `load_leagues()`.
+#' @param key League key.
+#' @param sex `"male"` or `"female"`.
+#' @param bankroll Output of `load_bankroll()`.
+#' @param fit_dep,odds_dep DAG-only dependency declarations; ignored at runtime.
+#' @return Integer count of recommendation rows.
+#' @export
+decide_one <- function(leagues, key, sex, bankroll,
+                       fit_dep = NULL, odds_dep = NULL) {
+  league <- leagues[[key]]
+  recs <- decide_league(league = league, sex = sex, bankroll = bankroll)
+  nrow(recs)
+}

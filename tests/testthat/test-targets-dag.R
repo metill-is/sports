@@ -62,3 +62,41 @@ test_that("fit targets exist for every active (league x sex) combo", {
     }
   }
 })
+
+test_that("decide targets exist for every active (league x sex)", {
+  testthat::skip_if_not_installed("targets")
+  manifest <- targets::tar_manifest(
+    script = here::here("_targets.R"),
+    fields = "name",
+    callr_function = NULL
+  )
+  leagues <- load_leagues()
+  active <- filter_leagues(leagues, active_only = TRUE)
+  for (key in names(active)) {
+    for (sex in active[[key]]$sexes) {
+      expect_true(
+        paste0("decide_", key, "_", sex) %in% manifest$name,
+        info = paste("missing decide target for", key, sex)
+      )
+    }
+  }
+})
+
+test_that("publish targets exist for every active (league x sex)", {
+  testthat::skip_if_not_installed("targets")
+  manifest <- targets::tar_manifest(
+    script = here::here("_targets.R"),
+    fields = "name",
+    callr_function = NULL
+  )
+  leagues <- load_leagues()
+  active <- filter_leagues(leagues, active_only = TRUE)
+  for (key in names(active)) {
+    for (sex in active[[key]]$sexes) {
+      expect_true(
+        paste0("publish_", key, "_", sex) %in% manifest$name,
+        info = paste("missing publish target for", key, sex)
+      )
+    }
+  }
+})

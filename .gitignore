@@ -36,3 +36,6 @@ Stan/*/*
 
 # Subagent worktrees (ephemeral)
 .claude/worktrees/
+
+# Stan fit objects (10MB+ each, regenerable from data/facts/)
+data/beliefs/fits/

@@ -82,6 +82,19 @@ fit_league <- function(league_key = NULL,
     seed            = seed
   )
 
+  # Plan 6: persist the fit object so publish_one() can read it back.
+  # `data/beliefs/latest/` is the canonical Parquet for the long-form draws,
+  # but publishers also need team-level Stan parameters via fit$draws(var)
+  # which aren't in that schema. Save the fit RDS alongside.
+  fits_dir <- file.path(
+    root, "beliefs", "fits",
+    paste0("sport=", league$sport),
+    paste0("country=", league$country),
+    paste0("sex=", sex)
+  )
+  dir.create(fits_dir, recursive = TRUE, showWarnings = FALSE)
+  fit$save_object(file = file.path(fits_dir, "fit.rds"))
+
   beliefs <- extract_posteriors(fit, prep$pred_d,
     league = league, sex = sex,
     fit_date = fit_date

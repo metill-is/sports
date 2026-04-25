@@ -31,8 +31,12 @@ test_that("fit_league writes beliefs_latest and beliefs_archive", {
     away_goals = runif(10, 70, 100)
   )
 
+  fake_fit <- structure(
+    list(save_object = function(file) saveRDS(NULL, file)),
+    class = "CmdStanMCMC"
+  )
   testthat::local_mocked_bindings(
-    fit_model = function(...) structure(list(), class = "CmdStanMCMC"),
+    fit_model = function(...) fake_fit,
     extract_posteriors = function(...) fake_beliefs,
     .package = "sports"
   )
@@ -45,6 +49,11 @@ test_that("fit_league writes beliefs_latest and beliefs_archive", {
 
   expect_s3_class(out, "tbl_df")
   expect_equal(nrow(out), 10L)
+  # Plan 6: fit RDS persisted alongside beliefs/latest/.
+  expect_true(file.exists(file.path(
+    root, "beliefs", "fits",
+    "sport=basketball", "country=iceland", "sex=male", "fit.rds"
+  )))
 
   bl <- read_table("beliefs_latest",
     root = root,
@@ -83,8 +92,12 @@ test_that("fit_league (write_archive = FALSE) only writes latest", {
     draw_id = 1L, home_goals = 85, away_goals = 80
   )
 
+  fake_fit <- structure(
+    list(save_object = function(file) saveRDS(NULL, file)),
+    class = "CmdStanMCMC"
+  )
   testthat::local_mocked_bindings(
-    fit_model = function(...) structure(list(), class = "CmdStanMCMC"),
+    fit_model = function(...) fake_fit,
     extract_posteriors = function(...) fake_beliefs,
     .package = "sports"
   )

@@ -119,4 +119,52 @@ for (key in active_keys) {
   }
 }
 
-c(static_targets, ingest_targets, odds_targets, fit_targets)
+# Per-(league x sex) decide targets -- Kelly + portfolio + calibration.
+# Depends on fit_<key>_<sex> and (when Lengjan-configured) odds_<key>.
+decide_targets <- list()
+for (key in active_keys) {
+  league_def <- leagues_definition[[key]]
+  for (sex in league_def$sexes) {
+    target_name <- paste0("decide_", key, "_", sex)
+    fit_dep <- as.symbol(paste0("fit_", key, "_", sex))
+    if (key %in% lengjan_keys) {
+      odds_dep <- as.symbol(paste0("odds_", key))
+      cmd <- substitute(
+        decide_one(leagues_config, k, s, bankroll, fit_dep, odds_dep),
+        list(k = key, s = sex, fit_dep = fit_dep, odds_dep = odds_dep)
+      )
+    } else {
+      cmd <- substitute(
+        decide_one(leagues_config, k, s, bankroll, fit_dep),
+        list(k = key, s = sex, fit_dep = fit_dep)
+      )
+    }
+    decide_targets[[length(decide_targets) + 1L]] <- tar_target_raw(
+      name = target_name, command = cmd
+    )
+  }
+}
+
+# Per-(league x sex) publish targets -- JSONs.
+# Depends on fit (via fit RDS file at data/beliefs/fits/) and decide.
+publish_targets <- list()
+for (key in active_keys) {
+  league_def <- leagues_definition[[key]]
+  for (sex in league_def$sexes) {
+    target_name <- paste0("publish_", key, "_", sex)
+    fit_dep <- as.symbol(paste0("fit_", key, "_", sex))
+    decide_dep <- as.symbol(paste0("decide_", key, "_", sex))
+    publish_targets[[length(publish_targets) + 1L]] <- tar_target_raw(
+      name = target_name,
+      command = substitute(
+        publish_one(leagues_config, k, s, fit_dep, decide_dep),
+        list(k = key, s = sex, fit_dep = fit_dep, decide_dep = decide_dep)
+      )
+    )
+  }
+}
+
+c(
+  static_targets, ingest_targets, odds_targets, fit_targets,
+  decide_targets, publish_targets
+)

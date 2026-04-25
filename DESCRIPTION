@@ -70,4 +70,5 @@ Collate:
     'publish-basketball-iceland.R'
     'publish-football-iceland.R'
     'publish-handball-iceland.R'
+    'publish-pipeline.R'
     'schedule-active.R'
