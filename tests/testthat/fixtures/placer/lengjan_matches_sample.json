@@ -1,0 +1,38 @@
+[
+  {
+    "match_id": "12345",
+    "home": "KR",
+    "away": "FH",
+    "odds_home": 1.85,
+    "odds_draw": 3.4,
+    "odds_away": 4.2,
+    "detail_url": "/getraunaleikir/lengjan/leikur?id=12345&sport=1"
+  },
+  {
+    "match_id": "12346",
+    "home": "Fram",
+    "away": "Stjarnan",
+    "odds_home": 2.1,
+    "odds_draw": 3.2,
+    "odds_away": 3.5,
+    "detail_url": "/getraunaleikir/lengjan/leikur?id=12346&sport=1"
+  },
+  {
+    "match_id": "12347",
+    "home": "<c3><8d>BV",
+    "away": "<c3><9e>b<c3><b3>r Ak.",
+    "odds_home": 2.5,
+    "odds_draw": 3.1,
+    "odds_away": 2.8,
+    "detail_url": "/getraunaleikir/lengjan/leikur?id=12347&sport=1"
+  },
+  {
+    "match_id": "12348",
+    "home": "Valur",
+    "away": "KR",
+    "odds_home": 1.65,
+    "odds_draw": 3.8,
+    "odds_away": 5,
+    "detail_url": "/getraunaleikir/lengjan/leikur?id=12348&sport=1"
+  }
+]

@@ -8,7 +8,8 @@ append_to_ledger(
   bet_row,
   root,
   dual_write_csv = TRUE,
-  legacy_root = file.path(root, "..", "_legacy", "sports")
+  legacy_root = normalizePath(file.path(root, "..", "_legacy", "sports"), mustWork =
+    FALSE)
 )
 }
 \arguments{
