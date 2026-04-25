@@ -797,13 +797,3 @@ handicap_to_lengjan_line <- function(handicap) {
     paste0("0-", abs(handicap))
   }
 }
-
-#' Random delay helper (local copy — also defined in placer-navigate.R)
-#'
-#' @param range Numeric length-2 vector: c(min_seconds, max_seconds)
-#' @return Numeric: a random value in [range[1], range[2]]
-#' @keywords internal
-#' @noRd
-sample_delay <- function(range = c(2, 4)) {
-  stats::runif(1, min = range[1], max = range[2])
-}
