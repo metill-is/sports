@@ -57,3 +57,20 @@ test_that("load_recommendations returns 0 rows + correct cols when nothing match
   expect_equal(nrow(out), 0L)
   expect_true(all(c("match_date", "home_team", "market") %in% names(out)))
 })
+
+test_that("load_recommendations(run_date = NULL) returns only the most recent partition", {
+  tmp <- withr::local_tempdir()
+
+  base <- arrow::read_parquet(testthat::test_path(
+    "fixtures", "placer", "recs_sample.parquet"
+  ))
+  # Older run with the same matches as the fixture
+  older <- base
+  older$run_id <- as.POSIXct("2026-04-24 09:00:00", tz = "UTC")
+
+  write_table(base, "recommendations", root = tmp)
+  write_table(older, "recommendations", root = tmp)
+
+  out <- load_recommendations(tmp, target_date = as.Date("2026-04-26"))
+  expect_true(all(out$run_id == as.POSIXct("2026-04-25 09:00:00", tz = "UTC")))
+})

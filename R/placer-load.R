@@ -21,16 +21,21 @@ load_recommendations <- function(root,
                                  today_only = FALSE,
                                  target_date = NULL,
                                  run_date = NULL) {
-  recs <- tryCatch(
-    read_table("recommendations", root = root),
-    error = function(e) tibble::tibble()
-  )
+  # `read_table` already returns an empty tibble when the partition directory
+  # is absent (storage.R:266), so the previous tryCatch was hiding genuine
+  # read errors (corrupt Parquet, schema drift). Let real errors propagate.
+  recs <- read_table("recommendations", root = root)
   if (nrow(recs) == 0L) {
     return(empty_recommendations_for_placement())
   }
 
+  # Restrict to the requested run_date partition (or the most recent when
+  # NULL). Without this filter the placer would consider stale Kelly sizes
+  # from prior runs alongside the current run's recommendations.
   if (!is.null(run_date)) {
     recs <- recs[as.character(recs$run_date) == as.character(run_date), , drop = FALSE]
+  } else if ("run_date" %in% names(recs) && nrow(recs) > 0L) {
+    recs <- recs[recs$run_date == max(recs$run_date), , drop = FALSE]
   }
 
   if (!is.null(target_date)) {
@@ -65,9 +70,17 @@ dedup_against_ledger <- function(recs, root) {
     return(recs)
   }
 
+  # An unreadable ledger is recoverable (worst case: re-attempt a duplicate
+  # bet), but it's still a real fault that operators should see.
   led <- tryCatch(
     read_table("ledger", root = root),
-    error = function(e) tibble::tibble()
+    error = function(e) {
+      cli::cli_warn(c(
+        "dedup_against_ledger: ledger read failed; skipping dedup",
+        "i" = "{conditionMessage(e)}"
+      ))
+      tibble::tibble()
+    }
   )
   if (nrow(led) == 0L) {
     return(recs)
@@ -78,12 +91,16 @@ dedup_against_ledger <- function(recs, root) {
     "home_team", "away_team", "market", "outcome", "line"
   )
   if (!all(key_cols %in% names(led))) {
+    cli::cli_warn(
+      "dedup_against_ledger: ledger missing key column(s); skipping dedup"
+    )
     return(recs)
   }
 
-  rec_key <- do.call(paste, c(recs[, key_cols], sep = "||"))
-  led_key <- do.call(paste, c(led[, key_cols], sep = "||"))
-  recs[!rec_key %in% led_key, , drop = FALSE]
+  # dplyr::anti_join handles NA-equality on the join (two NA `line` values
+  # are treated as matching), and is type-safe against future Date format
+  # changes that would break the previous string-concat key.
+  dplyr::anti_join(recs, led[, key_cols, drop = FALSE], by = key_cols)
 }
 
 #' @keywords internal
