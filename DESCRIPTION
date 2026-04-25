@@ -55,4 +55,6 @@ Collate:
     'model-posteriors.R'
     'model-prepare.R'
     'model-league.R'
+    'publish-basketball-iceland.R'
     'publish-football-iceland.R'
+    'publish-handball-iceland.R'
