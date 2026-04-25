@@ -93,7 +93,17 @@ fit_league <- function(league_key = NULL,
     paste0("sex=", sex)
   )
   dir.create(fits_dir, recursive = TRUE, showWarnings = FALSE)
-  fit$save_object(file = file.path(fits_dir, "fit.rds"))
+  # save_object() depends on cmdstanr's underlying CSV temp files. They can
+  # be GC'd between fit and save (e.g. cmdstan_fit() output_dir cleanup).
+  # Warn-and-continue rather than fail the whole pipeline.
+  tryCatch(
+    fit$save_object(file = file.path(fits_dir, "fit.rds")),
+    error = function(e) {
+      cli::cli_alert_warning(
+        "Failed to save fit RDS at {fits_dir}: {conditionMessage(e)}"
+      )
+    }
+  )
 
   beliefs <- extract_posteriors(fit, prep$pred_d,
     league = league, sex = sex,
