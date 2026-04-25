@@ -44,10 +44,42 @@
         "stan_model": { "type": "string" },
         "betting": {
           "type": "object",
+          "additionalProperties": false,
+          "required": ["kelly_frac", "ev_threshold", "markets", "scoring", "min_bet"],
           "properties": {
-            "kelly_fraction": { "type": "number", "minimum": 0, "maximum": 1 },
-            "markets":        { "type": "array", "items": { "type": "string", "enum": ["moneyline", "spread", "total"] } },
-            "min_bet":        { "type": "number", "minimum": 0 }
+            "kelly_frac": {
+              "oneOf": [
+                { "type": "number", "minimum": 0, "maximum": 1 },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "male":   { "type": "number", "minimum": 0, "maximum": 1 },
+                    "female": { "type": "number", "minimum": 0, "maximum": 1 }
+                  }
+                }
+              ]
+            },
+            "ev_threshold": { "type": "number" },
+            "markets": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "moneyline": { "type": "boolean" },
+                "spread":    { "type": "boolean" },
+                "total":     { "type": "boolean" }
+              }
+            },
+            "scoring": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "has_ties":      { "type": "boolean" },
+                "tie_threshold": { "type": "number" }
+              }
+            },
+            "min_bet":       { "type": "number", "minimum": 0 },
+            "max_age_hours": { "type": "number", "minimum": 0 }
           }
         }
       }

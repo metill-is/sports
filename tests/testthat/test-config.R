@@ -60,7 +60,7 @@ test_that("filter_leagues() narrows by selector", {
 # ---------------------------------------------------------------------------
 
 test_that("load_leagues() accepts single-sex leagues (C1 regression)", {
-  # Single-element sexes/markets must stay as arrays after YAML -> JSON conversion;
+  # Single-element sexes must stay as arrays after YAML -> JSON conversion;
   # auto_unbox = TRUE would otherwise flatten them to scalars and trip schema validation.
   tmp <- withr::local_tempfile(fileext = ".yml")
   yaml::write_yaml(list(
@@ -69,7 +69,13 @@ test_that("load_leagues() accepts single-sex leagues (C1 regression)", {
       country = "england",
       sexes = list("male"),
       stan_model = "football_england/model.stan",
-      betting = list(markets = list("moneyline"), kelly_fraction = 0.25)
+      betting = list(
+        kelly_frac = 0.25,
+        ev_threshold = 0.0,
+        markets = list(moneyline = TRUE, spread = TRUE, total = TRUE),
+        scoring = list(has_ties = TRUE, tie_threshold = 0),
+        min_bet = 200
+      )
     ))
   ), tmp)
 

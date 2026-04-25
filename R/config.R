@@ -30,16 +30,14 @@ load_leagues <- function(path = here::here("config", "leagues.yml"),
 
 # Coerce known-array fields to lists so that jsonlite::toJSON(auto_unbox = TRUE)
 # does not flatten single-element arrays into scalars (which would trip the
-# schema's "must be array" checks on e.g. `sexes: [male]` or
-# `betting.markets: [moneyline]`).
+# schema's "must be array" checks on e.g. `sexes: [male]`).
+# Note: betting$markets is now an object (boolean toggles), not an array —
+# do NOT wrap it here.
 coerce_array_fields <- function(leagues) {
   for (key in names(leagues)) {
     l <- leagues[[key]]
     if (!is.null(l$sexes) && !is.list(l$sexes)) {
       l$sexes <- as.list(l$sexes)
-    }
-    if (!is.null(l$betting$markets) && !is.list(l$betting$markets)) {
-      l$betting$markets <- as.list(l$betting$markets)
     }
     # lengjan$competitions is already a list-of-lists in yaml.load output; leave alone.
     leagues[[key]] <- l
@@ -63,6 +61,35 @@ validate_leagues <- function(leagues, schema_path) {
     stop(paste0("leagues.yml failed schema validation:\n", err_lines), call. = FALSE)
   }
   invisible(TRUE)
+}
+
+#' Load + validate the global bankroll config.
+#'
+#' Reads `config/bankroll.yml`. If `current_pool` is missing from the YAML
+#' (the usual case), derives it as `initial_pool + sum(ledger$pnl[settled])`
+#' so the bankroll evolves with realised PnL.
+#'
+#' @param path Path to bankroll.yml.
+#' @param ledger_root Root directory for Parquet stores (parent of `decisions/ledger/`).
+#' @return List with `initial_pool`, `current_pool`, `daily_budget_frac`,
+#'   `daily_budget_min_isk`.
+#' @export
+load_bankroll <- function(path = here::here("config", "bankroll.yml"),
+                          ledger_root = here::here("data")) {
+  cfg <- yaml::yaml.load(readr::read_file(path))
+  if (is.null(cfg$current_pool)) {
+    led <- tryCatch(
+      read_table("ledger", root = ledger_root),
+      error = function(e) tibble::tibble(pnl = numeric(0), settled = logical(0))
+    )
+    if (!all(c("pnl", "settled") %in% names(led))) {
+      led <- tibble::tibble(pnl = numeric(0), settled = logical(0))
+    }
+    settled_pnl <- led$pnl[!is.na(led$settled) & led$settled]
+    realised_pnl <- sum(settled_pnl, na.rm = TRUE)
+    cfg$current_pool <- cfg$initial_pool + realised_pnl
+  }
+  cfg
 }
 
 #' Filter a loaded leagues list by selector.

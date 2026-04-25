@@ -33,9 +33,17 @@ basketball_iceland:
       Stjarnan: Stjarnan kv
   stan_model: basketball_iceland/2d_student_t_scalarsigma.stan
   betting:
-    kelly_fraction: 0.10
-    markets: [moneyline, spread, total]
+    kelly_frac: 0.10
+    ev_threshold: 0.0
+    markets:
+      moneyline: true
+      spread: true
+      total: true
+    scoring:
+      has_ties: false
+      tie_threshold: 0
     min_bet: 200
+    max_age_hours: 48
 
 handball_iceland:
   sport: handball
@@ -60,9 +68,17 @@ handball_iceland:
       HBH: HB Hafnarfjörður
   stan_model: handball_iceland/2d_student_t.stan
   betting:
-    kelly_fraction: 0.10
-    markets: [moneyline, spread, total]
+    kelly_frac: 0.10
+    ev_threshold: 0.0
+    markets:
+      moneyline: true
+      spread: true
+      total: true
+    scoring:
+      has_ties: true
+      tie_threshold: 0.5
     min_bet: 200
+    max_age_hours: 48
 
 football_iceland:
   sport: football
@@ -83,6 +99,16 @@ football_iceland:
       Víkingur R.: Víkingur Rvk
   stan_model: football_iceland/bivariate_poisson_no_inflation.stan
   betting:
-    kelly_fraction: 0.10
-    markets: [moneyline, spread, total]
+    kelly_frac:
+      male: 0.15
+      female: 0.075
+    ev_threshold: 0.0
+    markets:
+      moneyline: true
+      spread: true
+      total: true
+    scoring:
+      has_ties: true
+      tie_threshold: 0
     min_bet: 200
+    max_age_hours: 48

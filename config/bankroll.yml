@@ -1,0 +1,13 @@
+# config/bankroll.yml — global betting bankroll + daily-budget cap.
+#
+# `initial_pool` — known deposits at workspace start (matches the figure in
+#   /Users/brynjolfurjonsson/.claude/projects/-Users-brynjolfurjonsson-sports/memory/MEMORY.md, set 2026-03-06 = 23,610 ISK).
+# `current_pool` — runtime bankroll derived from `initial_pool` + ledger PnL,
+#   computed by `load_bankroll()` if `current_pool` is missing here.
+# `daily_budget_frac` — max fraction of current bankroll wagered per day. Caps
+#   the Stage-2 portfolio optimiser's total stake.
+# `daily_budget_min_isk` — never under-bet on a quiet day; floor in absolute ISK
+#   so a low-volume day doesn't turn into 100-ISK bets due to fractional caps.
+initial_pool: 23610
+daily_budget_frac: 0.05
+daily_budget_min_isk: 1000
