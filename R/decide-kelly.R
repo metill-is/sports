@@ -10,6 +10,7 @@ NULL
 #' - moneyline: outcome == "home" wins iff home_goals > away_goals
 #' - spread:    outcome == "home" wins iff (home_goals + line) > away_goals
 #'              outcome == "away" wins iff (away_goals + line) > home_goals
+#'              outcome == "draw" wins iff (home_goals + line) == away_goals (push)
 #' - total:     outcome == "over"  wins iff (home_goals + away_goals) > line
 #'              outcome == "under" wins iff (home_goals + away_goals) < line
 #'
@@ -31,17 +32,21 @@ build_return_matrix <- function(beliefs, bets) {
         away = hg < ag
       ),
       spread = {
-        if (!bets$outcome[[j]] %in% c("home", "away")) {
+        if (!bets$outcome[[j]] %in% c("home", "away", "draw")) {
           stop(
-            "Spread outcome must be 'home' or 'away', got: ",
+            "Spread outcome must be 'home', 'away', or 'draw', got: ",
             bets$outcome[[j]],
             call. = FALSE
           )
         }
+        line <- bets$line[[j]]
         if (bets$outcome[[j]] == "home") {
-          (hg + bets$line[[j]]) > ag
+          (hg + line) > ag
+        } else if (bets$outcome[[j]] == "away") {
+          (ag + line) > hg
         } else {
-          (ag + bets$line[[j]]) > hg
+          # spread/draw: wins when the handicap-adjusted margin is exactly zero
+          (hg + line) == ag
         }
       },
       total = {

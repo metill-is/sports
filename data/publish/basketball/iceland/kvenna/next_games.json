@@ -1,0 +1,71 @@
+{
+  "generated_at": "2026-04-25T10:13:45+0000",
+  "matches": [
+    {
+      "date": "2026-04-27",
+      "home": "Njarðvík",
+      "away": "Grindavík",
+      "mean_home": 85.28,
+      "mean_away": 87.18,
+      "mean_diff": -1.9,
+      "p_home": 0.4392,
+      "p_away": 0.5608,
+      "p_tie": 0
+    },
+    {
+      "date": "2026-04-28",
+      "home": "Haukar",
+      "away": "Keflavík",
+      "mean_home": 85.12,
+      "mean_away": 84.95,
+      "mean_diff": 0.17,
+      "p_home": 0.502,
+      "p_away": 0.498,
+      "p_tie": 0
+    },
+    {
+      "date": "2026-05-01",
+      "home": "Grindavík",
+      "away": "Njarðvík",
+      "mean_home": 93.14,
+      "mean_away": 82.36,
+      "mean_diff": 10.78,
+      "p_home": 0.7805,
+      "p_away": 0.2195,
+      "p_tie": 0
+    },
+    {
+      "date": "2026-05-02",
+      "home": "Keflavík",
+      "away": "Haukar",
+      "mean_home": 87.77,
+      "mean_away": 82.72,
+      "mean_diff": 5.05,
+      "p_home": 0.6567,
+      "p_away": 0.3432,
+      "p_tie": 0
+    },
+    {
+      "date": "2026-05-05",
+      "home": "Haukar",
+      "away": "Keflavík",
+      "mean_home": 84.65,
+      "mean_away": 84.69,
+      "mean_diff": -0.04,
+      "p_home": 0.4973,
+      "p_away": 0.5028,
+      "p_tie": 0
+    },
+    {
+      "date": "2026-05-05",
+      "home": "Njarðvík",
+      "away": "Grindavík",
+      "mean_home": 85.62,
+      "mean_away": 87.65,
+      "mean_diff": -2.03,
+      "p_home": 0.43,
+      "p_away": 0.57,
+      "p_tie": 0
+    }
+  ]
+}

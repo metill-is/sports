@@ -1,0 +1,27 @@
+{
+  "generated_at": "2026-04-25T10:13:47+0000",
+  "matches": [
+    {
+      "date": "2026-04-27",
+      "home": "FH",
+      "away": "Valur",
+      "mean_home": 31.31,
+      "mean_away": 29.82,
+      "mean_diff": 1.48,
+      "p_home": 0.615,
+      "p_away": 0.385,
+      "p_tie": 0
+    },
+    {
+      "date": "2026-04-30",
+      "home": "Valur",
+      "away": "FH",
+      "mean_home": 30.69,
+      "mean_away": 30.25,
+      "mean_diff": 0.43,
+      "p_home": 0.5345,
+      "p_away": 0.4655,
+      "p_tie": 0
+    }
+  ]
+}

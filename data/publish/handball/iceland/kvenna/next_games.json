@@ -1,0 +1,38 @@
+{
+  "generated_at": "2026-04-25T10:13:49+0000",
+  "matches": [
+    {
+      "date": "2026-04-25",
+      "home": "Haukar",
+      "away": "ÍBV",
+      "mean_home": 25.93,
+      "mean_away": 28.55,
+      "mean_diff": -2.61,
+      "p_home": 0.2985,
+      "p_away": 0.7015,
+      "p_tie": 0
+    },
+    {
+      "date": "2026-04-28",
+      "home": "Valur",
+      "away": "Fram",
+      "mean_home": 28.78,
+      "mean_away": 26.79,
+      "mean_diff": 1.99,
+      "p_home": 0.6425,
+      "p_away": 0.3575,
+      "p_tie": 0
+    },
+    {
+      "date": "2026-04-28",
+      "home": "ÍBV",
+      "away": "Haukar",
+      "mean_home": 27.76,
+      "mean_away": 27.16,
+      "mean_diff": 0.61,
+      "p_home": 0.5452,
+      "p_away": 0.4548,
+      "p_tie": 0
+    }
+  ]
+}

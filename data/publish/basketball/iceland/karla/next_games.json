@@ -1,0 +1,115 @@
+{
+  "generated_at": "2026-04-25T10:13:42+0000",
+  "matches": [
+    {
+      "date": "2026-04-25",
+      "home": "Stjarnan",
+      "away": "Tindastóll",
+      "mean_home": 93.09,
+      "mean_away": 83.73,
+      "mean_diff": 9.36,
+      "p_home": 0.7608,
+      "p_away": 0.2392,
+      "p_tie": 0
+    },
+    {
+      "date": "2026-04-26",
+      "home": "Valur",
+      "away": "Grindavík",
+      "mean_home": 103.47,
+      "mean_away": 96.77,
+      "mean_diff": 6.7,
+      "p_home": 0.6828,
+      "p_away": 0.3172,
+      "p_tie": 0
+    },
+    {
+      "date": "2026-04-28",
+      "home": "Selfoss",
+      "away": "Sindri",
+      "mean_home": 85.34,
+      "mean_away": 81.5,
+      "mean_diff": 3.84,
+      "p_home": 0.6135,
+      "p_away": 0.3865,
+      "p_tie": 0
+    },
+    {
+      "date": "2026-04-29",
+      "home": "Tindastóll",
+      "away": "Stjarnan",
+      "mean_home": 86.94,
+      "mean_away": 90.51,
+      "mean_diff": -3.57,
+      "p_home": 0.3972,
+      "p_away": 0.6028,
+      "p_tie": 0
+    },
+    {
+      "date": "2026-04-30",
+      "home": "Grindavík",
+      "away": "Valur",
+      "mean_home": 103.95,
+      "mean_away": 99.81,
+      "mean_diff": 4.14,
+      "p_home": 0.6155,
+      "p_away": 0.3845,
+      "p_tie": 0
+    },
+    {
+      "date": "2026-05-02",
+      "home": "Sindri",
+      "away": "Selfoss",
+      "mean_home": 87.32,
+      "mean_away": 82.82,
+      "mean_diff": 4.5,
+      "p_home": 0.6275,
+      "p_away": 0.3725,
+      "p_tie": 0
+    },
+    {
+      "date": "2026-05-03",
+      "home": "Stjarnan",
+      "away": "Tindastóll",
+      "mean_home": 93.22,
+      "mean_away": 83.33,
+      "mean_diff": 9.89,
+      "p_home": 0.7695,
+      "p_away": 0.2305,
+      "p_tie": 0
+    },
+    {
+      "date": "2026-05-04",
+      "home": "Valur",
+      "away": "Grindavík",
+      "mean_home": 103.71,
+      "mean_away": 96.93,
+      "mean_diff": 6.78,
+      "p_home": 0.6828,
+      "p_away": 0.3172,
+      "p_tie": 0
+    },
+    {
+      "date": "2026-05-06",
+      "home": "Grindavík",
+      "away": "Valur",
+      "mean_home": 103.87,
+      "mean_away": 100.19,
+      "mean_diff": 3.68,
+      "p_home": 0.598,
+      "p_away": 0.402,
+      "p_tie": 0
+    },
+    {
+      "date": "2026-05-06",
+      "home": "Tindastóll",
+      "away": "Stjarnan",
+      "mean_home": 85.29,
+      "mean_away": 81.57,
+      "mean_diff": 3.72,
+      "p_home": 0.6125,
+      "p_away": 0.3875,
+      "p_tie": 0
+    }
+  ]
+}
