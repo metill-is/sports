@@ -16,7 +16,7 @@ ingest_league(league, sex, root = here::here("data"), seasons = NULL)
 \item{seasons}{Optional integer vector to pass through to `fetch_results`.}
 }
 \value{
-invisible(NULL)
+Integer count of rows written (results + schedules), invisibly.
 }
 \description{
 Reads `league$data_source$results` and `league$data_source$schedule` to pick

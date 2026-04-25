@@ -45,7 +45,7 @@ get_ingest_source <- function(name) {
 #' @param sex "male" or "female".
 #' @param root Data root. Defaults to `here::here("data")`.
 #' @param seasons Optional integer vector to pass through to `fetch_results`.
-#' @return invisible(NULL)
+#' @return Integer count of rows written (results + schedules), invisibly.
 #' @export
 ingest_league <- function(league, sex,
                           root = here::here("data"),
@@ -62,5 +62,45 @@ ingest_league <- function(league, sex,
   if (nrow(results) > 0) upsert_table(results, "results", root = root)
   if (nrow(schedule) > 0) upsert_table(schedule, "schedules", root = root)
 
-  invisible(NULL)
+  invisible(as.integer(nrow(results) + nrow(schedule)))
+}
+
+#' Run federation ingest for a single league across all configured sexes.
+#'
+#' Wrapper used by `_targets.R`'s per-league `ingest_<key>` targets. Reads
+#' the active_competitions JSON to short-circuit when there are no near-term
+#' fixtures (saves a chromote launch).
+#'
+#' @param leagues Output of `load_leagues()` (full config; the wrapper picks
+#'   `leagues[[key]]` itself).
+#' @param key League key (e.g. `"football_iceland"`).
+#' @param active_path Path to `config/active_competitions.json`.
+#' @return Total rows written across the league's sexes (integer).
+#' @export
+ingest_one_league <- function(leagues, key, active_path) {
+  active <- jsonlite::fromJSON(active_path)
+  if (isFALSE(active$active[[key]])) {
+    cli::cli_alert_info("{key}: skipped (no active fixtures)")
+    return(0L)
+  }
+  league <- leagues[[key]]
+  total <- 0L
+  for (sex in league$sexes) {
+    total <- total + ingest_league(league, sex, seasons = NULL)
+  }
+  total
+}
+
+#' Run Lengjan odds ingest for a single league (DAG wrapper).
+#'
+#' @inheritParams ingest_one_league
+#' @return Number of odds rows written (integer).
+#' @export
+ingest_one_lengjan <- function(leagues, key, active_path) {
+  active <- jsonlite::fromJSON(active_path)
+  if (isFALSE(active$active[[key]])) {
+    cli::cli_alert_info("{key}: skipped (no active fixtures)")
+    return(0L)
+  }
+  as.integer(ingest_lengjan_odds(leagues[key]))
 }
