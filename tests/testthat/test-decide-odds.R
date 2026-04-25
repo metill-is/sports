@@ -30,7 +30,15 @@ test_that("prepare_odds returns the latest odds per (match, market, outcome, lin
   ),
   ignore.order = TRUE
   )
+  # Fixture has 4 rows: moneyline/home appears twice (06:00 + 12:00).
+  # Dedup keeps only the latest, so 3 unique groups remain.
   expect_equal(nrow(out), 3L)
+
+  # The older moneyline/home scrape (1.95 at 06:00) should be dropped;
+  # the newer one (1.85 at 12:00) survives.
+  ml_home <- out[out$market == "moneyline" & out$outcome == "home", ]
+  expect_equal(nrow(ml_home), 1L)
+  expect_equal(ml_home$odds, 1.85)
 })
 
 test_that("prepare_odds drops odds older than max_age_hours", {

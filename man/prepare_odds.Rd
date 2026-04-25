@@ -10,6 +10,7 @@ prepare_odds(
   sex,
   end_date = Sys.Date(),
   max_age_hours = 48,
+  now = Sys.time(),
   root = here::here("data")
 )
 }
@@ -23,7 +24,10 @@ sex-keyed.}
 
 \item{end_date}{Drop matches before this date. Default today.}
 
-\item{max_age_hours}{Drop scrapes older than this (vs `Sys.time()`).}
+\item{max_age_hours}{Drop scrapes older than this (vs `now`).}
+
+\item{now}{Reference timestamp for age filtering. Default `Sys.time()`.
+Override in tests to avoid dependence on wall-clock time.}
 
 \item{root}{Data root. Default `here::here("data")`.}
 }

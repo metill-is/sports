@@ -70,9 +70,8 @@ prepare_odds <- function(league, sex,
     dplyr::slice_max(.data$scraped_at, n = 1L, with_ties = FALSE) |>
     dplyr::ungroup() |>
     dplyr::select(
-      .data$match_date, .data$home_team, .data$away_team,
-      .data$market, .data$outcome, .data$line, .data$odds,
-      .data$scraped_at
+      "match_date", "home_team", "away_team",
+      "market", "outcome", "line", "odds", "scraped_at"
     )
 }
 
