@@ -202,7 +202,7 @@ This is one-time post-cutover admin; the new monorepo is `metill-is/sports`
 - `DESCRIPTION` + `NAMESPACE` treat the monorepo as an R package — `devtools::load_all()` / `devtools::test()` are the daily drivers.
 - Exports: `load_leagues`, `filter_leagues`, `schemas`, `write_table`, `read_table`, `rebuild_duckdb`. Internal helpers are `#' @noRd`.
 - `testthat` edition 3, tests in `tests/testthat/`.
-- See `.claude/rules/r-package-conventions.md` and `.claude/rules/r-conventions.md`.
+- See `~/.claude/rules/r-package-conventions.md` (user-global) and `.claude/rules/r-conventions.md` (project-local).
 
 ### Column-naming convention (spec §3.3)
 

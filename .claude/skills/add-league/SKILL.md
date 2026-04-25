@@ -1,205 +1,195 @@
 ---
 name: add-league
-description: Use when adding a new league to the pipeline. Guides through config, directory setup, team mappings, and verification.
+description: Use when adding a new league to the monorepo. Walks through leagues.yml, Stan model, ingest source, team_names invariant, and verification.
 argument-hint: "[sport] [country]"
 context: fork
 effort: high
 ---
 
-# /add-league — Add a new league
+# /add-league — Add a new league to the monorepo
 
-You are adding a new league to the Sports unified pipeline. Follow this checklist.
+The post-Plan-6 monorepo simplifies the old four-step "create directory + bets.yml +
+team_names CSV + symlinks" dance into a single source of truth: `config/leagues.yml`.
+Most additions touch three files.
+
+> The current scope is the three active Icelandic leagues. When extending beyond
+> Iceland, the dead `_legacy/` paths in `_legacy/{sports,lengjan-odds,…}` are
+> useful as historical reference for ingest scrapers and team_names CSVs.
 
 ## Step 1: Gather information
 
-If not provided in arguments, ask the user:
+Ask the user (or infer from arguments):
 
-1. **Sport**: basketball, handball, or football
-2. **Country**: lowercase name (e.g., `romania`, `croatia`)
-3. **Pipeline type**: Infer from sport:
-   - Basketball → `shared` (needs `config_module`)
-   - Handball → `handball_other` (uses shared handball/other pipeline)
-   - Football → `football` (self-contained per-league scripts)
-4. **Data source**: Infer from sport:
-   - Basketball → `baskethotel` (only Iceland) or manual
-   - Handball → `livesport_handball`
-   - Football → `livesport_football`
-5. **Betting**: Will this league have a betting pipeline? (requires Lengjan odds coverage)
-6. **Sex**: `[male]`, `[female]`, or `[male, female]`
+1. **Sport** — `basketball`, `handball`, `football`
+2. **Country** — lowercase (`norway`, `denmark`, …)
+3. **League key** — by convention `{sport}_{country}` (e.g. `basketball_norway`)
+4. **Sexes** — any subset of `[male, female]`
+5. **Federation source** — does an `R/ingest-{federation}-{sport}.R` already
+   cover this league? If not, a new scraper is needed (see Step 4).
+6. **Lengjan odds + bet placement** — does Lengjan list this league? If yes,
+   you'll need competition IDs and a `team_names` map (Step 5).
+7. **Stan model** — reuse an existing one (e.g. `2d_student_t_scalarsigma.stan`
+   for basketball, `2d_student_t.stan` for handball, `bivariate_poisson_no_inflation.stan`
+   for football) or write a new one. The path is relative to `Stan/`.
 
-## Step 2: Add to `leagues.yml`
+## Step 2: Add a `config/leagues.yml` entry
 
-Read `Sports/config/leagues.yml` and add a new entry:
-
-```yaml
-{sport}_{country}:
-  sport: {sport}
-  country: {country}
-  dir: {sport}/{country}
-  sex: [{sex}]
-  stan_model: {model}  # 2d_student_t.stan for basketball/handball, bivariate_poisson_inflated_diagonal_corrmodel.stan for football
-  pipeline: {pipeline_type}
-  data_source: {data_source}
-  has_bets: {true/false}
-```
-
-Place it in the correct section (grouped by sport, betting/no-betting).
-
-## Step 3: Create league directory
-
-```bash
-cd /Users/brynjolfurjonsson/sports/Sports
-
-# Create directory structure
-mkdir -p {sport}/{country}
-touch {sport}/{country}/.here    # CRITICAL: here::here() needs this
-
-# If betting is enabled:
-mkdir -p {sport}/{country}/config
-mkdir -p {sport}/{country}/history
-mkdir -p {sport}/{country}/R
-```
-
-### Create `.here` marker
-
-The `.here` file must exist — without it, `here::here()` resolves to `Sports/` instead of the league directory.
-
-## Step 4: Create `config/bets.yml` (if betting)
-
-Only if `has_bets: true`. Use this template, adjusting for sport:
+Append a block following the schema enforced by `config/leagues.schema.json`.
+Mirror the structure of an active league. A minimal entry:
 
 ```yaml
-sport: "{sport}"
-country: "{country}"
-sex: [{ sex }]
-
-bankroll:
-  kelly_frac: 0.10 # Start conservative for new leagues
-  kelly_frac_male: 0.10 # Optional per-sex override (omit if you don't need it)
-  kelly_frac_female: 0.10 # Optional per-sex override (omit if you don't need it)
-  max_match_kelly: 1.0 # Stage 1 per-match ceiling (keep 1.0 unless you have a reason)
-  ev_threshold: 0.00 # Min EV edge to enter optimiser
-  min_bet_amount: 200
-  bet_digits: 0
-  currency: "kr"
-  # NOTE: do NOT add cur_pool — current pool is computed from Sports/config/bankroll.yml::initial_pool
-
-scoring:
-  has_ties: { true for handball/football, false for basketball }
-  tie_threshold: { 0.5 for handball, 0 for football, 0 for basketball }
-
-markets:
-  outcome: true
-  handicap: { true for football, false for handball }
-  totals: true
-
-predictions:
-  path: "results"
-  max_age_hours: 48
-
-odds:
-  source: "lengjan-odds"
-  lengjan_odds_path: "../../../lengjan-odds/data/{sport}_{country}"
-  booker: "Lengjan"
-
-deduplication:
-  use_gsheets: false
-
-history:
-  enabled: true
-  path: "history"
+basketball_norway:
+  sport: basketball
+  country: norway
+  sexes: [male]
+  active: true
+  data_source:
+    results: nbbf_basketball         # must match a registered ingest source
+    schedule: nbbf_basketball
+    odds: lengjan_odds
+  lengjan:
+    competitions:
+      - { id: "1234", name: "BLNO", sex: male }
+    team_names:
+      Bærum: Bærum Basket
+      # ... canonical pipeline name → Lengjan display name
+  stan_model: basketball_norway/2d_student_t_scalarsigma.stan
+  betting:
+    kelly_frac: 0.10                  # conservative for new leagues
+    ev_threshold: 0.0
+    markets:
+      moneyline: true
+      spread: true
+      total: true
+    scoring:
+      has_ties: false
+      tie_threshold: 0
+    min_bet: 200
+    max_age_hours: 48
 ```
 
-## Step 5: Create `R/run_bets.R` (if betting)
-
-```r
-box::use(../../../R/bets/run[run_betting_pipeline])
-cfg <- yaml::read_yaml(here::here("config", "bets.yml"))
-run_betting_pipeline(cfg)
-```
-
-Adjust the `../../../` path based on directory depth from `Sports/R/bets/`.
-
-## Step 6: Create team name mapping (if Lengjan odds)
-
-If using `lengjan-odds` source, create:
-`~/sports/lengjan-odds/config/team_names_{sport}_{country}.csv`
-
-```csv
-out, in
-pipeline_name, lengjan_dom_name
-```
-
-**Column convention**: `out` = pipeline/model team name, `in` = name as it appears on Lengjan's DOM. Accepted alternatives: `pipeline` / `lengjan` (newer style). No other column names are recognised — `resolve_match_ids` silently produces an empty lookup if the header is wrong.
-
-Populate by comparing Lengjan team names (`lengjan-odds/data/{sport}_{country}/odds_1x2.csv` after the first scrape) with model team names (`Sports/{sport}/{country}/data/{sex}/schedule.csv`).
-
-**Required even if no names differ today** — promotion/relegation introduces new teams mid-season, and bet placement fails silently the first time a mismatched name appears.
-
-## Step 7: Handball-specific: create symlinks
-
-For `handball_other` pipeline, create symlinks so the shared code can find data:
+Validate the entry parses cleanly:
 
 ```bash
-cd /Users/brynjolfurjonsson/sports/Sports/handball/other
-mkdir -p data results    # parents only, not per-country subdirs
-ln -sf ../../{country}/data data/{country}
-ln -sf ../../{country}/results results/{country}
-
-# If betting:
-mkdir -p odds           # parent only, NOT odds/{country}
-ln -sf ../../{country}/odds odds/{country}
+cd /Users/brynjolfurjonsson/sports && Rscript -e 'devtools::load_all(); print(names(load_leagues()))'
 ```
 
-Symlink relative paths are **two levels up**, not three. From `handball/other/odds/{country}`, the target `../../{country}/odds` resolves to `handball/{country}/odds`. Verify with `ls -l handball/other/odds/` — existing entries should look like `denmark -> ../../denmark/odds`.
+## Step 3: Add the Stan model
 
-These symlinks let `handball/other/R/` code access per-country data via `here("data", country, ...)`.
-
-## Step 8: Add to lengjan-odds (if scraping odds)
-
-If this sport/country needs odds scraped:
-
-1. Add competition to `lengjan-odds/config/competitions.yml` **with a `team_names:` key pointing at the CSV from Step 6**:
-
-   ```yaml
-   {sport}_{country}:
-     sport: <id>               # 1=Football, 2=Basketball, 6=Handball
-     country: "<code>"
-     team_names: "team_names_{sport}_{country}.csv"   # REQUIRED — both scraper and lengjan-bets read this key
-     leagues:
-       League Name:
-         competition: "<id>"
-   ```
-
-   **Critical invariant**: the `team_names:` key is what activates the CSV. A CSV on disk without this key is dead code — `lengjan-bets` cannot resolve match IDs and bet placement fails with `no_match_id`. Older CLAUDE.md copy calls this "optional" — that's true for the scraper but not for bet placement.
-
-2. Update `active_competitions.json` if using schedule-aware scraping
-
-## Step 9: Verify with dry-run
+Create the directory and place a `.stan` file at the path you set in
+`stan_model:`:
 
 ```bash
-cd /Users/brynjolfurjonsson/sports/Sports && Rscript run.R --league {sport}_{country} --dry-run
+mkdir -p Stan/basketball_norway
+# Either copy a reusable model:
+cp Stan/basketball_iceland/2d_student_t_scalarsigma.stan Stan/basketball_norway/
+# Or author a new one — see .claude/rules/stan-conventions.md
 ```
 
-This should show the league in the plan without errors.
+If reusing an existing model verbatim, a single per-league directory still
+makes sense — different leagues will diverge over time (priors, additional
+parameters), and per-key directories keep changes isolated.
 
-## Step 10: Test data step
+## Step 4: (If new federation) add the ingest scraper
+
+If `data_source.results` references a source that doesn't already exist in
+`R/ingest.R`'s dispatcher, write a new scraper following the patterns in:
+
+- `R/ingest-ksi-football.R` (paginated server-rendered HTML)
+- `R/ingest-kki-basketball.R` (XLSX from a federation site)
+- `R/ingest-hsi-handball.R` (chromote-driven JS site)
+
+Each scraper exports a function that returns a tibble matching the `results`
+schema in `R/storage-schemas.R`. Register the new source string in `R/ingest.R::ingest_league()`.
+
+Add a test under `tests/testthat/test-ingest-{federation}-{sport}.R` —
+either a real-network test (skip in CI) or an HTML/XLSX fixture-driven test.
+
+## Step 5: (If betting) populate `team_names`
+
+The `team_names` invariant is **load-bearing**: a recommendation with a team
+not keyed in `lengjan.team_names` will fail
+`validate_team_names_config()` pre-flight, before the placer opens a Chrome
+session.
+
+Direction: `{canonical_pipeline_name: lengjan_display_name}`.
+
+To populate: after a first odds scrape (`Rscript run.R --league {key} --step odds`)
+the canonical names are visible in `data/facts/odds/`; the Lengjan display
+names are in the same rows. Diff them and add any rows where they differ.
+
+> Known limitation: the schema is sex-agnostic. Teams that appear in both
+> male and female schedules under different Lengjan names (e.g. `Fram` /
+> `Fram kv`) cannot be represented in a single map. For now, leave shared
+> teams out and document in a comment — they'll error out at validate time
+> with a clear "missing team_names for: …" message. See
+> [project_team_names_schema](../../../../.claude/projects/-Users-brynjolfurjonsson-sports/memory/project_team_names_schema.md).
+
+## Step 6: Dry-run verification
 
 ```bash
-cd /Users/brynjolfurjonsson/sports/Sports && Rscript run.R --league {sport}_{country} --step data
+cd /Users/brynjolfurjonsson/sports && Rscript run.R --league {key} --step all --dry-run
 ```
 
-If data download succeeds, the league is correctly wired.
+This prints the targets that would run. Confirm the league key appears in
+each step's targets.
 
-## Checklist summary
+## Step 7: Run the data + fit pipeline
 
-- [ ] `leagues.yml` entry added
-- [ ] Directory created with `.here` marker
-- [ ] `config/bets.yml` created (if betting)
-- [ ] `R/run_bets.R` created (if betting)
-- [ ] `history/` directory created (if betting)
-- [ ] Team name mapping CSV created (if Lengjan)
-- [ ] Symlinks in `handball/other/` (if handball)
-- [ ] `lengjan-odds` competition config (if scraping)
-- [ ] Dry-run passes
-- [ ] Data step works
+Ingest first (cheap, tests the scraper):
+
+```bash
+Rscript run.R --league {key} --step data
+Rscript run.R --league {key} --step odds
+```
+
+Verify Parquet writes:
+
+```bash
+Rscript -e 'sports::rebuild_duckdb(); con <- DBI::dbConnect(duckdb::duckdb(), "sports.duckdb", read_only = TRUE); print(DBI::dbGetQuery(con, "SELECT sport, country, COUNT(*) FROM results GROUP BY 1,2"))'
+```
+
+Then a smoke-test fit:
+
+```bash
+# Detached (recommended for any fit):
+LOG=/tmp/fit-{key}.log
+nohup Rscript run.R --league {key} --step fit > "$LOG" 2>&1 & disown
+echo "PID $! — log: $LOG"
+```
+
+## Step 8: (Optional) wire up publish
+
+Football has a full 7-JSON publisher; basketball + handball are scaffolds
+(meta + next_games only). To add full publishing for a new league, mirror
+`R/publish-football-iceland.R` under a new file and register it in
+`R/publish-pipeline.R::publish_one()`.
+
+If only the scaffold is wanted (typical for new leagues until the
+metill-platform page is designed), no code change is needed — the
+dispatcher uses sport-level routing.
+
+## Checklist
+
+- [ ] `config/leagues.yml` entry parses (`load_leagues()` succeeds)
+- [ ] `Stan/{league_key}/{model}.stan` exists and matches `stan_model:` path
+- [ ] (If new federation) `R/ingest-{federation}-{sport}.R` written + registered
+- [ ] (If new federation) ingest test added
+- [ ] `lengjan.team_names` populated for any teams that appear in odds scrape
+- [ ] Dry-run lists expected targets
+- [ ] `--step data` succeeds end-to-end (results in Parquet)
+- [ ] `--step odds` succeeds (odds rows in Parquet)
+- [ ] First fit converges (no divergences, ESS > 400, R̂ < 1.01)
+- [ ] (If betting) `--step decide` produces non-zero recommendations or
+      a clear "no candidates passed EV threshold" message
+
+## Reference
+
+- Single source of truth: `config/leagues.yml` (validated against
+  `config/leagues.schema.json`)
+- Ingest dispatcher: `R/ingest.R::ingest_league()`
+- Storage schemas: `R/storage-schemas.R`
+- Stan conventions: `.claude/rules/stan-conventions.md`
+- Betting conventions: `.claude/rules/sports-betting.md`
+- Pipeline conventions: `.claude/rules/sports-pipeline.md`
+- Per-sport notes: `.claude/rules/sports-per-sport.md`
