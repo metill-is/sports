@@ -58,3 +58,39 @@ test_that("portfolio_optimise errors on invalid mode", {
   pkgs <- list(make_pkg("g1", rep(0.01, 100), 0.5))
   expect_error(portfolio_optimise(pkgs, max_daily = 0.01, mode = "bogus"))
 })
+
+test_that("portfolio_optimise falls back to proportional on solver error", {
+  # Inject a solver failure via local mock — testthat ed3 supports this for
+  # any namespaced function call.
+  testthat::local_mocked_bindings(
+    nloptr = function(...) stop("Injected solver failure"),
+    .package = "nloptr"
+  )
+
+  pkgs <- list(
+    make_pkg("g1", c(rep(0.10, 500), rep(-0.05, 500)), match_kelly_sum = 1.0),
+    make_pkg("g2", c(rep(0.05, 500), rep(-0.03, 500)), match_kelly_sum = 1.0)
+  )
+  expect_warning(
+    out <- portfolio_optimise(pkgs, max_daily = 0.05, mode = "optimal"),
+    "Falling back"
+  )
+  expect_true(out$diagnostics$fallback)
+  expect_true(out$diagnostics$budget_binding)
+  expect_equal(out$diagnostics$total_stake, 0.05)
+  # Uniform proportional lambdas
+  expect_equal(unname(out$lambdas[1]), unname(out$lambdas[2]))
+})
+
+test_that("portfolio_optimise does NOT mutate the global RNG state", {
+  set.seed(2024L)
+  pkgs <- list(
+    make_pkg("g1", rnorm(200), match_kelly_sum = 1.0),
+    make_pkg("g2", rnorm(200), match_kelly_sum = 1.0)
+  )
+  # Capture state immediately before the call so any drift inside is visible.
+  before <- .Random.seed
+  portfolio_optimise(pkgs, max_daily = 0.05, mode = "optimal", seed = 99L)
+  after <- .Random.seed
+  expect_identical(before, after)
+})

@@ -59,15 +59,19 @@ portfolio_optimise <- function(packages, max_daily,
   kelly_fracs <- vapply(packages, `[[`, numeric(1), "kelly_frac")
   S_max <- max(vapply(raw_pnls, length, integer(1)))
 
-  set.seed(seed)
-  pnl_matrix <- matrix(0, nrow = S_max, ncol = M)
-  for (m in seq_len(M)) {
-    v <- raw_pnls[[m]] * kelly_fracs[m]
-    if (length(v) < S_max) {
-      v <- v[sample.int(length(v), S_max, replace = TRUE)]
+  # Draw-pairing uses random sampling for reproducibility; isolate the global
+  # RNG state so the caller's stream isn't perturbed.
+  pnl_matrix <- withr::with_seed(seed, {
+    mat <- matrix(0, nrow = S_max, ncol = M)
+    for (m in seq_len(M)) {
+      v <- raw_pnls[[m]] * kelly_fracs[m]
+      if (length(v) < S_max) {
+        v <- v[sample.int(length(v), S_max, replace = TRUE)]
+      }
+      mat[, m] <- v[sample.int(S_max)]
     }
-    pnl_matrix[, m] <- v[sample.int(S_max)]
-  }
+    mat
+  })
 
   eval_f <- function(lambda) {
     wealth <- 1 + as.vector(pnl_matrix %*% lambda)
@@ -100,12 +104,26 @@ portfolio_optimise <- function(packages, max_daily,
       )
     ),
     error = function(e) {
-      cli::cli_alert_warning(
-        "Portfolio SLSQP failed: {conditionMessage(e)}. Falling back to proportional."
+      warning(
+        "Portfolio SLSQP failed: ", conditionMessage(e),
+        ". Falling back to proportional.",
+        call. = FALSE
       )
       NULL
     }
   )
+
+  # nloptr can return negative status without throwing (e.g. -4
+  # NLOPT_ROUNDOFF_LIMITED). Treat those as silent failures and route through
+  # the same fallback as a thrown error.
+  if (!is.null(result) && !is.null(result$status) && result$status < 0) {
+    warning(
+      "Portfolio SLSQP returned failure status ", result$status,
+      ". Falling back to proportional.",
+      call. = FALSE
+    )
+    result <- NULL
+  }
 
   if (is.null(result)) {
     scale <- max_daily / total_eff
@@ -114,7 +132,8 @@ portfolio_optimise <- function(packages, max_daily,
       diagnostics = list(
         budget_binding = TRUE,
         fallback       = TRUE,
-        scale_factor   = scale
+        scale_factor   = scale,
+        total_stake    = max_daily
       )
     ))
   }
