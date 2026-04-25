@@ -12,7 +12,7 @@ Mid-migration. End-state design: [`docs/superpowers/specs/2026-04-24-sports-pipe
 |---|---|---|
 | **1: Foundation + Storage + ETL** | Monorepo init, storage layer, ETL for odds + ledger | ✅ Complete |
 | **2: Ingest (federation scrapers) + historical backfill** | `R/ingest/` dispatcher + 3 federation scrapers (KSÍ / KKÍ / HSÍ) with `upsert_table` safe-merge semantics, historical match-data backfill | ✅ Complete — 9,914 rows in `data/facts/results/` |
-| 3: Model layer | `prepare_data()` + `fit()` + posteriors for 3 leagues (golden-output tests vs `_legacy/*/results/*/fit.rds`) | Pending |
+| **3: Model layer** | `R/model-{prepare,fit,posteriors,league}.R` + 3 Stan models under `Stan/{league_key}/`, `beliefs/{latest,archive}/` snapshot + accretive tables, golden-output sanity gate vs `_legacy/*/results/*/fit.rds` backup | ✅ Complete |
 | 4: Decide + Placer + Publish | Kelly, portfolio, bet placement, website JSON | Pending |
 | 5: Orchestration + CI + cutover | `{targets}` DAG, CI workflows (scrape + fit + publish), metill-platform pull, cutover, archive `_legacy/` remotes | Pending |
 
@@ -31,14 +31,23 @@ sports/
 │   ├── ingest.R                    # Source-registry dispatcher: ingest_league()
 │   ├── ingest-kki-basketball.R     # Baskethotel XLSX (2021-2026)
 │   ├── ingest-hsi-handball.R       # HSÍ (chromote; 2021-2025 male OD historical)
-│   └── ingest-ksi-football.R       # KSÍ (paginated server-rendered; 2021-2025 men's)
-├── Stan/                           # (Plan 3 populates)
+│   ├── ingest-ksi-football.R       # KSÍ (paginated server-rendered; 2021-2025 men's)
+│   ├── model-prepare.R             # prepare_data(league, sex) → list(stan_data, pred_d, teams)
+│   ├── model-fit.R                 # fit_model() — pure cmdstanr wrapper
+│   ├── model-posteriors.R          # extract_posteriors() → beliefs_latest tibble
+│   └── model-league.R              # fit_league() — end-to-end orchestrator
+├── Stan/
+│   ├── basketball_iceland/2d_student_t_scalarsigma.stan
+│   ├── handball_iceland/2d_student_t.stan
+│   └── football_iceland/bivariate_poisson_no_inflation.stan
 ├── data/                           # Parquet stores (git-tracked, hive-partitioned)
 │   ├── facts/
 │   │   ├── odds/                   # Lengjan odds snapshots (1,433 rows)
 │   │   ├── results/                # Match history (9,914 rows across 3 sports, up to 6 seasons)
-│   │   └── schedules/              # (Plan 3+ uses upcoming fixtures via ingest)
-│   ├── beliefs/                    # (Plan 3 populates: latest/ + archive/)
+│   │   └── schedules/              # Upcoming fixtures via ingest
+│   ├── beliefs/
+│   │   ├── latest/sport=X/country=Y/sex=Z/beliefs.parquet               # Snapshot per fit
+│   │   └── archive/sport=X/country=Y/sex=Z/fit_date=YYYY-MM-DD/…         # Accretive per fit_date
 │   └── decisions/
 │       ├── ledger/                 # Placed-bet history (1,870 rows, PnL = 89,369 ISK)
 │       ├── candidates/             # (Plan 4 populates)
@@ -47,8 +56,9 @@ sports/
 │   ├── etl/                        # One-time legacy-CSV → Parquet migrations
 │   │   ├── 03_etl_odds.R
 │   │   └── 04_etl_ledger.R
-│   └── backfill_ingest.R           # Single-command re-run of all 3 scrapers
-├── tests/testthat/                 # 169 passing assertions across config, storage*, duckdb-views, etl-validation, ingest-*
+│   ├── backfill_ingest.R           # Single-command re-run of all 3 scrapers
+│   └── fit_all.R                   # Fit all active (league × sex) combos → beliefs/
+├── tests/testthat/                 # 230+ passing assertions across config, storage*, duckdb-views, etl-validation, ingest-*, model-*
 ├── sports.duckdb                   # Gitignored; rebuildable via rebuild_duckdb()
 ├── docs/superpowers/               # Specs + plans
 └── _legacy/                        # Subtree-merged histories of the 4 predecessor repos
@@ -105,6 +115,18 @@ Internal schemas use English throughout. Canonical column names: `home_team` / `
 ### Stan models
 
 `.claude/rules/stan-conventions.md` — `cmdstanr`, non-centred parameterisations, `generated quantities` for posterior-predictive checks.
+
+### Model layer
+
+- `fit_league(league_key, sex)` is the only public entry point. Loads config, calls `prepare_data()` → `fit_model()` → `extract_posteriors()`, writes `beliefs/latest/` (overwrite) and `beliefs/archive/` (accretive per `fit_date`).
+- `prepare_data()` is pure — reads Parquet facts, returns `list(stan_data, pred_d, teams)`. No file I/O beyond `read_table()`.
+- `fit_model()` is a pure cmdstanr wrapper — takes stan_data + stan_path, returns the fit. Callers save to disk.
+- `extract_posteriors()` materialises posterior draws as the canonical `beliefs_latest` tibble (per-draw-per-match).
+- Stan models live in `Stan/{league_key}/{file}.stan`. `leagues.yml`'s `stan_model` field uses this relative path.
+- Backfill with `Rscript scripts/fit_all.R`. Run detached (wall-clock several hours with 1000 MCMC iters):
+  ```
+  nohup Rscript scripts/fit_all.R > /tmp/fit_all.log 2>&1 & disown
+  ```
 
 ### Betting conventions
 
