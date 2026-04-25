@@ -22,6 +22,28 @@ test_that("append_to_ledger writes a new bet to Parquet", {
   expect_equal(back$bet_amount, 1180)
 })
 
+test_that("append_to_ledger writes Parquet only by default (no CSV)", {
+  tmp <- withr::local_tempdir()
+  bet <- mk_ledger_row()
+
+  # Default call: no dual_write_csv argument. Plan 6 cutover flipped the
+  # default from TRUE -> FALSE, so this must NOT touch the legacy CSV path.
+  append_to_ledger(bet, root = tmp)
+
+  expect_true(dir.exists(file.path(tmp, "decisions", "ledger")))
+  back <- read_table("ledger", root = tmp)
+  expect_equal(nrow(back), 1L)
+
+  legacy_csv_path <- normalizePath(
+    file.path(
+      tmp, "..", "_legacy", "sports",
+      bet$sport, bet$country, "history", "bets_log.csv"
+    ),
+    mustWork = FALSE
+  )
+  expect_false(file.exists(legacy_csv_path))
+})
+
 test_that("append_to_ledger preserves existing rows on append", {
   tmp <- withr::local_tempdir()
   append_to_ledger(mk_ledger_row(home = "KR"), root = tmp, dual_write_csv = FALSE)

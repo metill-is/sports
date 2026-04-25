@@ -12,13 +12,15 @@ NULL
 #'
 #' @param bet_row Single-row tibble matching `schemas()$ledger`.
 #' @param root Data root for the Parquet ledger.
-#' @param dual_write_csv Default `TRUE` during Plan 5 cutover. Plan 6 drops.
+#' @param dual_write_csv Default `FALSE` (Plan 6 cutover from Plan 5's
+#'   dual-write). Set `TRUE` only for opt-in regression-testing -- Parquet
+#'   is the canonical store from Plan 6 onward.
 #' @param legacy_root Root path for legacy CSV writes (default
 #'   `<root>/../_legacy/sports`).
 #' @return invisible(NULL)
 #' @export
 append_to_ledger <- function(bet_row, root,
-                             dual_write_csv = TRUE,
+                             dual_write_csv = FALSE,
                              legacy_root = normalizePath(
                                file.path(root, "..", "_legacy", "sports"),
                                mustWork = FALSE
@@ -70,7 +72,7 @@ append_to_ledger <- function(bet_row, root,
     csv_path <- file.path(csv_dir, "bets_log.csv")
 
     # No dedup on CSV — a retry would produce a duplicate row. Parquet is the
-    # canonical store; CSV is dropped in Plan 6 once agreement is confirmed.
+    # canonical store; CSV dual-write is opt-in post Plan 6 cutover.
     if (file.exists(csv_path)) {
       existing_csv <- readr::read_csv(csv_path, show_col_types = FALSE)
       combined_csv <- dplyr::bind_rows(existing_csv, bet_row)

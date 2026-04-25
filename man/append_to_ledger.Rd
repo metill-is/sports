@@ -7,7 +7,7 @@
 append_to_ledger(
   bet_row,
   root,
-  dual_write_csv = TRUE,
+  dual_write_csv = FALSE,
   legacy_root = normalizePath(file.path(root, "..", "_legacy", "sports"), mustWork =
     FALSE)
 )
@@ -17,7 +17,9 @@ append_to_ledger(
 
 \item{root}{Data root for the Parquet ledger.}
 
-\item{dual_write_csv}{Default `TRUE` during Plan 5 cutover. Plan 6 drops.}
+\item{dual_write_csv}{Default `FALSE` (Plan 6 cutover from Plan 5's
+dual-write). Set `TRUE` only for opt-in regression-testing -- Parquet
+is the canonical store from Plan 6 onward.}
 
 \item{legacy_root}{Root path for legacy CSV writes (default
 `<root>/../_legacy/sports`).}
