@@ -14,6 +14,11 @@ NULL
   market_section  = "section.zh0raz0"
 )
 
+# Rate-limit constants for the chromote-driven detail-page loop. Mirrors the
+# legacy `rate_limit_config$page_delay_*` values from
+# _legacy/lengjan-odds/R/scrape.R.
+.LENGJAN_DETAIL_DELAY_S <- c(min = 2, max = 5)
+
 #' Parse a Lengjan competition page (1x2 odds + match links).
 #'
 #' Long-form output: one row per outcome (home/draw/away). `line` is NA for
@@ -266,7 +271,15 @@ ingest_lengjan_odds <- function(leagues, scraped_at = Sys.time(),
           away_team = comp_rows$away_team[1L + (i - 1L) * 3L],
           match_date = comp_rows$match_date[1L + (i - 1L) * 3L]
         )
-        match_url <- sprintf("https://games.lotto.is%s", match_links[[i]])
+        # Append marketTab=allMarkets so the detail page renders handicap +
+        # totals tables immediately. Without it the legacy code clicked a
+        # "show more" button (selectors$more_markets); the rendered-page query
+        # arg avoids that interaction. See _legacy/lengjan-odds/R/scrape.R.
+        match_url <- sprintf(
+          "https://games.lotto.is%s%smarketTab=allMarkets",
+          match_links[[i]],
+          if (grepl("\\?", match_links[[i]])) "&" else "?"
+        )
         detail_html <- tryCatch(
           .lengjan_fetch(chromote_session, match_url),
           error = function(e) {
@@ -280,7 +293,9 @@ ingest_lengjan_odds <- function(leagues, scraped_at = Sys.time(),
             parse_match_detail(detail_html, match_meta)
           )
         }
-        Sys.sleep(stats::runif(1, 2, 5))
+        Sys.sleep(stats::runif(
+          1, .LENGJAN_DETAIL_DELAY_S[["min"]], .LENGJAN_DETAIL_DELAY_S[["max"]]
+        ))
       }
 
       rows[[key]] <- dplyr::bind_rows(rows[[key]], comp_rows)
