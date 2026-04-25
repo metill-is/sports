@@ -10,6 +10,7 @@ Encoding: UTF-8
 Depends: R (>= 4.0)
 Imports:
     arrow,
+    chromote,
     cli,
     DBI,
     dplyr,
@@ -57,6 +58,7 @@ Collate:
     'model-league.R'
     'placer-ledger.R'
     'placer-load.R'
+    'placer-login.R'
     'placer-validate.R'
     'publish-basketball-iceland.R'
     'publish-football-iceland.R'
