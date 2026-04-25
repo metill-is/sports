@@ -24,6 +24,11 @@ seed <- get_flag("seed", 42L, as.integer)
 leagues <- load_leagues()
 active <- leagues[vapply(leagues, function(l) isTRUE(l$active), logical(1))]
 
+# Lock fit_date to the start of the run. Without this, an overnight
+# backfill straddles midnight and writes some buckets to fit_date=D and
+# others to fit_date=D+1, splitting one logical run across two archive
+# partitions.
+run_date <- Sys.Date()
 t0 <- Sys.time()
 for (key in names(active)) {
   league <- active[[key]]
@@ -33,6 +38,7 @@ for (key in names(active)) {
       {
         beliefs <- fit_league(
           league = league, sex = sex,
+          fit_date = run_date,
           iter_warmup = iter, iter_sampling = iter, seed = seed
         )
         cli::cli_alert_success("wrote {nrow(beliefs)} beliefs rows")
