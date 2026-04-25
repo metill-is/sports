@@ -91,12 +91,29 @@ football_iceland:
     odds: lengjan_odds
   lengjan:
     competitions:
-      - { id: "746",   name: "Besta Deildin",            sex: male }
-      - { id: "20443", name: "Besta Deildin Efri Hluti", sex: male }
-      - { id: "20442", name: "Besta Deildin Neðri Hluti", sex: male }
+      - { id: "746",   name: "Besta Deildin",            sex: male   }
+      - { id: "20443", name: "Besta Deildin Efri Hluti", sex: male   }
+      - { id: "20442", name: "Besta Deildin Neðri Hluti", sex: male   }
+      - { id: "757",   name: "Lengjudeildin",            sex: male   }
+      - { id: "1568",  name: "Besta deild kvenna",       sex: female }
+    # Note: team_names is currently shared across sexes within a league.
+    # Teams that appear in both male and female schedules (e.g. Fram, FH,
+    # ÍBV, Valur, Stjarnan, Víkingur R., Breiðablik) cannot be mapped here
+    # because Lengjan suffixes the women's display ("Fram kv", etc.) while
+    # the men's display omits the suffix — a single key cannot represent
+    # both. Mappings below are for teams that appear in the men's LD1 only,
+    # i.e. men-only across the 2026 women's schedule.
     team_names:
       Þór: Þór Ak.
       Víkingur R.: Víkingur Rvk
+      Þróttur R.: Þróttur Rvk
+      Leiknir R.: Leiknir Rvk
+      Ægir: Ægir
+      ÍR: ÍR
+      Grótta: Grótta
+      Grindavík: Grindavík
+      Njarðvík: Njarðvík
+      Völsungur: Völsungur
   stan_model: football_iceland/bivariate_poisson_no_inflation.stan
   betting:
     kelly_frac:
