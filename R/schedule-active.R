@@ -22,33 +22,37 @@ generate_active_competitions <- function(leagues, lookahead_days = 7L,
   stopifnot(is.list(leagues), length(leagues) > 0L)
 
   schedule_root <- file.path(root, "facts", "schedules")
+  # Helper: cold-start fall-back. Used both when the schedules dir is missing
+  # AND when the Parquet read errors. Silent-disable-all-scrapes on read error
+  # would be the opposite of the cold-start fail-safe philosophy.
+  default_all_active <- function(reason) {
+    cli::cli_alert_warning("{reason} - defaulting all leagues to active")
+    out <- as.list(rep(TRUE, length(leagues)))
+    names(out) <- names(leagues)
+    out
+  }
+
   if (!dir.exists(schedule_root)) {
-    cli::cli_alert_warning(
-      "No schedules at {schedule_root} - defaulting all leagues to active"
-    )
-    active <- as.list(rep(TRUE, length(leagues)))
-    names(active) <- names(leagues)
+    active <- default_all_active(sprintf("No schedules at %s", schedule_root))
   } else {
     today <- Sys.Date()
     horizon <- today + as.integer(lookahead_days)
     schedules <- tryCatch(
       read_table("schedules", root = root),
-      error = function(e) {
-        cli::cli_alert_warning("Read schedules failed: {conditionMessage(e)}")
-        tibble::tibble(
-          sport = character(0), country = character(0),
-          match_date = as.Date(character(0))
-        )
-      }
+      error = function(e) NULL
     )
-    active <- vapply(leagues, function(l) {
-      hits <- schedules$sport == l$sport &
-        schedules$country == l$country &
-        schedules$match_date >= today &
-        schedules$match_date <= horizon
-      isTRUE(any(hits))
-    }, logical(1))
-    active <- as.list(active)
+    if (is.null(schedules)) {
+      active <- default_all_active("Failed to read data/facts/schedules/")
+    } else {
+      active <- vapply(leagues, function(l) {
+        hits <- schedules$sport == l$sport &
+          schedules$country == l$country &
+          schedules$match_date >= today &
+          schedules$match_date <= horizon
+        isTRUE(any(hits))
+      }, logical(1))
+      active <- as.list(active)
+    }
   }
 
   payload <- list(
@@ -56,6 +60,9 @@ generate_active_competitions <- function(leagues, lookahead_days = 7L,
     lookahead_days = as.integer(lookahead_days),
     active = active
   )
+  # Auto-create the parent dir so callers don't have to. jsonlite::write_json
+  # otherwise fails with "cannot open the connection".
+  dir.create(dirname(out_path), recursive = TRUE, showWarnings = FALSE)
   jsonlite::write_json(payload, out_path, pretty = TRUE, auto_unbox = TRUE)
   cli::cli_alert_success(
     "Wrote {out_path} ({sum(unlist(active))}/{length(active)} active)"
