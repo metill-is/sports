@@ -329,7 +329,11 @@ ingest_lengjan_odds <- function(leagues, scraped_at = Sys.time(),
 
 .lengjan_country_code <- function(country) {
   # Canonical (lowercase) -> Lengjan country query parameter.
-  # Mirrors `_legacy/lengjan-odds/config/competitions.yml`'s `country:` field.
+  # Currently only `iceland` is wired through `config/leagues.yml::active=true`;
+  # the other codes are kept as a forward-compatible lookup for when
+  # non-Icelandic leagues are reactivated in later plans. Removing them would
+  # force re-derivation from `_legacy/lengjan-odds/config/competitions.yml`,
+  # so keeping them here is intentional and not dead code.
   codes <- c(
     iceland = "IS", england = "ENG", italy = "IT", spain = "ES",
     denmark = "DK", germany = "DE", sweden = "SE", norway = "NO",

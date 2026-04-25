@@ -85,6 +85,100 @@ is_positive_ev <- function(p, odds) {
   p * (odds - 1) - (1 - p) > 0
 }
 
+# ── DOM odds parser (Plan 5 Task 6 seam) ─────────────────────────────────────
+
+#' Parse the actual odds from a Lengjan odds-button HTML fragment.
+#'
+#' Pure parser — no browser, no Chromote. Mirrors the regex chain embedded in
+#' the JavaScript inside \code{click_market_button} / \code{click_table_button}
+#' so that a Lengjan UI deploy that changes the odds-element structure
+#' surfaces as a unit-test failure here, rather than silently producing wrong
+#' odds at placement time. Used by both click helpers to verify the JS-reported
+#' odds value against an independent R-side parse.
+#'
+#' Resolution order:
+#' \enumerate{
+#'   \item \code{aria-label} containing "stuðull: D.D" (market buttons,
+#'     primary path).
+#'   \item Plain text content matching \code{^[1X2]?(\\d+\\.\\d+)$} (market
+#'     buttons, fallback for label-prefixed numeric text like "11.69").
+#'   \item First decimal anywhere in plain text content (table buttons).
+#' }
+#'
+#' @param html Character. The \code{outerHTML} of a single odds button element.
+#' @return Numeric odds (e.g. 2.28), or \code{NA_real_} if no parse path matched.
+#' @export
+parse_actual_odds_from_dom <- function(html) {
+  if (is.null(html) || length(html) == 0L) {
+    return(NA_real_)
+  }
+  if (is.na(html) || !is.character(html) || !nzchar(html)) {
+    return(NA_real_)
+  }
+
+  aria <- regmatches(
+    html, regexec('aria-label="([^"]*)"', html)
+  )[[1L]]
+  if (length(aria) >= 2L) {
+    m <- regmatches(
+      aria[2L], regexec("stu\u00f0ull:\\s*(\\d+\\.\\d+)", aria[2L])
+    )[[1L]]
+    if (length(m) >= 2L) {
+      return(as.numeric(m[2L]))
+    }
+  }
+
+  text <- trimws(gsub("<[^>]+>", "", html))
+  if (!nzchar(text)) {
+    return(NA_real_)
+  }
+
+  cleaned <- sub("^[1X2]", "", text)
+  m <- regmatches(cleaned, regexec("^(\\d+\\.\\d+)$", cleaned))[[1L]]
+  if (length(m) >= 2L) {
+    return(as.numeric(m[2L]))
+  }
+
+  m <- regmatches(text, regexec("(\\d+\\.\\d+)", text))[[1L]]
+  if (length(m) >= 2L) {
+    return(as.numeric(m[2L]))
+  }
+
+  NA_real_
+}
+
+#' Cross-check JS-reported odds against the R-side parser.
+#'
+#' Stops with a clear diagnostic if the parser disagrees with the JS or
+#' fails to parse the chosen button HTML. Tolerant of older JS payloads that
+#' don't carry the \code{html} field (warns but does not stop).
+#'
+#' @keywords internal
+#' @noRd
+verify_odds_match <- function(parsed, actual_odds) {
+  html <- parsed$html
+  if (is.null(html) || length(html) == 0L || !nzchar(html)) {
+    cli::cli_alert_warning(
+      "Click button JS did not return outerHTML; skipping R-side verification."
+    )
+    return(invisible(actual_odds))
+  }
+  verified <- parse_actual_odds_from_dom(html)
+  if (is.na(verified)) {
+    stop(sprintf(
+      "parse_actual_odds_from_dom: could not parse odds from chosen button.\n  HTML head: %s",
+      substr(html, 1L, 200L)
+    ), call. = FALSE)
+  }
+  if (abs(verified - actual_odds) > 1e-9) {
+    stop(sprintf(
+      "Odds parser disagreement: JS reported %.4f, R parser found %.4f.\n  HTML head: %s",
+      actual_odds, verified, substr(html, 1L, 200L)
+    ), call. = FALSE)
+  }
+  invisible(actual_odds)
+}
+
 # ── Main entry point ──────────────────────────────────────────────────────────
 
 #' Place a single bet on Lengjan
@@ -419,7 +513,8 @@ click_market_button <- function(session, section_label, btn_index) {
       return JSON.stringify({
         odds: target.odds,
         x: rect.x + rect.width / 2,
-        y: rect.y + rect.height / 2
+        y: rect.y + rect.height / 2,
+        html: target.element.outerHTML
       });
     })()
   ", section_label, section_label, btn_index, btn_index)
@@ -432,6 +527,7 @@ click_market_button <- function(session, section_label, btn_index) {
   }
 
   actual_odds <- parsed$odds
+  verify_odds_match(parsed, actual_odds)
 
   # Use CDP trusted click at the button coordinates
   cdp_click(session, parsed$x, parsed$y)
@@ -522,7 +618,8 @@ click_table_button <- function(session, section_label, line_label, btn_index) {
       return JSON.stringify({
         odds: target.odds,
         x: rect.x + rect.width / 2,
-        y: rect.y + rect.height / 2
+        y: rect.y + rect.height / 2,
+        html: target.element.outerHTML
       });
     })()
   ", section_label, section_label, section_label, line_label, line_label,
@@ -537,6 +634,7 @@ click_table_button <- function(session, section_label, line_label, btn_index) {
   }
 
   actual_odds <- parsed$odds
+  verify_odds_match(parsed, actual_odds)
 
   # Use CDP trusted click
   cdp_click(session, parsed$x, parsed$y)

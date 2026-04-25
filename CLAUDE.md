@@ -116,7 +116,7 @@ sports/
 
 **P1–P4 placement rules** (only-writer, actual-odds, kelly-recompute, EV reject) are preserved verbatim from `_legacy/lengjan-bets/`. See `.claude/rules/sports-betting.md` for the full statement.
 
-**Known gap (deferred):** The DOM regex that parses live odds out of Lengjan's odds buttons lives inline in `R/placer-place.R::click_market_button` / `click_table_button`. A pure `parse_actual_odds_from_dom()` seam was specified in Plan 5 Task 6 but not extracted in the port — a Lengjan UI deploy that changes the odds-element structure would silently produce wrong odds rather than a unit-test failure. ~15-line refactor when next touching `placer-place.R`.
+**DOM odds parser:** A pure `parse_actual_odds_from_dom(html)` (exported from `R/placer-place.R`) mirrors the JS regex chain inline in `click_market_button` / `click_table_button`. Both click helpers re-parse the chosen button's `outerHTML` and verify the JS-reported odds against the R-side parse — a Lengjan UI deploy that changes the odds-element structure now surfaces as either a `parse_actual_odds_from_dom: could not parse` error or an `Odds parser disagreement` error, rather than silent wrong odds. The parser is fixture-tested in `tests/testthat/test-placer-place.R`.
 
 ## Quick reference
 

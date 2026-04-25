@@ -43,3 +43,54 @@ test_that("handicap_to_lengjan_line: negative handicap gives '0-<abs(h)>' format
 test_that("handicap_to_lengjan_line: zero handicap gives '0-0'", {
   expect_equal(handicap_to_lengjan_line(0), "0-0")
 })
+
+# ── parse_actual_odds_from_dom (Plan 5 Task 6 seam) ───────────────────────────
+
+test_that("parse_actual_odds_from_dom: aria-label with stuðull (market button primary path)", {
+  html <- '<button aria-label="1, stuðull: 2.28">2.28</button>'
+  expect_equal(parse_actual_odds_from_dom(html), 2.28)
+})
+
+test_that("parse_actual_odds_from_dom: aria-label takes precedence over text content", {
+  html <- '<button aria-label="2, stuðull: 1.50">99.99</button>'
+  expect_equal(parse_actual_odds_from_dom(html), 1.50)
+})
+
+test_that("parse_actual_odds_from_dom: aria-label with home-team variant", {
+  html <- '<button aria-label="Heimavinning, stuðull: 1.85">1.85</button>'
+  expect_equal(parse_actual_odds_from_dom(html), 1.85)
+})
+
+test_that("parse_actual_odds_from_dom: text content with [1X2] prefix (market button fallback)", {
+  expect_equal(parse_actual_odds_from_dom("<button>11.69</button>"), 1.69)
+  expect_equal(parse_actual_odds_from_dom("<button>X7.80</button>"), 7.80)
+  expect_equal(parse_actual_odds_from_dom("<button>22.39</button>"), 2.39)
+})
+
+test_that("parse_actual_odds_from_dom: bare numeric text content (table button)", {
+  expect_equal(parse_actual_odds_from_dom("<button>1.65</button>"), 1.65)
+  expect_equal(parse_actual_odds_from_dom("<button><p>1.87</p></button>"), 1.87)
+})
+
+test_that("parse_actual_odds_from_dom: returns NA on no parseable odds", {
+  expect_true(is.na(parse_actual_odds_from_dom("<button>no odds here</button>")))
+  expect_true(is.na(parse_actual_odds_from_dom("<button></button>")))
+  expect_true(is.na(parse_actual_odds_from_dom("")))
+})
+
+test_that("parse_actual_odds_from_dom: defensive against NA/NULL/non-character input", {
+  expect_true(is.na(parse_actual_odds_from_dom(NA_character_)))
+  expect_true(is.na(parse_actual_odds_from_dom(NULL)))
+  expect_true(is.na(parse_actual_odds_from_dom(character(0))))
+})
+
+test_that("parse_actual_odds_from_dom: nested elements parse to correct first decimal", {
+  # Real-world Lengjan structure: <button> wraps <p class="..."> with the odds
+  html <- '<button><div><p class="h7cub5">2.05</p></div></button>'
+  expect_equal(parse_actual_odds_from_dom(html), 2.05)
+})
+
+test_that("parse_actual_odds_from_dom: aria-label without stuðull falls through to text", {
+  html <- '<button aria-label="some other label">1.95</button>'
+  expect_equal(parse_actual_odds_from_dom(html), 1.95)
+})

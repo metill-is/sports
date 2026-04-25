@@ -61,10 +61,22 @@ validate_team_names_config <- function(leagues, recs) {
     missing_teams <- setdiff(teams, names(tn))
 
     if (length(missing_teams) > 0L) {
+      sexes_in_rows <- if ("sex" %in% names(rows)) unique(rows$sex) else character(0)
+      hint <- if ("female" %in% sexes_in_rows) {
+        paste0(
+          "\n  Note: women's-league team names (e.g. 'Fram kv') are not ",
+          "representable in the current sex-agnostic team_names schema. ",
+          "See ~/.claude/projects/-Users-brynjolfurjonsson-sports/memory/",
+          "project_team_names_schema.md."
+        )
+      } else {
+        ""
+      }
       stop(
         "validate_team_names_config: ", key,
         " is missing team_names for: ",
         paste(missing_teams, collapse = ", "),
+        hint,
         call. = FALSE
       )
     }
