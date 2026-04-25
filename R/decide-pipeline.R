@@ -4,8 +4,16 @@ NULL
 #' Decide pipeline: beliefs + odds + bankroll -> candidates + recommendations.
 #'
 #' Chains prepare_odds + kelly_joint + portfolio_optimise + compute_calibration,
-#' then writes `candidates` (every-stage audit log) and `recommendations`
+#' then writes `candidates` (terminal-state audit log) and `recommendations`
 #' (post-filter survivors) Parquet via write_table().
+#'
+#' The `stage` column on candidates is the bet's terminal classification:
+#'   - `kept`: passed all filters; appears in recommendations
+#'   - `dropped_low_ev`: kelly_joint zeroed it (ev below ev_threshold)
+#'   - `dropped_min_bet`: bet_amount fell below `betting$min_bet`
+#'   - `dropped_market_off`: market disabled in `betting$markets` toggles
+#' The pipeline does not emit per-step intermediate stages — the final stage
+#' captures the decisive filter.
 #'
 #' @param league_key Key into load_leagues(). Mutually exclusive with `league`.
 #' @param league Pre-loaded league list. Mutually exclusive with `league_key`.
@@ -312,7 +320,3 @@ annotate_market_off <- function(odds, league, sex, run_id) {
     stage = "dropped_market_off"
   )
 }
-
-#' @keywords internal
-#' @noRd
-`%||%` <- function(x, y) if (is.null(x)) y else x

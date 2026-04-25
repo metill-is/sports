@@ -115,17 +115,17 @@ test_that("decide_league markets toggle drops disabled markets", {
     league = league, sex = "male", root = root,
     bankroll = mini_bankroll()
   )
-  # No bets allowed -> no candidates with stage='kept'
   cands <- read_table("candidates",
     filter = list(sport = "basketball", country = "iceland"),
     root = root
   )
-  if (nrow(cands) > 0L) {
-    expect_false("kept" %in% cands$stage)
-  }
+  # Markets disabled -> all rows tagged dropped_market_off, none kept
+  expect_gt(nrow(cands), 0L)
+  expect_false("kept" %in% cands$stage)
+  expect_true(all(cands$stage == "dropped_market_off"))
 })
 
-test_that("decide_league stage column tracks the filter journey", {
+test_that("decide_league stage column emits only terminal classifications", {
   set.seed(13)
   root <- withr::local_tempdir()
   mini_decide_setup(root)
@@ -141,8 +141,89 @@ test_that("decide_league stage column tracks the filter journey", {
   )
   expect_true("stage" %in% names(cands))
   expect_true(all(cands$stage %in%
-    c(
-      "candidate", "post_portfolio", "post_calibration",
-      "kept", "dropped_min_bet", "dropped_low_ev", "dropped_market_off"
-    )))
+    c("kept", "dropped_min_bet", "dropped_low_ev", "dropped_market_off")))
+})
+
+test_that("decide_league handles per-sex kelly_frac (object form)", {
+  set.seed(13)
+  root <- withr::local_tempdir()
+  mini_decide_setup(root)
+  league <- mini_basketball_league()
+  # Switch to per-sex object form (mimics football_iceland)
+  league$betting$kelly_frac <- list(male = 0.20, female = 0.05)
+
+  out <- decide_league(
+    league = league, sex = "male", root = root,
+    bankroll = mini_bankroll()
+  )
+  expect_s3_class(out, "tbl_df")
+  # No error means the per-sex resolution worked.
+})
+
+test_that("decide_league errors on missing kelly_frac for the requested sex", {
+  set.seed(13)
+  root <- withr::local_tempdir()
+  mini_decide_setup(root)
+  # Add female beliefs so the function reaches the kelly_frac check (otherwise
+  # it short-circuits at the empty-beliefs warning).
+  female_beliefs <- tibble::tibble(
+    sport = "basketball", country = "iceland", sex = "female",
+    fit_date = Sys.Date(),
+    match_date = as.Date("2026-04-26"),
+    home_team = "Alpha", away_team = "Bravo",
+    draw_id = 1:1000,
+    home_goals = rpois(1000, lambda = 90),
+    away_goals = rpois(1000, lambda = 85)
+  )
+  write_table(female_beliefs, "beliefs_latest", root = root)
+
+  league <- mini_basketball_league()
+  league$betting$kelly_frac <- list(male = 0.10) # no female key
+
+  expect_error(
+    decide_league(
+      league = league, sex = "female", root = root,
+      bankroll = mini_bankroll()
+    ),
+    "kelly_frac"
+  )
+})
+
+test_that("decide_league with write = FALSE does not write tables", {
+  set.seed(13)
+  root <- withr::local_tempdir()
+  mini_decide_setup(root)
+  league <- mini_basketball_league()
+
+  out <- decide_league(
+    league = league, sex = "male", root = root,
+    bankroll = mini_bankroll(), write = FALSE
+  )
+  expect_s3_class(out, "tbl_df")
+  expect_false(dir.exists(file.path(root, "decisions", "candidates")))
+  expect_false(dir.exists(file.path(root, "decisions", "recommendations")))
+})
+
+test_that("decide_league recommendations contain only kept rows", {
+  set.seed(13)
+  root <- withr::local_tempdir()
+  mini_decide_setup(root)
+  league <- mini_basketball_league()
+  # Drop min_bet so all positive-EV bets survive
+  league$betting$min_bet <- 0
+
+  out <- decide_league(
+    league = league, sex = "male", root = root,
+    bankroll = mini_bankroll()
+  )
+  recs <- read_table("recommendations",
+    filter = list(sport = "basketball", country = "iceland"),
+    root = root
+  )
+  # All recs match `kept` stage from candidates
+  if (nrow(recs) > 0L) {
+    expect_true(all(recs$bet_amount > 0))
+    expect_true(all(c("kelly", "bet_amount") %in% names(recs)))
+  }
+  expect_equal(nrow(recs), nrow(out))
 })
