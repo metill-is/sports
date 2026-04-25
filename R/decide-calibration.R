@@ -9,15 +9,21 @@ NULL
 #'
 #' multiplier = (prior_weight * prior_ratio + sum(win)) / (prior_weight + sum(p))
 #'
-#' Returns `prior_ratio` when no settled history exists.
+#' Returns `prior_ratio` when no settled history exists at any of three points:
+#' the ledger directory is absent, no rows are present for the (sport, country)
+#' partition, or no rows survive the (sex, settled, non-NA) filter.
 #'
 #' @param league List with `sport` + `country`.
 #' @param sex "male" or "female".
 #' @param root Data root. Default `here::here("data")`.
-#' @param prior_weight Pseudo-count strength. Higher = slower adaptation.
-#'   Default 30.
+#' @param prior_weight Pseudo-count strength — equivalent expected wins of
+#'   prior data. Higher = slower adaptation. Default 30 (vs legacy 10) was
+#'   chosen to resist single-season noise: with ~300 settled bets per
+#'   (league, sex), prior_weight = 30 keeps the multiplier near-1.0 unless
+#'   the sample is large or strongly biased; prior_weight = 10 would track
+#'   short runs of luck more aggressively.
 #' @param prior_ratio Prior calibration ratio. 1.0 = model is well-calibrated.
-#'   Default 1.0.
+#'   Default 1.0. Also the value returned in all empty-history paths.
 #' @param floor Lower clamp on multiplier. Default 0.5.
 #' @param ceiling Upper clamp. Default 1.5.
 #' @return Numeric scalar in `[floor, ceiling]`, rounded to 3 decimals.
@@ -34,19 +40,28 @@ compute_calibration <- function(league, sex,
     return(prior_ratio)
   }
 
+  # Distinguish "no data yet" (silent fall-through) from "data exists but
+  # unreadable" (signal to the caller via message). read_table itself returns
+  # an empty tibble for missing-partition cases, so any error here is genuine.
   led <- tryCatch(
     read_table("ledger",
       root = root,
       filter = list(sport = league$sport, country = league$country)
     ),
-    error = function(e) tibble::tibble()
+    error = function(e) {
+      message(
+        "compute_calibration: ledger read failed (", conditionMessage(e),
+        "). Returning prior_ratio."
+      )
+      tibble::tibble()
+    }
   )
 
   if (nrow(led) == 0L) {
     return(prior_ratio)
   }
 
-  # Filter to settled bets matching sex with non-NA win + p
+  # Filter to settled bets matching sex with non-NA win + p.
   led <- led[!is.na(led$sex) & led$sex == sex, , drop = FALSE]
   led <- led[!is.na(led$settled) & led$settled, , drop = FALSE]
   led <- led[!is.na(led$win) & !is.na(led$p), , drop = FALSE]
@@ -55,8 +70,10 @@ compute_calibration <- function(league, sex,
     return(prior_ratio)
   }
 
-  actual_wins <- sum(as.numeric(led$win), na.rm = TRUE)
-  expected_wins <- sum(led$p, na.rm = TRUE)
+  # sum() on a logical vector counts TRUEs; the prior !is.na guard already
+  # cleared NAs so the explicit na.rm is redundant but harmless.
+  actual_wins <- sum(led$win)
+  expected_wins <- sum(led$p)
 
   multiplier <- (prior_weight * prior_ratio + actual_wins) /
     (prior_weight + expected_wins)

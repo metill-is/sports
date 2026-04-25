@@ -21,11 +21,15 @@ compute_calibration(
 
 \item{root}{Data root. Default `here::here("data")`.}
 
-\item{prior_weight}{Pseudo-count strength. Higher = slower adaptation.
-Default 30.}
+\item{prior_weight}{Pseudo-count strength — equivalent expected wins of
+prior data. Higher = slower adaptation. Default 30 (vs legacy 10) was
+chosen to resist single-season noise: with ~300 settled bets per
+(league, sex), prior_weight = 30 keeps the multiplier near-1.0 unless
+the sample is large or strongly biased; prior_weight = 10 would track
+short runs of luck more aggressively.}
 
 \item{prior_ratio}{Prior calibration ratio. 1.0 = model is well-calibrated.
-Default 1.0.}
+Default 1.0. Also the value returned in all empty-history paths.}
 
 \item{floor}{Lower clamp on multiplier. Default 0.5.}
 
@@ -42,5 +46,7 @@ Beta-Binomial smoothing starts updating from bet 1.
 \details{
 multiplier = (prior_weight * prior_ratio + sum(win)) / (prior_weight + sum(p))
 
-Returns `prior_ratio` when no settled history exists.
+Returns `prior_ratio` when no settled history exists at any of three points:
+the ledger directory is absent, no rows are present for the (sport, country)
+partition, or no rows survive the (sex, settled, non-NA) filter.
 }
