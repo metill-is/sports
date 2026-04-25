@@ -38,14 +38,15 @@ Config/testthat/edition: 3
 RoxygenNote: 7.3.3
 Collate:
     'config.R'
+    'storage-schemas.R'
+    'storage.R'
+    'decide-odds.R'
     'duckdb-views.R'
     'ingest.R'
     'ingest-hsi-handball.R'
     'ingest-kki-basketball.R'
     'ingest-ksi-football.R'
     'model-fit.R'
-    'storage-schemas.R'
-    'storage.R'
     'model-posteriors.R'
     'model-prepare.R'
     'model-league.R'
