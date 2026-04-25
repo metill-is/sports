@@ -878,7 +878,7 @@ tar_source("R/")
 leagues_definition <- load_leagues()
 active_keys <- names(filter_leagues(leagues_definition, active_only = TRUE))
 lengjan_keys <- names(filter_leagues(
-  leagues_definition, active = TRUE, has_lengjan = TRUE
+  leagues_definition, active_only = TRUE, has_lengjan = TRUE
 ))
 
 # Static targets (config, active filter)
