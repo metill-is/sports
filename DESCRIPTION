@@ -55,3 +55,4 @@ Collate:
     'model-posteriors.R'
     'model-prepare.R'
     'model-league.R'
+    'publish-football-iceland.R'
