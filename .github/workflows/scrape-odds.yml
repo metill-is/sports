@@ -1,0 +1,64 @@
+name: Scrape Lengjan Odds
+
+on:
+  schedule:
+    - cron: '0 8,14,20 * * *'   # 3x daily UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: 'release'
+          use-public-rspm: true
+
+      - uses: browser-actions/setup-chrome@v1
+        id: setup-chrome
+        with:
+          chrome-version: stable
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: |
+            any::devtools
+            any::targets
+            any::tidyselect
+            any::chromote
+
+      - name: Restore targets cache
+        uses: actions/cache@v4
+        with:
+          path: _targets
+          key: targets-${{ hashFiles('_targets.R', 'R/**', 'config/**') }}
+          restore-keys: targets-
+
+      - name: Refresh active_competitions.json
+        run: |
+          Rscript -e 'devtools::load_all(); generate_active_competitions(load_leagues(), lookahead_days = 14L)'
+
+      - name: Scrape odds
+        env:
+          CHROMOTE_CHROME: ${{ steps.setup-chrome.outputs.chrome-path }}
+        run: |
+          Rscript run.R --all --step odds
+
+      - name: Commit if data changed
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/facts/odds/ config/active_competitions.json
+          git diff --cached --quiet || git commit -m "data: odds scrape $(date -u +%Y-%m-%dT%H:%MZ)"
+          git pull --rebase origin main
+          git push
