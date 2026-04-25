@@ -78,10 +78,15 @@ load_bankroll <- function(path = here::here("config", "bankroll.yml"),
                           ledger_root = here::here("data")) {
   cfg <- yaml::yaml.load(readr::read_file(path))
   if (is.null(cfg$current_pool)) {
-    led <- tryCatch(
-      read_table("ledger", root = ledger_root),
-      error = function(e) tibble::tibble(pnl = numeric(0), settled = logical(0))
-    )
+    # Distinguish "ledger not yet created" (fall back to initial_pool) from
+    # "ledger exists but is unreadable" (let the error surface). Pre-flight
+    # the directory rather than swallowing read_table errors blindly.
+    ledger_dir <- file.path(ledger_root, "decisions", "ledger")
+    if (!dir.exists(ledger_dir)) {
+      led <- tibble::tibble(pnl = numeric(0), settled = logical(0))
+    } else {
+      led <- read_table("ledger", root = ledger_root)
+    }
     if (!all(c("pnl", "settled") %in% names(led))) {
       led <- tibble::tibble(pnl = numeric(0), settled = logical(0))
     }

@@ -27,5 +27,5 @@ test_that("malformed betting block fails validation", {
   ))
   tmp <- withr::local_tempfile(fileext = ".yml")
   writeLines(bad, tmp)
-  expect_error(load_leagues(path = tmp))
+  expect_error(load_leagues(path = tmp), "kelly_frac|maximum|<=")
 })
