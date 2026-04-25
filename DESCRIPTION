@@ -29,6 +29,7 @@ Imports:
     stringr,
     tibble,
     tidyr,
+    nloptr,
     yaml
 Suggests:
     cmdstanr,
@@ -40,6 +41,7 @@ Collate:
     'config.R'
     'storage-schemas.R'
     'storage.R'
+    'decide-kelly.R'
     'decide-odds.R'
     'duckdb-views.R'
     'ingest.R'
