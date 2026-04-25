@@ -33,3 +33,6 @@ Stan/*/*
 
 # Personal Claude Code preferences (not shared)
 .claude/settings.local.json
+
+# Subagent worktrees (ephemeral)
+.claude/worktrees/
