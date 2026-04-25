@@ -62,6 +62,7 @@ Collate:
     'placer-navigate.R'
     'placer-place.R'
     'placer-validate.R'
+    'placer-pipeline.R'
     'publish-basketball-iceland.R'
     'publish-football-iceland.R'
     'publish-handball-iceland.R'
