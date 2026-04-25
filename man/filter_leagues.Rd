@@ -9,7 +9,8 @@ filter_leagues(
   sport = NULL,
   country = NULL,
   league = NULL,
-  active_only = FALSE
+  active_only = FALSE,
+  has_lengjan = FALSE
 )
 }
 \arguments{
@@ -18,6 +19,9 @@ filter_leagues(
 \item{sport, country, league}{Optional filters.}
 
 \item{active_only}{If TRUE, keep only leagues with `active = TRUE`.}
+
+\item{has_lengjan}{If TRUE, drop leagues whose `lengjan$competitions` block
+is empty/missing — i.e. nothing to scrape from Lengjan.}
 }
 \value{
 Filtered named list.

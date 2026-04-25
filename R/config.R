@@ -102,10 +102,13 @@ load_bankroll <- function(path = here::here("config", "bankroll.yml"),
 #' @param leagues Named list from `load_leagues()`.
 #' @param sport,country,league Optional filters.
 #' @param active_only If TRUE, keep only leagues with `active = TRUE`.
+#' @param has_lengjan If TRUE, drop leagues whose `lengjan$competitions` block
+#'   is empty/missing — i.e. nothing to scrape from Lengjan.
 #' @return Filtered named list.
 #' @export
 filter_leagues <- function(leagues, sport = NULL, country = NULL,
-                           league = NULL, active_only = FALSE) {
+                           league = NULL, active_only = FALSE,
+                           has_lengjan = FALSE) {
   keep <- rep(TRUE, length(leagues))
   names(keep) <- names(leagues)
 
@@ -120,6 +123,11 @@ filter_leagues <- function(leagues, sport = NULL, country = NULL,
   }
   if (isTRUE(active_only)) {
     keep <- keep & vapply(leagues, function(l) isTRUE(l$active), logical(1))
+  }
+  if (isTRUE(has_lengjan)) {
+    keep <- keep & vapply(leagues, function(l) {
+      length(l$lengjan$competitions) > 0L
+    }, logical(1))
   }
 
   leagues[keep]

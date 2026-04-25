@@ -26,6 +26,7 @@ Imports:
     readr,
     readxl,
     rlang,
+    rvest,
     stringi,
     stringr,
     tibble,
@@ -52,6 +53,7 @@ Collate:
     'ingest-hsi-handball.R'
     'ingest-kki-basketball.R'
     'ingest-ksi-football.R'
+    'ingest-lengjan-odds.R'
     'model-fit.R'
     'model-posteriors.R'
     'model-prepare.R'

@@ -158,3 +158,30 @@ test_that("filter_leagues() applies sport and active_only together (I4)", {
   result <- filter_leagues(leagues, sport = "football", active_only = TRUE)
   expect_equal(names(result), "football_iceland")
 })
+
+test_that("filter_leagues(has_lengjan = TRUE) keeps Icelandic leagues", {
+  leagues <- load_leagues()
+  active <- filter_leagues(leagues, active_only = TRUE, has_lengjan = TRUE)
+  expect_gt(length(active), 0L)
+  for (l in active) {
+    expect_true(length(l$lengjan$competitions) > 0L)
+  }
+})
+
+test_that("filter_leagues(has_lengjan = TRUE) drops leagues without competitions", {
+  leagues <- list(
+    with_lengjan = list(
+      sport = "football", country = "iceland", active = TRUE,
+      lengjan = list(competitions = list(list(id = "1", name = "x", sex = "male")))
+    ),
+    no_lengjan = list(
+      sport = "basketball", country = "iceland", active = TRUE
+    ),
+    empty_competitions = list(
+      sport = "handball", country = "iceland", active = TRUE,
+      lengjan = list(competitions = list())
+    )
+  )
+  result <- filter_leagues(leagues, has_lengjan = TRUE)
+  expect_equal(names(result), "with_lengjan")
+})
