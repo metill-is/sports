@@ -65,6 +65,20 @@ ingest_league <- function(league, sex,
   invisible(as.integer(nrow(results) + nrow(schedule)))
 }
 
+#' Schedule-active gate used by all DAG wrappers.
+#'
+#' Reads `config/active_competitions.json` and returns TRUE if the league has
+#' near-term fixtures (or if the file omits the league entirely — fail-safe to
+#' active). Used by `ingest_one_*` and the Task 4-5 fit/decide/publish wrappers
+#' so the gate is applied consistently.
+#'
+#' @keywords internal
+#' @noRd
+.is_league_active <- function(active_path, key) {
+  active <- jsonlite::fromJSON(active_path)
+  !isFALSE(active$active[[key]])
+}
+
 #' Run federation ingest for a single league across all configured sexes.
 #'
 #' Wrapper used by `_targets.R`'s per-league `ingest_<key>` targets. Reads
@@ -75,11 +89,13 @@ ingest_league <- function(league, sex,
 #'   `leagues[[key]]` itself).
 #' @param key League key (e.g. `"football_iceland"`).
 #' @param active_path Path to `config/active_competitions.json`.
-#' @return Total rows written across the league's sexes (integer).
+#' @return Integer count of rows fetched (results + schedule combined),
+#'   summed across the league's sexes. Not equal to rows newly written —
+#'   `upsert_table()` deduplicates on disk. Use only as a "did anything
+#'   happen" indicator.
 #' @export
 ingest_one_league <- function(leagues, key, active_path) {
-  active <- jsonlite::fromJSON(active_path)
-  if (isFALSE(active$active[[key]])) {
+  if (!.is_league_active(active_path, key)) {
     cli::cli_alert_info("{key}: skipped (no active fixtures)")
     return(0L)
   }
@@ -97,8 +113,7 @@ ingest_one_league <- function(leagues, key, active_path) {
 #' @return Number of odds rows written (integer).
 #' @export
 ingest_one_lengjan <- function(leagues, key, active_path) {
-  active <- jsonlite::fromJSON(active_path)
-  if (isFALSE(active$active[[key]])) {
+  if (!.is_league_active(active_path, key)) {
     cli::cli_alert_info("{key}: skipped (no active fixtures)")
     return(0L)
   }

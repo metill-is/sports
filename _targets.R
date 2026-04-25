@@ -13,6 +13,13 @@
 
 library(targets)
 
+# Set UTF-8 locale before sourcing R/. Some R/ files use \uXXXX escapes for
+# Icelandic strings (e.g. R/ingest-hsi-handball.R::HSI_MONTH_MAP) that fail to
+# re-translate under a C locale -- which targets' callr-spawned worker sessions
+# default to. Without this, tar_source() / tar_make() error with
+# "internal parser error" when reading those files.
+Sys.setlocale("LC_ALL", "en_US.UTF-8")
+
 tar_option_set(
   packages = c(
     "arrow", "dplyr", "tibble", "purrr", "readr", "stringr", "lubridate",
@@ -27,7 +34,7 @@ tar_option_set(
 # so we source ingest.R explicitly first, then let tar_source() pick up the
 # rest (it is idempotent -- re-sourcing ingest.R is harmless).
 source(here::here("R", "ingest.R"))
-tar_source("R/")
+tar_source(here::here("R"))
 
 # Read leagues at DAG definition time so we can generate per-league targets.
 leagues_definition <- load_leagues()
