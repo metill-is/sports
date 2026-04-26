@@ -270,7 +270,7 @@ Internal schemas use English throughout. Canonical column names: `home_team` / `
 
 ## Skills
 
-The four model-invocable skills under `.claude/skills/` (`/bet`, `/sports-update`, `/add-league`, `/place-bets`) remain from the pre-migration workspace. They were authored against the legacy four-repo layout and will be revised to use `Rscript run.R --step ...` in a follow-up pass; for now they continue to work via the deprecated `scripts/*_all.R` runners.
+The four model-invocable skills under `.claude/skills/` (`/bet`, `/sports-update`, `/add-league`, `/place-bets`) were rewritten in `f50b0bd` (post-Plan-6) to invoke the `{targets}` DAG via `Rscript run.R --step ...`. Drift back to the pre-migration four-repo layout is guarded by `tests/testthat/test-skill-conventions.R`, which fails the build if any skill references `lengjan-bets/`, `lengjan-odds/`, `Sports/{sport}/{country}/`, or the `--sync` flag.
 
 **Do not add `disable-model-invocation: true` to these skills.** They are intentionally model-invocable.
 
