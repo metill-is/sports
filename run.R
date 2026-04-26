@@ -110,4 +110,6 @@ if (dry_run) {
 }
 
 cli::cli_h1("tar_make({length(target_names)} targets)")
-targets::tar_make(names = tidyselect::all_of(target_names))
+# !! splices target_names into the call so tidy-select resolves the literal
+# vector instead of looking up the name in tar_make()'s own scope.
+rlang::inject(targets::tar_make(names = tidyselect::all_of(!!target_names)))
