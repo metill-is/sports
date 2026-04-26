@@ -285,7 +285,10 @@ ingest_lengjan_odds <- function(leagues, scraped_at = Sys.time(),
           if (grepl("\\?", match_links[[i]])) "&" else "?"
         )
         detail_html <- tryCatch(
-          .lengjan_fetch(chromote_session, match_url),
+          .lengjan_fetch(
+            chromote_session, match_url,
+            expand_aria = c("row-OU_FT", "row-HC_FT")
+          ),
           error = function(e) {
             cli::cli_alert_warning("Match detail fetch failed: {conditionMessage(e)}")
             NULL
@@ -348,10 +351,33 @@ ingest_lengjan_odds <- function(leagues, scraped_at = Sys.time(),
   codes[[country]]
 }
 
-.lengjan_fetch <- function(session, url) {
+.lengjan_fetch <- function(session, url, settle_s = 3,
+                           expand_aria = character(0)) {
+  # Lengjan match-detail pages with marketTab=allMarkets keep a long-poll /
+  # WebSocket alive that prevents Chrome from ever firing the `load` event.
+  # `Page$loadEventFired(timeout_ = 30000)` then blocks indefinitely (the
+  # chromote `timeout_` argument is unreliable on synchronous event subscriptions).
+  # The legacy scraper at _legacy/lengjan-odds/R/scrape.R::scrape_match_detail()
+  # used `rvest::read_html_live() + Sys.sleep(3)` and explicitly commented
+  # "Wait for React hydration" -- mirror that here.
+  #
+  # `expand_aria` lists aria-controls IDs whose accordion buttons should be
+  # clicked to render their tables. `marketTab=allMarkets` opens the all-markets
+  # tab but each individual market section (row-OU_FT, row-HC_FT, ...) is
+  # still collapsed and contains no <table>/<tr> until clicked. The legacy
+  # code did this with `page$click(...)`; we do the equivalent JS click via
+  # Runtime.evaluate.
   session$Page$navigate(url)
-  session$Page$loadEventFired(timeout_ = 30000)
-  Sys.sleep(2)
+  Sys.sleep(settle_s)
+  if (length(expand_aria) > 0L) {
+    aria_list <- paste0("'", expand_aria, "'", collapse = ", ")
+    js <- sprintf(
+      "(() => { for (const id of [%s]) { const btn = document.querySelector(`button[aria-controls=\"${id}\"]`); if (btn && btn.getAttribute('aria-expanded') !== 'true') btn.click(); } })()",
+      aria_list
+    )
+    session$Runtime$evaluate(js)
+    Sys.sleep(2)
+  }
   rvest::read_html(session$Runtime$evaluate(
     "document.documentElement.outerHTML"
   )$result$value)
