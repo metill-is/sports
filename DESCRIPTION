@@ -18,9 +18,11 @@ Imports:
     fs,
     here,
     httr2,
+    janitor,
     jsonlite,
     jsonvalidate,
     lubridate,
+    nloptr,
     posterior,
     purrr,
     readr,
@@ -32,12 +34,12 @@ Imports:
     targets,
     tibble,
     tidyr,
-    nloptr,
+    withr,
+    xml2,
     yaml
 Suggests:
     cmdstanr,
-    testthat (>= 3.0.0),
-    withr
+    testthat (>= 3.0.0)
 Config/testthat/edition: 3
 RoxygenNote: 7.3.3
 Collate:
