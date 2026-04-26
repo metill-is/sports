@@ -20,7 +20,10 @@ permissions:
 jobs:
   fit:
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    # Six (league x sex) Stan fits take 30-60 min each serially -- a cold cache
+    # run needs ~3-5 hours. Cap is GitHub's 6-hour hard limit; once the targets
+    # cache primes on a green run, subsequent runs only refit when ingests change.
+    timeout-minutes: 350
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
