@@ -10,7 +10,9 @@ validate_team_names_config(leagues, recs)
 \item{leagues}{Named list from \code{load_leagues()}.}
 
 \item{recs}{Recommendations tibble.  Must contain \code{sport},
-\code{country}, \code{home_team}, and \code{away_team} columns.}
+\code{country}, \code{sex}, \code{home_team}, and \code{away_team}
+columns.  \code{sex} must be one of \code{"male"} or \code{"female"};
+the team_names lookup is sex-keyed.}
 }
 \value{
 Invisibly \code{TRUE} on success.

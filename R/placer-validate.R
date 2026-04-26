@@ -11,7 +11,9 @@ NULL
 #'
 #' @param leagues Named list from \code{load_leagues()}.
 #' @param recs Recommendations tibble.  Must contain \code{sport},
-#'   \code{country}, \code{home_team}, and \code{away_team} columns.
+#'   \code{country}, \code{sex}, \code{home_team}, and \code{away_team}
+#'   columns.  \code{sex} must be one of \code{"male"} or \code{"female"};
+#'   the team_names lookup is sex-keyed.
 #' @return Invisibly \code{TRUE} on success.
 #' @export
 validate_team_names_config <- function(leagues, recs) {
@@ -22,7 +24,7 @@ validate_team_names_config <- function(leagues, recs) {
       call. = FALSE
     )
   }
-  needed_cols <- c("sport", "country", "home_team", "away_team")
+  needed_cols <- c("sport", "country", "sex", "home_team", "away_team")
   missing_input <- setdiff(needed_cols, names(recs))
   if (length(missing_input) > 0L) {
     stop(
@@ -32,10 +34,22 @@ validate_team_names_config <- function(leagues, recs) {
     )
   }
 
-  groups <- unique(recs[, c("sport", "country"), drop = FALSE])
+  valid_sexes <- c("male", "female")
+  bad_sex <- setdiff(unique(recs$sex), valid_sexes)
+  if (length(bad_sex) > 0L) {
+    stop(
+      "validate_team_names_config: rec(s) have invalid sex value(s): ",
+      paste(bad_sex, collapse = ", "),
+      ". Expected one of: ", paste(valid_sexes, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  groups <- unique(recs[, c("sport", "country", "sex"), drop = FALSE])
   for (i in seq_len(nrow(groups))) {
     sp <- groups$sport[i]
     co <- groups$country[i]
+    sx <- groups$sex[i]
     key <- paste0(sp, "_", co)
 
     if (!key %in% names(leagues)) {
@@ -46,37 +60,54 @@ validate_team_names_config <- function(leagues, recs) {
     }
 
     league <- leagues[[key]]
-    tn <- league$lengjan$team_names
+    tn_all <- league$lengjan$team_names
 
-    if (is.null(tn) || length(tn) == 0L) {
+    if (is.null(tn_all) || length(tn_all) == 0L) {
       stop(
         "validate_team_names_config: ", key,
-        " has no lengjan$team_names. Add team_names to config/leagues.yml.",
+        " has no lengjan$team_names. Add ",
+        "team_names: {male: {...}, female: {...}} to config/leagues.yml.",
         call. = FALSE
       )
     }
 
-    rows <- recs[recs$sport == sp & recs$country == co, , drop = FALSE]
+    if (!sx %in% names(tn_all)) {
+      stop(
+        "validate_team_names_config: ", key,
+        " is missing the `", sx, "` sub-map under lengjan.team_names. ",
+        "Both `male` and `female` keys are required ",
+        "(use `{}` for an empty sub-map).",
+        call. = FALSE
+      )
+    }
+
+    tn <- tn_all[[sx]]
+
+    rows <- recs[
+      recs$sport == sp & recs$country == co & recs$sex == sx, ,
+      drop = FALSE
+    ]
     teams <- unique(c(rows$home_team, rows$away_team))
+
+    if (length(tn) == 0L) {
+      stop(
+        "validate_team_names_config: ", key, " (", sx, ") ",
+        "has an empty team_names sub-map. Add canonical -> Lengjan-display ",
+        "mappings under lengjan.team_names.", sx,
+        " (source: data/facts/odds/sport=", sp, "/country=", co,
+        " or wait for the next scrape). Missing teams: ",
+        paste(teams, collapse = ", "),
+        call. = FALSE
+      )
+    }
+
     missing_teams <- setdiff(teams, names(tn))
 
     if (length(missing_teams) > 0L) {
-      sexes_in_rows <- if ("sex" %in% names(rows)) unique(rows$sex) else character(0)
-      hint <- if ("female" %in% sexes_in_rows) {
-        paste0(
-          "\n  Note: women's-league team names (e.g. 'Fram kv') are not ",
-          "representable in the current sex-agnostic team_names schema. ",
-          "See ~/.claude/projects/-Users-brynjolfurjonsson-sports/memory/",
-          "project_team_names_schema.md."
-        )
-      } else {
-        ""
-      }
       stop(
-        "validate_team_names_config: ", key,
-        " is missing team_names for: ",
+        "validate_team_names_config: ", key, " (", sx, ") ",
+        "is missing team_names for: ",
         paste(missing_teams, collapse = ", "),
-        hint,
         call. = FALSE
       )
     }

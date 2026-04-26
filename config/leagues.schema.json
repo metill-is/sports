@@ -37,7 +37,12 @@
             },
             "team_names": {
               "type": "object",
-              "additionalProperties": { "type": "string" }
+              "required": ["male", "female"],
+              "additionalProperties": false,
+              "properties": {
+                "male":   { "type": "object", "additionalProperties": { "type": "string" } },
+                "female": { "type": "object", "additionalProperties": { "type": "string" } }
+              }
             }
           }
         },

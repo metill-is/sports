@@ -23,14 +23,16 @@ basketball_iceland:
       - { id: "30774", name: "Bónusdeild kvenna efri", sex: female }
       - { id: "30773", name: "Bónusdeild kvenna neðri", sex: female }
     team_names:
-      Grindavík: Grindavík kv
-      Valur: Valur kv
-      Njarðvík: Njarðvík kv
-      Haukar: Haukar kv
-      Keflavík: Keflavík kv
-      Tindastóll: UMF Tindastoll kv
-      Ármann: Ármann kv
-      Stjarnan: Stjarnan kv
+      male: {}                         # No men's BD on Lengjan currently
+      female:
+        Grindavík: Grindavík kv
+        Valur: Valur kv
+        Njarðvík: Njarðvík kv
+        Haukar: Haukar kv
+        Keflavík: Keflavík kv
+        Tindastóll: UMF Tindastoll kv
+        Ármann: Ármann kv
+        Stjarnan: Stjarnan kv
   stan_model: basketball_iceland/2d_student_t_scalarsigma.stan
   betting:
     kelly_frac: 0.10
@@ -58,14 +60,16 @@ handball_iceland:
     competitions:
       - { id: "1269", name: "Olísdeild karla", sex: male }
     team_names:
-      Þór: Þór Akureyri
-      HK: Handknattleiksfélag Kópavogs
-      ÍBV: ÍBV Vestmannaeyjar
-      ÍR: ÍR Reykjavík
-      FH: FH Hafnarfjörður
-      KA: KA Akureyri
-      ÍH: ÍH Keflavík
-      HBH: HB Hafnarfjörður
+      male:
+        Þór: Þór Akureyri
+        HK: Handknattleiksfélag Kópavogs
+        ÍBV: ÍBV Vestmannaeyjar
+        ÍR: ÍR Reykjavík
+        FH: FH Hafnarfjörður
+        KA: KA Akureyri
+        ÍH: ÍH Keflavík
+        HBH: HB Hafnarfjörður
+      female: {}                       # No women's handball on Lengjan currently
   stan_model: handball_iceland/2d_student_t.stan
   betting:
     kelly_frac: 0.10
@@ -96,24 +100,32 @@ football_iceland:
       - { id: "20442", name: "Besta Deildin Neðri Hluti", sex: male   }
       - { id: "757",   name: "Lengjudeildin",            sex: male   }
       - { id: "1568",  name: "Besta deild kvenna",       sex: female }
-    # Note: team_names is currently shared across sexes within a league.
-    # Teams that appear in both male and female schedules (e.g. Fram, FH,
-    # ÍBV, Valur, Stjarnan, Víkingur R., Breiðablik) cannot be mapped here
-    # because Lengjan suffixes the women's display ("Fram kv", etc.) while
-    # the men's display omits the suffix — a single key cannot represent
-    # both. Mappings below are for teams that appear in the men's LD1 only,
-    # i.e. men-only across the 2026 women's schedule.
     team_names:
-      Þór: Þór Ak.
-      Víkingur R.: Víkingur Rvk
-      Þróttur R.: Þróttur Rvk
-      Leiknir R.: Leiknir Rvk
-      Ægir: Ægir
-      ÍR: ÍR
-      Grótta: Grótta
-      Grindavík: Grindavík
-      Njarðvík: Njarðvík
-      Völsungur: Völsungur
+      male:
+        # Existing LD1 + men-only sex-disjoint entries:
+        Þór: Þór Ak.
+        Víkingur R.: Víkingur Rvk
+        Þróttur R.: Þróttur Rvk
+        Leiknir R.: Leiknir Rvk
+        Ægir: Ægir
+        ÍR: ÍR
+        Grótta: Grótta
+        Grindavík: Grindavík
+        Njarðvík: Njarðvík
+        Völsungur: Völsungur
+        # BD teams that also appear in women's BD (verified against
+        # data/facts/odds/sport=football/country=iceland):
+        KR: KR
+        FH: FH
+        Stjarnan: Stjarnan
+        Valur: Valur
+        Fram: Fram
+        ÍBV: ÍBV
+        Breiðablik: Breiðablik
+        Keflavík: Keflavík
+        ÍA: ÍA
+        KA: KA
+      female: {}                       # No historical women's football odds yet
   stan_model: football_iceland/bivariate_poisson_no_inflation.stan
   betting:
     kelly_frac:

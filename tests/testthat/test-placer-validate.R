@@ -1,8 +1,14 @@
+# Existing 6 cases migrated to nested team_names shape, plus 4 new cases
+# for per-sex behaviour.
+
 test_that("validate_team_names_config passes when all recs have a team_names entry", {
   leagues <- list(
     football_iceland = list(
       sport = "football", country = "iceland",
-      lengjan = list(team_names = list("KR" = "KR Reykjavik"))
+      lengjan = list(team_names = list(
+        male = list("KR" = "KR Reykjavik"),
+        female = list()
+      ))
     )
   )
   recs <- tibble::tibble(
@@ -33,7 +39,10 @@ test_that("validate_team_names_config errors when a recommended team is unmapped
   leagues <- list(
     football_iceland = list(
       sport = "football", country = "iceland",
-      lengjan = list(team_names = list("KR" = "KR Reykjavik"))
+      lengjan = list(team_names = list(
+        male = list("KR" = "KR Reykjavik"),
+        female = list()
+      ))
     )
   )
   recs <- tibble::tibble(
@@ -60,7 +69,6 @@ test_that("validate_recommendations_schema accepts the canonical column set", {
 test_that("validate_recommendations_schema errors on a missing column", {
   recs <- tibble::tibble(
     sport = "football", country = "iceland", sex = "male"
-    # missing home_team, away_team, etc.
   )
   expect_error(
     validate_recommendations_schema(recs),
@@ -69,7 +77,7 @@ test_that("validate_recommendations_schema errors on a missing column", {
 })
 
 test_that("validate_team_names_config errors when league key is absent from leagues.yml", {
-  leagues <- list() # empty registry
+  leagues <- list()
   recs <- tibble::tibble(
     sport = "football", country = "iceland", sex = "male",
     home_team = "KR", away_team = "FH"
@@ -95,12 +103,96 @@ test_that("validate_team_names_config errors loudly on recs missing core columns
   leagues <- list(
     football_iceland = list(
       sport = "football", country = "iceland",
-      lengjan = list(team_names = list("KR" = "KR"))
+      lengjan = list(team_names = list(
+        male = list("KR" = "KR"), female = list()
+      ))
     )
   )
   bad_recs <- tibble::tibble(sport = "football", country = "iceland")
   expect_error(
     validate_team_names_config(leagues, bad_recs),
     "missing column"
+  )
+})
+
+# ---------- New per-sex behaviour ----------
+
+test_that("validate_team_names_config errors when the rec's sex sub-map is empty", {
+  leagues <- list(
+    football_iceland = list(
+      sport = "football", country = "iceland",
+      lengjan = list(team_names = list(
+        male = list("KR" = "KR"),
+        female = list()
+      ))
+    )
+  )
+  recs <- tibble::tibble(
+    sport = "football", country = "iceland", sex = "female",
+    home_team = "Fram", away_team = "Stjarnan"
+  )
+  expect_error(
+    validate_team_names_config(leagues, recs),
+    "empty.*sub-map|female|data/facts/odds"
+  )
+})
+
+test_that("validate_team_names_config does not satisfy a male rec from the female sub-map", {
+  leagues <- list(
+    football_iceland = list(
+      sport = "football", country = "iceland",
+      lengjan = list(team_names = list(
+        male = list(),
+        female = list("Fram" = "Fram kv")
+      ))
+    )
+  )
+  recs <- tibble::tibble(
+    sport = "football", country = "iceland", sex = "male",
+    home_team = "Fram", away_team = "KR"
+  )
+  expect_error(
+    validate_team_names_config(leagues, recs),
+    "male|empty"
+  )
+})
+
+test_that("validate_team_names_config errors when team_names lacks the rec's sex key entirely", {
+  leagues <- list(
+    football_iceland = list(
+      sport = "football", country = "iceland",
+      lengjan = list(team_names = list(
+        male = list("KR" = "KR")
+        # no female key at all
+      ))
+    )
+  )
+  recs <- tibble::tibble(
+    sport = "football", country = "iceland", sex = "female",
+    home_team = "Fram", away_team = "Stjarnan"
+  )
+  expect_error(
+    validate_team_names_config(leagues, recs),
+    "female|sub-map"
+  )
+})
+
+test_that("validate_team_names_config errors with a clear message when rec$sex is unknown", {
+  leagues <- list(
+    football_iceland = list(
+      sport = "football", country = "iceland",
+      lengjan = list(team_names = list(
+        male = list("KR" = "KR"),
+        female = list()
+      ))
+    )
+  )
+  recs <- tibble::tibble(
+    sport = "football", country = "iceland", sex = "all",
+    home_team = "KR", away_team = "FH"
+  )
+  expect_error(
+    validate_team_names_config(leagues, recs),
+    "invalid sex|sex value"
   )
 })

@@ -129,25 +129,30 @@ place_bets <- function(leagues = NULL,
       drop = FALSE
     ]
 
-    # Build pipeline -> Lengjan name map (direction: canonical -> Lengjan display)
-    tn <- league$lengjan$team_names # list: pipeline_name = "Lengjan display"
-    pipeline_to_lengjan <- if (!is.null(tn) && length(tn) > 0L) {
-      stats::setNames(as.character(unlist(tn)), names(tn))
-    } else {
-      character(0)
-    }
+    # Build per-sex pipeline -> Lengjan name maps.
+    # team_names has shape list(male = list(...), female = list(...)); each
+    # sub-map is canonical-pipeline-name -> Lengjan-display-name.
+    tn_all <- league$lengjan$team_names
+    pipeline_to_lengjan_by_sex <- lapply(tn_all, function(sex_map) {
+      if (length(sex_map) == 0L) {
+        return(character(0))
+      }
+      stats::setNames(as.character(unlist(sex_map)), names(sex_map))
+    })
 
     # Resolve match IDs across all competitions for this league
     match_ids <- resolve_match_ids_new(
       session = session,
       league = league,
       sport_id = sport_id,
-      pipeline_to_lengjan = pipeline_to_lengjan
+      pipeline_to_lengjan = character(0) # kept for API stability; unused inside
     )
 
     # Place each bet
     for (i in seq_len(nrow(league_recs))) {
       bet <- league_recs[i, ]
+      pipeline_to_lengjan <- pipeline_to_lengjan_by_sex[[bet$sex]] %||%
+        character(0)
 
       home_l <- pipeline_to_lengjan[[bet$home_team]]
       if (is.null(home_l) || is.na(home_l)) home_l <- bet$home_team
