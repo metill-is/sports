@@ -1,4 +1,11 @@
-.ingest_registry <- new.env(parent = emptyenv())
+# Idempotent: tar_source() walks R/ alphabetically, so ingest-*.R sources
+# *before* ingest.R (- sorts before .). _targets.R works around that with an
+# explicit source(ingest.R) first, but tar_source() then re-sources ingest.R
+# at the end -- which would clobber a freshly-populated registry. Guard the
+# init so the second pass is truly harmless.
+if (!exists(".ingest_registry", inherits = FALSE)) {
+  .ingest_registry <- new.env(parent = emptyenv())
+}
 
 #' Register an ingest source module.
 #' @param name Source name referenced in leagues.yml's data_source field.

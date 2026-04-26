@@ -40,6 +40,8 @@ Imports:
 Suggests:
     cmdstanr,
     testthat (>= 3.0.0)
+Remotes:
+    stan-dev/cmdstanr
 Config/testthat/edition: 3
 RoxygenNote: 7.3.3
 Collate:
