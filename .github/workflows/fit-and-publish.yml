@@ -39,6 +39,12 @@ jobs:
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       CMDSTAN_VERSION: '2.38.0'
+      # Temporary: cut iter counts while we iterate on the workflow itself.
+      # Drop these two env vars (or set to 1000) once the pipeline is stable
+      # and we want production-quality posteriors back. fit_league() falls
+      # back to 1000 each when the vars are unset.
+      SPORTS_FIT_ITER_WARMUP: '100'
+      SPORTS_FIT_ITER_SAMPLING: '100'
 
     steps:
       - uses: actions/checkout@v4

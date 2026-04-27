@@ -1,6 +1,17 @@
 #' @include model-prepare.R model-fit.R model-posteriors.R storage.R config.R
 NULL
 
+# Read an integer env var with sensible fallbacks. `Sys.getenv(name, "1000")`
+# treats an unset env var as 1000 but a *set-to-empty* env var as `""`, which
+# `as.integer()` converts to NA. nzchar() guards against that.
+.env_iter <- function(name, default = 1000L) {
+  v <- Sys.getenv(name, "")
+  if (!nzchar(v)) {
+    return(as.integer(default))
+  }
+  as.integer(v)
+}
+
 #' End-to-end: prepare data, fit Stan, extract posteriors, write beliefs.
 #'
 #' Supports two call modes:
@@ -36,8 +47,13 @@ fit_league <- function(league_key = NULL,
                        root = here::here("data"),
                        stan_dir = here::here("Stan"),
                        method = "sample",
-                       iter_warmup = 1000L,
-                       iter_sampling = 1000L,
+                       # Defaults read from env vars so CI can opt into faster
+                       # fits (e.g. SPORTS_FIT_ITER_WARMUP=100) while iterating
+                       # on pipeline plumbing without changing call sites or
+                       # test code. Empty/unset env vars fall back to the
+                       # production-quality 1000 default.
+                       iter_warmup = .env_iter("SPORTS_FIT_ITER_WARMUP"),
+                       iter_sampling = .env_iter("SPORTS_FIT_ITER_SAMPLING"),
                        chains = 4L,
                        seed = NULL,
                        from_season = NULL,
