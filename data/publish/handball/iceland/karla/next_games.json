@@ -1,26 +1,48 @@
 {
-  "generated_at": "2026-04-25T10:13:47+0000",
+  "generated_at": "2026-04-27T14:55:18+0000",
   "matches": [
     {
       "date": "2026-04-27",
       "home": "FH",
       "away": "Valur",
-      "mean_home": 31.31,
-      "mean_away": 29.82,
-      "mean_diff": 1.48,
-      "p_home": 0.615,
-      "p_away": 0.385,
+      "mean_home": 30.77,
+      "mean_away": 30.49,
+      "mean_diff": 0.28,
+      "p_home": 0.54,
+      "p_away": 0.46,
       "p_tie": 0
     },
     {
       "date": "2026-04-30",
       "home": "Valur",
       "away": "FH",
-      "mean_home": 30.69,
-      "mean_away": 30.25,
-      "mean_diff": 0.43,
-      "p_home": 0.5345,
-      "p_away": 0.4655,
+      "mean_home": 31.6,
+      "mean_away": 29.49,
+      "mean_diff": 2.11,
+      "p_home": 0.6675,
+      "p_away": 0.3325,
+      "p_tie": 0
+    },
+    {
+      "date": "2026-05-04",
+      "home": "FH",
+      "away": "Valur",
+      "mean_home": 30.51,
+      "mean_away": 30.5,
+      "mean_diff": 0.01,
+      "p_home": 0.515,
+      "p_away": 0.485,
+      "p_tie": 0
+    },
+    {
+      "date": "2026-05-07",
+      "home": "Valur",
+      "away": "FH",
+      "mean_home": 31.52,
+      "mean_away": 29.65,
+      "mean_diff": 1.86,
+      "p_home": 0.6775,
+      "p_away": 0.3225,
       "p_tie": 0
     }
   ]
