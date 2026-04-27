@@ -123,8 +123,16 @@ jobs:
           # main branch. Retry pull --rebase + push with backoff. Five attempts
           # is plenty -- the rebase only ever has at most two unrelated peer
           # commits ahead of us.
+          #
+          # --autostash: targets reruns the always-cue ingest_<league> upstream
+          # of --step fit, which leaves unstaged rewrites in data/facts/* that
+          # this workflow has no business committing (scrape-results owns those
+          # paths). Plain `pull --rebase` errors out with "cannot pull with
+          # rebase: You have unstaged changes". --autostash stashes everything
+          # unstaged before the rebase, pops it afterwards; if the pop conflicts
+          # we still have our commit applied and pushable.
           for attempt in 1 2 3 4 5; do
-            if git pull --rebase origin main && git push origin main; then
+            if git pull --rebase --autostash origin main && git push origin main; then
               echo "Push succeeded on attempt $attempt"
               exit 0
             fi
