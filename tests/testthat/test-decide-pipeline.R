@@ -1,9 +1,13 @@
-# Helper: build minimal beliefs + odds for one match
-mini_decide_setup <- function(root) {
+# Helper: build minimal beliefs + odds for one match.
+# `match_date` is kept relative to Sys.Date() rather than hardcoded -- callers
+# that don't pass an explicit run_date to decide_league() default to today, and
+# any fixed past date silently turns the match into a no-op once Sys.Date()
+# passes it.
+mini_decide_setup <- function(root, match_date = Sys.Date() + 1L) {
   beliefs <- tibble::tibble(
     sport = "basketball", country = "iceland", sex = "male",
     fit_date = Sys.Date(),
-    match_date = as.Date("2026-04-26"),
+    match_date = match_date,
     home_team = "Alpha", away_team = "Bravo",
     draw_id = 1:1000,
     home_goals = rpois(1000, lambda = 90),
@@ -14,7 +18,7 @@ mini_decide_setup <- function(root) {
   odds <- tibble::tibble(
     sport = "basketball", country = "iceland",
     scraped_at = Sys.time(),
-    match_date = as.Date("2026-04-26"),
+    match_date = match_date,
     home_team = "Alpha", away_team = "Bravo",
     market = c("moneyline", "moneyline"),
     outcome = c("home", "away"),
@@ -165,11 +169,12 @@ test_that("decide_league errors on missing kelly_frac for the requested sex", {
   root <- withr::local_tempdir()
   mini_decide_setup(root)
   # Add female beliefs so the function reaches the kelly_frac check (otherwise
-  # it short-circuits at the empty-beliefs warning).
+  # it short-circuits at the empty-beliefs warning). match_date relative to
+  # Sys.Date() so the fixture stays in the future.
   female_beliefs <- tibble::tibble(
     sport = "basketball", country = "iceland", sex = "female",
     fit_date = Sys.Date(),
-    match_date = as.Date("2026-04-26"),
+    match_date = Sys.Date() + 1L,
     home_team = "Alpha", away_team = "Bravo",
     draw_id = 1:1000,
     home_goals = rpois(1000, lambda = 90),
