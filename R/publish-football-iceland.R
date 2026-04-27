@@ -290,6 +290,39 @@ NULL
     )
 }
 
+# Append `new_rows` to a history JSON file, dedup on `key_cols` keeping the
+# row with the most recent `generated_at`. Creates the file on first call.
+# Stored shape: { "schema_version": 1, "records": [ {...}, ... ] }.
+# Tolerates missing or malformed existing files (treated as empty history).
+.append_to_history_pfi <- function(path, new_rows, key_cols) {
+  existing <- if (file.exists(path)) {
+    tryCatch(
+      {
+        parsed <- jsonlite::fromJSON(path, simplifyDataFrame = TRUE)
+        records <- parsed$records
+        if (is.data.frame(records)) tibble::as_tibble(records) else tibble::tibble()
+      },
+      error = function(e) tibble::tibble()
+    )
+  } else {
+    tibble::tibble()
+  }
+
+  all_rows <- dplyr::bind_rows(existing, new_rows) |>
+    dplyr::arrange(dplyr::desc(.data$generated_at)) |>
+    dplyr::distinct(dplyr::across(dplyr::all_of(key_cols)), .keep_all = TRUE) |>
+    dplyr::arrange(dplyr::across(dplyr::all_of(key_cols)))
+
+  jsonlite::write_json(
+    list(schema_version = 1L, records = all_rows),
+    path,
+    auto_unbox = TRUE,
+    dataframe = "rows",
+    digits = 5,
+    na = "null"
+  )
+}
+
 # ---- Public API --------------------------------------------------------------
 
 #' Publish football Iceland posterior summaries as JSON
@@ -625,6 +658,29 @@ publish_football_iceland <- function(fit,
         file.path(out_dir, "standings.json"),
         auto_unbox = TRUE, dataframe = "rows", digits = 5, na = "null"
       )
+
+      # Append per-round table to standings_history.json. Drops the snapshot-
+      # only `form` and `xg_trend` columns. Dedup on (as_of, team) lets re-runs
+      # against the same set of played fixtures replace rather than duplicate.
+      standings_history_row <- standings_rows |>
+        dplyr::mutate(
+          as_of        = format(max(bd_results$match_date), "%Y-%m-%d"),
+          generated_at = generated_at,
+          round        = as.integer(round_num),
+          season       = current_season
+        ) |>
+        dplyr::select(
+          "as_of", "generated_at", "round", "season",
+          "team", "short", "played", "wins", "draws", "losses",
+          "goals_for", "goals_against", "goal_diff", "points",
+          "xg_for", "xg_against", "xpts",
+          "rank"
+        )
+      .append_to_history_pfi(
+        file.path(out_dir, "standings_history.json"),
+        standings_history_row,
+        key_cols = c("as_of", "team")
+      )
     } else {
       jsonlite::write_json(
         list(
@@ -664,6 +720,29 @@ publish_football_iceland <- function(fit,
     list(generated_at = generated_at, records = team_strengths),
     file.path(out_dir, "team_strengths.json"),
     auto_unbox = TRUE, dataframe = "rows", digits = 5
+  )
+
+  # Append per-fit summary to team_strengths_history.json. One row per
+  # (team x component x location x coverage x fit_date). Dedup on the full
+  # key so re-running against the same fit replaces rather than duplicates.
+  # Written for both sexes -- women's season may not have started yet, but
+  # the file is still produced so future fits accrete to a stable path.
+  team_strengths_history_row <- team_strengths |>
+    dplyr::mutate(
+      fit_date     = format(end_date, "%Y-%m-%d"),
+      generated_at = generated_at,
+      round        = as.integer(round_num),
+      season       = current_season
+    ) |>
+    dplyr::select(
+      "fit_date", "generated_at", "round", "season",
+      "team", "component", "location", "coverage",
+      "median", "lower", "upper"
+    )
+  .append_to_history_pfi(
+    file.path(out_dir, "team_strengths_history.json"),
+    team_strengths_history_row,
+    key_cols = c("fit_date", "team", "component", "location", "coverage")
   )
 
   # ---- final_positions.json + points_distribution.json ---------------------
@@ -847,8 +926,9 @@ publish_football_iceland <- function(fit,
     auto_unbox = TRUE, dataframe = "rows", digits = 5
   )
 
+  n_files <- if (sex == "male") 9L else 8L
   message(sprintf(
-    "publish_football_iceland: wrote 7 JSONs to %s", out_dir
+    "publish_football_iceland: wrote %d JSONs to %s", n_files, out_dir
   ))
   invisible(NULL)
 }

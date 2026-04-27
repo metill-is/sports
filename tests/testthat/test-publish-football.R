@@ -149,3 +149,240 @@ test_that("publish_football_iceland: output_root creates directory", {
   )
   expect_true(dir.exists(file.path(out, "football", "iceland", "karla")))
 })
+
+# ---- History helper unit tests --------------------------------------------
+
+test_that(".append_to_history_pfi creates a new file with schema_version=1", {
+  out <- withr::local_tempdir()
+  path <- file.path(out, "history.json")
+
+  rows <- tibble::tibble(
+    fit_date = "2026-04-27", generated_at = "2026-04-27T12:00:00+0000",
+    team = "Valur", value = 1.5
+  )
+  sports:::.append_to_history_pfi(path, rows, key_cols = c("fit_date", "team"))
+
+  expect_true(file.exists(path))
+  parsed <- jsonlite::fromJSON(path, simplifyDataFrame = TRUE)
+  expect_equal(parsed$schema_version, 1L)
+  expect_equal(nrow(parsed$records), 1L)
+  expect_equal(parsed$records$team, "Valur")
+})
+
+test_that(".append_to_history_pfi appends new rows on subsequent calls", {
+  out <- withr::local_tempdir()
+  path <- file.path(out, "history.json")
+
+  day1 <- tibble::tibble(
+    fit_date = "2026-04-26", generated_at = "2026-04-26T12:00:00+0000",
+    team = "Valur", value = 1.5
+  )
+  sports:::.append_to_history_pfi(path, day1, key_cols = c("fit_date", "team"))
+
+  day2 <- tibble::tibble(
+    fit_date = "2026-04-27", generated_at = "2026-04-27T12:00:00+0000",
+    team = "Valur", value = 1.7
+  )
+  sports:::.append_to_history_pfi(path, day2, key_cols = c("fit_date", "team"))
+
+  parsed <- jsonlite::fromJSON(path, simplifyDataFrame = TRUE)
+  expect_equal(nrow(parsed$records), 2L)
+  expect_setequal(parsed$records$fit_date, c("2026-04-26", "2026-04-27"))
+})
+
+test_that(".append_to_history_pfi dedups on key_cols, keeping the newest generated_at", {
+  out <- withr::local_tempdir()
+  path <- file.path(out, "history.json")
+
+  earlier <- tibble::tibble(
+    fit_date = "2026-04-27", generated_at = "2026-04-27T08:00:00+0000",
+    team = "Valur", value = 1.5
+  )
+  sports:::.append_to_history_pfi(path, earlier, key_cols = c("fit_date", "team"))
+
+  later <- tibble::tibble(
+    fit_date = "2026-04-27", generated_at = "2026-04-27T16:00:00+0000",
+    team = "Valur", value = 9.9
+  )
+  sports:::.append_to_history_pfi(path, later, key_cols = c("fit_date", "team"))
+
+  parsed <- jsonlite::fromJSON(path, simplifyDataFrame = TRUE)
+  expect_equal(nrow(parsed$records), 1L)
+  expect_equal(parsed$records$value, 9.9)
+})
+
+test_that(".append_to_history_pfi tolerates a missing or malformed file", {
+  out <- withr::local_tempdir()
+  bad <- file.path(out, "bad.json")
+  writeLines("not valid json {", bad)
+
+  rows <- tibble::tibble(
+    fit_date = "2026-04-27", generated_at = "2026-04-27T12:00:00+0000",
+    team = "Valur", value = 1.5
+  )
+  sports:::.append_to_history_pfi(bad, rows, key_cols = c("fit_date", "team"))
+
+  parsed <- jsonlite::fromJSON(bad, simplifyDataFrame = TRUE)
+  expect_equal(nrow(parsed$records), 1L)
+})
+
+# ---- History integration tests --------------------------------------------
+
+test_that("publish_football_iceland writes team_strengths_history.json (male)", {
+  fit_path <- backup_fit_path("male")
+  if (!file.exists(fit_path)) {
+    testthat::skip("legacy male football fit unavailable")
+  }
+  if (!dir.exists(here::here("data", "facts", "results"))) {
+    testthat::skip("facts/results absent")
+  }
+
+  fit <- readRDS(fit_path)
+  leagues <- load_leagues()
+  league <- leagues[["football_iceland"]]
+
+  out <- withr::local_tempdir()
+  suppressWarnings(
+    publish_football_iceland(
+      fit, league,
+      sex = "male",
+      end_date = as.Date("2026-04-25"),
+      output_root = out
+    )
+  )
+
+  hist_path <- file.path(
+    out, "football", "iceland", "karla", "team_strengths_history.json"
+  )
+  expect_true(file.exists(hist_path))
+
+  parsed <- jsonlite::fromJSON(hist_path, simplifyDataFrame = TRUE)
+  expect_equal(parsed$schema_version, 1L)
+  expect_true(nrow(parsed$records) > 0L)
+  expected_cols <- c(
+    "fit_date", "generated_at", "round", "season",
+    "team", "component", "location", "coverage",
+    "median", "lower", "upper"
+  )
+  expect_true(all(expected_cols %in% names(parsed$records)))
+  expect_setequal(unique(parsed$records$component), c("offence", "defence", "total"))
+  expect_setequal(unique(parsed$records$location), c("home", "away"))
+  expect_setequal(unique(parsed$records$coverage), c(0.5, 0.8, 0.95))
+})
+
+test_that("publish_football_iceland writes team_strengths_history.json (female)", {
+  fit_path <- backup_fit_path("female")
+  if (!file.exists(fit_path)) {
+    testthat::skip("legacy female football fit unavailable")
+  }
+  if (!dir.exists(here::here("data", "facts", "results"))) {
+    testthat::skip("facts/results absent")
+  }
+
+  fit <- readRDS(fit_path)
+  leagues <- load_leagues()
+  league <- leagues[["football_iceland"]]
+
+  out <- withr::local_tempdir()
+  suppressWarnings(
+    publish_football_iceland(
+      fit, league,
+      sex = "female",
+      end_date = as.Date("2026-04-25"),
+      output_root = out
+    )
+  )
+
+  hist_path <- file.path(
+    out, "football", "iceland", "kvenna", "team_strengths_history.json"
+  )
+  expect_true(file.exists(hist_path))
+  parsed <- jsonlite::fromJSON(hist_path, simplifyDataFrame = TRUE)
+  expect_equal(parsed$schema_version, 1L)
+})
+
+test_that("publish_football_iceland writes standings_history.json (male only)", {
+  fit_path_m <- backup_fit_path("male")
+  fit_path_f <- backup_fit_path("female")
+  if (!file.exists(fit_path_m) || !file.exists(fit_path_f)) {
+    testthat::skip("legacy football fits unavailable for both sexes")
+  }
+  if (!dir.exists(here::here("data", "facts", "results"))) {
+    testthat::skip("facts/results absent")
+  }
+
+  leagues <- load_leagues()
+  league <- leagues[["football_iceland"]]
+
+  out <- withr::local_tempdir()
+  suppressWarnings({
+    publish_football_iceland(
+      readRDS(fit_path_m), league,
+      sex = "male",
+      end_date = as.Date("2026-04-25"), output_root = out
+    )
+    publish_football_iceland(
+      readRDS(fit_path_f), league,
+      sex = "female",
+      end_date = as.Date("2026-04-25"), output_root = out
+    )
+  })
+
+  expect_true(file.exists(file.path(
+    out, "football", "iceland", "karla", "standings_history.json"
+  )))
+  expect_false(file.exists(file.path(
+    out, "football", "iceland", "kvenna", "standings_history.json"
+  )))
+
+  parsed <- jsonlite::fromJSON(
+    file.path(out, "football", "iceland", "karla", "standings_history.json"),
+    simplifyDataFrame = TRUE
+  )
+  expect_equal(parsed$schema_version, 1L)
+  expected_cols <- c(
+    "as_of", "generated_at", "round", "season",
+    "team", "short", "played", "wins", "draws", "losses",
+    "goals_for", "goals_against", "goal_diff", "points", "rank"
+  )
+  if (nrow(parsed$records) > 0L) {
+    expect_true(all(expected_cols %in% names(parsed$records)))
+  }
+})
+
+test_that("publish_football_iceland: re-running dedups history on (fit_date, team, ...)", {
+  fit_path <- backup_fit_path("male")
+  if (!file.exists(fit_path)) {
+    testthat::skip("legacy male football fit unavailable")
+  }
+  if (!dir.exists(here::here("data", "facts", "results"))) {
+    testthat::skip("facts/results absent")
+  }
+
+  fit <- readRDS(fit_path)
+  leagues <- load_leagues()
+  league <- leagues[["football_iceland"]]
+
+  out <- withr::local_tempdir()
+  suppressWarnings({
+    publish_football_iceland(
+      fit, league,
+      sex = "male",
+      end_date = as.Date("2026-04-25"), output_root = out
+    )
+    publish_football_iceland(
+      fit, league,
+      sex = "male",
+      end_date = as.Date("2026-04-25"), output_root = out
+    )
+  })
+
+  hist_path <- file.path(
+    out, "football", "iceland", "karla", "team_strengths_history.json"
+  )
+  parsed <- jsonlite::fromJSON(hist_path, simplifyDataFrame = TRUE)
+
+  key_cols <- c("fit_date", "team", "component", "location", "coverage")
+  n_unique <- nrow(unique(parsed$records[, key_cols]))
+  expect_equal(nrow(parsed$records), n_unique)
+})

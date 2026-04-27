@@ -2,7 +2,7 @@
 % Please edit documentation in R/publish-handball-iceland.R
 \name{publish_handball_iceland}
 \alias{publish_handball_iceland}
-\title{Publish handball Iceland JSONs (Plan 4 scaffold).}
+\title{Publish handball Iceland JSONs.}
 \usage{
 publish_handball_iceland(
   fit,
@@ -30,9 +30,23 @@ publish_handball_iceland(
 `invisible(NULL)`
 }
 \description{
-Produces a minimal pair of JSONs (`meta.json` + `next_games.json`) for
-handball Iceland into `output_root/handball/iceland/{karla,kvenna}/`.
-League-table / season-projection / team-strengths JSONs are deferred to
-Plan 6 -- they need the metill-platform handball page to be designed
-first.
+Writes seven JSON files into the karla and kvenna subfolders of
+`output_root/handball/iceland/`:
+  - `meta.json`
+  - `next_games.json`
+  - `standings.json`
+  - `team_strengths.json`
+  - `final_positions.json`
+  - `points_distribution.json`
+  - `home_advantage.json`
+}
+\details{
+Mirrors the football Iceland publish surface modulo the same two
+structural differences as basketball: probability schemas use only
+p_home and p_away, and standings rows ship null `xg_for`/`xg_against`/`xpts`.
+Unlike basketball, handball ties exist in real games (`has_ties: true`,
+`tie_threshold: 0.5` in leagues.yml), so the W/T/L scoring scheme is
+applied to played fixtures.
+
+Top division: Olisdeild (`OD`).
 }

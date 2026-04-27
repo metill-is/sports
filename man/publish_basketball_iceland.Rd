@@ -2,7 +2,7 @@
 % Please edit documentation in R/publish-basketball-iceland.R
 \name{publish_basketball_iceland}
 \alias{publish_basketball_iceland}
-\title{Publish basketball Iceland JSONs (Plan 4 scaffold).}
+\title{Publish basketball Iceland JSONs.}
 \usage{
 publish_basketball_iceland(
   fit,
@@ -30,9 +30,24 @@ publish_basketball_iceland(
 `invisible(NULL)`
 }
 \description{
-Produces a minimal pair of JSONs (`meta.json` + `next_games.json`) for
-basketball Iceland into `output_root/basketball/iceland/{karla,kvenna}/`.
-League-table / season-projection / team-strengths JSONs are deferred to
-Plan 6 -- they need the metill-platform basketball page to be designed
-first.
+Writes seven JSON files into the karla and kvenna subfolders of
+`output_root/basketball/iceland/`:
+  - `meta.json`
+  - `next_games.json`
+  - `standings.json`
+  - `team_strengths.json`
+  - `final_positions.json`
+  - `points_distribution.json`
+  - `home_advantage.json`
+}
+\details{
+Mirrors the football Iceland publish surface modulo two structural
+differences imposed by the 2D Student-t model:
+  - No draws -- probability schemas use only p_home and p_away (basketball
+    is W/L only since OT resolves; the rare exact-tie probability from
+    continuous Student-t draws is rolled into `p_tie` for back-compat).
+  - No goals-process xG -- standings rows ship null `xg_for`/`xg_against`
+    /`xpts`. The platform JS gates the expected-columns block on these.
+
+Top division: Bonusdeild (`BD`).
 }
