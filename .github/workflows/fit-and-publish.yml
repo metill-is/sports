@@ -3,27 +3,38 @@ name: Fit + Decide + Publish
 on:
   schedule:
     - cron: '0 7 * * *'   # 1x daily UTC, after results scrape
-  workflow_dispatch:
-    inputs:
-      league:
-        description: 'Single league key (e.g. football_iceland) or "all"'
-        required: false
-        default: 'all'
-      sex:
-        description: 'male | female | all'
-        required: false
-        default: 'all'
+  workflow_dispatch: {}
 
 permissions:
   contents: write
 
+# Avoid two cron-triggered runs piling up if a previous run is still going.
+# In-progress runs are NOT cancelled -- a 1.5h fit that just started should
+# not be killed by the next dispatch.
+concurrency:
+  group: fit-and-publish
+  cancel-in-progress: false
+
 jobs:
   fit:
+    # Per-league matrix: each (league) job runs fit + decide + publish for
+    # both sexes of that league via run.R --league $LEAGUE. Three parallel
+    # jobs replace the previous monolithic 3-5h run -- failure of one league's
+    # publish (or hitting a per-job timeout) no longer kills the work for the
+    # other two. Each job has its own targets cache scoped to its league.
+    strategy:
+      fail-fast: false
+      matrix:
+        league:
+          - football_iceland
+          - basketball_iceland
+          - handball_iceland
+
     runs-on: ubuntu-latest
-    # Six (league x sex) Stan fits take 30-60 min each serially -- a cold cache
-    # run needs ~3-5 hours. Cap is GitHub's 6-hour hard limit; once the targets
-    # cache primes on a green run, subsequent runs only refit when ingests change.
-    timeout-minutes: 350
+    # Per-league fit takes 30-90 min cold + cheap decide/publish; 120 min
+    # gives margin. The previous 350m monolith was needed because all six
+    # (league x sex) fits ran serially; we now parallelise across leagues.
+    timeout-minutes: 120
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
@@ -58,33 +69,69 @@ jobs:
         run: |
           Rscript -e 'cmdstanr::install_cmdstan(version = Sys.getenv("CMDSTAN_VERSION"), cores = 2)'
 
-      - name: Restore targets cache
+      - name: Restore targets cache (per league)
+        # Per-league cache keys mean a Stan-model change to one league does
+        # not invalidate the others' caches. The hashFiles still includes
+        # all of R/ since cross-cutting helpers like R/model-* are shared,
+        # but a typo fix in publish-football won't force basketball/handball
+        # to refit from scratch -- targets itself only refits when its
+        # own dependencies change.
         uses: actions/cache@v4
         with:
           path: _targets
-          key: targets-${{ hashFiles('_targets.R', 'R/**', 'config/**', 'Stan/**') }}
-          restore-keys: targets-
+          key: targets-${{ matrix.league }}-${{ hashFiles('_targets.R', 'R/**', 'config/**', format('Stan/{0}/**', matrix.league)) }}
+          restore-keys: |
+            targets-${{ matrix.league }}-
 
-      - name: Fit + decide + publish
+      - name: Fit + decide + publish (${{ matrix.league }})
         run: |
-          LEAGUE="${{ github.event.inputs.league || 'all' }}"
-          SEX="${{ github.event.inputs.sex || 'all' }}"
-          if [ "$LEAGUE" = "all" ]; then
-            Rscript run.R --all --step fit
-            Rscript run.R --all --step decide
-            Rscript run.R --all --step publish
-          else
-            Rscript run.R --league "$LEAGUE" --sex "$SEX" --step fit
-            Rscript run.R --league "$LEAGUE" --sex "$SEX" --step decide
-            Rscript run.R --league "$LEAGUE" --sex "$SEX" --step publish
-          fi
+          Rscript run.R --league "${{ matrix.league }}" --step fit
+          Rscript run.R --league "${{ matrix.league }}" --step decide
+          Rscript run.R --league "${{ matrix.league }}" --step publish
 
       - name: Commit if data changed
         run: |
+          set -e
+          LEAGUE="${{ matrix.league }}"
+          # league key is "<sport>_<country>"; we publish per sport directory.
+          SPORT="${LEAGUE%_*}"
+
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/beliefs/latest/ data/beliefs/archive/ data/decisions/candidates/ \
-                  data/decisions/recommendations/ data/publish/
-          git diff --cached --quiet || git commit -m "data: fit/decide/publish $(date -u +%Y-%m-%dT%H:%MZ)"
-          git pull --rebase origin main
-          git push
+
+          # Scope adds to this league's sport partition only -- avoids touching
+          # other matrix jobs' files between their write and our commit. Skip
+          # paths that don't exist yet (e.g. on first decide-only failure
+          # the recommendations partition won't be there).
+          for p in \
+            "data/beliefs/latest/sport=$SPORT/" \
+            "data/beliefs/archive/sport=$SPORT/" \
+            "data/decisions/candidates/sport=$SPORT/" \
+            "data/decisions/recommendations/sport=$SPORT/" \
+            "data/publish/$SPORT/"; do
+            if [ -d "$p" ]; then git add -A "$p"; fi
+          done
+
+          if git diff --cached --quiet; then
+            echo "No data changed for $LEAGUE"
+            exit 0
+          fi
+
+          git commit -m "data: fit/decide/publish $LEAGUE $(date -u +%Y-%m-%dT%H:%MZ)"
+
+          # Three matrix jobs may finish near simultaneously and race on the
+          # main branch. Retry pull --rebase + push with backoff. Five attempts
+          # is plenty -- the rebase only ever has at most two unrelated peer
+          # commits ahead of us.
+          for attempt in 1 2 3 4 5; do
+            if git pull --rebase origin main && git push origin main; then
+              echo "Push succeeded on attempt $attempt"
+              exit 0
+            fi
+            backoff=$((RANDOM % 15 + 5))
+            echo "Push attempt $attempt failed; sleeping ${backoff}s"
+            sleep "$backoff"
+          done
+
+          echo "Failed to push $LEAGUE data after 5 attempts"
+          exit 1
