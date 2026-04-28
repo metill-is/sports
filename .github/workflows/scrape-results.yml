@@ -57,5 +57,10 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/facts/results/ data/facts/schedules/
           git diff --cached --quiet || git commit -m "data: federation scrape $(date -u +%Y-%m-%dT%H:%MZ)"
-          git pull --rebase origin main
+          # --autostash: chromote / targets may leave unstaged rewrites in
+          # working-tree files this workflow has no business committing
+          # (e.g. _targets metadata, cached chrome state). Plain `pull --rebase`
+          # would error out with "cannot pull with rebase: You have unstaged
+          # changes". --autostash shelves them before rebasing, pops after.
+          git pull --rebase --autostash origin main
           git push
