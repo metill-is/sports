@@ -20,10 +20,14 @@ basketball_iceland:
     odds: lengjan_odds
   lengjan:
     competitions:
-      - { id: "30774", name: "Bónusdeild kvenna efri", sex: female }
-      - { id: "30773", name: "Bónusdeild kvenna neðri", sex: female }
+      # 2026-04-28: Lengjan restructured kvenna efri/neðri (30774/30773) into a
+      # single playoff umbrella per sex. Old IDs now return empty placeholder
+      # pages (identical char count, no team hits). Men's Bónusdeild is now
+      # also on Lengjan (was missing at migration time).
+      - { id: "1519", name: "Bónusdeild karla úrslitakeppni", sex: male }
+      - { id: "1528", name: "Bónusdeild kvenna úrslitakeppni", sex: female }
     team_names:
-      male: {}                         # No men's BD on Lengjan currently
+      male: {}                         # Populate after first men's-matches scrape
       female:
         Grindavík: Grindavík kv
         Valur: Valur kv
