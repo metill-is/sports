@@ -92,8 +92,14 @@ ingest_league <- function(league, sex,
 #' the active_competitions JSON to short-circuit when there are no near-term
 #' fixtures (saves a chromote launch).
 #'
-#' @param leagues Output of `load_leagues()` (full config; the wrapper picks
-#'   `leagues[[key]]` itself).
+#' Takes the per-league "static" slice (sport, country, sexes, active,
+#' stan_model, data_source) rather than the full leagues config, so that
+#' downstream cache invalidation tracks only the fields that actually affect
+#' federation ingest -- changes to `lengjan` or `betting` don't bust this
+#' target's cache.
+#'
+#' @param static Per-league static slice (output of `league_static_<key>`
+#'   target in `_targets.R`).
 #' @param key League key (e.g. `"football_iceland"`).
 #' @param active_path Path to `config/active_competitions.json`.
 #' @return Integer count of rows fetched (results + schedule combined),
@@ -101,28 +107,35 @@ ingest_league <- function(league, sex,
 #'   `upsert_table()` deduplicates on disk. Use only as a "did anything
 #'   happen" indicator.
 #' @export
-ingest_one_league <- function(leagues, key, active_path) {
+ingest_one_league <- function(static, key, active_path) {
   if (!.is_league_active(active_path, key)) {
     cli::cli_alert_info("{key}: skipped (no active fixtures)")
     return(0L)
   }
-  league <- leagues[[key]]
   total <- 0L
-  for (sex in league$sexes) {
-    total <- total + ingest_league(league, sex, seasons = NULL)
+  for (sex in static$sexes) {
+    total <- total + ingest_league(static, sex, seasons = NULL)
   }
   total
 }
 
 #' Run Lengjan odds ingest for a single league (DAG wrapper).
 #'
-#' @inheritParams ingest_one_league
+#' Takes the static + lengjan slices separately so that betting-only changes
+#' don't bust this target's cache.
+#'
+#' @param static Per-league static slice.
+#' @param lengjan Per-league `lengjan` slice (competitions + team_names).
+#' @param key League key.
+#' @param active_path Path to `config/active_competitions.json`.
 #' @return Number of odds rows written (integer).
 #' @export
-ingest_one_lengjan <- function(leagues, key, active_path) {
+ingest_one_lengjan <- function(static, lengjan, key, active_path) {
   if (!.is_league_active(active_path, key)) {
     cli::cli_alert_info("{key}: skipped (no active fixtures)")
     return(0L)
   }
-  as.integer(ingest_lengjan_odds(leagues[key]))
+  league <- static
+  league$lengjan <- lengjan
+  as.integer(ingest_lengjan_odds(stats::setNames(list(league), key)))
 }

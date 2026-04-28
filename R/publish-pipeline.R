@@ -5,19 +5,25 @@ NULL
 #'
 #' Reads the fit RDS from `data/beliefs/fits/sport=X/country=Y/sex=Z/fit.rds`
 #' (saved by `fit_league` as a side-effect) and dispatches to the appropriate
-#' `publish_<sport>_iceland()`. Plan 6 cutover: replaces SPORTS_BACKUP_ROOT
-#' with a canonical in-tree path.
+#' `publish_<sport>_iceland()`. Takes the static + betting slices separately
+#' so publish-cache invalidation tracks only the fields the publishers read
+#' (sport/country for paths, betting.scoring for tie thresholds in
+#' basketball/handball publishers); a `lengjan` change does not bust this
+#' cache.
 #'
-#' @param leagues Output of `load_leagues()`.
-#' @param key League key.
+#' @param static Per-league static slice (sport, country, ...).
+#' @param betting Per-league `betting` slice.
+#' @param key League key (used only to dispatch to the per-sport publisher).
 #' @param sex `"male"` or `"female"`.
 #' @param fit_dep,decide_dep DAG-only dependency declarations; ignored.
 #' @param root Storage root.
 #' @return invisible(NULL).
 #' @export
-publish_one <- function(leagues, key, sex, fit_dep = NULL, decide_dep = NULL,
+publish_one <- function(static, betting, key, sex,
+                        fit_dep = NULL, decide_dep = NULL,
                         root = here::here("data")) {
-  league <- leagues[[key]]
+  league <- static
+  league$betting <- betting
   fit_path <- file.path(
     root, "beliefs", "fits",
     paste0("sport=", league$sport),

@@ -76,13 +76,49 @@ static_targets <- list(
   )
 )
 
+# Per-league config slices.
+#
+# leagues.yml is a coarse-grained source: every change rebuilds `leagues_config`
+# and would invalidate every downstream target that takes `leagues_config` as
+# a hash input. Splitting per-league config into three concern-scoped slices
+# lets targets' content-based hashing isolate cache invalidation: editing
+# `lengjan.competitions` rebuilds only `league_lengjan_<key>` (and its
+# downstream odds + decide), leaving `league_static_<key>` byte-identical
+# and so the 30-90 minute Stan fits stay cached.
+#
+# - league_static_<key>:  sport, country, sexes, active, stan_model, data_source
+# - league_lengjan_<key>: lengjan (competitions + team_names)
+# - league_betting_<key>: betting (kelly_frac, ev_threshold, markets, scoring, ...)
+slice_targets <- unlist(lapply(active_keys, function(key) {
+  list(
+    tar_target_raw(
+      name = paste0("league_static_", key),
+      command = substitute(
+        leagues_config[[k]][c(
+          "sport", "country", "sexes", "active", "stan_model", "data_source"
+        )],
+        list(k = key)
+      )
+    ),
+    tar_target_raw(
+      name = paste0("league_lengjan_", key),
+      command = substitute(leagues_config[[k]]$lengjan, list(k = key))
+    ),
+    tar_target_raw(
+      name = paste0("league_betting_", key),
+      command = substitute(leagues_config[[k]]$betting, list(k = key))
+    )
+  )
+}), recursive = FALSE)
+
 # Per-league ingest targets -- federation results + schedules.
 ingest_targets <- lapply(active_keys, function(key) {
+  static_dep <- as.symbol(paste0("league_static_", key))
   tar_target_raw(
     name = paste0("ingest_", key),
     command = substitute(
-      ingest_one_league(leagues_config, k, active_competitions),
-      list(k = key)
+      ingest_one_league(static, k, active_competitions),
+      list(static = static_dep, k = key)
     ),
     cue = tar_cue(mode = "always")
   )
@@ -90,53 +126,67 @@ ingest_targets <- lapply(active_keys, function(key) {
 
 # Per-league odds targets -- Lengjan, schedule-aware.
 odds_targets <- lapply(lengjan_keys, function(key) {
+  static_dep <- as.symbol(paste0("league_static_", key))
+  lengjan_dep <- as.symbol(paste0("league_lengjan_", key))
   tar_target_raw(
     name = paste0("odds_", key),
     command = substitute(
-      ingest_one_lengjan(leagues_config, k, active_competitions),
-      list(k = key)
+      ingest_one_lengjan(static, lengjan, k, active_competitions),
+      list(static = static_dep, lengjan = lengjan_dep, k = key)
     ),
     cue = tar_cue(mode = "always")
   )
 })
 
-# Per-(league x sex) fit targets -- Stan posteriors. Depends on ingest_<key>
-# but fit only re-runs when the upstream actually changes (default cue,
-# unlike scrape targets which run on every invocation).
+# Per-(league x sex) fit targets -- Stan posteriors. Depends only on the
+# static slice (sport/country/stan_model) plus the ingest dep, NOT on lengjan
+# or betting -- those don't affect the model so they shouldn't bust the
+# cache.
 fit_targets <- list()
 for (key in active_keys) {
   league_def <- leagues_definition[[key]]
   for (sex in league_def$sexes) {
     target_name <- paste0("fit_", key, "_", sex)
+    static_dep <- as.symbol(paste0("league_static_", key))
     ingest_dep <- as.symbol(paste0("ingest_", key))
     fit_targets[[length(fit_targets) + 1L]] <- tar_target_raw(
       name = target_name,
       command = substitute(
-        fit_one(leagues_config, k, s, ingest_dep),
-        list(k = key, s = sex, ingest_dep = ingest_dep)
+        fit_one(static, s, ingest_dep),
+        list(static = static_dep, s = sex, ingest_dep = ingest_dep)
       )
     )
   }
 }
 
 # Per-(league x sex) decide targets -- Kelly + portfolio + calibration.
-# Depends on fit_<key>_<sex> and (when Lengjan-configured) odds_<key>.
+# Depends on all three slices (static + lengjan for team_names + betting for
+# kelly_frac/ev_threshold) plus fit + odds.
 decide_targets <- list()
 for (key in active_keys) {
   league_def <- leagues_definition[[key]]
   for (sex in league_def$sexes) {
     target_name <- paste0("decide_", key, "_", sex)
+    static_dep <- as.symbol(paste0("league_static_", key))
+    lengjan_dep <- as.symbol(paste0("league_lengjan_", key))
+    betting_dep <- as.symbol(paste0("league_betting_", key))
     fit_dep <- as.symbol(paste0("fit_", key, "_", sex))
     if (key %in% lengjan_keys) {
       odds_dep <- as.symbol(paste0("odds_", key))
       cmd <- substitute(
-        decide_one(leagues_config, k, s, bankroll, fit_dep, odds_dep),
-        list(k = key, s = sex, fit_dep = fit_dep, odds_dep = odds_dep)
+        decide_one(static, lengjan, betting, s, bankroll, fit_dep, odds_dep),
+        list(
+          static = static_dep, lengjan = lengjan_dep, betting = betting_dep,
+          s = sex, fit_dep = fit_dep, odds_dep = odds_dep
+        )
       )
     } else {
       cmd <- substitute(
-        decide_one(leagues_config, k, s, bankroll, fit_dep),
-        list(k = key, s = sex, fit_dep = fit_dep)
+        decide_one(static, lengjan, betting, s, bankroll, fit_dep),
+        list(
+          static = static_dep, lengjan = lengjan_dep, betting = betting_dep,
+          s = sex, fit_dep = fit_dep
+        )
       )
     }
     decide_targets[[length(decide_targets) + 1L]] <- tar_target_raw(
@@ -146,25 +196,31 @@ for (key in active_keys) {
 }
 
 # Per-(league x sex) publish targets -- JSONs.
-# Depends on fit (via fit RDS file at data/beliefs/fits/) and decide.
+# Depends on static + betting (publishers read sport/country for paths and
+# betting.scoring for tie thresholds), plus fit + decide.
 publish_targets <- list()
 for (key in active_keys) {
   league_def <- leagues_definition[[key]]
   for (sex in league_def$sexes) {
     target_name <- paste0("publish_", key, "_", sex)
+    static_dep <- as.symbol(paste0("league_static_", key))
+    betting_dep <- as.symbol(paste0("league_betting_", key))
     fit_dep <- as.symbol(paste0("fit_", key, "_", sex))
     decide_dep <- as.symbol(paste0("decide_", key, "_", sex))
     publish_targets[[length(publish_targets) + 1L]] <- tar_target_raw(
       name = target_name,
       command = substitute(
-        publish_one(leagues_config, k, s, fit_dep, decide_dep),
-        list(k = key, s = sex, fit_dep = fit_dep, decide_dep = decide_dep)
+        publish_one(static, betting, k, s, fit_dep, decide_dep),
+        list(
+          static = static_dep, betting = betting_dep, k = key, s = sex,
+          fit_dep = fit_dep, decide_dep = decide_dep
+        )
       )
     )
   }
 }
 
 c(
-  static_targets, ingest_targets, odds_targets, fit_targets,
+  static_targets, slice_targets, ingest_targets, odds_targets, fit_targets,
   decide_targets, publish_targets
 )
