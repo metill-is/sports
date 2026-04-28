@@ -101,37 +101,99 @@ transformed data {
 }
 
 parameters {
-  // Offensive
+  // ===== Offensive strengths (per-team random walk across rounds) =====
+
+  // off0[k]: team k's offensive ability at round 1, on the LOG-rate scale (the linear
+  // predictor for a Poisson rate). Sign +: above-average attacker. exp(off0[k]) is a
+  // multiplicative rate scaling, so |off0[k]| ~ 0.5-1.5 expected. std_normal() is
+  // weakly informative on this scale -- a 1-sigma shift is exp(1) ~ 2.7x rate, a
+  // substantively large effect. Sum-to-zero anchors league-mean log-rate.
   sum_to_zero_vector[K] off0;
+
+  // z_off[i, k]: standardised round-i innovation for the offensive RW. Dimensionless
+  // std_normal; actual change per round = delta_t .* sigma_off .* z_off (see transformed
+  // parameters). Sum-to-zero preserves the league-mean log-rate anchor.
   array[N_rounds] sum_to_zero_vector[K] z_off;
+
+  // Non-centred lognormal hierarchy on per-team RW SD:
+  //   sigma_off[k] = exp(mean_sigma_off + z_sigma_off[k] * scale_sigma_off).
+  // mean_sigma_off ~ normal(-4, 2) puts typical RW SD ~ exp(-4) ~ 0.018 on log-rate
+  // per sqrt-week, i.e. ~1.8% multiplicative drift per round. Much smaller than
+  // basketball/handball because effects are multiplicative on log scale -- even small
+  // log-scale drifts yield meaningful rate changes. scale_sigma_off ~ exponential(2)
+  // (mean 0.5) governs between-team variation in volatility.
   vector[K] z_sigma_off;
   real<lower = 0> scale_sigma_off;
   real mean_sigma_off;
 
-  // Defensive
+  // ===== Defensive strengths (per-team random walk) =====
+
+  // def0[k]: team k's defensive ability at round 1 on log-rate scale. Sign +: better
+  // defence (defence enters as -def[opponent] in mu, lowering opponent log-rate).
+  // Same sum-to-zero, std_normal() prior as offence -- both enter mu symmetrically.
   sum_to_zero_vector[K] def0;
   array[N_rounds] sum_to_zero_vector[K] z_def;
+
+  // Defensive volatility hierarchy. mean_sigma_def ~ normal(-5, 2) is shifted lower
+  // than offence (-4): defensive ability drifts even more slowly than offence on the
+  // log scale, matching the empirical pattern (defensive structure is harder to change
+  // quickly). exp(-5) ~ 0.007, roughly 0.7% multiplicative drift per round.
   vector[K] z_sigma_def;
   real<lower = 0> scale_sigma_def;
   real mean_sigma_def;
 
-  // Mean log-goals
+  // ===== League-wide mean log-goals =====
+  // mean_log_goals: scalar baseline log-rate of goals per team per game. Unlike
+  // basketball/handball there is no per-season RW here -- league-wide drift is absorbed
+  // by team-level off/def strengths. normal(log(1.5), 1) centres on the Icelandic
+  // top-division empirical mean (~1.5 goals/team) with 1-sigma admitting per-team rates
+  // from ~0.55 to ~4.1 (exp(log(1.5) +/- 1)).
   real mean_log_goals;
 
-  // Home advantage
+  // ===== Home advantage (per team, strict positive) =====
+
+  // home_advantage_off[k]: extra log-rate scored at home (>= 0 by substantive prior; no
+  // team is *worse* at home). std_normal() with the >=0 constraint becomes half-normal(0,1)
+  // -- exp(0.3) ~ 1.35x rate at home is typical for Icelandic football; the prior admits
+  // up to ~exp(1) ~ 2.7x at 1-sigma without aggressive shrinkage.
   vector<lower = 0>[K] home_advantage_off;
+  // home_advantage_def[k]: extra log-rate prevented at home (>= 0, same half-std_normal()).
+  // Per-team total home edge = home_advantage_off + home_advantage_def on the log scale.
   vector<lower = 0>[K] home_advantage_def;
 
-  // Bivariate Poisson correlation (trivariate-reduction shared rate)
+  // ===== Bivariate Poisson correlation (trivariate-reduction shared rate) =====
+  // The bivariate Poisson is constructed as Y1 = X1 + X3, Y2 = X2 + X3, where
+  // X3 ~ Poisson(lambda3) is the shared component. Larger lambda3 -> more correlation
+  // between team-1 and team-2 goal counts. Here lambda3 is parameterised as
+  //   lambda3 = exp(log_inv_logit(alpha_mu3 + beta_mu3_strength_diff * |dStrength|)
+  //                 + 0.5 * (mu1 + mu2))
+  // = p * sqrt(lambda1 * lambda2), where p = inv_logit(...) in (0, 1) is the "shared
+  // fraction" of the geometric mean of the two team rates.
+
+  // alpha_mu3: baseline logit of the shared fraction p. std_normal -- 1-sigma admits
+  // p in about (0.27, 0.73), covering the natural range of correlation strengths
+  // without forcing a specific magnitude.
   real alpha_mu3;
+  // beta_mu3_strength_diff: how |dStrength| modulates p. Sign +: mismatched games have
+  // more correlation; - : less correlation. std_normal is weakly informative; 2026-04-20
+  // audits showed fitted p ~0.02 in Iceland (small) -- the data drives this rather than
+  // the prior.
   real beta_mu3_strength_diff;
 }
 
 transformed parameters {
+  // offense[i, k]: deterministic random-walk trajectory of team k's offensive log-rate
+  // through round i (same units as off0). Sum-to-zero across teams at every i because
+  // each innovation is sum-to-zero.
   array[N_rounds] vector[K] offense;
+  // sigma_off[k]: per-team RW SD on the natural (positive) scale, derived from the
+  // lognormal hierarchy. Typical magnitude ~exp(-4) ~ 0.018 log-rate per sqrt-week
+  // (~1.8% multiplicative drift).
   vector<lower = 0>[K] sigma_off = exp(mean_sigma_off + z_sigma_off * scale_sigma_off);
 
+  // defense[i, k]: defensive analogue of offense[i, k] -- log-rate scale, sum-to-zero.
   array[N_rounds] vector[K] defense;
+  // sigma_def[k]: per-team defensive RW SD (mean_sigma_def -> exp() ~ 0.007 ~ 0.7% drift).
   vector<lower = 0>[K] sigma_def = exp(mean_sigma_def + z_sigma_def * scale_sigma_def);
 
   offense[1] = off0;

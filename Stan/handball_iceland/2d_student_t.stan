@@ -81,43 +81,92 @@ transformed data {
  * - This sharing of information helps with teams having fewer matches
  */
 parameters {
-  // Offensive parameters with hierarchical structure
-  sum_to_zero_vector[K] off0;              // Initial offensive strengths
-  array[N_rounds] sum_to_zero_vector[K] z_off;  // Innovations for offense
-  
-  vector[K] z_sigma_off;                   // Scale of random walk
+  // ===== Offensive strengths (per-team random walk across rounds) =====
+
+  // off0[k]: team k's offensive ability at round 1, in goals-per-game relative to the
+  // league mean (sum_to_zero_vector centres at 0). Sign +: above-average scorer.
+  // |off0[k]| ~ 0-5 typical in Icelandic top-division handball; normal(0, 10) is weakly
+  // informative and admits 2-sigma outliers around +/- 20 goals without active shrinkage.
+  sum_to_zero_vector[K] off0;
+
+  // z_off[i, k]: standardised round-i innovation for the offensive RW. Dimensionless
+  // std_normal; actual change per round = delta_t .* sigma_off .* z_off (see transformed
+  // parameters). Sum-to-zero preserves the league-mean anchor.
+  array[N_rounds] sum_to_zero_vector[K] z_off;
+
+  // Non-centred lognormal hierarchy on per-team RW SD:
+  //   sigma_off[k] = exp(mean_sigma_off + z_sigma_off[k] * scale_sigma_off).
+  // mean_sigma_off ~ normal(-1.5, 2) on the log scale puts typical RW SD ~ exp(-1.5) ~ 0.22
+  // goals per sqrt-week (small round-to-round drift); scale_sigma_off ~ exponential(2)
+  // (mean 0.5) governs between-team variation; z_sigma_off ~ std_normal are per-team draws.
+  vector[K] z_sigma_off;
   real<lower = 0> scale_sigma_off;
   real mean_sigma_off;
 
-  // Defensive parameters
-  sum_to_zero_vector[K] def0;              // Initial defensive strengths
-  array[N_rounds] sum_to_zero_vector[K] z_def;  // Innovations for defense
-  
-  vector[K] z_sigma_def;                   // Scale of random walk
+  // ===== Defensive strengths (per-team random walk) =====
+
+  // def0[k]: team k's defensive ability at round 1. Sign convention +: better defence
+  // (reduces opponent expected score, since defence enters as -def[opponent] in mu).
+  // Same sum-to-zero, normal(0, 10) prior as offence -- both enter mu symmetrically.
+  sum_to_zero_vector[K] def0;
+  array[N_rounds] sum_to_zero_vector[K] z_def;
+
+  // Defensive analogue of the offensive volatility hierarchy. mean_sigma_def ~ normal(-2, 2)
+  // shifted lower than offence (-1.5): empirically, defensive ability drifts more slowly
+  // than offensive ability at the team-week level.
+  vector[K] z_sigma_def;
   real<lower = 0> scale_sigma_def;
   real mean_sigma_def;
 
-  // Mean of log goals
+  // ===== Seasonal scoring environment (random walk + linear drift across seasons) =====
+
+  // mean_goals0: season-1 league-wide expected goals per team per game. normal(30, 10)
+  // centres on the Icelandic handball top-division empirical mean (~28-30 goals/team/game)
+  // with 2-sigma admitting rule-change regimes spanning ~10-50.
   real mean_goals0;
+  // delta_mean_goals: year-over-year drift; + means rising scoring (rule changes, pace
+  // evolution). normal(0, 10) admits ~+/- 20-goal shift over two seasons before the data
+  // must override.
   real delta_mean_goals;
+  // sigma_mean_goals: residual SD around the seasonal linear trend. Strict +,
+  // exponential(2) (mean 0.5) is a soft regulariser -- only large on sudden discontinuities.
   real<lower = 0> sigma_mean_goals;
+  // z_mean_goals: standardised seasonal innovations; std_normal.
   array[N_seasons - 1] real z_mean_goals;
 
 
-  // Home advantage parameters
-  vector<lower = 0>[K] home_advantage_off;
-  vector<lower = 0>[K] home_advantage_def;  
+  // ===== Home advantage (per team, strict positive) =====
 
-  // Team-specific sigma parameters
-  vector[K] z_sigma_team;        // Team-specific scoring variability
+  // home_advantage_off[k]: extra goals scored at home (>= 0 by substantive prior; no team
+  // is *worse* at home). Typical 1-3 goals; half-normal(0, 10) is wide enough for ~5-goal
+  // outliers without aggressive shrinkage.
+  vector<lower = 0>[K] home_advantage_off;
+  // home_advantage_def[k]: extra goals prevented at home (>= 0, same half-normal(0, 10)).
+  // Per-team total home edge = home_advantage_off + home_advantage_def.
+  vector<lower = 0>[K] home_advantage_def;
+
+  // ===== Per-team scoring variability hierarchy =====
+  // sigma_team[k] = exp(mean_sigma_team + z_sigma_team[k] * scale_sigma_team).
+  // mean_sigma_team ~ normal(2, 2) puts typical team-level score SD ~ exp(2) ~ 7.4 goals,
+  // close to the observed Icelandic handball per-team score SD of ~5-7 goals. Unlike
+  // basketball's collapsed scalar sigma, handball retains the per-team structure because
+  // dispersion across top-division handball teams varies meaningfully.
+  vector[K] z_sigma_team;
   real<lower = 0> scale_sigma_team;
   real mean_sigma_team;
 
-  // Degrees of freedom for t-distribution
-  real<lower = 1> nu;                      // Degrees of freedom for t-distribution
-  
-  // Correlation between home and away goals
-  real<lower=-1, upper=1> rho;            // Correlation between home and away goals
+  // ===== Heavy-tail degrees of freedom =====
+  // nu: Student-t degrees of freedom. Constrained >= 1 to keep variance defined.
+  // gamma(3, 0.15) has mean 20 -- admits occasional blowouts (low nu) without forcing
+  // Gaussian (nu -> infinity) or extreme heavy tails (nu near 1).
+  real<lower = 1> nu;
+
+  // ===== Score correlation =====
+  // rho: correlation between home and away goals within a match, constant across all
+  // matches (unlike basketball's match-dependent rho). uniform(-1, 1) is non-informative
+  // -- the data alone drives the posterior. Substantively expected near zero or slightly
+  // positive (high-pace games lift both scores).
+  real<lower=-1, upper=1> rho;
 }
 
 /**
@@ -128,12 +177,17 @@ parameters {
  * 2. Evolves team strengths through time using random walks
  */
 transformed parameters {
-  // Offensive parameters over time
-  array[N_rounds] vector[K] offense;        // Offensive strengths for each round
+  // offense[i, k]: deterministic random-walk trajectory of team k's offensive ability
+  // through round i, in goals-per-game (same units as off0). Sum-to-zero across teams
+  // at every i because each innovation is sum-to-zero.
+  array[N_rounds] vector[K] offense;
+  // sigma_off[k]: per-team RW SD on the natural (positive) scale, derived from the
+  // lognormal hierarchy. Typical magnitude ~exp(-1.5) ~ 0.22 goals per sqrt-week.
   vector<lower = 0>[K] sigma_off = exp(mean_sigma_off + z_sigma_off * scale_sigma_off);
 
-  // Defensive parameters over time
-  array[N_rounds] vector[K] defense;        // Defensive strengths for each round
+  // defense[i, k]: defensive analogue of offense[i, k] -- same units, same sum-to-zero.
+  array[N_rounds] vector[K] defense;
+  // sigma_def[k]: per-team defensive RW SD (mean_sigma_def -> exp() ~ 0.14 goals/sqrt-week).
   vector<lower = 0>[K] sigma_def = exp(mean_sigma_def + z_sigma_def * scale_sigma_def);
 
   // Initialize first round
@@ -146,11 +200,17 @@ transformed parameters {
     defense[i, ] = defense[i - 1, ] + delta_t[ , i] .* sigma_def .* z_def[i, ];
   }
 
+  // sigma_team[k]: per-team scoring SD on the natural (positive) scale, derived from the
+  // lognormal hierarchy on mean_sigma_team. Typical magnitude ~exp(2) ~ 7.4 goals -- this
+  // is the per-team game-level scoring noise after offence/defence are accounted for.
   vector<lower=0>[K] sigma_team = exp(mean_sigma_team + scale_sigma_team * z_sigma_team);
 
+  // mean_goals[s]: league-wide expected goals per team per game in season s, in goals
+  // (same units as mean_goals0). Built from a linear trend (delta_mean_goals) plus
+  // standardised seasonal noise (sigma_mean_goals * z_mean_goals).
   vector[N_seasons] mean_goals;
   mean_goals[1] = mean_goals0;
-  for (i in 2:N_seasons) { 
+  for (i in 2:N_seasons) {
     mean_goals[i] = mean_goals[i - 1] + delta_mean_goals + sigma_mean_goals * z_mean_goals[i - 1];
   }
 
