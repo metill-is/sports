@@ -19,7 +19,10 @@ fit_league(
   seed = NULL,
   from_season = NULL,
   schedule_horizon_days = 14L,
-  write_archive = TRUE
+  write_archive = TRUE,
+  round_cutoff = NULL,
+  season = NULL,
+  top_division = "BD"
 )
 }
 \arguments{
@@ -50,6 +53,21 @@ fit_league(
 \item{schedule_horizon_days}{Days ahead of `end_date` to include from schedule. Default 14.}
 
 \item{write_archive}{Write `beliefs/archive/` in addition to `beliefs/latest/`? Default TRUE.}
+
+\item{round_cutoff}{Optional integer. When supplied (with `season`),
+triggers per-round mode: `end_date` is overridden to the date of the
+round-N completion (max of each top-division team's Nth match);
+`schedule_horizon_days` is widened to cover the rest of the season; the
+fit RDS is written to `data/beliefs/fits_by_round/sport=X/.../season=YYYY/round=NN/fit.rds`
+instead of `data/beliefs/fits/`; and predictive draws are appended to
+`beliefs_by_round` (with `season` and `round_cutoff` columns) instead of
+`beliefs_latest` / `beliefs_archive`. Returns `NULL` invisibly if the
+round is not yet complete in the data.}
+
+\item{season}{Integer season year. Required when `round_cutoff` is set.}
+
+\item{top_division}{Division code identifying the top flight for round
+accounting. Default `"BD"`.}
 }
 \value{
 Tibble of beliefs (invisibly).

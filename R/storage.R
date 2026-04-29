@@ -5,14 +5,15 @@ NULL
 #' @noRd
 table_partitions <- function() {
   list(
-    results         = c("sport", "country", "sex", "season"),
-    schedules       = c("sport", "country", "sex", "season"),
-    odds            = c("sport", "country", "scraped_date"),
-    beliefs_latest  = c("sport", "country", "sex"),
+    results = c("sport", "country", "sex", "season"),
+    schedules = c("sport", "country", "sex", "season"),
+    odds = c("sport", "country", "scraped_date"),
+    beliefs_latest = c("sport", "country", "sex"),
     beliefs_archive = c("sport", "country", "sex", "fit_date"),
-    candidates      = c("sport", "country", "run_date"),
+    beliefs_by_round = c("sport", "country", "sex", "season", "round_cutoff"),
+    candidates = c("sport", "country", "run_date"),
     recommendations = c("sport", "country", "run_date"),
-    ledger          = c("sport", "country")
+    ledger = c("sport", "country")
   )
 }
 
@@ -25,6 +26,7 @@ table_subdir <- function(table) {
     odds = c("facts", "odds"),
     beliefs_latest = c("beliefs", "latest"),
     beliefs_archive = c("beliefs", "archive"),
+    beliefs_by_round = c("beliefs", "by_round"),
     candidates = c("decisions", "candidates"),
     recommendations = c("decisions", "recommendations"),
     ledger = c("decisions", "ledger"),

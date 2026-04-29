@@ -60,6 +60,7 @@ Collate:
     'ingest-ksi-football.R'
     'ingest-lengjan-odds.R'
     'model-fit.R'
+    'round-cutoff.R'
     'model-posteriors.R'
     'model-prepare.R'
     'model-league.R'

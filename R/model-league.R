@@ -1,4 +1,4 @@
-#' @include model-prepare.R model-fit.R model-posteriors.R storage.R config.R
+#' @include model-prepare.R model-fit.R model-posteriors.R storage.R config.R round-cutoff.R
 NULL
 
 # Read an integer env var with sensible fallbacks. `Sys.getenv(name, "1000")`
@@ -37,6 +37,18 @@ NULL
 #' @param from_season Optional integer: earliest season to include in training data.
 #' @param schedule_horizon_days Days ahead of `end_date` to include from schedule. Default 14.
 #' @param write_archive Write `beliefs/archive/` in addition to `beliefs/latest/`? Default TRUE.
+#' @param round_cutoff Optional integer. When supplied (with `season`),
+#'   triggers per-round mode: `end_date` is overridden to the date of the
+#'   round-N completion (max of each top-division team's Nth match);
+#'   `schedule_horizon_days` is widened to cover the rest of the season; the
+#'   fit RDS is written to `data/beliefs/fits_by_round/sport=X/.../season=YYYY/round=NN/fit.rds`
+#'   instead of `data/beliefs/fits/`; and predictive draws are appended to
+#'   `beliefs_by_round` (with `season` and `round_cutoff` columns) instead of
+#'   `beliefs_latest` / `beliefs_archive`. Returns `NULL` invisibly if the
+#'   round is not yet complete in the data.
+#' @param season Integer season year. Required when `round_cutoff` is set.
+#' @param top_division Division code identifying the top flight for round
+#'   accounting. Default `"BD"`.
 #' @return Tibble of beliefs (invisibly).
 #' @export
 fit_league <- function(league_key = NULL,
@@ -58,7 +70,10 @@ fit_league <- function(league_key = NULL,
                        seed = NULL,
                        from_season = NULL,
                        schedule_horizon_days = 14L,
-                       write_archive = TRUE) {
+                       write_archive = TRUE,
+                       round_cutoff = NULL,
+                       season = NULL,
+                       top_division = "BD") {
   if (is.null(league) == is.null(league_key)) {
     stop("Exactly one of `league_key` or `league` must be supplied",
       call. = FALSE
@@ -76,6 +91,41 @@ fit_league <- function(league_key = NULL,
   }
   stopifnot(sex %in% c("male", "female"))
   stopifnot(!is.null(league$stan_model))
+
+  by_round_mode <- !is.null(round_cutoff)
+  if (by_round_mode) {
+    if (is.null(season)) {
+      stop("`season` is required when `round_cutoff` is supplied", call. = FALSE)
+    }
+    results_all <- read_table(
+      "results",
+      root = root,
+      filter = list(sport = league$sport, country = league$country, sex = sex)
+    )
+    cutoff_date <- compute_round_cutoff_date(
+      results_all,
+      season = season,
+      round_cutoff = round_cutoff,
+      top_division = top_division
+    )
+    if (is.null(cutoff_date)) {
+      cli::cli_alert_warning(
+        paste0(
+          "fit_league({league$sport}/{league$country}/{sex}): round ",
+          "{round_cutoff} of season {season} not yet complete -- skipping."
+        )
+      )
+      return(invisible(NULL))
+    }
+    end_date <- cutoff_date
+    schedule_horizon_days <- 200L
+    cli::cli_alert_info(
+      paste0(
+        "fit_league round mode: season {season} round {round_cutoff} ",
+        "(cutoff_date = {format(cutoff_date)})"
+      )
+    )
+  }
 
   stan_path <- file.path(stan_dir, league$stan_model)
   if (!file.exists(stan_path)) {
@@ -102,12 +152,23 @@ fit_league <- function(league_key = NULL,
   # `data/beliefs/latest/` is the canonical Parquet for the long-form draws,
   # but publishers also need team-level Stan parameters via fit$draws(var)
   # which aren't in that schema. Save the fit RDS alongside.
-  fits_dir <- file.path(
-    root, "beliefs", "fits",
-    paste0("sport=", league$sport),
-    paste0("country=", league$country),
-    paste0("sex=", sex)
-  )
+  if (by_round_mode) {
+    fits_dir <- file.path(
+      root, "beliefs", "fits_by_round",
+      paste0("sport=", league$sport),
+      paste0("country=", league$country),
+      paste0("sex=", sex),
+      paste0("season=", season),
+      paste0("round=", sprintf("%02d", as.integer(round_cutoff)))
+    )
+  } else {
+    fits_dir <- file.path(
+      root, "beliefs", "fits",
+      paste0("sport=", league$sport),
+      paste0("country=", league$country),
+      paste0("sex=", sex)
+    )
+  }
   dir.create(fits_dir, recursive = TRUE, showWarnings = FALSE)
   # save_object() depends on cmdstanr's underlying CSV temp files. They can
   # be GC'd between fit and save (e.g. cmdstan_fit() output_dir cleanup).
@@ -127,9 +188,20 @@ fit_league <- function(league_key = NULL,
   )
 
   if (nrow(beliefs) > 0L) {
-    write_table(beliefs, "beliefs_latest", root = root)
-    if (isTRUE(write_archive)) {
-      write_table(beliefs, "beliefs_archive", root = root)
+    if (by_round_mode) {
+      beliefs$season <- as.integer(season)
+      beliefs$round_cutoff <- as.integer(round_cutoff)
+      beliefs <- beliefs[, c(
+        "sport", "country", "sex", "season", "round_cutoff",
+        "fit_date", "match_date", "home_team", "away_team",
+        "draw_id", "home_goals", "away_goals"
+      ), drop = FALSE]
+      write_table(beliefs, "beliefs_by_round", root = root)
+    } else {
+      write_table(beliefs, "beliefs_latest", root = root)
+      if (isTRUE(write_archive)) {
+        write_table(beliefs, "beliefs_archive", root = root)
+      }
     }
   } else {
     cli::cli_alert_warning(

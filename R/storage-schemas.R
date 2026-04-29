@@ -70,6 +70,20 @@ schemas <- function() {
       home_goals  = arrow::float64(),
       away_goals  = arrow::float64()
     ),
+    beliefs_by_round = arrow::schema(
+      sport        = arrow::string(),
+      country      = arrow::string(),
+      sex          = arrow::string(),
+      season       = arrow::int32(),
+      round_cutoff = arrow::int32(),
+      fit_date     = arrow::date32(),
+      match_date   = arrow::date32(),
+      home_team    = arrow::string(),
+      away_team    = arrow::string(),
+      draw_id      = arrow::int32(),
+      home_goals   = arrow::float64(),
+      away_goals   = arrow::float64()
+    ),
     candidates = arrow::schema(
       run_id      = ts,
       sport       = arrow::string(),
