@@ -141,7 +141,8 @@ decide_league <- function(league_key = NULL, league = NULL, sex,
     kj <- kelly_joint(
       mb[, c("draw_id", "home_goals", "away_goals"), drop = FALSE],
       bets_in,
-      kelly_frac = kelly_frac_val,
+      max_match_stake = betting$max_match_stake %||%
+        (bankroll$max_match_stake_default %||% 1.0),
       ev_threshold = betting$ev_threshold %||% 0.0
     )
 

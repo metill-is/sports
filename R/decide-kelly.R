@@ -132,7 +132,10 @@ solve_kelly_joint <- function(net_return, max_stake) {
 #'   one match. Typically S = 4000 rows from a Stan fit.
 #' @param bets Tibble with `market` (moneyline/spread/total), `outcome`
 #'   (home/draw/away/over/under), `line` (numeric or NA), `odds` (decimal).
-#' @param kelly_frac Maximum fraction of bankroll for this match.
+#' @param max_match_stake Per-match solver cap (`Σ f_j ≤ max_match_stake`).
+#'   Default 1.0 = unconstrained joint Kelly. The §7.2 fractional-Kelly
+#'   shrinkage `kelly_frac` is applied by the caller (`decide_league()`)
+#'   after the optimiser returns, *not* via this cap.
 #' @param ev_threshold Minimum EV per bet to consider. Bets below threshold
 #'   are zeroed before optimisation.
 #' @param tie_threshold Reserved for future use (tie-handling in handball
@@ -141,7 +144,7 @@ solve_kelly_joint <- function(net_return, max_stake) {
 #'   (numeric S), `match_kelly_sum` (sum of kelly_raw), `diagnostics` (list).
 #' @export
 kelly_joint <- function(beliefs, bets,
-                        kelly_frac = 0.10,
+                        max_match_stake = 1.0,
                         ev_threshold = 0.0,
                         tie_threshold = 0) {
   R <- build_return_matrix(beliefs, bets)
@@ -155,7 +158,7 @@ kelly_joint <- function(beliefs, bets,
   solver_status <- NA_integer_
   solver_iterations <- NA_integer_
   if (sum(keep) > 0L) {
-    sol <- solve_kelly_joint(R_keep, max_stake = kelly_frac)
+    sol <- solve_kelly_joint(R_keep, max_stake = max_match_stake)
     f[keep] <- sol$solution
     solver_status <- sol$status
     solver_iterations <- sol$iterations
@@ -176,11 +179,11 @@ kelly_joint <- function(beliefs, bets,
     match_pnl = match_pnl,
     match_kelly_sum = sum(f),
     diagnostics = list(
-      n_bets        = nrow(bets),
-      n_kept        = sum(keep),
-      kelly_frac    = kelly_frac,
-      nloptr_status = solver_status,
-      nloptr_iter   = solver_iterations
+      n_bets          = nrow(bets),
+      n_kept          = sum(keep),
+      max_match_stake = max_match_stake,
+      nloptr_status   = solver_status,
+      nloptr_iter     = solver_iterations
     )
   )
 }
