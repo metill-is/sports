@@ -238,8 +238,19 @@ Internal schemas use English throughout. Canonical column names: `home_team` / `
   prepare_odds + kelly_joint + portfolio_optimise + compute_calibration,
   writes candidates (with stage column) + recommendations Parquet.
 - Joint Kelly is the only mode (per 2026-03-06 memory note).
+- **Stake formula (post Plan 7a, 2026-04-29):**
+  `bet_amount = round(kelly_raw × portfolio_lambda × min(kelly_frac × calibration, kelly_ceiling) × current_pool)`.
+  - `kelly_raw` is the unconstrained joint Kelly fraction from
+    `kelly_joint()`; bounded above by `max_match_stake` (per-league override
+    or `bankroll$max_match_stake_default`, default 1.0 = unconstrained).
+  - `kelly_frac` is the §7.2 multiplicative shrinkage (Browne γ); per-league
+    in `leagues.yml::*.betting.kelly_frac` (scalar or `{male, female}`).
+  - `calibration` is the Beta-Binomial multiplier from
+    `compute_calibration()`, clamped to `[0.5, 1.5]`.
+  - `kelly_ceiling` is the K5 hard cap (default 0.25 in `bankroll.yml`).
 - Per-sex `kelly_frac` supported via object form in `betting:` config
-  (football_iceland uses male=0.15, female=0.075).
+  (basketball/football use per-sex; handball uses scalar). Browne-grounded
+  defaults: male 0.20, female 0.10–0.15.
 - Daily driver: `Rscript run.R --all --step decide` (uses `{targets}` cache).
   `scripts/decide_all.R` is deprecated — keep for one-shot reruns. Wall-clock ~seconds.
 
@@ -281,12 +292,12 @@ Handoff: `Sports/Sports Handoff.md`.
 
 ### Relevant Knowledge topics
 
-| Topic folder                       | Content                                            |
-| ---------------------------------- | -------------------------------------------------- |
-| `Knowledge/Betting Optimisation/`  | Kelly criterion, calibration, placement rules, PnL |
-| `Knowledge/Sports Models/`         | Bayesian model theory, Stan implementation, goals  |
-| `Knowledge/Lengjan Pipeline/`      | Odds scraping, schedule-aware filtering            |
-| `Knowledge/Livesport Data/`        | Match data scraping, CI pipeline                   |
+| Topic folder                              | Content                                            |
+| ----------------------------------------- | -------------------------------------------------- |
+| `Sports/Knowledge/Betting Optimisation/`  | Kelly criterion, calibration, placement rules, PnL |
+| `Sports/Knowledge/Sports Models/`         | Bayesian model theory, Stan implementation, goals  |
+| `Sports/Knowledge/Lengjan Pipeline/`      | Odds scraping, schedule-aware filtering            |
+| `Sports/Knowledge/Livesport Data/`        | Match data scraping, CI pipeline                   |
 
 Each topic has a `_MOC.md` entry point — read it first, then selectively load sub-documents.
 
