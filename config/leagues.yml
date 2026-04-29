@@ -27,7 +27,17 @@ basketball_iceland:
       - { id: "1519", name: "Bónusdeild karla úrslitakeppni", sex: male }
       - { id: "1528", name: "Bónusdeild kvenna úrslitakeppni", sex: female }
     team_names:
-      male: {}                         # Populate after first men's-matches scrape
+      # Men's úrslitakeppni (id 1519). Lengjan uses bare team names for the
+      # men's draw — verified against data/facts/odds 2026-04-29 scrape.
+      male:
+        Grindavík: Grindavík
+        Valur: Valur
+        Tindastóll: Tindastóll
+        Stjarnan: Stjarnan
+        Haukar: Haukar
+        Njarðvík: Njarðvík
+        Keflavík: Keflavík
+        Ármann: Ármann
       female:
         Grindavík: Grindavík kv
         Valur: Valur kv

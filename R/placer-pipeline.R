@@ -212,26 +212,23 @@ place_bets <- function(leagues = NULL,
         )
 
         bet_row <- tibble::tibble(
-          run_id         = bet$run_id,
           placed_at      = Sys.time(),
+          match_date     = bet$match_date,
           sport          = bet$sport,
           country        = bet$country,
           sex            = bet$sex,
-          match_date     = bet$match_date,
           home_team      = bet$home_team,
           away_team      = bet$away_team,
           market         = bet$market,
           outcome        = bet$outcome,
           line           = bet$line,
-          p              = bet$p,
-          odds           = actual_odds,
           odds_placed    = actual_odds,
-          ev             = actual_ev,
+          p              = bet$p,
           kelly          = bet$kelly,
           bet_amount     = actual_amount,
+          settled        = FALSE,
           win            = NA,
-          pnl            = NA_real_,
-          source         = "place_bets"
+          pnl            = NA_real_
         )
 
         tryCatch(

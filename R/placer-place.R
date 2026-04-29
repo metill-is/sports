@@ -195,7 +195,15 @@ verify_odds_match <- function(parsed, actual_odds) {
 #'   actual_odds (from Lengjan DOM), and amount (stake entered)
 #' @export
 place_bet <- function(session, bet, match_id, sport_id, dry_run = FALSE) {
-  market <- bet$market
+  # Decide layer emits market names {moneyline, spread, total}; placer's legacy
+  # internal names are {outcome, handicap, totals}. Translate at the boundary
+  # so the placer body keeps its legacy vocabulary unchanged.
+  market <- switch(bet$market,
+    moneyline = "outcome",
+    spread    = "handicap",
+    total     = "totals",
+    bet$market
+  )
   result <- tryCatch(
     {
       if (market == "outcome") {
@@ -205,6 +213,7 @@ place_bet <- function(session, bet, match_id, sport_id, dry_run = FALSE) {
       } else if (market == "totals") {
         place_totals_bet(session, bet, match_id, sport_id, dry_run)
       } else {
+        cli::cli_alert_warning("Unknown market: {market}")
         list(status = "skipped", reason = paste("Unknown market:", market))
       }
     },
@@ -281,7 +290,7 @@ place_outcome_bet <- function(session, bet, match_id, sport_id, dry_run) {
     match_id, "&sport=", sport_id
   )
   cli::cli_alert_info(
-    "Navigating to {bet$home} vs {bet$away} for {bet$outcome} @ {bet$odds}"
+    "Navigating to {bet$home_team} vs {bet$away_team} for {bet$outcome} @ {bet$odds}"
   )
   session$Page$navigate(url)
   Sys.sleep(sample_delay(c(2.5, 4)))
@@ -293,10 +302,15 @@ place_outcome_bet <- function(session, bet, match_id, sport_id, dry_run) {
     stop("Invalid outcome for 1x2: ", bet$outcome)
   )
 
-  # Click odds button — returns actual odds from the DOM
+  # Click odds button — returns actual odds from the DOM.
+  # WHY \uxxxx escape: in a C locale R session, sprintf() converts non-ASCII
+  # literals to <U+xxxx> placeholder text instead of the actual codepoint, so
+  # the literal "Úrslit" arrives at the page's DOM as the literal 13-char
+  # string "<U+00DA>rslit" and never matches. The escape forces the right
+  # codepoint regardless of locale. See r-package-conventions.md.
   actual_odds <- click_market_button(
     session,
-    section_label = "Úrslit",
+    section_label = "\u00darslit",
     btn_index = btn_index
   )
 
@@ -328,13 +342,13 @@ place_handicap_bet <- function(session, bet, match_id, sport_id, dry_run) {
     match_id, "&sport=", sport_id
   )
   cli::cli_alert_info(
-    "Navigating to {bet$home} vs {bet$away} for handicap {bet$outcome} ",
+    "Navigating to {bet$home_team} vs {bet$away_team} for handicap {bet$outcome} ",
     "line={bet$info} @ {bet$odds}"
   )
   session$Page$navigate(url)
   Sys.sleep(sample_delay(c(2.5, 4)))
 
-  expand_market_section(session, "Forgjöf")
+  expand_market_section(session, "Forgj\u00f6f")
   Sys.sleep(sample_delay(c(1, 2)))
 
   click_show_all(session)
@@ -350,7 +364,7 @@ place_handicap_bet <- function(session, bet, match_id, sport_id, dry_run) {
 
   actual_odds <- click_table_button(
     session,
-    section_label = "Forgjöf",
+    section_label = "Forgj\u00f6f",
     line_label = line_label,
     btn_index = btn_index
   )
@@ -382,7 +396,7 @@ place_totals_bet <- function(session, bet, match_id, sport_id, dry_run) {
     match_id, "&sport=", sport_id
   )
   cli::cli_alert_info(
-    "Navigating to {bet$home} vs {bet$away} for totals {bet$outcome} ",
+    "Navigating to {bet$home_team} vs {bet$away_team} for totals {bet$outcome} ",
     "line={bet$info} @ {bet$odds}"
   )
   session$Page$navigate(url)
@@ -466,7 +480,8 @@ expand_market_section <- function(session, section_label) {
 #' @return Numeric: actual odds from Lengjan
 #' @keywords internal
 #' @noRd
-click_market_button <- function(session, section_label, btn_index) {
+click_market_button <- function(session, section_label, btn_index,
+                                max_wait_seconds = 10) {
   js <- sprintf("
     (() => {
       // Find section by label (supports startsWith for variants like 'Úrslit leiksins')
@@ -519,8 +534,19 @@ click_market_button <- function(session, section_label, btn_index) {
     })()
   ", section_label, section_label, btn_index, btn_index)
 
-  result <- session$Runtime$evaluate(expression = js, returnByValue = TRUE)
-  parsed <- jsonlite::fromJSON(result$result$value)
+  # Poll the section selector — Lengjan's React app sometimes hydrates the
+  # markets up to several seconds after navigation. Retry on transient
+  # "Section not found" / "Not enough odds buttons" errors.
+  deadline <- Sys.time() + max_wait_seconds
+  parsed <- NULL
+  repeat {
+    result <- session$Runtime$evaluate(expression = js, returnByValue = TRUE)
+    parsed <- jsonlite::fromJSON(result$result$value)
+    transient <- !is.null(parsed$error) &&
+      parsed$error %in% c("Section not found", "Not enough odds buttons")
+    if (!transient || Sys.time() >= deadline) break
+    Sys.sleep(0.5)
+  }
 
   if (!is.null(parsed$error)) {
     stop("Failed to click odds button: ", parsed$error)
