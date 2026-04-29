@@ -2,7 +2,6 @@
 name: place-bets
 description: Use when placing bets on Lengjan. Previews pending bets, then places after confirmation.
 argument-hint: "[--league LEAGUE] [--today] [--date YYYY-MM-DD]"
-context: fork
 ---
 
 # /place-bets — Preview and place bets on Lengjan

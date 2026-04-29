@@ -75,3 +75,41 @@ test_that("no .claude/skills/*/SKILL.md references deprecated paths or flags", {
   }
   expect_true(TRUE)
 })
+
+test_that("/bet and /place-bets do not set context: fork in frontmatter", {
+  skills_dir <- here::here(".claude", "skills")
+  if (!dir.exists(skills_dir)) {
+    testthat::skip("no .claude/skills/ directory")
+  }
+  presentational <- c("bet", "place-bets")
+
+  failures <- character(0)
+  for (name in presentational) {
+    f <- file.path(skills_dir, name, "SKILL.md")
+    if (!file.exists(f)) next
+    contents <- readLines(f, warn = FALSE)
+    fm_bounds <- which(contents == "---")
+    if (length(fm_bounds) < 2L) next
+    frontmatter <- contents[(fm_bounds[1L] + 1L):(fm_bounds[2L] - 1L)]
+    if (any(grepl("^context:\\s*fork\\s*$", frontmatter))) {
+      failures <- c(failures, sprintf(
+        ".claude/skills/%s/SKILL.md sets `context: fork`",
+        name
+      ))
+    }
+  }
+
+  if (length(failures) > 0L) {
+    fail(paste(
+      "Presentational skills must not set `context: fork`.",
+      "`context: fork` runs the skill in a sub-session whose final message",
+      "is captured as <local-command-stdout> for the next parent turn but",
+      "never rendered as a visible chat bubble. Skills that exist to *show*",
+      "tables (`/bet`) or to gate placement on a user-visible preview",
+      "(`/place-bets`) silently produce nothing in the UI under fork.",
+      paste("  -", failures, collapse = "\n"),
+      sep = "\n"
+    ))
+  }
+  expect_true(TRUE)
+})

@@ -2,7 +2,6 @@
 name: bet
 description: Use when generating fresh recommendations or viewing the current ones. Runs the decide layer (Kelly + portfolio + calibration) and shows the latest recommendations.
 argument-hint: "[--league LEAGUE] [--all] [--dry-run] [show]"
-context: fork
 ---
 
 # /bet — Generate or view betting recommendations
