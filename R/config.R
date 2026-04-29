@@ -72,7 +72,7 @@ validate_leagues <- function(leagues, schema_path) {
 #' @param path Path to bankroll.yml.
 #' @param ledger_root Root directory for Parquet stores (parent of `decisions/ledger/`).
 #' @return List with `initial_pool`, `current_pool`, `daily_budget_frac`,
-#'   `daily_budget_min_isk`.
+#'   `daily_budget_min_isk`, `kelly_ceiling`, `max_match_stake_default`.
 #' @export
 load_bankroll <- function(path = here::here("config", "bankroll.yml"),
                           ledger_root = here::here("data")) {
@@ -94,6 +94,8 @@ load_bankroll <- function(path = here::here("config", "bankroll.yml"),
     realised_pnl <- sum(settled_pnl, na.rm = TRUE)
     cfg$current_pool <- cfg$initial_pool + realised_pnl
   }
+  if (is.null(cfg$kelly_ceiling)) cfg$kelly_ceiling <- 0.25
+  if (is.null(cfg$max_match_stake_default)) cfg$max_match_stake_default <- 1.0
   cfg
 }
 

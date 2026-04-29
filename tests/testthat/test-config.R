@@ -185,3 +185,31 @@ test_that("filter_leagues(has_lengjan = TRUE) drops leagues without competitions
   result <- filter_leagues(leagues, has_lengjan = TRUE)
   expect_equal(names(result), "with_lengjan")
 })
+
+test_that("load_bankroll exposes kelly_ceiling and max_match_stake_default defaults", {
+  tmp_yaml <- withr::local_tempfile(fileext = ".yml")
+  writeLines(c(
+    "initial_pool: 10000",
+    "daily_budget_frac: 0.05",
+    "daily_budget_min_isk: 1000"
+  ), tmp_yaml)
+  empty_root <- withr::local_tempdir()
+  b <- load_bankroll(path = tmp_yaml, ledger_root = empty_root)
+  expect_equal(b$kelly_ceiling, 0.25)
+  expect_equal(b$max_match_stake_default, 1.0)
+})
+
+test_that("load_bankroll honours explicit kelly_ceiling override", {
+  tmp_yaml <- withr::local_tempfile(fileext = ".yml")
+  writeLines(c(
+    "initial_pool: 10000",
+    "daily_budget_frac: 0.05",
+    "daily_budget_min_isk: 1000",
+    "kelly_ceiling: 0.15",
+    "max_match_stake_default: 0.40"
+  ), tmp_yaml)
+  empty_root <- withr::local_tempdir()
+  b <- load_bankroll(path = tmp_yaml, ledger_root = empty_root)
+  expect_equal(b$kelly_ceiling, 0.15)
+  expect_equal(b$max_match_stake_default, 0.40)
+})

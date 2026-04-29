@@ -11,3 +11,12 @@
 initial_pool: 23610
 daily_budget_frac: 0.05
 daily_budget_min_isk: 1000
+# Kelly fraction safety ceiling (K5 invariant): never overbet even with
+# perfect calibration. Clamps `kelly_frac × calibration_multiplier` from
+# above. See Sports/Knowledge/Betting Optimisation/rules#K5.
+kelly_ceiling: 0.25
+# Default per-match solver cap when a league does not override it. 1.0 means
+# the joint Kelly optimiser is unconstrained at the per-match level — the
+# §7.2 multiplicative shrinkage and the §10 portfolio scaling are the active
+# stake limiters. Per-league overrides go in leagues.yml::*.betting.
+max_match_stake_default: 1.0
