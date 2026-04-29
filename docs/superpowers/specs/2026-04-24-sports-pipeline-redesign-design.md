@@ -322,4 +322,4 @@ Each of steps 3–8 has a "must match current production" gate. If they don't ma
 
 - Current state CLAUDE.md files: `Sports/CLAUDE.md`, `lengjan-odds/CLAUDE.md`, `livesport-data/CLAUDE.md`, `lengjan-bets/CLAUDE.md`, `metill-platform/CLAUDE.md`
 - Rules: `Sports/.claude/rules/sports-pipeline.md`, `sports-betting.md`, `sports-per-sport.md`
-- Knowledge topics: `Metill/Knowledge/Betting Optimisation/_MOC.md`, `Sports Models/_MOC.md`, `Lengjan Pipeline/_MOC.md`, `Livesport Data/_MOC.md`
+- Knowledge topics: `Metill/Sports/Knowledge/Betting Optimisation/_MOC.md`, `Sports/Knowledge/Sports Models/_MOC.md`, `Sports/Knowledge/Lengjan Pipeline/_MOC.md`, `Sports/Knowledge/Livesport Data/_MOC.md`

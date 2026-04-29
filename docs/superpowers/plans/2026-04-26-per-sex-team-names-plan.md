@@ -790,4 +790,4 @@ EOF
 - Stan parameter data-stories (in-flight by user; separate work)
 - Lengjan SPA `loadEventFired` performance investigation
 - Per-rec `sex` validation in `R/decide-pipeline.R` (separate PR; defence in depth)
-- Updating `Knowledge/Lengjan Pipeline/_MOC.md` to document the per-sex schema (Obsidian doc sweep, separate from code)
+- Updating `Sports/Knowledge/Lengjan Pipeline/_MOC.md` to document the per-sex schema (Obsidian doc sweep, separate from code)

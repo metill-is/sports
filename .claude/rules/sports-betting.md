@@ -16,7 +16,7 @@ The betting system has a strict separation of concerns:
 2. **lengjan-bets** reads recommendations, places bets on Lengjan, and writes to `bets_log.csv`
 3. **Kelly fractions** are computed dynamically from calibration ratio per league
 
-The Sports pipeline **never** writes to `bets_log.csv`. See `Knowledge/Betting Optimisation/_MOC.md` in the Metill Obsidian vault for the full rule set and placement conventions.
+The Sports pipeline **never** writes to `bets_log.csv`. See `Sports/Knowledge/Betting Optimisation/_MOC.md` in the Metill Obsidian vault for the full rule set and placement conventions.
 
 ## `bets.yml` schema
 

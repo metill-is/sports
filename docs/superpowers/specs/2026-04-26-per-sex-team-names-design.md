@@ -293,5 +293,5 @@ unaffected (ledger does not store or reference `team_names`).
 - Per-rec `sex` validation in `R/decide-pipeline.R` (separate PR; defence
   against `NA` sex in recs).
 - Documenting the per-sex schema convention in
-  `Knowledge/Lengjan Pipeline/_MOC.md` (Obsidian doc sweep, separate from
+  `Sports/Knowledge/Lengjan Pipeline/_MOC.md` (Obsidian doc sweep, separate from
   code).
