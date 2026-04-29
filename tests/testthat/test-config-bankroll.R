@@ -2,7 +2,8 @@ test_that("load_bankroll returns expected fields", {
   cfg <- load_bankroll()
   expect_named(cfg, c(
     "initial_pool", "current_pool",
-    "daily_budget_frac", "daily_budget_min_isk"
+    "daily_budget_frac", "daily_budget_min_isk",
+    "kelly_ceiling", "max_match_stake_default"
   ),
   ignore.order = TRUE
   )

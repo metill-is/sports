@@ -5,14 +5,20 @@ test_that("expanded betting block validates against schema", {
     leagues, function(l) !is.null(l$betting$kelly_frac),
     logical(1)
   )))
-  # Football has per-sex form
+  # Football + basketball use per-sex form (different ROI / sample size by sex)
   expect_true(is.list(leagues$football_iceland$betting$kelly_frac))
   expect_named(leagues$football_iceland$betting$kelly_frac,
     c("male", "female"),
     ignore.order = TRUE
   )
-  # Basketball + handball use scalar form
-  expect_type(leagues$basketball_iceland$betting$kelly_frac, "double")
+  expect_true(is.list(leagues$basketball_iceland$betting$kelly_frac))
+  # Handball uses scalar form (women's handball not yet on Lengjan)
+  expect_type(leagues$handball_iceland$betting$kelly_frac, "double")
+  # All leagues now define max_match_stake
+  expect_true(all(vapply(
+    leagues, function(l) !is.null(l$betting$max_match_stake),
+    logical(1)
+  )))
 })
 
 test_that("malformed betting block fails validation", {

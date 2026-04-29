@@ -65,6 +65,7 @@
                 }
               ]
             },
+            "max_match_stake": { "type": "number", "minimum": 0, "maximum": 1 },
             "ev_threshold": { "type": "number" },
             "markets": {
               "type": "object",

@@ -39,7 +39,17 @@ basketball_iceland:
         Stjarnan: Stjarnan kv
   stan_model: basketball_iceland/2d_student_t_scalarsigma.stan
   betting:
-    kelly_frac: 0.10
+    # kelly_frac is the §7.2 multiplicative shrinkage (Browne γ for finite-
+    # horizon power utility). Iceland-tier ROI history (+9.18 % per
+    # Sports/Knowledge/Betting Optimisation/Historical/roi-snapshot-2026-04-19)
+    # supports moderate confidence; female cell tighter on smaller sample.
+    kelly_frac:
+      male: 0.20
+      female: 0.15
+    # Per-match solver cap; rarely binds for typical raw Kelly fractions
+    # (1-5 %) so the §7.2 shrinkage and §10 portfolio scaling are the
+    # active stake limiters.
+    max_match_stake: 0.50
     ev_threshold: 0.0
     markets:
       moneyline: true
@@ -76,7 +86,8 @@ handball_iceland:
       female: {}                       # No women's handball on Lengjan currently
   stan_model: handball_iceland/2d_student_t.stan
   betting:
-    kelly_frac: 0.10
+    kelly_frac: 0.20         # §7.2 multiplicative shrinkage; quarter-of-half-Kelly
+    max_match_stake: 0.50    # solver cap; rarely binds
     ev_threshold: 0.0
     markets:
       moneyline: true
@@ -132,9 +143,12 @@ football_iceland:
       female: {}                       # No historical women's football odds yet
   stan_model: football_iceland/bivariate_poisson_no_inflation.stan
   betting:
+    # kelly_frac is the §7.2 multiplicative shrinkage. Female cell stays
+    # tighter — first Icelandic women's football season, thin history.
     kelly_frac:
-      male: 0.15
-      female: 0.075
+      male: 0.20
+      female: 0.10
+    max_match_stake: 0.50
     ev_threshold: 0.0
     markets:
       moneyline: true
