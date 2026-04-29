@@ -4,12 +4,10 @@
 \alias{fit_one}
 \title{tar_target wrapper: fit a single (league x sex) and return belief row count.}
 \usage{
-fit_one(leagues, key, sex, ingest_dep = NULL)
+fit_one(static, sex, ingest_dep = NULL)
 }
 \arguments{
-\item{leagues}{Output of `load_leagues()`.}
-
-\item{key}{League key (e.g. `"football_iceland"`).}
+\item{static}{Per-league static slice (output of `league_static_<key>`).}
 
 \item{sex}{`"male"` or `"female"`.}
 
@@ -19,9 +17,10 @@ fit_one(leagues, key, sex, ingest_dep = NULL)
 Integer count of belief rows written.
 }
 \description{
-Takes the leagues config + key + sex (rather than a league object) so it
-fits the (config, k, ...) signature pattern used by every DAG wrapper.
-`ingest_dep` is unused at runtime -- its only purpose is to declare the
-DAG dependency on the upstream ingest target without coupling fit_league()
-to one.
+Takes the per-league "static" slice (sport, country, stan_model, sexes,
+data_source) rather than the full leagues config, so the fit cache is
+insulated from `lengjan` or `betting` changes -- those don't affect the
+Stan model or its inputs and shouldn't trigger a 30-90 minute refit.
+`ingest_dep` is unused at runtime; it only declares the DAG edge to the
+upstream ingest target.
 }

@@ -4,13 +4,14 @@
 \alias{ingest_one_lengjan}
 \title{Run Lengjan odds ingest for a single league (DAG wrapper).}
 \usage{
-ingest_one_lengjan(leagues, key, active_path)
+ingest_one_lengjan(static, lengjan, key, active_path)
 }
 \arguments{
-\item{leagues}{Output of `load_leagues()` (full config; the wrapper picks
-`leagues[[key]]` itself).}
+\item{static}{Per-league static slice.}
 
-\item{key}{League key (e.g. `"football_iceland"`).}
+\item{lengjan}{Per-league `lengjan` slice (competitions + team_names).}
+
+\item{key}{League key.}
 
 \item{active_path}{Path to `config/active_competitions.json`.}
 }
@@ -18,5 +19,6 @@ ingest_one_lengjan(leagues, key, active_path)
 Number of odds rows written (integer).
 }
 \description{
-Run Lengjan odds ingest for a single league (DAG wrapper).
+Takes the static + lengjan slices separately so that betting-only changes
+don't bust this target's cache.
 }

@@ -5,7 +5,8 @@
 \title{tar_target wrapper: publish JSONs for a single (league x sex).}
 \usage{
 publish_one(
-  leagues,
+  static,
+  betting,
   key,
   sex,
   fit_dep = NULL,
@@ -14,9 +15,11 @@ publish_one(
 )
 }
 \arguments{
-\item{leagues}{Output of `load_leagues()`.}
+\item{static}{Per-league static slice (sport, country, ...).}
 
-\item{key}{League key.}
+\item{betting}{Per-league `betting` slice.}
+
+\item{key}{League key (used only to dispatch to the per-sport publisher).}
 
 \item{sex}{`"male"` or `"female"`.}
 
@@ -30,6 +33,9 @@ invisible(NULL).
 \description{
 Reads the fit RDS from `data/beliefs/fits/sport=X/country=Y/sex=Z/fit.rds`
 (saved by `fit_league` as a side-effect) and dispatches to the appropriate
-`publish_<sport>_iceland()`. Plan 6 cutover: replaces SPORTS_BACKUP_ROOT
-with a canonical in-tree path.
+`publish_<sport>_iceland()`. Takes the static + betting slices separately
+so publish-cache invalidation tracks only the fields the publishers read
+(sport/country for paths, betting.scoring for tie thresholds in
+basketball/handball publishers); a `lengjan` change does not bust this
+cache.
 }

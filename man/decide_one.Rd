@@ -4,12 +4,22 @@
 \alias{decide_one}
 \title{tar_target wrapper: decide for a single (league x sex).}
 \usage{
-decide_one(leagues, key, sex, bankroll, fit_dep = NULL, odds_dep = NULL)
+decide_one(
+  static,
+  lengjan,
+  betting,
+  sex,
+  bankroll,
+  fit_dep = NULL,
+  odds_dep = NULL
+)
 }
 \arguments{
-\item{leagues}{Output of `load_leagues()`.}
+\item{static}{Per-league static slice (sport, country, sexes, data_source).}
 
-\item{key}{League key.}
+\item{lengjan}{Per-league `lengjan` slice (competitions + team_names).}
+
+\item{betting}{Per-league `betting` slice.}
 
 \item{sex}{`"male"` or `"female"`.}
 
@@ -21,7 +31,9 @@ decide_one(leagues, key, sex, bankroll, fit_dep = NULL, odds_dep = NULL)
 Integer count of recommendation rows.
 }
 \description{
-fit_dep and odds_dep are pure dependency declarations -- their values are
-ignored. decide_league() reads its inputs from data/ Parquet, but listing
-the deps here keeps the DAG honest about staleness.
+Takes the static + lengjan + betting slices separately so the decide cache
+invalidates precisely when any of them changes, and not when unrelated
+sections of leagues.yml move. fit_dep / odds_dep are pure DAG-edge
+declarations -- their values are ignored. decide_league() reads its
+inputs from data/ Parquet.
 }

@@ -4,11 +4,11 @@
 \alias{ingest_one_league}
 \title{Run federation ingest for a single league across all configured sexes.}
 \usage{
-ingest_one_league(leagues, key, active_path)
+ingest_one_league(static, key, active_path)
 }
 \arguments{
-\item{leagues}{Output of `load_leagues()` (full config; the wrapper picks
-`leagues[[key]]` itself).}
+\item{static}{Per-league static slice (output of `league_static_<key>`
+target in `_targets.R`).}
 
 \item{key}{League key (e.g. `"football_iceland"`).}
 
@@ -24,4 +24,11 @@ Integer count of rows fetched (results + schedule combined),
 Wrapper used by `_targets.R`'s per-league `ingest_<key>` targets. Reads
 the active_competitions JSON to short-circuit when there are no near-term
 fixtures (saves a chromote launch).
+}
+\details{
+Takes the per-league "static" slice (sport, country, sexes, active,
+stan_model, data_source) rather than the full leagues config, so that
+downstream cache invalidation tracks only the fields that actually affect
+federation ingest -- changes to `lengjan` or `betting` don't bust this
+target's cache.
 }
