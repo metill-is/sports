@@ -232,3 +232,68 @@ test_that("decide_league recommendations contain only kept rows", {
   }
   expect_equal(nrow(recs), nrow(out))
 })
+
+test_that("decide_league applies kelly_frac as a multiplicative shrinkage", {
+  set.seed(13)
+  root <- withr::local_tempdir()
+  mini_decide_setup(root)
+  league <- mini_basketball_league()
+  league$betting$kelly_frac <- 0.10
+  league$betting$min_bet <- 0
+
+  # Generous daily budget so portfolio never scales down — isolates the
+  # multiplicative chain from the portfolio-scaling step.
+  br <- mini_bankroll()
+  br$daily_budget_frac <- 1.0
+
+  out <- decide_league(
+    league = league, sex = "male",
+    run_date = as.Date("2026-04-25"),
+    root = root,
+    bankroll = br
+  )
+  cands <- read_table("candidates",
+    filter = list(sport = "basketball", country = "iceland"),
+    root = root
+  )
+  kept <- cands[cands$stage == "kept", , drop = FALSE]
+  expect_gt(nrow(kept), 0L)
+
+  # No ledger -> calibration multiplier = prior_ratio = 1.0
+  # Single match + generous budget -> portfolio lambda = 1.0
+  # kelly_frac = 0.10, ceiling = 0.25 -> shrink_eff = 0.10
+  ratio <- out$kelly[1] / kept$kelly_raw[1]
+  expect_lt(ratio, 0.105)
+  expect_gt(ratio, 0.095)
+})
+
+test_that("decide_league clamps kelly_frac at kelly_ceiling (K5 invariant)", {
+  set.seed(13)
+  root <- withr::local_tempdir()
+  mini_decide_setup(root)
+  league <- mini_basketball_league()
+  # kelly_frac > kelly_ceiling: 0.30 > 0.25 should clamp to 0.25
+  league$betting$kelly_frac <- 0.30
+  league$betting$min_bet <- 0
+
+  br <- mini_bankroll()
+  br$daily_budget_frac <- 1.0
+
+  out <- decide_league(
+    league = league, sex = "male",
+    run_date = as.Date("2026-04-25"),
+    root = root,
+    bankroll = br
+  )
+  cands <- read_table("candidates",
+    filter = list(sport = "basketball", country = "iceland"),
+    root = root
+  )
+  kept <- cands[cands$stage == "kept", , drop = FALSE]
+  expect_gt(nrow(kept), 0L)
+
+  # Without the ceiling clamp, ratio would be 0.30. Clamped at 0.25.
+  ratio <- out$kelly[1] / kept$kelly_raw[1]
+  expect_lt(ratio, 0.255)
+  expect_gt(ratio, 0.245)
+})

@@ -196,8 +196,16 @@ decide_league <- function(league_key = NULL, league = NULL, sex,
   mk <- paste(cands$match_date, cands$home_team, cands$away_team, sep = "||")
   cands$lambda <- lambdas[mk]
 
-  # Final kelly = kelly_raw * lambda * calibration_multiplier
-  cands$kelly <- cands$kelly_raw * cands$lambda * calib
+  # Restored §7.2 multiplicative chain with K5 ceiling clamp:
+  #   shrink_eff = min(kelly_frac × calibration, kelly_ceiling)
+  #   kelly      = kelly_raw × portfolio_lambda × shrink_eff
+  # The optimiser ran unconstrained at max_match_stake (default 1.0); the
+  # post-hoc kelly_frac multiplier is the Browne-finite-horizon hedge against
+  # model misspecification. K5 ensures kelly_frac × calibration never exceeds
+  # 0.25 even with calibration drift up to ceiling 1.5.
+  kelly_ceiling <- bankroll$kelly_ceiling %||% 0.25
+  shrink_eff <- min(kelly_frac_val * calib, kelly_ceiling)
+  cands$kelly <- cands$kelly_raw * cands$lambda * shrink_eff
   cands$bet_amount <- round(cands$kelly * bankroll$current_pool)
 
   # Stage: dropped_low_ev already set; update remaining
