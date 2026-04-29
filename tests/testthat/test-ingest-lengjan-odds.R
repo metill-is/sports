@@ -57,3 +57,61 @@ test_that("ingest_lengjan_odds skips chromote bits with skip_if", {
   active <- filter_leagues(leagues, active_only = TRUE, has_lengjan = TRUE)
   expect_gt(length(active), 0L)
 })
+
+# Fake chromote session helper for retry-behaviour tests. Mirrors the subset of
+# the ChromoteSession API that .lengjan_fetch touches: $Page$navigate and
+# $Runtime$evaluate. `fail_first_n` makes the first N navigate calls throw
+# the same error message chromote uses on a Page.navigate timeout.
+make_fake_chromote_session <- function(fail_first_n = 0L,
+                                       html = "<html><body>OK</body></html>") {
+  call_count <- 0L
+  navigate <- function(url) {
+    call_count <<- call_count + 1L
+    if (call_count <= fail_first_n) {
+      stop(
+        "Chromote: timed out waiting for response to command Page.navigate"
+      )
+    }
+    invisible()
+  }
+  evaluate <- function(expr) {
+    list(result = list(value = html))
+  }
+  list(
+    Page = list(navigate = navigate),
+    Runtime = list(evaluate = evaluate),
+    .navigate_calls = function() call_count
+  )
+}
+
+test_that(".lengjan_fetch returns parsed HTML on the happy path", {
+  session <- make_fake_chromote_session(fail_first_n = 0L)
+  out <- .lengjan_fetch(
+    session, "https://example.com",
+    settle_s = 0, max_attempts = 3L, backoff_base_s = 0
+  )
+  expect_s3_class(out, "xml_document")
+  expect_equal(session$.navigate_calls(), 1L)
+})
+
+test_that(".lengjan_fetch retries on transient errors and eventually succeeds", {
+  session <- make_fake_chromote_session(fail_first_n = 2L)
+  out <- suppressMessages(.lengjan_fetch(
+    session, "https://example.com",
+    settle_s = 0, max_attempts = 3L, backoff_base_s = 0
+  ))
+  expect_s3_class(out, "xml_document")
+  expect_equal(session$.navigate_calls(), 3L)
+})
+
+test_that(".lengjan_fetch surfaces the original error after max_attempts", {
+  session <- make_fake_chromote_session(fail_first_n = Inf)
+  expect_error(
+    suppressMessages(.lengjan_fetch(
+      session, "https://example.com",
+      settle_s = 0, max_attempts = 3L, backoff_base_s = 0
+    )),
+    "Page.navigate"
+  )
+  expect_equal(session$.navigate_calls(), 3L)
+})

@@ -25,7 +25,12 @@ tar_option_set(
     "arrow", "dplyr", "tibble", "purrr", "readr", "stringr", "lubridate",
     "rvest", "yaml", "jsonlite", "here", "cli", "fs"
   ),
-  format = "rds"
+  format = "rds",
+  # WHY: a transient chromote timeout in one league's odds target should not
+  # take the whole pipeline down. "trim" lets siblings + their downstream
+  # decide/publish chains keep running while the failed target's downstream
+  # is skipped; daily reruns will retry only the failed target via the cache.
+  error = "trim"
 )
 
 # Source R/ files. Ingest source modules (ingest-{ksi,hsi,kki,lengjan}.R) call

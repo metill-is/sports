@@ -240,6 +240,10 @@ ingest_lengjan_odds <- function(leagues, scraped_at = Sys.time(),
   owns_session <- is.null(chromote_session)
   if (owns_session) {
     chromote_session <- chromote::ChromoteSession$new()
+    # WHY: chromote's default 10s is short for Lengjan's JS-heavy pages from
+    # a US-hosted GitHub runner. Bumping the session-wide default before any
+    # navigate avoids spurious Page.navigate timeouts on the happy path.
+    try(chromote_session$default_timeout <- 30, silent = TRUE)
   }
   on.exit(if (owns_session) chromote_session$close(), add = TRUE)
 
@@ -352,14 +356,18 @@ ingest_lengjan_odds <- function(leagues, scraped_at = Sys.time(),
 }
 
 .lengjan_fetch <- function(session, url, settle_s = 3,
-                           expand_aria = character(0)) {
+                           expand_aria = character(0),
+                           max_attempts = 3L,
+                           backoff_base_s = 5) {
   # Lengjan match-detail pages with marketTab=allMarkets keep a long-poll /
   # WebSocket alive that prevents Chrome from ever firing the `load` event.
   # `Page$loadEventFired(timeout_ = 30000)` then blocks indefinitely (the
   # chromote `timeout_` argument is unreliable on synchronous event subscriptions).
   # The legacy scraper at _legacy/lengjan-odds/R/scrape.R::scrape_match_detail()
   # used `rvest::read_html_live() + Sys.sleep(3)` and explicitly commented
-  # "Wait for React hydration" -- mirror that here.
+  # "Wait for React hydration" -- mirror that here. So we deliberately do NOT
+  # use chromote::go_to() (which waits for loadEventFired); the navigate +
+  # Sys.sleep pattern is load-bearing for detail pages.
   #
   # `expand_aria` lists aria-controls IDs whose accordion buttons should be
   # clicked to render their tables. `marketTab=allMarkets` opens the all-markets
@@ -367,20 +375,46 @@ ingest_lengjan_odds <- function(leagues, scraped_at = Sys.time(),
   # still collapsed and contains no <table>/<tr> until clicked. The legacy
   # code did this with `page$click(...)`; we do the equivalent JS click via
   # Runtime.evaluate.
-  session$Page$navigate(url)
-  Sys.sleep(settle_s)
-  if (length(expand_aria) > 0L) {
-    aria_list <- paste0("'", expand_aria, "'", collapse = ", ")
-    js <- sprintf(
-      "(() => { for (const id of [%s]) { const btn = document.querySelector(`button[aria-controls=\"${id}\"]`); if (btn && btn.getAttribute('aria-expanded') !== 'true') btn.click(); } })()",
-      aria_list
+  #
+  # WHY retry: `Page$navigate` periodically times out under Lengjan-side
+  # latency spikes ("Chromote: timed out waiting for response to command
+  # Page.navigate"). Exponential backoff (5s, 10s, 20s by default) absorbs
+  # transient blips without masking a real outage; max_attempts bounds the
+  # worst case.
+  attempt <- 1L
+  repeat {
+    res <- tryCatch(
+      {
+        session$Page$navigate(url)
+        Sys.sleep(settle_s)
+        if (length(expand_aria) > 0L) {
+          aria_list <- paste0("'", expand_aria, "'", collapse = ", ")
+          js <- sprintf(
+            "(() => { for (const id of [%s]) { const btn = document.querySelector(`button[aria-controls=\"${id}\"]`); if (btn && btn.getAttribute('aria-expanded') !== 'true') btn.click(); } })()",
+            aria_list
+          )
+          session$Runtime$evaluate(js)
+          Sys.sleep(2)
+        }
+        rvest::read_html(session$Runtime$evaluate(
+          "document.documentElement.outerHTML"
+        )$result$value)
+      },
+      error = function(e) e
     )
-    session$Runtime$evaluate(js)
-    Sys.sleep(2)
+
+    if (!inherits(res, "error")) {
+      return(res)
+    }
+    if (attempt >= max_attempts) stop(res)
+
+    backoff <- backoff_base_s * 2^(attempt - 1L)
+    cli::cli_alert_warning(
+      "Lengjan fetch attempt {attempt}/{max_attempts} failed ({conditionMessage(res)}); retrying in {backoff}s"
+    )
+    Sys.sleep(backoff)
+    attempt <- attempt + 1L
   }
-  rvest::read_html(session$Runtime$evaluate(
-    "document.documentElement.outerHTML"
-  )$result$value)
 }
 
 `%||%` <- function(x, y) if (is.null(x)) y else x
