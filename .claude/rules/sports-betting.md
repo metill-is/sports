@@ -1,172 +1,198 @@
 ---
 paths:
-  - "Sports/R/bets/**"
-  - "Sports/**/config/bets.yml"
-  - "Sports/**/R/run_bets.R"
-  - "Sports/**/history/**"
+  - "R/decide-*.R"
+  - "R/placer-*.R"
+  - "config/leagues.yml"
+  - "config/bankroll.yml"
+  - "scripts/place_bets.R"
+  - "scripts/preview_bets.R"
+  - "tests/testthat/test-decide-*.R"
+  - "tests/testthat/test-placer-*.R"
 ---
 
-# Betting Pipeline Conventions
+# Betting Pipeline Conventions (post Plan 6 + Plan 7a)
 
-## System architecture
+> Authoritative theory + invariants live in the Metill Obsidian vault under
+> [`Sports/Knowledge/Betting Optimisation/`](obsidian://). Read the
+> [`_MOC`](obsidian://Sports/Knowledge/Betting%20Optimisation/_MOC) for
+> the cold-start reading order; this file is the project-side quick
+> reference.
 
-The betting system has a strict separation of concerns:
+## Architecture (current)
 
-1. **Sports pipeline** generates `recommendations.csv` (ephemeral, overwritten every run)
-2. **lengjan-bets** reads recommendations, places bets on Lengjan, and writes to `bets_log.csv`
-3. **Kelly fractions** are computed dynamically from calibration ratio per league
+The decide layer and the placer are now both in this repo:
 
-The Sports pipeline **never** writes to `bets_log.csv`. See `Sports/Knowledge/Betting Optimisation/_MOC.md` in the Metill Obsidian vault for the full rule set and placement conventions.
+```
+config/leagues.yml      ── per-league betting config + team_names + Stan model
+config/bankroll.yml     ── global initial_pool, kelly_ceiling, max_match_stake_default,
+                           daily_budget_frac, daily_budget_min_isk
+        │
+        ▼
+R/decide-pipeline.R::decide_league(league, sex)
+        │
+        ├── R/decide-odds.R::prepare_odds()                 (read odds Parquet, filter horizon)
+        ├── R/decide-kelly.R::kelly_joint()                 (Stage-1 SLSQP, capped by max_match_stake)
+        ├── R/decide-portfolio.R::portfolio_optimise()      (Stage-2 daily-budget scaling)
+        ├── R/decide-calibration.R::compute_calibration()   (Beta-Binomial multiplier in [0.5, 1.5])
+        └── §7.2 chain in decide_league():
+              shrink_eff = min(kelly_frac × calibration, kelly_ceiling)
+              kelly      = kelly_raw × portfolio_lambda × shrink_eff
+              bet_amount = round(kelly × current_pool)
+        │
+        ▼
+data/decisions/recommendations/sport=*/country=*/run_date=*/   (Parquet, ephemeral per run_date)
+        │
+        ▼
+R/placer-pipeline.R::place_bets()                            (LOCAL ONLY — never on CI)
+        │
+        ├── R/placer-validate.R                              (pre-flight team_names + recs schema)
+        ├── R/placer-load.R::dedup_against_ledger()          (P1 idempotency)
+        ├── R/placer-login.R                                 (LENGJAN_USER / LENGJAN_PASS from .Renviron)
+        ├── R/placer-navigate.R::extract_matches()           (find Lengjan match IDs)
+        ├── R/placer-place.R::place_bet()                    (P3/P4 enforcement)
+        └── R/placer-ledger.R::append_to_ledger()            (only writer; canonical Parquet)
+        │
+        ▼
+data/decisions/ledger/sport=*/country=*/   (Parquet, append-only, immutable per row)
+```
 
-## `bets.yml` schema
+CSV dual-write was retired by Plan 6; Parquet is canonical.
+
+## `config/leagues.yml::*.betting` schema (post Plan 7a)
 
 ```yaml
-sport: "handball"                    # Sport name
-country: "denmark"                   # Country
-sex: ["male", "female"]              # Which sexes to bet on
-
-bankroll:
-  kelly_frac: 0.10                   # Fraction of full Kelly to bet (0.04–0.20)
-  kelly_frac_male: 0.12              # Optional: override kelly_frac for male (resolved in run.R loop)
-  kelly_frac_female: 0.08            # Optional: override kelly_frac for female
-  max_match_kelly: 1.0               # Max total Kelly fraction per match in Stage 1 optimiser
-  ev_threshold: 0.00                 # Min EV edge to enter optimiser
-  min_bet_amount: 200                # Minimum bet size
-  bet_digits: 0                      # Rounding (0 = whole numbers)
-  currency: "kr"                     # ISK or EUR
-
-scoring:
-  has_ties: true                     # false for basketball
-  tie_threshold: 0.5                 # 0 for football, 0.5 for handball (goal diff for draw)
-
-markets:
-  outcome: true                      # 1x2 market
-  handicap: false                    # Asian/European handicap
-  totals: true                       # Over/under
-
-predictions:
-  path: "results"                    # Where posterior files live
-  max_age_hours: 48                  # Warn if posteriors older than this
-  divisions: [1, 2, 3, 4]           # Optional: filter by division (football only)
-
-odds:
-  source: "lengjan-odds"             # "local", "lengjan-odds", or "gsheets"
-  lengjan_odds_path: "../../../lengjan-odds/data/handball_denmark"  # Relative from league dir
-  booker: "Lengjan"                  # Booker name filter
-
-history:
-  enabled: true
-  path: "history"                    # Where bets_log.csv lives (written by lengjan-bets only)
+betting:
+  # §7.2 multiplicative shrinkage; per-(league, sex) Browne γ
+  kelly_frac:
+    male: 0.20
+    female: 0.10        # tighter for cold-start cells; or scalar form: kelly_frac: 0.20
+  # Stage-1 solver cap; rarely binds (defaults to bankroll.max_match_stake_default)
+  max_match_stake: 0.50
+  ev_threshold: 0.0     # min EV to enter optimiser
+  markets:
+    moneyline: true
+    spread: true
+    total: true
+  scoring:
+    has_ties: true       # false for basketball
+    tie_threshold: 0.5   # 0 for football, 0.5 for handball
+  min_bet: 200           # ISK floor; bets below are dropped post-shrinkage
+  max_age_hours: 48      # warn if odds older than this
 ```
 
-## Current pool
+## `config/bankroll.yml` schema
 
-The current bankroll is **not** a `bets.yml` field. `step_bet.R` computes it per-run from `Sports/config/bankroll.yml::initial_pool` (23,610 kr as of 2026-03-06, matching actual deposits) plus the sum of `pnl` on settled rows in `bets_log.csv`. Do not add `cur_pool` to `bets.yml` — it will be silently ignored.
+```yaml
+initial_pool: 23610            # known deposits at workspace start
+daily_budget_frac: 0.05        # max fraction of current_pool per day (Stage-2 cap)
+daily_budget_min_isk: 1000     # ISK floor — never under-bet on a quiet day
+kelly_ceiling: 0.25            # K5 hard cap on kelly_frac × calibration_multiplier
+max_match_stake_default: 1.0   # Stage-1 default if a league doesn't override
+```
 
-## Module architecture (`Sports/R/bets/`)
+`current_pool` is **not** a config field — it's derived per run by
+`R/config.R::load_bankroll()` as `initial_pool + Σ(ledger.pnl[settled])`.
 
-All modules use `box::use()`. Entry point is `run.R::run_betting_pipeline(cfg)`.
+## Stake formula
 
-| Module | Exports | Purpose |
+The bet-amount decomposition (always — this is the canonical chain
+documented in
+[`code-map.md`](obsidian://Sports/Knowledge/Betting%20Optimisation/code-map)):
+
+```
+shrink_eff = min(kelly_frac × calibration_multiplier, kelly_ceiling)
+kelly      = kelly_raw × portfolio_lambda × shrink_eff
+bet_amount = round(kelly × current_pool)
+```
+
+| Factor | Computed by | Default / source |
 |---|---|---|
-| `run.R` | `run_betting_pipeline(cfg)` | Orchestrator: loads posterior + odds → runs joint Kelly → deduplicates → outputs recommendations |
-| `calibration.R` | `compute_calibration()` | Bayesian calibration multiplier from settled bet history |
-| `kelly.R` | `format_bet_text()` | EV + stake formatting (shared by joint optimiser) |
-| `kelly_joint.R` | `build_return_matrix()`, `build_indicators()`, `get_kelly_joint()`, `collect_match_bets()`, `run_joint_kelly()`, `parse_handicap()` | Joint cross-market Kelly (draw-level, SLSQP, push/void aware) |
-| `diagnostics_joint.R` | `run_diagnostics()`, `print_diagnostics()` | Per-match diagnostics report |
-| `odds.R` | `load_odds(cfg)` | Dispatcher: local/lengjan-odds/gsheets |
-| `output.R` | `print_market()`, `dedup_against_log()`, `compute_bankroll()` | Display, ledger dedup, bankroll |
-| `history.R` | P&L plots, calibration analysis, `recommend_kelly()` | Offline analysis (deprecated for runtime use — see calibration.R) |
+| `kelly_raw` | `R/decide-kelly.R::kelly_joint()` SLSQP | unconstrained, capped at `max_match_stake` |
+| `portfolio_lambda` | `R/decide-portfolio.R::portfolio_optimise()` | 1.0 unless daily budget binds |
+| `kelly_frac` | `config/leagues.yml::*.betting.kelly_frac` | per-(league, sex) Browne γ ≈ 0.10–0.25 |
+| `calibration_multiplier` | `R/decide-calibration.R::compute_calibration()` | Beta-Binomial in `[0.5, 1.5]`, prior_weight=30 |
+| `kelly_ceiling` | `config/bankroll.yml` | 0.25 (K5 invariant) |
+| `current_pool` | `R/config.R::load_bankroll()` | `initial_pool + Σ(settled pnl)` |
 
-## Bayesian calibration
+## Invariants (canonical set in Obsidian
+[`rules.md`](obsidian://Sports/Knowledge/Betting%20Optimisation/rules))
 
-At pipeline runtime, `step_bet.R` calls `compute_calibration()` which computes a **multiplier** per sex:
+### Kelly fraction calibration (K1–K6)
 
-```
-multiplier = (prior_weight × prior_ratio + Σwins) / (prior_weight + Σmodel_prob)
-effective_kelly = base_kelly × clamp(multiplier, floor, ceiling)
-```
+- **K1** — `calibration_multiplier = clamp((w₀·r₀ + Σwin) / (w₀ + Σp), 0.5, 1.5)`
+- **K2** — Per (league, sex). Split by market only at ≥ 100 settled bets per market.
+- **K3** — `prior_weight = 30` anchors near 1.0 until ~30 settled bets per cell.
+- **K4** — Floor on multiplier = 0.5; never collapse to zero.
+- **K5** — Ceiling on `kelly_frac × calibration_multiplier` = 0.25 (mechanical clamp in `decide_league()`).
+- **K6** — Recomputed every `decide_league()` call from the live ledger.
 
-1. Reads settled bets from `bets_log.csv` for the league
-2. Computes Bayesian pseudo-count multiplier (starts updating from bet 1, no hard cutoff)
-3. Clamps multiplier to `[floor=0.5, ceiling=1.5]` (configurable in `bankroll.yml`)
-4. Multiplies the static `bets.yml` base value (does NOT replace it)
+### Placement (P1–P4)
 
-Defaults in `config/bankroll.yml` under `calibration:` key. Per-league override in `bets.yml`.
+- **P1** — Idempotent: `dedup_against_ledger()` runs before any browser session opens.
+- **P2** — Ledger records *actual* Lengjan odds (`odds_placed`), not the recommendation's odds.
+- **P3** — If live odds drift > 1 % from the recommendation, recompute Kelly stake at the new odds.
+- **P4** — Reject if the bet is no longer +EV at live odds (status `not_positive_ev`).
 
-`prior_weight` controls adaptation speed: higher = more bets needed to move away from prior.
-With `prior_weight=10`, ~10 expected wins of data halve the prior's influence.
+### Ledger immutability (L1–L4)
 
-## Per-league daily cap
+- **L1** — A row in the ledger means money was committed on Lengjan. No "logged but never placed" state.
+- **L2** — Rows are never deleted.
+- **L3** — Bet parameters (`odds_placed`, `bet_amount`, `outcome`, `line`) are frozen at write time.
+- **L4** — Settlement only fills `settled` / `win` / `pnl`; nothing else changes.
 
-`max_league_exposure` in `bankroll.yml` (default 0.20) caps any single league's total kelly fraction per day. Prevents a poorly-calibrated league from getting its full unconstrained stake on quiet days when the daily budget (`max_daily_exposure`) doesn't bind. Enforced in `run.R` after kelly_frac scaling.
+### Recommendations + bankroll (R1–R4, B1–B3)
 
-## Odds sources
+- **R1** — `recommendations` Parquet is ephemeral, overwritten every `decide_league()` run.
+- **R2** — Recommendations exclude bets already in the ledger (anti-join on match + market + outcome + line).
+- **R3** — Recommendations exclude past matches (`match_date >= run_date`).
+- **R4** — Odds must be fresher than `betting.max_age_hours`.
+- **B1** — All ledger rows are outstanding until settled.
+- **B2** — `bankroll = initial_pool + Σ(settled pnl)`.
+- **B3** — Per-match hard cap = `max_match_stake × kelly_ceiling` of bankroll (post Plan 7a default: `0.50 × 0.25 = 0.125`).
 
-| Source | Config | How it loads | Used by |
-|---|---|---|---|
-| `local` | `odds.path` | Reads CSVs from league's `data/` dir | football/england |
-| `lengjan-odds` | `odds.lengjan_odds_path` | Reads CSVs from `lengjan-odds/data/{key}/` (deduped to latest scrape per match×line) | handball/*, football/italy |
-| `gsheets` | `odds.gsheets_id` | Downloads from Google Sheets | basketball/iceland, handball/iceland |
+## Local-only enforcement
 
-## Market types
+`R/placer-*.R` is **never** wired into CI. The
+`tests/testthat/test-placer-ci-isolation.R` test fails the build if any
+`.github/workflows/*.yml` references `R/placer-`, `place_bets`,
+`preview_bets`, `placer_pipeline`, or `LENGJAN_*`.
 
-### 1x2 (outcome)
-Standard home/draw/away. For no-tie sports (basketball), draw column is dropped.
+## Skill reference
 
-### Handicap
-Two line types detected automatically:
-- **Whole-goal** (±1, ±2): European 3-way — draw-after-handicap is bettable with its own odds
-- **Fractional** (±0.5, ±1.5): Asian 2-way — no draw possible
-- No-tie sports (basketball) route all lines through Asian 2-way
+The four skills under `.claude/skills/` are model-invocable and intentionally
+unforked (see `tests/testthat/test-skill-conventions.R`):
 
-### Totals (over/under)
-Many-to-many join between posterior total goals and bookmaker limit lines.
-
-## Kelly criterion
-
-Single per-match optimiser across all markets simultaneously. Uses full posterior draw matrix (no collapse to point probabilities). Correctly handles:
-- Mutually exclusive outcomes within a market
-- Cross-market correlation (e.g., home win + home -0.5 HC)
-- Posterior uncertainty (automatic fractional Kelly behaviour)
-- Push/void outcomes on integer lines (return = 0 instead of -1)
-
-Uses `build_return_matrix()` → `get_kelly_joint()` with SLSQP (analytic gradients). Returns diagnostics (growth rate, worst-case wealth, effective bet count) per match. Pre-filters to positive-EV bets via `ev_threshold`. Stage 1 computes raw optimal fractions (default `max_match_kelly: 1.0`); all scaling is handled by Stage 2 (portfolio + calibration).
-
-**Daily bankroll budget:** After all leagues produce recommendations, `run.R` checks total kelly fraction per date. If it exceeds `max_daily_exposure` (default 0.75 in `config/bankroll.yml`), all allocations for that date are scaled proportionally.
-
-### kelly_frac guidelines
-
-**kelly_frac** = fraction of full Kelly stake. Applied by `format_bet_text()`. At runtime, may be overridden by `compute_calibration()` (adaptive Kelly).
-
-#### Priority resolution
-
-`step_bet.R` resolves the effective `kelly_frac`:
-
-1. **Base**: `kelly_frac_{sex}` from `bets.yml` (falls back to `kelly_frac`)
-2. **× Bayesian multiplier**: from `compute_calibration()` (always applied, prior-weighted)
-3. Result is the effective `kelly_frac` used downstream
-
-## Recommendations output
-
-The pipeline writes `Sports/recommendations.csv` with columns:
-`sport, country, sex, date, division, heima, gestir, market, outcome, o, p, ev, kelly, bet_amount, change, limit, booker`
-
-This file is ephemeral (overwritten every run) and consumed by `lengjan-bets`.
-
-## Ledger (`bets_log.csv`)
-
-Written **only** by `lengjan-bets/R/pipeline.R::log_placed_bet()` after confirmed placement. Columns:
-`date_recommended, date_match, sport, country, sex, market, home, away, outcome, odds, probability, ev, kelly_frac, bet_amount, info, win, pnl, source`
-
-- `win` and `pnl` are `NA` at placement time — filled by `step_settle.R`
-- `odds` records actual Lengjan odds at placement (rule P2), not recommended odds
-- Rows are never deleted (rule L2)
+| Skill | Purpose |
+|---|---|
+| `/bet` | Show current recommendations or run the decide layer to refresh |
+| `/place-bets` | Preview pending bets, then place after user confirmation |
+| `/sports-update` | Run the full pipeline (ingest + odds + fit + decide + publish) |
+| `/add-league` | Walk-through to add a new league to `config/leagues.yml` |
 
 ## Key gotchas
 
-- **`box::use()` relative paths** resolve from the calling file's directory, not the working directory
-- **`stats::setNames` unavailable** in box modules — use `unlist()` or `rlang::set_names()` instead
-- **Vectorise lookups** in `mutate()` with `ifelse()`, not `[[` (which isn't vectorised)
-- **Team name mappings** for Lengjan live in `lengjan-odds/config/team_names_{sport}_{country}.csv`
-- **sex=all partition** in Parquet store: settlement writes here; queries must filter `sex != "all"`
+- **C-locale R + non-ASCII literals**: when the system locale is `C` (no
+  UTF-8), R's source parser silently mangles non-ASCII string literals to
+  the placeholder text `<U+XXXX>`. Always use `\uxxxx` escapes for
+  Icelandic characters in R sources (e.g. `"Úrslit"` not `"Úrslit"`).
+  See the Plan 7a placer-fix commit for the canonical example. `R CMD check`
+  enforces this.
+- **`no_match_id` on bet placement**: almost always means
+  `config/leagues.yml::*.lengjan.team_names.{male|female}` is empty or
+  missing the team. Pre-flight `validate_team_names_config()` aborts on this
+  before login.
+- **Ledger schema drift**: `append_to_ledger()` requires the canonical
+  column set from `schemas()$ledger$names`. Missing `settled` is the most
+  common gap — placer-pipeline.R must include it (defaults to `FALSE` at
+  placement, flipped by settlement).
+- **`box::use()` inside `withr::with_dir()`**: relative paths break.
+  Use `source()` + `new.env()` instead.
+
+## Plan 7 series — active forward roadmap
+
+Hand-tuned constants in the bet-sizing path are queued for replacement by a
+hierarchical Bayesian model. See
+[`next-actions.md`](obsidian://Sports/Knowledge/Betting%20Optimisation/next-actions)
+in Obsidian for the current roadmap (7b CLV capture → 7c Baker-McHale
+calibration → 7d hierarchical kelly_frac pooling → 7e adaptive
+ev_threshold → 7f optional CVaR-Kelly).
