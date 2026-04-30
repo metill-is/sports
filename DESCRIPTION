@@ -64,6 +64,7 @@ Collate:
     'model-posteriors.R'
     'model-prepare.R'
     'model-league.R'
+    'pipeline-freshness.R'
     'placer-ledger.R'
     'placer-load.R'
     'placer-login.R'
