@@ -1,7 +1,7 @@
 ---
 name: bet
 description: Use when generating fresh recommendations or viewing the current ones. Runs the decide layer (Kelly + portfolio + calibration) and shows the latest recommendations.
-argument-hint: "[--league LEAGUE] [--all] [--dry-run] [show]"
+argument-hint: "[--league LEAGUE] [show]"
 ---
 
 # /bet — Generate or view betting recommendations
@@ -46,52 +46,39 @@ Present the table to the user. Then suggest:
 If `recommendations/` is empty or stale, run the decide layer first
 (Mode 2 below).
 
-## Mode 2: Run the decide layer (`--all`, `--league`, `--dry-run`)
+## Mode 2: Run the decide layer
 
 Generate fresh recommendations. The decide layer reads the latest
 `beliefs/latest/` snapshot for each (sport, country, sex), prepares odds,
 runs joint Kelly + portfolio optimisation + calibration, and writes
 candidates + recommendations Parquet.
 
-### Step 1: Dry-run preview
-
-```bash
-cd /Users/brynjolfurjonsson/sports && Rscript run.R --all --step decide --dry-run
-```
-
-Show the planned targets. Confirm before proceeding (unless the user
-already passed `--dry-run`).
-
-### Step 2: Execute
-
 Decide is fast (~seconds) and inline-safe — no detached launch needed.
 
 ```bash
-Rscript run.R --all --step decide
+Rscript scripts/04_decide.R
 ```
 
 Or for a single league / sex:
 
 ```bash
-Rscript run.R --league football_iceland --step decide
-Rscript run.R --league football_iceland --sex male --step decide
+Rscript scripts/04_decide.R --league football_iceland
+Rscript scripts/04_decide.R --league football_iceland --sex male
 ```
-
-### Step 3: Show results
 
 After completion, drop into Mode 1 to display the new recommendations.
 
-## When to use which step
+## When to use which entrypoint
 
-| User intent                                    | Step                                 |
-| ---------------------------------------------- | ------------------------------------ |
-| "Recompute recommendations against fresh odds" | `--step decide` (assumes fits exist) |
-| "Recompute everything end-to-end"              | `--step all` (use `/sports-update`)  |
-| "Just refresh the model fits"                  | `--step fit` (use `/sports-update`)  |
-| "Place bets I see in the table"                | `/place-bets`                        |
+| User intent                                    | Entrypoint                                    |
+| ---------------------------------------------- | --------------------------------------------- |
+| "Recompute recommendations against fresh odds" | `scripts/04_decide.R` (assumes fits exist)    |
+| "Recompute everything end-to-end"              | `/sports-update`                              |
+| "Just refresh the model fits"                  | `/sports-update fit`                   |
+| "Place bets I see in the table"                | `/place-bets`                                 |
 
 If the latest fit is older than `betting.max_age_hours` (config/leagues.yml),
-decide will warn — refit first via `/sports-update --step fit`.
+decide will warn — refit first via `/sports-update fit`.
 
 ## Error handling
 
@@ -99,15 +86,15 @@ decide will warn — refit first via `/sports-update --step fit`.
   for any league yet, or all runs are filtered out by EV threshold. Run
   Mode 2.
 - **"No posterior found"** → fit is missing for that league × sex. Run
-  `/sports-update --league {key} --step fit`.
+  `/sports-update fit --league {key}`.
 - **"Stale posterior warning"** → fit is older than `max_age_hours`. Refit
   first.
-- **"No odds rows for date range"** → `--step odds` hasn't run recently.
-  Run `Rscript run.R --all --step odds`.
+- **"No odds rows for date range"** → the odds scrape hasn't run recently.
+  Run `Rscript scripts/02_scrape_odds.R`.
 
 ## Reference
 
-- Decide entrypoint: `R/decide-pipeline.R::decide_league()`
+- Decide entrypoint: `scripts/04_decide.R` → `R/decide-pipeline.R::decide_one()`
 - Sub-stages: `R/decide-{odds,kelly,portfolio,calibration}.R`
 - Recommendations Parquet: `data/decisions/recommendations/sport=*/country=*/run_date=*/`
 - Candidates Parquet (with stage column for debugging): `data/decisions/candidates/`

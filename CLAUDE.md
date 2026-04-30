@@ -16,13 +16,20 @@ Mid-migration. End-state design: [`docs/superpowers/specs/2026-04-24-sports-pipe
 | **4: Decide + Publish** | Joint Kelly + portfolio + calibration → recommendations Parquet; football iceland 7-JSON publisher + basketball/handball 2-JSON scaffolds | ✅ Complete |
 | **5: Placer (local-only)** | `R/placer-*.R` ports `_legacy/lengjan-bets/`, dual-writes ledger CSV+Parquet during cutover, CI safety gate enforces local-only | ✅ Complete |
 | **6: Orchestration + CI + cutover** | `_targets.R` DAG + `run.R` CLI, 4 GitHub workflows (ci-tests, scrape-odds, scrape-results, fit-and-publish), metill-platform `pull-sports-data.yml`, placer dual-write dropped | ✅ Complete |
+| **7: Drop {targets}** | `_targets.R` + `run.R` replaced by 5 entry scripts (`scripts/0N_*.R`) with explicit freshness predicates; CI split into 5 workflows (results, odds, fit, decide-publish chained via `workflow_run`); cross-workflow git race resolved | ✅ Complete |
 
 ## Directory structure
 
 ```
 sports/
-├── _targets.R                      # {targets} DAG definition (5 layers: ingest -> fit -> decide -> publish)
-├── run.R                           # Thin CLI: --league/--sex/--step over tar_make()
+├── scripts/                         # Pipeline entry points (one per layer)
+│   ├── _lib.R                       # Shared CLI parser + target resolver
+│   ├── 00_active_competitions.R
+│   ├── 01_ingest_results.R
+│   ├── 02_scrape_odds.R             # Skips when no upcoming games (rule)
+│   ├── 03_fit.R                     # Skips when results haven't moved (rule)
+│   ├── 04_decide.R
+│   └── 05_publish.R
 ├── config/
 │   ├── leagues.yml                 # Single source of truth for league metadata
 │   ├── leagues.schema.json         # JSON Schema validator
@@ -42,7 +49,8 @@ sports/
 │   ├── model-prepare.R             # prepare_data(league, sex) → list(stan_data, pred_d, teams)
 │   ├── model-fit.R                 # fit_model() — pure cmdstanr wrapper
 │   ├── model-posteriors.R          # extract_posteriors() → beliefs_latest tibble
-│   ├── model-league.R              # fit_league() — end-to-end orchestrator
+│   ├── model-league.R              # fit_one() — end-to-end orchestrator
+│   ├── pipeline-freshness.R        # needs_refit() + has_upcoming_games() (Plan 7)
 │   ├── decide-odds.R               # prepare_odds(league, sex)
 │   ├── decide-kelly.R              # kelly_joint(beliefs, bets)
 │   ├── decide-portfolio.R          # portfolio_optimise(packages)
@@ -81,21 +89,18 @@ sports/
 │       ├── football/iceland/{karla,kvenna}/*.json
 │       ├── basketball/iceland/{karla,kvenna}/*.json
 │       └── handball/iceland/{karla,kvenna}/*.json
-├── .github/workflows/              # CI (Plan 6) — placer is NEVER referenced here
+├── .github/workflows/              # CI (Plan 7) — placer is NEVER referenced here
 │   ├── ci-tests.yml                # devtools::test() on push and PR
-│   ├── scrape-odds.yml             # Lengjan odds 3x/day cron
 │   ├── scrape-results.yml          # Federation results + schedules 1x/day
-│   └── fit-and-publish.yml         # Daily Stan fit + decide + publish
-├── scripts/
-│   ├── etl/                        # One-time legacy-CSV → Parquet migrations
-│   │   ├── 03_etl_odds.R
-│   │   └── 04_etl_ledger.R
-│   ├── backfill_ingest.R           # DEPRECATED — use Rscript run.R --step ingest
-│   ├── decide_all.R                # DEPRECATED — use Rscript run.R --step decide
-│   ├── fit_all.R                   # DEPRECATED — use Rscript run.R --step fit
-│   ├── place_bets.R                # CLI: dry-run by default, --live opts in (local-only)
-│   ├── preview_bets.R              # CLI: pending-bet preview, no browser (local-only)
-│   └── publish_all.R               # DEPRECATED — use Rscript run.R --step publish
+│   ├── scrape-odds.yml             # Lengjan odds 3x/day cron
+│   ├── fit.yml                     # Stan fit, chained on workflow_run from scrape-results
+│   └── decide-publish.yml          # Decide + publish, chained from fit AND scrape-odds
+│                                   # (so JSONs refresh on every odds scrape, not just daily)
+├── scripts/etl/                    # One-time legacy-CSV → Parquet migrations
+│   ├── 03_etl_odds.R
+│   └── 04_etl_ledger.R
+├── scripts/place_bets.R            # CLI: dry-run by default, --live opts in (local-only)
+├── scripts/preview_bets.R          # CLI: pending-bet preview, no browser (local-only)
 ├── tests/testthat/                 # 511+ passing assertions across config, storage*, duckdb-views, etl-validation, ingest-*, model-*, decide-*, publish-*, placer-*
 ├── sports.duckdb                   # Gitignored; rebuildable via rebuild_duckdb()
 ├── docs/superpowers/               # Specs + plans
@@ -125,18 +130,15 @@ sports/
 Rscript -e 'devtools::load_all()'
 Rscript -e 'devtools::test()'
 
-# Run the pipeline (daily driver -- uses {targets})
-Rscript run.R --help
-Rscript run.R --all --step odds                       # 3 leagues, scrape odds
-Rscript run.R --league football_iceland --sex male --step fit
-Rscript run.R --all --step fit                        # backfill all
-Rscript run.R --all --step decide                     # decide layer
-Rscript run.R --all --step publish                    # publish JSONs
-
-# Targets directly (advanced)
-Rscript -e 'targets::tar_make()'
-Rscript -e 'targets::tar_make(names = c("fit_handball_iceland_male"))'
-Rscript -e 'targets::tar_visnetwork()'                # DAG visualisation
+# Run the pipeline (daily driver -- one entry script per layer)
+Rscript scripts/00_active_competitions.R              # write active_competitions.json
+Rscript scripts/01_ingest_results.R                   # all active leagues
+Rscript scripts/01_ingest_results.R --league football_iceland
+Rscript scripts/02_scrape_odds.R                      # skips when no upcoming games
+Rscript scripts/03_fit.R                              # skips when results haven't moved
+Rscript scripts/03_fit.R --league football_iceland --sex male --force
+Rscript scripts/04_decide.R
+Rscript scripts/05_publish.R
 
 # Local placer (NEVER on CI)
 Rscript scripts/place_bets.R --dry-run
@@ -153,14 +155,6 @@ print(DBI::dbGetQuery(con, "SELECT sport, country, COUNT(*) AS n, SUM(pnl) AS pn
 '
 ```
 
-## Deprecated runners
-
-The `scripts/{fit,decide,publish}_all.R` and `scripts/backfill_ingest.R` scripts
-are kept as ad-hoc escape hatches but are **deprecated** in favour of
-`Rscript run.R`. They bypass the {targets} DAG and won't pick up cached
-results -- use them only for one-shot reruns where freshness matters more
-than caching.
-
 ## metill-platform integration
 
 The `metill-is/metill-platform` repo runs `pull-sports-data.yml` hourly:
@@ -168,7 +162,7 @@ clones `metill-is/sports`, rsyncs `data/publish/` into `data/ithrottir/`,
 commits if changed. A push to metill-platform triggers Fly.io auto-deploy.
 
 Sports-side workflow:
-1. fit-and-publish.yml writes data/publish/{...}/*.json
+1. decide-publish.yml writes data/publish/{...}/*.json
 2. The push to main triggers metill-platform's pull-sports-data.yml
    within the next hour
 3. metill-platform's commit deploys to fly.metill.is
@@ -225,11 +219,13 @@ Internal schemas use English throughout. Canonical column names: `home_team` / `
 - `fit_model()` is a pure cmdstanr wrapper — takes stan_data + stan_path, returns the fit. Callers save to disk.
 - `extract_posteriors()` materialises posterior draws as the canonical `beliefs_latest` tibble (per-draw-per-match).
 - Stan models live in `Stan/{league_key}/{file}.stan`. `leagues.yml`'s `stan_model` field uses this relative path.
-- Daily driver: `Rscript run.R --all --step fit` (uses `{targets}` cache).
-  `scripts/fit_all.R` is deprecated — keep for one-shot reruns. Run detached
-  for long backfills (wall-clock several hours with 1000 MCMC iters):
+- Daily driver: `Rscript scripts/03_fit.R`. The `needs_refit()` predicate
+  in `R/pipeline-freshness.R` short-circuits (league × sex) pairs whose
+  last `fit_date` is at least the latest completed `match_date`. Use
+  `--force` to refit unconditionally. Run detached for long backfills
+  (wall-clock several hours with 1000 MCMC iters):
   ```
-  nohup Rscript run.R --all --step fit > /tmp/fit_all.log 2>&1 & disown
+  nohup Rscript scripts/03_fit.R --force > /tmp/fit.log 2>&1 & disown
   ```
 
 ### Decide layer
@@ -251,8 +247,9 @@ Internal schemas use English throughout. Canonical column names: `home_team` / `
 - Per-sex `kelly_frac` supported via object form in `betting:` config
   (basketball/football use per-sex; handball uses scalar). Browne-grounded
   defaults: male 0.20, female 0.10–0.15.
-- Daily driver: `Rscript run.R --all --step decide` (uses `{targets}` cache).
-  `scripts/decide_all.R` is deprecated — keep for one-shot reruns. Wall-clock ~seconds.
+- Daily driver: `Rscript scripts/04_decide.R`. Wall-clock ~seconds.
+  Runs on every odds scrape via `decide-publish.yml`'s `workflow_run`
+  trigger so recommendations stay fresh as odds drift.
 
 ### Publish layer
 
@@ -261,11 +258,8 @@ Internal schemas use English throughout. Canonical column names: `home_team` / `
   7-JSON port (meta, next_games, standings, team_strengths, final_positions,
   points_distribution, home_advantage); basketball + handball are
   scaffolds (meta + next_games only).
-- Daily driver: `Rscript run.R --all --step publish` (the `{targets}` DAG wires
-  fresh-fit-on-demand via `R/publish-pipeline.R::publish_one()`).
-  `scripts/publish_all.R` is deprecated — keep for one-shot reruns; it still
-  reads the legacy backup fit at `SPORTS_BACKUP_ROOT` when available.
-- The `SPORTS_BACKUP_ROOT` env var overrides the default backup path.
+- Daily driver: `Rscript scripts/05_publish.R`. Wires fresh-fit-on-demand
+  via `R/publish-pipeline.R::publish_one()`.
 
 ### Betting conventions
 
@@ -281,7 +275,7 @@ Internal schemas use English throughout. Canonical column names: `home_team` / `
 
 ## Skills
 
-The four model-invocable skills under `.claude/skills/` (`/bet`, `/sports-update`, `/add-league`, `/place-bets`) were rewritten in `f50b0bd` (post-Plan-6) to invoke the `{targets}` DAG via `Rscript run.R --step ...`. Drift back to the pre-migration four-repo layout is guarded by `tests/testthat/test-skill-conventions.R`, which fails the build if any skill references `lengjan-bets/`, `lengjan-odds/`, `Sports/{sport}/{country}/`, or the `--sync` flag.
+The four model-invocable skills under `.claude/skills/` (`/bet`, `/sports-update`, `/add-league`, `/place-bets`) call `scripts/0N_*.R` directly. Drift back to legacy invocations is guarded by `tests/testthat/test-skill-conventions.R`, which fails the build if any skill references `lengjan-bets/`, `lengjan-odds/`, `Sports/{sport}/{country}/`, the `--sync` flag, or the legacy `Rscript run.R --step` pattern.
 
 **Do not add `disable-model-invocation: true` to these skills.** They are intentionally model-invocable.
 

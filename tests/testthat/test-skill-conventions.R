@@ -35,11 +35,19 @@ test_that("no .claude/skills/*/SKILL.md references deprecated paths or flags", {
     "cd /Users/brynjolfurjonsson/sports/lengjan-odds",
     "cd /Users/brynjolfurjonsson/sports/livesport-data",
     "cd /Users/brynjolfurjonsson/sports/Sports",
-    # Removed run.R flags (current run.R only accepts --league/--sex/--step/--all/--dry-run/--help)
+    # Pre-Plan-7 flags / entrypoints (run.R + targets removed; use scripts/0N_*.R)
     "--sync",
     "--due",
     "--stale",
-    # Deprecated runners (kept as escape hatches but skills must use {targets} via run.R)
+    "Rscript run.R",
+    "run.R --step",
+    "--step data",
+    "--step odds",
+    "--step fit",
+    "--step decide",
+    "--step publish",
+    "--step all",
+    # Deprecated runners (deleted in Plan 7)
     "scripts/fit_all.R",
     "scripts/decide_all.R",
     "scripts/publish_all.R",

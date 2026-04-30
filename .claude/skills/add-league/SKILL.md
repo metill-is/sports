@@ -114,7 +114,7 @@ session.
 
 Direction: `{canonical_pipeline_name: lengjan_display_name}`.
 
-To populate: after a first odds scrape (`Rscript run.R --league {key} --step odds`)
+To populate: after a first odds scrape (`Rscript scripts/02_scrape_odds.R --league {key}`)
 the canonical names are visible in `data/facts/odds/`; the Lengjan display
 names are in the same rows. Diff them and add any rows where they differ.
 
@@ -125,22 +125,14 @@ names are in the same rows. Diff them and add any rows where they differ.
 > with a clear "missing team_names for: …" message. See
 > [project_team_names_schema](../../../../.claude/projects/-Users-brynjolfurjonsson-sports/memory/project_team_names_schema.md).
 
-## Step 6: Dry-run verification
-
-```bash
-cd /Users/brynjolfurjonsson/sports && Rscript run.R --league {key} --step all --dry-run
-```
-
-This prints the targets that would run. Confirm the league key appears in
-each step's targets.
-
-## Step 7: Run the data + fit pipeline
+## Step 6: Run the data + fit pipeline
 
 Ingest first (cheap, tests the scraper):
 
 ```bash
-Rscript run.R --league {key} --step data
-Rscript run.R --league {key} --step odds
+Rscript scripts/00_active_competitions.R
+Rscript scripts/01_ingest_results.R --league {key}
+Rscript scripts/02_scrape_odds.R --league {key}
 ```
 
 Verify Parquet writes:
@@ -154,11 +146,11 @@ Then a smoke-test fit:
 ```bash
 # Detached (recommended for any fit):
 LOG=/tmp/fit-{key}.log
-nohup Rscript run.R --league {key} --step fit > "$LOG" 2>&1 & disown
+nohup Rscript scripts/03_fit.R --league {key} --force > "$LOG" 2>&1 & disown
 echo "PID $! — log: $LOG"
 ```
 
-## Step 8: (Optional) wire up publish
+## Step 7: (Optional) wire up publish
 
 Football has a full 7-JSON publisher; basketball + handball are scaffolds
 (meta + next_games only). To add full publishing for a new league, mirror
@@ -177,11 +169,11 @@ dispatcher uses sport-level routing.
 - [ ] (If new federation) ingest test added
 - [ ] `lengjan.team_names` populated for any teams that appear in odds scrape
 - [ ] Dry-run lists expected targets
-- [ ] `--step data` succeeds end-to-end (results in Parquet)
-- [ ] `--step odds` succeeds (odds rows in Parquet)
+- [ ] `scripts/01_ingest_results.R --league {key}` succeeds (results in Parquet)
+- [ ] `scripts/02_scrape_odds.R --league {key}` succeeds (odds rows in Parquet)
 - [ ] First fit converges (no divergences, ESS > 400, R̂ < 1.01)
-- [ ] (If betting) `--step decide` produces non-zero recommendations or
-      a clear "no candidates passed EV threshold" message
+- [ ] (If betting) `scripts/04_decide.R --league {key}` produces non-zero
+      recommendations or a clear "no candidates passed EV threshold" message
 
 ## Reference
 

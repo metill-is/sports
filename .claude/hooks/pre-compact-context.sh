@@ -4,22 +4,21 @@
 
 cat <<'EOF'
 === Sports Workspace Context (preserve across compaction) ===
-- Workspace: /Users/brynjolfurjonsson/sports/ (NOT a git repo itself)
-- Sub-projects: Sports/, lengjan-odds/, livesport-data/, lengjan-bets/
-- Each sub-project has its own CLAUDE.md — always read before making changes
+- Repo: /Users/brynjolfurjonsson/sports/ (single git repo, monorepo as of Plan 6)
+- _legacy/{sports,lengjan-odds,livesport-data,lengjan-bets}/ holds pre-cutover history
+- CLAUDE.md at repo root is authoritative
 - Memory: ~/.claude/projects/-Users-brynjolfurjonsson-sports/memory/MEMORY.md
 - Obsidian vault: ~/Obsidian/Metill/
 - Things 3 area: "Metill.is" (ID: 4WyyavEFjCPunRi9iD5tKe)
-- All R code: box::use(), here::here(), theme_metill(), Icelandic locale
+- R conventions: here::here(), theme_metill(), Icelandic locale via Sys.setlocale()
 
 === Sports Pipeline (preserve across compaction) ===
-- Unified CLI: cd Sports && Rscript run.R {selector} --step {steps}
-  Selectors: --sport, --country, --league, --all, --active, --stale, --due
-  Steps: data, fit, results, bet (comma-separated)
-  Overrides: --sex, --iter, --dry-run, --method (approximate inference disabled, use sample), --no-plots, --sync
-- League registry: Sports/config/leagues.yml (18 leagues; 3 active Icelandic, 15 paused as of 2026-04-10)
-- Betting config: Sports/{sport}/{country}/config/bets.yml
-- Skills: /bet (run bets), /sports-update (full pipeline), /add-league (new league)
-- Rules: sports-pipeline.md (pipeline arch), sports-betting.md (betting), sports-per-sport.md (data sources)
-- Key dirs: R/pipeline/ (dispatchers), R/bets/ (betting modules), R/schedule/ (scan.R)
+- Entry points: scripts/0N_*.R (one per layer; freshness predicates skip when nothing to do)
+  00_active_competitions.R / 01_ingest_results.R / 02_scrape_odds.R /
+  03_fit.R / 04_decide.R / 05_publish.R
+- Common flags: --league KEY, --sex male|female, --force (bypass freshness guard)
+- League registry: config/leagues.yml (Iceland active; non-Iceland paused for autumn restart)
+- Skills: /bet (recommendations), /sports-update (full pipeline), /add-league (new league), /place-bets (placer)
+- CI: .github/workflows/{scrape-results,scrape-odds,fit,decide-publish}.yml chained via workflow_run
+- Rules: sports-betting.md (betting), sports-per-sport.md (data sources), r-conventions.md, stan-conventions.md
 EOF
