@@ -34,33 +34,25 @@ jobs:
           dependencies: '"hard"'
           extra-packages: |
             any::devtools
-            any::targets
-            any::tidyselect
             any::chromote
 
-      - name: Restore targets cache
-        uses: actions/cache@v4
-        with:
-          path: _targets
-          key: targets-${{ hashFiles('_targets.R', 'R/**', 'config/**') }}
-          restore-keys: targets-
+      - name: Refresh active_competitions
+        run: Rscript scripts/00_active_competitions.R
 
       - name: Scrape results + schedules
         env:
           CHROMOTE_CHROME: ${{ steps.setup-chrome.outputs.chrome-path }}
-        run: |
-          Rscript run.R --all --step data
+        run: Rscript scripts/01_ingest_results.R
 
       - name: Commit if data changed
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/facts/results/ data/facts/schedules/
-          git diff --cached --quiet || git commit -m "data: federation scrape $(date -u +%Y-%m-%dT%H:%MZ)"
-          # --autostash: chromote / targets may leave unstaged rewrites in
-          # working-tree files this workflow has no business committing
-          # (e.g. _targets metadata, cached chrome state). Plain `pull --rebase`
-          # would error out with "cannot pull with rebase: You have unstaged
-          # changes". --autostash shelves them before rebasing, pops after.
-          git pull --rebase --autostash origin main
+          git add data/facts/results/ data/facts/schedules/ config/active_competitions.json
+          if git diff --cached --quiet; then
+            echo "No data changed"
+            exit 0
+          fi
+          git commit -m "data: federation scrape $(date -u +%Y-%m-%dT%H:%MZ)"
+          git pull --rebase origin main
           git push
