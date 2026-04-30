@@ -9,6 +9,29 @@ skip_if_no_legacy <- function() {
   }
 }
 
+# After the Plan 6 cutover the Parquet ledger is canonical and the placer
+# keeps appending new rows. The legacy CSVs in _legacy/sports/ are frozen
+# reference data and never grow. The legacy-vs-parquet equality assertions
+# below are one-shot cutover invariants -- once any new bet is placed,
+# parquet > legacy and that's correct, not a regression. Skip in that case.
+skip_if_post_cutover_drift <- function() {
+  parquet_rows <- nrow(read_table("ledger"))
+  legacy_files <- list.files(here::here("_legacy", "sports"),
+    pattern = "bets_log\\.csv$",
+    recursive = TRUE, full.names = TRUE
+  )
+  legacy_rows <- sum(vapply(legacy_files, function(f) {
+    df <- readr::read_csv(f, show_col_types = FALSE)
+    sum(df$sex != "all", na.rm = TRUE) + sum(is.na(df$sex))
+  }, integer(1)))
+  if (parquet_rows > legacy_rows) {
+    testthat::skip(sprintf(
+      "post-cutover drift: parquet=%d > legacy=%d (placer added %d new bets)",
+      parquet_rows, legacy_rows, parquet_rows - legacy_rows
+    ))
+  }
+}
+
 iceland_legacy_ledgers <- function() {
   list(
     basketball_iceland = here::here("_legacy", "sports", "basketball", "iceland", "history", "bets_log.csv"),
@@ -27,6 +50,7 @@ all_legacy_ledgers <- function() {
 
 test_that("Parquet ledger total row count matches legacy (modulo sex=all)", {
   skip_if_no_legacy()
+  skip_if_post_cutover_drift()
 
   legacy_files <- list.files(here::here("_legacy", "sports"),
     pattern = "bets_log\\.csv$",
@@ -48,6 +72,7 @@ test_that("Parquet ledger total row count matches legacy (modulo sex=all)", {
 
 test_that("Parquet ledger total PnL matches legacy to 0.01 ISK", {
   skip_if_no_legacy()
+  skip_if_post_cutover_drift()
 
   legacy_files <- list.files(here::here("_legacy", "sports"),
     pattern = "bets_log\\.csv$",
@@ -71,6 +96,7 @@ test_that("Parquet ledger total PnL matches legacy to 0.01 ISK", {
 
 test_that("Per-league PnL totals match legacy for each ledger file", {
   skip_if_no_legacy()
+  skip_if_post_cutover_drift()
 
   legacy_files <- list.files(here::here("_legacy", "sports"),
     pattern = "bets_log\\.csv$",
