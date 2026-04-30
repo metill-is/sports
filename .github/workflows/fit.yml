@@ -1,0 +1,67 @@
+name: Fit Stan Models
+
+on:
+  workflow_run:
+    workflows: ["Scrape Federation Results + Schedules"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fit
+  cancel-in-progress: false
+
+jobs:
+  fit:
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      CMDSTAN_VERSION: '2.38.0'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: 'release'
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-repositories: 'https://stan-dev.r-universe.dev'
+          extra-packages: |
+            any::devtools
+            any::cmdstanr
+
+      - name: Cache CmdStan installation
+        id: cache-cmdstan
+        uses: actions/cache@v4
+        with:
+          path: ~/.cmdstan
+          key: cmdstan-${{ env.CMDSTAN_VERSION }}-ubuntu-latest
+
+      - name: Install CmdStan if not cached
+        if: steps.cache-cmdstan.outputs.cache-hit != 'true'
+        run: Rscript -e 'cmdstanr::install_cmdstan(version = Sys.getenv("CMDSTAN_VERSION"), cores = 2)'
+
+      - name: Fit (skips when no new games)
+        run: Rscript scripts/03_fit.R
+
+      - name: Commit if beliefs changed
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/beliefs/latest/ data/beliefs/archive/
+          if git diff --cached --quiet; then
+            echo "No new fits"
+            exit 0
+          fi
+          git commit -m "data: stan fit $(date -u +%Y-%m-%dT%H:%MZ)"
+          git pull --rebase origin main
+          git push
