@@ -40,6 +40,3 @@ Stan/*/*
 # Stan fit objects (10MB+ each, regenerable from data/facts/)
 data/beliefs/fits/
 data/beliefs/fits_by_round/
-
-# {targets} cache (regenerable from R/, scripts/, data/)
-_targets/

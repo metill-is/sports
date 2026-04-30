@@ -31,7 +31,6 @@ Imports:
     rvest,
     stringi,
     stringr,
-    targets,
     tibble,
     tidyr,
     withr,
