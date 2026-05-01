@@ -38,6 +38,12 @@ jobs:
             any::devtools
             any::chromote
 
+      - name: Reinstall V8 from source with bundled static libv8
+        env:
+          DOWNLOAD_STATIC_LIBV8: "1"
+        run: |
+          Rscript -e 'install.packages("V8", type = "source", repos = c(CRAN = "https://cloud.r-project.org"))'
+
       - name: Refresh active_competitions
         run: Rscript scripts/00_active_competitions.R
 
