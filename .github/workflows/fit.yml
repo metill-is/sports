@@ -41,6 +41,12 @@ jobs:
             any::devtools
             any::cmdstanr
 
+      - name: Reinstall V8 from source with bundled static libv8
+        env:
+          DOWNLOAD_STATIC_LIBV8: "1"
+        run: |
+          Rscript -e 'install.packages("V8", type = "source", repos = c(CRAN = "https://cloud.r-project.org"))'
+
       - name: Cache CmdStan installation
         id: cache-cmdstan
         uses: actions/cache@v4

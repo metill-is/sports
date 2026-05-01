@@ -267,27 +267,63 @@ Internal schemas use English throughout. Canonical column names: `home_team` / `
 
 ### CI / GitHub Actions
 
-- All five workflows under `.github/workflows/` set `PKG_SYSREQS: "false"`
-  on the `r-lib/actions/setup-r-dependencies@v2` step. This disables pak's
-  automatic `add-apt-repository` install of system requirements.
+Two coordinated changes, both applied to all five workflows under
+`.github/workflows/`:
+
+**1. `PKG_SYSREQS: "false"` on `setup-r-dependencies@v2`** disables pak's
+automatic `add-apt-repository` install of system requirements.
+
 - Rationale: `chromote`'s `SystemRequirements` field maps to
   `ppa:xtradeb/apps` on Ubuntu. Registering that PPA queries
   `api.launchpad.net` for metadata, and Launchpad outages periodically
   time out (`TimeoutError: [Errno 110]`) for several hours at a time —
   silently breaking every R-package install on every workflow. Disabling
   pak's sysreqs handler removes the dependency on Launchpad entirely.
-- Substitute coverage: the Ubuntu 24.04 GitHub-hosted runner image already
-  ships Google Chrome and Chromium pre-installed (so chromote works), and
-  the standard `ubuntu-latest` libraries (libcurl, libssl, libxml2, etc.)
-  cover every other declared `SystemRequirements` in the project's
-  package set. The `browser-actions/setup-chrome@v1` step in the scrape
-  workflows further pins Chrome and exports `CHROMOTE_CHROME` for
-  chromote to use at runtime.
-- If a future R-package addition declares a sysreq the runner image
-  doesn't pre-install, the install will fail with a compile-time linker
-  error (loud, immediate). The remedy is a one-line `apt-get install`
-  step before `setup-r-dependencies` — pak still _prints_ the missing
-  sysreqs in its log so detection is easy.
+- Substitute coverage: the Ubuntu 24.04 GitHub-hosted runner image
+  pre-installs Google Chrome and Chromium (so chromote works at
+  runtime), and the standard `ubuntu-latest` libraries (libcurl,
+  libssl, libxml2, libyaml) cover every other declared
+  `SystemRequirements` in the project's package set. The
+  `browser-actions/setup-chrome@v1` step in the scrape workflows
+  further pins Chrome and exports `CHROMOTE_CHROME`.
+
+**2. Reinstall `V8` from source with `DOWNLOAD_STATIC_LIBV8=1`** after
+`setup-r-dependencies`:
+
+```yaml
+- name: Reinstall V8 from source with bundled static libv8
+  env:
+    DOWNLOAD_STATIC_LIBV8: "1"
+  run: |
+    Rscript -e 'install.packages("V8", type = "source", repos = c(CRAN = "https://cloud.r-project.org"))'
+```
+
+- Rationale: `jsonvalidate` (used in `R/config.R::validate_leagues` to
+  check `leagues.yml` against `leagues.schema.json`) depends on `V8`.
+  Posit Package Manager's pre-built `V8` binary for Ubuntu 24.04 noble
+  was linked against `libnode.so.109` (Node 18.x ABI), but noble ships
+  Node 20.x, which provides `libnode.so.115`. With sysreqs disabled, no
+  libnode is installed at all, so `dyn.load("V8.so")` fails immediately
+  on every entry script that calls `load_leagues()` (every entry
+  script does).
+- Fix: build `V8` from source on the runner with
+  `DOWNLOAD_STATIC_LIBV8=1`. V8's configure script downloads a static
+  libv8 binary from CRAN's V8 release page and links against it. The
+  resulting V8 `.so` has zero system library dependencies. This step
+  takes ~30 s but is robust against any libnode/libv8 ABI changes in
+  the runner image.
+- The order matters: this step runs **after** `setup-r-dependencies`
+  (which has installed the broken PPM binary) and overwrites V8 in
+  `R_LIBS_USER`.
+
+**Detection if a future package adds an unmet sysreq.** With
+`PKG_SYSREQS=false`, pak still _prints_ system requirements but skips
+the apt install. If a new R package declares a sysreq the runner
+image doesn't pre-install, the failure is a runtime
+`dyn.load: cannot open shared object file` (loud, immediate). The
+remedy is either a one-line `apt-get install` step before
+`setup-r-dependencies`, or — if the issue is an ABI mismatch like the
+V8 one — a from-source rebuild step like the V8 one above.
 
 ### Placer (local-only)
 

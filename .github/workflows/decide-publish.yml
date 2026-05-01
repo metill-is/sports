@@ -38,6 +38,12 @@ jobs:
           extra-packages: |
             any::devtools
 
+      - name: Reinstall V8 from source with bundled static libv8
+        env:
+          DOWNLOAD_STATIC_LIBV8: "1"
+        run: |
+          Rscript -e 'install.packages("V8", type = "source", repos = c(CRAN = "https://cloud.r-project.org"))'
+
       - name: Decide (Kelly + portfolio + calibration)
         run: Rscript scripts/04_decide.R
 
