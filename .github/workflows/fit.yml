@@ -2,7 +2,7 @@ name: Fit Stan Models
 
 on:
   workflow_run:
-    workflows: ["Scrape Federation Results + Schedules"]
+    workflows: ["Scrape Federation Results and Schedules"]
     types: [completed]
     branches: [main]
   workflow_dispatch: {}

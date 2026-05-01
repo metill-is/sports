@@ -1,4 +1,4 @@
-name: Scrape Federation Results + Schedules
+name: Scrape Federation Results and Schedules
 
 on:
   schedule:

@@ -325,6 +325,20 @@ remedy is either a one-line `apt-get install` step before
 `setup-r-dependencies`, or — if the issue is an ABI mismatch like the
 V8 one — a from-source rebuild step like the V8 one above.
 
+**Workflow name gotcha (`workflow_run` glob trap).** The
+`on.workflow_run.workflows` array uses glob patterns, not literal
+strings. Special meta-characters (`+`, `*`, `?`, `[`, `]`, `!`) in a
+workflow's `name:` field will silently break any `workflow_run`
+trigger that references it ([github/docs#12572](https://github.com/github/docs/issues/12572)).
+This bit us once: the upstream workflow was named
+`"Scrape Federation Results + Schedules"`, so the downstream
+`fit.yml`'s `workflows: ["Scrape Federation Results + Schedules"]`
+never matched, and the chain silently produced zero fit runs from
+2026-04-30 cutover until 2026-05-01 when the bug was found. Fix:
+renamed to `"Scrape Federation Results and Schedules"` (no
+meta-characters). Keep all workflow `name:` fields free of glob
+meta-characters.
+
 ### Placer (local-only)
 
 - `Rscript scripts/place_bets.R` is the public entrypoint. Default is dry-run; `--live` actually places. Always reads `LENGJAN_USER` / `LENGJAN_PASS` from `.Renviron`.
