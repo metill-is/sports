@@ -265,6 +265,30 @@ Internal schemas use English throughout. Canonical column names: `home_team` / `
 
 `.claude/rules/sports-betting.md` — P1–P4 placement rules, bets.yml schema (Plan 3 adds).
 
+### CI / GitHub Actions
+
+- All five workflows under `.github/workflows/` set `PKG_SYSREQS: "false"`
+  on the `r-lib/actions/setup-r-dependencies@v2` step. This disables pak's
+  automatic `add-apt-repository` install of system requirements.
+- Rationale: `chromote`'s `SystemRequirements` field maps to
+  `ppa:xtradeb/apps` on Ubuntu. Registering that PPA queries
+  `api.launchpad.net` for metadata, and Launchpad outages periodically
+  time out (`TimeoutError: [Errno 110]`) for several hours at a time —
+  silently breaking every R-package install on every workflow. Disabling
+  pak's sysreqs handler removes the dependency on Launchpad entirely.
+- Substitute coverage: the Ubuntu 24.04 GitHub-hosted runner image already
+  ships Google Chrome and Chromium pre-installed (so chromote works), and
+  the standard `ubuntu-latest` libraries (libcurl, libssl, libxml2, etc.)
+  cover every other declared `SystemRequirements` in the project's
+  package set. The `browser-actions/setup-chrome@v1` step in the scrape
+  workflows further pins Chrome and exports `CHROMOTE_CHROME` for
+  chromote to use at runtime.
+- If a future R-package addition declares a sysreq the runner image
+  doesn't pre-install, the install will fail with a compile-time linker
+  error (loud, immediate). The remedy is a one-line `apt-get install`
+  step before `setup-r-dependencies` — pak still _prints_ the missing
+  sysreqs in its log so detection is easy.
+
 ### Placer (local-only)
 
 - `Rscript scripts/place_bets.R` is the public entrypoint. Default is dry-run; `--live` actually places. Always reads `LENGJAN_USER` / `LENGJAN_PASS` from `.Renviron`.

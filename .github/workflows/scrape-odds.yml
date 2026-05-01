@@ -30,6 +30,8 @@ jobs:
           chrome-version: stable
 
       - uses: r-lib/actions/setup-r-dependencies@v2
+        env:
+          PKG_SYSREQS: "false"
         with:
           dependencies: '"hard"'
           extra-packages: |
