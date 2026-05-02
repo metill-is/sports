@@ -53,9 +53,11 @@ basketball_iceland:
     # horizon power utility). Iceland-tier ROI history (+9.18 % per
     # Sports/Knowledge/Betting Optimisation/Historical/roi-snapshot-2026-04-19)
     # supports moderate confidence; female cell tighter on smaller sample.
+    # 2026-05-02: scaled to 25 % of Browne defaults (user request — overall
+    # 75 % stake reduction). Pre-cut: male 0.20, female 0.15.
     kelly_frac:
-      male: 0.20
-      female: 0.15
+      male: 0.05
+      female: 0.0375
     # Per-match solver cap; rarely binds for typical raw Kelly fractions
     # (1-5 %) so the §7.2 shrinkage and §10 portfolio scaling are the
     # active stake limiters.
@@ -96,7 +98,9 @@ handball_iceland:
       female: {}                       # No women's handball on Lengjan currently
   stan_model: handball_iceland/2d_student_t.stan
   betting:
-    kelly_frac: 0.20         # §7.2 multiplicative shrinkage; quarter-of-half-Kelly
+    # 2026-05-02: scaled to 25 % of Browne default (user request — overall
+    # 75 % stake reduction). Pre-cut: 0.20.
+    kelly_frac: 0.05         # §7.2 multiplicative shrinkage; quarter-of-Browne
     max_match_stake: 0.50    # solver cap; rarely binds
     ev_threshold: 0.0
     markets:
@@ -138,6 +142,8 @@ football_iceland:
         Grindavík: Grindavík
         Njarðvík: Njarðvík
         Völsungur: Völsungur
+        Fylkir: Fylkir
+        Vestri: Vestri
         # BD teams that also appear in women's BD (verified against
         # data/facts/odds/sport=football/country=iceland):
         KR: KR
@@ -155,9 +161,11 @@ football_iceland:
   betting:
     # kelly_frac is the §7.2 multiplicative shrinkage. Female cell stays
     # tighter — first Icelandic women's football season, thin history.
+    # 2026-05-02: scaled to 25 % of Browne defaults (user request — overall
+    # 75 % stake reduction). Pre-cut: male 0.20, female 0.10.
     kelly_frac:
-      male: 0.20
-      female: 0.10
+      male: 0.05
+      female: 0.025
     max_match_stake: 0.50
     ev_threshold: 0.0
     markets:
