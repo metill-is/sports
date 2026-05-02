@@ -280,11 +280,16 @@ NULL
 #' seven JSON files into `output_root/football/iceland/{karla|kvenna}/`:
 #'   - `meta.json`
 #'   - `next_games.json`
-#'   - `standings.json`   (male / karla only)
+#'   - `standings.json`
 #'   - `team_strengths.json`
 #'   - `final_positions.json`
 #'   - `points_distribution.json`
 #'   - `home_advantage.json`
+#'
+#' Plus three accretive history files written when there's relevant data:
+#'   - `team_strengths_history.json`     (every fit)
+#'   - `standings_history.json`          (every fit with played top-flight matches)
+#'   - `round_predictions_history.json`  (every fit; empty `records` if archive not yet populated)
 #'
 #' @param fit CmdStanMCMC returned by `fit_model()`.  Must have been trained on
 #'   data consistent with `(league, sex, end_date)`.
@@ -586,136 +591,127 @@ publish_football_iceland <- function(fit,
     auto_unbox = TRUE, dataframe = "rows", digits = 5, na = "null"
   )
 
-  # ---- standings.json (top division, male only) ----------------------------
+  # ---- standings.json + standings_history.json -----------------------------
+  # Both sexes get a standings.json (empty `rows` if no top-flight matches
+  # have been played yet). standings_history.json is only appended when
+  # there are played matches -- empty-snapshot rows would be noise.
 
-  if (sex == "male") {
-    bd_results <- results[
-      results$season == current_season & results$division == top_div, ,
-      drop = FALSE
-    ]
+  bd_results <- results[
+    results$season == current_season & results$division == top_div, ,
+    drop = FALSE
+  ]
 
-    pad_form <- function(x, n = 5L) {
-      tail(c(rep(NA_character_, n), x), n)
-    }
+  pad_form <- function(x, n = 5L) {
+    tail(c(rep(NA_character_, n), x), n)
+  }
 
-    short_code <- function(team) {
-      team |>
-        stringr::str_remove_all("\\s|\\.") |>
-        stringr::str_to_upper() |>
-        stringr::str_sub(1L, 3L)
-    }
+  short_code <- function(team) {
+    team |>
+      stringr::str_remove_all("\\s|\\.") |>
+      stringr::str_to_upper() |>
+      stringr::str_sub(1L, 3L)
+  }
 
-    if (nrow(bd_results) > 0L) {
-      long_bd <- dplyr::bind_rows(
-        dplyr::transmute(bd_results,
-          team = .data$home_team, match_date = .data$match_date,
-          gf = .data$home_score, ga = .data$away_score
-        ),
-        dplyr::transmute(bd_results,
-          team = .data$away_team, match_date = .data$match_date,
-          gf = .data$away_score, ga = .data$home_score
+  if (nrow(bd_results) > 0L) {
+    long_bd <- dplyr::bind_rows(
+      dplyr::transmute(bd_results,
+        team = .data$home_team, match_date = .data$match_date,
+        gf = .data$home_score, ga = .data$away_score
+      ),
+      dplyr::transmute(bd_results,
+        team = .data$away_team, match_date = .data$match_date,
+        gf = .data$away_score, ga = .data$home_score
+      )
+    ) |>
+      dplyr::mutate(
+        result = dplyr::case_when(
+          .data$gf > .data$ga ~ "W",
+          .data$gf < .data$ga ~ "L",
+          TRUE ~ "D"
         )
       ) |>
-        dplyr::mutate(
-          result = dplyr::case_when(
-            .data$gf > .data$ga ~ "W",
-            .data$gf < .data$ga ~ "L",
-            TRUE ~ "D"
-          )
-        ) |>
-        dplyr::arrange(.data$team, .data$match_date)
+      dplyr::arrange(.data$team, .data$match_date)
 
-      standings_rows <- long_bd |>
-        dplyr::summarise(
-          played = dplyr::n(),
-          wins = sum(.data$result == "W"),
-          draws = sum(.data$result == "D"),
-          losses = sum(.data$result == "L"),
-          goals_for = sum(.data$gf),
-          goals_against = sum(.data$ga),
-          goal_diff = .data$goals_for - .data$goals_against,
-          points = 3L * .data$wins + .data$draws,
-          form = list(pad_form(tail(.data$result, 5L))),
-          .by = "team"
-        ) |>
-        dplyr::arrange(
-          dplyr::desc(.data$points), dplyr::desc(.data$goal_diff),
-          dplyr::desc(.data$goals_for)
-        ) |>
-        dplyr::mutate(
-          rank  = dplyr::row_number(),
-          short = short_code(.data$team)
-        )
+    standings_rows <- long_bd |>
+      dplyr::summarise(
+        played = dplyr::n(),
+        wins = sum(.data$result == "W"),
+        draws = sum(.data$result == "D"),
+        losses = sum(.data$result == "L"),
+        goals_for = sum(.data$gf),
+        goals_against = sum(.data$ga),
+        goal_diff = .data$goals_for - .data$goals_against,
+        points = 3L * .data$wins + .data$draws,
+        form = list(pad_form(tail(.data$result, 5L))),
+        .by = "team"
+      ) |>
+      dplyr::arrange(
+        dplyr::desc(.data$points), dplyr::desc(.data$goal_diff),
+        dplyr::desc(.data$goals_for)
+      ) |>
+      dplyr::mutate(
+        rank  = dplyr::row_number(),
+        short = short_code(.data$team)
+      )
 
-      if (!is.null(team_expected)) {
-        standings_rows <- standings_rows |>
-          dplyr::left_join(team_expected, by = "team") |>
-          dplyr::mutate(
-            xg_trend = lapply(.data$xg_trend, function(x) {
-              if (is.null(x)) numeric(0) else x
-            })
-          )
-      } else {
-        standings_rows <- standings_rows |>
-          dplyr::mutate(
-            xg_for = NA_real_, xg_against = NA_real_, xpts = NA_real_,
-            xg_trend = list(numeric(0))
-          )
-      }
-
+    if (!is.null(team_expected)) {
       standings_rows <- standings_rows |>
-        dplyr::select(
-          "team", "short", "played", "wins", "draws", "losses",
-          "goals_for", "goals_against", "goal_diff", "points",
-          "xg_for", "xg_against", "xpts",
-          "rank", "form", "xg_trend"
-        )
-
-      jsonlite::write_json(
-        list(
-          generated_at = generated_at,
-          season       = current_season,
-          as_of        = format(max(bd_results$match_date), "%Y-%m-%d"),
-          rows         = standings_rows
-        ),
-        file.path(out_dir, "standings.json"),
-        auto_unbox = TRUE, dataframe = "rows", digits = 5, na = "null"
-      )
-
-      # Append per-round table to standings_history.json. Drops the snapshot-
-      # only `form` and `xg_trend` columns. Dedup on (as_of, team) lets re-runs
-      # against the same set of played fixtures replace rather than duplicate.
-      standings_history_row <- standings_rows |>
+        dplyr::left_join(team_expected, by = "team") |>
         dplyr::mutate(
-          as_of        = format(max(bd_results$match_date), "%Y-%m-%d"),
-          generated_at = generated_at,
-          round        = as.integer(round_num),
-          season       = current_season
-        ) |>
-        dplyr::select(
-          "as_of", "generated_at", "round", "season",
-          "team", "short", "played", "wins", "draws", "losses",
-          "goals_for", "goals_against", "goal_diff", "points",
-          "xg_for", "xg_against", "xpts",
-          "rank"
+          xg_trend = lapply(.data$xg_trend, function(x) {
+            if (is.null(x)) numeric(0) else x
+          })
         )
-      .append_to_history_pfi(
-        file.path(out_dir, "standings_history.json"),
-        standings_history_row,
-        key_cols = c("as_of", "team")
-      )
     } else {
-      jsonlite::write_json(
-        list(
-          generated_at = generated_at, season = current_season,
-          as_of = format(end_date, "%Y-%m-%d"), rows = list()
-        ),
-        file.path(out_dir, "standings.json"),
-        auto_unbox = TRUE, dataframe = "rows", digits = 5, na = "null"
-      )
+      standings_rows <- standings_rows |>
+        dplyr::mutate(
+          xg_for = NA_real_, xg_against = NA_real_, xpts = NA_real_,
+          xg_trend = list(numeric(0))
+        )
     }
+
+    standings_rows <- standings_rows |>
+      dplyr::select(
+        "team", "short", "played", "wins", "draws", "losses",
+        "goals_for", "goals_against", "goal_diff", "points",
+        "xg_for", "xg_against", "xpts",
+        "rank", "form", "xg_trend"
+      )
+
+    jsonlite::write_json(
+      list(
+        generated_at = generated_at,
+        season       = current_season,
+        as_of        = format(max(bd_results$match_date), "%Y-%m-%d"),
+        rows         = standings_rows
+      ),
+      file.path(out_dir, "standings.json"),
+      auto_unbox = TRUE, dataframe = "rows", digits = 5, na = "null"
+    )
+
+    # Append per-round table to standings_history.json. Drops the snapshot-
+    # only `form` and `xg_trend` columns. Dedup on (as_of, team) lets re-runs
+    # against the same set of played fixtures replace rather than duplicate.
+    standings_history_row <- standings_rows |>
+      dplyr::mutate(
+        as_of        = format(max(bd_results$match_date), "%Y-%m-%d"),
+        generated_at = generated_at,
+        round        = as.integer(round_num),
+        season       = current_season
+      ) |>
+      dplyr::select(
+        "as_of", "generated_at", "round", "season",
+        "team", "short", "played", "wins", "draws", "losses",
+        "goals_for", "goals_against", "goal_diff", "points",
+        "xg_for", "xg_against", "xpts",
+        "rank"
+      )
+    .append_to_history_pfi(
+      file.path(out_dir, "standings_history.json"),
+      standings_history_row,
+      key_cols = c("as_of", "team")
+    )
   } else {
-    # kvenna: write an empty standings file so the file always exists
     jsonlite::write_json(
       list(
         generated_at = generated_at, season = current_season,
@@ -987,7 +983,7 @@ publish_football_iceland <- function(fit,
     auto_unbox = TRUE, dataframe = "rows", digits = 5
   )
 
-  n_files <- if (sex == "male") 9L else 8L
+  n_files <- length(list.files(out_dir, pattern = "\\.json$"))
   message(sprintf(
     "publish_football_iceland: wrote %d JSONs to %s", n_files, out_dir
   ))

@@ -77,7 +77,7 @@ test_that("publish_football_iceland: skip gracefully when backup fit absent", {
   expect_true(all(c("generated_at", "records") %in% names(ha)))
 })
 
-test_that("publish_football_iceland female: produces 7 JSONs", {
+test_that("publish_football_iceland female: writes the 7 always-on JSONs", {
   fit_path <- backup_fit_path("female")
   if (!file.exists(fit_path)) {
     testthat::skip("legacy female football fit unavailable")
@@ -301,7 +301,7 @@ test_that("publish_football_iceland writes team_strengths_history.json (female)"
   expect_equal(parsed$schema_version, 1L)
 })
 
-test_that("publish_football_iceland writes standings_history.json (male only)", {
+test_that("publish_football_iceland writes standings_history.json when matches have been played", {
   fit_path_m <- backup_fit_path("male")
   fit_path_f <- backup_fit_path("female")
   if (!file.exists(fit_path_m) || !file.exists(fit_path_f)) {
@@ -328,25 +328,30 @@ test_that("publish_football_iceland writes standings_history.json (male only)", 
     )
   })
 
+  # Karla had matches played by 2026-04-25, so standings_history.json must exist
+  # and follow the schema. Kvenna's existence depends on whether the women's
+  # season had top-flight matches by the same end_date -- if it did, the file
+  # follows the same schema; if not, no file is written (no empty-snapshot rows).
   expect_true(file.exists(file.path(
     out, "football", "iceland", "karla", "standings_history.json"
   )))
-  expect_false(file.exists(file.path(
-    out, "football", "iceland", "kvenna", "standings_history.json"
-  )))
 
-  parsed <- jsonlite::fromJSON(
-    file.path(out, "football", "iceland", "karla", "standings_history.json"),
-    simplifyDataFrame = TRUE
-  )
-  expect_equal(parsed$schema_version, 1L)
   expected_cols <- c(
     "as_of", "generated_at", "round", "season",
     "team", "short", "played", "wins", "draws", "losses",
     "goals_for", "goals_against", "goal_diff", "points", "rank"
   )
-  if (nrow(parsed$records) > 0L) {
-    expect_true(all(expected_cols %in% names(parsed$records)))
+
+  for (sex_folder in c("karla", "kvenna")) {
+    hist_path <- file.path(
+      out, "football", "iceland", sex_folder, "standings_history.json"
+    )
+    if (!file.exists(hist_path)) next
+    parsed <- jsonlite::fromJSON(hist_path, simplifyDataFrame = TRUE)
+    expect_equal(parsed$schema_version, 1L)
+    if (nrow(parsed$records) > 0L) {
+      expect_true(all(expected_cols %in% names(parsed$records)))
+    }
   }
 })
 
