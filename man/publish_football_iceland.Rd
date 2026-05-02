@@ -10,7 +10,8 @@ publish_football_iceland(
   sex,
   end_date = Sys.Date(),
   root = here::here("data"),
-  output_root = here::here("data", "publish")
+  output_root = here::here("data", "publish"),
+  archive_root = here::here("data", "beliefs", "archive")
 )
 }
 \arguments{
@@ -27,6 +28,9 @@ data consistent with `(league, sex, end_date)`.}
 \item{root}{Data root for `read_table()`. Default `here::here("data")`.}
 
 \item{output_root}{Root for JSON output. Default `here::here("data", "publish")`.}
+
+\item{archive_root}{Root of the beliefs archive used to source frozen
+pre-round xG / xPts predictions. Default `here::here("data", "beliefs", "archive")`.}
 }
 \value{
 `invisible(NULL)`.

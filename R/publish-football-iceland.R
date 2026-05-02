@@ -3,264 +3,6 @@ NULL
 
 # ---- Internal helpers --------------------------------------------------------
 
-# Row-wise log-sum-exp, numerically stable.
-.row_log_sum_exp_pfi <- function(m) {
-  m_max <- do.call(pmax, as.data.frame(m))
-  m_max + log(rowSums(exp(m - m_max)))
-}
-
-# Vectorised bivariate-Poisson log-PMF (trivariate reduction).
-# Mirrors poisson_2d_log_lpmf in bivariate_poisson_no_inflation.stan.
-.log_pmf_bvp_pfi <- function(g1, g2, log_lambda1, log_lambda2, log_lambda3) {
-  lambda1 <- exp(log_lambda1)
-  lambda2 <- exp(log_lambda2)
-  lambda3 <- exp(log_lambda3)
-
-  K <- min(g1, g2)
-  if (K < 0L) {
-    return(rep(-Inf, length(log_lambda1)))
-  }
-
-  n <- length(log_lambda1)
-  log_terms <- matrix(NA_real_, nrow = n, ncol = K + 1L)
-  for (k in 0:K) {
-    log_terms[, k + 1L] <-
-      k * log_lambda3 +
-      (g1 - k) * log_lambda1 +
-      (g2 - k) * log_lambda2 -
-      (lgamma(k + 1) + lgamma(g1 - k + 1) + lgamma(g2 - k + 1))
-  }
-
-  lse <- if (ncol(log_terms) == 1L) log_terms[, 1L] else .row_log_sum_exp_pfi(log_terms)
-  result <- -(lambda1 + lambda2 + lambda3) + lse
-
-  small <- lambda3 <= 1e-4
-  if (any(small)) {
-    result[small] <-
-      stats::dpois(g1, lambda1[small], log = TRUE) +
-      stats::dpois(g2, lambda2[small], log = TRUE)
-  }
-  result
-}
-
-# Simulate (Y1, Y2) from bivariate Poisson via trivariate reduction.
-.simulate_bvp_pfi <- function(mu1, mu2, mu3) {
-  n <- length(mu1)
-  X1 <- stats::rpois(n, exp(mu1))
-  X2 <- stats::rpois(n, exp(mu2))
-  X3 <- stats::rpois(n, exp(mu3))
-  list(y1 = X1 + X3, y2 = X2 + X3)
-}
-
-# Build model_d from results tibble + teams registry.
-# Returns the same structure as the legacy model_d.csv with columns:
-#   match_date, home_team, away_team, home_score, away_score,
-#   division, season, game_nr, home_nr, away_nr,
-#   home_round, away_round, season_first, model_row
-.build_model_d_pfi <- function(results, teams) {
-  results <- results[order(results$match_date), ]
-  results$game_nr <- seq_len(nrow(results))
-
-  # Per-team round counter (cumulative appearances across all seasons)
-  long <- dplyr::bind_rows(
-    dplyr::transmute(results,
-      game_nr = .data$game_nr, match_date = .data$match_date,
-      team = .data$home_team, season = .data$season, side = "home"
-    ),
-    dplyr::transmute(results,
-      game_nr = .data$game_nr, match_date = .data$match_date,
-      team = .data$away_team, season = .data$season, side = "away"
-    )
-  )
-  long <- long[order(long$team, long$match_date), ]
-  long <- long |>
-    dplyr::group_by(.data$team) |>
-    dplyr::mutate(round = dplyr::row_number()) |>
-    dplyr::ungroup() |>
-    dplyr::group_by(.data$team, .data$season) |>
-    dplyr::mutate(
-      season_round = dplyr::row_number(),
-      is_first = as.integer(.data$season_round == 1L)
-    ) |>
-    dplyr::ungroup()
-
-  home_long <- long[long$side == "home",
-    c("game_nr", "round", "is_first"),
-    drop = FALSE
-  ]
-  names(home_long) <- c("game_nr", "home_round", "season_first")
-
-  away_long <- long[long$side == "away",
-    c("game_nr", "round"),
-    drop = FALSE
-  ]
-  names(away_long) <- c("game_nr", "away_round")
-
-  model_d <- results |>
-    dplyr::inner_join(home_long, by = "game_nr") |>
-    dplyr::inner_join(away_long, by = "game_nr") |>
-    dplyr::inner_join(
-      dplyr::rename(teams, home_nr = "team_nr"),
-      by = c("home_team" = "team")
-    ) |>
-    dplyr::inner_join(
-      dplyr::rename(teams, away_nr = "team_nr"),
-      by = c("away_team" = "team")
-    ) |>
-    dplyr::arrange(.data$match_date)
-
-  model_d$model_row <- seq_len(nrow(model_d))
-  model_d
-}
-
-# Compute per-team posterior-predictive xG and xPts for played current-season
-# top-division matches.  Returns a tibble with columns:
-#   team, xg_for, xg_against, xpts  (posterior means, averaged over draws)
-#
-# If the fit dimensions do not match model_d, returns NULL with a warning.
-.aggregate_played_match_expected_pfi <- function(
-  fit, model_d, teams,
-  top_div = "BD",
-  check_sample_size = 5L
-) {
-  current_season <- max(model_d$season, na.rm = TRUE)
-  matches <- model_d[
-    model_d$season == current_season &
-      model_d$division == top_div &
-      !is.na(model_d$home_score) &
-      !is.na(model_d$away_score), ,
-    drop = FALSE
-  ]
-
-  if (nrow(matches) == 0L) {
-    return(tibble::tibble(
-      team = character(), xg_for = numeric(),
-      xg_against = numeric(), xpts = numeric()
-    ))
-  }
-
-  rv <- fit$draws(c(
-    "offense", "defense",
-    "home_advantage_off", "home_advantage_def",
-    "mean_log_goals",
-    "alpha_mu3", "beta_mu3_strength_diff",
-    "log_lik"
-  )) |> posterior::as_draws_rvars()
-
-  n_draws <- posterior::ndraws(rv$mean_log_goals)
-
-  # Validate: log_lik[n] must cover model_d
-  loglik_dr <- posterior::draws_of(rv$log_lik)
-  n_loglik <- ncol(loglik_dr)
-  if (n_loglik != nrow(model_d)) {
-    warning(sprintf(
-      paste0(
-        "publish_football_iceland: fit has log_lik[%d] but model_d has %d rows. ",
-        "The fit was trained on different data -- skipping xG/xPts computation."
-      ),
-      n_loglik, nrow(model_d)
-    ))
-    return(NULL)
-  }
-
-  offense_dr <- posterior::draws_of(rv$offense) # [draws, N_rounds, K]
-  defense_dr <- posterior::draws_of(rv$defense)
-  ha_off_dr <- posterior::draws_of(rv$home_advantage_off) # [draws, K]
-  ha_def_dr <- posterior::draws_of(rv$home_advantage_def)
-  mlg_dr <- as.numeric(posterior::draws_of(rv$mean_log_goals))
-  a_mu3_dr <- as.numeric(posterior::draws_of(rv$alpha_mu3))
-  b_mu3_dr <- as.numeric(posterior::draws_of(rv$beta_mu3_strength_diff))
-
-  check_n <- as.integer(min(check_sample_size, nrow(matches)))
-  check_idx <- integer(0)
-  recon_ll <- NULL
-  if (check_n > 0L) {
-    check_idx <- withr::with_seed(42L, sample.int(nrow(matches), check_n))
-    recon_ll <- matrix(NA_real_, nrow = n_draws, ncol = check_n)
-  }
-
-  team_per_match <- vector("list", nrow(matches))
-
-  for (m in seq_len(nrow(matches))) {
-    mi <- matches[m, ]
-    t1 <- mi$home_nr
-    t2 <- mi$away_nr
-    r1 <- mi$home_round
-    r2 <- mi$away_round
-
-    off_home <- offense_dr[, r1, t1] + ha_off_dr[, t1]
-    def_home <- defense_dr[, r1, t1] + ha_def_dr[, t1]
-    off_away <- offense_dr[, r2, t2]
-    def_away <- defense_dr[, r2, t2]
-
-    mu1 <- mlg_dr + off_home - def_away
-    mu2 <- mlg_dr + off_away - def_home
-
-    strength_diff <- abs(off_home + def_home - off_away - def_away)
-    logit_rho <- a_mu3_dr + b_mu3_dr * strength_diff
-    mu3 <- stats::plogis(logit_rho, log.p = TRUE) + 0.5 * (mu1 + mu2)
-
-    sim <- .simulate_bvp_pfi(mu1, mu2, mu3)
-
-    pts_home <- ifelse(sim$y1 > sim$y2, 3L, ifelse(sim$y1 == sim$y2, 1L, 0L))
-    pts_away <- ifelse(sim$y2 > sim$y1, 3L, ifelse(sim$y2 == sim$y1, 1L, 0L))
-
-    team_per_match[[m]] <- dplyr::bind_rows(
-      tibble::tibble(
-        .draw = seq_len(n_draws), team = teams$team[t1],
-        xg_for = sim$y1, xg_against = sim$y2, xpts = pts_home
-      ),
-      tibble::tibble(
-        .draw = seq_len(n_draws), team = teams$team[t2],
-        xg_for = sim$y2, xg_against = sim$y1, xpts = pts_away
-      )
-    )
-
-    slot <- match(m, check_idx)
-    if (!is.na(slot)) {
-      recon_ll[, slot] <- .log_pmf_bvp_pfi(
-        mi$home_score, mi$away_score, mu1, mu2, mu3
-      )
-    }
-  }
-
-  team_expected_draw <- dplyr::bind_rows(team_per_match) |>
-    dplyr::summarise(
-      xg_for = sum(.data$xg_for),
-      xg_against = sum(.data$xg_against),
-      xpts = sum(.data$xpts),
-      .by = c("team", ".draw")
-    )
-
-  # Log-likelihood cross-check
-  if (check_n > 0L) {
-    stan_ll <- loglik_dr[, matches$model_row[check_idx], drop = FALSE]
-    stan_mean <- colMeans(stan_ll)
-    recon_mean <- colMeans(recon_ll)
-    pooled_sd <- pmax(apply(stan_ll, 2, stats::sd), apply(recon_ll, 2, stats::sd))
-    mc_se <- pooled_sd / sqrt(n_draws)
-    tol <- 4 * mc_se
-    diff_ <- abs(stan_mean - recon_mean)
-    bad <- diff_ > tol
-    if (any(bad)) {
-      warning(sprintf(
-        paste0(
-          "publish_football_iceland: log_lik reconstruction disagrees with Stan on %d/%d ",
-          "sampled matches (>4 x MC SE). xG/xPts may be inaccurate."
-        ),
-        sum(bad), check_n
-      ))
-    }
-  }
-
-  team_expected_draw |>
-    dplyr::summarise(
-      xg_for = mean(.data$xg_for),
-      xg_against = mean(.data$xg_against),
-      xpts = mean(.data$xpts),
-      .by = "team"
-    )
-}
 
 # Extract per-team draws for a single Stan parameter vector indexed by team.
 .extract_team_draws_pfi <- function(fit, var, teams, component, location) {
@@ -323,6 +65,213 @@ NULL
   )
 }
 
+# Assign each match a "matchweek" derived from team-chronological match counts.
+# matchweek(m) = max(home_team_chrono_idx_after_m, away_team_chrono_idx_after_m).
+# A team's chrono_idx is its 1-based position when its played matches are
+# sorted by match_date. For perfectly synchronised round-robins this gives
+# the league matchweek; for postponed matches, the rescheduled match is
+# keyed to its team-chronological round (not its calendar position).
+# Output: input tibble + integer column `matchweek`. Input row order is preserved.
+.assign_matchweeks_pfi <- function(matches) {
+  if (nrow(matches) == 0L) {
+    out <- tibble::as_tibble(matches)
+    out$matchweek <- integer(0)
+    return(out)
+  }
+
+  ordered <- matches |>
+    dplyr::mutate(.input_idx = dplyr::row_number()) |>
+    dplyr::arrange(.data$match_date, .data$.input_idx) |>
+    dplyr::mutate(.chrono_idx = dplyr::row_number())
+
+  long <- dplyr::bind_rows(
+    ordered |> dplyr::transmute(
+      .data$.input_idx, .data$.chrono_idx,
+      team = .data$home_team
+    ),
+    ordered |> dplyr::transmute(
+      .data$.input_idx, .data$.chrono_idx,
+      team = .data$away_team
+    )
+  ) |>
+    dplyr::arrange(.data$.chrono_idx, .data$.input_idx) |>
+    dplyr::group_by(.data$team) |>
+    dplyr::mutate(team_idx = dplyr::row_number()) |>
+    dplyr::ungroup()
+
+  per_match <- long |>
+    dplyr::summarise(
+      matchweek = as.integer(max(.data$team_idx)),
+      .by = ".input_idx"
+    )
+
+  matches |>
+    dplyr::mutate(.input_idx = dplyr::row_number()) |>
+    dplyr::left_join(per_match, by = ".input_idx") |>
+    dplyr::select(-".input_idx") |>
+    tibble::as_tibble()
+}
+
+# Find the latest fit_date partition strictly less than `target_date` under
+# data/beliefs/archive/sport=X/country=Y/sex=Z/. Returns the parquet path
+# (or NULL if no such partition exists).
+.find_pre_round_fit_path_pfi <- function(archive_root, sport, country, sex, target_date) {
+  base <- file.path(
+    archive_root,
+    paste0("sport=", sport),
+    paste0("country=", country),
+    paste0("sex=", sex)
+  )
+  if (!dir.exists(base)) {
+    return(NULL)
+  }
+
+  parts <- list.dirs(base, full.names = TRUE, recursive = FALSE)
+  fit_dirs <- parts[grepl("/fit_date=", parts)]
+  if (length(fit_dirs) == 0L) {
+    return(NULL)
+  }
+
+  fit_dates <- as.Date(sub(".*fit_date=", "", fit_dirs))
+  candidates <- fit_dirs[fit_dates < target_date]
+  if (length(candidates) == 0L) {
+    return(NULL)
+  }
+
+  latest <- candidates[which.max(as.Date(sub(".*fit_date=", "", candidates)))]
+  files <- list.files(latest, pattern = "\\.parquet$", full.names = TRUE)
+  if (length(files) == 0L) {
+    return(NULL)
+  }
+  files[1L]
+}
+
+# Aggregate per-(round, team) frozen pre-round predictions for played matches.
+# For each played match, find the latest archived fit strictly before its
+# matchweek's first kickoff, read that fit's posterior draws for the match,
+# and compute team-side xG_for / xG_against / xPts. Aggregates per
+# (round, team) by summing across the team's matches in that round.
+#
+# Returns a tibble with columns:
+#   round (int), team (chr), fit_date (chr), n_matches (int),
+#   xg_for (dbl), xg_against (dbl), xpts (dbl),
+#   p_win (dbl), p_draw (dbl), p_loss (dbl)
+#
+# Matches whose matchweek has no pre-round archive partition are silently
+# skipped -- pre-archive early-season rounds simply do not appear.
+.aggregate_round_predictions_pfi <- function(played_matches, archive_root,
+                                             sport, country, sex) {
+  if (nrow(played_matches) == 0L) {
+    return(tibble::tibble(
+      round = integer(), team = character(), fit_date = character(),
+      n_matches = integer(),
+      xg_for = numeric(), xg_against = numeric(), xpts = numeric(),
+      p_win = numeric(), p_draw = numeric(), p_loss = numeric()
+    ))
+  }
+
+  with_mw <- .assign_matchweeks_pfi(played_matches)
+
+  per_round <- with_mw |>
+    dplyr::summarise(
+      first_kickoff = min(.data$match_date),
+      .by = "matchweek"
+    )
+
+  rounds <- vector("list", nrow(per_round))
+
+  for (i in seq_len(nrow(per_round))) {
+    mw <- per_round$matchweek[i]
+    target <- per_round$first_kickoff[i]
+
+    fit_path <- .find_pre_round_fit_path_pfi(
+      archive_root = archive_root,
+      sport = sport, country = country, sex = sex,
+      target_date = target
+    )
+    if (is.null(fit_path)) next
+
+    round_matches <- with_mw[with_mw$matchweek == mw, ]
+    fit_date_chr <- sub(".*fit_date=([^/]+)/.*", "\\1", fit_path)
+
+    beliefs <- arrow::read_parquet(fit_path) |>
+      dplyr::semi_join(
+        round_matches |> dplyr::select(
+          "home_team", "away_team", "match_date"
+        ),
+        by = c("home_team", "away_team", "match_date")
+      )
+
+    if (nrow(beliefs) == 0L) next
+
+    per_match <- beliefs |>
+      dplyr::summarise(
+        xg_home = mean(.data$home_goals),
+        xg_away = mean(.data$away_goals),
+        p_home_win = mean(.data$home_goals > .data$away_goals),
+        p_draw_match = mean(.data$home_goals == .data$away_goals),
+        p_away_win = mean(.data$home_goals < .data$away_goals),
+        .by = c("home_team", "away_team", "match_date")
+      ) |>
+      dplyr::mutate(
+        xpts_home = 3 * .data$p_home_win + .data$p_draw_match,
+        xpts_away = 3 * .data$p_away_win + .data$p_draw_match
+      )
+
+    home_side <- per_match |>
+      dplyr::transmute(
+        team = .data$home_team,
+        xg_for = .data$xg_home, xg_against = .data$xg_away,
+        xpts = .data$xpts_home,
+        p_win = .data$p_home_win, p_draw = .data$p_draw_match,
+        p_loss = .data$p_away_win
+      )
+    away_side <- per_match |>
+      dplyr::transmute(
+        team = .data$away_team,
+        xg_for = .data$xg_away, xg_against = .data$xg_home,
+        xpts = .data$xpts_away,
+        p_win = .data$p_away_win, p_draw = .data$p_draw_match,
+        p_loss = .data$p_home_win
+      )
+
+    rounds[[i]] <- dplyr::bind_rows(home_side, away_side) |>
+      dplyr::summarise(
+        n_matches = dplyr::n(),
+        xg_for = sum(.data$xg_for),
+        xg_against = sum(.data$xg_against),
+        xpts = sum(.data$xpts),
+        p_win = mean(.data$p_win),
+        p_draw = mean(.data$p_draw),
+        p_loss = mean(.data$p_loss),
+        .by = "team"
+      ) |>
+      dplyr::mutate(
+        round = as.integer(mw),
+        fit_date = fit_date_chr
+      )
+  }
+
+  result <- dplyr::bind_rows(rounds)
+  if (nrow(result) == 0L) {
+    return(tibble::tibble(
+      round = integer(), team = character(), fit_date = character(),
+      n_matches = integer(),
+      xg_for = numeric(), xg_against = numeric(), xpts = numeric(),
+      p_win = numeric(), p_draw = numeric(), p_loss = numeric()
+    ))
+  }
+
+  result |>
+    dplyr::mutate(n_matches = as.integer(.data$n_matches)) |>
+    dplyr::select(
+      "round", "team", "fit_date", "n_matches",
+      "xg_for", "xg_against", "xpts",
+      "p_win", "p_draw", "p_loss"
+    ) |>
+    dplyr::arrange(.data$round, .data$team)
+}
+
 # ---- Public API --------------------------------------------------------------
 
 #' Publish football Iceland posterior summaries as JSON
@@ -345,6 +294,8 @@ NULL
 #' @param end_date Training cutoff passed to `prepare_data()`. Default `Sys.Date()`.
 #' @param root Data root for `read_table()`. Default `here::here("data")`.
 #' @param output_root Root for JSON output. Default `here::here("data", "publish")`.
+#' @param archive_root Root of the beliefs archive used to source frozen
+#'   pre-round xG / xPts predictions. Default `here::here("data", "beliefs", "archive")`.
 #' @return `invisible(NULL)`.
 #' @importFrom rlang .data
 #' @export
@@ -353,7 +304,10 @@ publish_football_iceland <- function(fit,
                                      sex,
                                      end_date = Sys.Date(),
                                      root = here::here("data"),
-                                     output_root = here::here("data", "publish")) {
+                                     output_root = here::here("data", "publish"),
+                                     archive_root = here::here(
+                                       "data", "beliefs", "archive"
+                                     )) {
   stopifnot(sex %in% c("male", "female"))
   stopifnot(!is.null(league$sport), !is.null(league$country))
   stopifnot(league$sport == "football", league$country == "iceland")
@@ -383,9 +337,6 @@ publish_football_iceland <- function(fit,
 
   current_season <- max(results$season, na.rm = TRUE)
 
-  # -- Reconstruct model_d (needed for played_match_expected) -----------------
-  model_d <- .build_model_d_pfi(results, teams)
-
   # -- Current top-division teams (for strengths / home-advantage filter) -----
   current_top_teams <- results[
     results$season == current_season & results$division == top_div, ,
@@ -406,11 +357,78 @@ publish_football_iceland <- function(fit,
     top_teams_upcoming <- current_top_teams
   }
 
-  # -- xG / xPts per team (NULL if data-fit mismatch) ------------------------
-  team_expected <- .aggregate_played_match_expected_pfi(
-    fit, model_d, teams,
-    top_div = top_div
+  # -- Frozen pre-round xG / xPts -------------------------------------------
+  # For each played top-flight match, look up the latest archived fit strictly
+  # before that matchweek's first kickoff and use its posterior to compute xG
+  # / xPts. Per-team aggregates that include the full set of played
+  # matchweeks are exposed in standings.json; partial-coverage aggregates are
+  # NA (the standings table prefers honest blanks to retroactively-improved
+  # numbers). The per-(round, team) detail is appended to
+  # round_predictions_history.json regardless.
+  bd_played <- results[
+    results$season == current_season & results$division == top_div, ,
+    drop = FALSE
+  ]
+  round_predictions <- .aggregate_round_predictions_pfi(
+    played_matches = bd_played[, c("home_team", "away_team", "match_date")],
+    archive_root = archive_root,
+    sport = league$sport, country = league$country, sex = sex
   )
+
+  team_expected <- if (nrow(bd_played) > 0L) {
+    played_per_team <- bd_played |>
+      tidyr::pivot_longer(
+        c("home_team", "away_team"),
+        values_to = "team"
+      ) |>
+      dplyr::count(.data$team, name = "played_count")
+
+    if (nrow(round_predictions) == 0L) {
+      played_per_team |>
+        dplyr::transmute(
+          .data$team,
+          xg_for = NA_real_,
+          xg_against = NA_real_,
+          xpts = NA_real_,
+          xg_trend = list(numeric(0))
+        )
+    } else {
+      team_pred <- round_predictions |>
+        dplyr::arrange(.data$round) |>
+        dplyr::summarise(
+          n_predicted = sum(.data$n_matches),
+          xg_for_sum = sum(.data$xg_for),
+          xg_against_sum = sum(.data$xg_against),
+          xpts_sum = sum(.data$xpts),
+          xg_trend = list(.data$xg_for),
+          .by = "team"
+        )
+
+      played_per_team |>
+        dplyr::left_join(team_pred, by = "team") |>
+        dplyr::mutate(
+          full_coverage = !is.na(.data$n_predicted) &
+            .data$n_predicted == .data$played_count,
+          xg_for = dplyr::if_else(
+            .data$full_coverage, .data$xg_for_sum, NA_real_
+          ),
+          xg_against = dplyr::if_else(
+            .data$full_coverage, .data$xg_against_sum, NA_real_
+          ),
+          xpts = dplyr::if_else(
+            .data$full_coverage, .data$xpts_sum, NA_real_
+          ),
+          xg_trend = lapply(.data$xg_trend, function(x) {
+            if (is.null(x)) numeric(0) else x
+          })
+        ) |>
+        dplyr::select(
+          "team", "xg_for", "xg_against", "xpts", "xg_trend"
+        )
+    }
+  } else {
+    NULL
+  }
 
   # -- Posterior goals draws --------------------------------------------------
   posterior_goals_raw <- fit$draws(c("goals1_pred", "goals2_pred")) |>
@@ -618,7 +636,6 @@ publish_football_iceland <- function(fit,
           goal_diff = .data$goals_for - .data$goals_against,
           points = 3L * .data$wins + .data$draws,
           form = list(pad_form(tail(.data$result, 5L))),
-          xg_trend = list(numeric(0)),
           .by = "team"
         ) |>
         dplyr::arrange(
@@ -632,11 +649,17 @@ publish_football_iceland <- function(fit,
 
       if (!is.null(team_expected)) {
         standings_rows <- standings_rows |>
-          dplyr::left_join(team_expected, by = "team")
+          dplyr::left_join(team_expected, by = "team") |>
+          dplyr::mutate(
+            xg_trend = lapply(.data$xg_trend, function(x) {
+              if (is.null(x)) numeric(0) else x
+            })
+          )
       } else {
         standings_rows <- standings_rows |>
           dplyr::mutate(
-            xg_for = NA_real_, xg_against = NA_real_, xpts = NA_real_
+            xg_for = NA_real_, xg_against = NA_real_, xpts = NA_real_,
+            xg_trend = list(numeric(0))
           )
       }
 
@@ -744,6 +767,44 @@ publish_football_iceland <- function(fit,
     team_strengths_history_row,
     key_cols = c("fit_date", "team", "component", "location", "coverage")
   )
+
+  # ---- round_predictions_history.json --------------------------------------
+  # Per-(round, team) frozen pre-round xG / xPts. Sourced from the latest
+  # archived fit strictly before each matchweek's first kickoff, so the row
+  # for round R reflects the model as it stood the moment before the round
+  # started -- subsequent fits cannot retroactively improve it. Written for
+  # both sexes; the file is created with empty `records` even when the
+  # archive has no relevant partition yet, so the website never 404s.
+  round_predictions_path <- file.path(
+    out_dir, "round_predictions_history.json"
+  )
+  if (nrow(round_predictions) > 0L) {
+    round_predictions_history_row <- round_predictions |>
+      dplyr::mutate(
+        generated_at = generated_at,
+        season = current_season
+      ) |>
+      dplyr::select(
+        "fit_date", "generated_at", "round", "season",
+        "team", "n_matches",
+        "xg_for", "xg_against", "xpts",
+        "p_win", "p_draw", "p_loss"
+      )
+    .append_to_history_pfi(
+      round_predictions_path,
+      round_predictions_history_row,
+      key_cols = c("round", "team")
+    )
+  } else if (!file.exists(round_predictions_path)) {
+    jsonlite::write_json(
+      list(schema_version = 1L, records = list()),
+      round_predictions_path,
+      auto_unbox = TRUE,
+      dataframe = "rows",
+      digits = 5,
+      na = "null"
+    )
+  }
 
   # ---- final_positions.json + points_distribution.json ---------------------
 
