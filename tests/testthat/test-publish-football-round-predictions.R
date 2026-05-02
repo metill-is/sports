@@ -320,3 +320,43 @@ test_that("publish_football_iceland: empty archive -> empty history JSON, NA sta
     }
   }
 })
+
+test_that("publish_football_iceland: standings xg_trend serialises as array (auto_unbox guard)", {
+  # Regression: jsonlite::write_json(auto_unbox = TRUE) unboxes length-1
+  # vectors, which broke the website's standings-table.js when only one
+  # matchweek had a pre-round fit. The publisher must keep xg_trend as a
+  # JSON array regardless of length (0, 1, or many). Run with the legacy
+  # backup fit + the real archive (which currently covers only round 4),
+  # producing per-team length-1 xg_trend arrays.
+  fit_path <- backup_fit_path_rp("male")
+  if (!file.exists(fit_path)) testthat::skip("legacy football fit unavailable")
+  if (!dir.exists(here::here("data", "facts", "results"))) {
+    testthat::skip("facts/results absent -- cannot reconstruct prepare_data")
+  }
+  if (!dir.exists(here::here("data", "beliefs", "archive"))) {
+    testthat::skip("archive absent -- nothing to predict from")
+  }
+
+  fit <- readRDS(fit_path)
+  league <- load_leagues()[["football_iceland"]]
+  out <- withr::local_tempdir()
+
+  suppressWarnings(
+    publish_football_iceland(
+      fit, league,
+      sex = "male",
+      end_date = as.Date("2026-05-01"),
+      output_root = out
+    )
+  )
+
+  standings <- jsonlite::read_json(
+    file.path(out, "football", "iceland", "karla", "standings.json"),
+    simplifyVector = FALSE
+  )
+  testthat::skip_if(length(standings$rows) == 0L, "standings empty -- cannot exercise xg_trend")
+
+  for (row in standings$rows) {
+    expect_type(row$xg_trend, "list")
+  }
+})

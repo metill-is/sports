@@ -395,7 +395,7 @@ publish_football_iceland <- function(fit,
           xg_for = NA_real_,
           xg_against = NA_real_,
           xpts = NA_real_,
-          xg_trend = list(numeric(0))
+          xg_trend = list(I(numeric(0)))
         )
     } else {
       team_pred <- round_predictions |>
@@ -423,8 +423,11 @@ publish_football_iceland <- function(fit,
           xpts = dplyr::if_else(
             .data$full_coverage, .data$xpts_sum, NA_real_
           ),
+          # WHY: jsonlite::write_json(auto_unbox = TRUE) unboxes length-1
+          # vectors; I() preserves the array shape so the website's
+          # standings-table.js can iterate xg_trend uniformly.
           xg_trend = lapply(.data$xg_trend, function(x) {
-            if (is.null(x)) numeric(0) else x
+            if (is.null(x)) I(numeric(0)) else I(x)
           })
         ) |>
         dplyr::select(
@@ -659,14 +662,14 @@ publish_football_iceland <- function(fit,
         dplyr::left_join(team_expected, by = "team") |>
         dplyr::mutate(
           xg_trend = lapply(.data$xg_trend, function(x) {
-            if (is.null(x)) numeric(0) else x
+            if (is.null(x)) I(numeric(0)) else I(x)
           })
         )
     } else {
       standings_rows <- standings_rows |>
         dplyr::mutate(
           xg_for = NA_real_, xg_against = NA_real_, xpts = NA_real_,
-          xg_trend = list(numeric(0))
+          xg_trend = list(I(numeric(0)))
         )
     }
 
