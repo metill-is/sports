@@ -321,6 +321,44 @@ test_that("publish_football_iceland: empty archive -> empty history JSON, NA sta
   }
 })
 
+test_that("team_strengths_history covers every played matchweek from a single fit", {
+  # The strength-trajectory chart wants one trajectory point per matchweek
+  # (umferð eftir umferð). The model holds posterior estimates for every
+  # past round in `offense[1..N_rounds, K]`, so a single fit can populate
+  # the whole trajectory -- we don't need to accrete per-fit snapshots.
+  local_fit_path <- here::here(
+    "data", "beliefs", "fits",
+    "sport=football", "country=iceland", "sex=male", "fit.rds"
+  )
+  if (!file.exists(local_fit_path)) {
+    testthat::skip("local football fit unavailable -- requires fresh local fit")
+  }
+  if (!dir.exists(here::here("data", "facts", "results"))) {
+    testthat::skip("facts/results absent")
+  }
+
+  fit <- readRDS(local_fit_path)
+  league <- load_leagues()[["football_iceland"]]
+  out <- withr::local_tempdir()
+
+  suppressWarnings(
+    publish_football_iceland(
+      fit, league,
+      sex = "male",
+      end_date = as.Date("2026-05-01"),
+      output_root = out
+    )
+  )
+
+  hist <- jsonlite::fromJSON(
+    file.path(out, "football", "iceland", "karla", "team_strengths_history.json"),
+    simplifyDataFrame = TRUE
+  )
+  rounds <- sort(unique(hist$records$round))
+  # Each BD karla team has played 4 matches; trajectory should span rounds 1..4.
+  expect_true(all(c(1L, 2L, 3L, 4L) %in% rounds))
+})
+
 test_that("publish_football_iceland: standings xg_trend serialises as array (auto_unbox guard)", {
   # Regression: jsonlite::write_json(auto_unbox = TRUE) unboxes length-1
   # vectors, which broke the website's standings-table.js when only one

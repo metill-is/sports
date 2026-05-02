@@ -22,14 +22,158 @@ NULL
 }
 
 .summarise_team_intervals_pfi <- function(draws, coverages = c(0.5, 0.8, 0.95)) {
+  group_keys <- c("team", "component", "location")
+  if ("round" %in% names(draws)) {
+    group_keys <- c("round", group_keys)
+  }
   draws |>
     dplyr::reframe(
       median = stats::median(.data$value),
       coverage = coverages,
       lower = stats::quantile(.data$value, 0.5 - coverages / 2),
       upper = stats::quantile(.data$value, 0.5 + coverages / 2),
-      .by = c("team", "component", "location")
+      .by = dplyr::all_of(group_keys)
     )
+}
+
+# Build per-(BD-matchweek, team) trajectory of latent strength from a
+# single fit. Reads the full `offense[1..N_rounds, K]` and `defense[..]`
+# matrices and slices per-team round indices that correspond to each
+# team's BD-only chronological matches in the current season. Returns
+# a long tibble with (round, .draw, team, component, location, value)
+# where `round` is the BD matchweek (1, 2, 3, ...), not the model's
+# global per-team round index.
+.compute_team_strength_trajectory_pfi <- function(fit,
+                                                  results,
+                                                  teams,
+                                                  current_top_teams,
+                                                  current_season,
+                                                  top_div) {
+  results_played <- results[
+    !is.na(results$home_score) & !is.na(results$away_score), ,
+    drop = FALSE
+  ]
+  if (nrow(results_played) == 0L) {
+    return(tibble::tibble(
+      round = integer(), team = character(),
+      .draw = integer(),
+      component = character(), location = character(),
+      value = numeric()
+    ))
+  }
+
+  long_all <- dplyr::bind_rows(
+    dplyr::transmute(
+      results_played,
+      team = .data$home_team,
+      match_date = .data$match_date,
+      division = .data$division,
+      season = .data$season
+    ),
+    dplyr::transmute(
+      results_played,
+      team = .data$away_team,
+      match_date = .data$match_date,
+      division = .data$division,
+      season = .data$season
+    )
+  ) |>
+    dplyr::arrange(.data$team, .data$match_date) |>
+    dplyr::group_by(.data$team) |>
+    dplyr::mutate(global_round = dplyr::row_number()) |>
+    dplyr::ungroup()
+
+  bd_chrono <- long_all |>
+    dplyr::filter(
+      .data$season == current_season,
+      .data$division == top_div
+    ) |>
+    dplyr::arrange(.data$team, .data$match_date) |>
+    dplyr::group_by(.data$team) |>
+    dplyr::mutate(bd_matchweek = dplyr::row_number()) |>
+    dplyr::ungroup() |>
+    dplyr::semi_join(current_top_teams, by = "team") |>
+    dplyr::inner_join(teams[, c("team", "team_nr")], by = "team") |>
+    dplyr::select("team", "team_nr", "bd_matchweek", "global_round")
+
+  if (nrow(bd_chrono) == 0L) {
+    return(tibble::tibble(
+      round = integer(), team = character(),
+      .draw = integer(),
+      component = character(), location = character(),
+      value = numeric()
+    ))
+  }
+
+  rv <- fit$draws(c(
+    "offense", "defense", "home_advantage_off", "home_advantage_def"
+  )) |>
+    posterior::as_draws_rvars()
+  off_arr <- posterior::draws_of(rv$offense)
+  def_arr <- posterior::draws_of(rv$defense)
+  ha_off <- posterior::draws_of(rv$home_advantage_off)
+  ha_def <- posterior::draws_of(rv$home_advantage_def)
+  n_draws <- dim(off_arr)[1]
+  fit_n_rounds <- dim(off_arr)[2]
+  fit_n_teams <- dim(off_arr)[3]
+
+  usable <- bd_chrono |>
+    dplyr::filter(
+      .data$global_round <= fit_n_rounds,
+      .data$team_nr <= fit_n_teams
+    )
+  if (nrow(usable) < nrow(bd_chrono)) {
+    warning(sprintf(
+      paste0(
+        "publish_football_iceland: fit covers %d rounds x %d teams; ",
+        "%d (matchweek, team) entries fall outside (likely stale fit) -- skipping."
+      ),
+      fit_n_rounds, fit_n_teams, nrow(bd_chrono) - nrow(usable)
+    ))
+  }
+  if (nrow(usable) == 0L) {
+    return(tibble::tibble(
+      round = integer(), team = character(),
+      .draw = integer(),
+      component = character(), location = character(),
+      value = numeric()
+    ))
+  }
+
+  rows_long <- vector("list", nrow(usable))
+  for (i in seq_len(nrow(usable))) {
+    k <- usable$team_nr[i]
+    r <- usable$global_round[i]
+    mw <- usable$bd_matchweek[i]
+    team_name <- usable$team[i]
+
+    off_d <- off_arr[, r, k]
+    def_d <- def_arr[, r, k]
+    ha_o <- ha_off[, k]
+    ha_d <- ha_def[, k]
+
+    offence_away <- off_d
+    offence_home <- off_d + ha_o
+    defence_away <- def_d
+    defence_home <- def_d + ha_d
+    total_away <- offence_away + defence_away
+    total_home <- offence_home + defence_home
+
+    rows_long[[i]] <- tibble::tibble(
+      .draw = rep(seq_len(n_draws), 6L),
+      round = mw,
+      team = team_name,
+      component = rep(c("offence", "offence", "defence", "defence", "total", "total"), each = n_draws),
+      location = rep(c("home", "away", "home", "away", "home", "away"), each = n_draws),
+      value = c(
+        offence_home, offence_away,
+        defence_home, defence_away,
+        total_home, total_away
+      )
+    )
+  }
+
+  dplyr::bind_rows(rows_long)
 }
 
 # Append `new_rows` to a history JSON file, dedup on `key_cols` keeping the
@@ -744,27 +888,46 @@ publish_football_iceland <- function(fit,
     auto_unbox = TRUE, dataframe = "rows", digits = 5
   )
 
-  # Append per-fit summary to team_strengths_history.json. One row per
-  # (team x component x location x coverage x fit_date). Dedup on the full
-  # key so re-running against the same fit replaces rather than duplicates.
-  # Written for both sexes -- women's season may not have started yet, but
-  # the file is still produced so future fits accrete to a stable path.
-  team_strengths_history_row <- team_strengths |>
-    dplyr::mutate(
-      fit_date     = format(end_date, "%Y-%m-%d"),
-      generated_at = generated_at,
-      round        = as.integer(round_num),
-      season       = current_season
-    ) |>
-    dplyr::select(
-      "fit_date", "generated_at", "round", "season",
-      "team", "component", "location", "coverage",
-      "median", "lower", "upper"
+  # team_strengths_history.json -- per-(BD-matchweek, team) trajectory
+  # of latent strength derived from a SINGLE fit. The Stan model holds
+  # posterior estimates for every past round in `offense[1..N_rounds, K]`,
+  # so one fit covers the whole season-to-date trajectory; we don't
+  # accrete per-fit snapshots. Each publish overwrites the file with the
+  # latest fit's view of all played matchweeks.
+  trajectory_long <- .compute_team_strength_trajectory_pfi(
+    fit = fit,
+    results = results,
+    teams = teams,
+    current_top_teams = current_top_teams,
+    current_season = current_season,
+    top_div = top_div
+  )
+  team_strengths_history_row <- if (nrow(trajectory_long) > 0L) {
+    trajectory_long |>
+      .summarise_team_intervals_pfi() |>
+      dplyr::mutate(
+        fit_date     = format(end_date, "%Y-%m-%d"),
+        generated_at = generated_at,
+        season       = current_season
+      ) |>
+      dplyr::select(
+        "fit_date", "generated_at", "round", "season",
+        "team", "component", "location", "coverage",
+        "median", "lower", "upper"
+      )
+  } else {
+    tibble::tibble(
+      fit_date = character(), generated_at = character(),
+      round = integer(), season = integer(),
+      team = character(), component = character(),
+      location = character(), coverage = numeric(),
+      median = numeric(), lower = numeric(), upper = numeric()
     )
-  .append_to_history_pfi(
+  }
+  jsonlite::write_json(
+    list(schema_version = 1L, records = team_strengths_history_row),
     file.path(out_dir, "team_strengths_history.json"),
-    team_strengths_history_row,
-    key_cols = c("fit_date", "team", "component", "location", "coverage")
+    auto_unbox = TRUE, dataframe = "rows", digits = 5, na = "null"
   )
 
   # ---- round_predictions_history.json --------------------------------------

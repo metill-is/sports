@@ -355,7 +355,11 @@ test_that("publish_football_iceland writes standings_history.json when matches h
   }
 })
 
-test_that("publish_football_iceland: re-running dedups history on (fit_date, team, ...)", {
+test_that("publish_football_iceland: re-running dedups history on (round, team, ...)", {
+  # Multiple fits within the same matchweek collapse to one row per
+  # (round, team, component, location, coverage); latest fit wins. This
+  # keeps the strength-trajectory chart plotting one point per matchweek
+  # rather than stacking within-round refits as duplicate round-X points.
   fit_path <- backup_fit_path("male")
   if (!file.exists(fit_path)) {
     testthat::skip("legacy male football fit unavailable")
@@ -387,7 +391,7 @@ test_that("publish_football_iceland: re-running dedups history on (fit_date, tea
   )
   parsed <- jsonlite::fromJSON(hist_path, simplifyDataFrame = TRUE)
 
-  key_cols <- c("fit_date", "team", "component", "location", "coverage")
+  key_cols <- c("round", "team", "component", "location", "coverage")
   n_unique <- nrow(unique(parsed$records[, key_cols]))
   expect_equal(nrow(parsed$records), n_unique)
 })
