@@ -1873,8 +1873,16 @@ publish_football_iceland <- function(extracted,
 
     # ---- final_positions.json + points_distribution.json --------------------
 
-    final_positions <- extracted$final_positions
-    points_distribution <- extracted$points_distribution
+    # Filter to current_top_teams so LD pages don't accidentally render
+    # BD teams' projections. The extraction layer is currently BD-only
+    # (top_div hardcoded in extract-football-iceland.R), so for LD this
+    # produces empty data — chart modules render an empty state. The
+    # proper fix is to refactor the extraction layer to publish per
+    # division (separate follow-up).
+    final_positions <- extracted$final_positions |>
+      dplyr::semi_join(current_top_teams, by = "team")
+    points_distribution <- extracted$points_distribution |>
+      dplyr::semi_join(current_top_teams, by = "team")
 
     if (nrow(final_positions) > 0L) {
       n_teams_top <- length(unique(final_positions$team))
