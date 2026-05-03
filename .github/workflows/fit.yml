@@ -5,7 +5,12 @@ on:
     workflows: ["Scrape Federation Results and Schedules"]
     types: [completed]
     branches: [main]
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Pass --force to scripts/03_fit.R (refit every league regardless of needs_refit())"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -58,8 +63,10 @@ jobs:
         if: steps.cache-cmdstan.outputs.cache-hit != 'true'
         run: Rscript -e 'cmdstanr::install_cmdstan(version = Sys.getenv("CMDSTAN_VERSION"), cores = 2)'
 
-      - name: Fit (skips when no new games)
-        run: Rscript scripts/03_fit.R
+      - name: Fit (skips when no new games unless --force)
+        env:
+          FORCE_FLAG: ${{ inputs.force == true && '--force' || '' }}
+        run: Rscript scripts/03_fit.R $FORCE_FLAG
 
       - name: Commit if beliefs changed
         run: |
