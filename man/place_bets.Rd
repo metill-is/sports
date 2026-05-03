@@ -51,5 +51,18 @@ pending bet through the place-or-reject decision tree.
 \details{
 Returns one row per bet attempted (including those skipped or errored).
 Status values: "placed", "rejected_p3", "rejected_p4", "dry_run", "error",
-"no_match_id", "skipped_by_user".
+"no_match_id", "no_match_id_no_competitions", "skipped_by_user".
+
+"no_match_id" subtypes (after pre-flight \code{validate_team_names_config}
+has passed):
+\describe{
+  \item{\code{no_match_id_no_competitions}}{The configured Lengjan
+    competitions for this league returned zero matches across the board.
+    Typically a config gap (e.g. a new playoff competition not yet listed
+    in \code{leagues.yml}) or off-season.}
+  \item{\code{no_match_id}}{Other matches were found on Lengjan, but ours
+    was not. Most often the match was delisted because kickoff has passed;
+    less often a wrong-competition mapping or a team-name typo that
+    pre-flight validation didn't catch.}
+}
 }

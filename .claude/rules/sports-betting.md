@@ -177,10 +177,20 @@ unforked (see `tests/testthat/test-skill-conventions.R`):
   Icelandic characters in R sources (e.g. `"Úrslit"` not `"Úrslit"`).
   See the Plan 7a placer-fix commit for the canonical example. `R CMD check`
   enforces this.
-- **`no_match_id` on bet placement**: almost always means
-  `config/leagues.yml::*.lengjan.team_names.{male|female}` is empty or
-  missing the team. Pre-flight `validate_team_names_config()` aborts on this
-  before login.
+- **`no_match_id` on bet placement** (post 2026-04-30 disambiguation):
+  pre-flight `validate_team_names_config()` still aborts on missing
+  `team_names.{male|female}` entries before login, so that simple config-gap
+  case never reaches placement. Past pre-flight, `place_bets()` returns one
+  of two disambiguated statuses:
+  - `no_match_id_no_competitions` — `resolve_match_ids_new()` saw zero
+    matches across every configured `lengjan.competitions` entry. Typically
+    a config gap (a new playoff competition spawned a fresh ID and
+    `leagues.yml` doesn't list it yet) or off-season for the league.
+  - `no_match_id` (unchanged name) — at least one competition returned
+    matches but ours wasn't keyed in. Most often Lengjan delisted it because
+    kickoff has passed; less often a recommendation source is mapped to a
+    competition not in `leagues.yml`, or a team-name typo on the Lengjan
+    side that pre-flight didn't catch.
 - **Ledger schema drift**: `append_to_ledger()` requires the canonical
   column set from `schemas()$ledger$names`. Missing `settled` is the most
   common gap — placer-pipeline.R must include it (defaults to `FALSE` at

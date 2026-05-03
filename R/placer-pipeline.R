@@ -17,7 +17,20 @@ NULL
 #'
 #' Returns one row per bet attempted (including those skipped or errored).
 #' Status values: "placed", "rejected_p3", "rejected_p4", "dry_run", "error",
-#' "no_match_id", "skipped_by_user".
+#' "no_match_id", "no_match_id_no_competitions", "skipped_by_user".
+#'
+#' "no_match_id" subtypes (after pre-flight \code{validate_team_names_config}
+#' has passed):
+#' \describe{
+#'   \item{\code{no_match_id_no_competitions}}{The configured Lengjan
+#'     competitions for this league returned zero matches across the board.
+#'     Typically a config gap (e.g. a new playoff competition not yet listed
+#'     in \code{leagues.yml}) or off-season.}
+#'   \item{\code{no_match_id}}{Other matches were found on Lengjan, but ours
+#'     was not. Most often the match was delisted because kickoff has passed;
+#'     less often a wrong-competition mapping or a team-name typo that
+#'     pre-flight validation didn't catch.}
+#' }
 #'
 #' @param leagues Optional character vector of league keys to restrict to
 #'   (e.g. \code{"football_iceland"}). NULL = all.
@@ -141,12 +154,14 @@ place_bets <- function(leagues = NULL,
     })
 
     # Resolve match IDs across all competitions for this league
-    match_ids <- resolve_match_ids_new(
+    resolution <- resolve_match_ids_new(
       session = session,
       league = league,
       sport_id = sport_id,
       pipeline_to_lengjan = character(0) # kept for API stability; unused inside
     )
+    match_ids <- resolution$match_ids
+    n_total_matches <- resolution$n_total
 
     # Place each bet
     for (i in seq_len(nrow(league_recs))) {
@@ -163,11 +178,25 @@ place_bets <- function(leagues = NULL,
       mid <- match_ids[[match_key]]
 
       if (is.null(mid)) {
-        cli::cli_alert_warning(
-          "No match ID for {bet$home_team} vs {bet$away_team} ",
-          "(Lengjan: {home_l} vs {away_l}) — skipping."
-        )
-        results[[length(results) + 1L]] <- bet_result_row(bet, "no_match_id")
+        if (n_total_matches == 0L) {
+          cli::cli_alert_warning(
+            "No matches found in any configured competition for ",
+            "{bet$sport}_{bet$country} — likely a config gap ",
+            "(missing competition in leagues.yml) or off-season. ",
+            "Skipping {bet$home_team} vs {bet$away_team}."
+          )
+          results[[length(results) + 1L]] <- bet_result_row(
+            bet, "no_match_id_no_competitions"
+          )
+        } else {
+          cli::cli_alert_warning(
+            "No match ID for {bet$home_team} vs {bet$away_team} ",
+            "(Lengjan: {home_l} vs {away_l}) — ",
+            "{n_total_matches} other match(es) listed; ours likely delisted ",
+            "(kickoff passed) or on a competition not in leagues.yml. Skipping."
+          )
+          results[[length(results) + 1L]] <- bet_result_row(bet, "no_match_id")
+        }
         next
       }
 
@@ -276,17 +305,22 @@ place_bets <- function(leagues = NULL,
 #' @param league League config entry from \code{load_leagues()}
 #' @param sport_id Integer Lengjan sport ID
 #' @param pipeline_to_lengjan Named character: pipeline name -> Lengjan name
-#' @return Named list: key = "Lengjan Home - Lengjan Away", value = match_id
+#' @return List with elements \code{match_ids} (named character: key
+#'   "Lengjan Home - Lengjan Away" -> match_id) and \code{n_total} (integer
+#'   total matches found across all configured competitions; 0 means no
+#'   matches at all, used to disambiguate \code{no_match_id} into a
+#'   "no competitions had any matches" subtype).
 #' @keywords internal
 #' @noRd
 resolve_match_ids_new <- function(session, league, sport_id, pipeline_to_lengjan) {
   competitions <- league$lengjan$competitions
   if (is.null(competitions) || length(competitions) == 0L) {
     cli::cli_alert_warning("No competitions configured for this league.")
-    return(list())
+    return(list(match_ids = list(), n_total = 0L))
   }
 
   all_ids <- list()
+  n_total <- 0L
 
   for (comp in competitions) {
     comp_id <- comp$id
@@ -304,6 +338,7 @@ resolve_match_ids_new <- function(session, league, sport_id, pipeline_to_lengjan
 
     if (nrow(matches) == 0L) next
 
+    n_total <- n_total + nrow(matches)
     for (j in seq_len(nrow(matches))) {
       m <- matches[j, ]
       key <- paste(m$home, m$away, sep = " - ")
@@ -311,7 +346,7 @@ resolve_match_ids_new <- function(session, league, sport_id, pipeline_to_lengjan
     }
   }
 
-  all_ids
+  list(match_ids = all_ids, n_total = n_total)
 }
 
 #' Construct a single-row result tibble for the per-bet output.
