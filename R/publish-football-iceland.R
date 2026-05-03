@@ -563,7 +563,12 @@ NULL
 
   # Icelandic sex folder names
   sex_folder <- if (sex == "male") "karla" else "kvenna"
-  out_dir <- file.path(output_root, "football", "iceland", sex_folder)
+  out_dir <- file.path(
+    output_root,
+    "football",
+    "iceland",
+    sprintf("%s-%s", sex_folder, tolower(target_div))
+  )
   dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
 
   # -- Rebuild prep data -------------------------------------------------------
@@ -1389,8 +1394,6 @@ publish_football_iceland <- function(extracted,
   }
 
   sex_folder <- if (sex == "male") "karla" else "kvenna"
-  out_dir <- file.path(output_root, "football", "iceland", sex_folder)
-  dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
 
   # Reconstruct prep purely for division metadata + venue lookup. The
   # extraction layer doesn't carry division (deliberately — see Phase 1
@@ -1409,584 +1412,596 @@ publish_football_iceland <- function(extracted,
     drop = FALSE
   ]
 
-  top_div <- "BD"
-  current_season <- max(results$season, na.rm = TRUE)
+  divisions_to_publish <- c("BD", "LD")
+  for (target_div in divisions_to_publish) {
+    top_div <- target_div
+    out_dir <- file.path(
+      output_root,
+      "football",
+      "iceland",
+      sprintf("%s-%s", sex_folder, tolower(target_div))
+    )
+    dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
 
-  current_top_teams <- results[
-    results$season == current_season & results$division == top_div, ,
-    drop = FALSE
-  ] |>
-    dplyr::select("home_team", "away_team") |>
-    tidyr::pivot_longer(c("home_team", "away_team"), values_to = "team") |>
-    dplyr::distinct(.data$team)
+    current_season <- max(results$season, na.rm = TRUE)
 
-  top_teams_upcoming <- pred_d[pred_d$division == top_div, , drop = FALSE] |>
-    dplyr::select("home_team", "away_team") |>
-    tidyr::pivot_longer(c("home_team", "away_team"), values_to = "team") |>
-    dplyr::distinct(.data$team)
-  if (nrow(top_teams_upcoming) == 0L) {
-    top_teams_upcoming <- current_top_teams
-  }
+    current_top_teams <- results[
+      results$season == current_season & results$division == top_div, ,
+      drop = FALSE
+    ] |>
+      dplyr::select("home_team", "away_team") |>
+      tidyr::pivot_longer(c("home_team", "away_team"), values_to = "team") |>
+      dplyr::distinct(.data$team)
 
-  bd_played <- results[
-    results$season == current_season & results$division == top_div, ,
-    drop = FALSE
-  ]
-  round_predictions <- .aggregate_round_predictions_pfi(
-    played_matches = bd_played[, c("home_team", "away_team", "match_date")],
-    archive_root = archive_root,
-    sport = league$sport, country = league$country, sex = sex
-  )
+    top_teams_upcoming <- pred_d[pred_d$division == top_div, , drop = FALSE] |>
+      dplyr::select("home_team", "away_team") |>
+      tidyr::pivot_longer(c("home_team", "away_team"), values_to = "team") |>
+      dplyr::distinct(.data$team)
+    if (nrow(top_teams_upcoming) == 0L) {
+      top_teams_upcoming <- current_top_teams
+    }
 
-  team_expected <- if (nrow(bd_played) > 0L) {
-    played_per_team <- bd_played |>
-      tidyr::pivot_longer(
-        c("home_team", "away_team"),
-        values_to = "team"
-      ) |>
-      dplyr::count(.data$team, name = "played_count")
+    bd_played <- results[
+      results$season == current_season & results$division == top_div, ,
+      drop = FALSE
+    ]
+    round_predictions <- .aggregate_round_predictions_pfi(
+      played_matches = bd_played[, c("home_team", "away_team", "match_date")],
+      archive_root = archive_root,
+      sport = league$sport, country = league$country, sex = sex
+    )
 
-    if (nrow(round_predictions) == 0L) {
-      played_per_team |>
-        dplyr::transmute(
-          .data$team,
-          xg_for = NA_real_,
-          xg_against = NA_real_,
-          xpts = NA_real_,
-          n_predicted_matches = 0L,
-          n_played_matches = .data$played_count,
-          xg_trend = list(I(numeric(0)))
+    team_expected <- if (nrow(bd_played) > 0L) {
+      played_per_team <- bd_played |>
+        tidyr::pivot_longer(
+          c("home_team", "away_team"),
+          values_to = "team"
+        ) |>
+        dplyr::count(.data$team, name = "played_count")
+
+      if (nrow(round_predictions) == 0L) {
+        played_per_team |>
+          dplyr::transmute(
+            .data$team,
+            xg_for = NA_real_,
+            xg_against = NA_real_,
+            xpts = NA_real_,
+            n_predicted_matches = 0L,
+            n_played_matches = .data$played_count,
+            xg_trend = list(I(numeric(0)))
+          )
+      } else {
+        team_pred <- round_predictions |>
+          dplyr::arrange(.data$round) |>
+          dplyr::summarise(
+            n_predicted = sum(.data$n_matches),
+            xg_for_sum = sum(.data$xg_for),
+            xg_against_sum = sum(.data$xg_against),
+            xpts_sum = sum(.data$xpts),
+            xg_trend = list(.data$xg_for),
+            .by = "team"
+          )
+
+        played_per_team |>
+          dplyr::left_join(team_pred, by = "team") |>
+          dplyr::mutate(
+            n_predicted_matches = as.integer(
+              dplyr::coalesce(.data$n_predicted, 0L)
+            ),
+            n_played_matches = as.integer(.data$played_count),
+            xg_for = dplyr::if_else(
+              .data$n_predicted_matches > 0L, .data$xg_for_sum, NA_real_
+            ),
+            xg_against = dplyr::if_else(
+              .data$n_predicted_matches > 0L, .data$xg_against_sum, NA_real_
+            ),
+            xpts = dplyr::if_else(
+              .data$n_predicted_matches > 0L, .data$xpts_sum, NA_real_
+            ),
+            xg_trend = lapply(.data$xg_trend, function(x) {
+              if (is.null(x)) I(numeric(0)) else I(x)
+            })
+          ) |>
+          dplyr::select(
+            "team", "xg_for", "xg_against", "xpts",
+            "n_predicted_matches", "n_played_matches", "xg_trend"
+          )
+      }
+    } else {
+      NULL
+    }
+
+    predicted_matches <- extracted$predicted_matches
+
+    predicted_with_division <- if (nrow(predicted_matches) > 0L) {
+      predicted_matches |>
+        dplyr::left_join(
+          pred_d |> dplyr::distinct(
+            .data$home_team, .data$away_team,
+            .data$match_date, .data$division
+          ),
+          by = c("home_team", "away_team", "match_date")
         )
     } else {
-      team_pred <- round_predictions |>
-        dplyr::arrange(.data$round) |>
-        dplyr::summarise(
-          n_predicted = sum(.data$n_matches),
-          xg_for_sum = sum(.data$xg_for),
-          xg_against_sum = sum(.data$xg_against),
-          xpts_sum = sum(.data$xpts),
-          xg_trend = list(.data$xg_for),
-          .by = "team"
-        )
+      predicted_matches |>
+        dplyr::mutate(division = character(0))
+    }
 
-      played_per_team |>
-        dplyr::left_join(team_pred, by = "team") |>
+    generated_at <- format(Sys.time(), "%Y-%m-%dT%H:%M:%S%z")
+
+    # ---- meta.json ----------------------------------------------------------
+
+    round_num <- results[
+      results$season == current_season & results$division == top_div, ,
+      drop = FALSE
+    ] |>
+      tidyr::pivot_longer(c("home_team", "away_team"), values_to = "team") |>
+      dplyr::count(.data$team) |>
+      dplyr::pull("n") |>
+      (\(x) if (length(x) == 0L) 0L else min(x))()
+
+    n_draws <- if (nrow(predicted_matches) > 0L) {
+      per_match_count <- predicted_matches |>
+        dplyr::summarise(
+          s = sum(.data$count),
+          .by = c("home_team", "away_team", "match_date")
+        )
+      as.integer(round(mean(per_match_count$s)))
+    } else {
+      0L
+    }
+
+    meta <- list(
+      sport        = "football",
+      sex          = sex,
+      league       = "Besta deild",
+      season       = current_season,
+      generated_at = generated_at,
+      fit_date     = format(end_date, "%Y-%m-%d"),
+      round        = as.integer(round_num),
+      n_draws      = as.integer(n_draws)
+    )
+    jsonlite::write_json(
+      meta,
+      file.path(out_dir, "meta.json"),
+      auto_unbox = TRUE
+    )
+
+    # ---- next_games.json ----------------------------------------------------
+
+    male_top_division_venues <- tibble::tribble(
+      ~team, ~venue,
+      "Brei\u00f0ablik", "K\u00f3pavogsv\u00f6llur",
+      "FH", "Kaplakrikav\u00f6llur",
+      "Fram", "Laugardalsv\u00f6llur",
+      "KA", "KA-v\u00f6llurinn",
+      "KR", "KR-v\u00f6llur",
+      "Keflav\u00edk", "Nettov\u00f6llurinn",
+      "Stjarnan", "Stj\u00f6rnuv\u00f6llur",
+      "Valur", "Hl\u00ed\u00f0arendi",
+      "V\u00edkingur R.", "V\u00edkingsv\u00f6llur",
+      "\u00cdA", "Nor\u00f0ur\u00e1lsv\u00f6llurinn",
+      "\u00cdBV", "H\u00e1steinv\u00f6llur",
+      "\u00de\u00f3r", "\u00de\u00f3rsv\u00f6llur"
+    )
+
+    division_labels <- c(
+      BD = "BD", LD1 = "LD", LD2 = "\u00d6D", LD3 = "\u00deD",
+      LD4 = "FjD", CUP = "MB",
+      BD_UPPER_PO = "BD PO", BD_LOWER_PO = "BD N-PO",
+      LD1_PO = "LD PO"
+    )
+
+    if (nrow(predicted_with_division) > 0L) {
+      next_games_out <- predicted_with_division |>
+        dplyr::filter(
+          .data$match_date >= end_date,
+          .data$match_date <= end_date + 14L
+        ) |>
+        dplyr::mutate(goal_diff = .data$home_goals - .data$away_goals) |>
+        dplyr::summarise(
+          total = sum(.data$count),
+          mean_home_goals = sum(.data$home_goals * .data$count) / sum(.data$count),
+          mean_away_goals = sum(.data$away_goals * .data$count) / sum(.data$count),
+          mean_goal_diff = sum(.data$goal_diff * .data$count) / sum(.data$count),
+          p_home_win = sum(.data$count[.data$goal_diff > 0]) / sum(.data$count),
+          p_draw = sum(.data$count[.data$goal_diff == 0]) / sum(.data$count),
+          p_away_win = sum(.data$count[.data$goal_diff < 0]) / sum(.data$count),
+          goal_diff_distribution = list(
+            tibble::tibble(diff = .data$goal_diff, count = .data$count) |>
+              dplyr::summarise(n = sum(.data$count), .by = "diff") |>
+              dplyr::mutate(p = .data$n / sum(.data$n)) |>
+              dplyr::arrange(.data$diff) |>
+              dplyr::select("diff", "p")
+          ),
+          .by = c("division", "match_date", "home_team", "away_team")
+        ) |>
+        dplyr::arrange(.data$match_date, .data$home_team, .data$away_team) |>
+        dplyr::left_join(male_top_division_venues, by = c("home_team" = "team")) |>
         dplyr::mutate(
-          n_predicted_matches = as.integer(
-            dplyr::coalesce(.data$n_predicted, 0L)
+          division_code = dplyr::recode(
+            .data$division, !!!division_labels,
+            .default = .data$division
           ),
-          n_played_matches = as.integer(.data$played_count),
-          xg_for = dplyr::if_else(
-            .data$n_predicted_matches > 0L, .data$xg_for_sum, NA_real_
-          ),
-          xg_against = dplyr::if_else(
-            .data$n_predicted_matches > 0L, .data$xg_against_sum, NA_real_
-          ),
-          xpts = dplyr::if_else(
-            .data$n_predicted_matches > 0L, .data$xpts_sum, NA_real_
-          ),
-          xg_trend = lapply(.data$xg_trend, function(x) {
-            if (is.null(x)) I(numeric(0)) else I(x)
-          })
+          date = format(.data$match_date, "%Y-%m-%d")
         ) |>
         dplyr::select(
-          "team", "xg_for", "xg_against", "xpts",
-          "n_predicted_matches", "n_played_matches", "xg_trend"
-        )
-    }
-  } else {
-    NULL
-  }
-
-  predicted_matches <- extracted$predicted_matches
-
-  predicted_with_division <- if (nrow(predicted_matches) > 0L) {
-    predicted_matches |>
-      dplyr::left_join(
-        pred_d |> dplyr::distinct(
-          .data$home_team, .data$away_team,
-          .data$match_date, .data$division
-        ),
-        by = c("home_team", "away_team", "match_date")
-      )
-  } else {
-    predicted_matches |>
-      dplyr::mutate(division = character(0))
-  }
-
-  generated_at <- format(Sys.time(), "%Y-%m-%dT%H:%M:%S%z")
-
-  # ---- meta.json ----------------------------------------------------------
-
-  round_num <- results[
-    results$season == current_season & results$division == top_div, ,
-    drop = FALSE
-  ] |>
-    tidyr::pivot_longer(c("home_team", "away_team"), values_to = "team") |>
-    dplyr::count(.data$team) |>
-    dplyr::pull("n") |>
-    (\(x) if (length(x) == 0L) 0L else min(x))()
-
-  n_draws <- if (nrow(predicted_matches) > 0L) {
-    per_match_count <- predicted_matches |>
-      dplyr::summarise(
-        s = sum(.data$count),
-        .by = c("home_team", "away_team", "match_date")
-      )
-    as.integer(round(mean(per_match_count$s)))
-  } else {
-    0L
-  }
-
-  meta <- list(
-    sport        = "football",
-    sex          = sex,
-    league       = "Besta deild",
-    season       = current_season,
-    generated_at = generated_at,
-    fit_date     = format(end_date, "%Y-%m-%d"),
-    round        = as.integer(round_num),
-    n_draws      = as.integer(n_draws)
-  )
-  jsonlite::write_json(
-    meta,
-    file.path(out_dir, "meta.json"),
-    auto_unbox = TRUE
-  )
-
-  # ---- next_games.json ----------------------------------------------------
-
-  male_top_division_venues <- tibble::tribble(
-    ~team, ~venue,
-    "Brei\u00f0ablik", "K\u00f3pavogsv\u00f6llur",
-    "FH", "Kaplakrikav\u00f6llur",
-    "Fram", "Laugardalsv\u00f6llur",
-    "KA", "KA-v\u00f6llurinn",
-    "KR", "KR-v\u00f6llur",
-    "Keflav\u00edk", "Nettov\u00f6llurinn",
-    "Stjarnan", "Stj\u00f6rnuv\u00f6llur",
-    "Valur", "Hl\u00ed\u00f0arendi",
-    "V\u00edkingur R.", "V\u00edkingsv\u00f6llur",
-    "\u00cdA", "Nor\u00f0ur\u00e1lsv\u00f6llurinn",
-    "\u00cdBV", "H\u00e1steinv\u00f6llur",
-    "\u00de\u00f3r", "\u00de\u00f3rsv\u00f6llur"
-  )
-
-  division_labels <- c(
-    BD = "BD", LD1 = "LD", LD2 = "\u00d6D", LD3 = "\u00deD",
-    LD4 = "FjD", CUP = "MB",
-    BD_UPPER_PO = "BD PO", BD_LOWER_PO = "BD N-PO",
-    LD1_PO = "LD PO"
-  )
-
-  if (nrow(predicted_with_division) > 0L) {
-    next_games_out <- predicted_with_division |>
-      dplyr::filter(
-        .data$match_date >= end_date,
-        .data$match_date <= end_date + 14L
-      ) |>
-      dplyr::mutate(goal_diff = .data$home_goals - .data$away_goals) |>
-      dplyr::summarise(
-        total = sum(.data$count),
-        mean_home_goals = sum(.data$home_goals * .data$count) / sum(.data$count),
-        mean_away_goals = sum(.data$away_goals * .data$count) / sum(.data$count),
-        mean_goal_diff = sum(.data$goal_diff * .data$count) / sum(.data$count),
-        p_home_win = sum(.data$count[.data$goal_diff > 0]) / sum(.data$count),
-        p_draw = sum(.data$count[.data$goal_diff == 0]) / sum(.data$count),
-        p_away_win = sum(.data$count[.data$goal_diff < 0]) / sum(.data$count),
-        goal_diff_distribution = list(
-          tibble::tibble(diff = .data$goal_diff, count = .data$count) |>
-            dplyr::summarise(n = sum(.data$count), .by = "diff") |>
-            dplyr::mutate(p = .data$n / sum(.data$n)) |>
-            dplyr::arrange(.data$diff) |>
-            dplyr::select("diff", "p")
-        ),
-        .by = c("division", "match_date", "home_team", "away_team")
-      ) |>
-      dplyr::arrange(.data$match_date, .data$home_team, .data$away_team) |>
-      dplyr::left_join(male_top_division_venues, by = c("home_team" = "team")) |>
-      dplyr::mutate(
-        division_code = dplyr::recode(
-          .data$division, !!!division_labels,
-          .default = .data$division
-        ),
-        date = format(.data$match_date, "%Y-%m-%d")
-      ) |>
-      dplyr::select(
-        "date", "venue", "division", "division_code",
-        home = "home_team", away = "away_team",
-        "mean_home_goals", "mean_away_goals", "mean_goal_diff",
-        "p_home_win", "p_draw", "p_away_win",
-        "goal_diff_distribution"
-      )
-  } else {
-    next_games_out <- tibble::tibble(
-      date = character(), venue = character(),
-      division = character(), division_code = character(),
-      home = character(), away = character(),
-      mean_home_goals = numeric(), mean_away_goals = numeric(),
-      mean_goal_diff = numeric(), p_home_win = numeric(),
-      p_draw = numeric(), p_away_win = numeric(),
-      goal_diff_distribution = list()
-    )
-  }
-
-  jsonlite::write_json(
-    list(generated_at = generated_at, matches = next_games_out),
-    file.path(out_dir, "next_games.json"),
-    auto_unbox = TRUE, dataframe = "rows", digits = 5, na = "null"
-  )
-
-  # ---- standings.json + standings_history.json ----------------------------
-
-  bd_results <- results[
-    results$season == current_season & results$division == top_div, ,
-    drop = FALSE
-  ]
-
-  pad_form <- function(x, n = 5L) {
-    tail(c(rep(NA_character_, n), x), n)
-  }
-
-  short_code <- function(team) {
-    team |>
-      stringr::str_remove_all("\\s|\\.") |>
-      stringr::str_to_upper() |>
-      stringr::str_sub(1L, 3L)
-  }
-
-  if (nrow(bd_results) > 0L) {
-    long_bd <- dplyr::bind_rows(
-      dplyr::transmute(bd_results,
-        team = .data$home_team, match_date = .data$match_date,
-        gf = .data$home_score, ga = .data$away_score
-      ),
-      dplyr::transmute(bd_results,
-        team = .data$away_team, match_date = .data$match_date,
-        gf = .data$away_score, ga = .data$home_score
-      )
-    ) |>
-      dplyr::mutate(
-        result = dplyr::case_when(
-          .data$gf > .data$ga ~ "W",
-          .data$gf < .data$ga ~ "L",
-          TRUE ~ "D"
-        )
-      ) |>
-      dplyr::arrange(.data$team, .data$match_date)
-
-    standings_rows <- long_bd |>
-      dplyr::summarise(
-        played = dplyr::n(),
-        wins = sum(.data$result == "W"),
-        draws = sum(.data$result == "D"),
-        losses = sum(.data$result == "L"),
-        goals_for = sum(.data$gf),
-        goals_against = sum(.data$ga),
-        goal_diff = .data$goals_for - .data$goals_against,
-        points = 3L * .data$wins + .data$draws,
-        form = list(pad_form(tail(.data$result, 5L))),
-        .by = "team"
-      ) |>
-      dplyr::arrange(
-        dplyr::desc(.data$points), dplyr::desc(.data$goal_diff),
-        dplyr::desc(.data$goals_for)
-      ) |>
-      dplyr::mutate(
-        rank  = dplyr::row_number(),
-        short = short_code(.data$team)
-      )
-
-    if (!is.null(team_expected)) {
-      standings_rows <- standings_rows |>
-        dplyr::left_join(team_expected, by = "team") |>
-        dplyr::mutate(
-          xg_trend = lapply(.data$xg_trend, function(x) {
-            if (is.null(x)) I(numeric(0)) else I(x)
-          })
+          "date", "venue", "division", "division_code",
+          home = "home_team", away = "away_team",
+          "mean_home_goals", "mean_away_goals", "mean_goal_diff",
+          "p_home_win", "p_draw", "p_away_win",
+          "goal_diff_distribution"
         )
     } else {
-      standings_rows <- standings_rows |>
-        dplyr::mutate(
-          xg_for = NA_real_, xg_against = NA_real_, xpts = NA_real_,
-          n_predicted_matches = 0L,
-          n_played_matches = as.integer(.data$played),
-          xg_trend = list(I(numeric(0)))
-        )
+      next_games_out <- tibble::tibble(
+        date = character(), venue = character(),
+        division = character(), division_code = character(),
+        home = character(), away = character(),
+        mean_home_goals = numeric(), mean_away_goals = numeric(),
+        mean_goal_diff = numeric(), p_home_win = numeric(),
+        p_draw = numeric(), p_away_win = numeric(),
+        goal_diff_distribution = list()
+      )
     }
 
-    standings_rows <- standings_rows |>
-      dplyr::select(
-        "team", "short", "played", "wins", "draws", "losses",
-        "goals_for", "goals_against", "goal_diff", "points",
-        "xg_for", "xg_against", "xpts",
-        "n_predicted_matches", "n_played_matches",
-        "rank", "form", "xg_trend"
-      )
-
     jsonlite::write_json(
-      list(
-        generated_at = generated_at,
-        season       = current_season,
-        as_of        = format(max(bd_results$match_date), "%Y-%m-%d"),
-        rows         = standings_rows
-      ),
-      file.path(out_dir, "standings.json"),
+      list(generated_at = generated_at, matches = next_games_out),
+      file.path(out_dir, "next_games.json"),
       auto_unbox = TRUE, dataframe = "rows", digits = 5, na = "null"
     )
 
-    standings_history_row <- standings_rows |>
-      dplyr::mutate(
-        as_of        = format(max(bd_results$match_date), "%Y-%m-%d"),
-        generated_at = generated_at,
-        round        = as.integer(round_num),
-        season       = current_season
-      ) |>
-      dplyr::select(
-        "as_of", "generated_at", "round", "season",
-        "team", "short", "played", "wins", "draws", "losses",
-        "goals_for", "goals_against", "goal_diff", "points",
-        "xg_for", "xg_against", "xpts",
-        "n_predicted_matches", "n_played_matches",
-        "rank"
-      )
-    .append_to_history_pfi(
-      file.path(out_dir, "standings_history.json"),
-      standings_history_row,
-      key_cols = c("as_of", "team")
-    )
-  } else {
-    jsonlite::write_json(
-      list(
-        generated_at = generated_at, season = current_season,
-        as_of = format(end_date, "%Y-%m-%d"), rows = list()
-      ),
-      file.path(out_dir, "standings.json"),
-      auto_unbox = TRUE, dataframe = "rows", digits = 5, na = "null"
-    )
-  }
+    # ---- standings.json + standings_history.json ----------------------------
 
-  # ---- team_strengths.json ------------------------------------------------
+    bd_results <- results[
+      results$season == current_season & results$division == top_div, ,
+      drop = FALSE
+    ]
 
-  team_strengths <- extracted$team_strengths_quantiles |>
-    dplyr::semi_join(current_top_teams, by = "team") |>
-    .intervals_from_quantiles_pfi(c("team", "component", "location"))
+    pad_form <- function(x, n = 5L) {
+      tail(c(rep(NA_character_, n), x), n)
+    }
 
-  jsonlite::write_json(
-    list(generated_at = generated_at, records = team_strengths),
-    file.path(out_dir, "team_strengths.json"),
-    auto_unbox = TRUE, dataframe = "rows", digits = 5
-  )
+    short_code <- function(team) {
+      team |>
+        stringr::str_remove_all("\\s|\\.") |>
+        stringr::str_to_upper() |>
+        stringr::str_sub(1L, 3L)
+    }
 
-  # ---- team_strengths_history.json ----------------------------------------
-
-  rs_filtered <- extracted$round_strengths_quantiles |>
-    dplyr::semi_join(current_top_teams, by = "team")
-
-  team_strengths_history_row <- if (nrow(rs_filtered) > 0L) {
-    rs_filtered |>
-      .intervals_from_quantiles_pfi(
-        c("round", "team", "component", "location")
-      ) |>
-      dplyr::mutate(
-        fit_date     = format(end_date, "%Y-%m-%d"),
-        generated_at = generated_at,
-        season       = current_season
-      ) |>
-      dplyr::select(
-        "fit_date", "generated_at", "round", "season",
-        "team", "component", "location", "coverage",
-        "median", "lower", "upper"
-      )
-  } else {
-    tibble::tibble(
-      fit_date = character(), generated_at = character(),
-      round = integer(), season = integer(),
-      team = character(), component = character(),
-      location = character(), coverage = numeric(),
-      median = numeric(), lower = numeric(), upper = numeric()
-    )
-  }
-  jsonlite::write_json(
-    list(schema_version = 1L, records = team_strengths_history_row),
-    file.path(out_dir, "team_strengths_history.json"),
-    auto_unbox = TRUE, dataframe = "rows", digits = 5, na = "null"
-  )
-
-  # ---- round_predictions_history.json -------------------------------------
-
-  round_predictions_path <- file.path(
-    out_dir, "round_predictions_history.json"
-  )
-  if (nrow(round_predictions) > 0L) {
-    round_predictions_history_row <- round_predictions |>
-      dplyr::mutate(
-        generated_at = generated_at,
-        season = current_season
-      ) |>
-      dplyr::select(
-        "fit_date", "generated_at", "round", "season",
-        "team", "n_matches",
-        "xg_for", "xg_against", "xpts",
-        "p_win", "p_draw", "p_loss"
-      )
-    .append_to_history_pfi(
-      round_predictions_path,
-      round_predictions_history_row,
-      key_cols = c("round", "team")
-    )
-  } else if (!file.exists(round_predictions_path)) {
-    jsonlite::write_json(
-      list(schema_version = 1L, records = list()),
-      round_predictions_path,
-      auto_unbox = TRUE,
-      dataframe = "rows",
-      digits = 5,
-      na = "null"
-    )
-  }
-
-  # ---- final_positions.json + points_distribution.json --------------------
-
-  final_positions <- extracted$final_positions
-  points_distribution <- extracted$points_distribution
-
-  if (nrow(final_positions) > 0L) {
-    n_teams_top <- length(unique(final_positions$team))
-
-    top_six <- final_positions |>
-      dplyr::summarise(
-        p_top_six = sum(.data$probability[.data$placement <= 6L]),
-        p_winner = sum(.data$probability[.data$placement == 1L]),
-        p_relegation = sum(
-          .data$probability[.data$placement >= n_teams_top - 1L]
+    if (nrow(bd_results) > 0L) {
+      long_bd <- dplyr::bind_rows(
+        dplyr::transmute(bd_results,
+          team = .data$home_team, match_date = .data$match_date,
+          gf = .data$home_score, ga = .data$away_score
         ),
-        .by = "team"
-      )
-
-    jsonlite::write_json(
-      list(
-        generated_at = generated_at,
-        season       = current_season,
-        n_teams      = n_teams_top,
-        records      = final_positions,
-        summary      = top_six
-      ),
-      file.path(out_dir, "final_positions.json"),
-      auto_unbox = TRUE, dataframe = "rows", digits = 5
-    )
-
-    final_positions_history_row <- final_positions |>
-      dplyr::mutate(
-        as_of        = format(max(bd_results$match_date), "%Y-%m-%d"),
-        generated_at = generated_at,
-        round        = as.integer(round_num),
-        season       = current_season
-      ) |>
-      dplyr::select(
-        "as_of", "generated_at", "round", "season",
-        "team", "placement", "probability"
-      )
-    .append_to_history_pfi(
-      file.path(out_dir, "final_positions_history.json"),
-      final_positions_history_row,
-      key_cols = c("as_of", "team", "placement")
-    )
-
-    base_points <- bd_results |>
-      dplyr::mutate(
-        result = dplyr::case_when(
-          .data$home_score > .data$away_score ~ "home",
-          .data$home_score < .data$away_score ~ "away",
-          TRUE ~ "tie"
+        dplyr::transmute(bd_results,
+          team = .data$away_team, match_date = .data$match_date,
+          gf = .data$away_score, ga = .data$home_score
         )
       ) |>
-      tidyr::pivot_longer(
-        c("home_team", "away_team"),
-        values_to = "team"
-      ) |>
-      dplyr::mutate(
-        name = dplyr::if_else(.data$name == "home_team", "home", "away"),
-        points = dplyr::case_when(
-          .data$result == "tie" ~ 1L,
-          .data$result == .data$name ~ 3L,
-          TRUE ~ 0L
-        )
-      ) |>
-      dplyr::summarise(base_points = sum(.data$points), .by = "team")
+        dplyr::mutate(
+          result = dplyr::case_when(
+            .data$gf > .data$ga ~ "W",
+            .data$gf < .data$ga ~ "L",
+            TRUE ~ "D"
+          )
+        ) |>
+        dplyr::arrange(.data$team, .data$match_date)
 
-    points_summary <- points_distribution |>
-      dplyr::group_by(.data$team) |>
-      dplyr::summarise(
-        mean_points = sum(.data$points * .data$probability),
-        median_points = .weighted_quantile_pfi(
-          .data$points, round(.data$probability * 1e9), 0.5
-        ),
-        lower_80 = .weighted_quantile_pfi(
-          .data$points, round(.data$probability * 1e9), 0.1
-        ),
-        upper_80 = .weighted_quantile_pfi(
-          .data$points, round(.data$probability * 1e9), 0.9
+      standings_rows <- long_bd |>
+        dplyr::summarise(
+          played = dplyr::n(),
+          wins = sum(.data$result == "W"),
+          draws = sum(.data$result == "D"),
+          losses = sum(.data$result == "L"),
+          goals_for = sum(.data$gf),
+          goals_against = sum(.data$ga),
+          goal_diff = .data$goals_for - .data$goals_against,
+          points = 3L * .data$wins + .data$draws,
+          form = list(pad_form(tail(.data$result, 5L))),
+          .by = "team"
+        ) |>
+        dplyr::arrange(
+          dplyr::desc(.data$points), dplyr::desc(.data$goal_diff),
+          dplyr::desc(.data$goals_for)
+        ) |>
+        dplyr::mutate(
+          rank  = dplyr::row_number(),
+          short = short_code(.data$team)
         )
-      ) |>
-      dplyr::left_join(base_points, by = "team") |>
-      dplyr::mutate(base_points = dplyr::coalesce(.data$base_points, 0L)) |>
-      dplyr::left_join(top_six, by = "team")
 
-    jsonlite::write_json(
-      list(
-        generated_at = generated_at,
-        season       = current_season,
-        records      = points_distribution,
-        summary      = points_summary
-      ),
-      file.path(out_dir, "points_distribution.json"),
-      auto_unbox = TRUE, dataframe = "rows", digits = 5
-    )
-  } else {
-    jsonlite::write_json(
-      list(
-        generated_at = generated_at, season = current_season,
-        n_teams = 0L, records = list(), summary = list()
-      ),
-      file.path(out_dir, "final_positions.json"),
-      auto_unbox = TRUE, dataframe = "rows", digits = 5
-    )
-    jsonlite::write_json(
-      list(
-        generated_at = generated_at, season = current_season,
-        records = list(), summary = list()
-      ),
-      file.path(out_dir, "points_distribution.json"),
-      auto_unbox = TRUE, dataframe = "rows", digits = 5
-    )
-    final_positions_history_path <- file.path(
-      out_dir, "final_positions_history.json"
-    )
-    if (!file.exists(final_positions_history_path)) {
+      if (!is.null(team_expected)) {
+        standings_rows <- standings_rows |>
+          dplyr::left_join(team_expected, by = "team") |>
+          dplyr::mutate(
+            xg_trend = lapply(.data$xg_trend, function(x) {
+              if (is.null(x)) I(numeric(0)) else I(x)
+            })
+          )
+      } else {
+        standings_rows <- standings_rows |>
+          dplyr::mutate(
+            xg_for = NA_real_, xg_against = NA_real_, xpts = NA_real_,
+            n_predicted_matches = 0L,
+            n_played_matches = as.integer(.data$played),
+            xg_trend = list(I(numeric(0)))
+          )
+      }
+
+      standings_rows <- standings_rows |>
+        dplyr::select(
+          "team", "short", "played", "wins", "draws", "losses",
+          "goals_for", "goals_against", "goal_diff", "points",
+          "xg_for", "xg_against", "xpts",
+          "n_predicted_matches", "n_played_matches",
+          "rank", "form", "xg_trend"
+        )
+
       jsonlite::write_json(
-        list(schema_version = 1L, records = list()),
-        final_positions_history_path,
+        list(
+          generated_at = generated_at,
+          season       = current_season,
+          as_of        = format(max(bd_results$match_date), "%Y-%m-%d"),
+          rows         = standings_rows
+        ),
+        file.path(out_dir, "standings.json"),
+        auto_unbox = TRUE, dataframe = "rows", digits = 5, na = "null"
+      )
+
+      standings_history_row <- standings_rows |>
+        dplyr::mutate(
+          as_of        = format(max(bd_results$match_date), "%Y-%m-%d"),
+          generated_at = generated_at,
+          round        = as.integer(round_num),
+          season       = current_season
+        ) |>
+        dplyr::select(
+          "as_of", "generated_at", "round", "season",
+          "team", "short", "played", "wins", "draws", "losses",
+          "goals_for", "goals_against", "goal_diff", "points",
+          "xg_for", "xg_against", "xpts",
+          "n_predicted_matches", "n_played_matches",
+          "rank"
+        )
+      .append_to_history_pfi(
+        file.path(out_dir, "standings_history.json"),
+        standings_history_row,
+        key_cols = c("as_of", "team")
+      )
+    } else {
+      jsonlite::write_json(
+        list(
+          generated_at = generated_at, season = current_season,
+          as_of = format(end_date, "%Y-%m-%d"), rows = list()
+        ),
+        file.path(out_dir, "standings.json"),
         auto_unbox = TRUE, dataframe = "rows", digits = 5, na = "null"
       )
     }
+
+    # ---- team_strengths.json ------------------------------------------------
+
+    team_strengths <- extracted$team_strengths_quantiles |>
+      dplyr::semi_join(current_top_teams, by = "team") |>
+      .intervals_from_quantiles_pfi(c("team", "component", "location"))
+
+    jsonlite::write_json(
+      list(generated_at = generated_at, records = team_strengths),
+      file.path(out_dir, "team_strengths.json"),
+      auto_unbox = TRUE, dataframe = "rows", digits = 5
+    )
+
+    # ---- team_strengths_history.json ----------------------------------------
+
+    rs_filtered <- extracted$round_strengths_quantiles |>
+      dplyr::semi_join(current_top_teams, by = "team")
+
+    team_strengths_history_row <- if (nrow(rs_filtered) > 0L) {
+      rs_filtered |>
+        .intervals_from_quantiles_pfi(
+          c("round", "team", "component", "location")
+        ) |>
+        dplyr::mutate(
+          fit_date     = format(end_date, "%Y-%m-%d"),
+          generated_at = generated_at,
+          season       = current_season
+        ) |>
+        dplyr::select(
+          "fit_date", "generated_at", "round", "season",
+          "team", "component", "location", "coverage",
+          "median", "lower", "upper"
+        )
+    } else {
+      tibble::tibble(
+        fit_date = character(), generated_at = character(),
+        round = integer(), season = integer(),
+        team = character(), component = character(),
+        location = character(), coverage = numeric(),
+        median = numeric(), lower = numeric(), upper = numeric()
+      )
+    }
+    jsonlite::write_json(
+      list(schema_version = 1L, records = team_strengths_history_row),
+      file.path(out_dir, "team_strengths_history.json"),
+      auto_unbox = TRUE, dataframe = "rows", digits = 5, na = "null"
+    )
+
+    # ---- round_predictions_history.json -------------------------------------
+
+    round_predictions_path <- file.path(
+      out_dir, "round_predictions_history.json"
+    )
+    if (nrow(round_predictions) > 0L) {
+      round_predictions_history_row <- round_predictions |>
+        dplyr::mutate(
+          generated_at = generated_at,
+          season = current_season
+        ) |>
+        dplyr::select(
+          "fit_date", "generated_at", "round", "season",
+          "team", "n_matches",
+          "xg_for", "xg_against", "xpts",
+          "p_win", "p_draw", "p_loss"
+        )
+      .append_to_history_pfi(
+        round_predictions_path,
+        round_predictions_history_row,
+        key_cols = c("round", "team")
+      )
+    } else if (!file.exists(round_predictions_path)) {
+      jsonlite::write_json(
+        list(schema_version = 1L, records = list()),
+        round_predictions_path,
+        auto_unbox = TRUE,
+        dataframe = "rows",
+        digits = 5,
+        na = "null"
+      )
+    }
+
+    # ---- final_positions.json + points_distribution.json --------------------
+
+    final_positions <- extracted$final_positions
+    points_distribution <- extracted$points_distribution
+
+    if (nrow(final_positions) > 0L) {
+      n_teams_top <- length(unique(final_positions$team))
+
+      top_six <- final_positions |>
+        dplyr::summarise(
+          p_top_six = sum(.data$probability[.data$placement <= 6L]),
+          p_winner = sum(.data$probability[.data$placement == 1L]),
+          p_relegation = sum(
+            .data$probability[.data$placement >= n_teams_top - 1L]
+          ),
+          .by = "team"
+        )
+
+      jsonlite::write_json(
+        list(
+          generated_at = generated_at,
+          season       = current_season,
+          n_teams      = n_teams_top,
+          records      = final_positions,
+          summary      = top_six
+        ),
+        file.path(out_dir, "final_positions.json"),
+        auto_unbox = TRUE, dataframe = "rows", digits = 5
+      )
+
+      final_positions_history_row <- final_positions |>
+        dplyr::mutate(
+          as_of        = format(max(bd_results$match_date), "%Y-%m-%d"),
+          generated_at = generated_at,
+          round        = as.integer(round_num),
+          season       = current_season
+        ) |>
+        dplyr::select(
+          "as_of", "generated_at", "round", "season",
+          "team", "placement", "probability"
+        )
+      .append_to_history_pfi(
+        file.path(out_dir, "final_positions_history.json"),
+        final_positions_history_row,
+        key_cols = c("as_of", "team", "placement")
+      )
+
+      base_points <- bd_results |>
+        dplyr::mutate(
+          result = dplyr::case_when(
+            .data$home_score > .data$away_score ~ "home",
+            .data$home_score < .data$away_score ~ "away",
+            TRUE ~ "tie"
+          )
+        ) |>
+        tidyr::pivot_longer(
+          c("home_team", "away_team"),
+          values_to = "team"
+        ) |>
+        dplyr::mutate(
+          name = dplyr::if_else(.data$name == "home_team", "home", "away"),
+          points = dplyr::case_when(
+            .data$result == "tie" ~ 1L,
+            .data$result == .data$name ~ 3L,
+            TRUE ~ 0L
+          )
+        ) |>
+        dplyr::summarise(base_points = sum(.data$points), .by = "team")
+
+      points_summary <- points_distribution |>
+        dplyr::group_by(.data$team) |>
+        dplyr::summarise(
+          mean_points = sum(.data$points * .data$probability),
+          median_points = .weighted_quantile_pfi(
+            .data$points, round(.data$probability * 1e9), 0.5
+          ),
+          lower_80 = .weighted_quantile_pfi(
+            .data$points, round(.data$probability * 1e9), 0.1
+          ),
+          upper_80 = .weighted_quantile_pfi(
+            .data$points, round(.data$probability * 1e9), 0.9
+          )
+        ) |>
+        dplyr::left_join(base_points, by = "team") |>
+        dplyr::mutate(base_points = dplyr::coalesce(.data$base_points, 0L)) |>
+        dplyr::left_join(top_six, by = "team")
+
+      jsonlite::write_json(
+        list(
+          generated_at = generated_at,
+          season       = current_season,
+          records      = points_distribution,
+          summary      = points_summary
+        ),
+        file.path(out_dir, "points_distribution.json"),
+        auto_unbox = TRUE, dataframe = "rows", digits = 5
+      )
+    } else {
+      jsonlite::write_json(
+        list(
+          generated_at = generated_at, season = current_season,
+          n_teams = 0L, records = list(), summary = list()
+        ),
+        file.path(out_dir, "final_positions.json"),
+        auto_unbox = TRUE, dataframe = "rows", digits = 5
+      )
+      jsonlite::write_json(
+        list(
+          generated_at = generated_at, season = current_season,
+          records = list(), summary = list()
+        ),
+        file.path(out_dir, "points_distribution.json"),
+        auto_unbox = TRUE, dataframe = "rows", digits = 5
+      )
+      final_positions_history_path <- file.path(
+        out_dir, "final_positions_history.json"
+      )
+      if (!file.exists(final_positions_history_path)) {
+        jsonlite::write_json(
+          list(schema_version = 1L, records = list()),
+          final_positions_history_path,
+          auto_unbox = TRUE, dataframe = "rows", digits = 5, na = "null"
+        )
+      }
+    }
+
+    # ---- home_advantage.json ------------------------------------------------
+
+    home_advantage <- extracted$home_advantage_quantiles |>
+      .intervals_from_quantiles_pfi(c("team", "component")) |>
+      dplyr::semi_join(top_teams_upcoming, by = "team")
+
+    jsonlite::write_json(
+      list(generated_at = generated_at, records = home_advantage),
+      file.path(out_dir, "home_advantage.json"),
+      auto_unbox = TRUE, dataframe = "rows", digits = 5
+    )
+
+    n_files <- length(list.files(out_dir, pattern = "\\.json$"))
+    message(sprintf(
+      "publish_football_iceland: wrote %d JSONs to %s", n_files, out_dir
+    ))
   }
 
-  # ---- home_advantage.json ------------------------------------------------
-
-  home_advantage <- extracted$home_advantage_quantiles |>
-    .intervals_from_quantiles_pfi(c("team", "component")) |>
-    dplyr::semi_join(top_teams_upcoming, by = "team")
-
-  jsonlite::write_json(
-    list(generated_at = generated_at, records = home_advantage),
-    file.path(out_dir, "home_advantage.json"),
-    auto_unbox = TRUE, dataframe = "rows", digits = 5
-  )
-
-  n_files <- length(list.files(out_dir, pattern = "\\.json$"))
-  message(sprintf(
-    "publish_football_iceland: wrote %d JSONs to %s", n_files, out_dir
-  ))
   invisible(NULL)
 }

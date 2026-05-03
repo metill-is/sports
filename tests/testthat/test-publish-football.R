@@ -40,7 +40,7 @@ test_that("publish_football_iceland: skip gracefully when backup fit absent", {
     )
   )
 
-  out_dir <- file.path(out, "football", "iceland", "karla")
+  out_dir <- file.path(out, "football", "iceland", "karla-bd")
   expected <- c(
     "meta.json", "next_games.json", "standings.json",
     "team_strengths.json", "final_positions.json",
@@ -464,9 +464,65 @@ test_that("publish_football_iceland: BD output unchanged after target_div refact
 
   # After Task 1, public output is still at karla/ (the per-division dirs
   # come in Task 2). After Task 2, this expectation moves to karla-bd/.
-  out_dir <- file.path(out, "football", "iceland", "karla")
+  out_dir <- file.path(out, "football", "iceland", "karla-bd")
   expect_true(file.exists(file.path(out_dir, "standings.json")))
   standings <- jsonlite::read_json(file.path(out_dir, "standings.json"))
   # BD is 12 teams
   expect_equal(length(standings$rows), 12)
+})
+
+test_that("publish_football_iceland: writes karla-bd/ and karla-ld/ dirs", {
+  fit_path <- backup_fit_path("male")
+  if (!file.exists(fit_path)) {
+    testthat::skip("legacy football fit unavailable")
+  }
+  if (!dir.exists(here::here("data", "facts", "results"))) {
+    testthat::skip("facts/results absent")
+  }
+
+  fit <- readRDS(fit_path)
+  leagues <- load_leagues()
+  league <- leagues[["football_iceland"]]
+
+  out <- withr::local_tempdir()
+  extracted <- .build_extracted_football_for_test(
+    fit, league,
+    sex = "male", end_date = as.Date("2026-04-25")
+  )
+  suppressWarnings(
+    publish_football_iceland(
+      extracted = extracted,
+      league = league,
+      sex = "male",
+      end_date = as.Date("2026-04-25"),
+      output_root = out
+    )
+  )
+
+  bd_dir <- file.path(out, "football", "iceland", "karla-bd")
+  ld_dir <- file.path(out, "football", "iceland", "karla-ld")
+  expect_true(dir.exists(bd_dir), info = "karla-bd dir missing")
+  expect_true(dir.exists(ld_dir), info = "karla-ld dir missing")
+
+  expected <- c(
+    "meta.json", "next_games.json", "standings.json",
+    "team_strengths.json", "final_positions.json",
+    "points_distribution.json", "home_advantage.json"
+  )
+  for (f in expected) {
+    expect_true(
+      file.exists(file.path(bd_dir, f)),
+      info = paste("missing in karla-bd:", f)
+    )
+    expect_true(
+      file.exists(file.path(ld_dir, f)),
+      info = paste("missing in karla-ld:", f)
+    )
+  }
+
+  # BD has 12 teams; LD has 12 teams.
+  bd_standings <- jsonlite::read_json(file.path(bd_dir, "standings.json"))
+  ld_standings <- jsonlite::read_json(file.path(ld_dir, "standings.json"))
+  expect_equal(length(bd_standings$rows), 12)
+  expect_equal(length(ld_standings$rows), 12)
 })
