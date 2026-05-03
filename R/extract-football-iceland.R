@@ -439,3 +439,122 @@ extract_football_iceland <- function(fit, league, sex,
   )
   invisible(NULL)
 }
+
+#' Load a per-fit football iceland extraction archive partition
+#'
+#' Reads the six Parquet files written by [`extract_football_iceland()`] from
+#' `data/beliefs/archive/sport=football/country=iceland/sex=Z/fit_date=D/`
+#' into a named list. Phase 2 of the extraction-layer migration consumes the
+#' returned list inside `publish_football_iceland()` instead of an in-memory
+#' fit RDS.
+#'
+#' Auto-discovery (default `fit_date = NULL`) walks the `fit_date=*`
+#' partitions in descending order and returns the first one that contains all
+#' six expected files. Legacy partitions written before Phase 1 (only
+#' `part-0.parquet`) are silently skipped.
+#'
+#' @param league League list with `sport == "football"` and
+#'   `country == "iceland"`.
+#' @param sex `"male"` or `"female"`.
+#' @param fit_date `Date` or `NULL`. When `NULL` (default), reads the latest
+#'   partition that contains the full extracted set.
+#' @param archive_root Beliefs archive root.
+#'   Default `here::here("data", "beliefs", "archive")`.
+#' @return Named list with seven elements: the six tibbles
+#'   (`predicted_matches`, `team_strengths_quantiles`,
+#'   `round_strengths_quantiles`, `home_advantage_quantiles`,
+#'   `final_positions`, `points_distribution`) plus `fit_date` (the `Date` of
+#'   the partition that was loaded).
+#' @export
+read_extracted_football <- function(league, sex, fit_date = NULL,
+                                    archive_root = here::here(
+                                      "data", "beliefs", "archive"
+                                    )) {
+  stopifnot(league$sport == "football", league$country == "iceland")
+  stopifnot(sex %in% c("male", "female"))
+
+  expected <- c(
+    "predicted_matches.parquet",
+    "team_strengths_quantiles.parquet",
+    "round_strengths_quantiles.parquet",
+    "home_advantage_quantiles.parquet",
+    "final_positions.parquet",
+    "points_distribution.parquet"
+  )
+
+  base <- file.path(
+    archive_root,
+    paste0("sport=", league$sport),
+    paste0("country=", league$country),
+    paste0("sex=", sex)
+  )
+  if (!dir.exists(base)) {
+    stop("No archive directory at ", base, call. = FALSE)
+  }
+
+  if (is.null(fit_date)) {
+    parts <- list.dirs(base, full.names = TRUE, recursive = FALSE)
+    fit_dirs <- parts[grepl("/fit_date=", parts)]
+    if (length(fit_dirs) == 0L) {
+      stop("No fit_date partitions under ", base, call. = FALSE)
+    }
+    fit_dates_chr <- sub(".*fit_date=", "", fit_dirs)
+    ord <- order(as.Date(fit_dates_chr), decreasing = TRUE)
+    archive_dir <- NULL
+    for (i in ord) {
+      d <- fit_dirs[i]
+      if (all(file.exists(file.path(d, expected)))) {
+        archive_dir <- d
+        break
+      }
+    }
+    if (is.null(archive_dir)) {
+      stop(
+        "No fit_date partition under ", base,
+        " contains all 6 extracted Parquets ",
+        "(legacy partitions with only part-0.parquet are skipped). ",
+        "Force-trigger fit.yml or run extract_football_iceland() locally.",
+        call. = FALSE
+      )
+    }
+    fit_date_out <- as.Date(sub(".*fit_date=", "", archive_dir))
+  } else {
+    fit_date_out <- as.Date(fit_date)
+    archive_dir <- file.path(
+      base, paste0("fit_date=", format(fit_date_out, "%Y-%m-%d"))
+    )
+    if (!dir.exists(archive_dir)) {
+      stop("Archive partition not found: ", archive_dir, call. = FALSE)
+    }
+    missing_files <- expected[!file.exists(file.path(archive_dir, expected))]
+    if (length(missing_files) > 0L) {
+      stop(
+        "Archive partition ", archive_dir, " is missing files: ",
+        paste(missing_files, collapse = ", "),
+        call. = FALSE
+      )
+    }
+  }
+
+  list(
+    predicted_matches = arrow::read_parquet(
+      file.path(archive_dir, "predicted_matches.parquet")
+    ),
+    team_strengths_quantiles = arrow::read_parquet(
+      file.path(archive_dir, "team_strengths_quantiles.parquet")
+    ),
+    round_strengths_quantiles = arrow::read_parquet(
+      file.path(archive_dir, "round_strengths_quantiles.parquet")
+    ),
+    home_advantage_quantiles = arrow::read_parquet(
+      file.path(archive_dir, "home_advantage_quantiles.parquet")
+    ),
+    final_positions = arrow::read_parquet(
+      file.path(archive_dir, "final_positions.parquet")
+    ),
+    points_distribution = arrow::read_parquet(
+      file.path(archive_dir, "points_distribution.parquet")
+    ),
+    fit_date = fit_date_out
+  )
+}

@@ -210,6 +210,171 @@ test_that("team_strengths_quantiles q=50 matches publisher's median per cell", {
   expect_true(all(abs(joined$median - joined$q50_value) < 1e-3))
 })
 
+# ---- read_extracted_football() ----------------------------------------------
+
+# Build a fake "modern" partition (all 6 expected Parquets, possibly with
+# distinguishing payload). Test fixture only.
+.write_modern_partition_extract <- function(base, fit_date_chr,
+                                            payload = tibble::tibble(x = 1L)) {
+  pdir <- file.path(base, paste0("fit_date=", fit_date_chr))
+  dir.create(pdir, recursive = TRUE)
+  for (f in c(
+    "predicted_matches.parquet", "team_strengths_quantiles.parquet",
+    "round_strengths_quantiles.parquet", "home_advantage_quantiles.parquet",
+    "final_positions.parquet", "points_distribution.parquet"
+  )) {
+    arrow::write_parquet(payload, file.path(pdir, f))
+  }
+  invisible(pdir)
+}
+
+test_that("read_extracted_football: latest auto-discovery skips legacy partitions", {
+  tmp <- withr::local_tempdir()
+  base <- file.path(tmp, "sport=football", "country=iceland", "sex=male")
+  legacy <- file.path(base, "fit_date=2026-04-24")
+  dir.create(legacy, recursive = TRUE)
+  file.create(file.path(legacy, "part-0.parquet"))
+  .write_modern_partition_extract(base, "2026-05-03")
+
+  league <- list(sport = "football", country = "iceland")
+  out <- read_extracted_football(league, sex = "male", archive_root = tmp)
+  expect_equal(out$fit_date, as.Date("2026-05-03"))
+  expect_named(out, c(
+    "predicted_matches", "team_strengths_quantiles",
+    "round_strengths_quantiles", "home_advantage_quantiles",
+    "final_positions", "points_distribution",
+    "fit_date"
+  ))
+})
+
+test_that("read_extracted_football: latest auto-discovery picks newest modern partition", {
+  tmp <- withr::local_tempdir()
+  base <- file.path(tmp, "sport=football", "country=iceland", "sex=male")
+  .write_modern_partition_extract(base, "2026-04-29",
+    payload = tibble::tibble(d = "2026-04-29")
+  )
+  .write_modern_partition_extract(base, "2026-05-03",
+    payload = tibble::tibble(d = "2026-05-03")
+  )
+
+  league <- list(sport = "football", country = "iceland")
+  out <- read_extracted_football(league, sex = "male", archive_root = tmp)
+  expect_equal(out$fit_date, as.Date("2026-05-03"))
+  expect_equal(out$predicted_matches$d, "2026-05-03")
+})
+
+test_that("read_extracted_football: explicit fit_date loads exactly that partition", {
+  tmp <- withr::local_tempdir()
+  base <- file.path(tmp, "sport=football", "country=iceland", "sex=female")
+  .write_modern_partition_extract(base, "2026-04-25",
+    payload = tibble::tibble(d = "2026-04-25")
+  )
+  .write_modern_partition_extract(base, "2026-05-01",
+    payload = tibble::tibble(d = "2026-05-01")
+  )
+
+  league <- list(sport = "football", country = "iceland")
+  out <- read_extracted_football(
+    league,
+    sex = "female",
+    fit_date = as.Date("2026-04-25"),
+    archive_root = tmp
+  )
+  expect_equal(out$fit_date, as.Date("2026-04-25"))
+  expect_equal(out$predicted_matches$d, "2026-04-25")
+})
+
+test_that("read_extracted_football: errors when no archive directory exists", {
+  tmp <- withr::local_tempdir()
+  league <- list(sport = "football", country = "iceland")
+  expect_error(
+    read_extracted_football(league, sex = "male", archive_root = tmp),
+    "No archive directory"
+  )
+})
+
+test_that("read_extracted_football: errors when no partition has all 6 files", {
+  tmp <- withr::local_tempdir()
+  base <- file.path(tmp, "sport=football", "country=iceland", "sex=male")
+  legacy <- file.path(base, "fit_date=2026-04-24")
+  dir.create(legacy, recursive = TRUE)
+  file.create(file.path(legacy, "part-0.parquet"))
+
+  league <- list(sport = "football", country = "iceland")
+  expect_error(
+    read_extracted_football(league, sex = "male", archive_root = tmp),
+    "contains all 6"
+  )
+})
+
+test_that("read_extracted_football: explicit fit_date errors when missing files", {
+  tmp <- withr::local_tempdir()
+  base <- file.path(tmp, "sport=football", "country=iceland", "sex=male")
+  pdir <- file.path(base, "fit_date=2026-05-01")
+  dir.create(pdir, recursive = TRUE)
+  arrow::write_parquet(
+    tibble::tibble(x = 1L),
+    file.path(pdir, "predicted_matches.parquet")
+  )
+  league <- list(sport = "football", country = "iceland")
+  expect_error(
+    read_extracted_football(
+      league,
+      sex = "male",
+      fit_date = as.Date("2026-05-01"),
+      archive_root = tmp
+    ),
+    "is missing files"
+  )
+})
+
+test_that("read_extracted_football: round-trips with extract_football_iceland", {
+  fit_path <- backup_fit_path_extract("male")
+  if (!file.exists(fit_path)) testthat::skip("legacy football fit unavailable")
+  if (!dir.exists(here::here("data", "facts", "results"))) {
+    testthat::skip("facts/results absent")
+  }
+
+  fit <- readRDS(fit_path)
+  league <- load_leagues()[["football_iceland"]]
+  out <- withr::local_tempdir()
+
+  suppressWarnings(suppressMessages(
+    extract_football_iceland(
+      fit, league,
+      sex = "male",
+      fit_date = as.Date("2026-05-03"),
+      end_date = as.Date("2026-05-03"),
+      archive_root = out
+    )
+  ))
+
+  loaded <- read_extracted_football(
+    league,
+    sex = "male",
+    archive_root = out
+  )
+  expect_equal(loaded$fit_date, as.Date("2026-05-03"))
+
+  archive_dir <- file.path(
+    out,
+    "sport=football", "country=iceland", "sex=male",
+    "fit_date=2026-05-03"
+  )
+  expect_equal(
+    loaded$predicted_matches,
+    arrow::read_parquet(file.path(archive_dir, "predicted_matches.parquet"))
+  )
+  expect_equal(
+    loaded$team_strengths_quantiles,
+    arrow::read_parquet(file.path(archive_dir, "team_strengths_quantiles.parquet"))
+  )
+  expect_equal(
+    loaded$final_positions,
+    arrow::read_parquet(file.path(archive_dir, "final_positions.parquet"))
+  )
+})
+
 test_that("final_positions.parquet matches publisher's final_positions.json", {
   fit_path <- backup_fit_path_extract("male")
   if (!file.exists(fit_path)) testthat::skip("legacy football fit unavailable")
