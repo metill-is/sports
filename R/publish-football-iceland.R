@@ -801,6 +801,7 @@ NULL
   if (nrow(posterior_goals) > 0L) {
     next_games_out <- posterior_goals |>
       dplyr::filter(
+        .data$division == top_div,
         .data$match_date >= end_date,
         .data$match_date <= end_date + 14L
       ) |>
@@ -1602,6 +1603,7 @@ publish_football_iceland <- function(extracted,
     if (nrow(predicted_with_division) > 0L) {
       next_games_out <- predicted_with_division |>
         dplyr::filter(
+          .data$division == top_div,
           .data$match_date >= end_date,
           .data$match_date <= end_date + 14L
         ) |>

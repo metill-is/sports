@@ -526,3 +526,93 @@ test_that("publish_football_iceland: writes karla-bd/ and karla-ld/ dirs", {
   expect_equal(length(bd_standings$rows), 12)
   expect_equal(length(ld_standings$rows), 12)
 })
+
+test_that("publish_football_iceland: per-division next_games is filtered by division", {
+  fit_path <- backup_fit_path("male")
+  if (!file.exists(fit_path)) {
+    testthat::skip("legacy football fit unavailable")
+  }
+  if (!dir.exists(here::here("data", "facts", "results"))) {
+    testthat::skip("facts/results absent")
+  }
+
+  fit <- readRDS(fit_path)
+  leagues <- load_leagues()
+  league <- leagues[["football_iceland"]]
+
+  out <- withr::local_tempdir()
+  extracted <- .build_extracted_football_for_test(
+    fit, league,
+    sex = "male", end_date = as.Date("2026-04-25")
+  )
+  suppressWarnings(
+    publish_football_iceland(
+      extracted = extracted,
+      league = league,
+      sex = "male",
+      end_date = as.Date("2026-04-25"),
+      output_root = out
+    )
+  )
+
+  bd_ng <- jsonlite::read_json(
+    file.path(out, "football", "iceland", "karla-bd", "next_games.json"),
+    simplifyVector = TRUE
+  )
+  ld_ng <- jsonlite::read_json(
+    file.path(out, "football", "iceland", "karla-ld", "next_games.json"),
+    simplifyVector = TRUE
+  )
+
+  if (length(bd_ng$matches) > 0 && nrow(bd_ng$matches) > 0) {
+    expect_true(all(bd_ng$matches$division_code == "BD"))
+  }
+  if (length(ld_ng$matches) > 0 && nrow(ld_ng$matches) > 0) {
+    expect_true(all(ld_ng$matches$division_code == "LD"))
+  }
+})
+
+test_that("publish_football_iceland: per-division team_strengths scoped to division teams", {
+  fit_path <- backup_fit_path("male")
+  if (!file.exists(fit_path)) {
+    testthat::skip("legacy football fit unavailable")
+  }
+  if (!dir.exists(here::here("data", "facts", "results"))) {
+    testthat::skip("facts/results absent")
+  }
+
+  fit <- readRDS(fit_path)
+  leagues <- load_leagues()
+  league <- leagues[["football_iceland"]]
+
+  out <- withr::local_tempdir()
+  extracted <- .build_extracted_football_for_test(
+    fit, league,
+    sex = "male", end_date = as.Date("2026-04-25")
+  )
+  suppressWarnings(
+    publish_football_iceland(
+      extracted = extracted,
+      league = league,
+      sex = "male",
+      end_date = as.Date("2026-04-25"),
+      output_root = out
+    )
+  )
+
+  bd_dir <- file.path(out, "football", "iceland", "karla-bd")
+  ld_dir <- file.path(out, "football", "iceland", "karla-ld")
+
+  bd_strengths <- jsonlite::read_json(file.path(bd_dir, "team_strengths.json"))
+  ld_strengths <- jsonlite::read_json(file.path(ld_dir, "team_strengths.json"))
+
+  bd_teams <- unique(vapply(
+    bd_strengths$records, function(r) r$team, character(1)
+  ))
+  ld_teams <- unique(vapply(
+    ld_strengths$records, function(r) r$team, character(1)
+  ))
+
+  # BD and LD must be disjoint team sets (no team plays both).
+  expect_length(intersect(bd_teams, ld_teams), 0)
+})
