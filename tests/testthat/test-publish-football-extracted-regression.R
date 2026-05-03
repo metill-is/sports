@@ -103,7 +103,8 @@ backup_fit_path_reg <- function(sex) {
     )
   ))
 
-  sex_folder <- if (sex == "male") "karla" else "kvenna"
+  # Helper writes to {sex}-bd/ for the default target_div = "BD".
+  sex_folder <- if (sex == "male") "karla-bd" else "kvenna-bd"
   list(
     new = file.path(out_new, "football", "iceland", sex_folder),
     old = file.path(out_old, "football", "iceland", sex_folder)

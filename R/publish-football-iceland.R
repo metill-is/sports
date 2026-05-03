@@ -561,13 +561,17 @@ NULL
   stopifnot(inherits(end_date, "Date"))
   stopifnot(is.character(target_div), length(target_div) == 1L)
 
-  # Icelandic sex folder names
+  # Icelandic sex folder names. The dir suffix uses the display code
+  # (e.g. LD1 → "ld"), not the canonical division code, so URLs read
+  # naturally on the platform side.
+  division_dir_suffix <- c(BD = "bd", LD1 = "ld")
+  stopifnot(target_div %in% names(division_dir_suffix))
   sex_folder <- if (sex == "male") "karla" else "kvenna"
   out_dir <- file.path(
     output_root,
     "football",
     "iceland",
-    sprintf("%s-%s", sex_folder, tolower(target_div))
+    sprintf("%s-%s", sex_folder, division_dir_suffix[[target_div]])
   )
   dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
 
@@ -1412,14 +1416,17 @@ publish_football_iceland <- function(extracted,
     drop = FALSE
   ]
 
-  divisions_to_publish <- c("BD", "LD")
-  for (target_div in divisions_to_publish) {
+  # Canonical filter codes (matching results$division), mapped to URL-friendly
+  # display suffixes for the output directory name. LD1 → "ld" because the
+  # platform's URL slug is /lengja/ → karla-ld/, not karla-ld1/.
+  division_dir_suffix <- c(BD = "bd", LD1 = "ld")
+  for (target_div in names(division_dir_suffix)) {
     top_div <- target_div
     out_dir <- file.path(
       output_root,
       "football",
       "iceland",
-      sprintf("%s-%s", sex_folder, tolower(target_div))
+      sprintf("%s-%s", sex_folder, division_dir_suffix[[target_div]])
     )
     dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
 

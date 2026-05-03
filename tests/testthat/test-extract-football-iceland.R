@@ -192,7 +192,7 @@ test_that("team_strengths_quantiles q=50 matches publisher's median per cell", {
     "team_strengths_quantiles.parquet"
   ))
   ts_pub <- jsonlite::read_json(file.path(
-    pub, "football", "iceland", "karla", "team_strengths.json"
+    pub, "football", "iceland", "karla-bd", "team_strengths.json"
   ))$records
 
   ts_pub_df <- tibble::tibble(
@@ -426,7 +426,7 @@ test_that("final_positions.parquet matches publisher's final_positions.json", {
     "final_positions.parquet"
   ))
   fp_pub <- jsonlite::read_json(file.path(
-    pub, "football", "iceland", "karla", "final_positions.json"
+    pub, "football", "iceland", "karla-bd", "final_positions.json"
   ))$records
 
   if (length(fp_pub) == 0L) testthat::skip("final_positions empty (N_pred mismatch)")

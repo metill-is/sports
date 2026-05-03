@@ -34,9 +34,9 @@ test_that("publish_all writes the football 7-JSON contract", {
     "team_strengths.json", "final_positions.json",
     "points_distribution.json", "home_advantage.json"
   )
-  for (sex_dir in c("karla", "kvenna")) {
+  for (sex_dir in c("karla-bd", "karla-ld", "kvenna-bd", "kvenna-ld")) {
     out <- here::here("data", "publish", "football", "iceland", sex_dir)
-    if (!dir.exists(out)) next # OK if publish didn't have a fit for that sex
+    if (!dir.exists(out)) next # OK if publish didn't have a fit for that sex/div
     for (f in expected) {
       expect_true(
         file.exists(file.path(out, f)),

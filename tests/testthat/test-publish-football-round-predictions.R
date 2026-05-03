@@ -307,7 +307,7 @@ test_that("publish_football_iceland: empty archive -> empty history JSON, NA sta
     )
   )
 
-  out_dir <- file.path(out, "football", "iceland", "karla")
+  out_dir <- file.path(out, "football", "iceland", "karla-bd")
 
   history_path <- file.path(out_dir, "round_predictions_history.json")
   expect_true(file.exists(history_path))
@@ -376,7 +376,7 @@ test_that("publish_football_iceland: partial archive -> partial cumulative xG wi
     )
   )
 
-  out_dir <- file.path(out, "football", "iceland", "karla")
+  out_dir <- file.path(out, "football", "iceland", "karla-bd")
   standings <- jsonlite::read_json(file.path(out_dir, "standings.json"))
   if (length(standings$rows) == 0L) {
     testthat::skip("no played matches in current season")
@@ -456,7 +456,7 @@ test_that("team_strengths_history covers every played matchweek from a single fi
   )
 
   hist <- jsonlite::fromJSON(
-    file.path(out, "football", "iceland", "karla", "team_strengths_history.json"),
+    file.path(out, "football", "iceland", "karla-bd", "team_strengths_history.json"),
     simplifyDataFrame = TRUE
   )
   rounds <- sort(unique(hist$records$round))
@@ -499,7 +499,7 @@ test_that("publish_football_iceland: standings xg_trend serialises as array (aut
   )
 
   standings <- jsonlite::read_json(
-    file.path(out, "football", "iceland", "karla", "standings.json"),
+    file.path(out, "football", "iceland", "karla-bd", "standings.json"),
     simplifyVector = FALSE
   )
   testthat::skip_if(length(standings$rows) == 0L, "standings empty -- cannot exercise xg_trend")

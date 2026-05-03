@@ -106,7 +106,7 @@ test_that("publish_football_iceland female: writes the 7 always-on JSONs", {
     )
   )
 
-  out_dir <- file.path(out, "football", "iceland", "kvenna")
+  out_dir <- file.path(out, "football", "iceland", "kvenna-bd")
   expected <- c(
     "meta.json", "next_games.json", "standings.json",
     "team_strengths.json", "final_positions.json",
@@ -157,7 +157,7 @@ test_that("publish_football_iceland: output_root creates directory", {
       output_root = out
     )
   )
-  expect_true(dir.exists(file.path(out, "football", "iceland", "karla")))
+  expect_true(dir.exists(file.path(out, "football", "iceland", "karla-bd")))
 })
 
 # ---- History helper unit tests --------------------------------------------
@@ -267,7 +267,7 @@ test_that("publish_football_iceland writes team_strengths_history.json (male)", 
   )
 
   hist_path <- file.path(
-    out, "football", "iceland", "karla", "team_strengths_history.json"
+    out, "football", "iceland", "karla-bd", "team_strengths_history.json"
   )
   expect_true(file.exists(hist_path))
 
@@ -314,7 +314,7 @@ test_that("publish_football_iceland writes team_strengths_history.json (female)"
   )
 
   hist_path <- file.path(
-    out, "football", "iceland", "kvenna", "team_strengths_history.json"
+    out, "football", "iceland", "kvenna-bd", "team_strengths_history.json"
   )
   expect_true(file.exists(hist_path))
   parsed <- jsonlite::fromJSON(hist_path, simplifyDataFrame = TRUE)
@@ -365,7 +365,7 @@ test_that("publish_football_iceland writes standings_history.json when matches h
   # season had top-flight matches by the same end_date -- if it did, the file
   # follows the same schema; if not, no file is written (no empty-snapshot rows).
   expect_true(file.exists(file.path(
-    out, "football", "iceland", "karla", "standings_history.json"
+    out, "football", "iceland", "karla-bd", "standings_history.json"
   )))
 
   expected_cols <- c(
@@ -425,7 +425,7 @@ test_that("publish_football_iceland: re-running dedups history on (round, team, 
   })
 
   hist_path <- file.path(
-    out, "football", "iceland", "karla", "team_strengths_history.json"
+    out, "football", "iceland", "karla-bd", "team_strengths_history.json"
   )
   parsed <- jsonlite::fromJSON(hist_path, simplifyDataFrame = TRUE)
 
