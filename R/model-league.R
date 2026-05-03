@@ -209,6 +209,31 @@ fit_league <- function(league_key = NULL,
     )
   }
 
+  # WHY: extraction-layer Phase 1 (football only). Persist 6 publish-layer
+  # summary Parquets per fit so future republish runs don't need the
+  # gitignored fit RDS. See Sports/Knowledge/Publish Pipeline/extraction-layer
+  # in the Metill vault. Basketball + handball deferred to autumn 2026.
+  if (!by_round_mode &&
+    isTRUE(write_archive) &&
+    identical(league$sport, "football") &&
+    identical(league$country, "iceland")) {
+    tryCatch(
+      extract_football_iceland(
+        fit, league,
+        sex = sex,
+        fit_date = fit_date,
+        end_date = end_date,
+        root = root,
+        prep = prep
+      ),
+      error = function(e) {
+        cli::cli_alert_warning(
+          "extract_football_iceland failed: {conditionMessage(e)}"
+        )
+      }
+    )
+  }
+
   invisible(beliefs)
 }
 
