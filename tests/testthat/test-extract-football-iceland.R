@@ -169,9 +169,16 @@ test_that("team_strengths_quantiles q=50 matches publisher's median per cell", {
       archive_root = out
     )
   ))
+  extracted <- read_extracted_football(
+    league,
+    sex = "male",
+    fit_date = as.Date("2026-05-03"),
+    archive_root = out
+  )
   suppressWarnings(suppressMessages(
     publish_football_iceland(
-      fit, league,
+      extracted = extracted,
+      league = league,
       sex = "male",
       end_date = as.Date("2026-05-03"),
       output_root = pub
@@ -396,9 +403,16 @@ test_that("final_positions.parquet matches publisher's final_positions.json", {
       archive_root = out
     )
   ))
+  extracted <- read_extracted_football(
+    league,
+    sex = "male",
+    fit_date = as.Date("2026-05-03"),
+    archive_root = out
+  )
   suppressWarnings(suppressMessages(
     publish_football_iceland(
-      fit, league,
+      extracted = extracted,
+      league = league,
       sex = "male",
       end_date = as.Date("2026-05-03"),
       output_root = pub

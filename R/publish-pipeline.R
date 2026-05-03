@@ -3,11 +3,17 @@ NULL
 
 #' tar_target wrapper: publish JSONs for a single (league x sex).
 #'
-#' Reads the fit RDS from `data/beliefs/fits/sport=X/country=Y/sex=Z/fit.rds`
-#' (saved by `fit_league` as a side-effect) and dispatches to the appropriate
-#' `publish_<sport>_iceland()`. Takes the static + betting slices separately
-#' so publish-cache invalidation tracks only the fields the publishers read
-#' (sport/country for paths, betting.scoring for tie thresholds in
+#' Football iceland reads the per-fit extraction archive
+#' (`data/beliefs/archive/sport=football/country=iceland/sex=Z/fit_date=*/`,
+#' the 6 Parquets emitted by `extract_football_iceland()`) and dispatches
+#' to `publish_football_iceland(extracted, ...)`. Basketball and handball
+#' still read the fit RDS directly from
+#' `data/beliefs/fits/sport=X/country=Y/sex=Z/fit.rds` -- their migration
+#' to the extraction layer is deferred to the autumn 2026 cutover.
+#'
+#' Takes the static + betting slices separately so publish-cache
+#' invalidation tracks only the fields the publishers read (sport /
+#' country for paths, betting.scoring for tie thresholds in
 #' basketball/handball publishers); a `lengjan` change does not bust this
 #' cache.
 #'
@@ -24,6 +30,36 @@ publish_one <- function(static, betting, key, sex,
                         root = here::here("data")) {
   league <- static
   league$betting <- betting
+
+  if (identical(key, "football_iceland")) {
+    archive_root <- file.path(root, "beliefs", "archive")
+    extracted <- tryCatch(
+      read_extracted_football(
+        league = league,
+        sex = sex,
+        archive_root = archive_root
+      ),
+      error = function(e) {
+        cli::cli_alert_warning(
+          "publish_one(football_iceland/{sex}): {conditionMessage(e)}"
+        )
+        NULL
+      }
+    )
+    if (is.null(extracted)) {
+      return(invisible(NULL))
+    }
+    publish_football_iceland(
+      extracted = extracted,
+      league = league,
+      sex = sex,
+      root = root,
+      output_root = file.path(root, "publish"),
+      archive_root = archive_root
+    )
+    return(invisible(NULL))
+  }
+
   fit_path <- file.path(
     root, "beliefs", "fits",
     paste0("sport=", league$sport),
@@ -39,7 +75,6 @@ publish_one <- function(static, betting, key, sex,
   }
 
   dispatch <- list(
-    football_iceland   = publish_football_iceland,
     basketball_iceland = publish_basketball_iceland,
     handball_iceland   = publish_handball_iceland
   )
