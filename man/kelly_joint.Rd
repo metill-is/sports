@@ -7,7 +7,7 @@
 kelly_joint(
   beliefs,
   bets,
-  kelly_frac = 0.1,
+  max_match_stake = 1,
   ev_threshold = 0,
   tie_threshold = 0
 )
@@ -19,7 +19,10 @@ one match. Typically S = 4000 rows from a Stan fit.}
 \item{bets}{Tibble with `market` (moneyline/spread/total), `outcome`
 (home/draw/away/over/under), `line` (numeric or NA), `odds` (decimal).}
 
-\item{kelly_frac}{Maximum fraction of bankroll for this match.}
+\item{max_match_stake}{Per-match solver cap (`Σ f_j ≤ max_match_stake`).
+Default 1.0 = unconstrained joint Kelly. The §7.2 fractional-Kelly
+shrinkage `kelly_frac` is applied by the caller (`decide_league()`)
+after the optimiser returns, *not* via this cap.}
 
 \item{ev_threshold}{Minimum EV per bet to consider. Bets below threshold
 are zeroed before optimisation.}

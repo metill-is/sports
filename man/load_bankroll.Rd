@@ -16,7 +16,7 @@ load_bankroll(
 }
 \value{
 List with `initial_pool`, `current_pool`, `daily_budget_frac`,
-  `daily_budget_min_isk`.
+  `daily_budget_min_isk`, `kelly_ceiling`, `max_match_stake_default`.
 }
 \description{
 Reads `config/bankroll.yml`. If `current_pool` is missing from the YAML
