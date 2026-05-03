@@ -276,6 +276,12 @@ NULL
 # Find the latest fit_date partition strictly less than `target_date` under
 # data/beliefs/archive/sport=X/country=Y/sex=Z/. Returns the parquet path
 # (or NULL if no such partition exists).
+#
+# Within the chosen partition, prefers the Phase 1 extract output
+# (`predicted_matches.parquet`, integer-pair occurrence counts) and falls
+# back to the legacy long-format draws (`part-0.parquet`, one row per draw).
+# `.aggregate_round_predictions_pfi()` normalises both into a count-weighted
+# representation, so the caller doesn't need to care which path it got.
 .find_pre_round_fit_path_pfi <- function(archive_root, sport, country, sex, target_date) {
   base <- file.path(
     archive_root,
@@ -300,6 +306,14 @@ NULL
   }
 
   latest <- candidates[which.max(as.Date(sub(".*fit_date=", "", candidates)))]
+  preferred <- file.path(latest, "predicted_matches.parquet")
+  if (file.exists(preferred)) {
+    return(preferred)
+  }
+  fallback <- file.path(latest, "part-0.parquet")
+  if (file.exists(fallback)) {
+    return(fallback)
+  }
   files <- list.files(latest, pattern = "\\.parquet$", full.names = TRUE)
   if (length(files) == 0L) {
     return(NULL)
@@ -365,19 +379,30 @@ NULL
 
     if (nrow(beliefs) == 0L) next
 
+    # Normalise both archive schemas into a (home_goals, away_goals, count)
+    # representation. The Phase 1 extract writes `predicted_matches.parquet`
+    # with explicit `count` per integer-pair; the legacy `part-0.parquet`
+    # writes one row per draw. Treating the legacy schema as count=1 lets
+    # the same weighted aggregation cover both cases.
+    if (!"count" %in% names(beliefs)) {
+      beliefs$count <- 1L
+    }
+
     per_match <- beliefs |>
       dplyr::summarise(
-        xg_home = mean(.data$home_goals),
-        xg_away = mean(.data$away_goals),
-        p_home_win = mean(.data$home_goals > .data$away_goals),
-        p_draw_match = mean(.data$home_goals == .data$away_goals),
-        p_away_win = mean(.data$home_goals < .data$away_goals),
+        total = sum(.data$count),
+        xg_home = sum(.data$home_goals * .data$count) / sum(.data$count),
+        xg_away = sum(.data$away_goals * .data$count) / sum(.data$count),
+        p_home_win = sum(.data$count[.data$home_goals > .data$away_goals]) / sum(.data$count),
+        p_draw_match = sum(.data$count[.data$home_goals == .data$away_goals]) / sum(.data$count),
+        p_away_win = sum(.data$count[.data$home_goals < .data$away_goals]) / sum(.data$count),
         .by = c("home_team", "away_team", "match_date")
       ) |>
       dplyr::mutate(
         xpts_home = 3 * .data$p_home_win + .data$p_draw_match,
         xpts_away = 3 * .data$p_away_win + .data$p_draw_match
-      )
+      ) |>
+      dplyr::select(-"total")
 
     home_side <- per_match |>
       dplyr::transmute(
