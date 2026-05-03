@@ -343,7 +343,7 @@ place_handicap_bet <- function(session, bet, match_id, sport_id, dry_run) {
   )
   cli::cli_alert_info(
     "Navigating to {bet$home_team} vs {bet$away_team} for handicap {bet$outcome} ",
-    "line={bet$info} @ {bet$odds}"
+    "line={bet$line} @ {bet$odds}"
   )
   session$Page$navigate(url)
   Sys.sleep(sample_delay(c(2.5, 4)))
@@ -353,7 +353,7 @@ place_handicap_bet <- function(session, bet, match_id, sport_id, dry_run) {
 
   click_show_all(session)
 
-  line_label <- handicap_to_lengjan_line(as.numeric(bet$info))
+  line_label <- handicap_to_lengjan_line(bet$line)
 
   btn_index <- switch(bet$outcome,
     "home" = 1,
@@ -397,7 +397,7 @@ place_totals_bet <- function(session, bet, match_id, sport_id, dry_run) {
   )
   cli::cli_alert_info(
     "Navigating to {bet$home_team} vs {bet$away_team} for totals {bet$outcome} ",
-    "line={bet$info} @ {bet$odds}"
+    "line={bet$line} @ {bet$odds}"
   )
   session$Page$navigate(url)
   Sys.sleep(sample_delay(c(2.5, 4)))
@@ -405,7 +405,7 @@ place_totals_bet <- function(session, bet, match_id, sport_id, dry_run) {
   expand_market_section(session, "Yfir/Undir")
   Sys.sleep(sample_delay(c(1, 2)))
 
-  line_label <- as.character(bet$info)
+  line_label <- as.character(bet$line)
 
   btn_index <- switch(bet$outcome,
     "over"  = 1,

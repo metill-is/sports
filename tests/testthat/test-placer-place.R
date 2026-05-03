@@ -44,6 +44,20 @@ test_that("handicap_to_lengjan_line: zero handicap gives '0-0'", {
   expect_equal(handicap_to_lengjan_line(0), "0-0")
 })
 
+test_that("placer-place.R reads bet$line, not legacy bet$info (schema guard)", {
+  src <- readLines(testthat::test_path("..", "..", "R", "placer-place.R"))
+  expect_false(
+    any(grepl("bet\\$info", src, fixed = FALSE)),
+    info = paste(
+      "Recommendations Parquet schema uses 'line' (numeric DOUBLE).",
+      "Legacy CSV used 'info' (character) — that column does not exist on",
+      "recommendation rows, and reading it returns NULL, which mangles the",
+      "JS expression sent to chromote with",
+      "'BINDINGS: string value expected at position 19'."
+    )
+  )
+})
+
 # ── parse_actual_odds_from_dom (Plan 5 Task 6 seam) ───────────────────────────
 
 test_that("parse_actual_odds_from_dom: aria-label with stuðull (market button primary path)", {
