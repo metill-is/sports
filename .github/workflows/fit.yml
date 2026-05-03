@@ -11,6 +11,10 @@ on:
         description: "Pass --force to scripts/03_fit.R (refit every league regardless of needs_refit())"
         type: boolean
         default: false
+      league:
+        description: "Restrict to one league (e.g. football_iceland). Empty = all active leagues."
+        type: string
+        default: ""
 
 permissions:
   contents: write
@@ -23,7 +27,7 @@ jobs:
   fit:
     if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    timeout-minutes: 240
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
@@ -66,7 +70,8 @@ jobs:
       - name: Fit (skips when no new games unless --force)
         env:
           FORCE_FLAG: ${{ inputs.force == true && '--force' || '' }}
-        run: Rscript scripts/03_fit.R $FORCE_FLAG
+          LEAGUE_FLAG: ${{ inputs.league != '' && format('--league {0}', inputs.league) || '' }}
+        run: Rscript scripts/03_fit.R $FORCE_FLAG $LEAGUE_FLAG
 
       - name: Commit if beliefs changed
         run: |
