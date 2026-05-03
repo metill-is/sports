@@ -291,10 +291,15 @@ test_that("publish_football_iceland: empty archive -> empty history JSON, NA sta
   league <- load_leagues()[["football_iceland"]]
   out <- withr::local_tempdir()
   empty_archive <- withr::local_tempdir()
+  extracted <- .build_extracted_football_for_test(
+    fit, league,
+    sex = "male", end_date = as.Date("2026-04-25")
+  )
 
   suppressWarnings(
     publish_football_iceland(
-      fit, league,
+      extracted = extracted,
+      league = league,
       sex = "male",
       end_date = as.Date("2026-04-25"),
       output_root = out,
@@ -355,10 +360,15 @@ test_that("publish_football_iceland: partial archive -> partial cumulative xG wi
   fit <- readRDS(fit_path)
   league <- load_leagues()[["football_iceland"]]
   out <- withr::local_tempdir()
+  extracted <- .build_extracted_football_for_test(
+    fit, league,
+    sex = "male", end_date = Sys.Date()
+  )
 
   suppressWarnings(
     publish_football_iceland(
-      fit, league,
+      extracted = extracted,
+      league = league,
       sex = "male",
       end_date = Sys.Date(),
       output_root = out,
@@ -430,10 +440,15 @@ test_that("team_strengths_history covers every played matchweek from a single fi
   fit <- readRDS(local_fit_path)
   league <- load_leagues()[["football_iceland"]]
   out <- withr::local_tempdir()
+  extracted <- .build_extracted_football_for_test(
+    fit, league,
+    sex = "male", end_date = as.Date("2026-05-01")
+  )
 
   suppressWarnings(
     publish_football_iceland(
-      fit, league,
+      extracted = extracted,
+      league = league,
       sex = "male",
       end_date = as.Date("2026-05-01"),
       output_root = out
@@ -468,10 +483,15 @@ test_that("publish_football_iceland: standings xg_trend serialises as array (aut
   fit <- readRDS(fit_path)
   league <- load_leagues()[["football_iceland"]]
   out <- withr::local_tempdir()
+  extracted <- .build_extracted_football_for_test(
+    fit, league,
+    sex = "male", end_date = as.Date("2026-05-01")
+  )
 
   suppressWarnings(
     publish_football_iceland(
-      fit, league,
+      extracted = extracted,
+      league = league,
       sex = "male",
       end_date = as.Date("2026-05-01"),
       output_root = out

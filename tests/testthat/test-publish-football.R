@@ -26,14 +26,14 @@ test_that("publish_football_iceland: skip gracefully when backup fit absent", {
   league <- leagues[["football_iceland"]]
 
   out <- withr::local_tempdir()
-  # The backup fit was trained on an older data snapshot (N=3172, K=68).
-  # With end_date = today, prepare_data returns more rows -- the function
-  # warns about the mismatch and writes valid (possibly empty) JSONs for
-  # the posterior-dependent outputs.
+  extracted <- .build_extracted_football_for_test(
+    fit, league,
+    sex = "male", end_date = as.Date("2026-04-25")
+  )
   suppressWarnings(
     publish_football_iceland(
-      fit,
-      league,
+      extracted = extracted,
+      league = league,
       sex = "male",
       end_date = as.Date("2026-04-25"),
       output_root = out
@@ -92,10 +92,14 @@ test_that("publish_football_iceland female: writes the 7 always-on JSONs", {
   league <- leagues[["football_iceland"]]
 
   out <- withr::local_tempdir()
+  extracted <- .build_extracted_football_for_test(
+    fit, league,
+    sex = "female", end_date = as.Date("2026-04-25")
+  )
   suppressWarnings(
     publish_football_iceland(
-      fit,
-      league,
+      extracted = extracted,
+      league = league,
       sex = "female",
       end_date = as.Date("2026-04-25"),
       output_root = out
@@ -140,9 +144,14 @@ test_that("publish_football_iceland: output_root creates directory", {
   out <- file.path(withr::local_tempdir(), "nested", "output", "root")
   # Directory does not exist yet -- function should create it
   expect_false(dir.exists(out))
+  extracted <- .build_extracted_football_for_test(
+    fit, league,
+    sex = "male", end_date = as.Date("2026-04-25")
+  )
   suppressWarnings(
     publish_football_iceland(
-      fit, league,
+      extracted = extracted,
+      league = league,
       sex = "male",
       end_date = as.Date("2026-04-25"),
       output_root = out
@@ -243,9 +252,14 @@ test_that("publish_football_iceland writes team_strengths_history.json (male)", 
   league <- leagues[["football_iceland"]]
 
   out <- withr::local_tempdir()
+  extracted <- .build_extracted_football_for_test(
+    fit, league,
+    sex = "male", end_date = as.Date("2026-04-25")
+  )
   suppressWarnings(
     publish_football_iceland(
-      fit, league,
+      extracted = extracted,
+      league = league,
       sex = "male",
       end_date = as.Date("2026-04-25"),
       output_root = out
@@ -285,9 +299,14 @@ test_that("publish_football_iceland writes team_strengths_history.json (female)"
   league <- leagues[["football_iceland"]]
 
   out <- withr::local_tempdir()
+  extracted <- .build_extracted_football_for_test(
+    fit, league,
+    sex = "female", end_date = as.Date("2026-04-25")
+  )
   suppressWarnings(
     publish_football_iceland(
-      fit, league,
+      extracted = extracted,
+      league = league,
       sex = "female",
       end_date = as.Date("2026-04-25"),
       output_root = out
@@ -316,14 +335,26 @@ test_that("publish_football_iceland writes standings_history.json when matches h
   league <- leagues[["football_iceland"]]
 
   out <- withr::local_tempdir()
+  fit_m <- readRDS(fit_path_m)
+  fit_f <- readRDS(fit_path_f)
+  extracted_m <- .build_extracted_football_for_test(
+    fit_m, league,
+    sex = "male", end_date = as.Date("2026-04-25")
+  )
+  extracted_f <- .build_extracted_football_for_test(
+    fit_f, league,
+    sex = "female", end_date = as.Date("2026-04-25")
+  )
   suppressWarnings({
     publish_football_iceland(
-      readRDS(fit_path_m), league,
+      extracted = extracted_m,
+      league = league,
       sex = "male",
       end_date = as.Date("2026-04-25"), output_root = out
     )
     publish_football_iceland(
-      readRDS(fit_path_f), league,
+      extracted = extracted_f,
+      league = league,
       sex = "female",
       end_date = as.Date("2026-04-25"), output_root = out
     )
@@ -374,14 +405,20 @@ test_that("publish_football_iceland: re-running dedups history on (round, team, 
   league <- leagues[["football_iceland"]]
 
   out <- withr::local_tempdir()
+  extracted <- .build_extracted_football_for_test(
+    fit, league,
+    sex = "male", end_date = as.Date("2026-04-25")
+  )
   suppressWarnings({
     publish_football_iceland(
-      fit, league,
+      extracted = extracted,
+      league = league,
       sex = "male",
       end_date = as.Date("2026-04-25"), output_root = out
     )
     publish_football_iceland(
-      fit, league,
+      extracted = extracted,
+      league = league,
       sex = "male",
       end_date = as.Date("2026-04-25"), output_root = out
     )
