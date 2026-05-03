@@ -434,7 +434,7 @@ test_that("publish_football_iceland: re-running dedups history on (round, team, 
   expect_equal(nrow(parsed$records), n_unique)
 })
 
-test_that("publish_football_iceland: target_div='BD' produces same output as legacy top_div", {
+test_that("publish_football_iceland: BD output unchanged after target_div refactor (regression)", {
   fit_path <- backup_fit_path("male")
   if (!file.exists(fit_path)) {
     testthat::skip("legacy football fit unavailable")

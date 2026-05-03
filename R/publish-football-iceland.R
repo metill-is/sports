@@ -559,6 +559,7 @@ NULL
   stopifnot(!is.null(league$sport), !is.null(league$country))
   stopifnot(league$sport == "football", league$country == "iceland")
   stopifnot(inherits(end_date, "Date"))
+  stopifnot(is.character(target_div), length(target_div) == 1L)
 
   # Icelandic sex folder names
   sex_folder <- if (sex == "male") "karla" else "kvenna"
@@ -1409,7 +1410,6 @@ publish_football_iceland <- function(extracted,
   ]
 
   top_div <- "BD"
-  target_div <- top_div
   current_season <- max(results$season, na.rm = TRUE)
 
   current_top_teams <- results[
