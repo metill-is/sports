@@ -433,3 +433,40 @@ test_that("publish_football_iceland: re-running dedups history on (round, team, 
   n_unique <- nrow(unique(parsed$records[, key_cols]))
   expect_equal(nrow(parsed$records), n_unique)
 })
+
+test_that("publish_football_iceland: target_div='BD' produces same output as legacy top_div", {
+  fit_path <- backup_fit_path("male")
+  if (!file.exists(fit_path)) {
+    testthat::skip("legacy football fit unavailable")
+  }
+  if (!dir.exists(here::here("data", "facts", "results"))) {
+    testthat::skip("facts/results absent")
+  }
+
+  fit <- readRDS(fit_path)
+  leagues <- load_leagues()
+  league <- leagues[["football_iceland"]]
+
+  out <- withr::local_tempdir()
+  extracted <- .build_extracted_football_for_test(
+    fit, league,
+    sex = "male", end_date = as.Date("2026-04-25")
+  )
+  suppressWarnings(
+    publish_football_iceland(
+      extracted = extracted,
+      league = league,
+      sex = "male",
+      end_date = as.Date("2026-04-25"),
+      output_root = out
+    )
+  )
+
+  # After Task 1, public output is still at karla/ (the per-division dirs
+  # come in Task 2). After Task 2, this expectation moves to karla-bd/.
+  out_dir <- file.path(out, "football", "iceland", "karla")
+  expect_true(file.exists(file.path(out_dir, "standings.json")))
+  standings <- jsonlite::read_json(file.path(out_dir, "standings.json"))
+  # BD is 12 teams
+  expect_equal(length(standings$rows), 12)
+})

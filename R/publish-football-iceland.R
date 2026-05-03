@@ -553,7 +553,8 @@ NULL
                                                    ),
                                                    archive_root = here::here(
                                                      "data", "beliefs", "archive"
-                                                   )) {
+                                                   ),
+                                                   target_div = "BD") {
   stopifnot(sex %in% c("male", "female"))
   stopifnot(!is.null(league$sport), !is.null(league$country))
   stopifnot(league$sport == "football", league$country == "iceland")
@@ -579,7 +580,7 @@ NULL
   results <- results[!is.na(results$home_score) & !is.na(results$away_score), , drop = FALSE]
 
   # Top division label in the new schema
-  top_div <- "BD"
+  top_div <- target_div
 
   current_season <- max(results$season, na.rm = TRUE)
 
@@ -1408,6 +1409,7 @@ publish_football_iceland <- function(extracted,
   ]
 
   top_div <- "BD"
+  target_div <- top_div
   current_season <- max(results$season, na.rm = TRUE)
 
   current_top_teams <- results[
