@@ -94,8 +94,11 @@ sports/
 │   ├── scrape-results.yml          # Federation results + schedules 1x/day
 │   ├── scrape-odds.yml             # Lengjan odds 3x/day cron
 │   ├── fit.yml                     # Stan fit, chained on workflow_run from scrape-results
-│   └── decide-publish.yml          # Decide + publish, chained from fit AND scrape-odds
-│                                   # (so JSONs refresh on every odds scrape, not just daily)
+│   ├── decide-publish.yml          # Decide + publish, chained from fit AND scrape-odds
+│   │                               # (so JSONs refresh on every odds scrape, not just daily)
+│   └── republish.yml               # workflow_dispatch only — re-runs publish from
+│                                   # the existing extraction archive without re-fitting
+│                                   # (lever for fast schema iteration on the publisher)
 ├── scripts/etl/                    # One-time legacy-CSV → Parquet migrations
 │   ├── 03_etl_odds.R
 │   └── 04_etl_ledger.R
@@ -253,13 +256,29 @@ Internal schemas use English throughout. Canonical column names: `home_team` / `
 
 ### Publish layer
 
-- `publish_<sport>_iceland(fit, league, sex)` produces JSON snapshots in
-  `data/publish/<sport>/iceland/{karla,kvenna}/`. Football emits 11 JSONs
-  per sex: 7 snapshots (meta, next_games, standings, team_strengths,
-  final_positions, points_distribution, home_advantage) plus 4 history
-  files (standings_history, team_strengths_history, round_predictions_history,
-  final_positions_history). Basketball + handball emit the same 7 snapshots
-  plus `final_positions_history.json` (8 each).
+- **Football iceland (post Phase 2/3, 2026-05-03):**
+  `publish_football_iceland(extracted, league, sex)` reads from the 6
+  per-fit Parquets at
+  `data/beliefs/archive/sport=football/country=iceland/sex=Z/fit_date=*/`
+  (emitted by `extract_football_iceland()` in Phase 1) instead of the
+  in-memory fit RDS. The fit RDS is fully ephemeral — gitignored,
+  deletable after a fit completes — and the legacy
+  beliefs_archive (`part-0.parquet`) write was dropped for football
+  iceland in `R/model-league.R::fit_league()`. Use
+  `read_extracted_football(league, sex, fit_date = NULL)` to load the
+  archive into the publisher's `extracted` list. Schema-only
+  iterations on the publisher run via the `republish.yml`
+  `workflow_dispatch` Action, which calls `scripts/05_publish.R`
+  without re-fitting.
+- **Basketball + handball (still on the legacy fit-based path):**
+  `publish_<sport>_iceland(fit, league, sex)` reads from the fit RDS at
+  `data/beliefs/fits/sport=X/country=Y/sex=Z/fit.rds`; their migration
+  to the extraction layer is deferred to the autumn 2026 cutover.
+- File counts: football emits 11 JSONs per sex (7 snapshot + 4 history:
+  `standings_history`, `team_strengths_history`,
+  `round_predictions_history`, `final_positions_history`). Basketball +
+  handball emit the same 7 snapshots plus `final_positions_history.json`
+  (8 each).
 - **Schema features (as of 2026-05-03):**
   - `standings.json` rows ship cumulative `xg_for`/`xg_against`/`xpts` over
     archived rounds, plus `n_predicted_matches`/`n_played_matches` for
