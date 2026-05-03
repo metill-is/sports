@@ -1,0 +1,62 @@
+name: Republish JSONs
+
+# workflow_dispatch only. Runs publish without re-running fit or decide,
+# letting schema-only iterations on the publish layer ship in seconds
+# rather than the ~2 hours fit.yml takes. Reads the latest extraction
+# archive partition (the 6 Parquets emitted by extract_football_iceland)
+# committed by previous fit runs.
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: republish
+  cancel-in-progress: false
+
+jobs:
+  republish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: 'release'
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        env:
+          PKG_SYSREQS: "false"
+        with:
+          extra-packages: |
+            any::devtools
+
+      - name: Reinstall V8 from source with bundled static libv8
+        env:
+          DOWNLOAD_STATIC_LIBV8: "1"
+        run: |
+          Rscript -e 'install.packages("V8", type = "source", repos = c(CRAN = "https://cloud.r-project.org"))'
+
+      - name: Publish JSONs
+        run: Rscript scripts/05_publish.R
+
+      - name: Commit if outputs changed
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/publish/
+          if git diff --cached --quiet; then
+            echo "No publish JSONs changed"
+            exit 0
+          fi
+          git commit -m "data: republish JSONs $(date -u +%Y-%m-%dT%H:%MZ)"
+          git pull --rebase origin main
+          git push
