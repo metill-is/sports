@@ -199,7 +199,14 @@ fit_league <- function(league_key = NULL,
       write_table(beliefs, "beliefs_by_round", root = root)
     } else {
       write_table(beliefs, "beliefs_latest", root = root)
-      if (isTRUE(write_archive)) {
+      # WHY: football iceland's per-fit archive is now the 6 Parquets emitted
+      # by extract_football_iceland (Phase 1) -- the legacy long-form per-draw
+      # part-0.parquet write is redundant for that league. Basketball and
+      # handball iceland still rely on beliefs_archive until their own
+      # extraction layer ships at the autumn 2026 cutover.
+      is_football_iceland <- identical(league$sport, "football") &&
+        identical(league$country, "iceland")
+      if (isTRUE(write_archive) && !is_football_iceland) {
         write_table(beliefs, "beliefs_archive", root = root)
       }
     }
