@@ -1616,8 +1616,11 @@ publish_football_iceland <- function(extracted,
           p_home_win = sum(.data$count[.data$goal_diff > 0]) / sum(.data$count),
           p_draw = sum(.data$count[.data$goal_diff == 0]) / sum(.data$count),
           p_away_win = sum(.data$count[.data$goal_diff < 0]) / sum(.data$count),
+          # NB: tibble::tibble() has no data-mask context, so .data$goal_diff
+          # would fail with "Column `goal_diff` not found in `.data`". Bare
+          # symbols resolve via summarise()'s outer mask before the call.
           goal_diff_distribution = list(
-            tibble::tibble(diff = .data$goal_diff, count = .data$count) |>
+            tibble::tibble(diff = goal_diff, count = count) |>
               dplyr::summarise(n = sum(.data$count), .by = "diff") |>
               dplyr::mutate(p = .data$n / sum(.data$n)) |>
               dplyr::arrange(.data$diff) |>
