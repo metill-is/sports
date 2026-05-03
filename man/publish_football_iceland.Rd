@@ -37,7 +37,7 @@ pre-round xG / xPts predictions. Default `here::here("data", "beliefs", "archive
 }
 \description{
 Consumes a CmdStanMCMC fit from `fit_model()` / `fit_league()` and writes
-seven JSON files into `output_root/football/iceland/{karla|kvenna}/`:
+seven snapshot JSON files into `output_root/football/iceland/{karla|kvenna}/`:
   - `meta.json`
   - `next_games.json`
   - `standings.json`
@@ -47,8 +47,9 @@ seven JSON files into `output_root/football/iceland/{karla|kvenna}/`:
   - `home_advantage.json`
 }
 \details{
-Plus three accretive history files written when there's relevant data:
+Plus four accretive history files written when there's relevant data:
   - `team_strengths_history.json`     (every fit)
   - `standings_history.json`          (every fit with played top-flight matches)
   - `round_predictions_history.json`  (every fit; empty `records` if archive not yet populated)
+  - `final_positions_history.json`    (every fit with played top-flight matches; per-round trajectory of final-standings projection)
 }

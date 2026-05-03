@@ -317,8 +317,98 @@ test_that("publish_football_iceland: empty archive -> empty history JSON, NA sta
       expect_null(row$xg_against, info = paste("team:", row$team))
       expect_null(row$xpts, info = paste("team:", row$team))
       expect_equal(length(row$xg_trend), 0L, info = paste("team:", row$team))
+      expect_equal(
+        row$n_predicted_matches, 0L,
+        info = paste("team:", row$team)
+      )
+      expect_equal(
+        row$n_played_matches, row$played,
+        info = paste("team:", row$team)
+      )
     }
   }
+})
+
+test_that("publish_football_iceland: partial archive -> partial cumulative xG with coverage indicators", {
+  # Lookahead-free cumulative xG. With archive coverage for some rounds
+  # but not all, we expect:
+  #   * xg_for / xg_against / xpts are non-null (partial cumulative sums)
+  #   * n_predicted_matches > 0 but < n_played_matches for at least one team
+  #   * the xg vs goals comparison can be disclosed via the coverage fields
+  fit_path <- backup_fit_path_rp("male")
+  if (!file.exists(fit_path)) testthat::skip("legacy football fit unavailable")
+  if (!dir.exists(here::here("data", "facts", "results"))) {
+    testthat::skip("facts/results absent -- cannot reconstruct prepare_data")
+  }
+  archive_root <- here::here("data", "beliefs", "archive")
+  if (!dir.exists(archive_root)) {
+    testthat::skip("beliefs archive absent -- cannot test partial coverage")
+  }
+  archive_male <- file.path(
+    archive_root, "sport=football", "country=iceland", "sex=male"
+  )
+  fit_dates <- list.files(archive_male, pattern = "^fit_date=")
+  if (length(fit_dates) == 0L) {
+    testthat::skip("no fit_date partitions in male football archive")
+  }
+
+  fit <- readRDS(fit_path)
+  league <- load_leagues()[["football_iceland"]]
+  out <- withr::local_tempdir()
+
+  suppressWarnings(
+    publish_football_iceland(
+      fit, league,
+      sex = "male",
+      end_date = Sys.Date(),
+      output_root = out,
+      archive_root = archive_root
+    )
+  )
+
+  out_dir <- file.path(out, "football", "iceland", "karla")
+  standings <- jsonlite::read_json(file.path(out_dir, "standings.json"))
+  if (length(standings$rows) == 0L) {
+    testthat::skip("no played matches in current season")
+  }
+
+  any_partial <- FALSE
+  any_with_xg <- FALSE
+  for (row in standings$rows) {
+    expect_true(
+      "n_predicted_matches" %in% names(row),
+      info = paste("team:", row$team)
+    )
+    expect_true(
+      "n_played_matches" %in% names(row),
+      info = paste("team:", row$team)
+    )
+    expect_equal(
+      row$n_played_matches, row$played,
+      info = paste("team:", row$team)
+    )
+    if (row$n_predicted_matches > 0L) {
+      any_with_xg <- TRUE
+      expect_false(is.null(row$xg_for), info = paste("team:", row$team))
+      expect_false(is.null(row$xg_against), info = paste("team:", row$team))
+      expect_false(is.null(row$xpts), info = paste("team:", row$team))
+      if (row$n_predicted_matches < row$n_played_matches) {
+        any_partial <- TRUE
+      }
+    }
+  }
+  expect_true(
+    any_with_xg,
+    info = "expected at least one team to have non-null xg_for"
+  )
+  # If the archive's earliest fit_date is after some played matches' kickoffs,
+  # we expect at least one team to be in the partial-coverage state. The
+  # current data layout (round 4 played, archive starts mid-season) makes
+  # this near-certain for the male side.
+  expect_true(
+    any_partial,
+    info = "expected at least one team with n_predicted_matches < n_played_matches"
+  )
 })
 
 test_that("team_strengths_history covers every played matchweek from a single fit", {

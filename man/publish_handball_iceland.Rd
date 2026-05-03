@@ -30,7 +30,7 @@ publish_handball_iceland(
 `invisible(NULL)`
 }
 \description{
-Writes seven JSON files into the karla and kvenna subfolders of
+Writes seven snapshot JSON files into the karla and kvenna subfolders of
 `output_root/handball/iceland/`:
   - `meta.json`
   - `next_games.json`
@@ -41,6 +41,9 @@ Writes seven JSON files into the karla and kvenna subfolders of
   - `home_advantage.json`
 }
 \details{
+Plus one accretive history file written when there's relevant data:
+  - `final_positions_history.json`    (per-round trajectory of final-standings projection)
+
 Mirrors the football Iceland publish surface modulo the same two
 structural differences as basketball: probability schemas use only
 p_home and p_away, and standings rows ship null `xg_for`/`xg_against`/`xpts`.

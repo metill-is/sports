@@ -158,17 +158,34 @@ NULL
     defence_home <- def_d + ha_d
     total_away <- offence_away + defence_away
     total_home <- offence_home + defence_home
+    offence_avg <- (offence_home + offence_away) / 2
+    defence_avg <- (defence_home + defence_away) / 2
+    total_avg <- (total_home + total_away) / 2
 
     rows_long[[i]] <- tibble::tibble(
-      .draw = rep(seq_len(n_draws), 6L),
+      .draw = rep(seq_len(n_draws), 9L),
       round = mw,
       team = team_name,
-      component = rep(c("offence", "offence", "defence", "defence", "total", "total"), each = n_draws),
-      location = rep(c("home", "away", "home", "away", "home", "away"), each = n_draws),
+      component = rep(
+        c(
+          "offence", "offence", "offence",
+          "defence", "defence", "defence",
+          "total", "total", "total"
+        ),
+        each = n_draws
+      ),
+      location = rep(
+        c(
+          "home", "away", "avg",
+          "home", "away", "avg",
+          "home", "away", "avg"
+        ),
+        each = n_draws
+      ),
       value = c(
-        offence_home, offence_away,
-        defence_home, defence_away,
-        total_home, total_away
+        offence_home, offence_away, offence_avg,
+        defence_home, defence_away, defence_avg,
+        total_home, total_away, total_avg
       )
     )
   }
@@ -421,7 +438,7 @@ NULL
 #' Publish football Iceland posterior summaries as JSON
 #'
 #' Consumes a CmdStanMCMC fit from `fit_model()` / `fit_league()` and writes
-#' seven JSON files into `output_root/football/iceland/{karla|kvenna}/`:
+#' seven snapshot JSON files into `output_root/football/iceland/{karla|kvenna}/`:
 #'   - `meta.json`
 #'   - `next_games.json`
 #'   - `standings.json`
@@ -430,10 +447,11 @@ NULL
 #'   - `points_distribution.json`
 #'   - `home_advantage.json`
 #'
-#' Plus three accretive history files written when there's relevant data:
+#' Plus four accretive history files written when there's relevant data:
 #'   - `team_strengths_history.json`     (every fit)
 #'   - `standings_history.json`          (every fit with played top-flight matches)
 #'   - `round_predictions_history.json`  (every fit; empty `records` if archive not yet populated)
+#'   - `final_positions_history.json`    (every fit with played top-flight matches; per-round trajectory of final-standings projection)
 #'
 #' @param fit CmdStanMCMC returned by `fit_model()`.  Must have been trained on
 #'   data consistent with `(league, sex, end_date)`.
@@ -539,6 +557,8 @@ publish_football_iceland <- function(fit,
           xg_for = NA_real_,
           xg_against = NA_real_,
           xpts = NA_real_,
+          n_predicted_matches = 0L,
+          n_played_matches = .data$played_count,
           xg_trend = list(I(numeric(0)))
         )
     } else {
@@ -553,29 +573,34 @@ publish_football_iceland <- function(fit,
           .by = "team"
         )
 
+      # WHY: lookahead-free cumulative xG. Emit the partial sum over rounds
+      # whose pre-round fit is available in the archive, even when coverage
+      # is incomplete. Pair with n_predicted_matches / n_played_matches so
+      # the frontend can disclose partial coverage rather than treating xG
+      # vs. goals as apples-to-apples.
       played_per_team |>
         dplyr::left_join(team_pred, by = "team") |>
         dplyr::mutate(
-          full_coverage = !is.na(.data$n_predicted) &
-            .data$n_predicted == .data$played_count,
+          n_predicted_matches = as.integer(
+            dplyr::coalesce(.data$n_predicted, 0L)
+          ),
+          n_played_matches = as.integer(.data$played_count),
           xg_for = dplyr::if_else(
-            .data$full_coverage, .data$xg_for_sum, NA_real_
+            .data$n_predicted_matches > 0L, .data$xg_for_sum, NA_real_
           ),
           xg_against = dplyr::if_else(
-            .data$full_coverage, .data$xg_against_sum, NA_real_
+            .data$n_predicted_matches > 0L, .data$xg_against_sum, NA_real_
           ),
           xpts = dplyr::if_else(
-            .data$full_coverage, .data$xpts_sum, NA_real_
+            .data$n_predicted_matches > 0L, .data$xpts_sum, NA_real_
           ),
-          # WHY: jsonlite::write_json(auto_unbox = TRUE) unboxes length-1
-          # vectors; I() preserves the array shape so the website's
-          # standings-table.js can iterate xg_trend uniformly.
           xg_trend = lapply(.data$xg_trend, function(x) {
             if (is.null(x)) I(numeric(0)) else I(x)
           })
         ) |>
         dplyr::select(
-          "team", "xg_for", "xg_against", "xpts", "xg_trend"
+          "team", "xg_for", "xg_against", "xpts",
+          "n_predicted_matches", "n_played_matches", "xg_trend"
         )
     }
   } else {
@@ -642,6 +667,7 @@ publish_football_iceland <- function(fit,
   n_draws <- posterior::ndraws(fit$draws("home_advantage_tot"))
 
   meta <- list(
+    sport        = "football",
     sex          = sex,
     league       = "Besta deild",
     season       = current_season,
@@ -813,6 +839,8 @@ publish_football_iceland <- function(fit,
       standings_rows <- standings_rows |>
         dplyr::mutate(
           xg_for = NA_real_, xg_against = NA_real_, xpts = NA_real_,
+          n_predicted_matches = 0L,
+          n_played_matches = as.integer(.data$played),
           xg_trend = list(I(numeric(0)))
         )
     }
@@ -822,6 +850,7 @@ publish_football_iceland <- function(fit,
         "team", "short", "played", "wins", "draws", "losses",
         "goals_for", "goals_against", "goal_diff", "points",
         "xg_for", "xg_against", "xpts",
+        "n_predicted_matches", "n_played_matches",
         "rank", "form", "xg_trend"
       )
 
@@ -851,6 +880,7 @@ publish_football_iceland <- function(fit,
         "team", "short", "played", "wins", "draws", "losses",
         "goals_for", "goals_against", "goal_diff", "points",
         "xg_for", "xg_against", "xpts",
+        "n_predicted_matches", "n_played_matches",
         "rank"
       )
     .append_to_history_pfi(
@@ -871,13 +901,29 @@ publish_football_iceland <- function(fit,
 
   # ---- team_strengths.json -------------------------------------------------
 
-  team_strengths <- dplyr::bind_rows(
+  team_strengths_draws <- dplyr::bind_rows(
     .extract_team_draws_pfi(fit, "cur_offense_home", teams, "offence", "home"),
     .extract_team_draws_pfi(fit, "cur_defense_home", teams, "defence", "home"),
     .extract_team_draws_pfi(fit, "cur_strength_home", teams, "total", "home"),
     .extract_team_draws_pfi(fit, "cur_offense_away", teams, "offence", "away"),
     .extract_team_draws_pfi(fit, "cur_defense_away", teams, "defence", "away"),
     .extract_team_draws_pfi(fit, "cur_strength_away", teams, "total", "away")
+  )
+
+  # WHY: per-draw home/away average so the frontend can offer a
+  # location ∈ {home, away, avg} selector without re-computing.
+  # Averaging across draws-then-locations would underestimate uncertainty;
+  # we average per draw, then summarise.
+  team_strengths_avg <- team_strengths_draws |>
+    dplyr::summarise(
+      value = mean(.data$value),
+      .by = c(".draw", "team", "component")
+    ) |>
+    dplyr::mutate(location = "avg")
+
+  team_strengths <- dplyr::bind_rows(
+    team_strengths_draws,
+    team_strengths_avg
   ) |>
     .summarise_team_intervals_pfi() |>
     dplyr::semi_join(current_top_teams, by = "team")
@@ -1062,6 +1108,26 @@ publish_football_iceland <- function(fit,
       auto_unbox = TRUE, dataframe = "rows", digits = 5
     )
 
+    # WHY: per-round trajectory of final-standings predictions, mirroring
+    # the existing 3 history files. Lets the frontend offer a round filter
+    # showing how the projection has shifted as the season progressed.
+    final_positions_history_row <- final_positions |>
+      dplyr::mutate(
+        as_of        = format(max(bd_results$match_date), "%Y-%m-%d"),
+        generated_at = generated_at,
+        round        = as.integer(round_num),
+        season       = current_season
+      ) |>
+      dplyr::select(
+        "as_of", "generated_at", "round", "season",
+        "team", "placement", "probability"
+      )
+    .append_to_history_pfi(
+      file.path(out_dir, "final_positions_history.json"),
+      final_positions_history_row,
+      key_cols = c("as_of", "team", "placement")
+    )
+
     points_distribution <- iter_team_points |>
       dplyr::count(.data$team, .data$points) |>
       dplyr::mutate(
@@ -1111,6 +1177,16 @@ publish_football_iceland <- function(fit,
       file.path(out_dir, "points_distribution.json"),
       auto_unbox = TRUE, dataframe = "rows", digits = 5
     )
+    final_positions_history_path <- file.path(
+      out_dir, "final_positions_history.json"
+    )
+    if (!file.exists(final_positions_history_path)) {
+      jsonlite::write_json(
+        list(schema_version = 1L, records = list()),
+        final_positions_history_path,
+        auto_unbox = TRUE, dataframe = "rows", digits = 5, na = "null"
+      )
+    }
   }
 
   # ---- home_advantage.json -------------------------------------------------

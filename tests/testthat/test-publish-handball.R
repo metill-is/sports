@@ -136,7 +136,7 @@ test_that("publish_handball_iceland emits the 7 publish surface files (male)", {
     components <- unique(vapply(ts$records, \(r) r$component, character(1)))
     locations <- unique(vapply(ts$records, \(r) r$location, character(1)))
     expect_setequal(components, c("offence", "defence", "total"))
-    expect_setequal(locations, c("home", "away"))
+    expect_setequal(locations, c("home", "away", "avg"))
   }
 
   fp <- jsonlite::read_json(file.path(out_dir, "final_positions.json"))

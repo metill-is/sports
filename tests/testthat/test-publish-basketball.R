@@ -141,7 +141,7 @@ test_that("publish_basketball_iceland emits the 7 publish surface files (male)",
     components <- unique(vapply(ts$records, \(r) r$component, character(1)))
     locations <- unique(vapply(ts$records, \(r) r$location, character(1)))
     expect_setequal(components, c("offence", "defence", "total"))
-    expect_setequal(locations, c("home", "away"))
+    expect_setequal(locations, c("home", "away", "avg"))
   }
 
   # final_positions.json: placement distribution + summary

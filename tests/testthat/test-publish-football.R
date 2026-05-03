@@ -57,9 +57,10 @@ test_that("publish_football_iceland: skip gracefully when backup fit absent", {
   meta <- jsonlite::read_json(file.path(out_dir, "meta.json"))
   expect_named(
     meta,
-    c("sex", "league", "season", "generated_at", "fit_date", "round", "n_draws"),
+    c("sport", "sex", "league", "season", "generated_at", "fit_date", "round", "n_draws"),
     ignore.order = TRUE
   )
+  expect_equal(meta[["sport"]], "football")
   expect_equal(meta[["sex"]], "male")
   expect_type(meta[["round"]], "integer")
   expect_type(meta[["n_draws"]], "integer")
@@ -266,7 +267,7 @@ test_that("publish_football_iceland writes team_strengths_history.json (male)", 
   )
   expect_true(all(expected_cols %in% names(parsed$records)))
   expect_setequal(unique(parsed$records$component), c("offence", "defence", "total"))
-  expect_setequal(unique(parsed$records$location), c("home", "away"))
+  expect_setequal(unique(parsed$records$location), c("home", "away", "avg"))
   expect_setequal(unique(parsed$records$coverage), c(0.5, 0.8, 0.95))
 })
 

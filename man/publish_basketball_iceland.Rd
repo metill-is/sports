@@ -30,7 +30,7 @@ publish_basketball_iceland(
 `invisible(NULL)`
 }
 \description{
-Writes seven JSON files into the karla and kvenna subfolders of
+Writes seven snapshot JSON files into the karla and kvenna subfolders of
 `output_root/basketball/iceland/`:
   - `meta.json`
   - `next_games.json`
@@ -41,6 +41,9 @@ Writes seven JSON files into the karla and kvenna subfolders of
   - `home_advantage.json`
 }
 \details{
+Plus one accretive history file written when there's relevant data:
+  - `final_positions_history.json`    (per-round trajectory of final-standings projection)
+
 Mirrors the football Iceland publish surface modulo two structural
 differences imposed by the 2D Student-t model:
   - No draws -- probability schemas use only p_home and p_away (basketball

@@ -56,9 +56,9 @@ sports/
 │   ├── decide-portfolio.R          # portfolio_optimise(packages)
 │   ├── decide-calibration.R        # compute_calibration(league, sex)
 │   ├── decide-pipeline.R           # decide_league() orchestrator
-│   ├── publish-football-iceland.R  # 7 JSONs per sex
-│   ├── publish-basketball-iceland.R # meta + next_games scaffold
-│   ├── publish-handball-iceland.R  # meta + next_games scaffold
+│   ├── publish-football-iceland.R  # 11 JSONs per sex (7 snapshot + 4 history)
+│   ├── publish-basketball-iceland.R # 8 JSONs per sex (7 snapshot + final_positions_history; not surfaced on platform until autumn 2026)
+│   ├── publish-handball-iceland.R  # 8 JSONs per sex (7 snapshot + final_positions_history; final_positions/points_distribution zero-row at end-of-season — resolves autumn 2026)
 │   ├── publish-pipeline.R          # publish_one() dispatcher (sport-aware)
 │   ├── placer-validate.R           # validate_team_names_config + validate_recommendations_schema
 │   ├── placer-load.R               # load_recommendations + dedup_against_ledger
@@ -254,10 +254,37 @@ Internal schemas use English throughout. Canonical column names: `home_team` / `
 ### Publish layer
 
 - `publish_<sport>_iceland(fit, league, sex)` produces JSON snapshots in
-  `data/publish/<sport>/iceland/{karla,kvenna}/`. Football has full
-  7-JSON port (meta, next_games, standings, team_strengths, final_positions,
-  points_distribution, home_advantage); basketball + handball are
-  scaffolds (meta + next_games only).
+  `data/publish/<sport>/iceland/{karla,kvenna}/`. Football emits 11 JSONs
+  per sex: 7 snapshots (meta, next_games, standings, team_strengths,
+  final_positions, points_distribution, home_advantage) plus 4 history
+  files (standings_history, team_strengths_history, round_predictions_history,
+  final_positions_history). Basketball + handball emit the same 7 snapshots
+  plus `final_positions_history.json` (8 each).
+- **Schema features (as of 2026-05-03):**
+  - `standings.json` rows ship cumulative `xg_for`/`xg_against`/`xpts` over
+    archived rounds, plus `n_predicted_matches`/`n_played_matches` for
+    partial-coverage disclosure. Lookahead-free: each round uses the
+    latest fit strictly before its first kickoff.
+  - `team_strengths.json` ships a 9-cell grid per team:
+    `component ∈ {offence, defence, total}` × `location ∈ {home, away, avg}`.
+    `avg` is the per-draw mean so uncertainty intervals reflect the joint
+    posterior. Same grid in `team_strengths_history.json`.
+  - `final_positions_history.json` accretes per-round projections so the
+    frontend can offer a round filter; deduplicated on `(as_of, team, placement)`.
+  - `meta.json` includes `sport` for all three publishers.
+- **metill-platform consumption** (as of 2026-05-03): only football
+  surfaces on the platform. Of the 11 football JSONs, 6 are rendered today
+  — `meta`, `next_games`, `standings`, `team_strengths`,
+  `final_positions`, `team_strengths_history`. Three (`final_positions_history`,
+  `standings_history`, `home_advantage`, `points_distribution`) are
+  available for frontend rendering but not yet wired up.
+  `round_predictions_history` is publisher-internal (read by
+  `R/publish-football-iceland.R` itself to populate `xg_for/xg_against/xpts`
+  in `standings`). Basketball/handball publish output is generated and
+  rsynced but not rendered until autumn 2026. See
+  `~/.claude/projects/-Users-brynjolfurjonsson-sports/memory/project_publish_consumers.md`
+  and Obsidian: `Sports/Knowledge/Publish Pipeline/data-contract.md`
+  (compiled-truth catalogue with per-JSON schemas).
 - Daily driver: `Rscript scripts/05_publish.R`. Wires fresh-fit-on-demand
   via `R/publish-pipeline.R::publish_one()`.
 

@@ -3,7 +3,7 @@ NULL
 
 #' Publish handball Iceland JSONs.
 #'
-#' Writes seven JSON files into the karla and kvenna subfolders of
+#' Writes seven snapshot JSON files into the karla and kvenna subfolders of
 #' `output_root/handball/iceland/`:
 #'   - `meta.json`
 #'   - `next_games.json`
@@ -12,6 +12,9 @@ NULL
 #'   - `final_positions.json`
 #'   - `points_distribution.json`
 #'   - `home_advantage.json`
+#'
+#' Plus one accretive history file written when there's relevant data:
+#'   - `final_positions_history.json`    (per-round trajectory of final-standings projection)
 #'
 #' Mirrors the football Iceland publish surface modulo the same two
 #' structural differences as basketball: probability schemas use only
@@ -181,13 +184,27 @@ publish_handball_iceland <- function(fit, league, sex,
   )
 
   # ---- team_strengths.json -------------------------------------------------
-  team_strengths <- dplyr::bind_rows(
+  team_strengths_draws <- dplyr::bind_rows(
     .extract_team_draws_2dt(fit, "cur_offense_home", teams, "offence", "home"),
     .extract_team_draws_2dt(fit, "cur_defense_home", teams, "defence", "home"),
     .extract_team_draws_2dt(fit, "cur_strength_home", teams, "total", "home"),
     .extract_team_draws_2dt(fit, "cur_offense_away", teams, "offence", "away"),
     .extract_team_draws_2dt(fit, "cur_defense_away", teams, "defence", "away"),
     .extract_team_draws_2dt(fit, "cur_strength_away", teams, "total", "away")
+  )
+
+  # WHY: per-draw home/away average for the location selector. Same pattern
+  # as basketball + football publishers.
+  team_strengths_avg <- team_strengths_draws |>
+    dplyr::summarise(
+      value = mean(.data$value),
+      .by = c(".draw", "team", "component")
+    ) |>
+    dplyr::mutate(location = "avg")
+
+  team_strengths <- dplyr::bind_rows(
+    team_strengths_draws,
+    team_strengths_avg
   ) |>
     .summarise_team_intervals_2dt() |>
     dplyr::semi_join(current_top_teams, by = "team")
@@ -252,6 +269,27 @@ publish_handball_iceland <- function(fit, league, sex,
       auto_unbox = TRUE, dataframe = "rows", digits = 5
     )
 
+    final_positions_history_row <- final_positions |>
+      dplyr::mutate(
+        as_of = if (nrow(top_results) > 0L) {
+          format(max(top_results$match_date), "%Y-%m-%d")
+        } else {
+          format(end_date, "%Y-%m-%d")
+        },
+        generated_at = generated_at,
+        round = as.integer(round_num),
+        season = current_season
+      ) |>
+      dplyr::select(
+        "as_of", "generated_at", "round", "season",
+        "team", "placement", "probability"
+      )
+    .append_to_history_pfi(
+      file.path(out_dir, "final_positions_history.json"),
+      final_positions_history_row,
+      key_cols = c("as_of", "team", "placement")
+    )
+
     points_distribution <- iter_team_points |>
       dplyr::count(.data$team, .data$points) |>
       dplyr::mutate(
@@ -300,6 +338,16 @@ publish_handball_iceland <- function(fit, league, sex,
       file.path(out_dir, "points_distribution.json"),
       auto_unbox = TRUE, dataframe = "rows", digits = 5
     )
+    final_positions_history_path <- file.path(
+      out_dir, "final_positions_history.json"
+    )
+    if (!file.exists(final_positions_history_path)) {
+      jsonlite::write_json(
+        list(schema_version = 1L, records = list()),
+        final_positions_history_path,
+        auto_unbox = TRUE, dataframe = "rows", digits = 5, na = "null"
+      )
+    }
   }
 
   # ---- home_advantage.json -------------------------------------------------
@@ -310,8 +358,9 @@ publish_handball_iceland <- function(fit, league, sex,
     auto_unbox = TRUE, dataframe = "rows", digits = 5
   )
 
+  n_files <- length(list.files(out_dir, pattern = "\\.json$"))
   message(sprintf(
-    "publish_handball_iceland: wrote 7 JSONs to %s", out_dir
+    "publish_handball_iceland: wrote %d JSONs to %s", n_files, out_dir
   ))
   invisible(NULL)
 }
