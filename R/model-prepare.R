@@ -60,6 +60,13 @@ prepare_data <- function(league,
   teams$team_nr <- seq_len(nrow(teams))
 
   # -- Schedules (prediction matches) ----------------------------------------
+  # WHY: when end_date is in the past (historical backfill), the schedules
+  # table no longer carries matches between end_date and today -- they've
+  # been moved into results once they played. To produce lookahead-free
+  # predictions for those rounds, we union the upcoming-schedule with
+  # past-results-after-end_date (using only the (sport, country, sex,
+  # season, division, match_date, home_team, away_team) columns that
+  # schedule entries also carry).
   schedules <- read_table(
     "schedules",
     root = root,
@@ -67,10 +74,43 @@ prepare_data <- function(league,
   )
 
   horizon_end <- end_date + as.integer(schedule_horizon_days)
-  next_games <- schedules[
+  pred_cols <- c(
+    "sport", "country", "sex", "season", "division",
+    "match_date", "home_team", "away_team"
+  )
+
+  upcoming_from_schedules <- schedules[
     !is.na(schedules$match_date) &
       schedules$match_date >= end_date &
       schedules$match_date <= horizon_end, ,
+    drop = FALSE
+  ]
+  upcoming_from_schedules <- upcoming_from_schedules[
+    , intersect(pred_cols, names(upcoming_from_schedules)),
+    drop = FALSE
+  ]
+
+  results_all <- read_table(
+    "results",
+    root = root,
+    filter = list(sport = league$sport, country = league$country, sex = sex)
+  )
+  upcoming_from_results <- results_all[
+    !is.na(results_all$match_date) &
+      results_all$match_date > end_date &
+      results_all$match_date <= horizon_end, ,
+    drop = FALSE
+  ]
+  upcoming_from_results <- upcoming_from_results[
+    , intersect(pred_cols, names(upcoming_from_results)),
+    drop = FALSE
+  ]
+
+  next_games <- dplyr::bind_rows(
+    upcoming_from_schedules, upcoming_from_results
+  )
+  next_games <- next_games[
+    !duplicated(next_games[, c("match_date", "home_team", "away_team")]), ,
     drop = FALSE
   ]
 
