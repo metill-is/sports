@@ -256,17 +256,21 @@ Internal schemas use English throughout. Canonical column names: `home_team` / `
 
 ### Publish layer
 
-- **Football iceland (post Phase 2/3 + per-division split, 2026-05-03 evening):**
-  `publish_football_iceland(extracted, league, sex)` reads from the 6
-  per-fit Parquets at
-  `data/beliefs/archive/sport=football/country=iceland/sex=Z/fit_date=*/`
-  (emitted by `extract_football_iceland()` in Phase 1) instead of the
-  in-memory fit RDS. The fit RDS is fully ephemeral — gitignored,
-  deletable after a fit completes — and the legacy
-  beliefs_archive (`part-0.parquet`) write was dropped for football
-  iceland in `R/model-league.R::fit_league()`. Use
-  `read_extracted_football(league, sex, fit_date = NULL)` to load the
-  archive into the publisher's `extracted` list.
+- **Football iceland (post per-division extraction, 2026-05-04):**
+  `publish_football_iceland(extracted, league, sex)` reads from the
+  6 per-fit Parquets **per division** at
+  `data/beliefs/archive/sport=football/country=iceland/sex=Z/fit_date=*/division={BD|LD1}/`
+  (emitted by `extract_football_iceland()`) instead of the in-memory
+  fit RDS. The fit RDS is fully ephemeral — gitignored, deletable
+  after a fit completes — and the legacy beliefs_archive
+  (`part-0.parquet`) write was dropped for football iceland in
+  `R/model-league.R::fit_league()`. Use
+  `read_extracted_football(league, sex, fit_date = NULL)` to load
+  both divisions into the publisher's `extracted` argument; the
+  return shape is `list(BD = list(<6 tibbles>), LD1 = list(<6 tibbles>),
+  fit_date = D)`. Legacy fit_date partitions written by the
+  pre-2026-05-04 extractor (6 parquets directly under `fit_date=D/`)
+  are transparently lifted into the BD slot; LD1 is empty for those.
 
   **Per-division output**: the publisher loops over both Icelandic
   football divisions (`BD` = Besta deild, `LD1` = Lengjudeild) and
@@ -274,11 +278,13 @@ Internal schemas use English throughout. Canonical column names: `home_team` / `
   `data/publish/football/iceland/{sex_folder}-{div_suffix}/`. The dir
   suffix follows the platform URL slug (`/lengja/` → `ld`, not `ld1`).
   Total publish output for football iceland is 4 directories ×
-  11 JSONs = 44 files per fit. Internally each pass calls
-  `.publish_football_iceland_from_fit_pfi(..., target_div = X)` (the
-  legacy private wrapper that survived the Phase 2 rename); the public
-  `publish_football_iceland(extracted, ...)` is the per-(sex) loop
-  driver.
+  11 JSONs = 44 files per fit. The per-cell extracted slice is
+  pre-filtered to the division's teams + matches by the extractor, so
+  the publisher's loop body is now mostly a render of `ext <- extracted[[target_div]]`
+  rather than a filter-then-render. The legacy fit-based wrapper
+  `.publish_football_iceland_from_fit_pfi(..., target_div = X)`
+  survives as a regression backstop, deletable after a few production
+  cycles.
 
   Schema-only iterations on the publisher run via the `republish.yml`
   `workflow_dispatch` Action, which calls `scripts/05_publish.R`

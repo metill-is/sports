@@ -4,6 +4,41 @@ NULL
 # ---- Internal helpers --------------------------------------------------------
 
 
+# Empty extracted-list slot — used when a division partition is missing
+# from the archive (e.g. legacy archives that only wrote BD). Mirrors the
+# schema of `read_extracted_football()` slots so the publisher's per-cell
+# loop can run against an "empty" division without special-casing.
+.empty_extracted_pfi <- function() {
+  list(
+    predicted_matches = tibble::tibble(
+      home_team = character(), away_team = character(),
+      match_date = as.Date(character()),
+      home_goals = integer(), away_goals = integer(),
+      count = integer()
+    ),
+    team_strengths_quantiles = tibble::tibble(
+      team = character(), component = character(), location = character(),
+      quantile = integer(), value = numeric()
+    ),
+    round_strengths_quantiles = tibble::tibble(
+      round = integer(), team = character(),
+      component = character(), location = character(),
+      quantile = integer(), value = numeric()
+    ),
+    home_advantage_quantiles = tibble::tibble(
+      team = character(), component = character(),
+      quantile = integer(), value = numeric()
+    ),
+    final_positions = tibble::tibble(
+      team = character(), placement = integer(), probability = numeric()
+    ),
+    points_distribution = tibble::tibble(
+      team = character(), points = integer(), probability = numeric()
+    )
+  )
+}
+
+
 # Extract per-team draws for a single Stan parameter vector indexed by team.
 .extract_team_draws_pfi <- function(fit, var, teams, component, location) {
   fit$draws(var) |>
@@ -277,12 +312,18 @@ NULL
 # data/beliefs/archive/sport=X/country=Y/sex=Z/. Returns the parquet path
 # (or NULL if no such partition exists).
 #
-# Within the chosen partition, prefers the Phase 1 extract output
-# (`predicted_matches.parquet`, integer-pair occurrence counts) and falls
-# back to the legacy long-format draws (`part-0.parquet`, one row per draw).
-# `.aggregate_round_predictions_pfi()` normalises both into a count-weighted
-# representation, so the caller doesn't need to care which path it got.
-.find_pre_round_fit_path_pfi <- function(archive_root, sport, country, sex, target_date) {
+# Resolution order within a candidate fit_date partition:
+#   1. `division=<target_div>/predicted_matches.parquet` (post-2026-05-04)
+#   2. `predicted_matches.parquet` (legacy single-division extract) — only
+#       valid for target_div = "BD" since the legacy extract was BD-only
+#   3. `part-0.parquet` (pre-extraction legacy long-format draws) — same
+#      caveat (BD-only)
+#
+# `.aggregate_round_predictions_pfi()` normalises both predicted_matches and
+# part-0.parquet into a count-weighted representation, so the caller doesn't
+# need to care which path it got.
+.find_pre_round_fit_path_pfi <- function(archive_root, sport, country, sex,
+                                         target_date, target_div = "BD") {
   base <- file.path(
     archive_root,
     paste0("sport=", sport),
@@ -306,19 +347,26 @@ NULL
   }
 
   latest <- candidates[which.max(as.Date(sub(".*fit_date=", "", candidates)))]
-  preferred <- file.path(latest, "predicted_matches.parquet")
-  if (file.exists(preferred)) {
-    return(preferred)
+
+  # Preferred: per-division partition (current scheme).
+  per_div <- file.path(
+    latest, paste0("division=", target_div), "predicted_matches.parquet"
+  )
+  if (file.exists(per_div)) {
+    return(per_div)
   }
-  fallback <- file.path(latest, "part-0.parquet")
-  if (file.exists(fallback)) {
-    return(fallback)
+  # Legacy single-division extract — only meaningful for BD.
+  if (target_div == "BD") {
+    flat <- file.path(latest, "predicted_matches.parquet")
+    if (file.exists(flat)) {
+      return(flat)
+    }
+    fallback <- file.path(latest, "part-0.parquet")
+    if (file.exists(fallback)) {
+      return(fallback)
+    }
   }
-  files <- list.files(latest, pattern = "\\.parquet$", full.names = TRUE)
-  if (length(files) == 0L) {
-    return(NULL)
-  }
-  files[1L]
+  NULL
 }
 
 # Aggregate per-(round, team) frozen pre-round predictions for played matches.
@@ -335,7 +383,8 @@ NULL
 # Matches whose matchweek has no pre-round archive partition are silently
 # skipped -- pre-archive early-season rounds simply do not appear.
 .aggregate_round_predictions_pfi <- function(played_matches, archive_root,
-                                             sport, country, sex) {
+                                             sport, country, sex,
+                                             target_div = "BD") {
   if (nrow(played_matches) == 0L) {
     return(tibble::tibble(
       round = integer(), team = character(), fit_date = character(),
@@ -362,7 +411,8 @@ NULL
     fit_path <- .find_pre_round_fit_path_pfi(
       archive_root = archive_root,
       sport = sport, country = country, sex = sex,
-      target_date = target
+      target_date = target,
+      target_div = target_div
     )
     if (is.null(fit_path)) next
 
@@ -629,7 +679,8 @@ NULL
   round_predictions <- .aggregate_round_predictions_pfi(
     played_matches = bd_played[, c("home_team", "away_team", "match_date")],
     archive_root = archive_root,
-    sport = league$sport, country = league$country, sex = sex
+    sport = league$sport, country = league$country, sex = sex,
+    target_div = top_div
   )
 
   team_expected <- if (nrow(bd_played) > 0L) {
@@ -1391,13 +1442,29 @@ publish_football_iceland <- function(extracted,
     "round_strengths_quantiles", "home_advantage_quantiles",
     "final_positions", "points_distribution"
   )
-  missing_slots <- setdiff(required_slots, names(extracted))
-  if (length(missing_slots) > 0L) {
-    stop(
-      "publish_football_iceland: extracted list is missing slots: ",
-      paste(missing_slots, collapse = ", "),
-      call. = FALSE
+  # extracted shape: list keyed by division code (BD, LD1) — see
+  # read_extracted_football(). Each per-division list has the 6 parquet
+  # tibbles. A non-FATAL legacy fallback: if `extracted` is flat (the
+  # pre-2026-05-04 single-division shape), wrap it as BD-only and emit an
+  # empty LD1 cell. This lets early-cutover deploys still work against
+  # archives that haven't been re-extracted yet.
+  if (all(required_slots %in% names(extracted))) {
+    flat_legacy <- extracted[required_slots]
+    extracted <- list(
+      BD = flat_legacy, LD1 = .empty_extracted_pfi(),
+      fit_date = extracted$fit_date
     )
+  }
+  for (div in c("BD", "LD1")) {
+    div_slots <- if (is.list(extracted[[div]])) names(extracted[[div]]) else character()
+    missing_slots <- setdiff(required_slots, div_slots)
+    if (length(missing_slots) > 0L) {
+      stop(
+        "publish_football_iceland: extracted$", div,
+        " is missing slots: ", paste(missing_slots, collapse = ", "),
+        call. = FALSE
+      )
+    }
   }
 
   sex_folder <- if (sex == "male") "karla" else "kvenna"
@@ -1425,6 +1492,12 @@ publish_football_iceland <- function(extracted,
   division_dir_suffix <- c(BD = "bd", LD1 = "ld")
   for (target_div in names(division_dir_suffix)) {
     top_div <- target_div
+    # Per-division extracted slice — already filtered to this division's
+    # teams + matches by extract_football_iceland(). The publisher used
+    # to apply `semi_join(current_top_teams)` defensively; with per-cell
+    # extracts those filters are redundant (and would no-op anyway).
+    ext <- extracted[[target_div]]
+    if (is.null(ext)) ext <- .empty_extracted_pfi()
     out_dir <- file.path(
       output_root,
       "football",
@@ -1521,7 +1594,7 @@ publish_football_iceland <- function(extracted,
       NULL
     }
 
-    predicted_matches <- extracted$predicted_matches
+    predicted_matches <- ext$predicted_matches
 
     predicted_with_division <- if (nrow(predicted_matches) > 0L) {
       predicted_matches |>
@@ -1796,8 +1869,7 @@ publish_football_iceland <- function(extracted,
 
     # ---- team_strengths.json ------------------------------------------------
 
-    team_strengths <- extracted$team_strengths_quantiles |>
-      dplyr::semi_join(current_top_teams, by = "team") |>
+    team_strengths <- ext$team_strengths_quantiles |>
       .intervals_from_quantiles_pfi(c("team", "component", "location"))
 
     jsonlite::write_json(
@@ -1808,8 +1880,7 @@ publish_football_iceland <- function(extracted,
 
     # ---- team_strengths_history.json ----------------------------------------
 
-    rs_filtered <- extracted$round_strengths_quantiles |>
-      dplyr::semi_join(current_top_teams, by = "team")
+    rs_filtered <- ext$round_strengths_quantiles
 
     team_strengths_history_row <- if (nrow(rs_filtered) > 0L) {
       rs_filtered |>
@@ -1876,16 +1947,10 @@ publish_football_iceland <- function(extracted,
 
     # ---- final_positions.json + points_distribution.json --------------------
 
-    # Filter to current_top_teams so LD pages don't accidentally render
-    # BD teams' projections. The extraction layer is currently BD-only
-    # (top_div hardcoded in extract-football-iceland.R), so for LD this
-    # produces empty data — chart modules render an empty state. The
-    # proper fix is to refactor the extraction layer to publish per
-    # division (separate follow-up).
-    final_positions <- extracted$final_positions |>
-      dplyr::semi_join(current_top_teams, by = "team")
-    points_distribution <- extracted$points_distribution |>
-      dplyr::semi_join(current_top_teams, by = "team")
+    # Per-cell extracted slices are pre-filtered to the division's teams
+    # by extract_football_iceland(); no further semi_join needed here.
+    final_positions <- ext$final_positions
+    points_distribution <- ext$points_distribution
 
     if (nrow(final_positions) > 0L) {
       n_teams_top <- length(unique(final_positions$team))
@@ -2016,7 +2081,7 @@ publish_football_iceland <- function(extracted,
 
     # ---- home_advantage.json ------------------------------------------------
 
-    home_advantage <- extracted$home_advantage_quantiles |>
+    home_advantage <- ext$home_advantage_quantiles |>
       .intervals_from_quantiles_pfi(c("team", "component")) |>
       dplyr::semi_join(top_teams_upcoming, by = "team")
 
