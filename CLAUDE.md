@@ -86,7 +86,7 @@ sports/
 │   │   ├── recommendations/sport=X/country=Y/run_date=YYYY-MM-DD/  # Post-filter
 │   │   └── ledger/                 # Placed-bet history (1,870 rows, PnL = 89,369 ISK) — canonical
 │   └── publish/
-│       ├── football/iceland/{karla,kvenna}/*.json
+│       ├── football/iceland/{karla,kvenna}-{bd,ld}/*.json   # per (sex × division)
 │       ├── basketball/iceland/{karla,kvenna}/*.json
 │       └── handball/iceland/{karla,kvenna}/*.json
 ├── .github/workflows/              # CI (Plan 7) — placer is NEVER referenced here
@@ -256,7 +256,7 @@ Internal schemas use English throughout. Canonical column names: `home_team` / `
 
 ### Publish layer
 
-- **Football iceland (post Phase 2/3, 2026-05-03):**
+- **Football iceland (post Phase 2/3 + per-division split, 2026-05-03 evening):**
   `publish_football_iceland(extracted, league, sex)` reads from the 6
   per-fit Parquets at
   `data/beliefs/archive/sport=football/country=iceland/sex=Z/fit_date=*/`
@@ -266,19 +266,38 @@ Internal schemas use English throughout. Canonical column names: `home_team` / `
   beliefs_archive (`part-0.parquet`) write was dropped for football
   iceland in `R/model-league.R::fit_league()`. Use
   `read_extracted_football(league, sex, fit_date = NULL)` to load the
-  archive into the publisher's `extracted` list. Schema-only
-  iterations on the publisher run via the `republish.yml`
+  archive into the publisher's `extracted` list.
+
+  **Per-division output**: the publisher loops over both Icelandic
+  football divisions (`BD` = Besta deild, `LD1` = Lengjudeild) and
+  writes one full set of JSONs per `(sex, division)` cell into
+  `data/publish/football/iceland/{sex_folder}-{div_suffix}/`. The dir
+  suffix follows the platform URL slug (`/lengja/` → `ld`, not `ld1`).
+  Total publish output for football iceland is 4 directories ×
+  11 JSONs = 44 files per fit. Internally each pass calls
+  `.publish_football_iceland_from_fit_pfi(..., target_div = X)` (the
+  legacy private wrapper that survived the Phase 2 rename); the public
+  `publish_football_iceland(extracted, ...)` is the per-(sex) loop
+  driver.
+
+  Schema-only iterations on the publisher run via the `republish.yml`
   `workflow_dispatch` Action, which calls `scripts/05_publish.R`
   without re-fitting.
 - **Basketball + handball (still on the legacy fit-based path):**
   `publish_<sport>_iceland(fit, league, sex)` reads from the fit RDS at
-  `data/beliefs/fits/sport=X/country=Y/sex=Z/fit.rds`; their migration
-  to the extraction layer is deferred to the autumn 2026 cutover.
-- File counts: football emits 11 JSONs per sex (7 snapshot + 4 history:
-  `standings_history`, `team_strengths_history`,
-  `round_predictions_history`, `final_positions_history`). Basketball +
-  handball emit the same 7 snapshots plus `final_positions_history.json`
-  (8 each).
+  `data/beliefs/fits/sport=X/country=Y/sex=Z/fit.rds` and writes to
+  `data/publish/{sport}/iceland/{karla,kvenna}/` (no division split —
+  only the top division is modelled today). Migration to the
+  extraction layer + a per-division split is deferred to the autumn
+  2026 cutover.
+- File counts: football emits 11 JSONs per `(sex, division)` cell —
+  7 snapshot (`meta`, `next_games`, `standings`, `team_strengths`,
+  `final_positions`, `points_distribution`, `home_advantage`) plus
+  4 history (`standings_history`, `team_strengths_history`,
+  `round_predictions_history`, `final_positions_history`) — across
+  4 cells (`karla-bd`, `karla-ld`, `kvenna-bd`, `kvenna-ld`).
+  Basketball + handball emit the same 7 snapshots plus
+  `final_positions_history.json` per sex (8 × 2 = 16 each).
 - **Schema features (as of 2026-05-03):**
   - `standings.json` rows ship cumulative `xg_for`/`xg_against`/`xpts` over
     archived rounds, plus `n_predicted_matches`/`n_played_matches` for
