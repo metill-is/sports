@@ -1269,16 +1269,17 @@ NULL
       file.path(out_dir, "points_distribution.json"),
       auto_unbox = TRUE, dataframe = "rows", digits = 5
     )
+    # Always (re)write to truncate any stale rows from an earlier
+    # publisher version that didn't apply the per-division semi_join.
+    # See the matching comment in publish_football_iceland().
     final_positions_history_path <- file.path(
       out_dir, "final_positions_history.json"
     )
-    if (!file.exists(final_positions_history_path)) {
-      jsonlite::write_json(
-        list(schema_version = 1L, records = list()),
-        final_positions_history_path,
-        auto_unbox = TRUE, dataframe = "rows", digits = 5, na = "null"
-      )
-    }
+    jsonlite::write_json(
+      list(schema_version = 1L, records = list()),
+      final_positions_history_path,
+      auto_unbox = TRUE, dataframe = "rows", digits = 5, na = "null"
+    )
   }
 
   # ---- home_advantage.json -------------------------------------------------
@@ -1995,16 +1996,22 @@ publish_football_iceland <- function(extracted,
         file.path(out_dir, "points_distribution.json"),
         auto_unbox = TRUE, dataframe = "rows", digits = 5
       )
+      # Always (re)write the history file when the snapshot is empty —
+      # any pre-existing rows here are stale (e.g. BD-team rows written
+      # into an LD cell by an earlier publisher version that didn't apply
+      # the per-division `semi_join`). The append helper never retroacts
+      # on stale rows, so the only safe move is to truncate to empty when
+      # we have no current top-flight to project. The frontend's defensive
+      # filter (see metill-platform finishing-heatmap.js) catches what
+      # this misses for files already in flight.
       final_positions_history_path <- file.path(
         out_dir, "final_positions_history.json"
       )
-      if (!file.exists(final_positions_history_path)) {
-        jsonlite::write_json(
-          list(schema_version = 1L, records = list()),
-          final_positions_history_path,
-          auto_unbox = TRUE, dataframe = "rows", digits = 5, na = "null"
-        )
-      }
+      jsonlite::write_json(
+        list(schema_version = 1L, records = list()),
+        final_positions_history_path,
+        auto_unbox = TRUE, dataframe = "rows", digits = 5, na = "null"
+      )
     }
 
     # ---- home_advantage.json ------------------------------------------------
