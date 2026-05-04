@@ -58,6 +58,16 @@ NULL
       dplyr::select("home_team", "away_team") |>
       tidyr::pivot_longer(c("home_team", "away_team"), values_to = "team") |>
       dplyr::distinct(.data$team)
+  } else if (nrow(posterior_goals_long) > 0L) {
+    # Pre-round-1 fallback: when end_date precedes the current season's
+    # first match in target_div (e.g. backfill fits), the played-results
+    # filter is empty. Fall back to teams in the upcoming schedule for
+    # the same division so team_strengths_quantiles still ships.
+    posterior_goals_long |>
+      dplyr::filter(.data$division == target_div) |>
+      dplyr::distinct(.data$home_team, .data$away_team) |>
+      tidyr::pivot_longer(c("home_team", "away_team"), values_to = "team") |>
+      dplyr::distinct(.data$team)
   } else {
     tibble::tibble(team = character())
   }
