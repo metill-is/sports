@@ -230,6 +230,13 @@ Internal schemas use English throughout. Canonical column names: `home_team` / `
   ```
   nohup Rscript scripts/03_fit.R --force > /tmp/fit.log 2>&1 & disown
   ```
+- Historical backfill: `scripts/03b_backfill_football_iceland.R` fills in
+  pre-round fits for early-season rounds where the daily-driver hadn't yet
+  produced a partition. Each row in the script's `fits_to_run` tibble runs
+  one `fit_league(end_date = ..., schedule_horizon_days = 200L)` call;
+  partition is `fit_date=<end_date>`. Skip-if-exists keeps the script
+  re-runnable. Used by the publisher's lookahead-free `xg_for/xpts`
+  aggregation (see Publish layer) and the forest-plot pre-season baseline.
 
 ### Decide layer
 
@@ -312,7 +319,12 @@ Internal schemas use English throughout. Canonical column names: `home_team` / `
   - `team_strengths.json` ships a 9-cell grid per team:
     `component ∈ {offence, defence, total}` × `location ∈ {home, away, avg}`.
     `avg` is the per-draw mean so uncertainty intervals reflect the joint
-    posterior. Same grid in `team_strengths_history.json`.
+    posterior. Same grid in `team_strengths_history.json`. Each record
+    optionally carries a `preseason: {median, lower, upper}` object —
+    sourced from the latest archived fit strictly before the cell's first
+    played kickoff in the current season — used by the platform to render
+    a baseline (red) sub-row in the forest plot. Field is omitted when no
+    qualifying earlier fit exists.
   - `final_positions_history.json` accretes per-round projections so the
     frontend can offer a round filter; deduplicated on `(as_of, team, placement)`.
   - `meta.json` includes `sport` for all three publishers.
