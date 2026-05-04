@@ -355,15 +355,70 @@ NULL
   if (file.exists(per_div)) {
     return(per_div)
   }
-  # Legacy single-division extract — only meaningful for BD.
-  if (target_div == "BD") {
-    flat <- file.path(latest, "predicted_matches.parquet")
-    if (file.exists(flat)) {
-      return(flat)
-    }
-    fallback <- file.path(latest, "part-0.parquet")
-    if (file.exists(fallback)) {
-      return(fallback)
+  # Legacy single-tier extract: pre-fde4b7d the flat file actually contained
+  # predictions for ALL matches (it was nominally BD-only but never
+  # division-filtered). Fall back to it for both BD and LD1; the caller's
+  # semi-join with played matches selects the right rows.
+  flat <- file.path(latest, "predicted_matches.parquet")
+  if (file.exists(flat)) {
+    return(flat)
+  }
+  fallback <- file.path(latest, "part-0.parquet")
+  if (file.exists(fallback)) {
+    return(fallback)
+  }
+  NULL
+}
+
+# Read the team_strengths_quantiles tibble from the latest archived fit
+# strictly before `target_date` (typically the season's first kickoff for
+# the cell being published) that actually carries the extracted Parquet
+# for the target division. Walks back through fit_dates in reverse order
+# so very old part-0-only partitions are skipped in favour of any newer
+# per-division extract that exists. Returns NULL when no fit qualifies.
+.read_preseason_team_strengths_pfi <- function(archive_root,
+                                               sport, country, sex,
+                                               target_date, target_div) {
+  base <- file.path(
+    archive_root,
+    paste0("sport=", sport),
+    paste0("country=", country),
+    paste0("sex=", sex)
+  )
+  if (!dir.exists(base)) {
+    return(NULL)
+  }
+  parts <- list.dirs(base, full.names = TRUE, recursive = FALSE)
+  fit_dirs <- parts[grepl("/fit_date=", parts)]
+  if (length(fit_dirs) == 0L) {
+    return(NULL)
+  }
+  fit_dates <- as.Date(sub(".*fit_date=", "", fit_dirs))
+  ord <- order(fit_dates, decreasing = TRUE)
+  fit_dirs <- fit_dirs[ord]
+  fit_dates <- fit_dates[ord]
+  for (i in seq_along(fit_dirs)) {
+    if (fit_dates[i] >= target_date) next
+    candidates <- c(
+      file.path(
+        fit_dirs[i], paste0("division=", target_div),
+        "team_strengths_quantiles.parquet"
+      ),
+      # Phase-1 single-tier layout (pre-fde4b7d): the extracted parquet
+      # sat directly under fit_date=*/. Only meaningful for BD because
+      # that layout was implicitly BD-scoped for team_strengths_quantiles.
+      if (target_div == "BD") {
+        file.path(fit_dirs[i], "team_strengths_quantiles.parquet")
+      } else {
+        character(0)
+      }
+    )
+    hit <- candidates[file.exists(candidates)]
+    if (length(hit) > 0L) {
+      return(
+        arrow::read_parquet(hit[[1]]) |>
+          .intervals_from_quantiles_pfi(c("team", "component", "location"))
+      )
     }
   }
   NULL
@@ -1531,7 +1586,8 @@ publish_football_iceland <- function(extracted,
     round_predictions <- .aggregate_round_predictions_pfi(
       played_matches = bd_played[, c("home_team", "away_team", "match_date")],
       archive_root = archive_root,
-      sport = league$sport, country = league$country, sex = sex
+      sport = league$sport, country = league$country, sex = sex,
+      target_div = target_div
     )
 
     team_expected <- if (nrow(bd_played) > 0L) {
@@ -1872,10 +1928,54 @@ publish_football_iceland <- function(extracted,
     team_strengths <- ext$team_strengths_quantiles |>
       .intervals_from_quantiles_pfi(c("team", "component", "location"))
 
+    # Pre-season comparison: latest archived fit strictly before the cell's
+    # first played kickoff in the current season. Used by the platform's
+    # forest plot to render a baseline (red) sub-row beneath each team.
+    # NULL preseason → field omitted (frontend treats absence as "no row").
+    preseason_intervals <- if (nrow(bd_played) > 0L) {
+      .read_preseason_team_strengths_pfi(
+        archive_root = archive_root,
+        sport = league$sport, country = league$country, sex = sex,
+        target_date = min(bd_played$match_date),
+        target_div = target_div
+      )
+    } else {
+      NULL
+    }
+
+    if (!is.null(preseason_intervals) && nrow(preseason_intervals) > 0L) {
+      preseason_lookup <- preseason_intervals |>
+        dplyr::transmute(
+          .data$team, .data$component, .data$location, .data$coverage,
+          ps_median = .data$median,
+          ps_lower = .data$lower,
+          ps_upper = .data$upper
+        )
+      team_strengths <- team_strengths |>
+        dplyr::left_join(
+          preseason_lookup,
+          by = c("team", "component", "location", "coverage")
+        )
+      preseason_col <- vector("list", nrow(team_strengths))
+      for (i in seq_len(nrow(team_strengths))) {
+        m <- team_strengths$ps_median[i]
+        if (!is.na(m)) {
+          preseason_col[[i]] <- list(
+            median = m,
+            lower = team_strengths$ps_lower[i],
+            upper = team_strengths$ps_upper[i]
+          )
+        }
+      }
+      team_strengths$preseason <- preseason_col
+      team_strengths <- team_strengths |>
+        dplyr::select(-"ps_median", -"ps_lower", -"ps_upper")
+    }
+
     jsonlite::write_json(
       list(generated_at = generated_at, records = team_strengths),
       file.path(out_dir, "team_strengths.json"),
-      auto_unbox = TRUE, dataframe = "rows", digits = 5
+      auto_unbox = TRUE, dataframe = "rows", digits = 5, na = "null"
     )
 
     # ---- team_strengths_history.json ----------------------------------------

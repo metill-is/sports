@@ -616,3 +616,127 @@ test_that("publish_football_iceland: per-division team_strengths scoped to divis
   # BD and LD must be disjoint team sets (no team plays both).
   expect_length(intersect(bd_teams, ld_teams), 0)
 })
+
+test_that("publish_football_iceland: embeds preseason field when prior fit exists", {
+  fit_path <- backup_fit_path("male")
+  if (!file.exists(fit_path)) {
+    testthat::skip("legacy football fit unavailable")
+  }
+  if (!dir.exists(here::here("data", "facts", "results"))) {
+    testthat::skip("facts/results absent")
+  }
+
+  fit <- readRDS(fit_path)
+  leagues <- load_leagues()
+  league <- leagues[["football_iceland"]]
+
+  archive <- withr::local_tempdir()
+  out <- withr::local_tempdir()
+  end_date <- as.Date("2026-04-25")
+  preseason_date <- as.Date("2026-04-09")
+
+  # Build the "current" extracted bundle the publisher consumes.
+  extracted <- .build_extracted_football_for_test(
+    fit, league,
+    sex = "male", end_date = end_date
+  )
+
+  # Synthesise a "preseason" archive partition by copying the current
+  # extracted team_strengths_quantiles to fit_date=preseason_date. We do
+  # this directly because re-extracting the backup fit at a different
+  # end_date would mismatch n_pred_fit vs n_pred_data and produce empty
+  # team_strengths_quantiles. In production backfill the end_dates align,
+  # but the test only exercises the publisher's lookup-and-embed path.
+  preseason_dir <- file.path(
+    archive,
+    "sport=football", "country=iceland", "sex=male",
+    paste0("fit_date=", format(preseason_date, "%Y-%m-%d")),
+    "division=BD"
+  )
+  dir.create(preseason_dir, recursive = TRUE)
+  arrow::write_parquet(
+    extracted$BD$team_strengths_quantiles,
+    file.path(preseason_dir, "team_strengths_quantiles.parquet")
+  )
+  # Also write predicted_matches so .find_pre_round_fit_path_pfi has a
+  # canonical hit (though .read_preseason_team_strengths_pfi would walk
+  # through the partition list anyway).
+  arrow::write_parquet(
+    extracted$BD$predicted_matches,
+    file.path(preseason_dir, "predicted_matches.parquet")
+  )
+
+  suppressWarnings(
+    publish_football_iceland(
+      extracted = extracted,
+      league = league,
+      sex = "male",
+      end_date = end_date,
+      output_root = out,
+      archive_root = archive
+    )
+  )
+
+  ts <- jsonlite::read_json(
+    file.path(out, "football", "iceland", "karla-bd", "team_strengths.json")
+  )
+  expect_true(length(ts$records) > 0L)
+
+  with_preseason <- vapply(
+    ts$records,
+    function(r) "preseason" %in% names(r) && length(r$preseason) > 0L,
+    logical(1)
+  )
+  expect_true(any(with_preseason))
+
+  sample <- ts$records[[which(with_preseason)[1]]]
+  expect_named(sample$preseason, c("median", "lower", "upper"), ignore.order = TRUE)
+  expect_type(sample$preseason$median, "double")
+  expect_true(sample$preseason$lower <= sample$preseason$median)
+  expect_true(sample$preseason$median <= sample$preseason$upper)
+})
+
+test_that("publish_football_iceland: omits preseason when no prior fit exists", {
+  fit_path <- backup_fit_path("male")
+  if (!file.exists(fit_path)) {
+    testthat::skip("legacy football fit unavailable")
+  }
+  if (!dir.exists(here::here("data", "facts", "results"))) {
+    testthat::skip("facts/results absent")
+  }
+
+  fit <- readRDS(fit_path)
+  leagues <- load_leagues()
+  league <- leagues[["football_iceland"]]
+
+  archive <- withr::local_tempdir()
+  out <- withr::local_tempdir()
+  end_date <- as.Date("2026-04-25")
+
+  extracted <- .build_extracted_football_for_test(
+    fit, league,
+    sex = "male", end_date = end_date
+  )
+
+  suppressWarnings(
+    publish_football_iceland(
+      extracted = extracted,
+      league = league,
+      sex = "male",
+      end_date = end_date,
+      output_root = out,
+      archive_root = archive
+    )
+  )
+
+  ts <- jsonlite::read_json(
+    file.path(out, "football", "iceland", "karla-bd", "team_strengths.json")
+  )
+  expect_true(length(ts$records) > 0L)
+  with_preseason <- vapply(
+    ts$records,
+    function(r) "preseason" %in% names(r) && length(r$preseason) > 0L,
+    logical(1)
+  )
+  expect_false(any(with_preseason))
+})

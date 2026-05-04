@@ -137,6 +137,32 @@ test_that(".find_pre_round_fit_path_pfi: returns NULL when target precedes earli
   expect_null(out)
 })
 
+test_that(".find_pre_round_fit_path_pfi: legacy flat fallback applies to LD1", {
+  # The pre-fde4b7d single-tier extract was nominally BD-only but never
+  # division-filtered the matches in predicted_matches.parquet. Both BD
+  # and LD1 callers should fall through to the flat file (and from there
+  # to part-0.parquet). The caller's semi-join on played matches selects
+  # the right rows downstream.
+  tmp <- withr::local_tempdir()
+  base <- file.path(tmp, "sport=football", "country=iceland", "sex=male")
+  pdir <- file.path(base, "fit_date=2026-04-24")
+  dir.create(pdir, recursive = TRUE)
+  file.create(file.path(pdir, "predicted_matches.parquet"))
+
+  bd_path <- sports:::.find_pre_round_fit_path_pfi(
+    archive_root = tmp,
+    sport = "football", country = "iceland", sex = "male",
+    target_date = as.Date("2026-05-01"), target_div = "BD"
+  )
+  ld_path <- sports:::.find_pre_round_fit_path_pfi(
+    archive_root = tmp,
+    sport = "football", country = "iceland", sex = "male",
+    target_date = as.Date("2026-05-01"), target_div = "LD1"
+  )
+  expect_match(bd_path, "fit_date=2026-04-24/predicted_matches.parquet$")
+  expect_match(ld_path, "fit_date=2026-04-24/predicted_matches.parquet$")
+})
+
 # ---- .aggregate_round_predictions_pfi() -------------------------------------
 
 test_that(".aggregate_round_predictions_pfi: returns one row per (round, team) with required cols", {
