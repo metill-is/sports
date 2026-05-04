@@ -179,22 +179,22 @@ place_bets <- function(leagues = NULL,
 
       if (is.null(mid)) {
         if (n_total_matches == 0L) {
-          cli::cli_alert_warning(
+          cli::cli_alert_warning(paste0(
             "No matches found in any configured competition for ",
             "{bet$sport}_{bet$country} — likely a config gap ",
             "(missing competition in leagues.yml) or off-season. ",
             "Skipping {bet$home_team} vs {bet$away_team}."
-          )
+          ))
           results[[length(results) + 1L]] <- bet_result_row(
             bet, "no_match_id_no_competitions"
           )
         } else {
-          cli::cli_alert_warning(
+          cli::cli_alert_warning(paste0(
             "No match ID for {bet$home_team} vs {bet$away_team} ",
             "(Lengjan: {home_l} vs {away_l}) — ",
             "{n_total_matches} other match(es) listed; ours likely delisted ",
             "(kickoff passed) or on a competition not in leagues.yml. Skipping."
-          )
+          ))
           results[[length(results) + 1L]] <- bet_result_row(bet, "no_match_id")
         }
         next

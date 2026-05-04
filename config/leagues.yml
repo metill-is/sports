@@ -91,10 +91,11 @@ handball_iceland:
         HK: Handknattleiksfélag Kópavogs
         ÍBV: ÍBV Vestmannaeyjar
         ÍR: ÍR Reykjavík
-        FH: FH Hafnarfjörður
+        FH: FH
         KA: KA Akureyri
         ÍH: ÍH Keflavík
         HBH: HB Hafnarfjörður
+        Valur: Valur
       female: {}                       # No women's handball on Lengjan currently
   stan_model: handball_iceland/2d_student_t.stan
   betting:
