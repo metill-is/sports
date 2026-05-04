@@ -755,7 +755,8 @@ NULL
           xpts = NA_real_,
           n_predicted_matches = 0L,
           n_played_matches = .data$played_count,
-          xg_trend = list(I(numeric(0)))
+          xg_trend = list(I(numeric(0))),
+          xg_against_trend = list(I(numeric(0)))
         )
     } else {
       team_pred <- round_predictions |>
@@ -766,6 +767,7 @@ NULL
           xg_against_sum = sum(.data$xg_against),
           xpts_sum = sum(.data$xpts),
           xg_trend = list(.data$xg_for),
+          xg_against_trend = list(.data$xg_against),
           .by = "team"
         )
 
@@ -792,11 +794,15 @@ NULL
           ),
           xg_trend = lapply(.data$xg_trend, function(x) {
             if (is.null(x)) I(numeric(0)) else I(x)
+          }),
+          xg_against_trend = lapply(.data$xg_against_trend, function(x) {
+            if (is.null(x)) I(numeric(0)) else I(x)
           })
         ) |>
         dplyr::select(
           "team", "xg_for", "xg_against", "xpts",
-          "n_predicted_matches", "n_played_matches", "xg_trend"
+          "n_predicted_matches", "n_played_matches",
+          "xg_trend", "xg_against_trend"
         )
     }
   } else {
@@ -1014,6 +1020,8 @@ NULL
         goal_diff = .data$goals_for - .data$goals_against,
         points = 3L * .data$wins + .data$draws,
         form = list(pad_form(tail(.data$result, 5L))),
+        goals_trend = list(.data$gf),
+        goals_against_trend = list(.data$ga),
         .by = "team"
       ) |>
       dplyr::arrange(
@@ -1021,8 +1029,10 @@ NULL
         dplyr::desc(.data$goals_for)
       ) |>
       dplyr::mutate(
-        rank  = dplyr::row_number(),
-        short = short_code(.data$team)
+        rank = dplyr::row_number(),
+        short = short_code(.data$team),
+        goals_trend = lapply(.data$goals_trend, I),
+        goals_against_trend = lapply(.data$goals_against_trend, I)
       )
 
     if (!is.null(team_expected)) {
@@ -1030,6 +1040,9 @@ NULL
         dplyr::left_join(team_expected, by = "team") |>
         dplyr::mutate(
           xg_trend = lapply(.data$xg_trend, function(x) {
+            if (is.null(x)) I(numeric(0)) else I(x)
+          }),
+          xg_against_trend = lapply(.data$xg_against_trend, function(x) {
             if (is.null(x)) I(numeric(0)) else I(x)
           })
         )
@@ -1039,7 +1052,8 @@ NULL
           xg_for = NA_real_, xg_against = NA_real_, xpts = NA_real_,
           n_predicted_matches = 0L,
           n_played_matches = as.integer(.data$played),
-          xg_trend = list(I(numeric(0)))
+          xg_trend = list(I(numeric(0))),
+          xg_against_trend = list(I(numeric(0)))
         )
     }
 
@@ -1049,7 +1063,9 @@ NULL
         "goals_for", "goals_against", "goal_diff", "points",
         "xg_for", "xg_against", "xpts",
         "n_predicted_matches", "n_played_matches",
-        "rank", "form", "xg_trend"
+        "rank", "form",
+        "xg_trend", "xg_against_trend",
+        "goals_trend", "goals_against_trend"
       )
 
     jsonlite::write_json(
@@ -1064,7 +1080,8 @@ NULL
     )
 
     # Append per-round table to standings_history.json. Drops the snapshot-
-    # only `form` and `xg_trend` columns. Dedup on (as_of, team) lets re-runs
+    # only `form`, `xg_trend`, `xg_against_trend`, `goals_trend`, and
+    # `goals_against_trend` columns. Dedup on (as_of, team) lets re-runs
     # against the same set of played fixtures replace rather than duplicate.
     standings_history_row <- standings_rows |>
       dplyr::mutate(
@@ -1607,7 +1624,8 @@ publish_football_iceland <- function(extracted,
             xpts = NA_real_,
             n_predicted_matches = 0L,
             n_played_matches = .data$played_count,
-            xg_trend = list(I(numeric(0)))
+            xg_trend = list(I(numeric(0))),
+            xg_against_trend = list(I(numeric(0)))
           )
       } else {
         team_pred <- round_predictions |>
@@ -1618,6 +1636,7 @@ publish_football_iceland <- function(extracted,
             xg_against_sum = sum(.data$xg_against),
             xpts_sum = sum(.data$xpts),
             xg_trend = list(.data$xg_for),
+            xg_against_trend = list(.data$xg_against),
             .by = "team"
           )
 
@@ -1639,11 +1658,15 @@ publish_football_iceland <- function(extracted,
             ),
             xg_trend = lapply(.data$xg_trend, function(x) {
               if (is.null(x)) I(numeric(0)) else I(x)
+            }),
+            xg_against_trend = lapply(.data$xg_against_trend, function(x) {
+              if (is.null(x)) I(numeric(0)) else I(x)
             })
           ) |>
           dplyr::select(
             "team", "xg_for", "xg_against", "xpts",
-            "n_predicted_matches", "n_played_matches", "xg_trend"
+            "n_predicted_matches", "n_played_matches",
+            "xg_trend", "xg_against_trend"
           )
       }
     } else {
@@ -1843,6 +1866,8 @@ publish_football_iceland <- function(extracted,
           goal_diff = .data$goals_for - .data$goals_against,
           points = 3L * .data$wins + .data$draws,
           form = list(pad_form(tail(.data$result, 5L))),
+          goals_trend = list(.data$gf),
+          goals_against_trend = list(.data$ga),
           .by = "team"
         ) |>
         dplyr::arrange(
@@ -1850,8 +1875,10 @@ publish_football_iceland <- function(extracted,
           dplyr::desc(.data$goals_for)
         ) |>
         dplyr::mutate(
-          rank  = dplyr::row_number(),
-          short = short_code(.data$team)
+          rank = dplyr::row_number(),
+          short = short_code(.data$team),
+          goals_trend = lapply(.data$goals_trend, I),
+          goals_against_trend = lapply(.data$goals_against_trend, I)
         )
 
       if (!is.null(team_expected)) {
@@ -1859,6 +1886,9 @@ publish_football_iceland <- function(extracted,
           dplyr::left_join(team_expected, by = "team") |>
           dplyr::mutate(
             xg_trend = lapply(.data$xg_trend, function(x) {
+              if (is.null(x)) I(numeric(0)) else I(x)
+            }),
+            xg_against_trend = lapply(.data$xg_against_trend, function(x) {
               if (is.null(x)) I(numeric(0)) else I(x)
             })
           )
@@ -1868,7 +1898,8 @@ publish_football_iceland <- function(extracted,
             xg_for = NA_real_, xg_against = NA_real_, xpts = NA_real_,
             n_predicted_matches = 0L,
             n_played_matches = as.integer(.data$played),
-            xg_trend = list(I(numeric(0)))
+            xg_trend = list(I(numeric(0))),
+            xg_against_trend = list(I(numeric(0)))
           )
       }
 
@@ -1878,7 +1909,9 @@ publish_football_iceland <- function(extracted,
           "goals_for", "goals_against", "goal_diff", "points",
           "xg_for", "xg_against", "xpts",
           "n_predicted_matches", "n_played_matches",
-          "rank", "form", "xg_trend"
+          "rank", "form",
+          "xg_trend", "xg_against_trend",
+          "goals_trend", "goals_against_trend"
         )
 
       jsonlite::write_json(
@@ -1892,6 +1925,10 @@ publish_football_iceland <- function(extracted,
         auto_unbox = TRUE, dataframe = "rows", digits = 5, na = "null"
       )
 
+      # Append per-round table to standings_history.json. Drops the snapshot-
+      # only `form`, `xg_trend`, `xg_against_trend`, `goals_trend`, and
+      # `goals_against_trend` columns. Dedup on (as_of, team) lets re-runs
+      # against the same set of played fixtures replace rather than duplicate.
       standings_history_row <- standings_rows |>
         dplyr::mutate(
           as_of        = format(max(bd_results$match_date), "%Y-%m-%d"),
