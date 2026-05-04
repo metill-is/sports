@@ -756,10 +756,11 @@ NULL
 
   n_draws <- posterior::ndraws(fit$draws("home_advantage_tot"))
 
+  league_label <- c(BD = "Besta deild", LD1 = "Lengjudeild")[[target_div]]
   meta <- list(
     sport        = "football",
     sex          = sex,
-    league       = "Besta deild",
+    league       = league_label,
     season       = current_season,
     generated_at = generated_at,
     fit_date     = format(end_date, "%Y-%m-%d"),
@@ -1559,10 +1560,11 @@ publish_football_iceland <- function(extracted,
       0L
     }
 
+    league_label <- c(BD = "Besta deild", LD1 = "Lengjudeild")[[target_div]]
     meta <- list(
       sport        = "football",
       sex          = sex,
-      league       = "Besta deild",
+      league       = league_label,
       season       = current_season,
       generated_at = generated_at,
       fit_date     = format(end_date, "%Y-%m-%d"),
