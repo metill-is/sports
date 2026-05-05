@@ -2,13 +2,14 @@
 % Please edit documentation in R/extract-football-iceland.R
 \name{read_extracted_football}
 \alias{read_extracted_football}
-\title{Load a per-fit football iceland extraction archive partition}
+\title{Load a per-fit football iceland extraction partition}
 \usage{
 read_extracted_football(
   league,
   sex,
   fit_date = NULL,
-  archive_root = here::here("data", "beliefs", "archive")
+  extracts_root = here::here("data", "beliefs", "extracts"),
+  target_divs = .FOOTBALL_ICELAND_DIVISIONS_PFI
 )
 }
 \arguments{
@@ -18,28 +19,35 @@ read_extracted_football(
 \item{sex}{`"male"` or `"female"`.}
 
 \item{fit_date}{`Date` or `NULL`. When `NULL` (default), reads the latest
-partition that contains the full extracted set.}
+partition that contains the full six-file extracted set.}
 
-\item{archive_root}{Beliefs archive root.
-Default `here::here("data", "beliefs", "archive")`.}
+\item{extracts_root}{Beliefs extracts root.
+Default `here::here("data", "beliefs", "extracts")`.}
+
+\item{target_divs}{Character vector of divisions to load. Defaults to
+`c("BD", "LD1")`. Returned list always includes a slot per requested
+division (with empty-tibble parquets when the `division` filter yields
+no rows).}
 }
 \value{
-Named list with seven elements: the six tibbles
+Named list. Each requested division key (e.g. `"BD"`, `"LD1"`)
+  maps to a list with the six tibbles
   (`predicted_matches`, `team_strengths_quantiles`,
   `round_strengths_quantiles`, `home_advantage_quantiles`,
-  `final_positions`, `points_distribution`) plus `fit_date` (the `Date` of
-  the partition that was loaded).
+  `final_positions`, `points_distribution`) — `division` column dropped
+  after filtering. Plus `fit_date` (the `Date` of the partition that was
+  loaded).
 }
 \description{
 Reads the six Parquet files written by [`extract_football_iceland()`] from
-`data/beliefs/archive/sport=football/country=iceland/sex=Z/fit_date=D/`
-into a named list. Phase 2 of the extraction-layer migration consumes the
-returned list inside `publish_football_iceland()` instead of an in-memory
-fit RDS.
+`data/beliefs/extracts/sport=football/country=iceland/sex=Z/fit_date=D/`,
+splits each by the in-payload `division` column, and returns a named list
+keyed by division code.
 }
 \details{
 Auto-discovery (default `fit_date = NULL`) walks the `fit_date=*`
-partitions in descending order and returns the first one that contains all
-six expected files. Legacy partitions written before Phase 1 (only
-`part-0.parquet`) are silently skipped.
+partitions in descending order and returns the first one that contains
+all six expected files. BD is always required (the platform always renders
+the BD page); an absent `"LD1"` slice degrades to empty tibbles for the
+LD1 cell.
 }

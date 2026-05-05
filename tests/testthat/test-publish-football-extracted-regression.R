@@ -72,14 +72,14 @@ backup_fit_path_reg <- function(sex) {
       sex = sex,
       fit_date = end_date,
       end_date = end_date,
-      archive_root = extract_dir
+      extracts_root = extract_dir
     )
   ))
   extracted <- read_extracted_football(
     league,
     sex = sex,
     fit_date = end_date,
-    archive_root = extract_dir
+    extracts_root = extract_dir
   )
 
   suppressWarnings(suppressMessages(
@@ -89,7 +89,7 @@ backup_fit_path_reg <- function(sex) {
       sex = sex,
       end_date = end_date,
       output_root = out_new,
-      archive_root = extract_dir
+      extracts_root = extract_dir
     )
   ))
   suppressWarnings(suppressMessages(
@@ -99,7 +99,7 @@ backup_fit_path_reg <- function(sex) {
       sex = sex,
       end_date = end_date,
       output_root = out_old,
-      archive_root = extract_dir
+      extracts_root = extract_dir
     )
   ))
 

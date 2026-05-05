@@ -308,79 +308,66 @@ NULL
     tibble::as_tibble()
 }
 
-# Find the latest fit_date partition strictly less than `target_date` under
-# data/beliefs/archive/sport=X/country=Y/sex=Z/. Returns the parquet path
-# (or NULL if no such partition exists).
+# Find the latest fit_date partition strictly less than `target_date`.
+# Scans BOTH trees:
+#   - extracts/sport=X/country=Y/sex=Z/fit_date=D/predicted_matches.parquet
+#     (current per-fit summaries, with `division` payload column)
+#   - archive/sport=X/country=Y/sex=Z/fit_date=D/part-0.parquet
+#     (legacy long-form per-draw posteriors; written by model-league.R for
+#     non-football sports, plus historical football fits before the
+#     extraction layer landed)
 #
-# Resolution order within a candidate fit_date partition:
-#   1. `division=<target_div>/predicted_matches.parquet` (post-2026-05-04)
-#   2. `predicted_matches.parquet` (legacy single-division extract) — only
-#       valid for target_div = "BD" since the legacy extract was BD-only
-#   3. `part-0.parquet` (pre-extraction legacy long-format draws) — same
-#      caveat (BD-only)
-#
-# `.aggregate_round_predictions_pfi()` normalises both predicted_matches and
-# part-0.parquet into a count-weighted representation, so the caller doesn't
-# need to care which path it got.
-.find_pre_round_fit_path_pfi <- function(archive_root, sport, country, sex,
-                                         target_date, target_div = "BD") {
-  base <- file.path(
-    archive_root,
-    paste0("sport=", sport),
-    paste0("country=", country),
-    paste0("sex=", sex)
+# Returns the path of the most recent candidate, or NULL.
+# `.aggregate_round_predictions_pfi()` normalises both schemas into a
+# count-weighted representation; for extracts it also filters on `division`.
+.find_pre_round_fit_path_pfi <- function(extracts_root, archive_root,
+                                         sport, country, sex,
+                                         target_date) {
+  collect <- function(root, fname) {
+    base <- file.path(
+      root,
+      paste0("sport=", sport),
+      paste0("country=", country),
+      paste0("sex=", sex)
+    )
+    if (!dir.exists(base)) {
+      return(list())
+    }
+    parts <- list.dirs(base, full.names = TRUE, recursive = FALSE)
+    fit_dirs <- parts[grepl("/fit_date=", parts)]
+    out <- list()
+    for (d in fit_dirs) {
+      fd <- as.Date(sub(".*fit_date=", "", d))
+      if (is.na(fd) || fd >= target_date) next
+      p <- file.path(d, fname)
+      if (file.exists(p)) {
+        out[[length(out) + 1L]] <- list(path = p, fit_date = fd)
+      }
+    }
+    out
+  }
+
+  candidates <- c(
+    collect(extracts_root, "predicted_matches.parquet"),
+    collect(archive_root, "part-0.parquet")
   )
-  if (!dir.exists(base)) {
-    return(NULL)
-  }
-
-  parts <- list.dirs(base, full.names = TRUE, recursive = FALSE)
-  fit_dirs <- parts[grepl("/fit_date=", parts)]
-  if (length(fit_dirs) == 0L) {
-    return(NULL)
-  }
-
-  fit_dates <- as.Date(sub(".*fit_date=", "", fit_dirs))
-  candidates <- fit_dirs[fit_dates < target_date]
   if (length(candidates) == 0L) {
     return(NULL)
   }
 
-  latest <- candidates[which.max(as.Date(sub(".*fit_date=", "", candidates)))]
-
-  # Preferred: per-division partition (current scheme).
-  per_div <- file.path(
-    latest, paste0("division=", target_div), "predicted_matches.parquet"
-  )
-  if (file.exists(per_div)) {
-    return(per_div)
-  }
-  # Legacy single-tier extract: pre-fde4b7d the flat file actually contained
-  # predictions for ALL matches (it was nominally BD-only but never
-  # division-filtered). Fall back to it for both BD and LD1; the caller's
-  # semi-join with played matches selects the right rows.
-  flat <- file.path(latest, "predicted_matches.parquet")
-  if (file.exists(flat)) {
-    return(flat)
-  }
-  fallback <- file.path(latest, "part-0.parquet")
-  if (file.exists(fallback)) {
-    return(fallback)
-  }
-  NULL
+  fit_dates <- do.call(c, lapply(candidates, function(x) x$fit_date))
+  candidates[[which.max(fit_dates)]]$path
 }
 
-# Read the team_strengths_quantiles tibble from the latest archived fit
+# Read the team_strengths_quantiles tibble from the latest extracts fit
 # strictly before `target_date` (typically the season's first kickoff for
-# the cell being published) that actually carries the extracted Parquet
-# for the target division. Walks back through fit_dates in reverse order
-# so very old part-0-only partitions are skipped in favour of any newer
-# per-division extract that exists. Returns NULL when no fit qualifies.
-.read_preseason_team_strengths_pfi <- function(archive_root,
+# the cell being published) for the target division. Walks back through
+# fit_dates in reverse order; returns NULL when no fit qualifies.
+.read_preseason_team_strengths_pfi <- function(extracts_root,
                                                sport, country, sex,
                                                target_date, target_div) {
   base <- file.path(
-    archive_root,
+    extracts_root,
     paste0("sport=", sport),
     paste0("country=", country),
     paste0("sex=", sex)
@@ -399,27 +386,17 @@ NULL
   fit_dates <- fit_dates[ord]
   for (i in seq_along(fit_dirs)) {
     if (fit_dates[i] >= target_date) next
-    candidates <- c(
-      file.path(
-        fit_dirs[i], paste0("division=", target_div),
-        "team_strengths_quantiles.parquet"
-      ),
-      # Phase-1 single-tier layout (pre-fde4b7d): the extracted parquet
-      # sat directly under fit_date=*/. Only meaningful for BD because
-      # that layout was implicitly BD-scoped for team_strengths_quantiles.
-      if (target_div == "BD") {
-        file.path(fit_dirs[i], "team_strengths_quantiles.parquet")
-      } else {
-        character(0)
-      }
-    )
-    hit <- candidates[file.exists(candidates)]
-    if (length(hit) > 0L) {
-      return(
-        arrow::read_parquet(hit[[1]]) |>
-          .intervals_from_quantiles_pfi(c("team", "component", "location"))
-      )
+    f <- file.path(fit_dirs[i], "team_strengths_quantiles.parquet")
+    if (!file.exists(f)) next
+    df <- arrow::read_parquet(f)
+    if ("division" %in% names(df)) {
+      df <- df[df$division == target_div, , drop = FALSE]
+      df$division <- NULL
     }
+    if (nrow(df) == 0L) next
+    return(.intervals_from_quantiles_pfi(
+      df, c("team", "component", "location")
+    ))
   }
   NULL
 }
@@ -437,7 +414,8 @@ NULL
 #
 # Matches whose matchweek has no pre-round archive partition are silently
 # skipped -- pre-archive early-season rounds simply do not appear.
-.aggregate_round_predictions_pfi <- function(played_matches, archive_root,
+.aggregate_round_predictions_pfi <- function(played_matches,
+                                             extracts_root, archive_root,
                                              sport, country, sex,
                                              target_div = "BD") {
   if (nrow(played_matches) == 0L) {
@@ -464,17 +442,21 @@ NULL
     target <- per_round$first_kickoff[i]
 
     fit_path <- .find_pre_round_fit_path_pfi(
+      extracts_root = extracts_root,
       archive_root = archive_root,
       sport = sport, country = country, sex = sex,
-      target_date = target,
-      target_div = target_div
+      target_date = target
     )
     if (is.null(fit_path)) next
 
     round_matches <- with_mw[with_mw$matchweek == mw, ]
     fit_date_chr <- sub(".*fit_date=([^/]+)/.*", "\\1", fit_path)
 
-    beliefs <- arrow::read_parquet(fit_path) |>
+    beliefs <- arrow::read_parquet(fit_path)
+    if ("division" %in% names(beliefs)) {
+      beliefs <- beliefs[beliefs$division == target_div, , drop = FALSE]
+    }
+    beliefs <- beliefs |>
       dplyr::semi_join(
         round_matches |> dplyr::select(
           "home_team", "away_team", "match_date"
@@ -484,11 +466,10 @@ NULL
 
     if (nrow(beliefs) == 0L) next
 
-    # Normalise both archive schemas into a (home_goals, away_goals, count)
-    # representation. The Phase 1 extract writes `predicted_matches.parquet`
-    # with explicit `count` per integer-pair; the legacy `part-0.parquet`
-    # writes one row per draw. Treating the legacy schema as count=1 lets
-    # the same weighted aggregation cover both cases.
+    # Normalise both schemas into (home_goals, away_goals, count). The
+    # extracts `predicted_matches.parquet` carries `count` per integer-pair
+    # (post-aggregation); the legacy `part-0.parquet` carries one row per
+    # draw, so treat its rows as count=1.
     if (!"count" %in% names(beliefs)) {
       beliefs$count <- 1L
     }
@@ -656,6 +637,9 @@ NULL
                                                    output_root = here::here(
                                                      "data", "publish"
                                                    ),
+                                                   extracts_root = here::here(
+                                                     "data", "beliefs", "extracts"
+                                                   ),
                                                    archive_root = here::here(
                                                      "data", "beliefs", "archive"
                                                    ),
@@ -733,6 +717,7 @@ NULL
   ]
   round_predictions <- .aggregate_round_predictions_pfi(
     played_matches = bd_played[, c("home_team", "away_team", "match_date")],
+    extracts_root = extracts_root,
     archive_root = archive_root,
     sport = league$sport, country = league$country, sex = sex,
     target_div = top_div
@@ -1488,9 +1473,13 @@ NULL
 #' @param root Data root for `read_table()`. Default `here::here("data")`.
 #' @param output_root Root for JSON output. Default
 #'   `here::here("data", "publish")`.
-#' @param archive_root Root of the beliefs archive used to source frozen
-#'   pre-round xG / xPts predictions. Default
-#'   `here::here("data", "beliefs", "archive")`.
+#' @param extracts_root Root of the per-fit football extracts tree used to
+#'   source pre-round xG / xPts predictions and the preseason team-strength
+#'   baseline. Default `here::here("data", "beliefs", "extracts")`.
+#' @param archive_root Root of the beliefs archive (`part-0.parquet`,
+#'   per-draw long-form). Used as a fallback for round_predictions on fit
+#'   dates where no extract was written (legacy football fits before the
+#'   extraction layer landed). Default `here::here("data", "beliefs", "archive")`.
 #' @return `invisible(NULL)`.
 #' @importFrom rlang .data
 #' @export
@@ -1501,6 +1490,9 @@ publish_football_iceland <- function(extracted,
                                      root = here::here("data"),
                                      output_root = here::here(
                                        "data", "publish"
+                                     ),
+                                     extracts_root = here::here(
+                                       "data", "beliefs", "extracts"
                                      ),
                                      archive_root = here::here(
                                        "data", "beliefs", "archive"
@@ -1602,6 +1594,7 @@ publish_football_iceland <- function(extracted,
     ]
     round_predictions <- .aggregate_round_predictions_pfi(
       played_matches = bd_played[, c("home_team", "away_team", "match_date")],
+      extracts_root = extracts_root,
       archive_root = archive_root,
       sport = league$sport, country = league$country, sex = sex,
       target_div = target_div
@@ -1971,7 +1964,7 @@ publish_football_iceland <- function(extracted,
     # NULL preseason → field omitted (frontend treats absence as "no row").
     preseason_intervals <- if (nrow(bd_played) > 0L) {
       .read_preseason_team_strengths_pfi(
-        archive_root = archive_root,
+        extracts_root = extracts_root,
         sport = league$sport, country = league$country, sex = sex,
         target_date = min(bd_played$match_date),
         target_div = target_div

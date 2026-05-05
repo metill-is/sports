@@ -5,39 +5,58 @@
 \title{Publish football Iceland posterior summaries as JSON}
 \usage{
 publish_football_iceland(
-  fit,
+  extracted,
   league,
   sex,
   end_date = Sys.Date(),
   root = here::here("data"),
   output_root = here::here("data", "publish"),
+  extracts_root = here::here("data", "beliefs", "extracts"),
   archive_root = here::here("data", "beliefs", "archive")
 )
 }
 \arguments{
-\item{fit}{CmdStanMCMC returned by `fit_model()`.  Must have been trained on
-data consistent with `(league, sex, end_date)`.}
+\item{extracted}{Named list returned by [`read_extracted_football()`]:
+six tibbles plus optionally `fit_date`. The required tibbles are
+`predicted_matches`, `team_strengths_quantiles`,
+`round_strengths_quantiles`, `home_advantage_quantiles`,
+`final_positions`, `points_distribution`.}
 
-\item{league}{A single entry from `load_leagues()` (must have `sport` and
-`country` set).}
+\item{league}{A single entry from `load_leagues()` (must have `sport`
+and `country` set).}
 
 \item{sex}{`"male"` or `"female"`.}
 
-\item{end_date}{Training cutoff passed to `prepare_data()`. Default `Sys.Date()`.}
+\item{end_date}{Training cutoff passed to `prepare_data()`. Default
+`Sys.Date()`.}
 
 \item{root}{Data root for `read_table()`. Default `here::here("data")`.}
 
-\item{output_root}{Root for JSON output. Default `here::here("data", "publish")`.}
+\item{output_root}{Root for JSON output. Default
+`here::here("data", "publish")`.}
 
-\item{archive_root}{Root of the beliefs archive used to source frozen
-pre-round xG / xPts predictions. Default `here::here("data", "beliefs", "archive")`.}
+\item{extracts_root}{Root of the per-fit football extracts tree used to
+source pre-round xG / xPts predictions and the preseason team-strength
+baseline. Default `here::here("data", "beliefs", "extracts")`.}
+
+\item{archive_root}{Root of the beliefs archive (`part-0.parquet`,
+per-draw long-form). Used as a fallback for round_predictions on fit
+dates where no extract was written (legacy football fits before the
+extraction layer landed). Default `here::here("data", "beliefs", "archive")`.}
 }
 \value{
 `invisible(NULL)`.
 }
 \description{
-Consumes a CmdStanMCMC fit from `fit_model()` / `fit_league()` and writes
-seven snapshot JSON files into `output_root/football/iceland/{karla|kvenna}/`:
+Phase 2 entrypoint: reads from the per-fit extraction archive (the 6
+Parquets written by [`extract_football_iceland()`]) instead of an
+in-memory fit RDS. Use [`read_extracted_football()`] to construct
+`extracted`, or pass a hand-built list with the same shape (tests do
+the latter).
+}
+\details{
+Writes seven snapshot JSONs into
+`output_root/football/iceland/{karla|kvenna}/`:
   - `meta.json`
   - `next_games.json`
   - `standings.json`
@@ -45,11 +64,12 @@ seven snapshot JSON files into `output_root/football/iceland/{karla|kvenna}/`:
   - `final_positions.json`
   - `points_distribution.json`
   - `home_advantage.json`
-}
-\details{
-Plus four accretive history files written when there's relevant data:
-  - `team_strengths_history.json`     (every fit)
-  - `standings_history.json`          (every fit with played top-flight matches)
-  - `round_predictions_history.json`  (every fit; empty `records` if archive not yet populated)
-  - `final_positions_history.json`    (every fit with played top-flight matches; per-round trajectory of final-standings projection)
+
+Plus four accretive history files written when there is relevant data:
+  - `team_strengths_history.json` (every fit)
+  - `standings_history.json` (every fit with played top-flight matches)
+  - `round_predictions_history.json` (every fit; empty `records` when
+    the archive lacks pre-round partitions yet)
+  - `final_positions_history.json` (every fit with played top-flight
+    matches)
 }

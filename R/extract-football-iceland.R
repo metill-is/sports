@@ -29,12 +29,12 @@ NULL
 # return list ordering.
 .FOOTBALL_ICELAND_DIVISIONS_PFI <- c("BD", "LD1")
 
-# Per-division extraction. Writes the 6 parquets into
-# `<archive_dir_base>/division=<target_div>/`. The cross-division inputs
-# (`posterior_goals_long`, `team_strengths_draws`, `home_advantage_draws`,
-# `results`, `teams`) are computed once by the caller and passed in here.
+# Per-division extraction. Returns a named list of 6 tibbles (one per parquet
+# file type) for `target_div`. The caller binds rows across divisions and
+# writes one parquet per file type with `division` as a payload column.
+# Cross-division inputs (`posterior_goals_long`, `team_strengths_draws`,
+# `home_advantage_draws`, `results`, `teams`) are computed once by the caller.
 .extract_division_parquets_pfi <- function(target_div,
-                                           archive_dir_base,
                                            fit,
                                            teams,
                                            results,
@@ -44,11 +44,6 @@ NULL
                                            home_advantage_draws,
                                            n_pred_fit,
                                            n_pred_data) {
-  archive_dir <- file.path(
-    archive_dir_base, paste0("division=", target_div)
-  )
-  dir.create(archive_dir, recursive = TRUE, showWarnings = FALSE)
-
   top_results <- results[
     results$season == current_season & results$division == target_div, ,
     drop = FALSE
@@ -100,11 +95,6 @@ NULL
       )
   }
 
-  arrow::write_parquet(
-    predicted_matches,
-    file.path(archive_dir, "predicted_matches.parquet")
-  )
-
   # ---- 2. team_strengths_quantiles.parquet --------------------------------
   # 9-cell grid: component ∈ {offence, defence, total} × location ∈ {home, away, avg}.
   # `avg` is per-draw mean of home/away pre-quantile so uncertainty intervals
@@ -123,11 +113,6 @@ NULL
   ) |>
     dplyr::semi_join(current_top_teams, by = "team") |>
     .summarise_quantile_band_pfi(c("team", "component", "location"))
-
-  arrow::write_parquet(
-    team_strengths_quantiles,
-    file.path(archive_dir, "team_strengths_quantiles.parquet")
-  )
 
   # ---- 3. round_strengths_quantiles.parquet -------------------------------
   # Per (round, team) trajectory, scoped to the division's chronological
@@ -162,11 +147,6 @@ NULL
     )
   }
 
-  arrow::write_parquet(
-    round_strengths_quantiles,
-    file.path(archive_dir, "round_strengths_quantiles.parquet")
-  )
-
   # ---- 4. home_advantage_quantiles.parquet --------------------------------
   # Multiplicative form: exp(home_advantage_*). `total` halved per the
   # publisher's per-side allocation convention. Cross-division draws are
@@ -175,11 +155,6 @@ NULL
   home_advantage_quantiles <- home_advantage_draws |>
     dplyr::semi_join(current_top_teams, by = "team") |>
     .summarise_quantile_band_pfi(c("team", "component"))
-
-  arrow::write_parquet(
-    home_advantage_quantiles,
-    file.path(archive_dir, "home_advantage_quantiles.parquet")
-  )
 
   # ---- 5 + 6. final_positions.parquet + points_distribution.parquet -------
   # Pre-computed at extract time (when full draws are still in memory).
@@ -297,63 +272,66 @@ NULL
     )
   }
 
-  arrow::write_parquet(
-    final_positions,
-    file.path(archive_dir, "final_positions.parquet")
+  list(
+    predicted_matches         = predicted_matches,
+    team_strengths_quantiles  = team_strengths_quantiles,
+    round_strengths_quantiles = round_strengths_quantiles,
+    home_advantage_quantiles  = home_advantage_quantiles,
+    final_positions           = final_positions,
+    points_distribution       = points_distribution
   )
-  arrow::write_parquet(
-    points_distribution,
-    file.path(archive_dir, "points_distribution.parquet")
-  )
-
-  invisible(archive_dir)
 }
 
 # ---- Public API --------------------------------------------------------------
 
 #' Extract publish-layer summaries from a football iceland fit
 #'
-#' Writes six Parquet files **per division** into the per-fit archive
-#' partition at
-#' `data/beliefs/archive/sport=football/country=iceland/sex={male|female}/fit_date=YYYY-MM-DD/division={BD|LD1}/`.
-#' The fit covers both Icelandic football divisions (Besta deild + Lengjudeild)
-#' so each call writes 12 parquets total. The publisher consumes the per-division
-#' partitions independently to produce the four `(sex × division)` cells on disk.
+#' Writes six Parquet files into the per-fit extracts partition at
+#' `data/beliefs/extracts/sport=football/country=iceland/sex={male|female}/fit_date=YYYY-MM-DD/`.
+#' The fit covers both Icelandic football divisions (Besta deild + Lengjudeild);
+#' each parquet carries a `division` column (`"BD"` / `"LD1"`) so the publisher
+#' filters to the cell it's rendering.
 #'
-#' Per-division parquets:
+#' Files are written under `data/beliefs/extracts/`, **not** `data/beliefs/archive/`,
+#' so they don't pollute the canonical `beliefs_archive` table (per-draw-per-match
+#' draws written by `model-league.R::fit_league()` for sports without a
+#' dedicated extraction layer). Mixing the two trees previously caused
+#' arrow/DuckDB schema-unification failures.
 #'
-#' - `predicted_matches.parquet` — per-(home_team, away_team, match_date,
-#'   home_goals, away_goals) row with the integer-pair occurrence count
-#'   across the posterior. Filtered to the division's matches.
+#' Per-fit parquets (each with a `division` column):
+#'
+#' - `predicted_matches.parquet` — per-(division, home_team, away_team,
+#'   match_date, home_goals, away_goals) row with the integer-pair occurrence
+#'   count across the posterior.
 #' - `team_strengths_quantiles.parquet` — 99-quantile band per
-#'   (team, component, location) where component ∈ {offence, defence, total}
-#'   and location ∈ {home, away, avg}. The `avg` row is the per-draw mean of
-#'   home/away (computed pre-quantile so intervals reflect the joint posterior).
-#'   Filtered to the division's teams.
+#'   (division, team, component, location) where component ∈ {offence, defence,
+#'   total} and location ∈ {home, away, avg}. The `avg` row is the per-draw mean
+#'   of home/away (computed pre-quantile so intervals reflect the joint
+#'   posterior).
 #' - `round_strengths_quantiles.parquet` — same 9-cell grid but per
-#'   (round, team), where `round` is the team's chronological matchweek
-#'   *within the division*. Drives the strength trajectory.
-#' - `home_advantage_quantiles.parquet` — 99-quantile band per (team, component)
-#'   for the multiplicative home-advantage parameter `exp(home_advantage_*)`.
-#'   The `total` component is `exp(home_advantage_tot / 2)` matching the
-#'   publisher's per-side allocation. Filtered to the division's teams.
-#' - `final_positions.parquet` — per-(team, placement) probability over the
-#'   posterior, pre-computed at extract time because the count representation
-#'   above doesn't preserve the cross-match draw alignment that the simulation
-#'   requires.
-#' - `points_distribution.parquet` — per-(team, points) probability, same
-#'   reasoning.
+#'   (division, round, team), where `round` is the team's chronological
+#'   matchweek *within the division*. Drives the strength trajectory.
+#' - `home_advantage_quantiles.parquet` — 99-quantile band per
+#'   (division, team, component) for the multiplicative home-advantage parameter
+#'   `exp(home_advantage_*)`. The `total` component is `exp(home_advantage_tot / 2)`
+#'   matching the publisher's per-side allocation.
+#' - `final_positions.parquet` — per-(division, team, placement) probability
+#'   over the posterior, pre-computed at extract time because the count
+#'   representation above doesn't preserve the cross-match draw alignment that
+#'   the simulation requires.
+#' - `points_distribution.parquet` — per-(division, team, points) probability,
+#'   same reasoning.
 #'
 #' Together these six Parquets capture everything the football publisher
-#' currently reads from the in-memory fit RDS, at roughly 500 KB per fit per
-#' division (vs. 100–500 MB RDS). See
+#' currently reads from the in-memory fit RDS, at roughly 1 MB per fit
+#' (both divisions combined) vs. 100–500 MB for the RDS. See
 #' `Sports/Knowledge/Publish Pipeline/extraction-layer` in the Metill Obsidian
 #' vault for the design rationale.
 #'
 #' @param fit CmdStanMCMC fit object.
 #' @param league League list with `sport == "football"` and `country == "iceland"`.
 #' @param sex `"male"` or `"female"`.
-#' @param fit_date Date stamped on the archive partition. Default `Sys.Date()`.
+#' @param fit_date Date stamped on the extracts partition. Default `Sys.Date()`.
 #' @param end_date Training cutoff used for prepare_data() reconstruction.
 #'   Default = `fit_date`.
 #' @param root Data root. Default `here::here("data")`.
@@ -361,21 +339,20 @@ NULL
 #'   (default), reconstructs from disk; pass directly when calling from
 #'   `fit_league()` to avoid a redundant prepare_data call (and to
 #'   guarantee consistency with the fit).
-#' @param archive_root Optional write root for the per-fit archive partition.
-#'   Defaults to `file.path(root, "beliefs", "archive")`. Tests can override
+#' @param extracts_root Optional write root for the per-fit extracts partition.
+#'   Defaults to `file.path(root, "beliefs", "extracts")`. Tests can override
 #'   this to write into an isolated tempdir while still reading facts from
 #'   the real `root`.
 #' @param target_divs Character vector of division codes to extract. Defaults
 #'   to `c("BD", "LD1")` (both). Useful in tests to extract one division only.
-#' @return invisible(NULL). 6 × length(target_divs) Parquet files written into
-#'   the archive partition.
+#' @return invisible(NULL). 6 Parquet files written into the extracts partition.
 #' @export
 extract_football_iceland <- function(fit, league, sex,
                                      fit_date = Sys.Date(),
                                      end_date = fit_date,
                                      root = here::here("data"),
                                      prep = NULL,
-                                     archive_root = NULL,
+                                     extracts_root = NULL,
                                      target_divs = .FOOTBALL_ICELAND_DIVISIONS_PFI) {
   stopifnot(league$sport == "football", league$country == "iceland")
   stopifnot(sex %in% c("male", "female"))
@@ -392,17 +369,17 @@ extract_football_iceland <- function(fit, league, sex,
   teams <- prep$teams
   pred_d <- prep$pred_d
 
-  if (is.null(archive_root)) {
-    archive_root <- file.path(root, "beliefs", "archive")
+  if (is.null(extracts_root)) {
+    extracts_root <- file.path(root, "beliefs", "extracts")
   }
-  archive_dir_base <- file.path(
-    archive_root,
+  extracts_dir <- file.path(
+    extracts_root,
     paste0("sport=", league$sport),
     paste0("country=", league$country),
     paste0("sex=", sex),
     paste0("fit_date=", format(as.Date(fit_date), "%Y-%m-%d"))
   )
-  dir.create(archive_dir_base, recursive = TRUE, showWarnings = FALSE)
+  dir.create(extracts_dir, recursive = TRUE, showWarnings = FALSE)
 
   results <- read_table(
     "results",
@@ -506,72 +483,76 @@ extract_football_iceland <- function(fit, league, sex,
     )
   )
 
-  for (target_div in target_divs) {
-    .extract_division_parquets_pfi(
-      target_div = target_div,
-      archive_dir_base = archive_dir_base,
-      fit = fit,
-      teams = teams,
-      results = results,
-      current_season = current_season,
+  per_div <- lapply(target_divs, function(target_div) {
+    parts <- .extract_division_parquets_pfi(
+      target_div           = target_div,
+      fit                  = fit,
+      teams                = teams,
+      results              = results,
+      current_season       = current_season,
       posterior_goals_long = posterior_goals_long,
       team_strengths_draws = team_strengths_draws,
       home_advantage_draws = home_advantage_draws,
-      n_pred_fit = n_pred_fit,
-      n_pred_data = n_pred_data
+      n_pred_fit           = n_pred_fit,
+      n_pred_data          = n_pred_data
+    )
+    lapply(parts, function(df) dplyr::mutate(df, division = target_div))
+  })
+  names(per_div) <- target_divs
+
+  file_types <- names(per_div[[1]])
+  for (ft in file_types) {
+    bound <- dplyr::bind_rows(lapply(per_div, function(d) d[[ft]]))
+    arrow::write_parquet(
+      bound,
+      file.path(extracts_dir, paste0(ft, ".parquet"))
     )
   }
 
-  # cli::cli_alert_success treats `{...}` as expression interpolation, so
-  # use cli::cli_alert_info with a literal string assembled via sprintf — or
-  # avoid braces entirely.
   message(sprintf(
     "extract_football_iceland: wrote %d Parquets to %s [div: %s]",
-    6L * length(target_divs),
-    archive_dir_base,
+    length(file_types),
+    extracts_dir,
     paste(target_divs, collapse = ", ")
   ))
   invisible(NULL)
 }
 
-#' Load a per-fit football iceland extraction archive partition
+#' Load a per-fit football iceland extraction partition
 #'
 #' Reads the six Parquet files written by [`extract_football_iceland()`] from
-#' `data/beliefs/archive/sport=football/country=iceland/sex=Z/fit_date=D/division=Y/`,
-#' for one or more divisions, into a named list keyed by division code.
+#' `data/beliefs/extracts/sport=football/country=iceland/sex=Z/fit_date=D/`,
+#' splits each by the in-payload `division` column, and returns a named list
+#' keyed by division code.
 #'
 #' Auto-discovery (default `fit_date = NULL`) walks the `fit_date=*`
-#' partitions in descending order and returns the first one whose
-#' `division=BD/` sub-partition contains all six expected files.
-#' (BD is required because the platform always renders the BD page;
-#' an LD1 sub-partition is optional and degrades to an empty list of
-#' tibbles when missing — pre-2026-05-04 archives never wrote LD1.)
-#'
-#' Legacy partitions written before this refactor — six parquets directly
-#' under `fit_date=D/`, without the `division=Y/` sub-partition — are
-#' transparently lifted into BD and treated as empty for LD1.
+#' partitions in descending order and returns the first one that contains
+#' all six expected files. BD is always required (the platform always renders
+#' the BD page); an absent `"LD1"` slice degrades to empty tibbles for the
+#' LD1 cell.
 #'
 #' @param league League list with `sport == "football"` and
 #'   `country == "iceland"`.
 #' @param sex `"male"` or `"female"`.
 #' @param fit_date `Date` or `NULL`. When `NULL` (default), reads the latest
-#'   partition that contains the full extracted set for BD.
-#' @param archive_root Beliefs archive root.
-#'   Default `here::here("data", "beliefs", "archive")`.
+#'   partition that contains the full six-file extracted set.
+#' @param extracts_root Beliefs extracts root.
+#'   Default `here::here("data", "beliefs", "extracts")`.
 #' @param target_divs Character vector of divisions to load. Defaults to
 #'   `c("BD", "LD1")`. Returned list always includes a slot per requested
-#'   division (with empty-tibble parquets when the division partition is
-#'   missing or LD1 in a legacy archive).
+#'   division (with empty-tibble parquets when the `division` filter yields
+#'   no rows).
 #' @return Named list. Each requested division key (e.g. `"BD"`, `"LD1"`)
 #'   maps to a list with the six tibbles
 #'   (`predicted_matches`, `team_strengths_quantiles`,
 #'   `round_strengths_quantiles`, `home_advantage_quantiles`,
-#'   `final_positions`, `points_distribution`). Plus `fit_date` (the `Date`
-#'   of the partition that was loaded).
+#'   `final_positions`, `points_distribution`) — `division` column dropped
+#'   after filtering. Plus `fit_date` (the `Date` of the partition that was
+#'   loaded).
 #' @export
 read_extracted_football <- function(league, sex, fit_date = NULL,
-                                    archive_root = here::here(
-                                      "data", "beliefs", "archive"
+                                    extracts_root = here::here(
+                                      "data", "beliefs", "extracts"
                                     ),
                                     target_divs = .FOOTBALL_ICELAND_DIVISIONS_PFI) {
   stopifnot(league$sport == "football", league$country == "iceland")
@@ -582,38 +563,28 @@ read_extracted_football <- function(league, sex, fit_date = NULL,
     all(target_divs %in% .FOOTBALL_ICELAND_DIVISIONS_PFI)
   )
 
-  expected <- c(
-    "predicted_matches.parquet",
-    "team_strengths_quantiles.parquet",
-    "round_strengths_quantiles.parquet",
-    "home_advantage_quantiles.parquet",
-    "final_positions.parquet",
-    "points_distribution.parquet"
+  file_types <- c(
+    "predicted_matches",
+    "team_strengths_quantiles",
+    "round_strengths_quantiles",
+    "home_advantage_quantiles",
+    "final_positions",
+    "points_distribution"
   )
+  expected <- paste0(file_types, ".parquet")
 
   base <- file.path(
-    archive_root,
+    extracts_root,
     paste0("sport=", league$sport),
     paste0("country=", league$country),
     paste0("sex=", sex)
   )
   if (!dir.exists(base)) {
-    stop("No archive directory at ", base, call. = FALSE)
+    stop("No extracts directory at ", base, call. = FALSE)
   }
 
-  # A fit_date partition is "complete" if either the per-division layout
-  # has all 6 BD parquets, or the legacy layout has all 6 directly under
-  # fit_date=D/. The legacy layout is treated as BD-only.
   .partition_is_complete <- function(fit_dir) {
-    bd_dir <- file.path(fit_dir, "division=BD")
-    if (all(file.exists(file.path(bd_dir, expected)))) {
-      return(TRUE)
-    }
-    # Legacy: extract pre-refactor wrote 6 parquets directly under fit_dir.
-    if (all(file.exists(file.path(fit_dir, expected)))) {
-      return(TRUE)
-    }
-    FALSE
+    all(file.exists(file.path(fit_dir, expected)))
   }
 
   if (is.null(fit_date)) {
@@ -635,8 +606,7 @@ read_extracted_football <- function(league, sex, fit_date = NULL,
     if (is.null(fit_dir)) {
       stop(
         "No fit_date partition under ", base,
-        " contains a complete extracted set ",
-        "(legacy partitions with only part-0.parquet are skipped). ",
+        " contains a complete extracted set. ",
         "Force-trigger fit.yml or run extract_football_iceland() locally.",
         call. = FALSE
       )
@@ -648,21 +618,19 @@ read_extracted_football <- function(league, sex, fit_date = NULL,
       base, paste0("fit_date=", format(fit_date_out, "%Y-%m-%d"))
     )
     if (!dir.exists(fit_dir)) {
-      stop("Archive partition not found: ", fit_dir, call. = FALSE)
+      stop("Extracts partition not found: ", fit_dir, call. = FALSE)
     }
     if (!.partition_is_complete(fit_dir)) {
       stop(
-        "Archive partition ", fit_dir,
-        " is incomplete (BD parquets missing under either ",
-        "division=BD/ or directly under the fit partition). ",
+        "Extracts partition ", fit_dir,
+        " is incomplete (one or more of: ",
+        paste(expected, collapse = ", "), "). ",
         "Re-run extract_football_iceland() against this fit.",
         call. = FALSE
       )
     }
   }
 
-  # Read each requested division's parquets. For BD, fall back to the legacy
-  # layout (parquets directly under fit_dir) when division=BD/ is missing.
   empty_tibbles <- list(
     predicted_matches = tibble::tibble(
       home_team = character(), away_team = character(),
@@ -691,39 +659,23 @@ read_extracted_football <- function(league, sex, fit_date = NULL,
     )
   )
 
+  parquets <- lapply(file_types, function(ft) {
+    arrow::read_parquet(file.path(fit_dir, paste0(ft, ".parquet")))
+  })
+  names(parquets) <- file_types
+
   read_one_division <- function(target_div) {
-    div_dir <- file.path(fit_dir, paste0("division=", target_div))
-    if (!all(file.exists(file.path(div_dir, expected)))) {
-      # Legacy archive: 6 parquets at fit_dir level → BD only
-      if (
-        target_div == "BD" &&
-          all(file.exists(file.path(fit_dir, expected)))
-      ) {
-        div_dir <- fit_dir
-      } else {
-        return(empty_tibbles)
+    out <- lapply(file_types, function(ft) {
+      df <- parquets[[ft]]
+      if (!"division" %in% names(df) || nrow(df) == 0L) {
+        return(empty_tibbles[[ft]])
       }
-    }
-    list(
-      predicted_matches = arrow::read_parquet(
-        file.path(div_dir, "predicted_matches.parquet")
-      ),
-      team_strengths_quantiles = arrow::read_parquet(
-        file.path(div_dir, "team_strengths_quantiles.parquet")
-      ),
-      round_strengths_quantiles = arrow::read_parquet(
-        file.path(div_dir, "round_strengths_quantiles.parquet")
-      ),
-      home_advantage_quantiles = arrow::read_parquet(
-        file.path(div_dir, "home_advantage_quantiles.parquet")
-      ),
-      final_positions = arrow::read_parquet(
-        file.path(div_dir, "final_positions.parquet")
-      ),
-      points_distribution = arrow::read_parquet(
-        file.path(div_dir, "points_distribution.parquet")
-      )
-    )
+      df <- df[df$division == target_div, , drop = FALSE]
+      df$division <- NULL
+      tibble::as_tibble(df)
+    })
+    names(out) <- file_types
+    out
   }
 
   out <- lapply(target_divs, read_one_division)

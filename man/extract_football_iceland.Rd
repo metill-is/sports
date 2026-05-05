@@ -12,7 +12,8 @@ extract_football_iceland(
   end_date = fit_date,
   root = here::here("data"),
   prep = NULL,
-  archive_root = NULL
+  extracts_root = NULL,
+  target_divs = .FOOTBALL_ICELAND_DIVISIONS_PFI
 )
 }
 \arguments{
@@ -22,7 +23,7 @@ extract_football_iceland(
 
 \item{sex}{`"male"` or `"female"`.}
 
-\item{fit_date}{Date stamped on the archive partition. Default `Sys.Date()`.}
+\item{fit_date}{Date stamped on the extracts partition. Default `Sys.Date()`.}
 
 \item{end_date}{Training cutoff used for prepare_data() reconstruction.
 Default = `fit_date`.}
@@ -34,47 +35,58 @@ Default = `fit_date`.}
 `fit_league()` to avoid a redundant prepare_data call (and to
 guarantee consistency with the fit).}
 
-\item{archive_root}{Optional write root for the per-fit archive partition.
-Defaults to `file.path(root, "beliefs", "archive")`. Tests can override
+\item{extracts_root}{Optional write root for the per-fit extracts partition.
+Defaults to `file.path(root, "beliefs", "extracts")`. Tests can override
 this to write into an isolated tempdir while still reading facts from
 the real `root`.}
+
+\item{target_divs}{Character vector of division codes to extract. Defaults
+to `c("BD", "LD1")` (both). Useful in tests to extract one division only.}
 }
 \value{
-invisible(NULL). Six Parquet files are written into the archive
-  partition.
+invisible(NULL). 6 Parquet files written into the extracts partition.
 }
 \description{
-Writes six Parquet files into the per-fit archive partition at
-`data/beliefs/archive/sport=football/country=iceland/sex={male|female}/fit_date=YYYY-MM-DD/`:
+Writes six Parquet files into the per-fit extracts partition at
+`data/beliefs/extracts/sport=football/country=iceland/sex={male|female}/fit_date=YYYY-MM-DD/`.
+The fit covers both Icelandic football divisions (Besta deild + Lengjudeild);
+each parquet carries a `division` column (`"BD"` / `"LD1"`) so the publisher
+filters to the cell it's rendering.
 }
 \details{
-- `predicted_matches.parquet` — per-(home_team, away_team, match_date,
-  home_goals, away_goals) row with the integer-pair occurrence count
-  across the posterior. Lossless compression of the discrete posterior
-  for that match's marginal distribution.
+Files are written under `data/beliefs/extracts/`, **not** `data/beliefs/archive/`,
+so they don't pollute the canonical `beliefs_archive` table (per-draw-per-match
+draws written by `model-league.R::fit_league()` for sports without a
+dedicated extraction layer). Mixing the two trees previously caused
+arrow/DuckDB schema-unification failures.
+
+Per-fit parquets (each with a `division` column):
+
+- `predicted_matches.parquet` — per-(division, home_team, away_team,
+  match_date, home_goals, away_goals) row with the integer-pair occurrence
+  count across the posterior.
 - `team_strengths_quantiles.parquet` — 99-quantile band per
-  (team, component, location) where component ∈ {offence, defence, total}
-  and location ∈ {home, away, avg}. The `avg` row is the per-draw mean of
-  home/away (computed pre-quantile so intervals reflect the joint posterior).
+  (division, team, component, location) where component ∈ {offence, defence,
+  total} and location ∈ {home, away, avg}. The `avg` row is the per-draw mean
+  of home/away (computed pre-quantile so intervals reflect the joint
+  posterior).
 - `round_strengths_quantiles.parquet` — same 9-cell grid but per
-  (round, team) — drives the strength trajectory.
-- `home_advantage_quantiles.parquet` — 99-quantile band per (team, component)
-  for the multiplicative home-advantage parameter `exp(home_advantage_*)`.
-  The `total` component is `exp(home_advantage_tot / 2)` matching the
-  publisher's per-side allocation.
-- `final_positions.parquet` — per-(team, placement) probability over the
-  posterior, pre-computed at extract time because the count representation
-  above doesn't preserve the cross-match draw alignment that the simulation
-  requires.
-- `points_distribution.parquet` — per-(team, points) probability, same
-  reasoning.
+  (division, round, team), where `round` is the team's chronological
+  matchweek *within the division*. Drives the strength trajectory.
+- `home_advantage_quantiles.parquet` — 99-quantile band per
+  (division, team, component) for the multiplicative home-advantage parameter
+  `exp(home_advantage_*)`. The `total` component is `exp(home_advantage_tot / 2)`
+  matching the publisher's per-side allocation.
+- `final_positions.parquet` — per-(division, team, placement) probability
+  over the posterior, pre-computed at extract time because the count
+  representation above doesn't preserve the cross-match draw alignment that
+  the simulation requires.
+- `points_distribution.parquet` — per-(division, team, points) probability,
+  same reasoning.
 
 Together these six Parquets capture everything the football publisher
-currently reads from the in-memory fit RDS, at roughly 500 KB per fit
-(vs. 100–500 MB RDS). See `Sports/Knowledge/Publish Pipeline/extraction-layer`
-in the Metill Obsidian vault for the design rationale.
-
-Phase 1 of the extraction-layer migration (additive; the publisher still
-reads from the in-memory fit RDS for now). Phase 2 will refactor
-`publish_football_iceland()` to take an `extracted` list parameter.
+currently reads from the in-memory fit RDS, at roughly 1 MB per fit
+(both divisions combined) vs. 100–500 MB for the RDS. See
+`Sports/Knowledge/Publish Pipeline/extraction-layer` in the Metill Obsidian
+vault for the design rationale.
 }

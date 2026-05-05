@@ -15,13 +15,13 @@
       sex = sex,
       fit_date = end_date,
       end_date = end_date,
-      archive_root = extract_dir
+      extracts_root = extract_dir
     )
   ))
   read_extracted_football(
     league,
     sex = sex,
     fit_date = end_date,
-    archive_root = extract_dir
+    extracts_root = extract_dir
   )
 }

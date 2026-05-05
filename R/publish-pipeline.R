@@ -3,8 +3,8 @@ NULL
 
 #' tar_target wrapper: publish JSONs for a single (league x sex).
 #'
-#' Football iceland reads the per-fit extraction archive
-#' (`data/beliefs/archive/sport=football/country=iceland/sex=Z/fit_date=*/`,
+#' Football iceland reads the per-fit extraction tree
+#' (`data/beliefs/extracts/sport=football/country=iceland/sex=Z/fit_date=*/`,
 #' the 6 Parquets emitted by `extract_football_iceland()`) and dispatches
 #' to `publish_football_iceland(extracted, ...)`. Basketball and handball
 #' still read the fit RDS directly from
@@ -32,12 +32,13 @@ publish_one <- function(static, betting, key, sex,
   league$betting <- betting
 
   if (identical(key, "football_iceland")) {
+    extracts_root <- file.path(root, "beliefs", "extracts")
     archive_root <- file.path(root, "beliefs", "archive")
     extracted <- tryCatch(
       read_extracted_football(
         league = league,
         sex = sex,
-        archive_root = archive_root
+        extracts_root = extracts_root
       ),
       error = function(e) {
         cli::cli_alert_warning(
@@ -55,6 +56,7 @@ publish_one <- function(static, betting, key, sex,
       sex = sex,
       root = root,
       output_root = file.path(root, "publish"),
+      extracts_root = extracts_root,
       archive_root = archive_root
     )
     return(invisible(NULL))

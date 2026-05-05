@@ -56,6 +56,7 @@ sports/
 │   ├── decide-portfolio.R          # portfolio_optimise(packages)
 │   ├── decide-calibration.R        # compute_calibration(league, sex)
 │   ├── decide-pipeline.R           # decide_league() orchestrator
+│   ├── extract-football-iceland.R  # extract_football_iceland() + read_extracted_football() (writes/reads beliefs/extracts/)
 │   ├── publish-football-iceland.R  # 11 JSONs per sex (7 snapshot + 4 history)
 │   ├── publish-basketball-iceland.R # 8 JSONs per sex (7 snapshot + final_positions_history; not surfaced on platform until autumn 2026)
 │   ├── publish-handball-iceland.R  # 8 JSONs per sex (7 snapshot + final_positions_history; final_positions/points_distribution zero-row at end-of-season — resolves autumn 2026)
@@ -79,7 +80,8 @@ sports/
 │   │   └── schedules/              # Upcoming fixtures via ingest
 │   ├── beliefs/
 │   │   ├── latest/sport=X/country=Y/sex=Z/beliefs.parquet               # Snapshot per fit
-│   │   ├── archive/sport=X/country=Y/sex=Z/fit_date=YYYY-MM-DD/…         # Accretive per fit_date
+│   │   ├── archive/sport=X/country=Y/sex=Z/fit_date=YYYY-MM-DD/part-0.parquet  # Per-draw, accretive per fit_date
+│   │   ├── extracts/sport=football/country=iceland/sex=Z/fit_date=YYYY-MM-DD/  # Football-only sidecars (6 parquets, division payload column)
 │   │   └── fits/                   # GITIGNORED — Stan fit RDS, regenerable
 │   ├── decisions/
 │   │   ├── candidates/sport=X/country=Y/run_date=YYYY-MM-DD/  # All stages
@@ -263,21 +265,31 @@ Internal schemas use English throughout. Canonical column names: `home_team` / `
 
 ### Publish layer
 
-- **Football iceland (post per-division extraction, 2026-05-04):**
+- **Football iceland (extracts tree, 2026-05-05):**
   `publish_football_iceland(extracted, league, sex)` reads from the
-  6 per-fit Parquets **per division** at
-  `data/beliefs/archive/sport=football/country=iceland/sex=Z/fit_date=*/division={BD|LD1}/`
+  6 per-fit Parquets at
+  `data/beliefs/extracts/sport=football/country=iceland/sex=Z/fit_date=*/`
   (emitted by `extract_football_iceland()`) instead of the in-memory
-  fit RDS. The fit RDS is fully ephemeral — gitignored, deletable
+  fit RDS. Each parquet carries a `division` column (`"BD"` or
+  `"LD1"`); the reader filters by that column to materialise per-cell
+  tibbles. The fit RDS is fully ephemeral — gitignored, deletable
   after a fit completes — and the legacy beliefs_archive
   (`part-0.parquet`) write was dropped for football iceland in
   `R/model-league.R::fit_league()`. Use
   `read_extracted_football(league, sex, fit_date = NULL)` to load
   both divisions into the publisher's `extracted` argument; the
   return shape is `list(BD = list(<6 tibbles>), LD1 = list(<6 tibbles>),
-  fit_date = D)`. Legacy fit_date partitions written by the
-  pre-2026-05-04 extractor (6 parquets directly under `fit_date=D/`)
-  are transparently lifted into the BD slot; LD1 is empty for those.
+  fit_date = D)`.
+
+  **Why a separate tree**: putting per-cell summaries under
+  `data/beliefs/archive/` (the canonical per-draw-per-match Parquet
+  table) caused two failures: (1) arrow's hive-partition auto-detection
+  saw mixed depths when football used `division=…/` subdirs; (2)
+  `arrow::open_dataset()` couldn't unify the per-draw schema with the
+  pre-aggregated sidecar schemas (e.g. `home_goals: double` vs
+  `int32`). Moving sidecars to `data/beliefs/extracts/` keeps the
+  `beliefs_archive` dataset uniform (one schema, depth 4) while still
+  partitioning the sidecars by `(sport, country, sex, fit_date)`.
 
   **Per-division output**: the publisher loops over both Icelandic
   football divisions (`BD` = Besta deild, `LD1` = Lengjudeild) and
@@ -286,9 +298,10 @@ Internal schemas use English throughout. Canonical column names: `home_team` / `
   suffix follows the platform URL slug (`/lengja/` → `ld`, not `ld1`).
   Total publish output for football iceland is 4 directories ×
   11 JSONs = 44 files per fit. The per-cell extracted slice is
-  pre-filtered to the division's teams + matches by the extractor, so
-  the publisher's loop body is now mostly a render of `ext <- extracted[[target_div]]`
-  rather than a filter-then-render. The legacy fit-based wrapper
+  pre-filtered to the division's teams + matches by the reader's
+  `division` filter, so the publisher's loop body is now mostly a
+  render of `ext <- extracted[[target_div]]` rather than a
+  filter-then-render. The legacy fit-based wrapper
   `.publish_football_iceland_from_fit_pfi(..., target_div = X)`
   survives as a regression backstop, deletable after a few production
   cycles.

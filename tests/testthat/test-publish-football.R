@@ -630,7 +630,7 @@ test_that("publish_football_iceland: embeds preseason field when prior fit exist
   leagues <- load_leagues()
   league <- leagues[["football_iceland"]]
 
-  archive <- withr::local_tempdir()
+  extracts <- withr::local_tempdir()
   out <- withr::local_tempdir()
   end_date <- as.Date("2026-04-25")
   preseason_date <- as.Date("2026-04-09")
@@ -641,28 +641,28 @@ test_that("publish_football_iceland: embeds preseason field when prior fit exist
     sex = "male", end_date = end_date
   )
 
-  # Synthesise a "preseason" archive partition by copying the current
-  # extracted team_strengths_quantiles to fit_date=preseason_date. We do
-  # this directly because re-extracting the backup fit at a different
-  # end_date would mismatch n_pred_fit vs n_pred_data and produce empty
+  # Synthesise a "preseason" extracts partition by copying the current
+  # extracted tibbles to fit_date=preseason_date. We do this directly
+  # because re-extracting the backup fit at a different end_date would
+  # mismatch n_pred_fit vs n_pred_data and produce empty
   # team_strengths_quantiles. In production backfill the end_dates align,
   # but the test only exercises the publisher's lookup-and-embed path.
   preseason_dir <- file.path(
-    archive,
+    extracts,
     "sport=football", "country=iceland", "sex=male",
-    paste0("fit_date=", format(preseason_date, "%Y-%m-%d")),
-    "division=BD"
+    paste0("fit_date=", format(preseason_date, "%Y-%m-%d"))
   )
   dir.create(preseason_dir, recursive = TRUE)
+  ts_with_div <- extracted$BD$team_strengths_quantiles
+  ts_with_div$division <- "BD"
   arrow::write_parquet(
-    extracted$BD$team_strengths_quantiles,
+    ts_with_div,
     file.path(preseason_dir, "team_strengths_quantiles.parquet")
   )
-  # Also write predicted_matches so .find_pre_round_fit_path_pfi has a
-  # canonical hit (though .read_preseason_team_strengths_pfi would walk
-  # through the partition list anyway).
+  pm_with_div <- extracted$BD$predicted_matches
+  pm_with_div$division <- "BD"
   arrow::write_parquet(
-    extracted$BD$predicted_matches,
+    pm_with_div,
     file.path(preseason_dir, "predicted_matches.parquet")
   )
 
@@ -673,7 +673,7 @@ test_that("publish_football_iceland: embeds preseason field when prior fit exist
       sex = "male",
       end_date = end_date,
       output_root = out,
-      archive_root = archive
+      extracts_root = extracts
     )
   )
 
@@ -709,7 +709,7 @@ test_that("publish_football_iceland: omits preseason when no prior fit exists", 
   leagues <- load_leagues()
   league <- leagues[["football_iceland"]]
 
-  archive <- withr::local_tempdir()
+  extracts <- withr::local_tempdir()
   out <- withr::local_tempdir()
   end_date <- as.Date("2026-04-25")
 
@@ -725,7 +725,7 @@ test_that("publish_football_iceland: omits preseason when no prior fit exists", 
       sex = "male",
       end_date = end_date,
       output_root = out,
-      archive_root = archive
+      extracts_root = extracts
     )
   )
 

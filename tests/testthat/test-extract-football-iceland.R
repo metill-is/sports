@@ -1,8 +1,8 @@
-# Phase 1 of the extraction-layer migration. extract_football_iceland()
-# writes six Parquet files per division into
-# data/beliefs/archive/.../fit_date=D/division={BD,LD1}/. Tests verify
-# (a) shape contracts and (b) that the extracted summaries agree with
-# what the in-memory publisher would compute.
+# extract_football_iceland() writes 6 Parquet files per fit into
+# data/beliefs/extracts/.../fit_date=D/, with `division` ("BD" or "LD1") as
+# a payload column in each. Tests verify (a) shape contracts and (b) that
+# the extracted summaries agree with what the in-memory publisher would
+# compute.
 
 backup_fit_path_extract <- function(sex) {
   root <- Sys.getenv(
@@ -12,17 +12,16 @@ backup_fit_path_extract <- function(sex) {
   file.path(root, "Sports", "football", "iceland", "results", sex, "fit.rds")
 }
 
-# Helper: archive partition path for a given (sex, fit_date, division).
-.archive_div_dir <- function(out, sex, fit_date_chr, target_div) {
+# Helper: extracts partition path for a given (sex, fit_date).
+.extracts_fit_dir <- function(out, sex, fit_date_chr) {
   file.path(
     out,
     "sport=football", "country=iceland", paste0("sex=", sex),
-    paste0("fit_date=", fit_date_chr),
-    paste0("division=", target_div)
+    paste0("fit_date=", fit_date_chr)
   )
 }
 
-test_that("extract_football_iceland writes all 6 Parquets per division with expected schemas", {
+test_that("extract_football_iceland writes all 6 Parquets with expected schemas + division column", {
   fit_path <- backup_fit_path_extract("male")
   if (!file.exists(fit_path)) testthat::skip("legacy football fit unavailable")
   if (!dir.exists(here::here("data", "facts", "results"))) {
@@ -39,10 +38,11 @@ test_that("extract_football_iceland writes all 6 Parquets per division with expe
       sex = "male",
       fit_date = as.Date("2026-05-03"),
       end_date = as.Date("2026-05-03"),
-      archive_root = out
+      extracts_root = out
     )
   ))
 
+  fit_dir <- .extracts_fit_dir(out, "male", "2026-05-03")
   expected <- c(
     "predicted_matches.parquet",
     "team_strengths_quantiles.parquet",
@@ -51,26 +51,22 @@ test_that("extract_football_iceland writes all 6 Parquets per division with expe
     "final_positions.parquet",
     "points_distribution.parquet"
   )
-  for (target_div in c("BD", "LD1")) {
-    archive_dir <- .archive_div_dir(out, "male", "2026-05-03", target_div)
-    for (f in expected) {
-      expect_true(
-        file.exists(file.path(archive_dir, f)),
-        info = paste("missing:", target_div, "/", f)
-      )
-    }
+  for (f in expected) {
+    expect_true(
+      file.exists(file.path(fit_dir, f)),
+      info = paste("missing:", f)
+    )
   }
+  # No nested division=*/ subdirs -- partition depth is 4, not 5.
+  expect_false(dir.exists(file.path(fit_dir, "division=BD")))
+  expect_false(dir.exists(file.path(fit_dir, "division=LD1")))
 
-  # BD schema checks (LD1 may be empty pre-refactor publisher; schemas
-  # are identical so spot-check BD). pm = predicted_matches, ts = team_strengths.
-  bd <- .archive_div_dir(out, "male", "2026-05-03", "BD")
-
-  pm <- arrow::read_parquet(file.path(bd, "predicted_matches.parquet"))
+  pm <- arrow::read_parquet(file.path(fit_dir, "predicted_matches.parquet"))
   expect_setequal(
     names(pm),
     c(
       "home_team", "away_team", "match_date",
-      "home_goals", "away_goals", "count"
+      "home_goals", "away_goals", "count", "division"
     )
   )
   if (nrow(pm) > 0L) {
@@ -78,21 +74,23 @@ test_that("extract_football_iceland writes all 6 Parquets per division with expe
     expect_true(is.integer(pm$home_goals))
     expect_true(is.integer(pm$away_goals))
     expect_true(is.integer(pm$count))
+    expect_true(all(pm$division %in% c("BD", "LD1")))
   }
 
-  ts <- arrow::read_parquet(file.path(bd, "team_strengths_quantiles.parquet"))
+  ts <- arrow::read_parquet(file.path(fit_dir, "team_strengths_quantiles.parquet"))
   expect_setequal(
     names(ts),
-    c("team", "component", "location", "quantile", "value")
+    c("team", "component", "location", "quantile", "value", "division")
   )
   expect_setequal(unique(ts$component), c("offence", "defence", "total"))
   expect_setequal(unique(ts$location), c("home", "away", "avg"))
   expect_setequal(unique(ts$quantile), 1:99)
+  expect_true(all(ts$division %in% c("BD", "LD1")))
 
-  rs <- arrow::read_parquet(file.path(bd, "round_strengths_quantiles.parquet"))
+  rs <- arrow::read_parquet(file.path(fit_dir, "round_strengths_quantiles.parquet"))
   expect_setequal(
     names(rs),
-    c("round", "team", "component", "location", "quantile", "value")
+    c("round", "team", "component", "location", "quantile", "value", "division")
   )
   if (nrow(rs) > 0L) {
     expect_setequal(unique(rs$component), c("offence", "defence", "total"))
@@ -100,28 +98,28 @@ test_that("extract_football_iceland writes all 6 Parquets per division with expe
     expect_setequal(unique(rs$quantile), 1:99)
   }
 
-  ha <- arrow::read_parquet(file.path(bd, "home_advantage_quantiles.parquet"))
+  ha <- arrow::read_parquet(file.path(fit_dir, "home_advantage_quantiles.parquet"))
   expect_setequal(
     names(ha),
-    c("team", "component", "quantile", "value")
+    c("team", "component", "quantile", "value", "division")
   )
   expect_setequal(unique(ha$component), c("offence", "defence", "total"))
   expect_setequal(unique(ha$quantile), 1:99)
   expect_true(all(ha$value > 0))
 
-  fp <- arrow::read_parquet(file.path(bd, "final_positions.parquet"))
-  expect_setequal(names(fp), c("team", "placement", "probability"))
+  fp <- arrow::read_parquet(file.path(fit_dir, "final_positions.parquet"))
+  expect_setequal(names(fp), c("team", "placement", "probability", "division"))
   if (nrow(fp) > 0L) {
     sums <- fp |>
-      dplyr::summarise(s = sum(.data$probability), .by = "team")
+      dplyr::summarise(s = sum(.data$probability), .by = c("division", "team"))
     expect_true(all(abs(sums$s - 1) < 1e-9))
   }
 
-  pd <- arrow::read_parquet(file.path(bd, "points_distribution.parquet"))
-  expect_setequal(names(pd), c("team", "points", "probability"))
+  pd <- arrow::read_parquet(file.path(fit_dir, "points_distribution.parquet"))
+  expect_setequal(names(pd), c("team", "points", "probability", "division"))
   if (nrow(pd) > 0L) {
     sums <- pd |>
-      dplyr::summarise(s = sum(.data$probability), .by = "team")
+      dplyr::summarise(s = sum(.data$probability), .by = c("division", "team"))
     expect_true(all(abs(sums$s - 1) < 1e-9))
   }
 })
@@ -143,28 +141,24 @@ test_that("extract_football_iceland: BD and LD1 partitions contain disjoint team
       sex = "male",
       fit_date = as.Date("2026-05-03"),
       end_date = as.Date("2026-05-03"),
-      archive_root = out
+      extracts_root = out
     )
   ))
 
-  bd_ts <- arrow::read_parquet(file.path(
-    .archive_div_dir(out, "male", "2026-05-03", "BD"),
+  ts <- arrow::read_parquet(file.path(
+    .extracts_fit_dir(out, "male", "2026-05-03"),
     "team_strengths_quantiles.parquet"
   ))
-  ld_ts <- arrow::read_parquet(file.path(
-    .archive_div_dir(out, "male", "2026-05-03", "LD1"),
-    "team_strengths_quantiles.parquet"
-  ))
+  bd_teams <- unique(ts$team[ts$division == "BD"])
+  ld_teams <- unique(ts$team[ts$division == "LD1"])
 
-  if (nrow(ld_ts) == 0L) {
+  if (length(ld_teams) == 0L) {
     testthat::skip("LD1 strengths empty for this fit (no Lengjudeild matches)")
   }
-  bd_teams <- unique(bd_ts$team)
-  ld_teams <- unique(ld_ts$team)
   expect_length(intersect(bd_teams, ld_teams), 0L)
 })
 
-test_that("extract_football_iceland: target_divs subset writes only requested partitions", {
+test_that("extract_football_iceland: target_divs subset only includes requested divisions", {
   fit_path <- backup_fit_path_extract("male")
   if (!file.exists(fit_path)) testthat::skip("legacy football fit unavailable")
   if (!dir.exists(here::here("data", "facts", "results"))) {
@@ -181,13 +175,16 @@ test_that("extract_football_iceland: target_divs subset writes only requested pa
       sex = "male",
       fit_date = as.Date("2026-05-03"),
       end_date = as.Date("2026-05-03"),
-      archive_root = out,
+      extracts_root = out,
       target_divs = "BD"
     )
   ))
 
-  expect_true(dir.exists(.archive_div_dir(out, "male", "2026-05-03", "BD")))
-  expect_false(dir.exists(.archive_div_dir(out, "male", "2026-05-03", "LD1")))
+  ts <- arrow::read_parquet(file.path(
+    .extracts_fit_dir(out, "male", "2026-05-03"),
+    "team_strengths_quantiles.parquet"
+  ))
+  expect_setequal(unique(ts$division), "BD")
 })
 
 test_that("predicted_matches.parquet preserves total draw count per match", {
@@ -207,12 +204,12 @@ test_that("predicted_matches.parquet preserves total draw count per match", {
       sex = "male",
       fit_date = as.Date("2026-05-03"),
       end_date = as.Date("2026-05-03"),
-      archive_root = out
+      extracts_root = out
     )
   ))
 
   pm <- arrow::read_parquet(file.path(
-    .archive_div_dir(out, "male", "2026-05-03", "BD"),
+    .extracts_fit_dir(out, "male", "2026-05-03"),
     "predicted_matches.parquet"
   ))
   if (nrow(pm) == 0L) testthat::skip("predicted_matches empty (N_pred mismatch)")
@@ -220,7 +217,7 @@ test_that("predicted_matches.parquet preserves total draw count per match", {
   per_match_total <- pm |>
     dplyr::summarise(
       total = sum(.data$count),
-      .by = c("home_team", "away_team", "match_date")
+      .by = c("division", "home_team", "away_team", "match_date")
     )
   expect_equal(length(unique(per_match_total$total)), 1L)
 })
@@ -243,14 +240,14 @@ test_that("team_strengths_quantiles q=50 matches publisher's median per cell", {
       sex = "male",
       fit_date = as.Date("2026-05-03"),
       end_date = as.Date("2026-05-03"),
-      archive_root = out
+      extracts_root = out
     )
   ))
   extracted <- read_extracted_football(
     league,
     sex = "male",
     fit_date = as.Date("2026-05-03"),
-    archive_root = out
+    extracts_root = out
   )
   suppressWarnings(suppressMessages(
     publish_football_iceland(
@@ -263,9 +260,11 @@ test_that("team_strengths_quantiles q=50 matches publisher's median per cell", {
   ))
 
   ts_q <- arrow::read_parquet(file.path(
-    .archive_div_dir(out, "male", "2026-05-03", "BD"),
+    .extracts_fit_dir(out, "male", "2026-05-03"),
     "team_strengths_quantiles.parquet"
-  ))
+  )) |>
+    dplyr::filter(.data$division == "BD")
+
   ts_pub <- jsonlite::read_json(file.path(
     pub, "football", "iceland", "karla-bd", "team_strengths.json"
   ))$records
@@ -294,92 +293,56 @@ test_that("team_strengths_quantiles q=50 matches publisher's median per cell", {
 
 # ---- read_extracted_football() ----------------------------------------------
 
-# Build a "modern" partition (per-division parquets) for one or both divisions.
+# Build a "modern" partition (6 parquets at fit_date=*/, with `division` payload).
 # `divisions = c("BD", "LD1")` writes both; payload identifies which sub-dir.
-.write_modern_partition_extract <- function(base, fit_date_chr,
-                                            divisions = c("BD", "LD1"),
-                                            payload = tibble::tibble(x = 1L)) {
+.write_extracts_partition <- function(base, fit_date_chr,
+                                      divisions = c("BD", "LD1"),
+                                      payload = tibble::tibble(x = 1L)) {
   fit_dir <- file.path(base, paste0("fit_date=", fit_date_chr))
   dir.create(fit_dir, recursive = TRUE, showWarnings = FALSE)
-  for (target_div in divisions) {
-    pdir <- file.path(fit_dir, paste0("division=", target_div))
-    dir.create(pdir, recursive = TRUE)
-    for (f in c(
-      "predicted_matches.parquet", "team_strengths_quantiles.parquet",
-      "round_strengths_quantiles.parquet", "home_advantage_quantiles.parquet",
-      "final_positions.parquet", "points_distribution.parquet"
-    )) {
-      arrow::write_parquet(payload, file.path(pdir, f))
-    }
-  }
-  invisible(fit_dir)
-}
-
-# Build a legacy partition (6 parquets directly under fit_date=D/, BD-only).
-.write_legacy_partition_extract <- function(base, fit_date_chr,
-                                            payload = tibble::tibble(x = 1L)) {
-  pdir <- file.path(base, paste0("fit_date=", fit_date_chr))
-  dir.create(pdir, recursive = TRUE)
   for (f in c(
     "predicted_matches.parquet", "team_strengths_quantiles.parquet",
     "round_strengths_quantiles.parquet", "home_advantage_quantiles.parquet",
     "final_positions.parquet", "points_distribution.parquet"
   )) {
-    arrow::write_parquet(payload, file.path(pdir, f))
+    df_per_div <- lapply(divisions, function(d) {
+      out <- payload
+      out$division <- d
+      out
+    })
+    arrow::write_parquet(dplyr::bind_rows(df_per_div), file.path(fit_dir, f))
   }
-  invisible(pdir)
+  invisible(fit_dir)
 }
 
-test_that("read_extracted_football: latest auto-discovery skips legacy-pre-extract partitions", {
+test_that("read_extracted_football: latest auto-discovery picks newest complete partition", {
   tmp <- withr::local_tempdir()
   base <- file.path(tmp, "sport=football", "country=iceland", "sex=male")
-  legacy <- file.path(base, "fit_date=2026-04-24")
-  dir.create(legacy, recursive = TRUE)
-  file.create(file.path(legacy, "part-0.parquet"))
-  .write_modern_partition_extract(base, "2026-05-03")
-
-  league <- list(sport = "football", country = "iceland")
-  out <- read_extracted_football(league, sex = "male", archive_root = tmp)
-  expect_equal(out$fit_date, as.Date("2026-05-03"))
-  expect_named(out, c("BD", "LD1", "fit_date"))
-  expect_named(
-    out$BD,
-    c(
-      "predicted_matches", "team_strengths_quantiles",
-      "round_strengths_quantiles", "home_advantage_quantiles",
-      "final_positions", "points_distribution"
-    )
-  )
-})
-
-test_that("read_extracted_football: latest auto-discovery picks newest modern partition", {
-  tmp <- withr::local_tempdir()
-  base <- file.path(tmp, "sport=football", "country=iceland", "sex=male")
-  .write_modern_partition_extract(base, "2026-04-29",
+  .write_extracts_partition(base, "2026-04-29",
     payload = tibble::tibble(d = "2026-04-29")
   )
-  .write_modern_partition_extract(base, "2026-05-03",
+  .write_extracts_partition(base, "2026-05-03",
     payload = tibble::tibble(d = "2026-05-03")
   )
 
   league <- list(sport = "football", country = "iceland")
-  out <- read_extracted_football(league, sex = "male", archive_root = tmp)
+  out <- read_extracted_football(league, sex = "male", extracts_root = tmp)
   expect_equal(out$fit_date, as.Date("2026-05-03"))
   expect_equal(out$BD$predicted_matches$d, "2026-05-03")
 })
 
-test_that("read_extracted_football: lifts legacy single-dir partition into BD slot", {
+test_that("read_extracted_football: returns BD-only when LD1 rows absent", {
   tmp <- withr::local_tempdir()
   base <- file.path(tmp, "sport=football", "country=iceland", "sex=male")
-  .write_legacy_partition_extract(base, "2026-05-01",
-    payload = tibble::tibble(d = "legacy")
+  .write_extracts_partition(base, "2026-05-01",
+    divisions = "BD",
+    payload = tibble::tibble(d = "bd-only")
   )
 
   league <- list(sport = "football", country = "iceland")
-  out <- read_extracted_football(league, sex = "male", archive_root = tmp)
+  out <- read_extracted_football(league, sex = "male", extracts_root = tmp)
   expect_equal(out$fit_date, as.Date("2026-05-01"))
-  expect_equal(out$BD$predicted_matches$d, "legacy")
-  # LD1 falls back to empty tibbles for legacy partitions.
+  expect_equal(out$BD$predicted_matches$d, "bd-only")
   expect_equal(nrow(out$LD1$predicted_matches), 0L)
   expect_equal(nrow(out$LD1$final_positions), 0L)
 })
@@ -387,10 +350,10 @@ test_that("read_extracted_football: lifts legacy single-dir partition into BD sl
 test_that("read_extracted_football: explicit fit_date loads exactly that partition", {
   tmp <- withr::local_tempdir()
   base <- file.path(tmp, "sport=football", "country=iceland", "sex=female")
-  .write_modern_partition_extract(base, "2026-04-25",
+  .write_extracts_partition(base, "2026-04-25",
     payload = tibble::tibble(d = "2026-04-25")
   )
-  .write_modern_partition_extract(base, "2026-05-01",
+  .write_extracts_partition(base, "2026-05-01",
     payload = tibble::tibble(d = "2026-05-01")
   )
 
@@ -399,31 +362,34 @@ test_that("read_extracted_football: explicit fit_date loads exactly that partiti
     league,
     sex = "female",
     fit_date = as.Date("2026-04-25"),
-    archive_root = tmp
+    extracts_root = tmp
   )
   expect_equal(out$fit_date, as.Date("2026-04-25"))
   expect_equal(out$BD$predicted_matches$d, "2026-04-25")
 })
 
-test_that("read_extracted_football: errors when no archive directory exists", {
+test_that("read_extracted_football: errors when no extracts directory exists", {
   tmp <- withr::local_tempdir()
   league <- list(sport = "football", country = "iceland")
   expect_error(
-    read_extracted_football(league, sex = "male", archive_root = tmp),
-    "No archive directory"
+    read_extracted_football(league, sex = "male", extracts_root = tmp),
+    "No extracts directory"
   )
 })
 
-test_that("read_extracted_football: errors when no partition has a complete BD set", {
+test_that("read_extracted_football: errors when no partition is complete", {
   tmp <- withr::local_tempdir()
   base <- file.path(tmp, "sport=football", "country=iceland", "sex=male")
-  legacy <- file.path(base, "fit_date=2026-04-24")
-  dir.create(legacy, recursive = TRUE)
-  file.create(file.path(legacy, "part-0.parquet"))
+  pdir <- file.path(base, "fit_date=2026-04-24")
+  dir.create(pdir, recursive = TRUE)
+  arrow::write_parquet(
+    tibble::tibble(x = 1L, division = "BD"),
+    file.path(pdir, "predicted_matches.parquet")
+  )
 
   league <- list(sport = "football", country = "iceland")
   expect_error(
-    read_extracted_football(league, sex = "male", archive_root = tmp),
+    read_extracted_football(league, sex = "male", extracts_root = tmp),
     "complete extracted set"
   )
 })
@@ -431,10 +397,10 @@ test_that("read_extracted_football: errors when no partition has a complete BD s
 test_that("read_extracted_football: explicit fit_date errors when partition is incomplete", {
   tmp <- withr::local_tempdir()
   base <- file.path(tmp, "sport=football", "country=iceland", "sex=male")
-  pdir <- file.path(base, "fit_date=2026-05-01", "division=BD")
+  pdir <- file.path(base, "fit_date=2026-05-01")
   dir.create(pdir, recursive = TRUE)
   arrow::write_parquet(
-    tibble::tibble(x = 1L),
+    tibble::tibble(x = 1L, division = "BD"),
     file.path(pdir, "predicted_matches.parquet")
   )
   league <- list(sport = "football", country = "iceland")
@@ -443,7 +409,7 @@ test_that("read_extracted_football: explicit fit_date errors when partition is i
       league,
       sex = "male",
       fit_date = as.Date("2026-05-01"),
-      archive_root = tmp
+      extracts_root = tmp
     ),
     "incomplete"
   )
@@ -466,30 +432,22 @@ test_that("read_extracted_football: round-trips with extract_football_iceland", 
       sex = "male",
       fit_date = as.Date("2026-05-03"),
       end_date = as.Date("2026-05-03"),
-      archive_root = out
+      extracts_root = out
     )
   ))
 
   loaded <- read_extracted_football(
     league,
     sex = "male",
-    archive_root = out
+    extracts_root = out
   )
   expect_equal(loaded$fit_date, as.Date("2026-05-03"))
 
-  bd_dir <- .archive_div_dir(out, "male", "2026-05-03", "BD")
-  expect_equal(
-    loaded$BD$predicted_matches,
-    arrow::read_parquet(file.path(bd_dir, "predicted_matches.parquet"))
-  )
-  expect_equal(
-    loaded$BD$team_strengths_quantiles,
-    arrow::read_parquet(file.path(bd_dir, "team_strengths_quantiles.parquet"))
-  )
-  expect_equal(
-    loaded$BD$final_positions,
-    arrow::read_parquet(file.path(bd_dir, "final_positions.parquet"))
-  )
+  fit_dir <- .extracts_fit_dir(out, "male", "2026-05-03")
+  full <- arrow::read_parquet(file.path(fit_dir, "predicted_matches.parquet"))
+  bd_only <- full[full$division == "BD", ]
+  bd_only$division <- NULL
+  expect_equal(loaded$BD$predicted_matches, tibble::as_tibble(bd_only))
 })
 
 test_that("final_positions.parquet matches publisher's final_positions.json", {
@@ -510,14 +468,14 @@ test_that("final_positions.parquet matches publisher's final_positions.json", {
       sex = "male",
       fit_date = as.Date("2026-05-03"),
       end_date = as.Date("2026-05-03"),
-      archive_root = out
+      extracts_root = out
     )
   ))
   extracted <- read_extracted_football(
     league,
     sex = "male",
     fit_date = as.Date("2026-05-03"),
-    archive_root = out
+    extracts_root = out
   )
   suppressWarnings(suppressMessages(
     publish_football_iceland(
@@ -529,10 +487,11 @@ test_that("final_positions.parquet matches publisher's final_positions.json", {
     )
   ))
 
-  fp_extract <- arrow::read_parquet(file.path(
-    .archive_div_dir(out, "male", "2026-05-03", "BD"),
+  fp_full <- arrow::read_parquet(file.path(
+    .extracts_fit_dir(out, "male", "2026-05-03"),
     "final_positions.parquet"
   ))
+  fp_extract <- fp_full[fp_full$division == "BD", c("team", "placement", "probability")]
   fp_pub <- jsonlite::read_json(file.path(
     pub, "football", "iceland", "karla-bd", "final_positions.json"
   ))$records
