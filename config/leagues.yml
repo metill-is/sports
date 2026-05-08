@@ -87,12 +87,12 @@ handball_iceland:
       - { id: "1269", name: "Olísdeild karla", sex: male }
     team_names:
       male:
-        Þór: Þór Akureyri
-        HK: Handknattleiksfélag Kópavogs
-        ÍBV: ÍBV Vestmannaeyjar
-        ÍR: ÍR Reykjavík
+        Þór: Þór
+        HK: HK
+        ÍBV: ÍBV
+        ÍR: ÍR
         FH: FH
-        KA: KA Akureyri
+        KA: KA
         ÍH: ÍH Keflavík
         HBH: HB Hafnarfjörður
         Valur: Valur
