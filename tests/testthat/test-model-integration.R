@@ -71,7 +71,7 @@ test_that("per-match draw count is constant within a (sport, sex) bucket", {
     dplyr::group_by(sport, sex, match_date, home_team, away_team) |>
     dplyr::summarise(n_draws = dplyr::n(), .groups = "drop") |>
     dplyr::group_by(sport, sex) |>
-    dplyr::summarise(sd_draws = stats::sd(n_draws), .groups = "drop")
+    dplyr::summarise(n_draws_distinct = dplyr::n_distinct(n_draws), .groups = "drop")
 
-  expect_true(all(per_bucket$sd_draws == 0))
+  expect_true(all(per_bucket$n_draws_distinct == 1L))
 })
