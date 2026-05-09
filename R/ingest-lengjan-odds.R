@@ -95,6 +95,14 @@ parse_competition_page <- function(html, sport, country) {
 #' expand button: `row-HC_FT` is the handicap (spread) market, `row-OU_FT`
 #' is the totals market. Yields long-form rows for each line/outcome pair.
 #'
+#' Handicap arity differs by sport. Football is 3-way (home/draw/away) with
+#' range-string lines like "0-1", "1-0", "2-0" (parsed to signed numeric via
+#' [parse_handicap()] -- see legacy reference at
+#' `_legacy/lengjan-odds/R/scrape.R::extract_table_market()`). Basketball and
+#' handball are 2-way (home/away) with plain numeric lines like "-1.0", "2.5".
+#' Arity is determined per-row from the count of odds buttons rather than the
+#' market label, so both can coexist under the same `row-HC_FT` aria id.
+#'
 #' @param html Parsed HTML for the detail page.
 #' @param match_meta Named list with `sport, country, home_team, away_team,
 #'   match_date` to attach to the output.
@@ -114,10 +122,8 @@ parse_match_detail <- function(html, match_meta) {
 
     if (identical(aria, "row-HC_FT")) {
       market <- "spread"
-      outcomes <- c("home", "away")
     } else if (identical(aria, "row-OU_FT")) {
       market <- "total"
-      outcomes <- c("over", "under")
     } else {
       next
     }
@@ -126,15 +132,30 @@ parse_match_detail <- function(html, match_meta) {
     for (r in rows) {
       th_el <- rvest::html_element(r, "th")
       if (inherits(th_el, "xml_missing")) next
-      line_str <- rvest::html_text2(th_el)
-      line_val <- suppressWarnings(as.numeric(line_str))
-      if (is.na(line_val)) next
+      line_str <- trimws(rvest::html_text2(th_el))
 
       btns <- rvest::html_elements(r, .lengjan_selectors$odds_button)
       odds_vals <- suppressWarnings(as.numeric(rvest::html_text2(
         rvest::html_elements(btns, .lengjan_selectors$odds_value)
       )))
-      if (length(odds_vals) < 2L) next
+      n <- length(odds_vals)
+      if (n < 2L || any(is.na(odds_vals[seq_len(n)]))) next
+
+      outcomes <- if (market == "total") {
+        c("over", "under")
+      } else if (n >= 3L) {
+        c("home", "draw", "away")
+      } else {
+        c("home", "away")
+      }
+
+      # Numeric ("-1.0", "2.5") first; fall back to "X-Y" range encoding
+      # used by Lengjan football handicap (parse_handicap maps "0-1" -> -1).
+      line_val <- suppressWarnings(as.numeric(line_str))
+      if (is.na(line_val) && grepl("^[0-9]+-[0-9]+$", line_str)) {
+        line_val <- parse_handicap(line_str)
+      }
+      if (is.na(line_val)) next
 
       out[[length(out) + 1L]] <- tibble::tibble(
         sport = match_meta$sport, country = match_meta$country,
@@ -143,7 +164,7 @@ parse_match_detail <- function(html, match_meta) {
         market = market,
         outcome = outcomes,
         line = line_val,
-        odds = odds_vals[1:2]
+        odds = odds_vals[seq_along(outcomes)]
       )
     }
   }
@@ -279,10 +300,11 @@ ingest_lengjan_odds <- function(leagues, scraped_at = Sys.time(),
           away_team = comp_rows$away_team[1L + (i - 1L) * 3L],
           match_date = comp_rows$match_date[1L + (i - 1L) * 3L]
         )
-        # Append marketTab=allMarkets so the detail page renders handicap +
-        # totals tables immediately. Without it the legacy code clicked a
-        # "show more" button (selectors$more_markets); the rendered-page query
-        # arg avoids that interaction. See _legacy/lengjan-odds/R/scrape.R.
+        # Append marketTab=allMarkets to switch the detail page to the
+        # all-markets tab. Each individual section (row-HC_FT, row-OU_FT) is
+        # still rendered collapsed and contains no <table>/<tr> until clicked
+        # -- the expansion is handled by `expand_aria` in `.lengjan_fetch()`.
+        # See _legacy/lengjan-odds/R/scrape.R for the original click flow.
         match_url <- sprintf(
           "https://games.lotto.is%s%smarketTab=allMarkets",
           match_links[[i]],

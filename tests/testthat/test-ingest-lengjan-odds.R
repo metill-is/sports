@@ -48,6 +48,46 @@ test_that("parse_match_detail extracts handicap + totals", {
   )
 })
 
+test_that("parse_match_detail extracts 3-way football handicap with range lines", {
+  # Football handicap rows on Lengjan are 3-way (home/draw/away) with
+  # range-string lines like "0-1", "1-0", "2-0". Regression for a silent
+  # parser drop that lost ~all football handicap data; legacy reference at
+  # _legacy/lengjan-odds/data/football_iceland/odds_handicap.csv.
+  html_path <- testthat::test_path("fixtures/lengjan/match_detail_football.html")
+  html <- rvest::read_html(html_path)
+
+  match_meta <- list(
+    sport = "football", country = "iceland",
+    home_team = "Fram", away_team = "ÍA",
+    match_date = as.Date("2026-04-12")
+  )
+  out <- parse_match_detail(html, match_meta)
+
+  # Silent-drop guard: both market types must be present.
+  expect_true("spread" %in% out$market)
+  expect_true("total" %in% out$market)
+
+  # 3 handicap rows x 3 outcomes = 9 spread rows. parse_handicap maps
+  # "0-1" -> -1, "1-0" -> 1, "2-0" -> 2 (signed home line).
+  spread_rows <- out[out$market == "spread", ]
+  expect_equal(nrow(spread_rows), 9L)
+  expect_setequal(spread_rows$outcome, c("home", "draw", "away"))
+  expect_setequal(unique(spread_rows$line), c(-1, 1, 2))
+
+  # Per-line: "0-1" -> line -1, ÍA-favoured leg should have the lowest odds.
+  hc_minus1 <- spread_rows[spread_rows$line == -1, ]
+  expect_equal(
+    hc_minus1$odds[match(c("home", "draw", "away"), hc_minus1$outcome)],
+    c(3.42, 4.25, 1.61)
+  )
+
+  # 2 totals rows x 2 outcomes = 4 over/under rows; numeric lines preserved.
+  total_rows <- out[out$market == "total", ]
+  expect_equal(nrow(total_rows), 4L)
+  expect_setequal(total_rows$outcome, c("over", "under"))
+  expect_setequal(unique(total_rows$line), c(2.5, 3.5))
+})
+
 test_that("ingest_lengjan_odds skips chromote bits with skip_if", {
   testthat::skip_if_not(
     nzchar(Sys.getenv("LENGJAN_LIVE_TEST")),
