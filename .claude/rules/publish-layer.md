@@ -67,14 +67,21 @@ Schema-only iterations on the publisher run via the `republish.yml`
 `workflow_dispatch` Action, which calls `scripts/05_publish.R` without
 re-fitting.
 
-## Basketball + handball (still on the legacy fit-based path)
+## Basketball + handball (legacy fit-based path; seasonally paused)
 
 `publish_<sport>_iceland(fit, league, sex)` reads from the fit RDS at
 `data/beliefs/fits/sport=X/country=Y/sex=Z/fit.rds` and writes to
 `data/publish/{sport}/iceland/{karla,kvenna}/` (no division split —
-only the top division is modelled today). Migration to the
-extraction layer + a per-division split is deferred to the autumn
-2026 cutover.
+only the top division is modelled). Migration to the extraction layer
++ a per-division split is deferred to the autumn 2026 cutover.
+
+**Currently paused.** Icelandic basketball + handball regular seasons
+finished in late April 2026; the playoff brackets aren't modelled.
+CI's last basketball publish was 2026-04-29 (`f230c47`); last handball
+publish was 2026-04-30 (`a4741b0`). Fits may still occur if completed
+matches arrive (e.g. straggler results), but `decide-publish.yml`
+no-ops on these sports until the autumn 2026 season opener — see
+[memory: project_basketball_handball_seasonal_pause](../../.claude/projects/-Users-brynjolfurjonsson-sports/memory/project_basketball_handball_seasonal_pause.md).
 
 ## File counts
 
@@ -108,7 +115,7 @@ extraction layer + a per-division split is deferred to the autumn
   `(as_of, team, placement)`.
 - `meta.json` includes `sport` for all three publishers.
 
-## metill-platform consumption (as of 2026-05-03)
+## metill-platform consumption (as of 2026-05-09)
 
 Only football surfaces on the platform. Of the 11 football JSONs,
 6 are rendered today — `meta`, `next_games`, `standings`,
@@ -117,9 +124,9 @@ Only football surfaces on the platform. Of the 11 football JSONs,
 `points_distribution`) are available for frontend rendering but not
 yet wired up. `round_predictions_history` is publisher-internal
 (read by `R/publish-football-iceland.R` itself to populate
-`xg_for/xg_against/xpts` in `standings`). Basketball/handball
-publish output is generated and rsynced but not rendered until
-autumn 2026.
+`xg_for/xg_against/xpts` in `standings`). Basketball + handball are
+seasonally paused (regular seasons finished late April 2026,
+playoffs not modelled); publish for those sports resumes autumn 2026.
 
 See [memory: project_publish_consumers](../../.claude/projects/-Users-brynjolfurjonsson-sports/memory/project_publish_consumers.md).
 

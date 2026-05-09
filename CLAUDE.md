@@ -177,7 +177,7 @@ Internal schemas use English throughout. Canonical column names: `home_team` / `
 
 ### Settle layer
 
-`R/settle.R` exports `compute_settlement(bets, results)` and `settle_ledger(root)`. Joins ledger rows where `settled = FALSE` against `data/facts/results/` on `(sport, country, sex, match_date, home_team, away_team)`, computes `win` + `pnl` per market with strict-inequality boundaries (matching `decide-kelly.R::build_return_matrix` so calibration stays self-consistent with the EV used at placement). Already-settled rows are immutable (L4). Daily driver: `Rscript scripts/06_settle.R`. Run before `04_decide.R` so `current_pool = initial_pool + Σ(settled.pnl)` reflects realised PnL. Currently local-only — no CI workflow invokes it.
+`R/settle.R` exports `compute_settlement(bets, results)` and `settle_ledger(root)`. Joins ledger rows where `settled = FALSE` against `data/facts/results/` on `(sport, country, sex, match_date, home_team, away_team)`, computes `win` + `pnl` per market with strict-inequality boundaries (matching `decide-kelly.R::build_return_matrix` so calibration stays self-consistent with the EV used at placement). Already-settled rows are immutable (L4). Daily driver: `Rscript scripts/06_settle.R`. Run before `04_decide.R` so `current_pool = initial_pool + Σ(settled.pnl)` reflects realised PnL. **Local-only by design** — both placer and settle write to `data/decisions/ledger/`, and `arrow::write_parquet` is read-then-write (not atomic), so adding a CI-host writer would race concurrent local placer runs and risk Parquet corruption. Promoting to a workflow would require atomic upsert semantics or a coordination mechanism.
 
 ## Git hygiene
 
