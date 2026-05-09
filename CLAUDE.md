@@ -77,6 +77,7 @@ Rscript scripts/03_fit.R                              # skips when results haven
 Rscript scripts/03_fit.R --league football_iceland --sex male --force
 Rscript scripts/04_decide.R
 Rscript scripts/05_publish.R
+Rscript scripts/06_settle.R                           # resolve win/pnl for settled bets
 
 # Local placer (NEVER on CI)
 Rscript scripts/place_bets.R --dry-run
@@ -173,6 +174,10 @@ Internal schemas use English throughout. Canonical column names: `home_team` / `
 - `R/placer-*.R` is **never** wired into CI; the `test-placer-ci-isolation.R` test enforces this.
 - The placer is the only writer to `data/decisions/ledger/` (Parquet, canonical). Plan 6 cutover dropped the CSV dual-write default; opt-in via `dual_write_csv = TRUE` if a legacy CSV regression check is needed.
 - P1: idempotent (dedup against ledger). P2: ledger records actual Lengjan odds. P3: Kelly stake recomputed if odds drift. P4: bets no longer +EV are rejected.
+
+### Settle layer
+
+`R/settle.R` exports `compute_settlement(bets, results)` and `settle_ledger(root)`. Joins ledger rows where `settled = FALSE` against `data/facts/results/` on `(sport, country, sex, match_date, home_team, away_team)`, computes `win` + `pnl` per market with strict-inequality boundaries (matching `decide-kelly.R::build_return_matrix` so calibration stays self-consistent with the EV used at placement). Already-settled rows are immutable (L4). Daily driver: `Rscript scripts/06_settle.R`. Run before `04_decide.R` so `current_pool = initial_pool + Σ(settled.pnl)` reflects realised PnL. Currently local-only — no CI workflow invokes it.
 
 ## Git hygiene
 

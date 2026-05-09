@@ -15,7 +15,7 @@ cat <<'EOF'
 === Sports Pipeline (preserve across compaction) ===
 - Entry points: scripts/0N_*.R (one per layer; freshness predicates skip when nothing to do)
   00_active_competitions.R / 01_ingest_results.R / 02_scrape_odds.R /
-  03_fit.R / 04_decide.R / 05_publish.R
+  03_fit.R / 04_decide.R / 05_publish.R / 06_settle.R
 - Common flags: --league KEY, --sex male|female, --force (bypass freshness guard)
 - League registry: config/leagues.yml (Iceland active; non-Iceland paused for autumn restart)
 - Skills: /bet (recommendations), /sports-update (full pipeline), /add-league (new league), /place-bets (placer), /sync-main (cron-collision sync), /wrap-up-session (end-of-session checklist)

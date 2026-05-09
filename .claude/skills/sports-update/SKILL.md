@@ -38,6 +38,7 @@ Single-step mapping (when the user asks for one phase only):
 | "fit", "refit", "refresh models"  | `scripts/03_fit.R`                             |
 | "decide", "recompute recs"        | `scripts/04_decide.R`                          |
 | "publish", "regenerate JSONs"     | `scripts/05_publish.R`                         |
+| "settle", "resolve bets", "settle ledger" | `scripts/06_settle.R`                  |
 
 ## Step 2: Plan and warn
 
@@ -71,6 +72,7 @@ cd /Users/brynjolfurjonsson/sports && \
     Rscript scripts/01_ingest_results.R && \
     Rscript scripts/02_scrape_odds.R && \
     Rscript scripts/03_fit.R && \
+    Rscript scripts/06_settle.R && \
     Rscript scripts/04_decide.R && \
     Rscript scripts/05_publish.R
   ' > "$LOG" 2>&1 & \
@@ -135,11 +137,13 @@ Only commit if the user confirms. Use a descriptive message such as
 ### Pre-betting refresh
 
 ```bash
-# Update everything, then preview pending bets
+# Update everything, then preview pending bets. Settle runs before decide
+# so current_pool reflects realised PnL from any newly-resolved bets.
 Rscript scripts/00_active_competitions.R
 Rscript scripts/01_ingest_results.R
 Rscript scripts/02_scrape_odds.R
 Rscript scripts/03_fit.R
+Rscript scripts/06_settle.R
 Rscript scripts/04_decide.R
 Rscript scripts/05_publish.R
 Rscript scripts/preview_bets.R
