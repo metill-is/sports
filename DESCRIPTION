@@ -79,3 +79,4 @@ Collate:
     'publish-handball-iceland.R'
     'publish-pipeline.R'
     'schedule-active.R'
+    'settle.R'

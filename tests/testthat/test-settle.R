@@ -1,0 +1,289 @@
+make_bet <- function(market, outcome, line = NA_real_,
+                     odds = 2.0, bet_amount = 100,
+                     home = "A", away = "B",
+                     match_date = as.Date("2026-05-01"),
+                     sport = "football", country = "iceland", sex = "male") {
+  tibble::tibble(
+    placed_at   = as.POSIXct("2026-05-01 12:00:00", tz = "UTC"),
+    match_date  = match_date,
+    sport       = sport,
+    country     = country,
+    sex         = sex,
+    home_team   = home,
+    away_team   = away,
+    market      = market,
+    outcome     = outcome,
+    line        = line,
+    odds_placed = odds,
+    p           = 0.5,
+    kelly       = 0.05,
+    bet_amount  = bet_amount,
+    settled     = FALSE,
+    win         = NA,
+    pnl         = NA_real_
+  )
+}
+
+make_result <- function(home_score, away_score,
+                        home = "A", away = "B",
+                        match_date = as.Date("2026-05-01"),
+                        sport = "football", country = "iceland", sex = "male") {
+  tibble::tibble(
+    sport      = sport,
+    country    = country,
+    sex        = sex,
+    season     = 2026L,
+    match_date = match_date,
+    home_team  = home,
+    away_team  = away,
+    home_score = as.integer(home_score),
+    away_score = as.integer(away_score)
+  )
+}
+
+test_that("compute_settlement: moneyline home wins when home > away", {
+  bets <- make_bet("moneyline", "home", odds = 2.5)
+  res <- make_result(2, 1)
+  out <- compute_settlement(bets, res)
+  expect_true(out$win)
+  expect_equal(out$pnl, 100 * (2.5 - 1))
+})
+
+test_that("compute_settlement: moneyline away wins when away > home", {
+  bets <- make_bet("moneyline", "away", odds = 3.0)
+  res <- make_result(1, 2)
+  out <- compute_settlement(bets, res)
+  expect_true(out$win)
+  expect_equal(out$pnl, 200)
+})
+
+test_that("compute_settlement: moneyline draw wins on tie", {
+  bets <- make_bet("moneyline", "draw", odds = 3.5)
+  res <- make_result(1, 1)
+  out <- compute_settlement(bets, res)
+  expect_true(out$win)
+  expect_equal(out$pnl, 250)
+})
+
+test_that("compute_settlement: moneyline home loses when away wins", {
+  bets <- make_bet("moneyline", "home", odds = 2.5)
+  res <- make_result(0, 1)
+  out <- compute_settlement(bets, res)
+  expect_false(out$win)
+  expect_equal(out$pnl, -100)
+})
+
+test_that("compute_settlement: spread home wins when adjusted margin > 0", {
+  bets <- make_bet("spread", "home", line = 1.5, odds = 1.9)
+  res <- make_result(0, 1)
+  out <- compute_settlement(bets, res)
+  expect_true(out$win)
+  expect_equal(out$pnl, 90)
+})
+
+test_that("compute_settlement: spread integer-line push counts as loss for home", {
+  bets <- make_bet("spread", "home", line = 1.0, odds = 1.9)
+  res <- make_result(0, 1)
+  out <- compute_settlement(bets, res)
+  expect_false(out$win)
+  expect_equal(out$pnl, -100)
+})
+
+test_that("compute_settlement: spread away wins on adjusted margin", {
+  bets <- make_bet("spread", "away", line = 0.5, odds = 1.9)
+  res <- make_result(1, 1)
+  out <- compute_settlement(bets, res)
+  expect_true(out$win)
+})
+
+test_that("compute_settlement: total over wins on strict greater-than", {
+  bets <- make_bet("total", "over", line = 2.5, odds = 1.85)
+  res <- make_result(2, 1)
+  out <- compute_settlement(bets, res)
+  expect_true(out$win)
+  expect_equal(out$pnl, 85)
+})
+
+test_that("compute_settlement: total under wins on strict less-than", {
+  bets <- make_bet("total", "under", line = 2.5, odds = 1.85)
+  res <- make_result(1, 1)
+  out <- compute_settlement(bets, res)
+  expect_true(out$win)
+})
+
+test_that("compute_settlement: integer-line total push counts as loss both sides", {
+  over <- make_bet("total", "over", line = 5.0, odds = 1.85)
+  under <- make_bet("total", "under", line = 5.0, odds = 1.85)
+  res <- make_result(2, 3)
+  expect_false(compute_settlement(over, res)$win)
+  expect_false(compute_settlement(under, res)$win)
+})
+
+test_that("compute_settlement: missing result leaves win NA", {
+  bets <- make_bet("moneyline", "home",
+    home = "A", away = "B",
+    match_date = as.Date("2026-05-02")
+  )
+  res <- make_result(1, 0,
+    home = "C", away = "D",
+    match_date = as.Date("2026-05-02")
+  )
+  out <- compute_settlement(bets, res)
+  expect_true(is.na(out$win))
+  expect_true(is.na(out$pnl))
+})
+
+test_that("compute_settlement: empty bets returns empty tibble", {
+  bets <- make_bet("moneyline", "home")[0, ]
+  res <- make_result(1, 0)
+  out <- compute_settlement(bets, res)
+  expect_equal(nrow(out), 0)
+})
+
+test_that("compute_settlement: unknown market raises clear error", {
+  bets <- make_bet("moneyline", "home")
+  bets$market <- "asianhandicap"
+  res <- make_result(1, 0)
+  expect_error(compute_settlement(bets, res), "Unknown market")
+})
+
+test_that("settle_ledger: flips only settled/win/pnl on newly resolvable rows (L4)", {
+  tmp <- withr::local_tempdir()
+  led <- dplyr::bind_rows(
+    make_bet("moneyline", "home",
+      odds = 2.0, bet_amount = 100,
+      home = "A", away = "B", match_date = as.Date("2026-05-01")
+    ),
+    make_bet("total", "over",
+      line = 2.5, odds = 1.85, bet_amount = 200,
+      home = "C", away = "D", match_date = as.Date("2026-05-01")
+    )
+  )
+  write_table(led, "ledger", root = tmp)
+
+  res <- dplyr::bind_rows(
+    make_result(2, 1, home = "A", away = "B"),
+    make_result(0, 1, home = "C", away = "D")
+  )
+  res_root <- file.path(tmp, "facts", "results")
+  fs::dir_create(res_root, recurse = TRUE)
+  arrow::write_dataset(
+    res,
+    path = res_root, format = "parquet",
+    partitioning = c("sport", "country", "sex", "season"),
+    existing_data_behavior = "overwrite"
+  )
+
+  n <- settle_ledger(root = tmp)
+  expect_equal(n, 2L)
+
+  out <- read_table("ledger", root = tmp)
+  out <- out[order(out$home_team), ]
+  expect_true(all(out$settled))
+  expect_equal(out$win, c(TRUE, FALSE))
+  expect_equal(out$pnl, c(100, -200))
+  expect_equal(out$bet_amount, c(100, 200))
+  expect_equal(out$odds_placed, c(2.0, 1.85))
+})
+
+test_that("settle_ledger: leaves already-settled rows untouched", {
+  tmp <- withr::local_tempdir()
+  led <- make_bet("moneyline", "home", odds = 2.0, bet_amount = 100)
+  led$settled <- TRUE
+  led$win <- TRUE
+  led$pnl <- 99999
+  write_table(led, "ledger", root = tmp)
+
+  res <- make_result(2, 1)
+  res_root <- file.path(tmp, "facts", "results")
+  fs::dir_create(res_root, recurse = TRUE)
+  arrow::write_dataset(
+    res,
+    path = res_root, format = "parquet",
+    partitioning = c("sport", "country", "sex", "season"),
+    existing_data_behavior = "overwrite"
+  )
+
+  n <- settle_ledger(root = tmp)
+  expect_equal(n, 0L)
+  out <- read_table("ledger", root = tmp)
+  expect_equal(out$pnl, 99999)
+})
+
+test_that("settle_ledger: returns 0 when no results match unsettled rows", {
+  tmp <- withr::local_tempdir()
+  led <- make_bet("moneyline", "home",
+    home = "A", away = "B",
+    match_date = as.Date("2026-05-02")
+  )
+  write_table(led, "ledger", root = tmp)
+
+  res <- make_result(1, 0,
+    home = "X", away = "Y",
+    match_date = as.Date("2026-05-02")
+  )
+  res_root <- file.path(tmp, "facts", "results")
+  fs::dir_create(res_root, recurse = TRUE)
+  arrow::write_dataset(
+    res,
+    path = res_root, format = "parquet",
+    partitioning = c("sport", "country", "sex", "season"),
+    existing_data_behavior = "overwrite"
+  )
+
+  n <- settle_ledger(root = tmp)
+  expect_equal(n, 0L)
+
+  out <- read_table("ledger", root = tmp)
+  expect_false(out$settled)
+  expect_true(is.na(out$win))
+  expect_true(is.na(out$pnl))
+})
+
+test_that("settle_ledger: empty ledger is a no-op", {
+  tmp <- withr::local_tempdir()
+  expect_equal(settle_ledger(root = tmp), 0L)
+})
+
+test_that("settle_ledger: leaves Parquet files of untouched partitions alone", {
+  tmp <- withr::local_tempdir()
+  led <- dplyr::bind_rows(
+    make_bet("moneyline", "home",
+      odds = 2.0, bet_amount = 100,
+      sport = "football", country = "iceland",
+      home = "A", away = "B", match_date = as.Date("2026-05-01")
+    ),
+    make_bet("moneyline", "home",
+      odds = 2.0, bet_amount = 100,
+      sport = "handball", country = "denmark",
+      home = "X", away = "Y", match_date = as.Date("2026-05-01")
+    )
+  )
+  write_table(led, "ledger", root = tmp)
+
+  res <- make_result(2, 1,
+    sport = "football", country = "iceland",
+    home = "A", away = "B"
+  )
+  res_root <- file.path(tmp, "facts", "results")
+  fs::dir_create(res_root, recurse = TRUE)
+  arrow::write_dataset(
+    res,
+    path = res_root, format = "parquet",
+    partitioning = c("sport", "country", "sex", "season"),
+    existing_data_behavior = "overwrite"
+  )
+
+  untouched <- file.path(
+    tmp, "decisions", "ledger",
+    "sport=handball", "country=denmark", "part-0.parquet"
+  )
+  mtime_before <- file.info(untouched)$mtime
+
+  Sys.sleep(1.05)
+  n <- settle_ledger(root = tmp)
+
+  mtime_after <- file.info(untouched)$mtime
+  expect_equal(n, 1L)
+  expect_equal(mtime_before, mtime_after)
+})

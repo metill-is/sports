@@ -37,6 +37,9 @@ Stan/*/*
 # Subagent worktrees (ephemeral)
 .claude/worktrees/
 
+# Scheduled-task runtime lock
+.claude/scheduled_tasks.lock
+
 # Stan fit objects (10MB+ each, regenerable from data/facts/)
 data/beliefs/fits/
 data/beliefs/fits_by_round/
