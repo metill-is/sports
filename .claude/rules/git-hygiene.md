@@ -1,0 +1,100 @@
+# Git Hygiene (Sports Repo)
+
+This repo runs hot — five GitHub workflows commit to `main` throughout the day
+(`scrape-results`, `scrape-odds`, `fit`, `decide-publish`, plus chained
+`workflow_run`s). A working session that takes hours typically sees ~10
+upstream commits land while you work. The patterns below keep local state in
+sync without losing anything.
+
+## Working-tree rule of thumb
+
+Anything in `data/` is **either** committed by cron **or** locally generated and
+short-lived (e.g. a placer run's modified ledger parquet, a manual decide run's
+new `run_date=YYYY-MM-DD/` partition). Treat local data state as ephemeral:
+either commit it immediately or accept that it will collide with cron and need
+stashing during the next sync.
+
+Source code, config, tests, docs are the opposite — never leave them as
+untracked WIP across sessions; commit to a branch even if you're not pushing.
+
+## The cron-collision sync pattern
+
+When `git pull --rebase` reports `error: untracked working tree files would be
+overwritten by checkout` or refuses because of unstaged changes, do **not**
+move data files aside manually. The clean pattern:
+
+```bash
+git stash push -u -m "<sensible message describing the WIP>"
+git pull --rebase origin main
+git stash pop
+```
+
+Three things this exploits:
+1. `-u` stashes untracked files too, including the data dirs that block checkout.
+2. `pull --rebase` fast-forwards through cron commits and detects any local
+   commits whose patches are already on origin (e.g. a PR you previously merged
+   under a different SHA). Those are silently skipped — local main becomes a
+   clean superset of origin/main.
+3. `stash pop` reapplies your WIP. If a stashed untracked file's path now has a
+   tracked file (because cron committed something there), the pop **keeps the
+   stash** rather than discarding the data. Your working tree gets origin/main's
+   canonical version; your stash entry remains for inspection.
+
+When pop conflicts, decide per file:
+- **Text file conflict** → resolve markers manually, `git add`, then drop or
+  keep the stash.
+- **Binary file conflict** (parquet, etc.) → `git checkout --ours <path>` to
+  keep your working tree's version, `--theirs` to take the stash's. Then
+  `git add` to mark resolved.
+
+## Stash discipline
+
+After every sync, `git stash list`. A stash that wasn't auto-dropped means a
+conflict happened — investigate and either resolve or drop. Stashes silently
+accumulate over weeks if ignored; today the repo had 6.
+
+A stash's content typically degrades over time as the surrounding code on main
+evolves: features it once carried get reimplemented and shipped through other
+PRs, and what's left is just stylistic deltas. Before dropping a long-lived
+stash, `git stash show -p stash@{N}` and grep its file list — if every text
+delta has an equivalent on main (search by symbol or roxygen tag), the stash
+is subsumed and safe to drop. Binary parquets older than the most recent cron
+commit at the same path are always stale.
+
+## Bash-tool gotcha: cwd persists, prefer `git -C <abs-path>`
+
+The Bash tool persists `cd` across calls within a session. A successful `cd
+.claude/worktrees/foo` inside one call means subsequent calls run from
+`/Users/.../sports/.claude/worktrees/foo`, not the original cwd. This silently
+mis-routes git commands to a different worktree.
+
+For any git operation that should target a specific repo or worktree, use
+explicit paths:
+
+```bash
+git -C /Users/brynjolfurjonsson/sports status              # never just `git status`
+git -C /Users/brynjolfurjonsson/sports diff path/to/file   # or with paths
+```
+
+`git -C` makes the working directory explicit and unaffected by prior `cd`s.
+
+## PR vs direct push
+
+This repo allows direct pushes to `main` (no required status checks). But the
+PR-and-auto-merge pattern is preferred because:
+- A push needs a clean local working tree (or stash dance) every time. A PR
+  branch can be created without disturbing the working tree on main.
+- `gh pr merge --rebase --auto --delete-branch` works even when no checks are
+  required — auto-merge fires immediately if checks pass (or instantly if none
+  exist), and the branch is cleaned up server-side.
+- The PR view gives a reviewable diff before commit lands on main.
+
+Use direct push only for trivial single-line fixes when the working tree is
+already clean.
+
+## When this rule is wrong
+
+If you encounter a git friction that this rule doesn't cover, append a short
+note to `~/.claude/projects/-Users-brynjolfurjonsson-sports/memory/MEMORY.md`
+under "Pipeline Gotchas", or invoke the `learner` agent at session end to
+propose updates. Patterns that recur across sessions belong here.

@@ -443,11 +443,15 @@ meta-characters.
 - The placer is the only writer to `data/decisions/ledger/` (Parquet, canonical). Plan 6 cutover dropped the CSV dual-write default; opt-in via `dual_write_csv = TRUE` if a legacy CSV regression check is needed.
 - P1: idempotent (dedup against ledger). P2: ledger records actual Lengjan odds. P3: Kelly stake recomputed if odds drift. P4: bets no longer +EV are rejected.
 
+## Git hygiene
+
+Five CI workflows commit to `main` throughout the day, so local working trees drift quickly. The cron-collision sync pattern (stash → pull --rebase → pop), stash discipline, the `git -C <abs-path>` rule for the Bash tool's persistent cwd, and the PR-vs-direct-push decision tree are documented in [`.claude/rules/git-hygiene.md`](./.claude/rules/git-hygiene.md). Operational helpers: `/sync-main` (mid-session re-alignment) and `/wrap-up-session` (end-of-session consolidation checklist).
+
 ## Skills
 
-The four model-invocable skills under `.claude/skills/` (`/bet`, `/sports-update`, `/add-league`, `/place-bets`) call `scripts/0N_*.R` directly. Drift back to legacy invocations is guarded by `tests/testthat/test-skill-conventions.R`, which fails the build if any skill references `lengjan-bets/`, `lengjan-odds/`, `Sports/{sport}/{country}/`, the `--sync` flag, or the legacy `Rscript run.R --step` pattern.
+The pipeline skills under `.claude/skills/` (`/bet`, `/sports-update`, `/add-league`, `/place-bets`) call `scripts/0N_*.R` directly. The git-hygiene skills (`/sync-main`, `/wrap-up-session`) handle cron-collision sync and end-of-session consolidation. Drift back to legacy invocations is guarded by `tests/testthat/test-skill-conventions.R`, which fails the build if any skill references `lengjan-bets/`, `lengjan-odds/`, `Sports/{sport}/{country}/`, the `--sync` flag, or the legacy `Rscript run.R --step` pattern.
 
-**Do not add `disable-model-invocation: true` to these skills.** They are intentionally model-invocable.
+**Do not add `disable-model-invocation: true` to the four pipeline skills.** They are intentionally model-invocable.
 
 ## Obsidian Output
 
