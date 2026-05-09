@@ -22,99 +22,32 @@ Migration complete (Plan 7, 2026-04-30). End-state design: [`docs/superpowers/sp
 
 ```
 sports/
-├── scripts/                         # Pipeline entry points (one per layer)
-│   ├── _lib.R                       # Shared CLI parser + target resolver
-│   ├── 00_active_competitions.R
-│   ├── 01_ingest_results.R
-│   ├── 02_scrape_odds.R             # Skips when no upcoming games (rule)
-│   ├── 03_fit.R                     # Skips when results haven't moved (rule)
-│   ├── 04_decide.R
-│   └── 05_publish.R
-├── config/
-│   ├── leagues.yml                 # Single source of truth for league metadata
-│   ├── leagues.schema.json         # JSON Schema validator
-│   ├── bankroll.yml                # Global Kelly cap + daily budget
-│   └── active_competitions.json    # GENERATED at each scrape run (Plan 6)
-├── R/                              # Package source
-│   ├── config.R                    # load_leagues() + filter_leagues()
-│   ├── storage-schemas.R           # Arrow schemas for 8 tables
-│   ├── storage.R                   # write_table() + read_table() primitives
-│   ├── duckdb-views.R              # rebuild_duckdb() — regenerable SQL view layer
-│   ├── ingest.R                    # Source-registry dispatcher: ingest_league()
-│   ├── ingest-kki-basketball.R     # Baskethotel XLSX (2021-2026)
-│   ├── ingest-hsi-handball.R       # HSÍ (chromote; 2021-2025 male OD historical)
-│   ├── ingest-ksi-football.R       # KSÍ (paginated server-rendered; 2021-2025 men's)
-│   ├── ingest-lengjan-odds.R       # Lengjan odds scraper (port of _legacy/lengjan-odds/)
-│   ├── schedule-active.R           # generate_active_competitions() -> config/active_competitions.json
-│   ├── model-prepare.R             # prepare_data(league, sex) → list(stan_data, pred_d, teams)
-│   ├── model-fit.R                 # fit_model() — pure cmdstanr wrapper
-│   ├── model-posteriors.R          # extract_posteriors() → beliefs_latest tibble
-│   ├── model-league.R              # fit_one() — end-to-end orchestrator
-│   ├── pipeline-freshness.R        # needs_refit() + has_upcoming_games() (Plan 7)
-│   ├── decide-odds.R               # prepare_odds(league, sex)
-│   ├── decide-kelly.R              # kelly_joint(beliefs, bets)
-│   ├── decide-portfolio.R          # portfolio_optimise(packages)
-│   ├── decide-calibration.R        # compute_calibration(league, sex)
-│   ├── decide-pipeline.R           # decide_league() orchestrator
-│   ├── extract-football-iceland.R  # extract_football_iceland() + read_extracted_football() (writes/reads beliefs/extracts/)
-│   ├── publish-football-iceland.R  # 11 JSONs per sex (7 snapshot + 4 history)
-│   ├── publish-basketball-iceland.R # 8 JSONs per sex (7 snapshot + final_positions_history; not surfaced on platform until autumn 2026)
-│   ├── publish-handball-iceland.R  # 8 JSONs per sex (7 snapshot + final_positions_history; final_positions/points_distribution zero-row at end-of-season — resolves autumn 2026)
-│   ├── publish-pipeline.R          # publish_one() dispatcher (sport-aware)
-│   ├── placer-validate.R           # validate_team_names_config + validate_recommendations_schema
-│   ├── placer-load.R               # load_recommendations + dedup_against_ledger
-│   ├── placer-ledger.R             # append_to_ledger (Parquet canonical; CSV dual-write opt-in)
-│   ├── placer-login.R              # chromote_login (auth + 2FA)
-│   ├── placer-navigate.R           # extract_matches + find_match_in_extracted
-│   ├── placer-place.R              # place_bet + P3/P4 state machine (~810 lines)
-│   ├── placer-pipeline.R           # place_bets() top-level orchestrator
-│   └── placer-preview.R            # preview_pending() — dry-run, no browser
-├── Stan/
-│   ├── basketball_iceland/2d_student_t_scalarsigma.stan
-│   ├── handball_iceland/2d_student_t.stan
-│   └── football_iceland/bivariate_poisson_no_inflation.stan
-├── data/                           # Parquet stores (git-tracked, hive-partitioned)
-│   ├── facts/
-│   │   ├── odds/                   # Lengjan odds snapshots (1,433 rows)
-│   │   ├── results/                # Match history (9,914 rows across 3 sports, up to 6 seasons)
-│   │   └── schedules/              # Upcoming fixtures via ingest
-│   ├── beliefs/
-│   │   ├── latest/sport=X/country=Y/sex=Z/beliefs.parquet               # Snapshot per fit
-│   │   ├── archive/sport=X/country=Y/sex=Z/fit_date=YYYY-MM-DD/part-0.parquet  # Per-draw, accretive per fit_date
-│   │   ├── extracts/sport=football/country=iceland/sex=Z/fit_date=YYYY-MM-DD/  # Football-only sidecars (6 parquets, division payload column)
-│   │   └── fits/                   # GITIGNORED — Stan fit RDS, regenerable
-│   ├── decisions/
-│   │   ├── candidates/sport=X/country=Y/run_date=YYYY-MM-DD/  # All stages
-│   │   ├── recommendations/sport=X/country=Y/run_date=YYYY-MM-DD/  # Post-filter
-│   │   └── ledger/                 # Placed-bet history (1,870 rows, PnL = 89,369 ISK) — canonical
-│   └── publish/
-│       ├── football/iceland/{karla,kvenna}-{bd,ld}/*.json   # per (sex × division)
-│       ├── basketball/iceland/{karla,kvenna}/*.json
-│       └── handball/iceland/{karla,kvenna}/*.json
-├── .github/workflows/              # CI (Plan 7) — placer is NEVER referenced here
-│   ├── ci-tests.yml                # devtools::test() on push and PR
-│   ├── scrape-results.yml          # Federation results + schedules 1x/day
-│   ├── scrape-odds.yml             # Lengjan odds 3x/day cron
-│   ├── fit.yml                     # Stan fit, chained on workflow_run from scrape-results
-│   ├── decide-publish.yml          # Decide + publish, chained from fit AND scrape-odds
-│   │                               # (so JSONs refresh on every odds scrape, not just daily)
-│   └── republish.yml               # workflow_dispatch only — re-runs publish from
-│                                   # the existing extraction archive without re-fitting
-│                                   # (lever for fast schema iteration on the publisher)
-├── scripts/etl/                    # One-time legacy-CSV → Parquet migrations
-│   ├── 03_etl_odds.R
-│   └── 04_etl_ledger.R
-├── scripts/place_bets.R            # CLI: dry-run by default, --live opts in (local-only)
-├── scripts/preview_bets.R          # CLI: pending-bet preview, no browser (local-only)
-├── tests/testthat/                 # 511+ passing assertions across config, storage*, duckdb-views, etl-validation, ingest-*, model-*, decide-*, publish-*, placer-*
-├── sports.duckdb                   # Gitignored; rebuildable via rebuild_duckdb()
-├── docs/superpowers/               # Specs + plans
-└── _legacy/                        # Subtree-merged histories of the 4 predecessor repos
-    ├── sports/                     # ex metill-is/sports (archived post-cutover)
-    ├── lengjan-odds/               # ex metill-is/lengjan-odds (archived post-cutover)
-    ├── livesport-data/             # ex metill-is/livesport-data (archived post-cutover)
-    └── lengjan-bets/               # ex metill-is/lengjan-bets (archived post-cutover)
+├── scripts/0N_*.R       # Pipeline entry points (00–05); see Quick reference
+├── config/              # leagues.yml + bankroll.yml + JSON Schema validators
+├── R/                   # R package source — see .claude/rules/ for per-area details
+│   ├── ingest-*.R       # Federation + Lengjan scrapers (KSÍ/KKÍ/HSÍ)
+│   ├── model-*.R        # → .claude/rules/model-decide.md
+│   ├── decide-*.R       # → .claude/rules/model-decide.md
+│   ├── publish-*.R      # → .claude/rules/publish-layer.md
+│   ├── extract-*.R      # Football per-fit extracts → publish-layer.md
+│   ├── placer-*.R       # Local-only Lengjan placement → sports-betting.md
+│   └── storage*.R       # Arrow schemas + write_table/read_table primitives
+├── Stan/{league_key}/   # Per-league Stan models
+├── data/                # Parquet stores (hive-partitioned, git-tracked)
+│   ├── facts/           # results, odds, schedules
+│   ├── beliefs/         # latest, archive, extracts (+ gitignored fits/)
+│   ├── decisions/       # candidates, recommendations, ledger (canonical Parquet)
+│   └── publish/         # *.json per (sport, country, sex[, division])
+├── tests/testthat/      # 511+ assertions; devtools::test() to run
+├── .github/workflows/   # 6 workflows → .claude/rules/ci-conventions.md
+├── docs/                # superpowers/ (specs + plans), audits/
+└── _legacy/             # 4 archived predecessor repos for git log --follow
 ```
+
+File-level annotations (e.g. which scraper covers which federation, which Stan
+model is used per league) live in `R/ingest.R::ingest_league()` (the source
+registry) and `config/leagues.yml::*.stan_model`. Read those for the
+authoritative mapping rather than mirroring them here.
 
 ## Local-only subsystem
 
@@ -215,225 +148,23 @@ Internal schemas use English throughout. Canonical column names: `home_team` / `
 
 ### Stan models
 
-`.claude/rules/stan-conventions.md` — `cmdstanr`, non-centred parameterisations, `generated quantities` for posterior-predictive checks.
+[`.claude/rules/stan-conventions.md`](.claude/rules/stan-conventions.md) — `cmdstanr`, non-centred parameterisations, `generated quantities` for posterior-predictive checks.
 
-### Model layer
+### Model + Decide layers
 
-- `fit_league(league_key, sex)` is the only public entry point. Loads config, calls `prepare_data()` → `fit_model()` → `extract_posteriors()`, writes `beliefs/latest/` (overwrite) and `beliefs/archive/` (accretive per `fit_date`).
-- `prepare_data()` is pure — reads Parquet facts, returns `list(stan_data, pred_d, teams)`. No file I/O beyond `read_table()`.
-- `fit_model()` is a pure cmdstanr wrapper — takes stan_data + stan_path, returns the fit. Callers save to disk.
-- `extract_posteriors()` materialises posterior draws as the canonical `beliefs_latest` tibble (per-draw-per-match).
-- Stan models live in `Stan/{league_key}/{file}.stan`. `leagues.yml`'s `stan_model` field uses this relative path.
-- Daily driver: `Rscript scripts/03_fit.R`. The `needs_refit()` predicate
-  in `R/pipeline-freshness.R` short-circuits (league × sex) pairs whose
-  last `fit_date` is at least the latest completed `match_date`. Use
-  `--force` to refit unconditionally. Run detached for long backfills
-  (wall-clock several hours with 1000 MCMC iters):
-  ```
-  nohup Rscript scripts/03_fit.R --force > /tmp/fit.log 2>&1 & disown
-  ```
-- Historical backfill: `scripts/03b_backfill_football_iceland.R` fills in
-  pre-round fits for early-season rounds where the daily-driver hadn't yet
-  produced a partition. Each row in the script's `fits_to_run` tibble runs
-  one `fit_league(end_date = ..., schedule_horizon_days = 200L)` call;
-  partition is `fit_date=<end_date>`. Skip-if-exists keeps the script
-  re-runnable. Used by the publisher's lookahead-free `xg_for/xpts`
-  aggregation (see Publish layer) and the forest-plot pre-season baseline.
-
-### Decide layer
-
-- `decide_league(league_key, sex)` is the public entry — chains
-  prepare_odds + kelly_joint + portfolio_optimise + compute_calibration,
-  writes candidates (with stage column) + recommendations Parquet.
-- Joint Kelly is the only mode (per 2026-03-06 memory note).
-- **Stake formula (post Plan 7a, 2026-04-29):**
-  `bet_amount = round(kelly_raw × portfolio_lambda × min(kelly_frac × calibration, kelly_ceiling) × current_pool)`.
-  - `kelly_raw` is the unconstrained joint Kelly fraction from
-    `kelly_joint()`; bounded above by `max_match_stake` (per-league override
-    or `bankroll$max_match_stake_default`, default 1.0 = unconstrained).
-  - `kelly_frac` is the §7.2 multiplicative shrinkage (Browne γ); per-league
-    in `leagues.yml::*.betting.kelly_frac` (scalar or `{male, female}`).
-  - `calibration` is the Beta-Binomial multiplier from
-    `compute_calibration()`, clamped to `[0.5, 1.5]`.
-  - `kelly_ceiling` is the K5 hard cap (default 0.25 in `bankroll.yml`).
-- Per-sex `kelly_frac` supported via object form in `betting:` config
-  (basketball/football use per-sex; handball uses scalar). Browne-grounded
-  defaults: male 0.20, female 0.10–0.15.
-- Daily driver: `Rscript scripts/04_decide.R`. Wall-clock ~seconds.
-  Runs on every odds scrape via `decide-publish.yml`'s `workflow_run`
-  trigger so recommendations stay fresh as odds drift.
+[`.claude/rules/model-decide.md`](.claude/rules/model-decide.md) — `fit_league()` + `decide_league()` public entries, stake formula (Browne shrinkage × calibration × Kelly ceiling × current pool), freshness predicates, joint Kelly. Loads when working on `R/{model,decide}-*.R`, `Stan/**`, `config/{leagues,bankroll}.yml`, or `scripts/03*_fit.R` / `scripts/04_decide.R`.
 
 ### Publish layer
 
-- **Football iceland (extracts tree, 2026-05-05):**
-  `publish_football_iceland(extracted, league, sex)` reads from the
-  6 per-fit Parquets at
-  `data/beliefs/extracts/sport=football/country=iceland/sex=Z/fit_date=*/`
-  (emitted by `extract_football_iceland()`) instead of the in-memory
-  fit RDS. Each parquet carries a `division` column (`"BD"` or
-  `"LD1"`); the reader filters by that column to materialise per-cell
-  tibbles. The fit RDS is fully ephemeral — gitignored, deletable
-  after a fit completes — and the legacy beliefs_archive
-  (`part-0.parquet`) write was dropped for football iceland in
-  `R/model-league.R::fit_league()`. Use
-  `read_extracted_football(league, sex, fit_date = NULL)` to load
-  both divisions into the publisher's `extracted` argument; the
-  return shape is `list(BD = list(<6 tibbles>), LD1 = list(<6 tibbles>),
-  fit_date = D)`.
-
-  **Why a separate tree**: putting per-cell summaries under
-  `data/beliefs/archive/` (the canonical per-draw-per-match Parquet
-  table) caused two failures: (1) arrow's hive-partition auto-detection
-  saw mixed depths when football used `division=…/` subdirs; (2)
-  `arrow::open_dataset()` couldn't unify the per-draw schema with the
-  pre-aggregated sidecar schemas (e.g. `home_goals: double` vs
-  `int32`). Moving sidecars to `data/beliefs/extracts/` keeps the
-  `beliefs_archive` dataset uniform (one schema, depth 4) while still
-  partitioning the sidecars by `(sport, country, sex, fit_date)`.
-
-  **Per-division output**: the publisher loops over both Icelandic
-  football divisions (`BD` = Besta deild, `LD1` = Lengjudeild) and
-  writes one full set of JSONs per `(sex, division)` cell into
-  `data/publish/football/iceland/{sex_folder}-{div_suffix}/`. The dir
-  suffix follows the platform URL slug (`/lengja/` → `ld`, not `ld1`).
-  Total publish output for football iceland is 4 directories ×
-  11 JSONs = 44 files per fit. The per-cell extracted slice is
-  pre-filtered to the division's teams + matches by the reader's
-  `division` filter, so the publisher's loop body is now mostly a
-  render of `ext <- extracted[[target_div]]` rather than a
-  filter-then-render. The legacy fit-based wrapper
-  `.publish_football_iceland_from_fit_pfi(..., target_div = X)`
-  survives as a regression backstop, deletable after a few production
-  cycles.
-
-  Schema-only iterations on the publisher run via the `republish.yml`
-  `workflow_dispatch` Action, which calls `scripts/05_publish.R`
-  without re-fitting.
-- **Basketball + handball (still on the legacy fit-based path):**
-  `publish_<sport>_iceland(fit, league, sex)` reads from the fit RDS at
-  `data/beliefs/fits/sport=X/country=Y/sex=Z/fit.rds` and writes to
-  `data/publish/{sport}/iceland/{karla,kvenna}/` (no division split —
-  only the top division is modelled today). Migration to the
-  extraction layer + a per-division split is deferred to the autumn
-  2026 cutover.
-- File counts: football emits 11 JSONs per `(sex, division)` cell —
-  7 snapshot (`meta`, `next_games`, `standings`, `team_strengths`,
-  `final_positions`, `points_distribution`, `home_advantage`) plus
-  4 history (`standings_history`, `team_strengths_history`,
-  `round_predictions_history`, `final_positions_history`) — across
-  4 cells (`karla-bd`, `karla-ld`, `kvenna-bd`, `kvenna-ld`).
-  Basketball + handball emit the same 7 snapshots plus
-  `final_positions_history.json` per sex (8 × 2 = 16 each).
-- **Schema features (as of 2026-05-03):**
-  - `standings.json` rows ship cumulative `xg_for`/`xg_against`/`xpts` over
-    archived rounds, plus `n_predicted_matches`/`n_played_matches` for
-    partial-coverage disclosure. Lookahead-free: each round uses the
-    latest fit strictly before its first kickoff.
-  - `team_strengths.json` ships a 9-cell grid per team:
-    `component ∈ {offence, defence, total}` × `location ∈ {home, away, avg}`.
-    `avg` is the per-draw mean so uncertainty intervals reflect the joint
-    posterior. Same grid in `team_strengths_history.json`. Each record
-    optionally carries a `preseason: {median, lower, upper}` object —
-    sourced from the latest archived fit strictly before the cell's first
-    played kickoff in the current season — used by the platform to render
-    a baseline (red) sub-row in the forest plot. Field is omitted when no
-    qualifying earlier fit exists.
-  - `final_positions_history.json` accretes per-round projections so the
-    frontend can offer a round filter; deduplicated on `(as_of, team, placement)`.
-  - `meta.json` includes `sport` for all three publishers.
-- **metill-platform consumption** (as of 2026-05-03): only football
-  surfaces on the platform. Of the 11 football JSONs, 6 are rendered today
-  — `meta`, `next_games`, `standings`, `team_strengths`,
-  `final_positions`, `team_strengths_history`. Three (`final_positions_history`,
-  `standings_history`, `home_advantage`, `points_distribution`) are
-  available for frontend rendering but not yet wired up.
-  `round_predictions_history` is publisher-internal (read by
-  `R/publish-football-iceland.R` itself to populate `xg_for/xg_against/xpts`
-  in `standings`). Basketball/handball publish output is generated and
-  rsynced but not rendered until autumn 2026. See
-  `~/.claude/projects/-Users-brynjolfurjonsson-sports/memory/project_publish_consumers.md`
-  and Obsidian: `Sports/Knowledge/Publish Pipeline/data-contract.md`
-  (compiled-truth catalogue with per-JSON schemas).
-- Daily driver: `Rscript scripts/05_publish.R`. Wires fresh-fit-on-demand
-  via `R/publish-pipeline.R::publish_one()`.
+[`.claude/rules/publish-layer.md`](.claude/rules/publish-layer.md) — football extracts tree (since 2026-05-05), basketball/handball legacy fit-RDS path, schema features (xg_for/xpts, 9-cell team-strengths grid, preseason baseline), metill-platform consumption. Loads when working on `R/{publish,extract}-*.R`, `data/{publish,beliefs/extracts}/**`, or `scripts/05_publish.R`.
 
 ### Betting conventions
 
-`.claude/rules/sports-betting.md` — P1–P4 placement rules, bets.yml schema (Plan 3 adds).
+[`.claude/rules/sports-betting.md`](.claude/rules/sports-betting.md) — P1–P4 placement rules, K1–K6 Kelly invariants, L1–L4 ledger immutability. Loads when working on `R/{decide,placer}-*.R`, `config/{leagues,bankroll}.yml`, `scripts/{place,preview}_bets.R`.
 
 ### CI / GitHub Actions
 
-Two coordinated changes, both applied to all five workflows under
-`.github/workflows/`:
-
-**1. `PKG_SYSREQS: "false"` on `setup-r-dependencies@v2`** disables pak's
-automatic `add-apt-repository` install of system requirements.
-
-- Rationale: `chromote`'s `SystemRequirements` field maps to
-  `ppa:xtradeb/apps` on Ubuntu. Registering that PPA queries
-  `api.launchpad.net` for metadata, and Launchpad outages periodically
-  time out (`TimeoutError: [Errno 110]`) for several hours at a time —
-  silently breaking every R-package install on every workflow. Disabling
-  pak's sysreqs handler removes the dependency on Launchpad entirely.
-- Substitute coverage: the Ubuntu 24.04 GitHub-hosted runner image
-  pre-installs Google Chrome and Chromium (so chromote works at
-  runtime), and the standard `ubuntu-latest` libraries (libcurl,
-  libssl, libxml2, libyaml) cover every other declared
-  `SystemRequirements` in the project's package set. The
-  `browser-actions/setup-chrome@v1` step in the scrape workflows
-  further pins Chrome and exports `CHROMOTE_CHROME`.
-
-**2. Reinstall `V8` from source with `DOWNLOAD_STATIC_LIBV8=1`** after
-`setup-r-dependencies`:
-
-```yaml
-- name: Reinstall V8 from source with bundled static libv8
-  env:
-    DOWNLOAD_STATIC_LIBV8: "1"
-  run: |
-    Rscript -e 'install.packages("V8", type = "source", repos = c(CRAN = "https://cloud.r-project.org"))'
-```
-
-- Rationale: `jsonvalidate` (used in `R/config.R::validate_leagues` to
-  check `leagues.yml` against `leagues.schema.json`) depends on `V8`.
-  Posit Package Manager's pre-built `V8` binary for Ubuntu 24.04 noble
-  was linked against `libnode.so.109` (Node 18.x ABI), but noble ships
-  Node 20.x, which provides `libnode.so.115`. With sysreqs disabled, no
-  libnode is installed at all, so `dyn.load("V8.so")` fails immediately
-  on every entry script that calls `load_leagues()` (every entry
-  script does).
-- Fix: build `V8` from source on the runner with
-  `DOWNLOAD_STATIC_LIBV8=1`. V8's configure script downloads a static
-  libv8 binary from CRAN's V8 release page and links against it. The
-  resulting V8 `.so` has zero system library dependencies. This step
-  takes ~30 s but is robust against any libnode/libv8 ABI changes in
-  the runner image.
-- The order matters: this step runs **after** `setup-r-dependencies`
-  (which has installed the broken PPM binary) and overwrites V8 in
-  `R_LIBS_USER`.
-
-**Detection if a future package adds an unmet sysreq.** With
-`PKG_SYSREQS=false`, pak still _prints_ system requirements but skips
-the apt install. If a new R package declares a sysreq the runner
-image doesn't pre-install, the failure is a runtime
-`dyn.load: cannot open shared object file` (loud, immediate). The
-remedy is either a one-line `apt-get install` step before
-`setup-r-dependencies`, or — if the issue is an ABI mismatch like the
-V8 one — a from-source rebuild step like the V8 one above.
-
-**Workflow name gotcha (`workflow_run` glob trap).** The
-`on.workflow_run.workflows` array uses glob patterns, not literal
-strings. Special meta-characters (`+`, `*`, `?`, `[`, `]`, `!`) in a
-workflow's `name:` field will silently break any `workflow_run`
-trigger that references it ([github/docs#12572](https://github.com/github/docs/issues/12572)).
-This bit us once: the upstream workflow was named
-`"Scrape Federation Results + Schedules"`, so the downstream
-`fit.yml`'s `workflows: ["Scrape Federation Results + Schedules"]`
-never matched, and the chain silently produced zero fit runs from
-2026-04-30 cutover until 2026-05-01 when the bug was found. Fix:
-renamed to `"Scrape Federation Results and Schedules"` (no
-meta-characters). Keep all workflow `name:` fields free of glob
-meta-characters.
+[`.claude/rules/ci-conventions.md`](.claude/rules/ci-conventions.md) — `PKG_SYSREQS: "false"` workaround (chromote / Launchpad PPA fragility), V8 from-source rebuild (libnode ABI mismatch), `workflow_run` glob trap (workflow `name:` fields must be glob-safe), workflow inventory. Loads when editing `.github/workflows/**`.
 
 ### Placer (local-only)
 
