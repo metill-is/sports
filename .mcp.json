@@ -5,7 +5,7 @@
       "command": "Rscript",
       "args": [
         "-e",
-        "mcptools::mcp_server(tools = '/Users/brynjolfurjonsson/Sports/.claude/r-tools.R')"
+        "mcptools::mcp_server(tools = '/Users/brynjolfurjonsson/sports/.claude/r-tools.R')"
       ],
       "env": {}
     }

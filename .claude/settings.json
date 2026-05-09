@@ -35,17 +35,6 @@
             "statusMessage": "Checking Stan syntax..."
           }
         ]
-      },
-      {
-        "matcher": "Bash(Rscript:*)",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/validate-pipeline-output.sh",
-            "timeout": 10000,
-            "statusMessage": "Validating pipeline output..."
-          }
-        ]
       }
     ]
   }

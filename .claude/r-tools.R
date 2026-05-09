@@ -2,9 +2,9 @@
 #
 # Loaded via:
 #   claude mcp add -s project r-sports -- Rscript -e \
-#     "mcptools::mcp_server(tools = '/Users/brynjolfurjonsson/Sports/.claude/r-tools.R')"
+#     "mcptools::mcp_server(tools = '/Users/brynjolfurjonsson/sports/.claude/r-tools.R')"
 
-PROJECT_ROOT <- "/Users/brynjolfurjonsson/Sports"
+PROJECT_ROOT <- "/Users/brynjolfurjonsson/sports"
 
 tool_query_duckdb <- ellmer::tool(
   fun = function(sql) {
@@ -120,13 +120,13 @@ tool_inspect_parquet <- ellmer::tool(
     btw::btw_this(df, format = "skim")
   },
   description = paste(
-    "Read a Parquet file or hive-partitioned dataset under ~/Sports and skim the first 2000 rows.",
+    "Read a Parquet file or hive-partitioned dataset under ~/sports and skim the first 2000 rows.",
     "Path is relative to project root.",
     "Examples: 'data/facts/results', 'data/beliefs/latest/sport=football/country=iceland/sex=male/beliefs.parquet'."
   ),
   name = "sports_inspect_parquet",
   arguments = list(
-    relative_path = ellmer::type_string("Path relative to ~/Sports.")
+    relative_path = ellmer::type_string("Path relative to ~/sports.")
   )
 )
 

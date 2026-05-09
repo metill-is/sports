@@ -18,7 +18,7 @@ cat <<'EOF'
   03_fit.R / 04_decide.R / 05_publish.R
 - Common flags: --league KEY, --sex male|female, --force (bypass freshness guard)
 - League registry: config/leagues.yml (Iceland active; non-Iceland paused for autumn restart)
-- Skills: /bet (recommendations), /sports-update (full pipeline), /add-league (new league), /place-bets (placer)
+- Skills: /bet (recommendations), /sports-update (full pipeline), /add-league (new league), /place-bets (placer), /sync-main (cron-collision sync), /wrap-up-session (end-of-session checklist)
 - CI: .github/workflows/{scrape-results,scrape-odds,fit,decide-publish}.yml chained via workflow_run
-- Rules: sports-betting.md (betting), sports-per-sport.md (data sources), r-conventions.md, stan-conventions.md
+- Rules: sports-betting.md (betting), git-hygiene.md (cron-collision sync), r-conventions.md, stan-conventions.md
 EOF

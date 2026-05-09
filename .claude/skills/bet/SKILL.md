@@ -94,7 +94,7 @@ decide will warn — refit first via `/sports-update fit`.
 
 ## Reference
 
-- Decide entrypoint: `scripts/04_decide.R` → `R/decide-pipeline.R::decide_one()`
+- Decide entrypoint: `scripts/04_decide.R` → `R/decide-pipeline.R::decide_league()`
 - Sub-stages: `R/decide-{odds,kelly,portfolio,calibration}.R`
 - Recommendations Parquet: `data/decisions/recommendations/sport=*/country=*/run_date=*/`
 - Candidates Parquet (with stage column for debugging): `data/decisions/candidates/`
