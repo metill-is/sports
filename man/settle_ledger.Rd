@@ -4,11 +4,16 @@
 \alias{settle_ledger}
 \title{Settle resolvable rows in the canonical Parquet ledger.}
 \usage{
-settle_ledger(root = here::here("data"))
+settle_ledger(root = here::here("data"), match_date_window_days = 3L)
 }
 \arguments{
 \item{root}{Data root for the Parquet stores
 (default `here::here("data")`).}
+
+\item{match_date_window_days}{Passed through to [compute_settlement()].
+Default `3L` — long enough to absorb the typical Icelandic-league
+reschedule horizon, short enough that cup-vs-league fixture repeats
+trigger the unique-pairing guard rather than mis-attribute.}
 }
 \value{
 Invisibly, the integer count of rows newly settled.
@@ -17,4 +22,13 @@ Invisibly, the integer count of rows newly settled.
 Reads the ledger and the results store, fills `settled` / `win` / `pnl`
 on rows that newly have a matching result, and re-writes the ledger.
 Already-settled rows are never re-evaluated (L4 ledger immutability).
+}
+\details{
+Calls [compute_settlement()] with `match_date_window_days = 3` so a bet
+whose `match_date` no longer matches any result row (typically because
+Lengjan rescheduled the kick-off after placement) still settles against
+the played fixture as long as it lands within three days of the
+originally-listed date *and* the window contains exactly one candidate
+result. See the `compute_settlement()` docs for the unique-pairing
+guard semantics.
 }
