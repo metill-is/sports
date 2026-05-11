@@ -1,4 +1,4 @@
-#' @include storage.R
+#' @include storage.R decide-normalise.R
 NULL
 
 #' Parse a Lengjan handicap string ("0-1") into signed numeric (-1).
@@ -62,13 +62,22 @@ prepare_odds <- function(league, sex,
   }
 
   # Dedup to latest scrape per (match x market x outcome x line)
-  raw |>
+  raw <- raw |>
     dplyr::group_by(
       .data$match_date, .data$home_team, .data$away_team,
       .data$market, .data$outcome, .data$line
     ) |>
     dplyr::slice_max(.data$scraped_at, n = 1L, with_ties = FALSE) |>
-    dplyr::ungroup() |>
+    dplyr::ungroup()
+
+  # Rewrite Lengjan-side names (e.g. "Grindavík kv") to canonical
+  # (e.g. "Grindavík") using the per-sex team_names map -- inverse
+  # direction from what the placer uses. Done at decide time rather than
+  # ingest time so facts/odds/ keeps the as-scraped strings (debugging
+  # value for Lengjan UI deploys; cf. 2026-04-25 "vs"->"-" separator flip).
+  raw <- normalise_lengjan_team_names(raw, league, sex)
+
+  raw |>
     dplyr::select(
       "match_date", "home_team", "away_team",
       "market", "outcome", "line", "odds", "scraped_at"

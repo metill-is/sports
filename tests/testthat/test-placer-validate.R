@@ -177,6 +177,26 @@ test_that("validate_team_names_config errors when team_names lacks the rec's sex
   )
 })
 
+test_that("validate_team_names_config errors when a sex sub-map has duplicate Lengjan values (non-injective)", {
+  leagues <- list(
+    football_iceland = list(
+      sport = "football", country = "iceland",
+      lengjan = list(team_names = list(
+        male = list("KR" = "Shared", "FH" = "Shared"),
+        female = list()
+      ))
+    )
+  )
+  recs <- tibble::tibble(
+    sport = "football", country = "iceland", sex = "male",
+    home_team = "KR", away_team = "FH"
+  )
+  expect_error(
+    validate_team_names_config(leagues, recs),
+    "non-injective"
+  )
+})
+
 test_that("validate_team_names_config errors with a clear message when rec$sex is unknown", {
   leagues <- list(
     football_iceland = list(

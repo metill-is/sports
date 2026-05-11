@@ -49,6 +49,7 @@ Collate:
     'storage.R'
     'decide-calibration.R'
     'decide-kelly.R'
+    'decide-normalise.R'
     'decide-odds.R'
     'decide-portfolio.R'
     'decide-pipeline.R'
