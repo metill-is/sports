@@ -128,7 +128,12 @@ decide_league <- function(league_key = NULL, league = NULL, sex,
         beliefs$away_team == at, ,
       drop = FALSE
     ]
-    if (nrow(mb) == 0L) next
+    if (nrow(mb) == 0L) {
+      cli::cli_alert_warning(
+        "decide: no beliefs for {league$sport}/{league$country}/{sex} {md} {ht}-{at} (skipping)"
+      )
+      next
+    }
 
     mb_odds <- odds_on[
       odds_on$match_date == md &

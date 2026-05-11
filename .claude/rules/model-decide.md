@@ -56,6 +56,17 @@ paths:
   `prepare_odds` + `kelly_joint` + `portfolio_optimise` +
   `compute_calibration`, writes candidates (with `stage` column) +
   recommendations Parquet.
+- **Team-name normalisation (post 2026-05-11):** `prepare_odds` calls
+  `normalise_lengjan_team_names()` to rewrite Lengjan-side strings
+  ("Grindavík kv", "Þróttur Rvk kv") to federation-canonical form
+  ("Grindavík", "Þróttur R.") so the per-match join against
+  `beliefs_latest` succeeds. The inverse map comes from
+  `leagues.yml::*.lengjan.team_names[[sex]]` — same source the placer
+  uses in the forward direction. Unmapped names pass through with a
+  `cli_alert_warning`; the join still produces a warn-and-skip at
+  `decide-pipeline.R:131` (`"decide: no beliefs for ..."`). Invertibility
+  of the map (each Lengjan rendering ← one canonical) is enforced by
+  both the normaliser and `validate_team_names_config()`.
 - Joint Kelly is the only mode (per 2026-03-06 memory note).
 - **Stake formula (post Plan 7a, 2026-04-29):**
   `bet_amount = round(kelly_raw × portfolio_lambda × min(kelly_frac × calibration, kelly_ceiling) × current_pool)`.

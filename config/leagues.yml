@@ -157,7 +157,16 @@ football_iceland:
         Keflavík: Keflavík
         ÍA: ÍA
         KA: KA
-      female: {}                       # No historical women's football odds yet
+      female:
+        # First women's BD season on Lengjan (Plan 1-era empty map upgraded
+        # 2026-05-11 after odds for "Fram kv", "FH kv", "Þróttur Rvk kv",
+        # "Víkingur Rvk kv", "ÍBV kv" appeared in data/facts/odds/.
+        # canonical (matches beliefs/latest) -> Lengjan rendering.
+        FH: FH kv
+        Fram: Fram kv
+        ÍBV: ÍBV kv
+        Víkingur R.: Víkingur Rvk kv
+        Þróttur R.: Þróttur Rvk kv
   stan_model: football_iceland/bivariate_poisson_no_inflation.stan
   betting:
     # kelly_frac is the §7.2 multiplicative shrinkage. Female cell stays
