@@ -4,7 +4,7 @@
 \alias{compute_settlement}
 \title{Compute win/pnl for placed bets given match results.}
 \usage{
-compute_settlement(bets, results)
+compute_settlement(bets, results, match_date_window_days = 0L)
 }
 \arguments{
 \item{bets}{Tibble matching the ledger schema (must include `sport`,
@@ -13,6 +13,10 @@ compute_settlement(bets, results)
 
 \item{results}{Tibble with columns `sport`, `country`, `sex`,
 `match_date`, `home_team`, `away_team`, `home_score`, `away_score`.}
+
+\item{match_date_window_days}{Non-negative integer. `0` (default) gives
+the strict equijoin behaviour. Positive values enable the
+uniquely-matched fallback described above.}
 }
 \value{
 The `bets` tibble with `settled` / `win` / `pnl` updated where
@@ -36,4 +40,16 @@ with the calibration multiplier the model used.
 Rows without a matching result retain `settled = FALSE`, `win = NA`,
 `pnl = NA`. Rows with a result get `settled = TRUE` plus the resolved
 `win` and `pnl`.
+
+When `match_date_window_days > 0`, bets that the strict equijoin leaves
+unsettled get a second-pass lookup against results within
+`match_date_window_days` of the bet's `match_date`, keyed on (sport,
+country, sex, home_team, away_team). The fallback only fires when the
+window contains exactly one candidate result for the bet — if a fixture
+genuinely repeats inside the window (e.g. league leg + cup tie within
+three days), every bet on that pairing is left unsettled rather than
+attributed ambiguously. This unblocks ledger orphans caused by Lengjan
+rescheduling a fixture after the bet was placed: the placer froze
+`match_date` at the original kick-off (L3/L4), but the federation
+results scraper records the played match at the new date.
 }

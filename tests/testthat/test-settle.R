@@ -133,6 +133,118 @@ test_that("compute_settlement: missing result leaves win NA", {
   expect_true(is.na(out$pnl))
 })
 
+test_that("compute_settlement: window=0 (default) ignores nearby off-date results", {
+  bets <- make_bet("moneyline", "home",
+    home = "Fylkir", away = "Vestri",
+    match_date = as.Date("2026-05-02"), odds = 2.5
+  )
+  res <- make_result(2, 0,
+    home = "Fylkir", away = "Vestri",
+    match_date = as.Date("2026-05-04")
+  )
+  out <- compute_settlement(bets, res)
+  expect_true(is.na(out$win))
+  expect_true(is.na(out$pnl))
+  expect_false(out$settled)
+})
+
+test_that("compute_settlement: rescheduled fixture settles against nearby result within window", {
+  bets <- dplyr::bind_rows(
+    make_bet("total", "under",
+      line = 2.5, odds = 2.15, bet_amount = 290,
+      home = "Fylkir", away = "Vestri",
+      match_date = as.Date("2026-05-02")
+    ),
+    make_bet("total", "under",
+      line = 3.5, odds = 1.46, bet_amount = 304,
+      home = "Fylkir", away = "Vestri",
+      match_date = as.Date("2026-05-02")
+    )
+  )
+  res <- make_result(2, 0,
+    home = "Fylkir", away = "Vestri",
+    match_date = as.Date("2026-05-04")
+  )
+
+  out <- compute_settlement(bets, res, match_date_window_days = 3L)
+  expect_true(all(out$settled))
+  expect_equal(out$win, c(TRUE, TRUE))
+  expect_equal(out$pnl, c(290 * (2.15 - 1), 304 * (1.46 - 1)))
+  # match_date itself must not be mutated (L3/L4 spirit)
+  expect_equal(out$match_date, rep(as.Date("2026-05-02"), 2))
+})
+
+test_that("compute_settlement: fallback respects window bounds", {
+  bets <- make_bet("moneyline", "home",
+    home = "A", away = "B",
+    match_date = as.Date("2026-05-01"), odds = 2.0
+  )
+  res <- make_result(2, 0,
+    home = "A", away = "B",
+    match_date = as.Date("2026-05-10")
+  )
+  # 9-day gap > 3-day window -> still unsettled
+  out <- compute_settlement(bets, res, match_date_window_days = 3L)
+  expect_true(is.na(out$win))
+  expect_false(out$settled)
+})
+
+test_that("compute_settlement: unique-pairing guard leaves ambiguous orphans unsettled", {
+  bets <- make_bet("moneyline", "home",
+    home = "A", away = "B",
+    match_date = as.Date("2026-05-02"), odds = 2.0
+  )
+  # Two genuine fixtures of the same pairing inside the window:
+  # ambiguity → guard must refuse to settle.
+  res <- dplyr::bind_rows(
+    make_result(2, 0, home = "A", away = "B", match_date = as.Date("2026-05-01")),
+    make_result(0, 1, home = "A", away = "B", match_date = as.Date("2026-05-04"))
+  )
+  out <- compute_settlement(bets, res, match_date_window_days = 5L)
+  expect_true(is.na(out$win))
+  expect_false(out$settled)
+})
+
+test_that("compute_settlement: fallback co-exists with strict pass on the same teams", {
+  # Bet1 is an orphan from a reschedule; Bet2 placed at the correct date for
+  # the same teams. Strict pass should settle Bet2; fallback should settle
+  # Bet1 against the same result.
+  bets <- dplyr::bind_rows(
+    make_bet("total", "under",
+      line = 2.5, odds = 2.0, bet_amount = 100,
+      home = "Fylkir", away = "Vestri",
+      match_date = as.Date("2026-05-02")
+    ),
+    make_bet("total", "under",
+      line = 3.5, odds = 1.5, bet_amount = 200,
+      home = "Fylkir", away = "Vestri",
+      match_date = as.Date("2026-05-04")
+    )
+  )
+  res <- make_result(2, 0,
+    home = "Fylkir", away = "Vestri",
+    match_date = as.Date("2026-05-04")
+  )
+  out <- compute_settlement(bets, res, match_date_window_days = 3L)
+  expect_true(all(out$settled))
+  expect_equal(out$win, c(TRUE, TRUE))
+  expect_equal(out$pnl, c(100 * 1.0, 200 * 0.5))
+})
+
+test_that("compute_settlement: fallback does not match wrong teams within window", {
+  bets <- make_bet("moneyline", "home",
+    home = "A", away = "B",
+    match_date = as.Date("2026-05-02"), odds = 2.0
+  )
+  res <- make_result(2, 0,
+    home = "C", away = "D",
+    match_date = as.Date("2026-05-03")
+  )
+  out <- compute_settlement(bets, res, match_date_window_days = 3L)
+  expect_true(is.na(out$win))
+  expect_false(out$settled)
+})
+
 test_that("compute_settlement: empty bets returns empty tibble", {
   bets <- make_bet("moneyline", "home")[0, ]
   res <- make_result(1, 0)
@@ -243,6 +355,76 @@ test_that("settle_ledger: returns 0 when no results match unsettled rows", {
 test_that("settle_ledger: empty ledger is a no-op", {
   tmp <- withr::local_tempdir()
   expect_equal(settle_ledger(root = tmp), 0L)
+})
+
+test_that("settle_ledger: back-settles rescheduled-fixture orphans via window default", {
+  tmp <- withr::local_tempdir()
+  led <- dplyr::bind_rows(
+    make_bet("total", "under",
+      line = 2.5, odds = 2.15, bet_amount = 290,
+      home = "Fylkir", away = "Vestri",
+      match_date = as.Date("2026-05-02")
+    ),
+    make_bet("total", "under",
+      line = 3.5, odds = 1.46, bet_amount = 304,
+      home = "Fylkir", away = "Vestri",
+      match_date = as.Date("2026-05-02")
+    )
+  )
+  write_table(led, "ledger", root = tmp)
+
+  res <- make_result(2, 0,
+    home = "Fylkir", away = "Vestri",
+    match_date = as.Date("2026-05-04")
+  )
+  res_root <- file.path(tmp, "facts", "results")
+  fs::dir_create(res_root, recurse = TRUE)
+  arrow::write_dataset(
+    res,
+    path = res_root, format = "parquet",
+    partitioning = c("sport", "country", "sex", "season"),
+    existing_data_behavior = "overwrite"
+  )
+
+  n <- settle_ledger(root = tmp)
+  expect_equal(n, 2L)
+
+  out <- read_table("ledger", root = tmp)
+  out <- out[order(out$line), ]
+  expect_true(all(out$settled))
+  expect_equal(out$win, c(TRUE, TRUE))
+  expect_equal(out$pnl, c(290 * (2.15 - 1), 304 * (1.46 - 1)))
+  # L3 spirit: match_date frozen at placement, never mutated
+  expect_equal(out$match_date, rep(as.Date("2026-05-02"), 2))
+})
+
+test_that("settle_ledger: window=0 disables fallback so orphans stay unsettled", {
+  tmp <- withr::local_tempdir()
+  led <- make_bet("total", "under",
+    line = 2.5, odds = 2.15, bet_amount = 290,
+    home = "Fylkir", away = "Vestri",
+    match_date = as.Date("2026-05-02")
+  )
+  write_table(led, "ledger", root = tmp)
+
+  res <- make_result(2, 0,
+    home = "Fylkir", away = "Vestri",
+    match_date = as.Date("2026-05-04")
+  )
+  res_root <- file.path(tmp, "facts", "results")
+  fs::dir_create(res_root, recurse = TRUE)
+  arrow::write_dataset(
+    res,
+    path = res_root, format = "parquet",
+    partitioning = c("sport", "country", "sex", "season"),
+    existing_data_behavior = "overwrite"
+  )
+
+  n <- settle_ledger(root = tmp, match_date_window_days = 0L)
+  expect_equal(n, 0L)
+  out <- read_table("ledger", root = tmp)
+  expect_false(out$settled)
+  expect_true(is.na(out$win))
 })
 
 test_that("settle_ledger: leaves Parquet files of untouched partitions alone", {
