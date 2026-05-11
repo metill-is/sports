@@ -44,9 +44,10 @@ Remotes:
 Config/testthat/edition: 3
 RoxygenNote: 7.3.3
 Collate:
-    'config.R'
     'storage-schemas.R'
     'storage.R'
+    'commit-ledger.R'
+    'config.R'
     'decide-calibration.R'
     'decide-kelly.R'
     'decide-normalise.R'

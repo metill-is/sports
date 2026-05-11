@@ -6,13 +6,44 @@ This repo runs hot — five GitHub workflows commit to `main` throughout the day
 upstream commits land while you work. The patterns below keep local state in
 sync without losing anything.
 
-## Working-tree rule of thumb
+## Highest-priority data: the ledger
 
-Anything in `data/` is **either** committed by cron **or** locally generated and
-short-lived (e.g. a placer run's modified ledger parquet, a manual decide run's
-new `run_date=YYYY-MM-DD/` partition). Treat local data state as ephemeral:
-either commit it immediately or accept that it will collide with cron and need
-stashing during the next sync.
+`data/decisions/ledger/` is the **only** path in this repo where local writes
+encode real-world state — each row means money was committed on Lengjan
+(L1 invariant in [`sports-betting.md`](./sports-betting.md)). It is the
+canonical record and cannot be reconstructed from anything else in the
+codebase. The generic "data is ephemeral" rule below does **not** apply
+here; the ledger always commits.
+
+Two enforcement layers are active, covering different failure modes:
+
+1. **Script-layer auto-commit** (`R/commit-ledger.R::commit_ledger_changes`).
+   `scripts/place_bets.R` and `scripts/06_settle.R` both call it after a
+   non-zero placement / settlement count. The commit is path-restricted
+   (`git commit -- data/decisions/ledger/`) so unrelated working-tree WIP
+   is never swept in. On failure the wrappers `quit(status = 1L)` with a
+   loud warning rather than continuing.
+
+2. **Pre-commit hook** (`tools/git-hooks/pre-commit`). Refuses any commit
+   while `data/decisions/ledger/` has unstaged or untracked changes. This
+   catches the "next commit on something else silently leaves the ledger
+   behind, a later reset destroys it" pattern. One-time activation per
+   clone: `bash tools/install-hooks.sh`.
+
+`place_bets()` and `settle_ledger()` themselves never touch git — only the
+script wrappers do. Library callers and the test suite are unaffected.
+
+Reference incident: commit 121710d (`data(ledger): restore 6 football
+iceland bets lost in 2026-05-08 git reset`). The placer wrote the rows
+correctly; the loss was at the git layer.
+
+## Working-tree rule of thumb (everything except the ledger)
+
+Anything else in `data/` is **either** committed by cron **or** locally
+generated and short-lived (e.g. a manual decide run's new
+`run_date=YYYY-MM-DD/` partition). Treat that data state as ephemeral:
+either commit it immediately or accept that it will collide with cron and
+need stashing during the next sync.
 
 Source code, config, tests, docs are the opposite — never leave them as
 untracked WIP across sessions; commit to a branch even if you're not pushing.

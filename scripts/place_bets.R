@@ -42,3 +42,37 @@ if (nrow(results) > 0L && "status" %in% names(results)) {
   )
   print(results[, cols_to_show])
 }
+
+# Commit the ledger immediately if any bets were actually placed (L1 invariant:
+# a row means money was committed on Lengjan). See commit 121710d for the
+# 2026-05-08 incident that motivated this guard.
+n_placed <- if ("status" %in% names(results)) {
+  sum(results$status == "placed", na.rm = TRUE)
+} else {
+  0L
+}
+if (n_placed > 0L && !dry_run) {
+  cli::cli_h2("Committing ledger to git")
+  commit_msg <- sprintf(
+    "data(ledger): placer run %s -- %d bet(s) placed",
+    format(Sys.time(), "%Y-%m-%d %H:%M UTC", tz = "UTC"),
+    n_placed
+  )
+  res <- commit_ledger_changes(here::here(), commit_msg)
+  switch(res$status,
+    committed = cli::cli_alert_success("Ledger committed: {res$message}"),
+    nothing_to_commit = cli::cli_alert_info(
+      "No ledger changes to commit (already clean)."
+    ),
+    failed = {
+      cli::cli_alert_danger("Ledger commit failed.")
+      cli::cli_alert_danger("git output:")
+      writeLines(res$output, stderr())
+      cli::cli_alert_danger(paste(
+        "Bets WERE placed on Lengjan but the ledger row(s) are NOT committed.",
+        "Commit data/decisions/ledger/ MANUALLY before doing anything else."
+      ))
+      quit(save = "no", status = 1L)
+    }
+  )
+}
