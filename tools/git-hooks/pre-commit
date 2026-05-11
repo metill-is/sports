@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# pre-commit: refuse to commit if data/decisions/ledger/ has any
+# unstaged or untracked changes.
+#
+# The ledger is the canonical record of money committed on Lengjan
+# (L1 invariant in .claude/rules/sports-betting.md). Leaving ledger
+# changes uncommitted while committing something else is the failure
+# mode that destroyed 6 bets on 2026-05-08 -- a later git reset took
+# the unstaged ledger parquet back to HEAD.
+#
+# Activate via:  bash tools/install-hooks.sh
+
+set -eu
+
+# repo root, regardless of where the commit was invoked from
+repo_root="$(git rev-parse --show-toplevel)"
+cd "$repo_root"
+
+# Lines from porcelain status: "XY filename"
+# X = index state, Y = worktree state.
+# We want any line where Y is not a space (worktree has unstaged
+# changes) OR the pair is ?? (untracked).
+ledger_dirty="$(
+  git status --porcelain -- data/decisions/ledger/ 2>/dev/null \
+    | awk '
+        {
+          xy = substr($0, 1, 2);
+          if (xy == "??")              { print; next }
+          if (substr($0, 2, 1) != " ") { print; next }
+        }
+      '
+)"
+
+if [ -n "$ledger_dirty" ]; then
+  cat >&2 <<'EOF'
+
+  pre-commit blocked: data/decisions/ledger/ has unstaged or untracked changes.
+
+  The ledger encodes real money committed on Lengjan (L1 invariant). Leaving
+  ledger changes uncommitted while making OTHER commits is the exact failure
+  that destroyed 6 bets on 2026-05-08 (see commit 121710d).
+
+  Resolve by picking one:
+    (a) Include them in this commit:  git add data/decisions/ledger/
+    (b) Stash them temporarily:        git stash push -u -- data/decisions/ledger/
+    (c) If they are genuinely junk:    git checkout -- data/decisions/ledger/
+
+  Unstaged/untracked ledger files:
+EOF
+  git status --porcelain -- data/decisions/ledger/ >&2
+  echo "" >&2
+  exit 1
+fi
+
+exit 0

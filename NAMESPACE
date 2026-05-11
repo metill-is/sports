@@ -3,6 +3,7 @@
 export(append_to_ledger)
 export(chromote_login)
 export(clear_bet_slip)
+export(commit_ledger_changes)
 export(competition_url)
 export(compute_calibration)
 export(compute_round_cutoff_date)
