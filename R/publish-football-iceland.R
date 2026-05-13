@@ -1506,20 +1506,25 @@ publish_football_iceland <- function(extracted,
     "round_strengths_quantiles", "home_advantage_quantiles",
     "final_positions", "points_distribution"
   )
-  # extracted shape: list keyed by division code (BD, LD1) — see
+  # extracted shape: list keyed by division code (BD, LD1, CUP) — see
   # read_extracted_football(). Each per-division list has the 6 parquet
   # tibbles. A non-FATAL legacy fallback: if `extracted` is flat (the
-  # pre-2026-05-04 single-division shape), wrap it as BD-only and emit an
-  # empty LD1 cell. This lets early-cutover deploys still work against
-  # archives that haven't been re-extracted yet.
+  # pre-2026-05-04 single-division shape), wrap it as BD-only and emit
+  # empty LD1 + CUP cells. This lets early-cutover deploys still work
+  # against archives that haven't been re-extracted yet.
   if (all(required_slots %in% names(extracted))) {
     flat_legacy <- extracted[required_slots]
     extracted <- list(
-      BD = flat_legacy, LD1 = .empty_extracted_pfi(),
+      BD = flat_legacy,
+      LD1 = .empty_extracted_pfi(),
+      CUP = .empty_extracted_pfi(),
       fit_date = extracted$fit_date
     )
   }
-  for (div in c("BD", "LD1")) {
+  for (div in c("BD", "LD1", "CUP")) {
+    if (is.null(extracted[[div]])) {
+      extracted[[div]] <- .empty_extracted_pfi()
+    }
     div_slots <- if (is.list(extracted[[div]])) names(extracted[[div]]) else character()
     missing_slots <- setdiff(required_slots, div_slots)
     if (length(missing_slots) > 0L) {
@@ -1552,10 +1557,12 @@ publish_football_iceland <- function(extracted,
 
   # Canonical filter codes (matching results$division), mapped to URL-friendly
   # display suffixes for the output directory name. LD1 → "ld" because the
-  # platform's URL slug is /lengja/ → karla-ld/, not karla-ld1/.
-  division_dir_suffix <- c(BD = "bd", LD1 = "ld")
+  # platform's URL slug is /lengja/ → karla-ld/, not karla-ld1/. CUP →
+  # "bikar" for the Mjólkurbikar tab.
+  division_dir_suffix <- c(BD = "bd", LD1 = "ld", CUP = "bikar")
   for (target_div in names(division_dir_suffix)) {
     top_div <- target_div
+    is_cup <- identical(target_div, "CUP")
     # Per-division extracted slice — already filtered to this division's
     # teams + matches by extract_football_iceland(). The publisher used
     # to apply `semi_join(current_top_teams)` defensively; with per-cell
@@ -1706,11 +1713,17 @@ publish_football_iceland <- function(extracted,
       0L
     }
 
-    league_label <- c(BD = "Besta deild", LD1 = "Lengjudeild")[[target_div]]
+    league_label <- c(
+      BD = "Besta deild",
+      LD1 = "Lengjudeild",
+      CUP = "Mj\u00f3lkurbikar"
+    )[[target_div]]
     meta <- list(
       sport        = "football",
       sex          = sex,
       league       = league_label,
+      division     = target_div,
+      is_cup       = is_cup,
       season       = current_season,
       generated_at = generated_at,
       fit_date     = format(end_date, "%Y-%m-%d"),

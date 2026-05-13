@@ -413,7 +413,12 @@ parse_ksi_results_page <- function(html, sport, country, sex, division, season,
 
   keep <- !is.na(out$match_date) &
     !is.na(out$home_team) & nzchar(out$home_team) &
-    !is.na(out$away_team) & nzchar(out$away_team)
+    !is.na(out$away_team) & nzchar(out$away_team) &
+    # WHY: KSÍ knockout-cup pages render bracket-round headers (e.g.
+    # "16 Liða Úrslit", "Undanúrslit", "Úrslitaleikur") as match-row stubs
+    # with away_team = "." until the pairing resolves. These pollute the
+    # schedules table and are dropped here at parse time.
+    out$home_team != "." & out$away_team != "."
   if (played_only) {
     keep <- keep & !is.na(out$home_score) & !is.na(out$away_score)
   }

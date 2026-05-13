@@ -24,10 +24,13 @@ NULL
 }
 
 # Canonical division codes the football iceland fit covers.
-# `BD` = Besta deild (top tier), `LD1` = Lengjudeild (second tier).
-# Order matches publish_football_iceland()'s loop and read_extracted_football()'s
-# return list ordering.
-.FOOTBALL_ICELAND_DIVISIONS_PFI <- c("BD", "LD1")
+# `BD` = Besta deild (top tier), `LD1` = Lengjudeild (second tier),
+# `CUP` = Mjólkurbikar (knockout cup). Order matches
+# publish_football_iceland()'s loop and read_extracted_football()'s return
+# list ordering. CUP rows skip the league-table simulation (final_positions /
+# points_distribution) since a knockout has no points table — those parquets
+# are written as empty tibbles for the CUP partition.
+.FOOTBALL_ICELAND_DIVISIONS_PFI <- c("BD", "LD1", "CUP")
 
 # Per-division extraction. Returns a named list of 6 tibbles (one per parquet
 # file type) for `target_div`. The caller binds rows across divisions and
@@ -160,6 +163,29 @@ NULL
   # Pre-computed at extract time (when full draws are still in memory).
   # Logic mirrors the publisher's existing simulation block, scoped to
   # the target division's teams + matches.
+  #
+  # CUP (Mjólkurbikar) is a knockout — there is no points table to
+  # integrate over, so we emit empty tibbles and skip the simulation.
+  # Bracket-progression probabilities (P(reach final), P(win cup)) are
+  # net-new work and not part of this extract path.
+  if (identical(target_div, "CUP")) {
+    return(list(
+      predicted_matches = predicted_matches,
+      team_strengths_quantiles = team_strengths_quantiles,
+      round_strengths_quantiles = round_strengths_quantiles,
+      home_advantage_quantiles = home_advantage_quantiles,
+      final_positions = tibble::tibble(
+        team = character(),
+        placement = integer(),
+        probability = numeric()
+      ),
+      points_distribution = tibble::tibble(
+        team = character(),
+        points = integer(),
+        probability = numeric()
+      )
+    ))
+  }
 
   base_points <- if (nrow(top_results) > 0L) {
     top_results |>

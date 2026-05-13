@@ -55,13 +55,15 @@ test_that("publish_football_iceland: skip gracefully when backup fit absent", {
 
   # Spot-check: meta.json has required fields
   meta <- jsonlite::read_json(file.path(out_dir, "meta.json"))
-  expect_named(
-    meta,
-    c("sport", "sex", "league", "season", "generated_at", "fit_date", "round", "n_draws"),
-    ignore.order = TRUE
+  required_meta_keys <- c(
+    "sport", "sex", "league", "division", "is_cup",
+    "season", "generated_at", "fit_date", "round", "n_draws"
   )
+  expect_true(all(required_meta_keys %in% names(meta)))
   expect_equal(meta[["sport"]], "football")
   expect_equal(meta[["sex"]], "male")
+  expect_equal(meta[["division"]], "BD")
+  expect_false(meta[["is_cup"]])
   expect_type(meta[["round"]], "integer")
   expect_type(meta[["n_draws"]], "integer")
 
@@ -525,6 +527,55 @@ test_that("publish_football_iceland: writes karla-bd/ and karla-ld/ dirs", {
   ld_standings <- jsonlite::read_json(file.path(ld_dir, "standings.json"))
   expect_equal(length(bd_standings$rows), 12)
   expect_equal(length(ld_standings$rows), 12)
+})
+
+test_that("publish_football_iceland: writes karla-bikar/ with is_cup=true and empty league-table JSONs", {
+  fit_path <- backup_fit_path("male")
+  if (!file.exists(fit_path)) {
+    testthat::skip("legacy football fit unavailable")
+  }
+  if (!dir.exists(here::here("data", "facts", "results"))) {
+    testthat::skip("facts/results absent")
+  }
+
+  fit <- readRDS(fit_path)
+  leagues <- load_leagues()
+  league <- leagues[["football_iceland"]]
+
+  out <- withr::local_tempdir()
+  extracted <- .build_extracted_football_for_test(
+    fit, league,
+    sex = "male", end_date = as.Date("2026-04-25")
+  )
+  suppressWarnings(
+    publish_football_iceland(
+      extracted = extracted,
+      league = league,
+      sex = "male",
+      end_date = as.Date("2026-04-25"),
+      output_root = out
+    )
+  )
+
+  cup_dir <- file.path(out, "football", "iceland", "karla-bikar")
+  expect_true(dir.exists(cup_dir), info = "karla-bikar dir missing")
+
+  meta <- jsonlite::read_json(file.path(cup_dir, "meta.json"))
+  expect_true(meta[["is_cup"]])
+  expect_equal(meta[["division"]], "CUP")
+  expect_equal(meta[["league"]], "Mj\u00f3lkurbikar")
+  expect_equal(meta[["sex"]], "male")
+
+  # Cup has no league table: standings, final_positions, points_distribution
+  # all empty even though the JSON files exist (preserved for endpoint
+  # stability — the frontend reads is_cup from meta.json and skips the
+  # league-table sections).
+  standings <- jsonlite::read_json(file.path(cup_dir, "standings.json"))
+  expect_equal(length(standings$rows), 0L)
+  final_pos <- jsonlite::read_json(file.path(cup_dir, "final_positions.json"))
+  expect_equal(length(final_pos$records), 0L)
+  points_dist <- jsonlite::read_json(file.path(cup_dir, "points_distribution.json"))
+  expect_equal(length(points_dist$records), 0L)
 })
 
 test_that("publish_football_iceland: per-division next_games is filtered by division", {

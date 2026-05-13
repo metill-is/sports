@@ -139,3 +139,36 @@ test_that("KSI_IDS covers men's 2021-2026 top flight", {
   expect_true(all(c("2021", "2022", "2023", "2024", "2025", "2026") %in%
     names(top_flight)))
 })
+
+test_that("KSI_IDS exposes men's + women's 2026 Mj\u00f3lkurbikar cup IDs", {
+  expect_equal(KSI_IDS$male$cup[["2026"]], 7059683L)
+  expect_equal(KSI_IDS$female$cup[["2026"]], 7058831L)
+})
+
+test_that("parse_ksi_results_page drops bracket-header placeholder rows", {
+  # Synthetic HTML mimicking a KSI cup page with one real match (Stjarnan vs
+  # KR) and one bracket-header placeholder (home = round name, away = ".").
+  # The filter at parse time must drop the placeholder.
+  html_str <- paste0(
+    "<html><body>",
+    '<div><div class="flex flex-col"><div>Mi\u00f0 13. ma\u00ed  18:00</div></div>',
+    "<div><a>Stjarnan</a>",
+    '<span class="body-4 whitespace-nowrap">-</span>',
+    "<a>KR</a></div></div>",
+    '<div><div class="flex flex-col"><div>F\u00f6s 15. ma\u00ed  19:00</div></div>',
+    "<div><a>16 Li\u00f0a \u00darslit</a>",
+    '<span class="body-4 whitespace-nowrap">-</span>',
+    "<a>.</a></div></div>",
+    "</body></html>"
+  )
+  Encoding(html_str) <- "UTF-8"
+  html <- rvest::read_html(html_str, encoding = "UTF-8")
+  parsed <- parse_ksi_results_page(
+    html,
+    sport = "football", country = "iceland", sex = "male",
+    division = "CUP", season = 2026L
+  )
+  expect_equal(nrow(parsed), 1L)
+  expect_equal(parsed$home_team, "Stjarnan")
+  expect_equal(parsed$away_team, "KR")
+})

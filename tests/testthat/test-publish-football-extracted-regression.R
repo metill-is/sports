@@ -46,6 +46,15 @@ backup_fit_path_reg <- function(sex) {
   if (is.list(parsed) && !is.null(parsed[["n_draws"]])) {
     parsed[["n_draws"]] <- NULL
   }
+  # The new publisher emits `division` + `is_cup` so the platform can
+  # branch on cup vs league. The legacy `.publish_football_iceland_from_fit_pfi`
+  # wrapper hasn't been updated (marked for retirement); drop these keys
+  # from both sides so the regression compares the shared fields only.
+  for (k in c("division", "is_cup")) {
+    if (is.list(parsed) && !is.null(parsed[[k]])) {
+      parsed[[k]] <- NULL
+    }
+  }
   parsed
 }
 

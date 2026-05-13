@@ -74,7 +74,7 @@ test_that("extract_football_iceland writes all 6 Parquets with expected schemas 
     expect_true(is.integer(pm$home_goals))
     expect_true(is.integer(pm$away_goals))
     expect_true(is.integer(pm$count))
-    expect_true(all(pm$division %in% c("BD", "LD1")))
+    expect_true(all(pm$division %in% c("BD", "LD1", "CUP")))
   }
 
   ts <- arrow::read_parquet(file.path(fit_dir, "team_strengths_quantiles.parquet"))
@@ -85,7 +85,7 @@ test_that("extract_football_iceland writes all 6 Parquets with expected schemas 
   expect_setequal(unique(ts$component), c("offence", "defence", "total"))
   expect_setequal(unique(ts$location), c("home", "away", "avg"))
   expect_setequal(unique(ts$quantile), 1:99)
-  expect_true(all(ts$division %in% c("BD", "LD1")))
+  expect_true(all(ts$division %in% c("BD", "LD1", "CUP")))
 
   rs <- arrow::read_parquet(file.path(fit_dir, "round_strengths_quantiles.parquet"))
   expect_setequal(
@@ -510,4 +510,62 @@ test_that("final_positions.parquet matches publisher's final_positions.json", {
   )
   expect_equal(nrow(joined), nrow(fp_extract))
   expect_true(all(abs(joined$probability - joined$pub_probability) < 1e-9))
+})
+
+test_that("extract_football_iceland: CUP target_div writes empty final_positions + points_distribution", {
+  fit_path <- backup_fit_path_extract("male")
+  if (!file.exists(fit_path)) testthat::skip("legacy football fit unavailable")
+  if (!dir.exists(here::here("data", "facts", "results"))) {
+    testthat::skip("facts/results absent")
+  }
+
+  fit <- readRDS(fit_path)
+  league <- load_leagues()[["football_iceland"]]
+  out <- withr::local_tempdir()
+
+  suppressWarnings(suppressMessages(
+    extract_football_iceland(
+      fit, league,
+      sex = "male",
+      fit_date = as.Date("2026-05-03"),
+      end_date = as.Date("2026-05-03"),
+      extracts_root = out,
+      target_divs = "CUP"
+    )
+  ))
+
+  fit_dir <- .extracts_fit_dir(out, "male", "2026-05-03")
+
+  # CUP is a knockout: final_positions + points_distribution are skipped
+  # in the extract (no league-table simulation makes sense for a bracket).
+  fp <- arrow::read_parquet(file.path(fit_dir, "final_positions.parquet"))
+  pd <- arrow::read_parquet(file.path(fit_dir, "points_distribution.parquet"))
+  expect_equal(nrow(fp), 0L)
+  expect_equal(nrow(pd), 0L)
+
+  # The other four parquets still carry CUP rows when prediction matches
+  # or training data exist for cup teams. We assert only that whatever
+  # rows are present carry the CUP division marker — no BD/LD1 leakage.
+  pm <- arrow::read_parquet(file.path(fit_dir, "predicted_matches.parquet"))
+  if (nrow(pm) > 0L) {
+    expect_true(all(pm$division == "CUP"))
+  }
+  ts <- arrow::read_parquet(file.path(fit_dir, "team_strengths_quantiles.parquet"))
+  if (nrow(ts) > 0L) {
+    expect_true(all(ts$division == "CUP"))
+  }
+})
+
+test_that("read_extracted_football: CUP slot present in default target_divs", {
+  tmp <- withr::local_tempdir()
+  base <- file.path(tmp, "sport=football", "country=iceland", "sex=male")
+  .write_extracts_partition(base, "2026-05-12",
+    divisions = c("BD", "LD1", "CUP"),
+    payload = tibble::tibble(marker = "v1")
+  )
+
+  league <- list(sport = "football", country = "iceland")
+  out <- read_extracted_football(league, sex = "male", extracts_root = tmp)
+  expect_true("CUP" %in% names(out))
+  expect_equal(out$CUP$predicted_matches$marker, "v1")
 })
