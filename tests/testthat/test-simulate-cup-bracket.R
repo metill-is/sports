@@ -328,7 +328,28 @@ test_that("simulate_cup_bracket: pairing_seed produces reproducible output", {
 
 test_that("default_tiebreak_opts returns the expected structure", {
   opts <- default_tiebreak_opts()
-  expect_named(opts, c("et_rate_scale", "shootout", "bt_scale"))
-  expect_equal(opts$et_rate_scale, log(30 / 90))
-  expect_equal(opts$shootout, "coin")
+  expect_named(opts, "max_iter")
+  expect_true(is.numeric(opts$max_iter))
+  expect_gt(opts$max_iter, 1L)
+})
+
+test_that(".simulate_cup_match_pfi: rejection sampling converges (no ties returned)", {
+  # With moderate lambdas the rejection loop should always produce a winner
+  # well within the max_iter cap.
+  set.seed(2031L)
+  off <- c(A = 0, B = 0)
+  def <- c(A = 0, B = 0)
+  ha_off <- c(A = 0.0, B = 0.0)
+  ha_def <- c(A = 0.0, B = 0.0)
+  tiebreak <- default_tiebreak_opts()
+
+  winners <- replicate(500L, .simulate_cup_match_pfi(
+    "A", "B", "neutral", off, def, ha_off, ha_def,
+    mean_log_goals = log(1.5), alpha_mu3 = -3, beta_mu3_diff = 0,
+    tiebreak_opts = tiebreak
+  ))
+  # Equal strength + neutral venue + symmetric coin fallback => ~50/50.
+  expect_true(all(winners %in% c("A", "B")))
+  expect_gt(mean(winners == "A"), 0.42)
+  expect_lt(mean(winners == "A"), 0.58)
 })

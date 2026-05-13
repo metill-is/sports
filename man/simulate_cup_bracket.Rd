@@ -44,8 +44,9 @@ Tibble with columns `team` (chr), `round_name` (factor with levels
 \description{
 For each posterior draw of team-strength parameters, forward-simulates the
 remaining cup bracket (R16 -> QF -> SF -> Final) using a bivariate-Poisson
-match model with an ET-then-shootout tiebreak chain. Pairings for rounds
-beyond R16 are drawn uniformly at random per draw unless
-`bracket_state$qf_pairings_known` / `$sf_pairings_known` is `TRUE`.
+match model. Per-match tiebreaking is rejection-sampling at the 90'
+lambdas (no separate ET / shootout model — see [`default_tiebreak_opts()`]).
+Pairings for rounds beyond R16 are drawn uniformly at random per draw
+unless `bracket_state$qf_pairings_known` / `$sf_pairings_known` is `TRUE`.
 Aggregates outcomes to cumulative per-(team, round_name) probabilities.
 }

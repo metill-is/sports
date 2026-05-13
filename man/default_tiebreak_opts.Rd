@@ -4,18 +4,22 @@
 \alias{default_tiebreak_opts}
 \title{Default tiebreak options for the cup bracket simulator}
 \usage{
-default_tiebreak_opts()
+default_tiebreak_opts(max_iter = 50L)
+}
+\arguments{
+\item{max_iter}{Maximum number of bivariate-Poisson draws per match
+before falling back to a 50/50 coin. Expected attempts are ≈ 1.28 for
+typical Icelandic-football lambdas; the cap exists only to defend
+against the degenerate "both teams project near-zero goals" case.}
 }
 \value{
-A list with `et_rate_scale`, `shootout`, `bt_scale`.
+A list with `max_iter`.
 }
 \description{
-Returns a list specifying the default tiebreak chain:
-- Extra time at 1/3 of the full-time rate (`et_rate_scale = log(30/90)`)
-- 50/50 coin shootout if still tied
-}
-\details{
-Override via `tiebreak_opts` to test alternatives. Setting
-`shootout = "bt"` enables a Bradley-Terry shootout biased by the offence
-difference (`bt_scale * (off_h - off_a)`).
+Rejection-sample bivariate Poisson outcomes at the 90' lambdas until a
+non-tied draw emerges. Mathematically equivalent to drawing from the
+conditional distribution P(winner | someone wins) under the model — i.e.
+treats ET / shootouts as "more 90' play at the same strengths", which is
+consistent with the prediction layer's assumption that strengths are
+frozen at training cutoff for all future matches.
 }

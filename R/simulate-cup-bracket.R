@@ -6,8 +6,9 @@ NULL
 # Forward-simulates a knockout cup bracket from R16 through Final, per
 # posterior draw. Reads team-strength + scalar parameter draws (extracted
 # by `.extract_sim_inputs_pfi()`), walks each draw through the bracket
-# using a bivariate-Poisson match model + ET/shootout tiebreak chain.
-# Aggregates to per-(team, round_name) cumulative probabilities.
+# using a bivariate-Poisson match model with rejection-sample tiebreaking
+# (P(winner | someone wins) at the 90' lambdas). Aggregates to
+# per-(team, round_name) cumulative probabilities.
 #
 # Design doc: Sports/Mjólkurbikar Bracket Simulator Design (Metill vault).
 
@@ -63,29 +64,30 @@ NULL
   lambda_a <- exp(mu_a)
   lambda3 <- exp(mu3)
 
-  goals <- .rbvpois(lambda_h, lambda_a, lambda3)
-  if (goals[1] > goals[2]) {
-    return(home_team)
+  # Rejection-sample from the bivariate Poisson until a non-tied draw
+  # emerges. Mathematically: P(home wins) / (P(home wins) + P(away wins)),
+  # i.e. the conditional win probability given that *someone* wins. This
+  # assumes ET / shootouts are "more 90' play at the same strengths" —
+  # consistent with the prediction layer's existing assumption that
+  # strengths are frozen at training cutoff for all future matches. Avoids
+  # arbitrary ET-rate-scale and shootout-model parameters.
+  #
+  # Expected attempts ≈ 1 / (1 - P(tie at 90')) ≈ 1.28 for typical
+  # Iceland-football lambdas. `max_iter` is a paranoia guard for the
+  # degenerate case where both teams are projected to score ~0 goals,
+  # which would make most draws (0, 0); the 50/50 fallback in that case
+  # is mathematically correct (the conditional distribution is undefined
+  # when P(non-tie) = 0).
+  for (i in seq_len(tiebreak_opts$max_iter)) {
+    goals <- .rbvpois(lambda_h, lambda_a, lambda3)
+    if (goals[1] > goals[2]) {
+      return(home_team)
+    }
+    if (goals[2] > goals[1]) {
+      return(away_team)
+    }
   }
-  if (goals[2] > goals[1]) {
-    return(away_team)
-  }
-
-  et_scale <- exp(tiebreak_opts$et_rate_scale)
-  et_goals <- .rbvpois(lambda_h * et_scale, lambda_a * et_scale, lambda3 * et_scale)
-  if (et_goals[1] > et_goals[2]) {
-    return(home_team)
-  }
-  if (et_goals[2] > et_goals[1]) {
-    return(away_team)
-  }
-
-  p_home <- if (identical(tiebreak_opts$shootout, "bt")) {
-    stats::plogis(tiebreak_opts$bt_scale * (off_h - off_a))
-  } else {
-    0.5
-  }
-  if (stats::runif(1L) < p_home) home_team else away_team
+  if (stats::runif(1L) < 0.5) home_team else away_team
 }
 
 # ---- One-draw bracket walker -----------------------------------------------
@@ -170,31 +172,32 @@ NULL
 
 #' Default tiebreak options for the cup bracket simulator
 #'
-#' Returns a list specifying the default tiebreak chain:
-#' - Extra time at 1/3 of the full-time rate (`et_rate_scale = log(30/90)`)
-#' - 50/50 coin shootout if still tied
+#' Rejection-sample bivariate Poisson outcomes at the 90' lambdas until a
+#' non-tied draw emerges. Mathematically equivalent to drawing from the
+#' conditional distribution P(winner | someone wins) under the model — i.e.
+#' treats ET / shootouts as "more 90' play at the same strengths", which is
+#' consistent with the prediction layer's assumption that strengths are
+#' frozen at training cutoff for all future matches.
 #'
-#' Override via `tiebreak_opts` to test alternatives. Setting
-#' `shootout = "bt"` enables a Bradley-Terry shootout biased by the offence
-#' difference (`bt_scale * (off_h - off_a)`).
+#' @param max_iter Maximum number of bivariate-Poisson draws per match
+#'   before falling back to a 50/50 coin. Expected attempts are ≈ 1.28 for
+#'   typical Icelandic-football lambdas; the cap exists only to defend
+#'   against the degenerate "both teams project near-zero goals" case.
 #'
-#' @return A list with `et_rate_scale`, `shootout`, `bt_scale`.
+#' @return A list with `max_iter`.
 #' @export
-default_tiebreak_opts <- function() {
-  list(
-    et_rate_scale = log(30 / 90),
-    shootout      = "coin",
-    bt_scale      = 0.5
-  )
+default_tiebreak_opts <- function(max_iter = 50L) {
+  list(max_iter = max_iter)
 }
 
 #' Simulate a knockout cup bracket across posterior draws
 #'
 #' For each posterior draw of team-strength parameters, forward-simulates the
 #' remaining cup bracket (R16 -> QF -> SF -> Final) using a bivariate-Poisson
-#' match model with an ET-then-shootout tiebreak chain. Pairings for rounds
-#' beyond R16 are drawn uniformly at random per draw unless
-#' `bracket_state$qf_pairings_known` / `$sf_pairings_known` is `TRUE`.
+#' match model. Per-match tiebreaking is rejection-sampling at the 90'
+#' lambdas (no separate ET / shootout model — see [`default_tiebreak_opts()`]).
+#' Pairings for rounds beyond R16 are drawn uniformly at random per draw
+#' unless `bracket_state$qf_pairings_known` / `$sf_pairings_known` is `TRUE`.
 #' Aggregates outcomes to cumulative per-(team, round_name) probabilities.
 #'
 #' @param sim_inputs_team Tibble with columns `team`, `.draw`, `cur_offense`,
