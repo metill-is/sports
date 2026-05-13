@@ -572,6 +572,16 @@ test_that("read_extracted_football: CUP slot present in default target_divs", {
 
 # ---- .build_bracket_state_pfi ------------------------------------------------
 
+# Helper: 8 R16 fixtures with 16 unique teams within a 1-day window.
+.cup_fixtures_r16 <- function(date_offset = 0L, n = 8L) {
+  tibble::tibble(
+    home_team  = paste0("H", seq_len(n)),
+    away_team  = paste0("A", seq_len(n)),
+    match_date = as.Date("2026-05-13") + date_offset,
+    division   = "CUP"
+  )
+}
+
 test_that(".build_bracket_state_pfi: returns NULL when fewer than 8 upcoming cup matches", {
   pred_d <- tibble::tibble(
     home_team  = c("A", "B"),
@@ -592,36 +602,85 @@ test_that(".build_bracket_state_pfi: returns NULL when fewer than 8 CUP-tagged m
   expect_null(.build_bracket_state_pfi(pred_d))
 })
 
-test_that(".build_bracket_state_pfi: returns 8-row R16 when 8+ CUP matches upcoming", {
-  pred_d <- tibble::tibble(
-    home_team  = paste0("H", 1:10),
-    away_team  = paste0("A", 1:10),
-    match_date = as.Date("2026-05-13") + 0:9,
-    division   = c(rep("BD", 2), rep("CUP", 8))
-  )
+test_that(".build_bracket_state_pfi: builds cup_teams + rounds shape when R16 fully upcoming", {
+  pred_d <- .cup_fixtures_r16()
   bs <- .build_bracket_state_pfi(pred_d)
   expect_false(is.null(bs))
-  expect_named(bs, "r16")
-  expect_equal(nrow(bs$r16), 8L)
-  expect_named(bs$r16, c("home_team", "away_team", "venue", "known_winner"))
-  expect_true(all(bs$r16$venue == "home"))
-  expect_true(all(is.na(bs$r16$known_winner)))
-})
-
-test_that(".build_bracket_state_pfi: picks chronologically earliest 8 cup matches", {
-  pred_d <- tibble::tibble(
-    home_team  = paste0("H", 1:10),
-    away_team  = paste0("A", 1:10),
-    match_date = as.Date("2026-05-13") + 0:9,
-    division   = rep("CUP", 10)
+  expect_named(bs, c("cup_teams", "rounds"))
+  expect_equal(length(bs$cup_teams), 16L)
+  expect_named(bs$rounds, c("R16", "R8", "SF", "Final"))
+  expect_true(bs$rounds$R16$pairings_known)
+  expect_equal(nrow(bs$rounds$R16$matches), 8L)
+  expect_named(
+    bs$rounds$R16$matches,
+    c("home_team", "away_team", "venue", "known_winner")
   )
-  bs <- .build_bracket_state_pfi(pred_d)
-  # First 8 chronologically are H1-H8 / A1-A8.
-  expect_equal(bs$r16$home_team, paste0("H", 1:8))
-  expect_equal(bs$r16$away_team, paste0("A", 1:8))
+  expect_true(all(is.na(bs$rounds$R16$matches$known_winner)))
+  # No R8/SF/Final fixtures in the synthetic input → pairings unknown.
+  expect_false(bs$rounds$R8$pairings_known)
+  expect_false(bs$rounds$SF$pairings_known)
+  expect_false(bs$rounds$Final$pairings_known)
 })
 
-test_that(".build_bracket_state_pfi: handles NULL / empty input", {
+test_that(".build_bracket_state_pfi: handles NULL / empty inputs", {
   expect_null(.build_bracket_state_pfi(NULL))
   expect_null(.build_bracket_state_pfi(tibble::tibble()))
+  expect_null(.build_bracket_state_pfi(NULL, results = NULL))
+})
+
+test_that(".build_bracket_state_pfi: post-R16 — R16 results populate cup_teams + known_winners", {
+  # Scenario: R16 was played 2 days ago (results), no upcoming cup fixtures.
+  # The builder should still identify the 16 cup teams from results.
+  r16_results <- tibble::tibble(
+    home_team  = paste0("H", 1:8),
+    away_team  = paste0("A", 1:8),
+    match_date = as.Date("2026-05-13"),
+    home_score = c(2L, 1L, 3L, 0L, 4L, 1L, 2L, 3L),
+    away_score = c(1L, 0L, 1L, 2L, 0L, 0L, 1L, 2L),
+    division   = "CUP",
+    season     = 2026L
+  )
+  bs <- .build_bracket_state_pfi(
+    pred_d = NULL, results = r16_results, current_season = 2026L
+  )
+  expect_false(is.null(bs))
+  expect_equal(length(bs$cup_teams), 16L)
+  expect_true(bs$rounds$R16$pairings_known)
+  expect_equal(nrow(bs$rounds$R16$matches), 8L)
+  # All 8 R16 matches have known_winners populated since results have scores.
+  expect_true(all(!is.na(bs$rounds$R16$matches$known_winner)))
+  # Match 1: H1 (2) beat A1 (1) -> known_winner is H1
+  expect_equal(bs$rounds$R16$matches$known_winner[1], "H1")
+  expect_equal(bs$rounds$R16$matches$known_winner[4], "A4") # H4 lost 0-2
+  # R8/SF/Final still unknown (KSÍ hasn't drawn yet).
+  expect_false(bs$rounds$R8$pairings_known)
+})
+
+test_that(".build_bracket_state_pfi: post-R16 with R8 drawn — R8 pairings_known = TRUE", {
+  r16_results <- tibble::tibble(
+    home_team  = paste0("H", 1:8),
+    away_team  = paste0("A", 1:8),
+    match_date = as.Date("2026-05-13"),
+    home_score = rep(2L, 8L),
+    away_score = rep(1L, 8L), # all home teams won
+    division   = "CUP",
+    season     = 2026L
+  )
+  # KSÍ now schedules R8: 4 matches between the 8 R16-winners (H1..H8).
+  r8_schedule <- tibble::tibble(
+    home_team  = c("H1", "H3", "H5", "H7"),
+    away_team  = c("H2", "H4", "H6", "H8"),
+    match_date = as.Date("2026-06-07"),
+    division   = "CUP"
+  )
+  bs <- .build_bracket_state_pfi(
+    pred_d = r8_schedule, results = r16_results, current_season = 2026L
+  )
+  expect_false(is.null(bs))
+  expect_true(bs$rounds$R16$pairings_known)
+  expect_true(bs$rounds$R8$pairings_known)
+  expect_equal(nrow(bs$rounds$R8$matches), 4L)
+  expect_equal(bs$rounds$R8$matches$home_team, c("H1", "H3", "H5", "H7"))
+  expect_true(all(is.na(bs$rounds$R8$matches$known_winner))) # R8 not played yet
+  expect_false(bs$rounds$SF$pairings_known)
 })

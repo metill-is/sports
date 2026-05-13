@@ -35,6 +35,27 @@
   )
 }
 
+# New-shape helper: build a generalised bracket_state with cup_teams + rounds.
+# `r16_matches` is the 8-row R16 tibble produced by .standard_r16_bracket().
+# By default R8/SF/Final have pairings_known = FALSE so the simulator draws
+# them uniformly. Tests that need known later rounds can override per-test.
+.standard_bracket_state <- function(teams,
+                                    r16_matches = NULL,
+                                    r8 = list(pairings_known = FALSE, matches = NULL),
+                                    sf = list(pairings_known = FALSE, matches = NULL),
+                                    final = list(pairings_known = FALSE, matches = NULL)) {
+  if (is.null(r16_matches)) r16_matches <- .standard_r16_bracket(teams)
+  list(
+    cup_teams = teams,
+    rounds = list(
+      R16   = list(pairings_known = TRUE, matches = r16_matches),
+      R8    = r8,
+      SF    = sf,
+      Final = final
+    )
+  )
+}
+
 # ---- Bivariate Poisson primitive --------------------------------------------
 
 test_that(".rbvpois has correct marginal means and shared-component covariance", {
@@ -113,9 +134,7 @@ test_that("simulate_cup_bracket: equal-strength teams produce ~1/16 P(Champion) 
   teams <- paste0("T", sprintf("%02d", 1:16))
   inputs <- .make_equal_strength_inputs(teams, n_draws = 2000L)
 
-  bracket_state <- list(
-    r16 = .standard_r16_bracket(teams)
-  )
+  bracket_state <- .standard_bracket_state(teams)
 
   result <- simulate_cup_bracket(
     inputs$team, inputs$scalar, bracket_state,
@@ -154,7 +173,7 @@ test_that("simulate_cup_bracket: equal-strength teams produce ~1/16 P(Champion) 
 test_that("simulate_cup_bracket: per-team probabilities are monotone non-increasing across rounds", {
   teams <- paste0("T", sprintf("%02d", 1:16))
   inputs <- .make_equal_strength_inputs(teams, n_draws = 500L)
-  bracket_state <- list(r16 = .standard_r16_bracket(teams))
+  bracket_state <- .standard_bracket_state(teams)
 
   result <- simulate_cup_bracket(
     inputs$team, inputs$scalar, bracket_state,
@@ -192,7 +211,7 @@ test_that("simulate_cup_bracket: dominant team has high P(Champion)", {
     beta_mu3_strength_diff = 0
   )
 
-  bracket_state <- list(r16 = .standard_r16_bracket(teams))
+  bracket_state <- .standard_bracket_state(teams)
 
   result <- simulate_cup_bracket(
     team_inputs, scalar_inputs, bracket_state,
@@ -220,7 +239,7 @@ test_that("simulate_cup_bracket: known_winner is respected for R16 matches", {
   # Pin T01 as the deterministic R16 winner of match 1 (T01 vs T02).
   r16$known_winner[1L] <- "T01"
 
-  bracket_state <- list(r16 = r16)
+  bracket_state <- .standard_bracket_state(teams, r16_matches = r16)
 
   result <- simulate_cup_bracket(
     inputs$team, inputs$scalar, bracket_state,
@@ -278,7 +297,7 @@ test_that("simulate_cup_bracket: fixed QF pairings reduce variance vs open-brack
   r16 <- .standard_r16_bracket(teams)
 
   # Open-bracket sim
-  open_state <- list(r16 = r16)
+  open_state <- .standard_bracket_state(teams, r16_matches = r16)
   open_result <- simulate_cup_bracket(
     team_inputs, scalar_inputs, open_state,
     pairing_seed = 23L
@@ -287,14 +306,22 @@ test_that("simulate_cup_bracket: fixed QF pairings reduce variance vs open-brack
     dplyr::filter(.data$team == "T01", .data$round_name == "Champion") |>
     dplyr::pull("probability")
 
-  # Fixed-bracket sim: T01 (match 1 winner) is paired with match 8 winner in QF.
-  fixed_state <- list(
-    r16 = r16,
-    qf_pairings_known = TRUE,
-    qf = tibble::tibble(
-      prev_left  = c(1L, 2L, 3L, 4L),
-      prev_right = c(8L, 7L, 6L, 5L),
-      venue      = rep("neutral", 4L)
+  # Fixed-bracket sim: pin all R16 winners deterministically, then pin R8
+  # pairings to specific team matchups (T01 vs T15 — the weakest), and
+  # confirm the simulator uses the pinned R8 pairings rather than redrawing.
+  r16_pinned <- r16
+  r16_pinned$known_winner <- teams[seq(1L, 15L, by = 2L)] # odd-indexed teams win
+  fixed_state <- .standard_bracket_state(
+    teams,
+    r16_matches = r16_pinned,
+    r8 = list(
+      pairings_known = TRUE,
+      matches = tibble::tibble(
+        home_team    = c("T01", "T03", "T05", "T07"),
+        away_team    = c("T15", "T13", "T11", "T09"),
+        venue        = rep("neutral", 4L),
+        known_winner = NA_character_
+      )
     )
   )
   fixed_result <- simulate_cup_bracket(
@@ -305,7 +332,8 @@ test_that("simulate_cup_bracket: fixed QF pairings reduce variance vs open-brack
     dplyr::filter(.data$team == "T01", .data$round_name == "Champion") |>
     dplyr::pull("probability")
 
-  # Whichever mode: T01 should be the favourite. Sanity check.
+  # In fixed mode T01 plays the weakest team (T15) in R8, then random SF/F.
+  # Both modes should give T01 a meaningful Champion probability.
   expect_gt(open_t01_champ, 0.20)
   expect_gt(fixed_t01_champ, 0.20)
 })
@@ -313,7 +341,7 @@ test_that("simulate_cup_bracket: fixed QF pairings reduce variance vs open-brack
 test_that("simulate_cup_bracket: pairing_seed produces reproducible output", {
   teams <- paste0("T", sprintf("%02d", 1:16))
   inputs <- .make_equal_strength_inputs(teams, n_draws = 300L)
-  bracket_state <- list(r16 = .standard_r16_bracket(teams))
+  bracket_state <- .standard_bracket_state(teams)
 
   r1 <- simulate_cup_bracket(
     inputs$team, inputs$scalar, bracket_state,

@@ -117,54 +117,51 @@ NULL
     )
   }
 
-  r16 <- bracket_state$r16
-  r16_winners <- character(nrow(r16))
-  for (m in seq_len(nrow(r16))) {
-    if (!is.na(r16$known_winner[m])) {
-      r16_winners[m] <- r16$known_winner[m]
-    } else {
-      r16_winners[m] <- sim_match(r16$home_team[m], r16$away_team[m], r16$venue[m])
-    }
-  }
-
-  if (!is.null(bracket_state$qf) && isTRUE(bracket_state$qf_pairings_known)) {
-    qf_left <- r16_winners[bracket_state$qf$prev_left]
-    qf_right <- r16_winners[bracket_state$qf$prev_right]
-    qf_venue <- bracket_state$qf$venue
-  } else {
-    perm <- sample.int(8L)
-    qf_left <- r16_winners[perm[c(1L, 3L, 5L, 7L)]]
-    qf_right <- r16_winners[perm[c(2L, 4L, 6L, 8L)]]
-    qf_venue <- rep("neutral", 4L)
-  }
-  qf_winners <- character(4L)
-  for (m in seq_len(4L)) {
-    qf_winners[m] <- sim_match(qf_left[m], qf_right[m], qf_venue[m])
-  }
-
-  if (!is.null(bracket_state$sf) && isTRUE(bracket_state$sf_pairings_known)) {
-    sf_left <- qf_winners[bracket_state$sf$prev_left]
-    sf_right <- qf_winners[bracket_state$sf$prev_right]
-    sf_venue <- bracket_state$sf$venue
-  } else {
-    perm_sf <- sample.int(4L)
-    sf_left <- qf_winners[perm_sf[c(1L, 3L)]]
-    sf_right <- qf_winners[perm_sf[c(2L, 4L)]]
-    sf_venue <- rep("neutral", 2L)
-  }
-  sf_winners <- character(2L)
-  for (m in seq_len(2L)) {
-    sf_winners[m] <- sim_match(sf_left[m], sf_right[m], sf_venue[m])
-  }
-
-  final_winner <- sim_match(sf_winners[1], sf_winners[2], "neutral")
-
-  cup_teams <- unique(c(r16$home_team, r16$away_team))
+  cup_teams <- bracket_state$cup_teams
   round_reached <- stats::setNames(rep(0L, length(cup_teams)), cup_teams)
-  round_reached[r16_winners] <- pmax(round_reached[r16_winners], 1L)
-  round_reached[qf_winners] <- pmax(round_reached[qf_winners], 2L)
-  round_reached[sf_winners] <- pmax(round_reached[sf_winners], 3L)
-  round_reached[final_winner] <- 4L
+
+  # The bracket walker. Each round either has known pairings (from results /
+  # schedule) or has its pairings simulated via a uniform random permutation
+  # of the previous round's winners. Per-match outcomes are similarly either
+  # known (played match) or simulated via sim_match.
+  ROUND_SEQ <- c("R16", "R8", "SF", "Final")
+  ROUND_SIZE <- c(R16 = 8L, R8 = 4L, SF = 2L, Final = 1L)
+
+  current_winners <- cup_teams
+  for (r_idx in seq_along(ROUND_SEQ)) {
+    round_name <- ROUND_SEQ[r_idx]
+    round <- bracket_state$rounds[[round_name]]
+    n_m <- ROUND_SIZE[[round_name]]
+
+    if (isTRUE(round$pairings_known) && !is.null(round$matches) &&
+      nrow(round$matches) == n_m) {
+      matches <- round$matches
+    } else {
+      perm <- sample.int(length(current_winners))
+      paired <- current_winners[perm]
+      matches <- tibble::tibble(
+        home_team    = paired[seq.int(1L, 2L * n_m, by = 2L)],
+        away_team    = paired[seq.int(2L, 2L * n_m, by = 2L)],
+        venue        = rep("neutral", n_m),
+        known_winner = rep(NA_character_, n_m)
+      )
+    }
+
+    winners <- character(n_m)
+    for (m in seq_len(n_m)) {
+      if (!is.na(matches$known_winner[m])) {
+        winners[m] <- matches$known_winner[m]
+      } else {
+        winners[m] <- sim_match(
+          matches$home_team[m], matches$away_team[m], matches$venue[m]
+        )
+      }
+    }
+
+    round_reached[winners] <- pmax(round_reached[winners], r_idx)
+    current_winners <- winners
+  }
+
   round_reached
 }
 
@@ -233,10 +230,10 @@ simulate_cup_bracket <- function(sim_inputs_team,
     is.data.frame(sim_inputs_team),
     is.data.frame(sim_inputs_scalar),
     is.list(bracket_state),
-    !is.null(bracket_state$r16),
-    nrow(bracket_state$r16) == 8L,
-    all(c("home_team", "away_team", "venue", "known_winner")
-    %in% names(bracket_state$r16)),
+    !is.null(bracket_state$cup_teams),
+    length(bracket_state$cup_teams) == 16L,
+    !is.null(bracket_state$rounds),
+    all(c("R16", "R8", "SF", "Final") %in% names(bracket_state$rounds)),
     all(c(
       "team", ".draw", "cur_offense", "cur_defense",
       "home_advantage_off", "home_advantage_def"

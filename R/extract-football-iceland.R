@@ -178,21 +178,18 @@ NULL
       probability = numeric()
     )
     tournament_placements <- if (!is.null(sim_inputs) && !is.null(bracket_state)) {
-      # Defensive: skip simulator when R16 teams aren't present in sim_inputs.
-      # This happens when a fit's team registry doesn't cover all R16
+      # Defensive: skip simulator when cup teams aren't present in sim_inputs.
+      # This happens when a fit's team registry doesn't cover all cup
       # entrants (e.g. legacy backup fit + fresh schedule); the simulator's
       # by-name lookups would otherwise crash with "subscript out of bounds".
-      needed_teams <- unique(c(
-        bracket_state$r16$home_team,
-        bracket_state$r16$away_team
-      ))
+      needed_teams <- bracket_state$cup_teams
       sim_team_names <- unique(sim_inputs$team$team)
       missing_in_sim <- setdiff(needed_teams, sim_team_names)
       if (length(missing_in_sim) > 0L) {
         warning(
           sprintf(
             paste0(
-              "tournament_placements: skipping simulator -- %d R16 team(s) ",
+              "tournament_placements: skipping simulator -- %d cup team(s) ",
               "not in sim_inputs$team: %s. This usually means the fit's ",
               "team registry doesn't match the current schedule."
             ),
@@ -410,39 +407,145 @@ NULL
   list(team = team_inputs, scalar = scalar_inputs)
 }
 
-# Build a v1 R16-only bracket_state from the prediction-data tibble.
+# Build a bracket_state for the cup bracket simulator.
 #
-# Returns:
-#   * a list with an 8-row `r16` tibble (home_team, away_team, venue,
-#     known_winner) when at least 8 upcoming cup matches are available, OR
-#   * NULL when fewer than 8 upcoming cup matches exist (e.g. R16 already
-#     started and the simulator's "full upcoming R16" precondition fails).
+# Identifies the 16 R16 teams from the season's cup matches (union of played
+# results + upcoming schedule) by sliding-window detection: the first window
+# of 8 chronological cup matches involving exactly 16 distinct teams within
+# a ≤ 4-day span is treated as the R16 round. Subsequent cup matches in the
+# same season that involve only those 16 teams are bracket matches; their
+# chronological rank determines round (ranks 1-8 = R16, 9-12 = R8, 13-14 =
+# SF, 15 = Final).
 #
-# v1 limitation: only forward-simulates from a fully-upcoming R16. Partial
-# bracket states (some R16 played, some not) and later-stage entry points
-# (R8 / SF / Final) require additional handling; see design doc.
-.build_bracket_state_pfi <- function(pred_d) {
-  if (is.null(pred_d) || nrow(pred_d) == 0L) {
+# Returns a list with:
+#   * cup_teams: character(16) — the R16 entrants
+#   * rounds: a named list keyed by "R16", "R8", "SF", "Final". Each round
+#     entry is itself a list with:
+#       - pairings_known: logical. TRUE if the round's matches are listed
+#         in results or upcoming schedule; FALSE if KSÍ has not yet drawn it.
+#       - matches: tibble(home_team, away_team, venue, known_winner) when
+#         pairings_known; NULL otherwise. `known_winner` is the team name
+#         for played matches, NA for upcoming.
+#
+# Returns NULL when fewer than 8 cup matches with 16 distinct teams are
+# available (e.g. cup season hasn't reached R16 yet).
+.build_bracket_state_pfi <- function(pred_d, results = NULL,
+                                     current_season = NULL) {
+  empty_or_null <- function(x) is.null(x) || nrow(x) == 0L
+  if (empty_or_null(pred_d) && empty_or_null(results)) {
     return(NULL)
   }
-  cup_upcoming <- pred_d |>
-    dplyr::filter(.data$division == "CUP") |>
+
+  schedule_part <- if (!empty_or_null(pred_d)) {
+    pred_d |>
+      dplyr::filter(.data$division == "CUP") |>
+      dplyr::transmute(
+        match_date   = .data$match_date,
+        home_team    = .data$home_team,
+        away_team    = .data$away_team,
+        played       = FALSE,
+        known_winner = NA_character_
+      )
+  } else {
+    tibble::tibble(
+      match_date = as.Date(character()),
+      home_team = character(), away_team = character(),
+      played = logical(), known_winner = character()
+    )
+  }
+
+  results_part <- if (!empty_or_null(results)) {
+    res <- results |>
+      dplyr::filter(.data$division == "CUP")
+    if (!is.null(current_season) && "season" %in% names(res)) {
+      res <- res[res$season == current_season, , drop = FALSE]
+    }
+    if (nrow(res) > 0L && all(c("home_score", "away_score") %in% names(res))) {
+      res |>
+        dplyr::transmute(
+          match_date = .data$match_date,
+          home_team = .data$home_team,
+          away_team = .data$away_team,
+          played = TRUE,
+          known_winner = dplyr::case_when(
+            .data$home_score > .data$away_score ~ .data$home_team,
+            .data$home_score < .data$away_score ~ .data$away_team,
+            TRUE ~ NA_character_ # tied at 90' results without ET info;
+            # treat as unresolved -> simulator re-runs.
+          )
+        )
+    } else {
+      tibble::tibble(
+        match_date = as.Date(character()),
+        home_team = character(), away_team = character(),
+        played = logical(), known_winner = character()
+      )
+    }
+  } else {
+    tibble::tibble(
+      match_date = as.Date(character()),
+      home_team = character(), away_team = character(),
+      played = logical(), known_winner = character()
+    )
+  }
+
+  cup_matches <- dplyr::bind_rows(results_part, schedule_part) |>
+    dplyr::distinct(.data$match_date, .data$home_team, .data$away_team,
+      .keep_all = TRUE
+    ) |>
     dplyr::arrange(.data$match_date)
 
-  if (nrow(cup_upcoming) < 8L) {
+  if (nrow(cup_matches) < 8L) {
     return(NULL)
   }
 
-  r16 <- cup_upcoming |>
-    dplyr::slice_head(n = 8L) |>
-    dplyr::transmute(
-      home_team    = .data$home_team,
-      away_team    = .data$away_team,
-      venue        = "home",
-      known_winner = NA_character_
-    )
+  # Identify R16 via sliding-window: first 8-match window with 16 distinct
+  # teams in ≤ 4 days.
+  cup_teams <- NULL
+  for (i in seq_len(nrow(cup_matches) - 7L)) {
+    win <- cup_matches[i:(i + 7L), , drop = FALSE]
+    teams_in_window <- unique(c(win$home_team, win$away_team))
+    span_days <- as.numeric(max(win$match_date) - min(win$match_date))
+    if (length(teams_in_window) == 16L && span_days <= 4L) {
+      cup_teams <- teams_in_window
+      break
+    }
+  }
+  if (is.null(cup_teams)) {
+    return(NULL)
+  }
 
-  list(r16 = r16)
+  bracket_matches <- cup_matches |>
+    dplyr::filter(.data$home_team %in% cup_teams &
+      .data$away_team %in% cup_teams) |>
+    dplyr::mutate(rank = dplyr::row_number())
+
+  build_round <- function(ranks) {
+    m <- bracket_matches |> dplyr::filter(.data$rank %in% ranks)
+    if (nrow(m) == length(ranks)) {
+      list(
+        pairings_known = TRUE,
+        matches = tibble::tibble(
+          home_team    = m$home_team,
+          away_team    = m$away_team,
+          venue        = "home",
+          known_winner = m$known_winner
+        )
+      )
+    } else {
+      list(pairings_known = FALSE, matches = NULL)
+    }
+  }
+
+  list(
+    cup_teams = cup_teams,
+    rounds = list(
+      R16   = build_round(1:8),
+      R8    = build_round(9:12),
+      SF    = build_round(13:14),
+      Final = build_round(15L)
+    )
+  )
 }
 
 # ---- Public API --------------------------------------------------------------
@@ -647,12 +750,16 @@ extract_football_iceland <- function(fit, league, sex,
     )
   )
 
-  # Cup bracket simulator inputs: per-draw raw model parameters + R16 fixture state.
-  # `sim_inputs` is always extracted (cheap, ~5 MB on disk); `bracket_state` is
-  # only built when at least 8 upcoming cup matches are available.
+  # Cup bracket simulator inputs: per-draw raw model parameters + bracket state.
+  # `sim_inputs` is always extracted (cheap, ~5 MB on disk). `bracket_state`
+  # unions played results + upcoming schedule to support any entry point —
+  # R16 still upcoming, partial R16, R8 onwards once R16 plays, etc.
   sim_inputs <- .extract_sim_inputs_pfi(fit, teams)
   bracket_state <- if ("CUP" %in% target_divs) {
-    .build_bracket_state_pfi(pred_d)
+    .build_bracket_state_pfi(pred_d,
+      results = results,
+      current_season = current_season
+    )
   } else {
     NULL
   }
