@@ -48,20 +48,30 @@ partitioning the sidecars by `(sport, country, sex, fit_date)`. See
 
 ### Per-division output
 
-The publisher loops over both Icelandic football divisions
-(`BD` = Besta deild, `LD1` = Lengjudeild) and writes one full set of
-JSONs per `(sex, division)` cell into
+The publisher loops over the three Icelandic football divisions
+(`BD` = Besta deild, `LD1` = Lengjudeild, `CUP` = Mjólkurbikar) and
+writes one full set of JSONs per `(sex, division)` cell into
 `data/publish/football/iceland/{sex_folder}-{div_suffix}/`. The dir
-suffix follows the platform URL slug (`/lengja/` → `ld`, not `ld1`).
-Total publish output for football iceland is 4 directories ×
-11 JSONs = 44 files per fit. The per-cell extracted slice is
+suffix follows the platform URL slug (`/lengja/` → `ld`, not `ld1`;
+`/bikar/` → `bikar`). Total publish output is 6 directories ×
+11 JSONs = 66 files per fit. The per-cell extracted slice is
 pre-filtered to the division's teams + matches by the reader's
 `division` filter, so the publisher's loop body is now mostly a
 render of `ext <- extracted[[target_div]]` rather than a
 filter-then-render. The legacy fit-based wrapper
-`.publish_football_iceland_from_fit_pfi(..., target_div = X)`
-survives as a regression backstop, deletable after a few production
-cycles.
+`.publish_football_iceland_from_fit_pfi(..., target_div = X)` is
+BD/LD1-only and survives as a regression backstop, deletable after
+a few production cycles.
+
+CUP cells skip the league-table outputs (`standings.json`,
+`standings_history.json`, `final_positions.json`,
+`final_positions_history.json`, `points_distribution.json`) — those
+five JSONs ship as empty placeholders for endpoint stability.
+`meta.json` carries `is_cup: true` + `division: "CUP"` so frontends
+branch on the cup marker rather than inspecting standings rows. The
+extract layer's `.extract_division_parquets_pfi()` short-circuits the
+league-table simulation when `target_div == "CUP"`; the publisher's
+standings block is gated on `!is_cup`.
 
 Schema-only iterations on the publisher run via the `republish.yml`
 `workflow_dispatch` Action, which calls `scripts/05_publish.R` without

@@ -370,7 +370,8 @@ NULL
 #'   this to write into an isolated tempdir while still reading facts from
 #'   the real `root`.
 #' @param target_divs Character vector of division codes to extract. Defaults
-#'   to `c("BD", "LD1")` (both). Useful in tests to extract one division only.
+#'   to `c("BD", "LD1", "CUP")` (the full football iceland set). Useful in
+#'   tests to extract one division only.
 #' @return invisible(NULL). 6 Parquet files written into the extracts partition.
 #' @export
 extract_football_iceland <- function(fit, league, sex,
@@ -565,7 +566,7 @@ extract_football_iceland <- function(fit, league, sex,
 #' @param extracts_root Beliefs extracts root.
 #'   Default `here::here("data", "beliefs", "extracts")`.
 #' @param target_divs Character vector of divisions to load. Defaults to
-#'   `c("BD", "LD1")`. Returned list always includes a slot per requested
+#'   `c("BD", "LD1", "CUP")`. Returned list always includes a slot per requested
 #'   division (with empty-tibble parquets when the `division` filter yields
 #'   no rows).
 #' @return Named list. Each requested division key (e.g. `"BD"`, `"LD1"`)

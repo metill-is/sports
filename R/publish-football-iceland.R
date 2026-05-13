@@ -1824,6 +1824,11 @@ publish_football_iceland <- function(extracted,
     )
 
     # ---- standings.json + standings_history.json ----------------------------
+    #
+    # Cups are knockouts — there is no points table. Skip the W/L/D
+    # tabulation entirely for CUP cells: tallying cup matches by points
+    # would produce a misleading "table" mixing teams from every division
+    # ranked by their cup runs.
 
     bd_results <- results[
       results$season == current_season & results$division == top_div, ,
@@ -1841,7 +1846,7 @@ publish_football_iceland <- function(extracted,
         stringr::str_sub(1L, 3L)
     }
 
-    if (nrow(bd_results) > 0L) {
+    if (!is_cup && nrow(bd_results) > 0L) {
       long_bd <- dplyr::bind_rows(
         dplyr::transmute(bd_results,
           team = .data$home_team, match_date = .data$match_date,
@@ -1962,6 +1967,15 @@ publish_football_iceland <- function(extracted,
           as_of = format(end_date, "%Y-%m-%d"), rows = list()
         ),
         file.path(out_dir, "standings.json"),
+        auto_unbox = TRUE, dataframe = "rows", digits = 5, na = "null"
+      )
+      # Truncate standings_history.json to empty too: when the cell has no
+      # league-table semantics (cups) any prior records are stale and the
+      # append helper would otherwise keep them. Mirrors the pattern below
+      # for final_positions_history.json.
+      jsonlite::write_json(
+        list(schema_version = 1L, records = list()),
+        file.path(out_dir, "standings_history.json"),
         auto_unbox = TRUE, dataframe = "rows", digits = 5, na = "null"
       )
     }
