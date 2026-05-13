@@ -34,6 +34,10 @@ NULL
     ),
     points_distribution = tibble::tibble(
       team = character(), points = integer(), probability = numeric()
+    ),
+    tournament_placements = tibble::tibble(
+      team = character(), round_name = character(),
+      probability = numeric()
     )
   )
 }
@@ -2247,6 +2251,46 @@ publish_football_iceland <- function(extracted,
       file.path(out_dir, "home_advantage.json"),
       auto_unbox = TRUE, dataframe = "rows", digits = 5
     )
+
+    # ---- tournament_placements.json (cup cells only) ------------------------
+    # Bracket-progression probabilities from the R-side simulator. The
+    # extract layer writes this parquet only for the CUP cell; BD/LD1 emit
+    # an empty placeholder so the JSON endpoint is stable.
+    if (is_cup) {
+      tournament_placements <- ext$tournament_placements
+      if (nrow(tournament_placements) > 0L) {
+        champion_summary <- tournament_placements |>
+          dplyr::filter(.data$round_name == "Champion") |>
+          dplyr::arrange(dplyr::desc(.data$probability)) |>
+          dplyr::transmute(
+            team        = .data$team,
+            p_champion  = .data$probability
+          )
+        jsonlite::write_json(
+          list(
+            generated_at = generated_at,
+            season       = current_season,
+            n_teams      = length(unique(tournament_placements$team)),
+            records      = tournament_placements,
+            summary      = champion_summary
+          ),
+          file.path(out_dir, "tournament_placements.json"),
+          auto_unbox = TRUE, dataframe = "rows", digits = 5
+        )
+      } else {
+        jsonlite::write_json(
+          list(
+            generated_at = generated_at,
+            season       = current_season,
+            n_teams      = 0L,
+            records      = list(),
+            summary      = list()
+          ),
+          file.path(out_dir, "tournament_placements.json"),
+          auto_unbox = TRUE, dataframe = "rows", digits = 5
+        )
+      }
+    }
 
     n_files <- length(list.files(out_dir, pattern = "\\.json$"))
     message(sprintf(

@@ -569,3 +569,59 @@ test_that("read_extracted_football: CUP slot present in default target_divs", {
   expect_true("CUP" %in% names(out))
   expect_equal(out$CUP$predicted_matches$marker, "v1")
 })
+
+# ---- .build_bracket_state_pfi ------------------------------------------------
+
+test_that(".build_bracket_state_pfi: returns NULL when fewer than 8 upcoming cup matches", {
+  pred_d <- tibble::tibble(
+    home_team  = c("A", "B"),
+    away_team  = c("C", "D"),
+    match_date = as.Date(c("2026-05-13", "2026-05-14")),
+    division   = c("CUP", "CUP")
+  )
+  expect_null(.build_bracket_state_pfi(pred_d))
+})
+
+test_that(".build_bracket_state_pfi: returns NULL when fewer than 8 CUP-tagged matches", {
+  pred_d <- tibble::tibble(
+    home_team  = paste0("H", 1:10),
+    away_team  = paste0("A", 1:10),
+    match_date = as.Date("2026-05-13") + 0:9,
+    division   = c(rep("BD", 4), rep("CUP", 6))
+  )
+  expect_null(.build_bracket_state_pfi(pred_d))
+})
+
+test_that(".build_bracket_state_pfi: returns 8-row R16 when 8+ CUP matches upcoming", {
+  pred_d <- tibble::tibble(
+    home_team  = paste0("H", 1:10),
+    away_team  = paste0("A", 1:10),
+    match_date = as.Date("2026-05-13") + 0:9,
+    division   = c(rep("BD", 2), rep("CUP", 8))
+  )
+  bs <- .build_bracket_state_pfi(pred_d)
+  expect_false(is.null(bs))
+  expect_named(bs, "r16")
+  expect_equal(nrow(bs$r16), 8L)
+  expect_named(bs$r16, c("home_team", "away_team", "venue", "known_winner"))
+  expect_true(all(bs$r16$venue == "home"))
+  expect_true(all(is.na(bs$r16$known_winner)))
+})
+
+test_that(".build_bracket_state_pfi: picks chronologically earliest 8 cup matches", {
+  pred_d <- tibble::tibble(
+    home_team  = paste0("H", 1:10),
+    away_team  = paste0("A", 1:10),
+    match_date = as.Date("2026-05-13") + 0:9,
+    division   = rep("CUP", 10)
+  )
+  bs <- .build_bracket_state_pfi(pred_d)
+  # First 8 chronologically are H1-H8 / A1-A8.
+  expect_equal(bs$r16$home_team, paste0("H", 1:8))
+  expect_equal(bs$r16$away_team, paste0("A", 1:8))
+})
+
+test_that(".build_bracket_state_pfi: handles NULL / empty input", {
+  expect_null(.build_bracket_state_pfi(NULL))
+  expect_null(.build_bracket_state_pfi(tibble::tibble()))
+})

@@ -46,7 +46,9 @@ NULL
                                            team_strengths_draws,
                                            home_advantage_draws,
                                            n_pred_fit,
-                                           n_pred_data) {
+                                           n_pred_data,
+                                           sim_inputs = NULL,
+                                           bracket_state = NULL) {
   top_results <- results[
     results$season == current_season & results$division == target_div, ,
     drop = FALSE
@@ -165,10 +167,53 @@ NULL
   # the target division's teams + matches.
   #
   # CUP (Mjólkurbikar) is a knockout — there is no points table to
-  # integrate over, so we emit empty tibbles and skip the simulation.
-  # Bracket-progression probabilities (P(reach final), P(win cup)) are
-  # net-new work and not part of this extract path.
+  # integrate over, so we emit empty tibbles for league-table outputs.
+  # Bracket-progression probabilities live in `tournament_placements`
+  # and come from `simulate_cup_bracket()` when sim_inputs + bracket_state
+  # are provided by the caller.
   if (identical(target_div, "CUP")) {
+    empty_placements <- tibble::tibble(
+      team        = character(),
+      round_name  = character(),
+      probability = numeric()
+    )
+    tournament_placements <- if (!is.null(sim_inputs) && !is.null(bracket_state)) {
+      # Defensive: skip simulator when R16 teams aren't present in sim_inputs.
+      # This happens when a fit's team registry doesn't cover all R16
+      # entrants (e.g. legacy backup fit + fresh schedule); the simulator's
+      # by-name lookups would otherwise crash with "subscript out of bounds".
+      needed_teams <- unique(c(
+        bracket_state$r16$home_team,
+        bracket_state$r16$away_team
+      ))
+      sim_team_names <- unique(sim_inputs$team$team)
+      missing_in_sim <- setdiff(needed_teams, sim_team_names)
+      if (length(missing_in_sim) > 0L) {
+        warning(
+          sprintf(
+            paste0(
+              "tournament_placements: skipping simulator -- %d R16 team(s) ",
+              "not in sim_inputs$team: %s. This usually means the fit's ",
+              "team registry doesn't match the current schedule."
+            ),
+            length(missing_in_sim),
+            paste(missing_in_sim, collapse = ", ")
+          ),
+          call. = FALSE
+        )
+        empty_placements
+      } else {
+        simulate_cup_bracket(
+          sim_inputs_team   = sim_inputs$team,
+          sim_inputs_scalar = sim_inputs$scalar,
+          bracket_state     = bracket_state,
+          pairing_seed      = 42L
+        ) |>
+          dplyr::mutate(round_name = as.character(.data$round_name))
+      }
+    } else {
+      empty_placements
+    }
     return(list(
       predicted_matches = predicted_matches,
       team_strengths_quantiles = team_strengths_quantiles,
@@ -183,7 +228,8 @@ NULL
         team = character(),
         points = integer(),
         probability = numeric()
-      )
+      ),
+      tournament_placements = tournament_placements
     ))
   }
 
@@ -299,13 +345,104 @@ NULL
   }
 
   list(
-    predicted_matches         = predicted_matches,
-    team_strengths_quantiles  = team_strengths_quantiles,
+    predicted_matches = predicted_matches,
+    team_strengths_quantiles = team_strengths_quantiles,
     round_strengths_quantiles = round_strengths_quantiles,
-    home_advantage_quantiles  = home_advantage_quantiles,
-    final_positions           = final_positions,
-    points_distribution       = points_distribution
+    home_advantage_quantiles = home_advantage_quantiles,
+    final_positions = final_positions,
+    points_distribution = points_distribution,
+    tournament_placements = tibble::tibble(
+      team        = character(),
+      round_name  = character(),
+      probability = numeric()
+    )
   )
+}
+
+# Extract per-draw model parameters needed by the cup bracket simulator.
+# Returns `list(team = <per-(team, .draw) tibble>, scalar = <per-.draw scalar tibble>)`.
+# Values are raw log-scale (NOT exp-transformed) so the simulator can compose
+# them additively into Poisson rates exactly as the model does in its
+# generated quantities block.
+.extract_sim_inputs_pfi <- function(fit, teams) {
+  extract_team <- function(var) {
+    fit$draws(var) |>
+      posterior::as_draws_df() |>
+      tibble::as_tibble() |>
+      tidyr::pivot_longer(
+        c(-".chain", -".draw", -".iteration"),
+        names_to  = "name",
+        values_to = "value"
+      ) |>
+      dplyr::mutate(
+        team_idx = as.integer(readr::parse_number(.data$name)),
+        team     = teams$team[.data$team_idx]
+      ) |>
+      dplyr::select("team", ".draw", "value")
+  }
+
+  team_inputs <- extract_team("cur_offense_away") |>
+    dplyr::rename(cur_offense = "value") |>
+    dplyr::full_join(
+      extract_team("cur_defense_away") |> dplyr::rename(cur_defense = "value"),
+      by = c("team", ".draw")
+    ) |>
+    dplyr::full_join(
+      extract_team("home_advantage_off") |>
+        dplyr::rename(home_advantage_off = "value"),
+      by = c("team", ".draw")
+    ) |>
+    dplyr::full_join(
+      extract_team("home_advantage_def") |>
+        dplyr::rename(home_advantage_def = "value"),
+      by = c("team", ".draw")
+    )
+
+  scalar_inputs <- fit$draws(c(
+    "mean_log_goals", "alpha_mu3", "beta_mu3_strength_diff"
+  )) |>
+    posterior::as_draws_df() |>
+    tibble::as_tibble() |>
+    dplyr::select(
+      ".draw", "mean_log_goals", "alpha_mu3", "beta_mu3_strength_diff"
+    )
+
+  list(team = team_inputs, scalar = scalar_inputs)
+}
+
+# Build a v1 R16-only bracket_state from the prediction-data tibble.
+#
+# Returns:
+#   * a list with an 8-row `r16` tibble (home_team, away_team, venue,
+#     known_winner) when at least 8 upcoming cup matches are available, OR
+#   * NULL when fewer than 8 upcoming cup matches exist (e.g. R16 already
+#     started and the simulator's "full upcoming R16" precondition fails).
+#
+# v1 limitation: only forward-simulates from a fully-upcoming R16. Partial
+# bracket states (some R16 played, some not) and later-stage entry points
+# (R8 / SF / Final) require additional handling; see design doc.
+.build_bracket_state_pfi <- function(pred_d) {
+  if (is.null(pred_d) || nrow(pred_d) == 0L) {
+    return(NULL)
+  }
+  cup_upcoming <- pred_d |>
+    dplyr::filter(.data$division == "CUP") |>
+    dplyr::arrange(.data$match_date)
+
+  if (nrow(cup_upcoming) < 8L) {
+    return(NULL)
+  }
+
+  r16 <- cup_upcoming |>
+    dplyr::slice_head(n = 8L) |>
+    dplyr::transmute(
+      home_team    = .data$home_team,
+      away_team    = .data$away_team,
+      venue        = "home",
+      known_winner = NA_character_
+    )
+
+  list(r16 = r16)
 }
 
 # ---- Public API --------------------------------------------------------------
@@ -510,6 +647,16 @@ extract_football_iceland <- function(fit, league, sex,
     )
   )
 
+  # Cup bracket simulator inputs: per-draw raw model parameters + R16 fixture state.
+  # `sim_inputs` is always extracted (cheap, ~5 MB on disk); `bracket_state` is
+  # only built when at least 8 upcoming cup matches are available.
+  sim_inputs <- .extract_sim_inputs_pfi(fit, teams)
+  bracket_state <- if ("CUP" %in% target_divs) {
+    .build_bracket_state_pfi(pred_d)
+  } else {
+    NULL
+  }
+
   per_div <- lapply(target_divs, function(target_div) {
     parts <- .extract_division_parquets_pfi(
       target_div           = target_div,
@@ -521,7 +668,9 @@ extract_football_iceland <- function(fit, league, sex,
       team_strengths_draws = team_strengths_draws,
       home_advantage_draws = home_advantage_draws,
       n_pred_fit           = n_pred_fit,
-      n_pred_data          = n_pred_data
+      n_pred_data          = n_pred_data,
+      sim_inputs           = sim_inputs,
+      bracket_state        = bracket_state
     )
     lapply(parts, function(df) dplyr::mutate(df, division = target_div))
   })
@@ -536,11 +685,21 @@ extract_football_iceland <- function(fit, league, sex,
     )
   }
 
+  arrow::write_parquet(
+    sim_inputs$team,
+    file.path(extracts_dir, "sim_inputs_team.parquet")
+  )
+  arrow::write_parquet(
+    sim_inputs$scalar,
+    file.path(extracts_dir, "sim_inputs_scalar.parquet")
+  )
+
   message(sprintf(
-    "extract_football_iceland: wrote %d Parquets to %s [div: %s]",
+    "extract_football_iceland: wrote %d division parquets + 2 sim_inputs parquets to %s [div: %s; bracket_state: %s]",
     length(file_types),
     extracts_dir,
-    paste(target_divs, collapse = ", ")
+    paste(target_divs, collapse = ", "),
+    if (is.null(bracket_state)) "absent (< 8 upcoming cup matches)" else "built"
   ))
   invisible(NULL)
 }
@@ -683,16 +842,29 @@ read_extracted_football <- function(league, sex, fit_date = NULL,
     ),
     points_distribution = tibble::tibble(
       team = character(), points = integer(), probability = numeric()
+    ),
+    tournament_placements = tibble::tibble(
+      team = character(), round_name = character(),
+      probability = numeric()
     )
   )
 
-  parquets <- lapply(file_types, function(ft) {
-    arrow::read_parquet(file.path(fit_dir, paste0(ft, ".parquet")))
+  # `tournament_placements.parquet` is a soft-required 7th file: produced by
+  # extracts since the cup-bracket simulator landed. Older partitions
+  # (pre-simulator) don't have it; we degrade gracefully to an empty tibble.
+  per_division_file_types <- c(file_types, "tournament_placements")
+  parquets <- lapply(per_division_file_types, function(ft) {
+    p <- file.path(fit_dir, paste0(ft, ".parquet"))
+    if (file.exists(p)) {
+      arrow::read_parquet(p)
+    } else {
+      empty_tibbles[[ft]]
+    }
   })
-  names(parquets) <- file_types
+  names(parquets) <- per_division_file_types
 
   read_one_division <- function(target_div) {
-    out <- lapply(file_types, function(ft) {
+    out <- lapply(per_division_file_types, function(ft) {
       df <- parquets[[ft]]
       if (!"division" %in% names(df) || nrow(df) == 0L) {
         return(empty_tibbles[[ft]])
@@ -701,12 +873,28 @@ read_extracted_football <- function(league, sex, fit_date = NULL,
       df$division <- NULL
       tibble::as_tibble(df)
     })
-    names(out) <- file_types
+    names(out) <- per_division_file_types
     out
   }
 
   out <- lapply(target_divs, read_one_division)
   names(out) <- target_divs
+
+  # Optional shared sim_inputs (per-draw model parameters; not per-division).
+  # Absent for pre-simulator partitions; the publisher only reads these when
+  # it needs to re-run the simulator with non-default tiebreak / pairing opts.
+  sim_inputs_team_path <- file.path(fit_dir, "sim_inputs_team.parquet")
+  sim_inputs_scalar_path <- file.path(fit_dir, "sim_inputs_scalar.parquet")
+  out$sim_inputs <- if (file.exists(sim_inputs_team_path) &&
+    file.exists(sim_inputs_scalar_path)) {
+    list(
+      team   = tibble::as_tibble(arrow::read_parquet(sim_inputs_team_path)),
+      scalar = tibble::as_tibble(arrow::read_parquet(sim_inputs_scalar_path))
+    )
+  } else {
+    NULL
+  }
+
   out$fit_date <- fit_date_out
   out
 }

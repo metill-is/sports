@@ -73,6 +73,22 @@ extract layer's `.extract_division_parquets_pfi()` short-circuits the
 league-table simulation when `target_div == "CUP"`; the publisher's
 standings block is gated on `!is_cup`.
 
+CUP cells additionally ship `tournament_placements.json` — P(team
+reaches at least round X) for X ∈ {R16, QF, SF, Final, Champion},
+cumulative form. Produced by the R-side cup bracket simulator
+`R/simulate-cup-bracket.R::simulate_cup_bracket()` reading per-draw
+strength parameters extracted from the fit. The simulator forward-walks
+R16 → R8 → SF → Final per posterior draw, drawing uniform-random pairings
+for unscheduled rounds (KSÍ does not pre-publish the bracket; pairings
+are drawn round-by-round — see `Sports/Mjólkurbikar Bracket Simulator
+Design.md`). v1 limitation: only runs when 8 R16 fixtures are entirely
+upcoming. Output also carries a `summary` array with the P(Champion)
+leaderboard for direct frontend rendering. Two shared parquets are also
+written per fit — `sim_inputs_team.parquet` (per-draw raw team
+strengths) and `sim_inputs_scalar.parquet` (per-draw scalar parameters)
+— so the simulator can be re-run with alternative tiebreak / pairing
+options without refitting.
+
 Schema-only iterations on the publisher run via the `republish.yml`
 `workflow_dispatch` Action, which calls `scripts/05_publish.R` without
 re-fitting.
@@ -95,12 +111,16 @@ no-ops on these sports until the autumn 2026 season opener — see
 
 ## File counts
 
-- Football: 11 JSONs per `(sex, division)` cell — 7 snapshot
-  (`meta`, `next_games`, `standings`, `team_strengths`,
-  `final_positions`, `points_distribution`, `home_advantage`) plus
-  4 history (`standings_history`, `team_strengths_history`,
-  `round_predictions_history`, `final_positions_history`) — across
-  4 cells (`karla-bd`, `karla-ld`, `kvenna-bd`, `kvenna-ld`).
+- Football: 11 JSONs per BD/LD1 cell; 12 JSONs per CUP cell (the 11
+  league JSONs — 5 empty placeholders + 6 cup-applicable — plus
+  `tournament_placements.json`). Across 6 cells (`karla-{bd,ld,bikar}`,
+  `kvenna-{bd,ld,bikar}`) that's 11×4 + 12×2 = 68 JSONs per fit.
+- Per-fit extracts: 9 parquets — the 7 per-cell file types
+  (`predicted_matches`, `team_strengths_quantiles`,
+  `round_strengths_quantiles`, `home_advantage_quantiles`,
+  `final_positions`, `points_distribution`, `tournament_placements`)
+  plus 2 shared bracket-simulator inputs (`sim_inputs_team`,
+  `sim_inputs_scalar`).
 - Basketball + handball: same 7 snapshots plus
   `final_positions_history.json` per sex (8 × 2 = 16 each).
 

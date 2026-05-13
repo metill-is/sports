@@ -82,3 +82,4 @@ Collate:
     'publish-pipeline.R'
     'schedule-active.R'
     'settle.R'
+    'simulate-cup-bracket.R'

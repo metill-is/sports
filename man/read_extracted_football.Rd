@@ -25,7 +25,7 @@ partition that contains the full six-file extracted set.}
 Default `here::here("data", "beliefs", "extracts")`.}
 
 \item{target_divs}{Character vector of divisions to load. Defaults to
-`c("BD", "LD1")`. Returned list always includes a slot per requested
+`c("BD", "LD1", "CUP")`. Returned list always includes a slot per requested
 division (with empty-tibble parquets when the `division` filter yields
 no rows).}
 }

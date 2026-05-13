@@ -41,7 +41,8 @@ this to write into an isolated tempdir while still reading facts from
 the real `root`.}
 
 \item{target_divs}{Character vector of division codes to extract. Defaults
-to `c("BD", "LD1")` (both). Useful in tests to extract one division only.}
+to `c("BD", "LD1", "CUP")` (the full football iceland set). Useful in
+tests to extract one division only.}
 }
 \value{
 invisible(NULL). 6 Parquet files written into the extracts partition.
