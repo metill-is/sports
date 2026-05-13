@@ -130,6 +130,7 @@ football_iceland:
       - { id: "20442", name: "Besta Deildin Neðri Hluti", sex: male   }
       - { id: "757",   name: "Lengjudeildin",            sex: male   }
       - { id: "813",   name: "Mjólkurbikar karla",       sex: male   }
+      - { id: "1581",  name: "2. deild karla",           sex: male   }
       - { id: "1568",  name: "Besta deild kvenna",       sex: female }
     team_names:
       male:
