@@ -8,9 +8,12 @@ NULL
 #'
 #' Bet-resolution by market:
 #' - moneyline: outcome == "home" wins iff home_goals > away_goals
-#' - spread:    outcome == "home" wins iff (home_goals + line) > away_goals
-#'              outcome == "away" wins iff (away_goals + line) > home_goals
-#'              outcome == "draw" wins iff (home_goals + line) == away_goals (push)
+#' - spread:    `line` is the home team's signed handicap shared across
+#'              outcomes of the row (positive = home gets head start). Define
+#'              `adj = (home_goals + line) - away_goals`. Then
+#'              outcome == "home" wins iff adj > 0
+#'              outcome == "away" wins iff adj < 0
+#'              outcome == "draw" wins iff adj == 0 (push)
 #' - total:     outcome == "over"  wins iff (home_goals + away_goals) > line
 #'              outcome == "under" wins iff (home_goals + away_goals) < line
 #'
@@ -39,14 +42,21 @@ build_return_matrix <- function(beliefs, bets) {
             call. = FALSE
           )
         }
+        # WHY: `line` is the home team's signed handicap shared across all
+        # outcomes of a parse_match_detail() row. Home and away are mirror
+        # images under one adjusted margin `adj = (hg + line) - ag`; they are
+        # NOT separate handicaps applied symmetrically to each side. The
+        # pre-2026-05-13 away formula `(ag + line) > hg` flipped the sign of
+        # the away branch and produced implausibly-high spread-away EVs on
+        # cup matches with |line| >= 2.
         line <- bets$line[[j]]
+        adj <- (hg + line) - ag
         if (bets$outcome[[j]] == "home") {
-          (hg + line) > ag
+          adj > 0
         } else if (bets$outcome[[j]] == "away") {
-          (ag + line) > hg
+          adj < 0
         } else {
-          # spread/draw: wins when the handicap-adjusted margin is exactly zero
-          (hg + line) == ag
+          adj == 0
         }
       },
       total = {

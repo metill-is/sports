@@ -89,8 +89,41 @@ test_that("compute_settlement: spread integer-line push counts as loss for home"
   expect_equal(out$pnl, -100)
 })
 
-test_that("compute_settlement: spread away wins on adjusted margin", {
+test_that("compute_settlement: spread away with positive line means away covers -line", {
+  # Lengjan convention: same line shared by home/away outcomes; line is the
+  # home team's signed handicap. line=+0.5 means home gets +0.5 head start
+  # (away effectively -0.5). With score 1-1, home covers (loses by < 0.5).
+  # Away does NOT cover.
   bets <- make_bet("spread", "away", line = 0.5, odds = 1.9)
+  res <- make_result(1, 1)
+  out <- compute_settlement(bets, res)
+  expect_false(out$win)
+})
+
+test_that("compute_settlement: spread away wins by covering -line", {
+  # line=+3 means away effectively -3; away covers when away wins by 4+.
+  bets <- make_bet("spread", "away", line = 3, odds = 15.73)
+  res <- make_result(0, 4)
+  out <- compute_settlement(bets, res)
+  expect_true(out$win)
+  expect_equal(out$pnl, 100 * (15.73 - 1))
+})
+
+test_that("compute_settlement: spread away with positive line does NOT cover on home win", {
+  # Pre-fix bug surface: previously (ag + line) > hg returned TRUE here
+  # (home does not win by 3+) and graded the bet as a "win" inside the
+  # ledger -- but Lengjan would have settled it as a loss (away didn't win
+  # by 4+). This guards against re-introducing the sign flip.
+  bets <- make_bet("spread", "away", line = 3, odds = 15.73)
+  res <- make_result(2, 1) # home wins by 1; away does not cover -3
+  out <- compute_settlement(bets, res)
+  expect_false(out$win)
+})
+
+test_that("compute_settlement: spread away with negative line wins on tie", {
+  # line=-0.5 means home gives 0.5 (away gets +0.5); with score 1-1 the away
+  # side has the tie + half-point cushion and wins the spread.
+  bets <- make_bet("spread", "away", line = -0.5, odds = 1.9)
   res <- make_result(1, 1)
   out <- compute_settlement(bets, res)
   expect_true(out$win)

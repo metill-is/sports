@@ -7,8 +7,11 @@ NULL
 #' away_team) and resolves win/pnl using the same per-market rules as
 #' [build_return_matrix()] in `R/decide-kelly.R`:
 #' - moneyline: home wins iff hg > ag; draw iff hg == ag; away iff hg < ag.
-#' - spread: home wins iff (hg + line) > ag (strict); away wins iff
-#'   (ag + line) > hg (strict); draw wins iff (hg + line) == ag.
+#' - spread: `line` is the home team's signed handicap (positive = home gets
+#'   head start). Define `adj = (hg + line) - ag`. Then home wins iff
+#'   adj > 0 (strict); away wins iff adj < 0 (strict); draw wins iff
+#'   adj == 0. Home and away are mirror images of one adjusted margin --
+#'   NOT two independent handicaps.
 #' - total: over wins iff (hg + ag) > line (strict); under wins iff
 #'   (hg + ag) < line (strict).
 #'
@@ -96,10 +99,16 @@ compute_settlement <- function(bets, results, match_date_window_days = 0L) {
         if (is.na(line[[i]])) {
           stop("spread bet has missing line", call. = FALSE)
         }
+        # WHY: `line` is the home team's signed handicap shared across all
+        # outcomes of a parse_match_detail() row -- home and away are
+        # mirror images under a single adjusted margin. The pre-2026-05-13
+        # away formula `(ag + line) > hg` flipped the sign of the away
+        # branch (same bug as build_return_matrix()).
+        adj <- (hg[[i]] + line[[i]]) - ag[[i]]
         switch(outcome[[i]],
-          home = (hg[[i]] + line[[i]]) > ag[[i]],
-          away = (ag[[i]] + line[[i]]) > hg[[i]],
-          draw = (hg[[i]] + line[[i]]) == ag[[i]],
+          home = adj > 0,
+          away = adj < 0,
+          draw = adj == 0,
           stop("Unknown spread outcome: ", outcome[[i]], call. = FALSE)
         )
       },
