@@ -78,16 +78,32 @@ reaches at least round X) for X ∈ {R16, QF, SF, Final, Champion},
 cumulative form. Produced by the R-side cup bracket simulator
 `R/simulate-cup-bracket.R::simulate_cup_bracket()` reading per-draw
 strength parameters extracted from the fit. The simulator forward-walks
-R16 → R8 → SF → Final per posterior draw, drawing uniform-random pairings
-for unscheduled rounds (KSÍ does not pre-publish the bracket; pairings
-are drawn round-by-round — see `Sports/Mjólkurbikar Bracket Simulator
-Design.md`). v1 limitation: only runs when 8 R16 fixtures are entirely
-upcoming. Output also carries a `summary` array with the P(Champion)
-leaderboard for direct frontend rendering. Two shared parquets are also
-written per fit — `sim_inputs_team.parquet` (per-draw raw team
-strengths) and `sim_inputs_scalar.parquet` (per-draw scalar parameters)
-— so the simulator can be re-run with alternative tiebreak / pairing
-options without refitting.
+R16 → R8 → SF → Final per posterior draw with per-match outcomes drawn
+from the bivariate-Poisson model at training-cutoff strengths. Ties at
+90' are handled by rejection sampling (keep drawing at the same lambdas
+until a non-tied draw emerges) — mathematically equivalent to
+P(winner | someone wins) under the model; avoids parametric ET/shootout
+chain. Pairings for unscheduled rounds are drawn uniformly at random per
+posterior draw (KSÍ does not pre-publish the bracket; pairings drawn
+round-by-round — see `Sports/Mjólkurbikar Bracket Simulator Design.md`).
+
+`bracket_state` uses a generalised `cup_teams + rounds` schema keyed by
+round name, supporting every cup-lifecycle entry point uniformly via one
+4-iteration walker loop: pre-R16, mid-R16 (some matches played, some
+upcoming), post-R16 / pre-R8 draw (R16 winners derived from results, R8
+random pairings), post-R8 draw, post-R8 played, etc.
+`.build_bracket_state_pfi(pred_d, results, current_season)` unions
+upcoming schedule + played results, identifies the 16 R16 teams via a
+sliding-window heuristic (8 cup matches in ≤ 4 days with 16 distinct
+teams), and ranks subsequent cup matches chronologically to populate
+R8/SF/Final.
+
+Output also carries a `summary` array with the P(Champion) leaderboard
+for direct frontend rendering. Two shared parquets are also written per
+fit — `sim_inputs_team.parquet` (per-draw raw team strengths) and
+`sim_inputs_scalar.parquet` (per-draw scalar parameters) — so the
+simulator can be re-run with alternative tiebreak / pairing options
+without refitting.
 
 Schema-only iterations on the publisher run via the `republish.yml`
 `workflow_dispatch` Action, which calls `scripts/05_publish.R` without
