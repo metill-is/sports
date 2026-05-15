@@ -133,6 +133,16 @@ validate_against_schema <- function(df, table) {
 #' `candidates` and `recommendations` partition on `run_date` derived from
 #' `run_id`). These are added by `add_virtual_partitions()` before validation
 #' and passed through to `arrow::write_dataset()` alongside the schema columns.
+#'
+#' Atomicity: each call stages the new files in a sibling directory and then
+#' POSIX-renames each touched partition into place. Arrow's bare
+#' `existing_data_behavior = "overwrite"` first deletes the old partition's
+#' files and *then* writes the new ones — a process kill in that window
+#' leaves the partition empty, which has bitten `beliefs/latest/` after a
+#' SIGKILL'd Stan fit. The staged-rename pattern narrows the failure window:
+#' if the arrow write fails, the on-disk state is unchanged; on success the
+#' visible state flips per partition via a single rename. See audit
+#' 2026-05-15 §H.
 #' @export
 write_table <- function(df, table, root = here::here("data")) {
   if (nrow(df) == 0) {
@@ -146,13 +156,45 @@ write_table <- function(df, table, root = here::here("data")) {
   dest <- do.call(fs::path, c(list(root), table_subdir(table)))
   fs::dir_create(dest, recurse = TRUE)
 
+  # Stage into a sibling directory adjacent to dest, then rename per-partition
+  # into place. The staging tree mirrors the partition structure so each
+  # partition leaf is a single atomic-rename unit.
+  # macOS strftime doesn't support `%N`, so build a microsecond-unique
+  # suffix from numeric Sys.time() instead of relying on locale strftime.
+  stage_root <- paste0(
+    dest, ".stage.", Sys.getpid(), ".",
+    formatC(as.numeric(Sys.time()) * 1e6, format = "f", digits = 0)
+  )
+  on.exit(
+    if (fs::dir_exists(stage_root)) {
+      tryCatch(fs::dir_delete(stage_root), error = function(e) NULL)
+    },
+    add = TRUE
+  )
+  fs::dir_create(stage_root, recurse = TRUE)
+
   arrow::write_dataset(
     df,
-    path = dest,
+    path = stage_root,
     format = "parquet",
     partitioning = partitions,
     existing_data_behavior = "overwrite"
   )
+
+  partition_keys <- dplyr::distinct(df[, partitions, drop = FALSE])
+  for (i in seq_len(nrow(partition_keys))) {
+    keys <- partition_keys[i, , drop = FALSE]
+    partition_segs <- vapply(partitions, function(p) {
+      paste0(p, "=", as.character(keys[[p]]))
+    }, character(1))
+    src <- do.call(fs::path, c(list(stage_root), as.list(partition_segs)))
+    dst <- do.call(fs::path, c(list(dest), as.list(partition_segs)))
+    fs::dir_create(fs::path_dir(dst), recurse = TRUE)
+    if (fs::dir_exists(dst)) {
+      tryCatch(fs::dir_delete(dst), error = function(e) NULL)
+    }
+    fs::file_move(src, dst)
+  }
 
   invisible(NULL)
 }

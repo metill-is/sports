@@ -130,6 +130,62 @@ test_that("write_table errors clearly on unknown table", {
   )
 })
 
+test_that("write_table preserves old partition data when arrow write fails", {
+  # Atomicity: pre-2026-05-15 the bare write_table called write_dataset with
+  # existing_data_behavior='overwrite', which deletes the partition's old
+  # files BEFORE writing new ones. A process kill in that window would leave
+  # the partition empty -- bitten by beliefs/latest/ after a SIGKILL'd Stan
+  # fit. The staged-rename fix should leave existing data intact when the
+  # new write fails. Audit 2026-05-15 §H.
+  tmp <- withr::local_tempdir()
+  good <- tibble::tibble(
+    sport = "football", country = "iceland",
+    scraped_at = as.POSIXct("2026-05-15 08:00:00", tz = "UTC"),
+    match_date = as.Date("2026-05-20"),
+    home_team = "KR", away_team = "Vikingur",
+    market = "moneyline", outcome = "home",
+    line = NA_real_, odds = 2.10
+  )
+  write_table(good, "odds", root = tmp)
+  expect_equal(nrow(read_table("odds", root = tmp)), 1L)
+
+  testthat::local_mocked_bindings(
+    write_dataset = function(...) stop("simulated mid-write crash"),
+    .package = "arrow"
+  )
+  bad <- tibble::tibble(
+    sport = "football", country = "iceland",
+    scraped_at = as.POSIXct("2026-05-15 14:00:00", tz = "UTC"),
+    match_date = as.Date("2026-05-20"),
+    home_team = "KR", away_team = "Vikingur",
+    market = "moneyline", outcome = "home",
+    line = NA_real_, odds = 2.05
+  )
+  expect_error(write_table(bad, "odds", root = tmp), "simulated mid-write crash")
+
+  back <- read_table("odds", root = tmp)
+  expect_equal(nrow(back), 1L)
+  expect_equal(back$odds, 2.10)
+})
+
+test_that("write_table cleans up staging directory on success", {
+  tmp <- withr::local_tempdir()
+  df <- tibble::tibble(
+    sport = "football", country = "iceland",
+    scraped_at = as.POSIXct("2026-05-15 08:00:00", tz = "UTC"),
+    match_date = as.Date("2026-05-20"),
+    home_team = "KR", away_team = "Vikingur",
+    market = "moneyline", outcome = "home",
+    line = NA_real_, odds = 2.10
+  )
+  write_table(df, "odds", root = tmp)
+  stage_siblings <- list.files(
+    fs::path(tmp, "facts"),
+    pattern = "\\.stage\\."
+  )
+  expect_length(stage_siblings, 0L)
+})
+
 test_that("beliefs_archive without fit_date errors", {
   tmp <- withr::local_tempdir()
   row <- tibble::tibble(
