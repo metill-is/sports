@@ -48,7 +48,8 @@ NULL
 #' @return Tibble of per-bet results with at minimum columns: \code{sport},
 #'   \code{country}, \code{sex}, \code{match_date}, \code{home_team},
 #'   \code{away_team}, \code{market}, \code{outcome}, \code{odds},
-#'   \code{bet_amount}, \code{status}.
+#'   \code{actual_odds} (Lengjan live odds at decision time, \code{NA} when no
+#'   click occurred), \code{bet_amount}, \code{status}.
 #' @export
 place_bets <- function(leagues = NULL,
                        dry_run = TRUE,
@@ -270,7 +271,10 @@ place_bets <- function(leagues = NULL,
         )
       }
 
-      results[[length(results) + 1L]] <- bet_result_row(bet, result$status)
+      results[[length(results) + 1L]] <- bet_result_row(
+        bet, result$status,
+        actual_odds = result$actual_odds %||% NA_real_
+      )
 
       # Safety: clear the bet slip before the next bet
       tryCatch(clear_bet_slip(session), error = function(e) NULL)
@@ -351,23 +355,34 @@ resolve_match_ids_new <- function(session, league, sport_id, pipeline_to_lengjan
 
 #' Construct a single-row result tibble for the per-bet output.
 #'
+#' \code{actual_odds} carries the live Lengjan odds at decision time when
+#' available — populated for status \code{"placed"}, \code{"rejected_p3"},
+#' and \code{"rejected_p4"}. For statuses that abort before the click
+#' (\code{"no_match_id*"}, \code{"skipped_by_user"}, \code{"error"} before
+#' click) it is \code{NA_real_}. Used by operators to spot suspicious
+#' frequent P4 rejections without round-tripping through the live odds
+#' history.
+#'
 #' @param bet Single-row recommendations tibble.
 #' @param status Character status string.
+#' @param actual_odds Numeric. Live Lengjan odds at decision time, or
+#'   \code{NA_real_} when no click occurred.
 #' @keywords internal
 #' @noRd
-bet_result_row <- function(bet, status) {
+bet_result_row <- function(bet, status, actual_odds = NA_real_) {
   tibble::tibble(
-    sport      = bet$sport,
-    country    = bet$country,
-    sex        = bet$sex,
-    match_date = bet$match_date,
-    home_team  = bet$home_team,
-    away_team  = bet$away_team,
-    market     = bet$market,
-    outcome    = bet$outcome,
-    odds       = bet$odds,
-    bet_amount = bet$bet_amount,
-    status     = status
+    sport       = bet$sport,
+    country     = bet$country,
+    sex         = bet$sex,
+    match_date  = bet$match_date,
+    home_team   = bet$home_team,
+    away_team   = bet$away_team,
+    market      = bet$market,
+    outcome     = bet$outcome,
+    odds        = bet$odds,
+    actual_odds = actual_odds,
+    bet_amount  = bet$bet_amount,
+    status      = status
   )
 }
 
@@ -377,17 +392,18 @@ bet_result_row <- function(bet, status) {
 #' @noRd
 empty_placement_results <- function() {
   tibble::tibble(
-    sport      = character(),
-    country    = character(),
-    sex        = character(),
-    match_date = as.Date(character()),
-    home_team  = character(),
-    away_team  = character(),
-    market     = character(),
-    outcome    = character(),
-    odds       = numeric(),
-    bet_amount = numeric(),
-    status     = character()
+    sport       = character(),
+    country     = character(),
+    sex         = character(),
+    match_date  = as.Date(character()),
+    home_team   = character(),
+    away_team   = character(),
+    market      = character(),
+    outcome     = character(),
+    odds        = numeric(),
+    actual_odds = numeric(),
+    bet_amount  = numeric(),
+    status      = character()
   )
 }
 

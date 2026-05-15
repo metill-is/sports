@@ -246,11 +246,20 @@ place_bet <- function(session, bet, match_id, sport_id, dry_run = FALSE) {
 check_live_odds <- function(session, bet, actual_odds) {
   # P4: Must still be +EV at live odds
   if (!is_positive_ev(bet$probability, actual_odds)) {
-    cli::cli_alert_warning(
-      "No longer +EV at live odds {actual_odds} (p={bet$probability}) — skipping."
-    )
+    ev_at_rec <- bet$probability * (bet$odds - 1) - (1 - bet$probability)
+    ev_at_live <- bet$probability * (actual_odds - 1) - (1 - bet$probability)
+    cli::cli_alert_danger(paste0(
+      "P4 reject: {bet$home_team} v {bet$away_team} {bet$market} {bet$outcome} ",
+      "(stake {bet$bet_amount} kr). Odds {bet$odds} → {actual_odds}; ",
+      "EV {round(ev_at_rec * 100, 2)}% → {round(ev_at_live * 100, 2)}%."
+    ))
     clear_bet_slip(session)
-    return(list(status = "skipped", reason = "not_positive_ev", actual_odds = actual_odds))
+    return(list(
+      ok          = FALSE,
+      status      = "rejected_p4",
+      reason      = "not_positive_ev",
+      actual_odds = actual_odds
+    ))
   }
 
   # P3: Proportionally adjust stake if odds drifted >1%
@@ -260,9 +269,18 @@ check_live_odds <- function(session, bet, actual_odds) {
       bet$probability, actual_odds, bet$odds, bet$bet_amount
     )
     if (amount < 200) {
-      cli::cli_alert_warning("Kelly amount {amount} kr < 200 kr minimum at live odds — skipping.")
+      cli::cli_alert_warning(paste0(
+        "P3 reject (kelly_too_small): {bet$home_team} v {bet$away_team} ",
+        "{bet$market} {bet$outcome}. Odds {bet$odds} → {actual_odds}; ",
+        "Kelly stake {amount} kr < 200 kr min_bet."
+      ))
       clear_bet_slip(session)
-      return(list(status = "skipped", reason = "kelly_too_small", actual_odds = actual_odds))
+      return(list(
+        ok          = FALSE,
+        status      = "rejected_p3",
+        reason      = "kelly_too_small",
+        actual_odds = actual_odds
+      ))
     }
     cli::cli_alert_info(
       "Odds drifted {bet$odds} → {actual_odds}: stake {bet$bet_amount} → {amount} kr"
@@ -270,7 +288,7 @@ check_live_odds <- function(session, bet, actual_odds) {
   }
 
   # All checks passed
-  list(ok = TRUE, amount = amount)
+  list(ok = TRUE, amount = amount, actual_odds = actual_odds)
 }
 
 # ── Outcome dispatch ──────────────────────────────────────────────────────────

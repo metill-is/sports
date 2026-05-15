@@ -34,9 +34,57 @@ test_that("place_bets returns a tibble with the documented status column", {
   expected_cols <- c(
     "sport", "country", "sex", "match_date",
     "home_team", "away_team", "market", "outcome",
-    "odds", "bet_amount", "status"
+    "odds", "actual_odds", "bet_amount", "status"
   )
   expect_true(all(expected_cols %in% names(out)))
+})
+
+test_that("bet_result_row carries actual_odds for forensics on P3/P4 rejects", {
+  # Pre-2026-05-15 the placer collapsed all rejection paths to status='skipped'
+  # and dropped the live odds, blinding the operator to which odds drift caused
+  # the rejection. After the audit fix:
+  #   - status reflects the documented set (rejected_p4 / rejected_p3 / ...)
+  #   - actual_odds is recorded for any path that read live odds before aborting
+  bet <- tibble::tibble(
+    sport = "football", country = "iceland", sex = "male",
+    match_date = as.Date("2026-05-20"),
+    home_team = "KR", away_team = "Vikingur",
+    market = "moneyline", outcome = "home",
+    odds = 2.10, bet_amount = 500
+  )
+
+  # Pre-flight abort (no click): actual_odds defaults to NA
+  row_pre <- bet_result_row(bet, "no_match_id")
+  expect_true("actual_odds" %in% names(row_pre))
+  expect_true(is.na(row_pre$actual_odds))
+
+  # P4 reject after click: actual_odds carried through
+  row_p4 <- bet_result_row(bet, "rejected_p4", actual_odds = 1.92)
+  expect_equal(row_p4$actual_odds, 1.92)
+  expect_equal(row_p4$status, "rejected_p4")
+
+  # P3 reject (Kelly too small): actual_odds carried through
+  row_p3 <- bet_result_row(bet, "rejected_p3", actual_odds = 1.45)
+  expect_equal(row_p3$actual_odds, 1.45)
+  expect_equal(row_p3$status, "rejected_p3")
+
+  # Placed: actual_odds reflects what was clicked
+  row_placed <- bet_result_row(bet, "placed", actual_odds = 2.08)
+  expect_equal(row_placed$actual_odds, 2.08)
+})
+
+test_that("empty_placement_results matches bet_result_row column order", {
+  bet <- tibble::tibble(
+    sport = "football", country = "iceland", sex = "male",
+    match_date = as.Date("2026-05-20"),
+    home_team = "KR", away_team = "Vikingur",
+    market = "moneyline", outcome = "home",
+    odds = 2.10, bet_amount = 500
+  )
+  expect_identical(
+    names(empty_placement_results()),
+    names(bet_result_row(bet, "placed", actual_odds = 2.08))
+  )
 })
 
 # ── resolve_match_ids_new return-shape contract (no_match_id disambiguation) ──
