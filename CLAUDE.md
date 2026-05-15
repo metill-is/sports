@@ -11,12 +11,12 @@ Migration complete (Plan 7, 2026-04-30). End-state design: [`docs/superpowers/sp
 | Plan | Scope | Status |
 |---|---|---|
 | **1: Foundation + Storage + ETL** | Monorepo init, storage layer, ETL for odds + ledger | ✅ Complete |
-| **2: Ingest (federation scrapers) + historical backfill** | `R/ingest/` dispatcher + 3 federation scrapers (KSÍ / KKÍ / HSÍ) with `upsert_table` safe-merge semantics, historical match-data backfill | ✅ Complete — 9,914 rows in `data/facts/results/` |
+| **2: Ingest (federation scrapers) + historical backfill** | `R/ingest.R` + `R/ingest-*.R` (flat layout) — 3 federation scrapers (KSÍ / KKÍ / HSÍ) with `upsert_table` safe-merge semantics, historical match-data backfill | ✅ Complete — 9,914+ rows in `data/facts/results/` |
 | **3: Model layer** | `R/model-{prepare,fit,posteriors,league}.R` + 3 Stan models under `Stan/{league_key}/`, `beliefs/{latest,archive}/` snapshot + accretive tables, golden-output sanity gate vs `_legacy/*/results/*/fit.rds` backup | ✅ Complete |
-| **4: Decide + Publish** | Joint Kelly + portfolio + calibration → recommendations Parquet; football iceland 7-JSON publisher + basketball/handball 2-JSON scaffolds | ✅ Complete |
+| **4: Decide + Publish** | Joint Kelly + portfolio + calibration → recommendations Parquet; football iceland 11/12-JSON publisher (per BD/LD/CUP cell) + basketball/handball 8-JSON publishers (seasonally paused) | ✅ Complete |
 | **5: Placer (local-only)** | `R/placer-*.R` ports `_legacy/lengjan-bets/`, dual-writes ledger CSV+Parquet during cutover, CI safety gate enforces local-only | ✅ Complete |
-| **6: Orchestration + CI + cutover** | `_targets.R` DAG + `run.R` CLI, 4 GitHub workflows (ci-tests, scrape-odds, scrape-results, fit-and-publish), metill-platform `pull-sports-data.yml`, placer dual-write dropped | ✅ Complete |
-| **7: Drop {targets}** | `_targets.R` + `run.R` replaced by 5 entry scripts (`scripts/0N_*.R`) with explicit freshness predicates; CI split into 5 workflows (results, odds, fit, decide-publish chained via `workflow_run`); cross-workflow git race resolved | ✅ Complete |
+| **6: Orchestration + CI + cutover** | `_targets.R` DAG + `run.R` CLI (later replaced by Plan 7), metill-platform `pull-sports-data.yml`, placer dual-write dropped | ✅ Complete (superseded by Plan 7 for CI topology) |
+| **7: Drop {targets}** | `_targets.R` + `run.R` replaced by 6 entry scripts (`scripts/0N_*.R`) with explicit freshness predicates; CI split into 6 workflows — 5 auto-running (ci-tests, scrape-results, scrape-odds, fit, decide-publish via `workflow_run`) + 1 manual-dispatch (republish); cross-workflow git race resolved | ✅ Complete |
 
 ## Directory structure
 
@@ -30,16 +30,22 @@ sports/
 │   ├── decide-*.R       # → .claude/rules/model-decide.md
 │   ├── publish-*.R      # → .claude/rules/publish-layer.md
 │   ├── extract-*.R      # Football per-fit extracts → publish-layer.md
+│   ├── simulate-cup-bracket.R  # Mjólkurbikar forward simulator
 │   ├── placer-*.R       # Local-only Lengjan placement → sports-betting.md
-│   └── storage*.R       # Arrow schemas + write_table/read_table primitives
+│   ├── settle.R         # Settle layer (win/pnl) → sports-betting.md
+│   ├── commit-ledger.R  # Auto-commit ledger after placer/settle → git-hygiene.md
+│   ├── pipeline-freshness.R  # needs_refit / has_upcoming_games predicates
+│   ├── storage*.R       # Arrow schemas + write_table/read_table primitives
+│   ├── config.R         # leagues.yml + bankroll.yml loaders
+│   └── duckdb-views.R   # rebuild_duckdb() — SQL views over Parquet
 ├── Stan/{league_key}/   # Per-league Stan models
 ├── data/                # Parquet stores (hive-partitioned, git-tracked)
 │   ├── facts/           # results, odds, schedules
 │   ├── beliefs/         # latest, archive, extracts (+ gitignored fits/)
 │   ├── decisions/       # candidates, recommendations, ledger (canonical Parquet)
 │   └── publish/         # *.json per (sport, country, sex[, division])
-├── tests/testthat/      # 511+ assertions; devtools::test() to run
-├── .github/workflows/   # 6 workflows → .claude/rules/ci-conventions.md
+├── tests/testthat/      # 1120+ assertions; devtools::test() to run
+├── .github/workflows/   # 5 cron-driven + republish manual → .claude/rules/ci-conventions.md
 ├── docs/                # superpowers/ (specs + plans), audits/
 └── _legacy/             # 4 archived predecessor repos for git log --follow
 ```
@@ -53,7 +59,7 @@ authoritative mapping rather than mirroring them here.
 
 `R/placer-*.R` (Plan 5) places bets against Lengjan via Chromote browser automation using `LENGJAN_USER` / `LENGJAN_PASS` from `.Renviron` (template at `.Renviron.example`). It is **never** executed on CI — no workflow invokes it and no GitHub Actions secret named `LENGJAN_*` is configured.
 
-**Enforcement:** `tests/testthat/test-placer-ci-isolation.R` greps every `.github/workflows/*.yml` and fails the build if any line references `R/placer-`, `place_bets`, `preview_bets`, `placer_pipeline`, or `LENGJAN_*`. The test skips when there are no workflow files yet (Plan 6 territory).
+**Enforcement:** `tests/testthat/test-placer-ci-isolation.R` greps every `.github/workflows/*.yml` and fails the build if any line references `R/placer-`, `place_bets`, `preview_bets`, `placer_pipeline`, or `LENGJAN_*`.
 
 **Ledger storage:** As of Plan 6 cutover, Parquet at `data/decisions/ledger/` is the canonical ledger store. `append_to_ledger()`'s `dual_write_csv` argument defaults to `FALSE`; set `TRUE` only for opt-in regression-testing against the legacy CSV at `_legacy/sports/{sport}/{country}/history/bets_log.csv`.
 
@@ -79,9 +85,9 @@ Rscript scripts/04_decide.R
 Rscript scripts/05_publish.R
 Rscript scripts/06_settle.R                           # resolve win/pnl for settled bets
 
-# Local placer (NEVER on CI)
-Rscript scripts/place_bets.R --dry-run
-Rscript scripts/place_bets.R --live
+# Local placer (NEVER on CI). Default is dry-run; --live opts in to placement.
+Rscript scripts/place_bets.R                          # dry-run (default)
+Rscript scripts/place_bets.R --live                   # actually place
 Rscript scripts/preview_bets.R                        # no browser
 
 # Rebuild sports.duckdb after fresh Parquet writes
