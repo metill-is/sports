@@ -7,6 +7,7 @@
 compute_calibration(
   league,
   sex,
+  market = NULL,
   root = here::here("data"),
   prior_weight = 30,
   prior_ratio = 1,
@@ -18,6 +19,13 @@ compute_calibration(
 \item{league}{List with `sport` + `country`.}
 
 \item{sex}{"male" or "female".}
+
+\item{market}{Optional character. When supplied, restrict the ledger to
+that market before computing the multiplier — implements the K2
+invariant's "split by market only at ≥ N settled bets per market"
+when the caller has already decided which market deserves a split.
+For the operator-facing dispatcher that picks per-market vs aggregate
+automatically, see [compute_calibrations()].}
 
 \item{root}{Data root. Default `here::here("data")`.}
 

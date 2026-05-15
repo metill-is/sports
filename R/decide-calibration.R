@@ -15,6 +15,12 @@ NULL
 #'
 #' @param league List with `sport` + `country`.
 #' @param sex "male" or "female".
+#' @param market Optional character. When supplied, restrict the ledger to
+#'   that market before computing the multiplier — implements the K2
+#'   invariant's "split by market only at ≥ N settled bets per market"
+#'   when the caller has already decided which market deserves a split.
+#'   For the operator-facing dispatcher that picks per-market vs aggregate
+#'   automatically, see [compute_calibrations()].
 #' @param root Data root. Default `here::here("data")`.
 #' @param prior_weight Pseudo-count strength — equivalent expected wins of
 #'   prior data. Higher = slower adaptation. Default 30 (vs legacy 10) was
@@ -29,6 +35,7 @@ NULL
 #' @return Numeric scalar in `[floor, ceiling]`, rounded to 3 decimals.
 #' @export
 compute_calibration <- function(league, sex,
+                                market = NULL,
                                 root = here::here("data"),
                                 prior_weight = 30, prior_ratio = 1.0,
                                 floor = 0.5, ceiling = 1.5) {
@@ -65,6 +72,9 @@ compute_calibration <- function(league, sex,
   led <- led[!is.na(led$sex) & led$sex == sex, , drop = FALSE]
   led <- led[!is.na(led$settled) & led$settled, , drop = FALSE]
   led <- led[!is.na(led$win) & !is.na(led$p), , drop = FALSE]
+  if (!is.null(market)) {
+    led <- led[!is.na(led$market) & led$market == market, , drop = FALSE]
+  }
 
   if (nrow(led) == 0L) {
     return(prior_ratio)
@@ -80,4 +90,71 @@ compute_calibration <- function(league, sex,
 
   clamped <- max(floor, min(ceiling, multiplier))
   round(clamped, 3)
+}
+
+#' Resolve K2 — per-market calibration multipliers with aggregate fallback.
+#'
+#' Returns a named list with an `aggregate` multiplier plus a per-market
+#' multiplier for each market that meets the K2 threshold of `k2_min_n`
+#' settled bets. The caller looks up each candidate bet's market in the
+#' list, falling back to `aggregate` when the per-market entry is absent.
+#'
+#' Pre-2026-05-15 `decide_league()` applied a single aggregate multiplier
+#' across all markets — an active heterogeneity-masking pattern that K2 in
+#' `.claude/rules/sports-betting.md` explicitly forbids when sample size
+#' allows the split. Empirical decomposition at audit time (2026-05-15)
+#' showed `football_iceland / male` aggregate 0.86 but moneyline 0.81 vs
+#' total 0.89 — within-cell heterogeneity above the K2 threshold the docs
+#' claim to enforce. Audit §C.
+#'
+#' @param league List with `sport` + `country`.
+#' @param sex "male" or "female".
+#' @param k2_min_n Minimum settled bets per market before splitting out.
+#'   Default `100` per K2 in `sports-betting.md`.
+#' @param root Data root. Default `here::here("data")`.
+#' @param ... Forwarded to [compute_calibration()] (prior_weight, prior_ratio,
+#'   floor, ceiling).
+#' @return Named list with `aggregate` always present and per-market keys
+#'   only where `n >= k2_min_n`. Per-market keys mirror the `market` column
+#'   of the recommendations Parquet (`moneyline`, `spread`, `total`, ...).
+#' @export
+compute_calibrations <- function(league, sex,
+                                 k2_min_n = 100L,
+                                 root = here::here("data"),
+                                 ...) {
+  stopifnot(sex %in% c("male", "female"))
+  out <- list(aggregate = compute_calibration(league, sex, root = root, ...))
+
+  # Discover which markets cross the K2 threshold for this (sport, country, sex).
+  ledger_dir <- file.path(root, "decisions", "ledger")
+  if (!dir.exists(ledger_dir)) {
+    return(out)
+  }
+  led <- tryCatch(
+    read_table("ledger",
+      root = root,
+      filter = list(sport = league$sport, country = league$country)
+    ),
+    error = function(e) tibble::tibble()
+  )
+  if (nrow(led) == 0L) {
+    return(out)
+  }
+  led <- led[!is.na(led$sex) & led$sex == sex, , drop = FALSE]
+  led <- led[!is.na(led$settled) & led$settled, , drop = FALSE]
+  led <- led[!is.na(led$win) & !is.na(led$p), , drop = FALSE]
+  if (nrow(led) == 0L) {
+    return(out)
+  }
+
+  counts <- table(led$market)
+  for (mkt in names(counts)) {
+    if (counts[[mkt]] >= k2_min_n) {
+      out[[mkt]] <- compute_calibration(
+        league, sex,
+        market = mkt, root = root, ...
+      )
+    }
+  }
+  out
 }

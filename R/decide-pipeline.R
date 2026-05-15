@@ -193,7 +193,10 @@ decide_league <- function(league_key = NULL, league = NULL, sex,
   lambdas <- port$lambdas
 
   # 8. Calibration --------------------------------------------------------
-  calib <- compute_calibration(league, sex, root = root)
+  # K2: per-market multiplier when n_settled >= 100 per market, aggregate
+  # otherwise. Pre-2026-05-15 the aggregate ran across all markets, masking
+  # heterogeneity the rule file claimed to enforce. Audit §C.
+  calibs <- compute_calibrations(league, sex, root = root)
 
   # 9-11. Apply per-bet final kelly + bet_amount + min_bet ----------------
   cands <- dplyr::bind_rows(candidates_list)
@@ -201,6 +204,12 @@ decide_league <- function(league_key = NULL, league = NULL, sex,
   # Build lookup key for lambda (match_key = "date||home||away")
   mk <- paste(cands$match_date, cands$home_team, cands$away_team, sep = "||")
   cands$lambda <- lambdas[mk]
+
+  # Per-bet calibration: per-market when K2 promoted it, aggregate otherwise.
+  cands$calib <- vapply(cands$market, function(m) {
+    val <- calibs[[m]]
+    if (is.null(val)) calibs[["aggregate"]] else val
+  }, numeric(1))
 
   # Restored §7.2 multiplicative chain with K5 ceiling clamp:
   #   shrink_eff = min(kelly_frac × calibration, kelly_ceiling)
@@ -210,7 +219,7 @@ decide_league <- function(league_key = NULL, league = NULL, sex,
   # model misspecification. K5 ensures kelly_frac × calibration never exceeds
   # 0.25 even with calibration drift up to ceiling 1.5.
   kelly_ceiling <- bankroll$kelly_ceiling %||% 0.25
-  shrink_eff <- min(kelly_frac_val * calib, kelly_ceiling)
+  shrink_eff <- pmin(kelly_frac_val * cands$calib, kelly_ceiling)
   cands$kelly <- cands$kelly_raw * cands$lambda * shrink_eff
   cands$bet_amount <- round(cands$kelly * bankroll$current_pool)
 
