@@ -31,4 +31,14 @@ column (e.g. `odds` partitions on `scraped_date` derived from `scraped_at`;
 `candidates` and `recommendations` partition on `run_date` derived from
 `run_id`). These are added by `add_virtual_partitions()` before validation
 and passed through to `arrow::write_dataset()` alongside the schema columns.
+
+Atomicity: each call stages the new files in a sibling directory and then
+POSIX-renames each touched partition into place. Arrow's bare
+`existing_data_behavior = "overwrite"` first deletes the old partition's
+files and *then* writes the new ones — a process kill in that window
+leaves the partition empty, which has bitten `beliefs/latest/` after a
+SIGKILL'd Stan fit. The staged-rename pattern narrows the failure window:
+if the arrow write fails, the on-disk state is unchanged; on success the
+visible state flips per partition via a single rename. See audit
+2026-05-15 §H.
 }

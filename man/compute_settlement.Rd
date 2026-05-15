@@ -4,7 +4,12 @@
 \alias{compute_settlement}
 \title{Compute win/pnl for placed bets given match results.}
 \usage{
-compute_settlement(bets, results, match_date_window_days = 0L)
+compute_settlement(
+  bets,
+  results,
+  match_date_window_days = 0L,
+  tie_threshold = 0
+)
 }
 \arguments{
 \item{bets}{Tibble matching the ledger schema (must include `sport`,
@@ -17,6 +22,11 @@ compute_settlement(bets, results, match_date_window_days = 0L)
 \item{match_date_window_days}{Non-negative integer. `0` (default) gives
 the strict equijoin behaviour. Positive values enable the
 uniquely-matched fallback described above.}
+
+\item{tie_threshold}{Numeric \eqn{\ge 0}. Tie/push band — see the
+`build_return_matrix()` docstring. Default `0` preserves the exact
+equality semantics for integer-scored realisations. `settle_ledger()`
+looks up the threshold per-(sport, country) from `config/leagues.yml`.}
 }
 \value{
 The `bets` tibble with `settled` / `win` / `pnl` updated where
@@ -25,14 +35,25 @@ The `bets` tibble with `settled` / `win` / `pnl` updated where
 \description{
 Joins bets to results on (sport, country, sex, match_date, home_team,
 away_team) and resolves win/pnl using the same per-market rules as
-[build_return_matrix()] in `R/decide-kelly.R`:
-- moneyline: home wins iff hg > ag; draw iff hg == ag; away iff hg < ag.
-- spread: home wins iff (hg + line) > ag (strict); away wins iff
-  (ag + line) > hg (strict); draw wins iff (hg + line) == ag.
+[build_return_matrix()] in `R/decide-kelly.R` (with `tie_threshold = T`):
+- moneyline: home wins iff (hg - ag) > T; draw iff |hg - ag| <= T;
+  away iff (ag - hg) > T.
+- spread: `line` is the home team's signed handicap (positive = home gets
+  head start). Define `adj = (hg + line) - ag`. Then home wins iff
+  adj > T; away wins iff -adj > T; draw wins iff |adj| <= T. Home and
+  away are mirror images of one adjusted margin -- NOT two independent
+  handicaps.
 - total: over wins iff (hg + ag) > line (strict); under wins iff
   (hg + ag) < line (strict).
 }
 \details{
+For integer-scored sports with `T = 0` (football and basketball default,
+and handball *for the settle side* since recorded results are integer),
+the behaviour is equality-as-tie — exactly what the equality form
+encoded. The threshold matters only at decide-time on the continuous
+Stan posterior. K6 self-consistency holds because the same comparison
+is applied with the same threshold on both sides.
+
 Strict inequality on totals/spreads matches the EV computation that
 justified placing the bet, so settled win-rate stays self-consistent
 with the calibration multiplier the model used.

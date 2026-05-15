@@ -58,3 +58,71 @@ test_that("fit_model errors clearly on unknown method", {
     regexp = "should be one of"
   )
 })
+
+# ── check_stan_diagnostics: post-sample gate (audit 2026-05-15 §I) ────────────
+
+# Build a fake CmdStanMCMC-like object that responds to $diagnostic_summary,
+# $metadata, and $summary. The helper only calls these three methods.
+.fake_fit <- function(num_divergent = c(0L, 0L, 0L, 0L),
+                      iter_sampling = 1000L,
+                      rhat = 1.01, ess_bulk = 500,
+                      variable = "mu") {
+  list(
+    diagnostic_summary = function(quiet = TRUE) {
+      list(num_divergent = num_divergent)
+    },
+    metadata = function() list(iter_sampling = iter_sampling),
+    summary = function(...) {
+      tibble::tibble(variable = variable, rhat = rhat, ess_bulk = ess_bulk)
+    }
+  )
+}
+
+test_that("check_stan_diagnostics passes a clean fit silently", {
+  fit <- .fake_fit()
+  expect_invisible(check_stan_diagnostics(fit))
+})
+
+test_that("check_stan_diagnostics stops on divergent fraction above threshold", {
+  # 50 divergent per chain × 4 chains = 200 / 4000 = 5% > 1% default
+  fit <- .fake_fit(num_divergent = rep(50L, 4L))
+  expect_error(
+    check_stan_diagnostics(fit),
+    "200 divergent transitions in 4000.*5\\.00%.*1\\.00%"
+  )
+})
+
+test_that("check_stan_diagnostics stops on bad R-hat", {
+  fit <- .fake_fit(rhat = 1.20, variable = "home_advantage")
+  expect_error(
+    check_stan_diagnostics(fit),
+    "max R-hat 1.200 on parameter home_advantage exceeds 1.05"
+  )
+})
+
+test_that("check_stan_diagnostics stops on low bulk ESS", {
+  fit <- .fake_fit(ess_bulk = 50, variable = "tau")
+  expect_error(
+    check_stan_diagnostics(fit),
+    "min bulk ESS 50 on parameter tau below 100"
+  )
+})
+
+test_that("check_stan_diagnostics tolerates threshold overrides", {
+  # 5% divergence — would fail at default but passes at relaxed threshold
+  fit <- .fake_fit(num_divergent = rep(50L, 4L))
+  expect_invisible(check_stan_diagnostics(fit, max_divergent_frac = 0.1))
+})
+
+test_that("check_stan_diagnostics survives diagnostic_summary failure", {
+  # If cmdstanr's diagnostic_summary throws (older versions, partial fits),
+  # the gate should fall through to R-hat / ESS checks rather than abort.
+  fit <- list(
+    diagnostic_summary = function(quiet = TRUE) stop("legacy fit"),
+    metadata = function() list(iter_sampling = 1000L),
+    summary = function(...) {
+      tibble::tibble(variable = "mu", rhat = 1.01, ess_bulk = 500)
+    }
+  )
+  expect_invisible(check_stan_diagnostics(fit))
+})

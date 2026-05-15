@@ -16,7 +16,11 @@ fit_model(
   draws = 4000L,
   seed = NULL,
   init = 0,
-  show_progress = TRUE
+  show_progress = TRUE,
+  check_diagnostics = TRUE,
+  max_divergent_frac = 0.01,
+  max_rhat = 1.05,
+  min_ess_bulk = 100
 )
 }
 \arguments{
@@ -41,6 +45,21 @@ fit_model(
 \item{init}{Initial values passed to cmdstanr. Default 0 matches legacy.}
 
 \item{show_progress}{Print cmdstanr progress bar? Default TRUE.}
+
+\item{check_diagnostics}{If `TRUE` (default), call
+[check_stan_diagnostics()] after sampling and abort with a clear
+diagnostic on divergent transitions, R-hat, or ESS problems. Set to
+`FALSE` only for explicit pre-flight model exploration where you
+know the fit will be poor.}
+
+\item{max_divergent_frac}{Maximum allowed fraction of post-warmup
+iterations that diverged. Default `0.01` (1%).}
+
+\item{max_rhat}{Maximum allowed R-hat on any monitored parameter.
+Default `1.05`.}
+
+\item{min_ess_bulk}{Minimum allowed bulk ESS on any monitored parameter.
+Default `100`.}
 }
 \value{
 CmdStanMCMC (sample) or CmdStanGQ (pathfinder / variational).

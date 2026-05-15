@@ -27,8 +27,11 @@ after the optimiser returns, *not* via this cap.}
 \item{ev_threshold}{Minimum EV per bet to consider. Bets below threshold
 are zeroed before optimisation.}
 
-\item{tie_threshold}{Reserved for future use (tie-handling in handball
-scoring); currently unused.}
+\item{tie_threshold}{Numeric \eqn{\ge 0}. Tie/push band — see
+`build_return_matrix()` for resolution semantics. Sourced per-league
+from `config/leagues.yml::*.betting.scoring.tie_threshold` by
+`decide_league()`. Default 0 preserves equality-as-tie behaviour for
+integer-scoring sports.}
 }
 \value{
 List with `bets` (input cols + p, ev, kelly_raw), `match_pnl`

@@ -41,7 +41,8 @@ opt-in regression-testing while the legacy CSV files exist on disk.}
 Tibble of per-bet results with at minimum columns: \code{sport},
   \code{country}, \code{sex}, \code{match_date}, \code{home_team},
   \code{away_team}, \code{market}, \code{outcome}, \code{odds},
-  \code{bet_amount}, \code{status}.
+  \code{actual_odds} (Lengjan live odds at decision time, \code{NA} when no
+  click occurred), \code{bet_amount}, \code{status}.
 }
 \description{
 Top-level orchestrator for the placer. Reads recommendations from Parquet,
