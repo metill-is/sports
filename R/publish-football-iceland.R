@@ -1706,7 +1706,18 @@ publish_football_iceland <- function(extracted,
       dplyr::pull("n") |>
       (\(x) if (length(x) == 0L) 0L else min(x))()
 
-    n_draws <- if (nrow(predicted_matches) > 0L) {
+    # Source n_draws from the per-fit sim_inputs first (always populated when
+    # the fit ran), then fall back to predicted_matches' per-match count for
+    # legacy partitions without sim_inputs. Cup cells have predicted_matches
+    # empty by design (cup matches stay out of pred_d while KSI has not yet
+    # drawn the bracket); without the sim_inputs path n_draws was reported as
+    # 0 in meta.json even though the cup model fit on 4000 draws -- audit
+    # 2026-05-15 §E.
+    n_draws <- if (!is.null(extracted$sim_inputs) &&
+      !is.null(extracted$sim_inputs$scalar) &&
+      nrow(extracted$sim_inputs$scalar) > 0L) {
+      as.integer(dplyr::n_distinct(extracted$sim_inputs$scalar$.draw))
+    } else if (nrow(predicted_matches) > 0L) {
       per_match_count <- predicted_matches |>
         dplyr::summarise(
           s = sum(.data$count),

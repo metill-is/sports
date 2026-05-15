@@ -119,8 +119,15 @@ place_bets <- function(leagues = NULL,
   # 7. Per-league: resolve match IDs once per competition, then place bets
   results <- list()
   league_keys <- unique(paste0(recs$sport, "_", recs$country))
+  # L1-violation halt flag: a Lengjan placement that fails to land in the
+  # ledger creates an orphan bet that next run would re-place. When the
+  # tryCatch in the bet loop trips, this flag halts every subsequent bet
+  # across leagues so the operator's manual reconciliation isn't competing
+  # with further placements in the same session.
+  halt_for_l1 <- FALSE
 
   for (league_key in league_keys) {
+    if (halt_for_l1) break
     cli::cli_h2("Processing: {league_key}")
     league <- leagues_cfg[[league_key]]
 
@@ -261,14 +268,49 @@ place_bets <- function(leagues = NULL,
           pnl            = NA_real_
         )
 
-        tryCatch(
-          append_to_ledger(bet_row, root = root, dual_write_csv = dual_write_csv),
-          error = function(e) {
-            cli::cli_alert_danger(
-              "Ledger write failed for {bet$home_team} v {bet$away_team}: {e$message}"
-            )
-          }
+        # L1 protection: a successful Lengjan placement that fails to land in
+        # the ledger creates an orphan bet that will be re-placed on the next
+        # run. Pre-2026-05-15 the placer logged this at warning level and
+        # continued the loop, so a transient arrow / disk failure mid-batch
+        # could produce multiple orphans before anyone noticed. Now: surface
+        # the failure as a hard halt with explicit reconciliation instructions.
+        # Operator must inspect Lengjan's bet history before re-running.
+        ledger_write_err <- tryCatch(
+          {
+            append_to_ledger(bet_row, root = root, dual_write_csv = dual_write_csv)
+            NULL
+          },
+          error = function(e) e
         )
+        if (!is.null(ledger_write_err)) {
+          cli::cli_alert_danger(paste0(
+            "*** L1 VIOLATION — RECONCILE MANUALLY ***\n",
+            "  Bet placed on Lengjan but ledger write FAILED.\n",
+            "  Match:    {bet$home_team} v {bet$away_team} ({bet$match_date})\n",
+            "  Market:   {bet$market} {bet$outcome}",
+            if (!is.na(bet$line)) " line={bet$line}" else "",
+            "\n",
+            "  Stake:    {actual_amount} kr at odds {actual_odds}\n",
+            "  Error:    {conditionMessage(ledger_write_err)}\n",
+            "  ACTION:   1. Open Lengjan and verify the bet was placed.\n",
+            "            2. If placed, manually append the row to ",
+            "data/decisions/ledger/ before the next placer run.\n",
+            "            3. If NOT placed (rare — odds button clicked but ",
+            "Kaupa rejected), no action needed; the bet was not committed.\n",
+            "  Halting the placement loop. Remaining recommendations will ",
+            "NOT be processed."
+          ))
+          # Record the failed bet in results so the operator sees it in the
+          # summary, then halt the outer loop.
+          results[[length(results) + 1L]] <- bet_result_row(
+            bet, "error",
+            actual_odds = result$actual_odds %||% NA_real_
+          )
+          # Best-effort browser cleanup before halt
+          tryCatch(clear_bet_slip(session), error = function(e) NULL)
+          halt_for_l1 <- TRUE
+          break
+        }
       }
 
       results[[length(results) + 1L]] <- bet_result_row(

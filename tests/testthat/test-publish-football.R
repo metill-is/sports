@@ -565,6 +565,13 @@ test_that("publish_football_iceland: writes karla-bikar/ with is_cup=true and em
   expect_equal(meta[["division"]], "CUP")
   expect_equal(meta[["league"]], "Mj\u00f3lkurbikar")
   expect_equal(meta[["sex"]], "male")
+  # n_draws must reflect the fit's posterior sample count even for cup
+  # cells where predicted_matches is empty by design. Pre-2026-05-15 the
+  # cup meta.json reported n_draws=0, blinding consumers to whether the
+  # cup model had actually been fit. Audit fix sources n_draws from
+  # extracted$sim_inputs$scalar (always populated when the fit ran) when
+  # predicted_matches is empty.
+  expect_gt(meta[["n_draws"]], 0L)
 
   # Cup has no league table: standings, final_positions, points_distribution
   # all empty even though the JSON files exist (preserved for endpoint
