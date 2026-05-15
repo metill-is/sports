@@ -102,6 +102,65 @@ test_that("upsert_table is a no-op for a zero-row frame", {
   expect_equal(nrow(back), 1L)
 })
 
+test_that("upsert_table on odds preserves all daily snapshots (intra-day scrapes)", {
+  # Pre-2026-05-15, the scrape-odds workflow's three daily runs each wrote
+  # to the same (sport, country, scraped_date) partition via write_table,
+  # which uses Arrow's existing_data_behavior='overwrite'. The 14:00 scrape
+  # silently deleted the 08:00 snapshot, and the 20:00 scrape deleted both.
+  # Switching to upsert_table with scraped_at in the natural key makes the
+  # three scrapes accrete instead of overwrite. Audit 2026-05-15 §F.
+  make_odds <- function(scraped_at, market = "moneyline", outcome = "home",
+                        odds = 2.0, line = NA_real_) {
+    tibble::tibble(
+      sport      = "football",
+      country    = "iceland",
+      scraped_at = scraped_at,
+      match_date = as.Date("2026-05-20"),
+      home_team  = "KR",
+      away_team  = "Vikingur",
+      market     = market,
+      outcome    = outcome,
+      line       = line,
+      odds       = odds
+    )
+  }
+
+  tmp <- withr::local_tempdir()
+  scrape_08 <- make_odds(as.POSIXct("2026-05-15 08:00:00", tz = "UTC"), odds = 2.10)
+  scrape_14 <- make_odds(as.POSIXct("2026-05-15 14:00:00", tz = "UTC"), odds = 2.05)
+  scrape_20 <- make_odds(as.POSIXct("2026-05-15 20:00:00", tz = "UTC"), odds = 1.98)
+
+  upsert_table(scrape_08, "odds", root = tmp)
+  upsert_table(scrape_14, "odds", root = tmp)
+  upsert_table(scrape_20, "odds", root = tmp)
+
+  back <- read_table("odds", root = tmp)
+  expect_equal(nrow(back), 3L)
+  expect_setequal(round(back$odds, 2), c(2.10, 2.05, 1.98))
+})
+
+test_that("upsert_table on odds dedupes only on same scraped_at re-runs", {
+  # If a test or recovery script re-runs the exact same scrape (same
+  # scraped_at), the new row should win and not duplicate.
+  make_odds <- function(odds, scraped_at = as.POSIXct("2026-05-15 08:00:00", tz = "UTC")) {
+    tibble::tibble(
+      sport = "football", country = "iceland",
+      scraped_at = scraped_at, match_date = as.Date("2026-05-20"),
+      home_team = "KR", away_team = "Vikingur",
+      market = "moneyline", outcome = "home",
+      line = NA_real_, odds = odds
+    )
+  }
+
+  tmp <- withr::local_tempdir()
+  upsert_table(make_odds(2.10), "odds", root = tmp)
+  upsert_table(make_odds(2.05), "odds", root = tmp) # same scraped_at, corrected odds
+
+  back <- read_table("odds", root = tmp)
+  expect_equal(nrow(back), 1L)
+  expect_equal(back$odds, 2.05) # new row wins
+})
+
 test_that("upsert_table round-trips schedules with matching dedup semantics", {
   make_sched <- function(...) {
     defaults <- list(

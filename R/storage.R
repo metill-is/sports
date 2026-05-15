@@ -160,10 +160,15 @@ write_table <- function(df, table, root = here::here("data")) {
 #' Natural match-key columns per table (for upsert dedup).
 #'
 #' Unlike the partition columns, which identify which Parquet files to write,
-#' the natural key identifies one match within a partition. Re-ingests that
-#' return the same match with differing metadata (e.g. corrected scores) keep
+#' the natural key identifies one row within a partition. Re-ingests that
+#' return the same key with differing metadata (e.g. corrected scores) keep
 #' the newer row; re-ingests that return a strict subset of an earlier fetch
 #' keep the full union.
+#'
+#' For \code{odds}, `scraped_at` is part of the natural key so each cron
+#' snapshot accretes within the day's partition rather than overwriting
+#' earlier snapshots. Same-second re-runs (typically only in tests) dedup
+#' against the bet's full identity.
 #' @noRd
 natural_key_for <- function(table) {
   switch(table,
@@ -174,6 +179,10 @@ natural_key_for <- function(table) {
     schedules = c(
       "sport", "country", "sex", "season", "match_date",
       "home_team", "away_team"
+    ),
+    odds = c(
+      "sport", "country", "scraped_at", "match_date",
+      "home_team", "away_team", "market", "outcome", "line"
     ),
     stop("upsert_table not supported for table: ", table, call. = FALSE)
   )
@@ -239,6 +248,23 @@ upsert_table <- function(df, table, root = here::here("data")) {
 
     combined <- if (nrow(existing) > 0 &&
       all(nat_key %in% names(existing))) {
+      # Arrow returns hive-partition columns as character (parsed from the
+      # directory name) regardless of the in-memory type they had at write
+      # time. Coerce existing's partition columns back to the source type
+      # before bind_rows so dplyr doesn't error on type-mismatch.
+      for (col in intersect(partitions, names(new_rows))) {
+        target_class <- class(new_rows[[col]])[[1L]]
+        if (!identical(class(existing[[col]])[[1L]], target_class)) {
+          existing[[col]] <- switch(target_class,
+            "Date"      = as.Date(existing[[col]]),
+            "integer"   = as.integer(existing[[col]]),
+            "numeric"   = as.numeric(existing[[col]]),
+            "double"    = as.numeric(existing[[col]]),
+            "character" = as.character(existing[[col]]),
+            existing[[col]]
+          )
+        }
+      }
       # Put new rows first so row-wise dedup keeps the newer version on
       # natural-key collisions.
       bound <- dplyr::bind_rows(new_rows, existing)

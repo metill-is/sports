@@ -347,7 +347,14 @@ ingest_lengjan_odds <- function(leagues, scraped_at = Sys.time(),
     return(invisible(0L))
   }
 
-  write_table(all_rows, "odds", root = root)
+  # Upsert into the (sport, country, scraped_date) partition with the natural
+  # key (sport, country, scraped_at, match_date, home_team, away_team, market,
+  # outcome, line). Each cron snapshot has a distinct `scraped_at` so the
+  # three daily scrapes accrete rather than overwrite each other — pre-2026-05-15
+  # the plain write_table() call deleted the earlier scrape's data via
+  # arrow's `existing_data_behavior = "overwrite"`, leaving only the last
+  # scrape of the day visible. Audit 2026-05-15 §F.
+  upsert_table(all_rows, "odds", root = root)
   cli::cli_alert_success("Wrote {nrow(all_rows)} odds rows to facts/odds/")
   invisible(nrow(all_rows))
 }
