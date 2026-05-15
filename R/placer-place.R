@@ -273,6 +273,30 @@ check_live_odds <- function(session, bet, actual_odds) {
   list(ok = TRUE, amount = amount)
 }
 
+# ── Outcome dispatch ──────────────────────────────────────────────────────────
+
+#' Map a three-way outcome (home/draw/away) to its 1-indexed Lengjan button slot.
+#'
+#' Shared by `place_outcome_bet` (moneyline) and `place_handicap_bet` (spread).
+#' The canonical outcome strings come from `R/decide-kelly.R::build_return_matrix`
+#' and the `recommendations` Parquet schema — `home`, `draw`, `away`. Any other
+#' string is a contract violation upstream and must abort placement immediately
+#' rather than silently route to the wrong button.
+#'
+#' @param outcome Character. One of `"home"`, `"draw"`, `"away"`.
+#' @param market Character used only in the error message.
+#' @return Integer 1L/2L/3L.
+#' @keywords internal
+#' @noRd
+outcome_3way_btn_index <- function(outcome, market) {
+  switch(outcome,
+    "home" = 1L,
+    "draw" = 2L,
+    "away" = 3L,
+    stop("Invalid outcome for ", market, ": ", outcome, call. = FALSE)
+  )
+}
+
 # ── Outcome (1x2) bets ────────────────────────────────────────────────────────
 
 #' Place a 1x2 (outcome/moneyline) bet
@@ -295,12 +319,7 @@ place_outcome_bet <- function(session, bet, match_id, sport_id, dry_run) {
   session$Page$navigate(url)
   Sys.sleep(sample_delay(c(2.5, 4)))
 
-  btn_index <- switch(bet$outcome,
-    "home" = 1,
-    "tie"  = 2,
-    "away" = 3,
-    stop("Invalid outcome for 1x2: ", bet$outcome)
-  )
+  btn_index <- outcome_3way_btn_index(bet$outcome, "1x2")
 
   # Click odds button — returns actual odds from the DOM.
   # WHY \uxxxx escape: in a C locale R session, sprintf() converts non-ASCII
@@ -355,12 +374,7 @@ place_handicap_bet <- function(session, bet, match_id, sport_id, dry_run) {
 
   line_label <- handicap_to_lengjan_line(bet$line)
 
-  btn_index <- switch(bet$outcome,
-    "home" = 1,
-    "tie"  = 2,
-    "away" = 3,
-    stop("Invalid outcome for handicap: ", bet$outcome)
-  )
+  btn_index <- outcome_3way_btn_index(bet$outcome, "handicap")
 
   actual_odds <- click_table_button(
     session,

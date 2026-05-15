@@ -1,3 +1,56 @@
+test_that("outcome_3way_btn_index maps canonical outcome strings to button slots", {
+  # The recommendations Parquet schema and decide-kelly.R::build_return_matrix
+  # emit "home" / "draw" / "away". The placer's three-way dispatch must use
+  # exactly those strings — see audit 2026-05-15.
+  expect_equal(outcome_3way_btn_index("home", "1x2"), 1L)
+  expect_equal(outcome_3way_btn_index("draw", "1x2"), 2L)
+  expect_equal(outcome_3way_btn_index("away", "1x2"), 3L)
+
+  # Same contract for handicap (spread) bets.
+  expect_equal(outcome_3way_btn_index("home", "handicap"), 1L)
+  expect_equal(outcome_3way_btn_index("draw", "handicap"), 2L)
+  expect_equal(outcome_3way_btn_index("away", "handicap"), 3L)
+})
+
+test_that("outcome_3way_btn_index rejects the pre-2026-05-15 'tie' key", {
+  # Regression guard: the placer used to accept "tie" while the pipeline
+  # has been emitting "draw" since the Plan 6 cutover. Verified-dormant bug
+  # found in 2026-05-15 audit; any return to "tie" must fail loudly.
+  expect_error(
+    outcome_3way_btn_index("tie", "1x2"),
+    "Invalid outcome for 1x2: tie"
+  )
+  expect_error(
+    outcome_3way_btn_index("tie", "handicap"),
+    "Invalid outcome for handicap: tie"
+  )
+})
+
+test_that("outcome_3way_btn_index errors with helpful market context", {
+  expect_error(
+    outcome_3way_btn_index("over", "1x2"),
+    "Invalid outcome for 1x2: over"
+  )
+  expect_error(
+    outcome_3way_btn_index(NA_character_, "handicap"),
+    "Invalid outcome for handicap"
+  )
+})
+
+test_that("placer-place.R uses outcome_3way_btn_index, never literal 'tie' (regression)", {
+  src <- readLines(testthat::test_path("..", "..", "R", "placer-place.R"))
+  expect_false(
+    any(grepl('"tie"', src, fixed = TRUE)),
+    info = paste(
+      "Pre-2026-05-15 placer accepted 'tie' in switch statements while the",
+      "pipeline has been emitting 'draw' since the Plan 6 cutover. Any +EV",
+      "draw recommendation would silently crash inside place_bet() and be",
+      "recorded as status='error'. The fix routes both 1x2 and handicap",
+      "through outcome_3way_btn_index() which uses 'draw' canonically."
+    )
+  )
+})
+
 test_that("is_positive_ev returns TRUE iff EV is strictly positive", {
   # p * (odds - 1) - (1 - p) > 0  <=>  p * odds - 1 > 0
   expect_true(is_positive_ev(p = 0.55, odds = 2.0)) # 0.55*1 - 0.45 = 0.10 > 0
