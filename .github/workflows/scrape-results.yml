@@ -8,6 +8,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: scrape-results
+  cancel-in-progress: false
+
 jobs:
   scrape:
     runs-on: ubuntu-latest
