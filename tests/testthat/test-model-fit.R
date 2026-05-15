@@ -28,6 +28,9 @@ test_that("fit_model returns a CmdStanMCMC for MCMC method", {
     tmp
   )
 
+  # 8 schools centered (theta ~ normal(mu, tau)) is the textbook
+  # divergence-prone setup. The wrapper test is asserting the API shape,
+  # not model quality, so disable the post-sample diagnostic gate.
   fit <- fit_model(
     stan_data = list(
       N = 8L,
@@ -40,7 +43,8 @@ test_that("fit_model returns a CmdStanMCMC for MCMC method", {
     iter_warmup = 200L,
     iter_sampling = 200L,
     seed = 42L,
-    show_progress = FALSE
+    show_progress = FALSE,
+    check_diagnostics = FALSE
   )
 
   expect_s3_class(fit, "CmdStanMCMC")
