@@ -197,6 +197,25 @@ unforked (see `tests/testthat/test-skill-conventions.R`):
   placement, flipped by settlement).
 - **`box::use()` inside `withr::with_dir()`**: relative paths break.
   Use `source()` + `new.env()` instead.
+- **Spread `line` is the home team's signed handicap, shared across all
+  three outcomes of a row** (post 2026-05-13 fix). `parse_match_detail`
+  writes a single `line` to home/draw/away — home and away are *mirror
+  images* under one adjusted margin `adj = (hg + line) - ag`, not two
+  independent handicaps applied symmetrically. Win conditions:
+  - `outcome == "home"` ⟺ `adj > 0`
+  - `outcome == "away"` ⟺ `adj < 0`
+  - `outcome == "draw"` ⟺ `adj == 0`
+
+  Never write `(ag + line) > hg` for the away branch — that was the
+  Plan 4 mistake which surfaced on the 2026-05-13 Mjólkurbikar cup recs
+  with EVs +6.45 to +12.72. Both `R/decide-kelly.R::build_return_matrix`
+  and `R/settle.R::compute_settlement` enforce the convention; future
+  spread features (half-point push, Asian quarter-balls, 3-way European
+  variants) must extend that pattern, not break it. Three regression
+  tests guard it (`kelly_joint: spread home/away share one signed line`,
+  `kelly_joint: spread away with positive line means away covers -line`,
+  `build_return_matrix: spread away mirrors home under shared line`).
+  Full audit: [`Sports/Knowledge/Betting Optimisation/Historical/spread-away-sign-flip-2026-05-13`](obsidian://) in the Metill Obsidian vault.
 
 ## Plan 7 series — active forward roadmap
 
