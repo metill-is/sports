@@ -5,15 +5,23 @@ NULL
 #'
 #' Joins bets to results on (sport, country, sex, match_date, home_team,
 #' away_team) and resolves win/pnl using the same per-market rules as
-#' [build_return_matrix()] in `R/decide-kelly.R`:
-#' - moneyline: home wins iff hg > ag; draw iff hg == ag; away iff hg < ag.
+#' [build_return_matrix()] in `R/decide-kelly.R` (with `tie_threshold = T`):
+#' - moneyline: home wins iff (hg - ag) > T; draw iff |hg - ag| <= T;
+#'   away iff (ag - hg) > T.
 #' - spread: `line` is the home team's signed handicap (positive = home gets
 #'   head start). Define `adj = (hg + line) - ag`. Then home wins iff
-#'   adj > 0 (strict); away wins iff adj < 0 (strict); draw wins iff
-#'   adj == 0. Home and away are mirror images of one adjusted margin --
-#'   NOT two independent handicaps.
+#'   adj > T; away wins iff -adj > T; draw wins iff |adj| <= T. Home and
+#'   away are mirror images of one adjusted margin -- NOT two independent
+#'   handicaps.
 #' - total: over wins iff (hg + ag) > line (strict); under wins iff
 #'   (hg + ag) < line (strict).
+#'
+#' For integer-scored sports with `T = 0` (football and basketball default,
+#' and handball *for the settle side* since recorded results are integer),
+#' the behaviour is equality-as-tie — exactly what the equality form
+#' encoded. The threshold matters only at decide-time on the continuous
+#' Stan posterior. K6 self-consistency holds because the same comparison
+#' is applied with the same threshold on both sides.
 #'
 #' Strict inequality on totals/spreads matches the EV computation that
 #' justified placing the bet, so settled win-rate stays self-consistent
@@ -43,10 +51,15 @@ NULL
 #' @param match_date_window_days Non-negative integer. `0` (default) gives
 #'   the strict equijoin behaviour. Positive values enable the
 #'   uniquely-matched fallback described above.
+#' @param tie_threshold Numeric \eqn{\ge 0}. Tie/push band — see the
+#'   `build_return_matrix()` docstring. Default `0` preserves the exact
+#'   equality semantics for integer-scored realisations. `settle_ledger()`
+#'   looks up the threshold per-(sport, country) from `config/leagues.yml`.
 #' @return The `bets` tibble with `settled` / `win` / `pnl` updated where
 #'   resolvable. Other columns are unchanged.
 #' @export
-compute_settlement <- function(bets, results, match_date_window_days = 0L) {
+compute_settlement <- function(bets, results, match_date_window_days = 0L,
+                               tie_threshold = 0) {
   if (nrow(bets) == 0L) {
     return(bets)
   }
@@ -88,11 +101,12 @@ compute_settlement <- function(bets, results, match_date_window_days = 0L) {
     if (is.na(hg[[i]]) || is.na(ag[[i]])) {
       next
     }
+    diff <- hg[[i]] - ag[[i]]
     win[[i]] <- switch(market[[i]],
       moneyline = switch(outcome[[i]],
-        home = hg[[i]] > ag[[i]],
-        draw = hg[[i]] == ag[[i]],
-        away = hg[[i]] < ag[[i]],
+        home = diff > tie_threshold,
+        draw = abs(diff) <= tie_threshold,
+        away = -diff > tie_threshold,
         stop("Unknown moneyline outcome: ", outcome[[i]], call. = FALSE)
       ),
       spread = {
@@ -103,12 +117,13 @@ compute_settlement <- function(bets, results, match_date_window_days = 0L) {
         # outcomes of a parse_match_detail() row -- home and away are
         # mirror images under a single adjusted margin. The pre-2026-05-13
         # away formula `(ag + line) > hg` flipped the sign of the away
-        # branch (same bug as build_return_matrix()).
+        # branch (same bug as build_return_matrix()). `tie_threshold` keeps
+        # the spread push band consistent with moneyline.
         adj <- (hg[[i]] + line[[i]]) - ag[[i]]
         switch(outcome[[i]],
-          home = adj > 0,
-          away = adj < 0,
-          draw = adj == 0,
+          home = adj > tie_threshold,
+          away = -adj > tie_threshold,
+          draw = abs(adj) <= tie_threshold,
           stop("Unknown spread outcome: ", outcome[[i]], call. = FALSE)
         )
       },
@@ -183,10 +198,38 @@ settle_ledger <- function(root = here::here("data"),
   }
 
   to_settle <- led[unsettled_mask, , drop = FALSE]
-  resolved <- compute_settlement(
-    to_settle, results,
-    match_date_window_days = match_date_window_days
-  )
+
+  # K6 self-consistency: settle uses the same tie_threshold the decide layer
+  # used for the EV that justified the bet. Per-(sport, country) lookup from
+  # leagues.yml — unknown leagues (e.g. paused European cells whose old bets
+  # remain in the ledger) default to 0, which matches the pre-fix equality
+  # behaviour and is correct for integer-scored realisations regardless.
+  leagues_cfg <- tryCatch(load_leagues(), error = function(e) list())
+  tt_for <- function(sport, country) {
+    for (lg in leagues_cfg) {
+      if (identical(lg$sport, sport) && identical(lg$country, country)) {
+        return(lg$betting$scoring$tie_threshold %||% 0)
+      }
+    }
+    0
+  }
+
+  groups <- dplyr::distinct(to_settle[, c("sport", "country"), drop = FALSE])
+  resolved <- to_settle
+  for (gi in seq_len(nrow(groups))) {
+    sp <- groups$sport[[gi]]
+    co <- groups$country[[gi]]
+    gmask <- to_settle$sport == sp & to_settle$country == co
+    g_resolved <- compute_settlement(
+      to_settle[gmask, , drop = FALSE], results,
+      match_date_window_days = match_date_window_days,
+      tie_threshold = tt_for(sp, co)
+    )
+    resolved$settled[gmask] <- g_resolved$settled
+    resolved$win[gmask] <- g_resolved$win
+    resolved$pnl[gmask] <- g_resolved$pnl
+  }
+
   newly_resolved_in_subset <- resolved$settled & !is.na(resolved$win) &
     !(to_settle$settled & !is.na(to_settle$win))
   if (!any(newly_resolved_in_subset)) {
@@ -211,3 +254,6 @@ settle_ledger <- function(root = here::here("data"),
 
   invisible(as.integer(sum(newly_resolved_in_subset)))
 }
+
+# Null-coalescing (R 4.4+ has a base `%||%` but the package targets R >= 4.0).
+`%||%` <- function(x, y) if (is.null(x)) y else x

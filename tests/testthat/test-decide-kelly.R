@@ -101,6 +101,78 @@ test_that("kelly_joint: spread away with positive line means away covers -line",
   expect_lt(out$bets$kelly_raw[[2]], 1e-6)
 })
 
+test_that("build_return_matrix: tie_threshold = 0 preserves integer-tie semantics", {
+  # For integer-goal posterior draws (football/handball), tie_threshold = 0
+  # must reproduce the legacy hg==ag draw rule exactly.
+  set.seed(13)
+  draws <- mini_beliefs(2000L)
+  bets <- tibble::tibble(
+    market  = c("moneyline", "moneyline", "moneyline"),
+    outcome = c("home", "draw", "away"),
+    line    = NA_real_,
+    odds    = c(2.0, 3.0, 4.0)
+  )
+  R <- build_return_matrix(draws, bets, tie_threshold = 0)
+  p_home <- mean(R[, 1] > 0)
+  p_draw <- mean(R[, 2] > 0)
+  p_away <- mean(R[, 3] > 0)
+  # Three outcomes partition the sample space exactly
+  expect_equal(p_home + p_draw + p_away, 1.0, tolerance = 1e-9)
+  # And matches the explicit comparison
+  expect_equal(p_draw, mean(draws$home_goals == draws$away_goals), tolerance = 1e-9)
+})
+
+test_that("build_return_matrix: tie_threshold > 0 catches a band of continuous near-ties", {
+  # Handball's bivariate Student-t model produces continuous goal predictions
+  # with P(hg == ag) = 0. tie_threshold = 0.5 turns the draw outcome into
+  # 'within half a goal' — the moneyline draw market becomes bettable.
+  # Verified-dormant bug fix from the 2026-05-15 audit.
+  set.seed(17)
+  S <- 4000L
+  continuous_draws <- tibble::tibble(
+    draw_id    = seq_len(S),
+    home_goals = stats::rnorm(S, mean = 27, sd = 4),
+    away_goals = stats::rnorm(S, mean = 26, sd = 4)
+  )
+  bets <- tibble::tibble(
+    market = "moneyline", outcome = "draw", line = NA_real_, odds = 8.0
+  )
+
+  R0 <- build_return_matrix(continuous_draws, bets, tie_threshold = 0)
+  p0 <- mean(R0[, 1] > 0)
+  R_band <- build_return_matrix(continuous_draws, bets, tie_threshold = 0.5)
+  p_band <- mean(R_band[, 1] > 0)
+
+  # Continuous draws never produce hg == ag exactly
+  expect_equal(p0, 0)
+  # The half-goal band captures meaningful probability mass
+  expect_gt(p_band, 0.02)
+})
+
+test_that("build_return_matrix: tie_threshold partitions moneyline outcomes correctly", {
+  # home / draw / away must partition every draw under the band semantics:
+  #   diff > T          ⟺ home win
+  #   abs(diff) <= T    ⟺ draw
+  #   -diff > T         ⟺ away win
+  set.seed(19)
+  S <- 3000L
+  draws <- tibble::tibble(
+    draw_id    = seq_len(S),
+    home_goals = stats::rnorm(S, mean = 24, sd = 5),
+    away_goals = stats::rnorm(S, mean = 24, sd = 5)
+  )
+  bets <- tibble::tibble(
+    market  = rep("moneyline", 3),
+    outcome = c("home", "draw", "away"),
+    line    = NA_real_,
+    odds    = c(2, 5, 2)
+  )
+  R <- build_return_matrix(draws, bets, tie_threshold = 0.5)
+  outcomes <- cbind(R[, 1] > 0, R[, 2] > 0, R[, 3] > 0)
+  # Exactly one of three is TRUE per draw — no draw belongs to two buckets
+  expect_true(all(rowSums(outcomes) == 1L))
+})
+
 test_that("build_return_matrix: spread away mirrors home under shared line", {
   # Direct unit test on the matrix builder. For any single line value, home
   # and away cover sets must partition the no-push event into mirror halves:

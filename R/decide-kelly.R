@@ -6,33 +6,53 @@ NULL
 #' For each posterior draw s and each bet j, returns the bet's net return:
 #' (odds_j - 1) if bet j wins, else -1.
 #'
-#' Bet-resolution by market:
-#' - moneyline: outcome == "home" wins iff home_goals > away_goals
+#' Bet-resolution by market (with `tie_threshold = T` from league config):
+#' - moneyline: home wins iff (hg - ag)  >  T
+#'              draw wins iff |hg - ag|  <= T
+#'              away wins iff (ag - hg)  >  T
 #' - spread:    `line` is the home team's signed handicap shared across
 #'              outcomes of the row (positive = home gets head start). Define
 #'              `adj = (home_goals + line) - away_goals`. Then
-#'              outcome == "home" wins iff adj > 0
-#'              outcome == "away" wins iff adj < 0
-#'              outcome == "draw" wins iff adj == 0 (push)
-#' - total:     outcome == "over"  wins iff (home_goals + away_goals) > line
-#'              outcome == "under" wins iff (home_goals + away_goals) < line
+#'              home wins iff adj      >  T
+#'              away wins iff -adj     >  T
+#'              draw wins iff |adj|    <= T  (push band)
+#' - total:     over  wins iff (hg + ag) > line
+#'              under wins iff (hg + ag) < line
 #'
+#' For sports with integer scoring and `T = 0` (football basketball default)
+#' the equality-as-tie behaviour is preserved exactly. For handball
+#' (`T = 0.5` per `config/leagues.yml`), continuous Student-t goal draws
+#' have `hg == ag` of measure zero — the `T = 0.5` band captures the
+#' probability mass that would round to an integer tie at game time. This
+#' unlocks the handball moneyline draw market that was previously P = 0.
+#'
+#' @param beliefs Tibble with `home_goals` and `away_goals` columns
+#'   (one row per posterior draw per match).
+#' @param bets Tibble with `market`, `outcome`, `line`, `odds`.
+#' @param tie_threshold Numeric \eqn{\ge 0}. See description. Default 0.
+#' @return Numeric matrix, `nrow(beliefs)` x `nrow(bets)`. Each cell is
+#'   `odds_j - 1` (win) or `-1` (loss).
 #' @keywords internal
 #' @noRd
-build_return_matrix <- function(beliefs, bets) {
+build_return_matrix <- function(beliefs, bets, tie_threshold = 0) {
   S <- nrow(beliefs)
   B <- nrow(bets)
   R <- matrix(NA_real_, nrow = S, ncol = B)
   hg <- beliefs$home_goals
   ag <- beliefs$away_goals
+  diff <- hg - ag
   total <- hg + ag
 
   for (j in seq_len(B)) {
     win <- switch(bets$market[[j]],
       moneyline = switch(bets$outcome[[j]],
-        home = hg > ag,
-        draw = hg == ag,
-        away = hg < ag
+        home = diff > tie_threshold,
+        draw = abs(diff) <= tie_threshold,
+        away = -diff > tie_threshold,
+        stop("Moneyline outcome must be 'home','draw','away', got: ",
+          bets$outcome[[j]],
+          call. = FALSE
+        )
       ),
       spread = {
         if (!bets$outcome[[j]] %in% c("home", "away", "draw")) {
@@ -48,15 +68,18 @@ build_return_matrix <- function(beliefs, bets) {
         # NOT separate handicaps applied symmetrically to each side. The
         # pre-2026-05-13 away formula `(ag + line) > hg` flipped the sign of
         # the away branch and produced implausibly-high spread-away EVs on
-        # cup matches with |line| >= 2.
+        # cup matches with |line| >= 2. The `tie_threshold` band keeps the
+        # spread push semantics consistent with moneyline draws for sports
+        # whose continuous-goal model would otherwise hit `adj == 0` only
+        # with measure zero.
         line <- bets$line[[j]]
         adj <- (hg + line) - ag
         if (bets$outcome[[j]] == "home") {
-          adj > 0
+          adj > tie_threshold
         } else if (bets$outcome[[j]] == "away") {
-          adj < 0
+          -adj > tie_threshold
         } else {
-          adj == 0
+          abs(adj) <= tie_threshold
         }
       },
       total = {
@@ -148,8 +171,11 @@ solve_kelly_joint <- function(net_return, max_stake) {
 #'   after the optimiser returns, *not* via this cap.
 #' @param ev_threshold Minimum EV per bet to consider. Bets below threshold
 #'   are zeroed before optimisation.
-#' @param tie_threshold Reserved for future use (tie-handling in handball
-#'   scoring); currently unused.
+#' @param tie_threshold Numeric \eqn{\ge 0}. Tie/push band — see
+#'   `build_return_matrix()` for resolution semantics. Sourced per-league
+#'   from `config/leagues.yml::*.betting.scoring.tie_threshold` by
+#'   `decide_league()`. Default 0 preserves equality-as-tie behaviour for
+#'   integer-scoring sports.
 #' @return List with `bets` (input cols + p, ev, kelly_raw), `match_pnl`
 #'   (numeric S), `match_kelly_sum` (sum of kelly_raw), `diagnostics` (list).
 #' @export
@@ -157,7 +183,7 @@ kelly_joint <- function(beliefs, bets,
                         max_match_stake = 1.0,
                         ev_threshold = 0.0,
                         tie_threshold = 0) {
-  R <- build_return_matrix(beliefs, bets)
+  R <- build_return_matrix(beliefs, bets, tie_threshold = tie_threshold)
   p <- as.numeric(colMeans(R > 0))
   ev <- p * (bets$odds - 1) - (1 - p)
 

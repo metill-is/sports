@@ -148,7 +148,8 @@ decide_league <- function(league_key = NULL, league = NULL, sex,
       bets_in,
       max_match_stake = betting$max_match_stake %||%
         (bankroll$max_match_stake_default %||% 1.0),
-      ev_threshold = betting$ev_threshold %||% 0.0
+      ev_threshold = betting$ev_threshold %||% 0.0,
+      tie_threshold = betting$scoring$tie_threshold %||% 0
     )
 
     match_key <- paste(md, ht, at, sep = "||")

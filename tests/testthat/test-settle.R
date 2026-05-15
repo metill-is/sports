@@ -65,6 +65,38 @@ test_that("compute_settlement: moneyline draw wins on tie", {
   expect_equal(out$pnl, 250)
 })
 
+test_that("compute_settlement: tie_threshold default preserves integer-tie behaviour", {
+  # Settle inputs are always integer scores (federation results), so
+  # |diff| <= 0 ⟺ diff == 0 (default behaviour) and any tie_threshold up to
+  # 0.5 produces identical resolution on integer inputs. K6 mirror with decide
+  # holds: same comparison, applied to integer realisations vs continuous
+  # posterior, with the same threshold from leagues.yml.
+  bets <- make_bet("moneyline", "draw",
+    odds = 3.5,
+    sport = "handball", country = "iceland"
+  )
+  res <- make_result(28, 28,
+    sport = "handball", country = "iceland"
+  )
+  out_zero <- compute_settlement(bets, res, tie_threshold = 0)
+  out_half <- compute_settlement(bets, res, tie_threshold = 0.5)
+  expect_true(out_zero$win)
+  expect_true(out_half$win)
+  expect_equal(out_zero$pnl, out_half$pnl)
+})
+
+test_that("compute_settlement: tie_threshold = 0 still flags 1-goal margins as not-draw", {
+  bets <- make_bet("moneyline", "draw",
+    odds = 3.5,
+    sport = "handball", country = "iceland"
+  )
+  res <- make_result(29, 28,
+    sport = "handball", country = "iceland"
+  )
+  out <- compute_settlement(bets, res, tie_threshold = 0.5)
+  expect_false(out$win)
+})
+
 test_that("compute_settlement: moneyline home loses when away wins", {
   bets <- make_bet("moneyline", "home", odds = 2.5)
   res <- make_result(0, 1)
