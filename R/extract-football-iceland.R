@@ -48,7 +48,8 @@ NULL
                                            n_pred_fit,
                                            n_pred_data,
                                            sim_inputs = NULL,
-                                           bracket_state = NULL) {
+                                           bracket_state = NULL,
+                                           fit_date = NULL) {
   top_results <- results[
     results$season == current_season & results$division == target_div, ,
     drop = FALSE
@@ -200,11 +201,21 @@ NULL
         )
         empty_placements
       } else {
+        # Pairing seed derived from fit_date so each fit gets a stable but
+        # distinct draw — pre-2026-05-16 the seed was hardcoded 42L, which
+        # meant two consecutive fits' tournament_placements reflected
+        # identical pairing draws (only strength deltas), masking the
+        # bracket-sensitivity of the cup forecast. Audit publish I4.
+        seed_int <- if (!is.null(fit_date)) {
+          as.integer(format(as.Date(fit_date), "%Y%m%d"))
+        } else {
+          42L
+        }
         simulate_cup_bracket(
           sim_inputs_team   = sim_inputs$team,
           sim_inputs_scalar = sim_inputs$scalar,
           bracket_state     = bracket_state,
-          pairing_seed      = 42L
+          pairing_seed      = seed_int
         ) |>
           dplyr::mutate(round_name = as.character(.data$round_name))
       }
@@ -777,7 +788,8 @@ extract_football_iceland <- function(fit, league, sex,
       n_pred_fit           = n_pred_fit,
       n_pred_data          = n_pred_data,
       sim_inputs           = sim_inputs,
-      bracket_state        = bracket_state
+      bracket_state        = bracket_state,
+      fit_date             = fit_date
     )
     lapply(parts, function(df) dplyr::mutate(df, division = target_div))
   })

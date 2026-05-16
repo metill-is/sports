@@ -34,8 +34,6 @@ jobs:
           extra-packages: |
             any::devtools
             any::testthat
-            any::targets
-            any::tidyselect
 
       - name: Reinstall V8 from source with bundled static libv8
         env:

@@ -612,10 +612,18 @@ click_market_button <- function(session, section_label, btn_index,
 #' @param section_label Character label of the market section
 #' @param line_label Character label of the table row (e.g. "59.5", "1.5-0")
 #' @param btn_index Integer index of the button in the row (1-based)
+#' @param max_wait_seconds Numeric. Poll the section/table for this long
+#'   before failing on a transient hydration miss. Mirrors
+#'   `click_market_button` — handicap/totals tables hydrate later than the
+#'   1x2 market in Lengjan's React app, so the previous one-shot evaluation
+#'   produced a hard `stop()` whenever a Lengjan render race lost; the
+#'   whole placement loop then aborted with `status = "error"`. Audit
+#'   placer Important §I2.
 #' @return Numeric: actual odds from Lengjan
 #' @keywords internal
 #' @noRd
-click_table_button <- function(session, section_label, line_label, btn_index) {
+click_table_button <- function(session, section_label, line_label, btn_index,
+                               max_wait_seconds = 10) {
   js <- sprintf(
     "
     (() => {
@@ -684,8 +692,25 @@ click_table_button <- function(session, section_label, line_label, btn_index) {
     btn_index, line_label, btn_index
   )
 
-  result <- session$Runtime$evaluate(expression = js, returnByValue = TRUE)
-  parsed <- jsonlite::fromJSON(result$result$value)
+  # Poll for the table to hydrate. The handicap / totals tables Lengjan
+  # injects after the 1x2 markets render, so the first attempt frequently
+  # hits an empty section. Retry on transient table-not-found errors;
+  # missing-line is also transient when the line is being inserted.
+  deadline <- Sys.time() + max_wait_seconds
+  parsed <- NULL
+  transient_errors <- c(
+    "No table in section", "Not enough buttons in row"
+  )
+  repeat {
+    result <- session$Runtime$evaluate(expression = js, returnByValue = TRUE)
+    parsed <- jsonlite::fromJSON(result$result$value)
+    transient <- !is.null(parsed$error) &&
+      (parsed$error %in% transient_errors ||
+        grepl("^Section not found", parsed$error) ||
+        grepl("^Line not found", parsed$error))
+    if (!transient || Sys.time() >= deadline) break
+    Sys.sleep(0.5)
+  }
 
   if (!is.null(parsed$error)) {
     stop("Failed to click table button: ", parsed$error)

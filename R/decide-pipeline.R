@@ -223,7 +223,15 @@ decide_league <- function(league_key = NULL, league = NULL, sex,
   cands$kelly <- cands$kelly_raw * cands$lambda * shrink_eff
   cands$bet_amount <- round(cands$kelly * bankroll$current_pool)
 
-  # Stage: dropped_low_ev already set; update remaining
+  # Stage: dropped_low_ev already set; update remaining.
+  # WHY (audit 2026-05-16 follow-up): the filter compares post-round
+  # `bet_amount` to `min_bet` because `min_bet = 200` is Lengjan's external
+  # hard floor — bets under 200 ISK are rejected at the bookmaker. The
+  # rounded `bet_amount` is what we actually send. A raw Kelly of 199.5
+  # rounds to 200, which IS Lengjan-acceptable, so keep it; 199.4 rounds
+  # to 199, which is not. Do NOT switch to pre-round comparison even
+  # though it looks more monotonic — that would drop bets that round up
+  # to a valid stake.
   cands$stage <- ifelse(
     cands$kelly_raw <= 0,
     "dropped_low_ev",

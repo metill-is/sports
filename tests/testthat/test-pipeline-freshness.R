@@ -46,6 +46,14 @@ test_that("needs_refit() is FALSE when fit covers all completed games", {
   fs::dir_create(fit_dir)
   fs::file_create(fs::path(fit_dir, "beliefs.parquet"))
 
+  # needs_refit() also checks beliefs/latest/ — production state has both.
+  latest_dir <- fs::path(
+    root, "beliefs", "latest",
+    "sport=football", "country=iceland", "sex=male"
+  )
+  fs::dir_create(latest_dir)
+  fs::file_create(fs::path(latest_dir, "part-0.parquet"))
+
   expect_false(needs_refit(static, "male", root = root))
 })
 
@@ -105,7 +113,45 @@ test_that("needs_refit() ignores unplayed games", {
   fs::dir_create(fit_dir)
   fs::file_create(fs::path(fit_dir, "beliefs.parquet"))
 
+  latest_dir <- fs::path(
+    root, "beliefs", "latest",
+    "sport=football", "country=iceland", "sex=male"
+  )
+  fs::dir_create(latest_dir)
+  fs::file_create(fs::path(latest_dir, "part-0.parquet"))
+
   expect_false(needs_refit(static, "male", root = root))
+})
+
+test_that("needs_refit() returns TRUE when beliefs/latest/ is wiped despite archive history", {
+  root <- withr::local_tempdir()
+  static <- list(sport = "football", country = "iceland")
+
+  results_dir <- fs::path(
+    root, "facts", "results",
+    "sport=football", "country=iceland", "sex=male", "season=2026"
+  )
+  fs::dir_create(results_dir)
+  arrow::write_parquet(
+    tibble::tibble(
+      home_team = "A", away_team = "B",
+      match_date = as.Date("2026-04-29"),
+      home_score = 1L, away_score = 0L,
+      division = NA_character_, round = NA_integer_
+    ),
+    fs::path(results_dir, "part-0.parquet")
+  )
+
+  # archive has a fit_date but latest/ is empty (post-2026-05-15 defence-in-
+  # depth against latest/-wipe scenarios) — refit forced.
+  fit_dir <- fs::path(
+    root, "beliefs", "archive",
+    "sport=football", "country=iceland", "sex=male", "fit_date=2026-04-30"
+  )
+  fs::dir_create(fit_dir)
+  fs::file_create(fs::path(fit_dir, "beliefs.parquet"))
+
+  expect_true(needs_refit(static, "male", root = root))
 })
 
 test_that("has_upcoming_games() filters by horizon", {
