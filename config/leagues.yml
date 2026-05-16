@@ -147,6 +147,11 @@ football_iceland:
         Völsungur: Völsungur
         Fylkir: Fylkir
         Vestri: Vestri
+        # 2. deild karla teams surfacing on Lengjan via Mjólkurbikar cup
+        # (canonical == Lengjan rendering; verified 2026-05-16 against
+        # data/facts/odds/sport=football/country=iceland).
+        KFG: KFG
+        Magni: Magni
         # BD teams that also appear in women's BD (verified against
         # data/facts/odds/sport=football/country=iceland):
         KR: KR
