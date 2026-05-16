@@ -255,7 +255,7 @@ NULL
     dplyr::distinct(dplyr::across(dplyr::all_of(key_cols)), .keep_all = TRUE) |>
     dplyr::arrange(dplyr::across(dplyr::all_of(key_cols)))
 
-  jsonlite::write_json(
+  write_json_consistent(
     list(schema_version = 1L, records = all_rows),
     path,
     auto_unbox = TRUE,
@@ -868,7 +868,7 @@ NULL
     round        = as.integer(round_num),
     n_draws      = as.integer(n_draws)
   )
-  jsonlite::write_json(
+  write_json_consistent(
     meta,
     file.path(out_dir, "meta.json"),
     auto_unbox = TRUE
@@ -951,7 +951,7 @@ NULL
     )
   }
 
-  jsonlite::write_json(
+  write_json_consistent(
     list(generated_at = generated_at, matches = next_games_out),
     file.path(out_dir, "next_games.json"),
     auto_unbox = TRUE, dataframe = "rows", digits = 5, na = "null"
@@ -1057,7 +1057,7 @@ NULL
         "goals_trend", "goals_against_trend"
       )
 
-    jsonlite::write_json(
+    write_json_consistent(
       list(
         generated_at = generated_at,
         season       = current_season,
@@ -1093,7 +1093,7 @@ NULL
       key_cols = c("as_of", "team")
     )
   } else {
-    jsonlite::write_json(
+    write_json_consistent(
       list(
         generated_at = generated_at, season = current_season,
         as_of = format(end_date, "%Y-%m-%d"), rows = list()
@@ -1132,7 +1132,7 @@ NULL
     .summarise_team_intervals_pfi() |>
     dplyr::semi_join(current_top_teams, by = "team")
 
-  jsonlite::write_json(
+  write_json_consistent(
     list(generated_at = generated_at, records = team_strengths),
     file.path(out_dir, "team_strengths.json"),
     auto_unbox = TRUE, dataframe = "rows", digits = 5
@@ -1174,7 +1174,7 @@ NULL
       median = numeric(), lower = numeric(), upper = numeric()
     )
   }
-  jsonlite::write_json(
+  write_json_consistent(
     list(schema_version = 1L, records = team_strengths_history_row),
     file.path(out_dir, "team_strengths_history.json"),
     auto_unbox = TRUE, dataframe = "rows", digits = 5, na = "null"
@@ -1208,7 +1208,7 @@ NULL
       key_cols = c("round", "team")
     )
   } else if (!file.exists(round_predictions_path)) {
-    jsonlite::write_json(
+    write_json_consistent(
       list(schema_version = 1L, records = list()),
       round_predictions_path,
       auto_unbox = TRUE,
@@ -1300,7 +1300,7 @@ NULL
         .by = "team"
       )
 
-    jsonlite::write_json(
+    write_json_consistent(
       list(
         generated_at = generated_at,
         season       = current_season,
@@ -1353,7 +1353,7 @@ NULL
       dplyr::mutate(base_points = dplyr::coalesce(.data$base_points, 0L)) |>
       dplyr::left_join(top_six, by = "team")
 
-    jsonlite::write_json(
+    write_json_consistent(
       list(
         generated_at = generated_at,
         season       = current_season,
@@ -1365,7 +1365,7 @@ NULL
     )
   } else {
     # Empty outputs when fit dimensions don't match
-    jsonlite::write_json(
+    write_json_consistent(
       list(
         generated_at = generated_at, season = current_season,
         n_teams = 0L, records = list(), summary = list()
@@ -1373,7 +1373,7 @@ NULL
       file.path(out_dir, "final_positions.json"),
       auto_unbox = TRUE, dataframe = "rows", digits = 5
     )
-    jsonlite::write_json(
+    write_json_consistent(
       list(
         generated_at = generated_at, season = current_season,
         records = list(), summary = list()
@@ -1387,7 +1387,7 @@ NULL
     final_positions_history_path <- file.path(
       out_dir, "final_positions_history.json"
     )
-    jsonlite::write_json(
+    write_json_consistent(
       list(schema_version = 1L, records = list()),
       final_positions_history_path,
       auto_unbox = TRUE, dataframe = "rows", digits = 5, na = "null"
@@ -1424,7 +1424,7 @@ NULL
     ) |>
     dplyr::semi_join(top_teams_upcoming, by = "team")
 
-  jsonlite::write_json(
+  write_json_consistent(
     list(generated_at = generated_at, records = home_advantage),
     file.path(out_dir, "home_advantage.json"),
     auto_unbox = TRUE, dataframe = "rows", digits = 5
@@ -1745,7 +1745,7 @@ publish_football_iceland <- function(extracted,
       round        = as.integer(round_num),
       n_draws      = as.integer(n_draws)
     )
-    jsonlite::write_json(
+    write_json_consistent(
       meta,
       file.path(out_dir, "meta.json"),
       auto_unbox = TRUE
@@ -1832,7 +1832,7 @@ publish_football_iceland <- function(extracted,
       )
     }
 
-    jsonlite::write_json(
+    write_json_consistent(
       list(generated_at = generated_at, matches = next_games_out),
       file.path(out_dir, "next_games.json"),
       auto_unbox = TRUE, dataframe = "rows", digits = 5, na = "null"
@@ -1940,7 +1940,7 @@ publish_football_iceland <- function(extracted,
           "goals_trend", "goals_against_trend"
         )
 
-      jsonlite::write_json(
+      write_json_consistent(
         list(
           generated_at = generated_at,
           season       = current_season,
@@ -1976,7 +1976,7 @@ publish_football_iceland <- function(extracted,
         key_cols = c("as_of", "team")
       )
     } else {
-      jsonlite::write_json(
+      write_json_consistent(
         list(
           generated_at = generated_at, season = current_season,
           as_of = format(end_date, "%Y-%m-%d"), rows = list()
@@ -1988,7 +1988,7 @@ publish_football_iceland <- function(extracted,
       # league-table semantics (cups) any prior records are stale and the
       # append helper would otherwise keep them. Mirrors the pattern below
       # for final_positions_history.json.
-      jsonlite::write_json(
+      write_json_consistent(
         list(schema_version = 1L, records = list()),
         file.path(out_dir, "standings_history.json"),
         auto_unbox = TRUE, dataframe = "rows", digits = 5, na = "null"
@@ -2044,7 +2044,7 @@ publish_football_iceland <- function(extracted,
         dplyr::select(-"ps_median", -"ps_lower", -"ps_upper")
     }
 
-    jsonlite::write_json(
+    write_json_consistent(
       list(generated_at = generated_at, records = team_strengths),
       file.path(out_dir, "team_strengths.json"),
       auto_unbox = TRUE, dataframe = "rows", digits = 5, na = "null"
@@ -2078,7 +2078,7 @@ publish_football_iceland <- function(extracted,
         median = numeric(), lower = numeric(), upper = numeric()
       )
     }
-    jsonlite::write_json(
+    write_json_consistent(
       list(schema_version = 1L, records = team_strengths_history_row),
       file.path(out_dir, "team_strengths_history.json"),
       auto_unbox = TRUE, dataframe = "rows", digits = 5, na = "null"
@@ -2107,7 +2107,7 @@ publish_football_iceland <- function(extracted,
         key_cols = c("round", "team")
       )
     } else if (!file.exists(round_predictions_path)) {
-      jsonlite::write_json(
+      write_json_consistent(
         list(schema_version = 1L, records = list()),
         round_predictions_path,
         auto_unbox = TRUE,
@@ -2137,7 +2137,7 @@ publish_football_iceland <- function(extracted,
           .by = "team"
         )
 
-      jsonlite::write_json(
+      write_json_consistent(
         list(
           generated_at = generated_at,
           season       = current_season,
@@ -2206,7 +2206,7 @@ publish_football_iceland <- function(extracted,
         dplyr::mutate(base_points = dplyr::coalesce(.data$base_points, 0L)) |>
         dplyr::left_join(top_six, by = "team")
 
-      jsonlite::write_json(
+      write_json_consistent(
         list(
           generated_at = generated_at,
           season       = current_season,
@@ -2217,7 +2217,7 @@ publish_football_iceland <- function(extracted,
         auto_unbox = TRUE, dataframe = "rows", digits = 5
       )
     } else {
-      jsonlite::write_json(
+      write_json_consistent(
         list(
           generated_at = generated_at, season = current_season,
           n_teams = 0L, records = list(), summary = list()
@@ -2225,7 +2225,7 @@ publish_football_iceland <- function(extracted,
         file.path(out_dir, "final_positions.json"),
         auto_unbox = TRUE, dataframe = "rows", digits = 5
       )
-      jsonlite::write_json(
+      write_json_consistent(
         list(
           generated_at = generated_at, season = current_season,
           records = list(), summary = list()
@@ -2244,7 +2244,7 @@ publish_football_iceland <- function(extracted,
       final_positions_history_path <- file.path(
         out_dir, "final_positions_history.json"
       )
-      jsonlite::write_json(
+      write_json_consistent(
         list(schema_version = 1L, records = list()),
         final_positions_history_path,
         auto_unbox = TRUE, dataframe = "rows", digits = 5, na = "null"
@@ -2257,7 +2257,7 @@ publish_football_iceland <- function(extracted,
       .intervals_from_quantiles_pfi(c("team", "component")) |>
       dplyr::semi_join(top_teams_upcoming, by = "team")
 
-    jsonlite::write_json(
+    write_json_consistent(
       list(generated_at = generated_at, records = home_advantage),
       file.path(out_dir, "home_advantage.json"),
       auto_unbox = TRUE, dataframe = "rows", digits = 5
@@ -2277,7 +2277,7 @@ publish_football_iceland <- function(extracted,
             team        = .data$team,
             p_champion  = .data$probability
           )
-        jsonlite::write_json(
+        write_json_consistent(
           list(
             generated_at = generated_at,
             season       = current_season,
@@ -2289,7 +2289,7 @@ publish_football_iceland <- function(extracted,
           auto_unbox = TRUE, dataframe = "rows", digits = 5
         )
       } else {
-        jsonlite::write_json(
+        write_json_consistent(
           list(
             generated_at = generated_at,
             season       = current_season,

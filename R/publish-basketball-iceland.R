@@ -122,7 +122,7 @@ publish_basketball_iceland <- function(fit, league, sex,
     round        = as.integer(round_num),
     n_draws      = n_draws
   )
-  jsonlite::write_json(
+  write_json_consistent(
     meta, file.path(out_dir, "meta.json"),
     auto_unbox = TRUE, pretty = TRUE
   )
@@ -160,7 +160,7 @@ publish_basketball_iceland <- function(fit, league, sex,
       p_home = numeric(), p_away = numeric(), p_tie = numeric()
     )
   }
-  jsonlite::write_json(
+  write_json_consistent(
     list(generated_at = generated_at, matches = next_games_out),
     file.path(out_dir, "next_games.json"),
     auto_unbox = TRUE, dataframe = "rows", digits = 5, na = "null"
@@ -171,7 +171,7 @@ publish_basketball_iceland <- function(fit, league, sex,
     top_results,
     has_ties = has_ties, tie_threshold = tie_threshold
   )
-  jsonlite::write_json(
+  write_json_consistent(
     list(
       generated_at = generated_at,
       season = current_season,
@@ -214,7 +214,7 @@ publish_basketball_iceland <- function(fit, league, sex,
     .summarise_team_intervals_2dt() |>
     dplyr::semi_join(current_top_teams, by = "team")
 
-  jsonlite::write_json(
+  write_json_consistent(
     list(generated_at = generated_at, records = team_strengths),
     file.path(out_dir, "team_strengths.json"),
     auto_unbox = TRUE, dataframe = "rows", digits = 5
@@ -262,7 +262,7 @@ publish_basketball_iceland <- function(fit, league, sex,
         .by = "team"
       )
 
-    jsonlite::write_json(
+    write_json_consistent(
       list(
         generated_at = generated_at,
         season       = current_season,
@@ -316,7 +316,7 @@ publish_basketball_iceland <- function(fit, league, sex,
       dplyr::mutate(base_points = dplyr::coalesce(.data$base_points, 0L)) |>
       dplyr::left_join(placement_summary, by = "team")
 
-    jsonlite::write_json(
+    write_json_consistent(
       list(
         generated_at = generated_at,
         season       = current_season,
@@ -327,7 +327,7 @@ publish_basketball_iceland <- function(fit, league, sex,
       auto_unbox = TRUE, dataframe = "rows", digits = 5
     )
   } else {
-    jsonlite::write_json(
+    write_json_consistent(
       list(
         generated_at = generated_at, season = current_season,
         n_teams = 0L, records = list(), summary = list()
@@ -335,7 +335,7 @@ publish_basketball_iceland <- function(fit, league, sex,
       file.path(out_dir, "final_positions.json"),
       auto_unbox = TRUE, dataframe = "rows", digits = 5
     )
-    jsonlite::write_json(
+    write_json_consistent(
       list(
         generated_at = generated_at, season = current_season,
         records = list(), summary = list()
@@ -347,7 +347,7 @@ publish_basketball_iceland <- function(fit, league, sex,
       out_dir, "final_positions_history.json"
     )
     if (!file.exists(final_positions_history_path)) {
-      jsonlite::write_json(
+      write_json_consistent(
         list(schema_version = 1L, records = list()),
         final_positions_history_path,
         auto_unbox = TRUE, dataframe = "rows", digits = 5, na = "null"
@@ -357,7 +357,7 @@ publish_basketball_iceland <- function(fit, league, sex,
 
   # ---- home_advantage.json -------------------------------------------------
   home_advantage <- .compute_home_advantage_2dt(fit, teams, top_teams_upcoming)
-  jsonlite::write_json(
+  write_json_consistent(
     list(generated_at = generated_at, records = home_advantage),
     file.path(out_dir, "home_advantage.json"),
     auto_unbox = TRUE, dataframe = "rows", digits = 5
