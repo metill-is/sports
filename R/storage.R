@@ -36,14 +36,19 @@ table_subdir <- function(table) {
 
 #' Derive any virtual partition columns the table needs (e.g. scraped_date from
 #' scraped_at, run_date from run_id) before validation.
+#'
+#' Virtual-partition derivation pins timezone to UTC: cron runners are UTC-only
+#' today but a developer running locally near midnight in a non-UTC locale
+#' would otherwise push rows into the wrong scraped_date / run_date partition.
+#' Audit 2026-05-15 Important §I3 / Data M.
 #' @noRd
 add_virtual_partitions <- function(df, table) {
   if (table == "odds" && !("scraped_date" %in% names(df)) && "scraped_at" %in% names(df)) {
-    df$scraped_date <- as.Date(df$scraped_at)
+    df$scraped_date <- as.Date(df$scraped_at, tz = "UTC")
   }
   if (table %in% c("candidates", "recommendations") &&
     !("run_date" %in% names(df)) && "run_id" %in% names(df)) {
-    df$run_date <- as.Date(df$run_id)
+    df$run_date <- as.Date(df$run_id, tz = "UTC")
   }
   if (table == "beliefs_archive" && !("fit_date" %in% names(df))) {
     stop("beliefs_archive requires fit_date", call. = FALSE)
@@ -214,12 +219,16 @@ write_table <- function(df, table, root = here::here("data")) {
 #' @noRd
 natural_key_for <- function(table) {
   switch(table,
+    # `division` joins the key for results+schedules so cup-vs-league same-day
+    # pairings of the same teams don't collide (the audit's Data §I2 finding).
+    # Currently this combination is empty in the data, but a same-day cup tie
+    # plus league fixture between the same teams is physically possible.
     results = c(
-      "sport", "country", "sex", "season", "match_date",
+      "sport", "country", "sex", "season", "division", "match_date",
       "home_team", "away_team"
     ),
     schedules = c(
-      "sport", "country", "sex", "season", "match_date",
+      "sport", "country", "sex", "season", "division", "match_date",
       "home_team", "away_team"
     ),
     odds = c(
@@ -346,4 +355,25 @@ read_table <- function(table, root = here::here("data"), filter = list()) {
   }
 
   dplyr::collect(ds) |> tibble::as_tibble()
+}
+
+#' Write JSON with consistent NA serialisation.
+#'
+#' Thin wrapper over `jsonlite::write_json()` that forces `na = "null"`.
+#' Pre-2026-05-16 about half the publisher's `write_json` call sites set
+#' `na = "null"` and half didn't, producing inconsistent JSON shapes
+#' across snapshots (sometimes NA dropped, sometimes serialised as "NA"
+#' string). Audit 2026-05-15 publish §I1. Callers can still override
+#' `na` explicitly — wrapper-supplied default loses to caller-supplied
+#' value.
+#'
+#' @param x R object to serialise.
+#' @param path Destination path.
+#' @param ... Forwarded to `jsonlite::write_json`.
+#' @keywords internal
+#' @noRd
+write_json_consistent <- function(x, path, ...) {
+  dots <- list(...)
+  if (!"na" %in% names(dots)) dots$na <- "null"
+  do.call(jsonlite::write_json, c(list(x = x, path = path), dots))
 }

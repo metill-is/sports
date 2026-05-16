@@ -283,7 +283,14 @@ fetch_schedule_kki <- function(league, sex, seasons = NULL) {
     ))
   }
 
-  upcoming <- raw[is.na(raw$home_score), , drop = FALSE]
+  # Mirror the KSI / HSI scrapers: drop unplayed rows whose kickoff is in the
+  # past (stale fixtures that never resolved — e.g. the 2024 ÍA orphan
+  # surfaced in the 2026-05-15 audit). Schedule downstream must contain only
+  # genuinely-upcoming matches; played-but-unscored matches will land via the
+  # next results fetch.
+  upcoming <- raw[is.na(raw$home_score) &
+    !is.na(raw$match_date) &
+    raw$match_date >= Sys.Date(), , drop = FALSE]
   upcoming[, c(
     "sport", "country", "sex", "season", "match_date",
     "home_team", "away_team", "division", "round"

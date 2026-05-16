@@ -579,10 +579,21 @@ fetch_ksi_all <- function(sex, seasons = NULL,
 #' @param league Unused (source-module signature parity); KSÍ wiring is fixed
 #'   internally.
 #' @param sex "male" or "female".
-#' @param seasons Optional integer vector restricting seasons.
+#' @param seasons Optional integer vector restricting seasons. When `NULL`
+#'   (default) the function fetches just the current calendar year — historical
+#'   results don't change, so the daily cron walking all 5+ historical
+#'   `KSI_IDS` years (~minutes of HTTP latency + tens of MB of pointless
+#'   Parquet rewrites) is pure overhead. Explicit backfill jobs pass a
+#'   `seasons` vector to widen the scan. Audit data Important §I3.
 #' @keywords internal
 #' @noRd
 fetch_results_ksi <- function(league, sex, seasons = NULL) {
+  if (is.null(seasons)) {
+    current_year <- as.integer(format(Sys.Date(), "%Y"))
+    # current + previous year covers late-arriving scores around the Jan
+    # transition (KSI sometimes posts final-week scores after midnight UTC).
+    seasons <- c(current_year - 1L, current_year)
+  }
   all_matches <- fetch_ksi_all(sex, seasons = seasons, toggle = "results")
   if (nrow(all_matches) == 0L) {
     return(ksi_empty_results())
