@@ -152,6 +152,11 @@ football_iceland:
         # data/facts/odds/sport=football/country=iceland).
         KFG: KFG
         Magni: Magni
+        # Additional men's teams surfacing in 2026-05-17 Lengjudeildin fixtures
+        # (canonical == Lengjan rendering; verified against
+        # data/facts/odds/sport=football/country=iceland).
+        HK: HK
+        Afturelding: Afturelding
         # BD teams that also appear in women's BD (verified against
         # data/facts/odds/sport=football/country=iceland):
         KR: KR
