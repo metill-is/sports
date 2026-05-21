@@ -22,7 +22,7 @@ Migration complete (Plan 7, 2026-04-30). End-state design: [`docs/superpowers/sp
 
 ```
 sports/
-├── scripts/0N_*.R       # Pipeline entry points (00–05); see Quick reference
+├── scripts/0N_*.R       # Pipeline entry points (00–06); see Quick reference
 ├── config/              # leagues.yml + bankroll.yml + JSON Schema validators
 ├── R/                   # R package source — see .claude/rules/ for per-area details
 │   ├── ingest-*.R       # Federation + Lengjan scrapers (KSÍ/KKÍ/HSÍ)
@@ -212,6 +212,7 @@ Handoff: `Sports/Sports Handoff.md`.
 | `Sports/Knowledge/Sports Models/`         | Bayesian model theory, Stan implementation, goals  |
 | `Sports/Knowledge/Lengjan Pipeline/`      | Odds scraping, schedule-aware filtering            |
 | `Sports/Knowledge/Livesport Data/`        | Match data scraping, CI pipeline                   |
+| `Sports/Knowledge/Publish Pipeline/`      | Extraction layer + JSON data contract with metill-platform |
 
 Each topic has a `_MOC.md` entry point — read it first, then selectively load sub-documents.
 

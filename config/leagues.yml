@@ -147,11 +147,23 @@ football_iceland:
         Völsungur: Völsungur
         Fylkir: Fylkir
         Vestri: Vestri
-        # 2. deild karla teams surfacing on Lengjan via Mjólkurbikar cup
-        # (canonical == Lengjan rendering; verified 2026-05-16 against
-        # data/facts/odds/sport=football/country=iceland).
-        KFG: KFG
-        Magni: Magni
+        # 2. deild karla teams. Most canonical == Lengjan rendering; two
+        # diverge — see Víkingur Ó./Þróttur V. below. Confirmed names verified
+        # against data/facts/odds/sport=football/country=iceland (scraped via
+        # competition id 1581); unconfirmed teams use identity guess (KSÍ
+        # schedule has them in LD2 but no Lengjan odds yet).
+        KFG: KFG                       # confirmed
+        Magni: Magni                   # confirmed
+        Dalvík/Reynir: Dalvík/Reynir   # confirmed (no spaces around slash)
+        KFA: KFA                       # confirmed
+        Kormákur/Hvöt: Kormákur/Hvöt   # confirmed (no spaces around slash)
+        Selfoss: Selfoss               # confirmed
+        Víkingur Ó.: Víkingur Ól.      # confirmed — Lengjan uses "Ól.", KSÍ "Ó."
+        Þróttur V.: Þróttur Vogum      # confirmed — Lengjan uses full village name
+        Fjölnir: Fjölnir               # identity guess; verify on first odds appearance
+        Haukar: Haukar                 # identity guess; verify on first odds appearance
+        Hvíti riddarinn: Hvíti riddarinn  # identity guess; verify on first odds appearance
+        Kári: Kári                     # identity guess; verify on first odds appearance
         # Additional men's teams surfacing in 2026-05-17 Lengjudeildin fixtures
         # (canonical == Lengjan rendering; verified against
         # data/facts/odds/sport=football/country=iceland).
@@ -171,14 +183,20 @@ football_iceland:
         KA: KA
       female:
         # First women's BD season on Lengjan (Plan 1-era empty map upgraded
-        # 2026-05-11 after odds for "Fram kv", "FH kv", "Þróttur Rvk kv",
-        # "Víkingur Rvk kv", "ÍBV kv" appeared in data/facts/odds/.
-        # canonical (matches beliefs/latest) -> Lengjan rendering.
-        FH: FH kv
-        Fram: Fram kv
-        ÍBV: ÍBV kv
-        Víkingur R.: Víkingur Rvk kv
-        Þróttur R.: Þróttur Rvk kv
+        # 2026-05-11 after odds for the first 5 teams appeared in
+        # data/facts/odds/sport=football/country=iceland; 2026-05-18 audit
+        # added the remaining 5 KSÍ-schedule teams). canonical (matches
+        # beliefs/latest) -> Lengjan rendering.
+        FH: FH kv                                       # confirmed
+        Fram: Fram kv                                   # confirmed
+        ÍBV: ÍBV kv                                     # confirmed
+        Víkingur R.: Víkingur Rvk kv                    # confirmed
+        Þróttur R.: Þróttur Rvk kv                      # confirmed
+        Breiðablik: Breiðablik kv                       # confirmed 2026-05-18
+        Grindavík/Njarðvík: Grindavík / Njarðvík kv     # confirmed 2026-05-18 — note SPACES around slash on Lengjan side
+        Valur: Valur kv                                 # confirmed 2026-05-18
+        Stjarnan: Stjarnan kv                           # identity-pattern guess; first fixture 2026-05-20 vs Grindavík/Njarðvík
+        Þór/KA: Þór/KA kv                               # identity-pattern guess; first fixture 2026-05-20 vs Breiðablik. Verify on first odds appearance (Lengjan may use spaces — c.f. Grindavík/Njarðvík)
   stan_model: football_iceland/bivariate_poisson_no_inflation.stan
   betting:
     # kelly_frac is the §7.2 multiplicative shrinkage. Female cell stays
