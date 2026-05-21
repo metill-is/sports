@@ -146,3 +146,112 @@ test_that("prepare_data returns N_pred = 0 when no upcoming schedule matches", {
   expect_equal(out$stan_data$N_pred, 0L)
   expect_equal(nrow(out$pred_d), 0L)
 })
+
+# ---------------------------------------------------------------------------
+# training_filter (Plan 7c follow-on, 2026-05-21)
+# ---------------------------------------------------------------------------
+
+test_that("filter_results_by_top_divisions keeps matches where both teams qualify", {
+  results <- tibble::tibble(
+    home_team = c("A", "B", "C", "A", "D"),
+    away_team = c("B", "C", "D", "C", "E"),
+    match_date = as.Date(c(
+      "2025-08-01", "2025-09-01", "2025-09-15",
+      "2026-04-01", "2026-04-15"
+    )),
+    division = c("BD", "BD", "BD", "LD1", "LD4")
+  )
+  # Window [end_date - 365, end_date] = [2025-04-21, 2026-04-21].
+  # Divisions = c("BD", "LD1") → A, B, C, D qualify; E never plays in {BD, LD1}.
+  kept <- filter_results_by_top_divisions(
+    results,
+    divisions = c("BD", "LD1"),
+    lookback_days = 365L,
+    end_date = as.Date("2026-04-21")
+  )
+  expect_equal(nrow(kept), 4L)
+  expect_false("E" %in% c(kept$home_team, kept$away_team))
+})
+
+test_that("filter_results_by_top_divisions drops historical matches with stale teams", {
+  # A qualifies via a 2026 BD match; B's only top-tier appearance is 2023 BD.
+  # With lookback_days = 365 from end_date = 2026-05-01, only the 2026 match
+  # qualifies. B never qualifies. So A-B-2023 is dropped.
+  results <- tibble::tibble(
+    home_team = c("A", "B", "A"),
+    away_team = c("B", "C", "C"),
+    match_date = as.Date(c("2023-06-01", "2023-07-01", "2026-03-01")),
+    division = c("BD", "BD", "BD")
+  )
+  kept <- filter_results_by_top_divisions(
+    results,
+    divisions = "BD",
+    lookback_days = 365L,
+    end_date = as.Date("2026-05-01")
+  )
+  # Only A and C have a 2026 BD match → both qualify. B does not.
+  expect_setequal(unique(c(kept$home_team, kept$away_team)), c("A", "C"))
+  expect_equal(nrow(kept), 1L) # just A vs C in 2026-03-01
+})
+
+test_that("filter_results_by_top_divisions is a no-op for empty inputs", {
+  empty <- tibble::tibble(
+    home_team = character(),
+    away_team = character(),
+    match_date = as.Date(character()),
+    division = character()
+  )
+  expect_identical(
+    filter_results_by_top_divisions(empty, "BD", 365L, as.Date("2026-05-01")),
+    empty
+  )
+
+  results <- tibble::tibble(
+    home_team = "A", away_team = "B",
+    match_date = as.Date("2026-04-01"), division = "BD"
+  )
+  expect_identical(
+    filter_results_by_top_divisions(
+      results,
+      divisions = character(0), lookback_days = 365L,
+      end_date = as.Date("2026-05-01")
+    ),
+    results
+  )
+})
+
+test_that("prepare_data applies training_filter from league config", {
+  root <- setup_mini_root()
+  league <- list(
+    sport = "basketball", country = "iceland", sexes = "male",
+    stan_model = "basketball_iceland/2d_student_t_scalarsigma.stan",
+    training_filter = list(
+      divisions = "D2",
+      # Wide enough window to capture the lone D2 match in the fixture
+      # (Alpha-Delta on 2025-02-20).
+      lookback_days = 900L
+    )
+  )
+  out <- prepare_data(league,
+    sex = "male", end_date = as.Date("2026-04-24"),
+    schedule_horizon_days = 60L, root = root
+  )
+  # Only Alpha and Delta played D2; matches involving Bravo/Charlie drop.
+  # Remaining matches: g4 (Alpha-Delta 2025) and g6 (Delta-Alpha 2026).
+  expect_equal(out$stan_data$N, 2L)
+  expect_setequal(out$teams$team, c("Alpha", "Delta"))
+})
+
+test_that("prepare_data without training_filter retains all matches (default)", {
+  root <- setup_mini_root()
+  league <- list(
+    sport = "basketball", country = "iceland", sexes = "male",
+    stan_model = "basketball_iceland/2d_student_t_scalarsigma.stan"
+  )
+  out <- prepare_data(league,
+    sex = "male", end_date = as.Date("2026-04-24"),
+    schedule_horizon_days = 60L, root = root
+  )
+  expect_equal(out$stan_data$N, 6L)
+  expect_equal(nrow(out$teams), 4L)
+})

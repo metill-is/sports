@@ -47,6 +47,23 @@
           }
         },
         "stan_model": { "type": "string" },
+        "training_filter": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["divisions", "lookback_days"],
+          "description": "Restrict Stan training set to matches where both teams have competed in `divisions` within the last `lookback_days` from end_date. Cuts the funnel-shaped posterior from amateur teams with thin data + extreme cup blowouts.",
+          "properties": {
+            "divisions": {
+              "type": "array",
+              "items": { "type": "string" },
+              "minItems": 1
+            },
+            "lookback_days": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
         "betting": {
           "type": "object",
           "additionalProperties": false,

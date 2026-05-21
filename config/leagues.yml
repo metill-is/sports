@@ -198,6 +198,16 @@ football_iceland:
         Stjarnan: Stjarnan kv                           # identity-pattern guess; first fixture 2026-05-20 vs Grindavík/Njarðvík
         Þór/KA: Þór/KA kv                               # identity-pattern guess; first fixture 2026-05-20 vs Breiðablik. Verify on first odds appearance (Lengjan may use spaces — c.f. Grindavík/Njarðvík)
   stan_model: football_iceland/bivariate_poisson_no_inflation.stan
+  # Restrict Stan training to teams that have competed in the top four
+  # league tiers within the last 365 days. Cuts ~30 amateur/regional teams
+  # whose 1-2 cup blowouts (12-1, 10-0, 9-0) introduced funnel-shaped
+  # curvature in the posterior — see Knowledge/Sports Models/2026-05-21 —
+  # training-filter root cause.md for the full diagnosis. Lengjan doesn't
+  # offer odds on LD4 or amateur-cup-only sides, so dropping them aligns
+  # the training population with the prediction population.
+  training_filter:
+    divisions: [BD, BD_UPPER_PO, BD_LOWER_PO, LD1, LD2, LD3]
+    lookback_days: 365
   betting:
     # kelly_frac is the §7.2 multiplicative shrinkage. Female cell stays
     # tighter — first Icelandic women's football season, thin history.

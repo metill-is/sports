@@ -19,7 +19,11 @@ Logical scalar.
 \description{
 Returns `TRUE` when there is at least one completed match with
 `match_date` strictly later than the most recent `fit_date` partition
-under `data/beliefs/archive/`. Returns `TRUE` when no fit exists yet.
+under `data/beliefs/archive/`. Returns `TRUE` when no fit exists yet
+OR when `beliefs/latest/` is missing/empty for the cell (so a wiped
+canonical partition forces a refit even if archive still carries
+yesterday's fit — defensive complement to the atomic stage-then-rename
+in `write_table()`, audit 2026-05-15 §H + I2).
 Returns `FALSE` when no results exist (cannot fit on empty data) or
 when no game has been played since the last fit.
 }

@@ -12,6 +12,15 @@ NULL
   as.integer(v)
 }
 
+# Same shape but for a double-valued knob (e.g. adapt_delta).
+.env_dbl <- function(name, default) {
+  v <- Sys.getenv(name, "")
+  if (!nzchar(v)) {
+    return(as.numeric(default))
+  }
+  as.numeric(v)
+}
+
 #' End-to-end: prepare data, fit Stan, extract posteriors, write beliefs.
 #'
 #' Supports two call modes:
@@ -32,6 +41,12 @@ NULL
 #' @param stan_dir Stan-model root. Default `here::here("Stan")`.
 #' @param method Passed to `fit_model()`. "sample" (default), "pathfinder", or "variational".
 #' @param iter_warmup,iter_sampling MCMC iteration counts. Passed to `fit_model()`.
+#' @param adapt_delta NUTS target acceptance probability. Default reads
+#'   `SPORTS_FIT_ADAPT_DELTA` env var, falling back to `0.95`. Raised from
+#'   Stan's stock `0.8` after 2026-05-17 — football iceland's funnel-shaped
+#'   posterior (Mjólkurbikar blowouts between top-flight and 4th-tier teams)
+#'   hit 7% divergent transitions at the default and tripped the diagnostic
+#'   gate. Set `SPORTS_FIT_ADAPT_DELTA=0.99` to escalate if 0.95 still fails.
 #' @param chains Number of MCMC chains. Passed to `fit_model()`.
 #' @param seed Integer seed for reproducibility. NULL = cmdstanr default.
 #' @param from_season Optional integer: earliest season to include in training data.
@@ -66,6 +81,7 @@ fit_league <- function(league_key = NULL,
                        # production-quality 1000 default.
                        iter_warmup = .env_iter("SPORTS_FIT_ITER_WARMUP"),
                        iter_sampling = .env_iter("SPORTS_FIT_ITER_SAMPLING"),
+                       adapt_delta = .env_dbl("SPORTS_FIT_ADAPT_DELTA", 0.95),
                        chains = 4L,
                        seed = NULL,
                        from_season = NULL,
@@ -145,6 +161,7 @@ fit_league <- function(league_key = NULL,
     chains          = chains,
     iter_warmup     = iter_warmup,
     iter_sampling   = iter_sampling,
+    adapt_delta     = adapt_delta,
     seed            = seed
   )
 

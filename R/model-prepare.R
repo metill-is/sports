@@ -1,6 +1,61 @@
 #' @include storage.R
 NULL
 
+#' Filter results to matches where both teams have recently competed in
+#' specified divisions.
+#'
+#' The bivariate-Poisson football model assigns each team a hierarchically-
+#' parameterised attack/defence pair plus a random-walk innovation per round.
+#' With Mjólkurbikar in the training set, ~30 of ~97 teams have ≤10 matches
+#' (most cup-only amateurs scoring 0-12 against top-flight sides). Their
+#' parameters are weakly identified, and the inter-tier likelihood tension
+#' creates funnel-shaped curvature in the posterior — manifesting as 7 % of
+#' post-warmup transitions diverging at Stan's default `adapt_delta = 0.8`.
+#'
+#' The fix is to align the training population with the prediction
+#' population: bets are only ever placed on BD/LD1/LD2/LD3 matches and on
+#' Mjólkurbikar rounds that have reached at least LD3-tier opposition. So
+#' restrict training to teams that have competed in one of those divisions
+#' within a recent window. Their cross-tier cup matches against other
+#' qualifying teams stay in (useful for tracking promotion-track strength);
+#' their cup matches against amateur sides drop out (since amateur opponents
+#' fail the filter).
+#'
+#' Operates on rows already filtered to the (sport, country, sex) and to
+#' `match_date <= end_date`. The qualifying-team set is computed within the
+#' window `[end_date - lookback_days, end_date]`. The match-retention filter
+#' is then applied over the *full* `results` (not the window) — so a 2023
+#' BD-vs-BD match between two currently-competing teams stays in training.
+#'
+#' @param results Tibble with at least `home_team`, `away_team`,
+#'   `match_date`, `division`.
+#' @param divisions Character vector of qualifying division codes.
+#' @param lookback_days Integer; window relative to `end_date`.
+#' @param end_date Training cutoff date. Window is `[end_date - lookback_days,
+#'   end_date]`.
+#' @return Subset of `results` (same columns) keeping only matches where
+#'   both teams competed in `divisions` within the window.
+#' @noRd
+filter_results_by_top_divisions <- function(results, divisions, lookback_days,
+                                            end_date) {
+  if (nrow(results) == 0L || length(divisions) == 0L) {
+    return(results)
+  }
+  window_start <- end_date - as.integer(lookback_days)
+  qualifying <- results[
+    results$division %in% divisions &
+      results$match_date >= window_start &
+      results$match_date <= end_date, ,
+    drop = FALSE
+  ]
+  qualifying_teams <- unique(c(qualifying$home_team, qualifying$away_team))
+  results[
+    results$home_team %in% qualifying_teams &
+      results$away_team %in% qualifying_teams, ,
+    drop = FALSE
+  ]
+}
+
 #' Build stan_data + pred_d + teams from the facts store.
 #'
 #' Reads `data/facts/results/` and `data/facts/schedules/` for the given
@@ -50,6 +105,23 @@ prepare_data <- function(league,
     !is.na(results$home_score) & !is.na(results$away_score), ,
     drop = FALSE
   ]
+
+  tf <- league$training_filter
+  if (!is.null(tf) && length(tf$divisions) > 0L &&
+    !is.null(tf$lookback_days)) {
+    n_before <- nrow(results)
+    results <- filter_results_by_top_divisions(
+      results,
+      divisions     = tf$divisions,
+      lookback_days = as.integer(tf$lookback_days),
+      end_date      = end_date
+    )
+    cli::cli_alert_info(
+      "training_filter: kept {nrow(results)}/{n_before} matches \\
+      (divisions={.val {tf$divisions}}, lookback={tf$lookback_days}d)"
+    )
+  }
+
   results <- results[order(results$match_date), , drop = FALSE]
   results$game_nr <- seq_len(nrow(results))
 

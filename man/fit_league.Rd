@@ -15,6 +15,7 @@ fit_league(
   method = "sample",
   iter_warmup = .env_iter("SPORTS_FIT_ITER_WARMUP"),
   iter_sampling = .env_iter("SPORTS_FIT_ITER_SAMPLING"),
+  adapt_delta = .env_dbl("SPORTS_FIT_ADAPT_DELTA", 0.95),
   chains = 4L,
   seed = NULL,
   from_season = NULL,
@@ -43,6 +44,13 @@ fit_league(
 \item{method}{Passed to `fit_model()`. "sample" (default), "pathfinder", or "variational".}
 
 \item{iter_warmup, iter_sampling}{MCMC iteration counts. Passed to `fit_model()`.}
+
+\item{adapt_delta}{NUTS target acceptance probability. Default reads
+`SPORTS_FIT_ADAPT_DELTA` env var, falling back to `0.95`. Raised from
+Stan's stock `0.8` after 2026-05-17 — football iceland's funnel-shaped
+posterior (Mjólkurbikar blowouts between top-flight and 4th-tier teams)
+hit 7% divergent transitions at the default and tripped the diagnostic
+gate. Set `SPORTS_FIT_ADAPT_DELTA=0.99` to escalate if 0.95 still fails.}
 
 \item{chains}{Number of MCMC chains. Passed to `fit_model()`.}
 

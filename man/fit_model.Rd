@@ -12,6 +12,8 @@ fit_model(
   parallel_chains = chains,
   iter_warmup = 1000L,
   iter_sampling = 1000L,
+  adapt_delta = 0.95,
+  max_treedepth = 10L,
   num_paths = 4L,
   draws = 4000L,
   seed = NULL,
@@ -35,6 +37,16 @@ fit_model(
 \item{parallel_chains}{Number of chains to run in parallel.}
 
 \item{iter_warmup, iter_sampling}{Iteration counts (MCMC only).}
+
+\item{adapt_delta}{Target acceptance probability during warmup (MCMC only).
+Default `0.95` (raised from Stan's stock 0.8 after the 2026-05-17 audit:
+the football iceland model's funnel-shaped tails — driven by Mjólkurbikar
+blowouts between top-flight and 4th-tier teams — produced 7% divergent
+transitions at 0.8, tripping `check_stan_diagnostics()`). Higher = smaller
+leapfrog stepsize, fewer divergences, slower warmup.}
+
+\item{max_treedepth}{Maximum NUTS tree depth (MCMC only). Default `10`
+(Stan stock).}
 
 \item{num_paths}{Number of Pathfinder paths.}
 
