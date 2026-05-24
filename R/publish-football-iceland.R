@@ -1510,22 +1510,31 @@ publish_football_iceland <- function(extracted,
     "round_strengths_quantiles", "home_advantage_quantiles",
     "final_positions", "points_distribution"
   )
-  # extracted shape: list keyed by division code (BD, LD1, CUP) — see
+  # Canonical filter codes (matching results$division), mapped to URL-friendly
+  # display suffixes for the output directory name. LD1 -> "ld" because the
+  # platform's URL slug is /lengja/ -> karla-ld/, not karla-ld1/. CUP ->
+  # "bikar" for the Mjólkurbikar tab. Driven by
+  # config/leagues.yml::football_iceland.publish_divisions[[sex]] so adding
+  # a new cell is a config-only change here.
+  division_dir_suffix <- .football_iceland_division_slugs(sex)
+  division_codes <- names(division_dir_suffix)
+  division_labels_is <- .football_iceland_division_labels(sex)
+
+  # extracted shape: list keyed by division code (BD, LD1, ...) — see
   # read_extracted_football(). Each per-division list has the 6 parquet
   # tibbles. A non-FATAL legacy fallback: if `extracted` is flat (the
   # pre-2026-05-04 single-division shape), wrap it as BD-only and emit
-  # empty LD1 + CUP cells. This lets early-cutover deploys still work
-  # against archives that haven't been re-extracted yet.
+  # empty cells for every other configured division.
   if (all(required_slots %in% names(extracted))) {
     flat_legacy <- extracted[required_slots]
-    extracted <- list(
-      BD = flat_legacy,
-      LD1 = .empty_extracted_pfi(),
-      CUP = .empty_extracted_pfi(),
-      fit_date = extracted$fit_date
-    )
+    fit_date_keep <- extracted$fit_date
+    extracted <- list(BD = flat_legacy)
+    for (div in setdiff(division_codes, "BD")) {
+      extracted[[div]] <- .empty_extracted_pfi()
+    }
+    extracted$fit_date <- fit_date_keep
   }
-  for (div in c("BD", "LD1", "CUP")) {
+  for (div in division_codes) {
     if (is.null(extracted[[div]])) {
       extracted[[div]] <- .empty_extracted_pfi()
     }
@@ -1559,12 +1568,7 @@ publish_football_iceland <- function(extracted,
     drop = FALSE
   ]
 
-  # Canonical filter codes (matching results$division), mapped to URL-friendly
-  # display suffixes for the output directory name. LD1 → "ld" because the
-  # platform's URL slug is /lengja/ → karla-ld/, not karla-ld1/. CUP →
-  # "bikar" for the Mjólkurbikar tab.
-  division_dir_suffix <- c(BD = "bd", LD1 = "ld", CUP = "bikar")
-  for (target_div in names(division_dir_suffix)) {
+  for (target_div in division_codes) {
     top_div <- target_div
     is_cup <- identical(target_div, "CUP")
     # Per-division extracted slice — already filtered to this division's
@@ -1728,11 +1732,7 @@ publish_football_iceland <- function(extracted,
       0L
     }
 
-    league_label <- c(
-      BD = "Besta deild",
-      LD1 = "Lengjudeild",
-      CUP = "Mj\u00f3lkurbikar"
-    )[[target_div]]
+    league_label <- division_labels_is[[target_div]]
     meta <- list(
       sport        = "football",
       sex          = sex,

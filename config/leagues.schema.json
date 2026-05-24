@@ -64,6 +64,15 @@
             }
           }
         },
+        "publish_divisions": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Per-sex publish surface. Mirrored by the metill-platform consumer's DIVISIONS dict. Each entry's slug is both the consumer URL segment and the dir suffix under data/publish/{sport}/{country}/{sex_folder}-{slug}/.",
+          "properties": {
+            "male":   { "$ref": "#/definitions/publishDivisionList" },
+            "female": { "$ref": "#/definitions/publishDivisionList" }
+          }
+        },
         "betting": {
           "type": "object",
           "additionalProperties": false,
@@ -108,5 +117,22 @@
       }
     }
   },
-  "additionalProperties": false
+  "additionalProperties": false,
+  "definitions": {
+    "publishDivisionList": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["code", "slug", "label_is", "is_cup"],
+        "additionalProperties": false,
+        "properties": {
+          "code":     { "type": "string", "minLength": 1 },
+          "slug":     { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$" },
+          "label_is": { "type": "string", "minLength": 1 },
+          "is_cup":   { "type": "boolean" }
+        }
+      }
+    }
+  }
 }

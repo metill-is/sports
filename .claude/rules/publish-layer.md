@@ -27,9 +27,15 @@ fit RDS is fully ephemeral — gitignored, deletable after a fit
 completes — and the legacy beliefs_archive (`part-0.parquet`) write
 was dropped for football iceland in `R/model-league.R::fit_league()`.
 Use `read_extracted_football(league, sex, fit_date = NULL)` to load
-both divisions into the publisher's `extracted` argument; the return
-shape is
-`list(BD = list(<6 tibbles>), LD1 = list(<6 tibbles>), fit_date = D)`.
+all per-sex divisions into the publisher's `extracted` argument; the
+return shape is keyed by code from
+`config/leagues.yml::football_iceland.publish_divisions[[sex]]` plus a
+trailing `fit_date` slot. For example, with the 2026-05-24 config,
+male returns
+`list(BD = ..., LD1 = ..., LD2 = ..., LD3 = ..., CUP = ..., fit_date = D)`
+and female returns
+`list(BD = ..., LD1 = ..., LD2 = ..., CUP = ..., fit_date = D)`. Each
+per-division slot is a list of the 6 per-cell tibbles.
 
 ### Why a separate tree
 
@@ -48,20 +54,41 @@ partitioning the sidecars by `(sport, country, sex, fit_date)`. See
 
 ### Per-division output
 
-The publisher loops over the three Icelandic football divisions
-(`BD` = Besta deild, `LD1` = Lengjudeild, `CUP` = Mjólkurbikar) and
-writes one full set of JSONs per `(sex, division)` cell into
-`data/publish/football/iceland/{sex_folder}-{div_suffix}/`. The dir
-suffix follows the platform URL slug (`/lengja/` → `ld`, not `ld1`;
-`/bikar/` → `bikar`). Total publish output is 6 directories ×
-11 JSONs = 66 files per fit. The per-cell extracted slice is
-pre-filtered to the division's teams + matches by the reader's
-`division` filter, so the publisher's loop body is now mostly a
-render of `ext <- extracted[[target_div]]` rather than a
-filter-then-render. The legacy fit-based wrapper
+The publisher loops over the per-sex Icelandic football publish set
+defined in `config/leagues.yml::football_iceland.publish_divisions`.
+As of 2026-05-24 that's 5 cells for male (`BD`, `LD1`, `LD2`, `LD3`,
+`CUP`) and 4 cells for female (`BD`, `LD1`, `LD2`, `CUP`) — no
+women's 3. or 4. deild exists in Iceland; men's 4. deild is held out
+by `training_filter` because amateur cup blowouts produced funnel
+posteriors. Each cell writes one full set of JSONs into
+`data/publish/football/iceland/{sex_folder}-{slug}/` where the slug
+is from `publish_divisions[*].slug`, matching the metill-platform
+consumer's URL segments (`/besta/` → `bd`, `/lengja/` → `ld`,
+`/2deild/` → `2deild`, `/3deild/` → `3deild`, `/bikar/` → `bikar`).
+
+Total publish output (post 2026-05-24): 9 directories on a typical
+nightly fit — `karla-{bd,ld,2deild,3deild,bikar}` (5) plus
+`kvenna-{bd,ld,2deild,bikar}` (4). League cells emit 11 JSONs each;
+cup cells emit 12 (the extra one is `tournament_placements.json`).
+So per fit: `11×7 + 12×2 = 101` JSONs.
+
+To add a new cell: append a `{code, slug, label_is, is_cup}` entry to
+the per-sex `publish_divisions` list in `leagues.yml`, mirror it as a
+`DIVISIONS[<slug>]` entry on the consumer
+(`metill-platform/app/routes/ithrottir.py`), add the corresponding
+`(URL, meta.json)` row to the sitemap in `app/routes/pages.py`. The
+slug **must** be URL-safe (matches the schema's
+`^[A-Za-z0-9][A-Za-z0-9_-]*$` pattern). No R code change required for
+the producer side as long as the division's data already feeds the
+fit (via `training_filter.divisions` + an ingest source for matches).
+
+The per-cell extracted slice is pre-filtered to the division's teams +
+matches by the reader's `division` filter, so the publisher's loop
+body is mostly a render of `ext <- extracted[[target_div]]` rather
+than a filter-then-render. The legacy fit-based wrapper
 `.publish_football_iceland_from_fit_pfi(..., target_div = X)` is
-BD/LD1-only and survives as a regression backstop, deletable after
-a few production cycles.
+BD/LD1-only and survives as a regression backstop, deletable after a
+few production cycles.
 
 CUP cells skip the league-table outputs (`standings.json`,
 `standings_history.json`, `final_positions.json`,
@@ -127,10 +154,14 @@ no-ops on these sports until the autumn 2026 season opener — see
 
 ## File counts
 
-- Football: 11 JSONs per BD/LD1 cell; 12 JSONs per CUP cell (the 11
-  league JSONs — 5 empty placeholders + 6 cup-applicable — plus
-  `tournament_placements.json`). Across 6 cells (`karla-{bd,ld,bikar}`,
-  `kvenna-{bd,ld,bikar}`) that's 11×4 + 12×2 = 68 JSONs per fit.
+- Football: 11 JSONs per league cell (BD/LD1/LD2/LD3); 12 JSONs per
+  CUP cell (the 11 league JSONs — 5 empty placeholders for cup +
+  6 cup-applicable — plus `tournament_placements.json`). Per
+  `config/leagues.yml::football_iceland.publish_divisions` as of
+  2026-05-24, that's 9 cells:
+  `karla-{bd,ld,2deild,3deild,bikar}` (5) plus
+  `kvenna-{bd,ld,2deild,bikar}` (4) — i.e. `11×7 + 12×2 = 101` JSONs
+  per fit.
 - Per-fit extracts: 9 parquets — the 7 per-cell file types
   (`predicted_matches`, `team_strengths_quantiles`,
   `round_strengths_quantiles`, `home_advantage_quantiles`,

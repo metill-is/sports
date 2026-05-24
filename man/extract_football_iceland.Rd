@@ -13,7 +13,7 @@ extract_football_iceland(
   root = here::here("data"),
   prep = NULL,
   extracts_root = NULL,
-  target_divs = .FOOTBALL_ICELAND_DIVISIONS_PFI
+  target_divs = NULL
 )
 }
 \arguments{
@@ -40,9 +40,11 @@ Defaults to `file.path(root, "beliefs", "extracts")`. Tests can override
 this to write into an isolated tempdir while still reading facts from
 the real `root`.}
 
-\item{target_divs}{Character vector of division codes to extract. Defaults
-to `c("BD", "LD1", "CUP")` (the full football iceland set). Useful in
-tests to extract one division only.}
+\item{target_divs}{Character vector of division codes to extract. When
+`NULL` (default), resolves to the per-sex publish set from
+`config/leagues.yml::football_iceland.publish_divisions[[sex]]` —
+`c("BD", "LD1", "LD2", "LD3", "CUP")` for male, `c("BD", "LD1", "LD2", "CUP")`
+for female. Pass an explicit subset in tests to extract one division only.}
 }
 \value{
 invisible(NULL). 6 Parquet files written into the extracts partition.
