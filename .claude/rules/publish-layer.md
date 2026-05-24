@@ -85,10 +85,7 @@ fit (via `training_filter.divisions` + an ingest source for matches).
 The per-cell extracted slice is pre-filtered to the division's teams +
 matches by the reader's `division` filter, so the publisher's loop
 body is mostly a render of `ext <- extracted[[target_div]]` rather
-than a filter-then-render. The legacy fit-based wrapper
-`.publish_football_iceland_from_fit_pfi(..., target_div = X)` is
-BD/LD1-only and survives as a regression backstop, deletable after a
-few production cycles.
+than a filter-then-render.
 
 CUP cells skip the league-table outputs (`standings.json`,
 `standings_history.json`, `final_positions.json`,
