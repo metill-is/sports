@@ -433,6 +433,24 @@ NULL
 # them additively into Poisson rates exactly as the model does in its
 # generated quantities block.
 .extract_sim_inputs_pfi <- function(fit, teams) {
+  # WHY (issue #14): when `teams` (from prepare_data) has fewer rows than the
+  # fit's team-indexed parameter count — typically because a saved fit is
+  # paired with a freshly-built `prep` whose 365-day training filter has
+  # aged out some of the fit's original teams — `teams$team[team_idx]`
+  # injects NAs for the overflow indices. dplyr full_join treats NA==NA as a
+  # match key, so the join chain below would perform an NA-cartesian
+  # explosion (~80K × 80K rows) and blow past R's 16 GB vector memory ceiling.
+  # We drop NA-team rows inside extract_team() before they reach the join.
+  # Production never has a mismatch because fit_league() pairs each fit with
+  # the prep that built its stan_data; this is purely safety for stale-fit
+  # callers (ad-hoc analysis, backfill scripts).
+  n_teams_fit <- length(posterior::variables(fit$draws("cur_offense_away")))
+  if (n_teams_fit != nrow(teams)) {
+    cli::cli_warn(
+      ".extract_sim_inputs_pfi: fit has {n_teams_fit} team-indexed parameters but `teams` has {nrow(teams)} rows. Dropping {n_teams_fit - nrow(teams)} orphan team(s) from sim_inputs. Pair the fit with the prep that built its stan_data to silence this."
+    )
+  }
+
   extract_team <- function(var) {
     fit$draws(var) |>
       posterior::as_draws_df() |>
@@ -446,6 +464,9 @@ NULL
         team_idx = as.integer(readr::parse_number(.data$name)),
         team     = teams$team[.data$team_idx]
       ) |>
+      # NA-safe join: drop orphan rows where team_idx exceeds nrow(teams).
+      # See WHY block above.
+      dplyr::filter(!is.na(.data$team)) |>
       dplyr::select("team", ".draw", "value")
   }
 
