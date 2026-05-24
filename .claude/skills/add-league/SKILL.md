@@ -152,10 +152,15 @@ echo "PID $! — log: $LOG"
 
 ## Step 7: (Optional) wire up publish
 
-Football has a full 7-JSON publisher; basketball + handball are scaffolds
-(meta + next_games only). To add full publishing for a new league, mirror
-`R/publish-football-iceland.R` under a new file and register it in
-`R/publish-pipeline.R::publish_one()`.
+Football iceland has the full publisher (11–12 JSONs per cell across
+`publish_divisions`, driven by `config/leagues.yml::football_iceland.publish_divisions`
+— see [project_publish_divisions_config](../../../../.claude/projects/-Users-brynjolfurjonsson-sports/memory/project_publish_divisions_config.md));
+basketball + handball are scaffolds (meta + next_games only). To add full
+publishing for a new league, mirror `R/publish-football-iceland.R` under a new
+file and register it in `R/publish-pipeline.R::publish_one()`. New cells for an
+existing league require adding entries under `publish_divisions` _and_ a
+matching `DIVISIONS` entry in `metill-platform/app/routes/ithrottir.py` —
+forgetting the consumer side produces a 404 with no signal.
 
 If only the scaffold is wanted (typical for new leagues until the
 metill-platform page is designed), no code change is needed — the
@@ -182,6 +187,7 @@ dispatcher uses sport-level routing.
 - Ingest dispatcher: `R/ingest.R::ingest_league()`
 - Storage schemas: `R/storage-schemas.R`
 - Stan conventions: `.claude/rules/stan-conventions.md`
+- Model + decide layers: `.claude/rules/model-decide.md`
+- Publish layer: `.claude/rules/publish-layer.md`
 - Betting conventions: `.claude/rules/sports-betting.md`
-- Pipeline conventions: `.claude/rules/sports-pipeline.md`
-- Per-sport notes: `.claude/rules/sports-per-sport.md`
+- CI conventions: `.claude/rules/ci-conventions.md`

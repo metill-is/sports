@@ -1,8 +1,6 @@
-# Idempotent: tar_source() walks R/ alphabetically, so ingest-*.R sources
-# *before* ingest.R (- sorts before .). _targets.R works around that with an
-# explicit source(ingest.R) first, but tar_source() then re-sources ingest.R
-# at the end -- which would clobber a freshly-populated registry. Guard the
-# init so the second pass is truly harmless.
+# Idempotent: source order between this file and ingest-*.R isn't guaranteed
+# (the per-source register_ingest_source() calls run at package load time);
+# guard the init so a second pass is harmless.
 if (!exists(".ingest_registry", inherits = FALSE)) {
   .ingest_registry <- new.env(parent = emptyenv())
 }
@@ -88,18 +86,15 @@ ingest_league <- function(league, sex,
 
 #' Run federation ingest for a single league across all configured sexes.
 #'
-#' Wrapper used by `_targets.R`'s per-league `ingest_<key>` targets. Reads
+#' Called by `scripts/01_ingest_results.R` for each active league. Reads
 #' the active_competitions JSON to short-circuit when there are no near-term
 #' fixtures (saves a chromote launch).
 #'
 #' Takes the per-league "static" slice (sport, country, sexes, active,
-#' stan_model, data_source) rather than the full leagues config, so that
-#' downstream cache invalidation tracks only the fields that actually affect
-#' federation ingest -- changes to `lengjan` or `betting` don't bust this
-#' target's cache.
+#' stan_model, data_source) rather than the full leagues config.
 #'
-#' @param static Per-league static slice (output of `league_static_<key>`
-#'   target in `_targets.R`).
+#' @param static Per-league static slice (sport, country, sexes, active,
+#'   stan_model, data_source).
 #' @param key League key (e.g. `"football_iceland"`).
 #' @param active_path Path to `config/active_competitions.json`.
 #' @return Integer count of rows fetched (results + schedule combined),

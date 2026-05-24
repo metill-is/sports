@@ -261,21 +261,17 @@ fit_league <- function(league_key = NULL,
   invisible(beliefs)
 }
 
-#' tar_target wrapper: fit a single (league x sex) and return belief row count.
+#' Fit a single (league x sex) and return belief row count.
 #'
 #' Takes the per-league "static" slice (sport, country, stan_model, sexes,
-#' data_source) rather than the full leagues config, so the fit cache is
-#' insulated from `lengjan` or `betting` changes -- those don't affect the
-#' Stan model or its inputs and shouldn't trigger a 30-90 minute refit.
-#' `ingest_dep` is unused at runtime; it only declares the DAG edge to the
-#' upstream ingest target.
+#' data_source) rather than the full leagues config — keeps callers from
+#' re-loading the full config per call.
 #'
-#' @param static Per-league static slice (output of `league_static_<key>`).
+#' @param static Per-league static slice (sport, country, stan_model, sexes, data_source).
 #' @param sex `"male"` or `"female"`.
-#' @param ingest_dep Pure DAG-dependency declaration; value is ignored.
 #' @return Integer count of belief rows written.
 #' @export
-fit_one <- function(static, sex, ingest_dep = NULL) {
+fit_one <- function(static, sex) {
   beliefs <- fit_league(league = static, sex = sex)
   nrow(beliefs)
 }
