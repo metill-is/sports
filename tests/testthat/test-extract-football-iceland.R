@@ -69,12 +69,15 @@ test_that("extract_football_iceland writes all 6 Parquets with expected schemas 
       "home_goals", "away_goals", "count", "division"
     )
   )
+  # Extract output should be restricted to the per-sex publish set, sourced from
+  # config/leagues.yml::publish_divisions[[sex]]. Helper kept in sync with config.
+  publishable_divs <- .football_iceland_division_codes("male")
   if (nrow(pm) > 0L) {
     expect_true(all(pm$count > 0L))
     expect_true(is.integer(pm$home_goals))
     expect_true(is.integer(pm$away_goals))
     expect_true(is.integer(pm$count))
-    expect_true(all(pm$division %in% c("BD", "LD1", "CUP")))
+    expect_true(all(pm$division %in% publishable_divs))
   }
 
   ts <- arrow::read_parquet(file.path(fit_dir, "team_strengths_quantiles.parquet"))
@@ -85,7 +88,7 @@ test_that("extract_football_iceland writes all 6 Parquets with expected schemas 
   expect_setequal(unique(ts$component), c("offence", "defence", "total"))
   expect_setequal(unique(ts$location), c("home", "away", "avg"))
   expect_setequal(unique(ts$quantile), 1:99)
-  expect_true(all(ts$division %in% c("BD", "LD1", "CUP")))
+  expect_true(all(ts$division %in% publishable_divs))
 
   rs <- arrow::read_parquet(file.path(fit_dir, "round_strengths_quantiles.parquet"))
   expect_setequal(

@@ -9,7 +9,7 @@ read_extracted_football(
   sex,
   fit_date = NULL,
   extracts_root = here::here("data", "beliefs", "extracts"),
-  target_divs = .FOOTBALL_ICELAND_DIVISIONS_PFI
+  target_divs = NULL
 )
 }
 \arguments{
@@ -24,10 +24,11 @@ partition that contains the full six-file extracted set.}
 \item{extracts_root}{Beliefs extracts root.
 Default `here::here("data", "beliefs", "extracts")`.}
 
-\item{target_divs}{Character vector of divisions to load. Defaults to
-`c("BD", "LD1", "CUP")`. Returned list always includes a slot per requested
-division (with empty-tibble parquets when the `division` filter yields
-no rows).}
+\item{target_divs}{Character vector of divisions to load. When `NULL`
+(default), resolves to the per-sex publish set from
+`config/leagues.yml::football_iceland.publish_divisions[[sex]]`. Returned
+list always includes a slot per requested division (with empty-tibble
+parquets when the `division` filter yields no rows).}
 }
 \value{
 Named list. Each requested division key (e.g. `"BD"`, `"LD1"`)

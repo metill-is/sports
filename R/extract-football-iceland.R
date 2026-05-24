@@ -23,14 +23,74 @@ NULL
     dplyr::ungroup()
 }
 
-# Canonical division codes the football iceland fit covers.
-# `BD` = Besta deild (top tier), `LD1` = Lengjudeild (second tier),
-# `CUP` = Mjólkurbikar (knockout cup). Order matches
-# publish_football_iceland()'s loop and read_extracted_football()'s return
-# list ordering. CUP rows skip the league-table simulation (final_positions /
+# Per-sex publish division codes for football iceland.
+#
+# Reads `config/leagues.yml::football_iceland.publish_divisions[[sex]]` and
+# returns a character vector of `code` values (canonical Stan/results division
+# names — `BD`, `LD1`, `LD2`, `LD3`, `CUP`, etc.). Order is the YAML order.
+#
+# This replaces the pre-2026-05-24 file-scope constant
+# `.FOOTBALL_ICELAND_DIVISIONS_PFI <- c("BD", "LD1", "CUP")`. The constant
+# couldn't represent per-sex asymmetry (men publish LD2 + LD3; women publish
+# LD2 only — no women's 3. deild exists in Iceland).
+#
+# CUP rows skip the league-table simulation (final_positions /
 # points_distribution) since a knockout has no points table — those parquets
 # are written as empty tibbles for the CUP partition.
-.FOOTBALL_ICELAND_DIVISIONS_PFI <- c("BD", "LD1", "CUP")
+.football_iceland_division_codes <- function(sex) {
+  stopifnot(sex %in% c("male", "female"))
+  cfg <- load_leagues()[["football_iceland"]][["publish_divisions"]][[sex]]
+  if (is.null(cfg) || length(cfg) == 0L) {
+    stop(
+      ".football_iceland_division_codes: no publish_divisions[\"",
+      sex,
+      "\"] entry in config/leagues.yml.",
+      call. = FALSE
+    )
+  }
+  vapply(cfg, function(d) d$code, character(1))
+}
+
+# Per-sex map from canonical division code -> URL/dir slug.
+# Returns a named character vector: c(BD = "bd", LD1 = "ld", LD2 = "2deild", ...)
+# Used by publish_football_iceland() to build output directory names matching
+# the metill-platform consumer's URL slugs.
+.football_iceland_division_slugs <- function(sex) {
+  stopifnot(sex %in% c("male", "female"))
+  cfg <- load_leagues()[["football_iceland"]][["publish_divisions"]][[sex]]
+  if (is.null(cfg) || length(cfg) == 0L) {
+    stop(
+      ".football_iceland_division_slugs: no publish_divisions[\"",
+      sex,
+      "\"] entry in config/leagues.yml.",
+      call. = FALSE
+    )
+  }
+  setNames(
+    vapply(cfg, function(d) d$slug, character(1)),
+    vapply(cfg, function(d) d$code, character(1))
+  )
+}
+
+# Per-sex map from canonical division code -> Icelandic display label.
+# Returns a named character vector: c(BD = "Besta deild", LD1 = "Lengjudeild", ...)
+# Used by publish_football_iceland() to populate `meta.json::league`.
+.football_iceland_division_labels <- function(sex) {
+  stopifnot(sex %in% c("male", "female"))
+  cfg <- load_leagues()[["football_iceland"]][["publish_divisions"]][[sex]]
+  if (is.null(cfg) || length(cfg) == 0L) {
+    stop(
+      ".football_iceland_division_labels: no publish_divisions[\"",
+      sex,
+      "\"] entry in config/leagues.yml.",
+      call. = FALSE
+    )
+  }
+  setNames(
+    vapply(cfg, function(d) d$label_is, character(1)),
+    vapply(cfg, function(d) d$code, character(1))
+  )
+}
 
 # Per-division extraction. Returns a named list of 6 tibbles (one per parquet
 # file type) for `target_div`. The caller binds rows across divisions and
@@ -620,9 +680,11 @@ NULL
 #'   Defaults to `file.path(root, "beliefs", "extracts")`. Tests can override
 #'   this to write into an isolated tempdir while still reading facts from
 #'   the real `root`.
-#' @param target_divs Character vector of division codes to extract. Defaults
-#'   to `c("BD", "LD1", "CUP")` (the full football iceland set). Useful in
-#'   tests to extract one division only.
+#' @param target_divs Character vector of division codes to extract. When
+#'   `NULL` (default), resolves to the per-sex publish set from
+#'   `config/leagues.yml::football_iceland.publish_divisions[[sex]]` —
+#'   `c("BD", "LD1", "LD2", "LD3", "CUP")` for male, `c("BD", "LD1", "LD2", "CUP")`
+#'   for female. Pass an explicit subset in tests to extract one division only.
 #' @return invisible(NULL). 6 Parquet files written into the extracts partition.
 #' @export
 extract_football_iceland <- function(fit, league, sex,
@@ -631,14 +693,17 @@ extract_football_iceland <- function(fit, league, sex,
                                      root = here::here("data"),
                                      prep = NULL,
                                      extracts_root = NULL,
-                                     target_divs = .FOOTBALL_ICELAND_DIVISIONS_PFI) {
+                                     target_divs = NULL) {
   stopifnot(league$sport == "football", league$country == "iceland")
   stopifnot(sex %in% c("male", "female"))
   stopifnot(inherits(fit_date, "Date") || is.character(fit_date))
+  if (is.null(target_divs)) {
+    target_divs <- .football_iceland_division_codes(sex)
+  }
   stopifnot(
     is.character(target_divs),
     length(target_divs) >= 1L,
-    all(target_divs %in% .FOOTBALL_ICELAND_DIVISIONS_PFI)
+    all(target_divs %in% .football_iceland_division_codes(sex))
   )
 
   if (is.null(prep)) {
@@ -843,10 +908,11 @@ extract_football_iceland <- function(fit, league, sex,
 #'   partition that contains the full six-file extracted set.
 #' @param extracts_root Beliefs extracts root.
 #'   Default `here::here("data", "beliefs", "extracts")`.
-#' @param target_divs Character vector of divisions to load. Defaults to
-#'   `c("BD", "LD1", "CUP")`. Returned list always includes a slot per requested
-#'   division (with empty-tibble parquets when the `division` filter yields
-#'   no rows).
+#' @param target_divs Character vector of divisions to load. When `NULL`
+#'   (default), resolves to the per-sex publish set from
+#'   `config/leagues.yml::football_iceland.publish_divisions[[sex]]`. Returned
+#'   list always includes a slot per requested division (with empty-tibble
+#'   parquets when the `division` filter yields no rows).
 #' @return Named list. Each requested division key (e.g. `"BD"`, `"LD1"`)
 #'   maps to a list with the six tibbles
 #'   (`predicted_matches`, `team_strengths_quantiles`,
@@ -859,13 +925,16 @@ read_extracted_football <- function(league, sex, fit_date = NULL,
                                     extracts_root = here::here(
                                       "data", "beliefs", "extracts"
                                     ),
-                                    target_divs = .FOOTBALL_ICELAND_DIVISIONS_PFI) {
+                                    target_divs = NULL) {
   stopifnot(league$sport == "football", league$country == "iceland")
   stopifnot(sex %in% c("male", "female"))
+  if (is.null(target_divs)) {
+    target_divs <- .football_iceland_division_codes(sex)
+  }
   stopifnot(
     is.character(target_divs),
     length(target_divs) >= 1L,
-    all(target_divs %in% .FOOTBALL_ICELAND_DIVISIONS_PFI)
+    all(target_divs %in% .football_iceland_division_codes(sex))
   )
 
   file_types <- c(
