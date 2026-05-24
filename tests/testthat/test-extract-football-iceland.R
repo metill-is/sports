@@ -687,3 +687,58 @@ test_that(".build_bracket_state_pfi: post-R16 with R8 drawn — R8 pairings_know
   expect_true(all(is.na(bs$rounds$R8$matches$known_winner))) # R8 not played yet
   expect_false(bs$rounds$SF$pairings_known)
 })
+
+# ---- .extract_sim_inputs_pfi NA-safety (issue #14) --------------------------
+
+test_that(".extract_sim_inputs_pfi: drops orphan teams + warns when fit's team count exceeds nrow(teams)", {
+  fit_path <- backup_fit_path_extract("male")
+  if (!file.exists(fit_path)) testthat::skip("legacy football fit unavailable")
+
+  fit <- readRDS(fit_path)
+  n_teams_fit <- length(posterior::variables(fit$draws("cur_offense_away")))
+
+  # Build a deliberately too-short teams tibble. In real life this happens
+  # when a saved fit (e.g. a 2026-04-24 backup) is paired with a freshly-built
+  # prep$teams whose 365-day training filter has aged out some of the fit's
+  # original teams. Pre-fix this triggered a 16 GB NA-cartesian OOM in the
+  # full_join chain. Post-fix the NA filter drops the orphans cleanly and
+  # the function warns about the mismatch.
+  truncated_teams <- tibble::tibble(team = paste0("t", seq_len(n_teams_fit - 5L)))
+
+  expect_warning(
+    out <- .extract_sim_inputs_pfi(fit, truncated_teams),
+    regexp = "team-indexed parameters but `teams` has"
+  )
+  # Output contains only the named teams — orphan rows are filtered out
+  # before the join, so no NA team names survive.
+  expect_false(any(is.na(out$team$team)))
+  expect_setequal(unique(out$team$team), truncated_teams$team)
+  # And no NA-cartesian explosion: row count is exactly N_named × N_draws.
+  n_draws <- nrow(out$scalar)
+  expect_equal(nrow(out$team), nrow(truncated_teams) * n_draws)
+})
+
+test_that(".extract_sim_inputs_pfi: succeeds without warning when fit's team count matches nrow(teams)", {
+  fit_path <- backup_fit_path_extract("male")
+  if (!file.exists(fit_path)) testthat::skip("legacy football fit unavailable")
+
+  fit <- readRDS(fit_path)
+  n_teams_fit <- length(posterior::variables(fit$draws("cur_offense_away")))
+  matched_teams <- tibble::tibble(team = paste0("t", seq_len(n_teams_fit)))
+
+  # The matched-count path must NOT emit the mismatch warning — that signal
+  # is reserved for stale-fit callers.
+  expect_no_warning(
+    out <- .extract_sim_inputs_pfi(fit, matched_teams)
+  )
+  expect_named(out, c("team", "scalar"))
+  expect_setequal(
+    names(out$team),
+    c(
+      "team", ".draw", "cur_offense", "cur_defense",
+      "home_advantage_off", "home_advantage_def"
+    )
+  )
+  expect_false(any(is.na(out$team$team)))
+  expect_setequal(unique(out$team$team), matched_teams$team)
+})
