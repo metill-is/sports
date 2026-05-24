@@ -1,32 +1,28 @@
 #' @include publish-football-iceland.R publish-basketball-iceland.R publish-handball-iceland.R
 NULL
 
-#' tar_target wrapper: publish JSONs for a single (league x sex).
+#' Publish JSONs for a single (league x sex).
 #'
 #' Football iceland reads the per-fit extraction tree
 #' (`data/beliefs/extracts/sport=football/country=iceland/sex=Z/fit_date=*/`,
-#' the 6 Parquets emitted by `extract_football_iceland()`) and dispatches
-#' to `publish_football_iceland(extracted, ...)`. Basketball and handball
-#' still read the fit RDS directly from
+#' the per-cell Parquets emitted by `extract_football_iceland()`) and
+#' dispatches to `publish_football_iceland(extracted, ...)`. Basketball and
+#' handball still read the fit RDS directly from
 #' `data/beliefs/fits/sport=X/country=Y/sex=Z/fit.rds` -- their migration
 #' to the extraction layer is deferred to the autumn 2026 cutover.
 #'
-#' Takes the static + betting slices separately so publish-cache
-#' invalidation tracks only the fields the publishers read (sport /
-#' country for paths, betting.scoring for tie thresholds in
-#' basketball/handball publishers); a `lengjan` change does not bust this
-#' cache.
+#' Takes the static + betting slices separately because basketball/handball
+#' publishers branch on `betting.scoring` (tie thresholds); a `lengjan`
+#' change shouldn't trigger a republish.
 #'
 #' @param static Per-league static slice (sport, country, ...).
 #' @param betting Per-league `betting` slice.
 #' @param key League key (used only to dispatch to the per-sport publisher).
 #' @param sex `"male"` or `"female"`.
-#' @param fit_dep,decide_dep DAG-only dependency declarations; ignored.
 #' @param root Storage root.
 #' @return invisible(NULL).
 #' @export
 publish_one <- function(static, betting, key, sex,
-                        fit_dep = NULL, decide_dep = NULL,
                         root = here::here("data")) {
   league <- static
   league$betting <- betting
