@@ -48,6 +48,7 @@ Collate:
     'storage.R'
     'commit-ledger.R'
     'config.R'
+    'cumulative-xpts.R'
     'decide-calibration.R'
     'decide-kelly.R'
     'decide-normalise.R'

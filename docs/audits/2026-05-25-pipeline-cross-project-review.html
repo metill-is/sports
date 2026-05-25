@@ -481,12 +481,12 @@
 
 <div class="log-rollup">
 <strong>Rollup as of 2026-05-25:</strong>
-F2 (fit_date honesty) shipped ·
-F7 (round_predictions_history relocated) shipped ·
-F4 (extracts retention policy documented) shipped ·
-F1 (replay CLI <code>scripts/0Nr_replay.R</code> + <code>replay_football_iceland()</code>) shipped.
-Remaining in this session: optional F8 stretch (analytical time-series parquet).
-F3/F4/F6/F8/F9 cross-repo + larger items deferred.
+F2 (fit_date honesty) ·
+F7 (round_predictions_history relocated) ·
+F4 (extracts retention policy documented) ·
+F1 (replay CLI <code>scripts/0Nr_replay.R</code> + <code>replay_football_iceland()</code>) ·
+F8 (<code>cumulative_xpts_long()</code> analytical tibble across cells)
+all shipped. Remaining: F3 (deploy-chain fix; cross-repo, metill-platform side), F4-schema (cross-repo schema validation), F6 (basketball/handball extraction layer; autumn season work), F9 (Obsidian doc note for replay).
 </div>
 
 <style>
@@ -539,6 +539,41 @@ F3/F4/F6/F8/F9 cross-repo + larger items deferred.
   }
   .log-meta strong { color: var(--fg-soft); font-weight: 600; }
 </style>
+
+<article class="log-entry">
+  <div class="log-head">
+    <span class="when">2026-05-25 14:35</span>
+    <span class="what">F8 · <code>cumulative_xpts_long()</code> — one tibble across all cells</span>
+    <span class="status done">shipped</span>
+  </div>
+  <div class="body">
+    <p>The analytical companion to F1. After a <code>--per-round --no-fit</code> replay run populates <code>data/publish_replay/&lt;date&gt;/</code>, one call collapses every per-cell <code>standings_history.json</code> into a single long tibble with <code>(sport, country, sex, division)</code> prepended — ready for xPts-vs-actual residual plots, calibration backtests, or cross-cell aggregate analyses.</p>
+    <pre><code># Live publish tree
+cumulative_xpts_long()
+# → 342 rows × 24 cols across 7 cells (BD/LD/2deild + 3deild for male, no cup cells)
+
+# What-if tree from replay --publish-to
+cumulative_xpts_long(output_root = "data/publish_replay/2026-05-15/")</code></pre>
+    <p>Implementation notes:</p>
+    <ul>
+      <li>Cup cells are skipped automatically — they have no league-table semantics, so their <code>standings_history.json</code> is empty.</li>
+      <li>Cell directory parsed as <code>{sex_slug}-{division_slug}</code>; <code>karla</code>/<code>kvenna</code> map to <code>male</code>/<code>female</code>; division slug passed through verbatim.</li>
+      <li>Basketball/handball cells are skipped (no division suffix — F6 territory).</li>
+      <li>Each row carries the same schema as the source JSON: per-fit per-team snapshot with <code>xpts</code> cumulative across played matches that have a pre-round fit (with <code>n_predicted_matches</code> disclosing partial coverage). Use <code>filter(n_predicted_matches == n_played_matches)</code> if you only want full-coverage rows.</li>
+    </ul>
+    <p>TDD cycle:</p>
+    <ol>
+      <li><strong>RED</strong> — 3 test_that blocks in <code>tests/testthat/test-cumulative-xpts.R</code>: (a) live-tree returns long tibble with expected cols and parsed (sport, country, sex, division); (b) empty <code>output_root</code> returns empty tibble with all expected columns; (c) synthetic 2-cell fixture parses sex + division correctly. Failed with "could not find function".</li>
+      <li><strong>GREEN</strong> — wrote <code>R/cumulative-xpts.R</code>. First pass failed on macOS because <code>normalizePath()</code> resolves <code>/var/...</code> to <code>/private/var/...</code> while <code>list.files()</code> returns the original form, so the path-prefix sub never matched. Fixed by stripping the literal output_root prefix via <code>"^\\Q...\\E/+"</code> regex without normalization.</li>
+      <li><strong>Verify</strong> — 14 assertions pass across 3 test_that blocks. Smoke test against the live <code>data/publish/</code> tree returns 342 rows across 7 cells (12 in each 2deild/3deild, 60 in kvenna-bd, 66 in kvenna-ld, 84 in karla-bd, 96 in karla-ld — accumulated per-round snapshots since each cell's season started).</li>
+    </ol>
+  </div>
+  <div class="log-meta">
+    <strong>Files:</strong> new <code>R/cumulative-xpts.R</code>, new <code>tests/testthat/test-cumulative-xpts.R</code>, regenerated <code>man/cumulative_xpts_long.Rd</code> ·
+    <strong>Closes:</strong> F8 (analytical time-series helper) ·
+    <strong>Builds on:</strong> F1 (replay CLI as the natural data source)
+  </div>
+</article>
 
 <article class="log-entry">
   <div class="log-head">
