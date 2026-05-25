@@ -80,6 +80,7 @@ Collate:
     'publish-basketball-iceland.R'
     'publish-handball-iceland.R'
     'publish-pipeline.R'
+    'replay.R'
     'schedule-active.R'
     'settle.R'
     'simulate-cup-bracket.R'

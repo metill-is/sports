@@ -466,6 +466,30 @@
 <p style="font-size: 14px; color: var(--muted); font-family: var(--sans);">Running record of what's been done since this review was written. Newest entries first.</p>
 
 <style>
+  .log-rollup {
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin: 12px 0 18px;
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--fg-soft);
+  }
+  .log-rollup strong { color: var(--accent); }
+</style>
+
+<div class="log-rollup">
+<strong>Rollup as of 2026-05-25:</strong>
+F2 (fit_date honesty) shipped ·
+F7 (round_predictions_history relocated) shipped ·
+F4 (extracts retention policy documented) shipped ·
+F1 (replay CLI <code>scripts/0Nr_replay.R</code> + <code>replay_football_iceland()</code>) shipped.
+Remaining in this session: optional F8 stretch (analytical time-series parquet).
+F3/F4/F6/F8/F9 cross-repo + larger items deferred.
+</div>
+
+<style>
   .log-entry {
     border: 1px solid var(--border);
     border-radius: 6px;
@@ -515,6 +539,89 @@
   }
   .log-meta strong { color: var(--fg-soft); font-weight: 600; }
 </style>
+
+<article class="log-entry">
+  <div class="log-head">
+    <span class="when">2026-05-25 14:05</span>
+    <span class="what">F1 · replay CLI shipped — <code>scripts/0Nr_replay.R</code></span>
+    <span class="status done">shipped</span>
+  </div>
+  <div class="body">
+    <p>The user's headline ask. <code>fit_league(end_date=...)</code> and the per-fit extracts tree already made historical replay possible; what was missing was a single entry point. New <code>scripts/0Nr_replay.R</code> + tested orchestrator <code>replay_football_iceland()</code> in <code>R/replay.R</code> close the gap.</p>
+    <p><strong>CLI shape:</strong></p>
+    <pre><code># Re-fit + re-publish in place
+Rscript scripts/0Nr_replay.R --league football_iceland --sex male --as-of 2026-05-15
+
+# What-if mode (isolated tree, never touches live data/publish/)
+Rscript scripts/0Nr_replay.R --league football_iceland --sex male \
+    --as-of 2026-05-15 --publish-to data/publish_replay/2026-05-15/
+
+# Backfill all completed-round dates for a season (replaces 03b's hardcoded list)
+Rscript scripts/0Nr_replay.R --league football_iceland --sex male \
+    --season 2026 --per-round
+
+# Republish from existing extracts (~seconds, no Stan)
+Rscript scripts/0Nr_replay.R --league football_iceland --sex male \
+    --as-of 2026-05-15 --no-fit</code></pre>
+    <p><strong>Reproducibility:</strong> all replay paths derive the Stan seed from <code>as_of</code> (<code>as.integer(format(as_of, "%Y%m%d"))</code>) — same trick <code>R/simulate-cup-bracket.R</code> uses for bracket pairings. Two runs of the same date produce the same posterior draws.</p>
+    <p><strong>Per-round mode:</strong> reuses <code>compute_round_cutoff_date()</code> (existing in <code>R/round-cutoff.R</code>) to derive dates automatically from the schedule — replaces the hardcoded date list in <code>scripts/03b_backfill_football_iceland.R</code> (F5 falls out for free).</p>
+    <p><strong>Smoke verified end-to-end:</strong> <code>--no-fit --publish-to /tmp/sports-replay-smoke/</code> against the 2026-04-09 extracts wrote 51 JSONs across 5 male cells in seconds; <code>meta.json::fit_date == "2026-04-09"</code> (F2's honesty contract holding under replay).</p>
+    <p>TDD cycle:</p>
+    <ol>
+      <li><strong>RED</strong> — wrote <code>tests/testthat/test-replay.R</code> with 3 test_that blocks covering (a) <code>--no-fit</code> happy path with honest fit_date; (b) clear error when no extracts at target date; (c) <code>output_root</code> override doesn't touch the production tree. Failed with "could not find function replay_football_iceland".</li>
+      <li><strong>GREEN</strong> — wrote <code>R/replay.R</code> as a thin orchestrator over <code>fit_league()</code> + <code>read_extracted_football()</code> + <code>publish_football_iceland()</code>. ~85 lines including roxygen.</li>
+      <li><strong>Verify</strong> — 7 assertions pass across 3 test_that blocks. End-to-end smoke test against the 2026-04-09 partition produces correct output in /tmp.</li>
+      <li><strong>Script</strong> — <code>scripts/0Nr_replay.R</code> is a thin arg-parsing wrapper around the tested function. Error-path smoke tests verify clear messages for missing <code>--league</code>, unsupported league, missing <code>--as-of</code>.</li>
+    </ol>
+    <p><strong>Limitation (documented):</strong> Basketball/handball not yet supported — their publishers still consume the fit RDS directly (F6 in the roadmap). The CLI rejects them at arg-parse time with a clear error pointing to F6.</p>
+  </div>
+  <div class="log-meta">
+    <strong>Files:</strong> new <code>R/replay.R</code>, new <code>scripts/0Nr_replay.R</code>, new <code>tests/testthat/test-replay.R</code>, regenerated <code>man/replay_football_iceland.Rd</code> ·
+    <strong>Closes:</strong> F1 · subsumes F5 (hardcoded backfill dates) via <code>--per-round</code> mode ·
+    <strong>Builds on:</strong> F2 (honest fit_date)
+  </div>
+</article>
+
+<article class="log-entry">
+  <div class="log-head">
+    <span class="when">2026-05-25 13:25</span>
+    <span class="what">F7 · <code>round_predictions_history.json</code> moved out of <code>data/publish/</code></span>
+    <span class="status done">shipped</span>
+  </div>
+  <div class="body">
+    <p>The file is publisher-internal (read across fits to dedup on <code>(round, team)</code>) and has no metill-platform consumer. It was getting rsync'd into <code>data/ithrottir/</code> on every hourly pull where nothing reads it.</p>
+    <p>New location: <code>data/beliefs/round_predictions_history/football/iceland/{sex}-{slug}/round_predictions_history.json</code>. Same per-cell structure, sibling of <code>data/beliefs/extracts/</code> rather than under <code>data/publish/</code>. Each existing per-cell file was <code>git mv</code>'d (preserves history). The next metill-platform <code>pull-sports-data.yml</code> rsync (hourly cron + <code>--delete</code>) will drop the mirrored copies from <code>data/ithrottir/</code> automatically — no platform-side change needed.</p>
+    <p><strong>JSON count per fit now 92 instead of 101</strong> (9 cells × 1 file moved out). Per-cell file counts: league cells drop 11 → 10; cup cells drop 12 → 11.</p>
+    <p><strong>Design decision — derived default for tests:</strong> the new parameter <code>round_predictions_history_root</code> defaults to <code>NULL</code>. When NULL, the publisher derives the path as a sibling of <code>output_root</code>: production writes to <code>data/beliefs/round_predictions_history/</code>; tests passing a tempdir <code>output_root</code> automatically get a sibling tempdir for the history tree, so no test can accidentally write to the project's real beliefs tree. This is why I caught (and fixed) a leak where one existing test had been writing to the production path before the NULL-default refactor.</p>
+    <p>TDD cycle:</p>
+    <ol>
+      <li><strong>RED</strong> — updated the "empty archive → empty history JSON" test in <code>tests/testthat/test-publish-football-round-predictions.R</code> to look at the new path AND assert the file is NOT in <code>data/publish/</code>. Failed with "unused argument (round_predictions_history_root = hist_root)".</li>
+      <li><strong>GREEN</strong> — added the parameter to <code>publish_football_iceland()</code>, changed the write block to use it, with a NULL-derives-from-output_root default for test safety.</li>
+      <li><strong>Verify</strong> — 12 PASS, 1 SKIP, 0 FAIL in <code>test-publish-football-round-predictions.R</code>. <code>data/beliefs/round_predictions_history/</code> only contains the migrated production files (file mtimes unchanged from the morning pipeline run, confirming no leakage).</li>
+      <li><strong>Migration</strong> — <code>git mv</code> for all 9 existing files. Five karla files initially failed (test had leaked to production path before the NULL refactor); cleaned the rogue copies, re-ran <code>git mv</code>, all 9 moved cleanly with rename history preserved.</li>
+      <li><strong>Docs</strong> — updated <code>R/publish-football-iceland.R</code> roxygen (split outputs into <code>output_root</code> set and publisher-internal set), <code>.claude/rules/publish-layer.md</code> (file count 101 → 92, consumption section names the new path).</li>
+    </ol>
+  </div>
+  <div class="log-meta">
+    <strong>Files:</strong> <code>R/publish-football-iceland.R</code> (3 hunks + roxygen), <code>tests/testthat/test-publish-football-round-predictions.R</code> (1 hunk), <code>.claude/rules/publish-layer.md</code> (2 sections), 9 × <code>git mv</code> ·
+    <strong>Closes:</strong> F7
+  </div>
+</article>
+
+<article class="log-entry">
+  <div class="log-head">
+    <span class="when">2026-05-25 13:40</span>
+    <span class="what">Quick win · documented extracts retention policy</span>
+    <span class="status done">shipped</span>
+  </div>
+  <div class="body">
+    <p>The new replay CLI (F1) depends entirely on the per-fit extracts at <code>data/beliefs/extracts/.../fit_date=*/</code> remaining intact. A future cleanup that prunes these unawares would silently break replay. Added a "Retention policy: extracts are permanent" subsection to <code>.claude/rules/publish-layer.md</code> covering (a) the load-bearing claim, (b) realistic storage growth (~50 MB/active month, ~1.2 GB / 2 years), and (c) what to do if cleanup ever does become necessary (prefer compaction over deletion, verify no downstream consumer).</p>
+  </div>
+  <div class="log-meta">
+    <strong>Files:</strong> <code>.claude/rules/publish-layer.md</code> (1 new subsection) ·
+    <strong>Closes:</strong> "extracts retention policy" quick win from §7
+  </div>
+</article>
 
 <article class="log-entry">
   <div class="log-head">

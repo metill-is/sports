@@ -85,6 +85,13 @@ Rscript scripts/04_decide.R
 Rscript scripts/05_publish.R
 Rscript scripts/06_settle.R                           # resolve win/pnl for settled bets
 
+# Historical replay (re-fit + re-publish for any past date; football iceland only)
+Rscript scripts/0Nr_replay.R --league football_iceland --sex male --as-of 2026-05-15
+Rscript scripts/0Nr_replay.R --league football_iceland --sex male --season 2026 --per-round
+Rscript scripts/0Nr_replay.R --league football_iceland --sex male --as-of 2026-05-15 --no-fit
+Rscript scripts/0Nr_replay.R --league football_iceland --sex male --as-of 2026-05-15 \
+        --publish-to data/publish_replay/2026-05-15/   # safe what-if (isolated tree)
+
 # Local placer (NEVER on CI). Default is dry-run; --live opts in to placement.
 Rscript scripts/place_bets.R                          # dry-run (default)
 Rscript scripts/place_bets.R --live                   # actually place
