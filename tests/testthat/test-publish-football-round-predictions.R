@@ -317,6 +317,7 @@ test_that("publish_football_iceland: empty archive -> empty history JSON, NA sta
   fit <- readRDS(fit_path)
   league <- load_leagues()[["football_iceland"]]
   out <- withr::local_tempdir()
+  hist_root <- withr::local_tempdir()
   empty_extracts <- withr::local_tempdir()
   empty_archive <- withr::local_tempdir()
   extracted <- .build_extracted_football_for_test(
@@ -332,17 +333,24 @@ test_that("publish_football_iceland: empty archive -> empty history JSON, NA sta
       end_date = as.Date("2026-04-25"),
       output_root = out,
       extracts_root = empty_extracts,
-      archive_root = empty_archive
+      archive_root = empty_archive,
+      round_predictions_history_root = hist_root
     )
   )
 
   out_dir <- file.path(out, "football", "iceland", "karla-bd")
 
-  history_path <- file.path(out_dir, "round_predictions_history.json")
+  history_path <- file.path(
+    hist_root, "football", "iceland", "karla-bd",
+    "round_predictions_history.json"
+  )
   expect_true(file.exists(history_path))
   parsed <- jsonlite::read_json(history_path)
   expect_true(all(c("schema_version", "records") %in% names(parsed)))
   expect_length(parsed$records, 0L)
+  # F7: the file must NOT ship inside data/publish/ -- metill-platform
+  # rsyncs that tree and the JSON has no consumer on the platform side.
+  expect_false(file.exists(file.path(out_dir, "round_predictions_history.json")))
 
   standings <- jsonlite::read_json(file.path(out_dir, "standings.json"))
   if (length(standings$rows) > 0L) {

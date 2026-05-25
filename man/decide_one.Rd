@@ -2,17 +2,9 @@
 % Please edit documentation in R/decide-pipeline.R
 \name{decide_one}
 \alias{decide_one}
-\title{tar_target wrapper: decide for a single (league x sex).}
+\title{Decide for a single (league x sex).}
 \usage{
-decide_one(
-  static,
-  lengjan,
-  betting,
-  sex,
-  bankroll,
-  fit_dep = NULL,
-  odds_dep = NULL
-)
+decide_one(static, lengjan, betting, sex, bankroll)
 }
 \arguments{
 \item{static}{Per-league static slice (sport, country, sexes, data_source).}
@@ -24,16 +16,12 @@ decide_one(
 \item{sex}{`"male"` or `"female"`.}
 
 \item{bankroll}{Output of `load_bankroll()`.}
-
-\item{fit_dep, odds_dep}{DAG-only dependency declarations; ignored at runtime.}
 }
 \value{
 Integer count of recommendation rows.
 }
 \description{
-Takes the static + lengjan + betting slices separately so the decide cache
-invalidates precisely when any of them changes, and not when unrelated
-sections of leagues.yml move. fit_dep / odds_dep are pure DAG-edge
-declarations -- their values are ignored. decide_league() reads its
-inputs from data/ Parquet.
+Takes the static + lengjan + betting slices separately to keep callers
+from re-loading the full leagues config per call. decide_league() reads
+its inputs from data/ Parquet.
 }

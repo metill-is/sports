@@ -52,6 +52,25 @@ Moving sidecars to `data/beliefs/extracts/` keeps the
 partitioning the sidecars by `(sport, country, sex, fit_date)`. See
 [memory: project_extracts_tree](../../.claude/projects/-Users-brynjolfurjonsson-sports/memory/project_extracts_tree.md).
 
+### Retention policy: extracts are permanent
+
+`data/beliefs/extracts/.../fit_date=*/` partitions are **accretive and
+load-bearing for replay**. Never bulk-prune them; every kept partition
+is one historical date at which the publisher can be re-run against
+the same posteriors that shipped originally (modulo Stan RNG; see
+`scripts/0Nr_replay.R` for the seed-pinned reproducibility path).
+
+Storage cost: a typical football iceland fit writes ~335 KB per
+division × (5 + 4) cells × 2 sexes ≈ 6 MB per fit-day, or ~50 MB per
+active month. Two years of full coverage fits in ~1.2 GB —
+comfortably within git's expected envelope for this repo.
+
+If a future cleanup ever does become necessary, the recoverable thing
+is to drop partitions older than a documented horizon AND verify no
+downstream consumer (replay CLI, calibration backtest, post-hoc
+xPts time-series) is pointed at them. Even then, prefer compaction
+(e.g. monthly roll-ups) over deletion.
+
 ### Per-division output
 
 The publisher loops over the per-sex Icelandic football publish set
@@ -151,14 +170,15 @@ no-ops on these sports until the autumn 2026 season opener — see
 
 ## File counts
 
-- Football: 11 JSONs per league cell (BD/LD1/LD2/LD3); 12 JSONs per
-  CUP cell (the 11 league JSONs — 5 empty placeholders for cup +
-  6 cup-applicable — plus `tournament_placements.json`). Per
+- Football: 10 JSONs per league cell (BD/LD1/LD2/LD3); 11 JSONs per
+  CUP cell (the 10 league JSONs — 5 empty placeholders for cup + 5
+  cup-applicable — plus `tournament_placements.json`). Per
   `config/leagues.yml::football_iceland.publish_divisions` as of
   2026-05-24, that's 9 cells:
   `karla-{bd,ld,2deild,3deild,bikar}` (5) plus
-  `kvenna-{bd,ld,2deild,bikar}` (4) — i.e. `11×7 + 12×2 = 101` JSONs
-  per fit.
+  `kvenna-{bd,ld,2deild,bikar}` (4) — i.e. `10×7 + 11×2 = 92` JSONs
+  per fit. (`round_predictions_history.json` moved out of
+  `data/publish/` in F7 — see consumption note below.)
 - Per-fit extracts: 9 parquets — the 7 per-cell file types
   (`predicted_matches`, `team_strengths_quantiles`,
   `round_strengths_quantiles`, `home_advantage_quantiles`,
@@ -189,18 +209,25 @@ no-ops on these sports until the autumn 2026 season opener — see
   `(as_of, team, placement)`.
 - `meta.json` includes `sport` for all three publishers.
 
-## metill-platform consumption (as of 2026-05-09)
+## metill-platform consumption (as of 2026-05-25)
 
-Only football surfaces on the platform. Of the 11 football JSONs,
-6 are rendered today — `meta`, `next_games`, `standings`,
-`team_strengths`, `final_positions`, `team_strengths_history`. Three
-(`final_positions_history`, `standings_history`, `home_advantage`,
-`points_distribution`) are available for frontend rendering but not
-yet wired up. `round_predictions_history` is publisher-internal
-(read by `R/publish-football-iceland.R` itself to populate
-`xg_for/xg_against/xpts` in `standings`). Basketball + handball are
-seasonally paused (regular seasons finished late April 2026,
-playoffs not modelled); publish for those sports resumes autumn 2026.
+Only football surfaces on the platform. Of the 10 football JSONs in
+`data/publish/`, 6 are rendered today — `meta`, `next_games`,
+`standings`, `team_strengths`, `final_positions`,
+`team_strengths_history`. Four (`final_positions_history`,
+`standings_history`, `home_advantage`, `points_distribution`) are
+available for frontend rendering but not yet wired up. Basketball +
+handball are seasonally paused (regular seasons finished late April
+2026, playoffs not modelled); publish for those sports resumes autumn
+2026.
+
+`round_predictions_history.json` is publisher-internal — it
+accumulates `(round, team)` xG/xPts predictions across fits and is
+re-read each publish to dedup on `(round, team)` keeping the latest
+`generated_at`. As of 2026-05-25 (F7) it lives at
+`data/beliefs/round_predictions_history/football/iceland/{sex}-{slug}/`
+rather than `data/publish/.../`, so the metill-platform rsync no
+longer mirrors a file no consumer reads.
 
 See [memory: project_publish_consumers](../../.claude/projects/-Users-brynjolfurjonsson-sports/memory/project_publish_consumers.md).
 

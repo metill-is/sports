@@ -646,13 +646,18 @@ NULL
 #'   - `points_distribution.json`
 #'   - `home_advantage.json`
 #'
-#' Plus four accretive history files written when there is relevant data:
+#' Plus three accretive history files written under `output_root` when
+#' there is relevant data:
 #'   - `team_strengths_history.json` (every fit)
 #'   - `standings_history.json` (every fit with played top-flight matches)
-#'   - `round_predictions_history.json` (every fit; empty `records` when
-#'     the archive lacks pre-round partitions yet)
 #'   - `final_positions_history.json` (every fit with played top-flight
 #'     matches)
+#'
+#' Plus one publisher-internal accretive file written under
+#' `round_predictions_history_root` (kept out of `output_root` because
+#' metill-platform has no consumer for it):
+#'   - `round_predictions_history.json` (every fit; empty `records` when
+#'     the archive lacks pre-round partitions yet)
 #'
 #' @param extracted Named list returned by [`read_extracted_football()`]:
 #'   six tibbles plus optionally `fit_date`. The required tibbles are
@@ -674,6 +679,16 @@ NULL
 #'   per-draw long-form). Used as a fallback for round_predictions on fit
 #'   dates where no extract was written (legacy football fits before the
 #'   extraction layer landed). Default `here::here("data", "beliefs", "archive")`.
+#' @param round_predictions_history_root Root for the per-cell
+#'   `round_predictions_history.json` accumulator. Lives outside
+#'   `output_root` because the file is publisher-internal (read across
+#'   fits to dedup on `(round, team)`) and has no metill-platform
+#'   consumer. When `NULL` (default), derives from `output_root`:
+#'   production (`output_root = "data/publish"`) writes to
+#'   `data/beliefs/round_predictions_history/`; tests passing a
+#'   tempdir output_root automatically get a sibling tempdir for the
+#'   history tree, so no test ever accidentally writes to the
+#'   project's real beliefs tree.
 #' @return `invisible(NULL)`.
 #' @importFrom rlang .data
 #' @export
@@ -690,7 +705,14 @@ publish_football_iceland <- function(extracted,
                                      ),
                                      archive_root = here::here(
                                        "data", "beliefs", "archive"
-                                     )) {
+                                     ),
+                                     round_predictions_history_root = NULL) {
+  if (is.null(round_predictions_history_root)) {
+    round_predictions_history_root <- file.path(
+      dirname(output_root),
+      "beliefs", "round_predictions_history"
+    )
+  }
   stopifnot(sex %in% c("male", "female"))
   stopifnot(!is.null(league$sport), !is.null(league$country))
   stopifnot(league$sport == "football", league$country == "iceland")
@@ -1284,9 +1306,20 @@ publish_football_iceland <- function(extracted,
     )
 
     # ---- round_predictions_history.json -------------------------------------
+    # WHY: this file accumulates per-(round, team) predictions across fits
+    # so the publisher can dedup on (round, team) and surface the latest
+    # generated_at. It is NOT consumed by metill-platform, so we keep it
+    # OUT of output_root (data/publish/) to avoid bloating the rsync
+    # mirror -- F7 from docs/audits/2026-05-25-pipeline-cross-project-review.html.
 
+    round_predictions_dir <- file.path(
+      round_predictions_history_root,
+      "football", "iceland",
+      sprintf("%s-%s", sex_folder, division_dir_suffix[[target_div]])
+    )
+    dir.create(round_predictions_dir, recursive = TRUE, showWarnings = FALSE)
     round_predictions_path <- file.path(
-      out_dir, "round_predictions_history.json"
+      round_predictions_dir, "round_predictions_history.json"
     )
     if (nrow(round_predictions) > 0L) {
       round_predictions_history_row <- round_predictions |>

@@ -2,17 +2,9 @@
 % Please edit documentation in R/publish-pipeline.R
 \name{publish_one}
 \alias{publish_one}
-\title{tar_target wrapper: publish JSONs for a single (league x sex).}
+\title{Publish JSONs for a single (league x sex).}
 \usage{
-publish_one(
-  static,
-  betting,
-  key,
-  sex,
-  fit_dep = NULL,
-  decide_dep = NULL,
-  root = here::here("data")
-)
+publish_one(static, betting, key, sex, root = here::here("data"))
 }
 \arguments{
 \item{static}{Per-league static slice (sport, country, ...).}
@@ -23,8 +15,6 @@ publish_one(
 
 \item{sex}{`"male"` or `"female"`.}
 
-\item{fit_dep, decide_dep}{DAG-only dependency declarations; ignored.}
-
 \item{root}{Storage root.}
 }
 \value{
@@ -33,16 +23,14 @@ invisible(NULL).
 \description{
 Football iceland reads the per-fit extraction tree
 (`data/beliefs/extracts/sport=football/country=iceland/sex=Z/fit_date=*/`,
-the 6 Parquets emitted by `extract_football_iceland()`) and dispatches
-to `publish_football_iceland(extracted, ...)`. Basketball and handball
-still read the fit RDS directly from
+the per-cell Parquets emitted by `extract_football_iceland()`) and
+dispatches to `publish_football_iceland(extracted, ...)`. Basketball and
+handball still read the fit RDS directly from
 `data/beliefs/fits/sport=X/country=Y/sex=Z/fit.rds` -- their migration
 to the extraction layer is deferred to the autumn 2026 cutover.
 }
 \details{
-Takes the static + betting slices separately so publish-cache
-invalidation tracks only the fields the publishers read (sport /
-country for paths, betting.scoring for tie thresholds in
-basketball/handball publishers); a `lengjan` change does not bust this
-cache.
+Takes the static + betting slices separately because basketball/handball
+publishers branch on `betting.scoring` (tie thresholds); a `lengjan`
+change shouldn't trigger a republish.
 }

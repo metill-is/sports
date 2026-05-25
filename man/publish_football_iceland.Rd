@@ -12,7 +12,8 @@ publish_football_iceland(
   root = here::here("data"),
   output_root = here::here("data", "publish"),
   extracts_root = here::here("data", "beliefs", "extracts"),
-  archive_root = here::here("data", "beliefs", "archive")
+  archive_root = here::here("data", "beliefs", "archive"),
+  round_predictions_history_root = NULL
 )
 }
 \arguments{
@@ -43,6 +44,17 @@ baseline. Default `here::here("data", "beliefs", "extracts")`.}
 per-draw long-form). Used as a fallback for round_predictions on fit
 dates where no extract was written (legacy football fits before the
 extraction layer landed). Default `here::here("data", "beliefs", "archive")`.}
+
+\item{round_predictions_history_root}{Root for the per-cell
+`round_predictions_history.json` accumulator. Lives outside
+`output_root` because the file is publisher-internal (read across
+fits to dedup on `(round, team)`) and has no metill-platform
+consumer. When `NULL` (default), derives from `output_root`:
+production (`output_root = "data/publish"`) writes to
+`data/beliefs/round_predictions_history/`; tests passing a
+tempdir output_root automatically get a sibling tempdir for the
+history tree, so no test ever accidentally writes to the
+project's real beliefs tree.}
 }
 \value{
 `invisible(NULL)`.
@@ -65,11 +77,16 @@ Writes seven snapshot JSONs into
   - `points_distribution.json`
   - `home_advantage.json`
 
-Plus four accretive history files written when there is relevant data:
+Plus three accretive history files written under `output_root` when
+there is relevant data:
   - `team_strengths_history.json` (every fit)
   - `standings_history.json` (every fit with played top-flight matches)
-  - `round_predictions_history.json` (every fit; empty `records` when
-    the archive lacks pre-round partitions yet)
   - `final_positions_history.json` (every fit with played top-flight
     matches)
+
+Plus one publisher-internal accretive file written under
+`round_predictions_history_root` (kept out of `output_root` because
+metill-platform has no consumer for it):
+  - `round_predictions_history.json` (every fit; empty `records` when
+    the archive lacks pre-round partitions yet)
 }
