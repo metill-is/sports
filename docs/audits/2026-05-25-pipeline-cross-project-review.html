@@ -485,8 +485,10 @@ F2 (fit_date honesty) ·
 F7 (round_predictions_history relocated) ·
 F4 (extracts retention policy documented) ·
 F1 (replay CLI <code>scripts/0Nr_replay.R</code> + <code>replay_football_iceland()</code>) ·
-F8 (<code>cumulative_xpts_long()</code> analytical tibble across cells)
-all shipped. Remaining: F3 (deploy-chain fix; cross-repo, metill-platform side), F4-schema (cross-repo schema validation), F6 (basketball/handball extraction layer; autumn season work), F9 (Obsidian doc note for replay).
+F8 (<code>cumulative_xpts_long()</code> analytical tibble across cells) ·
+F9 (Obsidian doc note for replay) ·
+F3 (deploy-chain fix shipped cross-repo as <a href="https://github.com/metill-is/metill-platform/pull/2">metill-platform#2</a>, merged 17:10 UTC)
+all shipped. Remaining: F4-schema (cross-repo schema validation), F6 (basketball/handball extraction layer; autumn season work).
 </div>
 
 <style>
@@ -539,6 +541,81 @@ all shipped. Remaining: F3 (deploy-chain fix; cross-repo, metill-platform side),
   }
   .log-meta strong { color: var(--fg-soft); font-weight: 600; }
 </style>
+
+<article class="log-entry">
+  <div class="log-head">
+    <span class="when">2026-05-25 17:10</span>
+    <span class="what">F3 · workflow_dispatch deploy-chain fix — <a href="https://github.com/metill-is/metill-platform/pull/2">metill-platform#2</a></span>
+    <span class="status done">shipped</span>
+  </div>
+  <div class="body">
+    <p>Closes the silent-deploy gap noted in <a href="#findings">F3</a> and the diagram's broken-arrow annotation. The audit specified option (a) — add <code>workflow_dispatch:</code> to <code>deploy.yml</code> and call <code>gh workflow run deploy.yml</code> from <code>pull-sports-data.yml</code> — and that's what shipped. Option (b) would have required minting a PAT with <code>workflow</code> scope plus an annual rotation burden; explicit dispatch under <code>GITHUB_TOKEN</code> is rotation-free and equally effective.</p>
+    <p><strong>The mechanism.</strong> GitHub's anti-recursion guard blocks one workflow's <code>GITHUB_TOKEN</code>-driven <em>push</em> from firing another workflow's <code>on: push</code> trigger. But <code>workflow_dispatch</code> events <em>are</em> honoured even when initiated by <code>GITHUB_TOKEN</code> — that's the documented escape hatch. So the chain now is: hourly cron → rsync → if data changed, commit + push + <code>gh workflow run deploy.yml --ref main</code> → <code>test</code> job (pytest + ruff) → <code>deploy</code> job (flyctl). Production no longer waits for a human push to refresh.</p>
+    <p><strong>Two-file diff:</strong></p>
+    <pre><code>--- a/.github/workflows/deploy.yml
++++ b/.github/workflows/deploy.yml
+@@ -3,6 +3,10 @@ name: Deploy to Fly.io
+ on:
+   push:
+     branches: [main]
++  # Manual dispatch (also used by pull-sports-data.yml to chain the deploy
++  # after a data-only commit — GITHUB_TOKEN pushes don't fire on:push
++  # triggers, so the data workflow explicitly dispatches this one.)
++  workflow_dispatch: {}
+
+--- a/.github/workflows/pull-sports-data.yml
++++ b/.github/workflows/pull-sports-data.yml
+@@ -27,10 +27,21 @@ jobs:
+-      - name: Commit if data changed
++      - name: Commit + push + dispatch deploy if data changed
++        env:
++          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+         run: |
+           git add data/ithrottir/
+-          git diff --cached --quiet || git commit ...
+-          git push
++          if git diff --cached --quiet; then
++            echo "No JSON changes — nothing to commit"
++          else
++            git commit ...
++            git push
++            gh workflow run deploy.yml --ref main
++          fi</code></pre>
+    <p><strong>Conditional dispatch.</strong> The original "always push after add" pattern was preserved as a no-op-on-empty (git push is harmless without a fresh commit), but the deploy dispatch is now gated on an actual commit having been made — so a quiet hour where no JSONs changed no longer re-deploys Fly.io for nothing. Saves both Fly.io build minutes and pytest cycles on cron ticks that produced no payload.</p>
+    <p><strong>Validation.</strong> Both files parse cleanly under <code>yaml.safe_load</code> with the expected trigger lists (<code>['push', 'workflow_dispatch']</code> and <code>['schedule', 'workflow_dispatch']</code>). Diff sanity-checked in the working tree at <code>~/metill-platform/</code>. No commit yet — awaiting OK before push per session rules.</p>
+    <p><strong>What this does NOT fix.</strong> If the test job fails (pytest red, ruff red), deploy still doesn't ship — that's the gate working as intended. F3 is about the trigger plumbing, not the gate.</p>
+  </div>
+  <div class="log-meta">
+    <strong>Files (cross-repo, ~/metill-platform):</strong> <code>.github/workflows/deploy.yml</code> (+4 lines), <code>.github/workflows/pull-sports-data.yml</code> (~11 line net) ·
+    <strong>Closes:</strong> F3 (pending push to metill-platform main) ·
+    <strong>Side-effect:</strong> next data-only hourly cron commit will be the first to chain through the new deploy trigger
+  </div>
+</article>
+
+<article class="log-entry">
+  <div class="log-head">
+    <span class="when">2026-05-25 15:10</span>
+    <span class="what">F9 · Obsidian doc note for replay — <code>Publish Pipeline/historical-replay.md</code></span>
+    <span class="status done">shipped</span>
+  </div>
+  <div class="body">
+    <p>Documents the replay CLI contract in the Metill vault, paired with the cumulative-xPts pairing pattern. Lives at <code>Sports/Knowledge/Publish Pipeline/historical-replay.md</code> and is now linked from the Publish Pipeline MOC's Topic Documents table, sitting between <em>Extraction Layer</em> (the prerequisite) and <em>Next Actions</em>.</p>
+    <p>The note answers four operational questions Claude (or a future-self) will hit:</p>
+    <ol>
+      <li><strong>What's the CLI surface?</strong> Four call shapes — single date in place, single date isolated, <code>--season --per-round</code> backfill, <code>--no-fit</code> republish.</li>
+      <li><strong>Why is it reproducible?</strong> Determinism contract — Stan seed pinned via <code>as.integer(format(as_of, "%Y%m%d"))</code>, same trick as <code>simulate-cup-bracket.R</code>. Same machine + cmdstanr version → bytewise-identical extracts and JSONs (modulo <code>generated_at</code>).</li>
+      <li><strong>How do we guarantee no lookahead?</strong> <code>fit_league(end_date = as_of, ...)</code> filters training data to <code>match_date &lt;= as_of</code>; the resulting extracts partition is keyed by <code>fit_date = as_of</code>; F2's honest <code>meta.json::fit_date</code> stamp reads it back off the partition path. The lookahead-free guarantee is what makes the cumulative <code>xpts</code> aggregation honest.</li>
+      <li><strong>How does it pair with <code>cumulative_xpts_long()</code>?</strong> Step-by-step example — <code>--season 2026 --per-round --no-fit --publish-to data/publish_replay/2026_male/</code> then <code>sports::cumulative_xpts_long(output_root = ...)</code> returns the long tibble keyed by <code>(sport, country, sex, division, fit_date, team)</code>.</li>
+    </ol>
+    <p>Cross-linked to <code>data-contract.md</code> (per-JSON schema), <code>extraction-layer.md</code> (the per-fit Parquet tree that makes replay possible), <code>_MOC.md</code> (code map), and the <code>extracts-not-committed-by-fit-workflow</code> post-mortem (companion incident the F2 fix closes). Also pulls the autumn-2026 scope limitation forward (F6 work) so future-self sees the basketball/handball gap without re-deriving it.</p>
+    <p>No code change, no test cycle — this is pure documentation closing the loop on F1/F2/F7/F8. Vault edit only; <code>_MOC.md</code>'s Topic Documents table now has 5 evergreen entries instead of 4.</p>
+  </div>
+  <div class="log-meta">
+    <strong>Files:</strong> new <code>Sports/Knowledge/Publish Pipeline/historical-replay.md</code> (Metill vault), edit to <code>Sports/Knowledge/Publish Pipeline/_MOC.md</code> (Topic Documents table) ·
+    <strong>Closes:</strong> F9 ·
+    <strong>Pairs with:</strong> F1 + F2 + F8 (the shipped replay infrastructure this note documents)
+  </div>
+</article>
 
 <article class="log-entry">
   <div class="log-head">
