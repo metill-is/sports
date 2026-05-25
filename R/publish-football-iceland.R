@@ -695,6 +695,15 @@ publish_football_iceland <- function(extracted,
   stopifnot(!is.null(league$sport), !is.null(league$country))
   stopifnot(league$sport == "football", league$country == "iceland")
   stopifnot(inherits(end_date, "Date"))
+  # WHY: meta.json::fit_date must reflect the partition the publisher
+  # actually read from, not the caller's `end_date`. Otherwise a refit
+  # failure that falls back to stale extracts ships a meta.json claiming
+  # today's date while the posteriors are from days ago (2026-05-12 audit).
+  fit_date_stamp <- if (!is.null(extracted$fit_date)) {
+    as.Date(extracted$fit_date)
+  } else {
+    end_date
+  }
   required_slots <- c(
     "predicted_matches", "team_strengths_quantiles",
     "round_strengths_quantiles", "home_advantage_quantiles",
@@ -931,7 +940,7 @@ publish_football_iceland <- function(extracted,
       is_cup       = is_cup,
       season       = current_season,
       generated_at = generated_at,
-      fit_date     = format(end_date, "%Y-%m-%d"),
+      fit_date     = format(fit_date_stamp, "%Y-%m-%d"),
       round        = as.integer(round_num),
       n_draws      = as.integer(n_draws)
     )
@@ -1250,7 +1259,7 @@ publish_football_iceland <- function(extracted,
           c("round", "team", "component", "location")
         ) |>
         dplyr::mutate(
-          fit_date     = format(end_date, "%Y-%m-%d"),
+          fit_date     = format(fit_date_stamp, "%Y-%m-%d"),
           generated_at = generated_at,
           season       = current_season
         ) |>

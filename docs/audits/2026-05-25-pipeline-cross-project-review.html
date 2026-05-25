@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sports pipeline — cross-project review · 2026-05-25</title>
+<style>
+  :root {
+    --bg: #faf8f4;
+    --bg-elev: #ffffff;
+    --bg-soft: #f3efe6;
+    --fg: #1f2329;
+    --fg-soft: #4a5057;
+    --muted: #75787e;
+    --border: #e2dccf;
+    --border-strong: #c9c1ae;
+    --accent: #2c5f5f;
+    --accent-soft: #d8e6e6;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, monospace;
+    --serif: "Iowan Old Style", "Charter", "Source Serif Pro", Georgia, serif;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+
+    --sev-crit: #b3261e;
+    --sev-crit-bg: #fbeae9;
+    --sev-qual: #9c6f00;
+    --sev-qual-bg: #fbf3df;
+    --sev-enh:  #4f6d9d;
+    --sev-enh-bg: #e9eff8;
+    --sev-good: #4a7c4e;
+    --sev-good-bg: #e7f1e7;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1815;
+      --bg-elev: #22201c;
+      --bg-soft: #2a2723;
+      --fg: #e8e2d4;
+      --fg-soft: #c9c2b3;
+      --muted: #9b9485;
+      --border: #3a362f;
+      --border-strong: #524d42;
+      --accent: #7fb2b2;
+      --accent-soft: #1f3939;
+      --sev-crit: #f08178;
+      --sev-crit-bg: #3a1b1a;
+      --sev-qual: #d4ae5e;
+      --sev-qual-bg: #38301a;
+      --sev-enh: #9bb2d2;
+      --sev-enh-bg: #1f2a3a;
+      --sev-good: #97bf9a;
+      --sev-good-bg: #1d2e1e;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg); }
+  body {
+    font-family: var(--serif);
+    font-size: 17px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 56px 32px 96px;
+  }
+  @media (max-width: 720px) {
+    .page { padding: 32px 18px 64px; }
+    body { font-size: 16px; }
+  }
+
+  header.doc {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 28px;
+    margin-bottom: 40px;
+  }
+  .eyebrow {
+    font-family: var(--sans);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 10px;
+  }
+  h1 {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 38px;
+    line-height: 1.15;
+    margin: 0 0 8px;
+    letter-spacing: -0.01em;
+  }
+  .subtitle {
+    font-family: var(--serif);
+    font-style: italic;
+    color: var(--fg-soft);
+    margin: 0 0 24px;
+    font-size: 19px;
+  }
+  .tldr {
+    background: var(--accent-soft);
+    border-left: 3px solid var(--accent);
+    padding: 16px 20px;
+    border-radius: 0 4px 4px 0;
+    margin: 24px 0 20px;
+  }
+  .tldr strong { color: var(--accent); }
+  .tldr p { margin: 0; }
+  .tldr p + p { margin-top: 10px; }
+
+  nav.jump {
+    margin-top: 24px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    font-family: var(--sans);
+    font-size: 13px;
+  }
+  nav.jump a {
+    color: var(--fg-soft);
+    text-decoration: none;
+    border-bottom: 1px dotted var(--border-strong);
+    padding-bottom: 2px;
+  }
+  nav.jump a:hover { color: var(--accent); border-color: var(--accent); }
+
+  h2 {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 26px;
+    margin: 56px 0 16px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+    letter-spacing: -0.005em;
+  }
+  h3 {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 19px;
+    margin: 32px 0 10px;
+    color: var(--fg);
+  }
+  p { margin: 0 0 14px; }
+  ul, ol { margin: 0 0 14px; padding-left: 22px; }
+  li { margin-bottom: 6px; }
+  li p { margin-bottom: 6px; }
+
+  code, .mono {
+    font-family: var(--mono);
+    font-size: 0.88em;
+    background: var(--bg-soft);
+    padding: 1px 5px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+  }
+  pre {
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.5;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 16px;
+    overflow-x: auto;
+    margin: 14px 0 18px;
+  }
+  pre code {
+    background: transparent;
+    border: 0;
+    padding: 0;
+    font-size: inherit;
+  }
+
+  .file-ref {
+    font-family: var(--mono);
+    font-size: 0.85em;
+    color: var(--accent);
+    background: var(--accent-soft);
+    padding: 1px 5px;
+    border-radius: 3px;
+    text-decoration: none;
+    border: 1px solid transparent;
+  }
+  .file-ref:hover { border-color: var(--accent); }
+
+  /* Diagram */
+  figure.flow {
+    margin: 24px 0 32px;
+    padding: 0;
+  }
+  figure.flow svg {
+    width: 100%;
+    height: auto;
+    display: block;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg-elev);
+    padding: 16px;
+  }
+  figcaption {
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 10px;
+    text-align: center;
+  }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; margin: 18px 0 24px; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    font-family: var(--sans);
+  }
+  th, td {
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  th {
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    border-bottom: 2px solid var(--border-strong);
+    background: var(--bg-soft);
+  }
+  tbody tr:last-child td { border-bottom: 0; }
+  td code { font-size: 12px; }
+
+  /* Cross-source 3-column compare */
+  .compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 14px;
+    margin: 18px 0 26px;
+  }
+  @media (max-width: 760px) {
+    .compare { grid-template-columns: 1fr; }
+  }
+  .compare .col {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 16px;
+  }
+  .compare .col h4 {
+    margin: 0 0 10px;
+    font-family: var(--sans);
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+  }
+  .compare .col p, .compare .col li {
+    font-size: 14px;
+    line-height: 1.45;
+    font-family: var(--sans);
+  }
+  .compare .col ul { padding-left: 18px; margin: 0; }
+
+  /* Finding cards */
+  .finding {
+    display: grid;
+    grid-template-columns: 90px 1fr;
+    gap: 18px;
+    align-items: start;
+    margin: 22px 0;
+    padding: 18px 20px 16px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg-elev);
+  }
+  @media (max-width: 600px) {
+    .finding { grid-template-columns: 1fr; gap: 8px; }
+  }
+  .finding .tag {
+    font-family: var(--sans);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 4px 8px;
+    border-radius: 4px;
+    text-align: center;
+    align-self: start;
+    white-space: nowrap;
+  }
+  .tag.crit { background: var(--sev-crit-bg); color: var(--sev-crit); }
+  .tag.qual { background: var(--sev-qual-bg); color: var(--sev-qual); }
+  .tag.enh  { background: var(--sev-enh-bg);  color: var(--sev-enh); }
+  .tag.good { background: var(--sev-good-bg); color: var(--sev-good); }
+
+  .finding .body h3 {
+    margin-top: 0;
+    font-size: 18px;
+  }
+  .finding .body p:last-child { margin-bottom: 0; }
+  .finding .body .where {
+    font-size: 13px;
+    color: var(--muted);
+    font-family: var(--sans);
+    margin-top: 8px;
+  }
+
+  /* Side notes (margin) on wider screens — fall back to inline */
+  .with-aside {
+    display: grid;
+    grid-template-columns: 1fr 200px;
+    gap: 28px;
+    margin: 16px 0;
+  }
+  @media (max-width: 860px) {
+    .with-aside { grid-template-columns: 1fr; gap: 8px; }
+  }
+  .with-aside aside {
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.5;
+    border-left: 2px solid var(--border-strong);
+    padding-left: 14px;
+    padding-top: 2px;
+  }
+
+  /* Pipeline step boxes (also used for replay sketch) */
+  .step-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin: 18px 0 24px;
+    counter-reset: step;
+  }
+  .step {
+    display: grid;
+    grid-template-columns: 36px 1fr;
+    gap: 14px;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-top: 0;
+    background: var(--bg-elev);
+  }
+  .step:first-child { border-top: 1px solid var(--border); border-radius: 6px 6px 0 0; }
+  .step:last-child { border-radius: 0 0 6px 6px; }
+  .step::before {
+    counter-increment: step;
+    content: counter(step);
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    background: var(--accent-soft);
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    align-self: start;
+  }
+  .step h4 {
+    margin: 0 0 6px;
+    font-family: var(--serif);
+    font-size: 17px;
+    font-weight: 600;
+  }
+  .step p, .step pre { margin: 6px 0 0; }
+  .step pre { font-size: 12.5px; }
+
+  footer {
+    margin-top: 72px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  /* SVG diagram styling */
+  .flow-svg {
+    font-family: var(--sans);
+    font-size: 12px;
+  }
+  .flow-svg .node-rect {
+    fill: var(--bg-soft);
+    stroke: var(--border-strong);
+    stroke-width: 1.2;
+  }
+  .flow-svg .node-rect.data {
+    fill: var(--accent-soft);
+    stroke: var(--accent);
+  }
+  .flow-svg .node-rect.workflow {
+    fill: var(--bg-elev);
+    stroke: var(--accent);
+    stroke-dasharray: 3 3;
+  }
+  .flow-svg .node-label {
+    fill: var(--fg);
+    font-weight: 500;
+  }
+  .flow-svg .node-sub {
+    fill: var(--muted);
+    font-size: 10px;
+  }
+  .flow-svg .edge {
+    stroke: var(--fg-soft);
+    stroke-width: 1.2;
+    fill: none;
+  }
+  .flow-svg .edge.dim {
+    stroke: var(--border-strong);
+    stroke-dasharray: 4 3;
+  }
+  .flow-svg .annotation {
+    fill: var(--sev-crit);
+    font-size: 11px;
+    font-style: italic;
+  }
+  .flow-svg .lane-label {
+    fill: var(--accent);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .flow-svg .lane-bg {
+    fill: var(--bg-soft);
+    opacity: 0.5;
+  }
+</style>
+</head>
+<body>
+<main class="page">
+
+<header class="doc">
+  <p class="eyebrow">Cross-project review · 2026-05-25</p>
+  <h1>The sports pipeline, end to end</h1>
+  <p class="subtitle">Data flow across <span class="mono">metill-is/sports</span> and <span class="mono">metill-is/metill-platform</span>, with a path to ad-hoc model re-runs.</p>
+
+  <div class="tldr">
+    <p><strong>TL;DR.</strong> The pipeline produces <strong>133 JSON files</strong> across <strong>13 cells</strong> (9 football + 2 basketball + 2 handball), all rsync'd hourly into metill-platform and served behind FastAPI on Fly.io. The architecture is healthy: facts → beliefs → decisions → publish with explicit freshness predicates, and the per-fit extracts tree at <code>data/beliefs/extracts/</code> decouples publishing from re-fitting.</p>
+    <p>The headline gap is the one you asked about — <strong>model replay infrastructure exists but has no clean entry point</strong>. <code>fit_league(end_date=...)</code> works, <code>03b_backfill_football_iceland.R</code> uses it with hardcoded dates, and <code>republish.yml</code> can render JSONs from any past extract. What's missing is a single CLI: <code>scripts/0Nr_replay.R --league X --sex Y --as-of YYYY-MM-DD</code>. That, plus three honesty fixes (<code>meta.json::fit_date</code>, drift schema between repos, the <code>GITHUB_TOKEN</code> deploy chain), would close ~80% of the friction.</p>
+  </div>
+
+  <nav class="jump">
+    <a href="#log">Implementation log ↓</a>
+    <a href="#flow">Data flow</a>
+    <a href="#inventory">Inventory</a>
+    <a href="#compare">Code vs platform vs docs</a>
+    <a href="#findings">Findings</a>
+    <a href="#replay">Replay CLI proposal</a>
+    <a href="#others">Other improvements</a>
+    <a href="#quickwins">Quick wins</a>
+  </nav>
+</header>
+
+<!-- ============================================================ -->
+<section id="log">
+<h2>0 · Implementation log</h2>
+
+<p style="font-size: 14px; color: var(--muted); font-family: var(--sans);">Running record of what's been done since this review was written. Newest entries first.</p>
+
+<style>
+  .log-entry {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg-elev);
+    padding: 16px 20px;
+    margin: 14px 0;
+  }
+  .log-head {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+  .log-head .when {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .log-head .what {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 17px;
+  }
+  .log-head .status {
+    font-family: var(--sans);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 3px 8px;
+    border-radius: 4px;
+  }
+  .log-head .status.done { background: var(--sev-good-bg); color: var(--sev-good); }
+  .log-head .status.wip  { background: var(--sev-qual-bg); color: var(--sev-qual); }
+  .log-entry .body { font-size: 15px; }
+  .log-entry .body p { margin: 6px 0; }
+  .log-entry .body pre { font-size: 12.5px; margin: 8px 0; }
+  .log-entry .body code { font-size: 12.5px; }
+  .log-meta {
+    margin-top: 10px;
+    font-family: var(--sans);
+    font-size: 12.5px;
+    color: var(--muted);
+    border-top: 1px dashed var(--border);
+    padding-top: 8px;
+  }
+  .log-meta strong { color: var(--fg-soft); font-weight: 600; }
+</style>
+
+<article class="log-entry">
+  <div class="log-head">
+    <span class="when">2026-05-25 12:10</span>
+    <span class="what">F2 · meta.json::fit_date now reflects extracts partition</span>
+    <span class="status done">shipped</span>
+  </div>
+  <div class="body">
+    <p>The publisher was stamping <code>meta.json::fit_date</code> with <code>format(end_date, "%Y-%m-%d")</code> — the caller's view of "today" — rather than the date of the extracts partition it actually read. When a fit failed silently and today's publish fell back to yesterday's extracts, the JSON shipped <em>today's</em> date while the posteriors were days old (2026-05-12 incident).</p>
+    <p>The fix introduces a local <code>fit_date_stamp</code> near the top of <code>publish_football_iceland()</code> that prefers <code>extracted$fit_date</code> (set by <code>read_extracted_football()</code> from the resolved partition path) and falls back to <code>end_date</code> only when extracts don't carry one. Both <code>meta.json::fit_date</code> and the <code>team_strengths_history</code> stamp now use it.</p>
+    <p>TDD cycle:</p>
+    <ol>
+      <li><strong>RED</strong> — added test "<em>meta.json::fit_date reflects extracts partition, not end_date</em>" in <code>tests/testthat/test-publish-football.R</code>. Builds extracts at <code>fit_date = 2026-04-09</code>, calls publisher with <code>end_date = 2026-04-25</code>, expects meta.json to show <code>"2026-04-09"</code>. Failed with actual <code>"2026-04-25"</code>, confirming the bug.</li>
+      <li><strong>GREEN</strong> — two edits to <code>R/publish-football-iceland.R</code>:
+        <ul>
+          <li>Line 694: added <code>fit_date_stamp &lt;- if (!is.null(extracted$fit_date)) as.Date(extracted$fit_date) else end_date</code> with WHY comment.</li>
+          <li>Line 934: <code>fit_date = format(fit_date_stamp, "%Y-%m-%d")</code> in <code>meta &lt;- list(...)</code>.</li>
+          <li>Line 1253: same swap in <code>team_strengths_history_row</code>.</li>
+        </ul>
+      </li>
+      <li><strong>Verify</strong> — full <code>test-publish-football.R</code>: 88 PASS, 1 SKIP, 0 FAIL. <code>test-publish-football-round-predictions.R</code>: 12 PASS, 1 SKIP, 0 FAIL.</li>
+    </ol>
+  </div>
+  <div class="log-meta">
+    <strong>Files:</strong> <code>R/publish-football-iceland.R</code> (3 hunks), <code>tests/testthat/test-publish-football.R</code> (new test_that block) ·
+    <strong>Closes:</strong> F2 ·
+    <strong>Unblocks:</strong> F1 (replay CLI needs honest fit_date stamp)
+  </div>
+</article>
+
+</section>
+
+<!-- ============================================================ -->
+<section id="flow">
+<h2>1 · Where the data lives, how it moves</h2>
+
+<p>Two repos, one rsync, four cron schedules, one auto-deploy. The diagram below traces a row from the Icelandic football federation API to a chart in the user's browser.</p>
+
+<figure class="flow">
+<svg class="flow-svg" viewBox="0 0 940 760" role="img" aria-labelledby="flow-title flow-desc">
+  <title id="flow-title">End-to-end sports pipeline data flow</title>
+  <desc id="flow-desc">A vertical flow diagram showing data sources at the top, the sports repository's six scripts and four data tiers in the middle, and the metill-platform consumption path on the right culminating in a Fly.io-hosted browser view.</desc>
+
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+    </marker>
+    <marker id="arr-dim" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#c9c1ae"/>
+    </marker>
+  </defs>
+
+  <!-- Lanes -->
+  <rect class="lane-bg" x="20"  y="20"  width="540" height="700" rx="6"/>
+  <rect class="lane-bg" x="580" y="20"  width="340" height="700" rx="6"/>
+  <text class="lane-label" x="40" y="40">metill-is / sports</text>
+  <text class="lane-label" x="600" y="40">metill-is / metill-platform</text>
+
+  <!-- Sources -->
+  <g>
+    <rect class="node-rect" x="60"  y="60" width="200" height="44" rx="5"/>
+    <text class="node-label" x="160" y="82" text-anchor="middle">Federation APIs</text>
+    <text class="node-sub"   x="160" y="96" text-anchor="middle">KSÍ · KKÍ · HSÍ</text>
+
+    <rect class="node-rect" x="300" y="60" width="200" height="44" rx="5"/>
+    <text class="node-label" x="400" y="82" text-anchor="middle">Lengjan</text>
+    <text class="node-sub"   x="400" y="96" text-anchor="middle">odds + results scraping</text>
+  </g>
+
+  <!-- Scripts row 1 -->
+  <g>
+    <rect class="node-rect workflow" x="60"  y="140" width="200" height="48" rx="5"/>
+    <text class="node-label" x="160" y="162" text-anchor="middle">01_ingest_results.R</text>
+    <text class="node-sub"   x="160" y="178" text-anchor="middle">cron · daily 06:00 UTC</text>
+
+    <rect class="node-rect workflow" x="300" y="140" width="200" height="48" rx="5"/>
+    <text class="node-label" x="400" y="162" text-anchor="middle">02_scrape_odds.R</text>
+    <text class="node-sub"   x="400" y="178" text-anchor="middle">cron · 08/14/20 UTC</text>
+  </g>
+  <line class="edge" x1="160" y1="106" x2="160" y2="138" marker-end="url(#arr)"/>
+  <line class="edge" x1="400" y1="106" x2="400" y2="138" marker-end="url(#arr)"/>
+
+  <!-- Data tier: facts -->
+  <rect class="node-rect data" x="60" y="210" width="440" height="44" rx="5"/>
+  <text class="node-label" x="280" y="232" text-anchor="middle">data/facts/{results, schedules, odds}</text>
+  <text class="node-sub"   x="280" y="247" text-anchor="middle">parquet · hive-partitioned · committed</text>
+  <line class="edge" x1="160" y1="190" x2="160" y2="208" marker-end="url(#arr)"/>
+  <line class="edge" x1="400" y1="190" x2="400" y2="208" marker-end="url(#arr)"/>
+
+  <!-- 03 fit -->
+  <rect class="node-rect workflow" x="60" y="280" width="200" height="48" rx="5"/>
+  <text class="node-label" x="160" y="302" text-anchor="middle">03_fit.R</text>
+  <text class="node-sub"   x="160" y="318" text-anchor="middle">workflow_run · needs_refit()</text>
+  <line class="edge" x1="160" y1="256" x2="160" y2="278" marker-end="url(#arr)"/>
+
+  <!-- Annotation: replay arc -->
+  <path class="edge dim" d="M 160 304 C 30 304 30 510 60 510" marker-end="url(#arr-dim)"/>
+  <text class="annotation" x="35" y="406" text-anchor="middle" transform="rotate(-90 35 406)">replay path · today informal · should be a flag</text>
+
+  <!-- Data tier: beliefs -->
+  <rect class="node-rect data" x="60" y="350" width="440" height="58" rx="5"/>
+  <text class="node-label" x="280" y="370" text-anchor="middle">data/beliefs/</text>
+  <text class="node-sub"   x="280" y="386" text-anchor="middle">latest · archive · extracts/sex=Z/fit_date=D/division=…</text>
+  <text class="node-sub"   x="280" y="400" text-anchor="middle">fits/  (gitignored, ephemeral RDS)</text>
+  <line class="edge" x1="160" y1="330" x2="160" y2="348" marker-end="url(#arr)"/>
+
+  <!-- 04 decide + 05 publish -->
+  <rect class="node-rect workflow" x="60"  y="430" width="200" height="48" rx="5"/>
+  <text class="node-label" x="160" y="452" text-anchor="middle">04_decide.R</text>
+  <text class="node-sub"   x="160" y="468" text-anchor="middle">Kelly + portfolio + cal.</text>
+
+  <rect class="node-rect workflow" x="300" y="430" width="200" height="48" rx="5"/>
+  <text class="node-label" x="400" y="452" text-anchor="middle">05_publish.R</text>
+  <text class="node-sub"   x="400" y="468" text-anchor="middle">JSON · per-division · idempotent</text>
+
+  <line class="edge" x1="160" y1="410" x2="160" y2="428" marker-end="url(#arr)"/>
+  <line class="edge" x1="400" y1="410" x2="400" y2="428" marker-end="url(#arr)"/>
+
+  <!-- Data tier: decisions + publish -->
+  <rect class="node-rect data" x="60"  y="500" width="200" height="44" rx="5"/>
+  <text class="node-label" x="160" y="522" text-anchor="middle">data/decisions/</text>
+  <text class="node-sub"   x="160" y="537" text-anchor="middle">recommendations · ledger</text>
+
+  <rect class="node-rect data" x="300" y="500" width="200" height="44" rx="5"/>
+  <text class="node-label" x="400" y="522" text-anchor="middle">data/publish/</text>
+  <text class="node-sub"   x="400" y="537" text-anchor="middle">133 JSONs · 13 cells</text>
+
+  <line class="edge" x1="160" y1="480" x2="160" y2="498" marker-end="url(#arr)"/>
+  <line class="edge" x1="400" y1="480" x2="400" y2="498" marker-end="url(#arr)"/>
+
+  <!-- GitHub commit -->
+  <rect class="node-rect" x="300" y="570" width="200" height="36" rx="5"/>
+  <text class="node-label" x="400" y="592" text-anchor="middle">git commit + push to main</text>
+  <line class="edge" x1="400" y1="546" x2="400" y2="568" marker-end="url(#arr)"/>
+
+  <!-- Cross to metill-platform -->
+  <line class="edge" x1="500" y1="588" x2="640" y2="100" marker-end="url(#arr)"/>
+  <text class="node-sub" x="585" y="340" text-anchor="middle" transform="rotate(-72 585 340)">rsync · hourly cron</text>
+
+  <!-- Right lane: pull -->
+  <rect class="node-rect workflow" x="620" y="80" width="280" height="48" rx="5"/>
+  <text class="node-label" x="760" y="102" text-anchor="middle">pull-sports-data.yml</text>
+  <text class="node-sub"   x="760" y="118" text-anchor="middle">cron 0 * * * * · clone + rsync</text>
+
+  <rect class="node-rect data" x="620" y="150" width="280" height="44" rx="5"/>
+  <text class="node-label" x="760" y="172" text-anchor="middle">data/ithrottir/</text>
+  <text class="node-sub"   x="760" y="187" text-anchor="middle">mirror of data/publish/ (no filter)</text>
+  <line class="edge" x1="760" y1="130" x2="760" y2="148" marker-end="url(#arr)"/>
+
+  <!-- commit + deploy -->
+  <rect class="node-rect" x="620" y="220" width="280" height="36" rx="5"/>
+  <text class="node-label" x="760" y="242" text-anchor="middle">commit if changed</text>
+  <line class="edge" x1="760" y1="196" x2="760" y2="218" marker-end="url(#arr)"/>
+
+  <!-- the broken arrow -->
+  <line class="edge dim" x1="760" y1="258" x2="760" y2="298" marker-end="url(#arr-dim)"/>
+  <text class="annotation" x="900" y="280" text-anchor="end">⚠ GITHUB_TOKEN doesn't fire deploy.yml</text>
+
+  <rect class="node-rect workflow" x="620" y="300" width="280" height="48" rx="5"/>
+  <text class="node-label" x="760" y="322" text-anchor="middle">deploy.yml</text>
+  <text class="node-sub"   x="760" y="338" text-anchor="middle">pytest + ruff + flyctl deploy</text>
+
+  <rect class="node-rect" x="620" y="370" width="280" height="44" rx="5"/>
+  <text class="node-label" x="760" y="392" text-anchor="middle">Fly.io · Amsterdam · 2×1GB</text>
+  <text class="node-sub"   x="760" y="407" text-anchor="middle">FastAPI + Jinja + HTMX</text>
+  <line class="edge" x1="760" y1="350" x2="760" y2="368" marker-end="url(#arr)"/>
+
+  <rect class="node-rect" x="620" y="436" width="280" height="44" rx="5"/>
+  <text class="node-label" x="760" y="458" text-anchor="middle">/ithrottir/fotbolti/iceland/…</text>
+  <text class="node-sub"   x="760" y="473" text-anchor="middle">server-rendered + JSON data API</text>
+  <line class="edge" x1="760" y1="416" x2="760" y2="434" marker-end="url(#arr)"/>
+
+  <rect class="node-rect" x="620" y="500" width="280" height="44" rx="5"/>
+  <text class="node-label" x="760" y="522" text-anchor="middle">Browser · Observable Plot</text>
+  <text class="node-sub"   x="760" y="537" text-anchor="middle">strength · heatmap · bracket · …</text>
+  <line class="edge" x1="760" y1="482" x2="760" y2="498" marker-end="url(#arr)"/>
+
+  <!-- Legend -->
+  <g transform="translate(620, 600)">
+    <text class="lane-label" x="0" y="0">Legend</text>
+    <rect class="node-rect workflow" x="0" y="14" width="22" height="14" rx="3"/>
+    <text class="node-sub" x="32" y="25">workflow / script</text>
+    <rect class="node-rect data" x="0" y="36" width="22" height="14" rx="3"/>
+    <text class="node-sub" x="32" y="47">data store</text>
+    <rect class="node-rect" x="0" y="58" width="22" height="14" rx="3"/>
+    <text class="node-sub" x="32" y="69">other</text>
+    <line class="edge dim" x1="0" y1="92" x2="22" y2="92" marker-end="url(#arr-dim)"/>
+    <text class="node-sub" x="32" y="96">degraded / informal path</text>
+  </g>
+</svg>
+<figcaption>Sports repo (left lane) produces; metill-platform (right lane) consumes. The dotted left-arc shows where ad-hoc model replay should re-enter the fit step; the broken arrow on the right is the GITHUB_TOKEN deploy issue.</figcaption>
+</figure>
+
+</section>
+
+<!-- ============================================================ -->
+<section id="inventory">
+<h2>2 · Inventory snapshot</h2>
+
+<p>What ships today, where, and how it's read.</p>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr>
+      <th>Cell</th>
+      <th>Disk path</th>
+      <th>JSONs/cell</th>
+      <th>Status</th>
+      <th>Platform route</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>Football M · Besta deild</td><td><code>football/iceland/karla-bd/</code></td><td>11</td><td><span class="tag good" style="display:inline-block;padding:1px 6px;font-size:10px;">live</span></td><td><code>/ithrottir/fotbolti/iceland/karla/besta/</code></td></tr>
+    <tr><td>Football M · Lengjudeild</td><td><code>football/iceland/karla-ld/</code></td><td>11</td><td><span class="tag good" style="display:inline-block;padding:1px 6px;font-size:10px;">live</span></td><td><code>…/karla/lengja/</code></td></tr>
+    <tr><td>Football M · 2. deild</td><td><code>football/iceland/karla-2deild/</code></td><td>11</td><td><span class="tag qual" style="display:inline-block;padding:1px 6px;font-size:10px;">unsynced</span></td><td><code>…/karla/2deild/</code> (404 today)</td></tr>
+    <tr><td>Football M · 3. deild</td><td><code>football/iceland/karla-3deild/</code></td><td>11</td><td><span class="tag qual" style="display:inline-block;padding:1px 6px;font-size:10px;">unsynced</span></td><td><code>…/karla/3deild/</code> (404)</td></tr>
+    <tr><td>Football M · Mjólkurbikar</td><td><code>football/iceland/karla-bikar/</code></td><td>12</td><td><span class="tag good" style="display:inline-block;padding:1px 6px;font-size:10px;">live</span></td><td><code>…/karla/bikar/</code></td></tr>
+    <tr><td>Football F · Besta deild</td><td><code>football/iceland/kvenna-bd/</code></td><td>11</td><td><span class="tag good" style="display:inline-block;padding:1px 6px;font-size:10px;">live</span></td><td><code>…/kvenna/besta/</code></td></tr>
+    <tr><td>Football F · Lengjudeild</td><td><code>football/iceland/kvenna-ld/</code></td><td>11</td><td><span class="tag good" style="display:inline-block;padding:1px 6px;font-size:10px;">live</span></td><td><code>…/kvenna/lengja/</code></td></tr>
+    <tr><td>Football F · 2. deild</td><td><code>football/iceland/kvenna-2deild/</code></td><td>11</td><td><span class="tag qual" style="display:inline-block;padding:1px 6px;font-size:10px;">unsynced</span></td><td><code>…/kvenna/2deild/</code></td></tr>
+    <tr><td>Football F · Mjólkurbikar</td><td><code>football/iceland/kvenna-bikar/</code></td><td>12</td><td><span class="tag good" style="display:inline-block;padding:1px 6px;font-size:10px;">live</span></td><td><code>…/kvenna/bikar/</code></td></tr>
+    <tr><td>Basketball M / F</td><td><code>basketball/iceland/{karla,kvenna}/</code></td><td>8 each</td><td><span class="tag enh" style="display:inline-block;padding:1px 6px;font-size:10px;">paused</span></td><td>none yet</td></tr>
+    <tr><td>Handball M / F</td><td><code>handball/iceland/{karla,kvenna}/</code></td><td>8 each</td><td><span class="tag enh" style="display:inline-block;padding:1px 6px;font-size:10px;">paused</span></td><td>none yet</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p style="font-size: 14px; color: var(--muted); font-family: var(--sans);">
+The <em>unsynced</em> cells exist in <code>config/leagues.yml::publish_divisions</code> and metill-platform's <code>DIVISIONS</code> dict but no fit has yet produced their extracts. Once the next football fit runs, they appear automatically — no platform change needed.
+</p>
+</section>
+
+<!-- ============================================================ -->
+<section id="compare">
+<h2>3 · Code vs platform vs documentation</h2>
+
+<p>The vault is comprehensive but lags behind code in a few places. The platform's expectations are mostly implicit (no schema validation). Here are the alignments worth knowing:</p>
+
+<div class="compare">
+  <div class="col">
+    <h4>Sports repo (truth)</h4>
+    <ul>
+      <li><strong>11 JSONs/cell</strong> for football leagues, 12 for cups (<code>+ tournament_placements.json</code>)</li>
+      <li><strong>9 cells</strong> for football (5 male + 4 female), driven by <code>publish_divisions</code> in <code>leagues.yml</code></li>
+      <li>Football publishes via <strong>per-fit extracts</strong> at <code>data/beliefs/extracts/.../fit_date=D/</code></li>
+      <li>Basketball/handball still load <strong>fit RDS</strong> at publish time (paused until autumn)</li>
+      <li><code>meta.json::fit_date</code> = <code>format(Sys.Date())</code> at publish — <strong>not</strong> the resolved partition</li>
+    </ul>
+  </div>
+  <div class="col">
+    <h4>metill-platform (consumer)</h4>
+    <ul>
+      <li>Reads from <code>data/ithrottir/</code> (full rsync mirror, hourly)</li>
+      <li><code>DIVISIONS</code> dict in <code>app/routes/ithrottir.py</code> must list every cell — <strong>silent 404 if missing</strong></li>
+      <li>Reads <strong>5 JSONs</strong> server-side; the other 6–7 fetched client-side per chart</li>
+      <li>Surfaces <code>generated_at</code> + round count as freshness — trusts whatever the JSON says</li>
+      <li>OG cards only for BD/LD; cup pages fall through to a generic card</li>
+    </ul>
+  </div>
+  <div class="col">
+    <h4>Obsidian (Metill vault)</h4>
+    <ul>
+      <li><code>Sports/Knowledge/Publish Pipeline/data-contract.md</code> is the canonical schema doc — accurate, well-maintained</li>
+      <li>Decision log captures the 2026-05-12 <code>fit_date</code> staleness incident and proposes a fix that <strong>hasn't shipped</strong></li>
+      <li>Notes the <strong>GITHUB_TOKEN trigger issue</strong> as pending</li>
+      <li>Has <strong>no documented "as-of-date" replay contract</strong> — backfill pattern exists in script but not in docs</li>
+      <li>No documented archive-pruning policy</li>
+    </ul>
+  </div>
+</div>
+
+</section>
+
+<!-- ============================================================ -->
+<section id="findings">
+<h2>4 · Findings</h2>
+
+<p>Ordered by impact on your stated goal (re-run + re-export). Severity tags follow the convention in the rest of your project rules.</p>
+
+<!-- F1 -->
+<article class="finding">
+  <span class="tag enh">F1 · headline</span>
+  <div class="body">
+    <h3>Model-replay infrastructure exists but has no entry point</h3>
+    <p><code>fit_league(end_date = D, schedule_horizon_days = 200L)</code> already produces a fit "as of date D" using only data available then. <code>extract_football_iceland()</code> writes the per-division extracts. <code>publish_one()</code> reads from any <code>fit_date</code> partition. <code>republish.yml</code> can re-render JSONs in seconds. <strong>All the pieces are there.</strong></p>
+    <p>What's missing is a single CLI: <code>Rscript scripts/0Nr_replay.R --league football_iceland --sex male --as-of 2026-05-15 [--publish-to data/publish_replay/]</code>. Section 5 has a concrete proposal.</p>
+    <p class="where">Today: replay only happens via the hardcoded date list in <code>scripts/03b_backfill_football_iceland.R</code>. The function chain works; the surface doesn't.</p>
+  </div>
+</article>
+
+<!-- F2 -->
+<article class="finding">
+  <span class="tag crit">F2 · honesty</span>
+  <div class="body">
+    <h3>meta.json::fit_date lies about model freshness</h3>
+    <p>The field is set from <code>format(end_date, "%Y-%m-%d")</code> at publish time, not read from the resolved extracts partition. The 2026-05-12 incident: women's BD shipped <code>fit_date="2026-05-11"</code> while the underlying posteriors were from <code>2026-05-04</code> (9 days stale). The bug is acknowledged in <code>Sports/Knowledge/Publish Pipeline/data-contract.md</code> but the fix hasn't shipped.</p>
+    <p>This becomes a <em>blocker</em> for any replay workflow — if you re-publish with a fit from May 5 but <code>fit_date</code> shows today, the consumer can't tell.</p>
+    <p class="where">Likely culprit: <code>R/publish-football-iceland.R</code> · the <code>meta.json</code> assembler. Pin <code>fit_date</code> to the value embedded in <code>extracted$fit_date</code> (which <code>read_extracted_football()</code> already returns from the partition path).</p>
+  </div>
+</article>
+
+<!-- F3 -->
+<article class="finding">
+  <span class="tag crit">F3 · sync</span>
+  <div class="body">
+    <h3>pull-sports-data.yml commits don't trigger deploy.yml</h3>
+    <p>GitHub policy: pushes made with the default <code>GITHUB_TOKEN</code> don't fire other workflows' <code>on: push</code> triggers. So when the hourly pull commits new JSONs, <code>deploy.yml</code> doesn't run and production lags until the next human push to metill-platform main. Documented in the vault's <code>next-actions.md</code>; no fix yet.</p>
+    <p>Two clean fixes, pick one:</p>
+    <ul>
+      <li><strong>(a)</strong> Add <code>workflow_dispatch:</code> to <code>deploy.yml</code> and call <code>gh workflow run deploy.yml</code> at the end of <code>pull-sports-data.yml</code> (still uses <code>GITHUB_TOKEN</code>, but explicit dispatch <em>does</em> fire workflows).</li>
+      <li><strong>(b)</strong> Use a PAT with <code>workflow</code> scope as <code>secrets.SPORTS_DATA_PUSH_TOKEN</code> when pushing. Trades convenience for a token to rotate.</li>
+    </ul>
+    <p class="where"><code>metill-platform/.github/workflows/pull-sports-data.yml</code> · final <code>git push</code> step.</p>
+  </div>
+</article>
+
+<!-- F4 -->
+<article class="finding">
+  <span class="tag qual">F4 · drift</span>
+  <div class="body">
+    <h3>No schema validation between the two repos</h3>
+    <p>The contract is "filenames + JSON shapes." When a sports-side refactor renames a field (e.g. <code>p_top_six</code> → <code>p_european</code>) or adds a new required key, the platform's chart silently goes blank. The vault calls this out as a <em>critical risk</em> but nothing enforces it.</p>
+    <p>Lightweight option: write JSON Schemas alongside <code>config/leagues.yml</code> (you already have <code>schemas/leagues.schema.json</code>, this would be the publish-side companion), validate in <code>scripts/05_publish.R</code> before writing, and validate again in metill-platform's <code>pull-sports-data.yml</code> after rsync. Either side failing closed prevents broken pages.</p>
+    <p class="where">New files: <code>config/publish-schemas/{meta,standings,team_strengths,...}.schema.json</code>. Validator: <code>jsonvalidate::json_validate()</code> on R side, <code>fastjsonschema</code> on Python side.</p>
+  </div>
+</article>
+
+<!-- F5 -->
+<article class="finding">
+  <span class="tag qual">F5 · maintainability</span>
+  <div class="body">
+    <h3>Backfill dates are hardcoded in 03b</h3>
+    <p><code>scripts/03b_backfill_football_iceland.R</code> hardcodes the pre-round-N fit dates (5 entries for 2026 season). Adding a new league or starting a new season means editing the script. Better: derive the missing pre-round dates from the schedule + the gaps in <code>data/beliefs/extracts/.../fit_date=*/</code> partitions.</p>
+    <p>Pseudocode: for each (league, sex, round) where the round's first kickoff is in the past, ensure an extract partition exists with <code>fit_date &lt; first_kickoff</code>. If not, queue a fit.</p>
+    <p class="where">If you ship the replay CLI from F1, this becomes <em>"generate the list and pipe to xargs"</em> rather than a separate script.</p>
+  </div>
+</article>
+
+<!-- F6 -->
+<article class="finding">
+  <span class="tag qual">F6 · coverage</span>
+  <div class="body">
+    <h3>Basketball + handball can't be replayed at all</h3>
+    <p>They still load the fit RDS directly in <code>publish_basketball_iceland()</code> / <code>publish_handball_iceland()</code>. The RDS is ephemeral (gitignored, ~500 MB), so "what did we publish on date X" is unrecoverable without re-fitting from scratch — and the random-seed Stan run won't match.</p>
+    <p>Plan-wise this is the autumn 2026 work the vault notes. Worth scheduling before the next basketball season starts so the first fit lands in the extracts tree from day one. Schema-alignment with football (the 9-cell <code>team_strengths</code> grid, <code>goal_diff_distribution</code>) is a separate question to settle.</p>
+    <p class="where"><code>R/publish-basketball-iceland.R</code>, <code>R/publish-handball-iceland.R</code>, <code>R/extract-football-iceland.R</code> as the template.</p>
+  </div>
+</article>
+
+<!-- F7 -->
+<article class="finding">
+  <span class="tag enh">F7 · category</span>
+  <div class="body">
+    <h3>round_predictions_history.json doesn't belong in data/publish/</h3>
+    <p>The file is read by the publisher itself (it powers <code>team_expected</code> aggregation for <code>standings.json</code>'s cumulative xG), not by metill-platform. It still ships to <code>data/publish/</code>, gets rsync'd, sits in <code>data/ithrottir/</code>, and is never read. Wastes ~20 KB × 9 cells per cell on every sync; more importantly, it's a category error that confuses future readers.</p>
+    <p>Move it to <code>data/beliefs/extracts/.../round_predictions.parquet</code> and read from there in the publisher.</p>
+    <p class="where">Documented in vault as "pending re-homing." Cheap win.</p>
+  </div>
+</article>
+
+<!-- F8 -->
+<article class="finding">
+  <span class="tag enh">F8 · UX</span>
+  <div class="body">
+    <h3>No archive of past published JSONs</h3>
+    <p><code>data/publish/</code> is overwritten in place every fit cycle. Once you publish today's JSONs, yesterday's predictions are unrecoverable except by re-fitting with <code>end_date = yesterday</code>. That's <em>cheap</em> if extracts are still archived — but a tiny <code>data/publish_archive/YYYY-MM-DD/</code> mirror written by <code>05_publish.R</code> would let metill-platform show "predictions over time" without any backend work.</p>
+    <p>Equivalent: a single Parquet table <code>data/publish_archive/predictions_long.parquet</code> with one row per (fit_date, cell, file, key, value) — easier to query, smaller on disk, gives you the time-series for free.</p>
+    <p class="where">Either implementation enables a "spá frá X. apríl" toggle on each chart. Cheap; high user value if you ever want to talk about model evolution.</p>
+  </div>
+</article>
+
+<!-- F9 -->
+<article class="finding">
+  <span class="tag enh">F9 · docs</span>
+  <div class="body">
+    <h3>Replay contract isn't documented</h3>
+    <p>The Obsidian vault is genuinely strong on the publish-pipeline data contract, but has no section on "how to deterministically re-run the model for a historical date." Once F1 ships, write a short note in <code>Sports/Knowledge/Publish Pipeline/</code> covering: the CLI, the determinism guarantee (Stan seed handling), what data is available pre-round-N for football, and the archive retention policy.</p>
+    <p class="where">Vault path: <code>~/Obsidian/Metill/Sports/Knowledge/Publish Pipeline/historical-replay.md</code>.</p>
+  </div>
+</article>
+
+</section>
+
+<!-- ============================================================ -->
+<section id="replay">
+<h2>5 · Headline recommendation — replay CLI</h2>
+
+<p>This addresses the explicit ask: "re-run any models for this season and re-export the data for predictions or cumulative xP calculations." Concrete, small-scope proposal.</p>
+
+<h3>Surface</h3>
+
+<pre><code># Re-fit + re-publish for a single date (in-place; overwrites data/publish/)
+Rscript scripts/0Nr_replay.R --league football_iceland --sex male --as-of 2026-05-15
+
+# Re-fit + re-publish into an isolated tree (safe for what-if analysis)
+Rscript scripts/0Nr_replay.R --league football_iceland --sex male --as-of 2026-05-15 \
+  --publish-to data/publish_replay/2026-05-15/
+
+# Backfill a whole season's worth of pre-round fits (replaces 03b)
+Rscript scripts/0Nr_replay.R --league football_iceland --sex male --season 2026 --per-round
+
+# Just re-publish from existing extracts (no fit) — already exists as republish.yml,
+# expose it locally too
+Rscript scripts/0Nr_replay.R --league football_iceland --sex male --as-of 2026-05-15 --no-fit
+</code></pre>
+
+<h3>Implementation sketch</h3>
+
+<div class="step-list">
+
+  <div class="step">
+    <div>
+      <h4>New file: <code>scripts/0Nr_replay.R</code></h4>
+      <p>Single entry point. Parses args via <code>parse_pipeline_args()</code> (extend it; today it accepts <code>--league</code> + <code>--sex</code> + <code>--force</code>). Adds <code>--as-of</code>, <code>--season</code>, <code>--per-round</code>, <code>--no-fit</code>, <code>--publish-to</code>.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div>
+      <h4>Reuse existing functions, no new fit logic</h4>
+      <p>The script is a thin orchestrator:</p>
+      <pre><code>if (!args$no_fit) {
+  fit_league(
+    league_key = args$league, sex = args$sex,
+    end_date = args$as_of,
+    schedule_horizon_days = 200L,
+    write_archive = TRUE     # to data/beliefs/archive/.../fit_date=as_of/
+  )
+  # extract_football_iceland() is called internally
+}
+
+publish_one(
+  static = load_static(args$league),
+  betting = NULL,           # decisions are skipped in replay mode
+  key = args$league,
+  sex = args$sex,
+  root = args$publish_to %||% "data/publish",
+  fit_date = args$as_of     # NEW: pass through so meta.json honours it
+)</code></pre>
+    </div>
+  </div>
+
+  <div class="step">
+    <div>
+      <h4>Fix F2 inline</h4>
+      <p>Change <code>publish_one()</code> + <code>publish_football_iceland()</code> to accept an explicit <code>fit_date</code> argument and use it for <code>meta.json::fit_date</code> instead of <code>Sys.Date()</code>. Default to <code>extracted$fit_date</code> (which already comes from the partition path). This is a 5-line change and fixes the honesty bug for both replay and normal publish.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div>
+      <h4>Determinism</h4>
+      <p>Stan's HMC uses RNG seeds; without pinning, two runs of <code>fit_league(end_date = "2026-05-15")</code> produce <em>statistically equivalent but numerically different</em> posteriors. For exact replay, pin the seed:</p>
+      <pre><code>fit_model(..., seed = as.integer(format(end_date, "%Y%m%d")))</code></pre>
+      <p>This matches what <code>simulate-cup-bracket.R</code> already does for bracket pairings. Cheap, makes replay reproducible.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div>
+      <h4><code>--per-round</code> derives dates from the schedule</h4>
+      <p>Read <code>data/facts/schedules/.../season=2026/</code>, compute the kickoff date of each round's first match, output fits with <code>end_date = kickoff - 1 day</code> for each round where the partition doesn't already exist. Fixes F5 (hardcoded backfill dates) for free.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div>
+      <h4><code>--publish-to</code> enables what-if analysis safely</h4>
+      <p>Writing to <code>data/publish_replay/&lt;date&gt;/</code> instead of <code>data/publish/</code> means you can re-fit, inspect, compare to today's predictions, and throw it away — without disturbing the live cron pipeline. Add a <code>.gitignore</code> entry for <code>data/publish_replay/</code> so these don't accidentally ship.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div>
+      <h4>Cumulative xP / xG: already there</h4>
+      <p>This is worth saying explicitly — <code>standings.json::xpts</code> is already lookahead-free cumulative expected points per round, sourced from <code>round_predictions_history</code>. If you want the time series at the team level (xP trajectory across the season), it's already in <code>standings_history.json</code>. If you want it in a more analytical shape (single Parquet with <code>fit_date · team · round · xg_for · xg_against · xpts</code>), F8's archive table gives you that.</p>
+      <p>So the question to answer first: what specifically do you want xP for that the current standings don't give you? A different time slicing? A leaderboard with cumulative xP shown alongside actual? Export for an external notebook?</p>
+    </div>
+  </div>
+</div>
+
+<h3>Scope estimate</h3>
+
+<div class="with-aside">
+<div>
+<p>The replay CLI (F1) + <code>fit_date</code> honesty (F2) together: <strong>roughly one focused session</strong>. The skeleton already exists in <code>03b_backfill_football_iceland.R</code> — the work is generalising it, wiring args, and adding the <code>fit_date</code> pass-through. Determinism via seed-pinning is a one-line addition.</p>
+<p>F3 (deploy chain) is independent and small — a YAML edit on the metill-platform side. F4 (schema validation) is the largest discrete item and worth doing on its own day. F7 + F9 are documentation cleanups.</p>
+</div>
+<aside>
+F1+F2 are the prerequisites. F5 falls out of F1 for free. F8 is a comfortable next layer once F1 is in.
+</aside>
+</div>
+
+</section>
+
+<!-- ============================================================ -->
+<section id="others">
+<h2>6 · Other improvements worth tracking</h2>
+
+<h3>Stale-extract guard on the platform</h3>
+<p>The platform currently trusts whatever JSON it gets. A two-line check in <code>_build_league_context()</code> — if <code>generated_at</code> is older than 48h, surface a small "Spá ekki ný" badge — closes the perception gap when the upstream pipeline silently fails. Belt-and-braces alongside F3.</p>
+
+<h3>Stable extract retention policy</h3>
+<p>Football extracts are accretive — every fit writes a new <code>fit_date=D/</code> partition and they never get cleaned. Storage growth is modest (~50–100 MB/year per league) but it's worth documenting <em>that</em> they're permanent so a future tidy-up doesn't accidentally delete them. They're load-bearing for replay.</p>
+
+<h3>Lookahead audit for new replays</h3>
+<p>The lookahead-free cumulative-xG logic relies on "each round's xG comes from the latest fit strictly before that round's first kickoff." A single test that picks a known historical fit and verifies its <code>standings.json::xpts</code> matches a hand-computed value would catch silent regressions when extraction logic changes. Today there's no such guard.</p>
+
+<h3>OG cards for cup pages</h3>
+<p>Small UX miss: cup URLs fall through to the generic "Greining og spár · Íþróttir" OG card because the OG generator only handles BD/LD. Easy fix on the platform side — use <code>tournament_placements.json::summary</code> (top 4 favourites + P(champion)) as the card content for cup cells.</p>
+
+<h3>Two basketball/handball things to settle now</h3>
+<p>Both are seasonally paused, but two questions are cheaper to answer cold than hot:</p>
+<ul>
+  <li><strong>Schema alignment with football.</strong> Will their JSONs adopt the 9-cell strength grid (<code>component × location</code>) and the <code>goal_diff_distribution</code> shape? If yes, the JS chart components are reusable; if no, the platform needs sport-specific renderers.</li>
+  <li><strong>Extraction layer.</strong> The 200× size reduction from fit-RDS → parquets is even more useful for basketball/handball where the random-walk dimensionality is higher. Worth building before autumn season opens so the first fit goes straight into the extracts tree.</li>
+</ul>
+
+</section>
+
+<!-- ============================================================ -->
+<section id="quickwins">
+<h2>7 · Quick wins (≤ 30 min each)</h2>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th style="width:32%">Action</th><th>Where</th><th>Why</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Pin <code>meta.json::fit_date</code> to <code>extracted$fit_date</code></td>
+      <td><code>R/publish-football-iceland.R</code></td>
+      <td>Fixes F2 honesty bug. Prerequisite for any replay UI.</td>
+    </tr>
+    <tr>
+      <td>Add <code>workflow_dispatch:</code> to <code>deploy.yml</code> + call from <code>pull-sports-data.yml</code></td>
+      <td><code>metill-platform/.github/workflows/</code></td>
+      <td>Fixes F3 — production no longer lags JSON state.</td>
+    </tr>
+    <tr>
+      <td>Move <code>round_predictions_history.json</code> out of <code>data/publish/</code></td>
+      <td><code>R/extract-football-iceland.R</code> + publisher</td>
+      <td>Fixes F7 category error; saves a few KB per cell per sync.</td>
+    </tr>
+    <tr>
+      <td>Add stale-extract badge to league pages</td>
+      <td><code>app/routes/ithrottir.py::_build_league_context()</code></td>
+      <td>Surfaces silent pipeline failures to users.</td>
+    </tr>
+    <tr>
+      <td>Document <code>data/beliefs/extracts/</code> retention as permanent</td>
+      <td><code>.claude/rules/publish-layer.md</code></td>
+      <td>Prevents accidental deletion; replay depends on it.</td>
+    </tr>
+    <tr>
+      <td>Add an OG card branch for cup cells using top-4 favourites</td>
+      <td><code>app/routes/og.py</code></td>
+      <td>Minor UX polish; uses data already in <code>tournament_placements.json</code>.</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+</section>
+
+<footer>
+<p>Cross-project review · 2026-05-25 · sources audited: 133 published JSONs, 6 GitHub Actions workflows in <code>metill-is/sports</code>, <code>pull-sports-data.yml</code> + <code>deploy.yml</code> + 7 consumer files in <code>metill-is/metill-platform</code>, 5 Knowledge MOCs and ~12 sub-documents in the Metill Obsidian vault.</p>
+<p>Open in your default browser with <code>open docs/audits/2026-05-25-pipeline-cross-project-review.html</code> from the repo root.</p>
+</footer>
+
+</main>
+</body>
+</html>

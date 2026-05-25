@@ -754,6 +754,47 @@ test_that("publish_football_iceland: embeds preseason field when prior fit exist
   expect_true(sample$preseason$median <= sample$preseason$upper)
 })
 
+test_that("publish_football_iceland: meta.json::fit_date reflects extracts partition, not end_date", {
+  # The publisher previously stamped meta.json::fit_date with
+  # format(end_date, "%Y-%m-%d") -- which lies whenever the latest
+  # available extracts are older than `end_date` (e.g. a fit failed so
+  # today's publish reads yesterday's extracts). The honest answer is
+  # `extracted$fit_date`, the partition the publisher actually read.
+  fit_path <- backup_fit_path("male")
+  if (!file.exists(fit_path)) {
+    testthat::skip("legacy male football fit unavailable")
+  }
+  if (!dir.exists(here::here("data", "facts", "results"))) {
+    testthat::skip("facts/results absent")
+  }
+
+  fit <- readRDS(fit_path)
+  leagues <- load_leagues()
+  league <- leagues[["football_iceland"]]
+
+  out <- withr::local_tempdir()
+  extracted <- .build_extracted_football_for_test(
+    fit, league,
+    sex = "male", end_date = as.Date("2026-04-09")
+  )
+  expect_equal(extracted$fit_date, as.Date("2026-04-09"))
+
+  suppressWarnings(
+    publish_football_iceland(
+      extracted = extracted,
+      league = league,
+      sex = "male",
+      end_date = as.Date("2026-04-25"),
+      output_root = out
+    )
+  )
+
+  meta <- jsonlite::read_json(
+    file.path(out, "football", "iceland", "karla-bd", "meta.json")
+  )
+  expect_equal(meta[["fit_date"]], "2026-04-09")
+})
+
 test_that("publish_football_iceland: omits preseason when no prior fit exists", {
   fit_path <- backup_fit_path("male")
   if (!file.exists(fit_path)) {
