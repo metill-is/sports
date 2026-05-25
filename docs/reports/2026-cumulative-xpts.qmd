@@ -1,0 +1,581 @@
+---
+title: "2026 Cumulative xPts — Football Iceland"
+subtitle: "What the model expected vs. what happened, round by round"
+author: "Brynjólfur Gauti Jónsson"
+date: today
+date-format: "YYYY-MM-DD"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    toc-location: left
+    code-fold: true
+    code-tools: true
+    theme: cosmo
+    fig-width: 9
+    fig-height: 5.5
+    fig-dpi: 144
+    embed-resources: true
+    smooth-scroll: true
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r}
+#| label: setup
+#| include: false
+invisible(Sys.setlocale("LC_ALL", "is_IS.UTF-8"))
+options(width = 110)
+suppressPackageStartupMessages({
+  library(dplyr)
+  library(ggplot2)
+  library(tidyr)
+  library(forcats)
+  library(stringr)
+  library(scales)
+  library(gt)
+  devtools::load_all(here::here(), quiet = TRUE)
+})
+
+theme_set(metill::theme_metill())
+update_geom_defaults("line", list(linewidth = 0.7))
+update_geom_defaults("point", list(size = 1.6))
+
+division_levels <- c("bd", "ld", "2deild", "3deild")
+division_labels <- c(
+  bd       = "Besta deild",
+  ld       = "Lengjudeild",
+  `2deild` = "2. deild",
+  `3deild` = "3. deild"
+)
+
+xpts <- cumulative_xpts_long() |>
+  mutate(
+    as_of = as.Date(as_of),
+    generated_at = as.POSIXct(
+      generated_at,
+      format = "%Y-%m-%dT%H:%M:%S",
+      tz = "UTC"
+    ),
+    cell = paste(sex, division, sep = "/"),
+    full_coverage = n_predicted_matches == n_played_matches,
+    residual = points - xpts,
+    division_label = unname(division_labels[division]),
+    division_label = factor(
+      division_label,
+      levels = unname(division_labels[division_levels])
+    ),
+    sex_label = if_else(sex == "male", "Karla", "Kvenna")
+  )
+
+# Latest snapshot per cell — what the live publish tree currently shows
+latest_snapshot <- xpts |>
+  group_by(cell) |>
+  filter(as_of == max(as_of)) |>
+  ungroup()
+
+# Cells with enough fits to plot a trajectory (>=2 fits)
+cells_with_trajectory <- xpts |>
+  group_by(cell, sex, division) |>
+  summarise(n_fits = n_distinct(as_of), .groups = "drop") |>
+  filter(n_fits >= 2L) |>
+  arrange(sex, division)
+```
+
+```{r}
+#| label: derived-stats
+#| include: false
+# How many cells, fits, teams, rows?
+report_stats <- list(
+  total_rows    = nrow(xpts),
+  total_cells   = n_distinct(xpts$cell),
+  total_fits    = n_distinct(paste(xpts$cell, xpts$as_of)),
+  total_teams   = n_distinct(paste(xpts$cell, xpts$team)),
+  date_min      = format(min(xpts$as_of), "%Y-%m-%d"),
+  date_max      = format(max(xpts$as_of), "%Y-%m-%d"),
+  full_cov_pct  = round(100 * mean(xpts$full_coverage), 1)
+)
+```
+
+::: {.callout-note}
+## TL;DR
+Across the 2026 Icelandic football season so far there are **`r report_stats$total_rows` per-team-per-fit standings rows** drawn from **`r report_stats$total_fits` fits** spread across **`r report_stats$total_cells` cells** (sex × division) between **`r report_stats$date_min`** and **`r report_stats$date_max`**. **`r report_stats$full_cov_pct`%** of rows have full pre-round coverage (every played round was scored against a strictly-prior fit). The body of this report unpacks the per-team season trajectories, league-wide calibration, and where the model thinks teams are getting lucky or unlucky.
+:::
+
+# What this report is
+
+This is the analytical view of the season-to-date trajectory: **for each played round, the model's expected points (`xpts`) per team vs. the realised points the team actually picked up.** The data comes from `data/publish/.../standings_history.json` — accumulated round-by-round by the publisher at every fit, with each round scored against the latest model fit *strictly before* the round's first kickoff (the lookahead-free guarantee). One call to `sports::cumulative_xpts_long()` collapses every cell into a single long tibble.
+
+The report exists to **close the F8 loop** from the [2026-05-25 cross-project pipeline review](../audits/2026-05-25-pipeline-cross-project-review.html) — proving the replay + analytical helpers (`scripts/0Nr_replay.R`, `R/replay.R`, `R/cumulative-xpts.R`) work end-to-end against real publish output without any extra runtime infrastructure.
+
+::: {.callout-tip}
+## Why no separate `--per-round --no-fit` replay?
+The original stretch plan called for an isolated `data/publish_replay/2026_{sex}/` tree before plotting. In practice the live `data/publish/` tree **already contains** the per-round trajectory by design: every published `standings_history.json` is by construction the lookahead-free accumulation of "best-available-pre-round fit" predictions, deduped on `(round, team)`. Running `--per-round --no-fit` would simply rebuild the same JSONs from the same extracts — interesting as a smoke test but adds nothing for analysis. The replay CLI remains the right tool for *what-if* scenarios (different `as_of` than what production ran) and for *backfill* (filling in pre-round extracts that don't exist yet); for "show me the season so far," the live tree is enough.
+:::
+
+# Data coverage
+
+```{r}
+#| label: tbl-coverage
+#| tbl-cap: "Per-cell coverage: how many fits land in each (sex, division), the date span they cover, and the share of rows whose xPts was scored against a strictly-prior fit for every played round."
+coverage_summary <- xpts |>
+  group_by(sex_label, division_label) |>
+  summarise(
+    n_teams = n_distinct(team),
+    n_fits = n_distinct(as_of),
+    first_fit = min(as_of),
+    last_fit = max(as_of),
+    rows = n(),
+    full_coverage_pct = round(100 * mean(full_coverage), 1),
+    .groups = "drop"
+  ) |>
+  arrange(sex_label, division_label)
+
+coverage_summary |>
+  gt::gt() |>
+  gt::cols_label(
+    sex_label         = "Kyn",
+    division_label    = "Deild",
+    n_teams           = "Lið",
+    n_fits            = "Fit",
+    first_fit         = "Fyrsti fit",
+    last_fit          = "Síðasti fit",
+    rows              = "Línur",
+    full_coverage_pct = "Heild­ar­þekja %"
+  ) |>
+  gt::fmt_date(columns = c(first_fit, last_fit), date_style = "iso") |>
+  gt::fmt_number(columns = full_coverage_pct, decimals = 1) |>
+  gt::tab_options(table.font.size = 13L)
+```
+
+```{r}
+#| label: fig-fit-timeline
+#| fig-cap: "Timeline of fits per cell. Each dot is one published fit; cells with a single dot (2deild/3deild) only started getting published on 2026-05-23. The clusters of fits around 2026-05-12 onwards correspond to the daily-driver pipeline running through the active season; earlier dots are the per-round backfill fits."
+#| fig-height: 4
+
+xpts |>
+  distinct(sex_label, division_label, as_of) |>
+  mutate(cell_label = paste(sex_label, division_label)) |>
+  mutate(cell_label = fct_reorder(cell_label, as.numeric(as_of), min)) |>
+  ggplot(aes(as_of, cell_label)) +
+  geom_segment(aes(x = min(as_of), xend = as_of), linewidth = 0.3, colour = "grey80") +
+  geom_point(colour = "#4f6d9d", size = 2.6) +
+  scale_x_date(
+    date_breaks = "1 week",
+    date_labels = "%d. %b",
+    expand = expansion(mult = c(0.02, 0.05))
+  ) +
+  labs(
+    title = "Hverjir fitir liggja á bak við hverja birtingu?",
+    subtitle = "Tími fram á sviðsbreytingu — einn punktur á hvern fit í data/publish/",
+    x = NULL,
+    y = NULL
+  )
+```
+
+::: {.callout-warning}
+## Partial coverage in early-season rows
+The 2026-05-02 male BD fit (round 4) is partial-coverage: only round 4's xPts had a strictly-prior fit at that time; rounds 1–3 had no pre-round fit yet and contribute 0 to that snapshot's cumulative xPts. By 2026-05-03 the round-cutoff backfill landed and every subsequent fit is full-coverage from round 1. For trajectory plots and calibration we filter to full-coverage rows — partial rows are honest but tell a different story (they show "what the latest model knows now," not "what xPts said before each round").
+:::
+
+# Season-end snapshot — current standings vs. expectation
+
+```{r}
+#| label: tbl-snapshot-bd-male
+#| tbl-cap: "Karla Besta deild — current cumulative points vs. expected points. Positive *residual* = team is overperforming the model; negative = underperforming."
+
+snapshot_kable <- function(cell_filter) {
+  latest_snapshot |>
+    filter(cell == cell_filter, full_coverage) |>
+    select(
+      rank, team, played, wins, draws, losses,
+      goals_for, goals_against, points, xpts, residual
+    ) |>
+    arrange(rank) |>
+    gt::gt() |>
+    gt::cols_label(
+      rank          = "Sæti",
+      team          = "Lið",
+      played        = "L",
+      wins          = "S",
+      draws         = "J",
+      losses        = "T",
+      goals_for     = "Skoruð",
+      goals_against = "Fengin",
+      points        = "Stig",
+      xpts          = "xStig",
+      residual      = "Frávik"
+    ) |>
+    gt::fmt_number(columns = c(xpts, residual), decimals = 2) |>
+    gt::data_color(
+      columns = residual,
+      method = "numeric",
+      palette = c("#b3261e", "#fbeae9", "#ffffff", "#e7f1e7", "#4a7c4e"),
+      domain = c(-6, -2, 0, 2, 6),
+      na_color = "#ffffff"
+    ) |>
+    gt::tab_options(
+      table.font.size  = 13L,
+      data_row.padding = gt::px(4)
+    )
+}
+
+snapshot_kable("male/bd")
+```
+
+```{r}
+#| label: tbl-snapshot-ld-male
+#| tbl-cap: "Karla Lengjudeild — current cumulative points vs. expected points."
+snapshot_kable("male/ld")
+```
+
+```{r}
+#| label: tbl-snapshot-bd-female
+#| tbl-cap: "Kvenna Besta deild — current cumulative points vs. expected points."
+snapshot_kable("female/bd")
+```
+
+```{r}
+#| label: tbl-snapshot-ld-female
+#| tbl-cap: "Kvenna Lengjudeild — current cumulative points vs. expected points."
+snapshot_kable("female/ld")
+```
+
+# Per-team season trajectories
+
+This is the core analytical view. For each cell with ≥ 2 fits we plot, per team, two lines across rounds:
+
+- **Actual points** (solid) — `points` column at the round's snapshot.
+- **Expected points** (dashed) — `xpts` column, the model's pre-round forecast accumulated up to and including that round.
+
+Gaps between the lines tell the story: where the team got lucky (solid above dashed), where they ran into bad luck (solid below dashed), and where the model has correctly anticipated their level.
+
+```{r}
+#| label: trajectory-plot-fn
+#| include: false
+plot_trajectory <- function(sex_filter, division_filter, title_text) {
+  d <- xpts |>
+    filter(
+      sex == sex_filter,
+      division == division_filter,
+      full_coverage
+    )
+
+  if (nrow(d) == 0L) {
+    return(invisible(NULL))
+  }
+
+  team_order <- d |>
+    group_by(team) |>
+    filter(as_of == max(as_of)) |>
+    ungroup() |>
+    arrange(desc(points), desc(xpts)) |>
+    pull(team)
+
+  d <- d |> mutate(team = factor(team, levels = team_order))
+
+  d_long <- d |>
+    select(team, round, points, xpts) |>
+    pivot_longer(c(points, xpts), names_to = "metric", values_to = "value") |>
+    mutate(
+      metric_label = if_else(metric == "points", "Stig", "xStig"),
+      metric_label = factor(metric_label, levels = c("xStig", "Stig"))
+    )
+
+  ggplot(d_long, aes(round, value, colour = metric_label, linetype = metric_label)) +
+    geom_line() +
+    geom_point() +
+    facet_wrap(~team, ncol = 4) +
+    scale_colour_manual(values = c("xStig" = "#4f6d9d", "Stig" = "#1f2329"), name = NULL) +
+    scale_linetype_manual(values = c("xStig" = "32", "Stig" = "solid"), name = NULL) +
+    scale_x_continuous(breaks = scales::breaks_pretty(n = 5L)) +
+    labs(
+      title = title_text,
+      subtitle = "Uppsöfnuð stig (svört, heil lína) vs. uppsöfnuð xStig (blá, brotin lína) eftir umferð",
+      x = "Umferð",
+      y = "Uppsöfnuð stig"
+    ) +
+    theme(legend.position = "top")
+}
+```
+
+```{r}
+#| label: fig-trajectory-bd-male
+#| fig-cap: "Karla Besta deild season trajectory per team. Teams ordered by current points."
+#| fig-height: 7
+plot_trajectory("male", "bd", "Karla Besta deild — Stig vs. xStig")
+```
+
+```{r}
+#| label: fig-trajectory-ld-male
+#| fig-cap: "Karla Lengjudeild season trajectory per team."
+#| fig-height: 7
+plot_trajectory("male", "ld", "Karla Lengjudeild — Stig vs. xStig")
+```
+
+```{r}
+#| label: fig-trajectory-bd-female
+#| fig-cap: "Kvenna Besta deild season trajectory per team."
+#| fig-height: 7
+plot_trajectory("female", "bd", "Kvenna Besta deild — Stig vs. xStig")
+```
+
+```{r}
+#| label: fig-trajectory-ld-female
+#| fig-cap: "Kvenna Lengjudeild season trajectory per team."
+#| fig-height: 7
+plot_trajectory("female", "ld", "Kvenna Lengjudeild — Stig vs. xStig")
+```
+
+# Residual evolution — who is the model misjudging?
+
+A team's **residual** at fit *t* is `points(t) − xpts(t)` — positive when the team has banked more points than the model expected, negative when fewer. A team with consistent positive residuals across the season is one the model is *underrating*; consistent negative residuals = *overrating*. Residuals that drift back toward zero late in the season are consistent with reversion-to-mean (the lucky team's luck running out).
+
+```{r}
+#| label: residual-plot-fn
+#| include: false
+plot_residual_evolution <- function(sex_filter, division_filter, title_text) {
+  d <- xpts |>
+    filter(
+      sex == sex_filter,
+      division == division_filter,
+      full_coverage
+    )
+
+  if (nrow(d) == 0L) {
+    return(invisible(NULL))
+  }
+
+  latest_residual <- d |>
+    group_by(team) |>
+    filter(as_of == max(as_of)) |>
+    ungroup() |>
+    select(team, latest_residual = residual)
+
+  team_order <- latest_residual |>
+    arrange(desc(latest_residual)) |>
+    pull(team)
+
+  d <- d |>
+    left_join(latest_residual, by = "team") |>
+    mutate(team = factor(team, levels = team_order))
+
+  ggplot(d, aes(round, residual, group = team)) +
+    geom_hline(yintercept = 0, linewidth = 0.4, colour = "grey50") +
+    geom_line(aes(colour = latest_residual), linewidth = 0.8) +
+    geom_point(aes(colour = latest_residual), size = 1.8) +
+    facet_wrap(~team, ncol = 4) +
+    scale_colour_gradient2(
+      low = "#b3261e", mid = "#cccccc", high = "#4a7c4e",
+      midpoint = 0,
+      name = "Frávik\n(síðasti fit)",
+      guide = guide_colourbar(barwidth = 12, barheight = 0.6, title.position = "top")
+    ) +
+    scale_x_continuous(breaks = scales::breaks_pretty(n = 5L)) +
+    labs(
+      title = title_text,
+      subtitle = "Punktar = Stig − xStig á hverri umferð. Stiku­litur sýnir síðasta frávik liðs.",
+      x = "Umferð",
+      y = "Frávik (Stig − xStig)"
+    ) +
+    theme(legend.position = "bottom")
+}
+```
+
+```{r}
+#| label: fig-residual-bd-male
+#| fig-cap: "Karla Besta deild — residual evolution per team. Green = overperforming; red = underperforming."
+#| fig-height: 7
+plot_residual_evolution("male", "bd", "Karla Besta deild — Frávik eftir umferð")
+```
+
+```{r}
+#| label: fig-residual-ld-male
+#| fig-cap: "Karla Lengjudeild — residual evolution per team."
+#| fig-height: 7
+plot_residual_evolution("male", "ld", "Karla Lengjudeild — Frávik eftir umferð")
+```
+
+```{r}
+#| label: fig-residual-bd-female
+#| fig-cap: "Kvenna Besta deild — residual evolution per team."
+#| fig-height: 7
+plot_residual_evolution("female", "bd", "Kvenna Besta deild — Frávik eftir umferð")
+```
+
+```{r}
+#| label: fig-residual-ld-female
+#| fig-cap: "Kvenna Lengjudeild — residual evolution per team."
+#| fig-height: 7
+plot_residual_evolution("female", "ld", "Kvenna Lengjudeild — Frávik eftir umferð")
+```
+
+# League-wide calibration
+
+Because each match distributes 3 points (win 3 / draw 1+1 / loss 0+0), a well-calibrated model should satisfy **Σ Stig ≈ Σ xStig** league-wide at any given round — modulo the slightly lower expected total from draws (a drawn match distributes 2 points across both teams instead of 3). If the league-wide sum of xPts systematically lags or leads the actual points sum across the season, that's a global miscalibration the per-team residuals won't surface.
+
+```{r}
+#| label: fig-league-totals
+#| fig-cap: "League-wide cumulative actual points (solid) vs. expected points (dashed) per cell, summed across all teams at each fit. Closeness of the two lines is league-level calibration; the gap is the residual the model 'leaves on the table' relative to actual outcomes."
+#| fig-height: 6
+
+league_totals <- xpts |>
+  filter(full_coverage) |>
+  group_by(sex_label, division_label, as_of) |>
+  summarise(
+    actual_total = sum(points),
+    expected_total = sum(xpts),
+    .groups = "drop"
+  ) |>
+  mutate(cell_label = paste(sex_label, division_label))
+
+league_totals_long <- league_totals |>
+  pivot_longer(c(actual_total, expected_total),
+    names_to = "metric", values_to = "value"
+  ) |>
+  mutate(metric_label = if_else(metric == "actual_total", "Σ Stig", "Σ xStig"))
+
+ggplot(league_totals_long, aes(as_of, value, colour = metric_label, linetype = metric_label)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(~cell_label, scales = "free") +
+  scale_colour_manual(values = c("Σ Stig" = "#1f2329", "Σ xStig" = "#4f6d9d"), name = NULL) +
+  scale_linetype_manual(values = c("Σ Stig" = "solid", "Σ xStig" = "32"), name = NULL) +
+  scale_x_date(date_labels = "%d. %b", date_breaks = "1 week") +
+  labs(
+    title = "Deildarheildarsumma stiga vs. xStiga",
+    subtitle = "Skarast tvær línur ⇒ módelið er rétt á heildarstigi; bil ⇒ hallinn er kerfisbundinn",
+    x = NULL,
+    y = "Uppsafnaður stigafjöldi (deild)"
+  ) +
+  theme(legend.position = "top")
+```
+
+```{r}
+#| label: tbl-league-calibration
+#| tbl-cap: "Latest-fit league-wide totals. *Lid-meðaltal* shows the average per-team residual — large in absolute value means the model is consistently misjudging a few teams (the per-team plots above tell you which); near zero means the residuals cancel and the league as a whole is well-calibrated."
+league_totals |>
+  group_by(cell_label) |>
+  filter(as_of == max(as_of)) |>
+  ungroup() |>
+  mutate(
+    diff = actual_total - expected_total,
+    n_teams = c(
+      `Karla Besta deild` = 12, `Karla Lengjudeild` = 12,
+      `Karla 2. deild` = 12, `Karla 3. deild` = 12,
+      `Kvenna Besta deild` = 10, `Kvenna Lengjudeild` = 10,
+      `Kvenna 2. deild` = 10
+    )[cell_label],
+    per_team = diff / n_teams
+  ) |>
+  arrange(cell_label) |>
+  select(cell_label, as_of, actual_total, expected_total, diff, per_team) |>
+  gt::gt() |>
+  gt::cols_label(
+    cell_label     = "Deild",
+    as_of          = "Fit",
+    actual_total   = "Σ Stig",
+    expected_total = "Σ xStig",
+    diff           = "Σ Frávik",
+    per_team       = "Lið-meðaltal"
+  ) |>
+  gt::fmt_date(columns = as_of, date_style = "iso") |>
+  gt::fmt_number(columns = c(expected_total, diff, per_team), decimals = 2) |>
+  gt::tab_options(table.font.size = 13L)
+```
+
+# Where the model is most off
+
+A different cut: which teams have the **largest absolute residual** in the latest snapshot? These are the names worth investigating — either the model genuinely misjudged their strength entering the season, or they've had a streak of luck (positive) or misfortune (negative) the model couldn't have known about.
+
+```{r}
+#| label: fig-residual-leaderboard
+#| fig-cap: "Top 8 absolute residuals across BD + LD (both sexes). Bars to the right = overperforming the model; left = underperforming. Lengths normalised against the team's played matches so a team that's played fewer matches isn't unfairly punished."
+#| fig-height: 5.5
+
+top_residuals <- latest_snapshot |>
+  filter(
+    full_coverage,
+    division %in% c("bd", "ld")
+  ) |>
+  mutate(
+    residual_per_match = residual / played,
+    label = paste0(team, " (", sex_label, " ", division_label, ")")
+  ) |>
+  slice_max(abs(residual), n = 12, with_ties = FALSE)
+
+ggplot(
+  top_residuals,
+  aes(residual, fct_reorder(label, residual),
+    fill = residual > 0
+  )
+) +
+  geom_col(width = 0.7) +
+  geom_text(
+    aes(
+      label = sprintf("%+.1f", residual),
+      hjust = if_else(residual > 0, -0.15, 1.15)
+    ),
+    size = 3.4, family = "sans"
+  ) +
+  scale_fill_manual(
+    values = c(`TRUE` = "#4a7c4e", `FALSE` = "#b3261e"),
+    guide = "none"
+  ) +
+  scale_x_continuous(expand = expansion(mult = c(0.15, 0.15))) +
+  labs(
+    title = "Stærstu frávik (Stig − xStig) — síðasti fit",
+    subtitle = "Grænt = ofgert sína væntingu (heppið / vanmetið); rautt = vanframmistaða (óheppið / ofmetið)",
+    x = "Frávik (stig)",
+    y = NULL
+  )
+```
+
+# Limitations and read-me
+
+::: {.callout-important}
+## What this report doesn't show
+- **Match-level calibration** (does the model predict P(home win) well per match?) needs the per-draw `predicted_matches.parquet` from `data/beliefs/extracts/`, not `standings_history.json`. A future report can join these to compute Brier scores or reliability diagrams per division.
+- **Goal-difference uncertainty bands** — `cumulative_xpts_long()` returns point estimates; the underlying posterior is per-draw. A future helper that returns per-draw cumulative xPts would let us show a 95% credible interval around the dashed lines.
+- **Cup cells** are skipped — `karla-bikar` and `kvenna-bikar` have no league-table semantics. Cup forecasts (P(champion), bracket walk) live in `tournament_placements.json` and are not handled here.
+- **Basketball + handball** — the F6 work that adds per-cell extracts for those sports is autumn 2026. Until then their publishers consume the fit RDS directly and don't write a `standings_history.json` that `cumulative_xpts_long()` could pick up.
+- **2deild / 3deild** with a single fit show only one snapshot — the trajectory plots filter them out (need ≥ 2 fits).
+
+## What the partial-coverage filter excludes
+The trajectory and residual plots above filter to rows where `n_predicted_matches == n_played_matches`. About **`r 100 - report_stats$full_cov_pct`%** of all rows fail this — almost all in the first fit of a cell, where some early rounds had no strictly-prior fit. Those rows are honest but tell a different story (partial cumulative xPts), so they're held out of the per-round plots to keep the trajectories comparable.
+:::
+
+# Reproducing this report
+
+```{.bash}
+# Render directly from the live publish tree (this is what the rendered
+# HTML embedded above uses):
+quarto render docs/reports/2026-cumulative-xpts.qmd
+
+# Equivalent in-R workflow if you want the tibble for ad-hoc analysis:
+Rscript -e '
+  devtools::load_all()
+  x <- sports::cumulative_xpts_long()
+  dplyr::glimpse(x)
+'
+
+# Re-publish from existing extracts for a single date and report on
+# the result (use a replay tree to keep production untouched):
+Rscript scripts/0Nr_replay.R --league football_iceland --sex male \
+    --as-of 2026-05-21 --no-fit \
+    --publish-to data/publish_replay/2026-05-21/
+quarto render docs/reports/2026-cumulative-xpts.qmd \
+    -P output_root:data/publish_replay/2026-05-21/
+```
+
+(The `-P output_root:...` parameterisation is reserved for a future iteration — today the report reads the live tree unconditionally.)
+
+# Cross-references
+
+- [F8 audit log entry](../audits/2026-05-25-pipeline-cross-project-review.html) — `cumulative_xpts_long()` ships, this report consumes it
+- [F1 audit log entry](../audits/2026-05-25-pipeline-cross-project-review.html) — replay CLI ships; report demonstrates how to use it
+- `R/cumulative-xpts.R` — the helper this report calls
+- `R/replay.R` + `scripts/0Nr_replay.R` — the replay infrastructure
+- Metill vault note `Sports/Knowledge/Publish Pipeline/historical-replay.md` — the contract this report exercises

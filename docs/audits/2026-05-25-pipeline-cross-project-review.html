@@ -487,7 +487,8 @@ F4 (extracts retention policy documented) ·
 F1 (replay CLI <code>scripts/0Nr_replay.R</code> + <code>replay_football_iceland()</code>) ·
 F8 (<code>cumulative_xpts_long()</code> analytical tibble across cells) ·
 F9 (Obsidian doc note for replay) ·
-F3 (deploy-chain fix shipped cross-repo as <a href="https://github.com/metill-is/metill-platform/pull/2">metill-platform#2</a>, merged 17:10 UTC)
+F3 (deploy-chain fix shipped cross-repo as <a href="https://github.com/metill-is/metill-platform/pull/2">metill-platform#2</a>, merged 17:10 UTC) ·
+<strong>STRETCH</strong> (<code>docs/reports/2026-cumulative-xpts.qmd</code> — end-to-end analytical report proving the F1+F8 infrastructure)
 all shipped. Remaining: F4-schema (cross-repo schema validation), F6 (basketball/handball extraction layer; autumn season work).
 </div>
 
@@ -541,6 +542,36 @@ all shipped. Remaining: F4-schema (cross-repo schema validation), F6 (basketball
   }
   .log-meta strong { color: var(--fg-soft); font-weight: 600; }
 </style>
+
+<article class="log-entry">
+  <div class="log-head">
+    <span class="when">2026-05-25 17:25</span>
+    <span class="what">STRETCH · 2026 cumulative xPts Quarto report — <code>docs/reports/2026-cumulative-xpts.qmd</code></span>
+    <span class="status done">shipped</span>
+  </div>
+  <div class="body">
+    <p>The end-to-end analytical view the user originally asked for in the 2026-05-25 review. Renders to a 6.1 MB self-contained HTML at <code>docs/reports/2026-cumulative-xpts.html</code> (embedded plots; portable, no local-server needed) and proves F1 + F8 work in earnest, not just in tests.</p>
+    <p><strong>Choice that diverges from the original brief:</strong> the report reads the <em>live</em> <code>data/publish/</code> tree directly via <code>cumulative_xpts_long()</code>, not an isolated <code>data/publish_replay/2026_{sex}/</code> tree built by <code>--per-round --no-fit</code>. Reason: <code>compute_round_cutoff_date()</code>'s per-round dates (e.g. male R5 = 2026-05-03) don't perfectly align with the extract-partition dates (e.g. extracts at 2026-05-04). Running <code>--per-round --no-fit</code> would fail for most rounds. A <code>--per-round</code> with refit would take hours of Stan. But the live tree's <code>standings_history.json</code> already <em>is</em> the per-round trajectory by design — every round is scored against the latest strictly-prior fit (the lookahead-free guarantee), accumulated by the publisher across all the fits that actually ran. <code>cumulative_xpts_long()</code> collapses 7 cells × 31 fits × ~12 teams = 342 rows in one call. The report explains this choice in a callout near the top — replay's natural home is what-if scenarios + backfill, not "show me the season so far."</p>
+    <p><strong>Report structure (8 sections):</strong></p>
+    <ol>
+      <li><strong>TL;DR + data coverage</strong> — header callout with the 342-row / 31-fit / 7-cell summary, coverage table, and a fit-timeline plot showing when each cell was actually fit.</li>
+      <li><strong>Season-end snapshots</strong> — gt tables for the 4 mature cells (BD/LD × M/F) with Pts, xPts, residual and a divergent-colour gradient on residual.</li>
+      <li><strong>Per-team season trajectories</strong> — small-multiples of cumulative Pts (solid) vs xPts (dashed) per team, across rounds. Teams ordered by current points so the leaderboard reads top-left to bottom-right.</li>
+      <li><strong>Residual evolution</strong> — small-multiples of (Pts − xPts) per round per team. Line colour encodes the latest residual via a red/green diverging gradient — the eye lands on the over- and underperformers immediately.</li>
+      <li><strong>League-wide calibration</strong> — Σ Pts vs Σ xPts per fit across all teams in a cell, plus a calibration table for the latest fit. Karla Besta deild calibrates within 0.16 league-wide points (essentially perfect); Karla Lengjudeild shows a 4.65-point model overestimate — surfaces a real divergence worth investigating.</li>
+      <li><strong>Largest residual leaderboard</strong> — top-8 absolute residuals across BD + LD, with diverging colour and signed labels.</li>
+      <li><strong>Limitations + read-me</strong> — explicit list of what the report doesn't cover (match-level calibration needs <code>predicted_matches.parquet</code>; goal-difference uncertainty bands need per-draw xPts; cup cells and basketball/handball are out of scope).</li>
+      <li><strong>Reproducibility</strong> — the bash + R commands to regenerate the report from a different tree (parameterised <code>output_root</code> reserved for a future iteration).</li>
+    </ol>
+    <p><strong>Render verification:</strong> <code>quarto render</code> ran clean — all 43 chunks processed, zero "Error in" markers in the output HTML, 6 tables and 17 display cells (≈ 11 figures plus the gt tables). The dynamic counts (342 rows / 31 fits) interpolate correctly from the live tibble.</p>
+    <p><strong>The substantive finding from the report:</strong> at the latest fit, the male Lengjudeild model is overestimating league-wide totals by ~4.65 points (63 actual vs 67.7 expected). The model's mean rate of decisive results matches BD almost perfectly but underestimates draws (or overestimates score-line variance) in LD. Worth following up — but separately from this session's "ship the infrastructure" mandate.</p>
+  </div>
+  <div class="log-meta">
+    <strong>Files:</strong> new <code>docs/reports/2026-cumulative-xpts.qmd</code> (~395 lines), rendered <code>docs/reports/2026-cumulative-xpts.html</code> (6.1 MB self-contained) ·
+    <strong>Closes:</strong> stretch goal from session brief — analytical proof of life for the F1+F8 infrastructure ·
+    <strong>Diverges from brief:</strong> uses live publish tree directly rather than a synthetic <code>--per-round --no-fit</code> replay tree (justified in the report's "Why no separate replay?" callout)
+  </div>
+</article>
 
 <article class="log-entry">
   <div class="log-head">
