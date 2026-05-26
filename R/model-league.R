@@ -31,6 +31,13 @@ NULL
 #'
 #' Writes `data/beliefs/latest/` (snapshot -- overwritten per call) and
 #' optionally `data/beliefs/archive/sport=X/country=Y/sex=Z/fit_date=D/`.
+#' For football iceland, the legacy `beliefs_archive` write is skipped
+#' (Phase 3b, 2026-05-04) because `extract_football_iceland()` already
+#' persists the per-fit posterior summaries to `beliefs/extracts/`;
+#' `extracts/` is the canonical per-fit accretive store for that league.
+#' Pass `force_archive_write = TRUE` to bypass the skip — used by the
+#' one-off `scripts/03c_backfill_football_archive_2026_05.R` to fill the
+#' 2026-05-04 → 2026-05-25 archive gap.
 #'
 #' @param league_key Key into `load_leagues()`. Mutually exclusive with `league`.
 #' @param league Pre-loaded league list. Mutually exclusive with `league_key`.
@@ -52,6 +59,14 @@ NULL
 #' @param from_season Optional integer: earliest season to include in training data.
 #' @param schedule_horizon_days Days ahead of `end_date` to include from schedule. Default 14.
 #' @param write_archive Write `beliefs/archive/` in addition to `beliefs/latest/`? Default TRUE.
+#'   Football iceland skips the archive write even when this is TRUE
+#'   (the per-fit Parquets under `beliefs/extracts/` are the canonical
+#'   per-fit accretive store for that league). Set
+#'   `force_archive_write = TRUE` to override.
+#' @param force_archive_write Bypass the football-iceland archive skip
+#'   introduced in Phase 3b. Default `FALSE`. Only intended for the
+#'   one-off 2026-05-04 → 2026-05-25 backfill; daily fits should rely on
+#'   `extracts/` instead.
 #' @param round_cutoff Optional integer. When supplied (with `season`),
 #'   triggers per-round mode: `end_date` is overridden to the date of the
 #'   round-N completion (max of each top-division team's Nth match);
@@ -87,6 +102,7 @@ fit_league <- function(league_key = NULL,
                        from_season = NULL,
                        schedule_horizon_days = 14L,
                        write_archive = TRUE,
+                       force_archive_write = FALSE,
                        round_cutoff = NULL,
                        season = NULL,
                        top_division = "BD") {
@@ -216,14 +232,19 @@ fit_league <- function(league_key = NULL,
       write_table(beliefs, "beliefs_by_round", root = root)
     } else {
       write_table(beliefs, "beliefs_latest", root = root)
-      # WHY: football iceland's per-fit archive is now the 6 Parquets emitted
-      # by extract_football_iceland (Phase 1) -- the legacy long-form per-draw
-      # part-0.parquet write is redundant for that league. Basketball and
-      # handball iceland still rely on beliefs_archive until their own
-      # extraction layer ships at the autumn 2026 cutover.
+      # WHY: football iceland's per-fit archive is now the per-fit Parquets
+      # emitted by extract_football_iceland() under beliefs/extracts/ (Phase
+      # 1, 2026-05-04) -- the legacy long-form per-draw part-0.parquet write
+      # is redundant for that league. Basketball + handball iceland still
+      # rely on beliefs_archive even after F6 shipped their own extracts
+      # tree, because extracts/ for those sports doesn't carry per-draw
+      # state (no cup forward sim). `force_archive_write = TRUE` overrides
+      # the football skip for the one-off 2026-05-04 → 2026-05-25 backfill;
+      # do not flip its default.
       is_football_iceland <- identical(league$sport, "football") &&
         identical(league$country, "iceland")
-      if (isTRUE(write_archive) && !is_football_iceland) {
+      skip_archive <- is_football_iceland && !isTRUE(force_archive_write)
+      if (isTRUE(write_archive) && !skip_archive) {
         write_table(beliefs, "beliefs_archive", root = root)
       }
     }

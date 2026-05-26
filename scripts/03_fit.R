@@ -3,8 +3,10 @@
 # Fit Stan posteriors for (league x sex) pairs that have new completed
 # games since the last fit.
 #
-# Writes data/beliefs/latest/ (overwrite) and data/beliefs/archive/
-# (accretive per fit_date).
+# Writes data/beliefs/latest/ (overwrite) and either
+# data/beliefs/archive/ (basketball + handball) or data/beliefs/extracts/
+# (football iceland — accretive per fit_date; archive/ is skipped post
+# Phase 3b, see R/model-league.R::fit_league).
 #
 # Usage:
 #   Rscript scripts/03_fit.R                                    # all needing refit

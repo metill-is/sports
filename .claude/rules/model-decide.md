@@ -22,8 +22,20 @@ paths:
 
 - `fit_league(league_key, sex)` is the only public entry point. Loads
   config, calls `prepare_data()` → `fit_model()` → `extract_posteriors()`,
-  writes `beliefs/latest/` (overwrite) and `beliefs/archive/`
-  (accretive per `fit_date`).
+  writes `beliefs/latest/` (overwrite). The accretive per-`fit_date`
+  store depends on the league: basketball + handball iceland write to
+  `beliefs/archive/`; football iceland writes per-fit summary Parquets
+  to `beliefs/extracts/` instead (Phase 3b, 2026-05-04 —
+  `extract_football_iceland()` is invoked from inside `fit_league` and
+  the legacy `beliefs_archive` per-draw write is skipped). The
+  `force_archive_write = TRUE` override exists only for the one-off
+  2026-05-04 → 2026-05-25 backfill in
+  `scripts/03c_backfill_football_archive_2026_05.R`; daily fits never
+  set it.
+- `needs_refit()` consults both `beliefs/archive/` and
+  `beliefs/extracts/` and takes the freshest `fit_date` across the two
+  stores, so the predicate works uniformly across leagues regardless of
+  which store is canonical for that cell.
 - `prepare_data()` is pure — reads Parquet facts, returns
   `list(stan_data, pred_d, teams)`. No file I/O beyond `read_table()`.
 - `fit_model()` is a pure cmdstanr wrapper — takes stan_data + stan_path,

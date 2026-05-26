@@ -21,6 +21,7 @@ fit_league(
   from_season = NULL,
   schedule_horizon_days = 14L,
   write_archive = TRUE,
+  force_archive_write = FALSE,
   round_cutoff = NULL,
   season = NULL,
   top_division = "BD"
@@ -60,7 +61,16 @@ gate. Set `SPORTS_FIT_ADAPT_DELTA=0.99` to escalate if 0.95 still fails.}
 
 \item{schedule_horizon_days}{Days ahead of `end_date` to include from schedule. Default 14.}
 
-\item{write_archive}{Write `beliefs/archive/` in addition to `beliefs/latest/`? Default TRUE.}
+\item{write_archive}{Write `beliefs/archive/` in addition to `beliefs/latest/`? Default TRUE.
+Football iceland skips the archive write even when this is TRUE
+(the per-fit Parquets under `beliefs/extracts/` are the canonical
+per-fit accretive store for that league). Set
+`force_archive_write = TRUE` to override.}
+
+\item{force_archive_write}{Bypass the football-iceland archive skip
+introduced in Phase 3b. Default `FALSE`. Only intended for the
+one-off 2026-05-04 → 2026-05-25 backfill; daily fits should rely on
+`extracts/` instead.}
 
 \item{round_cutoff}{Optional integer. When supplied (with `season`),
 triggers per-round mode: `end_date` is overridden to the date of the
@@ -90,4 +100,11 @@ Supports two call modes:
 \details{
 Writes `data/beliefs/latest/` (snapshot -- overwritten per call) and
 optionally `data/beliefs/archive/sport=X/country=Y/sex=Z/fit_date=D/`.
+For football iceland, the legacy `beliefs_archive` write is skipped
+(Phase 3b, 2026-05-04) because `extract_football_iceland()` already
+persists the per-fit posterior summaries to `beliefs/extracts/`;
+`extracts/` is the canonical per-fit accretive store for that league.
+Pass `force_archive_write = TRUE` to bypass the skip — used by the
+one-off `scripts/03c_backfill_football_archive_2026_05.R` to fill the
+2026-05-04 → 2026-05-25 archive gap.
 }
