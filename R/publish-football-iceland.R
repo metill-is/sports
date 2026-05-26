@@ -990,12 +990,7 @@ publish_football_iceland <- function(extracted,
       "\u00de\u00f3r", "\u00de\u00f3rsv\u00f6llur"
     )
 
-    division_labels <- c(
-      BD = "BD", LD1 = "LD", LD2 = "\u00d6D", LD3 = "\u00deD",
-      LD4 = "FjD", CUP = "MB",
-      BD_UPPER_PO = "BD PO", BD_LOWER_PO = "BD N-PO",
-      LD1_PO = "LD PO"
-    )
+    division_labels <- .football_iceland_division_code_labels()
 
     if (nrow(predicted_with_division) > 0L) {
       next_games_out <- predicted_with_division |>

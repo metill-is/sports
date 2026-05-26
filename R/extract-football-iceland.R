@@ -92,6 +92,22 @@ NULL
   )
 }
 
+# Static map: canonical division code -> short ASCII badge code for
+# `next_games.json::division_code` (client-side filter key on metill-platform).
+# Values MUST match the schema regex ^[A-Z][A-Z0-9_]*$ at
+# `config/publish-schemas/football/next_games.schema.json` -- regression-tested
+# in tests/testthat/test-publish-divisions-config.R. The platform's
+# DIVISIONS dict at app/routes/ithrottir.py mirrors these codes; coordinate
+# any change there.
+.football_iceland_division_code_labels <- function() {
+  c(
+    BD = "BD", LD1 = "LD", LD2 = "D2", LD3 = "D3",
+    LD4 = "D4", CUP = "MB",
+    BD_UPPER_PO = "BDU", BD_LOWER_PO = "BDL",
+    LD1_PO = "LDP"
+  )
+}
+
 # Per-division extraction. Returns a named list of 6 tibbles (one per parquet
 # file type) for `target_div`. The caller binds rows across divisions and
 # writes one parquet per file type with `division` as a payload column.

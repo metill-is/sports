@@ -121,3 +121,51 @@ test_that("extract_football_iceland: target_divs validation rejects out-of-confi
     regexp = "target_divs"
   )
 })
+
+test_that("publish_football_iceland: every division_code emitted matches next_games schema regex", {
+  # WHY: 2deild/3deild cells added 2026-05-24 introduced non-ASCII recode
+  # outputs "ÖD"/"ÞD" into publish_football_iceland()'s
+  # division_labels map, which the JSON schema's
+  # ^[A-Z][A-Z0-9_]*$ pattern rejects -- decide-publish.yml then aborts.
+  # This test parameterises over every cell in publish_divisions.{male,female}
+  # so the next addition of a non-ASCII recode is caught at devtools::test()
+  # rather than in CI.
+  schema <- jsonlite::fromJSON(
+    here::here(
+      "config", "publish-schemas", "football", "next_games.schema.json"
+    )
+  )
+  pattern <- schema$properties$matches$items$properties$division_code$pattern
+  expect_true(nzchar(pattern))
+
+  labels <- .football_iceland_division_code_labels()
+  # The recode map's own values must all be schema-compliant -- even those
+  # for codes that aren't currently in publish_divisions (e.g. _PO playoff
+  # codes), because they could land in `division` payloads via training
+  # data and ride through the recode unchanged otherwise.
+  for (code in names(labels)) {
+    expect_match(
+      labels[[code]], pattern,
+      info = sprintf(
+        "division_labels[%s] = '%s' violates schema pattern %s",
+        code, labels[[code]], pattern
+      )
+    )
+  }
+
+  # And the publisher's emitted division_code for every (sex, cell) pair
+  # in publish_divisions must match too.
+  for (sex_key in c("male", "female")) {
+    codes <- .football_iceland_division_codes(sex_key)
+    for (code in codes) {
+      emitted <- if (code %in% names(labels)) labels[[code]] else code
+      expect_match(
+        emitted, pattern,
+        info = sprintf(
+          "publish_divisions[%s] code=%s emits division_code='%s' which violates schema pattern %s",
+          sex_key, code, emitted, pattern
+        )
+      )
+    }
+  }
+})
