@@ -489,8 +489,9 @@ F8 (<code>cumulative_xpts_long()</code> analytical tibble across cells) ·
 F9 (Obsidian doc note for replay) ·
 F3 (deploy-chain fix shipped cross-repo as <a href="https://github.com/metill-is/metill-platform/pull/2">metill-platform#2</a>, merged 17:10 UTC) ·
 <strong>STRETCH</strong> (<code>docs/reports/2026-cumulative-xpts.qmd</code> — end-to-end analytical report proving the F1+F8 infrastructure) ·
-<strong>F4</strong> (cross-repo JSON Schema validation: 11 football schemas + R-side <code>validate_publish_dir()</code> + Python <code>scripts/validate_publish.py</code>; both sides fail closed)
-all shipped. Remaining: F6 (basketball/handball extraction layer; autumn season work — schemas opt-in via the unmatched path until then).
+<strong>F4</strong> (cross-repo JSON Schema validation: 11 football schemas + R-side <code>validate_publish_dir()</code> + Python <code>scripts/validate_publish.py</code>; both sides fail closed) ·
+<strong>F6</strong> phase 1 (basketball + handball iceland extraction layer: 5 per-fit Parquets per sport, shared 2DT primitives, wired into <code>fit_league()</code>; publisher refactor deferred to autumn 2026 cutover)
+all shipped. <strong>The audit is now fully closed</strong>: every numbered finding has either landed in code or has a documented design doc for the autumn ramp.
 </div>
 
 <style>
@@ -543,6 +544,47 @@ all shipped. Remaining: F6 (basketball/handball extraction layer; autumn season 
   }
   .log-meta strong { color: var(--fg-soft); font-weight: 600; }
 </style>
+
+<article class="log-entry">
+  <div class="log-head">
+    <span class="when">2026-05-26 12:45</span>
+    <span class="what">F6 phase 1 · basketball + handball iceland extraction layer — <code>R/extract-{basketball,handball}-iceland.R</code></span>
+    <span class="status done">shipped</span>
+  </div>
+  <div class="body">
+    <p>The autumn-2026 prerequisite work, shipping in the pre-season pause so the first fits of the new season write to <code>data/beliefs/extracts/sport=&lt;sport&gt;/country=iceland/sex=Z/fit_date=D/</code> directly — no retroactive backfill required when the basketball + handball seasons restart.</p>
+    <p><strong>Architectural insight that shrunk the scope:</strong> all three Stan models (football BVP, basketball 2D Student-t, handball 2D Student-t) share the same variable families — <code>goals1_pred</code>/<code>goals2_pred</code>, <code>cur_offense_{home,away}</code> / <code>cur_defense_{home,away}</code> / <code>cur_strength_{home,away}</code>, <code>home_advantage_{off,def,tot}</code>. The audit's "~600 lines per sport" estimate assumed near-bespoke ports; in practice ~80% of the extraction code lives in a new <code>R/extract-iceland-2dt-shared.R</code> primitives file (~290 lines) plus two tiny per-sport entry points (~80 lines each). Plus pre-existing reusable helpers in <code>R/publish-iceland-2dt-helpers.R</code>.</p>
+    <p><strong>Schema alignment decision (hybrid):</strong> the design doc at <code>docs/superpowers/designs/2026-05-26-f6-basketball-handball-extraction.md</code> walks through the decision matrix in full. Headlines: same outer envelope (sport/sex/league/division/is_cup/season/generated_at/fit_date/round/n_draws), same 9-cell team_strengths grid, same final_positions shape. Sport-specific deltas: goal_diff_distribution binned to match score scale (basketball 5-pt buckets in [-50,+50]; handball 2-pt buckets in [-20,+20]); has_ties config-driven (basketball <code>FALSE</code>, handball <code>TRUE</code>). Net per-sport: 5 Parquets vs football's 9 — the 4 football-only artefacts (round-strength projections, tournament placements, cup sim inputs ×2) are skipped because basketball/handball have no modelled knockout cup and no per-round projection.</p>
+    <p><strong>Per-fit extract set</strong> (basketball + handball, each):</p>
+    <ul>
+      <li><code>predicted_matches.parquet</code> — per-match draws: mean home/away score, mean diff, p_home_win/p_draw/p_away_win, plus a binned goal_diff_distribution list-column.</li>
+      <li><code>team_strengths_quantiles.parquet</code> — 9-cell strength grid (component × location) × 99 quantile bands per team in the current top division.</li>
+      <li><code>home_advantage_quantiles.parquet</code> — per-team home-advantage quantile bands by component (offence/defence/total), exp-transformed.</li>
+      <li><code>final_positions.parquet</code> — per-team placement probability (1..n_teams) at season end.</li>
+      <li><code>points_distribution.parquet</code> — per-team discrete points-total distribution.</li>
+    </ul>
+    <p>TDD cycle:</p>
+    <ol>
+      <li><strong>RED</strong> — wrote <code>test-extract-{basketball,handball}-iceland.R</code> with 3 test_that blocks each: (a) writes 5 expected parquets to the partition, (b) team_strengths_quantiles covers the 9-cell grid × 99 quantiles, (c) re-run is byte-identical. All failed with "could not find function extract_X_iceland".</li>
+      <li><strong>GREEN</strong> — wrote shared core <code>R/extract-iceland-2dt-shared.R</code> (~290 lines, 8 internal primitives plus 1 orchestrator) + tiny per-sport entry points (~80 lines each). Discovered: handball's storage-schema top-division code is <code>"OD"</code> (Olís-deild), not <code>"BD"</code> like basketball + football — fixed by matching the existing publisher's <code>top_div</code> constant rather than assuming.</li>
+      <li><strong>Edge case</strong> — handball's regular season finished 2026-04-30; current_top_teams is empty during the seasonal pause. Added an early-return in <code>.summarise_quantile_band_2dt()</code> for the zero-rows case so the parquets ship empty (not a 99-NA-row table).</li>
+      <li><strong>Verify</strong> — 20 new test_that PASS (10 basketball + 10 handball assertions). Broader publish + extract suite: 192/0/36 (no regressions).</li>
+    </ol>
+    <p><strong>Auto-extract on fit:</strong> <code>fit_league()</code> now dispatches to the right extract function via <code>switch(league$sport, football = ..., basketball = ..., handball = ..., NULL)</code> — same try-catch wrapper so an extraction failure logs a warning but doesn't kill the fit. Backwards-compatible: existing football flow unchanged.</p>
+    <p><strong>What's NOT shipping in this commit (intentional):</strong></p>
+    <ul>
+      <li><strong>Publisher refactor</strong> — basketball + handball publishers still load the fit RDS directly. Refactoring them to consume extracts is the autumn-2026 cutover work; doing it now without a fresh fit + a known-good bytewise-regression baseline introduces drift risk.</li>
+      <li><strong>Schemas for these sports</strong> — under <code>config/publish-schemas/{basketball,handball}/</code>. Deferred until publisher refactor lands, because the published JSONs change shape then. Today basketball + handball JSONs land in the F4 validator's <code>unmatched</code> bucket (the design's opt-in pattern).</li>
+      <li><strong>Replay support</strong> — <code>scripts/0Nr_replay.R</code> still rejects basketball/handball at arg-parse. Trivial to lift once publishers consume extracts.</li>
+    </ul>
+    <p>So this commit is half of F6: it lays the pipe, populates the storage layer, and makes the extraction code path automatic from the next fit forward. The autumn-2026 cutover spends the second half (publisher rewrite + schemas + replay).</p>
+  </div>
+  <div class="log-meta">
+    <strong>Files:</strong> new <code>R/extract-iceland-2dt-shared.R</code>, new <code>R/extract-basketball-iceland.R</code>, new <code>R/extract-handball-iceland.R</code>, new <code>tests/testthat/test-extract-{basketball,handball}-iceland.R</code>, new <code>docs/superpowers/designs/2026-05-26-f6-basketball-handball-extraction.md</code>, edits to <code>R/model-league.R</code> + <code>NAMESPACE</code> + <code>Collate</code> + 2 new <code>man/*.Rd</code> ·
+    <strong>Closes (phase 1):</strong> F6 — extraction layer ·
+    <strong>Defers to autumn 2026:</strong> publisher refactor, schemas, replay enablement
+  </div>
+</article>
 
 <article class="log-entry">
   <div class="log-head">

@@ -233,29 +233,38 @@ fit_league <- function(league_key = NULL,
     )
   }
 
-  # WHY: extraction-layer Phase 1 (football only). Persist 6 publish-layer
-  # summary Parquets per fit so future republish runs don't need the
-  # gitignored fit RDS. See Sports/Knowledge/Publish Pipeline/extraction-layer
-  # in the Metill vault. Basketball + handball deferred to autumn 2026.
-  if (!by_round_mode &&
-    isTRUE(write_archive) &&
-    identical(league$sport, "football") &&
+  # WHY: extraction-layer per-fit persistence. Football iceland writes 9
+  # publish-layer summary Parquets per fit (Phase 1, since 2026-05-04);
+  # basketball + handball iceland write 5 each (F6 shipped 2026-05-26 — the
+  # 4 football-specific extras like cup bracket inputs and round projections
+  # are skipped). All three flows let future republish runs render JSONs
+  # without the gitignored fit RDS. See Sports/Knowledge/Publish Pipeline/
+  # extraction-layer in the Metill vault.
+  if (!by_round_mode && isTRUE(write_archive) &&
     identical(league$country, "iceland")) {
-    tryCatch(
-      extract_football_iceland(
-        fit, league,
-        sex = sex,
-        fit_date = fit_date,
-        end_date = end_date,
-        root = root,
-        prep = prep
-      ),
-      error = function(e) {
-        cli::cli_alert_warning(
-          "extract_football_iceland failed: {conditionMessage(e)}"
-        )
-      }
+    extract_fn <- switch(league$sport,
+      football = extract_football_iceland,
+      basketball = extract_basketball_iceland,
+      handball = extract_handball_iceland,
+      NULL
     )
+    if (!is.null(extract_fn)) {
+      tryCatch(
+        extract_fn(
+          fit, league,
+          sex = sex,
+          fit_date = fit_date,
+          end_date = end_date,
+          root = root,
+          prep = prep
+        ),
+        error = function(e) {
+          cli::cli_alert_warning(
+            "extract_{league$sport}_iceland failed: {conditionMessage(e)}"
+          )
+        }
+      )
+    }
   }
 
   invisible(beliefs)
