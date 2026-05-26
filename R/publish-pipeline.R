@@ -1,4 +1,4 @@
-#' @include publish-football-iceland.R publish-basketball-iceland.R publish-handball-iceland.R
+#' @include publish-football-iceland.R publish-basketball-iceland.R publish-handball-iceland.R validate-publish.R
 NULL
 
 #' Publish JSONs for a single (league x sex).
@@ -15,17 +15,29 @@ NULL
 #' publishers branch on `betting.scoring` (tie thresholds); a `lengjan`
 #' change shouldn't trigger a republish.
 #'
+#' After a successful publish, the resulting JSONs are validated against
+#' `config/publish-schemas/<sport>/*.schema.json` via `validate_publish_dir()`.
+#' Failures abort with the list of (file, error) entries -- the cron pipeline
+#' surfaces the message in its run log so drift between producer and
+#' platform-side consumer is caught locally. Set `validate = FALSE` for
+#' synthetic-data tests where the schema would reject the fixture by design.
+#'
 #' @param static Per-league static slice (sport, country, ...).
 #' @param betting Per-league `betting` slice.
 #' @param key League key (used only to dispatch to the per-sport publisher).
 #' @param sex `"male"` or `"female"`.
 #' @param root Storage root.
+#' @param validate Logical. When `TRUE` (default) the published JSONs are
+#'   validated against `config/publish-schemas/<sport>/`. Failures abort.
 #' @return invisible(NULL).
 #' @export
 publish_one <- function(static, betting, key, sex,
-                        root = here::here("data")) {
+                        root = here::here("data"),
+                        validate = TRUE) {
   league <- static
   league$betting <- betting
+
+  output_root <- file.path(root, "publish")
 
   if (identical(key, "football_iceland")) {
     extracts_root <- file.path(root, "beliefs", "extracts")
@@ -51,10 +63,13 @@ publish_one <- function(static, betting, key, sex,
       league = league,
       sex = sex,
       root = root,
-      output_root = file.path(root, "publish"),
+      output_root = output_root,
       extracts_root = extracts_root,
       archive_root = archive_root
     )
+    if (isTRUE(validate)) {
+      .validate_or_abort(output_root, sport = "football", key = key, sex = sex)
+    }
     return(invisible(NULL))
   }
 
@@ -84,5 +99,52 @@ publish_one <- function(static, betting, key, sex,
 
   fit <- readRDS(fit_path)
   pub_fn(fit, league, sex = sex)
+  if (isTRUE(validate)) {
+    .validate_or_abort(
+      output_root,
+      sport = league$sport,
+      key = key,
+      sex = sex
+    )
+  }
   invisible(NULL)
+}
+
+.validate_or_abort <- function(output_root, sport, key, sex) {
+  schema_dir <- here::here("config", "publish-schemas")
+  sport_dir <- file.path(output_root, sport)
+  if (!dir.exists(sport_dir) || !dir.exists(schema_dir)) {
+    return(invisible(NULL))
+  }
+  if (!dir.exists(file.path(schema_dir, sport))) {
+    # No schemas for this sport yet (e.g. basketball / handball pre-F6).
+    # Skip with an informational note.
+    cli::cli_alert_info(
+      "publish_one({key}/{sex}): no schemas at {schema_dir}/{sport}/ -- skipping validation"
+    )
+    return(invisible(NULL))
+  }
+
+  result <- validate_publish_dir(output_root, schema_dir = schema_dir)
+  if (isTRUE(result$ok)) {
+    cli::cli_alert_success(
+      "publish_one({key}/{sex}): schema validation passed ({result$n_passed}/{result$n_files} files)"
+    )
+    return(invisible(NULL))
+  }
+
+  cli::cli_alert_danger(
+    "publish_one({key}/{sex}): schema validation FAILED ({result$n_failed}/{result$n_files} files)"
+  )
+  for (e in result$errors) {
+    cli::cli_alert_warning(e)
+  }
+  cli::cli_abort(
+    paste0(
+      "publish_one({key}/{sex}) produced JSONs that do not match ",
+      "config/publish-schemas/{sport}/*.schema.json. See errors above. ",
+      "Either fix the publisher or, if the schema is genuinely stale, ",
+      "update the schema with a corresponding test."
+    )
+  )
 }

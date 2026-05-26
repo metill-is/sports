@@ -231,6 +231,31 @@ longer mirrors a file no consumer reads.
 
 See [memory: project_publish_consumers](../../.claude/projects/-Users-brynjolfurjonsson-sports/memory/project_publish_consumers.md).
 
+## Schema validation (since 2026-05-26)
+
+Every JSON the publishers emit is validated against
+`config/publish-schemas/<sport>/<file>.schema.json` (sport-namespaced) or
+`config/publish-schemas/<file>.schema.json` (sport-agnostic fallback) via
+`R/validate-publish.R::validate_publish_dir()`. `publish_one()` calls it
+at the end of each successful publish; on failure the daily-driver and
+`republish.yml` workflow both abort via `cli::cli_abort()`, leaving the
+previous JSONs on disk (writes are idempotent — no truncate-before-write).
+
+Today only football schemas exist (`config/publish-schemas/football/`).
+Basketball + handball legacy JSONs land in `unmatched` (informational,
+not errors) until F6 migrates them onto the football shape at the autumn
+2026 cutover. The unmatched path also lets future producer-side artefacts
+ship before their schema is written — the contract is opt-in per filename.
+
+Cross-repo: `metill-platform/scripts/validate_publish.py` mirrors the R
+validator using `fastjsonschema`. It runs inside `pull-sports-data.yml`
+between rsync and commit; exit-non-zero stops the workflow before the
+deploy-chain dispatch (F3) fires. Schemas ship from sports to platform
+via the same rsync — single source of truth at
+`config/publish-schemas/`, lands at `data/ithrottir-schemas/` on the
+platform side. See `config/publish-schemas/README.md` for the full
+contract.
+
 ## Daily driver
 
 `Rscript scripts/05_publish.R`. Wires fresh-fit-on-demand via

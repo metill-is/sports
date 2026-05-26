@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/metill-is/sports/config/publish-schemas/final_positions.schema.json",
+  "title": "data/publish/.../final_positions.json",
+  "description": "Per-team probability of finishing in each placement (1..n_teams) at season end. `summary` carries the headline aggregates per team (p_top_six, p_winner, p_relegation). Empty for cup cells.",
+  "type": "object",
+  "required": ["generated_at", "season", "n_teams", "records", "summary"],
+  "properties": {
+    "generated_at": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T" },
+    "season":       { "type": "integer", "minimum": 2000 },
+    "n_teams":      { "type": "integer", "minimum": 0 },
+    "records": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["team", "placement", "probability"],
+        "properties": {
+          "team":        { "type": "string", "minLength": 1 },
+          "placement":   { "type": "integer", "minimum": 1 },
+          "probability": { "type": "number", "minimum": 0, "maximum": 1 }
+        }
+      }
+    },
+    "summary": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["team", "p_top_six", "p_winner", "p_relegation"],
+        "properties": {
+          "team":          { "type": "string", "minLength": 1 },
+          "p_top_six":     { "type": "number", "minimum": 0, "maximum": 1 },
+          "p_winner":      { "type": "number", "minimum": 0, "maximum": 1 },
+          "p_relegation":  { "type": "number", "minimum": 0, "maximum": 1 }
+        }
+      }
+    }
+  }
+}

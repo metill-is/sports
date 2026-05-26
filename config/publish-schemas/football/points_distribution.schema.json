@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/metill-is/sports/config/publish-schemas/points_distribution.schema.json",
+  "title": "data/publish/.../points_distribution.json",
+  "description": "Per-team final-points distribution: discrete probability mass over each possible cumulative-points total at season end. `summary` gives the headline aggregates (mean, median, 80% band) plus baseline-derived placement probabilities.",
+  "type": "object",
+  "required": ["generated_at", "season", "records", "summary"],
+  "properties": {
+    "generated_at": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T" },
+    "season":       { "type": "integer", "minimum": 2000 },
+    "records": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["team", "points", "probability"],
+        "properties": {
+          "team":        { "type": "string", "minLength": 1 },
+          "points":      { "type": "integer", "minimum": 0 },
+          "probability": { "type": "number", "minimum": 0, "maximum": 1 }
+        }
+      }
+    },
+    "summary": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "team", "mean_points", "median_points",
+          "lower_80", "upper_80", "base_points",
+          "p_top_six", "p_winner", "p_relegation"
+        ],
+        "properties": {
+          "team":           { "type": "string", "minLength": 1 },
+          "mean_points":    { "type": "number" },
+          "median_points":  { "type": "number" },
+          "lower_80":       { "type": "number" },
+          "upper_80":       { "type": "number" },
+          "base_points":    { "type": "number" },
+          "p_top_six":      { "type": "number", "minimum": 0, "maximum": 1 },
+          "p_winner":       { "type": "number", "minimum": 0, "maximum": 1 },
+          "p_relegation":   { "type": "number", "minimum": 0, "maximum": 1 }
+        }
+      }
+    }
+  }
+}

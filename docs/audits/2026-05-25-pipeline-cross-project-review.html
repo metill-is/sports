@@ -488,8 +488,9 @@ F1 (replay CLI <code>scripts/0Nr_replay.R</code> + <code>replay_football_iceland
 F8 (<code>cumulative_xpts_long()</code> analytical tibble across cells) ·
 F9 (Obsidian doc note for replay) ·
 F3 (deploy-chain fix shipped cross-repo as <a href="https://github.com/metill-is/metill-platform/pull/2">metill-platform#2</a>, merged 17:10 UTC) ·
-<strong>STRETCH</strong> (<code>docs/reports/2026-cumulative-xpts.qmd</code> — end-to-end analytical report proving the F1+F8 infrastructure)
-all shipped. Remaining: F4-schema (cross-repo schema validation), F6 (basketball/handball extraction layer; autumn season work).
+<strong>STRETCH</strong> (<code>docs/reports/2026-cumulative-xpts.qmd</code> — end-to-end analytical report proving the F1+F8 infrastructure) ·
+<strong>F4</strong> (cross-repo JSON Schema validation: 11 football schemas + R-side <code>validate_publish_dir()</code> + Python <code>scripts/validate_publish.py</code>; both sides fail closed)
+all shipped. Remaining: F6 (basketball/handball extraction layer; autumn season work — schemas opt-in via the unmatched path until then).
 </div>
 
 <style>
@@ -542,6 +543,50 @@ all shipped. Remaining: F4-schema (cross-repo schema validation), F6 (basketball
   }
   .log-meta strong { color: var(--fg-soft); font-weight: 600; }
 </style>
+
+<article class="log-entry">
+  <div class="log-head">
+    <span class="when">2026-05-26 10:30</span>
+    <span class="what">F4 · cross-repo JSON Schema validation — <code>config/publish-schemas/football/*.schema.json</code></span>
+    <span class="status done">shipped</span>
+  </div>
+  <div class="body">
+    <p>The largest remaining item from the original audit. Closes the silent-drift risk between producer (<code>metill-is/sports</code>) and consumer (<code>metill-is/metill-platform</code>): every JSON the publisher emits now passes through a JSON Schema (Draft-07) on both sides, both failing closed.</p>
+    <p><strong>Layout:</strong> 11 schemas under <code>config/publish-schemas/football/</code> (one per JSON file type — <code>meta</code>, <code>next_games</code>, <code>standings</code>, <code>team_strengths</code>, <code>final_positions</code>, <code>team_strengths_history</code>, <code>final_positions_history</code>, <code>home_advantage</code>, <code>points_distribution</code>, <code>standings_history</code>, <code>tournament_placements</code>). Sport-namespaced lookup so basketball/handball legacy JSONs go to the validator's <code>unmatched</code> bucket today and pick up schemas at the F6 cutover without code change.</p>
+    <p><strong>R side (producer):</strong> <code>R/validate-publish.R::validate_publish_dir()</code> walks <code>data/publish/</code>, looks up <code>config/publish-schemas/&lt;sport&gt;/&lt;basename&gt;.schema.json</code>, validates with <code>jsonvalidate::json_validate(engine = "ajv")</code>. Wired into <code>publish_one()</code> at the end of each successful publish — on failure <code>cli::cli_abort()</code> with the list of (file, error) entries. <code>scripts/05_publish.R</code> (daily-driver) and <code>republish.yml</code> both fail closed.</p>
+    <p><strong>Python side (consumer):</strong> <code>metill-platform/scripts/validate_publish.py</code> mirrors the R API using <code>fastjsonschema</code>. <code>pull-sports-data.yml</code> now rsyncs <code>config/publish-schemas/</code> alongside the JSONs, then runs the validator between rsync and the commit-+-deploy step. Exit non-zero stops the workflow before the F3 deploy chain fires, so production stays on the last-known-good payload.</p>
+    <p><strong>Strictness contract (v1):</strong></p>
+    <ul>
+      <li>✅ Top-level required keys</li>
+      <li>✅ Field types (with union nulls where the producer legitimately emits null — early-cell xPts before any fit)</li>
+      <li>✅ URL-safe division-code patterns + ISO date/datetime prefixes</li>
+      <li>✅ Probability fields constrained to [0, 1]</li>
+      <li>❌ <code>additionalProperties: false</code> (default-permissive — keeps schemas additive)</li>
+      <li>❌ Cross-field invariants (<code>played == wins + draws + losses</code>) — too brittle for schema, covered by tests</li>
+    </ul>
+    <p><strong>Iterative TDD discoveries (shape inventory ≠ shape reality):</strong> three rounds of refinement against real production output before all 124 JSONs in <code>data/publish/</code> validated. (a) <code>goal_diff_distribution</code> items use keys <code>{diff, p}</code>, not the <code>{goal_diff, probability}</code> view produced by <code>jsonlite::fromJSON(simplifyDataFrame = TRUE)</code>. (b) <code>points_distribution.summary.lower_80</code> is a <code>number</code>, not an <code>integer</code> (Þróttur R.'s 12.9). (c) <code>kvenna-2deild</code> ships <code>xpts: null</code> + scalar (not array) trend columns when no fit exists yet — schemas now permit <code>["number", "null"]</code> and <code>["array", "number", "null"]</code> for those fields.</p>
+    <p><strong>TDD cycle:</strong></p>
+    <ol>
+      <li><strong>RED</strong> — 5 test_that blocks in <code>tests/testthat/test-publish-schemas.R</code> covering live-tree regression, missing-required-field rejection, wrong-type rejection, unmatched-file informational classification, cup-cell handling. All failed with "could not find function validate_publish_dir".</li>
+      <li><strong>GREEN</strong> — wrote <code>R/validate-publish.R</code> + 11 schemas. First pass: 15 errors against live data (basketball/handball legacy shape). Restructured to sport-namespaced. Second pass: 7 errors against football. Three rounds of schema relaxation (goal_diff_distribution key names, lower_80 type, null-permitted xpts/trends). Third pass: 0 errors.</li>
+      <li><strong>Cross-repo</strong> — wrote <code>metill-platform/scripts/validate_publish.py</code> with mirror API, 7 test_that blocks in <code>tests/test_validate_publish.py</code>. Verified locally: 92 passed, 0 failed, 41 unmatched (basketball + handball legacy + 9 stale F7-relocated <code>round_predictions_history.json</code> that the next <code>--delete</code> rsync will drop).</li>
+      <li><strong>Verify</strong> — 13 R tests pass; 7 Python tests pass; broader publish test suite (128/0/26 across <code>publish-*</code> filters) unaffected.</li>
+    </ol>
+    <p><strong>Failure surface story:</strong> if a producer-side refactor renames a field (e.g. <code>p_top_six</code> → <code>p_european</code>) or adds a new required key:</p>
+    <ol>
+      <li>Producer's <code>scripts/05_publish.R</code> aborts immediately — no commit, no push, no platform pull.</li>
+      <li>If the producer somehow shipped (e.g. schemas updated but producer didn't), the platform's <code>pull-sports-data.yml</code> validator catches it post-rsync and stops the workflow before the deploy-chain dispatch (F3).</li>
+    </ol>
+    <p>So a schema change must touch both sides in the same commit; if you only update one, the other fails closed.</p>
+    <p>Drift between repos was the single largest silent-failure mode pre-F4; it's now noisy by construction.</p>
+  </div>
+  <div class="log-meta">
+    <strong>Files (sports):</strong> new <code>config/publish-schemas/README.md</code> + <code>football/{11 schemas}</code>, new <code>R/validate-publish.R</code>, new <code>tests/testthat/test-publish-schemas.R</code>, edits to <code>R/publish-pipeline.R</code> + <code>.claude/rules/publish-layer.md</code> + <code>DESCRIPTION</code> + <code>NAMESPACE</code> + <code>Collate</code> ·
+    <strong>Files (metill-platform):</strong> new <code>scripts/validate_publish.py</code> + <code>tests/test_validate_publish.py</code>, edits to <code>.github/workflows/pull-sports-data.yml</code> + <code>pyproject.toml</code> ·
+    <strong>Closes:</strong> F4 ·
+    <strong>Defers:</strong> F6 schemas (basketball/handball; opt-in via <code>unmatched</code> until autumn)
+  </div>
+</article>
 
 <article class="log-entry">
   <div class="log-head">

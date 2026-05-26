@@ -4,7 +4,14 @@
 \alias{publish_one}
 \title{Publish JSONs for a single (league x sex).}
 \usage{
-publish_one(static, betting, key, sex, root = here::here("data"))
+publish_one(
+  static,
+  betting,
+  key,
+  sex,
+  root = here::here("data"),
+  validate = TRUE
+)
 }
 \arguments{
 \item{static}{Per-league static slice (sport, country, ...).}
@@ -16,6 +23,9 @@ publish_one(static, betting, key, sex, root = here::here("data"))
 \item{sex}{`"male"` or `"female"`.}
 
 \item{root}{Storage root.}
+
+\item{validate}{Logical. When `TRUE` (default) the published JSONs are
+validated against `config/publish-schemas/<sport>/`. Failures abort.}
 }
 \value{
 invisible(NULL).
@@ -33,4 +43,11 @@ to the extraction layer is deferred to the autumn 2026 cutover.
 Takes the static + betting slices separately because basketball/handball
 publishers branch on `betting.scoring` (tie thresholds); a `lengjan`
 change shouldn't trigger a republish.
+
+After a successful publish, the resulting JSONs are validated against
+`config/publish-schemas/<sport>/*.schema.json` via `validate_publish_dir()`.
+Failures abort with the list of (file, error) entries -- the cron pipeline
+surfaces the message in its run log so drift between producer and
+platform-side consumer is caught locally. Set `validate = FALSE` for
+synthetic-data tests where the schema would reject the fixture by design.
 }

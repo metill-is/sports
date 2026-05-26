@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/metill-is/sports/config/publish-schemas/meta.schema.json",
+  "title": "data/publish/.../meta.json",
+  "description": "Per-cell metadata: identity (sport/sex/league/division/is_cup), provenance (fit_date, generated_at), and Stan-run scalars (n_draws, round). Schema v1 — additive changes only without bumping.",
+  "type": "object",
+  "required": [
+    "sport", "sex", "league", "division", "is_cup",
+    "season", "generated_at", "fit_date", "round", "n_draws"
+  ],
+  "properties": {
+    "sport":        { "type": "string", "enum": ["football", "basketball", "handball"] },
+    "sex":          { "type": "string", "enum": ["male", "female"] },
+    "league":       { "type": "string", "minLength": 1 },
+    "division":     { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
+    "is_cup":       { "type": "boolean" },
+    "season":       { "type": "integer", "minimum": 2000, "maximum": 2100 },
+    "generated_at": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}" },
+    "fit_date":     { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+    "round":        { "type": "integer", "minimum": 0 },
+    "n_draws":      { "type": "integer", "minimum": 1 }
+  }
+}
