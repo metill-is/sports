@@ -37,10 +37,17 @@ for (i in seq_len(nrow(targets))) {
     "sport", "country", "sexes", "active", "stan_model", "data_source"
   )]
 
-  if (!opts$force && !needs_refit(static, row$sex)) {
-    cli::cli_alert_info("Skipping {row$key} ({row$sex}): no new games since last fit.")
-    skipped <- skipped + 1L
-    next
+  if (!opts$force) {
+    if (!needs_refit(static, row$sex)) {
+      cli::cli_alert_info("Skipping {row$key} ({row$sex}): no new games since last fit.")
+      skipped <- skipped + 1L
+      next
+    }
+    if (!has_upcoming_games(static, row$sex)) {
+      cli::cli_alert_info("Skipping {row$key} ({row$sex}): no upcoming games in the next 14 days.")
+      skipped <- skipped + 1L
+      next
+    }
   }
 
   cli::cli_h2("{row$key} ({row$sex})")

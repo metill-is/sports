@@ -79,7 +79,7 @@ Rscript scripts/00_active_competitions.R              # write active_competition
 Rscript scripts/01_ingest_results.R                   # all active leagues
 Rscript scripts/01_ingest_results.R --league football_iceland
 Rscript scripts/02_scrape_odds.R                      # skips when no upcoming games
-Rscript scripts/03_fit.R                              # skips when results haven't moved
+Rscript scripts/03_fit.R                              # skips when results haven't moved or no upcoming games
 Rscript scripts/03_fit.R --league football_iceland --sex male --force
 Rscript scripts/04_decide.R
 Rscript scripts/05_publish.R
