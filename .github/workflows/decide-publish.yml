@@ -54,7 +54,7 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/decisions/candidates/ data/decisions/recommendations/ data/publish/
+          git add data/decisions/candidates/ data/decisions/recommendations/ data/publish/ data/beliefs/round_predictions_history/
           if git diff --cached --quiet; then
             echo "No decisions or publish JSONs changed"
             exit 0
