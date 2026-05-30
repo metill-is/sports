@@ -1,0 +1,128 @@
+---
+title: "Betting Backtest — Iceland 2026"
+subtitle: "What would have been working, and how well"
+author: "Brynjólfur Gauti Jónsson"
+date: today
+date-format: "YYYY-MM-DD"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    toc-location: left
+    code-fold: true
+    code-tools: true
+    theme: cosmo
+    fig-width: 9
+    fig-height: 5.5
+    fig-dpi: 144
+    embed-resources: true
+    smooth-scroll: true
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r}
+#| label: setup
+#| include: false
+invisible(Sys.setlocale("LC_ALL", "is_IS.UTF-8"))
+options(width = 110)
+suppressPackageStartupMessages({
+  library(dplyr)
+  library(ggplot2)
+  library(gt)
+  library(scales)
+  devtools::load_all(here::here(), quiet = TRUE)
+})
+
+results <- read_table("results")
+initial_pool <- load_bankroll()$initial_pool
+picks <- bt_load_universe(strategy = "kept")
+roll <- bt_run(picks, results, stake_rule = stake_rolling, initial_pool = initial_pool)
+fixed <- bt_run(picks, results, stake_rule = stake_fixed, initial_pool = initial_pool)
+```
+
+## Headline — our actual picks
+
+```{r}
+#| label: kpis
+m <- bt_metrics(roll)
+gt(m) |>
+  fmt_number(c(total_staked, total_pnl, max_drawdown), decimals = 0) |>
+  fmt_percent(c(roi, hit_rate), decimals = 1) |>
+  tab_header("Rolling-bankroll performance (kept bets)")
+```
+
+```{r}
+#| label: pnl-curve
+#| fig-alt: "Cumulative profit-and-loss of the bankroll over the backtest window."
+roll |>
+  arrange(match_date) |>
+  ggplot(aes(match_date, pool_after)) +
+  geom_hline(yintercept = initial_pool, linetype = 2, colour = "grey50") +
+  geom_step() +
+  labs(
+    x = NULL, y = "Bankroll (ISK)",
+    title = "Rolling bankroll — kept bets"
+  ) +
+  theme_minimal()
+```
+
+## Where the edge is
+
+```{r}
+#| label: by-dimension
+bind_rows(
+  bt_metrics(fixed, by = "market") |> rename(dim = market) |> mutate(facet = "market"),
+  bt_metrics(fixed, by = "sport") |> rename(dim = sport) |> mutate(facet = "sport"),
+  bt_metrics(fixed, by = "sex") |> rename(dim = sex) |> mutate(facet = "sex")
+) |>
+  select(facet, dim, n_bets, total_pnl, roi, hit_rate, avg_odds) |>
+  gt(groupname_col = "facet") |>
+  fmt_number(total_pnl, decimals = 0) |>
+  fmt_percent(c(roi, hit_rate), decimals = 1) |>
+  tab_header("Fixed-fraction ROI by dimension")
+```
+
+## Calibration
+
+```{r}
+#| label: calibration
+#| fig-alt: "Reliability plot: predicted probability versus realised win frequency."
+bt_calibration(fixed, n_bins = 8) |>
+  filter(n > 0) |>
+  ggplot(aes(mean_p, realised_freq, size = n)) +
+  geom_abline(slope = 1, intercept = 0, linetype = 2, colour = "grey50") +
+  geom_point(alpha = 0.7) +
+  coord_equal(xlim = c(0, 1), ylim = c(0, 1)) +
+  labs(
+    x = "Predicted p", y = "Realised frequency",
+    title = "Calibration (kept bets)"
+  ) +
+  theme_minimal()
+```
+
+## Strategy comparison
+
+```{r}
+#| label: baselines
+bt_baselines() |>
+  select(strategy, stake_model, n_bets, total_pnl, roi, hit_rate) |>
+  arrange(desc(roi)) |>
+  gt() |>
+  fmt_number(total_pnl, decimals = 0) |>
+  fmt_percent(c(roi, hit_rate), decimals = 1) |>
+  tab_header("Strategy x stake-model comparison")
+```
+
+## Caveats
+
+- **Leak-free** picks: `candidates.p` was frozen pre-match; settlement reuses
+  `compute_settlement()` so win/push boundaries match the live decider.
+- **Obtainability:** odds are decide-time prices; some bets were never
+  placeable (early-kickoff delisting). Pending/unsettled bets are excluded.
+- **Counterfactual stakes are approximate** for non-kept strategies
+  (`portfolio_lambda` / calibration are not stored in `candidates`).
+- **Window** is short (candidates begin 2026-04-25) — per-cell slices with low
+  `n_bets` are noisy.
