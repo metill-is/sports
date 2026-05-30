@@ -60,3 +60,55 @@ stake_fixed <- function(universe, ref_pool = NULL, ...) {
   universe$pool_before <- ref_pool
   universe
 }
+
+#' Rolling-bankroll stake rule (path-dependent; the money story).
+#'
+#' Walks decide runs in chronological order. For each run, the pool is
+#' `initial_pool + sum(pnl)` over bets whose match settled *strictly before*
+#' that run's `run_date`, mirroring the live `current_pool`. The run's bets are
+#' sized off that pool (slate co-sizing, as joint Kelly does), then scaled down
+#' if the slate total exceeds the daily-budget cap
+#' `max(daily_budget_frac * pool, daily_budget_min_isk)`. `pnl` comes from each
+#' bet's `win` flag.
+#' @param universe Tibble with `run_id`, `run_date`, `match_date`, `win`,
+#'   `odds`, plus the columns [bt_effective_fraction()] needs.
+#' @param initial_pool Starting bankroll in ISK.
+#' @param daily_budget_frac,daily_budget_min_isk Daily-budget cap parameters
+#'   (defaults from `bankroll.yml`).
+#' @param ... Absorbs `ref_pool` (ignored) for a uniform stake-rule signature.
+#' @return `universe` plus `stake`, `pnl`, `pool_before`.
+#' @export
+stake_rolling <- function(universe, initial_pool = NULL,
+                          daily_budget_frac = 0.05,
+                          daily_budget_min_isk = 1000, ...) {
+  if (is.null(initial_pool)) initial_pool <- load_bankroll()$initial_pool
+  frac <- bt_effective_fraction(universe)
+  u <- universe
+  u$stake <- NA_real_
+  u$pnl <- NA_real_
+  u$pool_before <- NA_real_
+
+  settled_md <- as.Date(character())
+  settled_pnl <- numeric()
+
+  for (r in sort(unique(u$run_id))) {
+    rm <- which(u$run_id == r)
+    rd <- u$run_date[rm][[1]]
+    pool_r <- initial_pool + sum(settled_pnl[settled_md < rd], na.rm = TRUE)
+
+    stake_r <- round(frac[rm] * pool_r)
+    cap <- max(daily_budget_frac * pool_r, daily_budget_min_isk)
+    tot <- sum(stake_r)
+    if (is.finite(tot) && tot > cap && tot > 0) {
+      stake_r <- round(stake_r * cap / tot)
+    }
+    pnl_r <- ifelse(u$win[rm], stake_r * (u$odds[rm] - 1), -stake_r)
+
+    u$stake[rm] <- stake_r
+    u$pnl[rm] <- pnl_r
+    u$pool_before[rm] <- pool_r
+    settled_md <- c(settled_md, u$match_date[rm])
+    settled_pnl <- c(settled_pnl, pnl_r)
+  }
+  u
+}
