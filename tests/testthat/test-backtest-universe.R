@@ -36,6 +36,19 @@ test_that("bt_load_universe strategy='kept' keeps only kept rows", {
   })
 })
 
+test_that("bt_load_universe dedups a bet kept across run_dates to its earliest placement", {
+  cand <- dplyr::bind_rows(
+    make_cand("kept", ev = 0.30, run_id = "2026-05-01", odds = 2.0),
+    make_cand("kept", ev = 0.28, run_id = "2026-05-02", odds = 2.1)
+  )
+  with_universe_fixture(cand, code = function(root) {
+    u <- bt_load_universe(root = root, strategy = "kept")
+    expect_equal(nrow(u), 1L)
+    expect_equal(u$run_date, as.Date("2026-05-01"))
+    expect_equal(u$odds, 2.0)
+  })
+})
+
 test_that("bt_load_universe strategy='positive_ev' keeps all ev>0 regardless of stage", {
   cand <- dplyr::bind_rows(
     make_cand("kept", ev = 0.30),
