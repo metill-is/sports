@@ -52,3 +52,6 @@ docs/reports/*_files/
 # Isolated "what-if" replay tree (data/publish_replay/2026-05-15/, etc.)
 # — produced by scripts/0Nr_replay.R --publish-to, never meant to ship
 data/publish_replay/
+
+# Backtest artefacts (regenerable via scripts/0Nb_backtest.R)
+data/backtest/
