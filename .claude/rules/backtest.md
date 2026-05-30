@@ -21,6 +21,14 @@ Loads when working on `R/backtest-*.R`, `scripts/0Nb_backtest.R`, or
   the backtest is meant to judge football specifically, and basketball/handball
   are on seasonal pause. The engine (`bt_load_universe`) stays general; widen
   with `--league all` (CLI) or `leagues = NULL` (library) when they resume.
+- **Bug-era excluded by default.** `bt_load_universe(exclude_pre_fix = TRUE)`
+  (the default) drops decide runs before the 2026-05-13 spread sign-flip fix
+  (`run_date < bt_spread_fix_date()` = 2026-05-14); those candidates carry
+  contaminated spread EV that current code cannot reproduce (the forensic
+  review found the entire +ROI headline was one such bet). `--include-bug-era`
+  / `exclude_pre_fix = FALSE` opts back in. There is no pre-2026 odds history,
+  so a replay cannot extend the *bettable* backtest backwards — "re-baseline"
+  means fixed-era-only, not a re-fit.
 - **Output** `data/backtest/` is gitignored and regenerable via
   `Rscript scripts/0Nb_backtest.R`.
 - Phase 2 (separate spec): extend history via `0Nr_replay.R` re-fits (football

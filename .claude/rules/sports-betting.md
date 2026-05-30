@@ -211,10 +211,17 @@ unforked (see `tests/testthat/test-skill-conventions.R`):
   with EVs +6.45 to +12.72. Both `R/decide-kelly.R::build_return_matrix`
   and `R/settle.R::compute_settlement` enforce the convention; future
   spread features (half-point push, Asian quarter-balls, 3-way European
-  variants) must extend that pattern, not break it. Three regression
-  tests guard it (`kelly_joint: spread home/away share one signed line`,
+  variants) must extend that pattern, not break it. A sum-to-one guard
+  (`assert_outcome_prob_coherent()`, called in `kelly_joint()` after the
+  probabilities are computed) now aborts if any `(market, line)` group's
+  outcome probabilities sum to > 1 — the structural signature this bug left
+  (sums reached 1.88) that no guard previously caught (added 2026-05-30 from
+  the forensic review). Four regression tests guard it (`kelly_joint: spread
+  home/away share one signed line`,
   `kelly_joint: spread away with positive line means away covers -line`,
-  `build_return_matrix: spread away mirrors home under shared line`).
+  `build_return_matrix: spread away mirrors home under shared line`, and the
+  positive-case `build_return_matrix: away on a large positive spread gets
+  near-zero p`).
   Full audit: [`Sports/Knowledge/Betting Optimisation/Historical/spread-away-sign-flip-2026-05-13`](obsidian://) in the Metill Obsidian vault.
 
 ## Plan 7 series — active forward roadmap
