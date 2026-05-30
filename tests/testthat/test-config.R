@@ -213,3 +213,33 @@ test_that("load_bankroll honours explicit kelly_ceiling override", {
   expect_equal(b$kelly_ceiling, 0.15)
   expect_equal(b$max_match_stake_default, 0.40)
 })
+
+test_that("assert_injective_map passes NULL, empty, and injective maps", {
+  expect_invisible(assert_injective_map(NULL, "x"))
+  expect_invisible(assert_injective_map(list(), "x"))
+  expect_invisible(assert_injective_map(list(KR = "KR Reykjavik", FH = "FH"), "x"))
+})
+
+test_that("check_team_names_injective rejects a non-injective sub-map", {
+  leagues <- list(
+    football_iceland = list(lengjan = list(team_names = list(
+      male = list(KR = "Same", FH = "Same"),
+      female = list()
+    )))
+  )
+  expect_error(check_team_names_injective(leagues), "non-injective")
+})
+
+test_that("check_team_names_injective passes injective + team_names-less leagues", {
+  leagues <- list(
+    a = list(lengjan = list(team_names = list(
+      male = list(KR = "KR Reykjavik"), female = list()
+    ))),
+    b = list(sport = "basketball")
+  )
+  expect_invisible(check_team_names_injective(leagues))
+})
+
+test_that("load_leagues runs the injectivity guard on the real config", {
+  expect_type(load_leagues(), "list")
+})
