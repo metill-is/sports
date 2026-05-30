@@ -17,8 +17,9 @@ pipeline_health(root = here::here("data"), now = Sys.time(), leagues = NULL)
 A tibble with columns `check`, `scope`, `status`, `value`, `threshold`.
 }
 \description{
-Composes freshness, persisted Stan-diagnostics drift, orphaned-bet, and
-bankroll checks into one tibble of `{check, scope, status, value, threshold}`
+Composes freshness, persisted Stan-diagnostics drift, orphaned-bet,
+placement-capture-rate, and bankroll checks into one tibble of
+`{check, scope, status, value, threshold}`
 rows. `status` is one of `OK` < `WARN` < `FAIL`, plus `PAUSED` for a cell
 that is intentionally off-season (no upcoming games — reuses
 [has_upcoming_games()] so the seasonal basketball/handball pause yields

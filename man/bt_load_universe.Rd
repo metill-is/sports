@@ -10,7 +10,8 @@ bt_load_universe(
   leagues = NULL,
   sex = NULL,
   from = NULL,
-  to = NULL
+  to = NULL,
+  exclude_pre_fix = TRUE
 )
 }
 \arguments{
@@ -24,6 +25,11 @@ bt_load_universe(
 \item{sex}{Optional character vector of `sex` values to keep.}
 
 \item{from, to}{Optional `Date` or `YYYY-MM-DD` bounds on `run_date`.}
+
+\item{exclude_pre_fix}{If `TRUE` (default), drop decide runs before the
+2026-05-13 spread sign-flip fix (`run_date < bt_spread_fix_date()`); those
+bets are bug-contaminated and not reproducible by current code. Set `FALSE`
+to include the full (contaminated) history.}
 }
 \value{
 Tibble, one row per bet (see `bt_universe_cols()`); empty-with-columns
