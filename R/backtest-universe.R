@@ -2,6 +2,12 @@
 #' @include storage.R
 NULL
 
+# The 2026-05-13 spread sign-flip fix landed for decide runs on/after this date.
+# Earlier runs carry contaminated spread probabilities/EV that current code
+# cannot reproduce (forensic review 2026-05-30) -- excluded from the backtest by
+# default so the headline reflects the code that actually runs.
+bt_spread_fix_date <- function() as.Date("2026-05-14")
+
 bt_universe_cols <- function() {
   c(
     "run_date", "run_id", "sport", "country", "sex", "match_date",
@@ -38,13 +44,18 @@ bt_empty_universe <- function() {
 #' @param leagues Optional character vector of `sport` values to keep.
 #' @param sex Optional character vector of `sex` values to keep.
 #' @param from,to Optional `Date` or `YYYY-MM-DD` bounds on `run_date`.
+#' @param exclude_pre_fix If `TRUE` (default), drop decide runs before the
+#'   2026-05-13 spread sign-flip fix (`run_date < bt_spread_fix_date()`); those
+#'   bets are bug-contaminated and not reproducible by current code. Set `FALSE`
+#'   to include the full (contaminated) history.
 #' @return Tibble, one row per bet (see `bt_universe_cols()`); empty-with-columns
 #'   if nothing matches.
 #' @export
 bt_load_universe <- function(root = here::here("data"),
                              strategy = c("kept", "positive_ev", "all"),
                              leagues = NULL, sex = NULL,
-                             from = NULL, to = NULL) {
+                             from = NULL, to = NULL,
+                             exclude_pre_fix = TRUE) {
   strategy <- match.arg(strategy)
 
   cand <- tryCatch(read_table("candidates", root = root),
@@ -87,6 +98,14 @@ bt_load_universe <- function(root = here::here("data"),
   if (!is.null(sex)) cand <- cand[cand$sex %in% sex, , drop = FALSE]
   if (!is.null(from)) cand <- cand[cand$run_date >= as.Date(from), , drop = FALSE]
   if (!is.null(to)) cand <- cand[cand$run_date <= as.Date(to), , drop = FALSE]
+
+  # Drop the spread sign-flip bug era by default (forensic review 2026-05-30):
+  # those candidates' contaminated EV inflated the headline, and the whole
+  # pre-fix slate sizing is suspect because the buggy spreads co-sized with
+  # other bets. Opt back in with exclude_pre_fix = FALSE.
+  if (isTRUE(exclude_pre_fix)) {
+    cand <- cand[cand$run_date >= bt_spread_fix_date(), , drop = FALSE]
+  }
 
   # A bet recommended on several decide runs was placed once (placer P1
   # idempotency). Dedup to one row per unique bet, keeping the earliest run --

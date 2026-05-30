@@ -1,7 +1,7 @@
 # tests/testthat/test-backtest-universe.R
 make_cand <- function(stage, ev, market = "moneyline", outcome = "home",
                       line = NA_real_, odds = 2.0, p = 0.55,
-                      kelly_raw = 0.1, run_id = "2026-05-01",
+                      kelly_raw = 0.1, run_id = "2026-05-20",
                       home = "A", away = "B",
                       sport = "football", country = "iceland", sex = "male") {
   run_ts <- as.POSIXct(run_id, tz = "UTC")
@@ -38,14 +38,30 @@ test_that("bt_load_universe strategy='kept' keeps only kept rows", {
 
 test_that("bt_load_universe dedups a bet kept across run_dates to its earliest placement", {
   cand <- dplyr::bind_rows(
-    make_cand("kept", ev = 0.30, run_id = "2026-05-01", odds = 2.0),
-    make_cand("kept", ev = 0.28, run_id = "2026-05-02", odds = 2.1)
+    make_cand("kept", ev = 0.30, run_id = "2026-05-20", odds = 2.0),
+    make_cand("kept", ev = 0.28, run_id = "2026-05-21", odds = 2.1)
   )
   with_universe_fixture(cand, code = function(root) {
     u <- bt_load_universe(root = root, strategy = "kept")
     expect_equal(nrow(u), 1L)
-    expect_equal(u$run_date, as.Date("2026-05-01"))
+    expect_equal(u$run_date, as.Date("2026-05-20"))
     expect_equal(u$odds, 2.0)
+  })
+})
+
+test_that("bt_load_universe excludes the spread-bug era (run_date < 2026-05-14) by default", {
+  cand <- dplyr::bind_rows(
+    make_cand("kept", ev = 0.30, run_id = "2026-05-10", home = "A", away = "B"),
+    make_cand("kept", ev = 0.30, run_id = "2026-05-20", home = "C", away = "D")
+  )
+  with_universe_fixture(cand, code = function(root) {
+    u_default <- bt_load_universe(root = root, strategy = "kept")
+    expect_equal(nrow(u_default), 1L)
+    expect_equal(u_default$run_date, as.Date("2026-05-20"))
+    u_all <- bt_load_universe(
+      root = root, strategy = "kept", exclude_pre_fix = FALSE
+    )
+    expect_equal(nrow(u_all), 2L)
   })
 })
 
@@ -80,8 +96,8 @@ test_that("bt_load_universe attaches recorded kelly/bet_amount only to kept bets
     make_cand("dropped_min_bet", ev = 0.05, outcome = "draw")
   )
   recs <- tibble::tibble(
-    run_id = as.POSIXct("2026-05-01", tz = "UTC"),
-    run_date = as.Date("2026-05-01"),
+    run_id = as.POSIXct("2026-05-20", tz = "UTC"),
+    run_date = as.Date("2026-05-20"),
     sport = "football", country = "iceland", sex = "male",
     match_date = as.Date("2026-05-02"), home_team = "A", away_team = "B",
     market = "moneyline", outcome = "home", line = NA_real_,
