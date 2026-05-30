@@ -12,6 +12,7 @@ NULL
 #'   - `dropped_low_ev`: kelly_joint zeroed it (ev below ev_threshold)
 #'   - `dropped_min_bet`: bet_amount fell below `betting$min_bet`
 #'   - `dropped_market_off`: market disabled in `betting$markets` toggles
+#'   - `dropped_invalid_input`: odds non-finite/<=1 or posterior p non-finite
 #' The pipeline does not emit per-step intermediate stages — the final stage
 #' captures the decisive filter.
 #'
@@ -175,6 +176,7 @@ decide_league <- function(league_key = NULL, league = NULL, sex,
       odds = kj$bets$odds,
       ev = kj$bets$ev,
       kelly_raw = kj$bets$kelly_raw,
+      valid_input = kj$diagnostics$valid_input,
       stage = ifelse(kj$bets$kelly_raw > 0, "candidate", "dropped_low_ev")
     )
     candidates_list[[match_key]] <- cand
@@ -232,13 +234,11 @@ decide_league <- function(league_key = NULL, league = NULL, sex,
   # to 199, which is not. Do NOT switch to pre-round comparison even
   # though it looks more monotonic — that would drop bets that round up
   # to a valid stake.
-  cands$stage <- ifelse(
-    cands$kelly_raw <= 0,
-    "dropped_low_ev",
-    ifelse(cands$bet_amount < (betting$min_bet %||% 0),
-      "dropped_min_bet",
-      "kept"
-    )
+  cands$stage <- dplyr::case_when(
+    !cands$valid_input ~ "dropped_invalid_input",
+    cands$kelly_raw <= 0 ~ "dropped_low_ev",
+    cands$bet_amount < (betting$min_bet %||% 0) ~ "dropped_min_bet",
+    TRUE ~ "kept"
   )
 
   # Append any market-off rows

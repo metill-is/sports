@@ -145,7 +145,51 @@ test_that("decide_league stage column emits only terminal classifications", {
   )
   expect_true("stage" %in% names(cands))
   expect_true(all(cands$stage %in%
-    c("kept", "dropped_min_bet", "dropped_low_ev", "dropped_market_off")))
+    c(
+      "kept", "dropped_min_bet", "dropped_low_ev",
+      "dropped_market_off", "dropped_invalid_input"
+    )))
+})
+
+test_that("decide_league tags a non-finite posterior as dropped_invalid_input", {
+  set.seed(13)
+  root <- withr::local_tempdir()
+  beliefs <- tibble::tibble(
+    sport = "basketball", country = "iceland", sex = "male",
+    fit_date = Sys.Date(),
+    match_date = Sys.Date() + 1L,
+    home_team = "Alpha", away_team = "Bravo",
+    draw_id = 1:1000,
+    home_goals = c(NaN, rpois(999, lambda = 90)),
+    away_goals = rpois(1000, lambda = 85)
+  )
+  write_table(beliefs, "beliefs_latest", root = root)
+  odds <- tibble::tibble(
+    sport = "basketball", country = "iceland",
+    scraped_at = Sys.time(),
+    match_date = Sys.Date() + 1L,
+    home_team = "Alpha", away_team = "Bravo",
+    market = c("moneyline", "moneyline"),
+    outcome = c("home", "away"),
+    line = NA_real_,
+    odds = c(1.85, 2.10)
+  )
+  write_table(odds, "odds", root = root)
+
+  decide_league(
+    league = mini_basketball_league(), sex = "male", root = root,
+    bankroll = mini_bankroll()
+  )
+  cands <- read_table("candidates",
+    filter = list(sport = "basketball", country = "iceland"),
+    root = root
+  )
+  expect_true(all(cands$stage == "dropped_invalid_input"))
+  recs <- read_table("recommendations",
+    filter = list(sport = "basketball", country = "iceland"),
+    root = root
+  )
+  expect_equal(nrow(recs), 0L)
 })
 
 test_that("decide_league handles per-sex kelly_frac (object form)", {

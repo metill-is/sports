@@ -43,6 +43,7 @@ The `stage` column on candidates is the bet's terminal classification:
   - `dropped_low_ev`: kelly_joint zeroed it (ev below ev_threshold)
   - `dropped_min_bet`: bet_amount fell below `betting$min_bet`
   - `dropped_market_off`: market disabled in `betting$markets` toggles
+  - `dropped_invalid_input`: odds non-finite/<=1 or posterior p non-finite
 The pipeline does not emit per-step intermediate stages — the final stage
 captures the decisive filter.
 }
