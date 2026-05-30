@@ -199,3 +199,39 @@ test_that("beliefs_archive without fit_date errors", {
     regexp = "fit_date"
   )
 })
+
+test_that("read_table null-fills a schema-evolved column absent from old partitions", {
+  # Schema evolution: a nullable column (kickoff_time) added to the schedules
+  # schema is absent from partitions written before the migration. read_table
+  # must surface the column -- null-filling the old partition and preserving
+  # the value in the new one -- rather than silently dropping it (arrow's
+  # default first-fragment-wins inference does) or erroring.
+  tmp <- withr::local_tempdir()
+  parts <- table_partitions()[["schedules"]]
+  dest <- fs::path(tmp, "facts", "schedules")
+
+  # Old-style partition WITHOUT kickoff_time, written via raw arrow so it
+  # bypasses write_table's now-mandatory column. basketball sorts before
+  # football, so arrow's default inference reads this (column-less) fragment
+  # first -- the exact case that drops the new column.
+  old <- tibble::tibble(
+    sport = "basketball", country = "iceland", sex = "male", season = 2024L,
+    match_date = as.Date("2024-05-01"), home_team = "A", away_team = "B",
+    division = "BD", round = 1L
+  )
+  arrow::write_dataset(old, dest, partitioning = parts)
+
+  # New-style partition WITH kickoff_time, via the normal write path.
+  new <- tibble::tibble(
+    sport = "football", country = "iceland", sex = "male", season = 2026L,
+    match_date = as.Date("2026-05-01"), home_team = "C", away_team = "D",
+    division = "BD", round = 1L, kickoff_time = "18:00"
+  )
+  write_table(new, "schedules", root = tmp)
+
+  back <- read_table("schedules", root = tmp)
+  expect_true("kickoff_time" %in% names(back))
+  expect_equal(nrow(back), 2L)
+  expect_equal(back$kickoff_time[back$sport == "basketball"], NA_character_)
+  expect_equal(back$kickoff_time[back$sport == "football"], "18:00")
+})

@@ -61,6 +61,16 @@ ingest_league <- function(league, sex,
   results <- results_mod$fetch_results(league, sex, seasons = seasons)
   schedule <- schedule_mod$fetch_schedule(league, sex)
 
+  # kickoff_time is captured in the shared KSÍ parser and rides along on
+  # results, but the results schema has no such column -- drop it so results
+  # stays clean for every source (a no-op when the source never set it). On
+  # the schedule side, non-KSÍ sources (KKÍ / HSÍ) post no time, so backfill
+  # NA to satisfy the schedules schema's now-required kickoff_time column.
+  results$kickoff_time <- NULL
+  if (nrow(schedule) > 0 && !("kickoff_time" %in% names(schedule))) {
+    schedule$kickoff_time <- NA_character_
+  }
+
   # Use upsert semantics so re-ingests that return a strict subset of an
   # earlier fetch (e.g. HSI retry dropping G66 history) do not clobber the
   # larger partition on disk. See R/storage.R::upsert_table().

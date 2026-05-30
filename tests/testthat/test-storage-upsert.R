@@ -168,7 +168,7 @@ test_that("upsert_table round-trips schedules with matching dedup semantics", {
       season = 2025L,
       match_date = as.Date("2025-03-01"),
       home_team = "Valur", away_team = "FH",
-      division = "OD", round = NA_integer_
+      division = "OD", round = NA_integer_, kickoff_time = NA_character_
     )
     tibble::as_tibble(modifyList(defaults, list(...)))
   }

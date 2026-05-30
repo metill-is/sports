@@ -237,6 +237,22 @@ parse_ksi_date <- function(date_raw, year) {
   suppressWarnings(lubridate::dmy(cleaned))
 }
 
+#' Extract the KSÍ kick-off time ("18:00") from a raw date fragment.
+#'
+#' KSÍ renders each match-row date as "<day-name> <day>. <month-name>  <time>"
+#' (double-space before the time). [parse_ksi_date()] discards the time; this
+#' recovers it as a literal "HH:MM" string so placement can later be scheduled
+#' against the real kick-off rather than the bare date. Returns `NA` for rows
+#' that carry no time (e.g. unresolved cup-bracket placeholders).
+#'
+#' @param date_raw Character vector of raw date strings.
+#' @return Character vector of "HH:MM" times; `NA` where absent.
+#' @keywords internal
+#' @noRd
+parse_ksi_time <- function(date_raw) {
+  stringr::str_extract(date_raw, "\\d{1,2}:\\d{2}")
+}
+
 #' Extract the season year from a parsed KSÍ page.
 #'
 #' Reads the Tímabil `<select>` dropdown (id `timabil-select-filter-select`).
@@ -371,7 +387,8 @@ ksi_empty_schedule <- function() {
     home_team = character(),
     away_team = character(),
     division = character(),
-    round = integer()
+    round = integer(),
+    kickoff_time = character()
   )
 }
 
@@ -408,7 +425,8 @@ parse_ksi_results_page <- function(html, sport, country, sex, division, season,
     home_score = raw$home_score,
     away_score = raw$away_score,
     division = division,
-    round = NA_integer_
+    round = NA_integer_,
+    kickoff_time = parse_ksi_time(raw$date_raw)
   )
 
   keep <- !is.na(out$match_date) &
@@ -448,7 +466,7 @@ parse_ksi_schedule_page <- function(html, sport, country, sex, division, season)
   upcoming <- all_matches[is.na(all_matches$home_score), , drop = FALSE]
   upcoming[, c(
     "sport", "country", "sex", "season", "match_date",
-    "home_team", "away_team", "division", "round"
+    "home_team", "away_team", "division", "round", "kickoff_time"
   )]
 }
 
@@ -623,7 +641,7 @@ fetch_schedule_ksi <- function(league, sex, seasons = NULL) {
     all_matches$match_date >= Sys.Date(), , drop = FALSE]
   upcoming[, c(
     "sport", "country", "sex", "season", "match_date",
-    "home_team", "away_team", "division", "round"
+    "home_team", "away_team", "division", "round", "kickoff_time"
   )]
 }
 

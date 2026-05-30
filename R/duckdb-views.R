@@ -34,8 +34,13 @@ rebuild_duckdb <- function(root = here::here("data"),
     if (!fs::dir_exists(dir)) next
 
     glob <- sprintf("%s/**/*.parquet", dir)
+    # union_by_name reconciles schema drift across partitions (e.g. a column
+    # added to a store after older partitions were written, like
+    # schedules.kickoff_time) by name, null-filling absentees -- without it
+    # read_parquet adopts the first file's schema and silently drops the new
+    # column. Verified safe on the odds store's mixed scraped_at tz partitions.
     sql <- sprintf(
-      "CREATE OR REPLACE VIEW %s AS SELECT * FROM read_parquet('%s', hive_partitioning = TRUE)",
+      "CREATE OR REPLACE VIEW %s AS SELECT * FROM read_parquet('%s', hive_partitioning = TRUE, union_by_name = TRUE)",
       view_name, glob
     )
     DBI::dbExecute(con, sql)
