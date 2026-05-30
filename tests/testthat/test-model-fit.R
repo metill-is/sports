@@ -166,6 +166,28 @@ test_that("check_stan_diagnostics stops on low tail ESS", {
   expect_error(check_stan_diagnostics(fit), "tail ESS 50 on parameter tau")
 })
 
+test_that("persist_fit_diagnostics writes a readable one-row record", {
+  root <- withr::local_tempdir()
+  fit <- .fake_fit(num_divergent = rep(2L, 4L), ess_tail = 250)
+  league <- list(sport = "basketball", country = "iceland")
+  persist_fit_diagnostics(
+    fit, league,
+    sex = "male", fit_date = as.Date("2026-05-30"),
+    n_obs = 120L, adapt_delta = 0.95, iter_sampling = 1000L, chains = 4L,
+    root = root
+  )
+  d <- read_table("fit_diagnostics",
+    filter = list(sport = "basketball", country = "iceland", sex = "male"),
+    root = root
+  )
+  expect_equal(nrow(d), 1L)
+  expect_equal(d$n_divergent, 8L)
+  expect_equal(d$div_frac, 8 / 4000)
+  expect_equal(d$min_ess_tail, 250)
+  expect_equal(d$n_obs, 120L)
+  expect_true(d$passed)
+})
+
 test_that("evaluate_stan_diagnostics is silent when clean and flags each fault", {
   clean <- list(
     div_frac = 0, n_divergent = 0L, total_iter = 4000L,

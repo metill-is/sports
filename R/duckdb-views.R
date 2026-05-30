@@ -25,7 +25,8 @@ rebuild_duckdb <- function(root = here::here("data"),
     beliefs_archive = c("beliefs", "archive"),
     candidates      = c("decisions", "candidates"),
     recommendations = c("decisions", "recommendations"),
-    ledger          = c("decisions", "ledger")
+    ledger          = c("decisions", "ledger"),
+    fit_diagnostics = c("beliefs", "diagnostics")
   )
 
   for (view_name in names(subdirs)) {

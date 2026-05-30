@@ -136,6 +136,26 @@ schemas <- function() {
       settled     = arrow::bool(),
       win         = arrow::bool(),
       pnl         = arrow::float64()
+    ),
+    fit_diagnostics = arrow::schema(
+      sport           = arrow::string(),
+      country         = arrow::string(),
+      sex             = arrow::string(),
+      fit_date        = arrow::date32(),
+      n_obs           = arrow::int32(),
+      n_divergent     = arrow::int32(),
+      total_iter      = arrow::int32(),
+      div_frac        = arrow::float64(),
+      n_max_treedepth = arrow::int32(),
+      treedepth_frac  = arrow::float64(),
+      min_ebfmi       = arrow::float64(),
+      max_rhat        = arrow::float64(),
+      min_ess_bulk    = arrow::float64(),
+      min_ess_tail    = arrow::float64(),
+      adapt_delta     = arrow::float64(),
+      iter_sampling   = arrow::int32(),
+      chains          = arrow::int32(),
+      passed          = arrow::bool()
     )
   )
 }

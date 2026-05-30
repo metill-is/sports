@@ -339,3 +339,52 @@ check_stan_diagnostics <- function(fit,
   }
   invisible(metrics)
 }
+
+#' Persist one row of Stan sampler diagnostics for a completed fit.
+#'
+#' Writes a single row to the `fit_diagnostics` store
+#' (`data/beliefs/diagnostics/sport=*/country=*/sex=*/fit_date=*/`) so that
+#' convergence drift *below* the abort gate — divergences creeping from 3 to 80
+#' while still under 1%, or R-hat drifting toward 1.05 — becomes observable over
+#' time. Best-effort: a write failure warns rather than aborting the fit.
+#'
+#' @keywords internal
+#' @noRd
+persist_fit_diagnostics <- function(fit, league, sex, fit_date,
+                                    n_obs = NA_integer_,
+                                    adapt_delta = NA_real_,
+                                    iter_sampling = NA_integer_,
+                                    chains = NA_integer_,
+                                    root = here::here("data")) {
+  m <- extract_stan_metrics(fit)
+  passed <- length(evaluate_stan_diagnostics(m)) == 0L
+  row <- tibble::tibble(
+    sport = league$sport,
+    country = league$country,
+    sex = sex,
+    fit_date = as.Date(fit_date),
+    n_obs = as.integer(n_obs %||% NA_integer_),
+    n_divergent = as.integer(m$n_divergent),
+    total_iter = as.integer(m$total_iter),
+    div_frac = as.numeric(m$div_frac),
+    n_max_treedepth = as.integer(m$n_max_treedepth),
+    treedepth_frac = as.numeric(m$treedepth_frac),
+    min_ebfmi = as.numeric(m$min_ebfmi),
+    max_rhat = as.numeric(m$max_rhat),
+    min_ess_bulk = as.numeric(m$min_ess_bulk),
+    min_ess_tail = as.numeric(m$min_ess_tail),
+    adapt_delta = as.numeric(adapt_delta),
+    iter_sampling = as.integer(iter_sampling),
+    chains = as.integer(chains),
+    passed = passed
+  )
+  tryCatch(
+    write_table(row, "fit_diagnostics", root = root),
+    error = function(e) {
+      cli::cli_alert_warning(
+        "Failed to persist fit diagnostics: {conditionMessage(e)}"
+      )
+    }
+  )
+  invisible(row)
+}
