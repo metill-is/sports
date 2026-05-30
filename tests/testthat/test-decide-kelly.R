@@ -275,3 +275,36 @@ test_that("kelly_joint quarantines invalid-input bets via diagnostics$valid_inpu
   expect_equal(out$diagnostics$valid_input, c(TRUE, FALSE, FALSE))
   expect_equal(out$bets$kelly_raw[2:3], c(0, 0))
 })
+
+test_that("assert_outcome_prob_coherent aborts when exclusive outcomes sum to > 1", {
+  bets <- tibble::tibble(
+    market = c("spread", "spread", "spread"), line = c(3, 3, 3),
+    outcome = c("home", "draw", "away")
+  )
+  # The 2026-05-13 spread sign-flip produced sums up to 1.88 -- must abort.
+  expect_error(
+    assert_outcome_prob_coherent(bets, c(0.85, 0.05, 0.85)),
+    "sum to > 1"
+  )
+  # Exhaustive set summing to 1 is fine; a partial market summing < 1 is fine.
+  expect_no_error(assert_outcome_prob_coherent(bets, c(0.60, 0.10, 0.30)))
+  expect_no_error(assert_outcome_prob_coherent(
+    tibble::tibble(market = "total", line = 2.5, outcome = "over"), 0.55
+  ))
+})
+
+test_that("build_return_matrix: away on a large positive spread gets near-zero p (sign-flip cannot recur)", {
+  set.seed(1)
+  beliefs <- tibble::tibble(
+    draw_id = 1:600,
+    home_goals = rpois(600, 3.0),
+    away_goals = rpois(600, 0.4)
+  )
+  # Away +3 against a strong home favourite: away almost never covers.
+  bets <- tibble::tibble(market = "spread", outcome = "away", line = 3, odds = 18)
+  R <- build_return_matrix(beliefs, bets, tie_threshold = 0)
+  p <- mean(R[, 1] > 0)
+  expect_lt(p, 0.05)
+  # Negative EV -> dropped at ev_threshold = 0 (the buggy era priced it +EV).
+  expect_lt(p * (bets$odds - 1) - (1 - p), 0)
+})

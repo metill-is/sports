@@ -166,6 +166,37 @@ validate_bet_inputs <- function(odds, p) {
   is.finite(odds) & odds > 1 & is.finite(p)
 }
 
+#' Assert mutually-exclusive outcome probabilities are coherent.
+#'
+#' Within one match, the win-probabilities of the exclusive outcomes of a
+#' `(market, line)` group must sum to at most 1: exactly 1 when the full
+#' outcome set is offered, less when Lengjan lists only some outcomes. A sum
+#' strictly above 1 is structurally impossible and is the signature of the
+#' 2026-05-13 spread sign-flip bug (sums reached 1.88). Abort loudly rather
+#' than size stakes off a broken return matrix.
+#'
+#' @param bets Tibble with `market` and `line` (aligned to `p`).
+#' @param p Numeric win-probabilities, one per `bets` row.
+#' @param tol Numeric tolerance above 1 (Monte-Carlo slack).
+#' @keywords internal
+#' @noRd
+assert_outcome_prob_coherent <- function(bets, p, tol = 1e-6) {
+  if (length(p) == 0L) {
+    return(invisible(TRUE))
+  }
+  key <- paste(bets$market, bets$line, sep = "\r")
+  sums <- tapply(p, key, sum)
+  bad <- sums[is.finite(sums) & sums > 1 + tol]
+  if (length(bad) > 0L) {
+    cli::cli_abort(c(
+      "Outcome probabilities sum to > 1 — the return matrix is broken.",
+      "x" = "{length(bad)} (market, line) group(s) exceed 1; worst sum = {round(max(bad), 3)}.",
+      "i" = "Exhaustive exclusive outcomes cannot exceed 1 — check build_return_matrix() (cf. the 2026-05-13 spread sign-flip)."
+    ))
+  }
+  invisible(TRUE)
+}
+
 #' Joint Kelly criterion across all bets in one match.
 #'
 #' Replaces three independent per-market Kelly runs with a single convex
@@ -198,6 +229,7 @@ kelly_joint <- function(beliefs, bets,
                         tie_threshold = 0) {
   R <- build_return_matrix(beliefs, bets, tie_threshold = tie_threshold)
   p <- as.numeric(colMeans(R > 0))
+  assert_outcome_prob_coherent(bets, p)
   ev <- p * (bets$odds - 1) - (1 - p)
 
   # Quarantine bets whose odds are non-finite / <= 1 or whose posterior p is
