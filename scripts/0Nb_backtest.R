@@ -5,8 +5,9 @@
 # data/decisions/ -- never touches the ledger or the money path.
 #
 # Usage:
-#   Rscript scripts/0Nb_backtest.R                       # all strategies, both stake models
+#   Rscript scripts/0Nb_backtest.R                       # football iceland (default), both stake models
 #   Rscript scripts/0Nb_backtest.R --strategy kept --stake rolling
+#   Rscript scripts/0Nb_backtest.R --league all          # widen to every sport (bball/handball resume autumn)
 #   Rscript scripts/0Nb_backtest.R --league football_iceland --from 2026-04-25
 invisible(Sys.setlocale("LC_ALL", "is_IS.UTF-8"))
 options(width = 120)
@@ -19,11 +20,14 @@ get_flag <- function(name, default = NULL) {
 }
 strategy <- get_flag("strategy", "kept")
 stake <- get_flag("stake", "both")
-league <- get_flag("league")
+league <- get_flag("league", "football_iceland")
 from <- get_flag("from")
 to <- get_flag("to")
 
-sport_filter <- if (!is.null(league)) sub("_.*$", "", league) else NULL
+# Default scope is football only -- this backtest informs football specifically,
+# and basketball/handball are on seasonal pause. `--league all` widens to every
+# sport; `--league <key>` targets one league.
+sport_filter <- if (identical(league, "all")) NULL else sub("_.*$", "", league)
 
 results <- sports::read_table("results")
 initial_pool <- sports::load_bankroll()$initial_pool

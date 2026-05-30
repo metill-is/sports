@@ -1,6 +1,6 @@
 ---
-title: "Betting Backtest — Iceland 2026"
-subtitle: "What would have been working, and how well"
+title: "Betting Backtest — Football Iceland 2026"
+subtitle: "How well football betting would have worked, and where"
 author: "Brynjólfur Gauti Jónsson"
 date: today
 date-format: "YYYY-MM-DD"
@@ -38,7 +38,9 @@ suppressPackageStartupMessages({
 
 results <- read_table("results")
 initial_pool <- load_bankroll()$initial_pool
-picks <- bt_load_universe(strategy = "kept")
+# Football only -- this report informs football specifically; basketball and
+# handball are on seasonal pause (and would dilute the football verdict).
+picks <- bt_load_universe(strategy = "kept", leagues = "football")
 roll <- bt_run(picks, results, stake_rule = stake_rolling, initial_pool = initial_pool)
 fixed <- bt_run(picks, results, stake_rule = stake_fixed, initial_pool = initial_pool)
 ```
@@ -73,16 +75,17 @@ roll |>
 
 ```{r}
 #| label: by-dimension
+# Football only, so sport is constant -- break down by the dimensions that vary
+# within football: market type and sex.
 bind_rows(
   bt_metrics(fixed, by = "market") |> rename(dim = market) |> mutate(facet = "market"),
-  bt_metrics(fixed, by = "sport") |> rename(dim = sport) |> mutate(facet = "sport"),
   bt_metrics(fixed, by = "sex") |> rename(dim = sex) |> mutate(facet = "sex")
 ) |>
   select(facet, dim, n_bets, total_pnl, roi, hit_rate, avg_odds) |>
   gt(groupname_col = "facet") |>
   fmt_number(total_pnl, decimals = 0) |>
   fmt_percent(c(roi, hit_rate), decimals = 1) |>
-  tab_header("Fixed-fraction ROI by dimension")
+  tab_header("Fixed-fraction ROI by dimension (football)")
 ```
 
 ## Calibration
@@ -107,17 +110,20 @@ bt_calibration(fixed, n_bins = 8) |>
 
 ```{r}
 #| label: baselines
-bt_baselines() |>
+bt_baselines(leagues = "football") |>
   select(strategy, stake_model, n_bets, total_pnl, roi, hit_rate) |>
   arrange(desc(roi)) |>
   gt() |>
   fmt_number(total_pnl, decimals = 0) |>
   fmt_percent(c(roi, hit_rate), decimals = 1) |>
-  tab_header("Strategy x stake-model comparison")
+  tab_header("Strategy x stake-model comparison (football)")
 ```
 
 ## Caveats
 
+- **Football only.** Basketball and handball are excluded (seasonal pause, and
+  this report is meant to judge football specifically). Re-include all sports
+  with `Rscript scripts/0Nb_backtest.R --league all` once they resume.
 - **Leak-free** picks: `candidates.p` was frozen pre-match; settlement reuses
   `compute_settlement()` so win/push boundaries match the live decider.
 - **Obtainability:** odds are decide-time prices; some bets were never

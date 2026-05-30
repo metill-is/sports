@@ -200,8 +200,10 @@ Internal schemas use English throughout. Canonical column names: `home_team` / `
 
 `R/backtest-*.R` + `scripts/0Nb_backtest.R` + `docs/reports/2026-backtest.qmd`
 replay historical decisions against results to analyse strategy performance
-(PnL/ROI/calibration, by market/league/sex). Read-only, never on CI; reuses
-`compute_settlement()`. See `.claude/rules/backtest.md`.
+(PnL/ROI/calibration, by market/sex). Read-only, never on CI; reuses
+`compute_settlement()`. **Defaults to football only** (CLI + report); the engine
+stays general — widen with `--league all` when basketball/handball resume. See
+`.claude/rules/backtest.md`.
 
 ## Git hygiene
 
