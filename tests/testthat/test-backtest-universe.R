@@ -49,6 +49,18 @@ test_that("bt_load_universe dedups a bet kept across run_dates to its earliest p
   })
 })
 
+test_that("bt_load_universe leagues filter scopes to the named sport (football only)", {
+  cand <- dplyr::bind_rows(
+    make_cand("kept", ev = 0.30, sport = "football", home = "A", away = "B"),
+    make_cand("kept", ev = 0.30, sport = "basketball", home = "X", away = "Y")
+  )
+  with_universe_fixture(cand, code = function(root) {
+    u <- bt_load_universe(root = root, strategy = "kept", leagues = "football")
+    expect_equal(nrow(u), 1L)
+    expect_equal(u$sport, "football")
+  })
+})
+
 test_that("bt_load_universe strategy='positive_ev' keeps all ev>0 regardless of stage", {
   cand <- dplyr::bind_rows(
     make_cand("kept", ev = 0.30),
