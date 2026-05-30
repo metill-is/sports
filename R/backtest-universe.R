@@ -53,6 +53,9 @@ bt_load_universe <- function(root = here::here("data"),
   if (is.null(cand) || nrow(cand) == 0L) {
     return(bt_empty_universe())
   }
+  # read_table returns the hive-partition run_date as character; make it a real
+  # Date so ordering, from/to filters, and the rolling pool walk are typed.
+  cand$run_date <- as.Date(cand$run_date)
 
   recs <- tryCatch(read_table("recommendations", root = root),
     error = function(e) NULL
@@ -84,6 +87,19 @@ bt_load_universe <- function(root = here::here("data"),
   if (!is.null(sex)) cand <- cand[cand$sex %in% sex, , drop = FALSE]
   if (!is.null(from)) cand <- cand[cand$run_date >= as.Date(from), , drop = FALSE]
   if (!is.null(to)) cand <- cand[cand$run_date <= as.Date(to), , drop = FALSE]
+
+  # A bet recommended on several decide runs was placed once (placer P1
+  # idempotency). Dedup to one row per unique bet, keeping the earliest run --
+  # when it would first have been placed -- so multi-day recommendations are
+  # not counted multiple times.
+  ord <- order(cand$run_date)
+  cand <- cand[ord, , drop = FALSE]
+  bet_key <- paste(cand$sport, cand$country, cand$sex, cand$match_date,
+    cand$home_team, cand$away_team, cand$market,
+    cand$outcome, cand$line,
+    sep = "\r"
+  )
+  cand <- cand[!duplicated(bet_key), , drop = FALSE]
 
   if (nrow(cand) == 0L) {
     return(bt_empty_universe())
