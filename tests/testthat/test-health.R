@@ -70,3 +70,61 @@ test_that("overall_health_status escalates to the worst row", {
   expect_equal(overall_health_status(tibble::tibble(status = c("OK", "WARN", "FAIL"))), "FAIL")
   expect_equal(overall_health_status(tibble::tibble(status = c("OK", "PAUSED"))), "OK")
 })
+
+.mini_recs <- function(n, match_date = "2026-05-22", run_date = "2026-05-20") {
+  tibble::tibble(
+    run_id = as.POSIXct(run_date, tz = "UTC"), run_date = as.Date(run_date),
+    sport = "football", country = "iceland", sex = "male",
+    match_date = as.Date(match_date),
+    home_team = paste0("H", seq_len(n)), away_team = paste0("A", seq_len(n)),
+    market = "moneyline", outcome = "home", line = NA_real_,
+    p = 0.55, odds = 2.0, ev = 0.1, kelly = 0.02, bet_amount = 250
+  )
+}
+
+test_that("check_capture_rate WARNs when few recommendations were placed", {
+  root <- withr::local_tempdir()
+  recs <- .mini_recs(25L)
+  write_table(recs, "recommendations", root = root)
+  placed <- recs[1:10, ] # 10/25 = 40% -> WARN (below 70%, above 30%)
+  led <- tibble::tibble(
+    placed_at = as.POSIXct("2026-05-21", tz = "UTC"),
+    match_date = placed$match_date, sport = "football", country = "iceland",
+    sex = "male", home_team = placed$home_team, away_team = placed$away_team,
+    market = "moneyline", outcome = "home", line = NA_real_,
+    odds_placed = 2.0, p = 0.55, kelly = 0.02, bet_amount = 250,
+    settled = TRUE, win = TRUE, pnl = 250
+  )
+  write_table(led, "ledger", root = root)
+  res <- check_capture_rate(root, as.POSIXct("2026-05-30", tz = "UTC"), health_thresholds())
+  expect_equal(res$status, "WARN")
+  expect_match(res$value, "10/25")
+})
+
+test_that("check_capture_rate is OK at high capture and OK on thin data", {
+  root <- withr::local_tempdir()
+  recs <- .mini_recs(25L)
+  write_table(recs, "recommendations", root = root)
+  placed <- recs[1:23, ] # 23/25 = 92% -> OK
+  led <- tibble::tibble(
+    placed_at = as.POSIXct("2026-05-21", tz = "UTC"),
+    match_date = placed$match_date, sport = "football", country = "iceland",
+    sex = "male", home_team = placed$home_team, away_team = placed$away_team,
+    market = "moneyline", outcome = "home", line = NA_real_,
+    odds_placed = 2.0, p = 0.55, kelly = 0.02, bet_amount = 250,
+    settled = TRUE, win = TRUE, pnl = 250
+  )
+  write_table(led, "ledger", root = root)
+  expect_equal(
+    check_capture_rate(root, as.POSIXct("2026-05-30", tz = "UTC"), health_thresholds())$status,
+    "OK"
+  )
+
+  # Thin data (< capture_min_n recs in window) never escalates past OK.
+  root2 <- withr::local_tempdir()
+  write_table(.mini_recs(5L), "recommendations", root = root2)
+  expect_equal(
+    check_capture_rate(root2, as.POSIXct("2026-05-30", tz = "UTC"), health_thresholds())$status,
+    "OK"
+  )
+})

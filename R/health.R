@@ -15,7 +15,11 @@ health_thresholds <- function() {
     orphan_age_days = 10,
     div_frac_warn = 0.005, # half the 0.01 abort gate — the early-warning band
     rhat_warn = 1.02,
-    drawdown_warn_frac = 0.6 # current_pool < 60% of initial_pool
+    drawdown_warn_frac = 0.6, # current_pool < 60% of initial_pool
+    capture_window_days = 21, # look-back for placed-vs-recommended
+    capture_min_n = 20, # below this many recs in window, don't escalate
+    capture_warn_rate = 0.7, # placed/recommended below this -> WARN
+    capture_fail_rate = 0.3 # below this -> FAIL (near-total placement collapse)
   )
 }
 
@@ -186,6 +190,65 @@ check_orphaned_bets <- function(root, now, th) {
   health_row("orphaned_bets", "ledger", if (n > 0L) "WARN" else "OK", n, thr_lbl)
 }
 
+#' Capture rate: of bets recommended for matches that have now been played,
+#' how many were actually placed (appear in the ledger). A low rate is the
+#' operational defect the forensic review (2026-05-30) found dominates the
+#' modelling question — the pipeline placed ~45% of recommendations. Read-only
+#' on committed recommendations + ledger, so CI-safe. Recommendations exclude
+#' already-placed bets per run, but earlier run_date partitions retain a bet
+#' from before it was placed, so the distinct union across run_dates is the set
+#' of bets ever recommended; the inner-join to the ledger is what was placed.
+#' @noRd
+check_capture_rate <- function(root, now, th) {
+  thr_lbl <- paste0(">= ", round(100 * th$capture_warn_rate), "% placed")
+  key <- c(
+    "sport", "country", "sex", "match_date",
+    "home_team", "away_team", "market", "outcome", "line"
+  )
+  recs <- tryCatch(read_table("recommendations", root = root),
+    error = function(e) tibble::tibble()
+  )
+  if (nrow(recs) == 0L || !all(key %in% names(recs))) {
+    return(health_row("capture_rate", "recommendations", "OK", "no recommendations", thr_lbl))
+  }
+  today <- as.Date(now, tz = "UTC")
+  recs$match_date <- as.Date(recs$match_date)
+  recent <- recs[
+    !is.na(recs$match_date) &
+      recs$match_date >= (today - th$capture_window_days) &
+      recs$match_date < today, ,
+    drop = FALSE
+  ]
+  rec_d <- dplyr::distinct(recent[, key, drop = FALSE])
+  n_rec <- nrow(rec_d)
+  if (n_rec == 0L) {
+    return(health_row("capture_rate", "recommendations", "OK", "no settled-window recs", thr_lbl))
+  }
+  led <- tryCatch(read_table("ledger", root = root), error = function(e) tibble::tibble())
+  led_d <- if (nrow(led) > 0L && all(key %in% names(led))) {
+    led$match_date <- as.Date(led$match_date)
+    dplyr::distinct(led[, key, drop = FALSE])
+  } else {
+    rec_d[0, , drop = FALSE]
+  }
+  n_placed <- nrow(dplyr::inner_join(rec_d, led_d, by = key))
+  rate <- n_placed / n_rec
+  # Only escalate past OK once there are enough recs to be meaningful.
+  status <- if (n_rec < th$capture_min_n) {
+    "OK"
+  } else if (rate < th$capture_fail_rate) {
+    "FAIL"
+  } else if (rate < th$capture_warn_rate) {
+    "WARN"
+  } else {
+    "OK"
+  }
+  health_row(
+    "capture_rate", "recommendations", status,
+    sprintf("%.0f%% (%d/%d placed)", 100 * rate, n_placed, n_rec), thr_lbl
+  )
+}
+
 #' @noRd
 check_bankroll <- function(root, th) {
   bk <- tryCatch(load_bankroll(ledger_root = root), error = function(e) NULL)
@@ -209,8 +272,9 @@ check_bankroll <- function(root, th) {
 
 #' Read-only pipeline health snapshot.
 #'
-#' Composes freshness, persisted Stan-diagnostics drift, orphaned-bet, and
-#' bankroll checks into one tibble of `{check, scope, status, value, threshold}`
+#' Composes freshness, persisted Stan-diagnostics drift, orphaned-bet,
+#' placement-capture-rate, and bankroll checks into one tibble of
+#' `{check, scope, status, value, threshold}`
 #' rows. `status` is one of `OK` < `WARN` < `FAIL`, plus `PAUSED` for a cell
 #' that is intentionally off-season (no upcoming games — reuses
 #' [has_upcoming_games()] so the seasonal basketball/handball pause yields
@@ -242,6 +306,7 @@ pipeline_health <- function(root = here::here("data"),
     safe(check_odds_freshness(leagues, root, now, th)),
     safe(check_diagnostics_drift(root, th)),
     safe(check_orphaned_bets(root, now, th)),
+    safe(check_capture_rate(root, now, th)),
     safe(check_bankroll(root, th))
   )
 }
