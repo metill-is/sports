@@ -281,7 +281,7 @@ evaluate_stan_diagnostics <- function(metrics,
     msgs <- c(msgs, sprintf(
       paste0(
         "Stan diagnostic gate: min tail ESS %.0f on parameter %s below ",
-        "%d. Tail quantiles are unreliable — the spread/total stakes ",
+        "%d. Tail quantiles are unreliable \u2014 the spread/total stakes ",
         "depend on them. Increase iter_sampling."
       ),
       m$min_ess_tail, m$worst_ess_tail_var, as.integer(min_ess_tail)

@@ -22,7 +22,7 @@ write_health_status(h, status_path)
 
 overall <- overall_health_status(h)
 
-cli::cli_h1("Pipeline health — {overall}")
+cli::cli_h1("Pipeline health: {overall}")
 print(as.data.frame(h), row.names = FALSE)
 
 breaches <- h[h$status %in% c("WARN", "FAIL"), , drop = FALSE]

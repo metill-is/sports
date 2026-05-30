@@ -82,7 +82,7 @@ publish_one <- function(static, betting, key, sex,
           )
         }
         cli::cli_alert_warning(
-          "publish_one(football_iceland/{sex}): {conditionMessage(e)} (no extract partition yet — skipping)"
+          "publish_one(football_iceland/{sex}): {conditionMessage(e)} (no extract partition yet \u2014 skipping)"
         )
         NULL
       }
