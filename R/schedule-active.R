@@ -32,8 +32,10 @@ generate_active_competitions <- function(leagues, lookahead_days = 7L,
     out
   }
 
+  degraded <- FALSE
   if (!dir.exists(schedule_root)) {
     active <- default_all_active(sprintf("No schedules at %s", schedule_root))
+    degraded <- TRUE
   } else {
     today <- Sys.Date()
     horizon <- today + as.integer(lookahead_days)
@@ -43,6 +45,7 @@ generate_active_competitions <- function(leagues, lookahead_days = 7L,
     )
     if (is.null(schedules)) {
       active <- default_all_active("Failed to read data/facts/schedules/")
+      degraded <- TRUE
     } else {
       active <- vapply(leagues, function(l) {
         hits <- schedules$sport == l$sport &
@@ -58,6 +61,7 @@ generate_active_competitions <- function(leagues, lookahead_days = 7L,
   payload <- list(
     generated_at = format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"),
     lookahead_days = as.integer(lookahead_days),
+    degraded = degraded,
     active = active
   )
   # Auto-create the parent dir so callers don't have to. jsonlite::write_json

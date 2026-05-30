@@ -37,6 +37,8 @@ if (!fs::file_exists(active_path)) {
 }
 
 cli::cli_h1("Scrape odds ({length(active)} Lengjan-eligible leagues)")
+n_inseason <- 0L
+total_rows <- 0L
 for (key in names(active)) {
   league_def <- active[[key]]
   static <- league_def[c(
@@ -60,6 +62,20 @@ for (key in names(active)) {
   }
 
   cli::cli_h2("{key}")
-  ingest_one_lengjan(static, lengjan, key, active_path)
+  n_inseason <- n_inseason + 1L
+  total_rows <- total_rows + ingest_one_lengjan(static, lengjan, key, active_path)
 }
-cli::cli_alert_success("Odds scrape complete")
+
+# Fail loud on a total in-season wipe-out so a systemic Lengjan outage (all
+# match-detail fetches timing out, 2026-05-29) surfaces as a red workflow ->
+# GitHub failure email instead of a green run republishing stale odds.
+if (odds_scrape_empty_failure(n_inseason, total_rows, force = opts$force)) {
+  cli::cli_abort(c(
+    "Odds scrape wrote 0 rows across {n_inseason} in-season league(s).",
+    "x" = "Likely a systemic Lengjan scrape failure (timeouts or markup change).",
+    "i" = "Pass --force to scrape anyway without this guard."
+  ))
+}
+cli::cli_alert_success(
+  "Odds scrape complete ({total_rows} rows, {n_inseason} in-season league(s))"
+)
