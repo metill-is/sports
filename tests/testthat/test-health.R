@@ -51,6 +51,20 @@ test_that("fit_freshness is PAUSED when a cell has no upcoming games", {
   expect_true(any(ff$status == "PAUSED"))
 })
 
+test_that("write_health_status writes a readable status json with overall", {
+  path <- withr::local_tempfile(fileext = ".json")
+  h <- tibble::tibble(
+    check = c("a", "b"), scope = c("x", "y"), status = c("OK", "FAIL"),
+    value = c("1", "2"), threshold = c("t", "t")
+  )
+  write_health_status(h, path, now = as.POSIXct("2026-05-30 12:00", tz = "UTC"))
+  p <- jsonlite::read_json(path)
+  expect_equal(p$overall, "FAIL")
+  expect_equal(p$n_fail, 1L)
+  expect_equal(length(p$checks), 2L)
+  expect_equal(p$checks[[2]]$status, "FAIL")
+})
+
 test_that("overall_health_status escalates to the worst row", {
   expect_equal(overall_health_status(tibble::tibble(status = c("OK", "WARN", "OK"))), "WARN")
   expect_equal(overall_health_status(tibble::tibble(status = c("OK", "WARN", "FAIL"))), "FAIL")

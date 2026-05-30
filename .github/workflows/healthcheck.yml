@@ -1,0 +1,74 @@
+name: Health Check
+
+on:
+  schedule:
+    - cron: '0 7,19 * * *'   # twice daily UTC, after the morning fit + evening odds cycles
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: healthcheck
+  cancel-in-progress: false
+
+jobs:
+  healthcheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: 'release'
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        env:
+          PKG_SYSREQS: "false"
+        with:
+          dependencies: '"hard"'
+          extra-packages: |
+            any::devtools
+
+      - name: Reinstall V8 from source with bundled static libv8
+        env:
+          DOWNLOAD_STATIC_LIBV8: "1"
+        run: |
+          Rscript -e 'install.packages("V8", type = "source", repos = c(CRAN = "https://cloud.r-project.org"))'
+
+      - name: Compute health snapshot
+        run: Rscript scripts/07_healthcheck.R
+
+      # Best-effort: record the diffable status file. A push race with another
+      # workflow must not turn the health run red, so this never fails the job;
+      # the alert below reads the locally-computed status regardless.
+      - name: Commit status if changed
+        continue-on-error: true
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/health/
+          if git diff --cached --quiet; then
+            echo "Health status unchanged"
+          else
+            git commit -m "data: health snapshot $(date -u +%Y-%m-%dT%H:%MZ)"
+            git pull --rebase origin main
+            git push
+          fi
+
+      # The alert: fail the run (-> GitHub failure email) when overall is FAIL.
+      - name: Alert on breach
+        if: always()
+        run: |
+          overall=$(jq -r '.overall' data/health/status.json)
+          echo "Overall pipeline health: $overall"
+          if [ "$overall" = "FAIL" ]; then
+            echo "::error::Pipeline health is FAIL — inspect data/health/status.json"
+            exit 1
+          fi

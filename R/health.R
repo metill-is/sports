@@ -264,3 +264,28 @@ overall_health_status <- function(health) {
     "OK"
   }
 }
+
+#' Write a pipeline-health snapshot to JSON.
+#'
+#' Serialises a [pipeline_health()] tibble plus the overall status and
+#' fail/warn counts to `path` (typically `data/health/status.json`) — a
+#' committable, diffable, machine-readable health record a human, the
+#' `/pipeline-doctor` skill, or an external consumer can poll.
+#'
+#' @param health A tibble from [pipeline_health()].
+#' @param path Destination JSON path.
+#' @param now Reference time stamped into the payload. Default `Sys.time()`.
+#' @return invisible(path).
+#' @export
+write_health_status <- function(health, path, now = Sys.time()) {
+  payload <- list(
+    generated_at = format(now, "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"),
+    overall = overall_health_status(health),
+    n_fail = sum(health$status == "FAIL"),
+    n_warn = sum(health$status == "WARN"),
+    checks = health
+  )
+  dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
+  write_json_consistent(payload, path, pretty = TRUE, auto_unbox = TRUE)
+  invisible(path)
+}
