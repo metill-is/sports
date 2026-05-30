@@ -7,7 +7,8 @@ test_that("generate_active_competitions marks leagues with future fixtures activ
     match_date = Sys.Date() + 3L,
     home_team = "KR", away_team = "Valur",
     division = NA_character_,
-    round = NA_integer_
+    round = NA_integer_,
+    kickoff_time = NA_character_
   )
   write_table(fake_schedules, "schedules", root = file.path(tmp, "data"))
 
@@ -66,7 +67,8 @@ test_that("generate_active_competitions ignores past fixtures", {
     match_date = Sys.Date() - 7L,
     home_team = "KR", away_team = "Valur",
     division = NA_character_,
-    round = NA_integer_
+    round = NA_integer_,
+    kickoff_time = NA_character_
   )
   write_table(fake, "schedules", root = file.path(tmp, "data"))
 

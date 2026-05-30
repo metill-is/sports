@@ -24,15 +24,19 @@ schemas <- function() {
       round       = arrow::int32()
     ),
     schedules = arrow::schema(
-      sport       = arrow::string(),
-      country     = arrow::string(),
-      sex         = arrow::string(),
-      season      = arrow::int32(),
-      match_date  = arrow::date32(),
-      home_team   = arrow::string(),
-      away_team   = arrow::string(),
-      division    = arrow::string(),
-      round       = arrow::int32()
+      sport        = arrow::string(),
+      country      = arrow::string(),
+      sex          = arrow::string(),
+      season       = arrow::int32(),
+      match_date   = arrow::date32(),
+      home_team    = arrow::string(),
+      away_team    = arrow::string(),
+      division     = arrow::string(),
+      round        = arrow::int32(),
+      # Nullable "HH:MM" kick-off time captured from KSÍ (the federation source
+      # that exposes it); NA for sources/rows without a posted time. Added
+      # 2026-05-30 so placement can later be scheduled against actual kick-offs.
+      kickoff_time = arrow::string()
     ),
     odds = arrow::schema(
       sport       = arrow::string(),

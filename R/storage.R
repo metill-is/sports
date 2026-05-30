@@ -348,7 +348,19 @@ read_table <- function(table, root = here::here("data"), filter = list()) {
     return(tibble::tibble())
   }
 
-  ds <- arrow::open_dataset(src, partitioning = table_partitions()[[table]])
+  partitioning <- table_partitions()[[table]]
+  # Unify fragment schemas so a column added to the schema after some partitions
+  # were written (schema evolution, e.g. schedules.kickoff_time) is surfaced and
+  # null-filled for the older partitions, instead of being silently dropped by
+  # Arrow's default first-fragment-wins inference. The odds store carries a
+  # pre-existing scraped_at tz inconsistency (timestamp[us, tz=UTC] vs
+  # timestamp[us]) that unification cannot merge; there we fall back to the
+  # default open, preserving today's behaviour. Arrow raises the merge error at
+  # open time, so this tryCatch catches it before any collect.
+  ds <- tryCatch(
+    arrow::open_dataset(src, partitioning = partitioning, unify_schemas = TRUE),
+    error = function(e) arrow::open_dataset(src, partitioning = partitioning)
+  )
 
   if (length(filter) > 0) {
     for (col in names(filter)) {

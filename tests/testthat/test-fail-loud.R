@@ -32,7 +32,7 @@ test_that("generate_active_competitions is not degraded when schedules are prese
   sched <- tibble::tibble(
     sport = "football", country = "iceland", sex = "male", season = 2026L,
     match_date = Sys.Date() + 2L, home_team = "A", away_team = "B",
-    division = "BD", round = 1L
+    division = "BD", round = 1L, kickoff_time = NA_character_
   )
   write_table(sched, "schedules", root = root)
   leagues <- list(x = list(sport = "football", country = "iceland"))

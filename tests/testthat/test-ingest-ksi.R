@@ -23,7 +23,7 @@ test_that("parse_ksi_results_page extracts matches into canonical columns", {
     c(
       "sport", "country", "sex", "season", "match_date",
       "home_team", "away_team", "home_score", "away_score",
-      "division", "round"
+      "division", "round", "kickoff_time"
     )
   )
   expect_s3_class(parsed$match_date, "Date")
@@ -40,6 +40,14 @@ test_that("parse_ksi_results_page extracts matches into canonical columns", {
   # Dates must parse for every surviving row (including Icelandic month
   # names like "maí" / "júní" that appear in the fixture).
   expect_true(all(!is.na(parsed$match_date)))
+  # kickoff_time is captured from the same date column (KSÍ posts "HH:MM"
+  # after a double space); at least some fixture rows carry a time, and any
+  # value present is a well-formed HH:MM string.
+  expect_true(any(!is.na(parsed$kickoff_time)))
+  expect_true(all(
+    is.na(parsed$kickoff_time) |
+      grepl("^[0-9]{1,2}:[0-9]{2}$", parsed$kickoff_time)
+  ))
 })
 
 test_that("parse_ksi_date handles Icelandic month names", {
@@ -58,6 +66,23 @@ test_that("parse_ksi_date handles Icelandic month names", {
   expect_s3_class(out, "Date")
   expect_true(all(!is.na(out)))
   expect_equal(lubridate::month(out), c(4L, 5L, 6L, 7L, 8L, 9L))
+})
+
+test_that("parse_ksi_time extracts HH:MM and returns NA when absent", {
+  # KSI renders the kick-off time after a double space in the date column;
+  # parse_ksi_date strips it, parse_ksi_time recovers it.
+  raw <- c(
+    "Sun 26. apr\u00edl  18:00",
+    "Lau 2. ma\u00ed  16:00",
+    "Mi\u00f0 4. \u00e1g\u00fast  19:15",
+    "Sun 26. apr\u00edl",
+    ""
+  )
+  Encoding(raw) <- "UTF-8"
+  expect_equal(
+    parse_ksi_time(raw),
+    c("18:00", "16:00", "19:15", NA, NA)
+  )
 })
 
 test_that("parse_ksi_results_page with played_only drops unplayed", {
