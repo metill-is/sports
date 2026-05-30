@@ -196,6 +196,13 @@ Internal schemas use English throughout. Canonical column names: `home_team` / `
 
 **Local-only by design** — both placer and settle write to `data/decisions/ledger/`, and `arrow::write_parquet` is read-then-write (not atomic), so adding a CI-host writer would race concurrent local placer runs and risk Parquet corruption. Promoting to a workflow would require atomic upsert semantics or a coordination mechanism.
 
+### Backtest harness (2026-05-30)
+
+`R/backtest-*.R` + `scripts/0Nb_backtest.R` + `docs/reports/2026-backtest.qmd`
+replay historical decisions against results to analyse strategy performance
+(PnL/ROI/calibration, by market/league/sex). Read-only, never on CI; reuses
+`compute_settlement()`. See `.claude/rules/backtest.md`.
+
 ## Git hygiene
 
 Five CI workflows commit to `main` throughout the day, so local working trees drift quickly. The cron-collision sync pattern (stash → pull --rebase → pop), stash discipline, the `git -C <abs-path>` rule for the Bash tool's persistent cwd, and the PR-vs-direct-push decision tree are documented in [`.claude/rules/git-hygiene.md`](./.claude/rules/git-hygiene.md). Operational helpers: `/sync-main` (mid-session re-alignment) and `/wrap-up-session` (end-of-session consolidation checklist).
