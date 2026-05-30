@@ -44,10 +44,15 @@ Remotes:
 Config/testthat/edition: 3
 RoxygenNote: 7.3.3
 Collate:
+    'backtest-stake.R'
+    'config.R'
     'storage-schemas.R'
     'storage.R'
+    'settle.R'
+    'backtest-engine.R'
+    'backtest-metrics.R'
+    'backtest-universe.R'
     'commit-ledger.R'
-    'config.R'
     'cumulative-xpts.R'
     'decide-calibration.R'
     'decide-kelly.R'
@@ -88,6 +93,5 @@ Collate:
     'publish-pipeline.R'
     'replay.R'
     'schedule-active.R'
-    'settle.R'
     'simulate-cup-bracket.R'
     'storage-validate.R'

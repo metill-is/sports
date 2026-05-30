@@ -204,6 +204,15 @@ Internal schemas use English throughout. Canonical column names: `home_team` / `
 
 Two write-boundary guards complement the snapshot: `validate_values()` (`R/storage-validate.R`, wired into `write_table`) rejects impossible scores / `odds <= 1` / out-of-range `p`; `validate_bet_inputs()` (`R/decide-kelly.R`) quarantines a non-finite `p` or `odds <= 1` into a loud `dropped_invalid_input` candidate stage before stake sizing. The Stan gate (`check_stan_diagnostics`) also now covers treedepth / E-BFMI / tail-ESS and returns its metrics for persistence.
 
+### Backtest harness (2026-05-30)
+
+`R/backtest-*.R` + `scripts/0Nb_backtest.R` + `docs/reports/2026-backtest.qmd`
+replay historical decisions against results to analyse strategy performance
+(PnL/ROI/calibration, by market/sex). Read-only, never on CI; reuses
+`compute_settlement()`. **Defaults to football only** (CLI + report); the engine
+stays general — widen with `--league all` when basketball/handball resume. See
+`.claude/rules/backtest.md`.
+
 ## Git hygiene
 
 Five CI workflows commit to `main` throughout the day, so local working trees drift quickly. The cron-collision sync pattern (stash → pull --rebase → pop), stash discipline, the `git -C <abs-path>` rule for the Bash tool's persistent cwd, and the PR-vs-direct-push decision tree are documented in [`.claude/rules/git-hygiene.md`](./.claude/rules/git-hygiene.md). Operational helpers: `/sync-main` (mid-session re-alignment) and `/wrap-up-session` (end-of-session consolidation checklist).
