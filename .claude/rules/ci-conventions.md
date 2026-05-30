@@ -97,6 +97,7 @@ meta-characters.
 | `fit.yml` | `workflow_run` from scrape-results | Stan fit |
 | `decide-publish.yml` | `workflow_run` from fit AND scrape-odds | Recommendations + JSONs |
 | `republish.yml` | `workflow_dispatch` only | Re-run publish from existing extraction archive (lever for fast publisher iteration) |
+| `healthcheck.yml` | cron 2×/day + dispatch | Read-only `pipeline_health()` → `data/health/status.json`; commits if changed; fails the run on `overall == FAIL` so GitHub's failure email fires (the alert channel). `test-healthcheck-ci-isolation.R` proves it never writes the ledger. |
 
 The `decide-publish` chain reading `workflow_run` from *both* parents
 is what keeps JSON outputs fresh on every odds scrape, not just on the

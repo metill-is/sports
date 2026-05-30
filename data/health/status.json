@@ -1,0 +1,71 @@
+{
+  "generated_at": "2026-05-30T11:08:14Z",
+  "overall": "FAIL",
+  "n_fail": 1,
+  "n_warn": 1,
+  "checks": [
+    {
+      "check": "fit_freshness",
+      "scope": "basketball_iceland male",
+      "status": "PAUSED",
+      "value": "no upcoming games",
+      "threshold": "n/a"
+    },
+    {
+      "check": "fit_freshness",
+      "scope": "basketball_iceland female",
+      "status": "PAUSED",
+      "value": "no upcoming games",
+      "threshold": "n/a"
+    },
+    {
+      "check": "fit_freshness",
+      "scope": "handball_iceland male",
+      "status": "PAUSED",
+      "value": "no upcoming games",
+      "threshold": "n/a"
+    },
+    {
+      "check": "fit_freshness",
+      "scope": "handball_iceland female",
+      "status": "PAUSED",
+      "value": "no upcoming games",
+      "threshold": "n/a"
+    },
+    {
+      "check": "fit_freshness",
+      "scope": "football_iceland male",
+      "status": "OK",
+      "value": "2d old",
+      "threshold": "<= 2d"
+    },
+    {
+      "check": "fit_freshness",
+      "scope": "football_iceland female",
+      "status": "WARN",
+      "value": "4d old",
+      "threshold": "<= 2d"
+    },
+    {
+      "check": "odds_freshness",
+      "scope": "football_iceland",
+      "status": "FAIL",
+      "value": "47.5h old",
+      "threshold": "<= 8h"
+    },
+    {
+      "check": "orphaned_bets",
+      "scope": "ledger",
+      "status": "OK",
+      "value": "0",
+      "threshold": "0 unsettled > 10d"
+    },
+    {
+      "check": "bankroll",
+      "scope": "all",
+      "status": "OK",
+      "value": "107820 (457% of initial)",
+      "threshold": ">= 60% of initial"
+    }
+  ]
+}

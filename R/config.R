@@ -23,6 +23,7 @@ load_leagues <- function(path = here::here("config", "leagues.yml"),
       stop("leagues.schema.json not found: ", schema_path, call. = FALSE)
     }
     validate_leagues(leagues, schema_path)
+    check_team_names_injective(leagues)
   }
 
   leagues
@@ -59,6 +60,47 @@ validate_leagues <- function(leagues, schema_path) {
       "  (no detailed errors returned by validator)"
     }
     stop(paste0("leagues.yml failed schema validation:\n", err_lines), call. = FALSE)
+  }
+  invisible(TRUE)
+}
+
+#' Assert a canonical -> display name map is injective.
+#'
+#' Each display (Lengjan) value must come from at most one canonical name, or
+#' the decide-time inverse map (normalise_lengjan_team_names()) silently picks
+#' one canonical name at lookup time. NULL / empty maps pass. Shared by the
+#' load-time guard and the placer's pre-flight check.
+#' @noRd
+assert_injective_map <- function(map, label) {
+  if (is.null(map) || length(map) == 0L) {
+    return(invisible(TRUE))
+  }
+  vals <- unname(unlist(map))
+  if (anyDuplicated(vals) > 0L) {
+    dups <- unique(vals[duplicated(vals)])
+    cli::cli_abort(
+      c(
+        "{label} has non-injective team_names:",
+        "x" = "multiple canonical names map to {.val {dups}}"
+      ),
+      call = NULL
+    )
+  }
+  invisible(TRUE)
+}
+
+#' Assert every league's per-sex team_names sub-map is injective.
+#'
+#' Shifts the injectivity fault from "first bet on team X silently warn-skips"
+#' (decide/placer time) to every load_leagues() / test / CI run.
+#' @noRd
+check_team_names_injective <- function(leagues) {
+  for (key in names(leagues)) {
+    tn_all <- leagues[[key]]$lengjan$team_names
+    if (is.null(tn_all)) next
+    for (sx in names(tn_all)) {
+      assert_injective_map(tn_all[[sx]], label = paste0(key, " (", sx, ")"))
+    }
   }
   invisible(TRUE)
 }

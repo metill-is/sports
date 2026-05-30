@@ -240,3 +240,38 @@ test_that("max_match_stake = 0.05 enforces the per-match sum cap", {
   out <- kelly_joint(draws, bets, max_match_stake = 0.05, ev_threshold = 0.0)
   expect_lte(sum(out$bets$kelly_raw), 0.05 + 1e-6)
 })
+
+test_that("validate_bet_inputs rejects non-finite or <= 1 odds and non-finite p", {
+  expect_equal(
+    validate_bet_inputs(
+      odds = c(2.0, 1.0, 0.5, NaN, Inf, 2.0),
+      p = c(0.6, 0.6, 0.6, 0.6, 0.6, NaN)
+    ),
+    c(TRUE, FALSE, FALSE, FALSE, FALSE, FALSE)
+  )
+})
+
+test_that("kelly_joint does not crash on NaN / Inf / <= 1 odds", {
+  draws <- mini_beliefs(500L)
+  bets <- tibble::tibble(
+    market = rep("moneyline", 2L),
+    outcome = c("home", "away"),
+    line = NA_real_,
+    odds = c(NaN, 1.0)
+  )
+  expect_no_error(kelly_joint(draws, bets))
+})
+
+test_that("kelly_joint quarantines invalid-input bets via diagnostics$valid_input", {
+  set.seed(7)
+  draws <- mini_beliefs(2000L)
+  bets <- tibble::tibble(
+    market = rep("moneyline", 3L),
+    outcome = c("home", "draw", "away"),
+    line = NA_real_,
+    odds = c(1.85, 1.0, 0.5)
+  )
+  out <- kelly_joint(draws, bets, ev_threshold = 0.0)
+  expect_equal(out$diagnostics$valid_input, c(TRUE, FALSE, FALSE))
+  expect_equal(out$bets$kelly_raw[2:3], c(0, 0))
+})

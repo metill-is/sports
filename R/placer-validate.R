@@ -113,19 +113,12 @@ validate_team_names_config <- function(leagues, recs) {
     }
 
     # Injectivity: each Lengjan-side rendering must come from at most one
-    # canonical name. Without this, the decide-time inverse map (used by
-    # normalise_lengjan_team_names()) would silently pick one of the
-    # ambiguous canonical names at lookup time.
-    vals <- unname(unlist(tn))
-    if (anyDuplicated(vals) > 0L) {
-      dups <- unique(vals[duplicated(vals)])
-      stop(
-        "validate_team_names_config: ", key, " (", sx, ") ",
-        "has non-injective team_names; multiple canonical names map to: ",
-        paste(dups, collapse = ", "),
-        call. = FALSE
-      )
-    }
+    # canonical name, or normalise_lengjan_team_names()'s inverse map silently
+    # picks one. Shared with load_leagues()'s load-time guard.
+    assert_injective_map(
+      tn,
+      label = paste0("validate_team_names_config: ", key, " (", sx, ")")
+    )
   }
 
   invisible(TRUE)

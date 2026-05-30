@@ -22,7 +22,10 @@ fit_model(
   check_diagnostics = TRUE,
   max_divergent_frac = 0.01,
   max_rhat = 1.05,
-  min_ess_bulk = 100
+  min_ess_bulk = 100,
+  max_treedepth_frac = 0.2,
+  min_ebfmi = 0.2,
+  min_ess_tail = 100
 )
 }
 \arguments{
@@ -71,6 +74,14 @@ iterations that diverged. Default `0.01` (1%).}
 Default `1.05`.}
 
 \item{min_ess_bulk}{Minimum allowed bulk ESS on any monitored parameter.
+Default `100`.}
+
+\item{max_treedepth_frac}{Maximum fraction of post-warmup iterations
+allowed to saturate `max_treedepth`. Default `0.20`.}
+
+\item{min_ebfmi}{Minimum E-BFMI (energy) across chains. Default `0.2`.}
+
+\item{min_ess_tail}{Minimum tail ESS on any monitored parameter.
 Default `100`.}
 }
 \value{

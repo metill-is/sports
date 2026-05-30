@@ -38,6 +38,11 @@
 #'   Default `1.05`.
 #' @param min_ess_bulk Minimum allowed bulk ESS on any monitored parameter.
 #'   Default `100`.
+#' @param max_treedepth_frac Maximum fraction of post-warmup iterations
+#'   allowed to saturate `max_treedepth`. Default `0.20`.
+#' @param min_ebfmi Minimum E-BFMI (energy) across chains. Default `0.2`.
+#' @param min_ess_tail Minimum tail ESS on any monitored parameter.
+#'   Default `100`.
 #' @return CmdStanMCMC (sample) or CmdStanGQ (pathfinder / variational).
 #' @export
 fit_model <- function(stan_data,
@@ -57,7 +62,10 @@ fit_model <- function(stan_data,
                       check_diagnostics = TRUE,
                       max_divergent_frac = 0.01,
                       max_rhat = 1.05,
-                      min_ess_bulk = 100) {
+                      min_ess_bulk = 100,
+                      max_treedepth_frac = 0.20,
+                      min_ebfmi = 0.2,
+                      min_ess_tail = 100) {
   method <- match.arg(method)
 
   model <- cmdstanr::cmdstan_model(stan_model_path, quiet = TRUE)
@@ -97,7 +105,10 @@ fit_model <- function(stan_data,
         fit,
         max_divergent_frac = max_divergent_frac,
         max_rhat           = max_rhat,
-        min_ess_bulk       = min_ess_bulk
+        min_ess_bulk       = min_ess_bulk,
+        max_treedepth_frac = max_treedepth_frac,
+        min_ebfmi          = min_ebfmi,
+        min_ess_tail       = min_ess_tail
       )
     }
     fit
@@ -126,6 +137,159 @@ fit_model <- function(stan_data,
   }
 }
 
+#' Extract sampler diagnostics from a cmdstanr fit into a flat metric list.
+#'
+#' Defensive by construction: every cmdstanr accessor is wrapped so a partial
+#' fit, a legacy cmdstanr version, or a stubbed test fit yields `NA` for the
+#' missing metric rather than erroring. Gates downstream skip any `NA` metric.
+#'
+#' @keywords internal
+#' @noRd
+extract_stan_metrics <- function(fit) {
+  ds <- tryCatch(fit$diagnostic_summary(quiet = TRUE), error = function(e) NULL)
+  iter_per_chain <- tryCatch(fit$metadata()$iter_sampling, error = function(e) NA_integer_)
+
+  ds_field <- function(field) {
+    if (!is.null(ds) && !is.null(ds[[field]])) ds[[field]] else NULL
+  }
+  ndiv_vec <- ds_field("num_divergent")
+  ntd_vec <- ds_field("num_max_treedepth")
+  ebfmi_vec <- ds_field("ebfmi")
+
+  n_chains <- if (!is.null(ndiv_vec)) length(ndiv_vec) else NA_integer_
+  total_iter <- if (is.numeric(iter_per_chain) && length(iter_per_chain) == 1L &&
+    !is.na(iter_per_chain) && !is.na(n_chains)) {
+    as.integer(iter_per_chain) * n_chains
+  } else {
+    NA_integer_
+  }
+
+  frac_of <- function(count_vec) {
+    if (is.null(count_vec) || !is.finite(total_iter) || total_iter <= 0L) {
+      return(NA_real_)
+    }
+    sum(count_vec, na.rm = TRUE) / total_iter
+  }
+  safe_min <- function(x) if (is.null(x) || all(is.na(x))) NA_real_ else min(x, na.rm = TRUE)
+  safe_max <- function(x) if (is.null(x) || all(is.na(x))) NA_real_ else max(x, na.rm = TRUE)
+
+  summ <- tryCatch(
+    fit$summary(NULL, "rhat", "ess_bulk", "ess_tail"),
+    error = function(e) NULL
+  )
+  col <- function(nm) {
+    if (!is.null(summ) && nm %in% names(summ) && nrow(summ) > 0L) summ[[nm]] else NULL
+  }
+  worst <- function(nm, which_fn) {
+    v <- col(nm)
+    if (is.null(v)) {
+      return(NA_character_)
+    }
+    idx <- which_fn(v)
+    if (length(idx) == 0L) NA_character_ else summ$variable[idx]
+  }
+
+  list(
+    n_divergent = if (!is.null(ndiv_vec)) sum(ndiv_vec, na.rm = TRUE) else NA_integer_,
+    total_iter = total_iter,
+    n_chains = n_chains,
+    div_frac = frac_of(ndiv_vec),
+    n_max_treedepth = if (!is.null(ntd_vec)) sum(ntd_vec, na.rm = TRUE) else NA_integer_,
+    treedepth_frac = frac_of(ntd_vec),
+    min_ebfmi = safe_min(ebfmi_vec),
+    max_rhat = safe_max(col("rhat")),
+    min_ess_bulk = safe_min(col("ess_bulk")),
+    min_ess_tail = safe_min(col("ess_tail")),
+    worst_rhat_var = worst("rhat", which.max),
+    worst_ess_bulk_var = worst("ess_bulk", which.min),
+    worst_ess_tail_var = worst("ess_tail", which.min)
+  )
+}
+
+#' Evaluate extracted Stan metrics against gate thresholds.
+#'
+#' Pure: takes the metric list from [extract_stan_metrics()] and returns a
+#' character vector of gate-failure messages (empty when all gates pass). Each
+#' gate is skipped when its metric is `NA`. The divergence / R-hat / bulk-ESS
+#' messages are preserved verbatim from the pre-2026-05-30 gate so existing
+#' callers and tests see identical text.
+#'
+#' @keywords internal
+#' @noRd
+evaluate_stan_diagnostics <- function(metrics,
+                                      max_divergent_frac = 0.01,
+                                      max_rhat = 1.05,
+                                      min_ess_bulk = 100,
+                                      max_treedepth_frac = 0.20,
+                                      min_ebfmi = 0.2,
+                                      min_ess_tail = 100) {
+  m <- metrics
+  msgs <- character(0)
+
+  if (!is.na(m$div_frac) && m$div_frac > max_divergent_frac) {
+    msgs <- c(msgs, sprintf(
+      paste0(
+        "Stan diagnostic gate: %d divergent transitions in %d ",
+        "post-warmup iterations (%.2f%%) > %.2f%% threshold. ",
+        "Posterior is unreliable; do not promote to beliefs/latest. ",
+        "Reparameterise, raise adapt_delta, or inspect the data."
+      ),
+      m$n_divergent, m$total_iter, m$div_frac * 100, max_divergent_frac * 100
+    ))
+  }
+  if (!is.na(m$max_rhat) && m$max_rhat > max_rhat) {
+    msgs <- c(msgs, sprintf(
+      paste0(
+        "Stan diagnostic gate: max R-hat %.3f on parameter %s ",
+        "exceeds %.2f. Chains have not mixed; the posterior is not ",
+        "trustworthy. Increase iter_warmup or reparameterise."
+      ),
+      m$max_rhat, m$worst_rhat_var, max_rhat
+    ))
+  }
+  if (!is.na(m$min_ess_bulk) && m$min_ess_bulk < min_ess_bulk) {
+    msgs <- c(msgs, sprintf(
+      paste0(
+        "Stan diagnostic gate: min bulk ESS %.0f on parameter %s ",
+        "below %d. Too few effective samples for stable summaries. ",
+        "Increase iter_sampling or reduce model autocorrelation."
+      ),
+      m$min_ess_bulk, m$worst_ess_bulk_var, as.integer(min_ess_bulk)
+    ))
+  }
+  if (!is.na(m$treedepth_frac) && m$treedepth_frac > max_treedepth_frac) {
+    msgs <- c(msgs, sprintf(
+      paste0(
+        "Stan diagnostic gate: %d of %d post-warmup iterations (%.2f%%) ",
+        "saturated max treedepth, above the %.2f%% threshold. NUTS is ",
+        "hitting the depth limit; raise max_treedepth or reparameterise."
+      ),
+      m$n_max_treedepth, m$total_iter, m$treedepth_frac * 100, max_treedepth_frac * 100
+    ))
+  }
+  if (!is.na(m$min_ebfmi) && m$min_ebfmi < min_ebfmi) {
+    msgs <- c(msgs, sprintf(
+      paste0(
+        "Stan diagnostic gate: min E-BFMI %.3f below %.2f. Low energy ",
+        "fraction of missing information; momentum resampling is ",
+        "inefficient. Reparameterise the scale/variance parameters."
+      ),
+      m$min_ebfmi, min_ebfmi
+    ))
+  }
+  if (!is.na(m$min_ess_tail) && m$min_ess_tail < min_ess_tail) {
+    msgs <- c(msgs, sprintf(
+      paste0(
+        "Stan diagnostic gate: min tail ESS %.0f on parameter %s below ",
+        "%d. Tail quantiles are unreliable \u2014 the spread/total stakes ",
+        "depend on them. Increase iter_sampling."
+      ),
+      m$min_ess_tail, m$worst_ess_tail_var, as.integer(min_ess_tail)
+    ))
+  }
+  msgs
+}
+
 #' Abort if a Stan fit's posterior is unreliable.
 #'
 #' Pre-2026-05-15 no R-side code inspected the cmdstanr fit's diagnostics
@@ -134,109 +298,93 @@ fit_model <- function(stan_data,
 #' silently through `extract_posteriors()` into `data/beliefs/latest/` and
 #' become live bets via the placer. The 2026-04-12 memory note about
 #' approximate-inference crashing left the converged-but-bad full-NUTS
-#' failure mode uncovered. Audit 2026-05-15 §I.
-#'
-#' Defaults:
-#' - `max_divergent_frac = 0.01`: more than 1% divergent transitions on the
-#'   post-warmup window means HMC is missing typical-set regions of the
-#'   posterior. Below the operational acceptance per
-#'   `_legacy/sports/CLAUDE.md`'s historical convergence note.
-#' - `max_rhat = 1.05`: chains have not mixed; the published posterior is
-#'   not converged.
-#' - `min_ess_bulk = 100`: too few effective samples for stable summaries.
-#'
-#' This function intentionally `stop()`s rather than `quit()`s so callers
-#' can wrap it in a tryCatch when scoping (e.g. backfill scripts choosing
-#' which fits to refit). `scripts/03_fit.R` converts the abort to a
-#' workflow-failing exit at the script boundary.
+#' failure mode uncovered. Audit 2026-05-15 §I. 2026-05-30: also gates
+#' treedepth saturation, E-BFMI, and tail ESS, and returns the metrics.
 #'
 #' @param fit A `CmdStanMCMC` fit returned by `cmdstan_model()$sample()`.
-#' @param max_divergent_frac Numeric in `[0, 1]`.
-#' @param max_rhat Numeric `>= 1`.
-#' @param min_ess_bulk Numeric `>= 0`.
-#' @return Invisibly the fit, on success. Stops with a clear diagnostic
-#'   on failure.
+#' @param max_divergent_frac Numeric in `[0, 1]`. Default `0.01`.
+#' @param max_rhat Numeric `>= 1`. Default `1.05`.
+#' @param min_ess_bulk Numeric `>= 0`. Default `100`.
+#' @param max_treedepth_frac Maximum fraction of post-warmup iterations
+#'   allowed to saturate `max_treedepth`. Default `0.20`.
+#' @param min_ebfmi Minimum E-BFMI (energy fraction) across chains.
+#'   Default `0.2`.
+#' @param min_ess_tail Minimum tail ESS on any monitored parameter.
+#'   Default `100`; tail quantiles drive the spread/total stakes.
+#' @return Invisibly a named list of extracted diagnostic metrics
+#'   (`div_frac`, `treedepth_frac`, `min_ebfmi`, `max_rhat`,
+#'   `min_ess_bulk`, `min_ess_tail`, ...), on success. Stops with a clear
+#'   diagnostic on failure.
 #' @keywords internal
 #' @export
 check_stan_diagnostics <- function(fit,
                                    max_divergent_frac = 0.01,
                                    max_rhat = 1.05,
-                                   min_ess_bulk = 100) {
-  # Divergent transitions: a hard correctness signal — the sampler
-  # actively recognised it was wandering outside the typical set.
-  diag_summary <- tryCatch(
-    fit$diagnostic_summary(quiet = TRUE),
-    error = function(e) NULL
+                                   min_ess_bulk = 100,
+                                   max_treedepth_frac = 0.20,
+                                   min_ebfmi = 0.2,
+                                   min_ess_tail = 100) {
+  metrics <- extract_stan_metrics(fit)
+  msgs <- evaluate_stan_diagnostics(
+    metrics,
+    max_divergent_frac = max_divergent_frac,
+    max_rhat = max_rhat,
+    min_ess_bulk = min_ess_bulk,
+    max_treedepth_frac = max_treedepth_frac,
+    min_ebfmi = min_ebfmi,
+    min_ess_tail = min_ess_tail
   )
-  if (!is.null(diag_summary) && !is.null(diag_summary$num_divergent)) {
-    num_divergent <- sum(diag_summary$num_divergent, na.rm = TRUE)
-    iter_per_chain <- tryCatch(
-      fit$metadata()$iter_sampling,
-      error = function(e) NA_integer_
-    )
-    n_chains <- length(diag_summary$num_divergent)
-    total_iter <- if (is.numeric(iter_per_chain) && length(iter_per_chain) == 1L) {
-      iter_per_chain * n_chains
-    } else {
-      NA_integer_
-    }
-    if (is.finite(total_iter) && total_iter > 0L) {
-      div_frac <- num_divergent / total_iter
-      if (div_frac > max_divergent_frac) {
-        stop(
-          sprintf(
-            paste0(
-              "Stan diagnostic gate: %d divergent transitions in %d ",
-              "post-warmup iterations (%.2f%%) > %.2f%% threshold. ",
-              "Posterior is unreliable; do not promote to beliefs/latest. ",
-              "Reparameterise, raise adapt_delta, or inspect the data."
-            ),
-            num_divergent, total_iter, div_frac * 100, max_divergent_frac * 100
-          ),
-          call. = FALSE
-        )
-      }
-    }
+  if (length(msgs) > 0L) {
+    stop(paste(msgs, collapse = "\n"), call. = FALSE)
   }
+  invisible(metrics)
+}
 
-  # Mixing diagnostics: R-hat and bulk ESS on all monitored parameters.
-  # Summary call is heavier than diagnostic_summary() but still seconds.
-  summ <- tryCatch(
-    fit$summary(NULL, "rhat", "ess_bulk"),
-    error = function(e) NULL
+#' Persist one row of Stan sampler diagnostics for a completed fit.
+#'
+#' Writes a single row to the `fit_diagnostics` store
+#' (`data/beliefs/diagnostics/sport=*/country=*/sex=*/fit_date=*/`) so that
+#' convergence drift *below* the abort gate — divergences creeping from 3 to 80
+#' while still under 1%, or R-hat drifting toward 1.05 — becomes observable over
+#' time. Best-effort: a write failure warns rather than aborting the fit.
+#'
+#' @keywords internal
+#' @noRd
+persist_fit_diagnostics <- function(fit, league, sex, fit_date,
+                                    n_obs = NA_integer_,
+                                    adapt_delta = NA_real_,
+                                    iter_sampling = NA_integer_,
+                                    chains = NA_integer_,
+                                    root = here::here("data")) {
+  m <- extract_stan_metrics(fit)
+  passed <- length(evaluate_stan_diagnostics(m)) == 0L
+  row <- tibble::tibble(
+    sport = league$sport,
+    country = league$country,
+    sex = sex,
+    fit_date = as.Date(fit_date),
+    n_obs = as.integer(n_obs %||% NA_integer_),
+    n_divergent = as.integer(m$n_divergent),
+    total_iter = as.integer(m$total_iter),
+    div_frac = as.numeric(m$div_frac),
+    n_max_treedepth = as.integer(m$n_max_treedepth),
+    treedepth_frac = as.numeric(m$treedepth_frac),
+    min_ebfmi = as.numeric(m$min_ebfmi),
+    max_rhat = as.numeric(m$max_rhat),
+    min_ess_bulk = as.numeric(m$min_ess_bulk),
+    min_ess_tail = as.numeric(m$min_ess_tail),
+    adapt_delta = as.numeric(adapt_delta),
+    iter_sampling = as.integer(iter_sampling),
+    chains = as.integer(chains),
+    passed = passed
   )
-  if (!is.null(summ) && nrow(summ) > 0L) {
-    bad_rhat <- summ$rhat > max_rhat & !is.na(summ$rhat)
-    if (any(bad_rhat)) {
-      worst <- summ[which.max(summ$rhat), , drop = FALSE]
-      stop(
-        sprintf(
-          paste0(
-            "Stan diagnostic gate: max R-hat %.3f on parameter %s ",
-            "exceeds %.2f. Chains have not mixed; the posterior is not ",
-            "trustworthy. Increase iter_warmup or reparameterise."
-          ),
-          worst$rhat, worst$variable, max_rhat
-        ),
-        call. = FALSE
+  tryCatch(
+    write_table(row, "fit_diagnostics", root = root),
+    error = function(e) {
+      cli::cli_alert_warning(
+        "Failed to persist fit diagnostics: {conditionMessage(e)}"
       )
     }
-    bad_ess <- summ$ess_bulk < min_ess_bulk & !is.na(summ$ess_bulk)
-    if (any(bad_ess)) {
-      worst <- summ[which.min(summ$ess_bulk), , drop = FALSE]
-      stop(
-        sprintf(
-          paste0(
-            "Stan diagnostic gate: min bulk ESS %.0f on parameter %s ",
-            "below %d. Too few effective samples for stable summaries. ",
-            "Increase iter_sampling or reduce model autocorrelation."
-          ),
-          worst$ess_bulk, worst$variable, as.integer(min_ess_bulk)
-        ),
-        call. = FALSE
-      )
-    }
-  }
-
-  invisible(fit)
+  )
+  invisible(row)
 }

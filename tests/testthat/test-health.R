@@ -1,0 +1,72 @@
+.mini_ledger <- function(match_date, settled = FALSE, pnl = 0) {
+  tibble::tibble(
+    placed_at = as.POSIXct("2026-05-01", tz = "UTC"),
+    match_date = as.Date(match_date),
+    sport = "football", country = "iceland", sex = "male",
+    home_team = "A", away_team = "B",
+    market = "moneyline", outcome = "home", line = NA_real_,
+    odds_placed = 2.0, p = 0.55, kelly = 0.01, bet_amount = 200,
+    settled = settled, win = if (settled) TRUE else NA, pnl = pnl
+  )
+}
+
+test_that("check_orphaned_bets flags an old unsettled bet", {
+  root <- withr::local_tempdir()
+  write_table(.mini_ledger("2026-04-01", settled = FALSE), "ledger", root = root)
+  res <- check_orphaned_bets(root, as.POSIXct("2026-05-30", tz = "UTC"), health_thresholds())
+  expect_equal(res$status, "WARN")
+})
+
+test_that("check_orphaned_bets is OK with a recent unsettled bet", {
+  root <- withr::local_tempdir()
+  write_table(.mini_ledger("2026-05-29", settled = FALSE), "ledger", root = root)
+  res <- check_orphaned_bets(root, as.POSIXct("2026-05-30", tz = "UTC"), health_thresholds())
+  expect_equal(res$status, "OK")
+})
+
+test_that("pipeline_health returns the canonical health tibble shape", {
+  root <- withr::local_tempdir()
+  out <- pipeline_health(root = root, now = as.POSIXct("2026-05-30", tz = "UTC"), leagues = list())
+  expect_true(all(c("check", "scope", "status", "value", "threshold") %in% names(out)))
+  expect_true(all(out$status %in% c("OK", "WARN", "FAIL", "PAUSED")))
+})
+
+test_that("pipeline_health does not mutate the ledger (read-only money path)", {
+  root <- withr::local_tempdir()
+  write_table(.mini_ledger("2026-05-20", settled = TRUE, pnl = 100), "ledger", root = root)
+  led_dir <- file.path(root, "decisions", "ledger")
+  before <- tools::md5sum(list.files(led_dir, recursive = TRUE, full.names = TRUE, pattern = "parquet$"))
+  pipeline_health(root = root, now = as.POSIXct("2026-05-30", tz = "UTC"), leagues = list())
+  after <- tools::md5sum(list.files(led_dir, recursive = TRUE, full.names = TRUE, pattern = "parquet$"))
+  expect_identical(before, after)
+})
+
+test_that("fit_freshness is PAUSED when a cell has no upcoming games", {
+  root <- withr::local_tempdir()
+  leagues <- list(
+    football_iceland = list(sport = "football", country = "iceland", sexes = list("male"))
+  )
+  out <- pipeline_health(root = root, now = as.POSIXct("2026-05-30", tz = "UTC"), leagues = leagues)
+  ff <- out[out$check == "fit_freshness", ]
+  expect_true(any(ff$status == "PAUSED"))
+})
+
+test_that("write_health_status writes a readable status json with overall", {
+  path <- withr::local_tempfile(fileext = ".json")
+  h <- tibble::tibble(
+    check = c("a", "b"), scope = c("x", "y"), status = c("OK", "FAIL"),
+    value = c("1", "2"), threshold = c("t", "t")
+  )
+  write_health_status(h, path, now = as.POSIXct("2026-05-30 12:00", tz = "UTC"))
+  p <- jsonlite::read_json(path)
+  expect_equal(p$overall, "FAIL")
+  expect_equal(p$n_fail, 1L)
+  expect_equal(length(p$checks), 2L)
+  expect_equal(p$checks[[2]]$status, "FAIL")
+})
+
+test_that("overall_health_status escalates to the worst row", {
+  expect_equal(overall_health_status(tibble::tibble(status = c("OK", "WARN", "OK"))), "WARN")
+  expect_equal(overall_health_status(tibble::tibble(status = c("OK", "WARN", "FAIL"))), "FAIL")
+  expect_equal(overall_health_status(tibble::tibble(status = c("OK", "PAUSED"))), "OK")
+})

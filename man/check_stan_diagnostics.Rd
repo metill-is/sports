@@ -8,21 +8,35 @@ check_stan_diagnostics(
   fit,
   max_divergent_frac = 0.01,
   max_rhat = 1.05,
-  min_ess_bulk = 100
+  min_ess_bulk = 100,
+  max_treedepth_frac = 0.2,
+  min_ebfmi = 0.2,
+  min_ess_tail = 100
 )
 }
 \arguments{
 \item{fit}{A `CmdStanMCMC` fit returned by `cmdstan_model()$sample()`.}
 
-\item{max_divergent_frac}{Numeric in `[0, 1]`.}
+\item{max_divergent_frac}{Numeric in `[0, 1]`. Default `0.01`.}
 
-\item{max_rhat}{Numeric `>= 1`.}
+\item{max_rhat}{Numeric `>= 1`. Default `1.05`.}
 
-\item{min_ess_bulk}{Numeric `>= 0`.}
+\item{min_ess_bulk}{Numeric `>= 0`. Default `100`.}
+
+\item{max_treedepth_frac}{Maximum fraction of post-warmup iterations
+allowed to saturate `max_treedepth`. Default `0.20`.}
+
+\item{min_ebfmi}{Minimum E-BFMI (energy fraction) across chains.
+Default `0.2`.}
+
+\item{min_ess_tail}{Minimum tail ESS on any monitored parameter.
+Default `100`; tail quantiles drive the spread/total stakes.}
 }
 \value{
-Invisibly the fit, on success. Stops with a clear diagnostic
-  on failure.
+Invisibly a named list of extracted diagnostic metrics
+  (`div_frac`, `treedepth_frac`, `min_ebfmi`, `max_rhat`,
+  `min_ess_bulk`, `min_ess_tail`, ...), on success. Stops with a clear
+  diagnostic on failure.
 }
 \description{
 Pre-2026-05-15 no R-side code inspected the cmdstanr fit's diagnostics
@@ -31,21 +45,7 @@ R-hat well above 1.01, or ESS below the rule-of-thumb 100, would flow
 silently through `extract_posteriors()` into `data/beliefs/latest/` and
 become live bets via the placer. The 2026-04-12 memory note about
 approximate-inference crashing left the converged-but-bad full-NUTS
-failure mode uncovered. Audit 2026-05-15 §I.
-}
-\details{
-Defaults:
-- `max_divergent_frac = 0.01`: more than 1% divergent transitions on the
-  post-warmup window means HMC is missing typical-set regions of the
-  posterior. Below the operational acceptance per
-  `_legacy/sports/CLAUDE.md`'s historical convergence note.
-- `max_rhat = 1.05`: chains have not mixed; the published posterior is
-  not converged.
-- `min_ess_bulk = 100`: too few effective samples for stable summaries.
-
-This function intentionally `stop()`s rather than `quit()`s so callers
-can wrap it in a tryCatch when scoping (e.g. backfill scripts choosing
-which fits to refit). `scripts/03_fit.R` converts the abort to a
-workflow-failing exit at the script boundary.
+failure mode uncovered. Audit 2026-05-15 §I. 2026-05-30: also gates
+treedepth saturation, E-BFMI, and tail ESS, and returns the metrics.
 }
 \keyword{internal}

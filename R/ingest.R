@@ -134,3 +134,15 @@ ingest_one_lengjan <- function(static, lengjan, key, active_path) {
   league$lengjan <- lengjan
   as.integer(ingest_lengjan_odds(stats::setNames(list(league), key)))
 }
+
+#' Should an odds scrape fail loudly for returning nothing in-season?
+#'
+#' TRUE only when at least one in-season league was scraped yet the whole run
+#' wrote zero odds rows -- a systemic scraper failure (e.g. every Lengjan
+#' match-detail fetch timing out, the 2026-05-29 outage). A single league's
+#' emptiness is tolerated (odds may simply not be posted yet), so this keys on
+#' the run-wide total, not per league. A manual `force` run suppresses it.
+#' @noRd
+odds_scrape_empty_failure <- function(n_inseason, total_rows, force = FALSE) {
+  n_inseason > 0L && total_rows == 0L && !isTRUE(force)
+}

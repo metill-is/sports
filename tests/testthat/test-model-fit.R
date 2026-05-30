@@ -69,15 +69,24 @@ test_that("fit_model errors clearly on unknown method", {
 # $metadata, and $summary. The helper only calls these three methods.
 .fake_fit <- function(num_divergent = c(0L, 0L, 0L, 0L),
                       iter_sampling = 1000L,
-                      rhat = 1.01, ess_bulk = 500,
-                      variable = "mu") {
+                      rhat = 1.01, ess_bulk = 500, ess_tail = 500,
+                      variable = "mu",
+                      num_max_treedepth = c(0L, 0L, 0L, 0L),
+                      ebfmi = c(1, 1, 1, 1)) {
   list(
     diagnostic_summary = function(quiet = TRUE) {
-      list(num_divergent = num_divergent)
+      list(
+        num_divergent = num_divergent,
+        num_max_treedepth = num_max_treedepth,
+        ebfmi = ebfmi
+      )
     },
     metadata = function() list(iter_sampling = iter_sampling),
     summary = function(...) {
-      tibble::tibble(variable = variable, rhat = rhat, ess_bulk = ess_bulk)
+      tibble::tibble(
+        variable = variable, rhat = rhat,
+        ess_bulk = ess_bulk, ess_tail = ess_tail
+      )
     }
   )
 }
@@ -129,4 +138,73 @@ test_that("check_stan_diagnostics survives diagnostic_summary failure", {
     }
   )
   expect_invisible(check_stan_diagnostics(fit))
+})
+
+test_that("check_stan_diagnostics returns the metric list invisibly", {
+  m <- check_stan_diagnostics(.fake_fit())
+  expect_equal(m$div_frac, 0)
+  expect_equal(m$treedepth_frac, 0)
+  expect_equal(m$max_rhat, 1.01)
+  expect_equal(m$min_ess_bulk, 500)
+  expect_equal(m$min_ess_tail, 500)
+  expect_equal(m$min_ebfmi, 1)
+})
+
+test_that("check_stan_diagnostics stops on treedepth saturation above threshold", {
+  # 300 per chain x 4 = 1200 / 4000 = 30% > 20% default
+  fit <- .fake_fit(num_max_treedepth = rep(300L, 4L))
+  expect_error(check_stan_diagnostics(fit), "treedepth")
+})
+
+test_that("check_stan_diagnostics stops on low E-BFMI", {
+  fit <- .fake_fit(ebfmi = c(0.1, 0.9, 0.9, 0.9))
+  expect_error(check_stan_diagnostics(fit), "E-BFMI")
+})
+
+test_that("check_stan_diagnostics stops on low tail ESS", {
+  fit <- .fake_fit(ess_tail = 50, variable = "tau")
+  expect_error(check_stan_diagnostics(fit), "tail ESS 50 on parameter tau")
+})
+
+test_that("persist_fit_diagnostics writes a readable one-row record", {
+  root <- withr::local_tempdir()
+  fit <- .fake_fit(num_divergent = rep(2L, 4L), ess_tail = 250)
+  league <- list(sport = "basketball", country = "iceland")
+  persist_fit_diagnostics(
+    fit, league,
+    sex = "male", fit_date = as.Date("2026-05-30"),
+    n_obs = 120L, adapt_delta = 0.95, iter_sampling = 1000L, chains = 4L,
+    root = root
+  )
+  d <- read_table("fit_diagnostics",
+    filter = list(sport = "basketball", country = "iceland", sex = "male"),
+    root = root
+  )
+  expect_equal(nrow(d), 1L)
+  expect_equal(d$n_divergent, 8L)
+  expect_equal(d$div_frac, 8 / 4000)
+  expect_equal(d$min_ess_tail, 250)
+  expect_equal(d$n_obs, 120L)
+  expect_true(d$passed)
+})
+
+test_that("evaluate_stan_diagnostics is silent when clean and flags each fault", {
+  clean <- list(
+    div_frac = 0, n_divergent = 0L, total_iter = 4000L,
+    treedepth_frac = 0, n_max_treedepth = 0L, min_ebfmi = 1,
+    max_rhat = 1.0, min_ess_bulk = 500, min_ess_tail = 500,
+    worst_rhat_var = "mu", worst_ess_bulk_var = "mu", worst_ess_tail_var = "mu"
+  )
+  expect_length(evaluate_stan_diagnostics(clean), 0L)
+
+  bad <- clean
+  bad$div_frac <- 0.05
+  bad$n_divergent <- 200L
+  bad$treedepth_frac <- 0.30
+  bad$n_max_treedepth <- 1200L
+  bad$min_ebfmi <- 0.1
+  bad$max_rhat <- 1.2
+  bad$min_ess_bulk <- 50
+  bad$min_ess_tail <- 40
+  expect_length(evaluate_stan_diagnostics(bad), 6L)
 })

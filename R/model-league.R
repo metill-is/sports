@@ -181,6 +181,22 @@ fit_league <- function(league_key = NULL,
     seed            = seed
   )
 
+  # Persist sampler diagnostics (drift tracking, audit 2026-05-30). Daily
+  # MCMC fits only: by_round backfills share a fit_date across rounds and
+  # would collide in the (sport,country,sex,fit_date) partition. Best-effort.
+  if (identical(method, "sample") && !by_round_mode) {
+    persist_fit_diagnostics(
+      fit, league,
+      sex = sex,
+      fit_date = fit_date,
+      n_obs = prep$stan_data$N %||% NA_integer_,
+      adapt_delta = adapt_delta,
+      iter_sampling = iter_sampling,
+      chains = chains,
+      root = root
+    )
+  }
+
   # Plan 6: persist the fit object so publish_one() can read it back.
   # `data/beliefs/latest/` is the canonical Parquet for the long-form draws,
   # but publishers also need team-level Stan parameters via fit$draws(var)

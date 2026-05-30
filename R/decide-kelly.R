@@ -153,6 +153,19 @@ solve_kelly_joint <- function(net_return, max_stake) {
   )
 }
 
+#' Validate per-bet numeric inputs to the Kelly optimiser.
+#'
+#' A bet can be sized only if its decimal odds are finite and strictly above
+#' 1 (a payout must exist) and its posterior win probability is finite.
+#' Invalid bets are quarantined upstream of stake sizing so a malformed odds
+#' scrape or a degenerate posterior cannot send a NaN into `bet_amount`.
+#'
+#' @keywords internal
+#' @noRd
+validate_bet_inputs <- function(odds, p) {
+  is.finite(odds) & odds > 1 & is.finite(p)
+}
+
 #' Joint Kelly criterion across all bets in one match.
 #'
 #' Replaces three independent per-market Kelly runs with a single convex
@@ -187,7 +200,13 @@ kelly_joint <- function(beliefs, bets,
   p <- as.numeric(colMeans(R > 0))
   ev <- p * (bets$odds - 1) - (1 - p)
 
-  keep <- ev >= ev_threshold
+  # Quarantine bets whose odds are non-finite / <= 1 or whose posterior p is
+  # non-finite BEFORE they reach the optimiser. Without this a NaN odds makes
+  # `keep` carry NA (crashing the sum(keep) guard) and a <= 1 odds silently
+  # masquerades as dropped_low_ev. decide_league() maps !valid_input to the
+  # dropped_invalid_input stage.
+  valid_input <- validate_bet_inputs(bets$odds, p)
+  keep <- valid_input & (ev >= ev_threshold)
   R_keep <- R[, keep, drop = FALSE]
 
   f <- numeric(nrow(bets))
@@ -217,6 +236,8 @@ kelly_joint <- function(beliefs, bets,
     diagnostics = list(
       n_bets          = nrow(bets),
       n_kept          = sum(keep),
+      n_invalid       = sum(!valid_input),
+      valid_input     = valid_input,
       max_match_stake = max_match_stake,
       nloptr_status   = solver_status,
       nloptr_iter     = solver_iterations

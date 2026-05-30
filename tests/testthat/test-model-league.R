@@ -125,6 +125,11 @@ test_that("fit_league(football iceland) skips beliefs_archive by default", {
   # Relabel as football iceland so `is_football_iceland` triggers.
   results$sport <- "football"
   schedules$sport <- "football"
+  # mini_results is basketball-scale; bring scores into football range so the
+  # value validator accepts the relabelled fixture (fit_model is mocked, so the
+  # score magnitudes are incidental to this archive-skip test).
+  results$home_score <- results$home_score %% 6L
+  results$away_score <- results$away_score %% 6L
   write_table(results, "results", root = root)
   write_table(schedules, "schedules", root = root)
 
@@ -175,6 +180,11 @@ test_that("fit_league(football iceland, force_archive_write = TRUE) bypasses the
   )
   results$sport <- "football"
   schedules$sport <- "football"
+  # mini_results is basketball-scale; bring scores into football range so the
+  # value validator accepts the relabelled fixture (fit_model is mocked, so the
+  # score magnitudes are incidental to this archive-skip test).
+  results$home_score <- results$home_score %% 6L
+  results$away_score <- results$away_score %% 6L
   write_table(results, "results", root = root)
   write_table(schedules, "schedules", root = root)
 

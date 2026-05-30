@@ -13,7 +13,8 @@ table_partitions <- function() {
     beliefs_by_round = c("sport", "country", "sex", "season", "round_cutoff"),
     candidates = c("sport", "country", "run_date"),
     recommendations = c("sport", "country", "run_date"),
-    ledger = c("sport", "country")
+    ledger = c("sport", "country"),
+    fit_diagnostics = c("sport", "country", "sex", "fit_date")
   )
 }
 
@@ -30,6 +31,7 @@ table_subdir <- function(table) {
     candidates = c("decisions", "candidates"),
     recommendations = c("decisions", "recommendations"),
     ledger = c("decisions", "ledger"),
+    fit_diagnostics = c("beliefs", "diagnostics"),
     stop("Unknown table: ", table, call. = FALSE)
   )
 }
@@ -156,6 +158,7 @@ write_table <- function(df, table, root = here::here("data")) {
 
   df <- add_virtual_partitions(df, table)
   validate_against_schema(df, table)
+  validate_values(df, table)
   partitions <- table_partitions()[[table]]
 
   dest <- do.call(fs::path, c(list(root), table_subdir(table)))
