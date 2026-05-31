@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-31T09:48:01Z",
+  "generated_at": "2026-05-31T20:07:25Z",
   "overall": "WARN",
   "n_fail": 0,
   "n_warn": 2,
@@ -50,7 +50,7 @@
       "check": "odds_freshness",
       "scope": "football_iceland",
       "status": "WARN",
-      "value": "12.9h old",
+      "value": "9.9h old",
       "threshold": "<= 8h"
     },
     {
