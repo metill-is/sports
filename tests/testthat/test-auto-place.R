@@ -18,3 +18,18 @@ test_that("acquire_auto_place_lock blocks a live lock and reclaims a dead one", 
   release_auto_place_lock(root)
   expect_false(fs::file_exists(fs::path(root, ".auto_place.lock")))
 })
+
+test_that(".daily_room never goes negative", {
+  expect_equal(.daily_room(daily_budget = 5000, placed_today = 2000), 3000)
+  expect_equal(.daily_room(daily_budget = 5000, placed_today = 9000), 0)
+})
+
+test_that(".placed_today_stake sums only today's placed stakes", {
+  now <- as.POSIXct("2026-06-01 12:00:00", tz = "UTC")
+  led <- tibble::tibble(
+    placed_at = as.POSIXct(c("2026-06-01 09:00:00", "2026-05-31 20:00:00"), tz = "UTC"),
+    bet_amount = c(1500, 4000)
+  )
+  expect_equal(.placed_today_stake(led, now), 1500)
+  expect_equal(.placed_today_stake(tibble::tibble(), now), 0)
+})
