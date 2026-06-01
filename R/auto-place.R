@@ -226,3 +226,22 @@ run_auto_place <- function(root = here::here("data"),
     n_pending = n_pending, n_placed = n_placed, run_at = now, root = root
   )
 }
+
+#' Stash-safe `git pull --rebase` so the placer acts on CI's latest recs.
+#'
+#' Follows the `.claude/rules/git-hygiene.md` cron-collision pattern. Returns
+#' `TRUE` on a clean fast-forward/rebase, `FALSE` on any conflict or error.
+#' @param repo_root Repository root.
+#' @return Logical scalar.
+#' @export
+sync_recs <- function(repo_root = here::here()) {
+  g <- function(...) {
+    system2("git", c("-C", repo_root, ...), stdout = TRUE, stderr = TRUE)
+  }
+  attr_ok <- function(out) is.null(attr(out, "status")) || attr(out, "status") == 0L
+  g("stash", "push", "-u", "-m", "auto_place sync")
+  out <- g("pull", "--rebase", "origin", "main")
+  ok <- attr_ok(out)
+  pop <- g("stash", "pop")
+  ok && (attr_ok(pop) || any(grepl("No stash entries", pop)))
+}
