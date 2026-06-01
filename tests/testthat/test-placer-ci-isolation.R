@@ -20,6 +20,10 @@ test_that("no GitHub Actions workflow references the placer", {
     "placer_pipeline",
     "place_bets",
     "preview_bets",
+    "auto_place",
+    "autoplace",
+    "AUTO_PLACE",
+    "run_auto_place",
     "LENGJAN_USER",
     "LENGJAN_PASS"
   )
