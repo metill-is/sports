@@ -66,16 +66,22 @@ for (key in names(active)) {
   total_rows <- total_rows + ingest_one_lengjan(static, lengjan, key, active_path)
 }
 
-# Fail loud on a total in-season wipe-out so a systemic Lengjan outage (all
-# match-detail fetches timing out, 2026-05-29) surfaces as a red workflow ->
-# GitHub failure email instead of a green run republishing stale odds.
+# A run-wide 0-row result is usually benign, not an outage: between rounds --
+# and football is the only in-season Lengjan league while basketball + handball
+# are paused -- Lengjan posts no odds for days at a time. Aborting here red-Xed
+# the workflow (and so fired the health alert email) on every benign gap,
+# desensitising that channel. Staleness escalation now belongs to the
+# healthcheck's `odds_freshness` check (data/health, 2x/day): if odds stay
+# absent past its threshold it FAILs and fires the email -- which a transient
+# between-rounds gap, self-healing when Lengjan reposts, never reaches. So warn
+# and exit clean instead of aborting; a real outage still surfaces via
+# odds_freshness rather than an immediate red scrape.
 if (odds_scrape_empty_failure(n_inseason, total_rows, force = opts$force)) {
-  cli::cli_abort(c(
-    "Odds scrape wrote 0 rows across {n_inseason} in-season league(s).",
-    "x" = "Likely a systemic Lengjan scrape failure (timeouts or markup change).",
-    "i" = "Pass --force to scrape anyway without this guard."
-  ))
+  cli::cli_alert_warning(
+    "Odds scrape wrote 0 rows across {n_inseason} in-season league(s); no odds posted right now (likely between rounds). odds_freshness escalates if this persists."
+  )
+} else {
+  cli::cli_alert_success(
+    "Odds scrape complete ({total_rows} rows, {n_inseason} in-season league(s))"
+  )
 }
-cli::cli_alert_success(
-  "Odds scrape complete ({total_rows} rows, {n_inseason} in-season league(s))"
-)
