@@ -93,3 +93,46 @@ auto_place_daily_room <- function(root = here::here("data"),
   )
   .daily_room(daily_budget, .placed_today_stake(led, now))
 }
+
+#' @noRd
+placement_status_path <- function(root = here::here("data")) {
+  fs::path(root, "health", "placement_status.json")
+}
+
+#' Record the outcome of one unattended placement run.
+#'
+#' Statuses: `placed`, `nothing_pending`, `ev_rejected`, `disabled`, `locked`,
+#' `sync_failed`, `daily_cap_reached`, or `failed:<reason>`.
+#' @param status,n_pending,n_placed,error,run_at,root Run fields.
+#' @return The record list, invisibly.
+#' @export
+record_placement_status <- function(status,
+                                    n_pending = NA_integer_,
+                                    n_placed = NA_integer_,
+                                    error = NA_character_,
+                                    run_at = Sys.time(),
+                                    root = here::here("data")) {
+  path <- placement_status_path(root)
+  fs::dir_create(fs::path_dir(path))
+  rec <- list(
+    run_at = format(run_at, "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"),
+    status = status,
+    n_pending = n_pending,
+    n_placed = n_placed,
+    error = error
+  )
+  jsonlite::write_json(rec, path, auto_unbox = TRUE, pretty = TRUE)
+  invisible(rec)
+}
+
+#' Read the last placement-run status (`NULL` if none).
+#' @param root Data root.
+#' @return A list, or `NULL`.
+#' @export
+read_placement_status <- function(root = here::here("data")) {
+  path <- placement_status_path(root)
+  if (!fs::file_exists(path)) {
+    return(NULL)
+  }
+  jsonlite::read_json(path, simplifyVector = TRUE)
+}

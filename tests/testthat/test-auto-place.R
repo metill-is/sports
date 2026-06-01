@@ -33,3 +33,17 @@ test_that(".placed_today_stake sums only today's placed stakes", {
   expect_equal(.placed_today_stake(led, now), 1500)
   expect_equal(.placed_today_stake(tibble::tibble(), now), 0)
 })
+
+test_that("placement status round-trips and missing reads as NULL", {
+  root <- withr::local_tempdir()
+  expect_null(read_placement_status(root))
+
+  record_placement_status("placed",
+    n_pending = 3L, n_placed = 2L,
+    run_at = as.POSIXct("2026-06-01 12:00:00", tz = "UTC"), root = root
+  )
+  got <- read_placement_status(root)
+  expect_equal(got$status, "placed")
+  expect_equal(got$n_placed, 2L)
+  expect_match(got$run_at, "^2026-06-01T12:00")
+})
