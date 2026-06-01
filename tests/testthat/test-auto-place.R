@@ -47,3 +47,17 @@ test_that("placement status round-trips and missing reads as NULL", {
   expect_equal(got$n_placed, 2L)
   expect_match(got$run_at, "^2026-06-01T12:00")
 })
+
+test_that("auto_place_decide resolves the action precedence", {
+  base <- list(kill = FALSE, locked = FALSE, sync = TRUE, pending = 3L, room = 5000)
+  d <- function(o = list()) {
+    a <- utils::modifyList(base, o)
+    auto_place_decide(a$kill, a$locked, a$sync, a$pending, a$room)
+  }
+  expect_equal(d(list(kill = TRUE)), "disabled")
+  expect_equal(d(list(locked = TRUE)), "locked")
+  expect_equal(d(list(sync = FALSE)), "sync_failed")
+  expect_equal(d(list(pending = 0L)), "nothing_pending")
+  expect_equal(d(list(room = 0)), "daily_cap_reached")
+  expect_equal(d(), "place")
+})

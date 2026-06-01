@@ -136,3 +136,30 @@ read_placement_status <- function(root = here::here("data")) {
   }
   jsonlite::read_json(path, simplifyVector = TRUE)
 }
+
+#' Decide the next unattended-placement action from gathered signals.
+#'
+#' Precedence mirrors the wrapper sequence: kill switch, lock, sync, gate,
+#' daily cap, then place.
+#' @param kill_switched,locked,sync_ok,pending_n,daily_room Gathered signals.
+#' @return One of `disabled`, `locked`, `sync_failed`, `nothing_pending`,
+#'   `daily_cap_reached`, `place`.
+#' @export
+auto_place_decide <- function(kill_switched, locked, sync_ok, pending_n, daily_room) {
+  if (isTRUE(kill_switched)) {
+    return("disabled")
+  }
+  if (isTRUE(locked)) {
+    return("locked")
+  }
+  if (!isTRUE(sync_ok)) {
+    return("sync_failed")
+  }
+  if (pending_n == 0L) {
+    return("nothing_pending")
+  }
+  if (daily_room <= 0) {
+    return("daily_cap_reached")
+  }
+  "place"
+}
