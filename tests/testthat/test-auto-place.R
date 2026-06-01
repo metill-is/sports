@@ -128,3 +128,39 @@ test_that("run_auto_place records 'nothing_pending' with no recs", {
   )
   expect_equal(read_placement_status(root)$status, "nothing_pending")
 })
+
+test_that("run_auto_place records 'failed:<reason>' and re-throws when placement errors", {
+  root <- withr::local_tempdir()
+  seed_pending_rec(root)
+  expect_error(
+    run_auto_place(
+      root = root, now = as.POSIXct("2026-06-01 12:00:00", tz = "UTC"),
+      sync_fn = function(...) TRUE,
+      place_fn = function(...) stop("network timeout"),
+      bankroll_fn = function() {
+        list(
+          daily_budget_frac = 0.05, current_pool = 1e5,
+          daily_budget_min_isk = 1000
+        )
+      }
+    )
+  )
+  expect_equal(read_placement_status(root)$status, "failed:network timeout")
+})
+
+test_that("run_auto_place records 'ev_rejected' when placement returns no placed rows", {
+  root <- withr::local_tempdir()
+  seed_pending_rec(root)
+  run_auto_place(
+    root = root, now = as.POSIXct("2026-06-01 12:00:00", tz = "UTC"),
+    sync_fn = function(...) TRUE,
+    place_fn = function(...) tibble::tibble(status = "rejected_p4"),
+    bankroll_fn = function() {
+      list(
+        daily_budget_frac = 0.05, current_pool = 1e5,
+        daily_budget_min_isk = 1000
+      )
+    }
+  )
+  expect_equal(read_placement_status(root)$status, "ev_rejected")
+})

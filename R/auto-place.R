@@ -175,13 +175,17 @@ auto_place_decide <- function(kill_switched, locked, sync_ok, pending_n, daily_r
 #' @param sync_fn `function(repo_root) -> logical` (TRUE on clean sync).
 #' @param place_fn `place_bets`-compatible function returning a status tibble.
 #' @param bankroll_fn `function() -> load_bankroll()` list.
+#' @param headless Passed through to `place_fn`. `FALSE` (default) runs a
+#'   visible, human-paced browser as the design specifies; set `TRUE` for a
+#'   headless run if a visible window proves brittle in an unattended context.
 #' @return The recorded status list, invisibly.
 #' @export
 run_auto_place <- function(root = here::here("data"),
                            now = Sys.time(),
                            sync_fn = sync_recs,
                            place_fn = place_bets,
-                           bankroll_fn = function() load_bankroll(ledger_root = root)) {
+                           bankroll_fn = function() load_bankroll(ledger_root = root),
+                           headless = FALSE) {
   if (placement_kill_switched(root)) {
     return(record_placement_status("disabled", run_at = now, root = root))
   }
@@ -208,7 +212,7 @@ run_auto_place <- function(root = here::here("data"),
   }
 
   res <- tryCatch(
-    place_fn(dry_run = FALSE, interactive = FALSE, headless = FALSE, root = root),
+    place_fn(dry_run = FALSE, interactive = FALSE, headless = headless, root = root),
     error = function(e) {
       record_placement_status(paste0("failed:", conditionMessage(e)),
         n_pending = n_pending, run_at = now, root = root
@@ -239,6 +243,8 @@ sync_recs <- function(repo_root = here::here()) {
     system2("git", c("-C", repo_root, ...), stdout = TRUE, stderr = TRUE)
   }
   attr_ok <- function(out) is.null(attr(out, "status")) || attr(out, "status") == 0L
+  # Stash-push result is intentionally not gated: a data-only sync never stashes
+  # the local ledger (see git-hygiene.md), so a no-op or failed push is benign.
   g("stash", "push", "-u", "-m", "auto_place sync")
   out <- g("pull", "--rebase", "origin", "main")
   ok <- attr_ok(out)
