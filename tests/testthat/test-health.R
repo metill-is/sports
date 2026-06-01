@@ -168,3 +168,23 @@ test_that("check_placement_health is OK after a healthy run cleared the queue", 
   row <- check_placement_health(root, Sys.time(), th)
   expect_equal(row$status, "OK")
 })
+
+test_that("check_placement_health WARNs when last healthy run is stale", {
+  root <- withr::local_tempdir()
+  th <- health_thresholds()
+  seed_health_pending_rec(root)
+  record_placement_status("placed",
+    run_at = Sys.time() - 3600 * (th$placement_stale_warn_hours + 1), root = root
+  )
+  expect_equal(check_placement_health(root, Sys.time(), th)$status, "WARN")
+})
+
+test_that("check_placement_health FAILs when last healthy run is very stale", {
+  root <- withr::local_tempdir()
+  th <- health_thresholds()
+  seed_health_pending_rec(root)
+  record_placement_status("placed",
+    run_at = Sys.time() - 3600 * (th$placement_stale_fail_hours + 1), root = root
+  )
+  expect_equal(check_placement_health(root, Sys.time(), th)$status, "FAIL")
+})

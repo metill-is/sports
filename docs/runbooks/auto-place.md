@@ -17,3 +17,13 @@
 
 ## Confirm it is not on CI
 `Rscript -e 'devtools::test_file("tests/testthat/test-placer-ci-isolation.R")'`
+
+## Known limitation: CI alert lag
+`data/health/placement_status.json` is written locally each run but is NOT
+auto-committed by `scripts/auto_place.R`. So `/pipeline-doctor` and the
+SessionStart banner reflect it immediately (they read the local file), but the
+twice-daily `healthcheck.yml` -- and its failure-email alert -- only see it once
+it's committed (e.g. by the next fit/decide cron that touches `data/health/`).
+A `failed:*` that self-resolves between healthchecks can therefore be missed by
+the email path. Auto-committing the status file from `auto_place.R` is a noted
+follow-up; the local surfaces are the timely ones.

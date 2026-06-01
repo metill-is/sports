@@ -14,6 +14,7 @@ case "${1:-install}" in
     launchctl bootstrap "gui/$(id -u)" "$PLIST"
     echo "Installed + loaded. Tail: ~/Library/Logs/sports-autoplace.log"
     echo "Kill switch: touch $REPO/data/AUTO_PLACE_DISABLED"
+    echo "WARNING: RunAtLoad=true -- the agent runs once within ~20 min of install."
     ;;
   uninstall)
     launchctl bootout "gui/$(id -u)/is.metill.sports.autoplace" 2>/dev/null || true

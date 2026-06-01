@@ -20,3 +20,6 @@ if (hr < 9L || hr >= 22L) {
 
 rec <- run_auto_place(root = root)
 cli::cli_alert_info("auto_place: {rec$status}")
+if (identical(rec$status, "sync_failed")) {
+  quit(save = "no", status = 1L)
+}

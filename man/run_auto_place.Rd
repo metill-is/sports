@@ -11,7 +11,7 @@ run_auto_place(
   sync_fn = sync_recs,
   place_fn = place_bets,
   bankroll_fn = function() load_bankroll(ledger_root = root),
-  headless = FALSE
+  headless = TRUE
 )
 }
 \arguments{
@@ -25,9 +25,10 @@ run_auto_place(
 
 \item{bankroll_fn}{`function() -> load_bankroll()` list.}
 
-\item{headless}{Passed through to `place_fn`. `FALSE` (default) runs a
-visible, human-paced browser as the design specifies; set `TRUE` for a
-headless run if a visible window proves brittle in an unattended context.}
+\item{headless}{Passed through to `place_fn`. `TRUE` (default) is the robust
+choice for unattended/launchd runs (no dependency on an active GUI session).
+Set `FALSE` to watch a visible browser during a supervised run; the
+human-paced `sample_delay()` in the placer applies either way.}
 }
 \value{
 The recorded status list, invisibly.

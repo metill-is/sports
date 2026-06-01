@@ -164,3 +164,25 @@ test_that("run_auto_place records 'ev_rejected' when placement returns no placed
   )
   expect_equal(read_placement_status(root)$status, "ev_rejected")
 })
+
+test_that("run_auto_place records 'locked' when a live lock is held", {
+  root <- withr::local_tempdir()
+  seed_pending_rec(root)
+  writeLines(as.character(Sys.getpid()), fs::path(root, ".auto_place.lock"))
+  called <- FALSE
+  run_auto_place(
+    root = root, sync_fn = function(...) TRUE,
+    place_fn = function(...) {
+      called <<- TRUE
+      tibble::tibble(status = "placed")
+    },
+    bankroll_fn = function() {
+      list(
+        daily_budget_frac = 0.05, current_pool = 1e5,
+        daily_budget_min_isk = 1000
+      )
+    }
+  )
+  expect_false(called)
+  expect_equal(read_placement_status(root)$status, "locked")
+})

@@ -175,9 +175,10 @@ auto_place_decide <- function(kill_switched, locked, sync_ok, pending_n, daily_r
 #' @param sync_fn `function(repo_root) -> logical` (TRUE on clean sync).
 #' @param place_fn `place_bets`-compatible function returning a status tibble.
 #' @param bankroll_fn `function() -> load_bankroll()` list.
-#' @param headless Passed through to `place_fn`. `FALSE` (default) runs a
-#'   visible, human-paced browser as the design specifies; set `TRUE` for a
-#'   headless run if a visible window proves brittle in an unattended context.
+#' @param headless Passed through to `place_fn`. `TRUE` (default) is the robust
+#'   choice for unattended/launchd runs (no dependency on an active GUI session).
+#'   Set `FALSE` to watch a visible browser during a supervised run; the
+#'   human-paced `sample_delay()` in the placer applies either way.
 #' @return The recorded status list, invisibly.
 #' @export
 run_auto_place <- function(root = here::here("data"),
@@ -185,7 +186,7 @@ run_auto_place <- function(root = here::here("data"),
                            sync_fn = sync_recs,
                            place_fn = place_bets,
                            bankroll_fn = function() load_bankroll(ledger_root = root),
-                           headless = FALSE) {
+                           headless = TRUE) {
   if (placement_kill_switched(root)) {
     return(record_placement_status("disabled", run_at = now, root = root))
   }
