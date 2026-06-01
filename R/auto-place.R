@@ -163,3 +163,66 @@ auto_place_decide <- function(kill_switched, locked, sync_ok, pending_n, daily_r
   }
   "place"
 }
+
+#' Run one unattended placement cycle (kill -> lock -> sync -> gate ->
+#' daily-cap -> place), recording the outcome to the status store.
+#'
+#' `sync_fn`/`place_fn`/`bankroll_fn` are injected for testability; the shell
+#' `scripts/auto_place.R` passes the real `sync_recs`, `place_bets`,
+#' `load_bankroll`.
+#' @param root Data root.
+#' @param now Current time.
+#' @param sync_fn `function(repo_root) -> logical` (TRUE on clean sync).
+#' @param place_fn `place_bets`-compatible function returning a status tibble.
+#' @param bankroll_fn `function() -> load_bankroll()` list.
+#' @return The recorded status list, invisibly.
+#' @export
+run_auto_place <- function(root = here::here("data"),
+                           now = Sys.time(),
+                           sync_fn = sync_recs,
+                           place_fn = place_bets,
+                           bankroll_fn = function() load_bankroll(ledger_root = root)) {
+  if (placement_kill_switched(root)) {
+    return(record_placement_status("disabled", run_at = now, root = root))
+  }
+  if (!acquire_auto_place_lock(root)) {
+    return(record_placement_status("locked", run_at = now, root = root))
+  }
+  on.exit(release_auto_place_lock(root), add = TRUE)
+
+  sync_ok <- isTRUE(tryCatch(sync_fn(here::here()), error = function(e) FALSE))
+  pending <- tryCatch(suppressMessages(preview_pending(root = root)),
+    error = function(e) tibble::tibble()
+  )
+  n_pending <- nrow(pending)
+  room <- tryCatch(auto_place_daily_room(root, bankroll_fn(), now),
+    error = function(e) 0
+  )
+
+  action <- auto_place_decide(FALSE, FALSE, sync_ok, n_pending, room)
+  if (action != "place") {
+    return(record_placement_status(action,
+      n_pending = n_pending,
+      run_at = now, root = root
+    ))
+  }
+
+  res <- tryCatch(
+    place_fn(dry_run = FALSE, interactive = FALSE, headless = FALSE, root = root),
+    error = function(e) {
+      record_placement_status(paste0("failed:", conditionMessage(e)),
+        n_pending = n_pending, run_at = now, root = root
+      )
+      stop(e)
+    }
+  )
+  n_placed <- if ("status" %in% names(res)) {
+    sum(res$status == "placed", na.rm = TRUE)
+  } else {
+    0L
+  }
+  record_placement_status(
+    if (n_placed > 0L) "placed" else "ev_rejected",
+    n_pending = n_pending, n_placed = n_placed, run_at = now, root = root
+  )
+}

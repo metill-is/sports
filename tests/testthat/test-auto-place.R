@@ -61,3 +61,70 @@ test_that("auto_place_decide resolves the action precedence", {
   expect_equal(d(list(room = 0)), "daily_cap_reached")
   expect_equal(d(), "place")
 })
+
+seed_pending_rec <- function(root) {
+  recs <- tibble::tibble(
+    run_id = as.POSIXct("2026-06-01 10:00:00", tz = "UTC"),
+    sex = "male",
+    match_date = as.Date("2026-06-02"),
+    home_team = "A", away_team = "B",
+    market = "moneyline", outcome = "home", line = NA_real_,
+    p = 0.6, odds = 2.1, ev = 0.26, kelly = 0.02, bet_amount = 1500,
+    sport = "football", country = "iceland"
+  )
+  write_table(recs, "recommendations", root = root)
+}
+
+test_that("run_auto_place records 'placed' when a pending bet is placed", {
+  root <- withr::local_tempdir()
+  seed_pending_rec(root)
+  fake_place <- function(...) tibble::tibble(status = "placed")
+  run_auto_place(
+    root = root, now = as.POSIXct("2026-06-01 12:00:00", tz = "UTC"),
+    sync_fn = function(...) TRUE, place_fn = fake_place,
+    bankroll_fn = function() {
+      list(
+        daily_budget_frac = 0.05, current_pool = 1e5,
+        daily_budget_min_isk = 1000
+      )
+    }
+  )
+  expect_equal(read_placement_status(root)$status, "placed")
+})
+
+test_that("run_auto_place short-circuits on the kill switch", {
+  root <- withr::local_tempdir()
+  seed_pending_rec(root)
+  fs::file_create(fs::path(root, "AUTO_PLACE_DISABLED"))
+  called <- FALSE
+  run_auto_place(
+    root = root, sync_fn = function(...) TRUE,
+    place_fn = function(...) {
+      called <<- TRUE
+      tibble::tibble(status = "placed")
+    },
+    bankroll_fn = function() {
+      list(
+        daily_budget_frac = 0.05, current_pool = 1e5,
+        daily_budget_min_isk = 1000
+      )
+    }
+  )
+  expect_false(called)
+  expect_equal(read_placement_status(root)$status, "disabled")
+})
+
+test_that("run_auto_place records 'nothing_pending' with no recs", {
+  root <- withr::local_tempdir()
+  run_auto_place(
+    root = root, sync_fn = function(...) TRUE,
+    place_fn = function(...) stop("should not be called"),
+    bankroll_fn = function() {
+      list(
+        daily_budget_frac = 0.05, current_pool = 1e5,
+        daily_budget_min_isk = 1000
+      )
+    }
+  )
+  expect_equal(read_placement_status(root)$status, "nothing_pending")
+})
