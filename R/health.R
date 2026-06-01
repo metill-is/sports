@@ -19,7 +19,9 @@ health_thresholds <- function() {
     capture_window_days = 21, # look-back for placed-vs-recommended
     capture_min_n = 20, # below this many recs in window, don't escalate
     capture_warn_rate = 0.7, # placed/recommended below this -> WARN
-    capture_fail_rate = 0.3 # below this -> FAIL (near-total placement collapse)
+    capture_fail_rate = 0.3, # below this -> FAIL (near-total placement collapse)
+    placement_stale_warn_hours = 6, # pending bets + last healthy run older -> WARN
+    placement_stale_fail_hours = 14 # ...older still -> FAIL
   )
 }
 
@@ -270,6 +272,59 @@ check_bankroll <- function(root, th) {
   )
 }
 
+#' @noRd
+check_placement_health <- function(root, now, th) {
+  healthy <- c("placed", "nothing_pending", "ev_rejected", "daily_cap_reached")
+  thr_lbl <- paste0("healthy run < ", th$placement_stale_fail_hours, "h when pending")
+
+  pending <- tryCatch(
+    {
+      recs <- load_recommendations(root = root)
+      if (nrow(recs) == 0L) {
+        recs
+      } else {
+        recs <- recs[as.Date(recs$match_date) >= as.Date(now, tz = "UTC"), , drop = FALSE]
+        dedup_against_ledger(recs, root = root)
+      }
+    },
+    error = function(e) tibble::tibble()
+  )
+  n_pending <- nrow(pending)
+
+  last <- read_placement_status(root)
+
+  if (n_pending == 0L) {
+    return(health_row(
+      "placement_health", "auto_place", "OK",
+      "no pending bets", thr_lbl
+    ))
+  }
+  if (is.null(last)) {
+    return(health_row(
+      "placement_health", "auto_place", "WARN",
+      sprintf("%d pending, auto-place never run", n_pending), thr_lbl
+    ))
+  }
+
+  failed <- !(last$status %in% healthy)
+  age_h <- as.numeric(difftime(now,
+    as.POSIXct(last$run_at, tz = "UTC", format = "%Y-%m-%dT%H:%M:%SZ"),
+    units = "hours"
+  ))
+
+  status <- if (failed || age_h > th$placement_stale_fail_hours) {
+    "FAIL"
+  } else if (age_h > th$placement_stale_warn_hours) {
+    "WARN"
+  } else {
+    "OK"
+  }
+  health_row(
+    "placement_health", "auto_place", status,
+    sprintf("%d pending, last=%s (%.0fh)", n_pending, last$status, age_h), thr_lbl
+  )
+}
+
 #' Read-only pipeline health snapshot.
 #'
 #' Composes freshness, persisted Stan-diagnostics drift, orphaned-bet,
@@ -307,6 +362,7 @@ pipeline_health <- function(root = here::here("data"),
     safe(check_diagnostics_drift(root, th)),
     safe(check_orphaned_bets(root, now, th)),
     safe(check_capture_rate(root, now, th)),
+    safe(check_placement_health(root, now, th)),
     safe(check_bankroll(root, th))
   )
 }

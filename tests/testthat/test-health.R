@@ -1,3 +1,16 @@
+seed_health_pending_rec <- function(root) {
+  recs <- tibble::tibble(
+    run_id = as.POSIXct("2026-06-01 10:00:00", tz = "UTC"),
+    sex = "male",
+    match_date = as.Date("2100-01-01"),
+    home_team = "A", away_team = "B",
+    market = "moneyline", outcome = "home", line = NA_real_,
+    p = 0.6, odds = 2.1, ev = 0.26, kelly = 0.02, bet_amount = 1500,
+    sport = "football", country = "iceland"
+  )
+  write_table(recs, "recommendations", root = root)
+}
+
 .mini_ledger <- function(match_date, settled = FALSE, pnl = 0) {
   tibble::tibble(
     placed_at = as.POSIXct("2026-05-01", tz = "UTC"),
@@ -127,4 +140,31 @@ test_that("check_capture_rate is OK at high capture and OK on thin data", {
     check_capture_rate(root2, as.POSIXct("2026-05-30", tz = "UTC"), health_thresholds())$status,
     "OK"
   )
+})
+
+test_that("check_placement_health is OK when nothing is pending", {
+  root <- withr::local_tempdir()
+  th <- health_thresholds()
+  row <- check_placement_health(root, Sys.time(), th)
+  expect_equal(row$status, "OK")
+})
+
+test_that("check_placement_health FAILs on a failed last run with pending bets", {
+  root <- withr::local_tempdir()
+  th <- health_thresholds()
+  seed_health_pending_rec(root)
+  record_placement_status("failed:boom",
+    n_pending = 1L,
+    run_at = Sys.time(), root = root
+  )
+  row <- check_placement_health(root, Sys.time(), th)
+  expect_equal(row$status, "FAIL")
+})
+
+test_that("check_placement_health is OK after a healthy run cleared the queue", {
+  root <- withr::local_tempdir()
+  th <- health_thresholds()
+  record_placement_status("placed", n_placed = 2L, run_at = Sys.time(), root = root)
+  row <- check_placement_health(root, Sys.time(), th)
+  expect_equal(row$status, "OK")
 })
