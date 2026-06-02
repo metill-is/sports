@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-06-02T11:17:40Z",
-  "overall": "WARN",
-  "n_fail": 0,
-  "n_warn": 3,
+  "generated_at": "2026-06-02T21:47:45Z",
+  "overall": "FAIL",
+  "n_fail": 1,
+  "n_warn": 2,
   "checks": [
     {
       "check": "fit_freshness",
@@ -49,8 +49,8 @@
     {
       "check": "odds_freshness",
       "scope": "football_iceland",
-      "status": "WARN",
-      "value": "21.7h old",
+      "status": "FAIL",
+      "value": "32.2h old",
       "threshold": "<= 8h"
     },
     {
