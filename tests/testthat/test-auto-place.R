@@ -66,7 +66,7 @@ seed_pending_rec <- function(root) {
   recs <- tibble::tibble(
     run_id = as.POSIXct("2026-06-01 10:00:00", tz = "UTC"),
     sex = "male",
-    match_date = as.Date("2026-06-02"),
+    match_date = Sys.Date() + 7L,
     home_team = "A", away_team = "B",
     market = "moneyline", outcome = "home", line = NA_real_,
     p = 0.6, odds = 2.1, ev = 0.26, kelly = 0.02, bet_amount = 1500,
