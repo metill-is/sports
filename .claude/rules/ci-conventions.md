@@ -26,7 +26,7 @@ requirements.
   runtime), and the standard `ubuntu-latest` libraries (libcurl,
   libssl, libxml2, libyaml) cover every other declared
   `SystemRequirements` in the project's package set. The
-  `browser-actions/setup-chrome@v1` step in the scrape workflows
+  `browser-actions/setup-chrome@v2` step in the scrape workflows
   further pins Chrome and exports `CHROMOTE_CHROME`.
 
 ## 2. Reinstall V8 from source with `DOWNLOAD_STATIC_LIBV8=1`
