@@ -10,8 +10,10 @@ health_thresholds <- function() {
   list(
     fit_age_warn_days = 2,
     fit_age_fail_days = 4,
-    odds_age_warn_hours = 8,
-    odds_age_fail_hours = 24,
+    odds_lead_days = 3, # Lengjan posts football odds with a ~2-day median lead;
+    # only expect odds once a fixture falls inside this window (see
+    # check_odds_freshness). Wider than the lead so a normal between-match lull
+    # never alarms.
     orphan_age_days = 10,
     div_frac_warn = 0.005, # half the 0.01 abort gate — the early-warning band
     rhat_warn = 1.02,
@@ -102,16 +104,52 @@ check_fit_freshness <- function(leagues, root, now, th) {
   if (length(rows) == 0L) health_empty() else dplyr::bind_rows(rows)
 }
 
+#' Earliest scheduled match in `[today, today + days]` across a league's cells,
+#' or `NA` when none (off-season / between seasons). Derives "today" from the
+#' caller's reference time rather than `Sys.Date()` so the health snapshot is
+#' deterministic.
+#' @noRd
+.next_upcoming_match <- function(static, sexes, root, today, days = 14L) {
+  dates <- as.Date(character())
+  for (sx in sexes) {
+    sch <- tryCatch(
+      read_table("schedules",
+        root = root,
+        filter = list(sport = static$sport, country = static$country, sex = sx)
+      ),
+      error = function(e) tibble::tibble()
+    )
+    if (nrow(sch) == 0L || !("match_date" %in% names(sch))) next
+    md <- as.Date(sch$match_date)
+    md <- md[!is.na(md) & md >= today & md <= today + as.integer(days)]
+    dates <- c(dates, md)
+  }
+  if (length(dates) == 0L) as.Date(NA) else min(dates)
+}
+
+#' Match-proximity-aware odds freshness.
+#'
+#' A between-match lull — when Lengjan posts no odds because no fixture is near —
+#' is benign and must not alarm; absolute-age staleness (the previous design)
+#' false-FAILed on every such gap, since Lengjan posts football odds with a
+#' ~2-day median lead and routine inter-match gaps run 2–3 days. So staleness is
+#' escalated only once the next fixture falls inside `odds_lead_days`, and the
+#' signal that "we have what the decider needs" is odds covering some fixture
+#' on/after today. A fixture arriving *today* with no odds scraped is a genuine
+#' pipeline stall and FAILs (the alert email). Off-season cells (no upcoming
+#' fixture) produce no row, as before.
 #' @noRd
 check_odds_freshness <- function(leagues, root, now, th) {
+  today <- as.Date(now, tz = "UTC")
+  thr_lbl <- paste0("odds for fixtures within ", th$odds_lead_days, "d")
   rows <- list()
   for (key in names(leagues)) {
     lg <- leagues[[key]]
     static <- list(sport = lg$sport, country = lg$country)
-    upcoming <- any(vapply(.cell_sexes(lg), function(sx) {
-      tryCatch(has_upcoming_games(static, sx, root = root), error = function(e) FALSE)
-    }, logical(1)))
-    if (!isTRUE(upcoming)) next # off-season: odds intentionally not scraped
+    next_match <- .next_upcoming_match(static, .cell_sexes(lg), root, today)
+    if (is.na(next_match)) next # off-season: no fixture, so no odds expected
+
+    days_to_next <- as.numeric(next_match - today)
     od <- tryCatch(
       read_table("odds",
         root = root,
@@ -119,25 +157,23 @@ check_odds_freshness <- function(leagues, root, now, th) {
       ),
       error = function(e) tibble::tibble()
     )
-    if (nrow(od) == 0L || !("scraped_at" %in% names(od))) {
-      rows[[key]] <- health_row(
-        "odds_freshness", key, "FAIL", "no odds",
-        paste0("<= ", th$odds_age_warn_hours, "h")
-      )
-      next
-    }
-    age_h <- as.numeric(difftime(now, max(od$scraped_at, na.rm = TRUE), units = "hours"))
-    status <- if (age_h > th$odds_age_fail_hours) {
-      "FAIL"
-    } else if (age_h > th$odds_age_warn_hours) {
-      "WARN"
+    have_upcoming_odds <- nrow(od) > 0L && "match_date" %in% names(od) &&
+      any(as.Date(od$match_date) >= today, na.rm = TRUE)
+
+    if (have_upcoming_odds) {
+      status <- "OK"
+      value <- sprintf("odds cover upcoming fixtures (next in %dd)", as.integer(days_to_next))
+    } else if (days_to_next > th$odds_lead_days) {
+      status <- "OK"
+      value <- sprintf("next fixture in %dd; odds not posted yet", as.integer(days_to_next))
+    } else if (days_to_next >= 1) {
+      status <- "WARN"
+      value <- sprintf("next fixture in %dd, no upcoming odds scraped", as.integer(days_to_next))
     } else {
-      "OK"
+      status <- "FAIL"
+      value <- "fixture today, no odds scraped"
     }
-    rows[[key]] <- health_row(
-      "odds_freshness", key, status,
-      sprintf("%.1fh old", age_h), paste0("<= ", th$odds_age_warn_hours, "h")
-    )
+    rows[[key]] <- health_row("odds_freshness", key, status, value, thr_lbl)
   }
   if (length(rows) == 0L) health_empty() else dplyr::bind_rows(rows)
 }

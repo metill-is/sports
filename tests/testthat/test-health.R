@@ -101,6 +101,77 @@ test_that("check_capture_rate WARNs when few recommendations were placed", {
   expect_match(res$value, "10/25")
 })
 
+.mini_sched <- function(match_date, sex = "male", home = "A", away = "B") {
+  tibble::tibble(
+    sport = "football", country = "iceland", sex = sex, season = 2026L,
+    match_date = as.Date(match_date), home_team = home, away_team = away,
+    division = "besta", round = 1L, kickoff_time = NA_character_
+  )
+}
+
+.mini_odds <- function(match_date, scraped_at) {
+  tibble::tibble(
+    sport = "football", country = "iceland",
+    scraped_at = as.POSIXct(scraped_at, tz = "UTC"),
+    match_date = as.Date(match_date), home_team = "A", away_team = "B",
+    market = "moneyline", outcome = "home", line = NA_real_, odds = 2.0
+  )
+}
+
+.fb_league <- list(
+  football_iceland = list(sport = "football", country = "iceland", sexes = list("male"))
+)
+
+test_that("odds_freshness is OK during a between-match lull (next match beyond the lead window)", {
+  root <- withr::local_tempdir()
+  now <- as.POSIXct("2026-06-03 12:00", tz = "UTC")
+  # Next match is 5 days out; only stale odds for already-played matches exist.
+  write_table(.mini_sched("2026-06-08"), "schedules", root = root)
+  write_table(.mini_odds("2026-06-01", "2026-06-01 13:00"), "odds", root = root)
+  res <- check_odds_freshness(.fb_league, root, now, health_thresholds())
+  expect_equal(res$status, "OK")
+})
+
+test_that("odds_freshness is OK when odds cover an upcoming match, even if scraped days ago", {
+  root <- withr::local_tempdir()
+  now <- as.POSIXct("2026-06-03 12:00", tz = "UTC")
+  write_table(.mini_sched("2026-06-05"), "schedules", root = root)
+  # Odds for the upcoming 06-05 match, scraped two days ago.
+  write_table(.mini_odds("2026-06-05", "2026-06-01 13:00"), "odds", root = root)
+  res <- check_odds_freshness(.fb_league, root, now, health_thresholds())
+  expect_equal(res$status, "OK")
+})
+
+test_that("odds_freshness WARNs when a match is imminent but no upcoming odds are scraped", {
+  root <- withr::local_tempdir()
+  now <- as.POSIXct("2026-06-03 12:00", tz = "UTC")
+  # Match tomorrow, but only stale odds for past matches.
+  write_table(.mini_sched("2026-06-04"), "schedules", root = root)
+  write_table(.mini_odds("2026-06-01", "2026-06-01 13:00"), "odds", root = root)
+  res <- check_odds_freshness(.fb_league, root, now, health_thresholds())
+  expect_equal(res$status, "WARN")
+})
+
+test_that("odds_freshness FAILs when a match is today and no upcoming odds exist", {
+  root <- withr::local_tempdir()
+  now <- as.POSIXct("2026-06-03 12:00", tz = "UTC")
+  write_table(.mini_sched("2026-06-03"), "schedules", root = root)
+  write_table(.mini_odds("2026-06-01", "2026-06-01 13:00"), "odds", root = root)
+  res <- check_odds_freshness(.fb_league, root, now, health_thresholds())
+  expect_equal(res$status, "FAIL")
+  expect_match(res$value, "today")
+})
+
+test_that("odds_freshness produces no row off-season (no upcoming games)", {
+  root <- withr::local_tempdir()
+  now <- as.POSIXct("2026-06-03 12:00", tz = "UTC")
+  # Only past fixtures on the schedule -> not active.
+  write_table(.mini_sched("2026-05-01"), "schedules", root = root)
+  write_table(.mini_odds("2026-05-01", "2026-05-01 13:00"), "odds", root = root)
+  res <- check_odds_freshness(.fb_league, root, now, health_thresholds())
+  expect_equal(nrow(res), 0L)
+})
+
 test_that("check_capture_rate is OK at high capture and OK on thin data", {
   root <- withr::local_tempdir()
   recs <- .mini_recs(25L)
