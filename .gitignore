@@ -55,3 +55,7 @@ data/publish_replay/
 
 # Backtest artefacts (regenerable via scripts/0Nb_backtest.R)
 data/backtest/
+
+# Unattended placer runtime (local only)
+data/.auto_place.lock
+data/AUTO_PLACE_DISABLED

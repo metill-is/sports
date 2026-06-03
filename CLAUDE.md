@@ -68,6 +68,11 @@ authoritative mapping rather than mirroring them here.
 
 **DOM odds parser:** A pure `parse_actual_odds_from_dom(html)` (exported from `R/placer-place.R`) mirrors the JS regex chain inline in `click_market_button` / `click_table_button`. Both click helpers re-parse the chosen button's `outerHTML` and verify the JS-reported odds against the R-side parse — a Lengjan UI deploy that changes the odds-element structure now surfaces as either a `parse_actual_odds_from_dom: could not parse` error or an `Odds parser disagreement` error, rather than silent wrong odds. The parser is fixture-tested in `tests/testthat/test-placer-place.R`.
 
+- **Unattended placement (opt-in):** `scripts/auto_place.R` via the launchd
+  agent `is.metill.sports.autoplace` (installed by `tools/install-autoplace.sh`).
+  Kill switch: `touch data/AUTO_PLACE_DISABLED`. Health: the `placement_health`
+  check in `/pipeline-doctor`. Design + plan under `docs/superpowers/`.
+
 ## Quick reference
 
 ```bash

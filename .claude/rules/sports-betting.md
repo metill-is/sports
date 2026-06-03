@@ -157,6 +157,17 @@ bet_amount = round(kelly × current_pool)
 `.github/workflows/*.yml` references `R/placer-`, `place_bets`,
 `preview_bets`, `placer_pipeline`, or `LENGJAN_*`.
 
+### Unattended auto-placement (local-only)
+
+`scripts/auto_place.R` (+ `R/auto-place.R`) is a launchd-scheduled wrapper that
+runs `run_auto_place()` on a jittered daytime cadence. It gates on
+`preview_pending()` (zero Lengjan contact) and opens an authenticated session
+only when a new bet is pending, enforcing a cross-session daily cap, a kill
+switch (`data/AUTO_PLACE_DISABLED`), and a PID lock. It is **never** wired into
+CI; `test-placer-ci-isolation.R` forbids `auto_place`/`autoplace`/`AUTO_PLACE`/
+`run_auto_place` tokens in workflows. Failures surface via the
+`placement_health` health check. Install/remove: `tools/install-autoplace.sh`.
+
 ## Skill reference
 
 The four skills under `.claude/skills/` are model-invocable and intentionally
