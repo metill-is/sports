@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-06-03T12:37:43Z",
+  "generated_at": "2026-06-03T21:47:58Z",
   "overall": "WARN",
   "n_fail": 0,
-  "n_warn": 2,
+  "n_warn": 3,
   "checks": [
     {
       "check": "fit_freshness",
@@ -80,6 +80,13 @@
       "status": "WARN",
       "value": "42% (33/78 placed)",
       "threshold": ">= 70% placed"
+    },
+    {
+      "check": "placement_health",
+      "scope": "auto_place",
+      "status": "WARN",
+      "value": "5 pending, auto-place never run",
+      "threshold": "healthy run < 14h when pending"
     },
     {
       "check": "bankroll",
