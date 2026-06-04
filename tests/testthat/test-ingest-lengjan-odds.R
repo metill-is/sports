@@ -155,3 +155,45 @@ test_that(".lengjan_fetch surfaces the original error after max_attempts", {
   )
   expect_equal(session$.navigate_calls(), 3L)
 })
+
+test_that(".lengjan_fetch classes an exhausted-retry failure as lengjan_fetch_error", {
+  session <- make_fake_chromote_session(fail_first_n = Inf)
+  expect_error(
+    suppressMessages(.lengjan_fetch(
+      session, "https://example.com",
+      settle_s = 0, max_attempts = 2L, backoff_base_s = 0
+    )),
+    class = "lengjan_fetch_error"
+  )
+})
+
+test_that("ingest_one_lengjan soft-fails a transient fetch timeout to 0 rows", {
+  testthat::local_mocked_bindings(
+    .is_league_active = function(active_path, key) TRUE,
+    ingest_lengjan_odds = function(...) {
+      stop(structure(
+        class = c("lengjan_fetch_error", "error", "condition"),
+        list(message = "Chromote: timed out waiting for response to command Page.navigate")
+      ))
+    }
+  )
+  res <- suppressMessages(ingest_one_lengjan(
+    list(sport = "football", country = "iceland"), list(),
+    "football_iceland", "active.json"
+  ))
+  expect_identical(res, 0L)
+})
+
+test_that("ingest_one_lengjan still aborts on a non-fetch (parse) error", {
+  testthat::local_mocked_bindings(
+    .is_league_active = function(active_path, key) TRUE,
+    ingest_lengjan_odds = function(...) stop("parse_competition_page: unexpected DOM")
+  )
+  expect_error(
+    suppressMessages(ingest_one_lengjan(
+      list(sport = "football", country = "iceland"), list(),
+      "football_iceland", "active.json"
+    )),
+    "parse_competition_page"
+  )
+})
