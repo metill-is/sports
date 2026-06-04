@@ -64,6 +64,19 @@ latest_fit_date <- function(static, sex, root) {
   max(as.Date(bl$fit_date), na.rm = TRUE)
 }
 
+#' Data-currency-aware fit freshness.
+#'
+#' A fit goes stale only when completed results exist that it has not yet
+#' conditioned on -- not merely because wall-clock days pass. The previous
+#' absolute-age design false-FAILed on every routine inter-match lull: women's
+#' football in particular runs ~5-day gaps between fixtures, during which
+#' `needs_refit()` correctly skips the refit (no new data to fit on) yet the fit
+#' aged past the FAIL threshold. So staleness is gated on `needs_refit()` -- the
+#' pipeline's own "completed results moved past the fit" predicate, reused here
+#' so the health signal stays self-consistent with what `03_fit.R` acts on --
+#' and fit age only sets the *severity* once the fit is genuinely behind the
+#' data. Off-season cells (no upcoming games) are PAUSED, as before. This
+#' mirrors the match-proximity fix applied to `check_odds_freshness`.
 #' @noRd
 check_fit_freshness <- function(leagues, root, now, th) {
   today <- as.Date(now, tz = "UTC")
@@ -90,16 +103,26 @@ check_fit_freshness <- function(leagues, root, now, th) {
         next
       }
       age <- as.numeric(today - fd)
-      status <- if (age > th$fit_age_fail_days) {
+      behind <- tryCatch(needs_refit(static, sx, root = root),
+        error = function(e) FALSE
+      )
+      status <- if (!isTRUE(behind)) {
+        "OK"
+      } else if (age > th$fit_age_fail_days) {
         "FAIL"
       } else if (age > th$fit_age_warn_days) {
         "WARN"
       } else {
         "OK"
       }
+      value <- if (isTRUE(behind)) {
+        paste0(age, "d old, results pending fit")
+      } else {
+        paste0(age, "d old, current with results")
+      }
       rows[[scope]] <- health_row(
         "fit_freshness", scope, status,
-        paste0(age, "d old"), paste0("<= ", th$fit_age_warn_days, "d")
+        value, paste0("<= ", th$fit_age_warn_days, "d")
       )
     }
   }

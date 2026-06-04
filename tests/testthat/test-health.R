@@ -185,6 +185,77 @@ test_that("odds_freshness produces no row off-season (no upcoming games)", {
   expect_equal(nrow(res), 0L)
 })
 
+# Seed the on-disk state check_fit_freshness reads: a completed result, a
+# beliefs/latest partition carrying fit_date (latest_fit_date + needs_refit's
+# wiped-latest guard), and an archive fit_date= partition (needs_refit's
+# last_fit source). result_date <= fit_date => fit current; result_date >
+# fit_date => fit behind the data.
+.seed_fit <- function(root, fit_date, result_date, sex = "male") {
+  rd <- fs::path(
+    root, "facts", "results",
+    "sport=football", "country=iceland", paste0("sex=", sex), "season=2026"
+  )
+  fs::dir_create(rd)
+  arrow::write_parquet(
+    tibble::tibble(
+      home_team = "A", away_team = "B",
+      match_date = as.Date(result_date), home_score = 1L, away_score = 0L,
+      division = NA_character_, round = NA_integer_
+    ),
+    fs::path(rd, "part-0.parquet")
+  )
+  write_table(
+    tibble::tibble(
+      sport = "football", country = "iceland", sex = sex,
+      fit_date = as.Date(fit_date), match_date = as.Date(fit_date),
+      home_team = "A", away_team = "B", draw_id = 1L,
+      home_goals = 1, away_goals = 0
+    ),
+    "beliefs_latest",
+    root = root
+  )
+  arch <- fs::path(
+    root, "beliefs", "archive",
+    "sport=football", "country=iceland", paste0("sex=", sex),
+    paste0("fit_date=", fit_date)
+  )
+  fs::dir_create(arch)
+  fs::file_create(fs::path(arch, "beliefs.parquet"))
+}
+
+test_that("fit_freshness is OK during an inter-match lull (fit current with results)", {
+  root <- withr::local_tempdir()
+  now <- as.POSIXct("2026-06-04 12:00", tz = "UTC")
+  # Upcoming fixture five days out (has_upcoming_games uses the real clock, so
+  # this must be relative, not a fixed near date).
+  write_table(.mini_sched(Sys.Date() + 5L), "schedules", root = root)
+  # Fit is five days old, but no result postdates it: nothing to refit.
+  .seed_fit(root, fit_date = "2026-05-30", result_date = "2026-05-30")
+  res <- check_fit_freshness(.fb_league, root, now, health_thresholds())
+  expect_equal(res$status, "OK")
+})
+
+test_that("fit_freshness FAILs when results have moved past an old fit", {
+  root <- withr::local_tempdir()
+  now <- as.POSIXct("2026-06-04 12:00", tz = "UTC")
+  write_table(.mini_sched(Sys.Date() + 5L), "schedules", root = root)
+  # A completed result on 06-02 postdates the 05-30 fit: genuinely behind, and
+  # the fit is 5 days old (> fail threshold).
+  .seed_fit(root, fit_date = "2026-05-30", result_date = "2026-06-02")
+  res <- check_fit_freshness(.fb_league, root, now, health_thresholds())
+  expect_equal(res$status, "FAIL")
+})
+
+test_that("fit_freshness WARNs when behind but only mildly stale", {
+  root <- withr::local_tempdir()
+  now <- as.POSIXct("2026-06-04 12:00", tz = "UTC")
+  write_table(.mini_sched(Sys.Date() + 5L), "schedules", root = root)
+  # Behind (result 06-02 > fit 06-01) but the fit is only 3 days old (warn band).
+  .seed_fit(root, fit_date = "2026-06-01", result_date = "2026-06-02")
+  res <- check_fit_freshness(.fb_league, root, now, health_thresholds())
+  expect_equal(res$status, "WARN")
+})
+
 test_that("check_capture_rate is OK at high capture and OK on thin data", {
   root <- withr::local_tempdir()
   recs <- .mini_recs(25L)
