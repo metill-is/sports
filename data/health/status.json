@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-04T12:29:00Z",
+  "generated_at": "2026-06-04T20:57:12Z",
   "overall": "WARN",
   "n_fail": 0,
   "n_warn": 2,
@@ -85,7 +85,7 @@
       "check": "placement_health",
       "scope": "auto_place",
       "status": "WARN",
-      "value": "6 pending, auto-place never run",
+      "value": "7 pending, auto-place never run",
       "threshold": "healthy run < 14h when pending"
     },
     {
