@@ -435,7 +435,18 @@ ingest_lengjan_odds <- function(leagues, scraped_at = Sys.time(),
     if (!inherits(res, "error")) {
       return(res)
     }
-    if (attempt >= max_attempts) stop(res)
+    if (attempt >= max_attempts) {
+      # Classify an exhausted-retry fetch failure so callers can soft-fail a
+      # transient Lengjan-side / runner-network timeout (no odds this run)
+      # without red-Xing the workflow. DOM/parse errors are raised outside this
+      # fetch layer (parse_competition_page), so they never carry this class and
+      # still abort loudly. Message is preserved verbatim (base condition, no
+      # glue) so diagnostics still read "...Page.navigate".
+      stop(structure(
+        class = c("lengjan_fetch_error", "error", "condition"),
+        list(message = conditionMessage(res), call = conditionCall(res))
+      ))
+    }
 
     backoff <- backoff_base_s * 2^(attempt - 1L)
     cli::cli_alert_warning(

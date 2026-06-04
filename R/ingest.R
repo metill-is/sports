@@ -142,7 +142,21 @@ ingest_one_lengjan <- function(static, lengjan, key, active_path) {
   }
   league <- static
   league$lengjan <- lengjan
-  as.integer(ingest_lengjan_odds(stats::setNames(list(league), key)))
+  tryCatch(
+    as.integer(ingest_lengjan_odds(stats::setNames(list(league), key))),
+    lengjan_fetch_error = function(e) {
+      # A navigate/fetch timeout that survived every retry is transient and
+      # external (Lengjan-side latency or runner-network), not a scraper bug.
+      # Treat this league as 0 rows so the run exits clean instead of red-Xing
+      # the workflow on a blip; real staleness still escalates via the
+      # healthcheck's match-proximity odds_freshness check. Parse failures raise
+      # plain errors (no lengjan_fetch_error class) and so still abort the run.
+      cli::cli_alert_warning(
+        "{key}: Lengjan fetch timed out after retries ({conditionMessage(e)}); skipping this run. odds_freshness escalates if a fixture is imminent."
+      )
+      0L
+    }
+  )
 }
 
 #' Should an odds scrape fail loudly for returning nothing in-season?
