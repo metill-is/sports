@@ -71,6 +71,14 @@ ingest_league <- function(league, sex,
     schedule$kickoff_time <- NA_character_
   }
 
+  # Populate the league round (matchweek) by dense-ranking match_date within
+  # each (sport, country, sex, season, division) cell -- the scrapers cannot
+  # supply it (KSÍ exposes no round). Applied to results only: results carry the
+  # full played-season history so the rank is correct, whereas the schedule holds
+  # only future fixtures and would rank from 1 instead of continuing the season
+  # (cup rows stay NA either way). See R/derive-round.R.
+  results <- derive_league_round(results)
+
   # Use upsert semantics so re-ingests that return a strict subset of an
   # earlier fetch (e.g. HSI retry dropping G66 history) do not clobber the
   # larger partition on disk. See R/storage.R::upsert_table().
