@@ -1,14 +1,27 @@
 # config/bankroll.yml — global betting bankroll + daily-budget cap.
 #
-# `initial_pool` — known deposits at workspace start (matches the figure in
-#   /Users/brynjolfurjonsson/.claude/projects/-Users-brynjolfurjonsson-sports/memory/MEMORY.md, set 2026-03-06 = 23,610 ISK).
-# `current_pool` — runtime bankroll derived from `initial_pool` + ledger PnL,
-#   computed by `load_bankroll()` if `current_pool` is missing here.
+# BOOKMAKER SCOPE (2026-06-05): the canonical ledger mixes bets across several
+# real-world accounts (Lengjan, EpicBet, CoolBet) but has no `bookmaker` column
+# and tracks no deposits/withdrawals. The placer/decider only ever stake on
+# LENGJAN, so `current_pool` MUST reflect the real Lengjan account balance — NOT
+# the cross-bookmaker ledger PnL sum, which inflated it to ~107k against a real
+# ~15k Lengjan balance (a ~7x over-stake the live autoplace agent was making).
+# `current_pool` is therefore set EXPLICITLY here and maintained by hand; the
+# full ledger is kept untouched for historical profit analysis (backtest,
+# by-cell PnL) which reads it directly. Update `current_pool` after a deposit /
+# withdrawal or a batch of Lengjan settlements (read it off the Lengjan account).
+#
+# `initial_pool` — total capital ever deposited to LENGJAN (drawdown reference):
+#   29,000 ISK = 5k (2025-09-25) + 5k (2026-03-04) + 9k (2026-03-05) + 10k (2026-05-13).
+# `current_pool` — actual Lengjan account balance incl. outstanding bets:
+#   14,909 ISK as of 2026-06-05 (down ~49% on deposits — the bankroll-drawdown
+#   health check, 60% of initial, now correctly flags this).
 # `daily_budget_frac` — max fraction of current bankroll wagered per day. Caps
 #   the Stage-2 portfolio optimiser's total stake.
 # `daily_budget_min_isk` — never under-bet on a quiet day; floor in absolute ISK
 #   so a low-volume day doesn't turn into 100-ISK bets due to fractional caps.
-initial_pool: 23610
+initial_pool: 29000
+current_pool: 14909
 daily_budget_frac: 0.05
 daily_budget_min_isk: 1000
 # Kelly fraction safety ceiling (K5 invariant): never overbet even with

@@ -83,15 +83,25 @@ betting:
 ## `config/bankroll.yml` schema
 
 ```yaml
-initial_pool: 23610            # known deposits at workspace start
+initial_pool: 29000            # total LENGJAN deposits (drawdown reference)
+current_pool: 14909            # real Lengjan balance, set EXPLICITLY (see below)
 daily_budget_frac: 0.05        # max fraction of current_pool per day (Stage-2 cap)
 daily_budget_min_isk: 1000     # ISK floor — never under-bet on a quiet day
 kelly_ceiling: 0.25            # K5 hard cap on kelly_frac × calibration_multiplier
 max_match_stake_default: 1.0   # Stage-1 default if a league doesn't override
 ```
 
-`current_pool` is **not** a config field — it's derived per run by
-`R/config.R::load_bankroll()` as `initial_pool + Σ(ledger.pnl[settled])`.
+**`current_pool` is set EXPLICITLY (2026-06-05).** It was previously derived as
+`initial_pool + Σ(ledger.pnl[settled])`, but the canonical ledger mixes bets
+across several real-world accounts (Lengjan / EpicBet / CoolBet) with no
+`bookmaker` column and no deposit/withdrawal tracking — so that sum inflated the
+pool to ~107k against a real ~15k Lengjan balance (a ~7x over-stake the live
+autoplace agent was making). The placer/decider only stake on Lengjan, so
+`current_pool` must be the real Lengjan balance, set by hand in `bankroll.yml`
+and updated after deposits/withdrawals/settlements. The full ledger is kept
+untouched for historical profit analysis (backtest, by-cell PnL). `load_bankroll()`
+falls back to the ledger sum only when `current_pool` is absent, and now **warns
+loudly** when it does.
 
 ## Stake formula
 
@@ -147,7 +157,10 @@ bet_amount = round(kelly × current_pool)
 - **R3** — Recommendations exclude past matches (`match_date >= run_date`).
 - **R4** — Odds must be fresher than `betting.max_age_hours`.
 - **B1** — All ledger rows are outstanding until settled.
-- **B2** — `bankroll = initial_pool + Σ(settled pnl)`.
+- **B2** — `current_pool` is the real **Lengjan** account balance, set explicitly in
+  `bankroll.yml` (2026-06-05). It is NOT `initial_pool + Σ(settled pnl)` — the
+  ledger mixes bookmakers, so that sum over-states the Lengjan bankroll ~7x.
+  Maintained by hand; `load_bankroll()` warns if it falls back to the ledger sum.
 - **B3** — Per-match hard cap = `max_match_stake × kelly_ceiling` of bankroll (post Plan 7a default: `0.50 × 0.25 = 0.125`).
 
 ## Local-only enforcement
