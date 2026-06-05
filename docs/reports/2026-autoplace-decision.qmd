@@ -1,0 +1,312 @@
+---
+title: "Should we auto-place all bets? — Football Iceland 2026"
+subtitle: "What the betting-simulation harness says about turning on full automated placement"
+author: "Brynjólfur Gauti Jónsson"
+date: today
+date-format: "YYYY-MM-DD"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    toc-location: left
+    code-fold: true
+    code-tools: true
+    theme: cosmo
+    fig-width: 9
+    fig-height: 5
+    fig-dpi: 144
+    embed-resources: true
+    smooth-scroll: true
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r}
+#| label: setup
+#| include: false
+invisible(Sys.setlocale("LC_ALL", "is_IS.UTF-8"))
+options(width = 110)
+suppressPackageStartupMessages({
+  library(dplyr)
+  library(ggplot2)
+  library(gt)
+  library(scales)
+  devtools::load_all(here::here(), quiet = TRUE)
+})
+
+results <- read_table("results")
+initial_pool <- load_bankroll()$initial_pool
+
+# --- season-progress feature (mean current-season games the two teams had played) ---
+res26 <- results |>
+  filter(
+    sport == "football", country == "iceland",
+    as.Date(match_date) >= as.Date("2026-01-01")
+  ) |>
+  mutate(match_date = as.Date(match_date))
+long <- bind_rows(
+  res26 |> transmute(sex, team = home_team, d = match_date),
+  res26 |> transmute(sex, team = away_team, d = match_date)
+)
+games_prior <- function(sx, tm, dd) sum(long$d[long$sex == sx & long$team == tm] < dd)
+enrich <- function(df) {
+  if (is.null(df) || nrow(df) == 0) {
+    return(df)
+  }
+  df$match_date <- as.Date(df$match_date)
+  df$home_gp <- mapply(games_prior, df$sex, df$home_team, df$match_date)
+  df$away_gp <- mapply(games_prior, df$sex, df$away_team, df$match_date)
+  df$team_games_prior <- (df$home_gp + df$away_gp) / 2
+  df$ret <- df$pnl / pmax(df$stake, 1e-9)
+  df
+}
+run_u <- function(strategy) {
+  u <- bt_load_universe(strategy = strategy, leagues = "football", exclude_pre_fix = TRUE)
+  r <- bt_run(u, results, stake_rule = stake_fixed, initial_pool = initial_pool)
+  r$strategy <- strategy
+  enrich(r)
+}
+kept <- run_u("kept")
+posev <- run_u("positive_ev")
+
+# --- which recommendations did we actually place? (join the ledger) ---
+mk <- function(df) {
+  paste(df$sex, as.character(as.Date(df$match_date)), df$home_team,
+    df$away_team, df$market, df$outcome, df$line,
+    sep = "|"
+  )
+}
+led <- read_table("ledger") |>
+  filter(sport == "football", country == "iceland") |>
+  mutate(match_date = as.Date(match_date))
+led$key <- mk(led)
+kept$key <- mk(kept)
+kept$placed <- kept$key %in% unique(led$key)
+
+roi <- function(p, s) if (sum(s) > 0) sum(p) / sum(s) else NA_real_
+```
+
+::: {.callout-tip}
+## The decision, in one line
+
+**Yes — auto-placing all recommendations should beat the −8 % we got by hand, because that loss was driven by capturing the *wrong third* of bets, not by a broken strategy or by odds drift. But calibrate expectations to a *modest* edge (low single-digit ROI, genuinely uncertain), not the headline +16 %.** Treat the autoplace agent — installed 2026-06-05 — as a bounded data-collection experiment, not a proven money-printer.
+:::
+
+## PnL status
+
+```{r}
+#| label: tbl-pnl
+#| tbl-cap: "Two different objects: the money that actually moved, versus what the recommendations were worth."
+realised <- led |>
+  filter(settled, format(match_date, "%Y") == "2026") |>
+  summarise(
+    source = "Realised ledger 2026 (what we placed)",
+    n = n(), staked = sum(bet_amount), pnl = sum(pnl)
+  ) |>
+  mutate(roi = pnl / staked)
+
+counterfactual <- tibble(
+  source = c(
+    "Backtest — all recommendations (kept)",
+    "Backtest — wider +EV pool (positive_ev)"
+  ),
+  n = c(nrow(kept), nrow(posev)),
+  staked = c(sum(kept$stake), sum(posev$stake)),
+  pnl = c(sum(kept$pnl), sum(posev$pnl))
+) |> mutate(roi = pnl / staked)
+
+bind_rows(realised, counterfactual) |>
+  gt() |>
+  fmt_number(c(staked, pnl), decimals = 0) |>
+  fmt_percent(roi, decimals = 1) |>
+  tab_header("Realised vs. counterfactual PnL (clean, post-2026-05-14)") |>
+  tab_source_note("Backtest prices every recommendation at decide-time odds with a fixed-fraction stake; it is a leak-free upper bound, not a forecast.")
+```
+
+The realised −8 % and the +16 % backtest are not in conflict — they measure
+different worlds. The gap is **mechanical leakage between recommendation and
+ledger**, decomposed below. It is *not* the strategy decaying over the season.
+
+## Why the gap? It's capture, not drift
+
+If auto-placing all bets is going to help, the realised loss must come from *which*
+bets we placed, not from a haircut that automation would also suffer. It does.
+
+```{r}
+#| label: tbl-adverse
+#| tbl-cap: "Backtest ROI of the recommendations we placed vs. skipped — priced identically at decide-time odds, so this isolates selection from drift."
+kept |>
+  mutate(group = ifelse(placed, "Placed (~the third we captured)", "Skipped")) |>
+  group_by(group) |>
+  summarise(
+    n = n(), roi = roi(pnl, stake), hit = mean(win),
+    pnl = sum(pnl), .groups = "drop"
+  ) |>
+  gt() |>
+  fmt_number(pnl, decimals = 0) |>
+  fmt_percent(c(roi, hit), decimals = 1) |>
+  tab_header("Adverse selection: we captured the worse subset")
+```
+
+The bets we *placed* lost in the backtest (−10 %) while the bets we *skipped*
+won (+39 %) — at the same decide-time odds, so this is pure selection, not drift.
+The effect survives removing the single worst match-day (2026-05-17): placed
++6.7 % vs skipped +45.9 %. Separately, realised odds drift between decide-time and
+placement is essentially **zero** (median 0 %, mean +1.4 % across the 40 matched
+placed bets), so automation does not inherit a drift penalty.
+
+```{r}
+#| label: fig-gap
+#| fig-alt: "Bar chart contrasting the realised ledger ROI, the placed-subset backtest ROI, the skipped-subset ROI, and the all-recommendations ROI; placing all blends the placed and skipped subsets."
+tibble(
+  scenario = factor(
+    c(
+      "Realised\n(placed, actual odds)", "Backtest\nplaced subset",
+      "Backtest\nskipped subset", "Backtest\nALL recs (auto-place)"
+    ),
+    levels = c(
+      "Realised\n(placed, actual odds)", "Backtest\nplaced subset",
+      "Backtest\nskipped subset", "Backtest\nALL recs (auto-place)"
+    )
+  ),
+  roi = c(
+    realised$roi,
+    roi(kept$pnl[kept$placed], kept$stake[kept$placed]),
+    roi(kept$pnl[!kept$placed], kept$stake[!kept$placed]),
+    roi(kept$pnl, kept$stake)
+  )
+) |>
+  ggplot(aes(scenario, roi, fill = roi > 0)) +
+  geom_col(width = 0.65) +
+  geom_hline(yintercept = 0, colour = "grey40") +
+  scale_fill_manual(values = c("TRUE" = "#2c7fb8", "FALSE" = "#d95f5f"), guide = "none") +
+  scale_y_continuous(labels = label_percent()) +
+  labs(x = NULL, y = "ROI", title = "The realised loss is capture-selection, not strategy") +
+  theme_minimal()
+```
+
+## Would placing all of them help?
+
+**Mechanically, yes** — auto-placing all recommendations blends the placed and
+skipped subsets into the **+16.4 %** headline, removing the capture drag that cost
+us. Three sober caveats pull the realistic expectation down toward the low single
+digits:
+
+1. **Obtainability.** Some skipped winners were skipped because they became
+   unplaceable (kickoff passed, `no_match_id` — ~1 of 7 in today's live run). The
+   autoplace agent cannot capture those either, so the true ceiling is below
+   +16 %.
+2. **The +16 % is fragile.** It rests on n = 67 with the skipped winners doing the
+   work; the adversarial review found the kept-window per-bucket figures are not
+   influence-robust and the edge is statistically indistinguishable from zero
+   (95 % CI on the trend spans roughly ±130 pp). The **influence-robust** read is
+   the wider +EV pool: **+7.3 %** on n = 278.
+3. **No tailwind.** There is no season-progression effect to lean on (next
+   section), so the estimate does not improve as the year goes on.
+
+```{r}
+#| label: tbl-market
+#| tbl-cap: "Backtest by market — a possible 'subset' filter. Signal is weak at these sample sizes."
+kept |>
+  group_by(market) |>
+  summarise(
+    n = n(), roi = roi(pnl, stake), hit = mean(win),
+    avg_odds = mean(odds), pnl = sum(pnl), .groups = "drop"
+  ) |>
+  gt() |>
+  fmt_number(avg_odds, decimals = 2) |>
+  fmt_number(pnl, decimals = 0) |>
+  fmt_percent(c(roi, hit), decimals = 1) |>
+  tab_header("Kept-clean backtest ROI by market")
+```
+
+Spread looks strong (+49 %) and totals weak (−2 %), but at n = 17 / 22 these are
+too noisy to justify carving markets out — and spread is the very market the
+2026-05-13 sign-flip bug touched. The decide layer's EV + Kelly filter is already
+the principled subset; a hand-built market filter would be optimising on noise.
+
+## No season-progression tailwind
+
+The standing theory — that PnL improves as the model calibrates to current team
+strengths — is **not supported, and largely untestable** with betting data.
+
+```{r}
+#| label: fig-trend
+#| fig-alt: "Per-bet return against team-games-prior for the influence-robust positive-EV sample, with a flat-to-negative linear fit."
+posev |>
+  ggplot(aes(team_games_prior, ret)) +
+  geom_hline(yintercept = 0, colour = "grey60") +
+  geom_jitter(width = 0.15, height = 0, alpha = 0.3, size = 1) +
+  geom_smooth(method = "lm", se = TRUE, colour = "#2c7fb8") +
+  scale_y_continuous(labels = label_percent()) +
+  labs(
+    x = "team_games_prior (current-season games the teams had played)",
+    y = "per-bet return", title = "No upward trend (positive_ev, n=278)"
+  ) +
+  theme_minimal()
+```
+
+A six-investigator adversarial review (power/CI, the calibration mechanism,
+single-cluster influence, division confounding, alternative proxies, and
+truncation) returned **no support** at high confidence:
+
+- **Truncation dominates.** Besta Deild opened 2026-04-10 (men) / 04-24 (women);
+  the first clean bets land weeks later. 42 % of men's and 48 % of women's 2026
+  matches are genuine early season (`team_games_prior < 3`), and the clean bet
+  window covers **0 %** of them. The model is also fed the men's cup from March, so
+  by the first bet its posterior already carries current-season signal — the
+  cold-start the theory imagines happens before any odds exist.
+- **No power.** Detecting even a +20 pp ROI ramp would need n ≈ 4,000–6,000 vs the
+  67 / 278 we have; non-significance here is absence of evidence.
+- **Every proxy agrees.** Across 24 proxy × strategy cells (team-games, calendar
+  week, matchweek index, min/max games, days-since-start; pooled and BD-only),
+  **0** show a significant positive trend. Point estimates lean slightly negative.
+- A division confound (early-window bets are structurally lower-division/cup)
+  means the pooled negative slope should not be cited as a *clean refutation* — but
+  the within-Besta-Deild test is also flat/negative, so it offers no rescue.
+
+The only way to actually test the calibration mechanism is a **walk-forward
+per-round replay** (`scripts/0Nr_replay.R --per-round`): re-fit using data up to
+round *k*, score predictive calibration on round *k+1*, repeat. It is cheap
+(~16 Stan fits, one overnight `nohup` run) and already built — but it tests
+*calibration*, not PnL, and a single season can't supply the power a real test
+needs.
+
+## Recommendation
+
+```{r}
+#| label: recommendation
+#| output: asis
+cat(
+  "1. **Keep the autoplace agent on** (installed 2026-06-05). Closing the ~38 %\n",
+  "   capture gap is the highest-leverage change available, and the realised −8 %\n",
+  "   is far more likely capture-selection bad luck than a real negative edge.\n",
+  "2. **Expect a modest, uncertain edge — plan around +0 to +7 %, not +16 %.** The\n",
+  "   headline is an idealised upper bound; never budget against it.\n",
+  "3. **Treat it as an experiment.** Full capture makes realised PnL converge to the\n",
+  "   backtest, finally generating the sample size (target: low thousands of bets)\n",
+  "   needed to measure the edge. Monitor capture rate, `no_match_id` obtainability,\n",
+  "   and realised vs. +7 % expectation via `/pipeline-doctor`.\n",
+  "4. **Do not** tune `kelly_frac`, EV thresholds, or carve markets on this window —\n",
+  "   that is optimising on noise. Kelly is already at 25 % of Browne, bounding the\n",
+  "   downside while the experiment runs.\n",
+  "5. **Optional, cheap:** run the walk-forward replay to learn whether calibration\n",
+  "   genuinely sharpens early-season — useful science, but it will not by itself\n",
+  "   prove a betting edge.\n",
+  sep = ""
+)
+```
+
+## Caveats
+
+- The **+16.4 %** counterfactual is leak-aware but idealised (decide-time odds,
+  perfect capture). The **−8.1 %** realised figure is the truth; the gap is
+  structural (capture + obtainability), not the strategy decaying.
+- Kept-window per-bucket ROIs (n ≈ 18–28) are not influence-robust — one match-day
+  (2026-05-17) swings them. Quote the n = 278 positive_ev sample for trends.
+- The `round` column is unpopulated in the results store; season-progress here is
+  measured by games-played, not federation round number.
+- One 2026 season is far short of the sample a real edge test needs; revisit after
+  a full season of automated capture, ideally from round 1 in 2027.
