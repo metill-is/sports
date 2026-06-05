@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-06-05T10:45:49Z",
-  "overall": "FAIL",
-  "n_fail": 1,
-  "n_warn": 4,
+  "generated_at": "2026-06-05T20:49:07Z",
+  "overall": "WARN",
+  "n_fail": 0,
+  "n_warn": 3,
   "checks": [
     {
       "check": "fit_freshness",
@@ -35,15 +35,15 @@
     {
       "check": "fit_freshness",
       "scope": "football_iceland male",
-      "status": "WARN",
-      "value": "4d old, results pending fit",
+      "status": "OK",
+      "value": "0d old, current with results",
       "threshold": "<= 2d"
     },
     {
       "check": "fit_freshness",
       "scope": "football_iceland female",
-      "status": "FAIL",
-      "value": "6d old, results pending fit",
+      "status": "OK",
+      "value": "0d old, current with results",
       "threshold": "<= 2d"
     },
     {
@@ -52,6 +52,20 @@
       "status": "OK",
       "value": "odds cover upcoming fixtures (next in 0d)",
       "threshold": "odds for fixtures within 3d"
+    },
+    {
+      "check": "divergence_drift",
+      "scope": "football/iceland/female",
+      "status": "OK",
+      "value": "0.000%",
+      "threshold": "< 0.5%"
+    },
+    {
+      "check": "rhat_drift",
+      "scope": "football/iceland/female",
+      "status": "OK",
+      "value": "1.011",
+      "threshold": "< 1.020"
     },
     {
       "check": "divergence_drift",
@@ -70,8 +84,8 @@
     {
       "check": "orphaned_bets",
       "scope": "ledger",
-      "status": "WARN",
-      "value": "1",
+      "status": "OK",
+      "value": "0",
       "threshold": "0 unsettled > 10d"
     },
     {
@@ -85,14 +99,14 @@
       "check": "placement_health",
       "scope": "auto_place",
       "status": "WARN",
-      "value": "7 pending, auto-place never run",
+      "value": "2 pending, auto-place never run",
       "threshold": "healthy run < 14h when pending"
     },
     {
       "check": "bankroll",
       "scope": "all",
-      "status": "OK",
-      "value": "107820 (457% of initial)",
+      "status": "WARN",
+      "value": "14909 (51% of initial)",
       "threshold": ">= 60% of initial"
     }
   ]
