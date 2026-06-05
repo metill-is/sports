@@ -230,11 +230,19 @@ football_iceland:
   betting:
     # kelly_frac is the §7.2 multiplicative shrinkage. Female cell stays
     # tighter — first Icelandic women's football season, thin history.
-    # 2026-05-02: scaled to 25 % of Browne defaults (user request — overall
-    # 75 % stake reduction). Pre-cut: male 0.20, female 0.10.
+    # 2026-05-02: scaled to 25 % of Browne defaults. Pre-cut: male 0.20, female 0.10.
+    # 2026-06-05: restored to 50 % of Browne (male 0.10, female 0.05) after
+    # current_pool was corrected from an inflated ~107k to the real 14,909
+    # (PR #33). The 25 % cut was an artifact of the inflated pool, NOT an edge
+    # judgement — at frac 0.05 on the real pool 0 % of bets cleared the 200-ISK
+    # min_bet floor, so the placer placed nothing. Capped at HALF-Browne (not
+    # full) because the forensic review found no demonstrable edge (football
+    # 2026 -8.1 %, n=56). Raise toward full Browne only on a positive CLV signal.
+    # Coupled with daily_budget_frac 0.10 in bankroll.yml (raising frac alone is
+    # absorbed by the daily cap).
     kelly_frac:
-      male: 0.05
-      female: 0.025
+      male: 0.10
+      female: 0.05
     max_match_stake: 0.50
     ev_threshold: 0.0
     markets:

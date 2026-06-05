@@ -22,7 +22,13 @@
 #   so a low-volume day doesn't turn into 100-ISK bets due to fractional caps.
 initial_pool: 29000
 current_pool: 14909
-daily_budget_frac: 0.05
+# 2026-06-05: raised 0.05 -> 0.10 alongside the kelly_frac restoration. At the
+# corrected ~15k pool, 0.05 (= 745 ISK/day total) was the BINDING limiter and
+# absorbed any kelly_frac increase, so the two were raised together. 0.10 ->
+# autoplace daily cap max(0.10*14909, 1000) = ~1,491 ISK/day. Revisit if the
+# pool moves outside ~12-20k. (daily_budget_min_isk below is used by the
+# autoplace daily cap, not by decide-time sizing.)
+daily_budget_frac: 0.10
 daily_budget_min_isk: 1000
 # Kelly fraction safety ceiling (K5 invariant): never overbet even with
 # perfect calibration. Clamps `kelly_frac × calibration_multiplier` from
