@@ -135,6 +135,15 @@ load_bankroll <- function(path = here::here("config", "bankroll.yml"),
     settled_pnl <- led$pnl[!is.na(led$settled) & led$settled]
     realised_pnl <- sum(settled_pnl, na.rm = TRUE)
     cfg$current_pool <- cfg$initial_pool + realised_pnl
+    # WHY: the canonical ledger spans multiple bookmakers (Lengjan / EpicBet /
+    # CoolBet) and tracks no deposits/withdrawals, so summing it is NOT the
+    # real Lengjan bankroll. Setting current_pool explicitly in bankroll.yml is
+    # the supported path; warn loudly when falling back here so the ~7x
+    # over-stake bug (2026-06-05) cannot silently return.
+    cli::cli_warn(c(
+      "!" = "{.field current_pool} derived from the unscoped ledger ({.val {cfg$current_pool}} ISK).",
+      "i" = "The ledger mixes bookmakers; set {.field current_pool} explicitly in bankroll.yml to the real Lengjan balance."
+    ))
   }
   if (is.null(cfg$kelly_ceiling)) cfg$kelly_ceiling <- 0.25
   if (is.null(cfg$max_match_stake_default)) cfg$max_match_stake_default <- 1.0
