@@ -7,7 +7,13 @@ on:
     # Lengjan sometimes posts same-day odds late morning, and GitHub cron
     # drift runs 0.5-4h, so the old 07:00 slot fired before the first scrape
     # and false-FAILed odds_freshness on every such match day (2026-06-10).
-    # 12:00 keeps a >=4h cron-offset margin over the 08:00 scrape.
+    # 12:00 keeps a >=4h cron-offset margin over the 08:00 scrape; the 11:00
+    # scrape-odds slot shrinks the residual race against odds Lengjan posts
+    # AFTER the morning scrape ran (drift can still order 12:00+drift before
+    # 11:00+drift -- accepted residual, alert channel only).
+    # Accepted trade-off: the day's first alert lands after 1-2 unattended
+    # local placement cycles (the local agent runs 09-22); stakes in that
+    # window are bounded by the daily budget cap and P4's EV re-check.
     - cron: '0 12,19 * * *'
   workflow_dispatch: {}
 

@@ -234,13 +234,28 @@ run_auto_place <- function(root = here::here("data"),
 
 #' Stash-safe `git pull --rebase` so the placer acts on CI's latest recs.
 #'
-#' Follows the `.claude/rules/git-hygiene.md` cron-collision pattern, with a
-#' rescue step first: uncommitted rows under `data/decisions/ledger/` (left
-#' behind by a run that died between the ledger write and its commit) are
-#' committed via [commit_ledger_changes()] *before* the stash dance, so
-#' real-money rows are never carried through a stash (L1) and a dirty ledger
-#' can never wedge the sync. Returns `TRUE` on a clean fast-forward/rebase,
-#' `FALSE` on any conflict or error.
+#' Follows the `.claude/rules/git-hygiene.md` cron-collision pattern, hardened
+#' for an unattended caller sharing the user's working tree:
+#'
+#' * **Entry guards.** Returns `FALSE` (skip the cycle; placement is gated on
+#'   `sync_ok`) unless `HEAD` is `main` — `git pull --rebase origin main`
+#'   rebases the *checked-out* branch, so a launchd run firing while a feature
+#'   branch is checked out would silently rewrite it and land ledger commits
+#'   off-main. Likewise skips when a rebase or merge is already in progress
+#'   (a human may be mid-conflict-resolution; never touch their state).
+#' * **Ledger rescue.** Uncommitted rows under `data/decisions/ledger/` (left
+#'   behind by a run that died between the ledger write and its commit) are
+#'   committed via [commit_ledger_changes()] *before* the stash dance, so
+#'   real-money rows are never carried through a stash (L1) and a dirty
+#'   ledger can never wedge the sync.
+#' * **Own-stash discipline.** Pops only the stash entry *this run's* push
+#'   created (detected via `refs/stash` before/after). A bare `git stash pop`
+#'   after a no-op push would pop a pre-existing user stash — and a stale
+#'   ledger parquet inside one would then be auto-committed to the canonical
+#'   ledger by the next cycle's rescue.
+#' * **Conflict unwind.** A failed pull aborts the rebase it started, so a
+#'   conflict degrades to a skipped cycle instead of wedging every
+#'   subsequent run.
 #'
 #' All git calls go through `.git_run()`, which shell-quotes each argument.
 #' `system2(..., stdout = TRUE)` routes through `sh`, so an unquoted argument
@@ -249,20 +264,56 @@ run_auto_place <- function(root = here::here("data"),
 #' silently stashed nothing (exit 0), and every post-placement sync then died
 #' on the dirty ledger (incident 2026-06-10).
 #' @param repo_root Repository root.
-#' @return Logical scalar.
+#' @return Logical scalar: `TRUE` on a clean fast-forward/rebase.
 #' @export
 sync_recs <- function(repo_root = here::here()) {
+  g <- function(...) .git_run(c("-C", repo_root, ...))
+
+  head_ref <- g("rev-parse", "--abbrev-ref", "HEAD")
+  if (!head_ref$ok || !identical(head_ref$lines, "main")) {
+    return(FALSE)
+  }
+  if (.git_operation_in_progress(repo_root)) {
+    return(FALSE)
+  }
+
   rescue <- commit_ledger_changes(
     repo_root, "data(ledger): rescue uncommitted rows found at auto-place sync"
   )
   if (identical(rescue$status, "failed")) {
     return(FALSE) # never stash money rows; skip this cycle instead
   }
-  g <- function(...) .git_run(c("-C", repo_root, ...))
-  # Stash-push result is intentionally not gated: with the ledger committed
-  # above, anything stashed is regenerable working-tree state.
+
+  stash_before <- g("rev-parse", "-q", "--verify", "refs/stash")
   g("stash", "push", "-u", "-m", "auto_place sync")
+  stash_after <- g("rev-parse", "-q", "--verify", "refs/stash")
+  stash_created <- stash_after$ok &&
+    (!stash_before$ok || !identical(stash_before$lines, stash_after$lines))
+
   pull <- g("pull", "--rebase", "origin", "main")
-  pop <- g("stash", "pop")
-  pull$ok && (pop$ok || any(grepl("No stash entries", pop$lines)))
+  if (!pull$ok && .git_operation_in_progress(repo_root)) {
+    g("rebase", "--abort")
+  }
+
+  ok <- pull$ok
+  if (stash_created) {
+    pop <- g("stash", "pop")
+    ok <- ok && pop$ok
+  }
+  ok
+}
+
+#' Is a rebase, merge, or cherry-pick already in progress in this repo?
+#' @noRd
+.git_operation_in_progress <- function(repo_root) {
+  markers <- c("rebase-merge", "rebase-apply", "MERGE_HEAD", "CHERRY_PICK_HEAD")
+  any(vapply(markers, function(m) {
+    res <- .git_run(c("-C", repo_root, "rev-parse", "--git-path", m))
+    if (!res$ok || length(res$lines) == 0L) {
+      return(FALSE)
+    }
+    p <- res$lines[[1L]]
+    if (!fs::is_absolute_path(p)) p <- fs::path(repo_root, p)
+    fs::file_exists(p) || fs::dir_exists(p)
+  }, logical(1)))
 }

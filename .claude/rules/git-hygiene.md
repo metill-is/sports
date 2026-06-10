@@ -32,7 +32,15 @@ Three enforcement layers are active, covering different failure modes:
    placer's stash → pull → pop dance, any uncommitted ledger rows (a run
    that died between the parquet write and its commit) are committed via
    `commit_ledger_changes()`. Money rows are never carried through a stash,
-   and a dirty ledger can never wedge the 2-hourly sync.
+   and a dirty ledger can never wedge the 2-hourly sync. `sync_recs` also
+   refuses to run off `main` or during an in-progress rebase/merge (so the
+   agent never rewrites a checked-out feature branch or disturbs manual
+   conflict resolution), pops only the stash entry it itself created (a
+   pre-existing user stash — which may carry a stale ledger parquet — is
+   left alone), and aborts the rebase a conflicted pull started. The
+   script-layer commit in `scripts/auto_place.R` is likewise skipped on
+   `disabled`/`locked` runs, so the kill switch keeps the agent fully inert
+   during interactive ledger maintenance.
 
 3. **Pre-commit hook** (`tools/git-hooks/pre-commit`). Refuses any commit
    while `data/decisions/ledger/` has unstaged or untracked changes. This
