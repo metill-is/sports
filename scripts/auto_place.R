@@ -35,11 +35,14 @@ cli::cli_alert_info("auto_place: {rec$status}")
 # behind. L1 invariant: a row means money was committed on Lengjan; an
 # uncommitted row is destroyed by the next git reset. See commit 121710d
 # (2026-05-08) and the recovered auto-place rows of 2026-06-10.
-# Skipped when kill-switched or lock-blocked: those runs placed nothing, and
-# the kill switch must keep the agent inert during interactive ledger
-# maintenance (3-way union merges etc.) -- sync_recs() rescues any genuine
-# leftovers on the next enabled cycle.
-if (!(rec$status %in% c("disabled", "locked"))) {
+# Skipped when kill-switched, lock-blocked, or sync-refused: those runs
+# placed nothing, the kill switch must keep the agent inert during
+# interactive ledger maintenance (3-way union merges etc.), and sync_failed
+# may mean a feature branch is checked out -- committing then would land
+# money commits off-main (sync_recs() already rescue-commits on-main
+# leftovers before its pull, and rescues anything else on the next enabled
+# on-main cycle).
+if (!(rec$status %in% c("disabled", "locked", "sync_failed"))) {
   n_placed <- rec$n_placed
   n_placed <- if (is.null(n_placed) || is.na(n_placed)) 0L else as.integer(n_placed)
   commit_msg <- sprintf(

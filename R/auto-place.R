@@ -253,9 +253,13 @@ run_auto_place <- function(root = here::here("data"),
 #'   after a no-op push would pop a pre-existing user stash — and a stale
 #'   ledger parquet inside one would then be auto-committed to the canonical
 #'   ledger by the next cycle's rescue.
-#' * **Conflict unwind.** A failed pull aborts the rebase it started, so a
-#'   conflict degrades to a skipped cycle instead of wedging every
-#'   subsequent run.
+#' * **Conflict unwind.** A failed pull aborts the rebase it started, and a
+#'   conflicted pop leaves unmerged index entries that the entry guard then
+#'   detects -- either way a conflict degrades to skipped cycles (visible as
+#'   `sync_failed` in the placement status) until a human resolves, never a
+#'   half-applied state the next cycle builds on. A pop that git refuses
+#'   keeps the run's own `auto_place sync` stash entry; `git stash list`
+#'   after any `sync_failed` is part of the triage.
 #'
 #' All git calls go through `.git_run()`, which shell-quotes each argument.
 #' `system2(..., stdout = TRUE)` routes through `sh`, so an unquoted argument
@@ -303,11 +307,16 @@ sync_recs <- function(repo_root = here::here()) {
   ok
 }
 
-#' Is a rebase, merge, or cherry-pick already in progress in this repo?
+#' Is a rebase, merge, cherry-pick, or revert already in progress -- or the
+#' index left with unmerged entries (e.g. a conflicted stash pop, which
+#' creates no marker file)? Either way a human owns the tree; skip the cycle.
 #' @noRd
 .git_operation_in_progress <- function(repo_root) {
-  markers <- c("rebase-merge", "rebase-apply", "MERGE_HEAD", "CHERRY_PICK_HEAD")
-  any(vapply(markers, function(m) {
+  markers <- c(
+    "rebase-merge", "rebase-apply", "MERGE_HEAD", "CHERRY_PICK_HEAD",
+    "REVERT_HEAD"
+  )
+  marker_hit <- any(vapply(markers, function(m) {
     res <- .git_run(c("-C", repo_root, "rev-parse", "--git-path", m))
     if (!res$ok || length(res$lines) == 0L) {
       return(FALSE)
@@ -316,4 +325,9 @@ sync_recs <- function(repo_root = here::here()) {
     if (!fs::is_absolute_path(p)) p <- fs::path(repo_root, p)
     fs::file_exists(p) || fs::dir_exists(p)
   }, logical(1)))
+  if (marker_hit) {
+    return(TRUE)
+  }
+  unmerged <- .git_run(c("-C", repo_root, "ls-files", "-u"))
+  unmerged$ok && length(unmerged$lines) > 0L
 }
