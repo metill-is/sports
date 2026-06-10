@@ -63,6 +63,7 @@ Collate:
     'decide-odds.R'
     'decide-portfolio.R'
     'decide-pipeline.R'
+    'derive-round.R'
     'duckdb-views.R'
     'model-prepare.R'
     'publish-iceland-2dt-helpers.R'
