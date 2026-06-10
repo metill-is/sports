@@ -603,30 +603,102 @@ NULL
     ) |>
     dplyr::arrange(.data$match_date)
 
+  # KSÍ TBD placeholder stubs ("Undanúrslit" vs ".") are parse-filtered at
+  # ingest since 2026-05-13, but legacy rows persist in the schedules store
+  # and would poison the window-consistency check below ("." is never a
+  # window team). Results can't carry them (score filter), so this only
+  # ever drops schedule-side stubs.
+  cup_matches <- cup_matches[
+    cup_matches$home_team != "." & cup_matches$away_team != ".", ,
+    drop = FALSE
+  ]
+
+  # Reschedule ghosts: the schedules store keys on match_date, so a moved
+  # fixture leaves its old-dated row behind (retracted at ingest since
+  # 2026-06, but ghosts already baked into a fit's pred_d still reach this
+  # builder). In a single-elimination cup a pairing meets at most once per
+  # season, so two rows with the same unordered pair are the same tie —
+  # keep the played row if any, else the latest-dated one (reschedules are
+  # re-announced at the new date far more often than pulled forward).
+  cup_matches <- cup_matches |>
+    dplyr::mutate(
+      .pair = paste(
+        pmin(.data$home_team, .data$away_team),
+        pmax(.data$home_team, .data$away_team)
+      )
+    ) |>
+    dplyr::arrange(dplyr::desc(.data$played), dplyr::desc(.data$match_date)) |>
+    dplyr::distinct(.data$.pair, .keep_all = TRUE) |>
+    dplyr::select(-".pair") |>
+    dplyr::arrange(.data$match_date)
+
   if (nrow(cup_matches) < 8L) {
     return(NULL)
   }
 
-  # Identify R16 via sliding-window: first 8-match window with 16 distinct
-  # teams in ≤ 4 days.
+  # Identify the R16 via sliding window + subset-consistency: among windows
+  # of 8 consecutive matches with 16 distinct teams inside ≤ 4 days, the
+  # true R16 is the one whose LATER matches involve only those 16 teams.
+  # Early qualifying rounds also produce 16-distinct windows (the 2026
+  # Mjólkurbikar's March round hijacked the original first-hit heuristic
+  # and the bracket simulated 16 minnows — no Besta-deild team at all), but
+  # later rounds then field teams from outside the window, so the
+  # consistency test rejects them. Keep the LAST passing window; while the
+  # R16 field is not yet known no window passes and the builder returns
+  # NULL — the publisher then ships empty placements rather than a
+  # fictional bracket.
   cup_teams <- NULL
+  window_start <- NA_integer_
   for (i in seq_len(nrow(cup_matches) - 7L)) {
     win <- cup_matches[i:(i + 7L), , drop = FALSE]
     teams_in_window <- unique(c(win$home_team, win$away_team))
     span_days <- as.numeric(max(win$match_date) - min(win$match_date))
-    if (length(teams_in_window) == 16L && span_days <= 4L) {
-      cup_teams <- teams_in_window
-      break
+    if (length(teams_in_window) != 16L || span_days > 4L) {
+      next
     }
+    later <- cup_matches[-seq_len(i + 7L), , drop = FALSE]
+    if (nrow(later) > 0L &&
+      !all(c(later$home_team, later$away_team) %in% teams_in_window)) {
+      next
+    }
+    cup_teams <- teams_in_window
+    window_start <- i
   }
   if (is.null(cup_teams)) {
     return(NULL)
   }
 
-  bracket_matches <- cup_matches |>
+  # Anchor the bracket at the window start: in a knockout two R16 teams
+  # cannot have met in an earlier round (one would have been eliminated),
+  # so this is belt-and-braces against stray early-season rows.
+  bracket_matches <- cup_matches[
+    seq.int(window_start, nrow(cup_matches)), ,
+    drop = FALSE
+  ] |>
     dplyr::filter(.data$home_team %in% cup_teams &
       .data$away_team %in% cup_teams) |>
     dplyr::mutate(rank = dplyr::row_number())
+
+  # Resolve 90' ties via next-round participation: the results store has no
+  # extra-time/shootout outcome (ÍA 2-2 Grindavík stays a tie on paper),
+  # but in a knockout the advancing team is whichever of the two appears in
+  # a later bracket match (ÍA hosts the QF, so ÍA advanced). While the next
+  # round is undrawn the winner stays NA and the simulator re-tosses the
+  # tie at the model's lambdas.
+  na_idx <- which(bracket_matches$played & is.na(bracket_matches$known_winner))
+  for (j in na_idx) {
+    later_rows <- bracket_matches[
+      bracket_matches$rank > bracket_matches$rank[j], ,
+      drop = FALSE
+    ]
+    cand <- intersect(
+      c(bracket_matches$home_team[j], bracket_matches$away_team[j]),
+      c(later_rows$home_team, later_rows$away_team)
+    )
+    if (length(cand) == 1L) {
+      bracket_matches$known_winner[j] <- cand
+    }
+  }
 
   build_round <- function(ranks) {
     m <- bracket_matches |> dplyr::filter(.data$rank %in% ranks)

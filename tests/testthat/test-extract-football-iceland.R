@@ -742,3 +742,150 @@ test_that(".extract_sim_inputs_pfi: succeeds without warning when fit's team cou
   expect_false(any(is.na(out$team$team)))
   expect_setequal(unique(out$team$team), matched_teams$team)
 })
+
+# ---- .build_bracket_state_pfi: real-season shapes (2026 regressions) ---------
+# The 2026 Mjólkurbikar exposed three holes in the original heuristic, all
+# reproduced here from the real season's shape:
+#   1. Early qualifying rounds (March, 16 minnows over one weekend) satisfied
+#      "first 8-match window with 16 distinct teams in <=4 days", so the
+#      bracket simulated the wrong 16 teams (no Besta-deild entrants at all).
+#   2. A rescheduled fixture leaves a ghost row at the old date (the schedules
+#      store keys on match_date), corrupting the rank-positional round slicing.
+#   3. A 90' tie (ÍA 2-2 Grindavík) left known_winner = NA even though the
+#      QF draw proves who advanced, so the simulator re-tossed a decided tie.
+
+# Helper: a played early qualifying round — 8 matches, 16 distinct minnows,
+# inside one weekend. Home teams advance.
+.cup_results_early_round <- function() {
+  tibble::tibble(
+    home_team  = paste0("E", 1:8),
+    away_team  = paste0("E", 9:16),
+    match_date = as.Date("2026-03-18") + c(0L, 0L, 1L, 1L, 1L, 2L, 2L, 2L),
+    home_score = 2L,
+    away_score = 0L,
+    division   = "CUP",
+    season     = 2026L
+  )
+}
+
+# Helper: the real R16 — early-round survivors E1..E8 meet top-flight
+# entrants T1..T8 (who skip the qualifying rounds). Home teams advance.
+.cup_results_real_r16 <- function() {
+  tibble::tibble(
+    home_team  = c(paste0("E", 1:4), paste0("T", 1:4)),
+    away_team  = c(paste0("T", 5:8), paste0("E", 5:8)),
+    match_date = as.Date("2026-05-13") + rep(0:1, each = 4L),
+    home_score = 1L,
+    away_score = 0L,
+    division   = "CUP",
+    season     = 2026L
+  )
+}
+
+test_that(".build_bracket_state_pfi: early qualifying round does not hijack R16 detection", {
+  results <- dplyr::bind_rows(.cup_results_early_round(), .cup_results_real_r16())
+  bs <- .build_bracket_state_pfi(
+    pred_d = NULL, results = results, current_season = 2026L
+  )
+  expect_false(is.null(bs))
+  # The March window has 16 distinct teams in <=4 days, but later cup matches
+  # involve the T* entrants — only the May window is consistent.
+  expect_setequal(bs$cup_teams, c(paste0("E", 1:8), paste0("T", 1:8)))
+  expect_true(bs$rounds$R16$pairings_known)
+  expect_setequal(
+    bs$rounds$R16$matches$known_winner,
+    c(paste0("E", 1:4), paste0("T", 1:4))
+  )
+})
+
+test_that(".build_bracket_state_pfi: reschedule ghost of a bracket pairing is deduped", {
+  r16 <- .cup_results_real_r16()
+  # QF draw: 4 matches between the 8 R16 winners... plus a ghost — the
+  # E3-E4 tie was first scheduled Jun 10, then moved to Jun 13; both rows
+  # survive in the schedules store.
+  qf <- tibble::tibble(
+    home_team  = c("E1", "E3", "T1", "T3", "E3"),
+    away_team  = c("E2", "E4", "T2", "T4", "E4"),
+    match_date = as.Date(c(
+      "2026-06-10", "2026-06-13", "2026-06-12", "2026-06-12", "2026-06-10"
+    )),
+    division   = "CUP"
+  )
+  bs <- .build_bracket_state_pfi(
+    pred_d = qf, results = r16, current_season = 2026L
+  )
+  expect_false(is.null(bs))
+  expect_true(bs$rounds$R8$pairings_known)
+  expect_equal(nrow(bs$rounds$R8$matches), 4L)
+  pairs <- paste(bs$rounds$R8$matches$home_team, bs$rounds$R8$matches$away_team)
+  expect_equal(sum(pairs == "E3 E4"), 1L)
+  # The ghost must not leak into SF as a phantom 13th bracket match.
+  expect_false(bs$rounds$SF$pairings_known)
+})
+
+test_that(".build_bracket_state_pfi: played row wins over its stale future duplicate", {
+  r16 <- .cup_results_real_r16() # includes E1 1-0 T5 played 2026-05-13
+  ghost <- tibble::tibble(
+    home_team  = "E1",
+    away_team  = "T5",
+    match_date = as.Date("2026-06-10"), # stale future copy of the played tie
+    division   = "CUP"
+  )
+  bs <- .build_bracket_state_pfi(
+    pred_d = ghost, results = r16, current_season = 2026L
+  )
+  expect_false(is.null(bs))
+  m <- bs$rounds$R16$matches
+  expect_equal(sum(m$home_team == "E1" & m$away_team == "T5"), 1L)
+  expect_equal(m$known_winner[m$home_team == "E1" & m$away_team == "T5"], "E1")
+  # The ghost must not register as an R8 fixture.
+  expect_false(bs$rounds$R8$pairings_known)
+})
+
+test_that(".build_bracket_state_pfi: 90' tie resolved via next-round participation", {
+  r16 <- .cup_results_real_r16()
+  # E1 vs T5 ended level after 90' — the store has no ET/shootout outcome.
+  r16$away_score[1] <- 1L
+  # But the QF draw includes E1, so E1 demonstrably advanced.
+  qf <- tibble::tibble(
+    home_team  = c("E1", "T1", "E3", "T3"),
+    away_team  = c("E2", "T2", "E4", "T4"),
+    match_date = as.Date("2026-06-12"),
+    division   = "CUP"
+  )
+  bs <- .build_bracket_state_pfi(
+    pred_d = qf, results = r16, current_season = 2026L
+  )
+  m <- bs$rounds$R16$matches
+  expect_equal(m$known_winner[m$home_team == "E1" & m$away_team == "T5"], "E1")
+})
+
+test_that(".build_bracket_state_pfi: 90' tie stays NA when the next round is undrawn", {
+  r16 <- .cup_results_real_r16()
+  r16$away_score[1] <- 1L # E1 vs T5 level, no later matches to infer from
+  bs <- .build_bracket_state_pfi(
+    pred_d = NULL, results = r16, current_season = 2026L
+  )
+  m <- bs$rounds$R16$matches
+  expect_true(is.na(m$known_winner[m$home_team == "E1" & m$away_team == "T5"]))
+})
+
+test_that(".build_bracket_state_pfi: KSÍ TBD placeholder rows are ignored", {
+  r16 <- .cup_results_real_r16()
+  # Placeholder stubs (round-name vs ".") are parse-filtered since 2026-05-13
+  # but legacy rows persist in the schedules store. If they reached the
+  # consistency check they would reject every window ("." is never a window
+  # team) and the bracket would vanish.
+  placeholders <- tibble::tibble(
+    home_team  = c("Undanúrslit", "Úrslitaleikur"),
+    away_team  = c(".", "."),
+    match_date = as.Date(c("2026-06-24", "2026-09-11")),
+    division   = "CUP"
+  )
+  bs <- .build_bracket_state_pfi(
+    pred_d = placeholders, results = r16, current_season = 2026L
+  )
+  expect_false(is.null(bs))
+  expect_setequal(bs$cup_teams, c(paste0("E", 1:8), paste0("T", 1:8)))
+  expect_false(bs$rounds$R8$pairings_known)
+})
