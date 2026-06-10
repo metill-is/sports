@@ -180,3 +180,100 @@ test_that("upsert_table round-trips schedules with matching dedup semantics", {
   back <- read_table("schedules", root = tmp)
   expect_equal(nrow(back), 1L)
 })
+
+# ---- schedules snapshot retraction (reschedule ghosts) -----------------------
+# A fixture's natural key includes match_date, so when the federation moves a
+# match to a new date the old-dated row no longer collides on the key and the
+# plain upsert keeps both forever (the "ghost fixture" bug: Fylkir-Grótta
+# published at both 2026-06-10 and 2026-06-13). `snapshot_future_by` treats
+# the incoming frame as the authoritative statement of future fixtures for
+# every scope-combo (e.g. division) it covers: existing future rows in those
+# scopes that the new frame no longer asserts are retracted.
+
+make_sched_row <- function(...) {
+  defaults <- list(
+    sport = "football", country = "iceland", sex = "male",
+    season = 2026L,
+    match_date = as.Date("2026-06-13"),
+    home_team = "Fylkir", away_team = "Grotta",
+    division = "CUP", round = NA_integer_, kickoff_time = NA_character_
+  )
+  tibble::as_tibble(modifyList(defaults, list(...)))
+}
+
+test_that("upsert_table snapshot_future_by retracts a rescheduled fixture's old row", {
+  tmp <- withr::local_tempdir()
+
+  # Day 1 scrape: the tie is scheduled for Jun 10.
+  upsert_table(
+    make_sched_row(match_date = as.Date("2026-06-10")),
+    "schedules",
+    root = tmp
+  )
+
+  # Day 2 scrape: KSI moved the tie to Jun 13; the scrape no longer
+  # asserts the Jun 10 row.
+  upsert_table(
+    make_sched_row(match_date = as.Date("2026-06-13")),
+    "schedules",
+    root = tmp,
+    snapshot_future_by = "division",
+    snapshot_cutoff = as.Date("2026-06-09")
+  )
+
+  back <- read_table("schedules", root = tmp)
+  expect_equal(nrow(back), 1L)
+  expect_equal(back$match_date, as.Date("2026-06-13"))
+})
+
+test_that("snapshot retraction keeps past rows and divisions absent from the new frame", {
+  tmp <- withr::local_tempdir()
+
+  seed <- dplyr::bind_rows(
+    # Played-date CUP row (history; must survive).
+    make_sched_row(match_date = as.Date("2026-06-01")),
+    # Future CUP ghost (incl. a TBD placeholder fossil; must be swept).
+    make_sched_row(
+      match_date = as.Date("2026-06-24"),
+      home_team = "Undanúrslit", away_team = "."
+    ),
+    # Future BD row: division not covered by the new frame; must survive.
+    make_sched_row(
+      match_date = as.Date("2026-06-15"),
+      home_team = "KR", away_team = "Valur", division = "BD"
+    )
+  )
+  upsert_table(seed, "schedules", root = tmp)
+
+  upsert_table(
+    make_sched_row(match_date = as.Date("2026-06-22")),
+    "schedules",
+    root = tmp,
+    snapshot_future_by = "division",
+    snapshot_cutoff = as.Date("2026-06-09")
+  )
+
+  back <- read_table("schedules", root = tmp)
+  expect_equal(nrow(back), 3L)
+  got <- paste(back$division, back$match_date)
+  expect_setequal(
+    got,
+    c("CUP 2026-06-01", "BD 2026-06-15", "CUP 2026-06-22")
+  )
+})
+
+test_that("snapshot retraction defaults are inert (plain upsert unchanged)", {
+  tmp <- withr::local_tempdir()
+  upsert_table(
+    make_sched_row(match_date = as.Date("2026-06-10")),
+    "schedules",
+    root = tmp
+  )
+  upsert_table(
+    make_sched_row(match_date = as.Date("2026-06-13")),
+    "schedules",
+    root = tmp
+  )
+  back <- read_table("schedules", root = tmp)
+  expect_equal(nrow(back), 2L) # legacy union semantics preserved
+})

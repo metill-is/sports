@@ -82,8 +82,21 @@ ingest_league <- function(league, sex,
   # Use upsert semantics so re-ingests that return a strict subset of an
   # earlier fetch (e.g. HSI retry dropping G66 history) do not clobber the
   # larger partition on disk. See R/storage.R::upsert_table().
+  #
+  # Schedules additionally use per-division snapshot semantics: a scrape is
+  # the authoritative statement of each covered division's future fixtures,
+  # so a rescheduled match retracts its old-dated ghost row (the natural key
+  # includes match_date, so plain upsert would keep both dates forever —
+  # the duplicated-fixture bug of 2026-06). Scope is per-division because
+  # the fetchers degrade to a partial frame when one competition request
+  # fails: an absent division must mean "not scraped", never "no fixtures".
   if (nrow(results) > 0) upsert_table(results, "results", root = root)
-  if (nrow(schedule) > 0) upsert_table(schedule, "schedules", root = root)
+  if (nrow(schedule) > 0) {
+    upsert_table(
+      schedule, "schedules",
+      root = root, snapshot_future_by = "division"
+    )
+  }
 
   invisible(as.integer(nrow(results) + nrow(schedule)))
 }

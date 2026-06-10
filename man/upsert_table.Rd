@@ -4,7 +4,13 @@
 \alias{upsert_table}
 \title{Write a frame into the store with per-partition merge semantics.}
 \usage{
-upsert_table(df, table, root = here::here("data"))
+upsert_table(
+  df,
+  table,
+  root = here::here("data"),
+  snapshot_future_by = NULL,
+  snapshot_cutoff = Sys.Date()
+)
 }
 \arguments{
 \item{df}{A tibble or data frame matching the schema for `table`.}
@@ -12,6 +18,21 @@ upsert_table(df, table, root = here::here("data"))
 \item{table}{One of `"results"`, `"schedules"`.}
 
 \item{root}{Filesystem root (defaults to `here::here("data")`).}
+
+\item{snapshot_future_by}{Optional character vector of scope columns (e.g.
+`"division"`). When set, the incoming frame is treated as the
+authoritative snapshot of FUTURE rows for every scope-combo it contains:
+within each touched partition, existing rows whose scope columns match a
+combo present in the new frame and whose `match_date >=
+snapshot_cutoff` are retracted before the union. This is how rescheduled
+fixtures lose their old-dated ghost row — the natural key includes
+`match_date`, so a date change is otherwise a new identity that plain
+upsert semantics keep forever. Scope-combos absent from the new frame
+(e.g. a division whose scrape failed) are left untouched. Default `NULL`
+preserves the legacy union semantics.}
+
+\item{snapshot_cutoff}{Date; rows at or after this date are eligible for
+retraction when `snapshot_future_by` is set. Defaults to `Sys.Date()`.}
 }
 \value{
 invisible(NULL)
