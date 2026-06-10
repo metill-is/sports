@@ -129,13 +129,12 @@ check_fit_freshness <- function(leagues, root, now, th) {
   if (length(rows) == 0L) health_empty() else dplyr::bind_rows(rows)
 }
 
-#' Earliest scheduled match in `[today, today + days]` across a league's cells,
-#' or `NA` when none (off-season / between seasons). Derives "today" from the
-#' caller's reference time rather than `Sys.Date()` so the health snapshot is
+#' All schedule rows for a league's cells, with `sex` guaranteed present.
+#' Derives nothing from `Sys.Date()` so the health snapshot stays
 #' deterministic.
 #' @noRd
-.next_upcoming_match <- function(static, sexes, root, today, days = 14L) {
-  dates <- as.Date(character())
+.schedule_frame <- function(static, sexes, root) {
+  out <- list()
   for (sx in sexes) {
     sch <- tryCatch(
       read_table("schedules",
@@ -145,11 +144,47 @@ check_fit_freshness <- function(leagues, root, now, th) {
       error = function(e) tibble::tibble()
     )
     if (nrow(sch) == 0L || !("match_date" %in% names(sch))) next
-    md <- as.Date(sch$match_date)
-    md <- md[!is.na(md) & md >= today & md <= today + as.integer(days)]
-    dates <- c(dates, md)
+    if (!("sex" %in% names(sch))) sch$sex <- sx
+    out[[sx]] <- sch
   }
-  if (length(dates) == 0L) as.Date(NA) else min(dates)
+  if (length(out) == 0L) tibble::tibble() else dplyr::bind_rows(out)
+}
+
+#' (sex, division) pairs in which the decide layer has ever produced a
+#' candidate -- the empirically bettable universe. KSI schedules span
+#' divisions Lengjan never prices (LD4 false-FAILed the 2026-06-09 evening
+#' healthcheck), so the odds expectation is scoped to divisions with candidate
+#' history. Candidates -- not raw odds -- because odds rows carry Lengjan
+#' display names while candidates are post-join: canonical names plus `sex`.
+#' Self-maintaining: a new division enters coverage with its first decide run.
+#' Returns `NULL` (callers fall back to expecting odds everywhere) when no
+#' candidate history joins the schedule -- the conservative cold-start.
+#' @noRd
+.covered_divisions <- function(static, sch, root) {
+  if (nrow(sch) == 0L || !("division" %in% names(sch))) {
+    return(NULL)
+  }
+  cand <- tryCatch(
+    read_table("candidates",
+      root = root,
+      filter = list(sport = static$sport, country = static$country)
+    ),
+    error = function(e) tibble::tibble()
+  )
+  need <- c("sex", "match_date", "home_team", "away_team")
+  if (nrow(cand) == 0L || !all(need %in% names(cand))) {
+    return(NULL)
+  }
+  cm <- unique(cand[, need, drop = FALSE])
+  cm$match_date <- as.Date(cm$match_date)
+  sm <- sch[, c(need, "division"), drop = FALSE]
+  sm$match_date <- as.Date(sm$match_date)
+  hit <- merge(cm, sm, by = need)
+  hit <- hit[!is.na(hit$division), c("sex", "division"), drop = FALSE]
+  if (nrow(hit) == 0L) {
+    return(NULL)
+  }
+  unique(hit)
 }
 
 #' Match-proximity-aware odds freshness.
@@ -162,18 +197,41 @@ check_fit_freshness <- function(leagues, root, now, th) {
 #' signal that "we have what the decider needs" is odds covering some fixture
 #' on/after today. A fixture arriving *today* with no odds scraped is a genuine
 #' pipeline stall and FAILs (the alert email). Off-season cells (no upcoming
-#' fixture) produce no row, as before.
+#' fixture) produce no row, as before. Fixtures in (sex, division) cells that
+#' have never produced a candidate (see [.covered_divisions()]) carry no odds
+#' expectation: Lengjan does not price them, so their absence is not a stall.
 #' @noRd
 check_odds_freshness <- function(leagues, root, now, th) {
   today <- as.Date(now, tz = "UTC")
+  horizon_days <- 14L
   thr_lbl <- paste0("odds for fixtures within ", th$odds_lead_days, "d")
   rows <- list()
   for (key in names(leagues)) {
     lg <- leagues[[key]]
     static <- list(sport = lg$sport, country = lg$country)
-    next_match <- .next_upcoming_match(static, .cell_sexes(lg), root, today)
-    if (is.na(next_match)) next # off-season: no fixture, so no odds expected
+    sch <- .schedule_frame(static, .cell_sexes(lg), root)
+    if (nrow(sch) == 0L) next
+    md <- as.Date(sch$match_date)
+    upcoming <- sch[!is.na(md) & md >= today & md <= today + horizon_days, , drop = FALSE]
+    if (nrow(upcoming) == 0L) next # off-season: no fixture, so no odds expected
 
+    covered <- .covered_divisions(static, sch, root)
+    expected <- if (is.null(covered) || !("division" %in% names(upcoming))) {
+      upcoming
+    } else {
+      keep <- is.na(upcoming$division) |
+        paste(upcoming$sex, upcoming$division) %in% paste(covered$sex, covered$division)
+      upcoming[keep, , drop = FALSE]
+    }
+    if (nrow(expected) == 0L) {
+      rows[[key]] <- health_row(
+        "odds_freshness", key, "OK",
+        "upcoming fixtures only in divisions Lengjan has never priced", thr_lbl
+      )
+      next
+    }
+
+    next_match <- min(as.Date(expected$match_date))
     days_to_next <- as.numeric(next_match - today)
     od <- tryCatch(
       read_table("odds",

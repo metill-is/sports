@@ -2,7 +2,13 @@ name: Health Check
 
 on:
   schedule:
-    - cron: '0 7,19 * * *'   # twice daily UTC, after the morning fit + evening odds cycles
+    # Twice daily UTC. The morning slot must land AFTER the day's first odds
+    # scrape (cron 08:00) and the fit chain (results 06:00 + ~1.5h fit):
+    # Lengjan sometimes posts same-day odds late morning, and GitHub cron
+    # drift runs 0.5-4h, so the old 07:00 slot fired before the first scrape
+    # and false-FAILed odds_freshness on every such match day (2026-06-10).
+    # 12:00 keeps a >=4h cron-offset margin over the 08:00 scrape.
+    - cron: '0 12,19 * * *'
   workflow_dispatch: {}
 
 permissions:
