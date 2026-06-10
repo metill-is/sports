@@ -259,9 +259,24 @@ natural_key_for <- function(table) {
 #' @param df A tibble or data frame matching the schema for `table`.
 #' @param table One of `"results"`, `"schedules"`.
 #' @param root Filesystem root (defaults to `here::here("data")`).
+#' @param snapshot_future_by Optional character vector of scope columns (e.g.
+#'   `"division"`). When set, the incoming frame is treated as the
+#'   authoritative snapshot of FUTURE rows for every scope-combo it contains:
+#'   within each touched partition, existing rows whose scope columns match a
+#'   combo present in the new frame and whose `match_date >=
+#'   snapshot_cutoff` are retracted before the union. This is how rescheduled
+#'   fixtures lose their old-dated ghost row — the natural key includes
+#'   `match_date`, so a date change is otherwise a new identity that plain
+#'   upsert semantics keep forever. Scope-combos absent from the new frame
+#'   (e.g. a division whose scrape failed) are left untouched. Default `NULL`
+#'   preserves the legacy union semantics.
+#' @param snapshot_cutoff Date; rows at or after this date are eligible for
+#'   retraction when `snapshot_future_by` is set. Defaults to `Sys.Date()`.
 #' @return invisible(NULL)
 #' @export
-upsert_table <- function(df, table, root = here::here("data")) {
+upsert_table <- function(df, table, root = here::here("data"),
+                         snapshot_future_by = NULL,
+                         snapshot_cutoff = Sys.Date()) {
   if (nrow(df) == 0) {
     return(invisible(NULL))
   }
@@ -299,6 +314,30 @@ upsert_table <- function(df, table, root = here::here("data")) {
       read_table(table, root = root, filter = part_filter),
       error = function(e) tibble::tibble()
     )
+
+    if (!is.null(snapshot_future_by) && nrow(existing) > 0) {
+      missing_scope <- setdiff(
+        snapshot_future_by, intersect(names(new_rows), names(existing))
+      )
+      if (length(missing_scope) > 0 || !("match_date" %in% names(existing))) {
+        stop(
+          sprintf(
+            "upsert_table: snapshot_future_by column(s) unavailable: %s",
+            paste(c(missing_scope, "match_date"), collapse = ", ")
+          ),
+          call. = FALSE
+        )
+      }
+      scope_keys <- dplyr::distinct(
+        new_rows[, snapshot_future_by, drop = FALSE]
+      )
+      in_scope <- do.call(
+        paste, c(existing[, snapshot_future_by, drop = FALSE], sep = "\r")
+      ) %in% do.call(paste, c(scope_keys, sep = "\r"))
+      md <- as.Date(existing$match_date)
+      retract <- in_scope & !is.na(md) & md >= as.Date(snapshot_cutoff)
+      existing <- existing[!retract, , drop = FALSE]
+    }
 
     combined <- if (nrow(existing) > 0 &&
       all(nat_key %in% names(existing))) {
