@@ -83,3 +83,13 @@ test_that("placer wrapper gates the commit on !dry_run", {
     info = "placer wrapper must gate commit on !dry_run"
   )
 })
+
+test_that("unattended wrapper skips the commit on disabled/locked/sync_failed runs", {
+  path <- here::here("scripts/auto_place.R")
+  if (!file.exists(path)) skip("unattended wrapper missing")
+  src <- paste(readLines(path, warn = FALSE), collapse = "\n")
+  # sync_failed in the skip set is what keeps money commits off feature
+  # branches: a branch-guard refusal reports sync_failed, and committing
+  # then would land ledger rows on whatever branch is checked out.
+  expect_match(src, 'c\\("disabled", "locked", "sync_failed"\\)')
+})

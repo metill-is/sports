@@ -33,9 +33,13 @@ for an unattended caller sharing the user's working tree:
   after a no-op push would pop a pre-existing user stash — and a stale
   ledger parquet inside one would then be auto-committed to the canonical
   ledger by the next cycle's rescue.
-* **Conflict unwind.** A failed pull aborts the rebase it started, so a
-  conflict degrades to a skipped cycle instead of wedging every
-  subsequent run.
+* **Conflict unwind.** A failed pull aborts the rebase it started, and a
+  conflicted pop leaves unmerged index entries that the entry guard then
+  detects -- either way a conflict degrades to skipped cycles (visible as
+  `sync_failed` in the placement status) until a human resolves, never a
+  half-applied state the next cycle builds on. A pop that git refuses
+  keeps the run's own `auto_place sync` stash entry; `git stash list`
+  after any `sync_failed` is part of the triage.
 
 All git calls go through `.git_run()`, which shell-quotes each argument.
 `system2(..., stdout = TRUE)` routes through `sh`, so an unquoted argument

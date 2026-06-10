@@ -324,3 +324,23 @@ test_that("sync_recs aborts a conflicted pull; money rows end up committed, neve
   expect_false(dir.exists(file.path(work, ".git", "rebase-merge")))
   expect_false(dir.exists(file.path(work, ".git", "rebase-apply")))
 })
+
+test_that("sync_recs skips when the index has unmerged entries (conflicted pop state)", {
+  work <- .scratch_synced_repo()
+  writeLines("base", file.path(work, "conflict.txt"))
+  .tgit(work, "add", ".")
+  .tgit(work, "commit", "-m", "base")
+  writeLines("stashed version", file.path(work, "conflict.txt"))
+  .tgit(work, "stash", "push", "-m", "wip")
+  writeLines("committed version", file.path(work, "conflict.txt"))
+  .tgit(work, "add", ".")
+  .tgit(work, "commit", "-m", "diverge")
+  # A conflicted pop leaves unmerged index entries but NO marker file
+  # (no MERGE_HEAD) -- the guard must catch it via ls-files -u.
+  suppressWarnings(system2(
+    "git", vapply(c("-C", work, "stash", "pop"), shQuote, character(1)),
+    stdout = TRUE, stderr = TRUE
+  ))
+  expect_true(sports:::.git_operation_in_progress(work))
+  expect_false(sync_recs(work))
+})
