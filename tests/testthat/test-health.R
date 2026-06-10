@@ -131,6 +131,16 @@ test_that("check_capture_rate WARNs when few recommendations were placed", {
   )
 }
 
+.mini_candidate <- function(match_date, sex = "male", home = "A", away = "B") {
+  tibble::tibble(
+    run_id = as.POSIXct("2026-05-19 10:00:00", tz = "UTC"),
+    sport = "football", country = "iceland", sex = sex,
+    match_date = as.Date(match_date), home_team = home, away_team = away,
+    market = "moneyline", outcome = "home", line = NA_real_,
+    p = 0.55, odds = 2.0, ev = 0.1, kelly_raw = 0.02, stage = "kept"
+  )
+}
+
 .fb_league <- list(
   football_iceland = list(sport = "football", country = "iceland", sexes = list("male"))
 )
@@ -183,6 +193,89 @@ test_that("odds_freshness produces no row off-season (no upcoming games)", {
   write_table(.mini_odds("2026-05-01", "2026-05-01 13:00"), "odds", root = root)
   res <- check_odds_freshness(.fb_league, root, now, health_thresholds())
   expect_equal(nrow(res), 0L)
+})
+
+# --- division-coverage scoping (2026-06-09 LD4 false-FAIL) --------------------
+#
+# KSI schedules span divisions Lengjan never prices. The lone fixture on
+# 2026-06-09 was 4. deild (Alftanes v Hafnir); odds_freshness FAILed all day
+# and the Health Check workflow alert-emailed twice for a non-event. Odds are
+# only *expected* in (sex, division) cells with candidate history.
+
+test_that("odds_freshness ignores a today-fixture in a division without candidate history", {
+  root <- withr::local_tempdir()
+  now <- as.POSIXct("2026-06-03 12:00", tz = "UTC")
+  # Candidate history in 'besta' only; today's sole fixture is '4deild'.
+  write_table(
+    dplyr::bind_rows(
+      .mini_sched("2026-05-20"),
+      .mini_sched("2026-06-03", home = "C", away = "D") |>
+        dplyr::mutate(division = "4deild")
+    ),
+    "schedules",
+    root = root
+  )
+  write_table(.mini_candidate("2026-05-20"), "candidates", root = root)
+  write_table(.mini_odds("2026-05-20", "2026-05-18 13:00"), "odds", root = root)
+  res <- check_odds_freshness(.fb_league, root, now, health_thresholds())
+  expect_equal(res$status, "OK")
+  expect_match(res$value, "never priced")
+})
+
+test_that("odds_freshness still FAILs for a today-fixture in a division with candidate history", {
+  root <- withr::local_tempdir()
+  now <- as.POSIXct("2026-06-03 12:00", tz = "UTC")
+  write_table(
+    dplyr::bind_rows(
+      .mini_sched("2026-05-20"),
+      .mini_sched("2026-06-03", home = "C", away = "D")
+    ),
+    "schedules",
+    root = root
+  )
+  write_table(.mini_candidate("2026-05-20"), "candidates", root = root)
+  write_table(.mini_odds("2026-05-20", "2026-05-18 13:00"), "odds", root = root)
+  res <- check_odds_freshness(.fb_league, root, now, health_thresholds())
+  expect_equal(res$status, "FAIL")
+  expect_match(res$value, "today")
+})
+
+test_that("odds_freshness coverage is per sex, not per division name", {
+  root <- withr::local_tempdir()
+  now <- as.POSIXct("2026-06-03 12:00", tz = "UTC")
+  leagues <- list(
+    football_iceland = list(
+      sport = "football", country = "iceland", sexes = list("male", "female")
+    )
+  )
+  # Male 'besta' has candidate history; the only upcoming fixture is FEMALE
+  # 'besta' -- same division string, different cell, never priced.
+  write_table(
+    dplyr::bind_rows(
+      .mini_sched("2026-05-20"),
+      .mini_sched("2026-06-03", sex = "female", home = "C", away = "D")
+    ),
+    "schedules",
+    root = root
+  )
+  write_table(.mini_candidate("2026-05-20"), "candidates", root = root)
+  write_table(.mini_odds("2026-05-20", "2026-05-18 13:00"), "odds", root = root)
+  res <- check_odds_freshness(leagues, root, now, health_thresholds())
+  expect_equal(res$status, "OK")
+  expect_match(res$value, "never priced")
+})
+
+test_that("odds_freshness falls back to expecting odds everywhere with no candidate history", {
+  root <- withr::local_tempdir()
+  now <- as.POSIXct("2026-06-03 12:00", tz = "UTC")
+  # Cold start: schedule but no candidates at all -> conservative FAIL.
+  write_table(
+    .mini_sched("2026-06-03") |> dplyr::mutate(division = "4deild"),
+    "schedules",
+    root = root
+  )
+  res <- check_odds_freshness(.fb_league, root, now, health_thresholds())
+  expect_equal(res$status, "FAIL")
 })
 
 # Seed the on-disk state check_fit_freshness reads: a completed result, a
