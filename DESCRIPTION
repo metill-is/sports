@@ -46,6 +46,7 @@ RoxygenNote: 7.3.3
 Collate:
     'storage-schemas.R'
     'storage.R'
+    'commit-ledger.R'
     'placer-load.R'
     'placer-preview.R'
     'config.R'
@@ -55,7 +56,6 @@ Collate:
     'backtest-engine.R'
     'backtest-metrics.R'
     'backtest-universe.R'
-    'commit-ledger.R'
     'cumulative-xpts.R'
     'decide-calibration.R'
     'decide-kelly.R'
@@ -63,6 +63,7 @@ Collate:
     'decide-odds.R'
     'decide-portfolio.R'
     'decide-pipeline.R'
+    'derive-round.R'
     'duckdb-views.R'
     'model-prepare.R'
     'publish-iceland-2dt-helpers.R'

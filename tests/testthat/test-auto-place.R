@@ -186,3 +186,79 @@ test_that("run_auto_place records 'locked' when a live lock is held", {
   expect_false(called)
   expect_equal(read_placement_status(root)$status, "locked")
 })
+
+# --- sync_recs against real scratch git repos ---------------------------------
+#
+# The 2026-06-10 incident: sync_recs built git calls with an unquoted
+# system2(), so the stash message "auto_place sync" split into message
+# "auto_place" + pathspec "sync" -- the stash silently no-opped (exit 0),
+# and `pull --rebase` then died on the dirty working tree. These tests run
+# the real git binary so any future quoting/sequencing regression fails.
+
+.tgit <- function(dir, ...) {
+  args <- vapply(c("-C", dir, ...), shQuote, character(1))
+  out <- suppressWarnings(system2("git", args, stdout = TRUE, stderr = TRUE))
+  status <- attr(out, "status")
+  if (!is.null(status) && status != 0L) {
+    stop("git ", paste(c(...), collapse = " "), " failed: ", paste(out, collapse = "\n"))
+  }
+  out
+}
+
+# A working clone tracking a bare origin, one commit behind it, so
+# `pull --rebase origin main` has real work to do.
+.scratch_synced_repo <- function(env = parent.frame()) {
+  remote <- withr::local_tempdir(.local_envir = env)
+  work <- withr::local_tempdir(.local_envir = env)
+  .tgit(remote, "init", "--bare", "-b", "main")
+  .tgit(work, "init", "-b", "main")
+  .tgit(work, "config", "user.email", "test@example.invalid")
+  .tgit(work, "config", "user.name", "sync_recs test")
+  writeLines("v1", file.path(work, "remote_file.txt"))
+  writeLines("v1", file.path(work, "local_file.txt"))
+  .tgit(work, "add", ".")
+  .tgit(work, "commit", "-m", "init")
+  .tgit(work, "remote", "add", "origin", remote)
+  .tgit(work, "push", "-u", "origin", "main")
+  writeLines("v2", file.path(work, "remote_file.txt"))
+  .tgit(work, "add", "remote_file.txt")
+  .tgit(work, "commit", "-m", "remote change")
+  .tgit(work, "push", "origin", "main")
+  .tgit(work, "reset", "--hard", "HEAD~1")
+  work
+}
+
+test_that("sync_recs fast-forwards a clean clone", {
+  work <- .scratch_synced_repo()
+  expect_true(sync_recs(work))
+  expect_equal(readLines(file.path(work, "remote_file.txt")), "v2")
+})
+
+test_that("sync_recs stashes dirty non-ledger files through the pull (quoting regression)", {
+  work <- .scratch_synced_repo()
+  writeLines("local WIP", file.path(work, "local_file.txt"))
+  expect_true(sync_recs(work))
+  expect_equal(readLines(file.path(work, "remote_file.txt")), "v2")
+  expect_equal(readLines(file.path(work, "local_file.txt")), "local WIP")
+})
+
+test_that("sync_recs commits uncommitted ledger rows before syncing (L1 rescue)", {
+  work <- .scratch_synced_repo()
+  ledger_dir <- file.path(work, "data", "decisions", "ledger")
+  dir.create(ledger_dir, recursive = TRUE)
+  writeLines("row1", file.path(ledger_dir, "part-0.parquet"))
+  .tgit(work, "add", ".")
+  .tgit(work, "commit", "-m", "seed ledger")
+  writeLines(c("row1", "row2"), file.path(ledger_dir, "part-0.parquet"))
+
+  expect_true(sync_recs(work))
+
+  porcelain <- .tgit(work, "status", "--porcelain", "--", "data/decisions/ledger")
+  expect_length(porcelain, 0L)
+  subjects <- .tgit(work, "log", "--format=%s", "-3")
+  expect_true(any(grepl("rescue uncommitted rows", subjects)))
+  expect_equal(
+    readLines(file.path(ledger_dir, "part-0.parquet")),
+    c("row1", "row2")
+  )
+})
