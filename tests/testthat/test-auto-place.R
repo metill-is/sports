@@ -194,6 +194,9 @@ test_that("run_auto_place records 'locked' when a live lock is held", {
 # "auto_place" + pathspec "sync" -- the stash silently no-opped (exit 0),
 # and `pull --rebase` then died on the dirty working tree. These tests run
 # the real git binary so any future quoting/sequencing regression fails.
+# Host git config is isolated (GIT_CONFIG_GLOBAL/GIT_CONFIG_NOSYSTEM):
+# e.g. a global rebase.autostash=true would otherwise mask the quoting
+# regression by making `pull --rebase` stash the dirty tree itself.
 
 .tgit <- function(dir, ...) {
   args <- vapply(c("-C", dir, ...), shQuote, character(1))
@@ -202,12 +205,18 @@ test_that("run_auto_place records 'locked' when a live lock is held", {
   if (!is.null(status) && status != 0L) {
     stop("git ", paste(c(...), collapse = " "), " failed: ", paste(out, collapse = "\n"))
   }
-  out
+  as.character(out)
 }
 
 # A working clone tracking a bare origin, one commit behind it, so
 # `pull --rebase origin main` has real work to do.
 .scratch_synced_repo <- function(env = parent.frame()) {
+  empty_cfg <- withr::local_tempfile(.local_envir = env)
+  file.create(empty_cfg)
+  withr::local_envvar(
+    c(GIT_CONFIG_GLOBAL = empty_cfg, GIT_CONFIG_NOSYSTEM = "1"),
+    .local_envir = env
+  )
   remote <- withr::local_tempdir(.local_envir = env)
   work <- withr::local_tempdir(.local_envir = env)
   .tgit(remote, "init", "--bare", "-b", "main")
@@ -261,4 +270,57 @@ test_that("sync_recs commits uncommitted ledger rows before syncing (L1 rescue)"
     readLines(file.path(ledger_dir, "part-0.parquet")),
     c("row1", "row2")
   )
+})
+
+test_that("sync_recs leaves a pre-existing user stash alone (own-stash discipline)", {
+  work <- .scratch_synced_repo()
+  writeLines("precious", file.path(work, "wip.txt"))
+  .tgit(work, "stash", "push", "-u", "-m", "user precious WIP")
+
+  expect_true(sync_recs(work))
+
+  stashes <- .tgit(work, "stash", "list")
+  expect_length(stashes, 1L)
+  expect_match(stashes, "user precious WIP")
+  expect_false(file.exists(file.path(work, "wip.txt")))
+  expect_equal(readLines(file.path(work, "remote_file.txt")), "v2")
+})
+
+test_that("sync_recs refuses to run with a feature branch checked out", {
+  work <- .scratch_synced_repo()
+  .tgit(work, "checkout", "-q", "-b", "feat/wip")
+  sha_before <- .tgit(work, "rev-parse", "HEAD")
+
+  expect_false(sync_recs(work))
+
+  expect_equal(.tgit(work, "rev-parse", "HEAD"), sha_before)
+  expect_equal(.tgit(work, "rev-parse", "--abbrev-ref", "HEAD"), "feat/wip")
+})
+
+test_that("sync_recs aborts a conflicted pull; money rows end up committed, never stashed", {
+  work <- .scratch_synced_repo()
+  .tgit(work, "pull", "--rebase", "origin", "main")
+  ledger_dir <- file.path(work, "data", "decisions", "ledger")
+  dir.create(ledger_dir, recursive = TRUE)
+  writeLines("base", file.path(ledger_dir, "part-0.parquet"))
+  .tgit(work, "add", ".")
+  .tgit(work, "commit", "-m", "seed ledger")
+  .tgit(work, "push", "origin", "main")
+  writeLines("origin version", file.path(ledger_dir, "part-0.parquet"))
+  .tgit(work, "add", ".")
+  .tgit(work, "commit", "-m", "conflicting origin ledger change")
+  .tgit(work, "push", "origin", "main")
+  .tgit(work, "reset", "--hard", "HEAD~1")
+  writeLines("local money row", file.path(ledger_dir, "part-0.parquet"))
+
+  expect_false(sync_recs(work))
+
+  # The rescue commit holds the money rows; nothing is stranded in a stash
+  # (a rescue-after-stash mutant strands them in a kept, conflicted stash).
+  expect_length(.tgit(work, "stash", "list"), 0L)
+  expect_true(any(grepl("rescue uncommitted rows", .tgit(work, "log", "--format=%s", "-1"))))
+  expect_equal(readLines(file.path(ledger_dir, "part-0.parquet")), "local money row")
+  # The conflicted rebase was aborted, not left wedging the next cycle.
+  expect_false(dir.exists(file.path(work, ".git", "rebase-merge")))
+  expect_false(dir.exists(file.path(work, ".git", "rebase-apply")))
 })

@@ -10,18 +10,33 @@ sync_recs(repo_root = here::here())
 \item{repo_root}{Repository root.}
 }
 \value{
-Logical scalar.
+Logical scalar: `TRUE` on a clean fast-forward/rebase.
 }
 \description{
-Follows the `.claude/rules/git-hygiene.md` cron-collision pattern, with a
-rescue step first: uncommitted rows under `data/decisions/ledger/` (left
-behind by a run that died between the ledger write and its commit) are
-committed via [commit_ledger_changes()] *before* the stash dance, so
-real-money rows are never carried through a stash (L1) and a dirty ledger
-can never wedge the sync. Returns `TRUE` on a clean fast-forward/rebase,
-`FALSE` on any conflict or error.
+Follows the `.claude/rules/git-hygiene.md` cron-collision pattern, hardened
+for an unattended caller sharing the user's working tree:
 }
 \details{
+* **Entry guards.** Returns `FALSE` (skip the cycle; placement is gated on
+  `sync_ok`) unless `HEAD` is `main` — `git pull --rebase origin main`
+  rebases the *checked-out* branch, so a launchd run firing while a feature
+  branch is checked out would silently rewrite it and land ledger commits
+  off-main. Likewise skips when a rebase or merge is already in progress
+  (a human may be mid-conflict-resolution; never touch their state).
+* **Ledger rescue.** Uncommitted rows under `data/decisions/ledger/` (left
+  behind by a run that died between the ledger write and its commit) are
+  committed via [commit_ledger_changes()] *before* the stash dance, so
+  real-money rows are never carried through a stash (L1) and a dirty
+  ledger can never wedge the sync.
+* **Own-stash discipline.** Pops only the stash entry *this run's* push
+  created (detected via `refs/stash` before/after). A bare `git stash pop`
+  after a no-op push would pop a pre-existing user stash — and a stale
+  ledger parquet inside one would then be auto-committed to the canonical
+  ledger by the next cycle's rescue.
+* **Conflict unwind.** A failed pull aborts the rebase it started, so a
+  conflict degrades to a skipped cycle instead of wedging every
+  subsequent run.
+
 All git calls go through `.git_run()`, which shell-quotes each argument.
 `system2(..., stdout = TRUE)` routes through `sh`, so an unquoted argument
 containing a space — like the stash message here — is split into separate

@@ -49,20 +49,23 @@ test_that("placer and settle wrapper scripts call commit_ledger_changes after su
   }
 })
 
-test_that("placer and settle wrapper scripts propagate commit failure via quit(status = 1)", {
+test_that("the commit-failure branch itself quits with status 1 in every wrapper", {
   for (s in scripts_to_check) {
     path <- here::here(s$file)
     if (!file.exists(path)) next
     src <- paste(readLines(path, warn = FALSE), collapse = "\n")
-    # Permissive match: quit(..., status = 1[L]) anywhere near the
-    # commit failure handling. The combination of "failed =" branch
-    # and quit(...status = 1...) is the contract.
-    has_failed_branch <- grepl("failed\\s*=\\s*\\{", src)
-    has_quit_one <- grepl("quit\\([^)]*status\\s*=\\s*1L?\\)", src)
-    expect_true(
-      has_failed_branch && has_quit_one,
+    # The quit must live INSIDE the `failed = {...}` switch branch. A
+    # whole-file grep was satisfiable by an unrelated quit elsewhere in the
+    # script (auto_place.R has one for sync_failed), letting a
+    # log-and-continue failed branch pass -- the swallowed-commit-failure
+    # regression this file exists to catch. Brace-free branch bodies are a
+    # convention here, so the non-greedy [^}]* capture is exact.
+    branch <- regmatches(src, regexpr("failed\\s*=\\s*\\{[^}]*\\}", src))
+    expect_length(branch, 1L)
+    expect_match(
+      branch, "quit\\([^)]*status\\s*=\\s*1L?\\)",
       info = sprintf(
-        "%s (%s) must handle res$status == \"failed\" with quit(status = 1L)",
+        "%s (%s): the failed = { } branch must itself quit(status = 1L)",
         s$file, s$label
       )
     )
