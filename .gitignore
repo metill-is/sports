@@ -59,3 +59,4 @@ data/backtest/
 # Unattended placer runtime (local only)
 data/.auto_place.lock
 data/AUTO_PLACE_DISABLED
+data/health/placement_status.json

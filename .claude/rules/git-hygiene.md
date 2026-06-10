@@ -15,23 +15,34 @@ canonical record and cannot be reconstructed from anything else in the
 codebase. The generic "data is ephemeral" rule below does **not** apply
 here; the ledger always commits.
 
-Two enforcement layers are active, covering different failure modes:
+Three enforcement layers are active, covering different failure modes:
 
 1. **Script-layer auto-commit** (`R/commit-ledger.R::commit_ledger_changes`).
-   `scripts/place_bets.R` and `scripts/06_settle.R` both call it after a
-   non-zero placement / settlement count. The commit is path-restricted
+   `scripts/place_bets.R`, `scripts/06_settle.R`, and `scripts/auto_place.R`
+   all call it after a run (it is a path-restricted no-op when the ledger is
+   clean). The commit is path-restricted
    (`git commit -- data/decisions/ledger/`) so unrelated working-tree WIP
    is never swept in. On failure the wrappers `quit(status = 1L)` with a
    loud warning rather than continuing.
+   `tests/testthat/test-script-ledger-commit.R` enforces the call in all
+   three wrappers (auto_place.R was missing it when it shipped — the
+   2026-06-10 orphaned-rows incident).
 
-2. **Pre-commit hook** (`tools/git-hooks/pre-commit`). Refuses any commit
+2. **Pre-sync rescue** (`R/auto-place.R::sync_recs`). Before the unattended
+   placer's stash → pull → pop dance, any uncommitted ledger rows (a run
+   that died between the parquet write and its commit) are committed via
+   `commit_ledger_changes()`. Money rows are never carried through a stash,
+   and a dirty ledger can never wedge the 2-hourly sync.
+
+3. **Pre-commit hook** (`tools/git-hooks/pre-commit`). Refuses any commit
    while `data/decisions/ledger/` has unstaged or untracked changes. This
    catches the "next commit on something else silently leaves the ledger
    behind, a later reset destroys it" pattern. One-time activation per
    clone: `bash tools/install-hooks.sh`.
 
 `place_bets()` and `settle_ledger()` themselves never touch git — only the
-script wrappers do. Library callers and the test suite are unaffected.
+script wrappers and `sync_recs()` do. Library callers and the test suite are
+unaffected.
 
 Reference incident: commit 121710d (`data(ledger): restore 6 football
 iceland bets lost in 2026-05-08 git reset`). The placer wrote the rows

@@ -13,6 +13,19 @@ sync_recs(repo_root = here::here())
 Logical scalar.
 }
 \description{
-Follows the `.claude/rules/git-hygiene.md` cron-collision pattern. Returns
-`TRUE` on a clean fast-forward/rebase, `FALSE` on any conflict or error.
+Follows the `.claude/rules/git-hygiene.md` cron-collision pattern, with a
+rescue step first: uncommitted rows under `data/decisions/ledger/` (left
+behind by a run that died between the ledger write and its commit) are
+committed via [commit_ledger_changes()] *before* the stash dance, so
+real-money rows are never carried through a stash (L1) and a dirty ledger
+can never wedge the sync. Returns `TRUE` on a clean fast-forward/rebase,
+`FALSE` on any conflict or error.
+}
+\details{
+All git calls go through `.git_run()`, which shell-quotes each argument.
+`system2(..., stdout = TRUE)` routes through `sh`, so an unquoted argument
+containing a space — like the stash message here — is split into separate
+words: git read `-m auto_place` plus pathspec `sync`, matched nothing,
+silently stashed nothing (exit 0), and every post-placement sync then died
+on the dirty ledger (incident 2026-06-10).
 }

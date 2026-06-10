@@ -1,8 +1,11 @@
 # tests/testthat/test-script-ledger-commit.R
 #
-# Guards that scripts/place_bets.R and scripts/06_settle.R both
+# Guards that scripts/place_bets.R, scripts/06_settle.R, and
+# scripts/auto_place.R all
 #   (a) invoke commit_ledger_changes() after a successful run, and
 #   (b) propagate a commit failure via quit(status = 1L).
+# (auto_place.R was missed when it shipped 2026-06-03; the 2026-06-10
+# orphaned-ledger incident is the regression this list-entry prevents.)
 #
 # Spawning the actual Rscript in a subprocess would be a slow/flaky
 # integration test (heavy devtools::load_all, chromote dep). Static
@@ -19,6 +22,11 @@ scripts_to_check <- list(
   list(
     file = "scripts/06_settle.R",
     label = "settle wrapper",
+    needs_dry_run_guard = FALSE
+  ),
+  list(
+    file = "scripts/auto_place.R",
+    label = "unattended placer wrapper",
     needs_dry_run_guard = FALSE
   )
 )

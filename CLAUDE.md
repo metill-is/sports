@@ -72,6 +72,10 @@ authoritative mapping rather than mirroring them here.
   agent `is.metill.sports.autoplace` (installed by `tools/install-autoplace.sh`).
   Kill switch: `touch data/AUTO_PLACE_DISABLED`. Health: the `placement_health`
   check in `/pipeline-doctor`. Design + plan under `docs/superpowers/`.
+  Like the other ledger-writing wrappers it calls `commit_ledger_changes()`
+  after each run, and `sync_recs()` rescue-commits any ledger rows a crashed
+  run left uncommitted before its stash → pull → pop sync (2026-06-10
+  incident). Run log: `~/Library/Logs/sports-autoplace.log`.
 
 ## Quick reference
 

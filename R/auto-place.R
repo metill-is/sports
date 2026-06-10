@@ -1,4 +1,4 @@
-#' @include config.R storage.R placer-preview.R placer-load.R
+#' @include config.R storage.R placer-preview.R placer-load.R commit-ledger.R
 NULL
 
 #' Is unattended placement disabled by the operator kill switch?
@@ -234,21 +234,35 @@ run_auto_place <- function(root = here::here("data"),
 
 #' Stash-safe `git pull --rebase` so the placer acts on CI's latest recs.
 #'
-#' Follows the `.claude/rules/git-hygiene.md` cron-collision pattern. Returns
-#' `TRUE` on a clean fast-forward/rebase, `FALSE` on any conflict or error.
+#' Follows the `.claude/rules/git-hygiene.md` cron-collision pattern, with a
+#' rescue step first: uncommitted rows under `data/decisions/ledger/` (left
+#' behind by a run that died between the ledger write and its commit) are
+#' committed via [commit_ledger_changes()] *before* the stash dance, so
+#' real-money rows are never carried through a stash (L1) and a dirty ledger
+#' can never wedge the sync. Returns `TRUE` on a clean fast-forward/rebase,
+#' `FALSE` on any conflict or error.
+#'
+#' All git calls go through `.git_run()`, which shell-quotes each argument.
+#' `system2(..., stdout = TRUE)` routes through `sh`, so an unquoted argument
+#' containing a space — like the stash message here — is split into separate
+#' words: git read `-m auto_place` plus pathspec `sync`, matched nothing,
+#' silently stashed nothing (exit 0), and every post-placement sync then died
+#' on the dirty ledger (incident 2026-06-10).
 #' @param repo_root Repository root.
 #' @return Logical scalar.
 #' @export
 sync_recs <- function(repo_root = here::here()) {
-  g <- function(...) {
-    system2("git", c("-C", repo_root, ...), stdout = TRUE, stderr = TRUE)
+  rescue <- commit_ledger_changes(
+    repo_root, "data(ledger): rescue uncommitted rows found at auto-place sync"
+  )
+  if (identical(rescue$status, "failed")) {
+    return(FALSE) # never stash money rows; skip this cycle instead
   }
-  attr_ok <- function(out) is.null(attr(out, "status")) || attr(out, "status") == 0L
-  # Stash-push result is intentionally not gated: a data-only sync never stashes
-  # the local ledger (see git-hygiene.md), so a no-op or failed push is benign.
+  g <- function(...) .git_run(c("-C", repo_root, ...))
+  # Stash-push result is intentionally not gated: with the ledger committed
+  # above, anything stashed is regenerable working-tree state.
   g("stash", "push", "-u", "-m", "auto_place sync")
-  out <- g("pull", "--rebase", "origin", "main")
-  ok <- attr_ok(out)
+  pull <- g("pull", "--rebase", "origin", "main")
   pop <- g("stash", "pop")
-  ok && (attr_ok(pop) || any(grepl("No stash entries", pop)))
+  pull$ok && (pop$ok || any(grepl("No stash entries", pop$lines)))
 }
