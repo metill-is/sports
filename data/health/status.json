@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-06-10T10:55:41Z",
-  "overall": "FAIL",
-  "n_fail": 1,
-  "n_warn": 3,
+  "generated_at": "2026-06-10T21:18:43Z",
+  "overall": "WARN",
+  "n_fail": 0,
+  "n_warn": 2,
   "checks": [
     {
       "check": "fit_freshness",
@@ -35,8 +35,8 @@
     {
       "check": "fit_freshness",
       "scope": "football_iceland male",
-      "status": "WARN",
-      "value": "3d old, results pending fit",
+      "status": "OK",
+      "value": "0d old, current with results",
       "threshold": "<= 2d"
     },
     {
@@ -49,8 +49,8 @@
     {
       "check": "odds_freshness",
       "scope": "football_iceland",
-      "status": "FAIL",
-      "value": "fixture today, no odds scraped",
+      "status": "OK",
+      "value": "odds cover upcoming fixtures (next in 0d)",
       "threshold": "odds for fixtures within 3d"
     },
     {
@@ -71,14 +71,14 @@
       "check": "divergence_drift",
       "scope": "football/iceland/male",
       "status": "OK",
-      "value": "0.000%",
+      "value": "0.250%",
       "threshold": "< 0.5%"
     },
     {
       "check": "rhat_drift",
       "scope": "football/iceland/male",
       "status": "OK",
-      "value": "1.014",
+      "value": "1.008",
       "threshold": "< 1.020"
     },
     {
