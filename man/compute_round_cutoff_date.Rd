@@ -4,7 +4,13 @@
 \alias{compute_round_cutoff_date}
 \title{Compute the cutoff date for a per-round Stan fit.}
 \usage{
-compute_round_cutoff_date(results, season, round_cutoff, top_division = "BD")
+compute_round_cutoff_date(
+  results,
+  season,
+  round_cutoff,
+  top_division = "BD",
+  quiet = FALSE
+)
 }
 \arguments{
 \item{results}{Tibble from `read_table("results")`. Must contain
@@ -16,6 +22,10 @@ compute_round_cutoff_date(results, season, round_cutoff, top_division = "BD")
 
 \item{top_division}{Division code identifying the top flight. Default `"BD"`
 (Besta deild for Icelandic football).}
+
+\item{quiet}{When `TRUE`, suppress the not-complete / no-matches alerts and
+return `NULL` silently. Used by [completed_bd_rounds()], whose probe past
+the last completed round expects `NULL` as its normal terminator.}
 }
 \value{
 Date or NULL.

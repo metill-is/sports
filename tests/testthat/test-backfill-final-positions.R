@@ -94,6 +94,9 @@ test_that("build_round_final_positions stamps as_of/round/division and rows sum 
   )
   expect_true(all(recs$as_of == "2026-05-01"))
   expect_true(all(recs$division == "BD"))
+  # round label = the division's own games-played count (min over its teams):
+  # A and C each played 1, B played 2 -> min = 1.
+  expect_true(all(recs$round == 1L))
   sums <- tapply(recs$probability, recs$team, sum)
   expect_true(all(abs(sums - 1) < 1e-9))
 })

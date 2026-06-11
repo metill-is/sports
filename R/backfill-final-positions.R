@@ -70,5 +70,14 @@ build_round_final_positions <- function(fit, prep, results, season_schedule,
         probability = .data$probability
       )
   })
-  dplyr::bind_rows(rows)
+  # Append a 0-row typed template so the documented 8-column contract holds
+  # even when every division skips (all `rows` are NULL) -- otherwise
+  # bind_rows() of all-NULL yields a 0-column tibble and the driver's
+  # `select(-"division")` would error.
+  empty_recs <- tibble::tibble(
+    as_of = character(), generated_at = character(),
+    round = integer(), season = integer(), division = character(),
+    team = character(), placement = integer(), probability = numeric()
+  )
+  dplyr::bind_rows(c(rows, list(empty_recs)))
 }

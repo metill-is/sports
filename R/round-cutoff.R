@@ -20,13 +20,17 @@ NULL
 #' @param round_cutoff Integer N >= 1: the per-team match count.
 #' @param top_division Division code identifying the top flight. Default `"BD"`
 #'   (Besta deild for Icelandic football).
+#' @param quiet When `TRUE`, suppress the not-complete / no-matches alerts and
+#'   return `NULL` silently. Used by [completed_bd_rounds()], whose probe past
+#'   the last completed round expects `NULL` as its normal terminator.
 #' @return Date or NULL.
 #' @importFrom rlang .data
 #' @export
 compute_round_cutoff_date <- function(results,
                                       season,
                                       round_cutoff,
-                                      top_division = "BD") {
+                                      top_division = "BD",
+                                      quiet = FALSE) {
   stopifnot(is.numeric(round_cutoff), length(round_cutoff) == 1L, round_cutoff >= 1L)
   stopifnot(is.numeric(season), length(season) == 1L)
 
@@ -36,9 +40,11 @@ compute_round_cutoff_date <- function(results,
   ]
 
   if (nrow(td) == 0L) {
-    cli::cli_alert_warning(
-      "No top-division ({top_division}) matches found for season {season}."
-    )
+    if (!quiet) {
+      cli::cli_alert_warning(
+        "No top-division ({top_division}) matches found for season {season}."
+      )
+    }
     return(NULL)
   }
 
@@ -57,13 +63,15 @@ compute_round_cutoff_date <- function(results,
 
   missing_teams <- setdiff(all_teams, nth$team)
   if (length(missing_teams) > 0L) {
-    cli::cli_alert_warning(
-      paste0(
-        "Round {round_cutoff} not complete for season {season}: ",
-        "{length(missing_teams)} team(s) have not yet played their ",
-        "{round_cutoff}th match ({paste(missing_teams, collapse = ', ')})."
+    if (!quiet) {
+      cli::cli_alert_warning(
+        paste0(
+          "Round {round_cutoff} not complete for season {season}: ",
+          "{length(missing_teams)} team(s) have not yet played their ",
+          "{round_cutoff}th match ({paste(missing_teams, collapse = ', ')})."
+        )
       )
-    )
+    }
     return(NULL)
   }
 
@@ -83,7 +91,9 @@ completed_bd_rounds <- function(results, season, top_division = "BD") {
   out <- list()
   r <- 1L
   repeat {
-    d <- compute_round_cutoff_date(results, season, r, top_division)
+    # quiet = TRUE: a NULL return is the normal loop terminator (the next
+    # round simply isn't complete yet), not a condition worth alerting on.
+    d <- compute_round_cutoff_date(results, season, r, top_division, quiet = TRUE)
     if (is.null(d)) break
     out[[length(out) + 1L]] <- tibble::tibble(round = r, cutoff_date = d)
     r <- r + 1L
