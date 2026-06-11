@@ -96,4 +96,5 @@ Collate:
     'replay.R'
     'schedule-active.R'
     'simulate-cup-bracket.R'
+    'simulate-league-season.R'
     'storage-validate.R'
