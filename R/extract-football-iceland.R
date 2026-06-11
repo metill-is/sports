@@ -326,76 +326,11 @@ NULL
   # (~2 rounds) -- a "position after the next ~2 rounds" forecast mislabelled
   # as the final table. See `simulate_league_season()`.
 
-  played <- top_results[
-    !is.na(top_results$home_score) & !is.na(top_results$away_score), ,
-    drop = FALSE
-  ]
-
-  realised <- if (nrow(played) > 0L) {
-    played |>
-      dplyr::mutate(
-        result = dplyr::case_when(
-          .data$home_score > .data$away_score ~ "home",
-          .data$home_score < .data$away_score ~ "away",
-          TRUE ~ "tie"
-        )
-      ) |>
-      tidyr::pivot_longer(c("home_team", "away_team"),
-        names_to = "loc", values_to = "team"
-      ) |>
-      dplyr::mutate(
-        loc = dplyr::if_else(.data$loc == "home_team", "home", "away"),
-        gf = dplyr::if_else(.data$loc == "home", .data$home_score, .data$away_score),
-        ga = dplyr::if_else(.data$loc == "home", .data$away_score, .data$home_score),
-        pts = dplyr::case_when(
-          .data$result == "tie" ~ 1L,
-          .data$result == .data$loc ~ 3L,
-          TRUE ~ 0L
-        )
-      ) |>
-      dplyr::summarise(
-        base_points = as.integer(sum(.data$pts)),
-        base_gf = as.integer(sum(.data$gf)),
-        base_ga = as.integer(sum(.data$ga)),
-        .by = "team"
-      ) |>
-      dplyr::mutate(base_gd = .data$base_gf - .data$base_ga)
-  } else {
-    tibble::tibble(
-      team = character(), base_points = integer(),
-      base_gf = integer(), base_ga = integer(), base_gd = integer()
-    )
-  }
-
-  # Every current-division team belongs in the table even with 0 played games.
-  base_standings <- current_top_teams |>
-    dplyr::left_join(realised, by = "team") |>
-    dplyr::mutate(
-      base_points = dplyr::coalesce(.data$base_points, 0L),
-      base_gf = dplyr::coalesce(.data$base_gf, 0L),
-      base_gd = dplyr::coalesce(.data$base_gd, 0L)
-    ) |>
-    dplyr::select("team", "base_points", "base_gd", "base_gf")
-
-  # Remaining fixtures: this division's scheduled matches not yet played,
-  # deduped on the ordered pair (drops reschedule ghosts; each ordered pair
-  # plays at most once per season), both teams in the current registry.
-  remaining_fixtures <- if (!is.null(season_schedule) && nrow(season_schedule) > 0L) {
-    played_pair <- paste(played$home_team, played$away_team)
-    season_schedule |>
-      dplyr::filter(
-        .data$division == target_div,
-        .data$home_team %in% current_top_teams$team,
-        .data$away_team %in% current_top_teams$team
-      ) |>
-      dplyr::mutate(.pair = paste(.data$home_team, .data$away_team)) |>
-      dplyr::filter(!(.data$.pair %in% played_pair)) |>
-      dplyr::arrange(dplyr::desc(.data$match_date)) |>
-      dplyr::distinct(.data$.pair, .keep_all = TRUE) |>
-      dplyr::select("home_team", "away_team")
-  } else {
-    tibble::tibble(home_team = character(), away_team = character())
-  }
+  br <- .league_base_and_remaining_pfi(
+    top_results, current_top_teams, season_schedule, target_div
+  )
+  base_standings <- br$base_standings
+  remaining_fixtures <- br$remaining_fixtures
 
   has_sim_inputs <- !is.null(sim_inputs) &&
     is.data.frame(sim_inputs$team) && nrow(sim_inputs$team) > 0L
@@ -443,6 +378,81 @@ NULL
       probability = numeric()
     )
   )
+}
+
+# Build the realised league table (points/GD/GF from played matches, every
+# current-division team present) plus the unplayed fixtures (this division's
+# scheduled matches not yet played, deduped on the ordered pair). Shared by the
+# daily extract and the per-round backfill so the two never diverge.
+.league_base_and_remaining_pfi <- function(played, current_top_teams,
+                                           season_schedule, target_div) {
+  played <- played[
+    !is.na(played$home_score) & !is.na(played$away_score), ,
+    drop = FALSE
+  ]
+  realised <- if (nrow(played) > 0L) {
+    played |>
+      dplyr::mutate(
+        result = dplyr::case_when(
+          .data$home_score > .data$away_score ~ "home",
+          .data$home_score < .data$away_score ~ "away",
+          TRUE ~ "tie"
+        )
+      ) |>
+      tidyr::pivot_longer(c("home_team", "away_team"),
+        names_to = "loc", values_to = "team"
+      ) |>
+      dplyr::mutate(
+        loc = dplyr::if_else(.data$loc == "home_team", "home", "away"),
+        gf = dplyr::if_else(.data$loc == "home", .data$home_score, .data$away_score),
+        ga = dplyr::if_else(.data$loc == "home", .data$away_score, .data$home_score),
+        pts = dplyr::case_when(
+          .data$result == "tie" ~ 1L,
+          .data$result == .data$loc ~ 3L,
+          TRUE ~ 0L
+        )
+      ) |>
+      dplyr::summarise(
+        base_points = as.integer(sum(.data$pts)),
+        base_gf = as.integer(sum(.data$gf)),
+        base_ga = as.integer(sum(.data$ga)),
+        .by = "team"
+      ) |>
+      dplyr::mutate(base_gd = .data$base_gf - .data$base_ga)
+  } else {
+    tibble::tibble(
+      team = character(), base_points = integer(),
+      base_gf = integer(), base_ga = integer(), base_gd = integer()
+    )
+  }
+
+  base_standings <- current_top_teams |>
+    dplyr::left_join(realised, by = "team") |>
+    dplyr::mutate(
+      base_points = dplyr::coalesce(.data$base_points, 0L),
+      base_gf = dplyr::coalesce(.data$base_gf, 0L),
+      base_gd = dplyr::coalesce(.data$base_gd, 0L)
+    ) |>
+    dplyr::select("team", "base_points", "base_gd", "base_gf")
+
+  remaining_fixtures <- if (!is.null(season_schedule) && nrow(season_schedule) > 0L) {
+    played_pair <- paste(played$home_team, played$away_team)
+    season_schedule |>
+      dplyr::filter(
+        .data$division == target_div,
+        .data$home_team %in% current_top_teams$team,
+        .data$away_team %in% current_top_teams$team
+      ) |>
+      dplyr::mutate(.pair = paste(.data$home_team, .data$away_team)) |>
+      dplyr::filter(!(.data$.pair %in% played_pair)) |>
+      dplyr::arrange(dplyr::desc(.data$match_date)) |>
+      dplyr::distinct(.data$.pair, .keep_all = TRUE) |>
+      dplyr::select("home_team", "away_team")
+  } else {
+    tibble::tibble(home_team = character(), away_team = character())
+  }
+
+  list(base_standings = base_standings, remaining_fixtures = remaining_fixtures)
 }
 
 # Extract per-draw model parameters needed by the cup bracket simulator.
