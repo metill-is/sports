@@ -1,0 +1,18 @@
+{
+  "tournament": "HM 2026",
+  "sport": "football",
+  "country": "world",
+  "sex": "male",
+  "generated_at": "2026-06-11T13:21:56Z",
+  "fit_date": "2026-06-11",
+  "n_teams": 48,
+  "n_groups": 12,
+  "n_draws": 3000,
+  "matches_played": 0,
+  "matches_group_total": 72,
+  "champion_favourite": {
+    "team": "Argentina",
+    "team_is": "Argentína",
+    "p_champion": 0.1778
+  }
+}

@@ -45,6 +45,16 @@ data/beliefs/fits/
 data/beliefs/fits_by_round/
 .worktrees/
 
+# World Cup: large/regenerable artifacts. Kept out of git:
+#   fit/  — 900MB+ Stan fit + extracted draws (regenerable via scripts/wc/fit.R)
+#   raw/  — bulk international-results CSV (re-downloaded; updates through the tournament)
+#   forecast.html — self-contained render (regenerable via wc_render_html())
+# Tracked: data/wc/structure/ (groups, FIFA Annex-C table, Icelandic names) +
+# data/publish/football/world/ (the JSON data contract metill-platform consumes).
+data/wc/fit/
+data/wc/raw/
+data/wc/forecast.html
+
 # Quarto report renders (regenerable from .qmd; can be multi-MB self-contained HTML)
 docs/reports/*.html
 docs/reports/*_files/
