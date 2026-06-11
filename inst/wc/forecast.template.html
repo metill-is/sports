@@ -83,7 +83,8 @@
   .pins{display:flex;gap:6px;flex-wrap:wrap}
   .pin{background:var(--ink);color:#fff;border-radius:14px;padding:2px 9px;font-size:.74rem;font-weight:600;cursor:pointer}
   .pin::after{content:" ✕";opacity:.6}
-  .bracket-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:10px}
+  .bracket-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:10px;
+    margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);width:100vw;padding-left:10px;padding-right:10px}
   .bracket{position:relative}
   .bracket svg.links{position:absolute;inset:0;pointer-events:none;z-index:0}
   .node{position:absolute;z-index:1;width:148px;transform:translateY(-50%);
@@ -323,16 +324,16 @@ document.getElementById("meta-line").textContent=
   layout(cl,1,"L"); leafCounter=0; layout(cr,1,"R");
   pos[rootI]={depth:0,side:"C",y:(pos[cl].y+pos[cr].y)/2}; // approx centre
   // geometry
-  const colW=164, rowH=46, padX=8, maxDepth=4;
+  const colW=164, rowH=92, padX=8, maxDepth=4;
   const xFor=p=> p.side==="C" ? maxDepth*colW
       : p.side==="L" ? (maxDepth-p.depth)*colW
       : (maxDepth+p.depth)*colW;
-  const height=(leafCounter)*rowH+40, width=(2*maxDepth+1)*colW+padX*2;
+  const height=(leafCounter)*rowH+70, width=(2*maxDepth+1)*colW+padX*2;
   const cont=document.getElementById("bracket");
   cont.style.height=height+"px"; cont.style.width=width+"px";
   const svg=document.createElementNS("http://www.w3.org/2000/svg","svg");
   svg.setAttribute("class","links"); svg.setAttribute("width",width); svg.setAttribute("height",height); cont.appendChild(svg);
-  const yPix=p=>p.y*rowH+28;
+  const yPix=p=>p.y*rowH+50;
 
   let pins={}; // match_no -> teamIdx (forced winner)
   const nodes={};
