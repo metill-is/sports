@@ -99,13 +99,27 @@ publish_world_cup <- function(sim_out, sim_inputs_team, structure, group_fixture
     pr <- pr[order(pr$match_date, pr$group), , drop = FALSE]
     lapply(seq_len(nrow(pr)), function(i) {
       r <- pr[i, ]
-      list(
+      out <- list(
         match_date = as.character(r$match_date), group = r$group,
         home = r$home, home_is = is_name(r$home),
         away = r$away, away_is = is_name(r$away),
         p_home = rnd(r$p_home), p_draw = rnd(r$p_draw), p_away = rnd(r$p_away),
         eg_home = rnd(r$eg_home, 2), eg_away = rnd(r$eg_away, 2)
       )
+      gdd <- if ("goal_diff_distribution" %in% names(pr)) {
+        r$goal_diff_distribution[[1]]
+      }
+      if (!is.null(gdd) && nrow(gdd) > 0L) {
+        if (abs(sum(gdd$p) - 1) > 1e-6) {
+          cli::cli_abort(
+            "publish_world_cup: goal-diff distribution for {r$home} vs {r$away} sums to {sum(gdd$p)}."
+          )
+        }
+        out$goal_diff_distribution <- lapply(seq_len(nrow(gdd)), function(k) {
+          list(diff = as.integer(gdd$diff[k]), p = rnd(gdd$p[k], 4))
+        })
+      }
+      out
     })
   } else {
     list()

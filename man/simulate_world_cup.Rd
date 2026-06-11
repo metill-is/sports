@@ -27,8 +27,11 @@ simulate_world_cup(
 }
 \value{
 List of aggregated views: `group_probs`, `placement_probs` (from the
-  forward bracket model), `predictions`, `performance`, `bracket_model`
-  (win matrix + R32 occupancy + structure for the interactive what-if).
+  forward bracket model), `predictions` (per unplayed fixture: 1X2
+  probabilities, expected goals, and a `goal_diff_distribution` list-column
+  of P(home - away = d) tibbles — the league next_games contract),
+  `performance`, `bracket_model` (win matrix + R32 occupancy + structure
+  for the interactive what-if).
 }
 \description{
 Simulate the World Cup across posterior draws.

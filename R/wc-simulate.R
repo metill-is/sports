@@ -337,8 +337,11 @@ wc_group_fixtures <- function(structure, root = here::here("data")) {
 #' @param structure Output of [wc_structure()].
 #' @param pairing_seed Optional integer for reproducibility.
 #' @return List of aggregated views: `group_probs`, `placement_probs` (from the
-#'   forward bracket model), `predictions`, `performance`, `bracket_model`
-#'   (win matrix + R32 occupancy + structure for the interactive what-if).
+#'   forward bracket model), `predictions` (per unplayed fixture: 1X2
+#'   probabilities, expected goals, and a `goal_diff_distribution` list-column
+#'   of P(home - away = d) tibbles — the league next_games contract),
+#'   `performance`, `bracket_model` (win matrix + R32 occupancy + structure
+#'   for the interactive what-if).
 #' @importFrom rlang .data
 #' @export
 simulate_world_cup <- function(sim_inputs_team, sim_inputs_scalar,
@@ -438,7 +441,14 @@ simulate_world_cup <- function(sim_inputs_team, sim_inputs_scalar,
       p_draw = colMeans(mh_m[, up, drop = FALSE] == mg_m[, up, drop = FALSE]),
       p_away = colMeans(mh_m[, up, drop = FALSE] < mg_m[, up, drop = FALSE]),
       eg_home = colMeans(lh_m[, up, drop = FALSE]),
-      eg_away = colMeans(lg_m[, up, drop = FALSE])
+      eg_away = colMeans(lg_m[, up, drop = FALSE]),
+      # Posterior P(home - away = d) per fixture — the league next_games
+      # contract (see publish-football-iceland.R) so the platform's
+      # fixture-card goal-diff strip renders identically for the WC.
+      goal_diff_distribution = lapply(up, function(f) {
+        tb <- table(mh_m[, f] - mg_m[, f])
+        tibble::tibble(diff = as.integer(names(tb)), p = as.numeric(tb) / nd)
+      })
     )
   }
 
