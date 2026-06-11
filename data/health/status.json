@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-06-10T21:18:43Z",
+  "generated_at": "2026-06-11T15:55:25Z",
   "overall": "WARN",
   "n_fail": 0,
-  "n_warn": 2,
+  "n_warn": 3,
   "checks": [
     {
       "check": "fit_freshness",
@@ -36,21 +36,21 @@
       "check": "fit_freshness",
       "scope": "football_iceland male",
       "status": "OK",
-      "value": "0d old, current with results",
+      "value": "1d old, current with results",
       "threshold": "<= 2d"
     },
     {
       "check": "fit_freshness",
       "scope": "football_iceland female",
       "status": "OK",
-      "value": "3d old, current with results",
+      "value": "0d old, current with results",
       "threshold": "<= 2d"
     },
     {
       "check": "odds_freshness",
       "scope": "football_iceland",
       "status": "OK",
-      "value": "odds cover upcoming fixtures (next in 0d)",
+      "value": "odds cover upcoming fixtures (next in 1d)",
       "threshold": "odds for fixtures within 3d"
     },
     {
@@ -64,21 +64,21 @@
       "check": "rhat_drift",
       "scope": "football/iceland/female",
       "status": "OK",
-      "value": "1.010",
+      "value": "1.009",
       "threshold": "< 1.020"
     },
     {
       "check": "divergence_drift",
       "scope": "football/iceland/male",
       "status": "OK",
-      "value": "0.250%",
+      "value": "0.000%",
       "threshold": "< 0.5%"
     },
     {
       "check": "rhat_drift",
       "scope": "football/iceland/male",
       "status": "OK",
-      "value": "1.008",
+      "value": "1.010",
       "threshold": "< 1.020"
     },
     {
@@ -92,14 +92,14 @@
       "check": "capture_rate",
       "scope": "recommendations",
       "status": "WARN",
-      "value": "30% (17/56 placed)",
+      "value": "34% (20/59 placed)",
       "threshold": ">= 70% placed"
     },
     {
       "check": "placement_health",
       "scope": "auto_place",
-      "status": "OK",
-      "value": "no pending bets",
+      "status": "WARN",
+      "value": "1 pending, auto-place never run",
       "threshold": "healthy run < 14h when pending"
     },
     {
