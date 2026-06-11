@@ -13,6 +13,37 @@ NULL
   }
 }
 
+# Posterior coverage intervals per (team, component) for the platform's
+# strength forest plot — the league team_strengths contract (median/lower/
+# upper at 50/80/95% coverage). Location is fixed to "avg": every WC
+# knockout match is at a neutral venue, so the league's home/away axis
+# does not exist here.
+.wc_strength_records <- function(sim_inputs_team, teams) {
+  sit <- sim_inputs_team[sim_inputs_team$team %in% teams, , drop = FALSE]
+  long <- dplyr::bind_rows(
+    tibble::tibble(
+      team = sit$team, component = "total",
+      value = sit$cur_offense + sit$cur_defense
+    ),
+    tibble::tibble(team = sit$team, component = "offence", value = sit$cur_offense),
+    tibble::tibble(team = sit$team, component = "defence", value = sit$cur_defense)
+  )
+  covs <- c(0.5, 0.8, 0.95)
+  out <- long |>
+    dplyr::reframe(
+      coverage = covs,
+      median = stats::median(.data$value),
+      lower = unname(stats::quantile(.data$value, 0.5 - covs / 2)),
+      upper = unname(stats::quantile(.data$value, 0.5 + covs / 2)),
+      .by = c("team", "component")
+    )
+  bad <- out$lower > out$median | out$median > out$upper
+  if (any(bad)) {
+    cli::cli_abort(".wc_strength_records: non-monotone quantiles for {sum(bad)} row(s).")
+  }
+  out
+}
+
 #' Publish the World Cup forecast JSON contract.
 #'
 #' @param sim_out Output of [simulate_world_cup()].
@@ -165,10 +196,19 @@ publish_world_cup <- function(sim_out, sim_inputs_team, structure, group_fixture
       defence = rnd(r$defence, 3), rating_rank = as.integer(r$rating_rank)
     )
   })
+  strength_records <- .wc_strength_records(sim_inputs_team, teams)
+  records_payload <- lapply(seq_len(nrow(strength_records)), function(i) {
+    r <- strength_records[i, ]
+    list(
+      team = r$team, team_is = is_name(r$team),
+      component = r$component, location = "avg", coverage = r$coverage,
+      median = rnd(r$median, 4), lower = rnd(r$lower, 4), upper = rnd(r$upper, 4)
+    )
+  })
   jsonlite::write_json(
     list(
       generated_at = generated_at, fit_date = as.character(fit_date),
-      teams = strengths_payload
+      teams = strengths_payload, records = records_payload
     ),
     file.path(out_dir, "team_strengths.json"),
     auto_unbox = TRUE, pretty = TRUE
