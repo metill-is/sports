@@ -69,3 +69,27 @@ compute_round_cutoff_date <- function(results,
 
   max(nth$match_date)
 }
+
+#' Enumerate completed top-division rounds with their cutoff dates.
+#'
+#' Walks `round_cutoff = 1, 2, ...` calling [compute_round_cutoff_date()] until
+#' it returns `NULL` (round not yet complete). Returns one row per completed
+#' round.
+#'
+#' @inheritParams compute_round_cutoff_date
+#' @return tibble(`round` int, `cutoff_date` Date), ascending. Empty if none.
+#' @export
+completed_bd_rounds <- function(results, season, top_division = "BD") {
+  out <- list()
+  r <- 1L
+  repeat {
+    d <- compute_round_cutoff_date(results, season, r, top_division)
+    if (is.null(d)) break
+    out[[length(out) + 1L]] <- tibble::tibble(round = r, cutoff_date = d)
+    r <- r + 1L
+  }
+  if (length(out) == 0L) {
+    return(tibble::tibble(round = integer(), cutoff_date = as.Date(character())))
+  }
+  dplyr::bind_rows(out)
+}

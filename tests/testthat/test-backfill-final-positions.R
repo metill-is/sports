@@ -37,3 +37,17 @@ test_that(".league_base_and_remaining_pfi drops reschedule ghosts (same ordered 
   out <- .league_base_and_remaining_pfi(played, ctt, schedule, "BD")
   expect_equal(nrow(out$remaining_fixtures), 1L) # deduped to the later date
 })
+
+test_that("completed_bd_rounds enumerates 1..R_max with ascending cutoff dates", {
+  # 2 BD teams playing 3 synchronised rounds -> 3 completed rounds.
+  results <- tibble::tibble(
+    home_team = c("A", "B", "A"), away_team = c("B", "A", "B"),
+    home_score = c(1L, 1L, 2L), away_score = c(0L, 1L, 1L),
+    division = "BD", season = 2026L,
+    match_date = as.Date(c("2026-04-10", "2026-04-17", "2026-04-24"))
+  )
+  rounds <- completed_bd_rounds(results, season = 2026L)
+  expect_equal(rounds$round, 1:3)
+  expect_true(all(diff(as.integer(rounds$cutoff_date)) > 0))
+  expect_equal(rounds$cutoff_date[1], as.Date("2026-04-10"))
+})
