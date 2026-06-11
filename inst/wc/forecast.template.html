@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="is">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HM 2026 — Spá Metils</title>
+<style>
+  :root{
+    --bg:#faf8f4; --surface:#ffffff; --ink:#1c1c28; --ink-soft:#5b5f6e;
+    --line:#e7e3da; --coral:#e67580; --coral-deep:#d6291f; --amber:#d4941d;
+    --qual:#3f8f74; --qual-soft:#b8d8cc; --shade:#f1ede5; --good:#2f8f5b; --bad:#c0473c;
+    --maxw:1180px;
+    --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+       line-height:1.5;font-size:16px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 20px}
+  h2{font-size:1.4rem;font-weight:800;letter-spacing:-.01em;margin:0 0 4px}
+  .lede{color:var(--ink-soft);margin:0 0 22px;max-width:66ch;font-size:.95rem}
+  section{padding:34px 0;border-bottom:1px solid var(--line)}
+
+  /* hero */
+  header.hero{background:var(--ink);color:#f4f2ee;padding:38px 0 30px}
+  .hero .kicker{font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--coral);font-weight:600;margin:0 0 8px}
+  .hero h1{margin:0;font-size:clamp(1.9rem,4.6vw,3rem);font-weight:800;letter-spacing:-.02em}
+  .hero .sub{margin:10px 0 0;color:#b9b6bf;max-width:62ch;font-size:1rem}
+  .fav{display:flex;align-items:baseline;gap:14px;margin-top:22px;flex-wrap:wrap}
+  .fav .lab{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:#8d8a95}
+  .fav .team{font-size:1.5rem;font-weight:800}
+  .fav .pct{font-size:1.5rem;font-weight:800;color:var(--coral)}
+  .meta-line{margin-top:18px;font-size:.8rem;color:#8d8a95}
+
+  /* champion leaderboard */
+  .board{display:grid;gap:7px}
+  .brow{display:grid;grid-template-columns:26px 1fr;gap:12px;align-items:center}
+  .brow .rk{color:var(--ink-soft);font-variant-numeric:tabular-nums;font-size:.85rem;text-align:right}
+  .bar{position:relative;background:var(--shade);border-radius:6px;height:30px;overflow:hidden}
+  .bar > i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,var(--coral),var(--coral-deep));border-radius:6px}
+  .bar .name{position:absolute;left:11px;top:0;height:30px;display:flex;align-items:center;font-weight:600;font-size:.9rem;z-index:2}
+  .bar .val{position:absolute;right:10px;top:0;height:30px;display:flex;align-items:center;font-variant-numeric:tabular-nums;font-weight:700;font-size:.85rem;z-index:2}
+
+  /* upcoming match cards */
+  .fix-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:13px}
+  .fix{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:12px 14px}
+  .fix .top{display:flex;justify-content:space-between;font-size:.72rem;color:var(--ink-soft);margin-bottom:8px}
+  .fix .teams{display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:600;font-size:.95rem}
+  .fix .teams .xg{font-variant-numeric:tabular-nums;color:var(--ink-soft);font-weight:600;font-size:.82rem}
+  .wdl{display:flex;height:9px;border-radius:5px;overflow:hidden;margin-top:10px;background:var(--shade)}
+  .wdl i{display:block;height:100%}
+  .wdl .h{background:var(--coral-deep)} .wdl .d{background:var(--amber)} .wdl .a{background:var(--ink-soft)}
+  .wdl-lab{display:flex;justify-content:space-between;font-size:.72rem;color:var(--ink-soft);margin-top:4px;font-variant-numeric:tabular-nums}
+
+  /* groups */
+  .groups{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:16px}
+  .gcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 15px}
+  .gcard h3{margin:0 0 4px;font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft)}
+  .gcard h3 b{color:var(--ink);font-size:1rem;letter-spacing:0}
+  .gcard .colhead{display:grid;grid-template-columns:1fr 38px 84px 46px;gap:8px;font-size:.66rem;color:var(--ink-soft);
+                  text-transform:uppercase;letter-spacing:.04em;padding:4px 0 6px;border-bottom:1px solid var(--shade)}
+  .gcard .colhead span:not(:first-child){text-align:right}
+  .grow{display:grid;grid-template-columns:1fr 38px 84px 46px;gap:8px;align-items:center;padding:6px 0}
+  .grow + .grow{border-top:1px solid var(--shade)}
+  .grow .tn{font-weight:600;font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .grow .pp{text-align:right;font-variant-numeric:tabular-nums;font-weight:700;font-size:.9rem}
+  .finish{display:flex;height:9px;border-radius:5px;overflow:hidden;background:var(--shade)}
+  .finish i{display:block;height:100%}
+  .finish .win{background:var(--qual)} .finish .ru{background:var(--qual-soft)}
+  .finish .th{background:var(--amber)} .finish .out{background:#e2ddd3}
+  .grow .adv{text-align:right;font-variant-numeric:tabular-nums;font-size:.84rem;font-weight:700;color:var(--qual)}
+  .ou{font-size:.7rem;font-weight:700;padding:1px 6px;border-radius:10px;margin-left:6px}
+  .ou.pos{background:#e1f0e8;color:var(--good)} .ou.neg{background:#f6e2df;color:var(--bad)}
+  .legend{font-size:.72rem;color:var(--ink-soft);margin-top:14px;display:flex;gap:14px;flex-wrap:wrap}
+  .legend b{display:inline-block;width:10px;height:10px;border-radius:2px;vertical-align:middle;margin-right:4px}
+
+  /* interactive bracket */
+  .bracket-ctl{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+  .bracket-ctl .draws{font-size:.85rem;color:var(--ink-soft);font-variant-numeric:tabular-nums}
+  .bracket-ctl .draws b{color:var(--ink)}
+  .btn{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;
+       padding:6px 12px;font-size:.82rem;font-weight:600;cursor:pointer}
+  .btn:hover{border-color:var(--coral)}
+  .pins{display:flex;gap:6px;flex-wrap:wrap}
+  .pin{background:var(--ink);color:#fff;border-radius:14px;padding:2px 9px;font-size:.74rem;font-weight:600;cursor:pointer}
+  .pin::after{content:" ✕";opacity:.6}
+  .bracket-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:10px}
+  .bracket{position:relative}
+  .bracket svg.links{position:absolute;inset:0;pointer-events:none;z-index:0}
+  .node{position:absolute;z-index:1;width:148px;transform:translateY(-50%);
+        background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:5px 6px;font-size:.78rem}
+  .node .rlabel{font-size:.6rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:3px}
+  .node.champ{border-color:var(--amber);box-shadow:0 0 0 2px #f4e4c4}
+  .cand{display:flex;align-items:center;gap:6px;padding:3px 4px;border-radius:5px;cursor:pointer;position:relative;overflow:hidden}
+  .cand:hover{background:var(--shade)}
+  .cand.pinned{background:var(--ink);color:#fff}
+  .cand .cbar{position:absolute;left:0;top:0;bottom:0;background:#f1d7da;z-index:0;border-radius:5px}
+  .cand.pinned .cbar{background:rgba(255,255,255,.18)}
+  .cand .cn{position:relative;z-index:1;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cand .cp{position:relative;z-index:1;font-variant-numeric:tabular-nums;font-weight:700;font-size:.74rem}
+  .node .empty{color:var(--ink-soft);font-size:.72rem;padding:3px 4px}
+
+  /* heatmap */
+  .heat-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table.heat{border-collapse:collapse;width:100%;min-width:560px;font-size:.86rem}
+  table.heat th{font-weight:600;color:var(--ink-soft);text-align:center;padding:6px 8px;font-size:.72rem;text-transform:uppercase}
+  table.heat th.tcol{text-align:left}
+  table.heat td{text-align:center;padding:0;border:2px solid var(--bg)}
+  table.heat td.tcol{text-align:left;padding:7px 10px;font-weight:600;white-space:nowrap}
+  table.heat .cell{padding:8px 6px;font-variant-numeric:tabular-nums;border-radius:4px}
+
+  footer{padding:28px 0 60px;color:var(--ink-soft);font-size:.84rem}
+  footer p{max-width:72ch;margin:0 0 10px}
+  .tag{display:inline-block;background:var(--shade);border-radius:20px;padding:2px 10px;font-size:.72rem;color:var(--ink-soft);margin-right:6px}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="wrap">
+    <p class="kicker">Heimsmeistaramótið í knattspyrnu · Bandaríkin · Kanada · Mexíkó</p>
+    <h1>HM 2026 — sigurspá</h1>
+    <p class="sub">Bayesísk spá Metils. Líkanið metur sóknar- og varnarstyrk hvers landsliðs út frá
+       landsleikjum síðustu ára og hermir mótið — riðlakeppni og útsláttarkeppni — þúsundir sinna.</p>
+    <div class="fav">
+      <span class="lab">Sigurstranglegast</span>
+      <span class="team" id="fav-team">—</span>
+      <span class="pct" id="fav-pct"></span>
+    </div>
+    <p class="meta-line" id="meta-line"></p>
+  </div>
+</header>
+
+<section><div class="wrap">
+  <h2>Hverjir vinna mótið?</h2>
+  <p class="lede">Líkur hvers liðs á að lyfta bikarnum, úr hermuninni.</p>
+  <div class="board" id="champ-board"></div>
+</div></section>
+
+<section><div class="wrap">
+  <h2>Næstu leikir</h2>
+  <p class="lede">Spá um úrslit komandi riðlaleikja: líkur á heimasigri / jafntefli / útisigri og
+     væntanleg mörk (xG) hvors liðs.</p>
+  <div class="fix-grid" id="fixtures"></div>
+</div></section>
+
+<section><div class="wrap">
+  <h2>Riðlakeppnin — spá um lokastöðu</h2>
+  <p class="lede">Spáð lokastig hvers liðs og líkur á sæti í riðlinum. Græni hlutinn = líkur á að vinna
+     riðilinn eða hafna í 2. sæti; gulur = 3. sæti; grár = falla úr keppni. Þegar leikir hafa verið spilaðir
+     birtist xG og hvort lið standa yfir eða undir væntingum líkansins.</p>
+  <div class="groups" id="groups"></div>
+  <div class="legend">
+    <span><b style="background:var(--qual)"></b>1. sæti</span>
+    <span><b style="background:var(--qual-soft)"></b>2. sæti</span>
+    <span><b style="background:var(--amber)"></b>3. sæti</span>
+    <span><b style="background:#e2ddd3"></b>4. sæti</span>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <h2>Útsláttarkeppnin — hvað ef?</h2>
+  <p class="lede">Útsláttartréð frá 32-liða úrslitum að úrslitaleik. Hver leikur sýnir líklegustu sigurvegarana
+     miðað við spána. <b>Smelltu á lið</b> til að ákveða að það vinni þann leik — þá uppfærast allar líkur
+     niður tréð. Reiknað út frá töflu yfir líkur á sigri í hverjum mögulegum innbyrðis viðureign.</p>
+  <div class="bracket-ctl">
+    <button class="btn" id="reset">Endurstilla</button>
+    <span class="draws" id="scenario"></span>
+    <div class="pins" id="pins"></div>
+  </div>
+  <div class="bracket-scroll"><div class="bracket" id="bracket"></div></div>
+</div></section>
+
+<section><div class="wrap">
+  <h2>Heildaryfirlit</h2>
+  <p class="lede">Líkur allra liða á að ná hverri umferð (uppsafnað). Dekkri reitur = hærri líkur.</p>
+  <div class="heat-wrap"><table class="heat" id="heat"></table></div>
+</div></section>
+
+<footer><div class="wrap">
+  <p><b>Aðferð.</b> Tvíbreytt Poisson-líkan (sama líkan og Metill notar fyrir íslenska boltann) metið á
+     landsleiki frá 2022. Styrkur hvers liðs þróast yfir tíma (random walk), svo nýlegir leikir vega þyngst
+     og matið skerpist eftir því sem á mótið líður. Spáin uppfærist þegar úrslit berast — og þá verður
+     forvitnilegt að sjá hvaða lið standa undir væntingum líkansins og hver ekki.</p>
+  <p><span class="tag">48 lið</span><span class="tag">12 riðlar</span><span class="tag">Bayesísk óvissa</span><span class="tag">Metill</span></p>
+</div></footer>
+
+<script>
+const DATA = __WC_DATA__;
+const pct = (x,dp)=>{ const v = x*100; const s = v.toFixed(dp ?? (v>=9.95?0:1)); return s.replace(".",",")+"%"; };
+const el=(t,c,txt)=>{const e=document.createElement(t); if(c)e.className=c; if(txt!=null)e.textContent=txt; return e;};
+
+/* hero */
+const meta=DATA.meta;
+document.getElementById("fav-team").textContent=meta.champion_favourite.team_is;
+document.getElementById("fav-pct").textContent=pct(meta.champion_favourite.p_champion);
+const dt=new Date(meta.generated_at);
+document.getElementById("meta-line").textContent=
+  `Uppfært ${dt.toLocaleDateString("is-IS",{day:"numeric",month:"long",year:"numeric"})} · ${meta.matches_played} af ${meta.matches_group_total} riðlaleikjum spilaðir · ${meta.n_draws.toLocaleString("is-IS")} hermanir`;
+
+/* champion leaderboard */
+(()=>{
+  const champ=DATA.placements.summary.slice(0,16), cmax=champ[0].p_champion||1, b=document.getElementById("champ-board");
+  champ.forEach((t,i)=>{
+    const row=el("div","brow"); row.appendChild(el("div","rk",i+1));
+    const bar=el("div","bar"); const f=el("i"); f.style.width=Math.max(2,(t.p_champion/cmax)*100)+"%"; bar.appendChild(f);
+    bar.appendChild(el("span","name",t.team_is)); bar.appendChild(el("span","val",pct(t.p_champion)));
+    row.appendChild(bar); b.appendChild(row);
+  });
+})();
+
+/* upcoming fixtures */
+(()=>{
+  const g=document.getElementById("fixtures"); const all=DATA.predictions.matches;
+  if(!all.length){ g.appendChild(el("p","lede","Allir riðlaleikir spilaðir.")); return; }
+  const ms=all.slice(0,12);
+  ms.forEach(m=>{
+    const c=el("div","fix");
+    const top=el("div","top"); top.appendChild(el("span",null,new Date(m.match_date).toLocaleDateString("is-IS",{day:"numeric",month:"short"})));
+    top.appendChild(el("span",null,"Riðill "+m.group)); c.appendChild(top);
+    const tr=el("div","teams");
+    tr.appendChild(el("span",null,m.home_is));
+    tr.appendChild(el("span","xg",`${m.eg_home.toFixed(1).replace(".",",")} – ${m.eg_away.toFixed(1).replace(".",",")}`));
+    tr.appendChild(el("span",null,m.away_is)); c.appendChild(tr);
+    const wdl=el("div","wdl");
+    const ih=el("i","h"); ih.style.width=(m.p_home*100)+"%";
+    const id=el("i","d"); id.style.width=(m.p_draw*100)+"%";
+    const ia=el("i","a"); ia.style.width=(m.p_away*100)+"%";
+    wdl.append(ih,id,ia); c.appendChild(wdl);
+    const lab=el("div","wdl-lab");
+    lab.appendChild(el("span",null,pct(m.p_home))); lab.appendChild(el("span",null,"J "+pct(m.p_draw))); lab.appendChild(el("span",null,pct(m.p_away)));
+    c.appendChild(lab); g.appendChild(c);
+  });
+})();
+
+/* groups: projected final tables + finishing distribution + xG/over-under */
+(()=>{
+  const wrap=document.getElementById("groups");
+  DATA.groups.groups.forEach(grp=>{
+    const card=el("div","gcard");
+    const h=el("h3"); h.innerHTML=`Riðill <b>${grp.group}</b>`; card.appendChild(h);
+    const anyPlayed=grp.teams.some(t=>t.played>0);
+    const ch=el("div","colhead");
+    ch.appendChild(el("span",null,"Lið")); ch.appendChild(el("span",null,"Sp.")); ch.appendChild(el("span",null,"Sæti")); ch.appendChild(el("span",null,"Áfr."));
+    card.appendChild(ch);
+    grp.teams.forEach(t=>{
+      const r=el("div","grow");
+      const tn=el("div","tn"); tn.textContent=t.team_is;
+      if(anyPlayed && t.played>0){
+        const ou=t.ou_pts; const chip=el("span","ou "+(ou>=0?"pos":"neg"), (ou>=0?"+":"")+ou.toFixed(1).replace(".",",")); chip.title="Yfir/undir væntum stigum (xP)"; tn.appendChild(chip);
+      }
+      r.appendChild(tn);
+      r.appendChild(el("div","pp",t.proj_points.toFixed(1).replace(".",",")));
+      const fin=el("div","finish");
+      [["win",t.p_first],["ru",t.p_second],["th",t.p_third],["out",t.p_fourth]].forEach(([cls,p])=>{const i=el("i",cls); i.style.width=(p*100)+"%"; fin.appendChild(i);});
+      const fwrap=el("div"); fwrap.appendChild(fin); r.appendChild(fwrap);
+      r.appendChild(el("div","adv",pct(t.p_advance)));
+      card.appendChild(r);
+    });
+    wrap.appendChild(card);
+  });
+})();
+
+/* placement heatmap */
+(()=>{
+  const rounds=[["R16","16"],["QF","8"],["SF","undanúrsl."],["Final","úrslit"],["Champion","meistari"]];
+  const byTeam={}; DATA.placements.records.forEach(r=>{ (byTeam[r.team]??={}).team_is=r.team_is; byTeam[r.team][r.round_name]=r.probability; });
+  const top=DATA.placements.summary.slice(0,16).map(s=>s.team);
+  const heat=document.getElementById("heat");
+  const thead=el("thead"); const htr=el("tr"); htr.appendChild(el("th","tcol","Lið")); rounds.forEach(r=>htr.appendChild(el("th",null,r[1]))); thead.appendChild(htr); heat.appendChild(thead);
+  const tb=el("tbody");
+  top.forEach(team=>{ const tr=el("tr"); tr.appendChild(el("td","tcol",byTeam[team].team_is));
+    rounds.forEach(r=>{ const p=byTeam[team][r[0]]??0; const td=el("td"); const c=el("div","cell",pct(p)); const a=Math.pow(p,.6);
+      c.style.background=`rgba(214,41,31,${(a*.85).toFixed(3)})`; if(a>.55)c.style.color="#fff"; td.appendChild(c); tr.appendChild(td); });
+    tb.appendChild(tr); });
+  heat.appendChild(tb);
+})();
+
+/* ===== interactive what-if bracket ===== */
+(()=>{
+  const B=DATA.bracket, teams=B.teams_is, M=B.matches, W=B.matchup, nt=teams.length;
+  const roundOf={}; M.forEach(m=>roundOf[m.match_no]=m.round);
+  const occByMatch={};
+  B.r32.forEach(r=>{ const a=new Float64Array(nt), b=new Float64Array(nt);
+    r.a.forEach(e=>a[e.i]=e.p); r.b.forEach(e=>b[e.i]=e.p); occByMatch[r.match_no]={a,b}; });
+  // Forward-propagate the bracket. winner[match_no] = P(team wins that match)
+  // given the slot distributions feeding it and the head-to-head matrix W.
+  function propagate(pins){
+    const winner={}; let scenarioP=1;
+    for(const m of M){
+      let dA,dB;
+      if(m.round==="R32"){ const o=occByMatch[m.match_no]; dA=o.a; dB=o.b; }
+      else { dA=winner[+m.feeder_a.slice(1)]; dB=winner[+m.feeder_b.slice(1)]; }
+      const nzA=[],nzB=[];
+      for(let t=0;t<nt;t++){ if(dA[t]>1e-9)nzA.push(t); if(dB[t]>1e-9)nzB.push(t); }
+      const cand=new Set([...nzA,...nzB]); const wd=new Float64Array(nt);
+      cand.forEach(t=>{ let sB=0,sA=0; const Wt=W[t];
+        for(const o of nzB) if(o!==t) sB+=dB[o]*Wt[o];
+        for(const o of nzA) if(o!==t) sA+=dA[o]*Wt[o];
+        wd[t]=dA[t]*sB+dB[t]*sA; });
+      // renormalise: feeder distributions can overlap, so the excluded
+      // self-play mass leaves a leak (standard bracket-independence fix).
+      let sw=0; for(let t=0;t<nt;t++) sw+=wd[t];
+      if(sw>0) for(let t=0;t<nt;t++) wd[t]/=sw;
+      const pin=pins[m.match_no];
+      if(pin!=null){ scenarioP*=(wd[pin]||0); const d=new Float64Array(nt); d[pin]=1; winner[m.match_no]=d; }
+      else winner[m.match_no]=wd;
+    }
+    return {winner, scenarioP};
+  }
+  const mIndex={}; M.forEach((m,i)=>mIndex[m.match_no]=i);
+  // build tree: children of a match = its W-feeders
+  const childrenOf=i=>["feeder_a","feeder_b"].map(k=>{const f=M[i][k]; return f[0]==="W"?mIndex[+f.slice(1)]:null;});
+  const rootI=mIndex[104];
+  // assign leaves order (in-order) for vertical layout, and side (left/right)
+  let leafCounter=0; const pos={};
+  function layout(i,depth,side){
+    const [l,r]=childrenOf(i);
+    if(l==null){ pos[i]={depth,side,y:leafCounter++}; return pos[i].y; }
+    const yl=layout(l,depth+1,side), yr=layout(r,depth+1,side);
+    pos[i]={depth,side,y:(yl+yr)/2}; return pos[i].y;
+  }
+  // root's two children define left/right halves
+  const [cl,cr]=childrenOf(rootI);
+  layout(cl,1,"L"); leafCounter=0; layout(cr,1,"R");
+  pos[rootI]={depth:0,side:"C",y:(pos[cl].y+pos[cr].y)/2}; // approx centre
+  // geometry
+  const colW=164, rowH=46, padX=8, maxDepth=4;
+  const xFor=p=> p.side==="C" ? maxDepth*colW
+      : p.side==="L" ? (maxDepth-p.depth)*colW
+      : (maxDepth+p.depth)*colW;
+  const height=(leafCounter)*rowH+40, width=(2*maxDepth+1)*colW+padX*2;
+  const cont=document.getElementById("bracket");
+  cont.style.height=height+"px"; cont.style.width=width+"px";
+  const svg=document.createElementNS("http://www.w3.org/2000/svg","svg");
+  svg.setAttribute("class","links"); svg.setAttribute("width",width); svg.setAttribute("height",height); cont.appendChild(svg);
+  const yPix=p=>p.y*rowH+28;
+
+  let pins={}; // match_no -> teamIdx (forced winner)
+  const nodes={};
+  const RL={R32:"32-liða",R16:"16-liða",QF:"8-liða",SF:"undanúrslit",Final:"úrslit"};
+  function render(){
+    const {winner, scenarioP}=propagate(pins);
+    const npins=Object.keys(pins).length;
+    document.getElementById("scenario").textContent =
+      npins ? `Líkur á þessari atburðarás: ${scenarioP<0.001?"<0,1%":pct(scenarioP)}` : "";
+    const pe=document.getElementById("pins"); pe.innerHTML="";
+    Object.entries(pins).forEach(([mno,t])=>{ const p=el("span","pin",`${RL[roundOf[mno]]}: ${teams[t]}`);
+      p.onclick=()=>{delete pins[mno]; render();}; pe.appendChild(p); });
+    M.forEach(m=>{
+      const node=nodes[mIndex[m.match_no]]; node.querySelectorAll(".cand,.empty").forEach(e=>e.remove());
+      const wd=winner[m.match_no]; const top=[];
+      for(let t=0;t<nt;t++) if(wd[t]>0.001) top.push([t,wd[t]]);
+      top.sort((a,b)=>b[1]-a[1]);
+      const show=top.slice(0,3);
+      if(!show.length){ node.appendChild(el("div","empty","—")); return; }
+      show.forEach(([t,p])=>{
+        const c=el("div","cand"+(pins[m.match_no]===t?" pinned":""));
+        const bar=el("div","cbar"); bar.style.width=(p*100)+"%"; c.appendChild(bar);
+        c.appendChild(el("div","cn",teams[t])); c.appendChild(el("div","cp",pct(p)));
+        c.onclick=()=>{ if(pins[m.match_no]===t) delete pins[m.match_no]; else pins[m.match_no]=t; render(); };
+        node.appendChild(c);
+      });
+    });
+  }
+
+  // create nodes + links
+  M.forEach((m,mi)=>{
+    const p=pos[mi]; const node=el("div","node"+(m.match_no===104?" champ":""));
+    node.style.left=(xFor(p)+padX)+"px"; node.style.top=yPix(p)+"px";
+    const rl={R32:"32-liða",R16:"16-liða",QF:"8-liða",SF:"undanúrslit",Final:"ÚRSLIT"}[m.round];
+    node.appendChild(el("div","rlabel",rl));
+    cont.appendChild(node); nodes[mi]=node;
+    const [l,r]=childrenOf(mi);
+    [l,r].forEach(ci=>{ if(ci==null)return; const cp=pos[ci];
+      const x1=xFor(cp)+padX+(cp.side==="R"?0:148), y1=yPix(cp);
+      const x2=xFor(p)+padX+(p.side==="R"?148:0), y2=yPix(p);
+      const ln=document.createElementNS("http://www.w3.org/2000/svg","path");
+      const mx=(x1+x2)/2; ln.setAttribute("d",`M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`);
+      ln.setAttribute("fill","none"); ln.setAttribute("stroke","#d9d4ca"); ln.setAttribute("stroke-width","1.5"); svg.appendChild(ln);
+    });
+  });
+  document.getElementById("reset").onclick=()=>{ pins={}; render(); };
+  render();
+})();
+</script>
+</body>
+</html>

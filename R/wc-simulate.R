@@ -1,0 +1,507 @@
+#' @include wc-structure.R
+NULL
+
+# World Cup tournament simulator.
+#
+# Group stage: for each posterior draw, play the 12 round-robins (played matches
+# fixed, unplayed simulated), rank, pick the 8 best thirds, allocate them to the
+# Round-of-32 via the FIFA Annex-C table. This yields, per draw, who fills each
+# of the 32 knockout entry slots.
+#
+# Knockout: a forward "bracket model". From the posterior we form a 48x48
+# head-to-head win matrix W[a,b] = P(a beats b) in one neutral knockout match,
+# and the R32 slot-occupancy (P each team fills each entry). The bracket is then
+# propagated forward round by round. This is light, smooth, and supports
+# client-side what-if (pin a winner -> re-propagate). It is the standard
+# bracket-independence approximation: each round uses marginal matchup odds, so
+# it slightly understates favourites' deep runs vs full-joint conditioning.
+#
+# Win-probability shortcut: under the trivariate-reduction bivariate Poisson the
+# shared component cancels in the margin (g_a - g_b = X1 - X2), so P(a beats b)
+# is a Skellam (difference-of-Poissons) probability of the two independent rates
+# exp(mu_a), exp(mu_b) and does not depend on the correlation parameter.
+
+# ---- Match-level primitives (group stage) ----------------------------------
+
+.wc_match_lambdas <- function(home, away, venue,
+                              off, def, ha_off, ha_def, mlg, amu3, bmu3) {
+  off_h <- off[[home]]
+  def_h <- def[[home]]
+  off_a <- off[[away]]
+  def_a <- def[[away]]
+  if (identical(venue, "home")) {
+    off_h <- off_h + ha_off[[home]]
+    def_h <- def_h + ha_def[[home]]
+  } else if (identical(venue, "away")) {
+    off_a <- off_a + ha_off[[away]]
+    def_a <- def_a + ha_def[[away]]
+  }
+  mu_h <- mlg + off_h - def_a
+  mu_a <- mlg + off_a - def_h
+  strength_diff <- abs(off_h + def_h - off_a - def_a)
+  logit_rho <- amu3 + bmu3 * strength_diff
+  mu3 <- stats::plogis(logit_rho, log.p = TRUE) + 0.5 * (mu_h + mu_a)
+  c(exp(mu_h), exp(mu_a), exp(mu3))
+}
+
+.wc_rbvpois <- function(l) {
+  x3 <- stats::rpois(1L, l[3])
+  c(stats::rpois(1L, l[1]) + x3, stats::rpois(1L, l[2]) + x3)
+}
+
+# Elementwise P(X1 > X2) for X1 ~ Pois(la), X2 ~ Pois(lb); la, lb matrices.
+.wc_skellam_pwin <- function(la, lb, kmax = 20L) {
+  P <- matrix(0, nrow(la), ncol(la))
+  for (k in 0:kmax) P <- P + stats::dpois(k, lb) * (1 - stats::ppois(k, la))
+  P
+}
+
+# ---- Group table -----------------------------------------------------------
+
+.wc_group_table <- function(group_teams, matches) {
+  pts <- stats::setNames(numeric(length(group_teams)), group_teams)
+  gf <- pts
+  ga <- pts
+  for (i in seq_len(nrow(matches))) {
+    h <- matches$home_team[i]
+    a <- matches$away_team[i]
+    hs <- matches$home_score[i]
+    as_ <- matches$away_score[i]
+    gf[h] <- gf[h] + hs
+    ga[h] <- ga[h] + as_
+    gf[a] <- gf[a] + as_
+    ga[a] <- ga[a] + hs
+    if (hs > as_) {
+      pts[h] <- pts[h] + 3
+    } else if (as_ > hs) {
+      pts[a] <- pts[a] + 3
+    } else {
+      pts[h] <- pts[h] + 1
+      pts[a] <- pts[a] + 1
+    }
+  }
+  gd <- gf - ga
+  ord <- order(-pts, -gd, -gf, stats::runif(length(group_teams)))
+  ranked <- group_teams[ord]
+  tibble::tibble(
+    team = ranked, rank = seq_along(ranked),
+    pts = unname(pts[ranked]), gd = unname(gd[ranked]), gf = unname(gf[ranked])
+  )
+}
+
+# ---- Best-third allocation -------------------------------------------------
+
+.wc_allocate_thirds <- function(qual_groups, structure) {
+  combo <- paste(sort(qual_groups), collapse = "")
+  ta <- structure$third_allocation
+  if (!is.null(ta)) {
+    row <- ta[ta$combo == combo, , drop = FALSE]
+    if (nrow(row) == 1L) {
+      slots <- as.character(structure$third_slots$match_no)
+      return(stats::setNames(
+        lapply(slots, function(m) row[[paste0("m", m)]]), slots
+      ))
+    }
+  }
+  .wc_bipartite_thirds(qual_groups, structure$third_slots)
+}
+
+.wc_bipartite_thirds <- function(qual_groups, third_slots) {
+  slots <- as.character(third_slots$match_no)
+  elig <- stats::setNames(third_slots$eligible, slots)
+  cand <- lapply(slots, function(s) intersect(elig[[s]], qual_groups))
+  names(cand) <- slots
+  ord <- slots[order(lengths(cand))]
+  assignment <- stats::setNames(rep(NA_character_, length(slots)), slots)
+  used <- character(0)
+  rec <- function(i) {
+    if (i > length(ord)) {
+      return(TRUE)
+    }
+    s <- ord[i]
+    for (g in cand[[s]]) {
+      if (!(g %in% used)) {
+        assignment[[s]] <<- g
+        used <<- c(used, g)
+        if (rec(i + 1L)) {
+          return(TRUE)
+        }
+        used <<- setdiff(used, g)
+        assignment[[s]] <<- NA_character_
+      }
+    }
+    FALSE
+  }
+  if (!rec(1L)) {
+    cli::cli_abort("No valid third-placed assignment for combo {paste(sort(qual_groups), collapse = '')}.")
+  }
+  as.list(assignment)
+}
+
+# ---- Forward bracket model -------------------------------------------------
+
+#' Propagate the knockout bracket forward from a win matrix + R32 occupancy.
+#'
+#' @param W `nt x nt` win matrix; `W[a, b]` = P(a beats b) in one neutral
+#'   knockout match (rows/cols indexed by team, 1..nt).
+#' @param occ_a,occ_b `16 x nt` matrices; row i = the team-occupancy of slot
+#'   a / b of the i-th Round-of-32 match (in `bracket` order).
+#' @param bracket The `structure$bracket` tibble (31 rows, ordered R32->Final).
+#' @param teams Character vector of team names (length nt).
+#' @param pins Optional named list `match_no -> team index` forcing a winner.
+#' @return List: `placement` (tibble team/round_name/probability, cumulative),
+#'   `reach` (per-round occupancy), `winner` (per-match winner distribution).
+#' @export
+wc_forward_bracket <- function(W, occ_a, occ_b, bracket, teams, pins = list()) {
+  nt <- length(teams)
+  Wm <- W
+  diag(Wm) <- 0
+  rounds <- c("R32", "R16", "QF", "SF", "Final")
+  reach <- stats::setNames(lapply(rounds, function(.) numeric(nt)), rounds)
+  winner <- vector("list", max(bracket$match_no))
+  r32_i <- 0L
+  for (i in seq_len(nrow(bracket))) {
+    m <- bracket$match_no[i]
+    r <- bracket$round[i]
+    if (r == "R32") {
+      r32_i <- r32_i + 1L
+      dA <- occ_a[r32_i, ]
+      dB <- occ_b[r32_i, ]
+    } else {
+      dA <- winner[[as.integer(sub("W", "", bracket$feeder_a[i]))]]
+      dB <- winner[[as.integer(sub("W", "", bracket$feeder_b[i]))]]
+    }
+    reach[[r]] <- reach[[r]] + dA + dB
+    # P(t wins) = P(t in A)*P(beats B's team) + P(t in B)*P(beats A's team),
+    # diag(Wm)=0 excludes the impossible t-vs-t. The two feeder distributions can
+    # overlap (a team can reach a deep match from either half), so the excluded
+    # self-play mass leaves a leak; renormalise to redistribute it (standard
+    # bracket-independence treatment).
+    wd <- dA * as.vector(Wm %*% dB) + dB * as.vector(Wm %*% dA)
+    sw <- sum(wd)
+    if (sw > 0) wd <- wd / sw
+    pin <- pins[[as.character(m)]]
+    if (!is.null(pin)) {
+      wd <- numeric(nt)
+      wd[pin] <- 1
+    }
+    winner[[m]] <- wd
+  }
+  final_m <- bracket$match_no[bracket$round == "Final"]
+  champ <- winner[[final_m]]
+
+  placement <- do.call(rbind, c(
+    lapply(rounds, function(r) {
+      tibble::tibble(team = teams, round_name = r, probability = reach[[r]])
+    }),
+    list(tibble::tibble(team = teams, round_name = "Champion", probability = champ))
+  ))
+  placement$round_name <- factor(placement$round_name,
+    levels = c(rounds, "Champion")
+  )
+  placement <- placement[order(placement$team, placement$round_name), ]
+  list(placement = tibble::as_tibble(placement), reach = reach, winner = winner)
+}
+
+# ---- One-draw group + R32 seeding ------------------------------------------
+
+.wc_sim_one_draw <- function(off, def, ha_off, ha_def, mlg, amu3, bmu3, ctx) {
+  fx <- ctx$fixtures
+  nf <- nrow(fx)
+  lh <- numeric(nf)
+  lg <- numeric(nf)
+  mh <- integer(nf)
+  mg <- integer(nf)
+  gh <- integer(nf)
+  ga <- integer(nf)
+  for (i in seq_len(nf)) {
+    l <- .wc_match_lambdas(
+      fx$home_team[i], fx$away_team[i], fx$venue[i],
+      off, def, ha_off, ha_def, mlg, amu3, bmu3
+    )
+    lh[i] <- l[1]
+    lg[i] <- l[2]
+    s <- .wc_rbvpois(l)
+    mh[i] <- s[1]
+    mg[i] <- s[2]
+    if (fx$played[i]) {
+      gh[i] <- fx$home_score[i]
+      ga[i] <- fx$away_score[i]
+    } else {
+      gh[i] <- s[1]
+      ga[i] <- s[2]
+    }
+  }
+
+  teams <- ctx$teams
+  finish <- stats::setNames(integer(length(teams)), teams)
+  pts <- stats::setNames(numeric(length(teams)), teams)
+  tgf <- pts
+  tga <- pts
+  winners <- character(0)
+  runners <- character(0)
+  third_rows <- vector("list", length(ctx$groups))
+  names(third_rows) <- names(ctx$groups)
+  for (g in names(ctx$groups)) {
+    sel <- ctx$fix_group_idx[[g]]
+    gm <- tibble::tibble(
+      home_team = fx$home_team[sel], away_team = fx$away_team[sel],
+      home_score = gh[sel], away_score = ga[sel]
+    )
+    tbl <- .wc_group_table(ctx$groups[[g]], gm)
+    finish[tbl$team] <- tbl$rank
+    pts[tbl$team] <- tbl$pts
+    tgf[tbl$team] <- tbl$gf
+    tga[tbl$team] <- tbl$gf - tbl$gd
+    winners[[g]] <- tbl$team[1]
+    runners[[g]] <- tbl$team[2]
+    tr <- tbl[3, , drop = FALSE]
+    tr$group <- g
+    third_rows[[g]] <- tr
+  }
+
+  thirds_df <- do.call(rbind, third_rows)
+  ord <- order(-thirds_df$pts, -thirds_df$gd, -thirds_df$gf, stats::runif(nrow(thirds_df)))
+  thirds_df <- thirds_df[ord, , drop = FALSE]
+  qualifying <- thirds_df[1:8, , drop = FALSE]
+  third_team_of_group <- stats::setNames(thirds_df$team, thirds_df$group)
+  alloc <- .wc_allocate_thirds(qualifying$group, structure = list(
+    third_allocation = ctx$third_allocation, third_slots = ctx$third_slots
+  ))
+  resolve_slot <- function(slot) {
+    tag <- substr(slot, 1L, 1L)
+    if (tag == "1") {
+      winners[[substr(slot, 2L, 2L)]]
+    } else if (tag == "2") {
+      runners[[substr(slot, 2L, 2L)]]
+    } else {
+      third_team_of_group[[alloc[[substr(slot, 3L, nchar(slot))]]]]
+    }
+  }
+
+  # Resolve the 16 Round-of-32 matchups (bracket rows where round == "R32").
+  r32 <- ctx$bracket[ctx$bracket$round == "R32", , drop = FALSE]
+  r32_a <- vapply(r32$feeder_a, function(f) ctx$tidx[[resolve_slot(f)]], integer(1))
+  r32_b <- vapply(r32$feeder_b, function(f) ctx$tidx[[resolve_slot(f)]], integer(1))
+
+  list(
+    finish = finish[teams], pts = pts[teams], gf = tgf[teams], ga = tga[teams],
+    lh = lh, lg = lg, mh = mh, mg = mg,
+    r32_a = unname(r32_a), r32_b = unname(r32_b),
+    off = unname(off[teams]), def = unname(def[teams])
+  )
+}
+
+# ---- Public API ------------------------------------------------------------
+
+#' Build the 72 group-stage fixtures from the facts store.
+#'
+#' @param structure Output of [wc_structure()].
+#' @param root Data root.
+#' @return Tibble: `group`, `home_team`, `away_team`, `home_score`,
+#'   `away_score`, `played`, `venue`, `match_date`.
+#' @export
+wc_group_fixtures <- function(structure, root = here::here("data")) {
+  flt <- list(sport = "football", country = "world", sex = "male")
+  res <- read_table("results", root = root, filter = flt)
+  res <- res[res$division == "FIFA World Cup" & res$season == 2026L, , drop = FALSE]
+  sch <- read_table("schedules", root = root, filter = flt)
+  sch <- sch[sch$division == "FIFA World Cup" & sch$season == 2026L, , drop = FALSE]
+
+  played <- tibble::tibble(
+    match_date = res$match_date, home_team = res$home_team, away_team = res$away_team,
+    home_score = res$home_score, away_score = res$away_score, played = TRUE
+  )
+  upcoming <- tibble::tibble(
+    match_date = sch$match_date, home_team = sch$home_team, away_team = sch$away_team,
+    home_score = NA_integer_, away_score = NA_integer_, played = FALSE
+  )
+  fx <- rbind(played, upcoming)
+  fx$group <- structure$group_of[fx$home_team]
+  away_group <- structure$group_of[fx$away_team]
+  fx <- fx[!is.na(fx$group) & !is.na(away_group) & fx$group == away_group, , drop = FALSE]
+  fx$venue <- ifelse(fx$home_team %in% structure$hosts, "home",
+    ifelse(fx$away_team %in% structure$hosts, "away", "neutral")
+  )
+  fx <- fx[order(fx$match_date, fx$group), , drop = FALSE]
+  fx
+}
+
+#' Simulate the World Cup across posterior draws.
+#'
+#' @param sim_inputs_team Tibble with `team`, `.draw`, `cur_offense`,
+#'   `cur_defense`, `home_advantage_off`, `home_advantage_def`.
+#' @param sim_inputs_scalar Tibble with `.draw`, `mean_log_goals`, `alpha_mu3`,
+#'   `beta_mu3_strength_diff`.
+#' @param group_fixtures Output of [wc_group_fixtures()].
+#' @param structure Output of [wc_structure()].
+#' @param pairing_seed Optional integer for reproducibility.
+#' @return List of aggregated views: `group_probs`, `placement_probs` (from the
+#'   forward bracket model), `predictions`, `performance`, `bracket_model`
+#'   (win matrix + R32 occupancy + structure for the interactive what-if).
+#' @importFrom rlang .data
+#' @export
+simulate_world_cup <- function(sim_inputs_team, sim_inputs_scalar,
+                               group_fixtures, structure, pairing_seed = NULL) {
+  if (!is.null(pairing_seed)) set.seed(pairing_seed)
+
+  teams <- unlist(structure$groups, use.names = FALSE)
+  tidx <- stats::setNames(seq_along(teams), teams)
+  nt <- length(teams)
+  ctx <- list(
+    teams = teams, tidx = tidx, groups = structure$groups,
+    group_of = structure$group_of, fixtures = group_fixtures,
+    fix_group_idx = split(seq_len(nrow(group_fixtures)), group_fixtures$group),
+    bracket = structure$bracket, third_slots = structure$third_slots,
+    third_allocation = structure$third_allocation
+  )
+
+  sit <- sim_inputs_team[sim_inputs_team$team %in% teams, , drop = FALSE]
+  draws_team <- split(sit, sit$.draw)
+  draws_scalar <- split(sim_inputs_scalar, sim_inputs_scalar$.draw)
+  keys <- intersect(names(draws_team), names(draws_scalar))
+  if (length(keys) == 0L) cli::cli_abort("simulate_world_cup: no overlapping .draw keys.")
+  nd <- length(keys)
+  nf <- nrow(group_fixtures)
+
+  finish_m <- matrix(0L, nd, nt)
+  pts_m <- matrix(0, nd, nt)
+  gf_m <- matrix(0, nd, nt)
+  ga_m <- matrix(0, nd, nt)
+  lh_m <- matrix(0, nd, nf)
+  lg_m <- matrix(0, nd, nf)
+  mh_m <- matrix(0L, nd, nf)
+  mg_m <- matrix(0L, nd, nf)
+  r32a_m <- matrix(0L, nd, 16L)
+  r32b_m <- matrix(0L, nd, 16L)
+  w_sum <- matrix(0, nt, nt)
+
+  for (i in seq_along(keys)) {
+    dt <- draws_team[[keys[i]]]
+    off <- stats::setNames(dt$cur_offense, dt$team)
+    def <- stats::setNames(dt$cur_defense, dt$team)
+    ha_off <- stats::setNames(dt$home_advantage_off, dt$team)
+    ha_def <- stats::setNames(dt$home_advantage_def, dt$team)
+    ds <- draws_scalar[[keys[i]]]
+    r <- .wc_sim_one_draw(
+      off, def, ha_off, ha_def,
+      ds$mean_log_goals, ds$alpha_mu3, ds$beta_mu3_strength_diff, ctx
+    )
+    finish_m[i, ] <- r$finish
+    pts_m[i, ] <- r$pts
+    gf_m[i, ] <- r$gf
+    ga_m[i, ] <- r$ga
+    lh_m[i, ] <- r$lh
+    lg_m[i, ] <- r$lg
+    mh_m[i, ] <- r$mh
+    mg_m[i, ] <- r$mg
+    r32a_m[i, ] <- r$r32_a
+    r32b_m[i, ] <- r$r32_b
+    # neutral-venue win matrix contribution (Skellam; correlation cancels)
+    l1 <- exp(ds$mean_log_goals + outer(r$off, r$def, "-"))
+    pw <- .wc_skellam_pwin(l1, t(l1))
+    denom <- pw + t(pw)
+    cw <- pw / denom
+    cw[!is.finite(cw)] <- 0.5
+    w_sum <- w_sum + cw
+  }
+  W <- w_sum / nd
+
+  # R32 slot occupancy (16 matches x nt)
+  occ_a <- matrix(0, 16L, nt)
+  occ_b <- matrix(0, 16L, nt)
+  for (m in 1:16) {
+    occ_a[m, ] <- tabulate(r32a_m[, m], nbins = nt) / nd
+    occ_b[m, ] <- tabulate(r32b_m[, m], nbins = nt) / nd
+  }
+
+  fwd <- wc_forward_bracket(W, occ_a, occ_b, structure$bracket, teams)
+  reach_r32 <- fwd$reach$R32
+
+  group_probs <- tibble::tibble(
+    team = teams,
+    group = unname(structure$group_of[teams]),
+    p_first = colMeans(finish_m == 1L), p_second = colMeans(finish_m == 2L),
+    p_third = colMeans(finish_m == 3L), p_fourth = colMeans(finish_m == 4L),
+    p_advance = reach_r32,
+    proj_points = colMeans(pts_m), proj_gf = colMeans(gf_m), proj_ga = colMeans(ga_m)
+  )
+
+  # ---- upcoming-match predictions (unplayed fixtures) ----
+  up <- which(!group_fixtures$played)
+  predictions <- NULL
+  if (length(up) > 0L) {
+    predictions <- tibble::tibble(
+      match_date = group_fixtures$match_date[up], group = group_fixtures$group[up],
+      home = group_fixtures$home_team[up], away = group_fixtures$away_team[up],
+      p_home = colMeans(mh_m[, up, drop = FALSE] > mg_m[, up, drop = FALSE]),
+      p_draw = colMeans(mh_m[, up, drop = FALSE] == mg_m[, up, drop = FALSE]),
+      p_away = colMeans(mh_m[, up, drop = FALSE] < mg_m[, up, drop = FALSE]),
+      eg_home = colMeans(lh_m[, up, drop = FALSE]),
+      eg_away = colMeans(lg_m[, up, drop = FALSE])
+    )
+  }
+
+  # ---- played-match performance: xG / xPts vs actual ----
+  pl <- which(group_fixtures$played)
+  performance <- tibble::tibble(
+    team = teams, group = unname(structure$group_of[teams]),
+    n_played = 0L, gf = 0, ga = 0, pts = 0, xg_for = 0, xg_against = 0, xpts = 0
+  )
+  if (length(pl) > 0L) {
+    eg_h <- colMeans(lh_m[, pl, drop = FALSE])
+    eg_a <- colMeans(lg_m[, pl, drop = FALSE])
+    xp_h <- colMeans(3 * (mh_m[, pl, drop = FALSE] > mg_m[, pl, drop = FALSE]) +
+      (mh_m[, pl, drop = FALSE] == mg_m[, pl, drop = FALSE]))
+    xp_a <- colMeans(3 * (mh_m[, pl, drop = FALSE] < mg_m[, pl, drop = FALSE]) +
+      (mh_m[, pl, drop = FALSE] == mg_m[, pl, drop = FALSE]))
+    acc <- stats::setNames(
+      replicate(nt, list(n = 0L, gf = 0, ga = 0, pts = 0, xgf = 0, xga = 0, xpts = 0),
+        simplify = FALSE
+      ), teams
+    )
+    for (j in seq_along(pl)) {
+      f <- pl[j]
+      h <- group_fixtures$home_team[f]
+      a <- group_fixtures$away_team[f]
+      hs <- group_fixtures$home_score[f]
+      as_ <- group_fixtures$away_score[f]
+      hp <- if (hs > as_) 3 else if (hs == as_) 1 else 0
+      ap <- if (as_ > hs) 3 else if (hs == as_) 1 else 0
+      acc[[h]]$n <- acc[[h]]$n + 1L
+      acc[[a]]$n <- acc[[a]]$n + 1L
+      acc[[h]]$gf <- acc[[h]]$gf + hs
+      acc[[h]]$ga <- acc[[h]]$ga + as_
+      acc[[a]]$gf <- acc[[a]]$gf + as_
+      acc[[a]]$ga <- acc[[a]]$ga + hs
+      acc[[h]]$pts <- acc[[h]]$pts + hp
+      acc[[a]]$pts <- acc[[a]]$pts + ap
+      acc[[h]]$xgf <- acc[[h]]$xgf + eg_h[j]
+      acc[[h]]$xga <- acc[[h]]$xga + eg_a[j]
+      acc[[a]]$xgf <- acc[[a]]$xgf + eg_a[j]
+      acc[[a]]$xga <- acc[[a]]$xga + eg_h[j]
+      acc[[h]]$xpts <- acc[[h]]$xpts + xp_h[j]
+      acc[[a]]$xpts <- acc[[a]]$xpts + xp_a[j]
+    }
+    performance$n_played <- vapply(teams, function(t) acc[[t]]$n, integer(1))
+    performance$gf <- vapply(teams, function(t) acc[[t]]$gf, numeric(1))
+    performance$ga <- vapply(teams, function(t) acc[[t]]$ga, numeric(1))
+    performance$pts <- vapply(teams, function(t) acc[[t]]$pts, numeric(1))
+    performance$xg_for <- vapply(teams, function(t) acc[[t]]$xgf, numeric(1))
+    performance$xg_against <- vapply(teams, function(t) acc[[t]]$xga, numeric(1))
+    performance$xpts <- vapply(teams, function(t) acc[[t]]$xpts, numeric(1))
+  }
+
+  bracket_model <- list(
+    teams = teams, W = W, occ_a = occ_a, occ_b = occ_b, bracket = structure$bracket
+  )
+
+  list(
+    group_probs = group_probs,
+    placement_probs = fwd$placement,
+    predictions = predictions,
+    performance = performance,
+    bracket_model = bracket_model,
+    n_draws = nd
+  )
+}

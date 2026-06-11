@@ -1,0 +1,438 @@
+{
+  "generated_at": "2026-06-11T13:21:56Z",
+  "fit_date": "2026-06-11",
+  "teams": [
+    {
+      "team": "Argentina",
+      "team_is": "Argentína",
+      "group": "J",
+      "rating": 2.755,
+      "offence": 1.387,
+      "defence": 1.368,
+      "rating_rank": 1
+    },
+    {
+      "team": "Spain",
+      "team_is": "Spánn",
+      "group": "H",
+      "rating": 2.656,
+      "offence": 1.558,
+      "defence": 1.098,
+      "rating_rank": 2
+    },
+    {
+      "team": "Colombia",
+      "team_is": "Kólumbía",
+      "group": "K",
+      "rating": 2.396,
+      "offence": 1.355,
+      "defence": 1.041,
+      "rating_rank": 3
+    },
+    {
+      "team": "England",
+      "team_is": "England",
+      "group": "L",
+      "rating": 2.324,
+      "offence": 1.293,
+      "defence": 1.031,
+      "rating_rank": 4
+    },
+    {
+      "team": "Brazil",
+      "team_is": "Brasilía",
+      "group": "C",
+      "rating": 2.307,
+      "offence": 1.487,
+      "defence": 0.82,
+      "rating_rank": 5
+    },
+    {
+      "team": "France",
+      "team_is": "Frakkland",
+      "group": "I",
+      "rating": 2.296,
+      "offence": 1.361,
+      "defence": 0.935,
+      "rating_rank": 6
+    },
+    {
+      "team": "Portugal",
+      "team_is": "Portúgal",
+      "group": "K",
+      "rating": 2.25,
+      "offence": 1.301,
+      "defence": 0.95,
+      "rating_rank": 7
+    },
+    {
+      "team": "Japan",
+      "team_is": "Japan",
+      "group": "F",
+      "rating": 2.239,
+      "offence": 1.293,
+      "defence": 0.946,
+      "rating_rank": 8
+    },
+    {
+      "team": "Uruguay",
+      "team_is": "Úrúgvæ",
+      "group": "H",
+      "rating": 2.091,
+      "offence": 0.951,
+      "defence": 1.139,
+      "rating_rank": 9
+    },
+    {
+      "team": "Belgium",
+      "team_is": "Belgía",
+      "group": "G",
+      "rating": 1.999,
+      "offence": 1.273,
+      "defence": 0.725,
+      "rating_rank": 10
+    },
+    {
+      "team": "Netherlands",
+      "team_is": "Holland",
+      "group": "F",
+      "rating": 1.977,
+      "offence": 1.268,
+      "defence": 0.709,
+      "rating_rank": 11
+    },
+    {
+      "team": "Senegal",
+      "team_is": "Senegal",
+      "group": "I",
+      "rating": 1.951,
+      "offence": 1.129,
+      "defence": 0.822,
+      "rating_rank": 12
+    },
+    {
+      "team": "Germany",
+      "team_is": "Þýskaland",
+      "group": "E",
+      "rating": 1.945,
+      "offence": 1.287,
+      "defence": 0.657,
+      "rating_rank": 13
+    },
+    {
+      "team": "Croatia",
+      "team_is": "Króatía",
+      "group": "L",
+      "rating": 1.915,
+      "offence": 1.08,
+      "defence": 0.835,
+      "rating_rank": 14
+    },
+    {
+      "team": "Switzerland",
+      "team_is": "Sviss",
+      "group": "B",
+      "rating": 1.846,
+      "offence": 1.211,
+      "defence": 0.636,
+      "rating_rank": 15
+    },
+    {
+      "team": "Algeria",
+      "team_is": "Alsír",
+      "group": "J",
+      "rating": 1.839,
+      "offence": 1.143,
+      "defence": 0.696,
+      "rating_rank": 16
+    },
+    {
+      "team": "Norway",
+      "team_is": "Noregur",
+      "group": "I",
+      "rating": 1.839,
+      "offence": 1.359,
+      "defence": 0.479,
+      "rating_rank": 17
+    },
+    {
+      "team": "Austria",
+      "team_is": "Austurríki",
+      "group": "J",
+      "rating": 1.801,
+      "offence": 1.08,
+      "defence": 0.722,
+      "rating_rank": 18
+    },
+    {
+      "team": "Morocco",
+      "team_is": "Marokkó",
+      "group": "C",
+      "rating": 1.716,
+      "offence": 0.914,
+      "defence": 0.802,
+      "rating_rank": 19
+    },
+    {
+      "team": "Ecuador",
+      "team_is": "Ekvador",
+      "group": "E",
+      "rating": 1.714,
+      "offence": 0.468,
+      "defence": 1.246,
+      "rating_rank": 20
+    },
+    {
+      "team": "Turkey",
+      "team_is": "Tyrkland",
+      "group": "D",
+      "rating": 1.569,
+      "offence": 1.157,
+      "defence": 0.411,
+      "rating_rank": 21
+    },
+    {
+      "team": "Egypt",
+      "team_is": "Egyptaland",
+      "group": "G",
+      "rating": 1.546,
+      "offence": 0.786,
+      "defence": 0.759,
+      "rating_rank": 22
+    },
+    {
+      "team": "Australia",
+      "team_is": "Ástralía",
+      "group": "D",
+      "rating": 1.526,
+      "offence": 0.811,
+      "defence": 0.715,
+      "rating_rank": 23
+    },
+    {
+      "team": "Mexico",
+      "team_is": "Mexíkó",
+      "group": "A",
+      "rating": 1.485,
+      "offence": 0.816,
+      "defence": 0.669,
+      "rating_rank": 24
+    },
+    {
+      "team": "South Korea",
+      "team_is": "Suður-Kórea",
+      "group": "A",
+      "rating": 1.465,
+      "offence": 0.969,
+      "defence": 0.496,
+      "rating_rank": 25
+    },
+    {
+      "team": "Tunisia",
+      "team_is": "Túnis",
+      "group": "F",
+      "rating": 1.424,
+      "offence": 0.633,
+      "defence": 0.791,
+      "rating_rank": 26
+    },
+    {
+      "team": "Canada",
+      "team_is": "Kanada",
+      "group": "B",
+      "rating": 1.405,
+      "offence": 0.762,
+      "defence": 0.643,
+      "rating_rank": 27
+    },
+    {
+      "team": "Iran",
+      "team_is": "Íran",
+      "group": "G",
+      "rating": 1.385,
+      "offence": 0.96,
+      "defence": 0.425,
+      "rating_rank": 28
+    },
+    {
+      "team": "Scotland",
+      "team_is": "Skotland",
+      "group": "C",
+      "rating": 1.288,
+      "offence": 0.904,
+      "defence": 0.384,
+      "rating_rank": 29
+    },
+    {
+      "team": "Ivory Coast",
+      "team_is": "Fílabeinsströndin",
+      "group": "E",
+      "rating": 1.288,
+      "offence": 0.589,
+      "defence": 0.699,
+      "rating_rank": 30
+    },
+    {
+      "team": "Paraguay",
+      "team_is": "Paragvæ",
+      "group": "D",
+      "rating": 1.249,
+      "offence": 0.625,
+      "defence": 0.624,
+      "rating_rank": 31
+    },
+    {
+      "team": "Sweden",
+      "team_is": "Svíþjóð",
+      "group": "F",
+      "rating": 1.241,
+      "offence": 1.083,
+      "defence": 0.159,
+      "rating_rank": 32
+    },
+    {
+      "team": "DR Congo",
+      "team_is": "Kongó",
+      "group": "K",
+      "rating": 1.215,
+      "offence": 0.522,
+      "defence": 0.692,
+      "rating_rank": 33
+    },
+    {
+      "team": "Uzbekistan",
+      "team_is": "Úsbekistan",
+      "group": "K",
+      "rating": 1.203,
+      "offence": 0.635,
+      "defence": 0.567,
+      "rating_rank": 34
+    },
+    {
+      "team": "Czech Republic",
+      "team_is": "Tékkland",
+      "group": "A",
+      "rating": 1.192,
+      "offence": 0.831,
+      "defence": 0.361,
+      "rating_rank": 35
+    },
+    {
+      "team": "Jordan",
+      "team_is": "Jórdanía",
+      "group": "J",
+      "rating": 0.967,
+      "offence": 0.847,
+      "defence": 0.12,
+      "rating_rank": 36
+    },
+    {
+      "team": "South Africa",
+      "team_is": "Suður-Afríka",
+      "group": "A",
+      "rating": 0.902,
+      "offence": 0.558,
+      "defence": 0.343,
+      "rating_rank": 37
+    },
+    {
+      "team": "Panama",
+      "team_is": "Panama",
+      "group": "L",
+      "rating": 0.899,
+      "offence": 0.726,
+      "defence": 0.173,
+      "rating_rank": 38
+    },
+    {
+      "team": "Ghana",
+      "team_is": "Gana",
+      "group": "L",
+      "rating": 0.852,
+      "offence": 0.551,
+      "defence": 0.301,
+      "rating_rank": 39
+    },
+    {
+      "team": "United States",
+      "team_is": "Bandaríkin",
+      "group": "D",
+      "rating": 0.83,
+      "offence": 0.51,
+      "defence": 0.32,
+      "rating_rank": 40
+    },
+    {
+      "team": "Iraq",
+      "team_is": "Írak",
+      "group": "I",
+      "rating": 0.781,
+      "offence": 0.363,
+      "defence": 0.418,
+      "rating_rank": 41
+    },
+    {
+      "team": "Saudi Arabia",
+      "team_is": "Sádi-Arabía",
+      "group": "H",
+      "rating": 0.763,
+      "offence": 0.326,
+      "defence": 0.437,
+      "rating_rank": 42
+    },
+    {
+      "team": "Cape Verde",
+      "team_is": "Grænhöfðaeyjar",
+      "group": "H",
+      "rating": 0.663,
+      "offence": 0.512,
+      "defence": 0.151,
+      "rating_rank": 43
+    },
+    {
+      "team": "Haiti",
+      "team_is": "Haítí",
+      "group": "C",
+      "rating": 0.63,
+      "offence": 0.714,
+      "defence": -0.084,
+      "rating_rank": 44
+    },
+    {
+      "team": "New Zealand",
+      "team_is": "Nýja-Sjáland",
+      "group": "G",
+      "rating": 0.624,
+      "offence": 0.272,
+      "defence": 0.353,
+      "rating_rank": 45
+    },
+    {
+      "team": "Bosnia and Herzegovina",
+      "team_is": "Bosnía og Hersegóvína",
+      "group": "B",
+      "rating": 0.463,
+      "offence": 0.427,
+      "defence": 0.036,
+      "rating_rank": 46
+    },
+    {
+      "team": "Curaçao",
+      "team_is": "Curaçao",
+      "group": "E",
+      "rating": 0.135,
+      "offence": 0.362,
+      "defence": -0.227,
+      "rating_rank": 47
+    },
+    {
+      "team": "Qatar",
+      "team_is": "Katar",
+      "group": "B",
+      "rating": 0.104,
+      "offence": 0.292,
+      "defence": -0.188,
+      "rating_rank": 48
+    }
+  ]
+}
