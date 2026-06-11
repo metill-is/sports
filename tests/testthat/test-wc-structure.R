@@ -37,6 +37,26 @@ test_that("bracket wires 31 knockout matches with valid feeders", {
   expect_true(all(fed_matches %in% s$bracket$match_no))
 })
 
+test_that("R16 feeders match the official 2026 schedule (guards the 89/90 swap)", {
+  s <- wc_structure()
+  r16 <- s$bracket[s$bracket$round == "R16", ]
+  pair_of <- function(m) {
+    row <- r16[r16$match_no == m, ]
+    sort(c(row$feeder_a, row$feeder_b))
+  }
+  # Source: Wikipedia "2026 FIFA World Cup knockout stage" bracket table.
+  # match 89 = W74 vs W77 (Philadelphia), match 90 = W73 vs W75 (Houston).
+  official <- list(
+    "89" = c("W74", "W77"), "90" = c("W73", "W75"),
+    "91" = c("W76", "W78"), "92" = c("W79", "W80"),
+    "93" = c("W83", "W84"), "94" = c("W81", "W82"),
+    "95" = c("W86", "W88"), "96" = c("W85", "W87")
+  )
+  for (m in names(official)) {
+    expect_setequal(pair_of(as.integer(m)), official[[m]])
+  }
+})
+
 test_that("the 8 third-placed slots carry 5-group eligibility sets", {
   s <- wc_structure()
   expect_setequal(s$third_slots$match_no, c(74L, 77L, 79L, 80L, 81L, 82L, 85L, 87L))
