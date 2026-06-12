@@ -5,8 +5,8 @@ paths:
 
 # CI / GitHub Actions Conventions
 
-Two coordinated workarounds are applied across all five workflows under
-`.github/workflows/`. Both exist to defend against upstream brittleness
+Two coordinated workarounds are applied across the R-package workflows
+under `.github/workflows/`. Both exist to defend against upstream brittleness
 in the GitHub-hosted Ubuntu runner image's R-package install pipeline.
 
 ## 1. `PKG_SYSREQS: "false"` on `setup-r-dependencies@v2`
@@ -98,10 +98,39 @@ meta-characters.
 | `decide-publish.yml` | `workflow_run` from fit AND scrape-odds | Recommendations + JSONs |
 | `republish.yml` | `workflow_dispatch` only | Re-run publish from existing extraction archive (lever for fast publisher iteration) |
 | `healthcheck.yml` | cron 2×/day + dispatch | Read-only `pipeline_health()` → `data/health/status.json`; commits if changed; fails the run on `overall == FAIL` so GitHub's failure email fires (the alert channel). `test-healthcheck-ci-isolation.R` proves it never writes the ledger. |
+| `world-cup.yml` | cron 1×/day + dispatch | HM 2026 forecast: download martj42 internationals → ingest → fit → simulate → publish `data/publish/world_cup/karla/*.json`. Self-contained (own ingest, no `workflow_run` parent). See note below. |
 
 The `decide-publish` chain reading `workflow_run` from *both* parents
 is what keeps JSON outputs fresh on every odds scrape, not just on the
 daily fit cycle.
+
+### `world-cup.yml` is single-job and self-contained — by necessity
+
+Unlike the league pipeline (scrape → fit → decide-publish, chained via
+`workflow_run` across separate workflows), the World Cup forecast runs
+download → ingest → fit → forecast in **one job**. The reason is
+`data/wc/fit/` being gitignored (`.gitignore`: ~900 MB Stan fit,
+regenerable): the fit artefacts never reach git, so a downstream job
+would have nothing to consume. `scripts/wc/{ingest,fit,forecast}.R` must
+therefore execute in sequence in the same runner.
+
+Two guards keep it cheap and self-terminating:
+
+- **Facts-diff skip-guard.** `scripts/wc/ingest.R` rewrites the
+  `country=world` facts Parquets from a fresh martj42 download; the
+  workflow refits only if `git status` shows those Parquets changed
+  (i.e. new in-window results landed). The season-partitioned store
+  makes this precise — only the touched `season=YYYY` partition flips,
+  and arrow re-serialises unchanged partitions byte-identically.
+  `workflow_dispatch` with `force: true` bypasses it.
+- **Tournament-window gate.** A tiny `gate` job no-ops the run past
+  `WC_END_DATE` (2026-07-20) so the daily cron auto-quiesces after the
+  final instead of refitting a finished bracket off later friendlies.
+
+Downstream is `metill-is/metill-platform`'s hourly `pull-sports-data.yml`,
+which already rsyncs the whole `data/publish/` tree (incl. `world_cup/`),
+so no metill-platform change was needed — same ≤1h freshness as the
+Icelandic leagues.
 
 The placer (`R/placer-*.R`) is **never** referenced from any workflow.
 Enforcement: `tests/testthat/test-placer-ci-isolation.R` greps every

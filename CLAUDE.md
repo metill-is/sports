@@ -46,7 +46,7 @@ sports/
 │   ├── health/          # status.json — pipeline_health() snapshot (read-only)
 │   └── publish/         # *.json per (sport, country, sex[, division])
 ├── tests/testthat/      # 1120+ assertions; devtools::test() to run
-├── .github/workflows/   # 6 cron-driven + republish manual → .claude/rules/ci-conventions.md
+├── .github/workflows/   # cron + workflow_run + republish/world-cup manual-dispatch → .claude/rules/ci-conventions.md
 ├── docs/                # superpowers/ (specs + plans), audits/, runbooks/
 └── _legacy/             # 4 archived predecessor repos for git log --follow
 ```

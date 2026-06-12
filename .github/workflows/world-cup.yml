@@ -1,0 +1,148 @@
+name: World Cup Forecast
+
+# Automates the 2026 World Cup (HM 2026) forecast that was previously a manual
+# local run of scripts/wc/{ingest,fit,forecast}.R. Mirrors fit.yml's R + CmdStan
+# setup. Single job: the Stan fit lands in data/wc/fit/ (gitignored, ~900MB), so
+# the forecast MUST consume it in the same run -- it can't be split across jobs.
+#
+# Downstream: this commits the 6 JSONs under data/publish/world_cup/karla/ to
+# metill-is/sports. The metill-platform `pull-sports-data.yml` cron (hourly)
+# already rsyncs the whole data/publish/ tree -> the /hm2026/ page, so no
+# metill-platform change is needed; freshness latency is <=1h, same as the
+# Icelandic football.
+
+on:
+  schedule:
+    - cron: '0 7 * * *'   # 1x daily UTC, after the prior day's late US-evening WC matches
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Refit even if martj42 has no new results (bypass the facts-diff skip-guard)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: world-cup
+  cancel-in-progress: false
+
+jobs:
+  # Cheap gate: the WC 2026 final is 19 Jul 2026. After the tournament the cron
+  # keeps firing but there is nothing to forecast -- post-tournament friendlies
+  # would only perturb a finished bracket. This no-ops the workflow past the end
+  # so it auto-quiesces without being disabled by hand. Bump WC_END_DATE to
+  # re-arm (e.g. for the women's World Cup on a world_cup/kvenna/ data dir).
+  gate:
+    runs-on: ubuntu-latest
+    outputs:
+      proceed: ${{ steps.window.outputs.proceed }}
+    env:
+      WC_END_DATE: '2026-07-20'
+    steps:
+      - id: window
+        run: |
+          today=$(date -u +%Y-%m-%d)
+          if [[ "$today" > "$WC_END_DATE" ]]; then
+            echo "::notice::$today is past WC_END_DATE ($WC_END_DATE) -- skipping."
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "proceed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  forecast:
+    needs: gate
+    if: needs.gate.outputs.proceed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      CMDSTAN_VERSION: '2.38.0'
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: 'release'
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        env:
+          PKG_SYSREQS: "false"
+        with:
+          extra-repositories: 'https://stan-dev.r-universe.dev'
+          extra-packages: |
+            any::devtools
+            any::cmdstanr
+
+      - name: Reinstall V8 from source with bundled static libv8
+        env:
+          DOWNLOAD_STATIC_LIBV8: "1"
+        run: |
+          Rscript -e 'install.packages("V8", type = "source", repos = c(CRAN = "https://cloud.r-project.org"))'
+
+      - name: Cache CmdStan installation
+        id: cache-cmdstan
+        uses: actions/cache@v5
+        with:
+          path: ~/.cmdstan
+          key: cmdstan-${{ env.CMDSTAN_VERSION }}-ubuntu-latest
+
+      - name: Install CmdStan if not cached
+        if: steps.cache-cmdstan.outputs.cache-hit != 'true'
+        run: Rscript -e 'cmdstanr::install_cmdstan(version = Sys.getenv("CMDSTAN_VERSION"), cores = 2)'
+
+      - name: Ingest martj42 internationals into the facts store
+        run: Rscript scripts/wc/ingest.R
+
+      - name: Decide whether a refit is needed
+        id: refit
+        env:
+          FORCE: ${{ inputs.force }}
+        run: |
+          # The ingest rewrites the country=world facts Parquets. If git sees no
+          # change, martj42 brought no new in-window, WC-relevant results since
+          # the last run -> nothing to refit, skip the expensive fit + forecast.
+          # (The first CI run may refit once if the runner's arrow build writes
+          # byte-different Parquets than the locally-committed ones; it settles
+          # to a clean no-op thereafter.)
+          paths='data/facts/results/sport=football/country=world data/facts/schedules/sport=football/country=world'
+          if [[ "$FORCE" == "true" ]]; then
+            echo "::notice::force=true -- refitting regardless of facts diff."
+            echo "needed=true" >> "$GITHUB_OUTPUT"
+          elif git status --porcelain $paths | grep -q .; then
+            echo "::notice::Facts store changed -- refitting."
+            echo "needed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::No new internationals -- skipping fit + forecast."
+            echo "needed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Fit the bivariate-Poisson model on internationals
+        if: steps.refit.outputs.needed == 'true'
+        run: Rscript scripts/wc/fit.R
+
+      - name: Simulate + publish the forecast JSONs
+        if: steps.refit.outputs.needed == 'true'
+        run: Rscript scripts/wc/forecast.R
+
+      - name: Commit + push if outputs changed
+        if: steps.refit.outputs.needed == 'true'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/facts/results/sport=football/country=world \
+                  data/facts/schedules/sport=football/country=world \
+                  data/publish/world_cup/
+          if git diff --cached --quiet; then
+            echo "No forecast changes to commit"
+            exit 0
+          fi
+          git commit -m "data(wc): forecast $(date -u +%Y-%m-%dT%H:%MZ)"
+          # Other data workflows commit to main frequently (different paths, so
+          # no content conflict); rebase so a stale tip doesn't reject the push.
+          git pull --rebase origin main
+          git push
