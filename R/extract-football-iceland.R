@@ -125,6 +125,7 @@ NULL
                                            n_pred_data,
                                            sim_inputs = NULL,
                                            bracket_state = NULL,
+                                           season_schedule = NULL,
                                            fit_date = NULL) {
   top_results <- results[
     results$season == current_season & results$division == target_div, ,
@@ -317,104 +318,40 @@ NULL
     ))
   }
 
-  base_points <- if (nrow(top_results) > 0L) {
-    top_results |>
-      dplyr::mutate(
-        result = dplyr::case_when(
-          .data$home_score > .data$away_score ~ "home",
-          .data$home_score < .data$away_score ~ "away",
-          TRUE ~ "tie"
-        )
-      ) |>
-      tidyr::pivot_longer(c("home_team", "away_team"), values_to = "team") |>
-      dplyr::mutate(
-        name = dplyr::if_else(.data$name == "home_team", "home", "away"),
-        points = dplyr::case_when(
-          .data$result == "tie" ~ 1L,
-          .data$result == .data$name ~ 3L,
-          TRUE ~ 0L
-        )
-      ) |>
-      dplyr::summarise(base_points = sum(.data$points), .by = "team")
-  } else {
-    tibble::tibble(team = character(), base_points = integer())
+  # ---- 5 + 6. final_positions + points_distribution (FULL remaining season) -
+  # Simulate every UNPLAYED fixture of the season from the posterior (frozen
+  # latest-round strengths, identical to the model's own match prediction),
+  # add the realised table, and rank to season-end placements. Replaces the
+  # previous logic, which integrated only the model's 14-day prediction window
+  # (~2 rounds) -- a "position after the next ~2 rounds" forecast mislabelled
+  # as the final table. See `simulate_league_season()`.
+
+  br <- .league_base_and_remaining_pfi(
+    top_results, current_top_teams, season_schedule, target_div
+  )
+  base_standings <- br$base_standings
+  remaining_fixtures <- br$remaining_fixtures
+
+  has_sim_inputs <- !is.null(sim_inputs) &&
+    is.data.frame(sim_inputs$team) && nrow(sim_inputs$team) > 0L
+  teams_covered <- has_sim_inputs && nrow(base_standings) > 0L &&
+    all(base_standings$team %in% sim_inputs$team$team)
+  if (has_sim_inputs && nrow(base_standings) > 0L && !teams_covered) {
+    warning(sprintf(
+      "final_positions[%s]: %d league team(s) lack strength draws; skipping season simulation.",
+      target_div, sum(!(base_standings$team %in% sim_inputs$team$team))
+    ), call. = FALSE)
   }
 
-  posterior_goals <- if (n_pred_fit == n_pred_data && n_pred_data > 0L) {
-    posterior_goals_long
-  } else {
-    tibble::tibble(
-      .draw = integer(), game_nr = integer(),
-      home_goals = numeric(), away_goals = numeric(),
-      match_date = as.Date(character()),
-      home_team = character(), away_team = character(),
-      division = character()
+  if (teams_covered) {
+    season_sim <- simulate_league_season(
+      sim_inputs_team    = sim_inputs$team,
+      sim_inputs_scalar  = sim_inputs$scalar,
+      remaining_fixtures = remaining_fixtures,
+      base_standings     = base_standings
     )
-  }
-
-  if (nrow(posterior_goals) > 0L && nrow(current_top_teams) > 0L) {
-    iter_team_points <- posterior_goals |>
-      dplyr::filter(.data$division == target_div) |>
-      dplyr::mutate(
-        result = dplyr::case_when(
-          .data$home_goals > .data$away_goals ~ "home",
-          .data$home_goals < .data$away_goals ~ "away",
-          TRUE ~ "tie"
-        )
-      ) |>
-      tidyr::pivot_longer(c("home_team", "away_team"), values_to = "team") |>
-      dplyr::mutate(
-        name = dplyr::if_else(.data$name == "home_team", "home", "away"),
-        points = dplyr::case_when(
-          .data$result == "tie" ~ 1L,
-          .data$result == .data$name ~ 3L,
-          TRUE ~ 0L
-        )
-      ) |>
-      dplyr::summarise(points = sum(.data$points), .by = c(".draw", "team")) |>
-      dplyr::left_join(base_points, by = "team") |>
-      dplyr::mutate(
-        base_points = dplyr::coalesce(.data$base_points, 0L),
-        points      = .data$points + .data$base_points
-      )
-  } else {
-    iter_team_points <- tibble::tibble(
-      .draw = integer(), team = character(),
-      points = integer(), base_points = integer()
-    )
-  }
-
-  if (nrow(iter_team_points) > 0L) {
-    iter_positions <- iter_team_points |>
-      dplyr::arrange(.data$.draw, dplyr::desc(.data$points)) |>
-      dplyr::mutate(placement = dplyr::row_number(), .by = ".draw")
-
-    n_teams_top <- iter_positions |>
-      dplyr::distinct(.data$team) |>
-      nrow()
-
-    final_positions <- iter_positions |>
-      dplyr::count(.data$team, .data$placement) |>
-      tidyr::complete(
-        team,
-        placement = seq_len(n_teams_top),
-        fill = list(n = 0)
-      ) |>
-      dplyr::mutate(
-        probability = .data$n / sum(.data$n),
-        .by = "team"
-      ) |>
-      dplyr::select("team", "placement", "probability") |>
-      dplyr::arrange(.data$team, .data$placement)
-
-    points_distribution <- iter_team_points |>
-      dplyr::count(.data$team, .data$points) |>
-      dplyr::mutate(
-        probability = .data$n / sum(.data$n),
-        .by = "team"
-      ) |>
-      dplyr::select("team", "points", "probability") |>
-      dplyr::arrange(.data$team, .data$points)
+    final_positions <- season_sim$final_positions
+    points_distribution <- season_sim$points_distribution
   } else {
     final_positions <- tibble::tibble(
       team = character(),
@@ -441,6 +378,81 @@ NULL
       probability = numeric()
     )
   )
+}
+
+# Build the realised league table (points/GD/GF from played matches, every
+# current-division team present) plus the unplayed fixtures (this division's
+# scheduled matches not yet played, deduped on the ordered pair). Shared by the
+# daily extract and the per-round backfill so the two never diverge.
+.league_base_and_remaining_pfi <- function(played, current_top_teams,
+                                           season_schedule, target_div) {
+  played <- played[
+    !is.na(played$home_score) & !is.na(played$away_score), ,
+    drop = FALSE
+  ]
+  realised <- if (nrow(played) > 0L) {
+    played |>
+      dplyr::mutate(
+        result = dplyr::case_when(
+          .data$home_score > .data$away_score ~ "home",
+          .data$home_score < .data$away_score ~ "away",
+          TRUE ~ "tie"
+        )
+      ) |>
+      tidyr::pivot_longer(c("home_team", "away_team"),
+        names_to = "loc", values_to = "team"
+      ) |>
+      dplyr::mutate(
+        loc = dplyr::if_else(.data$loc == "home_team", "home", "away"),
+        gf = dplyr::if_else(.data$loc == "home", .data$home_score, .data$away_score),
+        ga = dplyr::if_else(.data$loc == "home", .data$away_score, .data$home_score),
+        pts = dplyr::case_when(
+          .data$result == "tie" ~ 1L,
+          .data$result == .data$loc ~ 3L,
+          TRUE ~ 0L
+        )
+      ) |>
+      dplyr::summarise(
+        base_points = as.integer(sum(.data$pts)),
+        base_gf = as.integer(sum(.data$gf)),
+        base_ga = as.integer(sum(.data$ga)),
+        .by = "team"
+      ) |>
+      dplyr::mutate(base_gd = .data$base_gf - .data$base_ga)
+  } else {
+    tibble::tibble(
+      team = character(), base_points = integer(),
+      base_gf = integer(), base_ga = integer(), base_gd = integer()
+    )
+  }
+
+  base_standings <- current_top_teams |>
+    dplyr::left_join(realised, by = "team") |>
+    dplyr::mutate(
+      base_points = dplyr::coalesce(.data$base_points, 0L),
+      base_gf = dplyr::coalesce(.data$base_gf, 0L),
+      base_gd = dplyr::coalesce(.data$base_gd, 0L)
+    ) |>
+    dplyr::select("team", "base_points", "base_gd", "base_gf")
+
+  remaining_fixtures <- if (!is.null(season_schedule) && nrow(season_schedule) > 0L) {
+    played_pair <- paste(played$home_team, played$away_team)
+    season_schedule |>
+      dplyr::filter(
+        .data$division == target_div,
+        .data$home_team %in% current_top_teams$team,
+        .data$away_team %in% current_top_teams$team
+      ) |>
+      dplyr::mutate(.pair = paste(.data$home_team, .data$away_team)) |>
+      dplyr::filter(!(.data$.pair %in% played_pair)) |>
+      dplyr::arrange(dplyr::desc(.data$match_date)) |>
+      dplyr::distinct(.data$.pair, .keep_all = TRUE) |>
+      dplyr::select("home_team", "away_team")
+  } else {
+    tibble::tibble(home_team = character(), away_team = character())
+  }
+
+  list(base_standings = base_standings, remaining_fixtures = remaining_fixtures)
 }
 
 # Extract per-draw model parameters needed by the cup bracket simulator.
@@ -848,6 +860,28 @@ extract_football_iceland <- function(fit, league, sex,
     as.integer(format(as.Date(end_date), "%Y"))
   }
 
+  # Full-season schedule for the league final-position simulation. Read once
+  # (all divisions); `.extract_division_parquets_pfi()` filters to its division
+  # and anti-joins played fixtures. Best-effort: a missing schedules store
+  # degrades to base-table-only placements rather than failing the extract.
+  season_schedule <- tryCatch(
+    read_table(
+      "schedules",
+      root = root,
+      filter = list(
+        sport = league$sport, country = league$country, sex = sex
+      )
+    ),
+    error = function(e) NULL
+  )
+  if (!is.null(season_schedule) && nrow(season_schedule) > 0L) {
+    season_schedule <- season_schedule[
+      !is.na(season_schedule$match_date) &
+        season_schedule$season == current_season, ,
+      drop = FALSE
+    ]
+  }
+
   # ---- Cross-division: posterior_goals long + team_strengths_draws + home_adv
 
   posterior_goals_raw <- fit$draws(c("goals1_pred", "goals2_pred")) |>
@@ -963,6 +997,7 @@ extract_football_iceland <- function(fit, league, sex,
       n_pred_data          = n_pred_data,
       sim_inputs           = sim_inputs,
       bracket_state        = bracket_state,
+      season_schedule      = season_schedule,
       fit_date             = fit_date
     )
     lapply(parts, function(df) dplyr::mutate(df, division = target_div))
