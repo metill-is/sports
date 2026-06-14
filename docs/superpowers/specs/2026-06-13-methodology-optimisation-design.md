@@ -297,3 +297,82 @@ The user's few-thousand-ISK live-experiment budget is best spent on the CLV-inst
 
 See the plan's "Decision points" section — these are choices the user must make at implementation time (recalibration K1-handoff style, tau cap, fit source, CLV capture trigger, experiment-budget cap, gate thresholds).
 
+
+## 8. The per-sport axis (added 2026-06-14)
+
+> Status: design addendum. The §0 verdict ("NO demonstrable edge", written football-only) is **correct but narrow**. This section corrects the scope: the load-bearing heterogeneity axis in this system is **per-sport**, not per-market-within-football — and `kelly_frac` is *already* per-`(league,sex)` in `config/leagues.yml`, so the differentiation knob exists. All numbers below are verified against the live ledger (`read_table("ledger")`, 1,928 settled rows, span 2025-02-12 → 2026-05-31).
+
+### 8.0 The corrected, honest picture
+
+The original optimisation question was framed entirely on football_iceland (the only active-betting cell). That framing made the verdict *true* but *non-general*: football's break-even-and-noisy result does **not** describe the other two Iceland sports. The realised per-sport ledger edge, with correlation-aware (block-bootstrap-by-match, R≈8–10k) 95% CIs:
+
+| cell (iceland, settled) | n bets / matches | point ROI | 95% block CI | excludes 0? |
+|---|---|---|---|---|
+| handball | 424 / 171 | **+11.1%** | [-1.85, +24.42]% | no (closest; P(ROI≤0)=4.7%, on the boundary) |
+| basketball | 257 / 121 | **+1.2%** | [-15.7, +18.2]% | no |
+| football | 407 / 226 | **+0.8%** | [-15.4, +19.0]% | no |
+
+**The football finding stands and does not generalise.** Football is genuinely break-even and noisy (backtest -5.1% ROI on n=79, ranking last of 7 strategies). But handball is a *different distribution*: +11.1% realised, 61% hit vs 54.4% implied, equal-weight per-match ROI +21.3% [+10.5, +32.3] (excludes zero), and both the fair-odds null (one-sided p=0.028) and a vig-loaded null (p=0.0025) reject under block resampling. There is a real directional signal in handball that does not exist in football. Basketball sits with football: indistinguishable from zero, and indistinguishable from football.
+
+So the correct conclusion is **not** "no edge, stop here" — it is "**no edge in football; a promising-but-unproven edge in handball; nothing in basketball**", and the right structural response is to differentiate **per-sport**, not per-market. This is the high-value path the football-only framing missed.
+
+The directional handball signal is, however, **fragile and underpowered**, and must clear two hard gates before any sizing change. Both gates currently FAIL.
+
+### 8.1 GATE 1 — Bookmaker attribution: is the handball edge Lengjan-bankable?
+
+**Finding: NO. The handball headline was realised on books the forward pipeline cannot stake.** The forensic pass independently re-derived this two ways, and the live ledger confirms it:
+
+- **EUR×150 conversion fingerprint** (re-run on the live ledger as part of this addendum): **417/424 (98.3%)** of settled handball-iceland rows divide by 150 onto a clean cent-precise EUR grid, carrying **+99,456 of the +99,880 PnL**. Only 7 rows (+424 ISK) are non-EUR-grid. Round-50-ISK (the Lengjan stake fingerprint) covers only 21%. The legacy importer `R/bets/import_gsheets.R` (commit `f08de2fe`) sets `EUR_ISK <- 150` for the foreign-book tabs; EpicBet/CoolBet transact in EUR, Lengjan in ISK.
+- **`docs/runbooks/bankroll-and-extraction.md`** states it outright: "handball iceland (+99,880) was placed on the foreign books" and "`country == iceland` is NOT a Lengjan proxy."
+
+**The Lengjan-bettable cell is MALE only.** `config/leagues.yml` maps only *Olisdeild karla* (male) with `team_names.female = {}` ("no women's handball on Lengjan currently"). The +11.1% is a cross-sex aggregate; the female cell — which the pipeline **cannot stake** — carries the strongest signal:
+
+| handball iceland | n | ROI | 2026 (Lengjan era) |
+|---|---|---|---|
+| **male** (bettable) | 298 | **+7.5%** | **−31.8%** (−18,327 ISK, n=24) |
+| female (NOT on Lengjan) | 126 | +19.4% | +31.1% (n=19) |
+
+The bettable male cell's all-time ROI is +7.5% with a block CI of **[-9.4, +24.3]%, P(ROI≤0)=0.19 — not significant**, and dropping its top 5 matches turns it **negative**. Decisively, the only window where live Lengjan placement was even possible (2026) shows the bettable male cell at **−31.8%** (verified: −18,326.95 ISK on 24 bets). **The edge did not reproduce when the book changed.** System-wide, the legacy `pipeline` source (the Lengjan-automation proxy) is net **−8,161** across all leagues; the entire +97,530 system profit is in the manual/EUR `gsheets` source.
+
+**Implication:** sizing handball up on the strength of +11.1% would scale real Lengjan money on an edge demonstrated only on books the pipeline cannot trade — and, where it *can* trade (male, 2026), the realised result is sharply negative.
+
+### 8.2 GATE 2 — No forward/backtest validation exists for handball
+
+The leak-free `candidates`/`recommendations` store begins `run_date = 2026-04-25` — **after** the basketball/handball regular seasons paused in late April. Confirmed coverage: handball = **30 candidate rows** across 4 run_dates (2026-04-27 → 2026-05-07); basketball = 89; football = 4,448. `bt_load_universe()` returns only **4 handball / 12 basketball** decide-time bets.
+
+Therefore a **decide-time-odds backtest of handball model edge is structurally impossible today**, and there is no pre-2026-04-25 odds history to extend it backwards (a replay re-fits the model but cannot fabricate decide-time odds — `backtest.md`). Handball's edge lives **only** in the realised, cross-bookmaker, integrity-compromised ledger. The model's forward, Lengjan-native edge is **unverified**.
+
+**The remedy is forward-only.** When handball resumes (autumn 2026), it must be re-validated on Lengjan via the §5 harness instrument — the paper-shadow arm + forward CLV capture + paired-CLV Wald SPRT — exactly the machinery this spec already designs (but which is **not yet built**: `R/clv.R`, `R/experiment.R`, `R/experiment-gate.R`, `R/backtest-walkforward.R`, `scripts/0Nb_walkforward.R`, `config/experiments.yml` are all missing). Minimum sequence:
+
+1. **Pre-season:** build/enable the harness, generalise its football-only default to handball (confirm `compute_settlement()`'s handball `tie_threshold` is wired), and pre-register a `protocol.json` for a handball_iceland **male** paper-shadow arm (`primary_metric=clv`, `edge_min=0.01`, `n_min`, α/β).
+2. **In-season:** run the control decider live at the **current** `kelly_frac = 0.05` (do not raise); each settle, the **local** `06_settle.R` captures the last pre-kickoff Lengjan snapshot to `data/clv/` (per-sex team-name map; male only); accrue paired CLV.
+3. **Verdict:** Wald SPRT on pooled (handball, male) CLV. Graduate **only** on the multi-gate — **CLV up AND OOS log-loss not worse AND capture_rate ≥ 0.7** — and only by an operator hand-promotion with the K1/K2-double-count + live-stake-delta checklist. **Time-to-verdict ≈ 3–8 in-season weeks** at handball's peak cadence (117 settled bets in Oct 2025; median odds 1.90 < football's 2.02 → lower CLV variance → tighter SPRT), *provided the harness is live from the first fixture*.
+
+### 8.3 Adversarial findings folded in (why the handball headline is fragile even before the gates)
+
+Five independent lenses all returned `claim_holds=false`:
+
+- **Effective-n / correlation collapse.** 424 bets are only 171 match-blocks (2.48 bets/match); Kish effective count ≈ 76 match-blocks, ≈ 53 winning blocks. The block SE (6.78pp) is ~18% wider than naive (5.72pp); the naive per-bet CI's near-significance is an artefact of ignoring within-match correlation. At this n the MDE (80% power) is ~19% ROI vs an observed 11% → achieved power ≈ 37%; ~500 matches needed.
+- **Concentration.** Top 10 of 171 matches = 97.8% of PnL; two months (2025-03, 2025-10) supply ≈ 89,000 of 99,880; excluding the two best months collapses ROI to +2.0%.
+- **Regime decay.** Every Iceland sport flips positive→negative 2025→2026 (handball +12.6%→+2.4%, basketball +5.3%→−10.0%, football +4.6%→−8.1%). Monotone decay is *not* statistically established (P≈0.47) — equally consistent with "one good spring + reversion." Crucially the headline is a **spring** phenomenon; the single prior **autumn** (2025) is the weakest block (+8.4%, model overconfidence +9.6pp) — and autumn-2026 is exactly the season we'd be forecasting. Model claims edge +11.6pp vs realised +6.7pp: discount the stated edge.
+- **Obtainability.** Profitable turnover ran on low-limit recreational EUR accounts (max single stake ~30–75 EUR) now totalling ~1,136 EUR — the regime where scaling triggers stake caps / account-flagging. The runbook itself advises against building scrapers for these books ("no proven edge to exploit"). Lengjan's worse odds (a 4–8% margin haircut) would erode what little edge remains.
+- **Data integrity.** 91/424 settled handball rows (21%, +40,624 PnL ≈ 41% of the headline) have **no joinable result** in `data/facts/results/` — immutable (L4) hand-entered gsheets outcomes, unverifiable. 10 of the 324 joinable rows are settled in contradiction with the (line, score) the ledger itself stores (e.g. a clearly-OVER total recorded as an under win). `compute_settlement()` would never produce these; recorded checkable PnL diverges from current-logic settlement by ~8,762 ISK.
+
+None of these *disprove* a handball edge — the directional signal survives — but together they mean the +11.1% is far weaker evidence than the point estimate suggests, and every line of it points to the same remedy: **forward, Lengjan-native, book-clean validation before sizing.**
+
+### 8.4 Reframed methodology priorities
+
+The original spec's machinery is correct; only the **scope and ordering of its first real use** change.
+
+1. **Per-sport `kelly_frac` / calibration differentiation is the high-value path** (supersedes the implication that all tuning is multi-season-deferred). The cross-sport ROI spread (+11.1% / +1.2% / +0.8%) is the largest, most interpretable heterogeneity in the system, and the knob (`kelly_frac` per-`(league,sex)`) already exists. **Handball is the prime candidate** — but gated, not granted.
+2. **The harness's FIRST real job is handball-resume validation, not football tuning.** Phase 1 (walk-forward) is a calibration check; the *edge* verdict for handball comes from forward CLV. Generalising the harness's football-only default to handball, and wiring the local `06_settle.R` CLV capture for the handball **male** cell, is now the leading near-term deliverable — scheduled to be **live before the autumn-2026 first fixture**.
+3. **Per-market-within-football remains unjustified** (every per-market CI straddles zero; MDE +22–36% vs observed +21.5%; live counts 21–31 vs the K2 bar of 100) — **and per-market `kelly_frac` stays forbidden** (double-counts the K2 calibration axis; §3.1). Market heterogeneity lives only on the calibration axis. The per-sport axis is where the differentiation budget should go.
+4. **Basketball and football get no sizing change.** Football: pooled-(league,sex) calibration + harness only, as already specified. Basketball: no edge to size; revisit only on a resumed-season Lengjan track record.
+5. **`kelly_frac = 0.05` for handball is the knob NOT to raise** until a handball **male** paper-shadow arm SPRT-graduates on pooled CLV under the multi-gate. The few-thousand-ISK live-experiment budget is the ordinary control-arm betting; the shadow arm is paper-only.
+
+### 8.5 What would settle the handball question (and unblock sizing)
+
+- A forward, **Lengjan-only, MALE** track record from the autumn-2026 first fixture: ≥50–150 settled bets / paired-CLV observations recorded against Lengjan's actual posted lines, with realised ROI / paired CLV clearing zero.
+- A **paired-CLV Wald SPRT** graduation on pooled (handball, male) Lengjan CLV (`edge_min=0.01`) — leak-free, per-bet, immune to the effective-n collapse that plagues realised PnL — combined with the multi-gate.
+- Evidence the prices **hold at scale** on Lengjan (posted limits vs recommended stakes at the current `kelly_frac`), since the historical edge lived at recreational foreign-book stakes.
+- A bookmaker column (or partition) so future handball ROI is separable Lengjan-vs-foreign — the single ledger change that makes "is this edge forward-bankable" answerable without fingerprinting.

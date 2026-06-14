@@ -160,3 +160,28 @@ No work here until a Phase-5 arm graduates. When one does:
 | 5 | SPRT verdict + health rows over weeks; multi-gate graduation checklist |
 | 6 | walk-forward re-baseline; per-cell flip with coherence/budget/spread prerequisites |
 
+
+## Revised priorities — the per-sport axis (added 2026-06-14)
+
+> Cross-sport reassessment (2026-06-14) added spec §8. Handball Iceland is the prime
+> per-sport differentiation candidate but BLOCKED on two gates: ~98% of its realised
+> profit was placed on foreign EUR books (EpicBet/CoolBet), not Lengjan, and no forward
+> Lengjan validation exists (the candidates store post-dates the late-April pause).
+> The bettable male cell is +7.5% all-time (not significant) and -31.8% in the 2026
+> Lengjan era. Do NOT raise handball kelly_frac on the +11.1% headline.
+
+- P1 (NEW, high-value) — Per-sport kelly_frac/calibration differentiation is the leading optimisation path, NOT per-market-within-football. The cross-sport ROI spread (handball +11.1% / basketball +1.2% / football +0.8%, verified on the live ledger) is the largest interpretable heterogeneity in the system, and the knob (kelly_frac per-(league,sex)) already exists in config/leagues.yml. Handball is the prime candidate — but gated (see P2), never granted on the headline.
+- P2 (sequencing change) — The harness's FIRST real job is handball-resume validation on Lengjan, not football tuning. Before autumn-2026 first fixture: build the currently-unbuilt harness (R/clv.R, R/experiment.R, R/experiment-gate.R, R/backtest-walkforward.R, scripts/0Nb_walkforward.R, config/experiments.yml), generalise its football-only default to handball (confirm compute_settlement handball tie_threshold), and wire the local 06_settle.R forward-CLV capture for the handball MALE cell only (female {} in config). Time-to-verdict on a pooled (handball,male) CLV SPRT is ~3-8 in-season weeks IF live from fixture one.
+- P3 (hold) — Keep handball kelly_frac at 0.05. Do NOT raise it on the +11.1% headline: ~98% of that PnL was on foreign EUR books (verified 98.3% EUR×150 fingerprint), the bettable male cell is +7.5% (CI [-9.4,+24.3], not significant) and −31.8% in the 2026 Lengjan era. Promote only after a male paper-shadow arm SPRT-graduates under the multi-gate (CLV up AND OOS log-loss not worse AND capture_rate ≥ 0.7), by operator hand-promotion.
+- P4 (unchanged) — Per-market-within-football stays unjustified and per-market kelly_frac stays forbidden (double-counts the K2 calibration axis). Every per-market football CI straddles zero; market heterogeneity belongs on the calibration axis only. Football gets pooled-(league,sex) calibration + harness, as already specified — and is NOT the harness's first validation target.
+- P5 (unchanged) — Basketball gets no sizing change: indistinguishable from zero and from football (block CI [-15.7,+18.2]), 2026 = −10.0%. Revisit only on a resumed-season Lengjan track record.
+- P6 (data) — Add a bookmaker column/partition to the ledger so future handball ROI is separable Lengjan-vs-foreign — the single ledger change that makes 'is this edge forward-bankable' answerable without EUR-fingerprinting, and the prerequisite for ever trusting a realised per-sport ROI as a Lengjan signal.
+
+### Additional decision points (per-sport)
+
+- Handball sizing trigger — confirm the rule: handball kelly_frac stays 0.05 and is raised ONLY after a handball-iceland MALE paper-shadow arm SPRT-graduates on pooled Lengjan CLV under the multi-gate (CLV up AND OOS log-loss not worse AND capture_rate ≥ 0.7), by operator hand-promotion. The +11.1% / +19.4% headlines (female + foreign-book) explicitly do NOT trigger it.
+- Female handball — decide whether to keep it out of scope entirely (it is not on Lengjan; team_names.female={}) or, if KSÍ/Lengjan ever lists Olisdeild kvenna, require its own forward Lengjan track record before the +19.4%/+31.1% female signal is treated as bettable. Do not let the female cell's strength leak into the male sizing decision.
+- Harness scope generalisation — confirm extending the football-default harness (backtest.md, plan Phase 1 'football-only hard stop') to handball: which CLI/report gates flip from football-only, and that the local 06_settle.R CLV capture covers the handball MALE cell (per-sex name map, male only). This is the gating dependency for any autumn-2026 handball validation.
+- Pre-registration before resume — agree that a handball protocol.json (primary_metric=clv, edge_min=0.01, n_min, alpha/beta, axis_owner) is written and committed BEFORE the autumn-2026 first fixture, so the validation cannot become post-hoc metric shopping on a hot start.
+- Ledger bookmaker column — decide whether to add a bookmaker column/partition (and optionally a raw-vs-recal p column per §4.7). Without it, no future realised per-sport ROI can be cleanly attributed to Lengjan, and the per-sport differentiation programme keeps relying on the EUR×150 fingerprint as a proxy.
+- Basketball/football re-baseline — confirm neither sport's kelly_frac changes on this evidence (both indistinguishable from zero), and that the per-sport differentiation budget is spent on handball validation, not on tuning football per-market or basketball at all.
