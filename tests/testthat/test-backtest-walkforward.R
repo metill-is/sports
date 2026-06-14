@@ -183,3 +183,78 @@ test_that("bt_wf_require_pre_cutoff_odds drops candidates with no pre-cutoff odd
   expect_equal(out$home_team, "A")
   expect_equal(nrow(out), 1L)
 })
+
+test_that("bt_walkforward_cutoff seeds an isolated wf_root and never writes the live root (ASSERT-OUTPUT-ISOLATION-1, G6)", {
+  d <- as.Date("2026-05-20")
+  live_root <- withr::local_tempdir()
+  dir.create(file.path(live_root, "beliefs", "latest"), recursive = TRUE)
+  sentinel <- file.path(live_root, "beliefs", "latest", "SENTINEL")
+  writeLines("untouched", sentinel)
+
+  results <- tibble::tibble(
+    sport = "football", country = "iceland", sex = "male", season = 2026L,
+    match_date = as.Date(c("2026-05-18", "2026-05-22")),
+    home_team = c("A", "A"), away_team = c("B", "B"),
+    home_score = c(1L, 2L), away_score = c(0L, 1L),
+    division = "BD", round = c(1L, 2L)
+  )
+  odds <- tibble::tibble(
+    sport = "football", country = "iceland",
+    scraped_at = as.POSIXct(c("2026-05-19 12:00:00", "2026-05-23 12:00:00"), tz = "UTC"),
+    match_date = as.Date("2026-05-22"),
+    home_team = "A", away_team = "B",
+    market = "moneyline", outcome = "home", line = NA_real_, odds = c(2.50, 1.50)
+  )
+
+  fake_decide <- function(root, run_date, ...) {
+    tibble::tibble(
+      match_date = as.Date("2026-05-22"), home_team = "A", away_team = "B",
+      market = "moneyline", outcome = "home", line = NA_real_,
+      p = 0.7, odds = 2.50, ev = 0.1, kelly_raw = 0.1
+    )
+  }
+
+  scored <- bt_walkforward_cutoff(
+    sex = "male", d = d, horizon_days = 14L,
+    results = results, odds = odds, ledger = NULL,
+    live_root = live_root, decide_fn = fake_decide, tie_threshold = 0
+  )
+
+  expect_equal(readLines(sentinel), "untouched")
+  expect_equal(nrow(scored), 1L)
+  expect_equal(scored$odds, 2.50)
+  expect_true(scored$win)
+  expect_equal(scored$cutoff, d)
+  expect_true(all(scored$match_date > d))
+})
+
+test_that("bt_walkforward_cutoff drops a match settled on the cutoff day (same-day leak end-to-end, ASSERT-SAMEDAY-1)", {
+  d <- as.Date("2026-05-20")
+  live_root <- withr::local_tempdir()
+  results <- tibble::tibble(
+    sport = "football", country = "iceland", sex = "male", season = 2026L,
+    match_date = as.Date("2026-05-20"),
+    home_team = "A", away_team = "B",
+    home_score = 3L, away_score = 0L, division = "BD", round = 1L
+  )
+  odds <- tibble::tibble(
+    sport = "football", country = "iceland",
+    scraped_at = as.POSIXct("2026-05-19 12:00:00", tz = "UTC"),
+    match_date = as.Date("2026-05-20"),
+    home_team = "A", away_team = "B",
+    market = "moneyline", outcome = "home", line = NA_real_, odds = 2.50
+  )
+  fake_decide <- function(root, run_date, ...) {
+    tibble::tibble(
+      match_date = as.Date("2026-05-20"), home_team = "A", away_team = "B",
+      market = "moneyline", outcome = "home", line = NA_real_,
+      p = 0.7, odds = 2.50, ev = 0.1, kelly_raw = 0.1
+    )
+  }
+  scored <- bt_walkforward_cutoff(
+    sex = "male", d = d, horizon_days = 14L,
+    results = results, odds = odds, ledger = NULL,
+    live_root = live_root, decide_fn = fake_decide, tie_threshold = 0
+  )
+  expect_equal(nrow(scored), 0L)
+})
