@@ -32,7 +32,9 @@ bt_walkforward(
 \item{tie_threshold}{Per-(sport,country) push band.}
 }
 \value{
-`list(bets, scores, pnl)`.
+`list(bets, scores, pnl, skipped)`. `skipped` is a `(cutoff, error)`
+  tibble of cutoffs whose fit failed (e.g. the Stan divergence gate) — a
+  single bad fit is recorded and skipped, never aborting the whole sweep.
 }
 \description{
 For each `d` in `cutoffs`, re-fit as-of `d`, decide from pre-`d` odds, and

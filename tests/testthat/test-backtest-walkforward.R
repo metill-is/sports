@@ -292,3 +292,39 @@ test_that("bt_walkforward binds cutoffs and reports primary OOS scores + seconda
   expect_true(is.finite(wf$scores$brier))
   expect_equal(nrow(wf$bets), 2L)
 })
+
+test_that("bt_walkforward tolerates a per-cutoff fit failure: records it in $skipped and continues", {
+  live_root <- withr::local_tempdir()
+  results <- tibble::tibble(
+    sport = "football", country = "iceland", sex = "male", season = 2026L,
+    match_date = as.Date("2026-05-22"),
+    home_team = "A", away_team = "B",
+    home_score = 2L, away_score = 1L, division = "BD", round = 2L
+  )
+  odds <- tibble::tibble(
+    sport = "football", country = "iceland",
+    scraped_at = as.POSIXct("2026-05-19 12:00:00", tz = "UTC"),
+    match_date = as.Date("2026-05-22"),
+    home_team = "A", away_team = "B",
+    market = "moneyline", outcome = "home", line = NA_real_, odds = 2.0
+  )
+  flaky_decide <- function(root, run_date, sex, ledger_asof = NULL) {
+    if (run_date >= as.Date("2026-05-25")) {
+      stop("Stan diagnostic gate: 51 divergent transitions > 1.00% threshold", call. = FALSE)
+    }
+    tibble::tibble(
+      match_date = as.Date("2026-05-22"), home_team = "A", away_team = "B",
+      market = "moneyline", outcome = "home", line = NA_real_,
+      p = 0.6, odds = 2.0, ev = 0.1, kelly_raw = 0.1
+    )
+  }
+  wf <- bt_walkforward(
+    sex = "male", cutoffs = as.Date(c("2026-05-20", "2026-05-27")),
+    horizon_days = 14L, results = results, odds = odds, ledger = NULL,
+    live_root = live_root, decide_fn = flaky_decide, tie_threshold = 0
+  )
+  expect_equal(nrow(wf$bets), 1L)
+  expect_equal(nrow(wf$skipped), 1L)
+  expect_equal(wf$skipped$cutoff, as.Date("2026-05-27"))
+  expect_match(wf$skipped$error, "divergent")
+})

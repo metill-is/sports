@@ -207,10 +207,14 @@ bt_wf_seed_results <- function(results, root) {
 #' (calibration disabled, leak-free); `ledger_asof` is accepted for symmetry.
 #' @noRd
 bt_wf_default_decide <- function(root, run_date, sex, ledger_asof = NULL) {
+  # WHY: walk-forward re-fits at many historical cutoffs hit borderline
+  # divergence rates; adapt_delta = 0.99 keeps most under the Stan gate's 1%
+  # threshold. bt_walkforward tolerates any cutoff whose fit still trips it.
   fit_league(
     league_key = "football_iceland", sex = sex,
     fit_date = run_date, end_date = run_date,
     seed = as.integer(format(run_date, "%Y%m%d")),
+    adapt_delta = 0.99,
     schedule_horizon_days = 200L, root = root
   )
   decide_league(
@@ -233,7 +237,9 @@ bt_wf_default_decide <- function(root, run_date, sex, ledger_asof = NULL) {
 #' @param live_root Production data root (read-only).
 #' @param decide_fn Injected for tests; default fits+decides.
 #' @param tie_threshold Per-(sport,country) push band.
-#' @return `list(bets, scores, pnl)`.
+#' @return `list(bets, scores, pnl, skipped)`. `skipped` is a `(cutoff, error)`
+#'   tibble of cutoffs whose fit failed (e.g. the Stan divergence gate) — a
+#'   single bad fit is recorded and skipped, never aborting the whole sweep.
 #' @export
 bt_walkforward <- function(sex, cutoffs, horizon_days = 14L,
                            results, odds, ledger = NULL,
@@ -241,15 +247,30 @@ bt_walkforward <- function(sex, cutoffs, horizon_days = 14L,
                            decide_fn = bt_wf_default_decide,
                            tie_threshold = 0) {
   scored <- list()
+  skipped <- list()
   for (d in as.list(as.Date(cutoffs))) {
-    scored[[length(scored) + 1L]] <- bt_walkforward_cutoff(
-      sex = sex, d = d, horizon_days = horizon_days,
-      results = results, odds = odds, ledger = ledger,
-      live_root = live_root, decide_fn = decide_fn,
-      tie_threshold = tie_threshold
+    res <- tryCatch(
+      bt_walkforward_cutoff(
+        sex = sex, d = d, horizon_days = horizon_days,
+        results = results, odds = odds, ledger = ledger,
+        live_root = live_root, decide_fn = decide_fn,
+        tie_threshold = tie_threshold
+      ),
+      error = function(e) structure(conditionMessage(e), class = "bt_wf_skip")
     )
+    if (inherits(res, "bt_wf_skip")) {
+      cli::cli_alert_warning("walk-forward cutoff {format(d)} skipped: {as.character(res)}")
+      skipped[[length(skipped) + 1L]] <- tibble::tibble(cutoff = d, error = as.character(res))
+    } else {
+      scored[[length(scored) + 1L]] <- res
+    }
   }
   bets <- dplyr::bind_rows(scored)
+  skipped_df <- if (length(skipped) > 0L) {
+    dplyr::bind_rows(skipped)
+  } else {
+    tibble::tibble(cutoff = as.Date(character()), error = character())
+  }
   pnl <- if (nrow(bets) > 0L) {
     b <- bets
     b$stake <- 1
@@ -258,5 +279,5 @@ bt_walkforward <- function(sex, cutoffs, horizon_days = 14L,
   } else {
     tibble::tibble()
   }
-  list(bets = bets, scores = bt_oos_scores(bets), pnl = pnl)
+  list(bets = bets, scores = bt_oos_scores(bets), pnl = pnl, skipped = skipped_df)
 }
