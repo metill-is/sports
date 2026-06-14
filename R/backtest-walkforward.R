@@ -45,3 +45,38 @@ bt_wf_slice_odds <- function(odds, d) {
 #' @return Numeric hours.
 #' @export
 bt_wf_max_age_hours <- function() 24 * 365 * 10
+
+#' Restrict OOS candidates to matches STRICTLY after the cutoff, within horizon.
+#'
+#' G1/G2: neutralises the non-strict `schedules >= d` / `odds match_date >= d`
+#' operators even if a cutoff coincides with a match day. A day-`d` match is in
+#' the (inclusive) training set, so it must never be a bet.
+#' @param candidates Tibble with `match_date`.
+#' @param d Training cutoff date.
+#' @param horizon_days OOS window length.
+#' @return Candidates with `match_date > d & match_date <= d + horizon_days`.
+#' @export
+bt_wf_filter_oos <- function(candidates, d, horizon_days) {
+  if (nrow(candidates) == 0L) {
+    return(candidates)
+  }
+  d <- as.Date(d)
+  hi <- d + as.integer(horizon_days)
+  candidates[candidates$match_date > d & candidates$match_date <= hi, , drop = FALSE]
+}
+
+#' Assert the OOS bet match-set is disjoint from the training match-set (G1).
+#'
+#' Training = results with `match_date <= d` (what prepare_data trained on).
+#' @param oos OOS candidates (`match_date`, `home_team`, `away_team`).
+#' @param results Full results store.
+#' @param d Training cutoff.
+#' @return `TRUE` if disjoint.
+#' @export
+bt_wf_training_disjoint <- function(oos, results, d) {
+  d <- as.Date(d)
+  trn <- results[results$match_date <= d, , drop = FALSE]
+  tkey <- paste(trn$match_date, trn$home_team, trn$away_team, sep = "\r")
+  okey <- paste(oos$match_date, oos$home_team, oos$away_team, sep = "\r")
+  length(intersect(tkey, okey)) == 0L
+}

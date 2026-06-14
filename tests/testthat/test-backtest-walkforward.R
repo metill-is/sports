@@ -100,3 +100,44 @@ test_that("bt_wf_slice_odds + huge max_age_hours still returns old historical sn
   expect_equal(nrow(seen), 1L)
   expect_equal(seen$odds, 2.50)
 })
+
+test_that("bt_wf_filter_oos drops candidates on or before the cutoff and beyond the horizon (G2)", {
+  d <- as.Date("2026-05-20")
+  cands <- tibble::tibble(
+    match_date = as.Date(c("2026-05-19", "2026-05-20", "2026-05-21", "2026-06-10")),
+    home_team = c("A", "C", "E", "G"),
+    away_team = c("B", "D", "F", "H"),
+    p = 0.5, odds = 2.0, market = "moneyline", outcome = "home"
+  )
+  out <- bt_wf_filter_oos(cands, d, horizon_days = 14L)
+  expect_equal(out$home_team, "E")
+  expect_true(all(out$match_date > d))
+  expect_true(all(out$match_date <= d + 14L))
+})
+
+test_that("every OOS candidate has match_date strictly after the training cutoff (ASSERT-SAMEDAY-2)", {
+  d <- as.Date("2026-05-20")
+  cands <- tibble::tibble(
+    match_date = as.Date(c("2026-05-20", "2026-05-22")),
+    home_team = c("A", "C"), away_team = c("B", "D"),
+    p = 0.5, odds = 2.0, market = "moneyline", outcome = "home"
+  )
+  out <- bt_wf_filter_oos(cands, d, horizon_days = 14L)
+  expect_true(all(out$match_date > d))
+})
+
+test_that("bt_wf_training_disjoint is TRUE when OOS and training match-sets do not overlap, FALSE otherwise (ASSERT-SAMEDAY-3)", {
+  d <- as.Date("2026-05-20")
+  results <- tibble::tibble(
+    match_date = as.Date(c("2026-05-18", "2026-05-20")),
+    home_team = c("A", "C"), away_team = c("B", "D")
+  )
+  oos_clean <- tibble::tibble(
+    match_date = as.Date("2026-05-22"), home_team = "E", away_team = "F"
+  )
+  oos_leaky <- tibble::tibble(
+    match_date = as.Date("2026-05-20"), home_team = "C", away_team = "D"
+  )
+  expect_true(bt_wf_training_disjoint(oos_clean, results, d))
+  expect_false(bt_wf_training_disjoint(oos_leaky, results, d))
+})
