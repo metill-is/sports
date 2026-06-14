@@ -178,3 +178,71 @@ wc_build_results <- function(group_fixtures, root = here::here("data"),
     matches = rows
   )
 }
+
+#' Backfill the accountability snapshot log from the git history of
+#' `predictions.json`.
+#'
+#' Every daily fit committed a `predictions.json` covering the then-upcoming
+#' fixtures. Walking those commits oldest -> newest and upserting each into the
+#' snapshot log reconstructs exactly what [wc_snapshot_predictions()] would have
+#' accumulated day by day — recovering the pre-match prediction for every
+#' fixture ever published, including matches played before this layer shipped.
+#' Idempotent (re-running re-derives the same per-fixture latest pre-match row).
+#'
+#' @param root Data root (where the snapshot log is written).
+#' @param repo Repository root for git operations.
+#' @param ref Git ref to walk (default `"HEAD"`).
+#' @param predictions_path Repo-relative path to the published predictions.json.
+#' @return Invisibly, the number of historical commits folded in.
+#' @export
+wc_backfill_snapshots <- function(root = here::here("data"),
+                                  repo = here::here(),
+                                  ref = "HEAD",
+                                  predictions_path =
+                                    "data/publish/world_cup/karla/predictions.json") {
+  commits <- tryCatch(
+    system2(
+      "git",
+      c("-C", repo, "log", "--reverse", "--format=%H", ref, "--", predictions_path),
+      stdout = TRUE, stderr = FALSE
+    ),
+    error = function(e) character()
+  )
+  commits <- commits[nzchar(commits)]
+  if (length(commits) == 0L) {
+    cli::cli_warn(
+      "wc_backfill_snapshots: no predictions.json history at {.path {predictions_path}}."
+    )
+    return(invisible(0L))
+  }
+
+  need <- c(
+    "match_date", "group", "home", "away",
+    "p_home", "p_draw", "p_away", "eg_home", "eg_away"
+  )
+  n_ok <- 0L
+  for (sha in commits) {
+    raw <- tryCatch(
+      system2("git", c("-C", repo, "show", paste0(sha, ":", predictions_path)),
+        stdout = TRUE, stderr = FALSE
+      ),
+      error = function(e) character()
+    )
+    if (!length(raw)) next
+    pj <- tryCatch(
+      jsonlite::fromJSON(paste(raw, collapse = "\n"), simplifyVector = TRUE),
+      error = function(e) NULL
+    )
+    if (is.null(pj) || NROW(pj$matches) == 0L) next
+    m <- pj$matches
+    if (!all(need %in% names(m))) next
+    preds <- tibble::as_tibble(m[, need])
+    gen <- pj$generated_at
+    fit_date <- suppressWarnings(as.Date(substr(if (is.null(gen)) "" else gen, 1, 10)))
+    if (is.na(fit_date)) fit_date <- as.Date(min(preds$match_date)) # fallback
+    wc_snapshot_predictions(preds, fit_date = fit_date, root = root)
+    n_ok <- n_ok + 1L
+  }
+  cli::cli_alert_success("wc_backfill_snapshots: folded in {n_ok} commit(s).")
+  invisible(n_ok)
+}

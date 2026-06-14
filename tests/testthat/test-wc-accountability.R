@@ -145,3 +145,18 @@ test_that("publish_world_cup writes results.json with the contract shape", {
     file.path(root, "wc", "accountability", "prediction_log.json")
   ))
 })
+
+test_that("wc_backfill_snapshots no-ops gracefully when there is no history", {
+  root <- withr::local_tempdir()
+  expect_warning(
+    n <- wc_backfill_snapshots(
+      root = root, repo = here::here(),
+      predictions_path = "data/publish/world_cup/karla/does-not-exist.json"
+    ),
+    "no predictions.json history"
+  )
+  expect_equal(n, 0L)
+  expect_false(file.exists(
+    file.path(root, "wc", "accountability", "prediction_log.json")
+  ))
+})
