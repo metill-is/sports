@@ -62,6 +62,7 @@ Collate:
     'backtest-engine.R'
     'backtest-metrics.R'
     'backtest-universe.R'
+    'backtest-walkforward.R'
     'cumulative-xpts.R'
     'decide-calibration.R'
     'decide-kelly.R'
