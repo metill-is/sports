@@ -20,3 +20,28 @@ bt_oos_scores <- function(settled, eps = 1e-6) {
     log_loss = -mean(y * log(p) + (1 - y) * log(1 - p))
   )
 }
+
+#' Upper-bound the odds snapshots a decision at cutoff `d` may see.
+#'
+#' G3/G4: `prepare_odds` bounds `scraped_at` from below only and takes
+#' `slice_max(scraped_at)`. Pre-slicing here to `scraped_at <= d + 12h` and
+#' writing the result into the isolated `wf_root` makes the decider unable to
+#' select a closing/post-result snapshot.
+#' @param odds Tibble from `read_table("odds")` (has `scraped_at`).
+#' @param d Cutoff date.
+#' @return `odds` restricted to pre-cutoff snapshots.
+#' @export
+bt_wf_slice_odds <- function(odds, d) {
+  if (nrow(odds) == 0L) {
+    return(odds)
+  }
+  cutoff <- as.POSIXct(format(as.Date(d)), tz = "UTC") + lubridate::dhours(12)
+  odds[odds$scraped_at <= cutoff, , drop = FALSE]
+}
+
+#' Large `max_age_hours` so prepare_odds' lower bound never drops a
+#' legitimately-old historical snapshot once the upper bound is enforced by
+#' [bt_wf_slice_odds()] (G3). ~10 years.
+#' @return Numeric hours.
+#' @export
+bt_wf_max_age_hours <- function() 24 * 365 * 10
