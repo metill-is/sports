@@ -1,12 +1,404 @@
 {
-  "generated_at": "2026-06-14T08:56:24Z",
+  "generated_at": "2026-06-14T11:12:47Z",
   "summary": {
-    "n_played": 4,
-    "n_hit": 3,
-    "hit_rate": 0.75,
-    "mean_p_outcome": 0.4318
+    "n_played": 8,
+    "n_hit": 4,
+    "hit_rate": 0.5,
+    "mean_p_outcome": 0.3787
   },
   "matches": [
+    {
+      "match_date": "2026-06-13",
+      "group": "B",
+      "home": "Qatar",
+      "home_is": "Katar",
+      "away": "Switzerland",
+      "away_is": "Sviss",
+      "home_score": 1,
+      "away_score": 1,
+      "outcome": "D",
+      "pred": {
+        "p_home": 0.0493,
+        "p_draw": 0.101,
+        "p_away": 0.8497,
+        "eg_home": 0.54,
+        "eg_away": 3.1
+      },
+      "pred_dist": {
+        "diff": [
+          {
+            "diff": -12,
+            "p": 0.0003
+          },
+          {
+            "diff": -11,
+            "p": 0.0017
+          },
+          {
+            "diff": -10,
+            "p": 0.0013
+          },
+          {
+            "diff": -9,
+            "p": 0.0063
+          },
+          {
+            "diff": -8,
+            "p": 0.0113
+          },
+          {
+            "diff": -7,
+            "p": 0.026
+          },
+          {
+            "diff": -6,
+            "p": 0.0377
+          },
+          {
+            "diff": -5,
+            "p": 0.0763
+          },
+          {
+            "diff": -4,
+            "p": 0.1267
+          },
+          {
+            "diff": -3,
+            "p": 0.183
+          },
+          {
+            "diff": -2,
+            "p": 0.212
+          },
+          {
+            "diff": -1,
+            "p": 0.167
+          },
+          {
+            "diff": 0,
+            "p": 0.101
+          },
+          {
+            "diff": 1,
+            "p": 0.04
+          },
+          {
+            "diff": 2,
+            "p": 0.0063
+          },
+          {
+            "diff": 3,
+            "p": 0.0023
+          },
+          {
+            "diff": 4,
+            "p": 0.0003
+          },
+          {
+            "diff": 5,
+            "p": 0.0003
+          }
+        ]
+      },
+      "actual": {
+        "home": 1,
+        "away": 1,
+        "total": 2,
+        "diff": 0
+      },
+      "pred_fit_date": "2026-06-13",
+      "p_outcome": 0.101,
+      "hit": false,
+      "surprise": 0.899
+    },
+    {
+      "match_date": "2026-06-13",
+      "group": "C",
+      "home": "Brazil",
+      "home_is": "Brasilía",
+      "away": "Morocco",
+      "away_is": "Marokkó",
+      "home_score": 1,
+      "away_score": 1,
+      "outcome": "D",
+      "pred": {
+        "p_home": 0.529,
+        "p_draw": 0.2603,
+        "p_away": 0.2107,
+        "eg_home": 1.54,
+        "eg_away": 0.84
+      },
+      "pred_dist": {
+        "diff": [
+          {
+            "diff": -6,
+            "p": 0.0003
+          },
+          {
+            "diff": -5,
+            "p": 0.0003
+          },
+          {
+            "diff": -4,
+            "p": 0.0043
+          },
+          {
+            "diff": -3,
+            "p": 0.0153
+          },
+          {
+            "diff": -2,
+            "p": 0.0537
+          },
+          {
+            "diff": -1,
+            "p": 0.1367
+          },
+          {
+            "diff": 0,
+            "p": 0.2603
+          },
+          {
+            "diff": 1,
+            "p": 0.247
+          },
+          {
+            "diff": 2,
+            "p": 0.1533
+          },
+          {
+            "diff": 3,
+            "p": 0.0803
+          },
+          {
+            "diff": 4,
+            "p": 0.029
+          },
+          {
+            "diff": 5,
+            "p": 0.0123
+          },
+          {
+            "diff": 6,
+            "p": 0.0033
+          },
+          {
+            "diff": 7,
+            "p": 0.0017
+          },
+          {
+            "diff": 8,
+            "p": 0.0013
+          },
+          {
+            "diff": 9,
+            "p": 0.0003
+          },
+          {
+            "diff": 11,
+            "p": 0.0003
+          }
+        ]
+      },
+      "actual": {
+        "home": 1,
+        "away": 1,
+        "total": 2,
+        "diff": 0
+      },
+      "pred_fit_date": "2026-06-13",
+      "p_outcome": 0.2603,
+      "hit": false,
+      "surprise": 0.7397
+    },
+    {
+      "match_date": "2026-06-13",
+      "group": "C",
+      "home": "Haiti",
+      "home_is": "Haítí",
+      "away": "Scotland",
+      "away_is": "Skotland",
+      "home_score": 0,
+      "away_score": 1,
+      "outcome": "A",
+      "pred": {
+        "p_home": 0.2077,
+        "p_draw": 0.2093,
+        "p_away": 0.583,
+        "eg_home": 1.05,
+        "eg_away": 2.05
+      },
+      "pred_dist": {
+        "diff": [
+          {
+            "diff": -10,
+            "p": 0.0003
+          },
+          {
+            "diff": -9,
+            "p": 0.0007
+          },
+          {
+            "diff": -8,
+            "p": 0.0007
+          },
+          {
+            "diff": -7,
+            "p": 0.0033
+          },
+          {
+            "diff": -6,
+            "p": 0.0093
+          },
+          {
+            "diff": -5,
+            "p": 0.025
+          },
+          {
+            "diff": -4,
+            "p": 0.053
+          },
+          {
+            "diff": -3,
+            "p": 0.1027
+          },
+          {
+            "diff": -2,
+            "p": 0.1613
+          },
+          {
+            "diff": -1,
+            "p": 0.2267
+          },
+          {
+            "diff": 0,
+            "p": 0.2093
+          },
+          {
+            "diff": 1,
+            "p": 0.1213
+          },
+          {
+            "diff": 2,
+            "p": 0.0557
+          },
+          {
+            "diff": 3,
+            "p": 0.0213
+          },
+          {
+            "diff": 4,
+            "p": 0.0077
+          },
+          {
+            "diff": 5,
+            "p": 0.001
+          },
+          {
+            "diff": 6,
+            "p": 0.0007
+          }
+        ]
+      },
+      "actual": {
+        "home": 0,
+        "away": 1,
+        "total": 1,
+        "diff": -1
+      },
+      "pred_fit_date": "2026-06-13",
+      "p_outcome": 0.583,
+      "hit": true,
+      "surprise": 0.417
+    },
+    {
+      "match_date": "2026-06-13",
+      "group": "D",
+      "home": "Australia",
+      "home_is": "Ástralía",
+      "away": "Turkey",
+      "away_is": "Tyrkland",
+      "home_score": 2,
+      "away_score": 0,
+      "outcome": "H",
+      "pred": {
+        "p_home": 0.358,
+        "p_draw": 0.276,
+        "p_away": 0.366,
+        "eg_home": 1.14,
+        "eg_away": 1.2
+      },
+      "pred_dist": {
+        "diff": [
+          {
+            "diff": -6,
+            "p": 0.0007
+          },
+          {
+            "diff": -5,
+            "p": 0.001
+          },
+          {
+            "diff": -4,
+            "p": 0.0137
+          },
+          {
+            "diff": -3,
+            "p": 0.0397
+          },
+          {
+            "diff": -2,
+            "p": 0.1083
+          },
+          {
+            "diff": -1,
+            "p": 0.2027
+          },
+          {
+            "diff": 0,
+            "p": 0.276
+          },
+          {
+            "diff": 1,
+            "p": 0.201
+          },
+          {
+            "diff": 2,
+            "p": 0.1073
+          },
+          {
+            "diff": 3,
+            "p": 0.033
+          },
+          {
+            "diff": 4,
+            "p": 0.0117
+          },
+          {
+            "diff": 5,
+            "p": 0.0037
+          },
+          {
+            "diff": 6,
+            "p": 0.001
+          },
+          {
+            "diff": 7,
+            "p": 0.0003
+          }
+        ]
+      },
+      "actual": {
+        "home": 2,
+        "away": 0,
+        "total": 2,
+        "diff": 2
+      },
+      "pred_fit_date": "2026-06-13",
+      "p_outcome": 0.358,
+      "hit": false,
+      "surprise": 0.642
+    },
     {
       "match_date": "2026-06-12",
       "group": "B",
