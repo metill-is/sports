@@ -448,6 +448,23 @@ simulate_world_cup <- function(sim_inputs_team, sim_inputs_scalar,
       goal_diff_distribution = lapply(up, function(f) {
         tb <- table(mh_m[, f] - mg_m[, f])
         tibble::tibble(diff = as.integer(names(tb)), p = as.numeric(tb) / nd)
+      }),
+      # Marginal posterior goal distributions per fixture (home / away / total)
+      # — the score-prediction accountability contract: the platform draws each
+      # as a predicted-distribution-vs-actual strip (cf. the basketball/handball
+      # historical_testing.R interval plots). Same table-of-counts shape as the
+      # goal-difference distribution above.
+      home_goal_distribution = lapply(up, function(f) {
+        tb <- table(mh_m[, f])
+        tibble::tibble(goals = as.integer(names(tb)), p = as.numeric(tb) / nd)
+      }),
+      away_goal_distribution = lapply(up, function(f) {
+        tb <- table(mg_m[, f])
+        tibble::tibble(goals = as.integer(names(tb)), p = as.numeric(tb) / nd)
+      }),
+      total_goal_distribution = lapply(up, function(f) {
+        tb <- table(mh_m[, f] + mg_m[, f])
+        tibble::tibble(total = as.integer(names(tb)), p = as.numeric(tb) / nd)
       })
     )
   }

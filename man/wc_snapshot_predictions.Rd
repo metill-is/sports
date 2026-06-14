@@ -21,7 +21,10 @@ wc_snapshot_predictions(
 Invisibly, the log path.
 }
 \description{
-One row per (home, away, match_date): the latest pre-match 1X2 + expected-goal
-prediction and the `fit_date` that produced it. Idempotent within a fit; only
-genuine pre-match predictions (fit made on or before match day) are retained.
+One object per (home, away, match_date): the latest pre-match 1X2 + expected
+goals + the four predicted goal distributions (diff / home / away / total),
+and the `fit_date` that produced them. Idempotent within a fit; only genuine
+pre-match predictions (fit on or before match day) are retained. Distribution
+columns absent from `predictions` are simply omitted (so a feed carrying only
+goal-diff still snapshots cleanly).
 }

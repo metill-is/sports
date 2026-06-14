@@ -2,8 +2,8 @@
 % Please edit documentation in R/wc-accountability.R
 \name{wc_build_results}
 \alias{wc_build_results}
-\title{Build the accountability payload: played group fixtures vs their pre-match
-prediction (the `results.json` data contract).}
+\title{Build the accountability payload from played group fixtures + their pre-match
+snapshot (the `results.json` data contract).}
 \usage{
 wc_build_results(group_fixtures, root = here::here("data"), is_name = identity)
 }
@@ -19,9 +19,9 @@ wc_build_results(group_fixtures, root = here::here("data"), is_name = identity)
   qualifies (so the platform section stays gated off).
 }
 \description{
-For each played group fixture, joins to the latest pre-match snapshot
-(`fit_date <= match_date`) and records the actual outcome, the probability the
-model assigned to it, whether the model's most-likely call was right, and a
-"surprise" score. Matches with no pre-match prediction on record (e.g. played
-before this layer shipped) are skipped.
+Each record carries the 1X2 result (outcome, p_outcome, hit, surprise) AND
+the score-prediction view: `pred_dist` (the predicted home/away/total/diff
+goal distributions, whichever the snapshot holds) against `actual` (the
+realised home/away/total/diff goals). Matches with no pre-match prediction on
+record are skipped.
 }

@@ -30,5 +30,7 @@ fixtures. Walking those commits oldest -> newest and upserting each into the
 snapshot log reconstructs exactly what [wc_snapshot_predictions()] would have
 accumulated day by day — recovering the pre-match prediction for every
 fixture ever published, including matches played before this layer shipped.
-Idempotent (re-running re-derives the same per-fixture latest pre-match row).
+Historical files carry only `goal_diff_distribution`, so the home/away/total
+distributions backfill as absent and accrue from deployment forward.
+Idempotent.
 }

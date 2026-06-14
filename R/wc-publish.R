@@ -150,6 +150,25 @@ publish_world_cup <- function(sim_out, sim_inputs_team, structure, group_fixture
           list(diff = as.integer(gdd$diff[k]), p = rnd(gdd$p[k], 4))
         })
       }
+      # Marginal goal distributions (home / away / total) — the score-prediction
+      # accountability contract. Same {value, p} element shape as goal-diff; the
+      # value field is `goals` (home/away) or `total`.
+      ser_dist <- function(df, vfield) {
+        lapply(seq_len(nrow(df)), function(k) {
+          el <- list(as.integer(df[[vfield]][k]), rnd(df$p[k], 4))
+          names(el) <- c(vfield, "p")
+          el
+        })
+      }
+      for (spec in list(
+        c("home_goal_distribution", "goals"),
+        c("away_goal_distribution", "goals"),
+        c("total_goal_distribution", "total")
+      )) {
+        nm <- spec[1]
+        d <- if (nm %in% names(pr)) r[[nm]][[1]] else NULL
+        if (!is.null(d) && nrow(d) > 0L) out[[nm]] <- ser_dist(d, spec[2])
+      }
       out
     })
   } else {
