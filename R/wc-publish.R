@@ -264,6 +264,19 @@ publish_world_cup <- function(sim_out, sim_inputs_team, structure, group_fixture
     auto_unbox = TRUE, pretty = TRUE
   )
 
+  # ---- results.json (accountability: "did the model call it?") ----
+  # Snapshot today's upcoming-match predictions (so they survive being pruned
+  # once played), then build the played-fixtures-vs-prediction payload from the
+  # accumulated log. Empty `matches` until a played fixture has a pre-match
+  # snapshot on record -> the platform's accountability section stays gated off.
+  wc_snapshot_predictions(sim_out$predictions, fit_date = fit_date, root = root)
+  results_payload <- wc_build_results(group_fixtures, root = root, is_name = is_name)
+  jsonlite::write_json(
+    c(list(generated_at = generated_at), results_payload),
+    file.path(out_dir, "results.json"),
+    auto_unbox = TRUE, pretty = TRUE
+  )
+
   cli::cli_alert_success("Wrote WC publish JSON to {.path {out_dir}}")
   invisible(out_dir)
 }

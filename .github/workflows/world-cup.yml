@@ -136,6 +136,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/facts/results/sport=football/country=world \
                   data/facts/schedules/sport=football/country=world \
+                  data/wc/accountability/ \
                   data/publish/world_cup/
           if git diff --cached --quiet; then
             echo "No forecast changes to commit"
