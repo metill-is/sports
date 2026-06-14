@@ -207,14 +207,15 @@ bt_wf_seed_results <- function(results, root) {
 #' (calibration disabled, leak-free); `ledger_asof` is accepted for symmetry.
 #' @noRd
 bt_wf_default_decide <- function(root, run_date, sex, ledger_asof = NULL) {
-  # WHY: walk-forward re-fits at many historical cutoffs hit borderline
-  # divergence rates; adapt_delta = 0.99 keeps most under the Stan gate's 1%
-  # threshold. bt_walkforward tolerates any cutoff whose fit still trips it.
+  # WHY: fit at the production adapt_delta (0.95). Raising it to 0.99 traded an
+  # occasional benign divergence-gate trip for ~30x slower fits (this model's
+  # geometry saturates max_treedepth at small step sizes -> ~60 min/fit). So
+  # keep the production sampler and let bt_walkforward skip any cutoff whose fit
+  # trips the gate instead.
   fit_league(
     league_key = "football_iceland", sex = sex,
     fit_date = run_date, end_date = run_date,
     seed = as.integer(format(run_date, "%Y%m%d")),
-    adapt_delta = 0.99,
     schedule_horizon_days = 200L, root = root
   )
   decide_league(
