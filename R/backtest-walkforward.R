@@ -124,3 +124,97 @@ bt_wf_require_pre_cutoff_odds <- function(candidates, sliced_odds) {
   )
   candidates[ck %in% ok, , drop = FALSE]
 }
+
+#' Score one walk-forward cutoff inside an isolated tempdir.
+#'
+#' G6: builds a fresh `wf_root` tempdir, seeds pre-`d` results + a pre-sliced
+#' odds store into it; the live root is never written. `decide_fn` defaults to
+#' the real fit+decide closure ([bt_wf_default_decide()]); tests inject a fake
+#' to exercise the orchestration without Stan. G7: the universe is the decide
+#' return, never [bt_load_universe()]. G9: settlement uses window 0.
+#' @param sex,d,horizon_days Cutoff parameters.
+#' @param results,odds,ledger Pre-loaded stores (`ledger` may be NULL).
+#' @param live_root Production data root (read-only here).
+#' @param decide_fn Closure `(root, run_date, sex, ledger_asof)` -> candidate
+#'   tibble. Default fits as-of then decides.
+#' @param tie_threshold Per-(sport,country) push band (football = 0).
+#' @return Scored OOS tibble (`cutoff`, `run_id`, candidate cols, `win`).
+#' @export
+bt_walkforward_cutoff <- function(sex, d, horizon_days,
+                                  results, odds, ledger = NULL,
+                                  live_root = here::here("data"),
+                                  decide_fn = bt_wf_default_decide,
+                                  tie_threshold = 0) {
+  d <- as.Date(d)
+  wf_root <- withr::local_tempdir()
+
+  pre_results <- results[results$match_date <= (d + as.integer(horizon_days)), , drop = FALSE]
+  bt_wf_seed_results(pre_results, wf_root)
+
+  sliced <- bt_wf_slice_odds(odds, d)
+  if (nrow(sliced) > 0L) write_table(sliced, "odds", root = wf_root)
+
+  led_asof <- bt_wf_ledger_asof(ledger, d)
+
+  cands <- decide_fn(root = wf_root, run_date = d, sex = sex, ledger_asof = led_asof)
+  cands <- bt_wf_filter_oos(cands, d, horizon_days)
+  cands <- bt_wf_require_pre_cutoff_odds(cands, sliced)
+  if (nrow(cands) == 0L) {
+    cands$cutoff <- as.Date(character())
+    cands$run_id <- as.POSIXct(character(), tz = "UTC")
+    cands$win <- logical()
+    return(cands)
+  }
+
+  bets <- cands
+  bets$sport <- "football"
+  bets$country <- "iceland"
+  bets$sex <- sex
+  bets$odds_placed <- bets$odds
+  bets$bet_amount <- 1
+  bets$settled <- FALSE
+  bets$win <- NA
+  bets$pnl <- NA_real_
+  settled <- compute_settlement(bets, results,
+    match_date_window_days = 0L, tie_threshold = tie_threshold
+  )
+  cands$win <- settled$win
+  cands$cutoff <- d
+  cands$run_id <- as.POSIXct(format(d), tz = "UTC")
+  cands
+}
+
+#' Seed a results store into an isolated tempdir for prepare_data.
+#' @noRd
+bt_wf_seed_results <- function(results, root) {
+  if (nrow(results) == 0L) {
+    return(invisible(NULL))
+  }
+  res_root <- file.path(root, "facts", "results")
+  fs::dir_create(res_root, recurse = TRUE)
+  arrow::write_dataset(results,
+    path = res_root, format = "parquet",
+    partitioning = c("sport", "country", "sex", "season"),
+    existing_data_behavior = "overwrite"
+  )
+  invisible(NULL)
+}
+
+#' Default decide closure: fit as-of `d` into `wf_root`, then decide (G7).
+#'
+#' Never called by the pure tests (which inject a fake). The empty `wf_root`
+#' has no ledger, so `compute_calibrations` falls back to the neutral K3 prior
+#' (calibration disabled, leak-free); `ledger_asof` is accepted for symmetry.
+#' @noRd
+bt_wf_default_decide <- function(root, run_date, sex, ledger_asof = NULL) {
+  fit_league(
+    league_key = "football_iceland", sex = sex,
+    fit_date = run_date, end_date = run_date,
+    seed = as.integer(format(run_date, "%Y%m%d")),
+    schedule_horizon_days = 200L, root = root
+  )
+  decide_league(
+    league_key = "football_iceland", sex = sex,
+    run_date = run_date, root = root, write = FALSE
+  )
+}
