@@ -141,3 +141,45 @@ test_that("bt_wf_training_disjoint is TRUE when OOS and training match-sets do n
   expect_true(bt_wf_training_disjoint(oos_clean, results, d))
   expect_false(bt_wf_training_disjoint(oos_leaky, results, d))
 })
+
+test_that("bt_wf_ledger_asof keeps only rows whose match settled strictly before d (ASSERT-CALIB-1)", {
+  d <- as.Date("2026-05-20")
+  led <- tibble::tibble(
+    sport = "football", country = "iceland", sex = "male",
+    match_date = as.Date(c("2026-05-15", "2026-05-25")),
+    home_team = c("A", "C"), away_team = c("B", "D"),
+    settled = c(TRUE, TRUE), win = c(TRUE, FALSE), p = c(0.6, 0.4)
+  )
+  out <- bt_wf_ledger_asof(led, d)
+  expect_equal(nrow(out), 1L)
+  expect_equal(out$home_team, "A")
+})
+
+test_that("bt_wf_ledger_asof drops unsettled rows and a NULL/empty ledger returns empty", {
+  d <- as.Date("2026-05-20")
+  led <- tibble::tibble(
+    sport = "football", country = "iceland", sex = "male",
+    match_date = as.Date("2026-05-10"), home_team = "A", away_team = "B",
+    settled = FALSE, win = NA, p = 0.5
+  )
+  expect_equal(nrow(bt_wf_ledger_asof(led, d)), 0L)
+  expect_equal(nrow(bt_wf_ledger_asof(led[0, ], d)), 0L)
+})
+
+test_that("bt_wf_require_pre_cutoff_odds drops candidates with no pre-cutoff odds snapshot (G8, ASSERT-RESCHEDULE-1)", {
+  cands <- tibble::tibble(
+    match_date = as.Date(c("2026-05-22", "2026-05-23")),
+    home_team = c("A", "C"), away_team = c("B", "D"),
+    market = "moneyline", outcome = "home", line = NA_real_,
+    p = 0.5, odds = 2.0
+  )
+  sliced_odds <- tibble::tibble(
+    match_date = as.Date("2026-05-22"),
+    home_team = "A", away_team = "B",
+    market = "moneyline", outcome = "home", line = NA_real_,
+    odds = 2.0, scraped_at = as.POSIXct("2026-05-19 12:00:00", tz = "UTC")
+  )
+  out <- bt_wf_require_pre_cutoff_odds(cands, sliced_odds)
+  expect_equal(out$home_team, "A")
+  expect_equal(nrow(out), 1L)
+})

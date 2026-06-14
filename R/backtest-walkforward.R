@@ -80,3 +80,47 @@ bt_wf_training_disjoint <- function(oos, results, d) {
   okey <- paste(oos$match_date, oos$home_team, oos$away_team, sep = "\r")
   length(intersect(tkey, okey)) == 0L
 }
+
+#' As-of ledger view: rows whose match resolved strictly before `d` (G5).
+#'
+#' Feeds calibration so `compute_calibrations` cannot peek at bets that
+#' settled after the cutoff. Approximates settle-date by `match_date` (the
+#' ledger has no settle timestamp); `match_date < d` is the conservative cut.
+#' @param ledger Ledger tibble (or empty/NULL).
+#' @param d Cutoff date.
+#' @return Settled ledger rows with `match_date < d`.
+#' @export
+bt_wf_ledger_asof <- function(ledger, d) {
+  if (is.null(ledger) || nrow(ledger) == 0L) {
+    return(ledger[0, , drop = FALSE])
+  }
+  d <- as.Date(d)
+  keep <- !is.na(ledger$settled) & ledger$settled & ledger$match_date < d
+  ledger[keep, , drop = FALSE]
+}
+
+#' Drop OOS candidates with no pre-cutoff odds snapshot (G8).
+#'
+#' A fixture whose only stored date is a post-`d` schedule revision has no
+#' pre-cutoff odds and is not a bettable as-of match. Keying on the selection
+#' identity sidesteps phantom rescheduled fixtures.
+#' @param candidates OOS candidates.
+#' @param sliced_odds Output of [bt_wf_slice_odds()].
+#' @return Candidates that have a matching pre-cutoff odds snapshot.
+#' @export
+bt_wf_require_pre_cutoff_odds <- function(candidates, sliced_odds) {
+  if (nrow(candidates) == 0L || nrow(sliced_odds) == 0L) {
+    return(candidates[0, , drop = FALSE])
+  }
+  ok <- paste(sliced_odds$match_date, sliced_odds$home_team,
+    sliced_odds$away_team, sliced_odds$market, sliced_odds$outcome,
+    sliced_odds$line,
+    sep = "\r"
+  )
+  ck <- paste(candidates$match_date, candidates$home_team,
+    candidates$away_team, candidates$market, candidates$outcome,
+    candidates$line,
+    sep = "\r"
+  )
+  candidates[ck %in% ok, , drop = FALSE]
+}
