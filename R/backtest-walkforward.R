@@ -218,3 +218,45 @@ bt_wf_default_decide <- function(root, run_date, sex, ledger_asof = NULL) {
     run_date = run_date, root = root, write = FALSE
   )
 }
+
+#' Walk-forward out-of-sample validator over a set of cutoff dates.
+#'
+#' For each `d` in `cutoffs`, re-fit as-of `d`, decide from pre-`d` odds, and
+#' score the OOS matches in `(d, d + horizon_days]`. PRIMARY verdict is OOS
+#' Brier/log-loss ([bt_oos_scores()]); the secondary PnL arm uses unit stakes
+#' and is approximate. football_iceland only (the engine stays general). Each
+#' cutoff is a full Stan fit: run detached.
+#' @param sex "male" or "female".
+#' @param cutoffs Vector of cutoff Dates (strictly pre-round per G1).
+#' @param horizon_days OOS window length. Default 14.
+#' @param results,odds,ledger Pre-loaded stores (NULL ledger -> neutral calib).
+#' @param live_root Production data root (read-only).
+#' @param decide_fn Injected for tests; default fits+decides.
+#' @param tie_threshold Per-(sport,country) push band.
+#' @return `list(bets, scores, pnl)`.
+#' @export
+bt_walkforward <- function(sex, cutoffs, horizon_days = 14L,
+                           results, odds, ledger = NULL,
+                           live_root = here::here("data"),
+                           decide_fn = bt_wf_default_decide,
+                           tie_threshold = 0) {
+  scored <- list()
+  for (d in as.list(as.Date(cutoffs))) {
+    scored[[length(scored) + 1L]] <- bt_walkforward_cutoff(
+      sex = sex, d = d, horizon_days = horizon_days,
+      results = results, odds = odds, ledger = ledger,
+      live_root = live_root, decide_fn = decide_fn,
+      tie_threshold = tie_threshold
+    )
+  }
+  bets <- dplyr::bind_rows(scored)
+  pnl <- if (nrow(bets) > 0L) {
+    b <- bets
+    b$stake <- 1
+    b$pnl <- ifelse(b$win, b$stake * (b$odds - 1), -b$stake)
+    bt_metrics(b)
+  } else {
+    tibble::tibble()
+  }
+  list(bets = bets, scores = bt_oos_scores(bets), pnl = pnl)
+}
