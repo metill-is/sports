@@ -258,3 +258,37 @@ test_that("bt_walkforward_cutoff drops a match settled on the cutoff day (same-d
   )
   expect_equal(nrow(scored), 0L)
 })
+
+test_that("bt_walkforward binds cutoffs and reports primary OOS scores + secondary PnL", {
+  live_root <- withr::local_tempdir()
+  results <- tibble::tibble(
+    sport = "football", country = "iceland", sex = "male", season = 2026L,
+    match_date = as.Date(c("2026-05-22", "2026-05-29")),
+    home_team = "A", away_team = "B",
+    home_score = c(2L, 0L), away_score = c(1L, 1L),
+    division = "BD", round = c(2L, 3L)
+  )
+  odds <- tibble::tibble(
+    sport = "football", country = "iceland",
+    scraped_at = as.POSIXct(c("2026-05-19 12:00:00", "2026-05-26 12:00:00"), tz = "UTC"),
+    match_date = as.Date(c("2026-05-22", "2026-05-29")),
+    home_team = "A", away_team = "B",
+    market = "moneyline", outcome = "home", line = NA_real_, odds = 2.0
+  )
+  fake_decide <- function(root, run_date, sex, ledger_asof = NULL) {
+    md <- if (run_date < as.Date("2026-05-25")) as.Date("2026-05-22") else as.Date("2026-05-29")
+    tibble::tibble(
+      match_date = md, home_team = "A", away_team = "B",
+      market = "moneyline", outcome = "home", line = NA_real_,
+      p = 0.6, odds = 2.0, ev = 0.1, kelly_raw = 0.1
+    )
+  }
+  wf <- bt_walkforward(
+    sex = "male", cutoffs = as.Date(c("2026-05-20", "2026-05-27")),
+    horizon_days = 14L, results = results, odds = odds, ledger = NULL,
+    live_root = live_root, decide_fn = fake_decide, tie_threshold = 0
+  )
+  expect_equal(wf$scores$n, 2L)
+  expect_true(is.finite(wf$scores$brier))
+  expect_equal(nrow(wf$bets), 2L)
+})
