@@ -21,22 +21,28 @@ bt_oos_scores <- function(settled, eps = 1e-6) {
   )
 }
 
-#' Upper-bound the odds snapshots a decision at cutoff `d` may see.
+#' Drop odds snapshots scraped on or after each match's OWN kickoff day (G3/G4).
 #'
-#' G3/G4: `prepare_odds` bounds `scraped_at` from below only and takes
-#' `slice_max(scraped_at)`. Pre-slicing here to `scraped_at <= d + 12h` and
-#' writing the result into the isolated `wf_root` makes the decider unable to
-#' select a closing/post-result snapshot.
-#' @param odds Tibble from `read_table("odds")` (has `scraped_at`).
-#' @param d Cutoff date.
-#' @return `odds` restricted to pre-cutoff snapshots.
+#' `prepare_odds` bounds `scraped_at` from below only and takes
+#' `slice_max(scraped_at)`, so without an upper bound the decider could select a
+#' post-result snapshot. The leak-free boundary is each match's own match day,
+#' NOT the training cutoff `d`: Lengjan posts odds ~2 days before kickoff, so an
+#' OOS match 5-14 days after `d` has every one of its pre-match snapshots scraped
+#' well after `d`. The old `scraped_at <= d + 12h` rule therefore emptied the OOS
+#' odds set entirely (the 0-bets bug). A snapshot scraped any day BEFORE the
+#' match cannot embed the result; one on or after the match day can, so it is
+#' dropped. `slice_max(scraped_at)` downstream then takes the latest survivor =
+#' the closing-ish line. Writing the result into the isolated `wf_root` makes the
+#' decider structurally unable to see a match-day/post-result snapshot.
+#' @param odds Tibble from `read_table("odds")` (has `scraped_at`, `match_date`).
+#' @return `odds` restricted to snapshots scraped strictly before their match day.
 #' @export
-bt_wf_slice_odds <- function(odds, d) {
+bt_wf_slice_odds <- function(odds) {
   if (nrow(odds) == 0L) {
     return(odds)
   }
-  cutoff <- as.POSIXct(format(as.Date(d)), tz = "UTC") + lubridate::dhours(12)
-  odds[odds$scraped_at <= cutoff, , drop = FALSE]
+  scrape_day <- as.Date(odds$scraped_at, tz = "UTC")
+  odds[scrape_day < odds$match_date, , drop = FALSE]
 }
 
 #' Large `max_age_hours` so prepare_odds' lower bound never drops a
@@ -151,7 +157,7 @@ bt_walkforward_cutoff <- function(sex, d, horizon_days,
   pre_results <- results[results$match_date <= (d + as.integer(horizon_days)), , drop = FALSE]
   bt_wf_seed_results(pre_results, wf_root)
 
-  sliced <- bt_wf_slice_odds(odds, d)
+  sliced <- bt_wf_slice_odds(odds)
   if (nrow(sliced) > 0L) write_table(sliced, "odds", root = wf_root)
 
   led_asof <- bt_wf_ledger_asof(ledger, d)
@@ -218,9 +224,13 @@ bt_wf_default_decide <- function(root, run_date, sex, ledger_asof = NULL) {
     seed = as.integer(format(run_date, "%Y%m%d")),
     schedule_horizon_days = 200L, root = root
   )
+  # WHY: a historical decide runs weeks after the cutoff, so prepare_odds' default
+  # 48h (vs Sys.time()) lower bound would drop every pre-sliced snapshot. Pass a
+  # ~10yr window so only bt_wf_slice_odds' per-match-day upper bound binds.
   decide_league(
     league_key = "football_iceland", sex = sex,
-    run_date = run_date, root = root, write = FALSE
+    run_date = run_date, root = root, write = FALSE,
+    max_age_hours = bt_wf_max_age_hours()
   )
 }
 

@@ -23,13 +23,19 @@ NULL
 #' @param root Data root. Default here::here("data").
 #' @param bankroll Pre-loaded bankroll list (NULL = load_bankroll()).
 #' @param write Write candidates + recommendations? Default TRUE.
+#' @param max_age_hours Odds-staleness window forwarded to [prepare_odds()].
+#'   `NULL` (default) uses the league's `betting$max_age_hours` (or 48h),
+#'   preserving live behaviour. The walk-forward harness passes a large value so
+#'   a historical decide (run weeks after its cutoff) can still see the
+#'   pre-match odds it pre-sliced into the isolated root.
 #' @return Tibble of recommendations (kept bets) invisibly.
 #' @export
 decide_league <- function(league_key = NULL, league = NULL, sex,
                           run_date = Sys.Date(),
                           root = here::here("data"),
                           bankroll = NULL,
-                          write = TRUE) {
+                          write = TRUE,
+                          max_age_hours = NULL) {
   # 1. Resolve league -------------------------------------------------------
   if (is.null(league) == is.null(league_key)) {
     stop("Exactly one of `league_key` or `league` must be supplied",
@@ -77,7 +83,7 @@ decide_league <- function(league_key = NULL, league = NULL, sex,
   # 4. Odds + market toggles ------------------------------------------------
   odds <- prepare_odds(league, sex,
     end_date = run_date,
-    max_age_hours = betting$max_age_hours %||% 48,
+    max_age_hours = max_age_hours %||% betting$max_age_hours %||% 48,
     root = root
   )
   if (nrow(odds) == 0L) {

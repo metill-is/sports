@@ -38,67 +38,148 @@ test_that("bt_oos_scores drops rows with NA win (unsettled) before scoring", {
   expect_equal(s$brier, (0.7 - 1)^2)
 })
 
-test_that("bt_wf_slice_odds keeps only snapshots at or before d + 12h (ASSERT-ODDS-2)", {
-  d <- as.Date("2026-05-20")
+test_that("bt_wf_slice_odds cuts each match at its OWN match day, independent of any single cutoff (ASSERT-ODDS-2)", {
+  # Two matches on different days. The leak-free boundary is each match's own
+  # kickoff day -- a snapshot scraped any day BEFORE the match cannot embed the
+  # result; a snapshot on/after the match day can. This is per-row, so a match
+  # 12 days after a cutoff still keeps its (post-cutoff) pre-match snapshots.
   odds <- tibble::tibble(
     sport = "football", country = "iceland",
+    match_date = as.Date(c("2026-05-22", "2026-05-22", "2026-05-29", "2026-05-29")),
     scraped_at = as.POSIXct(
-      c("2026-05-19 14:00:00", "2026-05-20 10:00:00", "2026-05-21 09:00:00"),
+      c(
+        "2026-05-21 09:00:00", # day before its match -> keep
+        "2026-05-22 09:00:00", # ON its match day -> drop (may embed result)
+        "2026-05-28 09:00:00", # day before its match -> keep
+        "2026-05-29 18:00:00" # ON its match day -> drop
+      ),
       tz = "UTC"
     ),
-    match_date = as.Date("2026-05-22"),
     home_team = "A", away_team = "B",
     market = "moneyline", outcome = "home",
-    line = NA_real_, odds = c(2.50, 2.40, 1.90)
+    line = NA_real_, odds = c(2.50, 1.90, 2.10, 1.70)
   )
-  out <- bt_wf_slice_odds(odds, d)
-  expect_true(all(out$scraped_at <= as.POSIXct("2026-05-20", tz = "UTC") + lubridate::dhours(12)))
-  expect_false(any(out$odds == 1.90))
+  out <- bt_wf_slice_odds(odds)
   expect_equal(nrow(out), 2L)
+  expect_true(all(as.Date(out$scraped_at, tz = "UTC") < out$match_date))
+  expect_setequal(out$odds, c(2.50, 2.10))
 })
 
-test_that("bt_wf_decide selects the pre-cutoff snapshot, never the post-result one (ASSERT-ODDS-1, the mandated regression test)", {
-  d <- as.Date("2026-05-20")
+test_that("bt_wf_decide selects the latest pre-match-day snapshot, never the match-day/post-result one (ASSERT-ODDS-1, the mandated regression test)", {
+  # Three snapshots for one match: two pre-match-day (admissible) and one on the
+  # match day after kickoff (embeds the result). The slice must drop the last;
+  # prepare_odds' slice_max then takes the latest survivor = closing-ish line.
   odds <- tibble::tibble(
     sport = "football", country = "iceland",
+    match_date = as.Date("2026-05-22"),
     scraped_at = as.POSIXct(
-      c("2026-05-19 12:00:00", "2026-05-21 12:00:00"),
+      c("2026-05-19 12:00:00", "2026-05-21 12:00:00", "2026-05-22 20:00:00"),
       tz = "UTC"
     ),
-    match_date = as.Date("2026-05-22"),
     home_team = "A", away_team = "B",
     market = "moneyline", outcome = "home",
-    line = NA_real_, odds = c(2.50, 1.90)
+    line = NA_real_, odds = c(2.70, 2.50, 1.40)
   )
   wf_root <- withr::local_tempdir()
-  write_table(bt_wf_slice_odds(odds, d), "odds", root = wf_root)
+  write_table(bt_wf_slice_odds(odds), "odds", root = wf_root)
   seen <- prepare_odds(
     list(sport = "football", country = "iceland"), "male",
-    end_date = d, max_age_hours = 24 * 365 * 10, root = wf_root
+    end_date = as.Date("2026-05-01"), max_age_hours = bt_wf_max_age_hours(), root = wf_root
   )
+  expect_equal(nrow(seen), 1L)
   expect_equal(seen$odds, 2.50)
-  expect_false(any(seen$odds == 1.90))
-  expect_true(all(seen$scraped_at <= as.POSIXct("2026-05-20", tz = "UTC") + lubridate::dhours(12)))
+  expect_false(any(seen$odds == 1.40))
+  expect_true(all(as.Date(seen$scraped_at, tz = "UTC") < seen$match_date))
 })
 
-test_that("bt_wf_slice_odds + huge max_age_hours still returns old historical snapshots (ASSERT-ODDS-3, guards the silent-empty trap)", {
-  d <- as.Date("2026-05-20")
+test_that("bt_wf_slice_odds + huge max_age_hours still surfaces weeks-old pre-match snapshots (ASSERT-ODDS-3, guards the silent-empty trap)", {
+  # A snapshot scraped 4 days before the match must survive BOTH the slice and
+  # prepare_odds' lower bound. The bug stacked a same-day-as-cutoff slice on top
+  # of a 48h wall-clock lower bound, silently emptying the OOS odds set.
   odds <- tibble::tibble(
     sport = "football", country = "iceland",
-    scraped_at = as.POSIXct("2026-05-18 09:00:00", tz = "UTC"),
     match_date = as.Date("2026-05-22"),
+    scraped_at = as.POSIXct("2026-05-18 09:00:00", tz = "UTC"),
     home_team = "A", away_team = "B",
     market = "moneyline", outcome = "home",
     line = NA_real_, odds = 2.50
   )
   wf_root <- withr::local_tempdir()
-  write_table(bt_wf_slice_odds(odds, d), "odds", root = wf_root)
+  write_table(bt_wf_slice_odds(odds), "odds", root = wf_root)
   seen <- prepare_odds(
     list(sport = "football", country = "iceland"), "male",
-    end_date = d, max_age_hours = bt_wf_max_age_hours(), root = wf_root
+    end_date = as.Date("2026-05-01"), max_age_hours = bt_wf_max_age_hours(), root = wf_root
   )
   expect_equal(nrow(seen), 1L)
   expect_equal(seen$odds, 2.50)
+})
+
+test_that("decide_league forwards max_age_hours so a historical decide can see weeks-old odds (cause-b regression)", {
+  # The second stacked cause of the 0-bets bug: prepare_odds drops scrapes older
+  # than `now - max_age_hours` with now = Sys.time(). For a historical decide the
+  # odds are genuinely weeks old, so the default 48h window empties them. The
+  # harness must pass a huge max_age_hours through decide_league -> prepare_odds.
+  set.seed(7)
+  root <- withr::local_tempdir()
+  match_date <- Sys.Date() + 5L
+  beliefs <- tibble::tibble(
+    sport = "football", country = "iceland", sex = "male",
+    fit_date = Sys.Date(),
+    match_date = match_date,
+    home_team = "Alpha", away_team = "Bravo",
+    draw_id = 1:1000,
+    home_goals = rpois(1000, 1.6),
+    away_goals = rpois(1000, 1.1)
+  )
+  write_table(beliefs, "beliefs_latest", root = root)
+  odds <- tibble::tibble(
+    sport = "football", country = "iceland",
+    scraped_at = Sys.time() - lubridate::ddays(20),
+    match_date = match_date,
+    home_team = "Alpha", away_team = "Bravo",
+    market = c("moneyline", "moneyline"),
+    outcome = c("home", "away"),
+    line = NA_real_,
+    odds = c(2.40, 3.20)
+  )
+  write_table(odds, "odds", root = root)
+
+  league <- list(
+    sport = "football", country = "iceland", sexes = "male",
+    betting = list(
+      kelly_frac = list(male = 0.10), ev_threshold = 0.0,
+      markets = list(moneyline = TRUE, spread = TRUE, total = TRUE),
+      scoring = list(has_ties = TRUE, tie_threshold = 0),
+      min_bet = 200, max_age_hours = 48
+    )
+  )
+  bankroll <- list(
+    initial_pool = 14909, current_pool = 14909,
+    daily_budget_frac = 0.10, daily_budget_min_isk = 1000,
+    kelly_ceiling = 0.25
+  )
+
+  # Default config window (48h): the 20-day-old scrape is dropped -> no odds ->
+  # decide_league early-returns and writes EMPTY candidates.
+  decide_league(
+    league = league, sex = "male", run_date = Sys.Date(),
+    root = root, bankroll = bankroll, write = TRUE
+  )
+  cands_default <- read_table("candidates",
+    filter = list(sport = "football", country = "iceland"), root = root
+  )
+  expect_equal(nrow(cands_default), 0L)
+
+  # Override: the historical odds survive the age filter -> candidates appear.
+  decide_league(
+    league = league, sex = "male", run_date = Sys.Date(),
+    root = root, bankroll = bankroll, write = TRUE,
+    max_age_hours = bt_wf_max_age_hours()
+  )
+  cands_override <- read_table("candidates",
+    filter = list(sport = "football", country = "iceland"), root = root
+  )
+  expect_gt(nrow(cands_override), 0L)
 })
 
 test_that("bt_wf_filter_oos drops candidates on or before the cutoff and beyond the horizon (G2)", {
@@ -327,4 +408,51 @@ test_that("bt_walkforward tolerates a per-cutoff fit failure: records it in $ski
   expect_equal(nrow(wf$skipped), 1L)
   expect_equal(wf$skipped$cutoff, as.Date("2026-05-27"))
   expect_match(wf$skipped$error, "divergent")
+})
+
+test_that("walk-forward yields OOS candidates and scores >= 1 bet with a real as-of fit (integration; opt-in)", {
+  # Every test above injects a fake decide_fn, so none exercised the real
+  # fit_league -> decide_league path the slice rule + max_age_hours forwarding
+  # actually fix -- which is exactly why the 0-bets bug shipped green. This runs
+  # ONE real reduced-iter as-of fit against the live football_iceland store.
+  # Opt-in (Stan fit, ~minutes) and never on CI; the CI-isolation test forbids
+  # the harness symbols in any workflow regardless.
+  skip_on_cran()
+  skip_on_ci()
+  skip_if_not(
+    nzchar(Sys.getenv("SPORTS_RUN_WF_INTEGRATION")),
+    "set SPORTS_RUN_WF_INTEGRATION=1 to run the Stan-backed walk-forward integration test"
+  )
+  skip_if_not_installed("cmdstanr")
+
+  withr::local_envvar(
+    SPORTS_FIT_ITER_WARMUP = "400",
+    SPORTS_FIT_ITER_SAMPLING = "400"
+  )
+
+  league <- load_leagues()[["football_iceland"]]
+  results <- read_table("results",
+    filter = list(sport = "football", country = "iceland", sex = "male")
+  )
+  odds <- read_table("odds",
+    filter = list(sport = "football", country = "iceland")
+  )
+  skip_if(
+    nrow(results) == 0L || nrow(odds) == 0L,
+    "no football_iceland results/odds in this checkout"
+  )
+
+  wf <- bt_walkforward(
+    sex = "male", cutoffs = as.Date("2026-05-03"), horizon_days = 14L,
+    results = results, odds = odds, ledger = NULL,
+    tie_threshold = league$betting$scoring$tie_threshold %||% 0
+  )
+
+  # A reduced-iter fit can trip the Stan divergence gate -- a tolerated skip, not
+  # the regression we guard. Only assert the OOS pipeline when the fit survived.
+  if (nrow(wf$skipped) > 0L) {
+    skip(paste("reduced-iter fit tripped the Stan gate:", wf$skipped$error[1]))
+  }
+  expect_gt(nrow(wf$bets), 0L)
+  expect_gt(wf$scores$n, 0L)
 })
