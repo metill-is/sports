@@ -19,9 +19,11 @@ bt_walkforward(
 \arguments{
 \item{sex}{"male" or "female".}
 
-\item{cutoffs}{Vector of cutoff Dates (strictly pre-round per G1).}
+\item{cutoffs}{Vector of cutoff Dates (strictly pre-round per G1); sorted
+ascending internally.}
 
-\item{horizon_days}{OOS window length. Default 14.}
+\item{horizon_days}{OOS window CAP, and the tail length for the final cutoff.
+Default 14. Earlier cutoffs use `min(horizon_days, gap to next cutoff)`.}
 
 \item{results, odds, ledger}{Pre-loaded stores (NULL ledger -> neutral calib).}
 
@@ -44,9 +46,12 @@ bt_walkforward(
   `scores$n`.
 }
 \description{
-For each `d` in `cutoffs`, re-fit as-of `d`, decide from pre-`d` odds, and
-score the OOS matches in `(d, d + horizon_days]`. PRIMARY verdict is OOS
-Brier/log-loss ([bt_oos_scores()]); the secondary PnL arm uses unit stakes
-and is approximate. football_iceland only (the engine stays general). Each
-cutoff is a full Stan fit: run detached.
+For each `d` in `cutoffs` (sorted ascending), re-fit as-of `d`, decide from
+pre-`d` odds, and score the OOS matches in `(d, min(d + horizon_days, next
+cutoff)]` — the window is capped at the next cutoff so every match is scored
+once, under its freshest as-of fit (no double-counting across overlapping
+windows). The final cutoff keeps the full `horizon_days` tail. PRIMARY verdict
+is OOS Brier/log-loss ([bt_oos_scores()]); the secondary PnL arm uses unit
+stakes and is approximate. football_iceland only (the engine stays general).
+Each cutoff is a full Stan fit: run detached.
 }

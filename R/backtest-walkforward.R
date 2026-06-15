@@ -247,14 +247,19 @@ bt_wf_default_decide <- function(root, run_date, sex, ledger_asof = NULL) {
 
 #' Walk-forward out-of-sample validator over a set of cutoff dates.
 #'
-#' For each `d` in `cutoffs`, re-fit as-of `d`, decide from pre-`d` odds, and
-#' score the OOS matches in `(d, d + horizon_days]`. PRIMARY verdict is OOS
-#' Brier/log-loss ([bt_oos_scores()]); the secondary PnL arm uses unit stakes
-#' and is approximate. football_iceland only (the engine stays general). Each
-#' cutoff is a full Stan fit: run detached.
+#' For each `d` in `cutoffs` (sorted ascending), re-fit as-of `d`, decide from
+#' pre-`d` odds, and score the OOS matches in `(d, min(d + horizon_days, next
+#' cutoff)]` — the window is capped at the next cutoff so every match is scored
+#' once, under its freshest as-of fit (no double-counting across overlapping
+#' windows). The final cutoff keeps the full `horizon_days` tail. PRIMARY verdict
+#' is OOS Brier/log-loss ([bt_oos_scores()]); the secondary PnL arm uses unit
+#' stakes and is approximate. football_iceland only (the engine stays general).
+#' Each cutoff is a full Stan fit: run detached.
 #' @param sex "male" or "female".
-#' @param cutoffs Vector of cutoff Dates (strictly pre-round per G1).
-#' @param horizon_days OOS window length. Default 14.
+#' @param cutoffs Vector of cutoff Dates (strictly pre-round per G1); sorted
+#'   ascending internally.
+#' @param horizon_days OOS window CAP, and the tail length for the final cutoff.
+#'   Default 14. Earlier cutoffs use `min(horizon_days, gap to next cutoff)`.
 #' @param results,odds,ledger Pre-loaded stores (NULL ledger -> neutral calib).
 #' @param live_root Production data root (read-only).
 #' @param decide_fn Injected for tests; default fits+decides.
@@ -275,12 +280,25 @@ bt_walkforward <- function(sex, cutoffs, horizon_days = 14L,
                            live_root = here::here("data"),
                            decide_fn = bt_wf_default_decide,
                            tie_threshold = 0) {
+  cutoffs <- sort(as.Date(cutoffs))
+  n_cut <- length(cutoffs)
   scored <- list()
   skipped <- list()
-  for (d in as.list(as.Date(cutoffs))) {
+  for (i in seq_len(n_cut)) {
+    d <- cutoffs[i]
+    # WHY: cap each cutoff's OOS window at the NEXT cutoff so every match is
+    # scored once, under its freshest as-of fit. Per-round cutoffs sit closer
+    # than horizon_days (gaps ~4-9d vs 14d), so a fixed window would re-score
+    # ~every match under 2+ fits, inflating the calibration n ~2x. The last
+    # cutoff has no successor and keeps the full horizon_days tail.
+    eff_h <- if (i < n_cut) {
+      min(as.integer(horizon_days), as.integer(cutoffs[i + 1L] - d))
+    } else {
+      as.integer(horizon_days)
+    }
     res <- tryCatch(
       bt_walkforward_cutoff(
-        sex = sex, d = d, horizon_days = horizon_days,
+        sex = sex, d = d, horizon_days = eff_h,
         results = results, odds = odds, ledger = ledger,
         live_root = live_root, decide_fn = decide_fn,
         tie_threshold = tie_threshold
