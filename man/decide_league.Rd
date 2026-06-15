@@ -12,7 +12,8 @@ decide_league(
   root = here::here("data"),
   bankroll = NULL,
   write = TRUE,
-  max_age_hours = NULL
+  max_age_hours = NULL,
+  return_candidates = FALSE
 )
 }
 \arguments{
@@ -35,9 +36,16 @@ decide_league(
 preserving live behaviour. The walk-forward harness passes a large value so
 a historical decide (run weeks after its cutoff) can still see the
 pre-match odds it pre-sliced into the isolated root.}
+
+\item{return_candidates}{When `TRUE`, return the FULL candidates tibble (all
+stages, with `stage`/`ev`/`kelly_raw`) instead of just kept recommendations.
+The walk-forward harness needs every bettable candidate (each carries a
+model `p`) for its OOS calibration arm, then keys PnL off `stage == "kept"`.
+Default `FALSE` preserves the live return (kept recommendations only).}
 }
 \value{
-Tibble of recommendations (kept bets) invisibly.
+Recommendations (kept bets) invisibly, or the full candidates tibble
+  when `return_candidates = TRUE`.
 }
 \description{
 Chains prepare_odds + kelly_joint + portfolio_optimise + compute_calibration,

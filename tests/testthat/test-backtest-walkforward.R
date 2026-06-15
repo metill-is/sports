@@ -38,6 +38,16 @@ test_that("bt_oos_scores drops rows with NA win (unsettled) before scoring", {
   expect_equal(s$brier, (0.7 - 1)^2)
 })
 
+test_that("bt_oos_scores drops rows with NA/non-finite p (e.g. market-off candidates) before scoring", {
+  # Scoring ALL candidates means market-off rows (p = NA) and invalid-input rows
+  # (p = NaN) reach the scorer; they carry no model probability and must not
+  # contaminate the calibration verdict.
+  settled <- tibble::tibble(p = c(0.7, NA, NaN, 0.3), win = c(TRUE, TRUE, FALSE, FALSE))
+  s <- bt_oos_scores(settled)
+  expect_equal(s$n, 2L)
+  expect_equal(s$brier, mean((c(0.7, 0.3) - c(1, 0))^2))
+})
+
 test_that("bt_wf_slice_odds cuts each match at its OWN match day, independent of any single cutoff (ASSERT-ODDS-2)", {
   # Two matches on different days. The leak-free boundary is each match's own
   # kickoff day -- a snapshot scraped any day BEFORE the match cannot embed the
@@ -410,6 +420,58 @@ test_that("bt_walkforward tolerates a per-cutoff fit failure: records it in $ski
   expect_match(wf$skipped$error, "divergent")
 })
 
+test_that("bt_walkforward scores ALL candidates for calibration but PnL only over kept bets", {
+  # The primary OOS calibration verdict scores every bettable candidate the
+  # decider produced (kept + dropped-but-priced); the secondary PnL arm scores
+  # only the bets that would actually be placed (stage == "kept").
+  live_root <- withr::local_tempdir()
+  results <- tibble::tibble(
+    sport = "football", country = "iceland", sex = "male", season = 2026L,
+    match_date = as.Date("2026-05-22"),
+    home_team = "A", away_team = "B",
+    home_score = 2L, away_score = 0L, division = "BD", round = 2L
+  )
+  odds <- tibble::tibble(
+    sport = "football", country = "iceland",
+    scraped_at = as.POSIXct("2026-05-21 09:00:00", tz = "UTC"),
+    match_date = as.Date("2026-05-22"),
+    home_team = "A", away_team = "B",
+    market = c("moneyline", "moneyline", "total"),
+    outcome = c("home", "away", "over"),
+    line = c(NA_real_, NA_real_, 2.5),
+    odds = c(1.80, 4.5, 2.0)
+  )
+  # Real decide returns the FULL candidates tibble (all stages) when the harness
+  # asks for it; only stage == "kept" would be placed. Two of these three are
+  # dropped by staking filters but still carry a model p -> scored for calibration.
+  fake_decide <- function(root, run_date, sex, ledger_asof = NULL) {
+    tibble::tibble(
+      match_date = as.Date("2026-05-22"), home_team = "A", away_team = "B",
+      market = c("moneyline", "moneyline", "total"),
+      outcome = c("home", "away", "over"),
+      line = c(NA_real_, NA_real_, 2.5),
+      p = c(0.65, 0.12, 0.55), odds = c(1.80, 4.5, 2.0),
+      ev = c(0.17, -0.46, 0.10), kelly_raw = c(0.2, 0, 0.05),
+      stage = c("kept", "dropped_low_ev", "dropped_min_bet")
+    )
+  }
+  wf <- bt_walkforward(
+    sex = "male", cutoffs = as.Date("2026-05-10"), horizon_days = 14L,
+    results = results, odds = odds, ledger = NULL,
+    live_root = live_root, decide_fn = fake_decide, tie_threshold = 0
+  )
+  # Calibration over all 3 settled candidates.
+  expect_equal(wf$scores$n, 3L)
+  # PnL only over the single kept bet.
+  expect_equal(wf$pnl$n_bets, 1L)
+  expect_equal(sum(wf$bets$kept), 1L)
+  # The kept bet is moneyline-home @1.80; A won 2-0 -> a win.
+  kept_row <- wf$bets[wf$bets$kept, , drop = FALSE]
+  expect_equal(kept_row$market, "moneyline")
+  expect_equal(kept_row$outcome, "home")
+  expect_true(kept_row$win)
+})
+
 test_that("walk-forward yields OOS candidates and scores >= 1 bet with a real as-of fit (integration; opt-in)", {
   # Every test above injects a fake decide_fn, so none exercised the real
   # fit_league -> decide_league path the slice rule + max_age_hours forwarding
@@ -453,6 +515,10 @@ test_that("walk-forward yields OOS candidates and scores >= 1 bet with a real as
   if (nrow(wf$skipped) > 0L) {
     skip(paste("reduced-iter fit tripped the Stan gate:", wf$skipped$error[1]))
   }
-  expect_gt(nrow(wf$bets), 0L)
-  expect_gt(wf$scores$n, 0L)
+  # Calibration scores ALL bettable OOS candidates -> many per cutoff. A regress
+  # to placed-bets-only (the original n=1 bug) would fail this floor.
+  expect_gt(nrow(wf$bets), 5L)
+  expect_gt(wf$scores$n, 5L)
+  # PnL is the placed subset of the scored candidates.
+  if (!is.null(wf$pnl$n_bets)) expect_lte(wf$pnl$n_bets, wf$scores$n)
 })

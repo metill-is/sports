@@ -32,9 +32,16 @@ bt_walkforward(
 \item{tie_threshold}{Per-(sport,country) push band.}
 }
 \value{
-`list(bets, scores, pnl, skipped)`. `skipped` is a `(cutoff, error)`
-  tibble of cutoffs whose fit failed (e.g. the Stan divergence gate) — a
-  single bad fit is recorded and skipped, never aborting the whole sweep.
+`list(bets, scores, pnl, skipped)`. `bets` is every scored OOS
+  candidate with a `kept` flag; `scores` ([bt_oos_scores()]) is the PRIMARY
+  OOS calibration over ALL candidates with a finite `p` (so n reflects every
+  bettable prediction, not just placed bets); `pnl` ([bt_metrics()]) is the
+  secondary unit-stake arm over the `kept` (placed) subset only. `skipped` is
+  a `(cutoff, error)` tibble of cutoffs whose fit failed (e.g. the Stan
+  divergence gate) — a single bad fit is recorded and skipped, never aborting
+  the whole sweep. NB: candidate rows within a match (e.g. the three moneyline
+  outcomes) are correlated, so the effective n for calibration CIs is below
+  `scores$n`.
 }
 \description{
 For each `d` in `cutoffs`, re-fit as-of `d`, decide from pre-`d` odds, and
