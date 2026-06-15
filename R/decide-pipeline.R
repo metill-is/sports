@@ -28,14 +28,21 @@ NULL
 #'   preserving live behaviour. The walk-forward harness passes a large value so
 #'   a historical decide (run weeks after its cutoff) can still see the
 #'   pre-match odds it pre-sliced into the isolated root.
-#' @return Tibble of recommendations (kept bets) invisibly.
+#' @param return_candidates When `TRUE`, return the FULL candidates tibble (all
+#'   stages, with `stage`/`ev`/`kelly_raw`) instead of just kept recommendations.
+#'   The walk-forward harness needs every bettable candidate (each carries a
+#'   model `p`) for its OOS calibration arm, then keys PnL off `stage == "kept"`.
+#'   Default `FALSE` preserves the live return (kept recommendations only).
+#' @return Recommendations (kept bets) invisibly, or the full candidates tibble
+#'   when `return_candidates = TRUE`.
 #' @export
 decide_league <- function(league_key = NULL, league = NULL, sex,
                           run_date = Sys.Date(),
                           root = here::here("data"),
                           bankroll = NULL,
                           write = TRUE,
-                          max_age_hours = NULL) {
+                          max_age_hours = NULL,
+                          return_candidates = FALSE) {
   # 1. Resolve league -------------------------------------------------------
   if (is.null(league) == is.null(league_key)) {
     stop("Exactly one of `league_key` or `league` must be supplied",
@@ -59,6 +66,12 @@ decide_league <- function(league_key = NULL, league = NULL, sex,
   betting <- league$betting
   run_id <- as.POSIXct(format(run_date), tz = "UTC")
 
+  # An early exit returns the candidate-shaped empty tibble (with `stage`) when
+  # the caller asked for candidates, so the harness's bind_rows stays schema-safe.
+  empty_return <- function() {
+    if (isTRUE(return_candidates)) empty_candidates() else empty_recommendations()
+  }
+
   # 3. Read beliefs ---------------------------------------------------------
   beliefs <- tryCatch(
     read_table("beliefs_latest",
@@ -77,7 +90,7 @@ decide_league <- function(league_key = NULL, league = NULL, sex,
       " \u2014 skipping. Run scripts/fit_all.R first.",
       call. = FALSE
     )
-    return(invisible(empty_recommendations()))
+    return(invisible(empty_return()))
   }
 
   # 4. Odds + market toggles ------------------------------------------------
@@ -88,7 +101,7 @@ decide_league <- function(league_key = NULL, league = NULL, sex,
   )
   if (nrow(odds) == 0L) {
     if (write) decide_write_empty(league, sex, run_id, root)
-    return(invisible(empty_recommendations()))
+    return(invisible(empty_return()))
   }
 
   # Markets toggle: drop bets where markets[[market]] is FALSE
@@ -97,12 +110,12 @@ decide_league <- function(league_key = NULL, league = NULL, sex,
   odds_off <- odds[!market_kept, , drop = FALSE]
 
   if (nrow(odds_on) == 0L) {
+    cand_off <- annotate_market_off(odds_off, league, sex, run_id)
     if (write) {
-      cand_off <- annotate_market_off(odds_off, league, sex, run_id)
       write_table(cand_off, "candidates", root = root)
       write_table(empty_recommendations(), "recommendations", root = root)
     }
-    return(invisible(empty_recommendations()))
+    return(invisible(if (isTRUE(return_candidates)) cand_off else empty_recommendations()))
   }
 
   # 5. Per-match Kelly packages --------------------------------------------
@@ -190,7 +203,7 @@ decide_league <- function(league_key = NULL, league = NULL, sex,
 
   if (length(packages) == 0L) {
     if (write) decide_write_empty(league, sex, run_id, root)
-    return(invisible(empty_recommendations()))
+    return(invisible(empty_return()))
   }
 
   # 7. Portfolio scaling ---------------------------------------------------
@@ -285,7 +298,10 @@ decide_league <- function(league_key = NULL, league = NULL, sex,
     write_table(rec_out, "recommendations", root = root)
   }
 
-  # 14. Return recommendations tibble invisibly ---------------------------
+  # 14. Return: full candidates (harness) or kept recommendations (live) -------
+  if (isTRUE(return_candidates)) {
+    return(invisible(all_cands))
+  }
   recs_out <- recs[, c(
     "run_id", "sport", "country", "sex",
     "match_date", "home_team", "away_team",

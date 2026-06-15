@@ -8,7 +8,9 @@
 #' @return One-row tibble `(n, brier, log_loss)`; `n = 0` -> NA scores.
 #' @export
 bt_oos_scores <- function(settled, eps = 1e-6) {
-  d <- settled[!is.na(settled$win), , drop = FALSE]
+  # Scoring all candidates means market-off (p = NA) and invalid-input (p = NaN)
+  # rows reach here; they carry no model probability, so drop alongside NA wins.
+  d <- settled[!is.na(settled$win) & is.finite(settled$p), , drop = FALSE]
   if (nrow(d) == 0L) {
     return(tibble::tibble(n = 0L, brier = NA_real_, log_loss = NA_real_))
   }
@@ -169,6 +171,7 @@ bt_walkforward_cutoff <- function(sex, d, horizon_days,
     cands$cutoff <- as.Date(character())
     cands$run_id <- as.POSIXct(character(), tz = "UTC")
     cands$win <- logical()
+    cands$kept <- logical()
     return(cands)
   }
 
@@ -185,6 +188,10 @@ bt_walkforward_cutoff <- function(sex, d, horizon_days,
     match_date_window_days = 0L, tie_threshold = tie_threshold
   )
   cands$win <- settled$win
+  # `kept` splits the two arms: calibration (bt_oos_scores) scores all candidates
+  # with a finite p; PnL (bt_metrics) is restricted to the placed subset. A fake
+  # decide_fn without a `stage` column (the pure tests) -> all rows count as kept.
+  cands$kept <- if ("stage" %in% names(cands)) cands$stage == "kept" else TRUE
   cands$cutoff <- d
   cands$run_id <- as.POSIXct(format(d), tz = "UTC")
   cands
@@ -227,10 +234,14 @@ bt_wf_default_decide <- function(root, run_date, sex, ledger_asof = NULL) {
   # WHY: a historical decide runs weeks after the cutoff, so prepare_odds' default
   # 48h (vs Sys.time()) lower bound would drop every pre-sliced snapshot. Pass a
   # ~10yr window so only bt_wf_slice_odds' per-match-day upper bound binds.
+  # return_candidates = TRUE: the OOS calibration arm scores EVERY bettable
+  # candidate (each carries a model p), not just the handful that clear the
+  # staking filters; the PnL arm keys off stage == "kept" downstream.
   decide_league(
     league_key = "football_iceland", sex = sex,
     run_date = run_date, root = root, write = FALSE,
-    max_age_hours = bt_wf_max_age_hours()
+    max_age_hours = bt_wf_max_age_hours(),
+    return_candidates = TRUE
   )
 }
 
@@ -248,9 +259,16 @@ bt_wf_default_decide <- function(root, run_date, sex, ledger_asof = NULL) {
 #' @param live_root Production data root (read-only).
 #' @param decide_fn Injected for tests; default fits+decides.
 #' @param tie_threshold Per-(sport,country) push band.
-#' @return `list(bets, scores, pnl, skipped)`. `skipped` is a `(cutoff, error)`
-#'   tibble of cutoffs whose fit failed (e.g. the Stan divergence gate) — a
-#'   single bad fit is recorded and skipped, never aborting the whole sweep.
+#' @return `list(bets, scores, pnl, skipped)`. `bets` is every scored OOS
+#'   candidate with a `kept` flag; `scores` ([bt_oos_scores()]) is the PRIMARY
+#'   OOS calibration over ALL candidates with a finite `p` (so n reflects every
+#'   bettable prediction, not just placed bets); `pnl` ([bt_metrics()]) is the
+#'   secondary unit-stake arm over the `kept` (placed) subset only. `skipped` is
+#'   a `(cutoff, error)` tibble of cutoffs whose fit failed (e.g. the Stan
+#'   divergence gate) — a single bad fit is recorded and skipped, never aborting
+#'   the whole sweep. NB: candidate rows within a match (e.g. the three moneyline
+#'   outcomes) are correlated, so the effective n for calibration CIs is below
+#'   `scores$n`.
 #' @export
 bt_walkforward <- function(sex, cutoffs, horizon_days = 14L,
                            results, odds, ledger = NULL,
@@ -282,13 +300,19 @@ bt_walkforward <- function(sex, cutoffs, horizon_days = 14L,
   } else {
     tibble::tibble(cutoff = as.Date(character()), error = character())
   }
-  pnl <- if (nrow(bets) > 0L) {
-    b <- bets
-    b$stake <- 1
-    b$pnl <- ifelse(b$win, b$stake * (b$odds - 1), -b$stake)
-    bt_metrics(b)
-  } else {
-    tibble::tibble()
+  # Secondary PnL arm: only the PLACED bets (stage == "kept"), settled, unit
+  # stake. Calibration below scores ALL candidates; PnL scores what we'd bet.
+  pnl <- {
+    kb <- bets
+    if ("kept" %in% names(kb)) kb <- kb[!is.na(kb$kept) & kb$kept, , drop = FALSE]
+    kb <- kb[!is.na(kb$win), , drop = FALSE]
+    if (nrow(kb) > 0L) {
+      kb$stake <- 1
+      kb$pnl <- ifelse(kb$win, kb$stake * (kb$odds - 1), -kb$stake)
+      bt_metrics(kb)
+    } else {
+      tibble::tibble()
+    }
   }
   list(bets = bets, scores = bt_oos_scores(bets), pnl = pnl, skipped = skipped_df)
 }
