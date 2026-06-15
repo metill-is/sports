@@ -11,7 +11,8 @@ decide_league(
   run_date = Sys.Date(),
   root = here::here("data"),
   bankroll = NULL,
-  write = TRUE
+  write = TRUE,
+  max_age_hours = NULL
 )
 }
 \arguments{
@@ -28,6 +29,12 @@ decide_league(
 \item{bankroll}{Pre-loaded bankroll list (NULL = load_bankroll()).}
 
 \item{write}{Write candidates + recommendations? Default TRUE.}
+
+\item{max_age_hours}{Odds-staleness window forwarded to [prepare_odds()].
+`NULL` (default) uses the league's `betting$max_age_hours` (or 48h),
+preserving live behaviour. The walk-forward harness passes a large value so
+a historical decide (run weeks after its cutoff) can still see the
+pre-match odds it pre-sliced into the isolated root.}
 }
 \value{
 Tibble of recommendations (kept bets) invisibly.
