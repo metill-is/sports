@@ -384,6 +384,74 @@ test_that("bt_walkforward binds cutoffs and reports primary OOS scores + seconda
   expect_equal(nrow(wf$bets), 2L)
 })
 
+test_that("bt_walkforward caps each cutoff's window at the next cutoff so a match is scored once, under its freshest fit", {
+  # Per-round cutoffs sit closer than horizon_days, so two consecutive 14-day
+  # windows BOTH cover the 2026-05-20 match -> a fixed horizon double-counts it.
+  # Capping cutoff d1's window at d2 leaves the match only in d2's (freshest) one.
+  live_root <- withr::local_tempdir()
+  results <- tibble::tibble(
+    sport = "football", country = "iceland", sex = "male", season = 2026L,
+    match_date = as.Date("2026-05-20"),
+    home_team = "A", away_team = "B",
+    home_score = 2L, away_score = 0L, division = "BD", round = 3L
+  )
+  odds <- tibble::tibble(
+    sport = "football", country = "iceland",
+    scraped_at = as.POSIXct("2026-05-19 09:00:00", tz = "UTC"),
+    match_date = as.Date("2026-05-20"),
+    home_team = "A", away_team = "B",
+    market = "moneyline", outcome = "home", line = NA_real_, odds = 1.8
+  )
+  fake_decide <- function(root, run_date, sex, ledger_asof = NULL) {
+    tibble::tibble(
+      match_date = as.Date("2026-05-20"), home_team = "A", away_team = "B",
+      market = "moneyline", outcome = "home", line = NA_real_,
+      p = 0.6, odds = 1.8, ev = 0.08, kelly_raw = 0.1
+    )
+  }
+  # d1 = 05-10, d2 = 05-17 (7 days apart); both fixed-14d windows cover 05-20.
+  wf <- bt_walkforward(
+    sex = "male", cutoffs = as.Date(c("2026-05-10", "2026-05-17")),
+    horizon_days = 14L, results = results, odds = odds, ledger = NULL,
+    live_root = live_root, decide_fn = fake_decide, tie_threshold = 0
+  )
+  expect_equal(wf$scores$n, 1L)
+  expect_equal(nrow(wf$bets), 1L)
+  expect_equal(wf$bets$cutoff, as.Date("2026-05-17"))
+})
+
+test_that("bt_walkforward's LAST cutoff keeps the full horizon (no next cutoff to cap against)", {
+  live_root <- withr::local_tempdir()
+  results <- tibble::tibble(
+    sport = "football", country = "iceland", sex = "male", season = 2026L,
+    match_date = as.Date("2026-05-29"),
+    home_team = "A", away_team = "B",
+    home_score = 2L, away_score = 0L, division = "BD", round = 4L
+  )
+  odds <- tibble::tibble(
+    sport = "football", country = "iceland",
+    scraped_at = as.POSIXct("2026-05-28 09:00:00", tz = "UTC"),
+    match_date = as.Date("2026-05-29"),
+    home_team = "A", away_team = "B",
+    market = "moneyline", outcome = "home", line = NA_real_, odds = 1.8
+  )
+  fake_decide <- function(root, run_date, sex, ledger_asof = NULL) {
+    tibble::tibble(
+      match_date = as.Date("2026-05-29"), home_team = "A", away_team = "B",
+      market = "moneyline", outcome = "home", line = NA_real_,
+      p = 0.6, odds = 1.8, ev = 0.08, kelly_raw = 0.1
+    )
+  }
+  # Single (last) cutoff 05-17; the 05-29 match (12 days out) needs the full 14d.
+  wf <- bt_walkforward(
+    sex = "male", cutoffs = as.Date("2026-05-17"),
+    horizon_days = 14L, results = results, odds = odds, ledger = NULL,
+    live_root = live_root, decide_fn = fake_decide, tie_threshold = 0
+  )
+  expect_equal(wf$scores$n, 1L)
+  expect_equal(wf$bets$cutoff, as.Date("2026-05-17"))
+})
+
 test_that("bt_walkforward tolerates a per-cutoff fit failure: records it in $skipped and continues", {
   live_root <- withr::local_tempdir()
   results <- tibble::tibble(
