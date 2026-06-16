@@ -132,6 +132,14 @@ football_iceland:
       - { id: "813",   name: "Mjólkurbikar karla",       sex: male   }
       - { id: "1581",  name: "2. deild karla",           sex: male   }
       - { id: "1568",  name: "Besta deild kvenna",       sex: female }
+      # Women's cup — confirmed live 2026-06-16 (ÍBV kv v FH kv, 17 Jún) at
+      # competition id 2410. Lengjan labels it "Mjólkurbikar kvenna"; the same
+      # cell is "Bikar kvenna" on the publish side (publish_divisions.female.CUP).
+      # Closes the female-CUP scrape gap: the cell was already trained +
+      # published, just never bet. A cup is cross-divisional, so non-BD women's
+      # sides will surface here unmapped — fill team_names.female opportunistically
+      # as their odds first appear (same pattern as the women's BD map).
+      - { id: "2410",  name: "Mjólkurbikar kvenna",      sex: female }
     team_names:
       male:
         # Existing LD1 + men-only sex-disjoint entries:
