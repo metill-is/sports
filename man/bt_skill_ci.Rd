@@ -4,10 +4,14 @@
 \alias{bt_skill_ci}
 \title{Match-clustered bootstrap CI on the Brier skill score (model vs market).}
 \usage{
-bt_skill_ci(scored, R = 2000, probs = c(0.05, 0.5, 0.95), seed = 1L)
+bt_skill_ci(scored, by = NULL, R = 2000, probs = c(0.05, 0.5, 0.95), seed = 1L)
 }
 \arguments{
 \item{scored}{Output of [bt_devig()].}
+
+\item{by}{Optional grouping columns. With `by`, returns a per-group tibble of
+`(<by..>, skill_lo, skill_mid, skill_hi)` (requires length-3 `probs`); with
+`NULL` (default) returns the bare numeric vector for backward compatibility.}
 
 \item{R}{Bootstrap replicates. Default 2000.}
 
@@ -16,7 +20,7 @@ bt_skill_ci(scored, R = 2000, probs = c(0.05, 0.5, 0.95), seed = 1L)
 \item{seed}{RNG seed for reproducibility.}
 }
 \value{
-Numeric vector of the `probs` quantiles of the bootstrapped skill.
+Numeric vector of the `probs` quantiles, or a per-group tibble (`by`).
 }
 \description{
 Outcome rows within a match are dependent, so the resample unit is the MATCH,
