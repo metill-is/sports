@@ -229,12 +229,26 @@ bt_skill <- function(scored, by = NULL, eps = 1e-6) {
 #' not the row (index-expansion, so a match drawn twice contributes twice). This
 #' is what keeps the "is the edge real?" interval honest at small effective n.
 #' @param scored Output of [bt_devig()].
+#' @param by Optional grouping columns. With `by`, returns a per-group tibble of
+#'   `(<by..>, skill_lo, skill_mid, skill_hi)` (requires length-3 `probs`); with
+#'   `NULL` (default) returns the bare numeric vector for backward compatibility.
 #' @param R Bootstrap replicates. Default 2000.
 #' @param probs Quantiles to return. Default `c(0.05, 0.5, 0.95)`.
 #' @param seed RNG seed for reproducibility.
-#' @return Numeric vector of the `probs` quantiles of the bootstrapped skill.
+#' @return Numeric vector of the `probs` quantiles, or a per-group tibble (`by`).
 #' @export
-bt_skill_ci <- function(scored, R = 2000, probs = c(0.05, 0.5, 0.95), seed = 1L) {
+bt_skill_ci <- function(scored, by = NULL, R = 2000, probs = c(0.05, 0.5, 0.95), seed = 1L) {
+  if (!is.null(by)) {
+    return(
+      scored |>
+        dplyr::group_by(dplyr::across(dplyr::all_of(by))) |>
+        dplyr::group_modify(~ {
+          q <- bt_skill_ci(.x, by = NULL, R = R, probs = probs, seed = seed)
+          tibble::tibble(skill_lo = q[1], skill_mid = q[2], skill_hi = q[3])
+        }) |>
+        dplyr::ungroup()
+    )
+  }
   if (nrow(scored) == 0L) {
     return(rep(NA_real_, length(probs)))
   }
@@ -249,4 +263,77 @@ bt_skill_ci <- function(scored, R = 2000, probs = c(0.05, 0.5, 0.95), seed = 1L)
     }, numeric(1))
   })
   stats::quantile(reps, probs, names = FALSE)
+}
+
+#' Murphy (1973) decomposition of the Brier score.
+#'
+#' Splits Brier into reliability (calibration; lower better), resolution
+#' (discrimination; higher better), and uncertainty (base-rate variance, a
+#' property of the outcomes). Compare REL/RES across strata, NOT raw Brier --
+#' UNC differs by cell, so raw Brier is not cross-stratum comparable. The binned
+#' identity `BS = REL - RES + UNC` holds exactly when forecasts are constant
+#' within a bin.
+#' @param scored Tibble with numeric `p` and binary `y`.
+#' @param n_bins Forecast bins. Default 10.
+#' @param by Optional grouping columns.
+#' @return `(<by..>, n, reliability, resolution, uncertainty, brier)`.
+#' @export
+bt_brier_decomp <- function(scored, n_bins = 10, by = NULL) {
+  one <- function(d) {
+    n <- nrow(d)
+    o_bar <- mean(d$y)
+    bin <- cut(d$p, breaks = seq(0, 1, length.out = n_bins + 1), include.lowest = TRUE)
+    agg <- tibble::tibble(p = d$p, y = d$y, bin = bin) |>
+      dplyr::group_by(.data$bin) |>
+      dplyr::summarise(
+        nk = dplyr::n(), pbar = mean(.data$p), obar = mean(.data$y),
+        .groups = "drop"
+      )
+    tibble::tibble(
+      n = n,
+      reliability = sum(agg$nk * (agg$pbar - agg$obar)^2) / n,
+      resolution = sum(agg$nk * (agg$obar - o_bar)^2) / n,
+      uncertainty = o_bar * (1 - o_bar),
+      brier = mean((d$p - d$y)^2)
+    )
+  }
+  if (nrow(scored) == 0L) {
+    return(tibble::tibble())
+  }
+  if (is.null(by)) {
+    return(one(scored))
+  }
+  scored |>
+    dplyr::group_by(dplyr::across(dplyr::all_of(by))) |>
+    dplyr::group_modify(~ one(.x)) |>
+    dplyr::ungroup()
+}
+
+#' Calibration reliability with Jeffreys intervals and a binomial consistency band.
+#'
+#' Extends [bt_calibration()]: `lo`/`hi` are the Jeffreys (Beta(k+.5, n-k+.5))
+#' interval on each bin's realised frequency; `band_lo`/`band_hi` are the
+#' consistency band -- the central interval of the realised frequency UNDER the
+#' null that the bin is perfectly calibrated (Binomial(n, mean_p)/n). A bin whose
+#' `realised_freq` sits outside `[band_lo, band_hi]` is miscalibrated beyond
+#' sampling noise.
+#' @param settled Per-bet tibble (`p`, logical `win`).
+#' @param n_bins Probability bins. Default 10.
+#' @param by Optional grouping columns.
+#' @param conf Central mass for both intervals. Default 0.9.
+#' @return [bt_calibration()] columns plus `lo, hi, band_lo, band_hi`.
+#' @export
+bt_calibration_bands <- function(settled, n_bins = 10, by = NULL, conf = 0.9) {
+  cal <- bt_calibration(settled, n_bins = n_bins, by = by)
+  if (nrow(cal) == 0L) {
+    return(cal)
+  }
+  a <- (1 - conf) / 2
+  b <- 1 - a
+  k <- round(cal$realised_freq * cal$n)
+  cal$lo <- stats::qbeta(a, k + 0.5, cal$n - k + 0.5)
+  cal$hi <- stats::qbeta(b, k + 0.5, cal$n - k + 0.5)
+  cal$band_lo <- stats::qbinom(a, cal$n, cal$mean_p) / cal$n
+  cal$band_hi <- stats::qbinom(b, cal$n, cal$mean_p) / cal$n
+  cal
 }
