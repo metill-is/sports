@@ -411,6 +411,17 @@ check_placement_health <- function(root, now, th) {
   last <- read_placement_status(root)
 
   if (n_pending == 0L) {
+    if (!is.null(last) && !(last$status %in% healthy)) {
+      age_h <- as.numeric(difftime(now,
+        as.POSIXct(last$run_at, tz = "UTC", format = "%Y-%m-%dT%H:%M:%SZ"),
+        units = "hours"
+      ))
+      return(health_row(
+        "placement_health", "auto_place", "WARN",
+        sprintf("agent unhealthy: last=%s (%.0fh), 0 pending", last$status, age_h),
+        thr_lbl
+      ))
+    }
     return(health_row(
       "placement_health", "auto_place", "OK",
       "no pending bets", thr_lbl

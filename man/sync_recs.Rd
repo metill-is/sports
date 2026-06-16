@@ -40,6 +40,10 @@ for an unattended caller sharing the user's working tree:
   half-applied state the next cycle builds on. A pop that git refuses
   keeps the run's own `auto_place sync` stash entry; `git stash list`
   after any `sync_failed` is part of the triage.
+* **Failure logging.** A failed pull or pop logs git's captured stderr
+  (`$output`) via [cli::cli_alert_warning]. Without this the launchd run
+  recorded only R's opaque "status 128" -- the 2026-06-13 freeze went
+  three days undiagnosed because git's actual `fatal:` line was discarded.
 
 All git calls go through `.git_run()`, which shell-quotes each argument.
 `system2(..., stdout = TRUE)` routes through `sh`, so an unquoted argument
