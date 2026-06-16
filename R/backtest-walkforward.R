@@ -245,6 +245,96 @@ bt_wf_default_decide <- function(root, run_date, sex, ledger_asof = NULL) {
   )
 }
 
+#' Empty per-draw beliefs tibble in the `beliefs_latest` schema.
+#' @noRd
+bt_wf_empty_beliefs <- function() {
+  tibble::tibble(
+    sport = character(), country = character(), sex = character(),
+    fit_date = as.Date(character()), match_date = as.Date(character()),
+    home_team = character(), away_team = character(),
+    draw_id = integer(), home_goals = numeric(), away_goals = numeric()
+  )
+}
+
+#' Reconstruct per-draw beliefs from a saved football `predicted_matches` extract.
+#'
+#' The model's RDS fit is deliberately discarded (size); the durable record of a
+#' fit is `beliefs/extracts/.../fit_date=F/predicted_matches.parquet`, a histogram
+#' of the posterior draws — one row per `(match, home_goals, away_goals)` with a
+#' `count`. `uncount(count)` restores exactly the per-draw `beliefs_latest`
+#' `decide_league` consumes (the joint goal distribution, hence every market
+#' probability and the cross-market correlations, is preserved). football_iceland
+#' only, matching the harness scope.
+#' @param source_root Live data root holding `beliefs/extracts/`.
+#' @param fit_date The fit's as-of date (== the walk-forward cutoff).
+#' @param sex "male" or "female".
+#' @return A `beliefs_latest`-schema tibble, or an empty one if no extract exists.
+#' @export
+bt_wf_beliefs_from_extract <- function(source_root, fit_date, sex) {
+  fit_date <- as.Date(fit_date)
+  pm_path <- file.path(
+    source_root, "beliefs", "extracts", "sport=football", "country=iceland",
+    paste0("sex=", sex), paste0("fit_date=", format(fit_date)),
+    "predicted_matches.parquet"
+  )
+  if (!file.exists(pm_path)) {
+    return(bt_wf_empty_beliefs())
+  }
+  pm <- arrow::read_parquet(pm_path)
+  if (nrow(pm) == 0L) {
+    return(bt_wf_empty_beliefs())
+  }
+  draws <- pm[rep(seq_len(nrow(pm)), times = pm$count),
+    c("match_date", "home_team", "away_team", "home_goals", "away_goals"),
+    drop = FALSE
+  ]
+  draws <- draws |>
+    dplyr::group_by(.data$match_date, .data$home_team, .data$away_team) |>
+    dplyr::mutate(draw_id = dplyr::row_number()) |>
+    dplyr::ungroup()
+  tibble::tibble(
+    sport = "football", country = "iceland", sex = sex,
+    fit_date = fit_date,
+    match_date = as.Date(draws$match_date),
+    home_team = as.character(draws$home_team),
+    away_team = as.character(draws$away_team),
+    draw_id = as.integer(draws$draw_id),
+    home_goals = as.numeric(draws$home_goals),
+    away_goals = as.numeric(draws$away_goals)
+  )
+}
+
+#' Decide closure that REUSES saved per-fit predictions instead of re-fitting.
+#'
+#' The drop-in alternative to [bt_wf_default_decide()]: instead of a Stan fit, it
+#' loads the saved `predicted_matches` extract for `run_date` from `source_root`,
+#' reconstructs the as-of beliefs ([bt_wf_beliefs_from_extract()]), seeds them
+#' into the isolated `root`, and decides. No Stan — a season sweep runs in
+#' seconds, and it scores the model's ACTUAL published predictions. Pass the
+#' walk-forward cutoffs as the extract `fit_date`s so each is exactly leak-free
+#' (`end_date == fit_date`).
+#' @param source_root Live data root holding the saved extracts (read-only).
+#' @return A `decide_fn` closure `(root, run_date, sex, ledger_asof)`.
+#' @export
+bt_wf_extract_decide <- function(source_root = here::here("data")) {
+  function(root, run_date, sex, ledger_asof = NULL) {
+    beliefs <- bt_wf_beliefs_from_extract(source_root, run_date, sex)
+    if (nrow(beliefs) == 0L) {
+      stop("bt_wf_extract_decide: no saved predicted_matches for fit_date=",
+        format(as.Date(run_date)),
+        call. = FALSE
+      )
+    }
+    write_table(beliefs, "beliefs_latest", root = root)
+    decide_league(
+      league_key = "football_iceland", sex = sex,
+      run_date = run_date, root = root, write = FALSE,
+      max_age_hours = bt_wf_max_age_hours(),
+      return_candidates = TRUE
+    )
+  }
+}
+
 #' Walk-forward out-of-sample validator over a set of cutoff dates.
 #'
 #' For each `d` in `cutoffs` (sorted ascending), re-fit as-of `d`, decide from

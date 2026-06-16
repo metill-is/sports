@@ -1,17 +1,24 @@
 #!/usr/bin/env Rscript
 # scripts/0Nb_walkforward.R --
-# Leak-free walk-forward OOS validator for football iceland. Re-fits the model
-# as-of each cutoff, re-decides from pre-cutoff odds, scores OOS Brier/log-loss
-# (primary) + PnL (secondary). Read-only on the money path; NEVER on CI.
+# Leak-free walk-forward OOS validator for football iceland. Scores OOS
+# Brier/log-loss (primary, over all bettable candidates) + PnL (secondary, over
+# placed bets). Read-only on the money path; NEVER on CI.
 #
-# Each cutoff is a full Stan fit (~hours for a season sweep). Run detached:
-#   nohup Rscript scripts/0Nb_walkforward.R --sex male --season 2026 --per-round \
-#       > /tmp/wf.log 2>&1 & disown
+# Two modes:
+#   --reuse   REUSE saved per-fit predictions (beliefs/extracts/predicted_matches).
+#             No Stan -- a whole season runs in SECONDS, scoring the model's
+#             actual published predictions. Cutoffs = the saved extract fit_dates
+#             (each exactly leak-free). The recommended default.
+#   (re-fit)  Without --reuse, re-fit the model as-of each cutoff -- a full Stan
+#             fit per cutoff (~hours for a season). Run detached. Use when you
+#             need cutoffs that differ from the saved fit_dates.
 #
 # Usage:
-#   Rscript scripts/0Nb_walkforward.R --sex male --as-of 2026-05-15
-#   Rscript scripts/0Nb_walkforward.R --sex male --season 2026 --per-round
-#   Rscript scripts/0Nb_walkforward.R --sex male --season 2026 --per-round --horizon 10
+#   Rscript scripts/0Nb_walkforward.R --sex male --reuse                 # whole saved history
+#   Rscript scripts/0Nb_walkforward.R --sex male --reuse --season 2026   # one season
+#   Rscript scripts/0Nb_walkforward.R --sex male --as-of 2026-05-15      # re-fit, one cutoff
+#   Rscript scripts/0Nb_walkforward.R --sex male --season 2026 --per-round  # re-fit sweep (detached):
+#   #   nohup Rscript scripts/0Nb_walkforward.R --sex male --season 2026 --per-round > /tmp/wf.log 2>&1 & disown
 
 invisible(Sys.setlocale("LC_ALL", "en_US.UTF-8"))
 options(width = 120)
@@ -28,6 +35,7 @@ sex <- get_flag("sex")
 season_str <- get_flag("season")
 as_of_str <- get_flag("as-of")
 per_round <- has_flag("per-round")
+reuse <- has_flag("reuse")
 horizon_days <- as.integer(get_flag("horizon", "14"))
 
 if (is.null(sex)) stop("--sex required (male or female)", call. = FALSE)
@@ -46,34 +54,51 @@ odds <- read_table("odds",
 )
 ledger <- tryCatch(read_table("ledger"), error = function(e) NULL)
 
-# G1: each cutoff is round N's completion date, which is STRICTLY before round
-# N+1's matches; bt_wf_filter_oos then scores (cutoff, cutoff+horizon] so a
-# day-d match (trained on under match_date <= d) is never bet.
-cutoffs <- if (isTRUE(per_round)) {
-  if (is.null(season_str)) stop("--per-round requires --season YYYY", call. = FALSE)
-  season <- as.integer(season_str)
-  dates <- as.Date(character())
-  for (n in seq_len(50L)) {
-    cd <- suppressWarnings(suppressMessages(
-      compute_round_cutoff_date(results, season = season, round_cutoff = n, quiet = TRUE)
-    ))
-    if (is.null(cd)) break
-    dates <- c(dates, cd)
-  }
-  if (length(dates) == 0L) stop("No completed rounds for season ", season, call. = FALSE)
-  dates
+# --reuse: cutoffs are the saved extract fit_dates; the decide step reconstructs
+# beliefs from beliefs/extracts/.../predicted_matches.parquet -- no Stan re-fit
+# (seconds, not hours), scoring the model's ACTUAL published predictions. Each
+# fit_date is exactly leak-free (end_date == fit_date). Otherwise, each cutoff is
+# a round-completion date and the model is re-fit as-of it (G1).
+if (isTRUE(reuse)) {
+  ext_dir <- here::here(
+    "data", "beliefs", "extracts", "sport=football",
+    "country=iceland", paste0("sex=", sex)
+  )
+  if (!dir.exists(ext_dir)) stop("--reuse: no extracts at ", ext_dir, call. = FALSE)
+  fds <- sort(as.Date(sub("fit_date=", "", list.files(ext_dir))))
+  if (!is.null(season_str)) fds <- fds[format(fds, "%Y") == season_str]
+  if (length(fds) == 0L) stop("--reuse: no saved extract fit_dates", call. = FALSE)
+  cutoffs <- fds
+  decide_fn <- bt_wf_extract_decide(here::here("data"))
 } else {
-  if (is.null(as_of_str)) stop("--as-of YYYY-MM-DD required (or --per-round --season YYYY)", call. = FALSE)
-  d <- as.Date(as_of_str)
-  if (is.na(d)) stop("--as-of: could not parse '", as_of_str, "'", call. = FALSE)
-  d
+  decide_fn <- bt_wf_default_decide
+  cutoffs <- if (isTRUE(per_round)) {
+    if (is.null(season_str)) stop("--per-round requires --season YYYY", call. = FALSE)
+    season <- as.integer(season_str)
+    dates <- as.Date(character())
+    for (n in seq_len(50L)) {
+      cd <- suppressWarnings(suppressMessages(
+        compute_round_cutoff_date(results, season = season, round_cutoff = n, quiet = TRUE)
+      ))
+      if (is.null(cd)) break
+      dates <- c(dates, cd)
+    }
+    if (length(dates) == 0L) stop("No completed rounds for season ", season, call. = FALSE)
+    dates
+  } else {
+    if (is.null(as_of_str)) stop("--as-of YYYY-MM-DD required (or --per-round --season YYYY, or --reuse)", call. = FALSE)
+    d <- as.Date(as_of_str)
+    if (is.na(d)) stop("--as-of: could not parse '", as_of_str, "'", call. = FALSE)
+    d
+  }
 }
 
-cli::cli_h1("Walk-forward {league_key}/{sex}: {length(cutoffs)} cutoff(s), horizon={horizon_days}d")
+mode <- if (isTRUE(reuse)) "REUSE saved fits" else "RE-FIT per cutoff"
+cli::cli_h1("Walk-forward {league_key}/{sex} [{mode}]: {length(cutoffs)} cutoff(s), horizon={horizon_days}d")
 wf <- bt_walkforward(
   sex = sex, cutoffs = cutoffs, horizon_days = horizon_days,
   results = results, odds = odds, ledger = ledger,
-  tie_threshold = tie_threshold
+  decide_fn = decide_fn, tie_threshold = tie_threshold
 )
 
 out_dir <- here::here("data", "backtest", "walkforward")

@@ -540,6 +540,81 @@ test_that("bt_walkforward scores ALL candidates for calibration but PnL only ove
   expect_true(kept_row$win)
 })
 
+bt_wf_write_extract <- function(root, fit_date, sex, pm) {
+  d <- file.path(
+    root, "beliefs", "extracts", "sport=football", "country=iceland",
+    paste0("sex=", sex), paste0("fit_date=", format(as.Date(fit_date)))
+  )
+  fs::dir_create(d, recurse = TRUE)
+  arrow::write_parquet(pm, file.path(d, "predicted_matches.parquet"))
+}
+
+test_that("bt_wf_beliefs_from_extract uncounts a saved predicted_matches into per-draw beliefs", {
+  root <- withr::local_tempdir()
+  pm <- tibble::tibble(
+    home_team = c("A", "A", "B"), away_team = c("X", "X", "Y"),
+    match_date = as.Date(c("2026-05-05", "2026-05-05", "2026-05-06")),
+    home_goals = c(1, 2, 0), away_goals = c(0, 1, 0),
+    count = c(3L, 1L, 2L), division = "BD"
+  )
+  bt_wf_write_extract(root, "2026-05-03", "male", pm)
+
+  b <- bt_wf_beliefs_from_extract(root, as.Date("2026-05-03"), "male")
+  expect_equal(nrow(b), 6L) # sum(count) = 3 + 1 + 2
+  expect_true(all(c(
+    "sport", "country", "sex", "fit_date", "match_date",
+    "home_team", "away_team", "draw_id", "home_goals", "away_goals"
+  ) %in% names(b)))
+  a <- b[b$home_team == "A", , drop = FALSE]
+  expect_equal(nrow(a), 4L)
+  expect_setequal(a$draw_id, 1:4) # unique within the match
+  expect_equal(sum(a$home_goals == 1), 3L) # the (1,0) pair, count 3
+  expect_equal(sum(a$home_goals == 2), 1L) # the (2,1) pair, count 1
+  expect_equal(unique(b$fit_date), as.Date("2026-05-03"))
+})
+
+test_that("bt_wf_beliefs_from_extract returns empty when no saved extract exists for that fit_date", {
+  root <- withr::local_tempdir()
+  b <- bt_wf_beliefs_from_extract(root, as.Date("2026-05-03"), "male")
+  expect_equal(nrow(b), 0L)
+})
+
+test_that("bt_walkforward with the extract-reuse decide_fn scores OOS candidates WITHOUT a Stan fit", {
+  src <- withr::local_tempdir()
+  # Saved posterior for fit_date 2026-05-03: A strongly favoured over B.
+  pm <- tibble::tibble(
+    home_team = "A", away_team = "B",
+    match_date = as.Date("2026-05-08"),
+    home_goals = c(2, 1, 1, 0), away_goals = c(0, 0, 1, 1),
+    count = c(600L, 250L, 100L, 50L), division = "BD"
+  )
+  bt_wf_write_extract(src, "2026-05-03", "male", pm)
+
+  results <- tibble::tibble(
+    sport = "football", country = "iceland", sex = "male", season = 2026L,
+    match_date = as.Date("2026-05-08"),
+    home_team = "A", away_team = "B",
+    home_score = 2L, away_score = 0L, division = "BD", round = 5L
+  )
+  odds <- tibble::tibble(
+    sport = "football", country = "iceland",
+    scraped_at = as.POSIXct("2026-05-06 09:00:00", tz = "UTC"),
+    match_date = as.Date("2026-05-08"),
+    home_team = "A", away_team = "B",
+    market = "moneyline", outcome = "home", line = NA_real_, odds = 1.5
+  )
+
+  wf <- bt_walkforward(
+    sex = "male", cutoffs = as.Date("2026-05-03"), horizon_days = 14L,
+    results = results, odds = odds, ledger = NULL,
+    live_root = src, decide_fn = bt_wf_extract_decide(src), tie_threshold = 0
+  )
+  expect_equal(nrow(wf$skipped), 0L)
+  expect_gt(wf$scores$n, 0L)
+  expect_true(all(wf$bets$home_team == "A"))
+  expect_true(wf$bets$win[wf$bets$market == "moneyline" & wf$bets$outcome == "home"][1])
+})
+
 test_that("walk-forward yields OOS candidates and scores >= 1 bet with a real as-of fit (integration; opt-in)", {
   # Every test above injects a fake decide_fn, so none exercised the real
   # fit_league -> decide_league path the slice rule + max_age_hours forwarding
