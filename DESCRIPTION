@@ -61,6 +61,7 @@ Collate:
     'backtest-stake.R'
     'settle.R'
     'backtest-engine.R'
+    'backtest-marketcal.R'
     'backtest-metrics.R'
     'backtest-pit.R'
     'backtest-universe.R'
