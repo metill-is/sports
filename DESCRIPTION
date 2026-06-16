@@ -61,6 +61,7 @@ Collate:
     'settle.R'
     'backtest-engine.R'
     'backtest-metrics.R'
+    'backtest-pit.R'
     'backtest-universe.R'
     'backtest-walkforward.R'
     'cumulative-xpts.R'
