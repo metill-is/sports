@@ -57,6 +57,7 @@ Collate:
     'extract-football-iceland.R'
     'simulate-league-season.R'
     'backfill-final-positions.R'
+    'backtest-divisions.R'
     'backtest-stake.R'
     'settle.R'
     'backtest-engine.R'
