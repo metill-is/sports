@@ -1,0 +1,275 @@
+---
+title: "Model-Quality Experiment — Football Iceland 2026"
+subtitle: "Can an optimal Bayesian model + Kelly process profit from Lengjan's static line?"
+format:
+  dashboard:
+    theme: cosmo
+    embed-resources: true
+    orientation: rows
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r}
+#| label: setup
+#| include: false
+suppressPackageStartupMessages({
+  library(dplyr)
+  library(ggplot2)
+  library(gt)
+  library(jsonlite)
+})
+
+dash_dir <- here::here("data", "dashboard")
+files <- list.files(dash_dir, pattern = "\\.json$", full.names = TRUE)
+D <- lapply(files, function(f) jsonlite::fromJSON(f))
+names(D) <- tools::file_path_sans_ext(basename(files))
+
+base_theme <- tryCatch(metill::theme_metill(), error = function(e) theme_minimal(base_size = 12))
+pct <- function(x, d = 1) sprintf(paste0("%+.", d, "f%%"), 100 * x)
+pct0 <- function(x) sprintf("%.0f%%", 100 * x)
+
+meta <- D$meta
+sk <- D$skill
+mb <- D$market_bias
+ls_ <- D$line_stability
+dr_sex <- dplyr::filter(D$draw_rate, scope == "sex")
+
+total_sk <- sk[sk$market == "total", , drop = FALSE]
+ml_home <- mb[mb$market == "moneyline" & mb$outcome == "home", , drop = FALSE]
+verdict_color <- if (nrow(total_sk) && total_sk$brier_skill[1] < 0) "danger" else "success"
+```
+
+# Status
+
+## Row {height="22%"}
+
+```{r}
+#| content: valuebox
+#| title: "Model vs. de-vigged market — TOTALS"
+list(
+  value = if (nrow(total_sk)) pct(total_sk$brier_skill[1]) else "n/a",
+  icon = "graph-down-arrow",
+  color = verdict_color
+)
+```
+
+```{r}
+#| content: valuebox
+#| title: "OOS matches scored"
+list(value = meta$n_pit_total[1], icon = "calendar-check", color = "secondary")
+```
+
+```{r}
+#| content: valuebox
+#| title: "Lengjan price moves (share of series)"
+list(value = if (nrow(ls_)) pct0(ls_$pct_moved[1]) else "n/a", icon = "arrow-left-right", color = "info")
+```
+
+```{r}
+#| content: valuebox
+#| title: "Draw gap (obs − pred, male)"
+list(
+  value = {
+    g <- dr_sex$gap[dr_sex$sex == "male"]
+    if (length(g)) pct(g[1]) else "n/a"
+  },
+  icon = "dribbble", color = "secondary"
+)
+```
+
+## Row
+
+::: {.card title="The experiment, in one screen"}
+
+**Hypothesis chain:** an optimal Bayesian model (is it *right*?) → a soft, static
+line (where is it *wrong*?) → the model is *sharper* than the line → +EV → a
+self-updating Kelly/bankroll → realised profit. The leading indicators below
+accumulate over every match; realised PnL is the slow lagging confirmation.
+
+**What the diagnostics say so far (male, `r meta$n_pit_total[1]` OOS matches):**
+
+- **Totals are the model's blind spot** — the de-vigged line out-forecasts the
+  model on over/under (Brier skill **`r if (nrow(total_sk)) pct(total_sk$brier_skill[1]) else "n/a"`**),
+  the only market where the CI excludes zero. On *spread* the model is competitive.
+- **The line is soft on home & overs** — it under-prices home wins and overs and
+  over-prices draws (see *Where is the line soft?*).
+- **The line is not frozen** — Lengjan moves ~`r if (nrow(ls_)) pct0(ls_$pct_moved[1]) else "?"`
+  of price series at least once, so closing-line value is an open empirical
+  question, not a dead end.
+
+*Female market diagnostics are pending a `team_names` name-join fix in the
+walk-forward (`bt_wf_require_pre_cutoff_odds`); female PIT / draw-rate are shown.*
+
+:::
+
+# Is the model right?
+
+## Row
+
+```{r}
+#| title: "Randomised PIT — total goals (uniform = calibrated shape)"
+pt <- D$pit_total
+if (is.data.frame(pt) && nrow(pt)) {
+  ggplot(pt, aes(u)) +
+    geom_histogram(boundary = 0, bins = 10, fill = "#2c7fb8", colour = "white") +
+    geom_hline(yintercept = nrow(pt) / 10 / length(unique(pt$sex)), linetype = 2, colour = "grey40") +
+    facet_wrap(~sex, scales = "free_y") +
+    labs(x = "PIT value", y = "matches") +
+    base_theme
+} else {
+  ggplot() +
+    annotate("text", 0, 0, label = "no PIT data") +
+    theme_void()
+}
+```
+
+```{r}
+#| title: "Randomised PIT — goal difference (Skellam)"
+pd <- D$pit_diff
+if (is.data.frame(pd) && nrow(pd)) {
+  ggplot(pd, aes(u)) +
+    geom_histogram(boundary = 0, bins = 10, fill = "#7fcdbb", colour = "white") +
+    facet_wrap(~sex, scales = "free_y") +
+    labs(x = "PIT value", y = "matches") +
+    base_theme
+} else {
+  ggplot() +
+    theme_void()
+}
+```
+
+## Row
+
+```{r}
+#| title: "Predicted vs observed draw rate (the draw-deficit check)"
+dr <- dplyr::filter(D$draw_rate, scope == "division")
+if (is.data.frame(dr) && nrow(dr)) {
+  dr |>
+    dplyr::arrange(sex, division) |>
+    dplyr::transmute(sex, division, n,
+      predicted = predicted_draw_rate, observed = observed_draw_rate, gap
+    ) |>
+    gt() |>
+    fmt_percent(c(predicted, observed, gap), decimals = 1) |>
+    data_color(columns = gap, palette = c("#d73027", "white", "#1a9850"), domain = c(-0.2, 0.2)) |>
+    tab_options(table.font.size = px(12))
+} else {
+  gt(tibble::tibble(note = "no draw-rate data"))
+}
+```
+
+```{r}
+#| title: "Scoreline residual grid (observed − predicted; off-diagonal = correlation fault)"
+sr <- D$scoreline
+if (is.data.frame(sr) && nrow(sr)) {
+  ggplot(sr, aes(factor(home_goals), factor(away_goals), fill = residual)) +
+    geom_tile(colour = "white") +
+    scale_fill_gradient2(low = "#d73027", mid = "white", high = "#1a9850", midpoint = 0) +
+    facet_wrap(~sex) +
+    labs(x = "home goals", y = "away goals", fill = "obs−pred") +
+    base_theme
+} else {
+  ggplot() +
+    theme_void()
+}
+```
+
+# Where is the line soft?
+
+## Row
+
+```{r}
+#| title: "Market bias per outcome — bias > 0 means the line UNDER-prices it (value pocket)"
+if (is.data.frame(mb) && nrow(mb)) {
+  mb |>
+    dplyr::arrange(sex, market, outcome) |>
+    dplyr::transmute(sex, market, outcome, n, line_implied = mean_q, realised, bias) |>
+    gt() |>
+    fmt_percent(c(line_implied, realised, bias), decimals = 1) |>
+    data_color(columns = bias, palette = c("#d73027", "white", "#1a9850"), domain = c(-0.12, 0.12)) |>
+    tab_options(table.font.size = px(12))
+} else {
+  gt(tibble::tibble(note = "no market-bias data"))
+}
+```
+
+## Row
+
+```{r}
+#| title: "Disagreement — where model and line diverge, who is right?"
+dg <- D$disagreement
+if (is.data.frame(dg) && nrow(dg)) {
+  ord <- c("model<<mkt", "model<mkt", "agree", "model>mkt", "model>>mkt")
+  dg |>
+    dplyr::mutate(band = factor(band, levels = ord)) |>
+    dplyr::arrange(sex, market, band) |>
+    dplyr::transmute(sex, market, band, n, model_p = mean_p, line_q = mean_q, realised) |>
+    gt() |>
+    fmt_percent(c(model_p, line_q, realised), decimals = 1) |>
+    tab_options(table.font.size = px(11))
+} else {
+  gt(tibble::tibble(note = "no disagreement data"))
+}
+```
+
+```{r}
+#| title: "Does Lengjan move prices?"
+if (is.data.frame(ls_) && nrow(ls_)) {
+  ls_ |>
+    dplyr::transmute(
+      `price series` = n_series,
+      `share that moved` = pct0(pct_moved),
+      `mean distinct prices` = round(mean_distinct_prices, 2),
+      `mean snapshots` = round(mean_snapshots, 2)
+    ) |>
+    gt() |>
+    tab_options(table.font.size = px(13))
+} else {
+  gt(tibble::tibble(note = "no odds data"))
+}
+```
+
+# Am I sharper than the line?
+
+## Row
+
+```{r}
+#| title: "Model vs. de-vigged market — Brier skill by market (90% match-clustered CI)"
+if (is.data.frame(sk) && nrow(sk)) {
+  sk |>
+    dplyr::arrange(sex, market) |>
+    dplyr::transmute(sex, market, n,
+      matches = n_matches,
+      brier_skill, ci = sprintf("[%+.1f, %+.1f]%%", 100 * skill_lo, 100 * skill_hi)
+    ) |>
+    gt() |>
+    fmt_percent(brier_skill, decimals = 1) |>
+    data_color(columns = brier_skill, palette = c("#d73027", "white", "#1a9850"), domain = c(-0.1, 0.1)) |>
+    tab_options(table.font.size = px(12))
+} else {
+  gt(tibble::tibble(note = "no skill data"))
+}
+```
+
+## Row
+
+```{r}
+#| title: "Murphy decomposition — compare reliability & resolution across markets (not raw Brier)"
+bd <- D$brier_decomp
+if (is.data.frame(bd) && nrow(bd)) {
+  bd |>
+    dplyr::arrange(sex, market) |>
+    dplyr::transmute(sex, market, n,
+      reliability = round(reliability, 4), resolution = round(resolution, 4),
+      uncertainty = round(uncertainty, 4), brier = round(brier, 4)
+    ) |>
+    gt() |>
+    tab_options(table.font.size = px(12)) |>
+    tab_footnote("Lower reliability = better calibrated; higher resolution = better discrimination.")
+} else {
+  gt(tibble::tibble(note = "no decomposition data"))
+}
+```

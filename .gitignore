@@ -59,6 +59,11 @@ data/wc/forecast.html
 docs/reports/*.html
 docs/reports/*_files/
 
+# Model-quality dashboard: JSON contract + render (regenerable via scripts/0Nd_dashboard.R)
+data/dashboard/
+docs/dashboard/*.html
+docs/dashboard/*_files/
+
 # Isolated "what-if" replay tree (data/publish_replay/2026-05-15/, etc.)
 # — produced by scripts/0Nr_replay.R --publish-to, never meant to ship
 data/publish_replay/
