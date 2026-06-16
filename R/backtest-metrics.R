@@ -133,3 +133,120 @@ bt_baselines <- function(root = here::here("data"), results = NULL,
   }
   dplyr::bind_rows(out)
 }
+
+#' De-vig a candidate set: add the bookmaker's margin-free implied probability.
+#'
+#' The market's quoted `1/odds` sum to >1 within a market (the overround/vig).
+#' Normalising them to sum to 1 within each `(match, market, line)` group yields a
+#' fair market probability `q_market` to score against the model's `p` on the same
+#' rows. Two data-driven guards keep the comparison honest:
+#'   * `sum(p) ~= 1` per group -> the group is COMPLETE (every outcome present); an
+#'     incomplete book (missing moneyline draw, one-sided scrape) cannot be
+#'     de-vigged and is dropped.
+#'   * exactly one winner per group -> SETTLED and not a push; an integer
+#'     spread/total line landing exactly has no winner (`sum(win) == 0`) and is
+#'     dropped (a real push refunds the stake; neither side forecasts that).
+#' Markets here are 3-way for moneyline AND spread (the handicap tie is a `draw`
+#' outcome) and 2-way for total -- the guards adapt without hard-coding counts.
+#' @param bets Tibble with `p`, `odds`, logical `win`, `market`, `outcome`, `line`
+#'   and the match keys (`sport`, `country`, `sex`, `match_date`, `home_team`,
+#'   `away_team`).
+#' @param p_tol Completeness tolerance on `sum(p)`. Default 0.02.
+#' @return The settled, complete, non-push rows with added `y` (0/1), `overround`,
+#'   and `q_market`. Empty tibble if nothing qualifies.
+#' @importFrom rlang .data
+#' @export
+bt_devig <- function(bets, p_tol = 0.02) {
+  keys <- c(
+    "sport", "country", "sex", "match_date",
+    "home_team", "away_team", "market", "line"
+  )
+  d <- bets[is.finite(bets$p) & is.finite(bets$odds) &
+    bets$odds > 1 & !is.na(bets$win), , drop = FALSE]
+  if (nrow(d) == 0L) {
+    return(tibble::tibble())
+  }
+  d$y <- as.numeric(d$win)
+  d |>
+    dplyr::group_by(dplyr::across(dplyr::all_of(keys))) |>
+    dplyr::mutate(
+      overround = sum(1 / .data$odds),
+      q_market = (1 / .data$odds) / sum(1 / .data$odds),
+      grp_p = sum(.data$p),
+      grp_win = sum(.data$y)
+    ) |>
+    dplyr::ungroup() |>
+    dplyr::filter(abs(.data$grp_p - 1) < p_tol, .data$grp_win == 1) |>
+    dplyr::select(-"grp_p", -"grp_win")
+}
+
+#' Model-vs-market prediction-quality scores + Brier/log-loss skill.
+#'
+#' On the de-vigged rows from [bt_devig()], scores the model `p` and the market
+#' `q_market` against realised `y` with Brier + log-loss, and reports the skill
+#' scores `1 - score_model/score_market` (> 0 == the model beats the margin-free
+#' line). `n_matches` is the count of distinct fixtures -- the honest unit, since
+#' outcome rows within a match are mechanically dependent.
+#' @param scored Output of [bt_devig()] (`p`, `q_market`, `y`, `overround`).
+#' @param by Optional grouping columns (e.g. `"market"`).
+#' @param eps Log-loss clamp. Default 1e-6.
+#' @return One row (or one per `by` group) of model/market Brier + log-loss, their
+#'   skill scores, `n`, `n_matches`, and mean `overround`.
+#' @export
+bt_skill <- function(scored, by = NULL, eps = 1e-6) {
+  one <- function(d) {
+    clip <- function(x) pmin(pmax(x, eps), 1 - eps)
+    ll <- function(prob) {
+      -mean(d$y * log(clip(prob)) + (1 - d$y) * log(clip(1 - prob)))
+    }
+    bm <- mean((d$p - d$y)^2)
+    bk <- mean((d$q_market - d$y)^2)
+    lm <- ll(d$p)
+    lk <- ll(d$q_market)
+    tibble::tibble(
+      n = nrow(d),
+      n_matches = dplyr::n_distinct(paste(d$match_date, d$home_team, d$away_team)),
+      brier_model = bm, brier_market = bk, brier_skill = 1 - bm / bk,
+      logloss_model = lm, logloss_market = lk, logloss_skill = 1 - lm / lk,
+      overround = mean(d$overround)
+    )
+  }
+  if (nrow(scored) == 0L) {
+    return(tibble::tibble())
+  }
+  if (is.null(by)) {
+    return(one(scored))
+  }
+  scored |>
+    dplyr::group_by(dplyr::across(dplyr::all_of(by))) |>
+    dplyr::group_modify(~ one(.x)) |>
+    dplyr::ungroup()
+}
+
+#' Match-clustered bootstrap CI on the Brier skill score (model vs market).
+#'
+#' Outcome rows within a match are dependent, so the resample unit is the MATCH,
+#' not the row (index-expansion, so a match drawn twice contributes twice). This
+#' is what keeps the "is the edge real?" interval honest at small effective n.
+#' @param scored Output of [bt_devig()].
+#' @param R Bootstrap replicates. Default 2000.
+#' @param probs Quantiles to return. Default `c(0.05, 0.5, 0.95)`.
+#' @param seed RNG seed for reproducibility.
+#' @return Numeric vector of the `probs` quantiles of the bootstrapped skill.
+#' @export
+bt_skill_ci <- function(scored, R = 2000, probs = c(0.05, 0.5, 0.95), seed = 1L) {
+  if (nrow(scored) == 0L) {
+    return(rep(NA_real_, length(probs)))
+  }
+  mid <- paste(scored$match_date, scored$home_team, scored$away_team)
+  by_match <- split(seq_len(nrow(scored)), mid)
+  matches <- names(by_match)
+  withr::with_seed(seed, {
+    reps <- vapply(seq_len(R), function(i) {
+      idx <- unlist(by_match[sample(matches, replace = TRUE)], use.names = FALSE)
+      d <- scored[idx, , drop = FALSE]
+      1 - mean((d$p - d$y)^2) / mean((d$q_market - d$y)^2)
+    }, numeric(1))
+  })
+  stats::quantile(reps, probs, names = FALSE)
+}

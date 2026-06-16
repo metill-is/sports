@@ -45,6 +45,44 @@ roll <- bt_run(picks, results, stake_rule = stake_rolling, initial_pool = initia
 fixed <- bt_run(picks, results, stake_rule = stake_fixed, initial_pool = initial_pool)
 ```
 
+```{r}
+#| label: wf-setup
+#| include: false
+
+# Walk-forward (out-of-sample) arm. REUSE mode reconstructs each saved fit's
+# predictions (beliefs/extracts/predicted_matches) and re-decides -- no Stan, a
+# whole season in seconds -- so this report self-updates on every render as new
+# fits land. Empty (gitignored extracts absent) -> the WF sections skip cleanly.
+wf_sexes <- c("male", "female")
+wf_sexes <- wf_sexes[dir.exists(here::here(
+  "data", "beliefs", "extracts", "sport=football",
+  "country=iceland", paste0("sex=", wf_sexes)
+))]
+wf_bets <- dplyr::bind_rows(lapply(wf_sexes, function(s) {
+  r <- bt_walkforward_reuse(s, season = 2026)
+  if (is.null(r)) NULL else r$bets
+}))
+wf_available <- isTRUE(nrow(wf_bets) > 0)
+
+# De-vigged model-vs-market table (margin-free market probability `q_market`),
+# restricted to complete, settled, non-push (match, market, line) books.
+mkt <- if (wf_available) bt_devig(wf_bets) else tibble::tibble()
+```
+
+```{r}
+#| label: wf-empty-note
+#| output: asis
+#| echo: false
+if (!wf_available) {
+  cat(
+    "::: {.callout-note}\n",
+    "No walk-forward output yet. Generate it with ",
+    "`Rscript scripts/0Nb_walkforward.R --sex male --reuse` ",
+    "(seconds), then re-render.\n:::\n"
+  )
+}
+```
+
 ## Headline — our actual picks
 
 ```{r}
@@ -106,6 +144,170 @@ bt_calibration(fixed, n_bins = 8) |>
   theme_minimal()
 ```
 
+## Walk-forward — does the model hold up out of sample?
+
+The sections above judge our *actual bets*. These judge the *model*: every row
+below is a prediction made for a round the model had **not** been fit on, with
+the out-of-sample window capped at the next fit so nothing is double-counted or
+leaked. This is the whole-season picture (all bettable candidates, not just the
+handful we placed), so n is far larger than the kept-bet calibration above.
+
+```{r}
+#| label: wf-scores
+#| eval: !expr wf_available
+wf_bets |>
+  dplyr::group_by(sex) |>
+  dplyr::group_modify(~ bt_oos_scores(.x)) |>
+  dplyr::ungroup() |>
+  dplyr::mutate(
+    brier_skill = 1 - brier / 0.25,
+    logloss_skill = 1 - log_loss / log(2)
+  ) |>
+  gt::gt(rowname_col = "sex") |>
+  gt::fmt_number(c(brier, log_loss), decimals = 3) |>
+  gt::fmt_percent(c(brier_skill, logloss_skill), decimals = 1) |>
+  gt::cols_label(
+    n = "OOS preds", brier = "Brier", log_loss = "Log-loss",
+    brier_skill = "Brier skill", logloss_skill = "Log-loss skill"
+  ) |>
+  gt::tab_header("Out-of-sample probability scores (vs. coin-flip)") |>
+  gt::tab_source_note("Skill > 0 beats a 50/50 guess. 0.25 / 0.693 are the coin-flip Brier / log-loss.")
+```
+
+```{r}
+#| label: wf-reliability
+#| eval: !expr wf_available
+#| fig-alt: "Out-of-sample reliability: model predicted probability versus realised win frequency per probability bin, with binomial intervals, faceted by sex."
+wf_bets |>
+  dplyr::filter(!is.na(win), is.finite(p)) |>
+  dplyr::mutate(y = as.numeric(win), bin = cut(p, seq(0, 1, 0.1), include.lowest = TRUE)) |>
+  dplyr::group_by(sex, bin) |>
+  dplyr::summarise(
+    mean_p = mean(p), realised = mean(y), n = dplyr::n(),
+    lo = qbeta(.05, sum(y) + .5, dplyr::n() - sum(y) + .5),
+    hi = qbeta(.95, sum(y) + .5, dplyr::n() - sum(y) + .5),
+    .groups = "drop"
+  ) |>
+  dplyr::filter(n > 0) |>
+  ggplot(aes(mean_p, realised)) +
+  geom_abline(slope = 1, linetype = 2, colour = "grey55") +
+  geom_linerange(aes(ymin = lo, ymax = hi), colour = "grey75") +
+  geom_point(aes(size = n)) +
+  facet_wrap(~sex) +
+  coord_equal(xlim = c(0, 1), ylim = c(0, 1)) +
+  labs(
+    x = "Model predicted p", y = "Realised frequency",
+    title = "Walk-forward reliability (all OOS predictions)"
+  ) +
+  theme_minimal()
+```
+
+## Model vs. market — is there an informational edge?
+
+The bookmaker's odds are a forecast too. After stripping the vig (normalising
+`1/odds` to sum to 1 within each match-market book), whoever has the lower Brier
+is the better forecaster on these matches. A positive **Brier skill score**
+means the model carries information the line did not.
+
+```{r}
+#| label: wf-edge-readout
+#| eval: !expr wf_available
+#| output: asis
+#| echo: false
+edge <- bt_skill(mkt)
+ci <- bt_skill_ci(mkt)
+verdict <- dplyr::case_when(
+  ci[1] > 0 ~ "a **credible edge** over the market",
+  ci[3] < 0 ~ "the market is **credibly sharper** than the model",
+  TRUE ~ "**no demonstrable edge** either way — indistinguishable from the de-vigged line"
+)
+cat(sprintf(
+  paste0(
+    "> Over **%d** out-of-sample predictions across **%d** matches, the model's ",
+    "Brier skill vs. the de-vigged Lengjan line is **%+.1f%%** ",
+    "(90%% match-clustered CI %+.1f%% to %+.1f%%) — %s.\n"
+  ),
+  nrow(mkt), edge$n_matches, 100 * edge$brier_skill, 100 * ci[1], 100 * ci[3], verdict
+))
+```
+
+```{r}
+#| label: wf-vs-market
+#| eval: !expr wf_available
+dplyr::bind_rows(
+  dplyr::mutate(bt_skill(mkt), market = "ALL"),
+  bt_skill(mkt, by = "market")
+) |>
+  dplyr::relocate(market) |>
+  gt::gt(rowname_col = "market") |>
+  gt::fmt_number(c(brier_model, brier_market, logloss_model, logloss_market), decimals = 3) |>
+  gt::fmt_percent(c(brier_skill, logloss_skill, overround), decimals = 1) |>
+  gt::cols_label(
+    n = "n preds", n_matches = "matches",
+    brier_model = "model", brier_market = "market",
+    logloss_model = "model", logloss_market = "market",
+    brier_skill = "Brier skill", logloss_skill = "LogL skill", overround = "Overround"
+  ) |>
+  gt::tab_spanner("Brier", c(brier_model, brier_market)) |>
+  gt::tab_spanner("Log-loss", c(logloss_model, logloss_market)) |>
+  gt::tab_header("Model vs. de-vigged market — OOS prediction quality") |>
+  gt::tab_source_note("Skill > 0 = model beats the margin-free line on that market. Overround = bookmaker margin.")
+```
+
+```{r}
+#| label: wf-reliability-overlay
+#| eval: !expr wf_available
+#| fig-height: 4.2
+#| fig-alt: "Reliability curves for the model and the de-vigged market overlaid on the same axes, faceted by market type."
+dplyr::bind_rows(
+  dplyr::transmute(mkt, market, source = "Model", prob = p, y),
+  dplyr::transmute(mkt, market, source = "Market", prob = q_market, y)
+) |>
+  dplyr::mutate(bin = cut(prob, seq(0, 1, 0.1), include.lowest = TRUE)) |>
+  dplyr::group_by(market, source, bin) |>
+  dplyr::summarise(mean_p = mean(prob), realised = mean(y), n = dplyr::n(), .groups = "drop") |>
+  dplyr::filter(n >= 5) |>
+  ggplot(aes(mean_p, realised, colour = source)) +
+  geom_abline(slope = 1, linetype = 2, colour = "grey55") +
+  geom_line(alpha = .5) +
+  geom_point(aes(size = n)) +
+  facet_wrap(~market) +
+  coord_equal(xlim = c(0, 1), ylim = c(0, 1)) +
+  scale_colour_manual(values = c(Model = "#2c3e50", Market = "#e67e22")) +
+  labs(
+    x = "Predicted p", y = "Realised frequency", colour = NULL,
+    title = "Model vs. market reliability, by market"
+  ) +
+  theme_minimal()
+```
+
+When the model disagrees with the line, does it pay? Bets only happen on
+disagreement, so this is the betting-relevant cut: in the *model > market* rows,
+if realised frequency tracks the model's p rather than the market's, the
+disagreement carries information.
+
+```{r}
+#| label: wf-disagreement
+#| eval: !expr wf_available
+mkt |>
+  dplyr::mutate(
+    gap = p - q_market,
+    band = cut(gap, c(-Inf, -.05, -.01, .01, .05, Inf),
+      labels = c("model << mkt", "model < mkt", "~ agree", "model > mkt", "model >> mkt")
+    )
+  ) |>
+  dplyr::group_by(band) |>
+  dplyr::summarise(
+    n = dplyr::n(), model_p = mean(p), market_q = mean(q_market),
+    realised = mean(y), .groups = "drop"
+  ) |>
+  gt::gt(rowname_col = "band") |>
+  gt::fmt_percent(c(model_p, market_q, realised), decimals = 1) |>
+  gt::cols_label(model_p = "Model p", market_q = "Market q", realised = "Realised") |>
+  gt::tab_header("When the model disagrees with the line, who is right?") |>
+  gt::tab_source_note("Where model > market: if Realised tracks Model p (not Market q), the model's disagreements carry information.")
+```
+
 ## Strategy comparison
 
 ```{r}
@@ -132,3 +334,21 @@ bt_baselines(leagues = "football") |>
   (`portfolio_lambda` / calibration are not stored in `candidates`).
 - **Window** is short (candidates begin 2026-04-25) — per-cell slices with low
   `n_bets` are noisy.
+- **Walk-forward is leak-free by construction.** Each OOS prediction comes from a
+  fit that never saw its match; the window is capped at the next fit so no match
+  is double-counted. Reconstructed from the saved per-fit predictions
+  (`beliefs/extracts/`) — no re-fit, so the report self-updates on every render.
+- **Market = de-vigged line.** `1/odds` is normalised to sum to 1 within each
+  `(match, market, line)` book, removing the bookmaker margin so model and market
+  are scored on the same scale. Comparison runs only on complete, settled,
+  non-push books; proportional de-vig mildly overstates favourites (a small tilt
+  in the model's favour).
+- **Model vs. market is selection-conditioned, not "model beats the bookie."**
+  It scores only the matches Lengjan priced (and that cleared the candidate
+  filter): "is the model competitive with the line on the bets we'd consider?",
+  not a claim about fixtures the market declined to price.
+- **Correlated within a match.** The three moneyline outcomes (and the
+  spread/total sides) of one fixture are mechanically dependent, so the
+  Brier-skill CI is bootstrapped by **match**, not by row — effective n is well
+  below the prediction count. At a single season's scale, read by-market skill
+  scores as directional, not significant.

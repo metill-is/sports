@@ -33,3 +33,26 @@ Loads when working on `R/backtest-*.R`, `scripts/0Nb_backtest.R`, or
   `Rscript scripts/0Nb_backtest.R`.
 - Phase 2 (separate spec): extend history via `0Nr_replay.R` re-fits (football
   only); persist `portfolio_lambda` + calibration into `candidates`.
+
+## Two arms in `2026-backtest.qmd`
+
+The report now carries both backtests, re-rendering weekly:
+
+1. **Stored-decision backtest** (original): PnL/ROI/calibration of the *actual
+   kept decisions*, bug-era excluded. The money question, faithful stakes.
+2. **Walk-forward (`R/backtest-walkforward.R`)**: the *model's* OOS calibration
+   over every bettable candidate, plus a **model-vs-market** comparison. The QMD
+   calls `bt_walkforward_reuse(sex, season)` in setup (REUSE mode — reconstructs
+   beliefs from `beliefs/extracts/predicted_matches`, no Stan, ~70s/season) so it
+   self-updates; gated on `wf_available` so it skips cleanly when extracts are
+   absent.
+
+**Model-vs-market scoring** lives in `R/backtest-metrics.R`: `bt_devig()` adds
+the margin-free market probability `q_market` (normalise `1/odds` within each
+`(match, market, line)` book; drops incomplete books via `sum(p)~=1` and pushes
+via `sum(win)==1` — note moneyline AND spread are 3-way here). `bt_skill()`
+returns model/market Brier+log-loss + skill scores; `bt_skill_ci()` is the
+**match-clustered** bootstrap CI (outcome rows within a fixture are dependent, so
+resample matches, not rows). The comparison is leak-free in time but
+selection-conditioned on the bettable slate — frame as "competitive with the
+line on the bets we'd consider," not "beats the bookmaker."
