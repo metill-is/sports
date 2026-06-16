@@ -313,7 +313,9 @@ test_that("sync_recs aborts a conflicted pull; money rows end up committed, neve
   .tgit(work, "reset", "--hard", "HEAD~1")
   writeLines("local money row", file.path(ledger_dir, "part-0.parquet"))
 
-  expect_false(sync_recs(work))
+  # sync_recs now logs git's failure output (see the dedicated logging test);
+  # suppress it here so this test's focus -- money-row safety -- stays pristine.
+  expect_false(suppressMessages(sync_recs(work)))
 
   # The rescue commit holds the money rows; nothing is stranded in a stash
   # (a rescue-after-stash mutant strands them in a kept, conflicted stash).
@@ -323,6 +325,20 @@ test_that("sync_recs aborts a conflicted pull; money rows end up committed, neve
   # The conflicted rebase was aborted, not left wedging the next cycle.
   expect_false(dir.exists(file.path(work, ".git", "rebase-merge")))
   expect_false(dir.exists(file.path(work, ".git", "rebase-apply")))
+})
+
+test_that("sync_recs logs git's real error output when the pull fails", {
+  # The 2026-06-13 freeze was undiagnosable because sync_recs captured git's
+  # output in pull$output but discarded it -- only R's opaque "status 128"
+  # reached the log. A failing pull must surface git's actual message.
+  work <- .scratch_synced_repo()
+  writeLines("local conflicting", file.path(work, "remote_file.txt"))
+  .tgit(work, "add", "remote_file.txt")
+  .tgit(work, "commit", "-m", "local conflicting change")
+  expect_message(
+    expect_false(sync_recs(work)),
+    "git pull --rebase"
+  )
 })
 
 test_that("sync_recs skips when the index has unmerged entries (conflicted pop state)", {

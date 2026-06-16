@@ -384,6 +384,17 @@ test_that("check_placement_health is OK when nothing is pending", {
   expect_equal(row$status, "OK")
 })
 
+test_that("check_placement_health WARNs on a failed last run even with nothing pending", {
+  # The 2026-06-13 silent freeze: the agent's sync died for 3 days but the
+  # check read OK because the queue was empty. A broken agent must be visible
+  # even at zero pending (WARN, not FAIL -- empty queue means no money lost yet).
+  root <- withr::local_tempdir()
+  th <- health_thresholds()
+  record_placement_status("sync_failed", n_pending = 0L, run_at = Sys.time(), root = root)
+  row <- check_placement_health(root, Sys.time(), th)
+  expect_equal(row$status, "WARN")
+})
+
 test_that("check_placement_health FAILs on a failed last run with pending bets", {
   root <- withr::local_tempdir()
   th <- health_thresholds()

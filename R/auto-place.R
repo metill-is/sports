@@ -260,6 +260,10 @@ run_auto_place <- function(root = here::here("data"),
 #'   half-applied state the next cycle builds on. A pop that git refuses
 #'   keeps the run's own `auto_place sync` stash entry; `git stash list`
 #'   after any `sync_failed` is part of the triage.
+#' * **Failure logging.** A failed pull or pop logs git's captured stderr
+#'   (`$output`) via [cli::cli_alert_warning]. Without this the launchd run
+#'   recorded only R's opaque "status 128" -- the 2026-06-13 freeze went
+#'   three days undiagnosed because git's actual `fatal:` line was discarded.
 #'
 #' All git calls go through `.git_run()`, which shell-quotes each argument.
 #' `system2(..., stdout = TRUE)` routes through `sh`, so an unquoted argument
@@ -295,6 +299,14 @@ sync_recs <- function(repo_root = here::here()) {
     (!stash_before$ok || !identical(stash_before$lines, stash_after$lines))
 
   pull <- g("pull", "--rebase", "origin", "main")
+  if (!pull$ok) {
+    # WHY: .git_run captures git's stderr in $output but sync_recs used to
+    # discard it -- the 2026-06-13 freeze logged only R's opaque "status 128",
+    # making a 3-day outage undiagnosable. Surface git's real message.
+    cli::cli_alert_warning(
+      "sync_recs: git pull --rebase origin main failed (status {pull$status}): {pull$output}"
+    )
+  }
   if (!pull$ok && .git_operation_in_progress(repo_root)) {
     g("rebase", "--abort")
   }
@@ -302,6 +314,11 @@ sync_recs <- function(repo_root = here::here()) {
   ok <- pull$ok
   if (stash_created) {
     pop <- g("stash", "pop")
+    if (!pop$ok) {
+      cli::cli_alert_warning(
+        "sync_recs: git stash pop failed (status {pop$status}): {pop$output}"
+      )
+    }
     ok <- ok && pop$ok
   }
   ok
