@@ -67,6 +67,7 @@ Collate:
     'backtest-universe.R'
     'backtest-walkforward.R'
     'cumulative-xpts.R'
+    'dashboard-export.R'
     'decide-calibration.R'
     'decide-kelly.R'
     'decide-normalise.R'
