@@ -46,24 +46,31 @@ Why it did not settle:
   confirm the void/refund in your Lengjan bet history) has **no settle-path
   resolution**: `compute_settlement()` only resolves rows that join to a
   scraped result, so `settle_ledger()` (and `scripts/06_settle.R`) will never
-  touch a match that was never played. Record the void with a manual,
-  L4-respecting flip of **only** `settled` / `win` / `pnl` (a void is a stake
-  refund, not a loss → `pnl = 0`; never edit `match_date` or any frozen field).
-  `write_table` is partition-replace, so pass **every** row of the
-  `(sport, country)` partition — not just the voided one — or the rest are
-  wiped:
+  touch a match that was never played. Record the void with `void_bet()`
+  (`R/settle.R`), which flips **only** `settled` / `win` / `pnl` to
+  `TRUE` / `NA` / `0` (a void is a stake refund, not a loss → `pnl = 0`,
+  and `win = NA` so it never pollutes the calibration win-rate), leaves every
+  frozen field alone, and re-writes the whole `(sport, country)` partition for
+  you (`write_table` is partition-replace — `void_bet` handles that internally,
+  so you never hand-edit the tibble). It `stop()`s rather than guess if the key
+  matches zero rows, more than one row, or an already-settled row (L4).
+
+  Pass the **exact** frozen team-name renderings printed by the Diagnose step
+  above (`void_bet` matches with `==`, not a fuzzy grep):
 
   ```r
-  Rscript -e 'suppressMessages(devtools::load_all()); led <- read_table("ledger")
-    key <- led$sport=="football" & led$country=="iceland" & led$sex=="male" &
-      led$market=="moneyline" & grepl("Gr.tta", led$home_team) &
-      grepl("Grindav", led$away_team) & led$match_date==as.Date("2026-06-06") &
-      (is.na(led$settled) | !led$settled)
-    stopifnot(sum(key) == 1L); i <- which(key)
-    led$settled[i] <- TRUE; led$win[i] <- NA; led$pnl[i] <- 0
-    write_table(led[led$sport=="football" & led$country=="iceland", ], "ledger")
+  Rscript -e 'suppressMessages(devtools::load_all())
+    void_bet(
+      sport = "football", country = "iceland", sex = "male",
+      match_date = as.Date("2026-06-06"),
+      home_team = "Grótta", away_team = "Grindavík",
+      market = "moneyline"
+    )
     commit_ledger_changes(here::here(), "data(ledger): void <fixture> -- <reason>")'
   ```
+  If the Diagnose step shows more than one unsettled bet on that fixture+market
+  (e.g. two `total` lines), add `line = ...`, `outcome = ...`, or
+  `placed_at = ...` to pick exactly one — `void_bet` aborts on an ambiguous key.
   Then `git push origin main` — nothing auto-pushes the ledger.
 
 ## Verify

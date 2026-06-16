@@ -534,3 +534,186 @@ test_that("settle_ledger: leaves Parquet files of untouched partitions alone", {
   expect_equal(n, 1L)
   expect_equal(mtime_before, mtime_after)
 })
+
+# ---- void_bet() -----------------------------------------------------------
+#
+# A void is a stake refund on a match that was never played (postponed /
+# abandoned, then refunded by Lengjan). It has no scraped result for
+# compute_settlement() to join against, so void_bet() is the only sanctioned
+# resolution: flip ONLY settled/win/pnl (TRUE/NA/0), freeze everything else.
+# match_dates here are clock-relative on principle (the "time-bomb fixtures"
+# gotcha) even though void_bet does no date filtering.
+
+test_that("void_bet: flips only settled/win/pnl and freezes every other field", {
+  tmp <- withr::local_tempdir()
+  md <- Sys.Date() - 5L
+  led <- make_bet("moneyline", "home",
+    odds = 2.4, bet_amount = 268,
+    home = "Grotta", away = "Grindavik", match_date = md
+  )
+  write_table(led, "ledger", root = tmp)
+
+  voided <- void_bet(
+    root = tmp,
+    sport = "football", country = "iceland", sex = "male",
+    match_date = md, home_team = "Grotta", away_team = "Grindavik",
+    market = "moneyline"
+  )
+
+  # returns the post-flip row invisibly
+  expect_equal(nrow(voided), 1L)
+  expect_true(voided$settled)
+
+  out <- read_table("ledger", root = tmp)
+  expect_equal(nrow(out), 1L)
+  expect_true(out$settled)
+  expect_true(is.na(out$win))
+  expect_equal(out$pnl, 0)
+  # every frozen field is untouched (L3/L4)
+  expect_equal(out$match_date, md)
+  expect_equal(out$odds_placed, 2.4)
+  expect_equal(out$bet_amount, 268)
+  expect_equal(out$outcome, "home")
+  expect_equal(out$p, 0.5)
+  expect_equal(out$kelly, 0.05)
+})
+
+test_that("void_bet: preserves other rows in the same (sport, country) partition", {
+  tmp <- withr::local_tempdir()
+  md <- Sys.Date() - 5L
+  led <- dplyr::bind_rows(
+    make_bet("moneyline", "home",
+      odds = 2.4, bet_amount = 268,
+      home = "Grotta", away = "Grindavik", match_date = md
+    ),
+    make_bet("total", "over",
+      line = 2.5, odds = 1.9, bet_amount = 300,
+      home = "Valur", away = "KR", match_date = md
+    )
+  )
+  write_table(led, "ledger", root = tmp)
+
+  void_bet(
+    root = tmp,
+    sport = "football", country = "iceland", sex = "male",
+    match_date = md, home_team = "Grotta", away_team = "Grindavik",
+    market = "moneyline"
+  )
+
+  out <- read_table("ledger", root = tmp)
+  expect_equal(nrow(out), 2L)
+  voided <- out[out$home_team == "Grotta", ]
+  survivor <- out[out$home_team == "Valur", ]
+
+  expect_true(voided$settled)
+  expect_true(is.na(voided$win))
+  expect_equal(voided$pnl, 0)
+
+  # the untouched sibling in the same partition is exactly as written
+  expect_false(survivor$settled)
+  expect_true(is.na(survivor$win))
+  expect_true(is.na(survivor$pnl))
+  expect_equal(survivor$bet_amount, 300)
+  expect_equal(survivor$odds_placed, 1.9)
+  expect_equal(survivor$line, 2.5)
+})
+
+test_that("void_bet: errors when no ledger row matches the key", {
+  tmp <- withr::local_tempdir()
+  md <- Sys.Date() - 5L
+  led <- make_bet("moneyline", "home",
+    home = "Grotta", away = "Grindavik", match_date = md
+  )
+  write_table(led, "ledger", root = tmp)
+
+  expect_error(
+    void_bet(
+      root = tmp,
+      sport = "football", country = "iceland", sex = "male",
+      match_date = md, home_team = "Nobody", away_team = "Nope",
+      market = "moneyline"
+    ),
+    "matched 0"
+  )
+})
+
+test_that("void_bet: ambiguous key (multiple matches) is rejected, then disambiguated by line", {
+  tmp <- withr::local_tempdir()
+  md <- Sys.Date() - 5L
+  led <- dplyr::bind_rows(
+    make_bet("total", "over",
+      line = 2.5, odds = 1.9, bet_amount = 100,
+      home = "Grotta", away = "Grindavik", match_date = md
+    ),
+    make_bet("total", "over",
+      line = 3.5, odds = 1.5, bet_amount = 100,
+      home = "Grotta", away = "Grindavik", match_date = md
+    )
+  )
+  write_table(led, "ledger", root = tmp)
+
+  expect_error(
+    void_bet(
+      root = tmp,
+      sport = "football", country = "iceland", sex = "male",
+      match_date = md, home_team = "Grotta", away_team = "Grindavik",
+      market = "total"
+    ),
+    "ambiguous"
+  )
+
+  void_bet(
+    root = tmp,
+    sport = "football", country = "iceland", sex = "male",
+    match_date = md, home_team = "Grotta", away_team = "Grindavik",
+    market = "total", line = 2.5
+  )
+
+  out <- read_table("ledger", root = tmp)
+  out <- out[order(out$line), ]
+  expect_equal(out$settled, c(TRUE, FALSE))
+  expect_equal(out$win, c(NA, NA))
+  expect_equal(out$pnl, c(0, NA_real_))
+})
+
+test_that("void_bet: refuses to re-settle an already-settled row (L4)", {
+  tmp <- withr::local_tempdir()
+  md <- Sys.Date() - 5L
+  led <- make_bet("moneyline", "home",
+    odds = 2.0, bet_amount = 100,
+    home = "Grotta", away = "Grindavik", match_date = md
+  )
+  led$settled <- TRUE
+  led$win <- TRUE
+  led$pnl <- 100
+  write_table(led, "ledger", root = tmp)
+
+  expect_error(
+    void_bet(
+      root = tmp,
+      sport = "football", country = "iceland", sex = "male",
+      match_date = md, home_team = "Grotta", away_team = "Grindavik",
+      market = "moneyline"
+    ),
+    "already settled"
+  )
+
+  # the settled row is left exactly as it was
+  out <- read_table("ledger", root = tmp)
+  expect_true(out$settled)
+  expect_true(out$win)
+  expect_equal(out$pnl, 100)
+})
+
+test_that("void_bet: empty or missing ledger raises a clear error", {
+  tmp <- withr::local_tempdir()
+  expect_error(
+    void_bet(
+      root = tmp,
+      sport = "football", country = "iceland", sex = "male",
+      match_date = Sys.Date(), home_team = "A", away_team = "B",
+      market = "moneyline"
+    ),
+    "empty or missing"
+  )
+})

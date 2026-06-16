@@ -255,5 +255,106 @@ settle_ledger <- function(root = here::here("data"),
   invisible(as.integer(sum(newly_resolved_in_subset)))
 }
 
+#' Void (refund) a single unsettled ledger bet.
+#'
+#' Records a bookmaker void/refund on the canonical Parquet ledger. A void is
+#' *not* a graded outcome: the match was never played (postponed / abandoned)
+#' and Lengjan refunded the stake, so there is no scraped result for
+#' [settle_ledger()] / [compute_settlement()] to join against. This is the only
+#' sanctioned way to resolve such a row — the settle layer joins exclusively to
+#' results and will never touch a match that has no result.
+#'
+#' Identifies exactly one ledger row by the natural key (`sport`, `country`,
+#' `sex`, `match_date`, `home_team`, `away_team`, `market`), optionally narrowed
+#' by `line` / `outcome` / `placed_at` when the key alone is ambiguous (e.g. two
+#' total bets on one fixture at different lines). Flips **only**
+#' `settled = TRUE`, `win = NA`, `pnl = 0`; every frozen field (`odds_placed`,
+#' `bet_amount`, `outcome`, `line`, `match_date`, `p`, `kelly`, ...) is left
+#' untouched (L3/L4). A void is a stake refund, not a loss — hence `pnl = 0`,
+#' and `win = NA` rather than `FALSE` so a void never pollutes the calibration
+#' win-rate.
+#'
+#' Errors (never silently mutates) when the key matches zero rows, matches more
+#' than one row, or matches a row that is already settled (L4 — settled rows are
+#' immutable; never re-settle).
+#'
+#' Mirrors the partition-replace write at the tail of [settle_ledger()]:
+#' `write_table(..., "ledger")` overwrites whole `(sport, country)` partitions,
+#' so the full partition slice is re-written, not the single voided row (which
+#' would wipe its partition-mates). Like [settle_ledger()] this never touches
+#' git — the script-layer wrapper or the documented one-liner in
+#' `docs/runbooks/orphaned-bet.md` calls [commit_ledger_changes()] afterwards.
+#'
+#' @param root Data root for the Parquet stores (default `here::here("data")`).
+#' @param sport,country,sex,match_date,home_team,away_team,market The natural
+#'   key identifying the bet. `match_date` is coerced with [as.Date()].
+#' @param line,outcome,placed_at Optional disambiguators, each `NULL` (ignored)
+#'   by default. Supply one or more when the natural key alone matches more
+#'   than one ledger row.
+#' @return Invisibly, the single voided ledger row (post-flip) as a one-row
+#'   tibble.
+#' @export
+void_bet <- function(root = here::here("data"),
+                     sport, country, sex, match_date,
+                     home_team, away_team, market,
+                     line = NULL, outcome = NULL, placed_at = NULL) {
+  led <- tryCatch(read_table("ledger", root = root), error = function(e) NULL)
+  if (is.null(led) || nrow(led) == 0L) {
+    stop("void_bet: ledger is empty or missing; nothing to void.", call. = FALSE)
+  }
+
+  match_date <- as.Date(match_date)
+  mask <- led$sport == sport & led$country == country & led$sex == sex &
+    led$match_date == match_date & led$home_team == home_team &
+    led$away_team == away_team & led$market == market
+  if (!is.null(line)) {
+    mask <- mask & !is.na(led$line) & led$line == line
+  }
+  if (!is.null(outcome)) {
+    mask <- mask & led$outcome == outcome
+  }
+  if (!is.null(placed_at)) {
+    mask <- mask & led$placed_at == placed_at
+  }
+
+  idx <- which(mask)
+  n <- length(idx)
+  if (n == 0L) {
+    stop(
+      "void_bet: matched 0 ledger rows for the given key. ",
+      "Check the natural-key fields against the ledger.",
+      call. = FALSE
+    )
+  }
+  if (n > 1L) {
+    stop(
+      sprintf(
+        paste0(
+          "void_bet: key is ambiguous -- matched %d rows. ",
+          "Disambiguate with line / outcome / placed_at."
+        ),
+        n
+      ),
+      call. = FALSE
+    )
+  }
+  if (isTRUE(led$settled[[idx]])) {
+    stop(
+      "void_bet: the matched ledger row is already settled ",
+      "(L4 -- settled rows are immutable; never re-settle).",
+      call. = FALSE
+    )
+  }
+
+  led$settled[idx] <- TRUE
+  led$win[idx] <- NA
+  led$pnl[idx] <- 0
+
+  part_mask <- led$sport == sport & led$country == country
+  write_table(led[part_mask, , drop = FALSE], "ledger", root = root)
+
+  invisible(led[idx, , drop = FALSE])
+}
+
 # Null-coalescing (R 4.4+ has a base `%||%` but the package targets R >= 4.0).
 `%||%` <- function(x, y) if (is.null(x)) y else x
