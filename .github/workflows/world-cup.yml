@@ -13,7 +13,16 @@ name: World Cup Forecast
 
 on:
   schedule:
-    - cron: '0 7 * * *'   # 1x daily UTC, after the prior day's late US-evening WC matches
+    # martj42 commits its daily intl-results update between ~05:00 and ~10:04 UTC
+    # (median ~07:00, human-driven), so a single early run misses the ~half of days
+    # that post later. Two runs cover the spread so the /hm2026 page is fresh for
+    # Reykjavik readers (UTC+0, no DST -> UTC == local) at both coffee and lunch:
+    #   07:30 -> catches the early-posting days, page live ~09:00 (before coffee)
+    #   10:30 -> catches the late tail (incl. ~10:04), page live ~11:30 (before lunch)
+    # The facts-diff skip-guard makes whichever run sees no new martj42 results a
+    # cheap no-op, so on a typical day only one of the two actually re-fits.
+    - cron: '30 7 * * *'    # early run
+    - cron: '30 10 * * *'   # late catch-up run
   workflow_dispatch:
     inputs:
       force:
