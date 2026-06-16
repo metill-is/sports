@@ -335,6 +335,50 @@ bt_wf_extract_decide <- function(source_root = here::here("data")) {
   }
 }
 
+#' Walk-forward in REUSE mode over the saved extract fit_dates (no Stan).
+#'
+#' Thin orchestration shared by the CLI (`--reuse`) and the season report:
+#' enumerates the saved `predicted_matches` fit_dates for football_iceland/`sex`
+#' (optionally one season), loads `results` + `odds`, and runs [bt_walkforward()]
+#' with [bt_wf_extract_decide()]. A whole season scores in seconds.
+#' @param sex "male" or "female".
+#' @param season Optional integer year; filters the fit_dates to that season.
+#' @param horizon_days OOS window cap (tail for the final cutoff). Default 14.
+#' @param root Data root holding `beliefs/extracts/` + `facts/`.
+#' @return The [bt_walkforward()] list, or `NULL` if the cell has no saved
+#'   extracts (e.g. an off-season sex).
+#' @export
+bt_walkforward_reuse <- function(sex, season = NULL, horizon_days = 14L,
+                                 root = here::here("data")) {
+  ext_dir <- file.path(
+    root, "beliefs", "extracts", "sport=football",
+    "country=iceland", paste0("sex=", sex)
+  )
+  if (!dir.exists(ext_dir)) {
+    return(NULL)
+  }
+  fds <- sort(as.Date(sub("fit_date=", "", list.files(ext_dir))))
+  if (!is.null(season)) fds <- fds[format(fds, "%Y") == as.character(season)]
+  if (length(fds) == 0L) {
+    return(NULL)
+  }
+  league <- load_leagues()[["football_iceland"]]
+  tie_threshold <- league$betting$scoring$tie_threshold %||% 0
+  results <- read_table("results",
+    root = root,
+    filter = list(sport = "football", country = "iceland", sex = sex)
+  )
+  odds <- read_table("odds",
+    root = root,
+    filter = list(sport = "football", country = "iceland")
+  )
+  bt_walkforward(
+    sex = sex, cutoffs = fds, horizon_days = horizon_days,
+    results = results, odds = odds, ledger = NULL, live_root = root,
+    decide_fn = bt_wf_extract_decide(root), tie_threshold = tie_threshold
+  )
+}
+
 #' Walk-forward out-of-sample validator over a set of cutoff dates.
 #'
 #' For each `d` in `cutoffs` (sorted ascending), re-fit as-of `d`, decide from

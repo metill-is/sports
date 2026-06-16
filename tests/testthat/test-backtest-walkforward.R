@@ -615,6 +615,43 @@ test_that("bt_walkforward with the extract-reuse decide_fn scores OOS candidates
   expect_true(wf$bets$win[wf$bets$market == "moneyline" & wf$bets$outcome == "home"][1])
 })
 
+test_that("bt_walkforward_reuse returns NULL when no saved extracts exist for the cell", {
+  root <- withr::local_tempdir()
+  expect_null(bt_walkforward_reuse("male", root = root))
+})
+
+test_that("bt_walkforward_reuse runs the reuse path end-to-end over the saved extract fit_dates", {
+  root <- withr::local_tempdir()
+  pm <- tibble::tibble(
+    home_team = "A", away_team = "B", match_date = as.Date("2026-05-08"),
+    home_goals = c(2, 1, 1, 0), away_goals = c(0, 0, 1, 1),
+    count = c(600L, 250L, 100L, 50L), division = "BD"
+  )
+  bt_wf_write_extract(root, "2026-05-03", "male", pm)
+  write_table(
+    tibble::tibble(
+      sport = "football", country = "iceland", sex = "male", season = 2026L,
+      match_date = as.Date("2026-05-08"), home_team = "A", away_team = "B",
+      home_score = 2L, away_score = 0L, division = "BD", round = 5L
+    ),
+    "results",
+    root = root
+  )
+  write_table(
+    tibble::tibble(
+      sport = "football", country = "iceland",
+      scraped_at = as.POSIXct("2026-05-06 09:00:00", tz = "UTC"),
+      match_date = as.Date("2026-05-08"), home_team = "A", away_team = "B",
+      market = "moneyline", outcome = "home", line = NA_real_, odds = 1.5
+    ),
+    "odds",
+    root = root
+  )
+  wf <- bt_walkforward_reuse("male", season = 2026, root = root)
+  expect_false(is.null(wf))
+  expect_gt(wf$scores$n, 0L)
+})
+
 test_that("walk-forward yields OOS candidates and scores >= 1 bet with a real as-of fit (integration; opt-in)", {
   # Every test above injects a fake decide_fn, so none exercised the real
   # fit_league -> decide_league path the slice rule + max_age_hours forwarding
