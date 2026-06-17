@@ -111,6 +111,23 @@ delta has an equivalent on main (search by symbol or roxygen tag), the stash
 is subsumed and safe to drop. Binary parquets older than the most recent cron
 commit at the same path are always stale.
 
+## Before pushing to main
+
+The hourly `pull-sports-data` cron and the five CI workflows auto-commit to
+`main` constantly, so `main` almost always moves under you between sessions. A
+plain `git push` will be rejected as non-fast-forward (or, worse, you'll race a
+cron commit). Always re-sync first:
+
+```bash
+git -C /Users/brynjolfurjonsson/sports fetch origin
+git -C /Users/brynjolfurjonsson/sports rebase origin/main
+git -C /Users/brynjolfurjonsson/sports push
+```
+
+This is for the direct-push case only. The PR path below stays preferred —
+`gh pr merge --rebase --auto --delete-branch` still works because the repo now
+has auto-merge enabled, so keep the `--auto` recommendation.
+
 ## Bash-tool gotcha: cwd persists, prefer `git -C <abs-path>`
 
 The Bash tool persists `cd` across calls within a session. A successful `cd

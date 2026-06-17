@@ -76,6 +76,13 @@ authoritative mapping rather than mirroring them here.
   after each run, and `sync_recs()` rescue-commits any ledger rows a crashed
   run left uncommitted before its stash → pull → pop sync (2026-06-10
   incident). Run log: `~/Library/Logs/sports-autoplace.log`.
+  **Background-git warning:** this launchd job runs `git` (stash → pull --rebase
+  → pop) on `~/sports` on its own schedule. `sync_recs()` only rescue-commits the
+  *ledger* — any *other* uncommitted git-tracked generated data (e.g.
+  `data/publish/**/final_positions_history.json`, a backfill in progress) can be
+  clobbered by that background sync or a concurrent branch op. Commit generated
+  tracked data promptly during interactive sessions (2026-06-11 backfill-clobber
+  incident).
 
 ## Quick reference
 
