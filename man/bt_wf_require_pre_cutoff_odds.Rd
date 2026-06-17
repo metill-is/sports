@@ -4,12 +4,22 @@
 \alias{bt_wf_require_pre_cutoff_odds}
 \title{Drop OOS candidates with no pre-cutoff odds snapshot (G8).}
 \usage{
-bt_wf_require_pre_cutoff_odds(candidates, sliced_odds)
+bt_wf_require_pre_cutoff_odds(
+  candidates,
+  sliced_odds,
+  league = NULL,
+  sex = NULL
+)
 }
 \arguments{
 \item{candidates}{OOS candidates.}
 
 \item{sliced_odds}{Output of [bt_wf_slice_odds()].}
+
+\item{league}{League list (as from [load_leagues()]) carrying
+`lengjan$team_names`. `NULL` skips name normalisation.}
+
+\item{sex}{`"male"` or `"female"`. Required (with `league`) to normalise.}
 }
 \value{
 Candidates that have a matching pre-cutoff odds snapshot.
@@ -18,4 +28,15 @@ Candidates that have a matching pre-cutoff odds snapshot.
 A fixture whose only stored date is a post-`d` schedule revision has no
 pre-cutoff odds and is not a bettable as-of match. Keying on the selection
 identity sidesteps phantom rescheduled fixtures.
+}
+\details{
+The two sides live in different team-name namespaces: `decide_league` emits
+candidates in canonical (federation) names because `prepare_odds` runs
+[normalise_lengjan_team_names()], while `sliced_odds` are the raw pre-decide
+snapshots still in Lengjan display names. Any cell with a per-sex
+`lengjan.team_names` map (every football_iceland female team — "FH" vs
+"FH kv") would otherwise key two disjoint namespaces and drop every
+candidate. Pass `league` + `sex` to rewrite the odds side with the SAME map
+before keying; omit them (the default) for cells with no map, where the
+names already coincide.
 }

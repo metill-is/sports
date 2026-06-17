@@ -98,7 +98,7 @@ cli::cli_h1("Walk-forward {league_key}/{sex} [{mode}]: {length(cutoffs)} cutoff(
 wf <- bt_walkforward(
   sex = sex, cutoffs = cutoffs, horizon_days = horizon_days,
   results = results, odds = odds, ledger = ledger,
-  decide_fn = decide_fn, tie_threshold = tie_threshold
+  decide_fn = decide_fn, tie_threshold = tie_threshold, league = league
 )
 
 out_dir <- here::here("data", "backtest", "walkforward")

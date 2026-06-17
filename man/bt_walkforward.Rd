@@ -13,7 +13,8 @@ bt_walkforward(
   ledger = NULL,
   live_root = here::here("data"),
   decide_fn = bt_wf_default_decide,
-  tie_threshold = 0
+  tie_threshold = 0,
+  league = NULL
 )
 }
 \arguments{
@@ -32,6 +33,11 @@ Default 14. Earlier cutoffs use `min(horizon_days, gap to next cutoff)`.}
 \item{decide_fn}{Injected for tests; default fits+decides.}
 
 \item{tie_threshold}{Per-(sport,country) push band.}
+
+\item{league}{League list forwarded to [bt_walkforward_cutoff()] to bridge
+the candidate vs odds team-name namespaces (needed for any cell with a
+`lengjan.team_names` map, e.g. football_iceland female). `NULL` keys
+verbatim.}
 }
 \value{
 `list(bets, scores, pnl, skipped)`. `bets` is every scored OOS

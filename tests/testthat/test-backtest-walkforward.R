@@ -275,6 +275,48 @@ test_that("bt_wf_require_pre_cutoff_odds drops candidates with no pre-cutoff odd
   expect_equal(nrow(out), 1L)
 })
 
+test_that("bt_wf_require_pre_cutoff_odds bridges a team_names map so canonical-named candidates match Lengjan-named odds (regression: female cell scored 0 bets)", {
+  # A cell WITH a lengjan.team_names map (every football_iceland female team) is
+  # the female-name-identity counterpart to the male path above. decide_league
+  # emits candidates in canonical (federation) names ("FH", "Fram") because
+  # prepare_odds normalises the Lengjan-side names; the raw `sliced_odds` keep
+  # the Lengjan display names ("FH kv", "Fram kv"). Keying both sides verbatim
+  # never intersects -> every female candidate dropped -> the dashboard's market
+  # diagnostics were male-only. The fix normalises the odds side with the same
+  # per-sex map before keying.
+  cands <- tibble::tibble(
+    match_date = as.Date("2026-05-22"),
+    home_team = "FH", away_team = "Fram", # canonical (federation)
+    market = "moneyline", outcome = "home", line = NA_real_,
+    p = 0.6, odds = 2.0
+  )
+  sliced_odds <- tibble::tibble(
+    match_date = as.Date("2026-05-22"),
+    home_team = "FH kv", away_team = "Fram kv", # raw Lengjan display
+    market = "moneyline", outcome = "home", line = NA_real_,
+    odds = 2.0, scraped_at = as.POSIXct("2026-05-19 12:00:00", tz = "UTC")
+  )
+  league <- list(
+    sport = "football", country = "iceland",
+    lengjan = list(team_names = list(
+      male = list(),
+      female = list(FH = "FH kv", Fram = "Fram kv")
+    ))
+  )
+
+  # The bug: with no map the two namespaces never meet -> 0 candidates kept.
+  expect_equal(nrow(bt_wf_require_pre_cutoff_odds(cands, sliced_odds)), 0L)
+
+  # The fix: the female map rewrites the odds names to canonical -> join works.
+  out <- bt_wf_require_pre_cutoff_odds(
+    cands, sliced_odds,
+    league = league, sex = "female"
+  )
+  expect_equal(nrow(out), 1L)
+  expect_equal(out$home_team, "FH")
+  expect_equal(out$away_team, "Fram")
+})
+
 test_that("bt_walkforward_cutoff seeds an isolated wf_root and never writes the live root (ASSERT-OUTPUT-ISOLATION-1, G6)", {
   d <- as.Date("2026-05-20")
   live_root <- withr::local_tempdir()

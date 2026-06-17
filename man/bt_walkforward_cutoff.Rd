@@ -13,7 +13,8 @@ bt_walkforward_cutoff(
   ledger = NULL,
   live_root = here::here("data"),
   decide_fn = bt_wf_default_decide,
-  tie_threshold = 0
+  tie_threshold = 0,
+  league = NULL
 )
 }
 \arguments{
@@ -27,6 +28,11 @@ bt_walkforward_cutoff(
 tibble. Default fits as-of then decides.}
 
 \item{tie_threshold}{Per-(sport,country) push band (football = 0).}
+
+\item{league}{League list (as from [load_leagues()]) used to bridge the
+candidate (canonical) vs odds (Lengjan) team-name namespaces in
+[bt_wf_require_pre_cutoff_odds()]. `NULL` (default) keys verbatim — correct
+only for cells with no `lengjan.team_names` map.}
 }
 \value{
 Scored OOS tibble (`cutoff`, `run_id`, candidate cols, `win`).

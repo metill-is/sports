@@ -45,7 +45,8 @@ The report now carries both backtests, re-rendering weekly:
    calls `bt_walkforward_reuse(sex, season)` in setup (REUSE mode — reconstructs
    beliefs from `beliefs/extracts/predicted_matches`, no Stan, ~70s/season) so it
    self-updates; gated on `wf_available` so it skips cleanly when extracts are
-   absent.
+   absent. REUSE mode walks `predicted_matches` with `uncount(count)` to rebuild a
+   `beliefs_latest`-shaped tibble, avoiding a full re-fit.
 
 **Model-vs-market scoring** lives in `R/backtest-metrics.R`: `bt_devig()` adds
 the margin-free market probability `q_market` (normalise `1/odds` within each

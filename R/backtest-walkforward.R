@@ -112,13 +112,30 @@ bt_wf_ledger_asof <- function(ledger, d) {
 #' A fixture whose only stored date is a post-`d` schedule revision has no
 #' pre-cutoff odds and is not a bettable as-of match. Keying on the selection
 #' identity sidesteps phantom rescheduled fixtures.
+#'
+#' The two sides live in different team-name namespaces: `decide_league` emits
+#' candidates in canonical (federation) names because `prepare_odds` runs
+#' [normalise_lengjan_team_names()], while `sliced_odds` are the raw pre-decide
+#' snapshots still in Lengjan display names. Any cell with a per-sex
+#' `lengjan.team_names` map (every football_iceland female team — "FH" vs
+#' "FH kv") would otherwise key two disjoint namespaces and drop every
+#' candidate. Pass `league` + `sex` to rewrite the odds side with the SAME map
+#' before keying; omit them (the default) for cells with no map, where the
+#' names already coincide.
 #' @param candidates OOS candidates.
 #' @param sliced_odds Output of [bt_wf_slice_odds()].
+#' @param league League list (as from [load_leagues()]) carrying
+#'   `lengjan$team_names`. `NULL` skips name normalisation.
+#' @param sex `"male"` or `"female"`. Required (with `league`) to normalise.
 #' @return Candidates that have a matching pre-cutoff odds snapshot.
 #' @export
-bt_wf_require_pre_cutoff_odds <- function(candidates, sliced_odds) {
+bt_wf_require_pre_cutoff_odds <- function(candidates, sliced_odds,
+                                          league = NULL, sex = NULL) {
   if (nrow(candidates) == 0L || nrow(sliced_odds) == 0L) {
     return(candidates[0, , drop = FALSE])
+  }
+  if (!is.null(league) && !is.null(sex)) {
+    sliced_odds <- normalise_lengjan_team_names(sliced_odds, league, sex)
   }
   ok <- paste(sliced_odds$match_date, sliced_odds$home_team,
     sliced_odds$away_team, sliced_odds$market, sliced_odds$outcome,
@@ -146,13 +163,17 @@ bt_wf_require_pre_cutoff_odds <- function(candidates, sliced_odds) {
 #' @param decide_fn Closure `(root, run_date, sex, ledger_asof)` -> candidate
 #'   tibble. Default fits as-of then decides.
 #' @param tie_threshold Per-(sport,country) push band (football = 0).
+#' @param league League list (as from [load_leagues()]) used to bridge the
+#'   candidate (canonical) vs odds (Lengjan) team-name namespaces in
+#'   [bt_wf_require_pre_cutoff_odds()]. `NULL` (default) keys verbatim — correct
+#'   only for cells with no `lengjan.team_names` map.
 #' @return Scored OOS tibble (`cutoff`, `run_id`, candidate cols, `win`).
 #' @export
 bt_walkforward_cutoff <- function(sex, d, horizon_days,
                                   results, odds, ledger = NULL,
                                   live_root = here::here("data"),
                                   decide_fn = bt_wf_default_decide,
-                                  tie_threshold = 0) {
+                                  tie_threshold = 0, league = NULL) {
   d <- as.Date(d)
   wf_root <- withr::local_tempdir()
 
@@ -166,7 +187,7 @@ bt_walkforward_cutoff <- function(sex, d, horizon_days,
 
   cands <- decide_fn(root = wf_root, run_date = d, sex = sex, ledger_asof = led_asof)
   cands <- bt_wf_filter_oos(cands, d, horizon_days)
-  cands <- bt_wf_require_pre_cutoff_odds(cands, sliced)
+  cands <- bt_wf_require_pre_cutoff_odds(cands, sliced, league = league, sex = sex)
   if (nrow(cands) == 0L) {
     cands$cutoff <- as.Date(character())
     cands$run_id <- as.POSIXct(character(), tz = "UTC")
@@ -375,7 +396,8 @@ bt_walkforward_reuse <- function(sex, season = NULL, horizon_days = 14L,
   bt_walkforward(
     sex = sex, cutoffs = fds, horizon_days = horizon_days,
     results = results, odds = odds, ledger = NULL, live_root = root,
-    decide_fn = bt_wf_extract_decide(root), tie_threshold = tie_threshold
+    decide_fn = bt_wf_extract_decide(root), tie_threshold = tie_threshold,
+    league = league
   )
 }
 
@@ -398,6 +420,10 @@ bt_walkforward_reuse <- function(sex, season = NULL, horizon_days = 14L,
 #' @param live_root Production data root (read-only).
 #' @param decide_fn Injected for tests; default fits+decides.
 #' @param tie_threshold Per-(sport,country) push band.
+#' @param league League list forwarded to [bt_walkforward_cutoff()] to bridge
+#'   the candidate vs odds team-name namespaces (needed for any cell with a
+#'   `lengjan.team_names` map, e.g. football_iceland female). `NULL` keys
+#'   verbatim.
 #' @return `list(bets, scores, pnl, skipped)`. `bets` is every scored OOS
 #'   candidate with a `kept` flag; `scores` ([bt_oos_scores()]) is the PRIMARY
 #'   OOS calibration over ALL candidates with a finite `p` (so n reflects every
@@ -413,7 +439,7 @@ bt_walkforward <- function(sex, cutoffs, horizon_days = 14L,
                            results, odds, ledger = NULL,
                            live_root = here::here("data"),
                            decide_fn = bt_wf_default_decide,
-                           tie_threshold = 0) {
+                           tie_threshold = 0, league = NULL) {
   cutoffs <- sort(as.Date(cutoffs))
   n_cut <- length(cutoffs)
   scored <- list()
@@ -435,7 +461,7 @@ bt_walkforward <- function(sex, cutoffs, horizon_days = 14L,
         sex = sex, d = d, horizon_days = eff_h,
         results = results, odds = odds, ledger = ledger,
         live_root = live_root, decide_fn = decide_fn,
-        tie_threshold = tie_threshold
+        tie_threshold = tie_threshold, league = league
       ),
       error = function(e) structure(conditionMessage(e), class = "bt_wf_skip")
     )
