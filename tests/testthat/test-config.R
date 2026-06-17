@@ -230,6 +230,58 @@ test_that("check_team_names_injective rejects a non-injective sub-map", {
   expect_error(check_team_names_injective(leagues), "non-injective")
 })
 
+test_that("check_team_names_injective rejects a rendering shared across list-valued entries", {
+  # A team that Lengjan renders two ways is a list value; the invariant still
+  # holds across the flattened union -- no rendering may sit under two canonicals.
+  leagues <- list(
+    football_iceland = list(lengjan = list(team_names = list(
+      male = list(),
+      female = list(A = list("A kv", "Shared kv"), B = "Shared kv")
+    )))
+  )
+  expect_error(check_team_names_injective(leagues), "non-injective")
+})
+
+test_that("check_team_names_injective passes a list-valued entry with distinct renderings", {
+  leagues <- list(
+    football_iceland = list(lengjan = list(team_names = list(
+      male = list(),
+      female = list(Combined = list("Combined kv", "Comb. kv"), Valur = "Valur kv")
+    )))
+  )
+  expect_invisible(check_team_names_injective(leagues))
+})
+
+test_that("tn_renderings normalises scalar and list values to character vectors", {
+  r <- tn_renderings(list(
+    Valur = "Valur kv",
+    Combined = list("A kv", "B kv")
+  ))
+  expect_equal(r$Valur, "Valur kv")
+  expect_equal(r$Combined, c("A kv", "B kv"))
+})
+
+test_that("tn_renderings returns an empty list for an empty / NULL map", {
+  expect_equal(tn_renderings(list()), list())
+  expect_equal(tn_renderings(NULL), list())
+})
+
+test_that("leagues schema accepts both scalar and list-valued team_names renderings", {
+  leagues <- list(
+    football_iceland = minimal_league(list(
+      sport = "football",
+      lengjan = list(team_names = list(
+        male = list(KR = "KR"),
+        female = list(
+          Valur = "Valur kv",
+          Combined = list("Combined A kv", "Combined B kv")
+        )
+      ))
+    ))
+  )
+  expect_true(validate_leagues(leagues, schema_path()))
+})
+
 test_that("check_team_names_injective passes injective + team_names-less leagues", {
   leagues <- list(
     a = list(lengjan = list(team_names = list(

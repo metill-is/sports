@@ -176,6 +176,37 @@ find_match_in_extracted <- function(matches_df, home_lengjan, away_lengjan) {
   matches_df[matches_df$home == home_lengjan & matches_df$away == away_lengjan, ]
 }
 
+#' Resolve a Lengjan match_id for a bet, tolerant of multiple renderings.
+#'
+#' Lengjan renders some teams under more than one byte-distinct string (e.g.
+#' "Grindavík / Njarðvík kv" vs "Grindavik/Njarðvík kv"). A recommendation
+#' carries one canonical team name, which maps (via
+#' \code{leagues.yml::lengjan.team_names}) to a vector of acceptable Lengjan
+#' renderings. This tries every home x away rendering pair against the
+#' live-page \code{match_ids} and returns the first hit, so the bet resolves
+#' regardless of which rendering Lengjan currently shows. Renderings are tried
+#' in config order, so the primary (first) rendering wins when several are
+#' listed under one fixture.
+#'
+#' @param match_ids Named list keyed \code{"Home - Away"} (Lengjan display
+#'   names) -> match_id, as returned by \code{resolve_match_ids_new()}.
+#' @param home_renderings,away_renderings Character vectors of acceptable
+#'   Lengjan renderings for the home / away team (primary first).
+#' @return On a hit, \code{list(match_id, home, away)} carrying the matched
+#'   renderings. \code{NULL} when no rendering pair is listed.
+#' @export
+resolve_bet_match_id <- function(match_ids, home_renderings, away_renderings) {
+  for (h in home_renderings) {
+    for (a in away_renderings) {
+      mid <- match_ids[[paste(h, a, sep = " - ")]]
+      if (!is.null(mid)) {
+        return(list(match_id = mid, home = h, away = a))
+      }
+    }
+  }
+  NULL
+}
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 #' Click "Sjá allt" button to expand truncated match list (via JS)

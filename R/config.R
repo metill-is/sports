@@ -64,12 +64,37 @@ validate_leagues <- function(leagues, schema_path) {
   invisible(TRUE)
 }
 
+#' Normalise a per-sex team_names sub-map to canonical -> renderings form.
+#'
+#' A `team_names` value is either a single Lengjan rendering (scalar string) or
+#' a list of acceptable renderings — used when Lengjan renders the same team
+#' under more than one byte-distinct string (e.g. "Grindavík / Njarðvík kv" vs
+#' "Grindavik/Njarðvík kv"). This collapses both shapes to a named list whose
+#' values are always character vectors of one or more renderings, the first
+#' being the primary (the rendering the placer types into the bet slip). It is
+#' the single source of truth that lets the decode path
+#' ([normalise_lengjan_team_names()]) and the encode path ([resolve_bet_match_id()])
+#' read a scalar-or-list value uniformly.
+#'
+#' @param tn A per-sex sub-map (named list) or NULL.
+#' @return Named list: canonical name -> character vector of renderings.
+#'   `list()` for NULL / empty input.
+#' @noRd
+tn_renderings <- function(tn) {
+  if (is.null(tn) || length(tn) == 0L) {
+    return(list())
+  }
+  lapply(tn, function(v) as.character(unlist(v)))
+}
+
 #' Assert a canonical -> display name map is injective.
 #'
 #' Each display (Lengjan) value must come from at most one canonical name, or
 #' the decide-time inverse map (normalise_lengjan_team_names()) silently picks
-#' one canonical name at lookup time. NULL / empty maps pass. Shared by the
-#' load-time guard and the placer's pre-flight check.
+#' one canonical name at lookup time. List-valued entries (multiple renderings
+#' for one canonical) are flattened, so the invariant is enforced across the
+#' union of every rendering. NULL / empty maps pass. Shared by the load-time
+#' guard and the placer's pre-flight check.
 #' @noRd
 assert_injective_map <- function(map, label) {
   if (is.null(map) || length(map) == 0L) {

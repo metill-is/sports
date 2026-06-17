@@ -79,6 +79,15 @@ paths:
   `decide-pipeline.R:131` (`"decide: no beliefs for ..."`). Invertibility
   of the map (each Lengjan rendering ← one canonical) is enforced by
   both the normaliser and `validate_team_names_config()`.
+  A `team_names` value may be a **list** of acceptable renderings, not
+  just a scalar — used when Lengjan shows one team under more than one
+  byte-distinct string (e.g. football_iceland female `Grindavík/Njarðvík`
+  → `[Grindavík / Njarðvík kv, Grindavik/Njarðvík kv]`).
+  `tn_renderings()` (`R/config.R`) collapses scalar-or-list to a rendering
+  vector (primary first); the decode inverse points every rendering at the
+  one canonical, and the placer's `resolve_bet_match_id()` tries every
+  rendering against the live page so the bet resolves regardless of which
+  form Lengjan currently shows.
 - Joint Kelly is the only mode (per 2026-03-06 memory note).
 - **Stake formula (post Plan 7a, 2026-04-29):**
   `bet_amount = round(kelly_raw × portfolio_lambda × min(kelly_frac × calibration, kelly_ceiling) × current_pool)`.

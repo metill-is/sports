@@ -150,16 +150,13 @@ place_bets <- function(leagues = NULL,
       drop = FALSE
     ]
 
-    # Build per-sex pipeline -> Lengjan name maps.
+    # Build per-sex canonical -> acceptable-renderings maps.
     # team_names has shape list(male = list(...), female = list(...)); each
-    # sub-map is canonical-pipeline-name -> Lengjan-display-name.
+    # value is a canonical name -> one Lengjan rendering (scalar) or a list of
+    # acceptable renderings. tn_renderings() collapses both to a character
+    # vector (primary first) so the lookup can try every rendering.
     tn_all <- league$lengjan$team_names
-    pipeline_to_lengjan_by_sex <- lapply(tn_all, function(sex_map) {
-      if (length(sex_map) == 0L) {
-        return(character(0))
-      }
-      stats::setNames(as.character(unlist(sex_map)), names(sex_map))
-    })
+    renderings_by_sex <- lapply(tn_all, tn_renderings)
 
     # Resolve match IDs across all competitions for this league
     resolution <- resolve_match_ids_new(
@@ -174,16 +171,22 @@ place_bets <- function(leagues = NULL,
     # Place each bet
     for (i in seq_len(nrow(league_recs))) {
       bet <- league_recs[i, ]
-      pipeline_to_lengjan <- pipeline_to_lengjan_by_sex[[bet$sex]] %||%
-        character(0)
+      rmap <- renderings_by_sex[[bet$sex]] %||% list()
 
-      home_l <- pipeline_to_lengjan[[bet$home_team]]
-      if (is.null(home_l) || is.na(home_l)) home_l <- bet$home_team
-      away_l <- pipeline_to_lengjan[[bet$away_team]]
-      if (is.null(away_l) || is.na(away_l)) away_l <- bet$away_team
+      # Unmapped teams fall back to the canonical name as the Lengjan key.
+      home_renderings <- rmap[[bet$home_team]] %||% bet$home_team
+      away_renderings <- rmap[[bet$away_team]] %||% bet$away_team
 
-      match_key <- paste(home_l, away_l, sep = " - ")
-      mid <- match_ids[[match_key]]
+      resolved <- resolve_bet_match_id(match_ids, home_renderings, away_renderings)
+      # Primary rendering for the no-match warning; matched rendering on a hit.
+      home_l <- home_renderings[[1]]
+      away_l <- away_renderings[[1]]
+      mid <- NULL
+      if (!is.null(resolved)) {
+        mid <- resolved$match_id
+        home_l <- resolved$home
+        away_l <- resolved$away
+      }
 
       if (is.null(mid)) {
         if (n_total_matches == 0L) {

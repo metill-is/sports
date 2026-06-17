@@ -32,6 +32,66 @@ test_that("normalise_lengjan_team_names rewrites Lengjan-side teams to canonical
   expect_equal(out$away_team, "Valur")
 })
 
+test_that("normalise_lengjan_team_names maps every rendering of a list-valued entry to canonical", {
+  # Lengjan renders this women's team under two byte-distinct forms (verified
+  # against data/facts/odds): accented + spaced slash, and plain-i + bare slash.
+  # A list-valued team_names entry must decode both to the one canonical name.
+  odds <- tibble::tibble(
+    match_date = as.Date("2026-05-20"),
+    home_team = c(
+      "Grindav\u00edk / Njar\u00f0v\u00edk kv",
+      "Grindavik/Njar\u00f0v\u00edk kv"
+    ),
+    away_team = c("Valur kv", "Stjarnan kv"),
+    market = "moneyline", outcome = "home",
+    line = NA_real_, odds = 1.80,
+    scraped_at = as.POSIXct("2026-05-20 09:00:00", tz = "UTC")
+  )
+  league <- list(
+    sport = "football", country = "iceland",
+    lengjan = list(team_names = list(
+      female = list(
+        "Grindav\u00edk/Njar\u00f0v\u00edk" = list(
+          "Grindav\u00edk / Njar\u00f0v\u00edk kv",
+          "Grindavik/Njar\u00f0v\u00edk kv"
+        ),
+        Valur = "Valur kv",
+        Stjarnan = "Stjarnan kv"
+      )
+    ))
+  )
+
+  out <- normalise_lengjan_team_names(odds, league, sex = "female")
+
+  expect_equal(
+    out$home_team,
+    c("Grindav\u00edk/Njar\u00f0v\u00edk", "Grindav\u00edk/Njar\u00f0v\u00edk")
+  )
+  expect_equal(out$away_team, c("Valur", "Stjarnan"))
+})
+
+test_that("normalise_lengjan_team_names errors when a rendering is shared across list entries", {
+  odds <- tibble::tibble(
+    match_date = as.Date("2026-05-12"),
+    home_team = "X", away_team = "Y",
+    market = "moneyline", outcome = "home",
+    line = NA_real_, odds = 1.80,
+    scraped_at = as.POSIXct("2026-05-12 09:00:00", tz = "UTC")
+  )
+  # A rendering listed under A also appears under B -> ambiguous inverse.
+  league <- list(
+    sport = "football", country = "iceland",
+    lengjan = list(team_names = list(
+      female = list(A = list("A kv", "Shared kv"), B = "Shared kv")
+    ))
+  )
+
+  expect_error(
+    normalise_lengjan_team_names(odds, league, sex = "female"),
+    "non-injective"
+  )
+})
+
 test_that("normalise_lengjan_team_names is identity (with warning) when team_names is empty", {
   odds <- tibble::tibble(
     match_date = as.Date("2026-05-12"),

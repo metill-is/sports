@@ -6,13 +6,19 @@ NULL
 #' `config/leagues.yml::*.lengjan.team_names` maps canonical (federation)
 #' team names to Lengjan display names — direction
 #' `{canonical: lengjan_display}` — because the placer needs to find a
-#' Lengjan match ID from a recommendation's canonical name.
+#' Lengjan match ID from a recommendation's canonical name. A value is either
+#' a single rendering (scalar) or a list of acceptable renderings, used when
+#' Lengjan shows the same team under more than one byte-distinct string (e.g.
+#' "Grindavík / Njarðvík kv" vs "Grindavik/Njarðvík kv").
 #'
 #' For the decide-time join (odds Parquet vs beliefs Parquet) we need the
-#' inverse map. This function inverts the per-sex sub-map and applies it to
-#' the `home_team` + `away_team` columns. Unmapped names pass through with
-#' a `cli::cli_alert_warning` so the caller's loud "no beliefs" warning at
-#' [decide_league()] catches the resulting empty-beliefs join.
+#' inverse map. This function inverts the per-sex sub-map — every rendering of
+#' a canonical points back at that canonical — and applies it to the
+#' `home_team` + `away_team` columns. Unmapped names pass through with a
+#' `cli::cli_alert_warning` so the caller's loud "no beliefs" warning at
+#' [decide_league()] catches the resulting empty-beliefs join. The inverse must
+#' stay injective (each rendering from one canonical); a shared rendering across
+#' two canonicals is a hard error.
 #'
 #' @param odds Tibble with at least `home_team` and `away_team` columns.
 #' @param league League list (as from [load_leagues()]). Reads
@@ -52,8 +58,12 @@ normalise_lengjan_team_names <- function(odds, league, sex) {
     x
   }
 
-  canon <- tag_utf8(names(tn))
-  lengjan <- tag_utf8(unname(unlist(tn)))
+  # A canonical may map to several acceptable Lengjan renderings (list value);
+  # the inverse must point every rendering at that one canonical. Repeat each
+  # canonical by its rendering count so `canon` and `lengjan` stay aligned.
+  renders <- tn_renderings(tn)
+  canon <- tag_utf8(rep(names(renders), lengths(renders)))
+  lengjan <- tag_utf8(unlist(renders, use.names = FALSE))
   if (anyDuplicated(lengjan) > 0L) {
     dups <- unique(lengjan[duplicated(lengjan)])
     stop(

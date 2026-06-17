@@ -4,7 +4,10 @@
 # Non-Icelandic leagues are preserved in _legacy/ and will be re-added when
 # revived in later plans.
 #
-# team_names direction: {canonical: Lengjan_display_name}.
+# team_names direction: {canonical: Lengjan_display_name}. A value may be a
+# single rendering (scalar) or a list of acceptable renderings when Lengjan
+# shows the same team under more than one string (first element = primary the
+# placer types). Each rendering must come from exactly one canonical (injective).
 # Migrated from _legacy/sports/config/leagues.yml +
 # _legacy/lengjan-odds/config/competitions.yml +
 # _legacy/lengjan-odds/config/team_names_{sport}_iceland.csv.
@@ -201,7 +204,14 @@ football_iceland:
         Víkingur R.: Víkingur Rvk kv                    # confirmed
         Þróttur R.: Þróttur Rvk kv                      # confirmed
         Breiðablik: Breiðablik kv                       # confirmed 2026-05-18
-        Grindavík/Njarðvík: Grindavík / Njarðvík kv     # confirmed 2026-05-18 — note SPACES around slash on Lengjan side
+        # Lengjan renders this women's team under two byte-distinct forms
+        # (both verified in data/facts/odds): list them so the decode
+        # (normalise_lengjan_team_names) accepts either and the placer
+        # (resolve_bet_match_id) resolves whichever the live page shows.
+        # First element is the primary the placer types into the bet slip.
+        Grindavík/Njarðvík:
+          - Grindavík / Njarðvík kv                     # primary: accented, SPACES around slash (confirmed 2026-05-18)
+          - Grindavik/Njarðvík kv                       # variant: plain 'i', bare slash (confirmed 2026-06-16)
         Valur: Valur kv                                 # confirmed 2026-05-18
         Stjarnan: Stjarnan kv                           # identity-pattern guess; first fixture 2026-05-20 vs Grindavík/Njarðvík
         Þór/KA: Þór/KA kv                               # identity-pattern guess; first fixture 2026-05-20 vs Breiðablik. Verify on first odds appearance (Lengjan may use spaces — c.f. Grindavík/Njarðvík)
