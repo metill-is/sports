@@ -11,7 +11,13 @@
 suppressPackageStartupMessages(devtools::load_all(here::here(), quiet = TRUE))
 root <- here::here("data")
 
-Sys.sleep(stats::runif(1, 0, 1200)) # 0-20 min jitter; irregular timing
+args <- commandArgs(trailingOnly = TRUE)
+get_flag <- function(name) any(args == paste0("--", name))
+no_jitter <- get_flag("no-jitter") || get_flag("verify")
+
+if (!no_jitter) {
+  Sys.sleep(stats::runif(1, 0, 1200)) # 0-20 min jitter; irregular timing
+}
 
 hr <- as.integer(format(Sys.time(), "%H"))
 if (hr < 9L || hr >= 22L) {

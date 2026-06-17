@@ -42,7 +42,12 @@ print(m[c(
 
 fit_dir <- here::here("data", "wc", "fit")
 dir.create(fit_dir, showWarnings = FALSE, recursive = TRUE)
-fit$save_object(file.path(fit_dir, "fit.rds"))
+# fit.rds is ~900MB and is NOT the downstream cache -- forecast.R reads
+# sim_inputs.rds (saved below). Skip the heavy save_object when that cache
+# already exists; the run still refreshes sim_inputs + teams.
+if (!file.exists(file.path(fit_dir, "sim_inputs.rds"))) {
+  fit$save_object(file.path(fit_dir, "fit.rds"))
+}
 saveRDS(prep$teams, file.path(fit_dir, "teams.rds"))
 
 cat("\n--- team ratings (offence + defence, neutral) ---\n")
