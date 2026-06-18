@@ -11,7 +11,7 @@ test_that("wc_schedule loads 72 group fixtures with aliases applied", {
     "Cape Verde", "DR Congo", "Iran", "Turkey",
     "United States"
   ) %in% teams))
-  expect_false(any(c("Czechia", "Korea Republic", "USA", "Türkiye") %in% teams))
+  expect_false(any(c("Czechia", "Korea Republic", "USA", "T\u00FCrkiye") %in% teams))
   # Types + uniqueness.
   expect_type(s$match_no, "integer")
   expect_s3_class(s$kickoff, "POSIXct")

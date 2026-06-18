@@ -7,8 +7,10 @@
 # Non-ASCII keys built with intToUtf8() so the R source file stays pure ASCII,
 # avoiding locale-dependent parse failures (devtools::load_all reads files in
 # the native encoding, which is C/ASCII on macOS in some R configurations).
+# intToUtf8() produces strings in the same encoding as read.csv(encoding="UTF-8"),
+# so alias lookup succeeds regardless of the session locale.
 .wc_schedule_aliases <- local({
-  cote    <- intToUtf8(c(67L, 244L, 116L, 101L, 32L, 100L, 39L, 73L, 118L, 111L, 105L, 114L, 101L))
+  cote <- intToUtf8(c(67L, 244L, 116L, 101L, 32L, 100L, 39L, 73L, 118L, 111L, 105L, 114L, 101L))
   turkiye <- intToUtf8(c(84L, 252L, 114L, 107L, 105L, 121L, 101L))
   c(
     "Cabo Verde"     = "Cape Verde",
@@ -53,8 +55,8 @@ wc_schedule <- function(schedule_csv = here::here(
     encoding = "UTF-8"
   )
   d <- d[d[["Round Number"]] %in% c("1", "2", "3"), , drop = FALSE]
-  home    <- .wc_alias(trimws(d[["Home Team"]]))
-  away    <- .wc_alias(trimws(d[["Away Team"]]))
+  home <- .wc_alias(trimws(d[["Home Team"]]))
+  away <- .wc_alias(trimws(d[["Away Team"]]))
   kickoff <- as.POSIXct(d[["Date"]], format = "%d/%m/%Y %H:%M", tz = "UTC")
   out <- tibble::tibble(
     match_no = as.integer(d[["Match Number"]]),
