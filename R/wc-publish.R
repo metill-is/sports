@@ -58,6 +58,7 @@ NULL
 #' @export
 publish_world_cup <- function(sim_out, sim_inputs_team, structure, group_fixtures,
                               fit_date = Sys.Date(),
+                              head_to_head = NULL,
                               root = here::here("data"),
                               country_csv = here::here(
                                 "data", "wc", "structure", "country_names_is.csv"
@@ -315,6 +316,19 @@ publish_world_cup <- function(sim_out, sim_inputs_team, structure, group_fixture
     file.path(out_dir, "results.json"),
     auto_unbox = TRUE, pretty = TRUE
   )
+
+  # ---- head_to_head.json (team-vs-team joint Monte Carlo) ----
+  # Powers the page's "Einvígi" section: P(A farther than B), P(meet),
+  # P(A wins | meet) for every pair. Computed by wc_head_to_head() — a separate
+  # joint MC pass (the bracket model above is only marginal). Optional: skipped
+  # when not supplied so the forecast still publishes if H2H is disabled.
+  if (!is.null(head_to_head)) {
+    jsonlite::write_json(
+      wc_head_to_head_payload(head_to_head, is_name, generated_at, fit_date),
+      file.path(out_dir, "head_to_head.json"),
+      auto_unbox = TRUE, matrix = "rowmajor", digits = 6
+    )
+  }
 
   cli::cli_alert_success("Wrote WC publish JSON to {.path {out_dir}}")
   invisible(out_dir)

@@ -193,3 +193,54 @@ test_that("simulate_world_cup predictions carry a goal-diff distribution", {
     expect_equal(sum(gdd$p[gdd$diff < 0]), pr$p_away[i], tolerance = 1e-9)
   }
 })
+
+# ---- Head-to-head (joint MC) ------------------------------------------------
+
+test_that("wc_head_to_head returns coherent all-pairs probabilities", {
+  s <- wc_structure()
+  teams <- unlist(s$groups, use.names = FALSE)
+  nt <- length(teams)
+  si <- make_sim_inputs(teams, n_draws = 40L)
+  fx <- make_wc_fixtures(s)
+
+  h2h <- wc_head_to_head(si$team, si$scalar, fx, s,
+    k_replays = 30L, pairing_seed = 1L
+  )
+
+  expect_equal(h2h$teams, teams)
+  expect_length(h2h$pairs, nt * (nt - 1L) / 2L) # 1128
+
+  for (pr in h2h$pairs[c(1L, 17L, 500L, 1128L)]) {
+    # indices are 0-based, ordered i < j, in range
+    expect_true(pr$i >= 0L && pr$j <= nt - 1L && pr$i < pr$j)
+    # the three-way split is a valid distribution (implied p_j_farther >= 0)
+    expect_gte(pr$p_i_farther, 0)
+    expect_gte(pr$p_tie, 0)
+    expect_lte(pr$p_i_farther + pr$p_tie, 1 + 1e-9)
+    # meeting prob decomposes into the per-round meeting probs (identity holds
+    # exactly pre-rounding; allow for independent 4-decimal rounding of each)
+    mbr <- unlist(pr$meet_by_round)
+    expect_lt(abs(pr$p_meet - sum(mbr)), 1e-3)
+    # R32 meetings only possible for same-R32-match pairs; tournament-wide most
+    # pairs can't, but the field always exists
+    expect_true(all(mbr >= 0))
+    if (!is.null(pr$p_i_wins_if_meet)) {
+      expect_gte(pr$p_i_wins_if_meet, 0)
+      expect_lte(pr$p_i_wins_if_meet, 1)
+    }
+  }
+
+  # furthest-round marginals are proper pmfs (levels 0..6)
+  expect_length(h2h$team_marginals, nt)
+  for (m in h2h$team_marginals[c(1L, 24L, nt)]) {
+    expect_length(m, 7L)
+    expect_lt(abs(sum(m) - 1), 1e-3) # 7 components, each 4-decimal rounded
+  }
+
+  # equal strengths => head-to-head is a coin flip when teams meet
+  meets <- Filter(function(pr) !is.null(pr$p_i_wins_if_meet) && pr$p_meet > 0.01, h2h$pairs)
+  if (length(meets) > 0L) {
+    win <- vapply(meets, function(pr) pr$p_i_wins_if_meet, numeric(1))
+    expect_equal(mean(win), 0.5, tolerance = 0.05)
+  }
+})
