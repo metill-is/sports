@@ -52,3 +52,38 @@ test_that("publish_world_cup writes the new contract fields", {
   expect_true("teams" %in% names(ts))
   expect_length(ts$teams, length(teams))
 })
+
+test_that("publish_world_cup emits match_no + kickoff, kickoff-ordered", {
+  s <- wc_structure()
+  fx <- make_wc_fixtures(s)
+  teams <- unlist(s$groups, use.names = FALSE)
+  si <- make_sim_inputs(teams, n_draws = 50L)
+  out <- simulate_world_cup(si$team, si$scalar, fx, s, pairing_seed = 1L)
+  root <- withr::local_tempdir()
+  publish_world_cup(out, si$team, s, fx, root = root)
+  pred <- jsonlite::read_json(
+    file.path(root, "publish", "world_cup", "karla", "predictions.json")
+  )
+  ms <- pred$matches
+  expect_gt(length(ms), 0L)
+  # Every prediction here is a group-stage match, so each resolves against
+  # the schedule's validated 72 rows and carries both fields. The
+  # omit-when-NA emit path is for future knockout rows (deferred phase).
+  expect_true(all(vapply(ms, function(m) !is.null(m$match_no), logical(1))))
+  expect_true(all(vapply(ms, function(m) !is.null(m$kickoff), logical(1))))
+  # kickoff is ISO-8601 UTC.
+  expect_match(ms[[1]]$kickoff, "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$")
+  # Emitted in (match_date, kickoff) order: kickoff non-decreasing within a date.
+  prev_date <- ""
+  prev_kick <- ""
+  for (m in ms) {
+    if (m$match_date != prev_date) {
+      prev_date <- m$match_date
+      prev_kick <- ""
+    }
+    if (!is.null(m$kickoff)) {
+      expect_gte(m$kickoff, prev_kick)
+      prev_kick <- m$kickoff
+    }
+  }
+})
