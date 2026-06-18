@@ -52,3 +52,34 @@ test_that("publish_world_cup writes the new contract fields", {
   expect_true("teams" %in% names(ts))
   expect_length(ts$teams, length(teams))
 })
+
+test_that("publish_world_cup emits match_no + kickoff, kickoff-ordered", {
+  s <- wc_structure()
+  fx <- make_wc_fixtures(s)
+  teams <- unlist(s$groups, use.names = FALSE)
+  si <- make_sim_inputs(teams, n_draws = 50L)
+  out <- simulate_world_cup(si$team, si$scalar, fx, s, pairing_seed = 1L)
+  root <- withr::local_tempdir()
+  publish_world_cup(out, si$team, s, fx, root = root)
+  pred <- jsonlite::read_json(
+    file.path(root, "publish", "world_cup", "karla", "predictions.json")
+  )
+  ms <- pred$matches
+  expect_gt(length(ms), 0L)
+  # Every predicted (group) match carries the two new fields.
+  expect_true(all(vapply(ms, function(m) !is.null(m$match_no), logical(1))))
+  expect_true(all(vapply(ms, function(m) !is.null(m$kickoff), logical(1))))
+  # kickoff is ISO-8601 UTC.
+  expect_match(ms[[1]]$kickoff, "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$")
+  # Emitted in (match_date, match_no) order: match_no non-decreasing within a date.
+  prev_date <- ""
+  prev_no <- -1L
+  for (m in ms) {
+    if (m$match_date != prev_date) {
+      prev_date <- m$match_date
+      prev_no <- -1L
+    }
+    expect_gte(m$match_no, prev_no)
+    prev_no <- m$match_no
+  }
+})

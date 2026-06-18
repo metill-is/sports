@@ -61,6 +61,9 @@ publish_world_cup <- function(sim_out, sim_inputs_team, structure, group_fixture
                               root = here::here("data"),
                               country_csv = here::here(
                                 "data", "wc", "structure", "country_names_is.csv"
+                              ),
+                              schedule_csv = here::here(
+                                "data", "wc", "structure", "wc2026_schedule.csv"
                               )) {
   out_dir <- file.path(root, "publish", "world_cup", "karla")
   dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
@@ -127,7 +130,20 @@ publish_world_cup <- function(sim_out, sim_inputs_team, structure, group_fixture
   # ---- predictions.json (upcoming match cards) ----
   pr <- sim_out$predictions
   pred_payload <- if (!is.null(pr) && nrow(pr) > 0L) {
-    pr <- pr[order(pr$match_date, pr$group), , drop = FALSE]
+    sched <- wc_schedule(schedule_csv)
+    pr$pair_key <- .wc_pair_key(pr$home, pr$away)
+    j <- match(pr$pair_key, sched$pair_key)
+    pr$match_no <- sched$match_no[j]
+    pr$kickoff <- sched$kickoff[j]
+    miss <- is.na(pr$match_no) & !is.na(pr$group)
+    if (any(miss)) {
+      cli::cli_warn(c(
+        "publish_world_cup: {sum(miss)} group fixture(s) unmatched in schedule:",
+        paste(pr$home[miss], "vs", pr$away[miss], collapse = "; ")
+      ))
+    }
+    # NA match_no (future knockout rows) sort last via order()'s default.
+    pr <- pr[order(pr$match_date, pr$match_no), , drop = FALSE]
     lapply(seq_len(nrow(pr)), function(i) {
       r <- pr[i, ]
       out <- list(
@@ -137,6 +153,10 @@ publish_world_cup <- function(sim_out, sim_inputs_team, structure, group_fixture
         p_home = rnd(r$p_home), p_draw = rnd(r$p_draw), p_away = rnd(r$p_away),
         eg_home = rnd(r$eg_home, 2), eg_away = rnd(r$eg_away, 2)
       )
+      if (!is.na(r$match_no)) out$match_no <- as.integer(r$match_no)
+      if (!is.na(r$kickoff)) {
+        out$kickoff <- format(r$kickoff, "%Y-%m-%dT%H:%M:%SZ", tz = "UTC")
+      }
       gdd <- if ("goal_diff_distribution" %in% names(pr)) {
         r$goal_diff_distribution[[1]]
       }
