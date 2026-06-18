@@ -10,8 +10,10 @@ publish_world_cup(
   structure,
   group_fixtures,
   fit_date = Sys.Date(),
+  head_to_head = NULL,
   root = here::here("data"),
-  country_csv = here::here("data", "wc", "structure", "country_names_is.csv")
+  country_csv = here::here("data", "wc", "structure", "country_names_is.csv"),
+  schedule_csv = here::here("data", "wc", "structure", "wc2026_schedule.csv")
 )
 }
 \arguments{

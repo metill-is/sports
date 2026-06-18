@@ -23,7 +23,11 @@ fx <- wc_group_fixtures(s)
 cat(sprintf("group fixtures: %d (%d played)\n", nrow(fx), sum(fx$played)))
 
 out <- simulate_world_cup(si$team, si$scalar, fx, s, pairing_seed = 2026L)
-publish_world_cup(out, si$team, s, fx, fit_date = Sys.Date())
+# Joint team-vs-team head-to-head pass (separate from the marginal bracket model
+# above) — powers the page's "Einvígi" section. ~1.5 min extra on the cron.
+cat("computing team-vs-team head-to-head (joint MC)...\n")
+h2h <- wc_head_to_head(si$team, si$scalar, fx, s, k_replays = 400L)
+publish_world_cup(out, si$team, s, fx, fit_date = Sys.Date(), head_to_head = h2h)
 page <- wc_render_html()
 
 cat("\n=== CHAMPION PROBABILITIES (top 20) ===\n")

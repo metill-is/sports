@@ -532,3 +532,182 @@ simulate_world_cup <- function(sim_inputs_team, sim_inputs_scalar,
     n_draws = nd
   )
 }
+
+# ---- Team-vs-team head-to-head (joint Monte Carlo) -------------------------
+
+#' All-pairs head-to-head progression probabilities
+#'
+#' The published `placement_probs` (and the page's bracket model) are MARGINAL:
+#' [wc_forward_bracket()] is an analytic independence propagation over the
+#' *averaged* win matrix, so it cannot answer a JOINT pair question like
+#' "P(team A goes farther than team B)". That answer depends on two
+#' correlations that only live in the posterior draws: within-draw strength
+#' correlation (a draw where A is strong makes A both advance AND beat B
+#' head-to-head) and the bracket collision (A can eliminate B).
+#'
+#' This runs a nested per-draw Monte Carlo — outer loop over posterior strength
+#' draws (reusing [.wc_sim_one_draw()] for the *true joint* R32 bracket), inner
+#' loop of `k_replays` knockout playthroughs per draw using THIS draw's win
+#' matrix — and accumulates, for every one of the 1128 unordered team pairs:
+#' P(i farther), P(tie), P(they meet), P(i wins | meet), and the meeting-round
+#' distribution. Deliberately a *separate* pass from [simulate_world_cup()]
+#' (re-simulating the group stage) so the production forecast path is untouched;
+#' the extra group-stage pass costs ~1.5 min on the daily cron.
+#'
+#' @param sim_inputs_team,sim_inputs_scalar Per-draw strengths + scalars, as
+#'   consumed by [simulate_world_cup()].
+#' @param group_fixtures,structure As for [simulate_world_cup()].
+#' @param k_replays Knockout playthroughs per posterior draw (default 400).
+#' @param pairing_seed Seed for the group-stage tiebreak + third allocation RNG.
+#' @return A list: `teams` (English, index order), `n_draws`, `k_replays`,
+#'   `pairs` (1128 rows, 0-based `i < j`), `team_marginals` (48x7 furthest-round
+#'   pmf, levels 0 group-exit .. 6 champion). Shape it for publishing with
+#'   [wc_head_to_head_payload()].
+#' @export
+wc_head_to_head <- function(sim_inputs_team, sim_inputs_scalar, group_fixtures,
+                            structure, k_replays = 400L, pairing_seed = 2026L) {
+  if (!is.null(pairing_seed)) set.seed(pairing_seed)
+  K <- as.integer(k_replays)
+
+  teams <- unlist(structure$groups, use.names = FALSE)
+  tidx <- stats::setNames(seq_along(teams), teams)
+  nt <- length(teams)
+  ctx <- list(
+    teams = teams, tidx = tidx, groups = structure$groups,
+    group_of = structure$group_of, fixtures = group_fixtures,
+    fix_group_idx = split(seq_len(nrow(group_fixtures)), group_fixtures$group),
+    bracket = structure$bracket, third_slots = structure$third_slots,
+    third_allocation = structure$third_allocation
+  )
+
+  br <- structure$bracket
+  round_level <- c(R32 = 1L, R16 = 2L, QF = 3L, SF = 4L, Final = 5L)
+  r32_rows <- which(br$round == "R32")
+  max_m <- max(br$match_no)
+  final_m <- br$match_no[br$round == "Final"]
+
+  sit <- sim_inputs_team[sim_inputs_team$team %in% teams, , drop = FALSE]
+  draws_team <- split(sit, sit$.draw)
+  draws_scalar <- split(sim_inputs_scalar, sim_inputs_scalar$.draw)
+  keys <- intersect(names(draws_team), names(draws_scalar))
+  if (length(keys) == 0L) cli::cli_abort("wc_head_to_head: no overlapping .draw keys.")
+  nd <- length(keys)
+  N <- nd * K
+
+  cnt_farther <- matrix(0, nt, nt) # [i,j] = #replays exit_i > exit_j
+  cnt_iwin <- matrix(0, nt, nt) # [i,j] = #replays i knocked j out (any round)
+  cnt_iwin_r <- replicate(5L, matrix(0, nt, nt), simplify = FALSE) # by round 1..5
+  cnt_exit <- matrix(0, nt, 7L) # [i, level+1] = #replays exit_i == level (0..6)
+  kidx <- seq_len(K)
+
+  for (d in seq_along(keys)) {
+    dt <- draws_team[[keys[d]]]
+    off <- stats::setNames(dt$cur_offense, dt$team)
+    def <- stats::setNames(dt$cur_defense, dt$team)
+    ha_off <- stats::setNames(dt$home_advantage_off, dt$team)
+    ha_def <- stats::setNames(dt$home_advantage_def, dt$team)
+    ds <- draws_scalar[[keys[d]]]
+    r <- .wc_sim_one_draw(
+      off, def, ha_off, ha_def,
+      ds$mean_log_goals, ds$alpha_mu3, ds$beta_mu3_strength_diff, ctx
+    )
+
+    # per-draw neutral-venue conditional (decisive) win matrix — same recipe as
+    # simulate_world_cup() but kept PER DRAW (not averaged), so within-draw
+    # strength correlation is preserved.
+    l1 <- exp(ds$mean_log_goals + outer(r$off, r$def, "-"))
+    pw <- .wc_skellam_pwin(l1, t(l1))
+    cw <- pw / (pw + t(pw))
+    cw[!is.finite(cw)] <- 0.5
+
+    # K-replay knockout for THIS draw's fixed R32 bracket.
+    E <- matrix(0L, K, nt) # furthest round reached (0 = group exit)
+    winner <- vector("list", max_m)
+    for (rr in seq_len(nrow(br))) {
+      m <- br$match_no[rr]
+      rd <- br$round[rr]
+      if (rd == "R32") {
+        k32 <- match(rr, r32_rows)
+        A <- rep.int(r$r32_a[k32], K)
+        B <- rep.int(r$r32_b[k32], K)
+      } else {
+        A <- winner[[as.integer(sub("W", "", br$feeder_a[rr]))]]
+        B <- winner[[as.integer(sub("W", "", br$feeder_b[rr]))]]
+      }
+      a_wins <- stats::runif(K) < cw[cbind(A, B)]
+      w <- ifelse(a_wins, A, B)
+      l <- ifelse(a_wins, B, A)
+      winner[[m]] <- w
+      lvl <- round_level[[rd]]
+      E[cbind(kidx, l)] <- lvl
+      # winner-vs-loser counts for this round (one-hot crossprod, 48x48)
+      ow <- matrix(0, K, nt)
+      ow[cbind(kidx, w)] <- 1
+      ol <- matrix(0, K, nt)
+      ol[cbind(kidx, l)] <- 1
+      mm <- crossprod(ow, ol)
+      cnt_iwin <- cnt_iwin + mm
+      cnt_iwin_r[[lvl]] <- cnt_iwin_r[[lvl]] + mm
+    }
+    E[cbind(kidx, winner[[final_m]])] <- 6L # champion
+
+    # cnt_farther[i,j] = Σ_k 1(exit_i > exit_j) = Σ_{s=0..5} #(exit_i>s & exit_j==s)
+    for (s in 0:5) cnt_farther <- cnt_farther + crossprod(E > s, E == s)
+    for (lv in 0:6) cnt_exit[, lv + 1L] <- cnt_exit[, lv + 1L] + colSums(E == lv)
+  }
+
+  # ---- shape per-pair output (1128 unordered pairs, i < j, 0-based) ----
+  pairs <- vector("list", nt * (nt - 1L) / 2L)
+  p <- 0L
+  for (i in seq_len(nt - 1L)) {
+    for (j in (i + 1L):nt) {
+      cf_ij <- cnt_farther[i, j]
+      cf_ji <- cnt_farther[j, i]
+      meet <- cnt_iwin[i, j] + cnt_iwin[j, i]
+      mbr <- vapply(1:5, function(lv) {
+        (cnt_iwin_r[[lv]][i, j] + cnt_iwin_r[[lv]][j, i]) / N
+      }, numeric(1))
+      p <- p + 1L
+      pairs[[p]] <- list(
+        i = i - 1L, j = j - 1L,
+        p_i_farther = round(cf_ij / N, 4),
+        p_tie = round((N - cf_ij - cf_ji) / N, 4),
+        p_meet = round(meet / N, 4),
+        p_i_wins_if_meet = if (meet > 0) round(cnt_iwin[i, j] / meet, 4) else NULL,
+        meet_by_round = list(
+          R32 = round(mbr[1], 4), R16 = round(mbr[2], 4), QF = round(mbr[3], 4),
+          SF = round(mbr[4], 4), Final = round(mbr[5], 4)
+        )
+      )
+    }
+  }
+
+  team_marginals <- lapply(seq_len(nt), function(i) round(cnt_exit[i, ] / N, 4))
+
+  list(
+    teams = teams, n_draws = nd, k_replays = K,
+    pairs = pairs, team_marginals = team_marginals
+  )
+}
+
+#' Shape a [wc_head_to_head()] result into the published JSON payload
+#'
+#' Adds the Icelandic display names + timestamps. Shared by
+#' [publish_world_cup()] and the local `scripts/wc/gen_head_to_head.R` so the
+#' on-disk contract has a single source of truth.
+#'
+#' @param h2h Output of [wc_head_to_head()].
+#' @param is_name Namer fn (English -> Icelandic), e.g. `.wc_country_namer()`.
+#' @param generated_at,fit_date Stamps.
+#' @return A list ready for `jsonlite::write_json(auto_unbox = TRUE)`.
+#' @export
+wc_head_to_head_payload <- function(h2h, is_name, generated_at, fit_date) {
+  list(
+    generated_at = generated_at, fit_date = as.character(fit_date),
+    n_draws = h2h$n_draws, k_replays = h2h$k_replays,
+    teams = h2h$teams,
+    teams_is = unname(vapply(h2h$teams, is_name, character(1))),
+    pairs = h2h$pairs,
+    team_marginals = h2h$team_marginals
+  )
+}
