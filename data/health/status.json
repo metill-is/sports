@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-06-18T15:42:08Z",
-  "overall": "FAIL",
-  "n_fail": 1,
+  "generated_at": "2026-06-18T16:31:50Z",
+  "overall": "WARN",
+  "n_fail": 0,
   "n_warn": 2,
   "checks": [
     {
@@ -49,8 +49,8 @@
     {
       "check": "odds_freshness",
       "scope": "football_iceland",
-      "status": "FAIL",
-      "value": "fixture today, no odds scraped",
+      "status": "OK",
+      "value": "odds cover upcoming fixtures (next in 0d)",
       "threshold": "odds for fixtures within 3d"
     },
     {
