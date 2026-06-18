@@ -66,7 +66,9 @@ test_that("publish_world_cup emits match_no + kickoff, kickoff-ordered", {
   )
   ms <- pred$matches
   expect_gt(length(ms), 0L)
-  # Every predicted (group) match carries the two new fields.
+  # Every prediction here is a group-stage match, so each resolves against
+  # the schedule's validated 72 rows and carries both fields. The
+  # omit-when-NA emit path is for future knockout rows (deferred phase).
   expect_true(all(vapply(ms, function(m) !is.null(m$match_no), logical(1))))
   expect_true(all(vapply(ms, function(m) !is.null(m$kickoff), logical(1))))
   # kickoff is ISO-8601 UTC.
@@ -79,7 +81,9 @@ test_that("publish_world_cup emits match_no + kickoff, kickoff-ordered", {
       prev_date <- m$match_date
       prev_no <- -1L
     }
-    expect_gte(m$match_no, prev_no)
-    prev_no <- m$match_no
+    if (!is.null(m$match_no)) {
+      expect_gte(m$match_no, prev_no)
+      prev_no <- m$match_no
+    }
   }
 })
