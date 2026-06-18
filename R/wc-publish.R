@@ -142,8 +142,8 @@ publish_world_cup <- function(sim_out, sim_inputs_team, structure, group_fixture
         paste(pr$home[miss], "vs", pr$away[miss], collapse = "; ")
       ))
     }
-    # NA match_no (future knockout rows) sort last via order()'s default.
-    pr <- pr[order(pr$match_date, pr$match_no), , drop = FALSE]
+    # NA kickoff (future knockout rows) sort last via order()'s default.
+    pr <- pr[order(pr$match_date, pr$kickoff), , drop = FALSE]
     lapply(seq_len(nrow(pr)), function(i) {
       r <- pr[i, ]
       out <- list(

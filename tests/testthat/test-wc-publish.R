@@ -73,17 +73,17 @@ test_that("publish_world_cup emits match_no + kickoff, kickoff-ordered", {
   expect_true(all(vapply(ms, function(m) !is.null(m$kickoff), logical(1))))
   # kickoff is ISO-8601 UTC.
   expect_match(ms[[1]]$kickoff, "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$")
-  # Emitted in (match_date, match_no) order: match_no non-decreasing within a date.
+  # Emitted in (match_date, kickoff) order: kickoff non-decreasing within a date.
   prev_date <- ""
-  prev_no <- -1L
+  prev_kick <- ""
   for (m in ms) {
     if (m$match_date != prev_date) {
       prev_date <- m$match_date
-      prev_no <- -1L
+      prev_kick <- ""
     }
-    if (!is.null(m$match_no)) {
-      expect_gte(m$match_no, prev_no)
-      prev_no <- m$match_no
+    if (!is.null(m$kickoff)) {
+      expect_gte(m$kickoff, prev_kick)
+      prev_kick <- m$kickoff
     }
   }
 })
