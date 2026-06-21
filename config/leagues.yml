@@ -143,6 +143,13 @@ football_iceland:
       # sides will surface here unmapped — fill team_names.female opportunistically
       # as their odds first appear (same pattern as the women's BD map).
       - { id: "2410",  name: "Mjólkurbikar kvenna",      sex: female }
+      # Women's Lengjudeild (1. deild kvenna) -- comp 4670, added 2026-06-21.
+      # Division is already modelled + published (kvenna-ld); this wires the
+      # odds scrape + placement that were the only missing layer. KR kv /
+      # Haukar kv renderings confirmed from the 21 Jun scrape; remaining
+      # team_names.female LD-women entries are pattern-guesses (verify as odds
+      # appear, next round 27 Jun).
+      - { id: "4670",  name: "Lengjudeild kv.",          sex: female }
     team_names:
       male:
         # Existing LD1 + men-only sex-disjoint entries:
@@ -215,6 +222,22 @@ football_iceland:
         Valur: Valur kv                                 # confirmed 2026-05-18
         Stjarnan: Stjarnan kv                           # identity-pattern guess; first fixture 2026-05-20 vs Grindavík/Njarðvík
         Þór/KA: Þór/KA kv                               # identity-pattern guess; first fixture 2026-05-20 vs Breiðablik. Verify on first odds appearance (Lengjan may use spaces — c.f. Grindavík/Njarðvík)
+        # Women's Lengjudeild (1. deild kvenna) teams -- comp 4670, added
+        # 2026-06-21. KR / Haukar renderings CONFIRMED (21 Jun scrape); the
+        # other 8 are "<name> kv" pattern-guesses -- a wrong guess fails safe
+        # (decide warn-and-skips, no mis-placed bet). Verify each as its odds
+        # first appear. NB Tindastóll: basketball renders it "UMF Tindastoll
+        # kv", so the football rendering may diverge from this guess.
+        KR: KR kv                                       # confirmed 2026-06-21
+        Haukar: Haukar kv                               # confirmed 2026-06-21
+        FHL: FHL kv                                     # pattern guess; verify on first odds appearance
+        Grótta: Grótta kv                               # pattern guess; verify on first odds appearance
+        HK: HK kv                                       # pattern guess; verify on first odds appearance
+        Keflavík: Keflavík kv                           # pattern guess; verify on first odds appearance
+        Selfoss: Selfoss kv                             # pattern guess; verify on first odds appearance
+        Tindastóll: Tindastóll kv                       # pattern guess; basketball uses "UMF Tindastoll kv" -- verify
+        Völsungur: Völsungur kv                         # pattern guess; verify on first odds appearance
+        ÍA: ÍA kv                                       # pattern guess; verify on first odds appearance
   stan_model: football_iceland/bivariate_poisson_no_inflation.stan
   # Restrict Stan training to teams that have competed in the top four
   # league tiers within the last 365 days. Cuts ~30 amateur/regional teams
