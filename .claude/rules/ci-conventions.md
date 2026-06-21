@@ -98,7 +98,7 @@ meta-characters.
 | `decide-publish.yml` | `workflow_run` from fit AND scrape-odds | Recommendations + JSONs |
 | `republish.yml` | `workflow_dispatch` only | Re-run publish from existing extraction archive (lever for fast publisher iteration) |
 | `healthcheck.yml` | cron 2×/day + dispatch | Read-only `pipeline_health()` → `data/health/status.json`; commits if changed; fails the run on `overall == FAIL` so GitHub's failure email fires (the alert channel). `test-healthcheck-ci-isolation.R` proves it never writes the ledger. |
-| `world-cup.yml` | cron 2×/day (07:30 + 10:30 UTC) + dispatch | HM 2026 forecast: download martj42 internationals → ingest → fit → simulate → publish `data/publish/world_cup/karla/*.json`. Self-contained (own ingest, no `workflow_run` parent). Two crons straddle martj42's ~05:00–10:04 UTC update window so the page is fresh for Reykjavik readers (UTC+0) at both coffee and lunch; the facts-diff skip-guard no-ops whichever run sees nothing new. See note below. |
+| `world-cup.yml` | cron hourly (`17 * * * *`) + dispatch | HM 2026 forecast: download martj42 internationals → ingest → fit → simulate → publish `data/publish/world_cup/karla/*.json`. Self-contained (own ingest, no `workflow_run` parent). A cheap SHA pre-gate (`git ls-remote` martj42's tip vs the tracked `data/wc/martj42_pointer.txt`, read over raw.github — no clone of this ~11 GB repo) no-ops every poll where martj42 hasn't committed; the facts-diff is the precise second gate. See note below. |
 
 The `decide-publish` chain reading `workflow_run` from *both* parents
 is what keeps JSON outputs fresh on every odds scrape, not just on the
@@ -114,17 +114,39 @@ regenerable): the fit artefacts never reach git, so a downstream job
 would have nothing to consume. `scripts/wc/{ingest,fit,forecast}.R` must
 therefore execute in sequence in the same runner.
 
-Two guards keep it cheap and self-terminating:
+The cron is **hourly** (`17 * * * *`, around the clock — minute 17 dodges
+top-of-hour scheduled-run congestion). Hourly rather than the old 2×/day
+morning window because, during the live tournament, martj42 posts results
+across the whole UTC day (2026 WC games kick off in North-American
+afternoons/evenings → late-UTC commits), not just the ~05:00–10:04 UTC
+qualifier-update window. The SHA pre-gate below makes frequent polling
+nearly free; the repo is public so Actions minutes are free anyway.
 
+Three guards keep it cheap and self-terminating:
+
+- **SHA pre-gate.** The `gate` job reads martj42/international_results'
+  `master` tip via `git ls-remote` (no clone) and the SHA it last acted
+  on from the tracked pointer `data/wc/martj42_pointer.txt` (over
+  raw.github, since this repo is public — a full checkout of this ~11 GB
+  repo would defeat the point). If they match, the entire forecast job is
+  skipped, so the hourly cron is a sub-minute no-op on every poll where
+  martj42 hasn't committed — it never pays R/CmdStan setup. The forecast
+  job advances the pointer on **every** proceeding run (even a no-refit
+  one), so a stale pointer can't make later polls re-ingest forever. A
+  failed pointer read fails *safe* (proceeds); `git ls-remote` failure
+  retries 3× then errors loudly. `force: true` bypasses it.
 - **Facts-diff skip-guard.** `scripts/wc/ingest.R` rewrites the
   `country=world` facts Parquets from a fresh martj42 download; the
   workflow refits only if `git status` shows those Parquets changed
-  (i.e. new in-window results landed). The season-partitioned store
-  makes this precise — only the touched `season=YYYY` partition flips,
-  and arrow re-serialises unchanged partitions byte-identically.
-  `workflow_dispatch` with `force: true` bypasses it.
-- **Tournament-window gate.** A tiny `gate` job no-ops the run past
-  `WC_END_DATE` (2026-07-20) so the daily cron auto-quiesces after the
+  (i.e. new in-window results landed). This is the *precise* gate — the
+  SHA pre-gate only filters polls where martj42 didn't commit at all, so a
+  real-but-WC-irrelevant martj42 commit passes the SHA gate, ingests, and
+  no-ops here. The season-partitioned store makes this precise — only the
+  touched `season=YYYY` partition flips, and arrow re-serialises unchanged
+  partitions byte-identically. `workflow_dispatch` with `force: true`
+  bypasses both gates.
+- **Tournament-window gate.** The same `gate` job no-ops the run past
+  `WC_END_DATE` (2026-07-20) so the hourly cron auto-quiesces after the
   final instead of refitting a finished bracket off later friendlies.
 
 Downstream is `metill-is/metill-platform`'s hourly `pull-sports-data.yml`,

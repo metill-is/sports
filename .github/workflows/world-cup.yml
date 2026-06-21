@@ -13,20 +13,25 @@ name: World Cup Forecast
 
 on:
   schedule:
-    # martj42 commits its daily intl-results update between ~05:00 and ~10:04 UTC
-    # (median ~07:00, human-driven), so a single early run misses the ~half of days
-    # that post later. Two runs cover the spread so the /hm2026 page is fresh for
-    # Reykjavik readers (UTC+0, no DST -> UTC == local) at both coffee and lunch:
-    #   07:30 -> catches the early-posting days, page live ~09:00 (before coffee)
-    #   10:30 -> catches the late tail (incl. ~10:04), page live ~11:30 (before lunch)
-    # The facts-diff skip-guard makes whichever run sees no new martj42 results a
-    # cheap no-op, so on a typical day only one of the two actually re-fits.
-    - cron: '30 7 * * *'    # early run
-    - cron: '30 10 * * *'   # late catch-up run
+    # Poll hourly, around the clock. The cheap SHA pre-gate (see the `gate` job)
+    # turns a poll with no new martj42 commit into a sub-minute no-op -- it never
+    # clones this ~11 GB repo or spins up R/CmdStan -- so frequent polling costs
+    # almost nothing (and this repo is public, so Actions minutes are free too).
+    #
+    # Hourly, not the old 2x/day morning window, because during the live
+    # tournament martj42 posts results across the whole UTC day: 2026 WC games
+    # kick off in North-American afternoons/evenings -> late-UTC commits, not just
+    # the ~05:00-10:04 UTC qualifier-update window the previous schedule targeted.
+    # Detection latency is then <=1h; the downstream metill-platform rsync
+    # (pull-sports-data.yml) is itself hourly, so polling faster buys nothing.
+    #
+    # Minute 17, not :00, to dodge the top-of-hour congestion that makes GitHub
+    # delay (and sometimes drop) scheduled runs.
+    - cron: '17 * * * *'
   workflow_dispatch:
     inputs:
       force:
-        description: "Refit even if martj42 has no new results (bypass the facts-diff skip-guard)"
+        description: "Forecast even if martj42 has no new results (bypass BOTH the SHA pre-gate and the facts-diff skip-guard)"
         type: boolean
         default: false
 
@@ -38,15 +43,25 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Cheap gate: the WC 2026 final is 19 Jul 2026. After the tournament the cron
-  # keeps firing but there is nothing to forecast -- post-tournament friendlies
-  # would only perturb a finished bracket. This no-ops the workflow past the end
-  # so it auto-quiesces without being disabled by hand. Bump WC_END_DATE to
-  # re-arm (e.g. for the women's World Cup on a world_cup/kvenna/ data dir).
+  # Cheap pre-gate. Two checks decide whether to spin up the expensive R + CmdStan
+  # forecast job below, so the hourly cron is almost always a sub-minute no-op:
+  #   1. Tournament window -- no-op past WC_END_DATE (the WC 2026 final is 19 Jul
+  #      2026; after it the cron keeps firing but post-tournament friendlies would
+  #      only perturb a finished bracket). Bump WC_END_DATE to re-arm (e.g. for the
+  #      women's World Cup on a world_cup/kvenna/ data dir).
+  #   2. martj42 SHA -- no-op unless martj42/international_results' master tip moved
+  #      since the SHA we last acted on (stored in the tracked pointer file
+  #      data/wc/martj42_pointer.txt, advanced by the forecast job).
+  # Neither check clones this repo (~11 GB of committed data): the upstream tip
+  # comes from `git ls-remote` and the pointer is read over raw.github (this repo
+  # is public, so no auth). The data-level facts-diff in the forecast job stays as
+  # the *precise* second gate -- this SHA gate only filters polls where martj42 did
+  # not commit at all, so we never pay R setup on a dead poll.
   gate:
     runs-on: ubuntu-latest
     outputs:
-      proceed: ${{ steps.window.outputs.proceed }}
+      proceed: ${{ steps.decide.outputs.proceed }}
+      upstream_sha: ${{ steps.sha.outputs.upstream }}
     env:
       WC_END_DATE: '2026-07-20'
     steps:
@@ -54,9 +69,52 @@ jobs:
         run: |
           today=$(date -u +%Y-%m-%d)
           if [[ "$today" > "$WC_END_DATE" ]]; then
-            echo "::notice::$today is past WC_END_DATE ($WC_END_DATE) -- skipping."
+            echo "past=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "past=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - id: sha
+        run: |
+          # Retry a few times so a transient network blip on an hourly poll does
+          # not fail the run (and email); only a genuine outage (martj42 gone, GH
+          # unreachable for ~15s) escalates to a loud error.
+          upstream=""
+          for attempt in 1 2 3; do
+            upstream=$(git ls-remote https://github.com/martj42/international_results.git refs/heads/master | cut -f1)
+            [[ -n "$upstream" ]] && break
+            echo "::warning::git ls-remote attempt $attempt returned nothing; retrying..."
+            sleep 5
+          done
+          if [[ -z "$upstream" ]]; then
+            echo "::error::Could not read martj42 upstream SHA via git ls-remote after 3 attempts."
+            exit 1
+          fi
+          echo "upstream=$upstream" >> "$GITHUB_OUTPUT"
+
+      - id: decide
+        env:
+          FORCE: ${{ inputs.force }}
+          PAST: ${{ steps.window.outputs.past }}
+          UPSTREAM: ${{ steps.sha.outputs.upstream }}
+        run: |
+          # The SHA we last acted on. raw.github 404s on the first ever run (no
+          # pointer yet) or on any transient fetch error -> empty seen -> we fail
+          # safe by proceeding (a redundant run is harmless; a skipped real update
+          # is not). The repo is public, so no token is needed.
+          seen=$(curl -fsSL "https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/main/data/wc/martj42_pointer.txt" 2>/dev/null || echo "")
+          seen=$(printf '%s' "$seen" | tr -d '[:space:]')
+          if [[ "$PAST" == "true" ]]; then
+            echo "::notice::$(date -u +%F) is past WC_END_DATE ($WC_END_DATE) -- skipping."
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+          elif [[ "$FORCE" == "true" ]]; then
+            echo "::notice::force=true -- proceeding regardless of martj42 SHA."
+            echo "proceed=true" >> "$GITHUB_OUTPUT"
+          elif [[ -n "$seen" && "$UPSTREAM" == "$seen" ]]; then
+            echo "::notice::martj42 unchanged (${UPSTREAM:0:7}) since last run -- skipping."
             echo "proceed=false" >> "$GITHUB_OUTPUT"
           else
+            echo "::notice::martj42 advanced (${seen:0:7} -> ${UPSTREAM:0:7}) -- proceeding."
             echo "proceed=true" >> "$GITHUB_OUTPUT"
           fi
 
@@ -138,17 +196,28 @@ jobs:
         if: steps.refit.outputs.needed == 'true'
         run: Rscript scripts/wc/forecast.R
 
-      - name: Commit + push if outputs changed
-        if: steps.refit.outputs.needed == 'true'
+      # Runs on every proceeding poll (the job's `if` already requires proceed).
+      # Advancing the pointer is NOT gated on refit.needed: even when the
+      # facts-diff found nothing to refit, we must record the SHA we just
+      # processed, or every later poll would see "changed" and needlessly
+      # re-ingest. On a no-refit run only the pointer is staged -> a tiny
+      # pointer-only commit. (If martj42 commits again between the gate's read and
+      # here, the pointer lags by one commit and the next poll re-runs -- harmless,
+      # the facts-diff no-ops it.)
+      - name: Advance martj42 pointer + commit any new outputs
+        env:
+          UPSTREAM_SHA: ${{ needs.gate.outputs.upstream_sha }}
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/facts/results/sport=football/country=world \
+          echo "$UPSTREAM_SHA" > data/wc/martj42_pointer.txt
+          git add data/wc/martj42_pointer.txt \
+                  data/facts/results/sport=football/country=world \
                   data/facts/schedules/sport=football/country=world \
                   data/wc/accountability/ \
                   data/publish/world_cup/
           if git diff --cached --quiet; then
-            echo "No forecast changes to commit"
+            echo "Nothing to commit (pointer already current, no new outputs)"
             exit 0
           fi
           git commit -m "data(wc): forecast $(date -u +%Y-%m-%dT%H:%MZ)"
