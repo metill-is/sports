@@ -24,6 +24,10 @@ research/results/
 _legacy-tmp/
 sports-backup-*/
 
+# Reel strength-trajectory export — isolated re-fit scratch (regenerable; can be large)
+data_reel/
+out/wc_strength_trajectory*.json
+
 # Stan build artefacts
 *.exe
 *.hpp
