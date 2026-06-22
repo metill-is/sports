@@ -49,8 +49,14 @@ odds late morning, so the pre-scrape slot false-FAILed on match days.
 
 ## Fix
 
-- Transient (timeout / Lengjan briefly down) or to confirm a lull is self-healing:
-  re-run `gh workflow run scrape-odds.yml --repo metill-is/sports` and check it
+- **On the placer host (local), run the scrape directly** — it's the faster,
+  more deterministic fix: `Rscript scripts/02_scrape_odds.R`, then commit + push
+  the refreshed `data/facts/odds/`. Re-dispatching the workflow can take ~30 min
+  on a cold CI cache (the V8/chromote rebuild in `ci-conventions.md`), whereas
+  the local scrape runs in seconds against a warm toolchain.
+- Transient (timeout / Lengjan briefly down) or to confirm a lull is self-healing
+  when you're *not* on the placer host: re-run
+  `gh workflow run scrape-odds.yml --repo metill-is/sports` and check it
   returns a non-zero row count.
 - Lengjan markup changed: the DOM odds parser
   (`parse_actual_odds_from_dom()` in `R/placer-place.R`) or
