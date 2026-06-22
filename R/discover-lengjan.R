@@ -34,3 +34,45 @@ parse_competition_dropdown <- function(html) {
   }
   empty
 }
+
+#' Classify a Lengjan competition name into (sex, division).
+#'
+#' Deterministic, advisory name match. Sex from a "kvenna"/"kv" marker;
+#' division from the league-name pattern. A name that matches no division
+#' pattern is `division = NA`, `confidence = "low"` -- surfaced for a human,
+#' never auto-wired. Patterns are ASCII except the basketball "Bonusdeild" name,
+#' written with a `ó` escape (R-source non-ASCII rule); the cup matches the
+#' ASCII substring "bikar", so it needs no escape.
+#'
+#' @param lengjan_name Competition display name from the dropdown.
+#' @param sport,country Pass-through context (reserved for sport-specific rules).
+#' @return Tibble `{sex, division, confidence}` (one row).
+#' @export
+classify_competition <- function(lengjan_name, sport, country) {
+  nm <- lengjan_name
+  Encoding(nm) <- "UTF-8"
+  female <- grepl("kvenna", nm, ignore.case = TRUE) ||
+    grepl("(^| )kv\\.?( |$)", nm, ignore.case = TRUE)
+  sex <- if (female) "female" else "male"
+
+  division <- if (grepl("bikar", nm, ignore.case = TRUE)) {
+    "CUP"
+  } else if (grepl("3\\. *deild", nm, ignore.case = TRUE)) {
+    "LD3"
+  } else if (grepl("4\\. *deild", nm, ignore.case = TRUE)) {
+    "LD4"
+  } else if (grepl("2\\. *deild", nm, ignore.case = TRUE)) {
+    "LD2"
+  } else if (grepl("lengjudeild", nm, ignore.case = TRUE)) {
+    "LD1"
+  } else if (grepl("besta *deild|b\u00f3nusdeild", nm, ignore.case = TRUE)) {
+    "BD"
+  } else {
+    NA_character_
+  }
+  tibble::tibble(
+    sex = sex,
+    division = division,
+    confidence = if (is.na(division)) "low" else "high"
+  )
+}
