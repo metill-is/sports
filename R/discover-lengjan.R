@@ -300,3 +300,83 @@ discover_new_competitions <- function(leagues, session = NULL,
   }
   list(competitions = findings, unmodelled_offered_count = unmodelled)
 }
+
+#' @noRd
+.tn_to_list <- function(tn) {
+  if (is.null(tn) || nrow(tn) == 0L) {
+    return(list())
+  }
+  lapply(seq_len(nrow(tn)), function(j) {
+    list(
+      lengjan = tn$lengjan[[j]],
+      canonical_guess = if (is.na(tn$canonical_guess[[j]])) NULL else tn$canonical_guess[[j]],
+      confidence = tn$confidence[[j]]
+    )
+  })
+}
+
+#' @noRd
+.write_discovery_summary <- function(payload, path) {
+  lines <- c(
+    "# Lengjan discovery — proposed competitions",
+    "",
+    paste0("Generated: ", payload$generated_at),
+    paste0(
+      "Unmodelled competitions offered (in our sports/countries): ",
+      payload$unmodelled_offered_count
+    ),
+    ""
+  )
+  if (length(payload$competitions) == 0L) {
+    lines <- c(lines, "_No new modelled competitions to wire._")
+  } else {
+    for (c in payload$competitions) {
+      lines <- c(
+        lines,
+        sprintf(
+          "## %s / %s — %s (id=%s)", c$sport, c$inferred_sex,
+          c$inferred_division, c$comp_id
+        ),
+        sprintf("- Lengjan name: %s", c$lengjan_name),
+        sprintf("- Classify confidence: %s", c$classify_confidence),
+        "- Proposed team_names:"
+      )
+      if (length(c$proposed_team_names) == 0L) {
+        lines <- c(lines, "  - (none scraped yet)")
+      } else {
+        for (t in c$proposed_team_names) {
+          cg <- t$canonical_guess %||% "??? (verify)"
+          lines <- c(lines, sprintf("  - %s -> %s (%s)", t$lengjan, cg, t$confidence))
+        }
+      }
+      lines <- c(lines, "")
+    }
+  }
+  writeLines(enc2utf8(lines), path, useBytes = TRUE)
+  invisible(path)
+}
+
+#' Write the discovery proposal to JSON + a human-readable summary.
+#' @param findings Output of [discover_new_competitions()].
+#' @param root Data root; writes under `root/discovery/`.
+#' @param now Timestamp for the payload.
+#' @return invisible(path to proposals.json).
+#' @export
+write_discovery_proposal <- function(findings, root = here::here("data"),
+                                     now = Sys.time()) {
+  comps <- lapply(findings$competitions, function(f) {
+    f$proposed_team_names <- .tn_to_list(f$proposed_team_names)
+    f
+  })
+  payload <- list(
+    generated_at = format(now, "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"),
+    competitions = comps,
+    unmodelled_offered_count = findings$unmodelled_offered_count
+  )
+  dir <- file.path(root, "discovery")
+  dir.create(dir, recursive = TRUE, showWarnings = FALSE)
+  path <- file.path(dir, "proposals.json")
+  write_json_consistent(payload, path, pretty = TRUE, auto_unbox = TRUE)
+  .write_discovery_summary(payload, file.path(dir, "SUMMARY.md"))
+  invisible(path)
+}

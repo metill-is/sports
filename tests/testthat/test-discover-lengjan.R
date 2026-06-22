@@ -161,3 +161,40 @@ test_that(".known_teams_for reads results and filters by division correctly", {
   all_teams <- sports:::.known_teams_for("football", "iceland", "male", NA, root = tmp)
   expect_setequal(all_teams, c("Valur", "KR", "Fram", "HK")) # Bug 1: read_table("results") must work
 })
+
+
+test_that("write_discovery_proposal round-trips JSON with UTF-8 intact", {
+  tmp <- withr::local_tempdir()
+  findings <- list(
+    competitions = list(list(
+      sport = "football", country = "iceland", comp_id = "757",
+      lengjan_name = "Lengjudeildin", inferred_sex = "male",
+      inferred_division = "LD1", classify_confidence = "high",
+      modelled = TRUE, status = "new",
+      proposed_team_names = tibble::tibble(
+        lengjan = c("V\u00edkingur \u00d3l.", "Zzz"),
+        canonical_guess = c("V\u00edkingur \u00d3.", NA_character_),
+        confidence = c("high", "low")
+      )
+    )),
+    unmodelled_offered_count = 2L
+  )
+  path <- write_discovery_proposal(findings, root = tmp)
+  expect_true(file.exists(path))
+  expect_true(file.exists(file.path(tmp, "discovery", "SUMMARY.md")))
+
+  back <- jsonlite::read_json(path)
+  expect_equal(length(back$competitions), 1L)
+  expect_equal(back$competitions[[1]]$comp_id, "757")
+  expect_equal(back$competitions[[1]]$proposed_team_names[[1]]$lengjan, "V\u00edkingur \u00d3l.")
+  expect_equal(back$unmodelled_offered_count, 2L)
+})
+
+test_that("write_discovery_proposal writes an empty competitions array cleanly", {
+  tmp <- withr::local_tempdir()
+  path <- write_discovery_proposal(
+    list(competitions = list(), unmodelled_offered_count = 0L), root = tmp
+  )
+  back <- jsonlite::read_json(path)
+  expect_equal(length(back$competitions), 0L)
+})
