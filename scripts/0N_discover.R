@@ -35,6 +35,5 @@ if (is.null(findings)) {
 path <- write_discovery_proposal(findings)
 n <- length(findings$competitions)
 cli::cli_alert_success(
-  "Discovery wrote {n} proposed competition(s) to {path} ",
-  "({findings$unmodelled_offered_count} unmodelled offered)."
+  "Discovery wrote {n} proposed competition(s) to {path} ({findings$unmodelled_offered_count} unmodelled offered)."
 )
