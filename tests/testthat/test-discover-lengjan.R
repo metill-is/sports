@@ -188,12 +188,16 @@ test_that("write_discovery_proposal round-trips JSON with UTF-8 intact", {
   expect_equal(back$competitions[[1]]$comp_id, "757")
   expect_equal(back$competitions[[1]]$proposed_team_names[[1]]$lengjan, "V\u00edkingur \u00d3l.")
   expect_equal(back$unmodelled_offered_count, 2L)
+  # JSON null round-trips as a zero-length list via jsonlite::read_json (simplifyVector=FALSE)
+  expect_true(is.list(back$competitions[[1]]$proposed_team_names[[2]]$canonical_guess) &&
+    length(back$competitions[[1]]$proposed_team_names[[2]]$canonical_guess) == 0L)
 })
 
 test_that("write_discovery_proposal writes an empty competitions array cleanly", {
   tmp <- withr::local_tempdir()
   path <- write_discovery_proposal(
-    list(competitions = list(), unmodelled_offered_count = 0L), root = tmp
+    list(competitions = list(), unmodelled_offered_count = 0L),
+    root = tmp
   )
   back <- jsonlite::read_json(path)
   expect_equal(length(back$competitions), 0L)

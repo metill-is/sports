@@ -330,21 +330,21 @@ discover_new_competitions <- function(leagues, session = NULL,
   if (length(payload$competitions) == 0L) {
     lines <- c(lines, "_No new modelled competitions to wire._")
   } else {
-    for (c in payload$competitions) {
+    for (comp in payload$competitions) {
       lines <- c(
         lines,
         sprintf(
-          "## %s / %s — %s (id=%s)", c$sport, c$inferred_sex,
-          c$inferred_division, c$comp_id
+          "## %s / %s — %s (id=%s)", comp$sport, comp$inferred_sex,
+          comp$inferred_division, comp$comp_id
         ),
-        sprintf("- Lengjan name: %s", c$lengjan_name),
-        sprintf("- Classify confidence: %s", c$classify_confidence),
+        sprintf("- Lengjan name: %s", comp$lengjan_name),
+        sprintf("- Classify confidence: %s", comp$classify_confidence),
         "- Proposed team_names:"
       )
-      if (length(c$proposed_team_names) == 0L) {
+      if (length(comp$proposed_team_names) == 0L) {
         lines <- c(lines, "  - (none scraped yet)")
       } else {
-        for (t in c$proposed_team_names) {
+        for (t in comp$proposed_team_names) {
           cg <- t$canonical_guess %||% "??? (verify)"
           lines <- c(lines, sprintf("  - %s -> %s (%s)", t$lengjan, cg, t$confidence))
         }
