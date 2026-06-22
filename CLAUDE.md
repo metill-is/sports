@@ -102,6 +102,7 @@ Rscript scripts/04_decide.R
 Rscript scripts/05_publish.R
 Rscript scripts/06_settle.R                           # resolve win/pnl for settled bets
 Rscript scripts/07_healthcheck.R                      # read-only health snapshot -> data/health/status.json (or /pipeline-doctor)
+Rscript scripts/0N_discover.R                         # discover Lengjan leagues we model but don't yet scrape
 
 # Historical replay (re-fit + re-publish for any past date; football iceland only)
 Rscript scripts/0Nr_replay.R --league football_iceland --sex male --as-of 2026-05-15
@@ -235,7 +236,7 @@ Five CI workflows commit to `main` throughout the day, so local working trees dr
 
 ## Skills
 
-The pipeline skills under `.claude/skills/` (`/bet`, `/sports-update`, `/add-league`, `/place-bets`) call `scripts/0N_*.R` directly. The git-hygiene skills (`/sync-main`, `/wrap-up-session`) handle cron-collision sync and end-of-session consolidation. Drift back to legacy invocations is guarded by `tests/testthat/test-skill-conventions.R`, which fails the build if any skill references `lengjan-bets/`, `lengjan-odds/`, `Sports/{sport}/{country}/`, the `--sync` flag, or the legacy `Rscript run.R --step` pattern.
+The pipeline skills under `.claude/skills/` (`/bet`, `/sports-update`, `/add-league`, `/wire-league`, `/place-bets`) call `scripts/0N_*.R` directly. The git-hygiene skills (`/sync-main`, `/wrap-up-session`) handle cron-collision sync and end-of-session consolidation. Drift back to legacy invocations is guarded by `tests/testthat/test-skill-conventions.R`, which fails the build if any skill references `lengjan-bets/`, `lengjan-odds/`, `Sports/{sport}/{country}/`, the `--sync` flag, or the legacy `Rscript run.R --step` pattern.
 
 **Do not add `disable-model-invocation: true` to the four pipeline skills.** They are intentionally model-invocable.
 
