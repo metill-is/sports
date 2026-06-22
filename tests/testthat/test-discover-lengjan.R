@@ -97,3 +97,36 @@ test_that("match_team_names degrades an ambiguous distance tie to low", {
   expect_true(is.na(out$canonical_guess))
   expect_equal(out$confidence, "low")
 })
+
+test_that("discover_new_competitions flags a new modelled comp and skips configured + unmodelled ones", {
+  leagues <- list(
+    football_iceland = list(
+      sport = "football", country = "iceland", active = TRUE,
+      lengjan = list(competitions = list(list(id = "746", name = "Besta deild karla", sex = "male"))),
+      publish_divisions = list(
+        male = list(
+          list(code = "BD"), list(code = "LD1"), list(code = "LD2"),
+          list(code = "LD3"), list(code = "CUP")
+        )
+      )
+    )
+  )
+  fake_list <- function(sport, country) tibble::tibble(
+    sport = sport, country = country,
+    comp_id = c("746", "757", "9999"),
+    lengjan_name = c("Besta deild karla", "Lengjudeildin", "4. deild karla")
+  )
+  fake_tn <- function(comp_id, sport, country, sex, division) tibble::tibble(
+    lengjan = "Some Team", canonical_guess = "Some Team", confidence = "high"
+  )
+
+  res <- discover_new_competitions(leagues, list_fn = fake_list, team_names_fn = fake_tn)
+
+  expect_length(res$competitions, 1L)                       # 757 only
+  f <- res$competitions[[1L]]
+  expect_equal(f$comp_id, "757")
+  expect_equal(f$inferred_division, "LD1")
+  expect_true(f$modelled)
+  expect_equal(res$unmodelled_offered_count, 1L)            # 4. deild (LD4) not modelled
+  expect_s3_class(f$proposed_team_names, "tbl_df")
+})

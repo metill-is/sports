@@ -137,3 +137,165 @@ match_team_names <- function(renderings, known_teams) {
   })
   dplyr::bind_rows(rows)
 }
+
+#' List every competition Lengjan currently offers for a (sport, country).
+#' @param sport,country Canonical names ("football", "iceland").
+#' @param session A live `chromote::ChromoteSession`.
+#' @return Tibble `{sport, country, comp_id, lengjan_name}` (possibly empty).
+#' @export
+lengjan_list_competitions <- function(sport, country, session) {
+  url <- sprintf(
+    "https://games.lotto.is/getraunaleikir/lengjan?sport=%d&country=%s",
+    .lengjan_sport_id(sport), .lengjan_country_code(country)
+  )
+  html <- .lengjan_fetch(session, url)
+  comps <- parse_competition_dropdown(html)
+  if (nrow(comps) == 0L) {
+    return(tibble::tibble(
+      sport = character(0), country = character(0),
+      comp_id = character(0), lengjan_name = character(0)
+    ))
+  }
+  comps$sport <- sport
+  comps$country <- country
+  comps[, c("sport", "country", "comp_id", "lengjan_name"), drop = FALSE]
+}
+
+#' Draft team_names for a competition by scraping its page once.
+#' @param comp_id Lengjan competition ID.
+#' @param sport,country,sex Context.
+#' @param session A live `chromote::ChromoteSession`.
+#' @param known_teams Canonical team names to match against.
+#' @return Tibble `{lengjan, canonical_guess, confidence}`.
+#' @export
+propose_team_names <- function(comp_id, sport, country, sex, session, known_teams) {
+  url <- sprintf(
+    "https://games.lotto.is/getraunaleikir/lengjan?sport=%d&country=%s&competition=%s",
+    .lengjan_sport_id(sport), .lengjan_country_code(country), comp_id
+  )
+  html <- .lengjan_fetch(session, url)
+  rows <- parse_competition_page(html, sport = sport, country = country)
+  renderings <- unique(c(rows$home_team, rows$away_team))
+  renderings <- renderings[!is.na(renderings) & nzchar(renderings)]
+  match_team_names(renderings, known_teams)
+}
+
+#' @noRd
+.configured_comp_ids <- function(leagues, sport, country) {
+  ids <- character(0)
+  for (lg in leagues) {
+    if (identical(lg$sport, sport) && identical(lg$country, country)) {
+      for (cmp in lg$lengjan$competitions %||% list()) {
+        ids <- c(ids, as.character(cmp$id))
+      }
+    }
+  }
+  unique(ids)
+}
+
+#' @noRd
+.modelled_division_codes <- function(league, sex) {
+  pd <- league$publish_divisions[[sex]]
+  if (is.null(pd) || length(pd) == 0L) {
+    return(NULL) # NULL = no division gating (single-division sport)
+  }
+  vapply(pd, function(d) d$code, character(1))
+}
+
+#' @noRd
+.known_teams_for <- function(sport, country, sex, division, root) {
+  res <- tryCatch(
+    read_table(results, root = root,
+      filter = list(sport = sport, country = country, sex = sex)
+    ),
+    error = function(e) tibble::tibble()
+  )
+  if (nrow(res) == 0L) {
+    return(character(0))
+  }
+  if (!is.na(division) && division %in% names(res)) {
+    res <- res[!is.na(res$division) & res$division == division, , drop = FALSE]
+  }
+  unique(c(res$home_team, res$away_team))
+}
+
+#' Discover competitions Lengjan now offers that we model but do not yet scrape.
+#'
+#' For each active modelled `(sport, country)`, lists the live competitions,
+#' diffs against configured comp IDs, classifies each new one, keeps those whose
+#' inferred division we model, and drafts `team_names`. Pure inputs are
+#' injectable (`list_fn`, `team_names_fn`) so the orchestration is unit-tested
+#' without network or Stan. Competitions for a modelled `(sport, country)` whose
+#' division we do NOT model are counted in `unmodelled_offered_count`.
+#'
+#' @param leagues Full leagues list (`load_leagues()`).
+#' @param session A live `chromote::ChromoteSession` (required unless both
+#'   `list_fn` and `team_names_fn` are supplied).
+#' @param root Data root for `read_table("results")`.
+#' @param list_fn,team_names_fn Injectable closures for testing.
+#' @return `list(competitions = <list>, unmodelled_offered_count = int)`.
+#' @export
+discover_new_competitions <- function(leagues, session = NULL,
+                                      root = here::here("data"),
+                                      list_fn = NULL, team_names_fn = NULL) {
+  if (is.null(list_fn)) {
+    stopifnot(!is.null(session))
+    list_fn <- function(sport, country) lengjan_list_competitions(sport, country, session)
+  }
+  if (is.null(team_names_fn)) {
+    stopifnot(!is.null(session))
+    team_names_fn <- function(comp_id, sport, country, sex, division) {
+      kt <- .known_teams_for(sport, country, sex, division, root)
+      propose_team_names(comp_id, sport, country, sex, session, kt)
+    }
+  }
+
+  active <- filter_leagues(leagues, active_only = TRUE, has_lengjan = TRUE)
+  pairs <- list()
+  for (key in names(active)) {
+    lg <- active[[key]]
+    pk <- paste(lg$sport, lg$country, sep = "\r")
+    if (is.null(pairs[[pk]])) {
+      pairs[[pk]] <- list(sport = lg$sport, country = lg$country, league = lg)
+    }
+  }
+
+  findings <- list()
+  unmodelled <- 0L
+  for (p in pairs) {
+    live <- tryCatch(list_fn(p$sport, p$country), error = function(e) NULL)
+    if (is.null(live) || nrow(live) == 0L) next
+    have <- .configured_comp_ids(leagues, p$sport, p$country)
+    new <- live[!(as.character(live$comp_id) %in% have), , drop = FALSE]
+    if (nrow(new) == 0L) next
+    for (i in seq_len(nrow(new))) {
+      cls <- classify_competition(new$lengjan_name[[i]], p$sport, p$country)
+      codes <- .modelled_division_codes(p$league, cls$sex)
+      modelled <- is.null(codes) || (!is.na(cls$division) && cls$division %in% codes)
+      if (!modelled) {
+        unmodelled <- unmodelled + 1L
+        next
+      }
+      tn <- tryCatch(
+        team_names_fn(new$comp_id[[i]], p$sport, p$country, cls$sex, cls$division),
+        error = function(e) {
+          tibble::tibble(
+            lengjan = character(0), canonical_guess = character(0),
+            confidence = character(0)
+          )
+        }
+      )
+      findings[[length(findings) + 1L]] <- list(
+        sport = p$sport, country = p$country,
+        comp_id = as.character(new$comp_id[[i]]),
+        lengjan_name = new$lengjan_name[[i]],
+        inferred_sex = cls$sex,
+        inferred_division = cls$division,
+        classify_confidence = cls$confidence,
+        modelled = TRUE, status = "new",
+        proposed_team_names = tn
+      )
+    }
+  }
+  list(competitions = findings, unmodelled_offered_count = unmodelled)
+}
