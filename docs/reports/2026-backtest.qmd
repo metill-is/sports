@@ -1,6 +1,6 @@
 ---
 title: "Betting Backtest — Football Iceland 2026"
-subtitle: "How well football betting would have worked, and where"
+subtitle: "How well football betting would have worked, and in which leagues"
 author: "Brynjólfur Gauti Jónsson"
 date: today
 date-format: "YYYY-MM-DD"
@@ -43,6 +43,27 @@ initial_pool <- load_bankroll()$initial_pool
 picks <- bt_load_universe(strategy = "kept", leagues = "football")
 roll <- bt_run(picks, results, stake_rule = stake_rolling, initial_pool = initial_pool)
 fixed <- bt_run(picks, results, stake_rule = stake_fixed, initial_pool = initial_pool)
+
+# Per-league (division) view. The betting stores carry no division; recover it
+# from results on the federation-name match key so every breakdown names the
+# Icelandic league. Bettable football is men's BD/LD1/LD2/CUP + women's BD; men's
+# 3. deild and women's Lengjudeild/2. deild are modelled but never priced by
+# Lengjan, so they cannot appear in a betting backtest (see Caveats).
+roll <- bt_attach_division(roll, results)
+fixed <- bt_attach_division(fixed, results)
+
+# Canonical division code -> Icelandic label, per sex, from config/leagues.yml
+# (publish_divisions); falls back to the raw code for anything unmapped.
+div_levels <- c("BD", "LD1", "LD2", "LD3", "LD4", "CUP", "unknown")
+league_label <- function(sex, division) {
+  out <- division
+  for (s in unique(sex)) {
+    m <- tryCatch(.football_iceland_division_labels(s), error = function(e) character())
+    i <- sex == s & division %in% names(m)
+    out[i] <- unname(m[division[i]])
+  }
+  out
+}
 ```
 
 ```{r}
@@ -62,6 +83,8 @@ wf_bets <- dplyr::bind_rows(lapply(wf_sexes, function(s) {
   r <- bt_walkforward_reuse(s, season = 2026)
   if (is.null(r)) NULL else r$bets
 }))
+# Attach division before devig so the model-vs-market arm slices by league too.
+if (nrow(wf_bets) > 0) wf_bets <- bt_attach_division(wf_bets, results)
 wf_available <- isTRUE(nrow(wf_bets) > 0)
 
 # De-vigged model-vs-market table (margin-free market probability `q_market`),
@@ -109,6 +132,35 @@ roll |>
   theme_minimal()
 ```
 
+## Leagues covered
+
+```{r}
+#| label: coverage-note
+#| output: asis
+cov <- fixed |>
+  dplyr::count(sex, division) |>
+  dplyr::mutate(
+    division = factor(division, div_levels),
+    lab = paste0(league_label(sex, as.character(division)), " (", n, ")")
+  ) |>
+  dplyr::arrange(sex, division)
+cov_line <- function(s) {
+  v <- cov$lab[cov$sex == s]
+  if (length(v) == 0) "_none_" else paste(v, collapse = ", ")
+}
+cat(
+  "::: {.callout-note}\n",
+  "## Every bettable Icelandic football league this season\n\n",
+  "**Men:** ", cov_line("male"), "  \n",
+  "**Women:** ", cov_line("female"), "\n\n",
+  "Bracketed numbers are kept bets (fixed-era, deduped). Men's *3. deild* and ",
+  "women's *Lengjudeild*/*2. deild* are modelled but Lengjan never prices them, ",
+  "so they cannot enter a betting backtest — absent by necessity, not omission.\n",
+  ":::\n",
+  sep = ""
+)
+```
+
 ## Where the edge is
 
 ```{r}
@@ -124,6 +176,33 @@ bind_rows(
   fmt_number(total_pnl, decimals = 0) |>
   fmt_percent(c(roi, hit_rate), decimals = 1) |>
   tab_header("Fixed-fraction ROI by dimension (football)")
+```
+
+## By league
+
+Every bettable league broken out. Men's **Besta deild / Lengjudeild / 2. deild /
+Mjólkurbikar** and women's **Besta deild** are the cells Lengjan priced this
+season. Per-league `n` is small, so read these as directional, not significant.
+
+```{r}
+#| label: by-league
+bt_metrics(fixed, by = c("sex", "division")) |>
+  mutate(
+    league = league_label(sex, division),
+    division = factor(division, div_levels)
+  ) |>
+  arrange(sex, division) |>
+  select(sex, league, n_bets, total_pnl, roi, hit_rate, avg_odds) |>
+  gt(groupname_col = "sex") |>
+  fmt_number(total_pnl, decimals = 0) |>
+  fmt_number(avg_odds, decimals = 2) |>
+  fmt_percent(c(roi, hit_rate), decimals = 1) |>
+  cols_label(
+    league = "League", n_bets = "Bets", total_pnl = "PnL (ISK)",
+    roi = "ROI", hit_rate = "Hit rate", avg_odds = "Avg odds"
+  ) |>
+  tab_header("Fixed-fraction performance by league (kept bets)") |>
+  tab_source_note("Per-league n is small — directional, not significant.")
 ```
 
 ## Calibration
@@ -254,6 +333,35 @@ dplyr::bind_rows(
   gt::tab_source_note("Skill > 0 = model beats the margin-free line on that market. Overround = bookmaker margin.")
 ```
 
+The same comparison, sliced by league. The model is fit jointly across all
+divisions, so this asks whether its informational edge over the line concentrates
+in any particular league.
+
+```{r}
+#| label: wf-vs-market-league
+#| eval: !expr wf_available
+dplyr::bind_rows(
+  dplyr::mutate(bt_skill(mkt, by = "sex"), division = "ALL"),
+  bt_skill(mkt, by = c("sex", "division"))
+) |>
+  dplyr::mutate(
+    league = ifelse(division == "ALL", "— all —", league_label(sex, division)),
+    division = factor(division, c("ALL", div_levels))
+  ) |>
+  dplyr::arrange(sex, division) |>
+  dplyr::select(sex, league, n, n_matches, brier_model, brier_market, brier_skill) |>
+  gt::gt(groupname_col = "sex", rowname_col = "league") |>
+  gt::fmt_number(c(brier_model, brier_market), decimals = 3) |>
+  gt::fmt_percent(brier_skill, decimals = 1) |>
+  gt::cols_label(
+    n = "n preds", n_matches = "matches",
+    brier_model = "model", brier_market = "market", brier_skill = "Brier skill"
+  ) |>
+  gt::tab_spanner("Brier", c(brier_model, brier_market)) |>
+  gt::tab_header("Model vs. de-vigged market — by league") |>
+  gt::tab_source_note("Brier skill > 0 = model beats the margin-free line in that league. Per-league n is thin — directional only.")
+```
+
 ```{r}
 #| label: wf-reliability-overlay
 #| eval: !expr wf_available
@@ -326,6 +434,13 @@ bt_baselines(leagues = "football") |>
 - **Football only.** Basketball and handball are excluded (seasonal pause, and
   this report is meant to judge football specifically). Re-include all sports
   with `Rscript scripts/0Nb_backtest.R --league all` once they resume.
+- **Bettable leagues only.** Both arms run through the decider, which needs a
+  Lengjan price, so they cover men's *Besta deild / Lengjudeild / 2. deild /
+  Mjólkurbikar* and women's *Besta deild*. Men's *3. deild* and women's
+  *Lengjudeild*/*2. deild* are fit by the same model but never quoted by Lengjan,
+  so a betting backtest cannot include them — their absence is structural, not a
+  data gap. Division is recovered from `results` on the federation-name match key;
+  fixtures with no result yet show as `unknown` (none among settled kept bets).
 - **Leak-free** picks: `candidates.p` was frozen pre-match; settlement reuses
   `compute_settlement()` so win/push boundaries match the live decider.
 - **Obtainability:** odds are decide-time prices; some bets were never
