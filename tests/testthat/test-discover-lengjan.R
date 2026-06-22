@@ -39,16 +39,22 @@ test_that("parse_competition_dropdown finds the league select when placeholder i
 })
 
 test_that("classify_competition maps Icelandic names to (sex, division)", {
-  expect_equal(classify_competition("Besta deild karla", "football", "iceland")[c("sex","division")],
-               tibble::tibble(sex = "male", division = "BD"))
-  expect_equal(classify_competition("Besta deild kvenna", "football", "iceland")[c("sex","division")],
-               tibble::tibble(sex = "female", division = "BD"))
+  expect_equal(
+    classify_competition("Besta deild karla", "football", "iceland")[c("sex", "division")],
+    tibble::tibble(sex = "male", division = "BD")
+  )
+  expect_equal(
+    classify_competition("Besta deild kvenna", "football", "iceland")[c("sex", "division")],
+    tibble::tibble(sex = "female", division = "BD")
+  )
   expect_equal(classify_competition("Lengjudeildin", "football", "iceland")$division, "LD1")
   expect_equal(classify_competition("Lengjudeild kv.", "football", "iceland")$sex, "female")
   expect_equal(classify_competition("2. deild karla", "football", "iceland")$division, "LD2")
   expect_equal(classify_competition("3. deild karla", "football", "iceland")$division, "LD3")
-  expect_equal(classify_competition("Mjólkurbikar kvenna", "football", "iceland")[c("sex","division")],
-               tibble::tibble(sex = "female", division = "CUP"))
+  expect_equal(
+    classify_competition("Mjólkurbikar kvenna", "football", "iceland")[c("sex", "division")],
+    tibble::tibble(sex = "female", division = "CUP")
+  )
   expect_equal(classify_competition("Mjólkurbikar karla", "football", "iceland")$division, "CUP")
 })
 
@@ -77,4 +83,17 @@ test_that("match_team_names handles an empty rendering set", {
   out <- match_team_names(character(0), c("FH"))
   expect_equal(nrow(out), 0L)
   expect_named(out, c("lengjan", "canonical_guess", "confidence"))
+})
+
+test_that("match_team_names returns all low/NA when known_teams is empty", {
+  out <- match_team_names(c("FH kv", "KR"), character(0))
+  expect_equal(nrow(out), 2L)
+  expect_true(all(is.na(out$canonical_guess)))
+  expect_true(all(out$confidence == "low"))
+})
+
+test_that("match_team_names degrades an ambiguous distance tie to low", {
+  out <- match_team_names("KX", c("KR", "KA")) # adist 1 to both
+  expect_true(is.na(out$canonical_guess))
+  expect_equal(out$confidence, "low")
 })

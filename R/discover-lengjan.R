@@ -128,9 +128,9 @@ match_team_names <- function(renderings, known_teams) {
       return(tibble::tibble(lengjan = r, canonical_guess = kn[[hit[[1L]]]], confidence = "high"))
     }
     d <- utils::adist(rn, kn_norm)[1L, ]
-    j <- which.min(d)
-    if (length(j) == 1L && is.finite(d[[j]]) && d[[j]] <= 2L) {
-      tibble::tibble(lengjan = r, canonical_guess = kn[[j]], confidence = "medium")
+    dmin <- min(d)
+    if (is.finite(dmin) && dmin <= 2L && sum(d == dmin) == 1L) {
+      tibble::tibble(lengjan = r, canonical_guess = kn[[which.min(d)]], confidence = "medium")
     } else {
       tibble::tibble(lengjan = r, canonical_guess = NA_character_, confidence = "low")
     }
