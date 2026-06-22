@@ -202,9 +202,9 @@ Expected: FAIL — `could not find function "classify_competition"`.
 #' Deterministic, advisory name match. Sex from a "kvenna"/"kv" marker;
 #' division from the league-name pattern. A name that matches no division
 #' pattern is `division = NA`, `confidence = "low"` -- surfaced for a human,
-#' never auto-wired. Patterns are ASCII where possible; the only non-ASCII
-#' token ("bikar") is matched on its ASCII substring, so no `\\uXXXX` is needed
-#' for the cup.
+#' never auto-wired. Patterns are ASCII except the basketball "Bonusdeild" name,
+#' written with a `ó` escape (R-source non-ASCII rule); the cup matches the
+#' ASCII substring "bikar", so it needs no escape.
 #'
 #' @param lengjan_name Competition display name from the dropdown.
 #' @param sport,country Pass-through context (reserved for sport-specific rules).
@@ -227,7 +227,7 @@ classify_competition <- function(lengjan_name, sport, country) {
     "LD2"
   } else if (grepl("lengjudeild", nm, ignore.case = TRUE)) {
     "LD1"
-  } else if (grepl("besta *deild|bónusdeild", nm, ignore.case = TRUE)) {
+  } else if (grepl("besta *deild|b\u00f3nusdeild", nm, ignore.case = TRUE)) {
     "BD"
   } else {
     NA_character_
