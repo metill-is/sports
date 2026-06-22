@@ -1,0 +1,69 @@
+name: Discover Lengjan Leagues
+
+on:
+  schedule:
+    # Once daily UTC, off the odds-scrape slots (8,11,14,20) and the
+    # healthcheck slots. Competitions appear at most a few times per season.
+    - cron: '40 6 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: discover-leagues
+  cancel-in-progress: false
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: 'release'
+          use-public-rspm: true
+
+      - uses: browser-actions/setup-chrome@v2
+        id: setup-chrome
+        with:
+          chrome-version: stable
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        env:
+          PKG_SYSREQS: "false"
+        with:
+          dependencies: '"hard"'
+          extra-packages: |
+            any::devtools
+            any::chromote
+
+      - name: Reinstall V8 from source with bundled static libv8
+        env:
+          DOWNLOAD_STATIC_LIBV8: "1"
+        run: |
+          Rscript -e 'install.packages("V8", type = "source", repos = c(CRAN = "https://cloud.r-project.org"))'
+
+      - name: Discover Lengjan leagues
+        env:
+          CHROMOTE_CHROME: ${{ steps.setup-chrome.outputs.chrome-path }}
+        run: Rscript scripts/0N_discover.R
+
+      - name: Commit if discovery changed
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/discovery/
+          if git diff --cached --quiet; then
+            echo "No discovery change"
+            exit 0
+          fi
+          git commit -m "data(discovery): refresh $(date -u +%Y-%m-%dT%H:%MZ)"
+          git pull --rebase origin main
+          git push
