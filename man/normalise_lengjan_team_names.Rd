@@ -22,12 +22,18 @@ Same tibble with Lengjan-side names rewritten to canonical
 `config/leagues.yml::*.lengjan.team_names` maps canonical (federation)
 team names to Lengjan display names — direction
 `{canonical: lengjan_display}` — because the placer needs to find a
-Lengjan match ID from a recommendation's canonical name.
+Lengjan match ID from a recommendation's canonical name. A value is either
+a single rendering (scalar) or a list of acceptable renderings, used when
+Lengjan shows the same team under more than one byte-distinct string (e.g.
+"Grindavík / Njarðvík kv" vs "Grindavik/Njarðvík kv").
 }
 \details{
 For the decide-time join (odds Parquet vs beliefs Parquet) we need the
-inverse map. This function inverts the per-sex sub-map and applies it to
-the `home_team` + `away_team` columns. Unmapped names pass through with
-a `cli::cli_alert_warning` so the caller's loud "no beliefs" warning at
-[decide_league()] catches the resulting empty-beliefs join.
+inverse map. This function inverts the per-sex sub-map — every rendering of
+a canonical points back at that canonical — and applies it to the
+`home_team` + `away_team` columns. Unmapped names pass through with a
+`cli::cli_alert_warning` so the caller's loud "no beliefs" warning at
+[decide_league()] catches the resulting empty-beliefs join. The inverse must
+stay injective (each rendering from one canonical); a shared rendering across
+two canonicals is a hard error.
 }
