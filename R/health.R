@@ -389,6 +389,48 @@ check_bankroll <- function(root, th) {
   )
 }
 
+#' Discovery: Lengjan now lists a modelled competition we do not yet scrape.
+#'
+#' Reads `data/discovery/proposals.json` and WARNs on any proposed competition
+#' that is `modelled` and whose `comp_id` is not yet in
+#' `config/leagues.yml::*.lengjan.competitions`. Keying "un-actioned" off the
+#' LIVE config (not the proposal's `status`) makes the WARN self-clear the
+#' instant the comp is wired, even before the next discovery run refreshes the
+#' file. Never escalates past WARN -- a newly-listed league is not an outage.
+#' @noRd
+check_discovery <- function(root, th) {
+  thr_lbl <- "0 un-actioned modelled competitions"
+  path <- file.path(root, "discovery", "proposals.json")
+  if (!file.exists(path)) {
+    return(health_row("discovery", "lengjan", "OK", "no proposals file", thr_lbl))
+  }
+  prop <- tryCatch(jsonlite::read_json(path), error = function(e) NULL)
+  comps <- prop$competitions %||% list()
+  if (length(comps) == 0L) {
+    return(health_row("discovery", "lengjan", "OK", 0, thr_lbl))
+  }
+  leagues <- tryCatch(load_leagues(), error = function(e) list())
+  unactioned <- Filter(function(comp) {
+    isTRUE(comp$modelled) &&
+      !(as.character(comp$comp_id) %in%
+        .configured_comp_ids(leagues, comp$sport, comp$country))
+  }, comps)
+  n <- length(unactioned)
+  if (n == 0L) {
+    return(health_row("discovery", "lengjan", "OK", 0, thr_lbl))
+  }
+  labels <- vapply(unactioned, function(comp) {
+    sprintf(
+      "%s/%s %s (id=%s)", comp$sport, comp$inferred_sex %||% "?",
+      comp$inferred_division %||% "?", comp$comp_id
+    )
+  }, character(1))
+  health_row(
+    "discovery", "lengjan", "WARN",
+    paste0(n, ": ", paste(labels, collapse = "; ")), thr_lbl
+  )
+}
+
 #' @noRd
 check_placement_health <- function(root, now, th) {
   healthy <- c("placed", "nothing_pending", "ev_rejected", "daily_cap_reached")
@@ -491,7 +533,8 @@ pipeline_health <- function(root = here::here("data"),
     safe(check_orphaned_bets(root, now, th)),
     safe(check_capture_rate(root, now, th)),
     safe(check_placement_health(root, now, th)),
-    safe(check_bankroll(root, th))
+    safe(check_bankroll(root, th)),
+    safe(check_discovery(root, th))
   )
 }
 
