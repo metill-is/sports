@@ -16,3 +16,24 @@ test_that("parse_competition_dropdown returns empty tibble when no league select
   expect_named(comps, c("comp_id", "lengjan_name"))
   expect_equal(nrow(comps), 0L)
 })
+
+test_that("parse_competition_dropdown finds the league select when placeholder is not first", {
+  # Placeholder option "Veldu deild" is the SECOND option (not first).
+  # The function must still identify this as the league select and return
+  # only the real options (value != "").
+  html_str <- paste0(
+    "<html><body>",
+    "<select>",
+    '<option value="100">Foo</option>',
+    '<option value="">Veldu deild</option>',
+    '<option value="200">Bar</option>',
+    "</select>",
+    "</body></html>"
+  )
+  html <- rvest::read_html(html_str)
+  comps <- parse_competition_dropdown(html)
+  expect_s3_class(comps, "tbl_df")
+  expect_named(comps, c("comp_id", "lengjan_name"))
+  expect_equal(sort(comps$comp_id), c("100", "200"))
+  expect_false(any(comps$lengjan_name == "Veldu deild"))
+})

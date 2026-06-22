@@ -24,7 +24,7 @@ parse_competition_dropdown <- function(html) {
     if (length(opts) == 0L) next
     txt <- rvest::html_text2(opts)
     Encoding(txt) <- "UTF-8"
-    if (!identical(trimws(txt[[1L]]), "Veldu deild")) next
+    if (!any(trimws(txt) == "Veldu deild", na.rm = TRUE)) next
     vals <- rvest::html_attr(opts, "value")
     keep <- !is.na(vals) & nzchar(vals)
     return(tibble::tibble(
