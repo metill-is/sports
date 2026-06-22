@@ -76,3 +76,64 @@ classify_competition <- function(lengjan_name, sport, country) {
     confidence = if (is.na(division)) "low" else "high"
   )
 }
+
+#' Normalise a team name for fuzzy comparison (comparison key only).
+#'
+#' Lowercases, strips a trailing women's marker (" kv"/" kv."), transliterates
+#' diacritics to ASCII, removes dots, collapses whitespace, and folds the common
+#' "Rvk" -> "r" and (post-transliteration) "ol" -> "o" abbreviations so
+#' "Víkingur Rvk kv" and "Víkingur R." collide. The original canonical
+#' string is always what gets emitted -- this key is never shown.
+#' @noRd
+.norm_team <- function(x) {
+  x <- tolower(trimws(x))
+  x <- sub("\\s*kv\\.?$", "", x)
+  x <- stringi::stri_trans_general(x, "Latin-ASCII")
+  x <- gsub("\\.", "", x)
+  x <- gsub("\\brvk\\b", "r", x)
+  x <- gsub("\\bol\\b", "o", x)
+  x <- gsub("\\s+", " ", x)
+  trimws(x)
+}
+
+#' Fuzzy-match Lengjan team renderings to our canonical team names.
+#'
+#' Exact normalised match -> "high"; nearest within Levenshtein distance 2 ->
+#' "medium"; otherwise `canonical_guess = NA`, "low". Low/medium guesses are
+#' fail-safe: a wrong `team_names` entry makes `decide_league` warn-skip the
+#' match, never mis-bet (existing normaliser invariant).
+#'
+#' @param renderings Character vector of Lengjan display names.
+#' @param known_teams Character vector of canonical (federation) team names.
+#' @return Tibble `{lengjan, canonical_guess, confidence}`.
+#' @export
+match_team_names <- function(renderings, known_teams) {
+  empty <- tibble::tibble(
+    lengjan = character(0), canonical_guess = character(0), confidence = character(0)
+  )
+  if (length(renderings) == 0L) {
+    return(empty)
+  }
+  kn <- unique(known_teams)
+  if (length(kn) == 0L) {
+    return(tibble::tibble(
+      lengjan = renderings, canonical_guess = NA_character_, confidence = "low"
+    ))
+  }
+  kn_norm <- vapply(kn, .norm_team, character(1))
+  rows <- lapply(renderings, function(r) {
+    rn <- .norm_team(r)
+    hit <- which(kn_norm == rn)
+    if (length(hit) >= 1L) {
+      return(tibble::tibble(lengjan = r, canonical_guess = kn[[hit[[1L]]]], confidence = "high"))
+    }
+    d <- utils::adist(rn, kn_norm)[1L, ]
+    j <- which.min(d)
+    if (length(j) == 1L && is.finite(d[[j]]) && d[[j]] <= 2L) {
+      tibble::tibble(lengjan = r, canonical_guess = kn[[j]], confidence = "medium")
+    } else {
+      tibble::tibble(lengjan = r, canonical_guess = NA_character_, confidence = "low")
+    }
+  })
+  dplyr::bind_rows(rows)
+}

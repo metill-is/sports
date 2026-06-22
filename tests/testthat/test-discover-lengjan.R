@@ -57,3 +57,24 @@ test_that("classify_competition flags unknown names low-confidence with NA divis
   expect_true(is.na(r$division))
   expect_equal(r$confidence, "low")
 })
+
+
+test_that("match_team_names matches Lengjan renderings to canonical names", {
+  known <- c("FH", "Víkingur R.", "Valur", "Þróttur R.")
+  out <- match_team_names(
+    c("FH kv", "Víkingur Rvk kv", "Þróttur Rvk kv", "Qwerty United"),
+    known
+  )
+  expect_named(out, c("lengjan", "canonical_guess", "confidence"))
+  expect_equal(out$canonical_guess[out$lengjan == "FH kv"], "FH")
+  expect_equal(out$canonical_guess[out$lengjan == "Víkingur Rvk kv"], "Víkingur R.")
+  expect_equal(out$confidence[out$lengjan == "FH kv"], "high")
+  expect_true(is.na(out$canonical_guess[out$lengjan == "Qwerty United"]))
+  expect_equal(out$confidence[out$lengjan == "Qwerty United"], "low")
+})
+
+test_that("match_team_names handles an empty rendering set", {
+  out <- match_team_names(character(0), c("FH"))
+  expect_equal(nrow(out), 0L)
+  expect_named(out, c("lengjan", "canonical_guess", "confidence"))
+})
