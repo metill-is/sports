@@ -111,22 +111,53 @@ test_that("discover_new_competitions flags a new modelled comp and skips configu
       )
     )
   )
-  fake_list <- function(sport, country) tibble::tibble(
-    sport = sport, country = country,
-    comp_id = c("746", "757", "9999"),
-    lengjan_name = c("Besta deild karla", "Lengjudeildin", "4. deild karla")
-  )
-  fake_tn <- function(comp_id, sport, country, sex, division) tibble::tibble(
-    lengjan = "Some Team", canonical_guess = "Some Team", confidence = "high"
-  )
+  fake_list <- function(sport, country) {
+    tibble::tibble(
+      sport = sport, country = country,
+      comp_id = c("746", "757", "9999"),
+      lengjan_name = c("Besta deild karla", "Lengjudeildin", "4. deild karla")
+    )
+  }
+  fake_tn <- function(comp_id, sport, country, sex, division) {
+    tibble::tibble(
+      lengjan = "Some Team", canonical_guess = "Some Team", confidence = "high"
+    )
+  }
 
   res <- discover_new_competitions(leagues, list_fn = fake_list, team_names_fn = fake_tn)
 
-  expect_length(res$competitions, 1L)                       # 757 only
+  expect_length(res$competitions, 1L) # 757 only
   f <- res$competitions[[1L]]
   expect_equal(f$comp_id, "757")
   expect_equal(f$inferred_division, "LD1")
   expect_true(f$modelled)
-  expect_equal(res$unmodelled_offered_count, 1L)            # 4. deild (LD4) not modelled
+  expect_equal(res$unmodelled_offered_count, 1L) # 4. deild (LD4) not modelled
   expect_s3_class(f$proposed_team_names, "tbl_df")
+})
+
+test_that(".known_teams_for reads results and filters by division correctly", {
+  tmp <- withr::local_tempdir()
+
+  results <- tibble::tibble(
+    sport = "football",
+    country = "iceland",
+    sex = "male",
+    season = 2026L,
+    match_date = as.Date("2026-05-01"),
+    home_team = c("Valur", "Fram"),
+    away_team = c("KR", "HK"),
+    home_score = c(2L, 1L),
+    away_score = c(1L, 0L),
+    division = c("BD", "LD1"),
+    round = c(1L, 1L)
+  )
+  write_table(results, "results", root = tmp)
+
+  bd_teams <- sports:::.known_teams_for("football", "iceland", "male", "BD", root = tmp)
+  expect_setequal(bd_teams, c("Valur", "KR")) # Bug 2: division filter must work
+  expect_false("Fram" %in% bd_teams) # LD1 teams must not bleed in
+  expect_false("HK" %in% bd_teams)
+
+  all_teams <- sports:::.known_teams_for("football", "iceland", "male", NA, root = tmp)
+  expect_setequal(all_teams, c("Valur", "KR", "Fram", "HK")) # Bug 1: read_table("results") must work
 })

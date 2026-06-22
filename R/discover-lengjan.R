@@ -205,7 +205,8 @@ propose_team_names <- function(comp_id, sport, country, sex, session, known_team
 #' @noRd
 .known_teams_for <- function(sport, country, sex, division, root) {
   res <- tryCatch(
-    read_table(results, root = root,
+    read_table("results",
+      root = root,
       filter = list(sport = sport, country = country, sex = sex)
     ),
     error = function(e) tibble::tibble()
@@ -213,7 +214,7 @@ propose_team_names <- function(comp_id, sport, country, sex, session, known_team
   if (nrow(res) == 0L) {
     return(character(0))
   }
-  if (!is.na(division) && division %in% names(res)) {
+  if (!is.na(division) && "division" %in% names(res)) {
     res <- res[!is.na(res$division) & res$division == division, , drop = FALSE]
   }
   unique(c(res$home_team, res$away_team))
