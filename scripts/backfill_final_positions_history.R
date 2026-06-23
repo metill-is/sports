@@ -18,6 +18,14 @@ sex_arg <- {
   if (length(i)) args[i + 1L] else "both"
 }
 dry_run <- "--dry-run" %in% args
+# --from-round N: recompute only rounds >= N and MERGE into the existing
+# history (preserve every round we don't recompute), instead of a full replace.
+# Used to correct just the late rounds after a fixture-logic fix without paying
+# the full-season re-fit cost. Default 1 == original full-replace behaviour.
+from_round <- {
+  i <- which(args == "--from-round")
+  if (length(i)) as.integer(args[i + 1L]) else 1L
+}
 sexes <- if (sex_arg == "both") c("male", "female") else sex_arg
 
 root <- here::here("data")
@@ -52,6 +60,7 @@ for (sex in sexes) {
   all_recs <- list()
   for (i in seq_len(nrow(rounds))) {
     R <- rounds$round[i]
+    if (R < from_round) next
     cutoff <- rounds$cutoff_date[i]
     cli::cli_alert_info("  fitting {sex} round {R} (cutoff {format(cutoff)}) ...")
     prep <- prepare_data(league, sex,
@@ -102,17 +111,39 @@ for (sex in sexes) {
     gc()
   }
   history <- dplyr::bind_rows(all_recs)
+  if (nrow(history) == 0L) {
+    cli::cli_alert_info(
+      "{sex}: no completed round >= {from_round} to recompute; leaving history unchanged."
+    )
+    next
+  }
 
   for (div in league_divs) {
-    div_hist <- history[history$division == div, , drop = FALSE] |>
-      dplyr::select(-"division") |>
-      dplyr::arrange(.data$as_of, .data$team, .data$placement)
-    if (nrow(div_hist) == 0L) next
+    new_hist <- history[history$division == div, , drop = FALSE] |>
+      dplyr::select(-"division")
+    if (nrow(new_hist) == 0L) next
     out_dir <- file.path(
       root, "publish", "football", "iceland",
       paste0(SEX_SLUG[[sex]], "-", DIV_SLUG[[div]])
     )
     path <- file.path(out_dir, "final_positions_history.json")
+
+    # Targeted backfill (--from-round N): keep the existing rows for every round
+    # we did NOT recompute (rounds < N, plus any late round whose fit was
+    # skipped), and splice in the freshly-computed rows. A skipped round keeps
+    # its prior value rather than vanishing. Default (from_round == 1) is a full
+    # replace -- `new_hist` already covers every round, so the merge is a no-op.
+    div_hist <- new_hist
+    if (from_round > 1L && file.exists(path)) {
+      existing <- tryCatch(jsonlite::fromJSON(path)$records, error = function(e) NULL)
+      if (!is.null(existing) && nrow(existing) > 0L) {
+        recomputed <- unique(new_hist$round)
+        kept <- existing[!(existing$round %in% recomputed), , drop = FALSE]
+        div_hist <- dplyr::bind_rows(kept, new_hist)
+      }
+    }
+    div_hist <- div_hist |> dplyr::arrange(.data$as_of, .data$team, .data$placement)
+
     n_rounds <- dplyr::n_distinct(div_hist$as_of)
     cli::cli_alert_success(
       "  {sex}/{div}: {nrow(div_hist)} rows over {n_rounds} round(s) -> {path}"
