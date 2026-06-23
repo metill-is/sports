@@ -8,6 +8,13 @@
 # -> status recorded for the health layer. Relies on the placer's existing
 # P1-P4 rules, sample_delay() pacing, and the daily/per-match caps.
 
+# Pin a UTF-8 locale before load_all(): launchd fires this agent under the C
+# locale, where R cannot translate the Icelandic literals in the package source
+# (the "unable to translate ..." warnings on Icelandic month names) and
+# non-defensive Icelandic string matching risks mojibake. Mirrors every
+# scripts/0N_*.R entry point. Kept ASCII-only so parsing this file under the C
+# locale (before this line runs) is itself warning-free.
+invisible(Sys.setlocale("LC_ALL", "en_US.UTF-8"))
 suppressPackageStartupMessages(devtools::load_all(here::here(), quiet = TRUE))
 root <- here::here("data")
 

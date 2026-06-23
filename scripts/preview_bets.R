@@ -6,6 +6,9 @@
 #   Rscript scripts/preview_bets.R --league football_iceland
 #   Rscript scripts/preview_bets.R --today
 
+# Pin a UTF-8 locale before load_all() so Icelandic team/competition names in
+# the package source are never mangled under a C locale. Mirrors scripts/0N_*.R.
+invisible(Sys.setlocale("LC_ALL", "en_US.UTF-8"))
 suppressPackageStartupMessages(devtools::load_all(here::here()))
 
 args <- commandArgs(trailingOnly = TRUE)
