@@ -118,3 +118,44 @@ has_upcoming_games <- function(static, sex,
       schedules$match_date <= today + as.integer(days)
   )
 }
+
+#' Decide whether `scripts/03_fit.R` should skip a (league, sex) pair.
+#'
+#' Centralises the per-target skip decision so the entry script stays a thin
+#' loop and the branching is unit-testable. Returns `NULL` to fit, or a short
+#' human-readable reason to skip.
+#'
+#' Rules, in order:
+#' \enumerate{
+#'   \item Not forced and [needs_refit()] is `FALSE` → skip (`"no new games"`):
+#'     a refit would only reproduce the existing posterior.
+#'   \item [has_upcoming_games()] is `FALSE` (off-season / paused) AND no single
+#'     league was explicitly named → skip (`"no upcoming games"`), **even under
+#'     `--force`**. Forcing a refit of a paused, unbettable league regenerates
+#'     beliefs nobody consumes and risks marginal MCMC gate failures — the
+#'     off-season basketball R-hat/ESS breaches that spuriously fail a manual
+#'     `--force` (all-leagues) fit run.
+#' }
+#'
+#' An explicit `--league` (`league_named = TRUE`) overrides the paused skip, so
+#' `--force --league basketball_iceland` still refits the off-season league
+#' (e.g. to regenerate one league's beliefs after a model change). It does not
+#' bypass the "no new games" guard unless `--force` is also given.
+#'
+#' @param static Per-league static slice with `$sport` and `$country`.
+#' @param sex `"male"` or `"female"`.
+#' @param force Logical; the `--force` flag.
+#' @param league_named Logical; was a single `--league` explicitly requested?
+#' @param root Filesystem root (defaults to `here::here("data")`).
+#' @return `NULL` to fit, otherwise a character scalar reason to skip.
+#' @export
+fit_skip_reason <- function(static, sex, force, league_named,
+                            root = here::here("data")) {
+  if (!force && !needs_refit(static, sex, root = root)) {
+    return("no new games since last fit")
+  }
+  if (!has_upcoming_games(static, sex, root = root) && !league_named) {
+    return("no upcoming games (paused); pass --league to force a refit")
+  }
+  NULL
+}

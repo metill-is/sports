@@ -18,6 +18,7 @@ suppressPackageStartupMessages(devtools::load_all(here::here(), quiet = TRUE))
 source(here::here("scripts", "_lib.R"))
 
 opts <- parse_pipeline_args()
+league_named <- !is.null(opts$league)
 targets <- resolve_targets(opts)
 
 if (nrow(targets) == 0L) {
@@ -37,17 +38,14 @@ for (i in seq_len(nrow(targets))) {
     "sport", "country", "sexes", "active", "stan_model", "data_source"
   )]
 
-  if (!opts$force) {
-    if (!needs_refit(static, row$sex)) {
-      cli::cli_alert_info("Skipping {row$key} ({row$sex}): no new games since last fit.")
-      skipped <- skipped + 1L
-      next
-    }
-    if (!has_upcoming_games(static, row$sex)) {
-      cli::cli_alert_info("Skipping {row$key} ({row$sex}): no upcoming games in the next 14 days.")
-      skipped <- skipped + 1L
-      next
-    }
+  # --force refits in-season leagues even without new games, but a bulk
+  # force still skips paused (off-season) leagues -- an explicit --league
+  # overrides that. See fit_skip_reason() for the full rule set.
+  skip <- fit_skip_reason(static, row$sex, opts$force, league_named)
+  if (!is.null(skip)) {
+    cli::cli_alert_info("Skipping {row$key} ({row$sex}): {skip}.")
+    skipped <- skipped + 1L
+    next
   }
 
   cli::cli_h2("{row$key} ({row$sex})")
