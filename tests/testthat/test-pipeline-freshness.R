@@ -273,3 +273,68 @@ test_that("has_upcoming_games() returns FALSE when schedule dir missing", {
   static <- list(sport = "football", country = "iceland")
   expect_false(has_upcoming_games(static, "male", root = root))
 })
+
+# --- fit_skip_reason(): the scripts/03_fit.R skip decision -------------------
+# The predicates are mocked so these pin the --force / explicit-league
+# semantics, not the predicates themselves (those are covered above).
+
+test_that("fit_skip_reason() skips when not forced and there are no new games", {
+  testthat::local_mocked_bindings(
+    needs_refit = function(...) FALSE,
+    has_upcoming_games = function(...) TRUE
+  )
+  static <- list(sport = "football", country = "iceland")
+  reason <- fit_skip_reason(static, "male", force = FALSE, league_named = FALSE)
+  expect_match(reason, "no new games")
+})
+
+test_that("fit_skip_reason() fits an in-season league that needs a refit", {
+  testthat::local_mocked_bindings(
+    needs_refit = function(...) TRUE,
+    has_upcoming_games = function(...) TRUE
+  )
+  static <- list(sport = "football", country = "iceland")
+  expect_null(fit_skip_reason(static, "male", force = FALSE, league_named = FALSE))
+})
+
+test_that("fit_skip_reason() skips a paused league under a bulk --force", {
+  # CI-email regression: a manual force-all fit must not attempt an off-season
+  # (no-upcoming-games) league and trip the Stan diagnostic gate.
+  testthat::local_mocked_bindings(
+    needs_refit = function(...) TRUE,
+    has_upcoming_games = function(...) FALSE
+  )
+  static <- list(sport = "basketball", country = "iceland")
+  reason <- fit_skip_reason(static, "male", force = TRUE, league_named = FALSE)
+  expect_match(reason, "no upcoming games")
+})
+
+test_that("fit_skip_reason() force-refits an in-season league with no new games", {
+  testthat::local_mocked_bindings(
+    needs_refit = function(...) FALSE,
+    has_upcoming_games = function(...) TRUE
+  )
+  static <- list(sport = "football", country = "iceland")
+  expect_null(fit_skip_reason(static, "male", force = TRUE, league_named = FALSE))
+})
+
+test_that("fit_skip_reason() honours an explicit --league even when paused", {
+  # Explicit single-league intent overrides the paused skip, so
+  # `--force --league basketball_iceland` still refits the off-season league.
+  testthat::local_mocked_bindings(
+    needs_refit = function(...) TRUE,
+    has_upcoming_games = function(...) FALSE
+  )
+  static <- list(sport = "basketball", country = "iceland")
+  expect_null(fit_skip_reason(static, "male", force = TRUE, league_named = TRUE))
+})
+
+test_that("fit_skip_reason() still applies the no-new-games guard to a named, unforced league", {
+  testthat::local_mocked_bindings(
+    needs_refit = function(...) FALSE,
+    has_upcoming_games = function(...) TRUE
+  )
+  static <- list(sport = "basketball", country = "iceland")
+  reason <- fit_skip_reason(static, "male", force = FALSE, league_named = TRUE)
+  expect_match(reason, "no new games")
+})
