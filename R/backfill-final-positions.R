@@ -47,7 +47,11 @@ build_round_final_positions <- function(fit, prep, results, season_schedule,
       ), call. = FALSE)
       return(NULL)
     }
-    br <- .league_base_and_remaining_pfi(top, ctt, season_schedule, div)
+    multiplicity <- .division_rr_multiplicity_pfi(results, season, div)
+    br <- .league_base_and_remaining_pfi(
+      top, ctt, season_schedule, div,
+      multiplicity = multiplicity
+    )
     sim <- simulate_league_season(
       sim_inputs$team, sim_inputs$scalar,
       br$remaining_fixtures, br$base_standings

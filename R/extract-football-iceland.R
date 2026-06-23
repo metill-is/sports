@@ -325,9 +325,18 @@ NULL
   # previous logic, which integrated only the model's 14-day prediction window
   # (~2 rounds) -- a "position after the next ~2 rounds" forecast mislabelled
   # as the final table. See `simulate_league_season()`.
-
+  #
+  # For a double round-robin division the remaining fixtures are derived
+  # STRUCTURALLY (every unplayed ordered pair), not read from `season_schedule`:
+  # KSÍ only dates the first single round-robin early in the season, so the
+  # schedule store misses every return-leg fixture. Trusting it left the leader
+  # pinned at ~100 % because the table was integrated over only a handful of
+  # trailing first-leg games. Multiplicity is inferred from the most recent
+  # completed season; single round-robin divisions keep the schedule path.
+  multiplicity <- .division_rr_multiplicity_pfi(results, current_season, target_div)
   br <- .league_base_and_remaining_pfi(
-    top_results, current_top_teams, season_schedule, target_div
+    top_results, current_top_teams, season_schedule, target_div,
+    multiplicity = multiplicity
   )
   base_standings <- br$base_standings
   remaining_fixtures <- br$remaining_fixtures
@@ -381,11 +390,17 @@ NULL
 }
 
 # Build the realised league table (points/GD/GF from played matches, every
-# current-division team present) plus the unplayed fixtures (this division's
-# scheduled matches not yet played, deduped on the ordered pair). Shared by the
-# daily extract and the per-round backfill so the two never diverge.
+# current-division team present) plus the unplayed fixtures of the season.
+# Shared by the daily extract and the per-round backfill so the two never
+# diverge. `multiplicity` selects how the remaining fixtures are derived:
+#   - 2L  : double round-robin -> structural enumeration of every unplayed
+#           ordered pair (`.complete_double_rr_remaining_pfi`), independent of
+#           `season_schedule` (which KSÍ only half-publishes mid-season).
+#   - else: fall back to `season_schedule` minus played pairs (single
+#           round-robin divisions, or unknown multiplicity).
 .league_base_and_remaining_pfi <- function(played, current_top_teams,
-                                           season_schedule, target_div) {
+                                           season_schedule, target_div,
+                                           multiplicity = NA_integer_) {
   played <- played[
     !is.na(played$home_score) & !is.na(played$away_score), ,
     drop = FALSE
@@ -435,8 +450,21 @@ NULL
     ) |>
     dplyr::select("team", "base_points", "base_gd", "base_gf")
 
-  remaining_fixtures <- if (!is.null(season_schedule) && nrow(season_schedule) > 0L) {
-    played_pair <- paste(played$home_team, played$away_team)
+  played_pair <- paste(played$home_team, played$away_team)
+
+  remaining_fixtures <- if (isTRUE(multiplicity == 2L) &&
+    nrow(current_top_teams) >= 2L) {
+    # Double round-robin: derive the remaining fixtures structurally as every
+    # unplayed ordered (home, away) pair among the league's teams. KSÍ only
+    # dates the first single round-robin early in the season, so `season_schedule`
+    # misses every return-leg fixture; trusting it integrates the final table
+    # over a near-empty fixture set and pins the current leader at ~100 %.
+    # The simulator uses only (home, away) pairs (no dates), so this structural
+    # set is exact and complete. See `.complete_double_rr_remaining_pfi`.
+    .complete_double_rr_remaining_pfi(current_top_teams$team, played_pair)
+  } else if (!is.null(season_schedule) && nrow(season_schedule) > 0L) {
+    # Single round-robin (or unknown multiplicity): the schedule is the
+    # complete remaining set, so fall back to the published fixtures.
     season_schedule |>
       dplyr::filter(
         .data$division == target_div,
@@ -453,6 +481,58 @@ NULL
   }
 
   list(base_standings = base_standings, remaining_fixtures = remaining_fixtures)
+}
+
+# Structurally enumerate the remaining fixtures of a DOUBLE round-robin: every
+# ordered (home, away) pair among `teams` with home != away (each team hosts
+# every other exactly once), minus the ordered pairs already played. Orientation
+# is exact — once a team has hosted an opponent, only the return leg remains.
+# `played_pairs` is a character vector of `paste(home, away)` ordered-pair keys.
+# Returns tibble(home_team, away_team); empty for fewer than two teams.
+.complete_double_rr_remaining_pfi <- function(teams, played_pairs) {
+  teams <- unique(as.character(teams))
+  if (length(teams) < 2L) {
+    return(tibble::tibble(home_team = character(), away_team = character()))
+  }
+  grid <- expand.grid(
+    home_team = teams, away_team = teams,
+    KEEP.OUT.ATTRS = FALSE, stringsAsFactors = FALSE
+  )
+  grid <- grid[grid$home_team != grid$away_team, , drop = FALSE]
+  keep <- !(paste(grid$home_team, grid$away_team) %in% played_pairs)
+  tibble::tibble(
+    home_team = grid$home_team[keep],
+    away_team = grid$away_team[keep]
+  )
+}
+
+# Infer a league division's round-robin multiplicity (1 = single, 2 = double)
+# from the MOST RECENT COMPLETED PRIOR season. The current season cannot be
+# used: mid-way through a double round-robin each pair has met at most once, so
+# it would misread as single. Returns NA_integer_ when the division has no prior
+# season on record — the caller then falls back to the schedule-derived fixtures.
+.division_rr_multiplicity_pfi <- function(results, current_season, division) {
+  if (is.null(results) || nrow(results) == 0L) {
+    return(NA_integer_)
+  }
+  prior <- results[
+    results$division == division &
+      results$season < current_season &
+      !is.na(results$home_score) & !is.na(results$away_score), ,
+    drop = FALSE
+  ]
+  if (nrow(prior) == 0L) {
+    return(NA_integer_)
+  }
+  last <- max(prior$season)
+  d <- prior[prior$season == last, , drop = FALSE]
+  # Max meetings of any unordered pair in that completed season: 2 if any pair
+  # met home-and-away, 1 if every pair met once. Max is robust to a stray
+  # abandoned/void fixture leaving a single pair at one meeting.
+  pair_key <- paste(
+    pmin(d$home_team, d$away_team), pmax(d$home_team, d$away_team)
+  )
+  as.integer(max(table(pair_key)))
 }
 
 # Extract per-draw model parameters needed by the cup bracket simulator.
