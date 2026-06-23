@@ -17,6 +17,11 @@
   <dict>
     <key>PATH</key> <string>/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin</string>
     <key>TZ</key>   <string>Atlantic/Reykjavik</string>
+    <!-- launchd defaults to the C locale; pin UTF-8 so R does not mangle the
+         Icelandic literals in the package source (auto_place.R also sets this
+         in-process via Sys.setlocale, this is belt-and-suspenders). -->
+    <key>LANG</key>   <string>en_US.UTF-8</string>
+    <key>LC_ALL</key> <string>en_US.UTF-8</string>
   </dict>
 </dict>
 </plist>
