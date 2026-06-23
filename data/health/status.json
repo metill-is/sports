@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-22T21:32:16Z",
+  "generated_at": "2026-06-23T14:42:48Z",
   "overall": "WARN",
   "n_fail": 0,
   "n_warn": 2,
@@ -36,14 +36,14 @@
       "check": "fit_freshness",
       "scope": "football_iceland male",
       "status": "OK",
-      "value": "0d old, current with results",
+      "value": "1d old, current with results",
       "threshold": "<= 2d"
     },
     {
       "check": "fit_freshness",
       "scope": "football_iceland female",
       "status": "OK",
-      "value": "0d old, current with results",
+      "value": "1d old, current with results",
       "threshold": "<= 2d"
     },
     {
@@ -92,7 +92,7 @@
       "check": "capture_rate",
       "scope": "recommendations",
       "status": "WARN",
-      "value": "64% (14/22 placed)",
+      "value": "67% (14/21 placed)",
       "threshold": ">= 70% placed"
     },
     {
@@ -113,7 +113,7 @@
       "check": "discovery",
       "scope": "lengjan",
       "status": "OK",
-      "value": "no proposals file",
+      "value": "0",
       "threshold": "0 un-actioned modelled competitions"
     }
   ]
