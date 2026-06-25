@@ -82,6 +82,7 @@ Collate:
     'extract-iceland-2dt-shared.R'
     'extract-basketball-iceland.R'
     'extract-handball-iceland.R'
+    'gisko-backtest.R'
     'gisko.R'
     'pipeline-freshness.R'
     'health.R'
