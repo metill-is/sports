@@ -36,6 +36,37 @@ test_that("gisko_optimal_group_order solves the placement assignment", {
   expect_equal(gisko_optimal_group_order(pd), c("W", "X", "Y", "Z"))
 })
 
+test_that("gisko_render_report writes a self-contained HTML file", {
+  data <- list(
+    picks = tibble::tibble(
+      round = c("G1", "G1"), label = c("A v B", "C v D"),
+      pick = c("1-0", "0-0"), actual = c("1-0", "1-1"),
+      exp_points = c(2.5, 1.8), points = c(5L, 1L)
+    ),
+    by_round = tibble::tibble(
+      round = "G1", n = 2L, base = 6L, joker_match = "A v B",
+      joker_bonus = 5L, complete = FALSE
+    ),
+    structural = tibble::tibble(
+      pool = "A", placement = 4L, qualification = 4L,
+      model_order = "A > B > C > D", actual_order = "A > B > C > D"
+    ),
+    base_total = 6L, match_total = 6L, pool_pts = 4L, qual_pts = 4L,
+    model_total = 14L, n_played = 2L, ceiling = 10L,
+    pending_joker = NULL, complete_pools = "A"
+  )
+  tmp <- withr::local_tempfile(fileext = ".html")
+  gisko_render_report(data, tmp,
+    leader = list(match = 10L, pool = 4L, qual = 4L),
+    field_size = 2624L, generated_at = "2026-06-25"
+  )
+  html <- paste(readLines(tmp, warn = FALSE), collapse = "\n")
+  expect_match(html, "<!doctype html>", fixed = TRUE)
+  expect_match(html, "2,624", fixed = TRUE)
+  expect_match(html, "chip p5", fixed = TRUE)
+  expect_false(grepl("https?://|cdn|googleapis", html))
+})
+
 test_that("gisko_backtest_score totals base + per-round joker correctly", {
   pm_marg <- function(h, a, n = 6L) {
     pbar <- matrix(0, n, n)
