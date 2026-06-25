@@ -16,6 +16,26 @@ test_that("gisko_marginals_from_log adapts the accountability-log shape", {
   expect_equal(unname(marg$gd_pmf["1"]), 0.5)
 })
 
+test_that("gisko_optimal_group_order solves the placement assignment", {
+  # Two teams both most-likely 1st, but the assignment can't place both 1st;
+  # it must give one the 2nd slot to maximise expected correct placements.
+  p <- rbind(
+    A = c(0.6, 0.3, 0.1, 0.0),
+    B = c(0.5, 0.4, 0.1, 0.0),
+    C = c(0.0, 0.2, 0.5, 0.3),
+    D = c(0.0, 0.1, 0.3, 0.6)
+  )
+  colnames(p) <- 1:4
+  ord <- gisko_optimal_group_order(p)
+  expect_equal(ord, c("A", "B", "C", "D"))
+  expect_length(ord, 4L)
+
+  # degenerate: each team certain of a distinct slot -> that exact order
+  pd <- diag(4)
+  rownames(pd) <- c("W", "X", "Y", "Z")
+  expect_equal(gisko_optimal_group_order(pd), c("W", "X", "Y", "Z"))
+})
+
 test_that("gisko_backtest_score totals base + per-round joker correctly", {
   pm_marg <- function(h, a, n = 6L) {
     pbar <- matrix(0, n, n)
