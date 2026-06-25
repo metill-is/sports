@@ -150,6 +150,14 @@ football_iceland:
       # team_names.female LD-women entries are pattern-guesses (verify as odds
       # appear, next round 27 Jun).
       - { id: "4670",  name: "Lengjudeild kv.",          sex: female }
+      # Men's 3. deild (LD3) -- comp 3267, added 2026-06-25 via /wire-league.
+      # Division already modelled + published (karla-3deild); this wires the
+      # odds scrape + placement. Tindastóll / Sindri renderings CONFIRMED
+      # high-confidence (identity, verified against
+      # data/facts/results/sport=football/country=iceland). A cross-divisional
+      # cup is not involved here, but further LD3 sides will surface unmapped as
+      # their odds first appear -- fill team_names.male opportunistically.
+      - { id: "3267",  name: "3. deild",                 sex: male   }
     team_names:
       male:
         # Existing LD1 + men-only sex-disjoint entries:
@@ -199,6 +207,14 @@ football_iceland:
         Keflavík: Keflavík
         ÍA: ÍA
         KA: KA
+        # 3. deild karla teams -- comp 3267, added 2026-06-25 via /wire-league.
+        # Tindastóll / Sindri CONFIRMED high-confidence identity mappings
+        # (verified against data/facts/results/sport=football/country=iceland).
+        # Remaining LD3 sides will surface unmapped as their odds first appear;
+        # add them opportunistically (a wrong guess fails safe -- decide
+        # warn-and-skips, no mis-placed bet).
+        Tindastóll: Tindastóll          # confirmed 2026-06-25
+        Sindri: Sindri                  # confirmed 2026-06-25
       female:
         # First women's BD season on Lengjan (Plan 1-era empty map upgraded
         # 2026-05-11 after odds for the first 5 teams appeared in
