@@ -158,6 +158,37 @@ gisko_optimal_scoreline <- function(pbar, max_goals = nrow(pbar) - 1L) {
   )
 }
 
+#' Bayes-optimal GISKO scoreline from marginals only (Lemma 1)
+#'
+#' For the `predictions.json` path, where only the four marginals are available
+#' (no joint -- so no `p_exact` and no per-draw round distribution). The optimal
+#' scoreline and expected points are exact (Lemma 1); the "modal" baseline is
+#' the product-of-marginals mode.
+#'
+#' @param marg Marginals list as from [gisko_marginals_from_predictions()].
+#' @param max_goals Candidate-grid upper bound.
+#' @return list `home`, `away`, `exp_points`, `modal_home`, `modal_away`,
+#'   `optimal_differs_from_modal`, `top`.
+#' @export
+gisko_optimal_scoreline_marginal <- function(marg, max_goals = 8L) {
+  g <- 0:max_goals
+  cand <- expand.grid(home = g, away = g)
+  cand$exp_points <- mapply(
+    function(h, a) gisko_expected_points_marginal(h, a, marg), cand$home, cand$away
+  )
+  cand <- cand[order(-cand$exp_points), , drop = FALSE]
+  best <- cand[1, ]
+  modal_home <- as.integer(names(marg$home_pmf)[which.max(marg$home_pmf)])
+  modal_away <- as.integer(names(marg$away_pmf)[which.max(marg$away_pmf)])
+  list(
+    home = best$home, away = best$away, exp_points = best$exp_points,
+    modal_home = modal_home, modal_away = modal_away,
+    optimal_differs_from_modal =
+      !(best$home == modal_home && best$away == modal_away),
+    top = tibble::as_tibble(utils::head(cand, 6L))
+  )
+}
+
 #' Integrated posterior-predictive scoreline matrix for a pairing
 #'
 #' Reuses the WC model's rate function `.wc_match_lambdas()` (single source of

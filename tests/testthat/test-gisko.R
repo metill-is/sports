@@ -102,6 +102,17 @@ test_that("a degenerate posterior is optimised by its point mass", {
   expect_false(opt$optimal_differs_from_modal)
 })
 
+test_that("marginal and joint optimal scorelines agree (Lemma 1)", {
+  set.seed(3)
+  pbar <- matrix(stats::runif(81), 9, 9)
+  pbar <- pbar / sum(pbar)
+  marg <- gisko_marginals_from_pbar(pbar)
+  oj <- gisko_optimal_scoreline(pbar)
+  om <- gisko_optimal_scoreline_marginal(marg, max_goals = 8L)
+  expect_equal(om$exp_points, oj$exp_points, tolerance = 1e-9)
+  expect_equal(c(om$home, om$away), c(oj$home, oj$away))
+})
+
 test_that("gisko_predictive_matrix integrates per-draw PMFs over the posterior", {
   team <- tibble::tibble(
     team = rep(c("A", "B"), times = 3),
