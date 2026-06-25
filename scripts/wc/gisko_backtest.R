@@ -7,7 +7,7 @@ suppressMessages(devtools::load_all(here::here()))
 options(width = 120)
 
 GROUP_ROUND_TOTAL <- 24L # group matches per matchday in the 48-team format
-LEADER <- 164L
+LEADER_MATCH <- 145L # leader's match-prediction points (their 164 = 145 + 19 structural)
 
 pl <- jsonlite::read_json(
   here::here("data", "wc", "accountability", "prediction_log.json")
@@ -84,8 +84,9 @@ j3_played <- j3 %in% played_idx
 cli::cli_h2("Totals")
 cli::cli_text("Base match points (all {nrow(played)}): {bt$base_total}")
 cli::cli_text("Realised joker bonus (matchdays 1-2): {realised_joker}")
-cli::cli_alert_success("Realised so far: {realised_total} points")
-cli::cli_text("Current leader: {LEADER}  ->  difference: {realised_total - LEADER}")
+cli::cli_alert_success("Realised match points so far: {realised_total}")
+cli::cli_text("Leader's match-prediction points: {LEADER_MATCH}  ->  difference: {realised_total - LEADER_MATCH}")
+cli::cli_text("(Structure is scored separately -- see scripts/wc/gisko_structural_backtest.R; the model matches the leader's 19 there.)")
 if (!j3_played) {
   cli::cli_text(
     "Matchday-3 joker is optimally pending on {entries[[j3]]$home} v {entries[[j3]]$away} (not yet played) -- not counted above."

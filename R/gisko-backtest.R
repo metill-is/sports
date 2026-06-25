@@ -31,6 +31,38 @@ gisko_marginals_from_log <- function(m) {
   )
 }
 
+# All permutations of 1..n as rows (n! x n). Used for the size-4 group
+# assignment; not meant for large n.
+.gisko_perms <- function(n) {
+  if (n == 1L) {
+    return(matrix(1L, 1L, 1L))
+  }
+  sub <- .gisko_perms(n - 1L)
+  do.call(rbind, lapply(seq_len(n), function(i) {
+    cbind(i, matrix(ifelse(sub >= i, sub + 1L, sub), nrow(sub)))
+  }))
+}
+
+#' Optimal group ranking: maximise expected correctly-placed teams
+#'
+#' GISKO awards 1 point per team placed in its correct final group position.
+#' The optimal entry assigns teams to positions to maximise the expected number
+#' of correct placements -- a linear assignment on the placement-probability
+#' matrix (brute-forced; groups are size 4). The top two of the returned order
+#' double as the qualification (reach-R32) prediction.
+#'
+#' @param p_matrix Numeric matrix, rows = teams (rownamed), cols = positions
+#'   `1..n`, with `p_matrix[i, j]` = P(team i finishes j-th).
+#' @return Character vector of team names ordered 1st..last.
+#' @export
+gisko_optimal_group_order <- function(p_matrix) {
+  teams <- rownames(p_matrix)
+  n <- nrow(p_matrix)
+  perms <- .gisko_perms(n)
+  scores <- apply(perms, 1L, function(pi) sum(p_matrix[cbind(pi, seq_len(n))]))
+  teams[perms[which.max(scores), ]]
+}
+
 #' Score played matches under GISKO with a per-round joker
 #'
 #' For each played match: take the leak-free pre-match marginals, pick the
