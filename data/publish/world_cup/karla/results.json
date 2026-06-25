@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-06-25T08:24:27Z",
+  "generated_at": "2026-06-25T12:37:20Z",
   "summary": {
     "n_played": 54,
-    "n_hit": 33,
-    "hit_rate": 0.6111,
-    "mean_p_outcome": 0.4669
+    "n_hit": 32,
+    "hit_rate": 0.5926,
+    "mean_p_outcome": 0.4659
   },
   "matches": [
     {
@@ -414,9 +414,9 @@
       "home_is": "Kanada",
       "away": "Switzerland",
       "away_is": "Sviss",
-      "home_score": 2,
-      "away_score": 1,
-      "outcome": "H",
+      "home_score": 1,
+      "away_score": 2,
+      "outcome": "A",
       "pred": {
         "p_home": 0.3857,
         "p_draw": 0.2817,
@@ -611,15 +611,15 @@
         ]
       },
       "actual": {
-        "home": 2,
-        "away": 1,
+        "home": 1,
+        "away": 2,
         "total": 3,
-        "diff": 1
+        "diff": -1
       },
       "pred_fit_date": "2026-06-24",
-      "p_outcome": 0.3857,
-      "hit": true,
-      "surprise": 0.6143
+      "p_outcome": 0.3327,
+      "hit": false,
+      "surprise": 0.6673
     },
     {
       "match_date": "2026-06-24",
