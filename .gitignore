@@ -79,3 +79,6 @@ data/backtest/
 data/.auto_place.lock
 data/AUTO_PLACE_DISABLED
 data/health/placement_status.json
+
+# GISKO optimal-picks scratch output (regenerable)
+data/wc/gisko/
