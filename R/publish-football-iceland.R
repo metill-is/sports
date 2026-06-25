@@ -1528,6 +1528,21 @@ publish_football_iceland <- function(extracted,
           auto_unbox = TRUE, dataframe = "rows", digits = 5
         )
       }
+
+      # ---- bracket.json (cup cells with a live frontier) --------------------
+      # Pre-built in the extract layer (it needs the transient bracket_state)
+      # and round-tripped through cup_bracket.parquet. Mirrors the World Cup
+      # bracket.json contract so the platform's interactive what-if tree
+      # (cup-bracket.js) drives off the same shape. Additive: skipped when
+      # there's no live frontier (fully resolved / entry round undrawn).
+      cup_bracket <- extracted$cup_bracket
+      if (!is.null(cup_bracket) && length(cup_bracket) > 0L) {
+        jsonlite::write_json(
+          cup_bracket,
+          file.path(out_dir, "bracket.json"),
+          auto_unbox = TRUE, matrix = "rowmajor"
+        )
+      }
     }
 
     n_files <- length(list.files(out_dir, pattern = "\\.json$"))

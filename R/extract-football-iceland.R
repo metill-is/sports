@@ -820,6 +820,175 @@ NULL
   )
 }
 
+# Round sequence + sizes for a 16-team knockout. Shared with the simulator's
+# ROUND_SEQ / ROUND_SIZE so the two layers can't drift.
+.CUP_ROUND_SEQ_PFI <- c("R16", "R8", "SF", "Final")
+.CUP_ROUND_SIZE_PFI <- c(R16 = 8L, R8 = 4L, SF = 2L, Final = 1L)
+
+# Identify the current frontier: the earliest round whose matches are not all
+# decided. A round is "decided" when its pairings are known AND every match
+# has a non-NA known_winner. R16/R8 done, SF drawn-but-undecided -> frontier
+# = SF. Returns the round name, or NULL if the bracket is fully resolved /
+# the entry round itself is undrawn (no live frontier to model).
+.cup_frontier_round_pfi <- function(bracket_state) {
+  for (rn in .CUP_ROUND_SEQ_PFI) {
+    round <- bracket_state$rounds[[rn]]
+    size <- .CUP_ROUND_SIZE_PFI[[rn]]
+    if (!isTRUE(round$pairings_known) || is.null(round$matches)) {
+      # The earliest round with undrawn pairings is the frontier only if it
+      # has real participants to seed from — i.e. some EARLIER round decided.
+      # If the very first round (R16) is undrawn there's no frontier.
+      return(if (identical(rn, .CUP_ROUND_SEQ_PFI[[1]])) NULL else rn)
+    }
+    undecided <- is.na(round$matches$known_winner)
+    if (any(undecided)) {
+      return(rn)
+    }
+  }
+  NULL
+}
+
+# Neutral-venue head-to-head win matrix W[a, b] = P(a beats b), averaged over
+# posterior draws and restricted to `alive_teams` (in that exact order so the
+# rows/cols of W align with the `teams` vector the payload publishes).
+#
+# Lifts the WC serialiser's per-draw Skellam construction (wc-simulate.R:403-411):
+# neutral lambdas l1 = exp(mlg + outer(off, def, "-")); pw = P(home scores more)
+# via the package-internal `.wc_skellam_pwin()`; conditional-on-decisive
+# cw = pw / (pw + t(pw)) is the cup tie-resolution probability (matches the
+# simulator's rejection-sampling). diag(W) := 0 (a team can't beat itself),
+# mirroring the WC diag.
+.cup_win_matrix_pfi <- function(alive_teams, sim_inputs) {
+  nt <- length(alive_teams)
+  team_df <- sim_inputs$team[sim_inputs$team$team %in% alive_teams, , drop = FALSE]
+  scalar_df <- sim_inputs$scalar
+  draws <- sort(unique(team_df$.draw))
+  stopifnot(length(draws) > 0L)
+
+  w_sum <- matrix(0, nt, nt)
+  for (d in draws) {
+    td <- team_df[team_df$.draw == d, , drop = FALSE]
+    sd <- scalar_df[scalar_df$.draw == d, , drop = FALSE]
+    if (nrow(sd) == 0L) next
+    off <- stats::setNames(td$cur_offense, td$team)[alive_teams]
+    def <- stats::setNames(td$cur_defense, td$team)[alive_teams]
+    mlg <- sd$mean_log_goals[1L]
+
+    l1 <- exp(mlg + outer(off, def, "-")) # neutral venue, no home advantage
+    pw <- .wc_skellam_pwin(l1, t(l1))
+    denom <- pw + t(pw)
+    cw <- pw / denom
+    cw[!is.finite(cw)] <- 0.5
+    w_sum <- w_sum + cw
+  }
+  W <- w_sum / length(draws)
+  diag(W) <- 0
+  dimnames(W) <- list(alive_teams, alive_teams)
+  W
+}
+
+# Build the cup `bracket.json` payload for the live frontier forward, mirroring
+# the World Cup contract (wc-publish.R:267-287) so the metill-platform
+# interactive what-if tree (`cup-bracket.js`) drives off the same shape.
+#
+# At an SF frontier the payload describes 2 SF leaf matches + 1 Final root:
+#   * `teams` / `teams_is`: the alive teams (SF participants), canonical names.
+#     Icelandic clubs need no display-name remap, so teams_is == teams.
+#   * `matchup`: nt x nt neutral W matrix (rowmajor on serialise), diag 0.
+#   * `matches`: one node per remaining match. Leaves (SF) carry non-W slot
+#     feeder ids ("S<k>A"/"S<k>B"); the Final root carries "W<no>" feeders
+#     referencing the leaf match_nos. The platform finds the root via
+#     round == "Final".
+#   * `r32`: one entry per LEAF match (literal key name = "entry-round
+#     occupancy"), with DEGENERATE occupancy from the known pairings
+#     (a = [{i: idx(home), p: 1}], b = [{i: idx(away), p: 1}], 0-based indices
+#     into `teams`). The platform detects leaves by occByMatch[match_no] != null,
+#     so every leaf match_no MUST appear here.
+#
+# Returns NULL when there's no live frontier (fully resolved or entry round
+# undrawn) — the publisher then skips bracket.json.
+.build_cup_bracket_payload_pfi <- function(bracket_state, sim_inputs,
+                                           generated_at, n_draws) {
+  if (is.null(bracket_state) || is.null(sim_inputs)) {
+    return(NULL)
+  }
+  frontier <- .cup_frontier_round_pfi(bracket_state)
+  if (is.null(frontier)) {
+    return(NULL)
+  }
+  frontier_round <- bracket_state$rounds[[frontier]]
+  leaf_matches <- frontier_round$matches
+  n_leaf <- nrow(leaf_matches)
+  if (is.null(leaf_matches) || n_leaf == 0L) {
+    return(NULL)
+  }
+
+  # Alive teams = the participants of the frontier round's matches, in
+  # (home1, away1, home2, away2, ...) order so the leaf-pairing indices read
+  # cleanly off the `teams` vector.
+  alive_teams <- as.character(rbind(
+    leaf_matches$home_team, leaf_matches$away_team
+  ))
+  alive_teams <- unique(alive_teams)
+  stopifnot(all(alive_teams %in% sim_inputs$team$team))
+  idx0 <- stats::setNames(seq_along(alive_teams) - 1L, alive_teams) # 0-based
+
+  W <- .cup_win_matrix_pfi(alive_teams, sim_inputs)
+
+  # Forward chain from the frontier. The renderer is round-agnostic: it needs
+  # the leaf round + every subsequent round up to the Final, each round halving
+  # the match count. Leaf match_nos are 1..n_leaf; later rounds continue the
+  # numbering. Each non-leaf match feeds from two earlier match winners.
+  frontier_pos <- match(frontier, .CUP_ROUND_SEQ_PFI)
+  fwd_rounds <- .CUP_ROUND_SEQ_PFI[frontier_pos:length(.CUP_ROUND_SEQ_PFI)]
+
+  matches <- list()
+  match_no <- 0L
+  prev_match_nos <- integer(0)
+  for (rn in fwd_rounds) {
+    size <- .CUP_ROUND_SIZE_PFI[[rn]]
+    this_match_nos <- integer(size)
+    for (m in seq_len(size)) {
+      match_no <- match_no + 1L
+      this_match_nos[m] <- match_no
+      if (identical(rn, frontier)) {
+        # Leaf: feeders are entry-round SLOT ids (non-W-prefixed).
+        feeder_a <- sprintf("S%dA", m)
+        feeder_b <- sprintf("S%dB", m)
+      } else {
+        # Internal node: feeders are the two earlier matches' winners.
+        feeder_a <- sprintf("W%d", prev_match_nos[2L * m - 1L])
+        feeder_b <- sprintf("W%d", prev_match_nos[2L * m])
+      }
+      matches[[length(matches) + 1L]] <- list(
+        match_no = match_no, round = rn,
+        feeder_a = feeder_a, feeder_b = feeder_b
+      )
+    }
+    prev_match_nos <- this_match_nos
+  }
+
+  # r32: degenerate occupancy from the known leaf pairings, one per leaf match.
+  leaf_match_nos <- seq_len(n_leaf)
+  r32 <- lapply(leaf_match_nos, function(m) {
+    list(
+      match_no = m,
+      a = list(list(i = unname(idx0[[leaf_matches$home_team[m]]]), p = 1)),
+      b = list(list(i = unname(idx0[[leaf_matches$away_team[m]]]), p = 1))
+    )
+  })
+
+  list(
+    generated_at = generated_at,
+    n_draws      = as.integer(n_draws),
+    teams        = alive_teams,
+    teams_is     = alive_teams, # Icelandic clubs: display == canonical
+    matchup      = round(W, 4),
+    matches      = matches,
+    r32          = r32
+  )
+}
+
 # ---- Public API --------------------------------------------------------------
 
 #' Extract publish-layer summaries from a football iceland fit
@@ -1102,12 +1271,41 @@ extract_football_iceland <- function(fit, league, sex,
     file.path(extracts_dir, "sim_inputs_scalar.parquet")
   )
 
+  # Cup `bracket.json` payload for the metill-platform interactive what-if
+  # tree. Built HERE (not the publisher) because the payload needs
+  # `bracket_state`, which is transient and never persisted — the publisher
+  # only sees parquet outputs. Serialise the nested payload to a one-cell JSON
+  # string column so it survives the parquet round-trip in
+  # read_extracted_football(); the publisher writes it verbatim to bracket.json.
+  cup_bracket <- if (!is.null(bracket_state)) {
+    .build_cup_bracket_payload_pfi(
+      bracket_state = bracket_state,
+      sim_inputs    = sim_inputs,
+      generated_at  = format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"),
+      n_draws       = dplyr::n_distinct(sim_inputs$scalar$.draw)
+    )
+  } else {
+    NULL
+  }
+  if (!is.null(cup_bracket)) {
+    arrow::write_parquet(
+      tibble::tibble(
+        payload_json = jsonlite::toJSON(
+          cup_bracket,
+          auto_unbox = TRUE, matrix = "rowmajor"
+        ) |> as.character()
+      ),
+      file.path(extracts_dir, "cup_bracket.parquet")
+    )
+  }
+
   message(sprintf(
-    "extract_football_iceland: wrote %d division parquets + 2 sim_inputs parquets to %s [div: %s; bracket_state: %s]",
+    "extract_football_iceland: wrote %d division parquets + 2 sim_inputs parquets to %s [div: %s; bracket_state: %s; cup_bracket: %s]",
     length(file_types),
     extracts_dir,
     paste(target_divs, collapse = ", "),
-    if (is.null(bracket_state)) "absent (< 8 upcoming cup matches)" else "built"
+    if (is.null(bracket_state)) "absent (< 8 upcoming cup matches)" else "built",
+    if (is.null(cup_bracket)) "absent (no live frontier)" else "built"
   ))
   invisible(NULL)
 }
@@ -1303,6 +1501,22 @@ read_extracted_football <- function(league, sex, fit_date = NULL,
       team   = tibble::as_tibble(arrow::read_parquet(sim_inputs_team_path)),
       scalar = tibble::as_tibble(arrow::read_parquet(sim_inputs_scalar_path))
     )
+  } else {
+    NULL
+  }
+
+  # Optional pre-built cup `bracket.json` payload (a single JSON-string cell;
+  # written by extract_football_iceland() only when a live cup frontier
+  # exists). Parsed back to the nested list the publisher serialises verbatim.
+  # Absent for non-cup fits and for cup fits with no live frontier.
+  cup_bracket_path <- file.path(fit_dir, "cup_bracket.parquet")
+  out$cup_bracket <- if (file.exists(cup_bracket_path)) {
+    pj <- arrow::read_parquet(cup_bracket_path)$payload_json
+    if (length(pj) >= 1L && !is.na(pj[[1]])) {
+      jsonlite::fromJSON(pj[[1]], simplifyVector = FALSE)
+    } else {
+      NULL
+    }
   } else {
     NULL
   }
