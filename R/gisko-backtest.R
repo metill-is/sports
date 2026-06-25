@@ -109,3 +109,118 @@ gisko_backtest_score <- function(played, max_goals = 8L) {
     grand_total = sum(picks$points) + sum(by_round$joker_bonus)
   )
 }
+
+#' Assemble the full backtest dataset (matches + structural) from disk
+#'
+#' Shared loader for the text scorecard and the HTML report. Reads the frozen,
+#' leak-free accountability log + results and the pre-deadline group forecast,
+#' and returns everything both views need.
+#'
+#' @param pre_deadline_rev Git rev of the last `groups.json` before the 11 Jun
+#'   structural deadline.
+#' @return list: `picks` (per-match), `by_round`, `structural` (or NULL),
+#'   `base_total`, `match_total` (base + realised joker), `pool_pts`, `qual_pts`,
+#'   `model_total`, `n_played`, `ceiling`, `pending_joker`, `complete_pools`.
+#' @export
+gisko_scorecard_data <- function(pre_deadline_rev = "d4425564") {
+  group_round_total <- 24L
+  res <- read_table("results", filter = list(
+    sport = "football", country = "world", sex = "male"
+  ))
+  res <- res[res$division == "FIFA World Cup" & res$season == 2026L, , drop = FALSE]
+  res_key <- paste(res$home_team, res$away_team, as.character(res$match_date))
+  s <- wc_structure()
+  res$grp <- s$group_of[res$home_team]
+
+  raw <- utils::read.csv(
+    here::here("data", "wc", "structure", "wc2026_schedule.csv"),
+    check.names = FALSE, colClasses = "character", encoding = "UTF-8"
+  )
+  rmap <- stats::setNames(
+    raw[["Round Number"]],
+    .wc_pair_key(.wc_alias(trimws(raw[["Home Team"]])), .wc_alias(trimws(raw[["Away Team"]])))
+  )
+
+  pl <- jsonlite::read_json(
+    here::here("data", "wc", "accountability", "prediction_log.json")
+  )
+  entries <- lapply(pl$matches, function(m) {
+    list(
+      home = m$home, away = m$away, date = m$match_date,
+      round = unname(rmap[.wc_pair_key(m$home, m$away)]),
+      marg = gisko_marginals_from_log(m)
+    )
+  })
+  all_exp <- vapply(
+    entries, function(e) gisko_optimal_scoreline_marginal(e$marg)$exp_points, numeric(1)
+  )
+  keys <- vapply(entries, function(e) paste(e$home, e$away, e$date), character(1))
+  played_idx <- which(keys %in% res_key)
+  played <- do.call(rbind, lapply(played_idx, function(i) {
+    e <- entries[[i]]
+    r <- res[match(keys[i], res_key), ]
+    tibble::tibble(
+      round = ifelse(is.na(e$round), "G?", paste0("G", e$round)),
+      label = paste(e$home, "v", e$away), marg = list(e$marg),
+      act_home = as.integer(r$home_score), act_away = as.integer(r$away_score)
+    )
+  }))
+  bt <- gisko_backtest_score(played)
+  by_round <- bt$by_round
+  by_round$complete <- by_round$n == group_round_total
+  match_total <- bt$base_total + sum(by_round$joker_bonus[by_round$complete])
+  g3 <- which(vapply(entries, function(e) identical(e$round, "3"), logical(1)))
+  pend_i <- if (length(g3) > 0L) g3[which.max(all_exp[g3])] else integer(0)
+  pending_joker <- if (length(pend_i) == 1L && !(pend_i %in% played_idx)) {
+    entries[[pend_i]]
+  } else {
+    NULL
+  }
+
+  complete_pools <- names(which(table(res$grp) == 6L))
+  gj <- jsonlite::parse_json(paste(system2(
+    "git",
+    c(
+      "-C", here::here(), "show",
+      paste0(pre_deadline_rev, ":data/publish/world_cup/karla/groups.json")
+    ),
+    stdout = TRUE
+  ), collapse = "\n"))
+  forecast <- list()
+  for (grp in gj$groups) {
+    mm <- t(vapply(
+      grp$teams,
+      function(tm) c(tm$p_first, tm$p_second, tm$p_third, tm$p_fourth), numeric(4)
+    ))
+    rownames(mm) <- vapply(grp$teams, function(tm) tm$team, character(1))
+    forecast[[grp$group]] <- mm
+  }
+  structural <- if (length(complete_pools) == 0L) {
+    NULL
+  } else {
+    do.call(rbind, lapply(complete_pools, function(g) {
+      gm <- res[res$grp == g, ]
+      actual <- .wc_group_table(s$groups[[g]], data.frame(
+        home_team = gm$home_team, away_team = gm$away_team,
+        home_score = gm$home_score, away_score = gm$away_score
+      ))$team
+      model <- gisko_optimal_group_order(forecast[[g]][s$groups[[g]], , drop = FALSE])
+      tibble::tibble(
+        pool = g, placement = sum(model == actual),
+        qualification = 2L * length(intersect(model[1:2], actual[1:2])),
+        model_order = paste(model, collapse = " > "),
+        actual_order = paste(actual, collapse = " > ")
+      )
+    }))
+  }
+  pool_pts <- if (is.null(structural)) 0L else sum(structural$placement)
+  qual_pts <- if (is.null(structural)) 0L else sum(structural$qualification)
+  list(
+    picks = bt$picks, by_round = by_round, structural = structural,
+    base_total = bt$base_total, match_total = match_total,
+    pool_pts = pool_pts, qual_pts = qual_pts,
+    model_total = match_total + pool_pts + qual_pts,
+    n_played = nrow(played), ceiling = nrow(played) * 5L,
+    pending_joker = pending_joker, complete_pools = complete_pools
+  )
+}
