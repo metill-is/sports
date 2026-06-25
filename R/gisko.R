@@ -272,6 +272,20 @@ gisko_marginals_from_predictions <- function(match) {
 #' @export
 gisko_optimise_round <- function(matches, sim_inputs, max_goals = 8L) {
   nm <- nrow(matches)
+  if (nm == 0L) {
+    empty <- tibble::tibble(
+      label = character(), home = character(), away = character(),
+      opt_home = integer(), opt_away = integer(), exp_points = numeric(),
+      p_exact = numeric(), differs_from_modal = logical()
+    )
+    return(list(
+      picks = empty, joker = integer(0),
+      total_pmf = 1, total_pmf_joker = 1,
+      summary = rbind(
+        .gisko_dist_summary(1, "base"), .gisko_dist_summary(1, "joker")
+      )
+    ))
+  }
   picks <- vector("list", nm)
   per_draw <- vector("list", nm)
   nd <- NULL

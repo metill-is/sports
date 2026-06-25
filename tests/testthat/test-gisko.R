@@ -170,6 +170,24 @@ test_that("round total mean equals the sum of per-match expected points", {
   )
 })
 
+test_that("gisko_optimise_round handles a zero-row round without crashing", {
+  si <- list(
+    team = tibble::tibble(
+      team = "A", .draw = 1L, cur_offense = 0, cur_defense = 0,
+      home_advantage_off = 0, home_advantage_def = 0
+    ),
+    scalar = tibble::tibble(
+      .draw = 1L, mean_log_goals = 0.1, alpha_mu3 = -1, beta_mu3_strength_diff = 0.2
+    )
+  )
+  matches <- tibble::tibble(
+    home = character(), away = character(), venue = character(), label = character()
+  )
+  res <- expect_no_error(gisko_optimise_round(matches, si))
+  expect_equal(nrow(res$picks), 0L)
+  expect_length(res$joker, 0L)
+})
+
 test_that("the joker is the highest-expected-points match", {
   team <- tibble::tibble(
     team = rep(c("A", "B", "C", "D"), times = 2),
