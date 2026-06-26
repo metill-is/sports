@@ -804,12 +804,12 @@ test_that(".build_bracket_state_pfi: reschedule ghost of a bracket pairing is de
   # E3-E4 tie was first scheduled Jun 10, then moved to Jun 13; both rows
   # survive in the schedules store.
   qf <- tibble::tibble(
-    home_team  = c("E1", "E3", "T1", "T3", "E3"),
-    away_team  = c("E2", "E4", "T2", "T4", "E4"),
+    home_team = c("E1", "E3", "T1", "T3", "E3"),
+    away_team = c("E2", "E4", "T2", "T4", "E4"),
     match_date = as.Date(c(
       "2026-06-10", "2026-06-13", "2026-06-12", "2026-06-12", "2026-06-10"
     )),
-    division   = "CUP"
+    division = "CUP"
   )
   bs <- .build_bracket_state_pfi(
     pred_d = qf, results = r16, current_season = 2026L
@@ -888,4 +888,47 @@ test_that(".build_bracket_state_pfi: KSÍ TBD placeholder rows are ignored", {
   expect_false(is.null(bs))
   expect_setequal(bs$cup_teams, c(paste0("E", 1:8), paste0("T", 1:8)))
   expect_false(bs$rounds$R8$pairings_known)
+})
+
+test_that(".build_bracket_state_pfi: SF leg beyond the prediction horizon is recovered from the schedule", {
+  # Production bug (2026 Mjólkurbikar): prepare_data()'s pred_d truncates cup
+  # fixtures at the prediction horizon, so a late SF leg (Fylkir-Afturelding,
+  # 21 Jul, fit on 25 Jun) is absent from pred_d even though KSÍ has drawn it.
+  # The raw schedule store carries BOTH legs; feeding it in completes the SF.
+  # Without it the SF reads pairings_known = FALSE and no bracket.json / the
+  # wrong (random-pairing) champion probabilities are published.
+  r16 <- .cup_results_real_r16() # winners E1-E4, T1-T4
+  r8 <- tibble::tibble(
+    home_team  = c("E1", "E3", "T1", "T3"),
+    away_team  = c("E2", "E4", "T2", "T4"),
+    match_date = as.Date("2026-06-12"),
+    home_score = 2L,
+    away_score = 1L, # home teams advance: E1, E3, T1, T3
+    division   = "CUP",
+    season     = 2026L
+  )
+  results <- dplyr::bind_rows(r16, r8)
+  sf1 <- tibble::tibble(
+    home_team = "E1", away_team = "E3",
+    match_date = as.Date("2026-06-28"), division = "CUP"
+  )
+  sf2 <- tibble::tibble(
+    home_team = "T1", away_team = "T3",
+    match_date = as.Date("2026-07-21"), division = "CUP"
+  )
+  # pred_d sees only SF1 (inside the horizon); the schedule carries both legs.
+  bs <- .build_bracket_state_pfi(
+    pred_d         = sf1,
+    results        = results,
+    current_season = 2026L,
+    schedule       = dplyr::bind_rows(sf1, sf2)
+  )
+  expect_false(is.null(bs))
+  expect_true(bs$rounds$SF$pairings_known)
+  expect_equal(nrow(bs$rounds$SF$matches), 2L)
+  expect_setequal(
+    paste(bs$rounds$SF$matches$home_team, bs$rounds$SF$matches$away_team),
+    c("E1 E3", "T1 T3")
+  )
+  expect_true(all(is.na(bs$rounds$SF$matches$known_winner))) # SF not played
 })

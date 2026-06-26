@@ -609,8 +609,13 @@ NULL
 
 # Build a bracket_state for the cup bracket simulator.
 #
+# Upcoming fixtures are unioned from `pred_d` (the model's predicted matches)
+# and `schedule` (the raw drawn schedule). Pass `schedule` whenever available:
+# `pred_d` is truncated at the prediction horizon, so a late bracket leg can be
+# missing from it even after KSÍ has drawn the tie. `schedule` backfills it.
+#
 # Identifies the 16 R16 teams from the season's cup matches (union of played
-# results + upcoming schedule) by sliding-window detection: the first window
+# results + upcoming fixtures) by sliding-window detection: the first window
 # of 8 chronological cup matches involving exactly 16 distinct teams within
 # a ≤ 4-day span is treated as the R16 round. Subsequent cup matches in the
 # same season that involve only those 16 teams are bracket matches; their
@@ -630,14 +635,32 @@ NULL
 # Returns NULL when fewer than 8 cup matches with 16 distinct teams are
 # available (e.g. cup season hasn't reached R16 yet).
 .build_bracket_state_pfi <- function(pred_d, results = NULL,
-                                     current_season = NULL) {
+                                     current_season = NULL,
+                                     schedule = NULL) {
   empty_or_null <- function(x) is.null(x) || nrow(x) == 0L
-  if (empty_or_null(pred_d) && empty_or_null(results)) {
+  if (empty_or_null(pred_d) && empty_or_null(results) &&
+    empty_or_null(schedule)) {
     return(NULL)
   }
 
-  schedule_part <- if (!empty_or_null(pred_d)) {
-    pred_d |>
+  empty_schedule_part <- function() {
+    tibble::tibble(
+      match_date = as.Date(character()),
+      home_team = character(), away_team = character(),
+      played = logical(), known_winner = character()
+    )
+  }
+  # WHY: upcoming cup fixtures come from BOTH `pred_d` and the raw `schedule`
+  # store. `pred_d` is truncated at prepare_data()'s prediction horizon, so a
+  # late bracket leg (the 2026 Mjólkurbikar SF2 on 21 Jul, fit on 25 Jun) is
+  # absent from it even after KSÍ has drawn the tie; `schedule` carries it.
+  # Unioned and de-duplicated below (results-first `distinct` keeps the played
+  # row over its schedule copy).
+  cup_upcoming <- function(df) {
+    if (empty_or_null(df) || !"division" %in% names(df)) {
+      return(empty_schedule_part())
+    }
+    df |>
       dplyr::filter(.data$division == "CUP") |>
       dplyr::transmute(
         match_date   = .data$match_date,
@@ -646,13 +669,8 @@ NULL
         played       = FALSE,
         known_winner = NA_character_
       )
-  } else {
-    tibble::tibble(
-      match_date = as.Date(character()),
-      home_team = character(), away_team = character(),
-      played = logical(), known_winner = character()
-    )
   }
+  schedule_part <- dplyr::bind_rows(cup_upcoming(pred_d), cup_upcoming(schedule))
 
   results_part <- if (!empty_or_null(results)) {
     res <- results |>
@@ -1220,13 +1238,17 @@ extract_football_iceland <- function(fit, league, sex,
 
   # Cup bracket simulator inputs: per-draw raw model parameters + bracket state.
   # `sim_inputs` is always extracted (cheap, ~5 MB on disk). `bracket_state`
-  # unions played results + upcoming schedule to support any entry point —
-  # R16 still upcoming, partial R16, R8 onwards once R16 plays, etc.
+  # unions played results + the drawn schedule to support any entry point —
+  # R16 still upcoming, partial R16, R8 onwards once R16 plays, etc. `pred_d`
+  # alone is insufficient: it's truncated at the model's prediction horizon, so
+  # a late bracket leg (e.g. a 21 Jul semifinal fit on 25 Jun) is invisible to
+  # it — `season_schedule` carries the full draw.
   sim_inputs <- .extract_sim_inputs_pfi(fit, teams)
   bracket_state <- if ("CUP" %in% target_divs) {
     .build_bracket_state_pfi(pred_d,
       results = results,
-      current_season = current_season
+      current_season = current_season,
+      schedule = season_schedule
     )
   } else {
     NULL
@@ -1304,7 +1326,7 @@ extract_football_iceland <- function(fit, league, sex,
     length(file_types),
     extracts_dir,
     paste(target_divs, collapse = ", "),
-    if (is.null(bracket_state)) "absent (< 8 upcoming cup matches)" else "built",
+    if (is.null(bracket_state)) "absent (no R16 window detected)" else "built",
     if (is.null(cup_bracket)) "absent (no live frontier)" else "built"
   ))
   invisible(NULL)
