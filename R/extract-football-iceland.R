@@ -905,6 +905,37 @@ NULL
   W
 }
 
+# Home-venue win probability for one drawn match: P(home beats away | the home
+# team plays at its own ground), averaged over draws. Mirrors the venue=="home"
+# adjustment in .simulate_cup_match_pfi (add ha_off/ha_def to the home team)
+# fed through the same Skellam construction as .cup_win_matrix_pfi, so the
+# bracket.json's drawn-frontier cells agree with the leaderboard simulator.
+.cup_home_winprob_pfi <- function(home_team, away_team, sim_inputs) {
+  td <- sim_inputs$team
+  sd <- sim_inputs$scalar
+  draws <- sort(unique(td$.draw))
+  acc <- 0
+  n <- 0L
+  for (d in draws) {
+    t <- td[td$.draw == d, , drop = FALSE]
+    sc <- sd[sd$.draw == d, , drop = FALSE]
+    if (nrow(sc) == 0L) next
+    off <- stats::setNames(t$cur_offense, t$team)
+    def <- stats::setNames(t$cur_defense, t$team)
+    ha_off <- stats::setNames(t$home_advantage_off, t$team)
+    ha_def <- stats::setNames(t$home_advantage_def, t$team)
+    mlg <- sc$mean_log_goals[1L]
+    l_home <- exp(mlg + (off[[home_team]] + ha_off[[home_team]]) - def[[away_team]])
+    l_away <- exp(mlg + off[[away_team]] - (def[[home_team]] + ha_def[[home_team]]))
+    pw <- .wc_skellam_pwin(matrix(l_home, 1L, 1L), matrix(l_away, 1L, 1L))
+    pl <- .wc_skellam_pwin(matrix(l_away, 1L, 1L), matrix(l_home, 1L, 1L))
+    denom <- pw + pl
+    acc <- acc + if (denom > 0) pw / denom else 0.5
+    n <- n + 1L
+  }
+  acc / n
+}
+
 # Build the cup `bracket.json` payload for the live frontier forward, mirroring
 # the World Cup contract (wc-publish.R:267-287) so the metill-platform
 # interactive what-if tree (`cup-bracket.js`) drives off the same shape.
@@ -952,6 +983,21 @@ NULL
   idx0 <- stats::setNames(seq_along(alive_teams) - 1L, alive_teams) # 0-based
 
   W <- .cup_win_matrix_pfi(alive_teams, sim_inputs)
+
+  # Drawn frontier matches have real, known venues. The leaderboard simulator
+  # plays the SF at the host's ground (home advantage); the cup final is at a
+  # neutral ground and any what-if re-pairing is venue-agnostic. So overwrite
+  # only the leaf-pair cells with their home-venue win prob, leaving every
+  # cross-pairing (the Final and beyond) neutral — in a single-leg knockout a
+  # pairing meets at most once, so a leaf cell is never reused for a later round.
+  for (m in seq_len(n_leaf)) {
+    if (!identical(leaf_matches$venue[m], "home")) next
+    h <- leaf_matches$home_team[m]
+    a <- leaf_matches$away_team[m]
+    p <- .cup_home_winprob_pfi(h, a, sim_inputs)
+    W[h, a] <- p
+    W[a, h] <- 1 - p
+  }
 
   # Forward chain from the frontier. The renderer is round-agnostic: it needs
   # the leaf round + every subsequent round up to the Final, each round halving

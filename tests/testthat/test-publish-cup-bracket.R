@@ -114,6 +114,44 @@ test_that("W is oriented: stronger team has higher win prob", {
   )
 })
 
+test_that("leaf (SF) matchup cells use the home venue; non-leaf (Final) cells stay neutral", {
+  si <- .cup_bracket_sim_inputs()
+  bs_home <- .cup_bracket_state_sf() # SF venue = "home"
+  bs_neutral <- .cup_bracket_state_sf()
+  bs_neutral$rounds$SF$matches$venue <- "neutral"
+
+  bj_home <- .build_cup_bracket_payload_pfi(
+    bs_home, si,
+    generated_at = "2026-06-25T00:00:00Z", n_draws = 6L
+  )
+  bj_neu <- .build_cup_bracket_payload_pfi(
+    bs_neutral, si,
+    generated_at = "2026-06-25T00:00:00Z", n_draws = 6L
+  )
+  idx <- stats::setNames(seq_along(bj_home$teams), bj_home$teams)
+
+  # SF leaves carry the host's home advantage -> the home team's win prob is
+  # strictly higher than at neutral. Asserted on SF2 = Bravo (home) v Charlie;
+  # SF1's Alpha v Delta is saturated at ~1.0 (no headroom to shift).
+  expect_gt(
+    bj_home$matchup[idx[["Bravo"]], idx[["Charlie"]]],
+    bj_neu$matchup[idx[["Bravo"]], idx[["Charlie"]]]
+  )
+  # The reverse cell stays complementary (conditional-on-decisive).
+  expect_equal(
+    bj_home$matchup[idx[["Bravo"]], idx[["Charlie"]]] +
+      bj_home$matchup[idx[["Charlie"]], idx[["Bravo"]]],
+    1,
+    tolerance = 1e-6
+  )
+  # A Final cross-pairing (Alpha v Bravo) is not a leaf -> neutral, unchanged.
+  expect_equal(
+    bj_home$matchup[idx[["Alpha"]], idx[["Bravo"]]],
+    bj_neu$matchup[idx[["Alpha"]], idx[["Bravo"]]],
+    tolerance = 1e-9
+  )
+})
+
 test_that("matches: exactly one Final (root) with W-prefixed feeders", {
   bj <- .build_cup_bracket_payload_pfi(
     .cup_bracket_state_sf(), .cup_bracket_sim_inputs(),
