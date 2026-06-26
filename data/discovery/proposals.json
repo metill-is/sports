@@ -1,29 +1,5 @@
 {
-  "generated_at": "2026-06-25T11:04:56Z",
-  "competitions": [
-    {
-      "sport": "football",
-      "country": "iceland",
-      "comp_id": "3267",
-      "lengjan_name": "3. deild",
-      "inferred_sex": "male",
-      "inferred_division": "LD3",
-      "classify_confidence": "high",
-      "modelled": true,
-      "status": "new",
-      "proposed_team_names": [
-        {
-          "lengjan": "Tindastóll",
-          "canonical_guess": "Tindastóll",
-          "confidence": "high"
-        },
-        {
-          "lengjan": "Sindri",
-          "canonical_guess": "Sindri",
-          "confidence": "high"
-        }
-      ]
-    }
-  ],
+  "generated_at": "2026-06-26T10:01:48Z",
+  "competitions": [],
   "unmodelled_offered_count": 0
 }
