@@ -215,6 +215,21 @@ football_iceland:
         # warn-and-skips, no mis-placed bet).
         Tindastóll: Tindastóll          # confirmed 2026-06-25
         Sindri: Sindri                  # confirmed 2026-06-25
+        # 2026-06-26: remaining LD3 roster confirmed from data/facts/odds (first
+        # 3. deild odds round posted, fixtures 26-28 Jun). All identity except
+        # Víðir, which Lengjan renders with the town suffix "Víðir Garði"
+        # (c.f. Þróttur V. -> Þróttur Vogum). Reynir S. keeps "S." on Lengjan
+        # too (NOT "Reynir Sandgerði"). All 12 LD3 sides now mapped.
+        Augnablik: Augnablik            # confirmed 2026-06-26
+        KH: KH                          # confirmed 2026-06-26
+        KV: KV                          # confirmed 2026-06-26
+        Víðir: Víðir Garði              # confirmed 2026-06-26 (Lengjan adds town "Garði")
+        Höttur: Höttur                  # confirmed 2026-06-26
+        KF: KF                          # confirmed 2026-06-26
+        KÁ: KÁ                          # confirmed 2026-06-26
+        Reynir S.: Reynir S.            # confirmed 2026-06-26 (Lengjan keeps "S.", not "Sandgerði")
+        Árbær: Árbær                    # confirmed 2026-06-26
+        Ýmir: Ýmir                      # confirmed 2026-06-26
       female:
         # First women's BD season on Lengjan (Plan 1-era empty map upgraded
         # 2026-05-11 after odds for the first 5 teams appeared in
@@ -247,12 +262,17 @@ football_iceland:
         KR: KR kv                                       # confirmed 2026-06-21
         Haukar: Haukar kv                               # confirmed 2026-06-21
         FHL: FHL kv                                     # pattern guess; verify on first odds appearance
-        Grótta: Grótta kv                               # pattern guess; verify on first odds appearance
+        Grótta: Grótta kv                               # confirmed 2026-06-26 (Grótta kv v Völsungur kv)
         HK: HK kv                                       # pattern guess; verify on first odds appearance
         Keflavík: Keflavík kv                           # pattern guess; verify on first odds appearance
         Selfoss: Selfoss kv                             # pattern guess; verify on first odds appearance
-        Tindastóll: Tindastóll kv                       # pattern guess; basketball uses "UMF Tindastoll kv" -- verify
-        Völsungur: Völsungur kv                         # pattern guess; verify on first odds appearance
+        # Lengjan renders this women's side WITHOUT the accent ("Tindastoll kv"),
+        # diverging from the canonical "Tindastóll" -- list both so the decode
+        # accepts either (basketball uses yet another form, "UMF Tindastoll kv").
+        Tindastóll:
+          - Tindastoll kv                               # primary: plain 'o' -- CONFIRMED 2026-06-26 (KR kv v Tindastoll kv)
+          - Tindastóll kv                               # variant: accented (fallback if Lengjan corrects)
+        Völsungur: Völsungur kv                         # confirmed 2026-06-26 (Grótta kv v Völsungur kv)
         ÍA: ÍA kv                                       # pattern guess; verify on first odds appearance
   stan_model: football_iceland/bivariate_poisson_no_inflation.stan
   # Restrict Stan training to teams that have competed in the top four
