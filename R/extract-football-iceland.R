@@ -1025,7 +1025,8 @@ NULL
 }
 
 .build_cup_bracket_payload_pfi <- function(bracket_state, sim_inputs,
-                                           generated_at, n_draws) {
+                                           generated_at, n_draws,
+                                           results = NULL, season = NULL) {
   if (is.null(bracket_state) || is.null(sim_inputs)) {
     return(NULL)
   }
@@ -1112,12 +1113,17 @@ NULL
 
   list(
     generated_at = generated_at,
-    n_draws      = as.integer(n_draws),
-    teams        = alive_teams,
-    teams_is     = alive_teams, # Icelandic clubs: display == canonical
-    matchup      = round(W, 4),
-    matches      = matches,
-    r32          = r32
+    n_draws = as.integer(n_draws),
+    teams = alive_teams,
+    teams_is = alive_teams, # Icelandic clubs: display == canonical
+    matchup = round(W, 4),
+    matches = matches,
+    r32 = r32,
+    completed = if (!is.null(results) && !is.null(season)) {
+      .build_cup_completed_pfi(bracket_state, results, season)
+    } else {
+      list()
+    }
   )
 }
 
@@ -1418,7 +1424,9 @@ extract_football_iceland <- function(fit, league, sex,
       bracket_state = bracket_state,
       sim_inputs    = sim_inputs,
       generated_at  = format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"),
-      n_draws       = dplyr::n_distinct(sim_inputs$scalar$.draw)
+      n_draws       = dplyr::n_distinct(sim_inputs$scalar$.draw),
+      results       = results,
+      season        = current_season
     )
   } else {
     NULL

@@ -62,14 +62,14 @@
 
 # ---- Contract tests ---------------------------------------------------------
 
-test_that("cup bracket payload has the 7 WC keys", {
+test_that("cup bracket payload has the 8 keys (7 WC keys + completed)", {
   bj <- .build_cup_bracket_payload_pfi(
     .cup_bracket_state_sf(), .cup_bracket_sim_inputs(),
     generated_at = "2026-06-25T00:00:00Z", n_draws = 6L
   )
   expect_setequal(
     names(bj),
-    c("generated_at", "n_draws", "teams", "teams_is", "matchup", "matches", "r32")
+    c("generated_at", "n_draws", "teams", "teams_is", "matchup", "matches", "r32", "completed")
   )
 })
 
@@ -256,4 +256,29 @@ test_that(".build_cup_completed_pfi emits decided pre-frontier matches with scor
   expect_identical(b$away, "Bravo")
   expect_identical(b$home_score, 0L)
   expect_identical(b$away_score, 1L)
+})
+
+test_that("payload carries an additive completed[] without changing live keys", {
+  bs <- .cup_bracket_state_sf() # existing fixture: SF frontier, R16+R8 decided
+  si <- .cup_bracket_sim_inputs()
+  results <- tibble::tibble(
+    division = "CUP", season = 2026L,
+    home_team = bs$rounds$R16$matches$home_team,
+    away_team = bs$rounds$R16$matches$away_team,
+    home_score = rep(2L, nrow(bs$rounds$R16$matches)),
+    away_score = rep(0L, nrow(bs$rounds$R16$matches))
+  )
+  base <- .build_cup_bracket_payload_pfi(bs, si, "2026-06-27T00:00:00Z", 6L)
+  ext <- .build_cup_bracket_payload_pfi(bs, si, "2026-06-27T00:00:00Z", 6L,
+    results = results, season = 2026L
+  )
+  # live keys identical
+  expect_identical(ext$teams, base$teams)
+  expect_identical(ext$matchup, base$matchup)
+  expect_identical(ext$matches, base$matches)
+  expect_identical(ext$r32, base$r32)
+  # additive completed present + non-empty
+  expect_true("completed" %in% names(ext))
+  expect_true(length(ext$completed) >= 1L)
+  expect_true(all(vapply(ext$completed, function(x) !is.null(x$winner), TRUE)))
 })
