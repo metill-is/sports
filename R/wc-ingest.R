@@ -1,6 +1,100 @@
 #' @include storage.R
 NULL
 
+#' Patch martj42 results with operator-supplied scores.
+#'
+#' Fills the `home_score`/`away_score` of `raw` rows whose scores are still `NA`
+#' from an overlay keyed on `(date, home_team, away_team)`, for use when martj42
+#' lags behind played matches. martj42 stays canonical: once it carries a real
+#' score the overlay row is ignored (and, if it disagrees, a warning prompts the
+#' operator to prune it, so the overlay self-drains). An overlay row that matches
+#' no fixture aborts loudly — a silent no-op would hide a team-name typo.
+#'
+#' @param raw martj42-schema data frame (`date, home_team, away_team,
+#'   home_score, away_score, ...`), as read by [wc_ingest_internationals()].
+#' @param overlay Data frame with `date` (Date), `home_team`, `away_team`,
+#'   `home_score`, `away_score`. May be empty (no-op).
+#' @return `raw` with matched `NA`-score rows filled.
+#' @export
+wc_apply_manual_results <- function(raw, overlay) {
+  if (is.null(overlay) || nrow(overlay) == 0L) {
+    return(raw)
+  }
+  sep <- "\u001f" # unit separator - cannot appear in a date or team name
+  raw_key <- paste(raw$date, raw$home_team, raw$away_team, sep = sep)
+  n_filled <- 0L
+  for (i in seq_len(nrow(overlay))) {
+    o <- overlay[i, , drop = FALSE]
+    hits <- which(raw_key == paste(o$date, o$home_team, o$away_team, sep = sep))
+    if (length(hits) == 0L) {
+      cli::cli_abort(c(
+        "Manual overlay row matches no martj42 fixture.",
+        "x" = "{o$date} {o$home_team} vs {o$away_team}",
+        "i" = "Check the team-name spelling (run scripts/wc/list_missing.R)."
+      ))
+    }
+    if (length(hits) > 1L) {
+      cli::cli_abort(
+        "Overlay row {o$date} {o$home_team} vs {o$away_team} is ambiguous \\
+        ({length(hits)} martj42 rows match)."
+      )
+    }
+    j <- hits[[1L]]
+    eh <- raw$home_score[[j]]
+    ea <- raw$away_score[[j]]
+    if (!is.na(eh) && !is.na(ea)) {
+      if (!identical(as.integer(eh), as.integer(o$home_score)) ||
+        !identical(as.integer(ea), as.integer(o$away_score))) {
+        cli::cli_warn(c(
+          "martj42 already reports a different score; keeping martj42.",
+          "i" = "{o$date} {o$home_team}: {eh}-{ea} (martj42) vs \\
+            {o$home_score}-{o$away_score} (overlay). Remove it from manual_results.csv."
+        ))
+      }
+      next
+    }
+    raw$home_score[[j]] <- as.integer(o$home_score)
+    raw$away_score[[j]] <- as.integer(o$away_score)
+    n_filled <- n_filled + 1L
+  }
+  if (n_filled > 0L) {
+    cli::cli_alert_success(
+      "Applied {n_filled} manual result{?s} martj42 hasn't published yet."
+    )
+  }
+  raw
+}
+
+#' List WC fixtures that should be played but martj42 hasn't scored.
+#'
+#' Operator scaffold for `data/wc/manual_results.csv`: the WC-finals fixtures
+#' with a kickoff on/before `as_of` and a still-`NA` score. Operates on the raw
+#' martj42 schema (`tournament`/`date`), the same `raw` [wc_apply_manual_results()]
+#' receives.
+#'
+#' @param raw martj42-schema data frame.
+#' @param as_of Latest kickoff date to include. Default today.
+#' @return Data frame `date, home_team, away_team, home_score, away_score` with
+#'   `NA` scores, ready to paste into the overlay.
+#' @importFrom rlang .data
+#' @export
+wc_list_unscored_fixtures <- function(raw, as_of = Sys.Date()) {
+  raw |>
+    dplyr::filter(
+      .data$tournament == "FIFA World Cup",
+      format(.data$date, "%Y") == "2026",
+      .data$date <= as_of,
+      is.na(.data$home_score) | is.na(.data$away_score)
+    ) |>
+    dplyr::transmute(
+      date = .data$date,
+      home_team = .data$home_team,
+      away_team = .data$away_team,
+      home_score = NA_integer_,
+      away_score = NA_integer_
+    )
+}
+
 #' Ingest international football results into the facts store.
 #'
 #' Reads the bulk international-results CSV (martj42 schema:
@@ -32,6 +126,10 @@ NULL
 #' @param min_team_matches Minimum in-window internationals for an opponent to
 #'   be retained. Default 8.
 #' @param root Data root. Default `here::here("data")`.
+#' @param manual_overlay_path Optional CSV of operator-supplied scores
+#'   (`date, home_team, away_team, home_score, away_score`) merged onto martj42's
+#'   `NA`-score rows via [wc_apply_manual_results()]. Default
+#'   `data/wc/manual_results.csv`; skipped when absent.
 #' @return Invisibly, a list of row counts (`n_results`, `n_schedule`,
 #'   `n_teams`, `n_wc_teams`).
 #' @importFrom rlang .data
@@ -39,7 +137,8 @@ NULL
 wc_ingest_internationals <- function(csv_path = here::here("data", "wc", "raw", "results.csv"),
                                      window_start = as.Date("2022-01-01"),
                                      min_team_matches = 8L,
-                                     root = here::here("data")) {
+                                     root = here::here("data"),
+                                     manual_overlay_path = here::here("data", "wc", "manual_results.csv")) {
   raw <- readr::read_csv(
     csv_path,
     col_types = readr::cols(
@@ -54,6 +153,23 @@ wc_ingest_internationals <- function(csv_path = here::here("data", "wc", "raw", 
       neutral = readr::col_logical()
     )
   )
+
+  # Operator overlay: fill scores martj42 hasn't published yet (martj42 stays
+  # canonical once it catches up). Default path => the CI cron honours it too.
+  if (!is.null(manual_overlay_path) && file.exists(manual_overlay_path)) {
+    overlay <- readr::read_csv(
+      manual_overlay_path,
+      comment = "#",
+      col_types = readr::cols(
+        date = readr::col_date(),
+        home_team = readr::col_character(),
+        away_team = readr::col_character(),
+        home_score = readr::col_integer(),
+        away_score = readr::col_integer()
+      )
+    )
+    raw <- wc_apply_manual_results(raw, overlay)
+  }
 
   d <- raw |>
     dplyr::transmute(
