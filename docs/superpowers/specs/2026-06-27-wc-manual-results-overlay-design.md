@@ -156,9 +156,12 @@ Default run:
 8. Print a deploy-watch hint
    (`gh run list -R metill-is/metill-platform --workflow=pull-sports-data.yml`).
 
-(The exact git-add set for `data/wc/accountability` is confirmed against
-`forecast.R` / `publish_world_cup()` output during implementation, to mirror
-what `world-cup.yml` stages.)
+(Confirmed during implementation: `data/wc/accountability` **is** staged.
+`forecast.R` → `publish_world_cup()` → `wc_snapshot_predictions()`
+(`R/wc-accountability.R`) rewrites the git-tracked
+`data/wc/accountability/prediction_log.json` on every run, so the wrapper stages
+it to mirror `world-cup.yml:217` and to avoid leaving it dirty post-publish. The
+implementation plan briefly regressed this; the final review restored it.)
 
 ## 7. Interaction with the CI cron (no double-state)
 

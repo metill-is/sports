@@ -16,7 +16,7 @@
 - The martj42 raw schema (read straight from `read_csv`, before the `wc-ingest.R` transmute) has columns `date, home_team, away_team, home_score, away_score, tournament, city, country, neutral`. The merge/list helpers operate on THIS schema — `tournament`/`date`, not `division`/`match_date`.
 - British/international spelling in comments.
 - Commit-message style: `feat(wc):` / `test(wc):` / `docs(wc):` (mirrors the repo's `data(wc):`).
-- The manual path **must not** advance `data/wc/martj42_pointer.txt`, and the wrapper's git-add set is exactly: `data/publish/world_cup`, `data/facts/results/sport=football/country=world`, `data/facts/schedules/sport=football/country=world`, `data/wc/manual_results.csv` (NOT `data/wc/accountability` — `forecast.R`/`publish_world_cup()` do not write it).
+- The manual path **must not** advance `data/wc/martj42_pointer.txt` (keeps the CI cron unaffected). The wrapper's git-add set is exactly: `data/publish/world_cup`, `data/facts/results/sport=football/country=world`, `data/facts/schedules/sport=football/country=world`, `data/wc/manual_results.csv`, `data/wc/accountability`. **`data/wc/accountability` IS staged** — `forecast.R` → `publish_world_cup()` → `wc_snapshot_predictions()` (`R/wc-accountability.R`) rewrites the git-tracked `data/wc/accountability/prediction_log.json` on every run, so it must be staged to mirror `world-cup.yml:217` (and to avoid leaving it dirty, which would also abort the post-commit rebase). *(Corrected after the final review caught the original plan's wrong "not written" claim — the spec had it right.)*
 
 ---
 
@@ -606,7 +606,8 @@ git add \
   data/publish/world_cup \
   data/facts/results/sport=football/country=world \
   data/facts/schedules/sport=football/country=world \
-  data/wc/manual_results.csv
+  data/wc/manual_results.csv \
+  data/wc/accountability
 if git diff --cached --quiet; then
   echo "No changes to publish (forecast output identical). Nothing pushed."
   exit 0
