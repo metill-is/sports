@@ -9,3 +9,15 @@
 #   4. When martj42 publishes the real score you'll get a warning at ingest —
 #      delete that row here (the overlay self-drains).
 date,home_team,away_team,home_score,away_score
+2026-06-26,Egypt,Iran,1,1
+2026-06-26,New Zealand,Belgium,1,5
+2026-06-26,Cape Verde,Saudi Arabia,0,0
+2026-06-26,Uruguay,Spain,0,1
+2026-06-26,Norway,France,1,4
+2026-06-26,Senegal,Iraq,5,0
+2026-06-27,Algeria,Austria,,
+2026-06-27,Jordan,Argentina,,
+2026-06-27,Colombia,Portugal,,
+2026-06-27,DR Congo,Uzbekistan,,
+2026-06-27,Panama,England,,
+2026-06-27,Croatia,Ghana,,
