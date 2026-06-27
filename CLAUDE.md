@@ -126,6 +126,26 @@ print(DBI::dbGetQuery(con, "SELECT sport, country, COUNT(*) AS n, SUM(pnl) AS pn
 '
 ```
 
+### World Cup — manual refresh (martj42 lag)
+
+martj42 backfills match scores ~1 day late, so during the tournament the daily
+`world-cup.yml` cron is structurally a day behind. To publish a forecast that
+includes scores martj42 hasn't logged yet:
+
+1. `scripts/wc/refresh_now.sh --list-missing` — prints the played-but-unscored
+   WC fixtures as CSV rows (team names already match martj42).
+2. Paste them into `data/wc/manual_results.csv` and fill `home_score,away_score`.
+3. `scripts/wc/refresh_now.sh` — pulls, ingests (overlay merged onto martj42's
+   `NA` rows), re-fits (~46 min), re-forecasts, shows the champion table +
+   `data/wc/forecast.html`, then on `y` commits + pushes and triggers the
+   metill-platform pull (`gh workflow run pull-sports-data.yml -R
+   metill-is/metill-platform`).
+
+The overlay is committed and self-draining: once martj42 publishes the real
+score, ingest warns and martj42 wins — delete that row. The manual path does not
+touch `data/wc/martj42_pointer.txt`, so the next cron run is unaffected. Flags:
+`--yes` (skip confirm), `--no-push` (preview only), `--no-pull` (offline).
+
 ## metill-platform integration
 
 The `metill-is/metill-platform` repo runs `pull-sports-data.yml` hourly:
