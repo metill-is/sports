@@ -65,6 +65,36 @@ wc_apply_manual_results <- function(raw, overlay) {
   raw
 }
 
+#' List WC fixtures that should be played but martj42 hasn't scored.
+#'
+#' Operator scaffold for `data/wc/manual_results.csv`: the WC-finals fixtures
+#' with a kickoff on/before `as_of` and a still-`NA` score. Operates on the raw
+#' martj42 schema (`tournament`/`date`), the same `raw` [wc_apply_manual_results()]
+#' receives.
+#'
+#' @param raw martj42-schema data frame.
+#' @param as_of Latest kickoff date to include. Default today.
+#' @return Data frame `date, home_team, away_team, home_score, away_score` with
+#'   `NA` scores, ready to paste into the overlay.
+#' @importFrom rlang .data
+#' @export
+wc_list_unscored_fixtures <- function(raw, as_of = Sys.Date()) {
+  raw |>
+    dplyr::filter(
+      .data$tournament == "FIFA World Cup",
+      format(.data$date, "%Y") == "2026",
+      .data$date <= as_of,
+      is.na(.data$home_score) | is.na(.data$away_score)
+    ) |>
+    dplyr::transmute(
+      date = .data$date,
+      home_team = .data$home_team,
+      away_team = .data$away_team,
+      home_score = NA_integer_,
+      away_score = NA_integer_
+    )
+}
+
 #' Ingest international football results into the facts store.
 #'
 #' Reads the bulk international-results CSV (martj42 schema:
