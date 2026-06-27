@@ -211,3 +211,49 @@ test_that("r32 occupancy matches the synthetic SF pairings exactly", {
     )
   )
 })
+
+test_that(".build_cup_completed_pfi emits decided pre-frontier matches with scores", {
+  bs <- list(
+    cup_teams = c("Alpha", "Bravo", "Charlie", "Delta"),
+    rounds = list(
+      R16 = list(pairings_known = TRUE, matches = tibble::tibble(
+        home_team    = c("Alpha", "Echo", "Charlie", "Golf"),
+        away_team    = c("Foxtrot", "Bravo", "Hotel", "Delta"),
+        venue        = "home",
+        known_winner = c("Alpha", "Bravo", "Charlie", "Delta")
+      )),
+      R8 = list(pairings_known = TRUE, matches = tibble::tibble(
+        home_team    = c("Alpha", "Charlie"),
+        away_team    = c("Bravo", "Delta"),
+        venue        = "home",
+        known_winner = c("Alpha", "Charlie")
+      )),
+      SF = list(pairings_known = TRUE, matches = tibble::tibble(
+        home_team = "Alpha", away_team = "Charlie",
+        venue = "home", known_winner = NA_character_ # frontier (undecided)
+      )),
+      Final = list(pairings_known = FALSE, matches = NULL)
+    )
+  )
+  results <- tibble::tibble(
+    division = "CUP", season = 2026L,
+    home_team = c("Alpha", "Echo", "Charlie", "Golf"),
+    away_team = c("Foxtrot", "Bravo", "Hotel", "Delta"),
+    home_score = c(3L, 0L, 2L, 1L),
+    away_score = c(0L, 1L, 0L, 2L)
+  )
+  comp <- .build_cup_completed_pfi(bs, results, season = 2026L)
+  # 4 R16 + 2 QF decided matches, SF is the frontier (excluded)
+  expect_length(comp, 6L)
+  expect_setequal(unique(vapply(comp, `[[`, "", "round")), c("R16", "QF"))
+  a <- Filter(function(x) x$home == "Alpha" && x$round == "R16", comp)[[1]]
+  expect_identical(a$winner, "Alpha")
+  expect_identical(a$home_score, 3L)
+  expect_identical(a$away_score, 0L)
+  # score oriented to the bracket's home/away even when results row is flipped:
+  b <- Filter(function(x) x$winner == "Bravo", comp)[[1]] # bracket home=Echo away=Bravo
+  expect_identical(b$home, "Echo")
+  expect_identical(b$away, "Bravo")
+  expect_identical(b$home_score, 0L)
+  expect_identical(b$away_score, 1L)
+})

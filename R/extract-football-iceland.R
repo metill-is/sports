@@ -956,6 +956,74 @@ NULL
 #
 # Returns NULL when there's no live frontier (fully resolved or entry round
 # undrawn) — the publisher then skips bracket.json.
+
+# Completed (decided) cup matches for every round BEFORE the live frontier.
+# Returns a list of {round, home, away, home_score, away_score, winner} in
+# round-then-bracket order. Scores are joined from `results` by unordered pair
+# (a knockout pairing meets at most once per season+CUP) and oriented to the
+# bracket's home/away. Round names map the simulator's "R8" to the renderer's
+# "QF". An undecided match (known_winner NA) is skipped — it is not completed.
+.build_cup_completed_pfi <- function(bracket_state, results, season) {
+  if (is.null(bracket_state)) {
+    return(list())
+  }
+  frontier <- .cup_frontier_round_pfi(bracket_state)
+  # No frontier => fully resolved: every round is "before the (nonexistent)
+  # frontier", so treat all rounds as candidate-completed.
+  end_pos <- if (is.null(frontier)) {
+    length(.CUP_ROUND_SEQ_PFI)
+  } else {
+    match(frontier, .CUP_ROUND_SEQ_PFI) - 1L
+  }
+  if (is.na(end_pos) || end_pos < 1L) {
+    return(list())
+  }
+  done_rounds <- .CUP_ROUND_SEQ_PFI[seq_len(end_pos)]
+  round_label <- c(R16 = "R16", R8 = "QF", SF = "SF", Final = "Final")
+
+  cup_res <- results[
+    results$division == "CUP" & results$season == season &
+      !is.na(results$home_score) & !is.na(results$away_score), ,
+    drop = FALSE
+  ]
+
+  out <- list()
+  for (rn in done_rounds) {
+    rd <- bracket_state$rounds[[rn]]
+    if (is.null(rd) || !isTRUE(rd$pairings_known) || is.null(rd$matches)) next
+    mt <- rd$matches
+    for (m in seq_len(nrow(mt))) {
+      w <- mt$known_winner[m]
+      if (is.na(w)) next
+      h <- mt$home_team[m]
+      a <- mt$away_team[m]
+      hit <- which(
+        (cup_res$home_team == h & cup_res$away_team == a) |
+          (cup_res$home_team == a & cup_res$away_team == h)
+      )
+      hs <- NULL
+      as_ <- NULL
+      if (length(hit) >= 1L) {
+        r1 <- cup_res[hit[1L], ]
+        if (identical(r1$home_team, h)) {
+          hs <- as.integer(r1$home_score)
+          as_ <- as.integer(r1$away_score)
+        } else {
+          hs <- as.integer(r1$away_score)
+          as_ <- as.integer(r1$home_score)
+        }
+      }
+      out[[length(out) + 1L]] <- list(
+        round = unname(round_label[[rn]]),
+        home = h, away = a,
+        home_score = hs, away_score = as_,
+        winner = w
+      )
+    }
+  }
+  out
+}
+
 .build_cup_bracket_payload_pfi <- function(bracket_state, sim_inputs,
                                            generated_at, n_draws) {
   if (is.null(bracket_state) || is.null(sim_inputs)) {
