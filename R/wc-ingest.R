@@ -126,6 +126,10 @@ wc_list_unscored_fixtures <- function(raw, as_of = Sys.Date()) {
 #' @param min_team_matches Minimum in-window internationals for an opponent to
 #'   be retained. Default 8.
 #' @param root Data root. Default `here::here("data")`.
+#' @param manual_overlay_path Optional CSV of operator-supplied scores
+#'   (`date, home_team, away_team, home_score, away_score`) merged onto martj42's
+#'   `NA`-score rows via [wc_apply_manual_results()]. Default
+#'   `data/wc/manual_results.csv`; skipped when absent.
 #' @return Invisibly, a list of row counts (`n_results`, `n_schedule`,
 #'   `n_teams`, `n_wc_teams`).
 #' @importFrom rlang .data
@@ -133,7 +137,8 @@ wc_list_unscored_fixtures <- function(raw, as_of = Sys.Date()) {
 wc_ingest_internationals <- function(csv_path = here::here("data", "wc", "raw", "results.csv"),
                                      window_start = as.Date("2022-01-01"),
                                      min_team_matches = 8L,
-                                     root = here::here("data")) {
+                                     root = here::here("data"),
+                                     manual_overlay_path = here::here("data", "wc", "manual_results.csv")) {
   raw <- readr::read_csv(
     csv_path,
     col_types = readr::cols(
@@ -148,6 +153,23 @@ wc_ingest_internationals <- function(csv_path = here::here("data", "wc", "raw", 
       neutral = readr::col_logical()
     )
   )
+
+  # Operator overlay: fill scores martj42 hasn't published yet (martj42 stays
+  # canonical once it catches up). Default path => the CI cron honours it too.
+  if (!is.null(manual_overlay_path) && file.exists(manual_overlay_path)) {
+    overlay <- readr::read_csv(
+      manual_overlay_path,
+      comment = "#",
+      col_types = readr::cols(
+        date = readr::col_date(),
+        home_team = readr::col_character(),
+        away_team = readr::col_character(),
+        home_score = readr::col_integer(),
+        away_score = readr::col_integer()
+      )
+    )
+    raw <- wc_apply_manual_results(raw, overlay)
+  }
 
   d <- raw |>
     dplyr::transmute(

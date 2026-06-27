@@ -8,7 +8,8 @@ wc_ingest_internationals(
   csv_path = here::here("data", "wc", "raw", "results.csv"),
   window_start = as.Date("2022-01-01"),
   min_team_matches = 8L,
-  root = here::here("data")
+  root = here::here("data"),
+  manual_overlay_path = here::here("data", "wc", "manual_results.csv")
 )
 }
 \arguments{
@@ -24,6 +25,11 @@ which is ample for current-strength estimation and keeps the fit tractable.}
 be retained. Default 8.}
 
 \item{root}{Data root. Default `here::here("data")`.}
+
+\item{manual_overlay_path}{Optional CSV of operator-supplied scores
+(`date, home_team, away_team, home_score, away_score`) merged onto martj42's
+`NA`-score rows via [wc_apply_manual_results()]. Default
+`data/wc/manual_results.csv`; skipped when absent.}
 }
 \value{
 Invisibly, a list of row counts (`n_results`, `n_schedule`,

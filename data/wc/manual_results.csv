@@ -1,0 +1,11 @@
+# Manual WC results overlay — scores martj42 hasn't published yet.
+# Filled into the model at ingest; martj42 stays canonical once it catches up.
+#
+# HOW TO USE:
+#   1. scripts/wc/refresh_now.sh --list-missing   (prints the rows below, unfilled)
+#   2. Paste rows here and fill home_score,away_score. Team names MUST match
+#      martj42 spelling exactly (the --list-missing output already does).
+#   3. scripts/wc/refresh_now.sh                  (re-fits, re-forecasts, publishes)
+#   4. When martj42 publishes the real score you'll get a warning at ingest —
+#      delete that row here (the overlay self-drains).
+date,home_team,away_team,home_score,away_score
