@@ -3,16 +3,16 @@
   "sport": "football",
   "country": "world",
   "sex": "male",
-  "generated_at": "2026-06-26T09:41:22Z",
-  "fit_date": "2026-06-26",
+  "generated_at": "2026-06-27T17:32:21Z",
+  "fit_date": "2026-06-27",
   "n_teams": 48,
   "n_groups": 12,
   "n_draws": 3000,
-  "matches_played": 60,
+  "matches_played": 66,
   "matches_group_total": 72,
   "champion_favourite": {
     "team": "Argentina",
     "team_is": "Argentína",
-    "p_champion": 0.2535
+    "p_champion": 0.2667
   }
 }
