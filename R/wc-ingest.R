@@ -1,6 +1,70 @@
 #' @include storage.R
 NULL
 
+#' Patch martj42 results with operator-supplied scores.
+#'
+#' Fills the `home_score`/`away_score` of `raw` rows whose scores are still `NA`
+#' from an overlay keyed on `(date, home_team, away_team)`, for use when martj42
+#' lags behind played matches. martj42 stays canonical: once it carries a real
+#' score the overlay row is ignored (and, if it disagrees, a warning prompts the
+#' operator to prune it, so the overlay self-drains). An overlay row that matches
+#' no fixture aborts loudly — a silent no-op would hide a team-name typo.
+#'
+#' @param raw martj42-schema data frame (`date, home_team, away_team,
+#'   home_score, away_score, ...`), as read by [wc_ingest_internationals()].
+#' @param overlay Data frame with `date` (Date), `home_team`, `away_team`,
+#'   `home_score`, `away_score`. May be empty (no-op).
+#' @return `raw` with matched `NA`-score rows filled.
+#' @export
+wc_apply_manual_results <- function(raw, overlay) {
+  if (is.null(overlay) || nrow(overlay) == 0L) {
+    return(raw)
+  }
+  sep <- "\u001f" # unit separator - cannot appear in a date or team name
+  raw_key <- paste(raw$date, raw$home_team, raw$away_team, sep = sep)
+  n_filled <- 0L
+  for (i in seq_len(nrow(overlay))) {
+    o <- overlay[i, , drop = FALSE]
+    hits <- which(raw_key == paste(o$date, o$home_team, o$away_team, sep = sep))
+    if (length(hits) == 0L) {
+      cli::cli_abort(c(
+        "Manual overlay row matches no martj42 fixture.",
+        "x" = "{o$date} {o$home_team} vs {o$away_team}",
+        "i" = "Check the team-name spelling (run scripts/wc/list_missing.R)."
+      ))
+    }
+    if (length(hits) > 1L) {
+      cli::cli_abort(
+        "Overlay row {o$date} {o$home_team} vs {o$away_team} is ambiguous \\
+        ({length(hits)} martj42 rows match)."
+      )
+    }
+    j <- hits[[1L]]
+    eh <- raw$home_score[[j]]
+    ea <- raw$away_score[[j]]
+    if (!is.na(eh) && !is.na(ea)) {
+      if (!identical(as.integer(eh), as.integer(o$home_score)) ||
+        !identical(as.integer(ea), as.integer(o$away_score))) {
+        cli::cli_warn(c(
+          "martj42 already reports a different score; keeping martj42.",
+          "i" = "{o$date} {o$home_team}: {eh}-{ea} (martj42) vs \\
+            {o$home_score}-{o$away_score} (overlay). Remove it from manual_results.csv."
+        ))
+      }
+      next
+    }
+    raw$home_score[[j]] <- as.integer(o$home_score)
+    raw$away_score[[j]] <- as.integer(o$away_score)
+    n_filled <- n_filled + 1L
+  }
+  if (n_filled > 0L) {
+    cli::cli_alert_success(
+      "Applied {n_filled} manual result{?s} martj42 hasn't published yet."
+    )
+  }
+  raw
+}
+
 #' Ingest international football results into the facts store.
 #'
 #' Reads the bulk international-results CSV (martj42 schema:
