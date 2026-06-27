@@ -63,7 +63,8 @@ git add \
   data/publish/world_cup \
   data/facts/results/sport=football/country=world \
   data/facts/schedules/sport=football/country=world \
-  data/wc/manual_results.csv
+  data/wc/manual_results.csv \
+  data/wc/accountability
 if git diff --cached --quiet; then
   echo "No changes to publish (forecast output identical). Nothing pushed."
   exit 0
