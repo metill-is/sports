@@ -171,6 +171,115 @@ test_that("wc_forward_bracket: monotone, sums to one, and pins force a winner", 
   expect_equal(sum(pc$probability), 1, tolerance = 1e-9)
 })
 
+# ---- Knockout match predictions --------------------------------------------
+
+test_that(".wc_knockout_round_of maps played-knockout count to the round name", {
+  expect_equal(.wc_knockout_round_of(0L), "R32")
+  expect_equal(.wc_knockout_round_of(15L), "R32")
+  expect_equal(.wc_knockout_round_of(16L), "R16")
+  expect_equal(.wc_knockout_round_of(23L), "R16")
+  expect_equal(.wc_knockout_round_of(24L), "QF")
+  expect_equal(.wc_knockout_round_of(28L), "SF")
+  expect_equal(.wc_knockout_round_of(30L), "Final")
+})
+
+# make_group_results / make_r32_schedule live in helper-wc.R (shared with publish).
+
+test_that(".wc_knockout_fixtures_from returns cross-group upcoming fixtures as R32", {
+  s <- wc_structure()
+  results <- make_group_results(s) # 72 group fixtures played, 0 knockout
+  schedule <- make_r32_schedule(s) # 16 cross-group upcoming
+
+  kfx <- .wc_knockout_fixtures_from(schedule, results, s)
+
+  expect_equal(nrow(kfx), 16L)
+  expect_true(all(kfx$round == "R32"))
+  expect_true(all(kfx$played == FALSE))
+  expect_true(all(kfx$venue == "neutral"))
+  # every fixture is cross-group (not one of the 72 group pairings)
+  expect_true(all(s$group_of[kfx$home_team] != s$group_of[kfx$away_team]))
+})
+
+test_that(".wc_knockout_fixtures_from excludes group pairings still in the schedule", {
+  s <- wc_structure()
+  results <- make_group_results(s)
+  schedule <- dplyr::bind_rows(
+    .head <- tibble::tibble( # a stray group pairing (same group) must be dropped
+      match_date = as.Date("2026-06-28"),
+      home_team = s$groups$A[1], away_team = s$groups$A[2]
+    ),
+    make_r32_schedule(s)
+  )
+  kfx <- .wc_knockout_fixtures_from(schedule, results, s)
+  expect_equal(nrow(kfx), 16L) # the group pairing is excluded
+})
+
+test_that(".wc_knockout_fixtures_from rolls the round forward as knockout results land", {
+  s <- wc_structure()
+  r32 <- make_r32_schedule(s)
+  # All 16 R32 now played (added to results); the schedule holds 8 R16 fixtures.
+  results <- dplyr::bind_rows(make_group_results(s), r32)
+  gw <- vapply(s$groups, `[`, character(1), 1L)
+  schedule <- tibble::tibble(
+    match_date = as.Date("2026-07-05") + rep(0:3, each = 2L),
+    home_team = gw[1:8], away_team = gw[c(9:12, 1:4)]
+  )
+  kfx <- .wc_knockout_fixtures_from(schedule, results, s)
+  expect_equal(nrow(kfx), 8L)
+  expect_true(all(kfx$round == "R16"))
+})
+
+test_that("wc_knockout_predictions emits the card contract plus round + p_advance", {
+  s <- wc_structure()
+  teams <- unlist(s$groups, use.names = FALSE)
+  si <- make_sim_inputs(teams, n_draws = 200L) # equal strengths
+  fx <- make_wc_fixtures(s)
+  out <- simulate_world_cup(si$team, si$scalar, fx, s, pairing_seed = 7L)
+  W <- out$bracket_model$W
+
+  kfx <- .wc_knockout_fixtures_from(make_r32_schedule(s), make_group_results(s), s)
+  pr <- wc_knockout_predictions(kfx, si$team, si$scalar, s, W)
+
+  expect_equal(nrow(pr), nrow(kfx))
+  # same card contract as the group predictions
+  s1x2 <- with(pr, p_home + p_draw + p_away)
+  expect_true(all(abs(s1x2 - 1) < 1e-9))
+  expect_true(all(pr$eg_home > 0 & pr$eg_away > 0))
+  expect_true("goal_diff_distribution" %in% names(pr))
+  for (i in seq_len(min(5L, nrow(pr)))) {
+    gdd <- pr$goal_diff_distribution[[i]]
+    expect_equal(sum(gdd$p), 1, tolerance = 1e-9)
+    expect_equal(sum(gdd$p[gdd$diff > 0]), pr$p_home[i], tolerance = 1e-9)
+  }
+  # knockout-specific fields
+  expect_true(all(pr$round == "R32"))
+  expect_true(all(pr$p_advance >= 0 & pr$p_advance <= 1))
+  expect_true(all(is.na(pr$group)))
+  # equal strengths => progression is a coin flip
+  expect_equal(mean(pr$p_advance), 0.5, tolerance = 0.05)
+})
+
+test_that("wc_knockout_predictions handles a single fixture (the Final)", {
+  s <- wc_structure()
+  teams <- unlist(s$groups, use.names = FALSE)
+  si <- make_sim_inputs(teams, n_draws = 120L)
+  fx <- make_wc_fixtures(s)
+  out <- simulate_world_cup(si$team, si$scalar, fx, s, pairing_seed = 9L)
+
+  one <- tibble::tibble(
+    round = "Final", match_date = as.Date("2026-07-19"),
+    home_team = teams[1], away_team = teams[40], # cross-group (A vs J)
+    played = FALSE, venue = "neutral"
+  )
+  pr <- wc_knockout_predictions(one, si$team, si$scalar, s, out$bracket_model$W)
+
+  expect_equal(nrow(pr), 1L)
+  expect_equal(pr$round, "Final")
+  expect_equal(pr$p_home + pr$p_draw + pr$p_away, 1, tolerance = 1e-9)
+  expect_true(pr$p_advance >= 0 && pr$p_advance <= 1)
+  expect_s3_class(pr$goal_diff_distribution[[1]], "tbl_df")
+})
+
 # ---- Goal-diff distribution (fixture-card strip contract) -------------------
 
 test_that("simulate_world_cup predictions carry a goal-diff distribution", {

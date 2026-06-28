@@ -87,3 +87,56 @@ test_that("publish_world_cup emits match_no + kickoff, kickoff-ordered", {
     }
   }
 })
+
+test_that("publish_world_cup serialises knockout rows with round + p_advance", {
+  s <- wc_structure()
+  fx <- make_wc_fixtures(s)
+  teams <- unlist(s$groups, use.names = FALSE)
+  si <- make_sim_inputs(teams, n_draws = 60L)
+  out <- simulate_world_cup(si$team, si$scalar, fx, s, pairing_seed = 2L)
+
+  # Append synthetic R32 knockout predictions to the group cards.
+  kfx <- .wc_knockout_fixtures_from(make_r32_schedule(s), make_group_results(s), s)
+  kpred <- wc_knockout_predictions(kfx, si$team, si$scalar, s, out$bracket_model$W)
+  out$predictions <- dplyr::bind_rows(out$predictions, kpred)
+
+  root <- withr::local_tempdir()
+  publish_world_cup(out, si$team, s, fx, root = root)
+  pred <- jsonlite::read_json(
+    file.path(root, "publish", "world_cup", "karla", "predictions.json")
+  )
+
+  ko <- Filter(function(m) !is.null(m$round), pred$matches)
+  expect_equal(length(ko), nrow(kfx)) # all 16 knockout rows present
+  m <- ko[[1]]
+  expect_true(m$round %in% c("R32", "R16", "QF", "SF", "Final"))
+  expect_true(is.numeric(m$p_advance) && m$p_advance >= 0 && m$p_advance <= 1)
+  expect_null(m$group) # knockout rows carry no group
+  expect_true("goal_diff_distribution" %in% names(m))
+  expect_true(c("p_home", "p_draw", "p_away", "eg_home") %in% names(m) |> all())
+
+  # Group rows still carry no round/p_advance (contract isolation).
+  grp <- Filter(function(m) is.null(m$round), pred$matches)
+  expect_gt(length(grp), 0L)
+  expect_null(grp[[1]]$p_advance)
+})
+
+test_that("publish_world_cup handles knockout-only predictions (group stage over)", {
+  s <- wc_structure()
+  fx <- make_wc_fixtures(s)
+  teams <- unlist(s$groups, use.names = FALSE)
+  si <- make_sim_inputs(teams, n_draws = 50L)
+  out <- simulate_world_cup(si$team, si$scalar, fx, s, pairing_seed = 4L)
+  kfx <- .wc_knockout_fixtures_from(make_r32_schedule(s), make_group_results(s), s)
+  # Group stage finished: predictions hold ONLY knockout rows (group preds NULL).
+  out$predictions <- wc_knockout_predictions(kfx, si$team, si$scalar, s, out$bracket_model$W)
+
+  root <- withr::local_tempdir()
+  expect_no_error(publish_world_cup(out, si$team, s, fx, root = root))
+  pred <- jsonlite::read_json(
+    file.path(root, "publish", "world_cup", "karla", "predictions.json")
+  )
+  expect_equal(length(pred$matches), nrow(kfx))
+  expect_true(all(vapply(pred$matches, function(m) !is.null(m$round), logical(1))))
+  expect_true(all(vapply(pred$matches, function(m) is.null(m$group), logical(1))))
+})

@@ -23,6 +23,17 @@ fx <- wc_group_fixtures(s)
 cat(sprintf("group fixtures: %d (%d played)\n", nrow(fx), sum(fx$played)))
 
 out <- simulate_world_cup(si$team, si$scalar, fx, s, pairing_seed = 2026L)
+
+# Knockout-stage match cards: predict the scheduled-but-unplayed knockout
+# fixtures (empty during the group stage) and append them to the group cards so
+# predictions.json carries the upcoming round once the bracket is set.
+kfx <- wc_knockout_fixtures(s)
+cat(sprintf("knockout fixtures: %d\n", nrow(kfx)))
+if (nrow(kfx) > 0L) {
+  kpred <- wc_knockout_predictions(kfx, si$team, si$scalar, s, out$bracket_model$W)
+  out$predictions <- dplyr::bind_rows(out$predictions, kpred)
+}
+
 # Joint team-vs-team head-to-head pass (separate from the marginal bracket model
 # above) — powers the page's "Einvígi" section. ~1.5 min extra on the cron.
 cat("computing team-vs-team head-to-head (joint MC)...\n")
