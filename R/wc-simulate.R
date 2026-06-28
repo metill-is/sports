@@ -327,6 +327,127 @@ wc_group_fixtures <- function(structure, root = here::here("data")) {
   fx
 }
 
+# Knockout round name from the number of knockout matches already played.
+# 16 R32 + 8 R16 + 4 QF + 2 SF + 1 Final = 31; cumulative thresholds.
+.wc_knockout_round_of <- function(n_played) {
+  if (n_played < 16L) {
+    "R32"
+  } else if (n_played < 24L) {
+    "R16"
+  } else if (n_played < 28L) {
+    "QF"
+  } else if (n_played < 30L) {
+    "SF"
+  } else {
+    "Final"
+  }
+}
+
+# Pure core of [wc_knockout_fixtures()]: from schedule (upcoming) and results
+# (played) fixture tibbles, return the scheduled-but-unplayed *knockout* fixtures
+# with a `round` label. A knockout fixture is any pairing that is not one of the
+# 72 within-group pairings (and whose teams are both known). The round is derived
+# from the number of knockout matches already in `results` — so it rolls forward
+# (R32 -> R16 -> ...) for free as martj42 fills each round into the schedule.
+.wc_knockout_fixtures_from <- function(schedule, results, structure) {
+  go <- structure$group_of
+  group_pairs <- character(0)
+  for (g in names(structure$groups)) {
+    cmb <- utils::combn(structure$groups[[g]], 2L)
+    group_pairs <- c(group_pairs, .wc_pair_key(cmb[1, ], cmb[2, ]))
+  }
+  is_knockout <- function(home, away) {
+    !is.na(go[home]) & !is.na(go[away]) &
+      !(.wc_pair_key(home, away) %in% group_pairs)
+  }
+  n_ko_played <- if (nrow(results) > 0L) {
+    sum(is_knockout(results$home_team, results$away_team))
+  } else {
+    0L
+  }
+  round_name <- .wc_knockout_round_of(n_ko_played)
+
+  empty <- tibble::tibble(
+    round = character(0), match_date = as.Date(character(0)),
+    home_team = character(0), away_team = character(0),
+    played = logical(0), venue = character(0)
+  )
+  if (nrow(schedule) == 0L) {
+    return(empty)
+  }
+  keep <- is_knockout(schedule$home_team, schedule$away_team)
+  played_keys <- if (nrow(results) > 0L) {
+    .wc_pair_key(results$home_team, results$away_team)
+  } else {
+    character(0)
+  }
+  keep <- keep & !(.wc_pair_key(schedule$home_team, schedule$away_team) %in% played_keys)
+  k <- schedule[keep, , drop = FALSE]
+  if (nrow(k) == 0L) {
+    return(empty)
+  }
+  tibble::tibble(
+    round = rep(round_name, nrow(k)),
+    match_date = k$match_date,
+    home_team = k$home_team, away_team = k$away_team,
+    played = FALSE, venue = "neutral"
+  )
+}
+
+#' Build the upcoming knockout-stage fixtures from the facts store.
+#'
+#' The mirror of [wc_group_fixtures()] for the knockout rounds: the schedule's
+#' cross-group fixtures with both teams known and not yet played, labelled by
+#' round. Empty during the group stage (no knockout teams known yet).
+#'
+#' @param structure Output of [wc_structure()].
+#' @param root Data root.
+#' @return Tibble: `round`, `match_date`, `home_team`, `away_team`, `played`
+#'   (always FALSE), `venue` (always "neutral").
+#' @export
+wc_knockout_fixtures <- function(structure, root = here::here("data")) {
+  flt <- list(sport = "football", country = "world", sex = "male")
+  res <- read_table("results", root = root, filter = flt)
+  res <- res[res$division == "FIFA World Cup" & res$season == 2026L, , drop = FALSE]
+  sch <- read_table("schedules", root = root, filter = flt)
+  sch <- sch[sch$division == "FIFA World Cup" & sch$season == 2026L, , drop = FALSE]
+  .wc_knockout_fixtures_from(sch, res, structure)
+}
+
+# Shared fixture-card row builder. From per-fixture posterior score matrices
+# (`mh`/`mg` integer goals, `lh`/`lg` expected goals; all `draws x fixtures`)
+# build the league next_games card contract. Used for BOTH group and knockout
+# fixtures so the platform/reels render the two identically; callers add their
+# own identity column (`group` or `round`/`p_advance`).
+.wc_prediction_rows <- function(meta, mh, mg, lh, lg, nd) {
+  ff <- seq_len(ncol(mh))
+  tibble::tibble(
+    match_date = meta$match_date,
+    home = meta$home, away = meta$away,
+    p_home = colMeans(mh > mg),
+    p_draw = colMeans(mh == mg),
+    p_away = colMeans(mh < mg),
+    eg_home = colMeans(lh),
+    eg_away = colMeans(lg),
+    goal_diff_distribution = lapply(ff, function(f) {
+      tb <- table(mh[, f] - mg[, f])
+      tibble::tibble(diff = as.integer(names(tb)), p = as.numeric(tb) / nd)
+    }),
+    home_goal_distribution = lapply(ff, function(f) {
+      tb <- table(mh[, f])
+      tibble::tibble(goals = as.integer(names(tb)), p = as.numeric(tb) / nd)
+    }),
+    away_goal_distribution = lapply(ff, function(f) {
+      tb <- table(mg[, f])
+      tibble::tibble(goals = as.integer(names(tb)), p = as.numeric(tb) / nd)
+    }),
+    total_goal_distribution = lapply(ff, function(f) {
+      tb <- table(mh[, f] + mg[, f])
+      tibble::tibble(total = as.integer(names(tb)), p = as.numeric(tb) / nd)
+    })
+  )
+}
+
 #' Simulate the World Cup across posterior draws.
 #'
 #' @param sim_inputs_team Tibble with `team`, `.draw`, `cur_offense`,
@@ -431,42 +552,22 @@ simulate_world_cup <- function(sim_inputs_team, sim_inputs_scalar,
   )
 
   # ---- upcoming-match predictions (unplayed fixtures) ----
+  # Group cards; knockout cards are produced separately by
+  # [wc_knockout_predictions()] (same contract via .wc_prediction_rows) and
+  # appended downstream, since their teams come from the schedule, not the
+  # group-oriented per-draw matrices above.
   up <- which(!group_fixtures$played)
   predictions <- NULL
   if (length(up) > 0L) {
-    predictions <- tibble::tibble(
-      match_date = group_fixtures$match_date[up], group = group_fixtures$group[up],
-      home = group_fixtures$home_team[up], away = group_fixtures$away_team[up],
-      p_home = colMeans(mh_m[, up, drop = FALSE] > mg_m[, up, drop = FALSE]),
-      p_draw = colMeans(mh_m[, up, drop = FALSE] == mg_m[, up, drop = FALSE]),
-      p_away = colMeans(mh_m[, up, drop = FALSE] < mg_m[, up, drop = FALSE]),
-      eg_home = colMeans(lh_m[, up, drop = FALSE]),
-      eg_away = colMeans(lg_m[, up, drop = FALSE]),
-      # Posterior P(home - away = d) per fixture — the league next_games
-      # contract (see publish-football-iceland.R) so the platform's
-      # fixture-card goal-diff strip renders identically for the WC.
-      goal_diff_distribution = lapply(up, function(f) {
-        tb <- table(mh_m[, f] - mg_m[, f])
-        tibble::tibble(diff = as.integer(names(tb)), p = as.numeric(tb) / nd)
-      }),
-      # Marginal posterior goal distributions per fixture (home / away / total)
-      # — the score-prediction accountability contract: the platform draws each
-      # as a predicted-distribution-vs-actual strip (cf. the basketball/handball
-      # historical_testing.R interval plots). Same table-of-counts shape as the
-      # goal-difference distribution above.
-      home_goal_distribution = lapply(up, function(f) {
-        tb <- table(mh_m[, f])
-        tibble::tibble(goals = as.integer(names(tb)), p = as.numeric(tb) / nd)
-      }),
-      away_goal_distribution = lapply(up, function(f) {
-        tb <- table(mg_m[, f])
-        tibble::tibble(goals = as.integer(names(tb)), p = as.numeric(tb) / nd)
-      }),
-      total_goal_distribution = lapply(up, function(f) {
-        tb <- table(mh_m[, f] + mg_m[, f])
-        tibble::tibble(total = as.integer(names(tb)), p = as.numeric(tb) / nd)
-      })
+    meta <- tibble::tibble(
+      match_date = group_fixtures$match_date[up],
+      home = group_fixtures$home_team[up], away = group_fixtures$away_team[up]
     )
+    predictions <- .wc_prediction_rows(
+      meta, mh_m[, up, drop = FALSE], mg_m[, up, drop = FALSE],
+      lh_m[, up, drop = FALSE], lg_m[, up, drop = FALSE], nd
+    )
+    predictions$group <- group_fixtures$group[up]
   }
 
   # ---- played-match performance: xG / xPts vs actual ----
@@ -531,6 +632,81 @@ simulate_world_cup <- function(sim_inputs_team, sim_inputs_scalar,
     bracket_model = bracket_model,
     n_draws = nd
   )
+}
+
+#' Predict the upcoming knockout fixtures (per-match cards).
+#'
+#' For each scheduled-but-unplayed knockout fixture (known teams), simulate the
+#' match per posterior draw at a neutral venue and emit the same fixture-card
+#' contract as the group predictions, plus `round` and `p_advance` (the
+#' tie-resolved progression probability for the home team, taken from the neutral
+#' win matrix `W` so the card and the bracket model agree exactly).
+#'
+#' @param knockout_fixtures Output of [wc_knockout_fixtures()].
+#' @param sim_inputs_team,sim_inputs_scalar As for [simulate_world_cup()].
+#' @param structure Output of [wc_structure()].
+#' @param W The `nt x nt` neutral win matrix (`bracket_model$W`).
+#' @return Tibble in the [.wc_prediction_rows()] contract plus `group` (NA),
+#'   `round`, and `p_advance`; or `NULL` if there are no knockout fixtures.
+#' @export
+wc_knockout_predictions <- function(knockout_fixtures, sim_inputs_team,
+                                    sim_inputs_scalar, structure, W) {
+  if (is.null(knockout_fixtures) || nrow(knockout_fixtures) == 0L) {
+    return(NULL)
+  }
+  teams <- unlist(structure$groups, use.names = FALSE)
+  tidx <- stats::setNames(seq_along(teams), teams)
+
+  sit <- sim_inputs_team[sim_inputs_team$team %in% teams, , drop = FALSE]
+  draws_team <- split(sit, sit$.draw)
+  draws_scalar <- split(sim_inputs_scalar, sim_inputs_scalar$.draw)
+  keys <- intersect(names(draws_team), names(draws_scalar))
+  if (length(keys) == 0L) {
+    cli::cli_abort("wc_knockout_predictions: no overlapping .draw keys.")
+  }
+  nd <- length(keys)
+  nf <- nrow(knockout_fixtures)
+
+  lh_m <- matrix(0, nd, nf)
+  lg_m <- matrix(0, nd, nf)
+  mh_m <- matrix(0L, nd, nf)
+  mg_m <- matrix(0L, nd, nf)
+  for (i in seq_along(keys)) {
+    dt <- draws_team[[keys[i]]]
+    off <- stats::setNames(dt$cur_offense, dt$team)
+    def <- stats::setNames(dt$cur_defense, dt$team)
+    ha_off <- stats::setNames(dt$home_advantage_off, dt$team)
+    ha_def <- stats::setNames(dt$home_advantage_def, dt$team)
+    ds <- draws_scalar[[keys[i]]]
+    for (f in seq_len(nf)) {
+      l <- .wc_match_lambdas(
+        knockout_fixtures$home_team[f], knockout_fixtures$away_team[f],
+        knockout_fixtures$venue[f], off, def, ha_off, ha_def,
+        ds$mean_log_goals, ds$alpha_mu3, ds$beta_mu3_strength_diff
+      )
+      lh_m[i, f] <- l[1]
+      lg_m[i, f] <- l[2]
+      s <- .wc_rbvpois(l)
+      mh_m[i, f] <- s[1]
+      mg_m[i, f] <- s[2]
+    }
+  }
+
+  meta <- tibble::tibble(
+    match_date = knockout_fixtures$match_date,
+    home = knockout_fixtures$home_team, away = knockout_fixtures$away_team
+  )
+  rows <- .wc_prediction_rows(meta, mh_m, mg_m, lh_m, lg_m, nd)
+  rows$group <- NA_character_
+  rows$round <- knockout_fixtures$round
+  # p_advance = P(home advances). W is the neutral knockout win matrix with draws
+  # already redistributed (W[i, j] + W[j, i] = 1), i.e. tie-resolved via the
+  # ET/penalties shortcut — so it IS the progression probability, and is the same
+  # W the bracket model propagates, so card and bracket agree exactly.
+  rows$p_advance <- vapply(seq_len(nf), function(f) {
+    W[tidx[[knockout_fixtures$home_team[f]]], tidx[[knockout_fixtures$away_team[f]]]]
+  }, numeric(1))
+  rows
 }
 
 # ---- Team-vs-team head-to-head (joint Monte Carlo) -------------------------

@@ -148,12 +148,20 @@ publish_world_cup <- function(sim_out, sim_inputs_team, structure, group_fixture
     lapply(seq_len(nrow(pr)), function(i) {
       r <- pr[i, ]
       out <- list(
-        match_date = as.character(r$match_date), group = r$group,
+        match_date = as.character(r$match_date),
         home = r$home, home_is = is_name(r$home),
         away = r$away, away_is = is_name(r$away),
         p_home = rnd(r$p_home), p_draw = rnd(r$p_draw), p_away = rnd(r$p_away),
         eg_home = rnd(r$eg_home, 2), eg_away = rnd(r$eg_away, 2)
       )
+      # Group cards carry `group`; knockout cards carry `round` + `p_advance`
+      # (the tie-resolved progression probability). Mutually exclusive per row;
+      # the columns may be absent entirely (pure group- or knockout-stage runs).
+      if ("group" %in% names(r) && !is.na(r$group)) out$group <- r$group
+      if ("round" %in% names(r) && !is.na(r$round)) out$round <- r$round
+      if ("p_advance" %in% names(r) && !is.na(r$p_advance)) {
+        out$p_advance <- rnd(r$p_advance)
+      }
       if (!is.na(r$match_no)) out$match_no <- as.integer(r$match_no)
       if (!is.na(r$kickoff)) {
         out$kickoff <- format(r$kickoff, "%Y-%m-%dT%H:%M:%SZ", tz = "UTC")
