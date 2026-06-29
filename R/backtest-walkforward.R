@@ -369,7 +369,7 @@ bt_wf_sd_league <- function(stan_model = "football_iceland/2d_gaussian_sd.stan")
   lg
 }
 
-#' Decide closure that fits the (S,D) Gaussian model as-of `d`, then decides.
+#' Decide closure that fits the (S,D) Gaussian model as-of `d`, then decides
 #'
 #' The (S,D) analogue of [bt_wf_default_decide()]: it fits the (S,D) model (not
 #' the config's BVP) into the isolated `root` with `end_date == run_date`

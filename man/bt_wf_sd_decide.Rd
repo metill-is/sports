@@ -2,7 +2,7 @@
 % Please edit documentation in R/backtest-walkforward.R
 \name{bt_wf_sd_decide}
 \alias{bt_wf_sd_decide}
-\title{Decide closure that fits the (S,D) Gaussian model as-of `d`, then decides.}
+\title{Decide closure that fits the (S,D) Gaussian model as-of `d`, then decides}
 \usage{
 bt_wf_sd_decide(stan_model = "football_iceland/2d_gaussian_sd.stan")
 }
