@@ -356,6 +356,48 @@ bt_wf_extract_decide <- function(source_root = here::here("data")) {
   }
 }
 
+#' football_iceland league list with the (S,D) Gaussian Stan model.
+#'
+#' Overrides only `stan_model` so `fit_league(league = …)` fits the (S,D) model
+#' through the exact same prepare/fit/extract path as the production BVP.
+#' @param stan_model Stan path relative to `Stan/`. Default the (S,D) model.
+#' @return The football_iceland league list with `stan_model` replaced.
+#' @noRd
+bt_wf_sd_league <- function(stan_model = "football_iceland/2d_gaussian_sd.stan") {
+  lg <- load_leagues()[["football_iceland"]]
+  lg$stan_model <- stan_model
+  lg
+}
+
+#' Decide closure that fits the (S,D) Gaussian model as-of `d`, then decides.
+#'
+#' The (S,D) analogue of [bt_wf_default_decide()]: it fits the (S,D) model (not
+#' the config's BVP) into the isolated `root` with `end_date == run_date`
+#' (leak-free), then decides over the pre-sliced odds. `write_archive = FALSE`
+#' skips the football publish extracts (which assume BVP parameters); the
+#' `beliefs_latest` write the decider needs is unconditional.
+#' @param stan_model Stan path relative to `Stan/`. Default the (S,D) model.
+#' @return A `decide_fn` closure `(root, run_date, sex, ledger_asof)`.
+#' @export
+bt_wf_sd_decide <- function(stan_model = "football_iceland/2d_gaussian_sd.stan") {
+  league <- bt_wf_sd_league(stan_model)
+  function(root, run_date, sex, ledger_asof = NULL) {
+    fit_league(
+      league = league, sex = sex,
+      fit_date = run_date, end_date = run_date,
+      seed = as.integer(format(run_date, "%Y%m%d")),
+      schedule_horizon_days = 200L, root = root,
+      write_archive = FALSE
+    )
+    decide_league(
+      league_key = "football_iceland", sex = sex,
+      run_date = run_date, root = root, write = FALSE,
+      max_age_hours = bt_wf_max_age_hours(),
+      return_candidates = TRUE
+    )
+  }
+}
+
 #' Walk-forward in REUSE mode over the saved extract fit_dates (no Stan).
 #'
 #' Thin orchestration shared by the CLI (`--reuse`) and the season report:
