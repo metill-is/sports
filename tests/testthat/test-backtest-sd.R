@@ -31,3 +31,10 @@ test_that("bt_wf_sd_decide fits the (S,D) model and returns candidates", {
   expect_equal(captured$sex, "male")
   expect_true(all(c("p", "odds") %in% names(out)))
 })
+
+test_that("wf_select_decide_fn picks the right closure", {
+  expect_identical(wf_select_decide_fn("bvp", reuse = FALSE), bt_wf_default_decide)
+  expect_true(is.function(wf_select_decide_fn("bvp", reuse = TRUE)))
+  expect_true(is.function(wf_select_decide_fn("sd", reuse = FALSE)))
+  expect_error(wf_select_decide_fn("sd", reuse = TRUE), "reuse")
+})

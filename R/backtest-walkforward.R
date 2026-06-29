@@ -398,6 +398,30 @@ bt_wf_sd_decide <- function(stan_model = "football_iceland/2d_gaussian_sd.stan")
   }
 }
 
+#' Select the walk-forward decide closure for a model + mode.
+#'
+#' `model = "sd"` re-fits the (S,D) model and cannot REUSE (no saved extracts).
+#' `model = "bvp"` uses [bt_wf_extract_decide()] under `reuse`, else
+#' [bt_wf_default_decide()].
+#' @param model "bvp" or "sd".
+#' @param reuse Replay saved extracts (bvp only).
+#' @param source_root Live data root for the reuse path.
+#' @return A `decide_fn` closure.
+#' @noRd
+wf_select_decide_fn <- function(model = c("bvp", "sd"), reuse = FALSE,
+                                source_root = here::here("data")) {
+  model <- match.arg(model)
+  if (identical(model, "sd")) {
+    if (isTRUE(reuse)) {
+      stop("--reuse is unavailable for model=sd (no saved (S,D) extracts); use --per-round or --as-of",
+        call. = FALSE
+      )
+    }
+    return(bt_wf_sd_decide())
+  }
+  if (isTRUE(reuse)) bt_wf_extract_decide(source_root) else bt_wf_default_decide
+}
+
 #' Walk-forward in REUSE mode over the saved extract fit_dates (no Stan).
 #'
 #' Thin orchestration shared by the CLI (`--reuse`) and the season report:

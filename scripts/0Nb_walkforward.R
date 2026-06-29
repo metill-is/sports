@@ -36,6 +36,8 @@ season_str <- get_flag("season")
 as_of_str <- get_flag("as-of")
 per_round <- has_flag("per-round")
 reuse <- has_flag("reuse")
+model <- get_flag("model", "bvp")
+if (!model %in% c("bvp", "sd")) stop("--model must be 'bvp' or 'sd'", call. = FALSE)
 horizon_days <- as.integer(get_flag("horizon", "14"))
 
 if (is.null(sex)) stop("--sex required (male or female)", call. = FALSE)
@@ -59,6 +61,8 @@ ledger <- tryCatch(read_table("ledger"), error = function(e) NULL)
 # (seconds, not hours), scoring the model's ACTUAL published predictions. Each
 # fit_date is exactly leak-free (end_date == fit_date). Otherwise, each cutoff is
 # a round-completion date and the model is re-fit as-of it (G1).
+decide_fn <- wf_select_decide_fn(model, reuse = reuse, source_root = here::here("data"))
+
 if (isTRUE(reuse)) {
   ext_dir <- here::here(
     "data", "beliefs", "extracts", "sport=football",
@@ -69,9 +73,7 @@ if (isTRUE(reuse)) {
   if (!is.null(season_str)) fds <- fds[format(fds, "%Y") == season_str]
   if (length(fds) == 0L) stop("--reuse: no saved extract fit_dates", call. = FALSE)
   cutoffs <- fds
-  decide_fn <- bt_wf_extract_decide(here::here("data"))
 } else {
-  decide_fn <- bt_wf_default_decide
   cutoffs <- if (isTRUE(per_round)) {
     if (is.null(season_str)) stop("--per-round requires --season YYYY", call. = FALSE)
     season <- as.integer(season_str)
@@ -94,7 +96,7 @@ if (isTRUE(reuse)) {
 }
 
 mode <- if (isTRUE(reuse)) "REUSE saved fits" else "RE-FIT per cutoff"
-cli::cli_h1("Walk-forward {league_key}/{sex} [{mode}]: {length(cutoffs)} cutoff(s), horizon={horizon_days}d")
+cli::cli_h1("Walk-forward {league_key}/{sex} [{model} | {mode}]: {length(cutoffs)} cutoff(s), horizon={horizon_days}d")
 wf <- bt_walkforward(
   sex = sex, cutoffs = cutoffs, horizon_days = horizon_days,
   results = results, odds = odds, ledger = ledger,
@@ -103,8 +105,8 @@ wf <- bt_walkforward(
 
 out_dir <- here::here("data", "backtest", "walkforward")
 dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
-arrow::write_parquet(wf$bets, file.path(out_dir, paste0("bets_", sex, ".parquet")))
-arrow::write_parquet(wf$scores, file.path(out_dir, paste0("scores_", sex, ".parquet")))
+arrow::write_parquet(wf$bets, file.path(out_dir, paste0("bets_", model, "_", sex, ".parquet")))
+arrow::write_parquet(wf$scores, file.path(out_dir, paste0("scores_", model, "_", sex, ".parquet")))
 print(wf$scores)
 print(wf$pnl)
 cli::cli_alert_success("Walk-forward complete: {nrow(wf$bets)} OOS bets scored")
