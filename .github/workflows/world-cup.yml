@@ -221,7 +221,43 @@ jobs:
             exit 0
           fi
           git commit -m "data(wc): forecast $(date -u +%Y-%m-%dT%H:%MZ)"
-          # Other data workflows commit to main frequently (different paths, so
-          # no content conflict); rebase so a stale tip doesn't reject the push.
-          git pull --rebase origin main
-          git push
+          # Conflict-aware push. The league workflows each write DISJOINT paths,
+          # so a plain rebase never hits a content conflict -- but TWO world-cup
+          # runs (e.g. the hourly cron overlapping a forced/manual run) regenerate
+          # the SAME files here: data/publish/world_cup/, the accretive
+          # prediction_log.json, the pointer, and the country=world facts. The
+          # `concurrency: world-cup` group serialises runs only loosely, so a
+          # checkout-vs-remote-push race of seconds can leave our commit
+          # conflicting with a sibling run's (this is what failed run
+          # 28364002549). Every path this job writes is world-cup-exclusive and
+          # fully regenerated from the latest martj42 data + this run's fit, so
+          # OURS is the authoritative, freshest forecast: rebase preferring ours
+          # (`-X theirs` replays our commit, keeping its side on conflict), and
+          # retry in case origin advances again between fetch and push.
+          #
+          # Caveat: prediction_log.json is accretive. In the rare window where a
+          # fixture is played between two overlapping runs, a sibling's pre-match
+          # snapshot for that one match could be dropped. The match result itself
+          # is never lost (it lives in data/facts/results) and the next fit
+          # re-snapshots every still-upcoming fixture -- whereas the prior
+          # behaviour threw away the entire ~49-min forecast on any conflict.
+          pushed=0
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            if ! git rebase -X theirs FETCH_HEAD; then
+              echo "::error::Unexpected non-content rebase failure (attempt $attempt)."
+              git rebase --abort || true
+              exit 1
+            fi
+            if git push; then
+              echo "Pushed forecast outputs on attempt $attempt."
+              pushed=1
+              break
+            fi
+            echo "::warning::Push rejected (origin advanced); retrying (attempt $attempt)."
+            sleep $((attempt * 3))
+          done
+          if [[ "$pushed" -ne 1 ]]; then
+            echo "::error::Could not push forecast outputs after 5 attempts."
+            exit 1
+          fi
