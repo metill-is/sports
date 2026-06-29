@@ -6,3 +6,28 @@ test_that("2d_gaussian_sd.stan compiles", {
   mod <- cmdstanr::cmdstan_model(stan_path)
   expect_s3_class(mod, "CmdStanModel")
 })
+
+test_that("bt_wf_sd_league overrides only the stan_model", {
+  base <- load_leagues()[["football_iceland"]]
+  lg <- bt_wf_sd_league()
+  expect_equal(lg$stan_model, "football_iceland/2d_gaussian_sd.stan")
+  expect_equal(lg$sport, base$sport)
+  expect_equal(lg$country, base$country)
+})
+
+test_that("bt_wf_sd_decide fits the (S,D) model and returns candidates", {
+  captured <- new.env()
+  testthat::local_mocked_bindings(
+    fit_league = function(league, sex, ...) {
+      captured$stan_model <- league$stan_model
+      captured$sex <- sex
+      invisible(NULL)
+    },
+    decide_league = function(...) tibble::tibble(stage = "kept", p = 0.5, odds = 2.0)
+  )
+  fn <- bt_wf_sd_decide()
+  out <- fn(root = withr::local_tempdir(), run_date = as.Date("2026-05-15"), sex = "male")
+  expect_equal(captured$stan_model, "football_iceland/2d_gaussian_sd.stan")
+  expect_equal(captured$sex, "male")
+  expect_true(all(c("p", "odds") %in% names(out)))
+})
