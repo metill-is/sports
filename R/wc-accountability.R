@@ -36,6 +36,14 @@ NULL
   preds[[col]][[i]]
 }
 
+# Coerce a possibly-NULL / length-0 scalar to a length-1 character so the
+# order() vapplys below never abort. A logged knockout match carries no group
+# (bind_rows leaves it NA -> serialized as JSON null -> read back as NULL); once
+# that fixture is played it is not re-upserted, so the NULL flows into order().
+.wc_chr1 <- function(x) {
+  if (length(x) == 0L) NA_character_ else as.character(x)[[1L]]
+}
+
 # Normalise an incoming distribution (tibble / data.frame with a value field +
 # `p`) to a compact list of `{value, p}` elements, or NULL when empty/malformed.
 .wc_norm_dist <- function(df, vfield) {
@@ -108,9 +116,9 @@ wc_snapshot_predictions <- function(predictions, fit_date = Sys.Date(),
 
   matches <- unname(store)
   ord <- order(
-    vapply(matches, function(m) as.character(m$match_date), character(1)),
-    vapply(matches, function(m) as.character(m$group), character(1)),
-    vapply(matches, function(m) as.character(m$home), character(1))
+    vapply(matches, function(m) .wc_chr1(m$match_date), character(1)),
+    vapply(matches, function(m) .wc_chr1(m$group), character(1)),
+    vapply(matches, function(m) .wc_chr1(m$home), character(1))
   )
   matches <- matches[ord]
   jsonlite::write_json(
