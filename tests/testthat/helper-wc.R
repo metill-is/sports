@@ -46,6 +46,32 @@ make_r32_schedule <- function(structure) {
   )
 }
 
+# A fully-played, deterministic group stage: in every group team 1 beats all,
+# team 2 beats 3 & 4, team 3 beats 4 (9/6/3/0 pts, distinct GD), so each group's
+# top two are certain (one-hot occupancy) for the R32 slots that feed off them.
+# (Third-placed teams tie across groups; the best-thirds pick is left to the
+# allocator — irrelevant to the 2A/2B-fed R32 matches used in tests.)
+make_group_results_scored <- function(structure) {
+  rows <- list()
+  for (g in names(structure$groups)) {
+    tm <- structure$groups[[g]]
+    games <- list(
+      c(tm[1], tm[2], 1L, 0L), c(tm[1], tm[3], 2L, 0L), c(tm[1], tm[4], 3L, 0L),
+      c(tm[2], tm[3], 1L, 0L), c(tm[2], tm[4], 2L, 0L),
+      c(tm[3], tm[4], 1L, 0L)
+    )
+    for (gm in games) {
+      rows[[length(rows) + 1L]] <- tibble::tibble(
+        match_date = as.Date("2026-06-20"), group = g,
+        home_team = gm[[1]], away_team = gm[[2]],
+        home_score = as.integer(gm[[3]]), away_score = as.integer(gm[[4]]),
+        played = TRUE, venue = "neutral"
+      )
+    }
+  }
+  dplyr::bind_rows(rows)
+}
+
 # One-hot R32 slot occupancy (the certain, post-group state) from a given
 # assignment: a_names[i] / b_names[i] occupy slot a / b of the i-th R32 match
 # (bracket order, match 73..88). Returns 16 x nt matrices like simulate_world_cup.

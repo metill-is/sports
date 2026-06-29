@@ -9,7 +9,9 @@ simulate_world_cup(
   sim_inputs_scalar,
   group_fixtures,
   structure,
-  pairing_seed = NULL
+  pairing_seed = NULL,
+  knockout_results = NULL,
+  shootout_winners = NULL
 )
 }
 \arguments{
@@ -24,6 +26,15 @@ simulate_world_cup(
 \item{structure}{Output of [wc_structure()].}
 
 \item{pairing_seed}{Optional integer for reproducibility.}
+
+\item{knockout_results}{Optional played-knockout-results tibble from
+[wc_knockout_results()]. When supplied, decided matches are pinned so the
+forward bracket collapses onto reality (winner advances w.p. 1, loser 0);
+the per-match records also surface as `bracket_model$played`. `NULL` (the
+default) leaves the forecast unconditioned — its behaviour is unchanged.}
+
+\item{shootout_winners}{Optional `pair_key -> winner` map from
+[wc_shootout_winners()] resolving knockouts level on score.}
 }
 \value{
 List of aggregated views: `group_probs`, `placement_probs` (from the

@@ -457,6 +457,13 @@ wc_knockout_fixtures <- function(structure, root = here::here("data")) {
 #' @param group_fixtures Output of [wc_group_fixtures()].
 #' @param structure Output of [wc_structure()].
 #' @param pairing_seed Optional integer for reproducibility.
+#' @param knockout_results Optional played-knockout-results tibble from
+#'   [wc_knockout_results()]. When supplied, decided matches are pinned so the
+#'   forward bracket collapses onto reality (winner advances w.p. 1, loser 0);
+#'   the per-match records also surface as `bracket_model$played`. `NULL` (the
+#'   default) leaves the forecast unconditioned — its behaviour is unchanged.
+#' @param shootout_winners Optional `pair_key -> winner` map from
+#'   [wc_shootout_winners()] resolving knockouts level on score.
 #' @return List of aggregated views: `group_probs`, `placement_probs` (from the
 #'   forward bracket model), `predictions` (per unplayed fixture: 1X2
 #'   probabilities, expected goals, and a `goal_diff_distribution` list-column
@@ -466,7 +473,8 @@ wc_knockout_fixtures <- function(structure, root = here::here("data")) {
 #' @importFrom rlang .data
 #' @export
 simulate_world_cup <- function(sim_inputs_team, sim_inputs_scalar,
-                               group_fixtures, structure, pairing_seed = NULL) {
+                               group_fixtures, structure, pairing_seed = NULL,
+                               knockout_results = NULL, shootout_winners = NULL) {
   if (!is.null(pairing_seed)) set.seed(pairing_seed)
 
   teams <- unlist(structure$groups, use.names = FALSE)
@@ -539,7 +547,13 @@ simulate_world_cup <- function(sim_inputs_team, sim_inputs_scalar,
     occ_b[m, ] <- tabulate(r32b_m[, m], nbins = nt) / nd
   }
 
-  fwd <- wc_forward_bracket(W, occ_a, occ_b, structure$bracket, teams)
+  # Condition on played knockout results: pin each decided match's winner so the
+  # forward bracket collapses onto reality. Empty pins (no results / group stage)
+  # leave the call identical to before.
+  kp <- .wc_knockout_pins(
+    structure$bracket, teams, occ_a, occ_b, knockout_results, shootout_winners
+  )
+  fwd <- wc_forward_bracket(W, occ_a, occ_b, structure$bracket, teams, pins = kp$pins)
   reach_r32 <- fwd$reach$R32
 
   group_probs <- tibble::tibble(
@@ -621,7 +635,8 @@ simulate_world_cup <- function(sim_inputs_team, sim_inputs_scalar,
   }
 
   bracket_model <- list(
-    teams = teams, W = W, occ_a = occ_a, occ_b = occ_b, bracket = structure$bracket
+    teams = teams, W = W, occ_a = occ_a, occ_b = occ_b,
+    bracket = structure$bracket, played = kp$played
   )
 
   list(
