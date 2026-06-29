@@ -140,3 +140,43 @@ test_that("publish_world_cup handles knockout-only predictions (group stage over
   expect_true(all(vapply(pred$matches, function(m) !is.null(m$round), logical(1))))
   expect_true(all(vapply(pred$matches, function(m) is.null(m$group), logical(1))))
 })
+
+test_that("publish_world_cup writes played[] (0-based) in bracket.json", {
+  s <- wc_structure()
+  fx <- make_wc_fixtures(s)
+  si <- make_sim_inputs(unlist(s$groups, use.names = FALSE), n_draws = 50L)
+  out <- simulate_world_cup(si$team, si$scalar, fx, s, pairing_seed = 1L)
+  out$bracket_model$played <- list(list(
+    match_no = 73L, winner = 5L, loser = 12L,
+    winner_score = 2L, loser_score = 1L, shootout = FALSE
+  ))
+
+  root <- withr::local_tempdir()
+  publish_world_cup(out, si$team, s, fx, root = root)
+  br <- jsonlite::read_json(
+    file.path(root, "publish", "world_cup", "karla", "bracket.json")
+  )
+
+  expect_length(br$played, 1L)
+  p <- br$played[[1L]]
+  expect_equal(p$match_no, 73L)
+  expect_equal(p$winner, 4L) # 1-based 5 -> 0-based 4
+  expect_equal(p$loser, 11L)
+  expect_equal(p$winner_score, 2L)
+  expect_equal(p$loser_score, 1L)
+  expect_false(p$shootout)
+})
+
+test_that("publish_world_cup emits an empty played[] when nothing is decided", {
+  s <- wc_structure()
+  fx <- make_wc_fixtures(s)
+  si <- make_sim_inputs(unlist(s$groups, use.names = FALSE), n_draws = 50L)
+  out <- simulate_world_cup(si$team, si$scalar, fx, s, pairing_seed = 1L)
+
+  root <- withr::local_tempdir()
+  publish_world_cup(out, si$team, s, fx, root = root)
+  br <- jsonlite::read_json(
+    file.path(root, "publish", "world_cup", "karla", "bracket.json")
+  )
+  expect_length(br$played, 0L)
+})
