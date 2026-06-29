@@ -135,12 +135,15 @@ jobs:
         with:
           r-version: 'release'
           use-public-rspm: true
+          # stan-dev r-universe is read by setup-r (it configures the repos),
+          # NOT setup-r-dependencies@v2 -- which silently ignores
+          # extra-repositories and logs an "Unexpected input(s)" annotation.
+          extra-repositories: 'https://stan-dev.r-universe.dev'
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         env:
           PKG_SYSREQS: "false"
         with:
-          extra-repositories: 'https://stan-dev.r-universe.dev'
           extra-packages: |
             any::devtools
             any::cmdstanr
