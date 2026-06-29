@@ -171,6 +171,42 @@ test_that("wc_forward_bracket: monotone, sums to one, and pins force a winner", 
   expect_equal(sum(pc$probability), 1, tolerance = 1e-9)
 })
 
+# ---- Knockout-result conditioning (Phase 2) --------------------------------
+
+test_that("simulate_world_cup conditions placement on a played knockout result", {
+  s <- wc_structure()
+  teams <- unlist(s$groups, use.names = FALSE)
+  fx <- make_group_results_scored(s) # group stage fully played -> certain top 2
+  si <- make_sim_inputs(teams, n_draws = 60L)
+
+  base <- simulate_world_cup(si$team, si$scalar, fx, s, pairing_seed = 11L)
+  expect_length(base$bracket_model$played, 0L) # inert without knockout results
+
+  # match 73 (first R32) is 2A vs 2B — certain now the group stage is played.
+  occ_a <- base$bracket_model$occ_a
+  occ_b <- base$bracket_model$occ_b
+  ia <- which(occ_a[1, ] >= 0.9995)
+  ib <- which(occ_b[1, ] >= 0.9995)
+  expect_length(ia, 1L)
+  expect_length(ib, 1L)
+
+  kr <- tibble::tibble(
+    match_date = as.Date("2026-07-01"),
+    home_team = teams[ia], away_team = teams[ib], home_score = 2L, away_score = 1L
+  )
+  out <- simulate_world_cup(si$team, si$scalar, fx, s,
+    pairing_seed = 11L, knockout_results = kr
+  )
+
+  r16 <- out$placement_probs[out$placement_probs$round_name == "R16", ]
+  expect_equal(r16$probability[r16$team == teams[ia]], 1, tolerance = 1e-9)
+  expect_equal(r16$probability[r16$team == teams[ib]], 0, tolerance = 1e-9)
+
+  expect_length(out$bracket_model$played, 1L)
+  expect_equal(out$bracket_model$played[[1L]]$winner, ia)
+  expect_equal(out$bracket_model$played[[1L]]$loser, ib)
+})
+
 # ---- Knockout match predictions --------------------------------------------
 
 test_that(".wc_knockout_round_of maps played-knockout count to the round name", {

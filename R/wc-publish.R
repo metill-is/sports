@@ -287,6 +287,16 @@ publish_world_cup <- function(sim_out, sim_inputs_team, structure, group_fixture
         match_no = structure$bracket$match_no[r32_rows[m]],
         a = sparse_occ(bm$occ_a[m, ]), b = sparse_occ(bm$occ_b[m, ])
       )
+    }),
+    # Decided knockout matches (Phase 2): the page renders these as settled
+    # facts — winner row locked, loser greyed, downstream slots collapsed.
+    # 0-based winner/loser to match `teams`. Empty until a knockout is played.
+    played = lapply(bm$played, function(p) {
+      list(
+        match_no = p$match_no, winner = p$winner - 1L, loser = p$loser - 1L,
+        winner_score = p$winner_score, loser_score = p$loser_score,
+        shootout = p$shootout
+      )
     })
   )
   jsonlite::write_json(

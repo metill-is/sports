@@ -22,7 +22,17 @@ if (file.exists(si_path)) {
 fx <- wc_group_fixtures(s)
 cat(sprintf("group fixtures: %d (%d played)\n", nrow(fx), sum(fx$played)))
 
-out <- simulate_world_cup(si$team, si$scalar, fx, s, pairing_seed = 2026L)
+# Condition the forecast on played knockout results (Phase 2): pin each decided
+# match so the winner advances w.p. 1 and the loser 0, instead of re-simulating
+# the bracket from the group stage and showing eliminated teams with a chance.
+# Empty during the group stage -> the call is identical to before.
+kres <- wc_knockout_results(s)
+sw <- wc_shootout_winners()
+cat(sprintf("played knockout results: %d\n", nrow(kres)))
+
+out <- simulate_world_cup(si$team, si$scalar, fx, s,
+  pairing_seed = 2026L, knockout_results = kres, shootout_winners = sw
+)
 
 # Knockout-stage match cards: predict the scheduled-but-unplayed knockout
 # fixtures (empty during the group stage) and append them to the group cards so

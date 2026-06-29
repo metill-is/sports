@@ -44,3 +44,32 @@ if (!startsWith(header, "date,home_team,away_team")) {
 }
 
 wc_ingest_internationals(csv_path = csv_path)
+
+# Penalty-shootout winners. The simulator models ET / shootouts as more 90'
+# play, so a drawn knockout has no winner in the facts store. martj42 publishes
+# the shootout winner in a parallel shootouts.csv (its `winner` column); pull it
+# (validated; a 404/redirect leaves any cached raw file in place) and merge it
+# with the manual overlay's pen_winner into the committed data/wc/shootouts.csv,
+# which the pin-builder consults for level knockouts.
+shootouts_url <- paste0(
+  "https://raw.githubusercontent.com/",
+  "martj42/international_results/master/shootouts.csv"
+)
+shootouts_path <- here::here("data", "wc", "raw", "shootouts.csv")
+shootouts_tmp <- paste0(shootouts_path, ".tmp")
+ok <- tryCatch(
+  {
+    utils::download.file(shootouts_url, shootouts_tmp, mode = "wb", quiet = TRUE)
+    startsWith(
+      readLines(shootouts_tmp, n = 1L, warn = FALSE), "date,home_team,away_team,winner"
+    )
+  },
+  error = function(e) FALSE
+)
+if (isTRUE(ok)) {
+  file.rename(shootouts_tmp, shootouts_path)
+} else {
+  cli::cli_warn("martj42 shootouts download failed/changed; using any cached raw file.")
+  if (file.exists(shootouts_tmp)) unlink(shootouts_tmp)
+}
+wc_ingest_shootouts(wc_structure(), shootouts_csv = shootouts_path)

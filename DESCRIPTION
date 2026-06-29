@@ -113,5 +113,6 @@ Collate:
     'wc-publish.R'
     'wc-accountability.R'
     'wc-ingest.R'
+    'wc-knockout.R'
     'wc-render-html.R'
     'wc-schedule.R'
