@@ -133,9 +133,22 @@ wc_list_unscored_fixtures <- function(raw, as_of = Sys.Date()) {
       keep[is.na(keep)] <- FALSE
       mm <- mm[keep, , drop = FALSE]
       if (nrow(mm) > 0L) {
+        win <- trimws(as.character(mm$pen_winner))
+        # The operator types pen_winner by hand. A name that is neither team
+        # (typo, or the wrong team) would be written as the winner and later
+        # crash the pin-builder deep in the forecast. Abort loudly here instead,
+        # mirroring wc_apply_manual_results' name-typo discipline.
+        bad <- win != mm$home_team & win != mm$away_team
+        if (any(bad)) {
+          cli::cli_abort(c(
+            "Manual pen_winner is not one of the match's two teams.",
+            "x" = "{.val {win[bad]}} for {mm$home_team[bad]} vs {mm$away_team[bad]} ({mm$date[bad]})",
+            "i" = "pen_winner must exactly match home_team or away_team (martj42 spelling)."
+          ))
+        }
         man_rows <- tibble::tibble(
           date = as.character(mm$date), home_team = mm$home_team,
-          away_team = mm$away_team, winner = as.character(mm$pen_winner)
+          away_team = mm$away_team, winner = win
         )
       }
     }

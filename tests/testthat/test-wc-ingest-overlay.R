@@ -124,3 +124,22 @@ test_that("wc_ingest_shootouts writes WC knockout shootout winners (martj42 + ma
   expect_false(.wc_pair_key("England", "Germany") %in% names(m))
   expect_equal(length(m), 2L)
 })
+
+test_that("wc_ingest_shootouts rejects a pen_winner that is not one of the two teams", {
+  s <- wc_structure()
+  tmp <- withr::local_tempdir()
+  writeLines(c(
+    "date,home_team,away_team,home_score,away_score,pen_winner",
+    "2026-07-04,Brazil,France,1,1,Belgium" # a real team, but not in this match
+  ), file.path(tmp, "manual_results.csv"))
+
+  expect_error(
+    wc_ingest_shootouts(
+      s,
+      shootouts_csv = file.path(tmp, "does-not-exist.csv"),
+      manual_overlay_path = file.path(tmp, "manual_results.csv"),
+      root = tmp
+    ),
+    "pen_winner"
+  )
+})
