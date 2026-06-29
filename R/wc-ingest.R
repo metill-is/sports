@@ -95,6 +95,110 @@ wc_list_unscored_fixtures <- function(raw, as_of = Sys.Date()) {
     )
 }
 
+# Filter martj42 shootouts to 2026 WC knockout pairs, union with the manual
+# overlay's pen_winner rows. martj42 is canonical on a pair conflict (same
+# self-draining discipline as the score overlay). Returns
+# `date,home_team,away_team,winner`.
+.wc_shootouts_overlay <- function(martj42, manual, structure) {
+  go <- structure$group_of
+  is_wc_ko <- function(h, a) {
+    !is.na(go[h]) & !is.na(go[a]) & go[h] != go[a]
+  }
+  empty <- tibble::tibble(
+    date = character(), home_team = character(),
+    away_team = character(), winner = character()
+  )
+
+  m_rows <- empty
+  if (!is.null(martj42) && nrow(martj42) > 0L) {
+    keep <- format(as.Date(martj42$date), "%Y") == "2026" &
+      is_wc_ko(martj42$home_team, martj42$away_team)
+    keep[is.na(keep)] <- FALSE
+    mm <- martj42[keep, , drop = FALSE]
+    if (nrow(mm) > 0L) {
+      m_rows <- tibble::tibble(
+        date = as.character(mm$date), home_team = mm$home_team,
+        away_team = mm$away_team, winner = mm$winner
+      )
+    }
+  }
+
+  man_rows <- empty
+  if (!is.null(manual) && nrow(manual) > 0L && "pen_winner" %in% names(manual)) {
+    pw <- as.character(manual$pen_winner)
+    has <- !is.na(pw) & nzchar(trimws(pw))
+    mm <- manual[has, , drop = FALSE]
+    if (nrow(mm) > 0L) {
+      keep <- is_wc_ko(mm$home_team, mm$away_team)
+      keep[is.na(keep)] <- FALSE
+      mm <- mm[keep, , drop = FALSE]
+      if (nrow(mm) > 0L) {
+        man_rows <- tibble::tibble(
+          date = as.character(mm$date), home_team = mm$home_team,
+          away_team = mm$away_team, winner = as.character(mm$pen_winner)
+        )
+      }
+    }
+  }
+
+  # martj42 canonical: drop manual rows whose pair already has a martj42 winner.
+  man_rows <- man_rows[
+    !(.wc_pair_key(man_rows$home_team, man_rows$away_team) %in%
+      .wc_pair_key(m_rows$home_team, m_rows$away_team)), ,
+    drop = FALSE
+  ]
+  combined <- rbind(m_rows, man_rows)
+  combined[!duplicated(.wc_pair_key(combined$home_team, combined$away_team)), ,
+    drop = FALSE
+  ]
+}
+
+#' Ingest WC penalty-shootout winners into the committed shootouts store.
+#'
+#' The simulator models extra-time / shootouts as more 90' play, so the facts
+#' store records a drawn knockout as level on score with no winner. This writes
+#' the actual shootout winner to `data/wc/shootouts.csv` (committed) from
+#' martj42's `shootouts.csv` (canonical, ~1 day lagged) unioned with the manual
+#' overlay's `pen_winner` column (the lag-window operator path), filtered to
+#' 2026 WC knockout pairs. [wc_knockout_results()] + [wc_shootout_winners()] then
+#' resolve a level knockout's winner for pinning.
+#'
+#' @param structure Output of [wc_structure()].
+#' @param shootouts_csv Path to martj42's `shootouts.csv`
+#'   (`date,home_team,away_team,winner,first_shooter`); skipped when absent.
+#' @param manual_overlay_path Path to `manual_results.csv` (its optional
+#'   `pen_winner` column); skipped when absent.
+#' @param root Data root (writes `wc/shootouts.csv` under it).
+#' @return Invisibly, the number of shootout rows written.
+#' @export
+wc_ingest_shootouts <- function(structure,
+                                shootouts_csv = here::here("data", "wc", "raw", "shootouts.csv"),
+                                manual_overlay_path = here::here("data", "wc", "manual_results.csv"),
+                                root = here::here("data")) {
+  martj42 <- if (file.exists(shootouts_csv)) {
+    utils::read.csv(shootouts_csv, colClasses = "character", stringsAsFactors = FALSE)
+  } else {
+    NULL
+  }
+  manual <- if (file.exists(manual_overlay_path)) {
+    suppressWarnings(readr::read_csv(
+      manual_overlay_path,
+      comment = "#", col_types = readr::cols(.default = readr::col_character())
+    ))
+  } else {
+    NULL
+  }
+
+  tbl <- .wc_shootouts_overlay(martj42, manual, structure)
+  out_path <- file.path(root, "wc", "shootouts.csv")
+  dir.create(dirname(out_path), recursive = TRUE, showWarnings = FALSE)
+  utils::write.csv(tbl, out_path, row.names = FALSE, quote = FALSE)
+  cli::cli_alert_success(
+    "Wrote {nrow(tbl)} WC shootout winner{?s} to {.path {out_path}}."
+  )
+  invisible(nrow(tbl))
+}
+
 #' Ingest international football results into the facts store.
 #'
 #' Reads the bulk international-results CSV (martj42 schema:
