@@ -46,6 +46,22 @@ make_r32_schedule <- function(structure) {
   )
 }
 
+# One-hot R32 slot occupancy (the certain, post-group state) from a given
+# assignment: a_names[i] / b_names[i] occupy slot a / b of the i-th R32 match
+# (bracket order, match 73..88). Returns 16 x nt matrices like simulate_world_cup.
+make_certain_occ <- function(structure, a_names, b_names) {
+  teams <- unlist(structure$groups, use.names = FALSE)
+  tidx <- stats::setNames(seq_along(teams), teams)
+  nt <- length(teams)
+  oa <- matrix(0, 16L, nt)
+  ob <- matrix(0, 16L, nt)
+  for (i in 1:16) {
+    oa[i, tidx[[a_names[i]]]] <- 1
+    ob[i, tidx[[b_names[i]]]] <- 1
+  }
+  list(occ_a = oa, occ_b = ob)
+}
+
 make_sim_inputs <- function(teams, n_draws = 200L, off = NULL, def = NULL) {
   if (is.null(off)) off <- stats::setNames(rep(0, length(teams)), teams)
   if (is.null(def)) def <- stats::setNames(rep(0, length(teams)), teams)

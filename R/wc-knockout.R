@@ -95,3 +95,67 @@ wc_shootout_winners <- function(root = here::here("data")) {
   }
   w
 }
+
+# Build the {match_no -> winner index} pins (and per-match `played` records) that
+# collapse the forward bracket onto played knockout results. Walks
+# `structure$bracket` R32 -> Final, mirroring wc_forward_bracket's order so the
+# R32 occupancy rows (`occ_a`/`occ_b`) line up. A match resolves only when both
+# its competitors are certain — R32 from the (post-group, one-hot) occupancy,
+# later rounds from the winners pinned so far — so the map self-gates round by
+# round (an R16 match cannot pin until both its R32 feeders have). Drawn knockouts
+# resolve via `shootout_winners`; without one they stay probabilistic.
+# Returns 1-based winner/loser team indices (publish converts to 0-based).
+.wc_knockout_pins <- function(bracket, teams, occ_a, occ_b,
+                              knockout_results, shootout_winners = NULL) {
+  pins <- list()
+  played <- list()
+  if (is.null(knockout_results) || nrow(knockout_results) == 0L) {
+    return(list(pins = pins, played = played))
+  }
+  tidx <- stats::setNames(seq_along(teams), teams)
+  rk <- .wc_pair_key(knockout_results$home_team, knockout_results$away_team)
+  certain <- function(v) {
+    i <- which(v >= 0.9995)
+    if (length(i) == 1L) i else NA_integer_
+  }
+  feeder_no <- function(f) as.integer(sub("W", "", f))
+  winner_of <- list()
+  r32_i <- 0L
+  for (i in seq_len(nrow(bracket))) {
+    m <- bracket$match_no[i]
+    if (bracket$round[i] == "R32") {
+      r32_i <- r32_i + 1L
+      tA <- certain(occ_a[r32_i, ])
+      tB <- certain(occ_b[r32_i, ])
+    } else {
+      tA <- winner_of[[as.character(feeder_no(bracket$feeder_a[i]))]]
+      tB <- winner_of[[as.character(feeder_no(bracket$feeder_b[i]))]]
+      if (is.null(tA)) tA <- NA_integer_
+      if (is.null(tB)) tB <- NA_integer_
+    }
+    if (is.na(tA) || is.na(tB)) {
+      next
+    }
+    hit <- which(rk == .wc_pair_key(teams[tA], teams[tB]))
+    if (length(hit) == 0L) {
+      next
+    }
+    row <- knockout_results[hit[[1L]], , drop = FALSE]
+    w_name <- .wc_knockout_winner_of(row, shootout_winners)
+    if (is.na(w_name)) {
+      next
+    }
+    wi <- tidx[[w_name]]
+    li <- if (wi == tA) tB else tA
+    home_wins <- identical(row$home_team[[1L]], w_name)
+    pins[[as.character(m)]] <- wi
+    winner_of[[as.character(m)]] <- wi
+    played[[length(played) + 1L]] <- list(
+      match_no = as.integer(m), winner = wi, loser = li,
+      winner_score = as.integer(if (home_wins) row$home_score[[1L]] else row$away_score[[1L]]),
+      loser_score = as.integer(if (home_wins) row$away_score[[1L]] else row$home_score[[1L]]),
+      shootout = isTRUE(row$home_score[[1L]] == row$away_score[[1L]])
+    )
+  }
+  list(pins = pins, played = played)
+}

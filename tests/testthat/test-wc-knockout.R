@@ -70,3 +70,80 @@ test_that(".wc_knockout_winner_of picks the decisive winner or the shootout winn
   )
   expect_true(is.na(.wc_knockout_winner_of(res("Canada", "South Africa", 1L, 1L))))
 })
+
+# ---- .wc_knockout_pins ------------------------------------------------------
+
+test_that(".wc_knockout_pins pins a decided R32 match with a played record", {
+  s <- wc_structure()
+  teams <- unlist(s$groups, use.names = FALSE)
+  occ <- make_certain_occ(s, teams[1:16], teams[17:32])
+  kr <- tibble::tibble(
+    match_date = as.Date("2026-06-30"),
+    home_team = teams[1], away_team = teams[17], home_score = 2L, away_score = 1L
+  )
+  kp <- .wc_knockout_pins(s$bracket, teams, occ$occ_a, occ$occ_b, kr)
+
+  expect_equal(kp$pins[["73"]], 1L) # match 73 = first R32 row
+  expect_length(kp$played, 1L)
+  p <- kp$played[[1L]]
+  expect_equal(p$match_no, 73L)
+  expect_equal(p$winner, 1L)
+  expect_equal(p$loser, 17L)
+  expect_equal(p$winner_score, 2L)
+  expect_equal(p$loser_score, 1L)
+  expect_false(p$shootout)
+})
+
+test_that(".wc_knockout_pins resolves a level R32 via the shootout map only", {
+  s <- wc_structure()
+  teams <- unlist(s$groups, use.names = FALSE)
+  occ <- make_certain_occ(s, teams[1:16], teams[17:32])
+  kr <- tibble::tibble(
+    match_date = as.Date("2026-06-30"),
+    home_team = teams[1], away_team = teams[17], home_score = 1L, away_score = 1L
+  )
+  sw <- stats::setNames(teams[17], .wc_pair_key(teams[1], teams[17]))
+
+  kp <- .wc_knockout_pins(s$bracket, teams, occ$occ_a, occ$occ_b, kr, sw)
+  expect_equal(kp$pins[["73"]], 17L)
+  expect_true(kp$played[[1L]]$shootout)
+
+  kp2 <- .wc_knockout_pins(s$bracket, teams, occ$occ_a, occ$occ_b, kr)
+  expect_length(kp2$pins, 0L)
+  expect_length(kp2$played, 0L)
+})
+
+test_that(".wc_knockout_pins chains to R16 once both feeders are decided", {
+  s <- wc_structure()
+  teams <- unlist(s$groups, use.names = FALSE)
+  occ <- make_certain_occ(s, teams[1:16], teams[17:32])
+  # match 74 (R32 #2) and 77 (R32 #5) decided; their winners feed R16 match 89.
+  kr <- tibble::tibble(
+    match_date = as.Date("2026-07-05"),
+    home_team = c(teams[2], teams[5], teams[2]),
+    away_team = c(teams[18], teams[21], teams[5]),
+    home_score = c(1L, 3L, 2L), away_score = c(0L, 1L, 0L)
+  )
+  kp <- .wc_knockout_pins(s$bracket, teams, occ$occ_a, occ$occ_b, kr)
+
+  expect_equal(kp$pins[["74"]], 2L)
+  expect_equal(kp$pins[["77"]], 5L)
+  expect_equal(kp$pins[["89"]], 2L) # R16 89 = W74 vs W77
+})
+
+test_that(".wc_knockout_pins self-gates: no R16 pin until both feeders decided", {
+  s <- wc_structure()
+  teams <- unlist(s$groups, use.names = FALSE)
+  occ <- make_certain_occ(s, teams[1:16], teams[17:32])
+  # only match 74 decided; an R16 result for 89 (W74 vs W77) must be ignored.
+  kr <- tibble::tibble(
+    match_date = as.Date("2026-07-05"),
+    home_team = c(teams[2], teams[2]),
+    away_team = c(teams[18], teams[5]),
+    home_score = c(1L, 2L), away_score = c(0L, 0L)
+  )
+  kp <- .wc_knockout_pins(s$bracket, teams, occ$occ_a, occ$occ_b, kr)
+
+  expect_equal(kp$pins[["74"]], 2L)
+  expect_null(kp$pins[["89"]])
+})
