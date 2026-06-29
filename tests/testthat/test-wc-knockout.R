@@ -30,3 +30,43 @@ test_that("wc_knockout_results returns only played cross-group WC2026 fixtures",
   expect_type(k$home_score, "integer")
   expect_type(k$away_score, "integer")
 })
+
+# ---- wc_shootout_winners / .wc_knockout_winner_of ---------------------------
+
+test_that("wc_shootout_winners reads the shootouts store into a pair-key map", {
+  tmp <- withr::local_tempdir()
+  dir.create(file.path(tmp, "wc"))
+  writeLines(
+    c(
+      "date,home_team,away_team,winner",
+      "2026-07-01,Canada,South Africa,South Africa"
+    ),
+    file.path(tmp, "wc", "shootouts.csv")
+  )
+  m <- wc_shootout_winners(root = tmp)
+  expect_equal(unname(m[[.wc_pair_key("Canada", "South Africa")]]), "South Africa")
+  # symmetric: orientation of the lookup pair does not matter
+  expect_equal(unname(m[[.wc_pair_key("South Africa", "Canada")]]), "South Africa")
+})
+
+test_that("wc_shootout_winners returns NULL for an absent or header-only store", {
+  tmp <- withr::local_tempdir()
+  expect_null(wc_shootout_winners(root = tmp))
+  dir.create(file.path(tmp, "wc"))
+  writeLines("date,home_team,away_team,winner", file.path(tmp, "wc", "shootouts.csv"))
+  expect_null(wc_shootout_winners(root = tmp))
+})
+
+test_that(".wc_knockout_winner_of picks the decisive winner or the shootout winner", {
+  res <- function(h, a, hs, as_) {
+    tibble::tibble(home_team = h, away_team = a, home_score = hs, away_score = as_)
+  }
+  expect_equal(.wc_knockout_winner_of(res("Canada", "South Africa", 2L, 1L)), "Canada")
+  expect_equal(.wc_knockout_winner_of(res("Canada", "South Africa", 0L, 3L)), "South Africa")
+
+  sw <- stats::setNames("South Africa", .wc_pair_key("Canada", "South Africa"))
+  expect_equal(
+    .wc_knockout_winner_of(res("Canada", "South Africa", 1L, 1L), sw), "South Africa"
+  )
+  expect_true(is.na(.wc_knockout_winner_of(res("Canada", "South Africa", 1L, 1L))))
+})
