@@ -59,6 +59,27 @@ test_that("wc_snapshot_predictions rejects predictions made after match day", {
   expect_equal(NROW(.acc_log(root)$matches), 0L)
 })
 
+test_that("wc_snapshot_predictions tolerates a logged null-group (knockout) match", {
+  root <- withr::local_tempdir()
+  # Knockout cards carry no `group`, so bind_rows leaves group = NA and the
+  # snapshot serializes it to JSON null. Snapshot it as a future fixture.
+  wc_snapshot_predictions(
+    .acc_pred("2026-06-28", NA_character_, "South Africa", "Canada", 0.45, 0.27, 0.28),
+    fit_date = "2026-06-25", root = root
+  )
+  # On the next run that fixture has passed (fit_date > match_date), so it is NOT
+  # re-upserted -- the null-group entry is read back from the log (as NULL) and
+  # must not break the order() over the store.
+  expect_no_error(
+    wc_snapshot_predictions(
+      .acc_pred("2026-06-30", "A", "France", "Sweden", 0.50, 0.25, 0.25),
+      fit_date = "2026-06-29", root = root
+    )
+  )
+  log <- .acc_log(root)
+  expect_equal(nrow(log$matches), 2L)
+})
+
 test_that("wc_build_results pairs a played fixture with its pre-match prediction", {
   root <- withr::local_tempdir()
   wc_snapshot_predictions(
