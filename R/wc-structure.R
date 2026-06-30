@@ -22,8 +22,10 @@ NULL
 #'   eligibility-respecting assignment.
 #' @return A named list: `groups` (named list group -> 4 teams), `group_of`
 #'   (named chr team -> group), `hosts`, `bracket` (tibble `match_no`, `round`,
-#'   `feeder_a`, `feeder_b`), `third_slots` (tibble `match_no`, `eligible`
-#'   list-col), `third_allocation` (tibble or `NULL`), `rounds` (ordered).
+#'   `feeder_a`, `feeder_b`; 31 rows, does NOT include match 103), `third_slots`
+#'   (tibble `match_no`, `eligible` list-col), `third_allocation` (tibble or
+#'   `NULL`), `rounds` (ordered), `third_place` (1-row tibble for match 103 —
+#'   the bronze final between the two SF losers).
 #' @export
 wc_structure <- function(allocation_csv = here::here(
                            "data", "wc", "structure", "third_allocation.csv"
@@ -106,6 +108,10 @@ wc_structure <- function(allocation_csv = here::here(
     )
   }
 
+  third_place <- tibble::tibble(
+    match_no = 103L, round = "Third", feeder_a = "L101", feeder_b = "L102"
+  )
+
   list(
     groups = groups,
     group_of = group_of,
@@ -113,7 +119,8 @@ wc_structure <- function(allocation_csv = here::here(
     bracket = bracket,
     third_slots = third_slots,
     third_allocation = third_allocation,
-    rounds = c("R32", "R16", "QF", "SF", "Final", "Champion")
+    rounds = c("R32", "R16", "QF", "SF", "Final", "Champion"),
+    third_place = third_place
   )
 }
 

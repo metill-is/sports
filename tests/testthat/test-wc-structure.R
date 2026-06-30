@@ -88,3 +88,15 @@ test_that("wc_validate_teams passes when all teams present, aborts otherwise", {
   expect_invisible(wc_validate_teams(s, all_teams))
   expect_error(wc_validate_teams(s, setdiff(all_teams, "Spain")), "absent")
 })
+
+test_that("wc_structure exposes a third_place row separate from the main bracket", {
+  s <- wc_structure()
+  expect_false(103L %in% s$bracket$match_no) # not in the hot-loop bracket
+  tp <- s$third_place
+  expect_s3_class(tp, "tbl_df")
+  expect_equal(nrow(tp), 1L)
+  expect_equal(tp$match_no, 103L)
+  expect_equal(tp$round, "Third")
+  expect_equal(tp$feeder_a, "L101")
+  expect_equal(tp$feeder_b, "L102")
+})
