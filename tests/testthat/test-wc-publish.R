@@ -180,3 +180,31 @@ test_that("publish_world_cup emits an empty played[] when nothing is decided", {
   )
   expect_length(br$played, 0L)
 })
+
+test_that("publish writes Third/Fourth placements and a bronze bracket node", {
+  s <- wc_structure()
+  fx <- make_wc_fixtures(s)
+  teams <- unlist(s$groups, use.names = FALSE)
+  si <- make_sim_inputs(teams, n_draws = 60L)
+  out <- simulate_world_cup(si$team, si$scalar, fx, s, pairing_seed = 3L)
+  root <- withr::local_tempdir()
+  publish_world_cup(out, si$team, s, fx, root = root)
+
+  tp <- jsonlite::read_json(
+    file.path(root, "publish", "world_cup", "karla", "tournament_placements.json"),
+    simplifyVector = FALSE
+  )
+  rounds <- vapply(tp$records, function(r) r$round_name, character(1))
+  expect_true("Third" %in% rounds)
+  expect_true("Fourth" %in% rounds)
+  expect_true(!is.null(tp$summary[[1]]$p_bronze))
+
+  br <- jsonlite::read_json(
+    file.path(root, "publish", "world_cup", "karla", "bracket.json"),
+    simplifyVector = FALSE
+  )
+  thirds <- Filter(function(m) m$round == "Third", br$matches)
+  expect_length(thirds, 1L)
+  expect_equal(thirds[[1]]$match_no, 103L)
+  expect_equal(thirds[[1]]$feeder_a, "L101")
+})

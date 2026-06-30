@@ -219,10 +219,13 @@ publish_world_cup <- function(sim_out, sim_inputs_team, structure, group_fixture
   })
   champ <- pp[pp$round_name == "Champion", c("team", "probability")]
   champ <- champ[order(-champ$probability), , drop = FALSE]
+  bronze <- pp[pp$round_name == "Third", c("team", "probability")]
+  bz <- stats::setNames(bronze$probability, bronze$team)
   summary_payload <- lapply(seq_len(nrow(champ)), function(i) {
     list(
       team = champ$team[i], team_is = is_name(champ$team[i]),
-      p_champion = rnd(champ$probability[i])
+      p_champion = rnd(champ$probability[i]),
+      p_bronze = rnd(unname(bz[champ$team[i]]))
     )
   })
   jsonlite::write_json(
@@ -276,11 +279,14 @@ publish_world_cup <- function(sim_out, sim_inputs_team, structure, group_fixture
     generated_at = generated_at, n_draws = n_draws,
     teams = teams, teams_is = unname(vapply(teams, is_name, character(1))),
     matchup = round(bm$W, 4),
-    matches = lapply(seq_len(nrow(structure$bracket)), function(i) {
-      list(
-        match_no = structure$bracket$match_no[i], round = structure$bracket$round[i],
-        feeder_a = structure$bracket$feeder_a[i], feeder_b = structure$bracket$feeder_b[i]
-      )
+    matches = local({
+      allm <- rbind(structure$bracket, structure$third_place)
+      lapply(seq_len(nrow(allm)), function(i) {
+        list(
+          match_no = allm$match_no[i], round = allm$round[i],
+          feeder_a = allm$feeder_a[i], feeder_b = allm$feeder_b[i]
+        )
+      })
     }),
     r32 = lapply(seq_along(r32_rows), function(m) {
       list(
