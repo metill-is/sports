@@ -211,16 +211,37 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           echo "$UPSTREAM_SHA" > data/wc/martj42_pointer.txt
-          git add data/wc/martj42_pointer.txt \
+          # Stage every output by OWNED SUBTREE, not by enumerated leaf. These
+          # four roots are world-cup-exclusive (the disjoint-path invariant in
+          # git-hygiene.md): no other workflow writes under them, and the
+          # gitignored children (data/wc/{raw,fit}/, forecast.html, gisko/) are
+          # skipped by `git add`. Staging whole subtrees means a future new WC
+          # output is committed automatically -- a leaf-list `git add` silently
+          # rotted when Phase 2 added data/wc/shootouts.csv, which scripts/wc/
+          # ingest.R rewrites every run: it escaped the stage, left the tree
+          # dirty after commit, and the rebase below aborted with "cannot rebase:
+          # You have unstaged changes" (run 28437698745, 2026-06-30). The
+          # coverage contract is pinned by test-wc-workflow-staging.R.
+          git add data/wc/ \
+                  data/publish/world_cup/ \
                   data/facts/results/sport=football/country=world \
-                  data/facts/schedules/sport=football/country=world \
-                  data/wc/accountability/ \
-                  data/publish/world_cup/
+                  data/facts/schedules/sport=football/country=world
           if git diff --cached --quiet; then
             echo "Nothing to commit (pointer already current, no new outputs)"
             exit 0
           fi
           git commit -m "data(wc): forecast $(date -u +%Y-%m-%dT%H:%MZ)"
+          # Defence in depth: the rebase below refuses to run with a dirty tree
+          # (the exact 2026-06-30 symptom). After staging the owned subtrees the
+          # tree must be clean; if a tracked change still lingers it means the
+          # pipeline grew an output OUTSIDE the four owned roots -- surface it
+          # loudly with the offending paths instead of git's opaque "cannot
+          # rebase: You have unstaged changes" / "no rebase in progress" cascade.
+          if ! git diff --quiet; then
+            echo "::error::WC output landed outside the staged subtrees -- add it to the git-add block above:"
+            git status --porcelain
+            exit 1
+          fi
           # Conflict-aware push. The league workflows each write DISJOINT paths,
           # so a plain rebase never hits a content conflict -- but TWO world-cup
           # runs (e.g. the hourly cron overlapping a forced/manual run) regenerate
