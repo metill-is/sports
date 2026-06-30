@@ -44,14 +44,19 @@ skill <- bets |>
     if (nrow(sc) == 0L) {
       return(tibble::tibble())
     }
-    s <- bt_skill(sc, by = "market")
-    ci <- bt_skill_ci(sc, by = "market")
-    left_join(s, ci, by = "market")
+    s <- bt_skill(sc, by = c("sex", "market"))
+    ci <- bt_skill_ci(sc, by = c("sex", "market"))
+    left_join(s, ci, by = c("sex", "market"))
   }) |>
-  ungroup()
-knitr::kable(skill,
+  ungroup() |>
+  arrange(sex, market, model)
+knitr::kable(
+  skill |> select(model, sex, market, n, n_matches, brier_skill, skill_lo, skill_hi, logloss_skill),
   digits = 4,
-  caption = "Model-vs-market skill by market (brier_skill > 0 beats the de-vigged line; skill_lo/hi = match-clustered 90% CI)"
+  caption = paste(
+    "Model-vs-market skill by sex x market. brier_skill / logloss_skill > 0 beats the de-vigged line.",
+    "skill_lo/hi is the match-clustered 90% CI on the BRIER skill only -- it does not bound logloss_skill."
+  )
 )
 ```
 
@@ -67,9 +72,10 @@ plt <- skill |>
     position = position_dodge(width = 0.7), width = 0.2
   ) +
   geom_hline(yintercept = 0, linetype = 2) +
+  facet_wrap(~sex) +
   labs(
     title = "OOS Brier skill vs the de-vigged Lengjan line, 2026",
-    subtitle = "above 0 = beats the market; bars are 90% match-clustered CIs",
+    subtitle = "above 0 = beats the market; bars are 90% match-clustered CIs on Brier skill",
     x = NULL, y = "Brier skill (1 - model/market)"
   )
 tryCatch(plt + metill::theme_metill(), error = function(e) plt + theme_minimal())
@@ -82,6 +88,32 @@ cat(
   "\nRun Task 4 (scripts/0Nb_walkforward.R --model {bvp,sd} ...) first."
 )
 ```
+
+## Verdict — (S,D) lean-Gaussian does not promote
+
+**Pre-registered promote rule:** the `(S,D)` model advances to Phase 2 only if its
+**totals** Brier skill is ≥ 0 with a CI lower bound no worse than BVP's, per sex.
+
+**Outcome: fails on both sexes.** Walk-forward OOS over the 2026 season (male 11
+round cutoffs ≈ 148 bettable matches; female 9 ≈ 19):
+
+- It does not beat the de-vigged Lengjan line in any (sex × market) cell, and it
+  underperforms the production BVP across moneyline and spread for both sexes
+  (see the pooled rows: SD male −0.039 vs BVP −0.020; SD female −0.052 vs BVP
+  −0.002).
+- On **totals** — the market the mean-scaled covariance targets — male is
+  marginally less bad than BVP (−0.020 vs −0.037, both still below the line), and
+  on **female totals it erases a real edge BVP holds** (BVP +0.110 with a CI that
+  excludes 0, collapsing to SD +0.008 at the line).
+- The model was clean and identifiable (PPC: `φ ≈ 0.91`, `γ ≈ 1.17` both
+  data-driven, 0 divergences, EBFMI ≈ 1.0) — so the loss is the
+  **discrete-vs-continuous tradeoff**, not a covariance mis-specification. This
+  **replicates the April 2026 in-sample audit verdict through the OOS-market lens.**
+
+Phase 2 (standing infrastructure) does not run. The walk-forward `--model` hook,
+the second-moment diagnostic, and this report remain as reusable tooling and a
+documented negative result. Production football stays on
+`bivariate_poisson_no_inflation.stan`.
 
 ## Second-moment diagnostic (covariance data-story)
 
