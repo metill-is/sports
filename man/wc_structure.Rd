@@ -17,8 +17,10 @@ eligibility-respecting assignment.}
 \value{
 A named list: `groups` (named list group -> 4 teams), `group_of`
   (named chr team -> group), `hosts`, `bracket` (tibble `match_no`, `round`,
-  `feeder_a`, `feeder_b`), `third_slots` (tibble `match_no`, `eligible`
-  list-col), `third_allocation` (tibble or `NULL`), `rounds` (ordered).
+  `feeder_a`, `feeder_b`; 31 rows, does NOT include match 103), `third_slots`
+  (tibble `match_no`, `eligible` list-col), `third_allocation` (tibble or
+  `NULL`), `rounds` (ordered), `third_place` (1-row tibble for match 103 —
+  the bronze final between the two SF losers).
 }
 \description{
 Returns the static groups, hosts, and knockout bracket wiring used by the

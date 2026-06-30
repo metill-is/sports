@@ -4,7 +4,15 @@
 \alias{wc_forward_bracket}
 \title{Propagate the knockout bracket forward from a win matrix + R32 occupancy.}
 \usage{
-wc_forward_bracket(W, occ_a, occ_b, bracket, teams, pins = list())
+wc_forward_bracket(
+  W,
+  occ_a,
+  occ_b,
+  bracket,
+  teams,
+  pins = list(),
+  third_pin = NULL
+)
 }
 \arguments{
 \item{W}{`nt x nt` win matrix; `W[a, b]` = P(a beats b) in one neutral
