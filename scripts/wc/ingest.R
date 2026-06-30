@@ -11,13 +11,17 @@
 # Usage:
 #   Rscript scripts/wc/ingest.R
 #
-# data/wc/raw/ is gitignored (regenerable); the committed artefact is the
-# facts-store Parquet this writes. The World Cup Forecast workflow diffs those
-# Parquets to decide whether martj42 brought anything new worth refitting.
+# data/wc/raw/ is gitignored (regenerable); the committed artefacts are the
+# facts-store Parquet and data/wc/shootouts.csv this writes. The World Cup
+# Forecast workflow diffs the Parquets to decide whether martj42 brought
+# anything new worth refitting, and stages data/wc/ wholesale so shootouts.csv
+# rides along (see test-wc-workflow-staging.R).
 #
-# shootouts.csv from the same upstream is NOT downloaded -- the WC simulator
-# (R/wc-simulate.R) models extra-time / shootouts as more 90' at the same
-# strengths, so it never consults the historical shootout table.
+# This also downloads martj42's parallel shootouts.csv and merges it with the
+# manual pen_winner overlay into data/wc/shootouts.csv (see wc_ingest_shootouts
+# below). The simulator (R/wc-simulate.R) still models extra-time as more 90'
+# play, but Phase 2 knockout conditioning consults shootouts.csv to resolve the
+# winner of a level knockout that martj42 has already played.
 
 invisible(Sys.setlocale("LC_ALL", "en_US.UTF-8"))
 suppressPackageStartupMessages(devtools::load_all(here::here(), quiet = TRUE))
