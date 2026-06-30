@@ -147,3 +147,19 @@ test_that(".wc_knockout_pins self-gates: no R16 pin until both feeders decided",
   expect_equal(kp$pins[["74"]], 2L)
   expect_null(kp$pins[["89"]])
 })
+
+test_that(".wc_knockout_pins resolves the bronze (103) once both SFs are decided", {
+  s <- wc_structure()
+  teams <- unlist(s$groups, use.names = FALSE)
+  occ <- make_certain_occ(s, teams[1:16], teams[17:32])
+  # Drive both SFs to a known state by feeding every match on one path.
+  # Build results so that SF 101 and SF 102 are decided, then the bronze.
+  # Helper: walk the bracket giving slot-a the win at each round.
+  res <- wc_bronze_test_results(s, teams, occ) # defined in helper below
+  kp <- .wc_knockout_pins(s$bracket, teams, occ$occ_a, occ$occ_b, res$kr,
+    shootout_winners = NULL, third_place = s$third_place)
+  expect_false(is.null(kp$pins[["103"]]))
+  expect_equal(kp$pins[["103"]], res$bronze_winner_idx)
+  thirdrec <- Filter(function(p) p$match_no == 103L, kp$played)
+  expect_length(thirdrec, 1L)
+})

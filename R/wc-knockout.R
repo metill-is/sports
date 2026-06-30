@@ -106,7 +106,8 @@ wc_shootout_winners <- function(root = here::here("data")) {
 # resolve via `shootout_winners`; without one they stay probabilistic.
 # Returns 1-based winner/loser team indices (publish converts to 0-based).
 .wc_knockout_pins <- function(bracket, teams, occ_a, occ_b,
-                              knockout_results, shootout_winners = NULL) {
+                              knockout_results, shootout_winners = NULL,
+                              third_place = NULL) {
   pins <- list()
   played <- list()
   if (is.null(knockout_results) || nrow(knockout_results) == 0L) {
@@ -156,6 +157,46 @@ wc_shootout_winners <- function(root = here::here("data")) {
       loser_score = as.integer(if (home_wins) row$away_score[[1L]] else row$home_score[[1L]]),
       shootout = isTRUE(row$home_score[[1L]] == row$away_score[[1L]])
     )
+  }
+  # ---- Bronze (3rd place): SF losers, resolved only once both SFs are pinned --
+  # Precondition: third_pin (if set) must be a loser of one of the two SFs;
+  # passing a non-SF-loser would shift probability mass incorrectly (Sigma_fourth
+  # slightly < 1). Structurally unreachable here — we only set it to the actual
+  # bronze match winner, who must be an SF loser by tournament rules.
+  if (!is.null(third_place) && nrow(third_place) == 1L) {
+    sf <- bracket$match_no[bracket$round == "SF"]
+    loser_sf <- function(mno) {
+      i <- which(bracket$match_no == mno)
+      fa <- as.integer(sub("W", "", bracket$feeder_a[i]))
+      fb <- as.integer(sub("W", "", bracket$feeder_b[i]))
+      wsf <- winner_of[[as.character(mno)]]
+      parts <- c(winner_of[[as.character(fa)]], winner_of[[as.character(fb)]])
+      if (is.null(wsf) || length(parts) < 2L) {
+        return(NA_integer_)
+      }
+      setdiff(parts, wsf)
+    }
+    lA <- loser_sf(sf[1])
+    lB <- loser_sf(sf[2])
+    if (!is.na(lA) && !is.na(lB)) {
+      hit <- which(rk == .wc_pair_key(teams[lA], teams[lB]))
+      if (length(hit) > 0L) {
+        row <- knockout_results[hit[[1L]], , drop = FALSE]
+        w_name <- .wc_knockout_winner_of(row, shootout_winners)
+        if (!is.na(w_name)) {
+          wi <- tidx[[w_name]]
+          li <- if (wi == lA) lB else lA
+          home_wins <- identical(row$home_team[[1L]], w_name)
+          pins[["103"]] <- wi
+          played[[length(played) + 1L]] <- list(
+            match_no = 103L, winner = wi, loser = li,
+            winner_score = as.integer(if (home_wins) row$home_score[[1L]] else row$away_score[[1L]]),
+            loser_score = as.integer(if (home_wins) row$away_score[[1L]] else row$home_score[[1L]]),
+            shootout = isTRUE(row$home_score[[1L]] == row$away_score[[1L]])
+          )
+        }
+      }
+    }
   }
   list(pins = pins, played = played)
 }

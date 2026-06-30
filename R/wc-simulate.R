@@ -579,9 +579,12 @@ simulate_world_cup <- function(sim_inputs_team, sim_inputs_scalar,
   # forward bracket collapses onto reality. Empty pins (no results / group stage)
   # leave the call identical to before.
   kp <- .wc_knockout_pins(
-    structure$bracket, teams, occ_a, occ_b, knockout_results, shootout_winners
+    structure$bracket, teams, occ_a, occ_b, knockout_results, shootout_winners,
+    third_place = structure$third_place
   )
-  fwd <- wc_forward_bracket(W, occ_a, occ_b, structure$bracket, teams, pins = kp$pins)
+  fwd <- wc_forward_bracket(W, occ_a, occ_b, structure$bracket, teams,
+    pins = kp$pins, third_pin = kp$pins[["103"]]
+  )
   reach_r32 <- fwd$reach$R32
 
   group_probs <- tibble::tibble(

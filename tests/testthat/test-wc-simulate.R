@@ -427,3 +427,30 @@ test_that("wc_head_to_head returns coherent all-pairs probabilities", {
     expect_equal(mean(win), 0.5, tolerance = 0.05)
   }
 })
+
+test_that("simulate_world_cup collapses Third onto a played bronze result", {
+  s <- wc_structure()
+  teams <- unlist(s$groups, use.names = FALSE)
+  # make_all_group_results_scored gives distinct GDs to each group's 3rd-place
+  # team, making all 16 R32 slots certain (best-thirds A-H with unique margins).
+  # make_group_results_scored leaves 8 best-third slots uncertain and cannot
+  # be used here because .wc_knockout_pins self-gates on >= 0.9995 certainty.
+  fx <- make_all_group_results_scored(s)
+  si <- make_sim_inputs(teams, n_draws = 40L)
+  # Run once to learn the real R32 occupancy (which teams fill which slots).
+  base <- simulate_world_cup(si$team, si$scalar, fx, s,
+    pairing_seed = 5L, knockout_results = NULL
+  )
+  real_occ <- list(
+    occ_a = base$bracket_model$occ_a,
+    occ_b = base$bracket_model$occ_b
+  )
+  res <- wc_bronze_test_results(s, teams, real_occ)
+  out <- simulate_world_cup(si$team, si$scalar, fx, s,
+    pairing_seed = 5L, knockout_results = res$kr
+  )
+  third <- out$placement_probs[out$placement_probs$round_name == "Third", ]
+  bronze_team <- teams[res$bronze_winner_idx]
+  expect_equal(third$probability[third$team == bronze_team], 1, tolerance = 1e-9)
+  expect_true(any(vapply(out$bracket_model$played, function(p) p$match_no == 103L, logical(1))))
+})
