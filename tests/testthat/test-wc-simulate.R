@@ -341,6 +341,44 @@ test_that("simulate_world_cup predictions carry a goal-diff distribution", {
 
 # ---- Head-to-head (joint MC) ------------------------------------------------
 
+test_that("wc_forward_bracket emits Third/Fourth consistent with the SF-loser pool", {
+  s <- wc_structure()
+  teams <- unlist(s$groups, use.names = FALSE)
+  si <- make_sim_inputs(teams, n_draws = 100L)
+  fx <- make_wc_fixtures(s)
+  out <- simulate_world_cup(si$team, si$scalar, fx, s, pairing_seed = 6L)
+  bm <- out$bracket_model
+
+  fb <- wc_forward_bracket(bm$W, bm$occ_a, bm$occ_b, s$bracket, teams)
+  third <- fb$placement[fb$placement$round_name == "Third", ]
+  fourth <- fb$placement[fb$placement$round_name == "Fourth", ]
+
+  # exactly one bronze winner and one fourth-placed team across the field
+  expect_equal(sum(third$probability), 1, tolerance = 1e-9)
+  expect_equal(sum(fourth$probability), 1, tolerance = 1e-9)
+
+  # per-team identity: Third + Fourth == reach(SF) - reach(Final) (the SF-loser pool)
+  pool <- fb$reach$SF - fb$reach$Final
+  third <- third[match(teams, third$team), ]
+  fourth <- fourth[match(teams, fourth$team), ]
+  expect_equal(third$probability + fourth$probability, pool, tolerance = 1e-9)
+  expect_true(all(third$probability >= -1e-12))
+})
+
+test_that("wc_forward_bracket third_pin forces the bronze winner", {
+  s <- wc_structure()
+  teams <- unlist(s$groups, use.names = FALSE)
+  si <- make_sim_inputs(teams, n_draws = 80L)
+  fx <- make_wc_fixtures(s)
+  out <- simulate_world_cup(si$team, si$scalar, fx, s, pairing_seed = 6L)
+  bm <- out$bracket_model
+  x <- which(teams == "Brazil")
+  fb <- wc_forward_bracket(bm$W, bm$occ_a, bm$occ_b, s$bracket, teams, third_pin = x)
+  third <- fb$placement[fb$placement$round_name == "Third", ]
+  expect_equal(third$probability[third$team == "Brazil"], 1, tolerance = 1e-9)
+  expect_equal(sum(third$probability), 1, tolerance = 1e-9)
+})
+
 test_that("wc_head_to_head returns coherent all-pairs probabilities", {
   s <- wc_structure()
   teams <- unlist(s$groups, use.names = FALSE)

@@ -152,7 +152,7 @@ NULL
 #' @return List: `placement` (tibble team/round_name/probability, cumulative),
 #'   `reach` (per-round occupancy), `winner` (per-match winner distribution).
 #' @export
-wc_forward_bracket <- function(W, occ_a, occ_b, bracket, teams, pins = list()) {
+wc_forward_bracket <- function(W, occ_a, occ_b, bracket, teams, pins = list(), third_pin = NULL) {
   nt <- length(teams)
   Wm <- W
   diag(Wm) <- 0
@@ -190,14 +190,42 @@ wc_forward_bracket <- function(W, occ_a, occ_b, bracket, teams, pins = list()) {
   final_m <- bracket$match_no[bracket$round == "Final"]
   champ <- winner[[final_m]]
 
+  # ---- Third place (bronze): the two SF losers play a neutral match ----------
+  # loser(m) = (the two teams that played m) - (winner of m), clamped >= 0.
+  sf_no <- bracket$match_no[bracket$round == "SF"]
+  loser_of <- function(mno) {
+    row <- bracket[bracket$match_no == mno, ]
+    fa <- as.integer(sub("W", "", row$feeder_a))
+    fb <- as.integer(sub("W", "", row$feeder_b))
+    part <- winner[[fa]] + winner[[fb]]
+    l <- part - winner[[mno]]
+    l[l < 0] <- 0
+    l
+  }
+  lA <- loser_of(sf_no[1])
+  lB <- loser_of(sf_no[2])
+  bronze <- lA * as.vector(Wm %*% lB) + lB * as.vector(Wm %*% lA)
+  sb <- sum(bronze)
+  if (sb > 0) bronze <- bronze / sb * sum(lA) # scale to the SF-loser pool mass (~1)
+  if (!is.null(third_pin)) {
+    bronze <- numeric(nt)
+    bronze[third_pin] <- 1
+  }
+  fourth <- (lA + lB) - bronze
+  fourth[fourth < 0] <- 0
+
   placement <- do.call(rbind, c(
     lapply(rounds, function(r) {
       tibble::tibble(team = teams, round_name = r, probability = reach[[r]])
     }),
-    list(tibble::tibble(team = teams, round_name = "Champion", probability = champ))
+    list(
+      tibble::tibble(team = teams, round_name = "Champion", probability = champ),
+      tibble::tibble(team = teams, round_name = "Third", probability = bronze),
+      tibble::tibble(team = teams, round_name = "Fourth", probability = fourth)
+    )
   ))
   placement$round_name <- factor(placement$round_name,
-    levels = c(rounds, "Champion")
+    levels = c(rounds, "Champion", "Third", "Fourth")
   )
   placement <- placement[order(placement$team, placement$round_name), ]
   list(placement = tibble::as_tibble(placement), reach = reach, winner = winner)
