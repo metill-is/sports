@@ -110,6 +110,17 @@ gisko_backtest_score <- function(played, max_goals = 8L) {
   )
 }
 
+#' Restrict WC results to the group stage (schedule Round Number 1-3)
+#'
+#' Once the knockout begins, played knockout matches enter `res` and inherit a
+#' `grp` label from their home team, inflating those groups past six round-robin
+#' fixtures. Structural (pool placement + R32 qualification) scoring must ignore
+#' them. Knockout pairings are unmapped by `rmap`, so their `res_round` is `NA`.
+#' @noRd
+.gisko_group_stage <- function(res, res_round) {
+  res[res_round %in% c("1", "2", "3"), , drop = FALSE]
+}
+
 #' Assemble the full backtest dataset (matches + structural) from disk
 #'
 #' Shared loader for the text scorecard and the HTML report. Reads the frozen,
@@ -140,6 +151,14 @@ gisko_scorecard_data <- function(pre_deadline_rev = "d4425564") {
     raw[["Round Number"]],
     .wc_pair_key(.wc_alias(trimws(raw[["Home Team"]])), .wc_alias(trimws(raw[["Away Team"]])))
   )
+
+  # WHY: pool placement + R32 qualification are group-stage concepts. Once the
+  # knockout begins, played knockout matches enter `res` and get a `grp` label
+  # from their home team, inflating those groups past 6 and silently dropping
+  # them from `complete_pools`. Restrict structural scoring to the 72 round-robin
+  # fixtures (schedule Round Number 1-3); knockout pairings are unmapped (NA).
+  res_round <- unname(rmap[.wc_pair_key(.wc_alias(res$home_team), .wc_alias(res$away_team))])
+  res_grp_stage <- .gisko_group_stage(res, res_round)
 
   pl <- jsonlite::read_json(
     here::here("data", "wc", "accountability", "prediction_log.json")
@@ -177,7 +196,7 @@ gisko_scorecard_data <- function(pre_deadline_rev = "d4425564") {
     NULL
   }
 
-  complete_pools <- names(which(table(res$grp) == 6L))
+  complete_pools <- names(which(table(res_grp_stage$grp) == 6L))
   gj <- jsonlite::parse_json(paste(system2(
     "git",
     c(
@@ -199,7 +218,7 @@ gisko_scorecard_data <- function(pre_deadline_rev = "d4425564") {
     NULL
   } else {
     do.call(rbind, lapply(complete_pools, function(g) {
-      gm <- res[res$grp == g, ]
+      gm <- res_grp_stage[res_grp_stage$grp == g, ]
       actual <- .wc_group_table(s$groups[[g]], data.frame(
         home_team = gm$home_team, away_team = gm$away_team,
         home_score = gm$home_score, away_score = gm$away_score

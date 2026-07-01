@@ -67,6 +67,23 @@ test_that("gisko_render_report writes a self-contained HTML file", {
   expect_false(grepl("https?://|cdn|googleapis", html))
 })
 
+test_that(".gisko_group_stage drops knockout rows so completed pools survive", {
+  # Two groups, each with its 6 round-robin fixtures, plus one played knockout
+  # match per group that inherits the group's label from its home team.
+  res <- data.frame(
+    grp = c(rep("A", 6L), rep("B", 6L), "A", "B"),
+    stringsAsFactors = FALSE
+  )
+  res_round <- c(rep("1", 4L), rep("2", 4L), rep("3", 4L), NA, NA)
+
+  # Before the fix, table(res$grp) == 6L saw A = 7, B = 7 and dropped both.
+  expect_false(all(table(res$grp) == 6L))
+
+  gs <- .gisko_group_stage(res, res_round)
+  expect_equal(nrow(gs), 12L)
+  expect_equal(sort(names(which(table(gs$grp) == 6L))), c("A", "B"))
+})
+
 test_that("gisko_backtest_score totals base + per-round joker correctly", {
   pm_marg <- function(h, a, n = 6L) {
     pbar <- matrix(0, n, n)
