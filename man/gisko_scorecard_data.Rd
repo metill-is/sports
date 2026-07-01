@@ -7,13 +7,14 @@
 gisko_scorecard_data(pre_deadline_rev = "d4425564")
 }
 \arguments{
-\item{pre_deadline_rev}{Git rev of the last `groups.json` before the 11 Jun
-structural deadline.}
+\item{pre_deadline_rev}{Git rev of the last `groups.json` /
+`tournament_placements.json` before the 11 Jun structural deadline.}
 }
 \value{
 list: `picks` (per-match), `by_round`, `structural` (or NULL),
-  `base_total`, `match_total` (base + realised joker), `pool_pts`, `qual_pts`,
-  `model_total`, `n_played`, `ceiling`, `pending_joker`, `complete_pools`.
+  `knockout` (per-round reach score), `base_total`, `match_total` (base +
+  realised joker), `pool_pts`, `knockout_pts`, `model_total`, `n_played`,
+  `ceiling`, `pending_joker`, `complete_pools`.
 }
 \description{
 Shared loader for the text scorecard and the HTML report. Reads the frozen,

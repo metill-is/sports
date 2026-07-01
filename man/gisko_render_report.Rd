@@ -7,7 +7,7 @@
 gisko_render_report(
   data,
   path,
-  leader = list(match = 145L, pool = 9L, qual = 10L),
+  leader = list(match = 211L, pool = 35L, knockout = 69L),
   field_size = 2624L,
   generated_at = as.character(Sys.Date())
 )
@@ -17,7 +17,7 @@ gisko_render_report(
 
 \item{path}{Output `.html` path.}
 
-\item{leader}{Named list `match`, `pool`, `qual` (leader's points).}
+\item{leader}{Named list `match`, `pool`, `knockout` (leader's points).}
 
 \item{field_size}{Number of entrants on the leaderboard.}
 

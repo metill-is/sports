@@ -75,25 +75,24 @@
 #'
 #' @param data Output of [gisko_scorecard_data()].
 #' @param path Output `.html` path.
-#' @param leader Named list `match`, `pool`, `qual` (leader's points).
+#' @param leader Named list `match`, `pool`, `knockout` (leader's points).
 #' @param field_size Number of entrants on the leaderboard.
 #' @param generated_at Display timestamp string.
 #' @return `path`, invisibly.
 #' @export
 gisko_render_report <- function(data, path,
-                                leader = list(match = 145L, pool = 9L, qual = 10L),
+                                leader = list(match = 211L, pool = 35L, knockout = 69L),
                                 field_size = 2624L,
                                 generated_at = as.character(Sys.Date())) {
   picks <- data$picks
-  leader_total <- leader$match + leader$pool + leader$qual
+  leader_total <- leader$match + leader$pool + leader$knockout
   total_gap <- data$model_total - leader_total
   exact <- sum(picks$points == 5L)
   mean_pts <- round(mean(picks$points), 2)
   br <- data$by_round
   br$mean <- round(br$base / br$n, 2)
   best_md <- br$round[which.max(br$mean)]
-  struct_pts <- data$pool_pts + data$qual_pts
-  struct_leader <- leader$pool + leader$qual
+  match_gap <- data$match_total - leader$match
   jk_keys <- paste(br$round, br$joker_match)
 
   # scorecard rows
@@ -101,7 +100,7 @@ gisko_render_report <- function(data, path,
     rws <- list(
       c("Match predictions", data$match_total, leader$match),
       c("Pool placement", data$pool_pts, leader$pool),
-      c("Qualification (R32)", data$qual_pts, leader$qual)
+      c("Knockouts (R32-Champion)", data$knockout_pts, leader$knockout)
     )
     body <- vapply(rws, function(r) {
       g <- as.integer(r[2]) - as.integer(r[3])
@@ -127,11 +126,19 @@ gisko_render_report <- function(data, path,
   }, character(1)), collapse = "")
 
   # matchday table
+  eligible <- if (is.null(br$joker_eligible)) rep(TRUE, nrow(br)) else br$joker_eligible
   md_rows <- paste(vapply(seq_len(nrow(br)), function(i) {
+    joker <- if (!eligible[i]) {
+      "&mdash;"
+    } else {
+      paste0(
+        .gisko_esc(br$joker_match[i]), " (+", br$joker_bonus[i], ")",
+        if (!br$complete[i]) " *" else ""
+      )
+    }
     paste0(
       "<tr><td>", br$round[i], "</td><td>", br$n[i], "</td><td>", br$base[i],
-      "</td><td>", br$mean[i], "</td><td class='pick'>", .gisko_esc(br$joker_match[i]),
-      " (+", br$joker_bonus[i], ")", if (!br$complete[i]) " *" else "", "</td></tr>"
+      "</td><td>", br$mean[i], "</td><td class='pick'>", joker, "</td></tr>"
     )
   }, character(1)), collapse = "")
 
@@ -141,12 +148,12 @@ gisko_render_report <- function(data, path,
   } else {
     st <- data$structural
     paste0(
-      "<table class='num'><thead><tr><th>Pool</th><th>Placement</th><th>Qualif.</th>",
+      "<table class='num'><thead><tr><th>Pool</th><th>Placement</th>",
       "<th>Model ranking vs actual</th></tr></thead><tbody>",
       paste(vapply(seq_len(nrow(st)), function(i) {
         paste0(
-          "<tr><td><b>", st$pool[i], "</b></td><td>", st$placement[i], "/4</td><td>",
-          st$qualification[i], "/4</td><td class='ord'>", .gisko_esc(st$model_order[i]),
+          "<tr><td><b>", st$pool[i], "</b></td><td>", st$placement[i], "/4</td>",
+          "<td class='ord'>", .gisko_esc(st$model_order[i]),
           "<br><span style='color:#9a968f'>actual: ", .gisko_esc(st$actual_order[i]),
           "</span></td></tr>"
         )
@@ -159,9 +166,10 @@ gisko_render_report <- function(data, path,
   log_rows <- character(0)
   for (rd in unique(picks$round)) {
     sub <- picks[picks$round == rd, , drop = FALSE]
+    rd_label <- if (grepl("^G", rd)) paste("Matchday", sub("G", "", rd)) else rd
     log_rows <- c(log_rows, paste0(
-      "<tr class='rgrp'><td colspan='5'>Matchday ",
-      sub("G", "", rd), " &middot; ", nrow(sub), " played</td></tr>"
+      "<tr class='rgrp'><td colspan='5'>", rd_label,
+      " &middot; ", nrow(sub), " played</td></tr>"
     ))
     for (i in seq_len(nrow(sub))) {
       is_jk <- paste(sub$round[i], sub$label[i]) %in% jk_keys
@@ -189,30 +197,43 @@ gisko_render_report <- function(data, path,
     " &middot; leak-free backtest of the model's optimal picks</p>",
     "<div class='tldr'>If you'd run the model from the start you'd have <b>",
     data$model_total, " points</b> &mdash; vs the leader's <b>", leader_total,
-    "</b> (of <b>", format(field_size, big.mark = ","), "</b> entrants). ",
-    "<b>Level on structure</b> (", struct_pts, " vs ", struct_leader,
-    "); the whole gap is on match scorelines (", data$match_total, " vs ", leader$match,
-    ") &mdash; the safe, expected-points play hit only ", exact, " exact scores of ",
+    "</b> (of <b>", format(field_size, big.mark = ","), "</b> entrants), a gap of <b>",
+    total_gap, "</b>. Structure is close (pools ", data$pool_pts, " vs ", leader$pool,
+    ", knockouts ", data$knockout_pts, " vs ", leader$knockout,
+    "); most of the gap is on match scorelines (", data$match_total, " vs ", leader$match,
+    ") &mdash; the safe, expected-points play hit ", exact, " exact scores of ",
     data$n_played, ".</div>",
     "<h2>Scorecard</h2><table class='sc num'><thead><tr><th>Category</th><th>Model</th>",
     "<th>Leader</th><th>Gap</th></tr></thead><tbody>", sc_rows(), "</tbody></table>",
     "<h2>Where it stands</h2><div class='cards'>",
-    "<div class='card good'><div class='k'>Structure</div><div class='v'>", struct_pts, " = ",
-    struct_leader, "</div><p>Pool rankings + R32 qualification: tied with the leader.</p></div>",
+    "<div class='card'><div class='k'>Pools</div><div class='v'>", data$pool_pts, " &middot; ",
+    leader$pool, "</div><p>Group placement, 1 pt/team. ",
+    if (data$pool_pts >= leader$pool) {
+      "At or above the leader."
+    } else {
+      paste0("Behind by ", leader$pool - data$pool_pts, ".")
+    }, "</p></div>",
+    "<div class='card'><div class='k'>Knockouts</div><div class='v'>", data$knockout_pts, " &middot; ",
+    leader$knockout, "</div><p>Reach-based R32&ndash;Champion. ",
+    if (data$knockout_pts >= leader$knockout) {
+      "At or above the leader."
+    } else {
+      paste0("Behind by ", leader$knockout - data$knockout_pts, ".")
+    }, "</p></div>",
     "<div class='card warn'><div class='k'>Match scorelines</div><div class='v'>",
     data$match_total, " &middot; ", leader$match, "</div><p>Behind by ",
-    leader$match - data$match_total, " &mdash; the variance gap, not a forecasting one.</p></div>",
+    leader$match - data$match_total, " &mdash; realised-variance gap, not a forecasting one.</p></div>",
     "<div class='card'><div class='k'>Exact scores</div><div class='v'>", exact, " / ",
     data$n_played, "</div><p>Mean ", mean_pts, " pts/match. Ceiling ", data$ceiling,
-    " (all-exact). Best matchday: ", best_md, ".</p></div></div>",
+    " (all-exact). Best round: ", best_md, ".</p></div></div>",
     "<h2>Points per match</h2><div class='bars'>", dist_bars, "</div>",
     "<h2>By matchday</h2><table class='num'><thead><tr><th>Round</th><th>Played</th>",
     "<th>Points</th><th>Mean</th><th>Joker (by pre-match EV)</th></tr></thead><tbody>",
     md_rows, "</tbody></table>",
-    "<h2>Structure &mdash; completed pools</h2>", struct_html,
+    "<h2>Pool placement &mdash; completed pools</h2>", struct_html,
     "<h2>Every pick, and how it went</h2>", log_html,
     "<footer>Regenerate: <code>Rscript scripts/wc/gisko_report.R --leader-match ",
-    leader$match, " --leader-pool ", leader$pool, " --leader-qual ", leader$qual,
+    leader$match, " --leader-pool ", leader$pool, " --leader-knockout ", leader$knockout,
     " --field-size ", field_size, "</code>. Leak-free: each match scored from its frozen ",
     "pre-match prediction; structure from the 11 Jun pre-deadline forecast. ",
     "Topping a ", format(field_size, big.mark = ","),
