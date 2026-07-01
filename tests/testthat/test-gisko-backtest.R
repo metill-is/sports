@@ -45,19 +45,23 @@ test_that("gisko_render_report writes a self-contained HTML file", {
     ),
     by_round = tibble::tibble(
       round = "G1", n = 2L, base = 6L, joker_match = "A v B",
-      joker_bonus = 5L, complete = FALSE
+      joker_bonus = 5L, complete = FALSE, joker_eligible = TRUE
     ),
     structural = tibble::tibble(
-      pool = "A", placement = 4L, qualification = 4L,
+      pool = "A", placement = 4L,
       model_order = "A > B > C > D", actual_order = "A > B > C > D"
     ),
-    base_total = 6L, match_total = 6L, pool_pts = 4L, qual_pts = 4L,
-    model_total = 14L, n_played = 2L, ceiling = 10L,
+    knockout = tibble::tibble(
+      round = c("R32", "R16"), n_pred = c(32L, 16L), n_actual = c(32L, 4L),
+      hits = c(20L, 3L), points = c(40L, 9L), max_points = c(64L, 48L)
+    ),
+    base_total = 6L, match_total = 6L, pool_pts = 4L, knockout_pts = 49L,
+    model_total = 59L, n_played = 2L, ceiling = 10L,
     pending_joker = NULL, complete_pools = "A"
   )
   tmp <- withr::local_tempfile(fileext = ".html")
   gisko_render_report(data, tmp,
-    leader = list(match = 10L, pool = 4L, qual = 4L),
+    leader = list(match = 10L, pool = 4L, knockout = 50L),
     field_size = 2624L, generated_at = "2026-06-25"
   )
   html <- paste(readLines(tmp, warn = FALSE), collapse = "\n")
@@ -65,6 +69,115 @@ test_that("gisko_render_report writes a self-contained HTML file", {
   expect_match(html, "2,624", fixed = TRUE)
   expect_match(html, "chip p5", fixed = TRUE)
   expect_false(grepl("https?://|cdn|googleapis", html))
+})
+
+test_that("gisko_reach_score credits weight x |predicted reach ∩ actual reached|", {
+  # One round R32 (weight 2, size 2). Predict top-2 by frozen prob -> A, B.
+  # Actual reached = live prob ~1 -> A, C. Hit = {A} -> 1 team -> 2 points.
+  frozen <- data.frame(
+    team = c("A", "B", "C"), round_name = "R32", probability = c(0.9, 0.8, 0.1)
+  )
+  live <- data.frame(
+    team = c("A", "B", "C"), round_name = "R32", probability = c(1, 0, 1)
+  )
+  sc <- gisko_reach_score(frozen, live,
+    weights = c(R32 = 2L), sizes = c(R32 = 2L)
+  )
+  expect_equal(sc$round, "R32")
+  expect_equal(sc$n_pred, 2L)
+  expect_equal(sc$n_actual, 2L)
+  expect_equal(sc$hits, 1L)
+  expect_equal(sc$points, 2L)
+  expect_equal(sc$max_points, 4L)
+})
+
+test_that("gisko_reach_score handles multiple rounds and a top-1 champion", {
+  frozen <- rbind(
+    data.frame(
+      team = c("A", "B", "C", "D"), round_name = "R16",
+      probability = c(.9, .8, .7, .1)
+    ),
+    data.frame(
+      team = c("A", "B", "C", "D"), round_name = "Champion",
+      probability = c(.5, .3, .1, .05)
+    )
+  )
+  live <- rbind(
+    data.frame(
+      team = c("A", "B", "C", "D"), round_name = "R16",
+      probability = c(1, 1, 0, 0)
+    ),
+    data.frame(
+      team = c("A", "B", "C", "D"), round_name = "Champion",
+      probability = c(0, 0, 0, 0)
+    )
+  )
+  sc <- gisko_reach_score(frozen, live,
+    weights = c(R16 = 3L, Champion = 75L), sizes = c(R16 = 2L, Champion = 1L)
+  )
+  r16 <- sc[sc$round == "R16", ]
+  ch <- sc[sc$round == "Champion", ]
+  expect_equal(r16$hits, 2L)
+  expect_equal(r16$points, 6L)
+  expect_equal(ch$n_pred, 1L)
+  expect_equal(ch$hits, 0L)
+  expect_equal(ch$points, 0L)
+})
+
+test_that(".gisko_match_knockout_round returns the deepest round both teams reached", {
+  reach <- list(
+    R32 = c("A", "B", "C", "D"),
+    R16 = c("A", "B"),
+    QF = character(0)
+  )
+  expect_equal(.gisko_match_knockout_round("A", "B", reach), "R16")
+  expect_equal(.gisko_match_knockout_round("A", "C", reach), "R32")
+  expect_true(is.na(.gisko_match_knockout_round("A", "Z", reach)))
+})
+
+test_that(".gisko_match_knockout_round tags the two SF losers' match as Third", {
+  reach <- list(
+    R32 = c("A", "B", "C", "D"), R16 = c("A", "B", "C", "D"),
+    QF = c("A", "B", "C", "D"), SF = c("A", "B", "C", "D"), Final = c("A", "B")
+  )
+  # A,B are the finalists; C,D lost their semis -> their match is the bronze final
+  expect_equal(.gisko_match_knockout_round("C", "D", reach), "Third")
+  # a real semi-final has exactly one finalist in it -> stays SF
+  expect_equal(.gisko_match_knockout_round("A", "C", reach), "SF")
+})
+
+test_that(".gisko_joker_total counts a joker only for eligible, fully-played rounds", {
+  sizes <- c(
+    G1 = 24L, G2 = 24L, G3 = 24L, R32 = 16L, R16 = 8L, QF = 4L, SF = 2L, Final = 1L
+  )
+  by_round <- tibble::tibble(
+    round = c("G1", "R32", "QF", "SF", "Final"),
+    n = c(24L, 16L, 4L, 2L, 1L),
+    joker_bonus = c(5L, 3L, 4L, 10L, 20L)
+  )
+  # G1 + R32 + QF are joker-eligible and complete -> 5 + 3 + 4; SF and Final
+  # are fully played but GISKO grants no joker there -> excluded.
+  expect_equal(.gisko_joker_total(by_round, sizes), 12L)
+})
+
+test_that(".gisko_joker_total skips an eligible round that is not fully played", {
+  sizes <- c(R32 = 16L)
+  by_round <- tibble::tibble(round = "R32", n = 7L, joker_bonus = 1L)
+  expect_equal(.gisko_joker_total(by_round, sizes), 0L)
+})
+
+test_that("gisko_reach_score ignores NA live probabilities in the actual set", {
+  frozen <- data.frame(
+    team = c("A", "B", "C"), round_name = "R32", probability = c(.9, .8, .1)
+  )
+  live <- data.frame(
+    team = c("A", "B", "C"), round_name = "R32", probability = c(1, NA, 1)
+  )
+  sc <- gisko_reach_score(frozen, live,
+    weights = c(R32 = 2L), sizes = c(R32 = 2L)
+  )
+  expect_equal(sc$n_actual, 2L)
+  expect_equal(sc$hits, 1L)
 })
 
 test_that(".gisko_group_stage drops knockout rows so completed pools survive", {

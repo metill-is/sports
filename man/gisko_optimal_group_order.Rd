@@ -17,6 +17,6 @@ Character vector of team names ordered 1st..last.
 GISKO awards 1 point per team placed in its correct final group position.
 The optimal entry assigns teams to positions to maximise the expected number
 of correct placements -- a linear assignment on the placement-probability
-matrix (brute-forced; groups are size 4). The top two of the returned order
-double as the qualification (reach-R32) prediction.
+matrix (brute-forced; groups are size 4). Scores the "pools" bucket; R32
+qualification is scored separately and reach-based (see [gisko_reach_score()]).
 }

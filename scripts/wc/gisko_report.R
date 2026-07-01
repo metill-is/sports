@@ -1,6 +1,6 @@
 # Render the GISKO backtest as a self-contained HTML report.
 #   Rscript scripts/wc/gisko_report.R \
-#     --leader-match 145 --leader-pool 9 --leader-qual 10 --field-size 2624
+#     --leader-match 211 --leader-pool 35 --leader-knockout 69 --field-size 2624
 # Writes data/wc/gisko/scorecard.html (gitignored; regenerable). Open it with
 #   open data/wc/gisko/scorecard.html
 suppressMessages(devtools::load_all(here::here()))
@@ -11,9 +11,9 @@ getarg <- function(flag, default) {
   if (length(i) == 1L) as.integer(args[i + 1L]) else default
 }
 leader <- list(
-  match = getarg("--leader-match", 145L),
-  pool = getarg("--leader-pool", 9L),
-  qual = getarg("--leader-qual", 10L)
+  match = getarg("--leader-match", 211L),
+  pool = getarg("--leader-pool", 35L),
+  knockout = getarg("--leader-knockout", 69L)
 )
 field_size <- getarg("--field-size", 2624L)
 
@@ -26,4 +26,4 @@ gisko_render_report(data, out,
 )
 
 cli::cli_alert_success("Wrote {out}")
-cli::cli_text("Model {data$model_total} vs leader {leader$match + leader$pool + leader$qual} of {format(field_size, big.mark=',')}. Open with: open {out}")
+cli::cli_text("Model {data$model_total} vs leader {leader$match + leader$pool + leader$knockout} of {format(field_size, big.mark=',')}. Open with: open {out}")
