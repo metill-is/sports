@@ -59,12 +59,16 @@ if [[ "$ASSUME_YES" -ne 1 ]]; then
 fi
 
 echo "==> commit + push"
+# data/wc/ wholesale -- gitignored children (raw/, fit/, forecast.html, gisko/)
+# are skipped by git add. A leaf list here rotted when Phase 2 added
+# data/wc/shootouts.csv (regenerated every ingest): the dirty file made the
+# post-commit `git pull --rebase` abort AFTER commit, BEFORE push + trigger.
+# Same fix as world-cup.yml, 2026-06-30.
 git add \
   data/publish/world_cup \
   data/facts/results/sport=football/country=world \
   data/facts/schedules/sport=football/country=world \
-  data/wc/manual_results.csv \
-  data/wc/accountability
+  data/wc/
 if git diff --cached --quiet; then
   echo "No changes to publish (forecast output identical). Nothing pushed."
   exit 0
