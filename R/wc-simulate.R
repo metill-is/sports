@@ -355,29 +355,52 @@ wc_group_fixtures <- function(structure, root = here::here("data")) {
   fx
 }
 
-# Knockout round name from the number of knockout matches already played.
-# 16 R32 + 8 R16 + 4 QF + 2 SF + 1 Final = 31; cumulative thresholds.
-.wc_knockout_round_of <- function(n_played) {
-  if (n_played < 16L) {
-    "R32"
-  } else if (n_played < 24L) {
-    "R16"
-  } else if (n_played < 28L) {
-    "QF"
-  } else if (n_played < 30L) {
-    "SF"
-  } else {
-    "Final"
+# Knockout round a team of the given depth is about to play. Depth = number of
+# knockout matches already won (0 -> R32, 1 -> R16, 2 -> QF, 3 -> SF); >= 4 (a
+# Final winner is a champion, no further round) clamps to "Final".
+.wc_round_after_depth <- function(depth) {
+  c("R32", "R16", "QF", "SF", "Final")[pmin(depth, 4L) + 1L]
+}
+
+# Per-team knockout progress from played, scored, cross-group results. `wins` is
+# the team's knockout depth (matches won); `losses` its knockout defeats (only
+# the two 3rd-place entrants carry one while still scheduled). A penalty-decided
+# tie is level on the 90'+ET score the simulator produces, so its winner lives
+# in `shootout_winners`; a result with no determinable winner advances no one.
+.wc_knockout_progress <- function(results, structure, shootout_winners = NULL) {
+  teams <- unlist(structure$groups, use.names = FALSE)
+  wins <- stats::setNames(integer(length(teams)), teams)
+  losses <- stats::setNames(integer(length(teams)), teams)
+  if (nrow(results) == 0L ||
+    !all(c("home_score", "away_score") %in% names(results))) {
+    return(list(wins = wins, losses = losses))
   }
+  go <- structure$group_of
+  cross <- !is.na(go[results$home_team]) & !is.na(go[results$away_team]) &
+    go[results$home_team] != go[results$away_team]
+  scored <- !is.na(results$home_score) & !is.na(results$away_score)
+  k <- results[cross & scored, , drop = FALSE]
+  for (i in seq_len(nrow(k))) {
+    row <- k[i, , drop = FALSE]
+    w <- .wc_knockout_winner_of(row, shootout_winners)
+    if (is.na(w)) next
+    l <- if (identical(w, row$home_team[[1L]])) row$away_team[[1L]] else row$home_team[[1L]]
+    wins[[w]] <- wins[[w]] + 1L
+    losses[[l]] <- losses[[l]] + 1L
+  }
+  list(wins = wins, losses = losses)
 }
 
 # Pure core of [wc_knockout_fixtures()]: from schedule (upcoming) and results
 # (played) fixture tibbles, return the scheduled-but-unplayed *knockout* fixtures
-# with a `round` label. A knockout fixture is any pairing that is not one of the
-# 72 within-group pairings (and whose teams are both known). The round is derived
-# from the number of knockout matches already in `results` — so it rolls forward
-# (R32 -> R16 -> ...) for free as martj42 fills each round into the schedule.
-.wc_knockout_fixtures_from <- function(schedule, results, structure) {
+# with a per-fixture `round` label. A knockout fixture is any pairing that is not
+# one of the 72 within-group pairings (and whose teams are both known). Each
+# fixture's round is derived from the two teams' bracket depth (how many knockout
+# matches each has already won), NOT from the count of knockout matches played:
+# the 2026 schedule interleaves rounds (early R16 ties are set while later R32
+# ties are unplayed), so a single count-based label mis-stamps the whole slate.
+.wc_knockout_fixtures_from <- function(schedule, results, structure,
+                                       shootout_winners = NULL) {
   go <- structure$group_of
   group_pairs <- character(0)
   for (g in names(structure$groups)) {
@@ -388,13 +411,6 @@ wc_group_fixtures <- function(structure, root = here::here("data")) {
     !is.na(go[home]) & !is.na(go[away]) &
       !(.wc_pair_key(home, away) %in% group_pairs)
   }
-  n_ko_played <- if (nrow(results) > 0L) {
-    sum(is_knockout(results$home_team, results$away_team))
-  } else {
-    0L
-  }
-  round_name <- .wc_knockout_round_of(n_ko_played)
-
   empty <- tibble::tibble(
     round = character(0), match_date = as.Date(character(0)),
     home_team = character(0), away_team = character(0),
@@ -414,8 +430,22 @@ wc_group_fixtures <- function(structure, root = here::here("data")) {
   if (nrow(k) == 0L) {
     return(empty)
   }
+  # Both sides of a real bracket tie sit at the same depth; `max` tolerates a
+  # lagged result (martj42 backfills a round late) by trusting the deeper side.
+  # A knockout loss belongs only to the two 3rd-place entrants while scheduled,
+  # so a losing participant flags the bronze match.
+  prog <- .wc_knockout_progress(results, structure, shootout_winners)
+  round_of <- function(home, away) {
+    if (prog$losses[[home]] > 0L || prog$losses[[away]] > 0L) {
+      return("Third")
+    }
+    .wc_round_after_depth(max(prog$wins[[home]], prog$wins[[away]]))
+  }
   tibble::tibble(
-    round = rep(round_name, nrow(k)),
+    round = vapply(
+      seq_len(nrow(k)),
+      function(i) round_of(k$home_team[i], k$away_team[i]), character(1)
+    ),
     match_date = k$match_date,
     home_team = k$home_team, away_team = k$away_team,
     played = FALSE, venue = "neutral"
@@ -425,21 +455,28 @@ wc_group_fixtures <- function(structure, root = here::here("data")) {
 #' Build the upcoming knockout-stage fixtures from the facts store.
 #'
 #' The mirror of [wc_group_fixtures()] for the knockout rounds: the schedule's
-#' cross-group fixtures with both teams known and not yet played, labelled by
-#' round. Empty during the group stage (no knockout teams known yet).
+#' cross-group fixtures with both teams known and not yet played, each labelled
+#' by its own bracket round (derived from the two teams' knockout depth, so an
+#' interleaved schedule labels each fixture correctly). Empty during the group
+#' stage (no knockout teams known yet).
 #'
 #' @param structure Output of [wc_structure()].
 #' @param root Data root.
+#' @param shootout_winners Optional `pair_key -> winner` map from
+#'   [wc_shootout_winners()]; needed so a team that advanced on penalties (level
+#'   on the stored score) is counted toward its knockout depth. Defaults to the
+#'   store under `root`.
 #' @return Tibble: `round`, `match_date`, `home_team`, `away_team`, `played`
 #'   (always FALSE), `venue` (always "neutral").
 #' @export
-wc_knockout_fixtures <- function(structure, root = here::here("data")) {
+wc_knockout_fixtures <- function(structure, root = here::here("data"),
+                                 shootout_winners = wc_shootout_winners(root)) {
   flt <- list(sport = "football", country = "world", sex = "male")
   res <- read_table("results", root = root, filter = flt)
   res <- res[res$division == "FIFA World Cup" & res$season == 2026L, , drop = FALSE]
   sch <- read_table("schedules", root = root, filter = flt)
   sch <- sch[sch$division == "FIFA World Cup" & sch$season == 2026L, , drop = FALSE]
-  .wc_knockout_fixtures_from(sch, res, structure)
+  .wc_knockout_fixtures_from(sch, res, structure, shootout_winners = shootout_winners)
 }
 
 # Shared fixture-card row builder. From per-fixture posterior score matrices

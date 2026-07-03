@@ -4,12 +4,21 @@
 \alias{wc_knockout_fixtures}
 \title{Build the upcoming knockout-stage fixtures from the facts store.}
 \usage{
-wc_knockout_fixtures(structure, root = here::here("data"))
+wc_knockout_fixtures(
+  structure,
+  root = here::here("data"),
+  shootout_winners = wc_shootout_winners(root)
+)
 }
 \arguments{
 \item{structure}{Output of [wc_structure()].}
 
 \item{root}{Data root.}
+
+\item{shootout_winners}{Optional `pair_key -> winner` map from
+[wc_shootout_winners()]; needed so a team that advanced on penalties (level
+on the stored score) is counted toward its knockout depth. Defaults to the
+store under `root`.}
 }
 \value{
 Tibble: `round`, `match_date`, `home_team`, `away_team`, `played`
@@ -17,6 +26,8 @@ Tibble: `round`, `match_date`, `home_team`, `away_team`, `played`
 }
 \description{
 The mirror of [wc_group_fixtures()] for the knockout rounds: the schedule's
-cross-group fixtures with both teams known and not yet played, labelled by
-round. Empty during the group stage (no knockout teams known yet).
+cross-group fixtures with both teams known and not yet played, each labelled
+by its own bracket round (derived from the two teams' knockout depth, so an
+interleaved schedule labels each fixture correctly). Empty during the group
+stage (no knockout teams known yet).
 }
