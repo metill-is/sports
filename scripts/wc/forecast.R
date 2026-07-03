@@ -37,7 +37,7 @@ out <- simulate_world_cup(si$team, si$scalar, fx, s,
 # Knockout-stage match cards: predict the scheduled-but-unplayed knockout
 # fixtures (empty during the group stage) and append them to the group cards so
 # predictions.json carries the upcoming round once the bracket is set.
-kfx <- wc_knockout_fixtures(s)
+kfx <- wc_knockout_fixtures(s, shootout_winners = sw)
 cat(sprintf("knockout fixtures: %d\n", nrow(kfx)))
 if (nrow(kfx) > 0L) {
   kpred <- wc_knockout_predictions(kfx, si$team, si$scalar, s, out$bracket_model$W)

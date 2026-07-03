@@ -209,14 +209,23 @@ test_that("simulate_world_cup conditions placement on a played knockout result",
 
 # ---- Knockout match predictions --------------------------------------------
 
-test_that(".wc_knockout_round_of maps played-knockout count to the round name", {
-  expect_equal(.wc_knockout_round_of(0L), "R32")
-  expect_equal(.wc_knockout_round_of(15L), "R32")
-  expect_equal(.wc_knockout_round_of(16L), "R16")
-  expect_equal(.wc_knockout_round_of(23L), "R16")
-  expect_equal(.wc_knockout_round_of(24L), "QF")
-  expect_equal(.wc_knockout_round_of(28L), "SF")
-  expect_equal(.wc_knockout_round_of(30L), "Final")
+# A knockout result: winner `w` beats loser `l` 2-0 (home wins). Vectorised over
+# equal-length `w`/`l`. Used to give test fixtures scored, cross-group results
+# so the depth-based round derivation can determine each team's winners.
+.ko_win <- function(w, l, d = "2026-07-03") {
+  tibble::tibble(
+    match_date = as.Date(d), home_team = w, away_team = l,
+    home_score = 2L, away_score = 0L
+  )
+}
+
+test_that(".wc_round_after_depth maps a team's knockout depth to its next round", {
+  expect_equal(.wc_round_after_depth(0L), "R32")
+  expect_equal(.wc_round_after_depth(1L), "R16")
+  expect_equal(.wc_round_after_depth(2L), "QF")
+  expect_equal(.wc_round_after_depth(3L), "SF")
+  expect_equal(.wc_round_after_depth(4L), "Final")
+  expect_equal(.wc_round_after_depth(5L), "Final") # champion has no further round
 })
 
 # make_group_results / make_r32_schedule live in helper-wc.R (shared with publish).
@@ -252,17 +261,94 @@ test_that(".wc_knockout_fixtures_from excludes group pairings still in the sched
 
 test_that(".wc_knockout_fixtures_from rolls the round forward as knockout results land", {
   s <- wc_structure()
-  r32 <- make_r32_schedule(s)
-  # All 16 R32 now played (added to results); the schedule holds 8 R16 fixtures.
-  results <- dplyr::bind_rows(make_group_results(s), r32)
-  gw <- vapply(s$groups, `[`, character(1), 1L)
+  teams <- unlist(s$groups, use.names = FALSE)
+  r32 <- make_r32_schedule(s) # home teams[1:16] vs away teams[25:40]
+  # All 16 R32 played (home wins 2-0) -> winners teams[1:16]; the schedule holds
+  # 8 R16 fixtures pairing those winners cross-group (grp A/B vs grp C/D).
+  results <- .ko_win(r32$home_team, r32$away_team)
   schedule <- tibble::tibble(
     match_date = as.Date("2026-07-05") + rep(0:3, each = 2L),
-    home_team = gw[1:8], away_team = gw[c(9:12, 1:4)]
+    home_team = teams[1:8], away_team = teams[9:16]
   )
   kfx <- .wc_knockout_fixtures_from(schedule, results, s)
   expect_equal(nrow(kfx), 8L)
   expect_true(all(kfx$round == "R16"))
+})
+
+test_that(".wc_knockout_fixtures_from labels each fixture by its own depth (interleaved rounds)", {
+  s <- wc_structure()
+  teams <- unlist(s$groups, use.names = FALSE)
+  r32 <- make_r32_schedule(s) # home teams[1:16] vs away teams[25:40]
+  # First 8 R32 played (home wins): winners teams[1:8], losers teams[25:32].
+  r32_res <- .ko_win(r32$home_team[1:8], r32$away_team[1:8])
+  # Upcoming: the remaining 8 genuine R32 + 4 R16 fixtures pairing the winners
+  # teams[1:8] cross-group (grp A vs grp B). The old count-based label stamped
+  # all 12 "R32" because only 8 knockout matches had been played.
+  upcoming_r32 <- r32[9:16, c("match_date", "home_team", "away_team")]
+  r16 <- tibble::tibble(
+    match_date = as.Date("2026-07-07") + rep(0:1, each = 2L),
+    home_team = teams[1:4], away_team = teams[5:8]
+  )
+  schedule <- dplyr::bind_rows(upcoming_r32, r16)
+
+  kfx <- .wc_knockout_fixtures_from(schedule, r32_res, s)
+
+  rnd <- stats::setNames(kfx$round, .wc_pair_key(kfx$home_team, kfx$away_team))
+  expect_true(all(rnd[.wc_pair_key(upcoming_r32$home_team, upcoming_r32$away_team)] == "R32"))
+  expect_true(all(rnd[.wc_pair_key(r16$home_team, r16$away_team)] == "R16"))
+})
+
+test_that(".wc_knockout_fixtures_from counts a shootout-advanced team toward its depth", {
+  s <- wc_structure()
+  teams <- unlist(s$groups, use.names = FALSE)
+  # Two R32 matches decided on penalties (level on 90'+ET score); the winners
+  # live only in the shootout-winners map, so the score column shows a draw.
+  r32_res <- dplyr::bind_rows(
+    tibble::tibble(
+      match_date = as.Date("2026-07-03"), home_team = teams[1], away_team = teams[25],
+      home_score = 1L, away_score = 1L
+    ),
+    tibble::tibble(
+      match_date = as.Date("2026-07-03"), home_team = teams[5], away_team = teams[29],
+      home_score = 0L, away_score = 0L
+    )
+  )
+  sw <- stats::setNames(
+    c(teams[1], teams[5]),
+    .wc_pair_key(c(teams[1], teams[5]), c(teams[25], teams[29]))
+  )
+  schedule <- tibble::tibble(
+    match_date = as.Date("2026-07-07"), home_team = teams[1], away_team = teams[5]
+  )
+
+  # Without the shootout map the winners are undeterminable -> depth 0 -> R32.
+  kfx0 <- .wc_knockout_fixtures_from(schedule, r32_res, s)
+  expect_equal(kfx0$round, "R32")
+  # With it, both are R32 winners (depth 1) -> the fixture is R16.
+  kfx1 <- .wc_knockout_fixtures_from(schedule, r32_res, s, shootout_winners = sw)
+  expect_equal(kfx1$round, "R16")
+})
+
+test_that(".wc_knockout_fixtures_from labels the third-place match (loser participants) as Third", {
+  s <- wc_structure()
+  teams <- unlist(s$groups, use.names = FALSE)
+  # Two semi-final losers: each won three knockout matches then lost the SF. The
+  # derivation keys on the knockout *loss* — only the two bronze entrants carry
+  # one while still scheduled — so the fixture between them is the bronze match.
+  results <- dplyr::bind_rows(
+    .ko_win(teams[1], teams[25]), .ko_win(teams[1], teams[29]), .ko_win(teams[1], teams[33]),
+    .ko_win(teams[9], teams[1]), # teams[1] loses SF to teams[9]
+    .ko_win(teams[5], teams[26]), .ko_win(teams[5], teams[30]), .ko_win(teams[5], teams[34]),
+    .ko_win(teams[13], teams[5]) # teams[5] loses SF to teams[13]
+  )
+  schedule <- tibble::tibble(
+    match_date = as.Date("2026-07-18"), home_team = teams[1], away_team = teams[5]
+  )
+
+  kfx <- .wc_knockout_fixtures_from(schedule, results, s)
+
+  expect_equal(nrow(kfx), 1L)
+  expect_equal(kfx$round, "Third")
 })
 
 test_that("wc_knockout_predictions emits the card contract plus round + p_advance", {
