@@ -953,42 +953,75 @@ NULL
 #     (a = [{i: idx(home), p: 1}], b = [{i: idx(away), p: 1}], 0-based indices
 #     into `teams`). The platform detects leaves by occByMatch[match_no] != null,
 #     so every leaf match_no MUST appear here.
+#   * `played`: decided frontier matches as settled facts (WC Phase-2 contract:
+#     {match_no, winner, loser, winner_score, loser_score, shootout}, 0-based
+#     indices into `teams`). Their `matchup` cells are pinned to 1/0 so the
+#     what-if propagation advances the real winner with certainty. Empty until
+#     a frontier match is played.
 #
 # Returns NULL when there's no live frontier (fully resolved or entry round
 # undrawn) — the publisher then skips bracket.json.
 
-# Completed (decided) cup matches for every round BEFORE the live frontier.
-# Returns a list of {round, home, away, home_score, away_score, winner} in
-# round-then-bracket order. Scores are joined from `results` by unordered pair
-# (a knockout pairing meets at most once per season+CUP) and oriented to the
-# bracket's home/away. Round names map the simulator's "R8" to the renderer's
-# "QF". An undecided match (known_winner NA) is skipped — it is not completed.
-.build_cup_completed_pfi <- function(bracket_state, results, season) {
-  if (is.null(bracket_state)) {
-    return(list())
+# Played CUP results usable for score joins: current season, both scores
+# present. A 0-row tibble when `results`/`season` are absent, so callers can
+# join unconditionally.
+.cup_results_pfi <- function(results, season) {
+  if (is.null(results) || is.null(season)) {
+    return(tibble::tibble(
+      home_team = character(), away_team = character(),
+      home_score = integer(), away_score = integer()
+    ))
   }
-  frontier <- .cup_frontier_round_pfi(bracket_state)
-  # No frontier => fully resolved: every round is "before the (nonexistent)
-  # frontier", so treat all rounds as candidate-completed.
-  end_pos <- if (is.null(frontier)) {
-    length(.CUP_ROUND_SEQ_PFI)
-  } else {
-    match(frontier, .CUP_ROUND_SEQ_PFI) - 1L
-  }
-  if (is.na(end_pos) || end_pos < 1L) {
-    return(list())
-  }
-  done_rounds <- .CUP_ROUND_SEQ_PFI[seq_len(end_pos)]
-  round_label <- c(R16 = "R16", R8 = "QF", SF = "SF", Final = "Final")
-
-  cup_res <- results[
+  results[
     results$division == "CUP" & results$season == season &
       !is.na(results$home_score) & !is.na(results$away_score), ,
     drop = FALSE
   ]
+}
+
+# Score lookup for one bracket pairing, oriented to the bracket's (home, away).
+# Joined by unordered pair — a knockout pairing meets at most once per
+# season+CUP. NULL scores when the results store has no row for the pairing.
+.cup_pair_scores_pfi <- function(cup_res, h, a) {
+  hit <- which(
+    (cup_res$home_team == h & cup_res$away_team == a) |
+      (cup_res$home_team == a & cup_res$away_team == h)
+  )
+  if (length(hit) < 1L) {
+    return(list(home_score = NULL, away_score = NULL))
+  }
+  r1 <- cup_res[hit[1L], ]
+  if (identical(r1$home_team, h)) {
+    list(
+      home_score = as.integer(r1$home_score),
+      away_score = as.integer(r1$away_score)
+    )
+  } else {
+    list(
+      home_score = as.integer(r1$away_score),
+      away_score = as.integer(r1$home_score)
+    )
+  }
+}
+
+# Completed (decided) cup matches across ALL drawn rounds, per match — a
+# decided match inside a partially-played frontier round counts too (the 2026
+# Mjólkurbikar SF1 was played 28 Jun while SF2 waited until 21 Jul; the old
+# rounds-before-the-frontier walk dropped it from completed[]). Returns a list
+# of {round, home, away, home_score, away_score, winner} in round-then-bracket
+# order. Scores are joined from `results` by unordered pair and oriented to
+# the bracket's home/away. Round names map the simulator's "R8" to the
+# renderer's "QF". An undecided match (known_winner NA) is skipped — it is
+# not completed.
+.build_cup_completed_pfi <- function(bracket_state, results, season) {
+  if (is.null(bracket_state)) {
+    return(list())
+  }
+  round_label <- c(R16 = "R16", R8 = "QF", SF = "SF", Final = "Final")
+  cup_res <- .cup_results_pfi(results, season)
 
   out <- list()
-  for (rn in done_rounds) {
+  for (rn in .CUP_ROUND_SEQ_PFI) {
     rd <- bracket_state$rounds[[rn]]
     if (is.null(rd) || !isTRUE(rd$pairings_known) || is.null(rd$matches)) next
     mt <- rd$matches
@@ -997,26 +1030,11 @@ NULL
       if (is.na(w)) next
       h <- mt$home_team[m]
       a <- mt$away_team[m]
-      hit <- which(
-        (cup_res$home_team == h & cup_res$away_team == a) |
-          (cup_res$home_team == a & cup_res$away_team == h)
-      )
-      hs <- NULL
-      as_ <- NULL
-      if (length(hit) >= 1L) {
-        r1 <- cup_res[hit[1L], ]
-        if (identical(r1$home_team, h)) {
-          hs <- as.integer(r1$home_score)
-          as_ <- as.integer(r1$away_score)
-        } else {
-          hs <- as.integer(r1$away_score)
-          as_ <- as.integer(r1$home_score)
-        }
-      }
+      sc <- .cup_pair_scores_pfi(cup_res, h, a)
       out[[length(out) + 1L]] <- list(
         round = unname(round_label[[rn]]),
         home = h, away = a,
-        home_score = hs, away_score = as_,
+        home_score = sc$home_score, away_score = sc$away_score,
         winner = w
       )
     }
@@ -1059,10 +1077,20 @@ NULL
   # only the leaf-pair cells with their home-venue win prob, leaving every
   # cross-pairing (the Final and beyond) neutral — in a single-leg knockout a
   # pairing meets at most once, so a leaf cell is never reused for a later round.
+  # A DECIDED leaf (frontier match already played, e.g. SF1 while SF2 waits)
+  # is a fact, not a forecast: pin its cells to 1/0 so the renderer's what-if
+  # propagation advances the real winner with certainty.
   for (m in seq_len(n_leaf)) {
-    if (!identical(leaf_matches$venue[m], "home")) next
     h <- leaf_matches$home_team[m]
     a <- leaf_matches$away_team[m]
+    w <- leaf_matches$known_winner[m]
+    if (!is.na(w)) {
+      l <- if (identical(w, h)) a else h
+      W[w, l] <- 1
+      W[l, w] <- 0
+      next
+    }
+    if (!identical(leaf_matches$venue[m], "home")) next
     p <- .cup_home_winprob_pfi(h, a, sim_inputs)
     W[h, a] <- p
     W[a, h] <- 1 - p
@@ -1111,6 +1139,30 @@ NULL
     )
   })
 
+  # played: decided frontier matches as settled facts, mirroring the World Cup
+  # contract (wc-publish.R Phase 2) — 0-based winner/loser indices into
+  # `teams`, scores from the results store, `shootout` inferred from a level
+  # score with a known winner (the store carries no explicit ET/shootout
+  # marker). Empty until a frontier match is played.
+  cup_res <- .cup_results_pfi(results, season)
+  played <- list()
+  for (m in seq_len(n_leaf)) {
+    w <- leaf_matches$known_winner[m]
+    if (is.na(w)) next
+    h <- leaf_matches$home_team[m]
+    a <- leaf_matches$away_team[m]
+    l <- if (identical(w, h)) a else h
+    sc <- .cup_pair_scores_pfi(cup_res, h, a)
+    ws <- if (identical(w, h)) sc$home_score else sc$away_score
+    ls <- if (identical(w, h)) sc$away_score else sc$home_score
+    played[[length(played) + 1L]] <- list(
+      match_no = m,
+      winner = unname(idx0[[w]]), loser = unname(idx0[[l]]),
+      winner_score = ws, loser_score = ls,
+      shootout = !is.null(ws) && !is.null(ls) && ws == ls
+    )
+  }
+
   list(
     generated_at = generated_at,
     n_draws = as.integer(n_draws),
@@ -1123,7 +1175,8 @@ NULL
       .build_cup_completed_pfi(bracket_state, results, season)
     } else {
       list()
-    }
+    },
+    played = played
   )
 }
 

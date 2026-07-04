@@ -62,14 +62,17 @@
 
 # ---- Contract tests ---------------------------------------------------------
 
-test_that("cup bracket payload has the 8 keys (7 WC keys + completed)", {
+test_that("cup bracket payload has the 9 keys (8 WC keys + completed)", {
   bj <- .build_cup_bracket_payload_pfi(
     .cup_bracket_state_sf(), .cup_bracket_sim_inputs(),
     generated_at = "2026-06-25T00:00:00Z", n_draws = 6L
   )
   expect_setequal(
     names(bj),
-    c("generated_at", "n_draws", "teams", "teams_is", "matchup", "matches", "r32", "completed")
+    c(
+      "generated_at", "n_draws", "teams", "teams_is", "matchup", "matches",
+      "r32", "completed", "played"
+    )
   )
 })
 
@@ -281,4 +284,124 @@ test_that("payload carries an additive completed[] without changing live keys", 
   expect_true("completed" %in% names(ext))
   expect_true(length(ext$completed) >= 1L)
   expect_true(all(vapply(ext$completed, function(x) !is.null(x$winner), TRUE)))
+})
+
+# ---- Half-played frontier (2026-07-04 incident) -----------------------------
+# The 2026 Mjólkurbikar SF1 (Breiðablik 3-0 Víkingur R., played 28 Jun) was
+# published as a pending pairing: the payload treated every frontier match as
+# live, and completed[] stopped strictly before the frontier round. A decided
+# frontier match must (a) pin its matchup cells to 1/0, (b) appear in the
+# WC-contract `played[]`, and (c) appear in `completed[]`.
+
+# SF1 decided (Alpha beat Delta), SF2 undecided — the live frontier is still SF.
+.cup_bracket_state_sf_half <- function() {
+  bs <- .cup_bracket_state_sf()
+  bs$rounds$SF$matches$known_winner <- c("Alpha", NA_character_)
+  bs
+}
+
+.cup_half_results <- function(sf1_score = c(3L, 0L)) {
+  tibble::tibble(
+    division = "CUP", season = 2026L,
+    home_team = "Alpha", away_team = "Delta",
+    home_score = sf1_score[1], away_score = sf1_score[2]
+  )
+}
+
+test_that("a decided frontier leaf pins its matchup cells to 1/0", {
+  bj <- .build_cup_bracket_payload_pfi(
+    .cup_bracket_state_sf_half(), .cup_bracket_sim_inputs(),
+    generated_at = "2026-07-04T00:00:00Z", n_draws = 6L,
+    results = .cup_half_results(), season = 2026L
+  )
+  idx <- stats::setNames(seq_along(bj$teams), bj$teams)
+  expect_equal(bj$matchup[idx[["Alpha"]], idx[["Delta"]]], 1)
+  expect_equal(bj$matchup[idx[["Delta"]], idx[["Alpha"]]], 0)
+  # The undecided leaf keeps a genuine home-venue probability.
+  p_sf2 <- bj$matchup[idx[["Bravo"]], idx[["Charlie"]]]
+  expect_true(p_sf2 > 0 && p_sf2 < 1)
+})
+
+test_that("played[] carries decided frontier matches under the WC contract", {
+  bj <- .build_cup_bracket_payload_pfi(
+    .cup_bracket_state_sf_half(), .cup_bracket_sim_inputs(),
+    generated_at = "2026-07-04T00:00:00Z", n_draws = 6L,
+    results = .cup_half_results(), season = 2026L
+  )
+  expect_length(bj$played, 1L)
+  p <- bj$played[[1]]
+  sf1_no <- Filter(
+    function(m) m$round == "SF", bj$matches
+  )[[1]]$match_no
+  expect_identical(p$match_no, sf1_no)
+  # 0-based indices into teams, mirroring wc-publish.R.
+  expect_identical(bj$teams[p$winner + 1L], "Alpha")
+  expect_identical(bj$teams[p$loser + 1L], "Delta")
+  expect_identical(p$winner_score, 3L)
+  expect_identical(p$loser_score, 0L)
+  expect_false(p$shootout)
+})
+
+test_that("played[] is present but empty when no frontier match is decided", {
+  bj <- .build_cup_bracket_payload_pfi(
+    .cup_bracket_state_sf(), .cup_bracket_sim_inputs(),
+    generated_at = "2026-07-04T00:00:00Z", n_draws = 6L,
+    results = .cup_half_results(), season = 2026L
+  )
+  expect_true("played" %in% names(bj))
+  expect_length(bj$played, 0L)
+})
+
+test_that("a frontier match decided beyond 90' gets shootout = TRUE", {
+  bj <- .build_cup_bracket_payload_pfi(
+    .cup_bracket_state_sf_half(), .cup_bracket_sim_inputs(),
+    generated_at = "2026-07-04T00:00:00Z", n_draws = 6L,
+    results = .cup_half_results(sf1_score = c(2L, 2L)), season = 2026L
+  )
+  expect_length(bj$played, 1L)
+  expect_true(bj$played[[1]]$shootout)
+  expect_identical(bj$played[[1]]$winner_score, 2L)
+  expect_identical(bj$played[[1]]$loser_score, 2L)
+})
+
+test_that("completed[] includes decided matches of the frontier round", {
+  comp <- .build_cup_completed_pfi(
+    .cup_bracket_state_sf_half(), .cup_half_results(),
+    season = 2026L
+  )
+  sf <- Filter(function(x) x$round == "SF", comp)
+  expect_length(sf, 1L)
+  expect_identical(sf[[1]]$home, "Alpha")
+  expect_identical(sf[[1]]$away, "Delta")
+  expect_identical(sf[[1]]$home_score, 3L)
+  expect_identical(sf[[1]]$away_score, 0L)
+  expect_identical(sf[[1]]$winner, "Alpha")
+  # Pre-frontier rounds still emit (scores NULL when absent from results).
+  expect_length(Filter(function(x) x$round == "R16", comp), 8L)
+  expect_length(Filter(function(x) x$round == "QF", comp), 4L)
+})
+
+test_that("completed[] emits decided matches when the entry round is the frontier", {
+  bs <- list(
+    cup_teams = c("Alpha", "Bravo", "Charlie", "Delta"),
+    rounds = list(
+      R16 = list(pairings_known = TRUE, matches = tibble::tibble(
+        home_team    = c("Alpha", "Charlie", "Echo", "Golf"),
+        away_team    = c("Bravo", "Delta", "Foxtrot", "Hotel"),
+        venue        = "home",
+        known_winner = c("Alpha", "Charlie", NA, NA)
+      )),
+      R8 = list(pairings_known = FALSE, matches = NULL),
+      SF = list(pairings_known = FALSE, matches = NULL),
+      Final = list(pairings_known = FALSE, matches = NULL)
+    )
+  )
+  results <- tibble::tibble(
+    division = "CUP", season = 2026L,
+    home_team = c("Alpha", "Charlie"), away_team = c("Bravo", "Delta"),
+    home_score = c(2L, 1L), away_score = c(0L, 0L)
+  )
+  comp <- .build_cup_completed_pfi(bs, results, season = 2026L)
+  expect_length(comp, 2L)
+  expect_setequal(vapply(comp, `[[`, "", "winner"), c("Alpha", "Charlie"))
 })
