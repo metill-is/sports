@@ -1,310 +1,310 @@
 {
-  "generated_at": "2026-07-03T08:57:47Z",
-  "fit_date": "2026-07-03",
+  "generated_at": "2026-07-04T08:09:06Z",
+  "fit_date": "2026-07-04",
   "teams": [
     {
       "team": "Argentina",
       "team_is": "Argentína",
       "group": "J",
-      "rating": 2.81,
-      "offence": 1.415,
-      "defence": 1.395,
+      "rating": 2.753,
+      "offence": 1.417,
+      "defence": 1.336,
       "rating_rank": 1
     },
     {
       "team": "Spain",
       "team_is": "Spánn",
       "group": "H",
-      "rating": 2.746,
-      "offence": 1.553,
-      "defence": 1.193,
+      "rating": 2.75,
+      "offence": 1.556,
+      "defence": 1.195,
       "rating_rank": 2
     },
     {
       "team": "France",
       "team_is": "Frakkland",
       "group": "I",
-      "rating": 2.423,
-      "offence": 1.433,
-      "defence": 0.99,
+      "rating": 2.435,
+      "offence": 1.435,
+      "defence": 1,
       "rating_rank": 3
     },
     {
       "team": "Colombia",
       "team_is": "Kólumbía",
       "group": "K",
-      "rating": 2.42,
-      "offence": 1.352,
-      "defence": 1.068,
+      "rating": 2.41,
+      "offence": 1.336,
+      "defence": 1.074,
       "rating_rank": 4
     },
     {
       "team": "England",
       "team_is": "England",
       "group": "L",
-      "rating": 2.372,
-      "offence": 1.309,
-      "defence": 1.063,
+      "rating": 2.374,
+      "offence": 1.314,
+      "defence": 1.06,
       "rating_rank": 5
     },
     {
       "team": "Brazil",
       "team_is": "Brasilía",
       "group": "C",
-      "rating": 2.359,
-      "offence": 1.491,
-      "defence": 0.868,
+      "rating": 2.349,
+      "offence": 1.492,
+      "defence": 0.857,
       "rating_rank": 6
     },
     {
       "team": "Portugal",
       "team_is": "Portúgal",
       "group": "K",
-      "rating": 2.298,
-      "offence": 1.294,
-      "defence": 1.003,
+      "rating": 2.303,
+      "offence": 1.302,
+      "defence": 1.001,
       "rating_rank": 7
     },
     {
       "team": "Japan",
       "team_is": "Japan",
       "group": "F",
-      "rating": 2.292,
-      "offence": 1.337,
-      "defence": 0.955,
+      "rating": 2.296,
+      "offence": 1.343,
+      "defence": 0.954,
       "rating_rank": 8
-    },
-    {
-      "team": "Netherlands",
-      "team_is": "Holland",
-      "group": "F",
-      "rating": 2.056,
-      "offence": 1.335,
-      "defence": 0.722,
-      "rating_rank": 9
     },
     {
       "team": "Belgium",
       "team_is": "Belgía",
       "group": "G",
-      "rating": 2.055,
-      "offence": 1.313,
-      "defence": 0.742,
+      "rating": 2.073,
+      "offence": 1.323,
+      "defence": 0.749,
+      "rating_rank": 9
+    },
+    {
+      "team": "Netherlands",
+      "team_is": "Holland",
+      "group": "F",
+      "rating": 2.053,
+      "offence": 1.34,
+      "defence": 0.714,
       "rating_rank": 10
     },
     {
       "team": "Uruguay",
       "team_is": "Úrúgvæ",
       "group": "H",
-      "rating": 2.019,
-      "offence": 0.932,
-      "defence": 1.086,
+      "rating": 2.02,
+      "offence": 0.937,
+      "defence": 1.082,
       "rating_rank": 11
     },
     {
       "team": "Germany",
       "team_is": "Þýskaland",
       "group": "E",
-      "rating": 1.967,
-      "offence": 1.32,
-      "defence": 0.647,
+      "rating": 1.971,
+      "offence": 1.326,
+      "defence": 0.645,
       "rating_rank": 12
     },
     {
       "team": "Senegal",
       "team_is": "Senegal",
       "group": "I",
-      "rating": 1.932,
-      "offence": 1.203,
-      "defence": 0.728,
+      "rating": 1.936,
+      "offence": 1.215,
+      "defence": 0.722,
       "rating_rank": 13
     },
     {
       "team": "Norway",
       "team_is": "Noregur",
       "group": "I",
-      "rating": 1.906,
-      "offence": 1.43,
-      "defence": 0.476,
+      "rating": 1.901,
+      "offence": 1.424,
+      "defence": 0.477,
       "rating_rank": 14
     },
     {
       "team": "Switzerland",
       "team_is": "Sviss",
       "group": "B",
-      "rating": 1.894,
-      "offence": 1.207,
-      "defence": 0.687,
+      "rating": 1.892,
+      "offence": 1.208,
+      "defence": 0.684,
       "rating_rank": 15
     },
     {
       "team": "Morocco",
       "team_is": "Marokkó",
       "group": "C",
-      "rating": 1.893,
-      "offence": 0.937,
-      "defence": 0.956,
+      "rating": 1.891,
+      "offence": 0.933,
+      "defence": 0.958,
       "rating_rank": 16
     },
     {
       "team": "Croatia",
       "team_is": "Króatía",
       "group": "L",
-      "rating": 1.889,
-      "offence": 1.096,
-      "defence": 0.792,
+      "rating": 1.886,
+      "offence": 1.097,
+      "defence": 0.789,
       "rating_rank": 17
     },
     {
       "team": "Austria",
       "team_is": "Austurríki",
       "group": "J",
-      "rating": 1.767,
-      "offence": 1.1,
-      "defence": 0.666,
+      "rating": 1.764,
+      "offence": 1.099,
+      "defence": 0.665,
       "rating_rank": 18
     },
     {
       "team": "Algeria",
       "team_is": "Alsír",
       "group": "J",
-      "rating": 1.754,
+      "rating": 1.757,
       "offence": 1.13,
-      "defence": 0.623,
+      "defence": 0.627,
       "rating_rank": 19
     },
     {
       "team": "Egypt",
       "team_is": "Egyptaland",
       "group": "G",
-      "rating": 1.631,
-      "offence": 0.839,
-      "defence": 0.791,
+      "rating": 1.656,
+      "offence": 0.851,
+      "defence": 0.804,
       "rating_rank": 20
     },
     {
       "team": "Mexico",
       "team_is": "Mexíkó",
       "group": "A",
-      "rating": 1.576,
-      "offence": 0.846,
-      "defence": 0.73,
+      "rating": 1.591,
+      "offence": 0.851,
+      "defence": 0.74,
       "rating_rank": 21
     },
     {
       "team": "Ecuador",
       "team_is": "Ekvador",
       "group": "E",
-      "rating": 1.569,
-      "offence": 0.387,
-      "defence": 1.183,
+      "rating": 1.571,
+      "offence": 0.388,
+      "defence": 1.184,
       "rating_rank": 22
     },
     {
       "team": "Turkey",
       "team_is": "Tyrkland",
       "group": "D",
-      "rating": 1.561,
+      "rating": 1.564,
       "offence": 1.152,
-      "defence": 0.409,
+      "defence": 0.412,
       "rating_rank": 23
     },
     {
       "team": "Australia",
       "team_is": "Ástralía",
       "group": "D",
-      "rating": 1.491,
-      "offence": 0.742,
-      "defence": 0.748,
+      "rating": 1.489,
+      "offence": 0.749,
+      "defence": 0.74,
       "rating_rank": 24
     },
     {
       "team": "Canada",
       "team_is": "Kanada",
       "group": "B",
-      "rating": 1.453,
-      "offence": 0.777,
-      "defence": 0.676,
+      "rating": 1.45,
+      "offence": 0.775,
+      "defence": 0.674,
       "rating_rank": 25
     },
     {
       "team": "Iran",
       "team_is": "Íran",
       "group": "G",
-      "rating": 1.42,
-      "offence": 0.911,
-      "defence": 0.509,
+      "rating": 1.427,
+      "offence": 0.921,
+      "defence": 0.506,
       "rating_rank": 26
     },
     {
       "team": "South Korea",
       "team_is": "Suður-Kórea",
       "group": "A",
-      "rating": 1.403,
-      "offence": 0.906,
-      "defence": 0.497,
+      "rating": 1.409,
+      "offence": 0.916,
+      "defence": 0.493,
       "rating_rank": 27
     },
     {
       "team": "Ivory Coast",
       "team_is": "Fílabeinsströndin",
       "group": "E",
-      "rating": 1.393,
-      "offence": 0.637,
-      "defence": 0.756,
+      "rating": 1.396,
+      "offence": 0.642,
+      "defence": 0.754,
       "rating_rank": 28
     },
     {
       "team": "DR Congo",
       "team_is": "Kongó",
       "group": "K",
-      "rating": 1.342,
-      "offence": 0.577,
-      "defence": 0.765,
+      "rating": 1.339,
+      "offence": 0.576,
+      "defence": 0.763,
       "rating_rank": 29
-    },
-    {
-      "team": "Scotland",
-      "team_is": "Skotland",
-      "group": "C",
-      "rating": 1.289,
-      "offence": 0.872,
-      "defence": 0.417,
-      "rating_rank": 30
     },
     {
       "team": "Sweden",
       "team_is": "Svíþjóð",
       "group": "F",
-      "rating": 1.279,
-      "offence": 1.107,
-      "defence": 0.172,
+      "rating": 1.286,
+      "offence": 1.111,
+      "defence": 0.175,
+      "rating_rank": 30
+    },
+    {
+      "team": "Scotland",
+      "team_is": "Skotland",
+      "group": "C",
+      "rating": 1.284,
+      "offence": 0.866,
+      "defence": 0.418,
       "rating_rank": 31
     },
     {
       "team": "Paraguay",
       "team_is": "Paragvæ",
       "group": "D",
-      "rating": 1.259,
-      "offence": 0.619,
-      "defence": 0.64,
+      "rating": 1.252,
+      "offence": 0.614,
+      "defence": 0.638,
       "rating_rank": 32
     },
     {
       "team": "Tunisia",
       "team_is": "Túnis",
       "group": "F",
-      "rating": 1.168,
-      "offence": 0.616,
-      "defence": 0.552,
+      "rating": 1.153,
+      "offence": 0.618,
+      "defence": 0.535,
       "rating_rank": 33
     },
     {
       "team": "Czech Republic",
       "team_is": "Tékkland",
       "group": "A",
-      "rating": 1.119,
-      "offence": 0.801,
+      "rating": 1.125,
+      "offence": 0.807,
       "defence": 0.318,
       "rating_rank": 34
     },
@@ -313,125 +313,125 @@
       "team_is": "Úsbekistan",
       "group": "K",
       "rating": 0.973,
-      "offence": 0.617,
-      "defence": 0.356,
+      "offence": 0.619,
+      "defence": 0.354,
       "rating_rank": 35
-    },
-    {
-      "team": "South Africa",
-      "team_is": "Suður-Afríka",
-      "group": "A",
-      "rating": 0.927,
-      "offence": 0.546,
-      "defence": 0.381,
-      "rating_rank": 36
     },
     {
       "team": "Ghana",
       "team_is": "Gana",
       "group": "L",
-      "rating": 0.923,
+      "rating": 0.955,
+      "offence": 0.54,
+      "defence": 0.415,
+      "rating_rank": 36
+    },
+    {
+      "team": "South Africa",
+      "team_is": "Suður-Afríka",
+      "group": "A",
+      "rating": 0.926,
       "offence": 0.541,
-      "defence": 0.381,
+      "defence": 0.385,
       "rating_rank": 37
     },
     {
       "team": "Jordan",
       "team_is": "Jórdanía",
       "group": "J",
-      "rating": 0.912,
-      "offence": 0.82,
-      "defence": 0.092,
+      "rating": 0.923,
+      "offence": 0.828,
+      "defence": 0.095,
       "rating_rank": 38
-    },
-    {
-      "team": "Panama",
-      "team_is": "Panama",
-      "group": "L",
-      "rating": 0.876,
-      "offence": 0.685,
-      "defence": 0.191,
-      "rating_rank": 39
-    },
-    {
-      "team": "United States",
-      "team_is": "Bandaríkin",
-      "group": "D",
-      "rating": 0.854,
-      "offence": 0.537,
-      "defence": 0.317,
-      "rating_rank": 40
     },
     {
       "team": "Cape Verde",
       "team_is": "Grænhöfðaeyjar",
       "group": "H",
-      "rating": 0.812,
-      "offence": 0.523,
-      "defence": 0.289,
+      "rating": 0.883,
+      "offence": 0.58,
+      "defence": 0.304,
+      "rating_rank": 39
+    },
+    {
+      "team": "Panama",
+      "team_is": "Panama",
+      "group": "L",
+      "rating": 0.868,
+      "offence": 0.687,
+      "defence": 0.181,
+      "rating_rank": 40
+    },
+    {
+      "team": "United States",
+      "team_is": "Bandaríkin",
+      "group": "D",
+      "rating": 0.832,
+      "offence": 0.522,
+      "defence": 0.31,
       "rating_rank": 41
     },
     {
       "team": "Saudi Arabia",
       "team_is": "Sádi-Arabía",
       "group": "H",
-      "rating": 0.719,
-      "offence": 0.298,
-      "defence": 0.421,
+      "rating": 0.715,
+      "offence": 0.294,
+      "defence": 0.422,
       "rating_rank": 42
     },
     {
       "team": "Haiti",
       "team_is": "Haítí",
       "group": "C",
-      "rating": 0.66,
-      "offence": 0.7,
-      "defence": -0.04,
+      "rating": 0.652,
+      "offence": 0.694,
+      "defence": -0.043,
       "rating_rank": 43
-    },
-    {
-      "team": "New Zealand",
-      "team_is": "Nýja-Sjáland",
-      "group": "G",
-      "rating": 0.597,
-      "offence": 0.355,
-      "defence": 0.242,
-      "rating_rank": 44
     },
     {
       "team": "Iraq",
       "team_is": "Írak",
       "group": "I",
-      "rating": 0.589,
-      "offence": 0.317,
-      "defence": 0.272,
+      "rating": 0.596,
+      "offence": 0.323,
+      "defence": 0.273,
+      "rating_rank": 44
+    },
+    {
+      "team": "New Zealand",
+      "team_is": "Nýja-Sjáland",
+      "group": "G",
+      "rating": 0.584,
+      "offence": 0.347,
+      "defence": 0.237,
       "rating_rank": 45
     },
     {
       "team": "Bosnia and Herzegovina",
       "team_is": "Bosnía og Hersegóvína",
       "group": "B",
-      "rating": 0.524,
-      "offence": 0.445,
-      "defence": 0.079,
+      "rating": 0.525,
+      "offence": 0.449,
+      "defence": 0.075,
       "rating_rank": 46
     },
     {
       "team": "Curaçao",
       "team_is": "Curaçao",
       "group": "E",
-      "rating": 0.117,
-      "offence": 0.339,
-      "defence": -0.222,
+      "rating": 0.114,
+      "offence": 0.34,
+      "defence": -0.226,
       "rating_rank": 47
     },
     {
       "team": "Qatar",
       "team_is": "Katar",
       "group": "B",
-      "rating": -0.053,
-      "offence": 0.245,
-      "defence": -0.298,
+      "rating": -0.063,
+      "offence": 0.246,
+      "defence": -0.308,
       "rating_rank": 48
     }
   ],
@@ -442,9 +442,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.5,
-      "median": 1.7466,
-      "lower": 1.5978,
-      "upper": 1.9039
+      "median": 1.7521,
+      "lower": 1.601,
+      "upper": 1.9111
     },
     {
       "team": "Algeria",
@@ -452,9 +452,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.8,
-      "median": 1.7466,
-      "lower": 1.4644,
-      "upper": 2.0563
+      "median": 1.7521,
+      "lower": 1.46,
+      "upper": 2.0589
     },
     {
       "team": "Algeria",
@@ -462,9 +462,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.95,
-      "median": 1.7466,
-      "lower": 1.3134,
-      "upper": 2.2273
+      "median": 1.7521,
+      "lower": 1.3018,
+      "upper": 2.2236
     },
     {
       "team": "Argentina",
@@ -472,9 +472,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.5,
-      "median": 2.8109,
-      "lower": 2.5979,
-      "upper": 3.0232
+      "median": 2.7508,
+      "lower": 2.5373,
+      "upper": 2.9682
     },
     {
       "team": "Argentina",
@@ -482,9 +482,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.8,
-      "median": 2.8109,
-      "lower": 2.4118,
-      "upper": 3.2166
+      "median": 2.7508,
+      "lower": 2.3523,
+      "upper": 3.1527
     },
     {
       "team": "Argentina",
@@ -492,9 +492,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.95,
-      "median": 2.8109,
-      "lower": 2.2093,
-      "upper": 3.4409
+      "median": 2.7508,
+      "lower": 2.1429,
+      "upper": 3.3622
     },
     {
       "team": "Australia",
@@ -502,9 +502,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.5,
-      "median": 1.4904,
-      "lower": 1.2977,
-      "upper": 1.679
+      "median": 1.4942,
+      "lower": 1.2951,
+      "upper": 1.6715
     },
     {
       "team": "Australia",
@@ -512,9 +512,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.8,
-      "median": 1.4904,
-      "lower": 1.1283,
-      "upper": 1.8615
+      "median": 1.4942,
+      "lower": 1.1268,
+      "upper": 1.8462
     },
     {
       "team": "Australia",
@@ -522,9 +522,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.95,
-      "median": 1.4904,
-      "lower": 0.9225,
-      "upper": 2.0477
+      "median": 1.4942,
+      "lower": 0.9138,
+      "upper": 2.0422
     },
     {
       "team": "Austria",
@@ -532,9 +532,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.5,
-      "median": 1.7632,
-      "lower": 1.5911,
-      "upper": 1.946
+      "median": 1.7605,
+      "lower": 1.5924,
+      "upper": 1.9407
     },
     {
       "team": "Austria",
@@ -542,9 +542,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.8,
-      "median": 1.7632,
-      "lower": 1.4299,
-      "upper": 2.1081
+      "median": 1.7605,
+      "lower": 1.4428,
+      "upper": 2.0968
     },
     {
       "team": "Austria",
@@ -552,9 +552,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.95,
-      "median": 1.7632,
-      "lower": 1.2492,
-      "upper": 2.295
+      "median": 1.7605,
+      "lower": 1.2573,
+      "upper": 2.262
     },
     {
       "team": "Belgium",
@@ -562,9 +562,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.5,
-      "median": 2.0562,
-      "lower": 1.8855,
-      "upper": 2.2256
+      "median": 2.0709,
+      "lower": 1.8985,
+      "upper": 2.2447
     },
     {
       "team": "Belgium",
@@ -572,9 +572,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.8,
-      "median": 2.0562,
-      "lower": 1.7271,
-      "upper": 2.3803
+      "median": 2.0709,
+      "lower": 1.7431,
+      "upper": 2.4115
     },
     {
       "team": "Belgium",
@@ -582,9 +582,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.95,
-      "median": 2.0562,
-      "lower": 1.5498,
-      "upper": 2.5552
+      "median": 2.0709,
+      "lower": 1.5613,
+      "upper": 2.5922
     },
     {
       "team": "Bosnia and Herzegovina",
@@ -592,9 +592,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.5,
-      "median": 0.526,
-      "lower": 0.3639,
-      "upper": 0.689
+      "median": 0.5232,
+      "lower": 0.3523,
+      "upper": 0.6957
     },
     {
       "team": "Bosnia and Herzegovina",
@@ -602,9 +602,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.8,
-      "median": 0.526,
-      "lower": 0.199,
-      "upper": 0.8395
+      "median": 0.5232,
+      "lower": 0.1988,
+      "upper": 0.8491
     },
     {
       "team": "Bosnia and Herzegovina",
@@ -612,9 +612,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.95,
-      "median": 0.526,
-      "lower": 0.0164,
-      "upper": 1.0167
+      "median": 0.5232,
+      "lower": 0.0255,
+      "upper": 1.0129
     },
     {
       "team": "Brazil",
@@ -622,9 +622,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.5,
-      "median": 2.3598,
-      "lower": 2.1894,
-      "upper": 2.5275
+      "median": 2.3566,
+      "lower": 2.1807,
+      "upper": 2.5189
     },
     {
       "team": "Brazil",
@@ -632,9 +632,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.8,
-      "median": 2.3598,
-      "lower": 2.0266,
-      "upper": 2.6851
+      "median": 2.3566,
+      "lower": 2.0181,
+      "upper": 2.6742
     },
     {
       "team": "Brazil",
@@ -642,9 +642,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.95,
-      "median": 2.3598,
-      "lower": 1.8632,
-      "upper": 2.8709
+      "median": 2.3566,
+      "lower": 1.8272,
+      "upper": 2.8551
     },
     {
       "team": "Canada",
@@ -652,9 +652,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.5,
-      "median": 1.4586,
-      "lower": 1.2825,
-      "upper": 1.6265
+      "median": 1.4615,
+      "lower": 1.2609,
+      "upper": 1.6277
     },
     {
       "team": "Canada",
@@ -662,9 +662,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.8,
-      "median": 1.4586,
-      "lower": 1.104,
-      "upper": 1.7896
+      "median": 1.4615,
+      "lower": 1.0975,
+      "upper": 1.798
     },
     {
       "team": "Canada",
@@ -672,9 +672,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.95,
-      "median": 1.4586,
-      "lower": 0.9139,
-      "upper": 1.9854
+      "median": 1.4615,
+      "lower": 0.9185,
+      "upper": 2.0078
     },
     {
       "team": "Cape Verde",
@@ -682,9 +682,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.5,
-      "median": 0.8144,
-      "lower": 0.6436,
-      "upper": 0.988
+      "median": 0.8823,
+      "lower": 0.717,
+      "upper": 1.0475
     },
     {
       "team": "Cape Verde",
@@ -692,9 +692,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.8,
-      "median": 0.8144,
-      "lower": 0.4744,
-      "upper": 1.1407
+      "median": 0.8823,
+      "lower": 0.5602,
+      "upper": 1.21
     },
     {
       "team": "Cape Verde",
@@ -702,9 +702,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.95,
-      "median": 0.8144,
-      "lower": 0.2806,
-      "upper": 1.3127
+      "median": 0.8823,
+      "lower": 0.3942,
+      "upper": 1.3915
     },
     {
       "team": "Colombia",
@@ -712,9 +712,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.5,
-      "median": 2.4126,
-      "lower": 2.2538,
-      "upper": 2.5873
+      "median": 2.4074,
+      "lower": 2.2395,
+      "upper": 2.5763
     },
     {
       "team": "Colombia",
@@ -722,9 +722,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.8,
-      "median": 2.4126,
-      "lower": 2.0965,
-      "upper": 2.7393
+      "median": 2.4074,
+      "lower": 2.0901,
+      "upper": 2.7287
     },
     {
       "team": "Colombia",
@@ -732,9 +732,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.95,
-      "median": 2.4126,
-      "lower": 1.9261,
-      "upper": 2.9136
+      "median": 2.4074,
+      "lower": 1.9027,
+      "upper": 2.9308
     },
     {
       "team": "Croatia",
@@ -742,9 +742,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.5,
-      "median": 1.8902,
-      "lower": 1.7304,
-      "upper": 2.0527
+      "median": 1.8838,
+      "lower": 1.7292,
+      "upper": 2.0425
     },
     {
       "team": "Croatia",
@@ -752,9 +752,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.8,
-      "median": 1.8902,
-      "lower": 1.5845,
-      "upper": 2.1871
+      "median": 1.8838,
+      "lower": 1.5887,
+      "upper": 2.1919
     },
     {
       "team": "Croatia",
@@ -762,9 +762,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.95,
-      "median": 1.8902,
-      "lower": 1.4317,
-      "upper": 2.3518
+      "median": 1.8838,
+      "lower": 1.4154,
+      "upper": 2.3425
     },
     {
       "team": "Curaçao",
@@ -772,9 +772,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.5,
-      "median": 0.1148,
-      "lower": -0.0518,
-      "upper": 0.2914
+      "median": 0.1193,
+      "lower": -0.0604,
+      "upper": 0.2911
     },
     {
       "team": "Curaçao",
@@ -782,9 +782,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.8,
-      "median": 0.1148,
-      "lower": -0.2074,
-      "upper": 0.4386
+      "median": 0.1193,
+      "lower": -0.2271,
+      "upper": 0.4443
     },
     {
       "team": "Curaçao",
@@ -792,9 +792,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.95,
-      "median": 0.1148,
-      "lower": -0.3922,
-      "upper": 0.6103
+      "median": 0.1193,
+      "lower": -0.4142,
+      "upper": 0.6186
     },
     {
       "team": "Czech Republic",
@@ -802,9 +802,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.5,
-      "median": 1.1246,
-      "lower": 0.9527,
-      "upper": 1.297
+      "median": 1.13,
+      "lower": 0.9483,
+      "upper": 1.3048
     },
     {
       "team": "Czech Republic",
@@ -812,9 +812,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.8,
-      "median": 1.1246,
-      "lower": 0.7721,
-      "upper": 1.4521
+      "median": 1.13,
+      "lower": 0.801,
+      "upper": 1.4616
     },
     {
       "team": "Czech Republic",
@@ -822,9 +822,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.95,
-      "median": 1.1246,
-      "lower": 0.583,
-      "upper": 1.5945
+      "median": 1.13,
+      "lower": 0.5929,
+      "upper": 1.6239
     },
     {
       "team": "DR Congo",
@@ -832,9 +832,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.5,
-      "median": 1.3451,
-      "lower": 1.1597,
-      "upper": 1.5176
+      "median": 1.332,
+      "lower": 1.152,
+      "upper": 1.5269
     },
     {
       "team": "DR Congo",
@@ -842,9 +842,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.8,
-      "median": 1.3451,
-      "lower": 0.9912,
-      "upper": 1.6804
+      "median": 1.332,
+      "lower": 0.9966,
+      "upper": 1.6843
     },
     {
       "team": "DR Congo",
@@ -852,9 +852,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.95,
-      "median": 1.3451,
-      "lower": 0.8118,
-      "upper": 1.8822
+      "median": 1.332,
+      "lower": 0.8224,
+      "upper": 1.901
     },
     {
       "team": "Ecuador",
@@ -862,9 +862,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.5,
-      "median": 1.5725,
-      "lower": 1.3504,
-      "upper": 1.7995
+      "median": 1.5666,
+      "lower": 1.352,
+      "upper": 1.7944
     },
     {
       "team": "Ecuador",
@@ -872,9 +872,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.8,
-      "median": 1.5725,
-      "lower": 1.1245,
-      "upper": 2.0009
+      "median": 1.5666,
+      "lower": 1.1536,
+      "upper": 2.0047
     },
     {
       "team": "Ecuador",
@@ -882,9 +882,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.95,
-      "median": 1.5725,
-      "lower": 0.8831,
-      "upper": 2.201
+      "median": 1.5666,
+      "lower": 0.9082,
+      "upper": 2.2048
     },
     {
       "team": "Egypt",
@@ -892,9 +892,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.5,
-      "median": 1.6357,
-      "lower": 1.4653,
-      "upper": 1.7982
+      "median": 1.6592,
+      "lower": 1.4812,
+      "upper": 1.8192
     },
     {
       "team": "Egypt",
@@ -902,9 +902,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.8,
-      "median": 1.6357,
-      "lower": 1.3052,
-      "upper": 1.9426
+      "median": 1.6592,
+      "lower": 1.3414,
+      "upper": 1.9721
     },
     {
       "team": "Egypt",
@@ -912,9 +912,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.95,
-      "median": 1.6357,
-      "lower": 1.1473,
-      "upper": 2.1409
+      "median": 1.6592,
+      "lower": 1.1766,
+      "upper": 2.1469
     },
     {
       "team": "England",
@@ -922,9 +922,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.5,
-      "median": 2.3641,
-      "lower": 2.1851,
-      "upper": 2.5527
+      "median": 2.3692,
+      "lower": 2.1979,
+      "upper": 2.5371
     },
     {
       "team": "England",
@@ -932,9 +932,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.8,
-      "median": 2.3641,
-      "lower": 2.0307,
-      "upper": 2.7156
+      "median": 2.3692,
+      "lower": 2.0504,
+      "upper": 2.707
     },
     {
       "team": "England",
@@ -942,9 +942,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.95,
-      "median": 2.3641,
-      "lower": 1.848,
-      "upper": 2.9245
+      "median": 2.3692,
+      "lower": 1.8853,
+      "upper": 2.9088
     },
     {
       "team": "France",
@@ -952,9 +952,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.5,
-      "median": 2.4165,
-      "lower": 2.2614,
-      "upper": 2.5863
+      "median": 2.4331,
+      "lower": 2.2671,
+      "upper": 2.5957
     },
     {
       "team": "France",
@@ -962,9 +962,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.8,
-      "median": 2.4165,
-      "lower": 2.1126,
-      "upper": 2.7373
+      "median": 2.4331,
+      "lower": 2.1261,
+      "upper": 2.7449
     },
     {
       "team": "France",
@@ -972,9 +972,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.95,
-      "median": 2.4165,
-      "lower": 1.9594,
-      "upper": 2.9084
+      "median": 2.4331,
+      "lower": 1.9589,
+      "upper": 2.9189
     },
     {
       "team": "Germany",
@@ -982,9 +982,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.5,
-      "median": 1.968,
-      "lower": 1.8014,
-      "upper": 2.1404
+      "median": 1.9711,
+      "lower": 1.8053,
+      "upper": 2.1465
     },
     {
       "team": "Germany",
@@ -992,9 +992,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.8,
-      "median": 1.968,
-      "lower": 1.6359,
-      "upper": 2.2947
+      "median": 1.9711,
+      "lower": 1.6388,
+      "upper": 2.308
     },
     {
       "team": "Germany",
@@ -1002,9 +1002,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.95,
-      "median": 1.968,
-      "lower": 1.4608,
-      "upper": 2.469
+      "median": 1.9711,
+      "lower": 1.4544,
+      "upper": 2.4875
     },
     {
       "team": "Ghana",
@@ -1012,9 +1012,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.5,
-      "median": 0.9239,
-      "lower": 0.766,
-      "upper": 1.0815
+      "median": 0.9511,
+      "lower": 0.8,
+      "upper": 1.1107
     },
     {
       "team": "Ghana",
@@ -1022,9 +1022,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.8,
-      "median": 0.9239,
-      "lower": 0.6141,
-      "upper": 1.2295
+      "median": 0.9511,
+      "lower": 0.6536,
+      "upper": 1.2525
     },
     {
       "team": "Ghana",
@@ -1032,9 +1032,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.95,
-      "median": 0.9239,
-      "lower": 0.4295,
-      "upper": 1.4028
+      "median": 0.9511,
+      "lower": 0.5015,
+      "upper": 1.4156
     },
     {
       "team": "Haiti",
@@ -1042,9 +1042,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.5,
-      "median": 0.657,
-      "lower": 0.497,
-      "upper": 0.8218
+      "median": 0.6528,
+      "lower": 0.4892,
+      "upper": 0.8101
     },
     {
       "team": "Haiti",
@@ -1052,9 +1052,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.8,
-      "median": 0.657,
-      "lower": 0.3555,
-      "upper": 0.967
+      "median": 0.6528,
+      "lower": 0.34,
+      "upper": 0.9638
     },
     {
       "team": "Haiti",
@@ -1062,269 +1062,269 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.95,
-      "median": 0.657,
+      "median": 0.6528,
+      "lower": 0.1813,
+      "upper": 1.1396
+    },
+    {
+      "team": "Iran",
+      "team_is": "Íran",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 1.4276,
+      "lower": 1.2559,
+      "upper": 1.5955
+    },
+    {
+      "team": "Iran",
+      "team_is": "Íran",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 1.4276,
+      "lower": 1.0944,
+      "upper": 1.7618
+    },
+    {
+      "team": "Iran",
+      "team_is": "Íran",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 1.4276,
+      "lower": 0.9113,
+      "upper": 1.9524
+    },
+    {
+      "team": "Iraq",
+      "team_is": "Írak",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.5994,
+      "lower": 0.4366,
+      "upper": 0.7674
+    },
+    {
+      "team": "Iraq",
+      "team_is": "Írak",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.5994,
+      "lower": 0.2763,
+      "upper": 0.9123
+    },
+    {
+      "team": "Iraq",
+      "team_is": "Írak",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.5994,
+      "lower": 0.1022,
+      "upper": 1.0723
+    },
+    {
+      "team": "Ivory Coast",
+      "team_is": "Fílabeinsströndin",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 1.3965,
+      "lower": 1.1965,
+      "upper": 1.5937
+    },
+    {
+      "team": "Ivory Coast",
+      "team_is": "Fílabeinsströndin",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 1.3965,
+      "lower": 1.0118,
+      "upper": 1.7733
+    },
+    {
+      "team": "Ivory Coast",
+      "team_is": "Fílabeinsströndin",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 1.3965,
+      "lower": 0.8055,
+      "upper": 1.9762
+    },
+    {
+      "team": "Japan",
+      "team_is": "Japan",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 2.2901,
+      "lower": 2.125,
+      "upper": 2.459
+    },
+    {
+      "team": "Japan",
+      "team_is": "Japan",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 2.2901,
+      "lower": 1.9779,
+      "upper": 2.6209
+    },
+    {
+      "team": "Japan",
+      "team_is": "Japan",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 2.2901,
+      "lower": 1.8098,
+      "upper": 2.7998
+    },
+    {
+      "team": "Jordan",
+      "team_is": "Jórdanía",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.924,
+      "lower": 0.7777,
+      "upper": 1.0719
+    },
+    {
+      "team": "Jordan",
+      "team_is": "Jórdanía",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.924,
+      "lower": 0.6391,
+      "upper": 1.1985
+    },
+    {
+      "team": "Jordan",
+      "team_is": "Jórdanía",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.924,
+      "lower": 0.4838,
+      "upper": 1.3526
+    },
+    {
+      "team": "Mexico",
+      "team_is": "Mexíkó",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 1.5862,
+      "lower": 1.4086,
+      "upper": 1.7655
+    },
+    {
+      "team": "Mexico",
+      "team_is": "Mexíkó",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 1.5862,
+      "lower": 1.2407,
+      "upper": 1.9529
+    },
+    {
+      "team": "Mexico",
+      "team_is": "Mexíkó",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 1.5862,
+      "lower": 1.0483,
+      "upper": 2.1779
+    },
+    {
+      "team": "Morocco",
+      "team_is": "Marokkó",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 1.8979,
+      "lower": 1.6877,
+      "upper": 2.0984
+    },
+    {
+      "team": "Morocco",
+      "team_is": "Marokkó",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 1.8979,
+      "lower": 1.4921,
+      "upper": 2.2816
+    },
+    {
+      "team": "Morocco",
+      "team_is": "Marokkó",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 1.8979,
+      "lower": 1.2751,
+      "upper": 2.4668
+    },
+    {
+      "team": "Netherlands",
+      "team_is": "Holland",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 2.0537,
+      "lower": 1.8931,
+      "upper": 2.2192
+    },
+    {
+      "team": "Netherlands",
+      "team_is": "Holland",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 2.0537,
+      "lower": 1.7331,
+      "upper": 2.3705
+    },
+    {
+      "team": "Netherlands",
+      "team_is": "Holland",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 2.0537,
+      "lower": 1.5468,
+      "upper": 2.5205
+    },
+    {
+      "team": "New Zealand",
+      "team_is": "Nýja-Sjáland",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.5863,
+      "lower": 0.3863,
+      "upper": 0.783
+    },
+    {
+      "team": "New Zealand",
+      "team_is": "Nýja-Sjáland",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.5863,
       "lower": 0.2,
-      "upper": 1.1382
-    },
-    {
-      "team": "Iran",
-      "team_is": "Íran",
-      "component": "total",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 1.4144,
-      "lower": 1.2317,
-      "upper": 1.6053
-    },
-    {
-      "team": "Iran",
-      "team_is": "Íran",
-      "component": "total",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 1.4144,
-      "lower": 1.0708,
-      "upper": 1.7669
-    },
-    {
-      "team": "Iran",
-      "team_is": "Íran",
-      "component": "total",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 1.4144,
-      "lower": 0.8902,
-      "upper": 1.992
-    },
-    {
-      "team": "Iraq",
-      "team_is": "Írak",
-      "component": "total",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.5959,
-      "lower": 0.4231,
-      "upper": 0.7559
-    },
-    {
-      "team": "Iraq",
-      "team_is": "Írak",
-      "component": "total",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.5959,
-      "lower": 0.2755,
-      "upper": 0.8993
-    },
-    {
-      "team": "Iraq",
-      "team_is": "Írak",
-      "component": "total",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.5959,
-      "lower": 0.0832,
-      "upper": 1.066
-    },
-    {
-      "team": "Ivory Coast",
-      "team_is": "Fílabeinsströndin",
-      "component": "total",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 1.3933,
-      "lower": 1.1918,
-      "upper": 1.5873
-    },
-    {
-      "team": "Ivory Coast",
-      "team_is": "Fílabeinsströndin",
-      "component": "total",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 1.3933,
-      "lower": 1.0241,
-      "upper": 1.7664
-    },
-    {
-      "team": "Ivory Coast",
-      "team_is": "Fílabeinsströndin",
-      "component": "total",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 1.3933,
-      "lower": 0.8093,
-      "upper": 1.9699
-    },
-    {
-      "team": "Japan",
-      "team_is": "Japan",
-      "component": "total",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 2.2978,
-      "lower": 2.1239,
-      "upper": 2.461
-    },
-    {
-      "team": "Japan",
-      "team_is": "Japan",
-      "component": "total",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 2.2978,
-      "lower": 1.9559,
-      "upper": 2.613
-    },
-    {
-      "team": "Japan",
-      "team_is": "Japan",
-      "component": "total",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 2.2978,
-      "lower": 1.7755,
-      "upper": 2.7833
-    },
-    {
-      "team": "Jordan",
-      "team_is": "Jórdanía",
-      "component": "total",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.9133,
-      "lower": 0.7711,
-      "upper": 1.0584
-    },
-    {
-      "team": "Jordan",
-      "team_is": "Jórdanía",
-      "component": "total",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.9133,
-      "lower": 0.6362,
-      "upper": 1.1854
-    },
-    {
-      "team": "Jordan",
-      "team_is": "Jórdanía",
-      "component": "total",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.9133,
-      "lower": 0.4925,
-      "upper": 1.3291
-    },
-    {
-      "team": "Mexico",
-      "team_is": "Mexíkó",
-      "component": "total",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 1.5748,
-      "lower": 1.3824,
-      "upper": 1.764
-    },
-    {
-      "team": "Mexico",
-      "team_is": "Mexíkó",
-      "component": "total",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 1.5748,
-      "lower": 1.2261,
-      "upper": 1.9208
-    },
-    {
-      "team": "Mexico",
-      "team_is": "Mexíkó",
-      "component": "total",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 1.5748,
-      "lower": 1.042,
-      "upper": 2.1215
-    },
-    {
-      "team": "Morocco",
-      "team_is": "Marokkó",
-      "component": "total",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 1.8937,
-      "lower": 1.6863,
-      "upper": 2.0902
-    },
-    {
-      "team": "Morocco",
-      "team_is": "Marokkó",
-      "component": "total",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 1.8937,
-      "lower": 1.5223,
-      "upper": 2.2718
-    },
-    {
-      "team": "Morocco",
-      "team_is": "Marokkó",
-      "component": "total",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 1.8937,
-      "lower": 1.3202,
-      "upper": 2.4652
-    },
-    {
-      "team": "Netherlands",
-      "team_is": "Holland",
-      "component": "total",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 2.0641,
-      "lower": 1.8979,
-      "upper": 2.2177
-    },
-    {
-      "team": "Netherlands",
-      "team_is": "Holland",
-      "component": "total",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 2.0641,
-      "lower": 1.7416,
-      "upper": 2.3512
-    },
-    {
-      "team": "Netherlands",
-      "team_is": "Holland",
-      "component": "total",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 2.0641,
-      "lower": 1.5723,
-      "upper": 2.5134
-    },
-    {
-      "team": "New Zealand",
-      "team_is": "Nýja-Sjáland",
-      "component": "total",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.5994,
-      "lower": 0.4054,
-      "upper": 0.7933
-    },
-    {
-      "team": "New Zealand",
-      "team_is": "Nýja-Sjáland",
-      "component": "total",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.5994,
-      "lower": 0.2264,
-      "upper": 0.9689
+      "upper": 0.9539
     },
     {
       "team": "New Zealand",
@@ -1332,9 +1332,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.95,
-      "median": 0.5994,
-      "lower": -0.0433,
-      "upper": 1.1796
+      "median": 0.5863,
+      "lower": -0.0028,
+      "upper": 1.1452
     },
     {
       "team": "Norway",
@@ -1342,9 +1342,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.5,
-      "median": 1.9025,
-      "lower": 1.7322,
-      "upper": 2.0791
+      "median": 1.8943,
+      "lower": 1.7272,
+      "upper": 2.0714
     },
     {
       "team": "Norway",
@@ -1352,9 +1352,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.8,
-      "median": 1.9025,
-      "lower": 1.576,
-      "upper": 2.2496
+      "median": 1.8943,
+      "lower": 1.5804,
+      "upper": 2.225
     },
     {
       "team": "Norway",
@@ -1362,9 +1362,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.95,
-      "median": 1.9025,
-      "lower": 1.4063,
-      "upper": 2.4136
+      "median": 1.8943,
+      "lower": 1.427,
+      "upper": 2.4224
     },
     {
       "team": "Panama",
@@ -1372,9 +1372,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.5,
-      "median": 0.8746,
-      "lower": 0.7242,
-      "upper": 1.0283
+      "median": 0.8653,
+      "lower": 0.7213,
+      "upper": 1.0236
     },
     {
       "team": "Panama",
@@ -1382,9 +1382,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.8,
-      "median": 0.8746,
-      "lower": 0.5865,
-      "upper": 1.1756
+      "median": 0.8653,
+      "lower": 0.5817,
+      "upper": 1.1409
     },
     {
       "team": "Panama",
@@ -1392,9 +1392,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.95,
-      "median": 0.8746,
-      "lower": 0.4283,
-      "upper": 1.3167
+      "median": 0.8653,
+      "lower": 0.4368,
+      "upper": 1.2955
     },
     {
       "team": "Paraguay",
@@ -1402,9 +1402,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.5,
-      "median": 1.2534,
-      "lower": 1.0616,
-      "upper": 1.4471
+      "median": 1.2454,
+      "lower": 1.0567,
+      "upper": 1.4588
     },
     {
       "team": "Paraguay",
@@ -1412,9 +1412,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.8,
-      "median": 1.2534,
-      "lower": 0.8946,
-      "upper": 1.6371
+      "median": 1.2454,
+      "lower": 0.8691,
+      "upper": 1.6203
     },
     {
       "team": "Paraguay",
@@ -1422,9 +1422,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.95,
-      "median": 1.2534,
-      "lower": 0.6952,
-      "upper": 1.8309
+      "median": 1.2454,
+      "lower": 0.6948,
+      "upper": 1.8071
     },
     {
       "team": "Portugal",
@@ -1432,9 +1432,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.5,
-      "median": 2.3008,
-      "lower": 2.1122,
-      "upper": 2.4895
+      "median": 2.3079,
+      "lower": 2.1223,
+      "upper": 2.4897
     },
     {
       "team": "Portugal",
@@ -1442,9 +1442,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.8,
-      "median": 2.3008,
-      "lower": 1.947,
-      "upper": 2.6421
+      "median": 2.3079,
+      "lower": 1.9538,
+      "upper": 2.6475
     },
     {
       "team": "Portugal",
@@ -1452,9 +1452,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.95,
-      "median": 2.3008,
-      "lower": 1.7499,
-      "upper": 2.8348
+      "median": 2.3079,
+      "lower": 1.7609,
+      "upper": 2.8316
     },
     {
       "team": "Qatar",
@@ -1462,9 +1462,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.5,
-      "median": -0.0411,
-      "lower": -0.2494,
-      "upper": 0.1551
+      "median": -0.0476,
+      "lower": -0.253,
+      "upper": 0.1428
     },
     {
       "team": "Qatar",
@@ -1472,9 +1472,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.8,
-      "median": -0.0411,
-      "lower": -0.4394,
-      "upper": 0.3287
+      "median": -0.0476,
+      "lower": -0.4508,
+      "upper": 0.3006
     },
     {
       "team": "Qatar",
@@ -1482,9 +1482,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.95,
-      "median": -0.0411,
-      "lower": -0.6982,
-      "upper": 0.4914
+      "median": -0.0476,
+      "lower": -0.6867,
+      "upper": 0.4806
     },
     {
       "team": "Saudi Arabia",
@@ -1492,9 +1492,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.5,
-      "median": 0.7178,
-      "lower": 0.5652,
-      "upper": 0.8683
+      "median": 0.7139,
+      "lower": 0.5696,
+      "upper": 0.8622
     },
     {
       "team": "Saudi Arabia",
@@ -1502,9 +1502,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.8,
-      "median": 0.7178,
-      "lower": 0.424,
-      "upper": 1.0028
+      "median": 0.7139,
+      "lower": 0.4341,
+      "upper": 0.9941
     },
     {
       "team": "Saudi Arabia",
@@ -1512,9 +1512,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.95,
-      "median": 0.7178,
-      "lower": 0.2783,
-      "upper": 1.1627
+      "median": 0.7139,
+      "lower": 0.2695,
+      "upper": 1.1556
     },
     {
       "team": "Scotland",
@@ -1522,9 +1522,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.5,
-      "median": 1.294,
-      "lower": 1.1246,
-      "upper": 1.4419
+      "median": 1.2826,
+      "lower": 1.1224,
+      "upper": 1.4498
     },
     {
       "team": "Scotland",
@@ -1532,9 +1532,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.8,
-      "median": 1.294,
-      "lower": 0.9873,
-      "upper": 1.5889
+      "median": 1.2826,
+      "lower": 0.9675,
+      "upper": 1.5949
     },
     {
       "team": "Scotland",
@@ -1542,9 +1542,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.95,
-      "median": 1.294,
-      "lower": 0.8331,
-      "upper": 1.7445
+      "median": 1.2826,
+      "lower": 0.8112,
+      "upper": 1.7462
     },
     {
       "team": "Senegal",
@@ -1552,9 +1552,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.5,
-      "median": 1.9271,
-      "lower": 1.7686,
-      "upper": 2.0933
+      "median": 1.9339,
+      "lower": 1.7716,
+      "upper": 2.0939
     },
     {
       "team": "Senegal",
@@ -1562,9 +1562,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.8,
-      "median": 1.9271,
-      "lower": 1.6151,
-      "upper": 2.2483
+      "median": 1.9339,
+      "lower": 1.6208,
+      "upper": 2.2595
     },
     {
       "team": "Senegal",
@@ -1572,9 +1572,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.95,
-      "median": 1.9271,
-      "lower": 1.4555,
-      "upper": 2.452
+      "median": 1.9339,
+      "lower": 1.4452,
+      "upper": 2.4368
     },
     {
       "team": "South Africa",
@@ -1582,9 +1582,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.5,
-      "median": 0.936,
-      "lower": 0.7577,
-      "upper": 1.1003
+      "median": 0.9262,
+      "lower": 0.7557,
+      "upper": 1.1039
     },
     {
       "team": "South Africa",
@@ -1592,9 +1592,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.8,
-      "median": 0.936,
-      "lower": 0.5887,
-      "upper": 1.2475
+      "median": 0.9262,
+      "lower": 0.5875,
+      "upper": 1.2668
     },
     {
       "team": "South Africa",
@@ -1602,8 +1602,8 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.95,
-      "median": 0.936,
-      "lower": 0.4144,
+      "median": 0.9262,
+      "lower": 0.4085,
       "upper": 1.4333
     },
     {
@@ -1612,9 +1612,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.5,
-      "median": 1.4048,
-      "lower": 1.2373,
-      "upper": 1.5676
+      "median": 1.4099,
+      "lower": 1.2477,
+      "upper": 1.5705
     },
     {
       "team": "South Korea",
@@ -1622,9 +1622,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.8,
-      "median": 1.4048,
-      "lower": 1.0906,
-      "upper": 1.7149
+      "median": 1.4099,
+      "lower": 1.1035,
+      "upper": 1.7027
     },
     {
       "team": "South Korea",
@@ -1632,9 +1632,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.95,
-      "median": 1.4048,
-      "lower": 0.9286,
-      "upper": 1.86
+      "median": 1.4099,
+      "lower": 0.9339,
+      "upper": 1.8716
     },
     {
       "team": "Spain",
@@ -1642,9 +1642,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.5,
-      "median": 2.7452,
-      "lower": 2.5713,
-      "upper": 2.9187
+      "median": 2.7442,
+      "lower": 2.5811,
+      "upper": 2.9173
     },
     {
       "team": "Spain",
@@ -1652,9 +1652,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.8,
-      "median": 2.7452,
-      "lower": 2.4138,
-      "upper": 3.0712
+      "median": 2.7442,
+      "lower": 2.4229,
+      "upper": 3.0802
     },
     {
       "team": "Spain",
@@ -1662,9 +1662,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.95,
-      "median": 2.7452,
-      "lower": 2.2404,
-      "upper": 3.2469
+      "median": 2.7442,
+      "lower": 2.2656,
+      "upper": 3.2806
     },
     {
       "team": "Sweden",
@@ -1672,9 +1672,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.5,
-      "median": 1.2796,
-      "lower": 1.1178,
-      "upper": 1.435
+      "median": 1.2859,
+      "lower": 1.1244,
+      "upper": 1.4522
     },
     {
       "team": "Sweden",
@@ -1682,9 +1682,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.8,
-      "median": 1.2796,
-      "lower": 0.9753,
-      "upper": 1.5805
+      "median": 1.2859,
+      "lower": 0.9768,
+      "upper": 1.5953
     },
     {
       "team": "Sweden",
@@ -1692,9 +1692,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.95,
-      "median": 1.2796,
-      "lower": 0.8289,
-      "upper": 1.7625
+      "median": 1.2859,
+      "lower": 0.7923,
+      "upper": 1.7541
     },
     {
       "team": "Switzerland",
@@ -1702,9 +1702,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.5,
-      "median": 1.8933,
-      "lower": 1.7328,
-      "upper": 2.0574
+      "median": 1.8867,
+      "lower": 1.73,
+      "upper": 2.052
     },
     {
       "team": "Switzerland",
@@ -1712,9 +1712,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.8,
-      "median": 1.8933,
-      "lower": 1.585,
-      "upper": 2.1905
+      "median": 1.8867,
+      "lower": 1.5792,
+      "upper": 2.2065
     },
     {
       "team": "Switzerland",
@@ -1722,9 +1722,9 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.95,
-      "median": 1.8933,
-      "lower": 1.4308,
-      "upper": 2.3621
+      "median": 1.8867,
+      "lower": 1.4135,
+      "upper": 2.3816
     },
     {
       "team": "Tunisia",
@@ -1732,2659 +1732,2659 @@
       "component": "total",
       "location": "avg",
       "coverage": 0.5,
-      "median": 1.1856,
-      "lower": 0.9856,
-      "upper": 1.3608
-    },
-    {
-      "team": "Tunisia",
-      "team_is": "Túnis",
-      "component": "total",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 1.1856,
-      "lower": 0.8029,
-      "upper": 1.5074
-    },
-    {
-      "team": "Tunisia",
-      "team_is": "Túnis",
-      "component": "total",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 1.1856,
-      "lower": 0.5998,
-      "upper": 1.6827
-    },
-    {
-      "team": "Turkey",
-      "team_is": "Tyrkland",
-      "component": "total",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 1.5578,
-      "lower": 1.403,
-      "upper": 1.7091
-    },
-    {
-      "team": "Turkey",
-      "team_is": "Tyrkland",
-      "component": "total",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 1.5578,
-      "lower": 1.2718,
-      "upper": 1.8588
-    },
-    {
-      "team": "Turkey",
-      "team_is": "Tyrkland",
-      "component": "total",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 1.5578,
-      "lower": 1.1304,
-      "upper": 2.0175
-    },
-    {
-      "team": "United States",
-      "team_is": "Bandaríkin",
-      "component": "total",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.8691,
-      "lower": 0.6042,
-      "upper": 1.1115
-    },
-    {
-      "team": "United States",
-      "team_is": "Bandaríkin",
-      "component": "total",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.8691,
-      "lower": 0.3586,
-      "upper": 1.3252
-    },
-    {
-      "team": "United States",
-      "team_is": "Bandaríkin",
-      "component": "total",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.8691,
-      "lower": 0.0735,
-      "upper": 1.5354
-    },
-    {
-      "team": "Uruguay",
-      "team_is": "Úrúgvæ",
-      "component": "total",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 2.015,
-      "lower": 1.8176,
-      "upper": 2.2198
-    },
-    {
-      "team": "Uruguay",
-      "team_is": "Úrúgvæ",
-      "component": "total",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 2.015,
-      "lower": 1.6275,
-      "upper": 2.4117
-    },
-    {
-      "team": "Uruguay",
-      "team_is": "Úrúgvæ",
-      "component": "total",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 2.015,
-      "lower": 1.4276,
-      "upper": 2.6052
-    },
-    {
-      "team": "Uzbekistan",
-      "team_is": "Úsbekistan",
-      "component": "total",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.9745,
-      "lower": 0.8023,
-      "upper": 1.1527
-    },
-    {
-      "team": "Uzbekistan",
-      "team_is": "Úsbekistan",
-      "component": "total",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.9745,
-      "lower": 0.6233,
-      "upper": 1.3173
-    },
-    {
-      "team": "Uzbekistan",
-      "team_is": "Úsbekistan",
-      "component": "total",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.9745,
-      "lower": 0.4261,
-      "upper": 1.4774
-    },
-    {
-      "team": "Algeria",
-      "team_is": "Alsír",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 1.1329,
-      "lower": 1.0302,
-      "upper": 1.2305
-    },
-    {
-      "team": "Algeria",
-      "team_is": "Alsír",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 1.1329,
-      "lower": 0.9375,
-      "upper": 1.3244
-    },
-    {
-      "team": "Algeria",
-      "team_is": "Alsír",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 1.1329,
-      "lower": 0.8302,
-      "upper": 1.4318
-    },
-    {
-      "team": "Argentina",
-      "team_is": "Argentína",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 1.4262,
-      "lower": 1.3125,
-      "upper": 1.5242
-    },
-    {
-      "team": "Argentina",
-      "team_is": "Argentína",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 1.4262,
-      "lower": 1.2011,
-      "upper": 1.6153
-    },
-    {
-      "team": "Argentina",
-      "team_is": "Argentína",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 1.4262,
-      "lower": 1.0556,
-      "upper": 1.7065
-    },
-    {
-      "team": "Australia",
-      "team_is": "Ástralía",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.752,
-      "lower": 0.6173,
-      "upper": 0.8786
-    },
-    {
-      "team": "Australia",
-      "team_is": "Ástralía",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.752,
-      "lower": 0.4796,
-      "upper": 0.9873
-    },
-    {
-      "team": "Australia",
-      "team_is": "Ástralía",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.752,
-      "lower": 0.3347,
-      "upper": 1.1127
-    },
-    {
-      "team": "Austria",
-      "team_is": "Austurríki",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 1.1042,
-      "lower": 0.9861,
-      "upper": 1.2206
-    },
-    {
-      "team": "Austria",
-      "team_is": "Austurríki",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 1.1042,
-      "lower": 0.8648,
-      "upper": 1.3222
-    },
-    {
-      "team": "Austria",
-      "team_is": "Austurríki",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 1.1042,
-      "lower": 0.7559,
-      "upper": 1.4335
-    },
-    {
-      "team": "Belgium",
-      "team_is": "Belgía",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 1.3098,
-      "lower": 1.2033,
-      "upper": 1.419
-    },
-    {
-      "team": "Belgium",
-      "team_is": "Belgía",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 1.3098,
-      "lower": 1.1034,
-      "upper": 1.5218
-    },
-    {
-      "team": "Belgium",
-      "team_is": "Belgía",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 1.3098,
-      "lower": 0.982,
-      "upper": 1.6576
-    },
-    {
-      "team": "Bosnia and Herzegovina",
-      "team_is": "Bosnía og Hersegóvína",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.4444,
-      "lower": 0.3216,
-      "upper": 0.5723
-    },
-    {
-      "team": "Bosnia and Herzegovina",
-      "team_is": "Bosnía og Hersegóvína",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.4444,
-      "lower": 0.1991,
-      "upper": 0.6881
-    },
-    {
-      "team": "Bosnia and Herzegovina",
-      "team_is": "Bosnía og Hersegóvína",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.4444,
-      "lower": 0.0662,
-      "upper": 0.8068
-    },
-    {
-      "team": "Brazil",
-      "team_is": "Brasilía",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 1.4985,
-      "lower": 1.383,
-      "upper": 1.6052
-    },
-    {
-      "team": "Brazil",
-      "team_is": "Brasilía",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 1.4985,
-      "lower": 1.2739,
-      "upper": 1.694
-    },
-    {
-      "team": "Brazil",
-      "team_is": "Brasilía",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 1.4985,
-      "lower": 1.1486,
-      "upper": 1.7843
-    },
-    {
-      "team": "Canada",
-      "team_is": "Kanada",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.7872,
-      "lower": 0.6583,
-      "upper": 0.9057
-    },
-    {
-      "team": "Canada",
-      "team_is": "Kanada",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.7872,
-      "lower": 0.528,
-      "upper": 1.014
-    },
-    {
-      "team": "Canada",
-      "team_is": "Kanada",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.7872,
-      "lower": 0.361,
-      "upper": 1.1203
-    },
-    {
-      "team": "Cape Verde",
-      "team_is": "Grænhöfðaeyjar",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.529,
-      "lower": 0.3997,
-      "upper": 0.6499
-    },
-    {
-      "team": "Cape Verde",
-      "team_is": "Grænhöfðaeyjar",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.529,
-      "lower": 0.2861,
-      "upper": 0.7653
-    },
-    {
-      "team": "Cape Verde",
-      "team_is": "Grænhöfðaeyjar",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.529,
-      "lower": 0.1453,
-      "upper": 0.8851
-    },
-    {
-      "team": "Colombia",
-      "team_is": "Kólumbía",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 1.3518,
-      "lower": 1.2495,
-      "upper": 1.4585
-    },
-    {
-      "team": "Colombia",
-      "team_is": "Kólumbía",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 1.3518,
-      "lower": 1.1524,
-      "upper": 1.5482
-    },
-    {
-      "team": "Colombia",
-      "team_is": "Kólumbía",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 1.3518,
-      "lower": 1.0378,
-      "upper": 1.659
-    },
-    {
-      "team": "Croatia",
-      "team_is": "Króatía",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 1.0996,
-      "lower": 0.9938,
-      "upper": 1.2011
-    },
-    {
-      "team": "Croatia",
-      "team_is": "Króatía",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 1.0996,
-      "lower": 0.9053,
-      "upper": 1.2951
-    },
-    {
-      "team": "Croatia",
-      "team_is": "Króatía",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 1.0996,
-      "lower": 0.7805,
-      "upper": 1.388
-    },
-    {
-      "team": "Curaçao",
-      "team_is": "Curaçao",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.3423,
-      "lower": 0.2114,
-      "upper": 0.4741
-    },
-    {
-      "team": "Curaçao",
-      "team_is": "Curaçao",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.3423,
-      "lower": 0.0863,
-      "upper": 0.5898
-    },
-    {
-      "team": "Curaçao",
-      "team_is": "Curaçao",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.3423,
-      "lower": -0.0627,
-      "upper": 0.7222
-    },
-    {
-      "team": "Czech Republic",
-      "team_is": "Tékkland",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.8114,
-      "lower": 0.6868,
-      "upper": 0.9311
-    },
-    {
-      "team": "Czech Republic",
-      "team_is": "Tékkland",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.8114,
-      "lower": 0.5574,
-      "upper": 1.0315
-    },
-    {
-      "team": "Czech Republic",
-      "team_is": "Tékkland",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.8114,
-      "lower": 0.4118,
-      "upper": 1.1341
-    },
-    {
-      "team": "DR Congo",
-      "team_is": "Kongó",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.5874,
-      "lower": 0.4598,
-      "upper": 0.7039
-    },
-    {
-      "team": "DR Congo",
-      "team_is": "Kongó",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.5874,
-      "lower": 0.3331,
-      "upper": 0.7977
-    },
-    {
-      "team": "DR Congo",
-      "team_is": "Kongó",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.5874,
-      "lower": 0.2087,
-      "upper": 0.9227
-    },
-    {
-      "team": "Ecuador",
-      "team_is": "Ekvador",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.3975,
-      "lower": 0.2148,
-      "upper": 0.5742
-    },
-    {
-      "team": "Ecuador",
-      "team_is": "Ekvador",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.3975,
-      "lower": 0.0518,
-      "upper": 0.7126
-    },
-    {
-      "team": "Ecuador",
-      "team_is": "Ekvador",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.3975,
-      "lower": -0.1628,
-      "upper": 0.8608
-    },
-    {
-      "team": "Egypt",
-      "team_is": "Egyptaland",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.8459,
-      "lower": 0.737,
-      "upper": 0.9522
-    },
-    {
-      "team": "Egypt",
-      "team_is": "Egyptaland",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.8459,
-      "lower": 0.6292,
-      "upper": 1.0386
-    },
-    {
-      "team": "Egypt",
-      "team_is": "Egyptaland",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.8459,
-      "lower": 0.5016,
-      "upper": 1.1452
-    },
-    {
-      "team": "England",
-      "team_is": "England",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 1.3111,
-      "lower": 1.2139,
-      "upper": 1.409
-    },
-    {
-      "team": "England",
-      "team_is": "England",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 1.3111,
-      "lower": 1.1191,
-      "upper": 1.4956
-    },
-    {
-      "team": "England",
-      "team_is": "England",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 1.3111,
-      "lower": 0.9978,
-      "upper": 1.5914
-    },
-    {
-      "team": "France",
-      "team_is": "Frakkland",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 1.4385,
-      "lower": 1.3387,
-      "upper": 1.535
-    },
-    {
-      "team": "France",
-      "team_is": "Frakkland",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 1.4385,
-      "lower": 1.2369,
-      "upper": 1.6151
-    },
-    {
-      "team": "France",
-      "team_is": "Frakkland",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 1.4385,
-      "lower": 1.1044,
-      "upper": 1.7274
-    },
-    {
-      "team": "Germany",
-      "team_is": "Þýskaland",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 1.3238,
-      "lower": 1.2004,
-      "upper": 1.4507
-    },
-    {
-      "team": "Germany",
-      "team_is": "Þýskaland",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 1.3238,
-      "lower": 1.0768,
-      "upper": 1.5592
-    },
-    {
-      "team": "Germany",
-      "team_is": "Þýskaland",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 1.3238,
-      "lower": 0.9335,
-      "upper": 1.6748
-    },
-    {
-      "team": "Ghana",
-      "team_is": "Gana",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.5489,
-      "lower": 0.4177,
-      "upper": 0.6673
-    },
-    {
-      "team": "Ghana",
-      "team_is": "Gana",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.5489,
-      "lower": 0.3034,
-      "upper": 0.7693
-    },
-    {
-      "team": "Ghana",
-      "team_is": "Gana",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.5489,
-      "lower": 0.1659,
-      "upper": 0.8897
-    },
-    {
-      "team": "Haiti",
-      "team_is": "Haítí",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.7054,
-      "lower": 0.5926,
-      "upper": 0.8141
-    },
-    {
-      "team": "Haiti",
-      "team_is": "Haítí",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.7054,
-      "lower": 0.4863,
-      "upper": 0.9146
-    },
-    {
-      "team": "Haiti",
-      "team_is": "Haítí",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.7054,
-      "lower": 0.3751,
-      "upper": 1.0153
-    },
-    {
-      "team": "Iran",
-      "team_is": "Íran",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.9117,
-      "lower": 0.801,
-      "upper": 1.023
-    },
-    {
-      "team": "Iran",
-      "team_is": "Íran",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.9117,
-      "lower": 0.7036,
-      "upper": 1.1225
-    },
-    {
-      "team": "Iran",
-      "team_is": "Íran",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.9117,
-      "lower": 0.5612,
-      "upper": 1.2295
-    },
-    {
-      "team": "Iraq",
-      "team_is": "Írak",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.3252,
-      "lower": 0.1945,
-      "upper": 0.4456
-    },
-    {
-      "team": "Iraq",
-      "team_is": "Írak",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.3252,
-      "lower": 0.0726,
-      "upper": 0.549
-    },
-    {
-      "team": "Iraq",
-      "team_is": "Írak",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.3252,
-      "lower": -0.0583,
-      "upper": 0.6628
-    },
-    {
-      "team": "Ivory Coast",
-      "team_is": "Fílabeinsströndin",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.644,
-      "lower": 0.5059,
-      "upper": 0.7781
-    },
-    {
-      "team": "Ivory Coast",
-      "team_is": "Fílabeinsströndin",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.644,
-      "lower": 0.3719,
-      "upper": 0.8926
-    },
-    {
-      "team": "Ivory Coast",
-      "team_is": "Fílabeinsströndin",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.644,
-      "lower": 0.2225,
-      "upper": 1.0119
-    },
-    {
-      "team": "Japan",
-      "team_is": "Japan",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 1.3454,
-      "lower": 1.2437,
-      "upper": 1.442
-    },
-    {
-      "team": "Japan",
-      "team_is": "Japan",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 1.3454,
-      "lower": 1.1402,
-      "upper": 1.5236
-    },
-    {
-      "team": "Japan",
-      "team_is": "Japan",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 1.3454,
-      "lower": 0.9816,
-      "upper": 1.616
-    },
-    {
-      "team": "Jordan",
-      "team_is": "Jórdanía",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.8196,
-      "lower": 0.7202,
-      "upper": 0.9214
-    },
-    {
-      "team": "Jordan",
-      "team_is": "Jórdanía",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.8196,
-      "lower": 0.6223,
-      "upper": 1.007
-    },
-    {
-      "team": "Jordan",
-      "team_is": "Jórdanía",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.8196,
-      "lower": 0.5152,
-      "upper": 1.1179
-    },
-    {
-      "team": "Mexico",
-      "team_is": "Mexíkó",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.854,
-      "lower": 0.7209,
-      "upper": 0.9693
-    },
-    {
-      "team": "Mexico",
-      "team_is": "Mexíkó",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.854,
-      "lower": 0.5992,
-      "upper": 1.0793
-    },
-    {
-      "team": "Mexico",
-      "team_is": "Mexíkó",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.854,
-      "lower": 0.4688,
-      "upper": 1.1971
-    },
-    {
-      "team": "Morocco",
-      "team_is": "Marokkó",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.9469,
-      "lower": 0.8303,
-      "upper": 1.0532
-    },
-    {
-      "team": "Morocco",
-      "team_is": "Marokkó",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.9469,
-      "lower": 0.7118,
-      "upper": 1.153
-    },
-    {
-      "team": "Morocco",
-      "team_is": "Marokkó",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.9469,
-      "lower": 0.5558,
-      "upper": 1.2717
-    },
-    {
-      "team": "Netherlands",
-      "team_is": "Holland",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 1.3411,
-      "lower": 1.2323,
-      "upper": 1.4424
-    },
-    {
-      "team": "Netherlands",
-      "team_is": "Holland",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 1.3411,
-      "lower": 1.1325,
-      "upper": 1.5298
-    },
-    {
-      "team": "Netherlands",
-      "team_is": "Holland",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 1.3411,
-      "lower": 1.0187,
-      "upper": 1.6231
-    },
-    {
-      "team": "New Zealand",
-      "team_is": "Nýja-Sjáland",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.3598,
-      "lower": 0.2032,
-      "upper": 0.5141
-    },
-    {
-      "team": "New Zealand",
-      "team_is": "Nýja-Sjáland",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.3598,
-      "lower": 0.0496,
-      "upper": 0.6583
-    },
-    {
-      "team": "New Zealand",
-      "team_is": "Nýja-Sjáland",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.3598,
-      "lower": -0.1377,
-      "upper": 0.8073
-    },
-    {
-      "team": "Norway",
-      "team_is": "Noregur",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 1.4282,
-      "lower": 1.3257,
-      "upper": 1.5321
-    },
-    {
-      "team": "Norway",
-      "team_is": "Noregur",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 1.4282,
-      "lower": 1.2268,
-      "upper": 1.6325
-    },
-    {
-      "team": "Norway",
-      "team_is": "Noregur",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 1.4282,
-      "lower": 1.1227,
-      "upper": 1.7709
-    },
-    {
-      "team": "Panama",
-      "team_is": "Panama",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.689,
-      "lower": 0.5731,
-      "upper": 0.8066
-    },
-    {
-      "team": "Panama",
-      "team_is": "Panama",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.689,
-      "lower": 0.4587,
-      "upper": 0.8983
-    },
-    {
-      "team": "Panama",
-      "team_is": "Panama",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.689,
-      "lower": 0.3444,
-      "upper": 1.0022
-    },
-    {
-      "team": "Paraguay",
-      "team_is": "Paragvæ",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.6216,
-      "lower": 0.4687,
-      "upper": 0.7661
-    },
-    {
-      "team": "Paraguay",
-      "team_is": "Paragvæ",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.6216,
-      "lower": 0.3291,
-      "upper": 0.8992
-    },
-    {
-      "team": "Paraguay",
-      "team_is": "Paragvæ",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.6216,
-      "lower": 0.1759,
-      "upper": 1.0607
-    },
-    {
-      "team": "Portugal",
-      "team_is": "Portúgal",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 1.2971,
-      "lower": 1.1718,
-      "upper": 1.4235
-    },
-    {
-      "team": "Portugal",
-      "team_is": "Portúgal",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 1.2971,
-      "lower": 1.06,
-      "upper": 1.5268
-    },
-    {
-      "team": "Portugal",
-      "team_is": "Portúgal",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 1.2971,
-      "lower": 0.9116,
-      "upper": 1.632
-    },
-    {
-      "team": "Qatar",
-      "team_is": "Katar",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.262,
-      "lower": 0.0842,
-      "upper": 0.4222
-    },
-    {
-      "team": "Qatar",
-      "team_is": "Katar",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.262,
-      "lower": -0.075,
-      "upper": 0.5355
-    },
-    {
-      "team": "Qatar",
-      "team_is": "Katar",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.262,
-      "lower": -0.2602,
-      "upper": 0.663
-    },
-    {
-      "team": "Saudi Arabia",
-      "team_is": "Sádi-Arabía",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.2996,
-      "lower": 0.1912,
-      "upper": 0.4058
-    },
-    {
-      "team": "Saudi Arabia",
-      "team_is": "Sádi-Arabía",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.2996,
-      "lower": 0.0954,
-      "upper": 0.499
-    },
-    {
-      "team": "Saudi Arabia",
-      "team_is": "Sádi-Arabía",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.2996,
-      "lower": -0.0269,
-      "upper": 0.6006
-    },
-    {
-      "team": "Scotland",
-      "team_is": "Skotland",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.8766,
-      "lower": 0.764,
-      "upper": 0.9865
-    },
-    {
-      "team": "Scotland",
-      "team_is": "Skotland",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.8766,
-      "lower": 0.6558,
-      "upper": 1.0819
-    },
-    {
-      "team": "Scotland",
-      "team_is": "Skotland",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.8766,
-      "lower": 0.5286,
-      "upper": 1.1748
-    },
-    {
-      "team": "Senegal",
-      "team_is": "Senegal",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 1.198,
-      "lower": 1.0952,
-      "upper": 1.3036
-    },
-    {
-      "team": "Senegal",
-      "team_is": "Senegal",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 1.198,
-      "lower": 0.9925,
-      "upper": 1.4065
-    },
-    {
-      "team": "Senegal",
-      "team_is": "Senegal",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 1.198,
-      "lower": 0.9083,
-      "upper": 1.5548
-    },
-    {
-      "team": "South Africa",
-      "team_is": "Suður-Afríka",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.5551,
-      "lower": 0.4302,
-      "upper": 0.6648
-    },
-    {
-      "team": "South Africa",
-      "team_is": "Suður-Afríka",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.5551,
-      "lower": 0.3121,
-      "upper": 0.7625
-    },
-    {
-      "team": "South Africa",
-      "team_is": "Suður-Afríka",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.5551,
-      "lower": 0.1756,
-      "upper": 0.8775
-    },
-    {
-      "team": "South Korea",
-      "team_is": "Suður-Kórea",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.916,
-      "lower": 0.804,
-      "upper": 1.0183
-    },
-    {
-      "team": "South Korea",
-      "team_is": "Suður-Kórea",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.916,
-      "lower": 0.6848,
-      "upper": 1.109
-    },
-    {
-      "team": "South Korea",
-      "team_is": "Suður-Kórea",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.916,
-      "lower": 0.536,
-      "upper": 1.2208
-    },
-    {
-      "team": "Spain",
-      "team_is": "Spánn",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 1.5545,
-      "lower": 1.4593,
-      "upper": 1.6487
-    },
-    {
-      "team": "Spain",
-      "team_is": "Spánn",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 1.5545,
-      "lower": 1.3677,
-      "upper": 1.7321
-    },
-    {
-      "team": "Spain",
-      "team_is": "Spánn",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 1.5545,
-      "lower": 1.2601,
-      "upper": 1.8291
-    },
-    {
-      "team": "Sweden",
-      "team_is": "Svíþjóð",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 1.1112,
-      "lower": 0.9868,
-      "upper": 1.2233
-    },
-    {
-      "team": "Sweden",
-      "team_is": "Svíþjóð",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 1.1112,
-      "lower": 0.8836,
-      "upper": 1.3411
-    },
-    {
-      "team": "Sweden",
-      "team_is": "Svíþjóð",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 1.1112,
-      "lower": 0.7292,
-      "upper": 1.4618
-    },
-    {
-      "team": "Switzerland",
-      "team_is": "Sviss",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 1.2071,
-      "lower": 1.0999,
-      "upper": 1.3198
-    },
-    {
-      "team": "Switzerland",
-      "team_is": "Sviss",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 1.2071,
-      "lower": 0.9928,
-      "upper": 1.4149
-    },
-    {
-      "team": "Switzerland",
-      "team_is": "Sviss",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 1.2071,
-      "lower": 0.8738,
-      "upper": 1.5404
-    },
-    {
-      "team": "Tunisia",
-      "team_is": "Túnis",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.6235,
-      "lower": 0.4979,
-      "upper": 0.7343
-    },
-    {
-      "team": "Tunisia",
-      "team_is": "Túnis",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.6235,
-      "lower": 0.391,
-      "upper": 0.8338
-    },
-    {
-      "team": "Tunisia",
-      "team_is": "Túnis",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.6235,
-      "lower": 0.2627,
-      "upper": 0.9524
-    },
-    {
-      "team": "Turkey",
-      "team_is": "Tyrkland",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 1.1516,
-      "lower": 1.0443,
-      "upper": 1.2603
-    },
-    {
-      "team": "Turkey",
-      "team_is": "Tyrkland",
-      "component": "offence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 1.1516,
-      "lower": 0.9481,
+      "median": 1.1767,
+      "lower": 0.9708,
       "upper": 1.357
     },
     {
+      "team": "Tunisia",
+      "team_is": "Túnis",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 1.1767,
+      "lower": 0.7646,
+      "upper": 1.5145
+    },
+    {
+      "team": "Tunisia",
+      "team_is": "Túnis",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 1.1767,
+      "lower": 0.5033,
+      "upper": 1.7043
+    },
+    {
       "team": "Turkey",
       "team_is": "Tyrkland",
-      "component": "offence",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 1.5592,
+      "lower": 1.4133,
+      "upper": 1.7094
+    },
+    {
+      "team": "Turkey",
+      "team_is": "Tyrkland",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 1.5592,
+      "lower": 1.2805,
+      "upper": 1.8572
+    },
+    {
+      "team": "Turkey",
+      "team_is": "Tyrkland",
+      "component": "total",
       "location": "avg",
       "coverage": 0.95,
-      "median": 1.1516,
-      "lower": 0.8456,
-      "upper": 1.4623
+      "median": 1.5592,
+      "lower": 1.1202,
+      "upper": 2.0333
     },
     {
       "team": "United States",
       "team_is": "Bandaríkin",
-      "component": "offence",
+      "component": "total",
       "location": "avg",
       "coverage": 0.5,
-      "median": 0.547,
-      "lower": 0.3281,
-      "upper": 0.7601
+      "median": 0.8484,
+      "lower": 0.5689,
+      "upper": 1.1194
     },
     {
       "team": "United States",
       "team_is": "Bandaríkin",
-      "component": "offence",
+      "component": "total",
       "location": "avg",
       "coverage": 0.8,
-      "median": 0.547,
-      "lower": 0.1291,
-      "upper": 0.9307
+      "median": 0.8484,
+      "lower": 0.3105,
+      "upper": 1.3245
     },
     {
       "team": "United States",
       "team_is": "Bandaríkin",
-      "component": "offence",
+      "component": "total",
       "location": "avg",
       "coverage": 0.95,
-      "median": 0.547,
-      "lower": -0.0716,
-      "upper": 1.081
+      "median": 0.8484,
+      "lower": 0.0197,
+      "upper": 1.5379
     },
     {
       "team": "Uruguay",
       "team_is": "Úrúgvæ",
-      "component": "offence",
+      "component": "total",
       "location": "avg",
       "coverage": 0.5,
-      "median": 0.9378,
-      "lower": 0.7974,
-      "upper": 1.0765
+      "median": 2.0256,
+      "lower": 1.8274,
+      "upper": 2.2248
     },
     {
       "team": "Uruguay",
       "team_is": "Úrúgvæ",
-      "component": "offence",
+      "component": "total",
       "location": "avg",
       "coverage": 0.8,
-      "median": 0.9378,
-      "lower": 0.6691,
-      "upper": 1.1861
+      "median": 2.0256,
+      "lower": 1.6328,
+      "upper": 2.3984
     },
     {
       "team": "Uruguay",
       "team_is": "Úrúgvæ",
-      "component": "offence",
+      "component": "total",
       "location": "avg",
       "coverage": 0.95,
-      "median": 0.9378,
-      "lower": 0.5051,
-      "upper": 1.3102
+      "median": 2.0256,
+      "lower": 1.4121,
+      "upper": 2.6074
     },
     {
       "team": "Uzbekistan",
       "team_is": "Úsbekistan",
-      "component": "offence",
+      "component": "total",
       "location": "avg",
       "coverage": 0.5,
-      "median": 0.6237,
-      "lower": 0.5051,
-      "upper": 0.7407
+      "median": 0.9712,
+      "lower": 0.7969,
+      "upper": 1.1501
     },
     {
       "team": "Uzbekistan",
       "team_is": "Úsbekistan",
-      "component": "offence",
+      "component": "total",
       "location": "avg",
       "coverage": 0.8,
-      "median": 0.6237,
-      "lower": 0.3814,
-      "upper": 0.8434
+      "median": 0.9712,
+      "lower": 0.6387,
+      "upper": 1.3003
     },
     {
       "team": "Uzbekistan",
       "team_is": "Úsbekistan",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.9712,
+      "lower": 0.4437,
+      "upper": 1.5073
+    },
+    {
+      "team": "Algeria",
+      "team_is": "Alsír",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 1.13,
+      "lower": 1.029,
+      "upper": 1.2326
+    },
+    {
+      "team": "Algeria",
+      "team_is": "Alsír",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 1.13,
+      "lower": 0.934,
+      "upper": 1.3185
+    },
+    {
+      "team": "Algeria",
+      "team_is": "Alsír",
       "component": "offence",
       "location": "avg",
       "coverage": 0.95,
-      "median": 0.6237,
-      "lower": 0.2273,
-      "upper": 0.9495
-    },
-    {
-      "team": "Algeria",
-      "team_is": "Alsír",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.6177,
-      "lower": 0.4997,
-      "upper": 0.7447
-    },
-    {
-      "team": "Algeria",
-      "team_is": "Alsír",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.6177,
-      "lower": 0.3953,
-      "upper": 0.8559
-    },
-    {
-      "team": "Algeria",
-      "team_is": "Alsír",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.6177,
-      "lower": 0.286,
-      "upper": 0.9847
+      "median": 1.13,
+      "lower": 0.8321,
+      "upper": 1.4431
     },
     {
       "team": "Argentina",
       "team_is": "Argentína",
-      "component": "defence",
+      "component": "offence",
       "location": "avg",
       "coverage": 0.5,
-      "median": 1.3859,
-      "lower": 1.2159,
-      "upper": 1.5659
+      "median": 1.424,
+      "lower": 1.3098,
+      "upper": 1.528
     },
     {
       "team": "Argentina",
       "team_is": "Argentína",
-      "component": "defence",
+      "component": "offence",
       "location": "avg",
       "coverage": 0.8,
-      "median": 1.3859,
-      "lower": 1.0583,
-      "upper": 1.7403
+      "median": 1.424,
+      "lower": 1.2109,
+      "upper": 1.6196
     },
     {
       "team": "Argentina",
       "team_is": "Argentína",
-      "component": "defence",
+      "component": "offence",
       "location": "avg",
       "coverage": 0.95,
-      "median": 1.3859,
-      "lower": 0.8829,
-      "upper": 1.9357
+      "median": 1.424,
+      "lower": 1.0754,
+      "upper": 1.7085
     },
     {
       "team": "Australia",
       "team_is": "Ástralía",
-      "component": "defence",
+      "component": "offence",
       "location": "avg",
       "coverage": 0.5,
-      "median": 0.7453,
-      "lower": 0.6041,
-      "upper": 0.8793
+      "median": 0.7619,
+      "lower": 0.6244,
+      "upper": 0.8836
     },
     {
       "team": "Australia",
       "team_is": "Ástralía",
-      "component": "defence",
+      "component": "offence",
       "location": "avg",
       "coverage": 0.8,
-      "median": 0.7453,
-      "lower": 0.4922,
-      "upper": 1.007
+      "median": 0.7619,
+      "lower": 0.4801,
+      "upper": 1.0063
     },
     {
       "team": "Australia",
       "team_is": "Ástralía",
-      "component": "defence",
+      "component": "offence",
       "location": "avg",
       "coverage": 0.95,
-      "median": 0.7453,
-      "lower": 0.3711,
-      "upper": 1.1716
+      "median": 0.7619,
+      "lower": 0.3141,
+      "upper": 1.1163
     },
     {
       "team": "Austria",
       "team_is": "Austurríki",
-      "component": "defence",
+      "component": "offence",
       "location": "avg",
       "coverage": 0.5,
-      "median": 0.6666,
-      "lower": 0.5376,
-      "upper": 0.7931
+      "median": 1.1055,
+      "lower": 0.9911,
+      "upper": 1.2152
     },
     {
       "team": "Austria",
       "team_is": "Austurríki",
-      "component": "defence",
+      "component": "offence",
       "location": "avg",
       "coverage": 0.8,
-      "median": 0.6666,
-      "lower": 0.4319,
-      "upper": 0.9044
+      "median": 1.1055,
+      "lower": 0.8778,
+      "upper": 1.3162
     },
     {
       "team": "Austria",
       "team_is": "Austurríki",
-      "component": "defence",
+      "component": "offence",
       "location": "avg",
       "coverage": 0.95,
-      "median": 0.6666,
-      "lower": 0.2986,
-      "upper": 1.0413
+      "median": 1.1055,
+      "lower": 0.7478,
+      "upper": 1.4136
     },
     {
       "team": "Belgium",
       "team_is": "Belgía",
-      "component": "defence",
+      "component": "offence",
       "location": "avg",
       "coverage": 0.5,
-      "median": 0.7343,
-      "lower": 0.6162,
-      "upper": 0.8676
+      "median": 1.3211,
+      "lower": 1.2181,
+      "upper": 1.4275
     },
     {
       "team": "Belgium",
       "team_is": "Belgía",
-      "component": "defence",
+      "component": "offence",
       "location": "avg",
       "coverage": 0.8,
-      "median": 0.7343,
-      "lower": 0.5061,
-      "upper": 0.992
+      "median": 1.3211,
+      "lower": 1.1084,
+      "upper": 1.5307
     },
     {
       "team": "Belgium",
       "team_is": "Belgía",
-      "component": "defence",
+      "component": "offence",
       "location": "avg",
       "coverage": 0.95,
-      "median": 0.7343,
-      "lower": 0.3633,
-      "upper": 1.1307
+      "median": 1.3211,
+      "lower": 0.997,
+      "upper": 1.6843
     },
     {
       "team": "Bosnia and Herzegovina",
       "team_is": "Bosnía og Hersegóvína",
-      "component": "defence",
+      "component": "offence",
       "location": "avg",
       "coverage": 0.5,
-      "median": 0.0744,
-      "lower": -0.0288,
-      "upper": 0.1832
+      "median": 0.4526,
+      "lower": 0.323,
+      "upper": 0.5781
     },
     {
       "team": "Bosnia and Herzegovina",
       "team_is": "Bosnía og Hersegóvína",
-      "component": "defence",
+      "component": "offence",
       "location": "avg",
       "coverage": 0.8,
-      "median": 0.0744,
-      "lower": -0.1238,
-      "upper": 0.2842
+      "median": 0.4526,
+      "lower": 0.2102,
+      "upper": 0.6897
     },
     {
       "team": "Bosnia and Herzegovina",
       "team_is": "Bosnía og Hersegóvína",
-      "component": "defence",
+      "component": "offence",
       "location": "avg",
       "coverage": 0.95,
-      "median": 0.0744,
-      "lower": -0.2277,
-      "upper": 0.4026
+      "median": 0.4526,
+      "lower": 0.0739,
+      "upper": 0.8173
     },
     {
       "team": "Brazil",
       "team_is": "Brasilía",
-      "component": "defence",
+      "component": "offence",
       "location": "avg",
       "coverage": 0.5,
-      "median": 0.8674,
-      "lower": 0.7362,
-      "upper": 0.9973
+      "median": 1.5004,
+      "lower": 1.3899,
+      "upper": 1.5995
     },
     {
       "team": "Brazil",
       "team_is": "Brasilía",
-      "component": "defence",
+      "component": "offence",
       "location": "avg",
       "coverage": 0.8,
-      "median": 0.8674,
-      "lower": 0.6235,
-      "upper": 1.1211
+      "median": 1.5004,
+      "lower": 1.2819,
+      "upper": 1.6939
     },
     {
       "team": "Brazil",
       "team_is": "Brasilía",
-      "component": "defence",
+      "component": "offence",
       "location": "avg",
       "coverage": 0.95,
-      "median": 0.8674,
-      "lower": 0.4711,
-      "upper": 1.2634
+      "median": 1.5004,
+      "lower": 1.1426,
+      "upper": 1.7959
     },
     {
       "team": "Canada",
       "team_is": "Kanada",
-      "component": "defence",
+      "component": "offence",
       "location": "avg",
       "coverage": 0.5,
-      "median": 0.6676,
-      "lower": 0.5585,
-      "upper": 0.7884
+      "median": 0.7871,
+      "lower": 0.651,
+      "upper": 0.9095
     },
     {
       "team": "Canada",
       "team_is": "Kanada",
-      "component": "defence",
+      "component": "offence",
       "location": "avg",
       "coverage": 0.8,
-      "median": 0.6676,
-      "lower": 0.4546,
-      "upper": 0.9052
+      "median": 0.7871,
+      "lower": 0.5236,
+      "upper": 1.0095
     },
     {
       "team": "Canada",
       "team_is": "Kanada",
-      "component": "defence",
+      "component": "offence",
       "location": "avg",
       "coverage": 0.95,
-      "median": 0.6676,
-      "lower": 0.3311,
-      "upper": 1.0446
+      "median": 0.7871,
+      "lower": 0.3869,
+      "upper": 1.1253
     },
     {
       "team": "Cape Verde",
       "team_is": "Grænhöfðaeyjar",
-      "component": "defence",
+      "component": "offence",
       "location": "avg",
       "coverage": 0.5,
-      "median": 0.2921,
-      "lower": 0.1658,
+      "median": 0.5835,
+      "lower": 0.4621,
+      "upper": 0.6987
+    },
+    {
+      "team": "Cape Verde",
+      "team_is": "Grænhöfðaeyjar",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.5835,
+      "lower": 0.3373,
+      "upper": 0.8109
+    },
+    {
+      "team": "Cape Verde",
+      "team_is": "Grænhöfðaeyjar",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.5835,
+      "lower": 0.2227,
+      "upper": 0.9347
+    },
+    {
+      "team": "Colombia",
+      "team_is": "Kólumbía",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 1.3367,
+      "lower": 1.236,
+      "upper": 1.4408
+    },
+    {
+      "team": "Colombia",
+      "team_is": "Kólumbía",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 1.3367,
+      "lower": 1.14,
+      "upper": 1.5248
+    },
+    {
+      "team": "Colombia",
+      "team_is": "Kólumbía",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 1.3367,
+      "lower": 1.0345,
+      "upper": 1.6362
+    },
+    {
+      "team": "Croatia",
+      "team_is": "Króatía",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 1.0989,
+      "lower": 0.9915,
+      "upper": 1.2017
+    },
+    {
+      "team": "Croatia",
+      "team_is": "Króatía",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 1.0989,
+      "lower": 0.8976,
+      "upper": 1.2957
+    },
+    {
+      "team": "Croatia",
+      "team_is": "Króatía",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 1.0989,
+      "lower": 0.7828,
+      "upper": 1.404
+    },
+    {
+      "team": "Curaçao",
+      "team_is": "Curaçao",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.3491,
+      "lower": 0.2061,
+      "upper": 0.4836
+    },
+    {
+      "team": "Curaçao",
+      "team_is": "Curaçao",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.3491,
+      "lower": 0.0708,
+      "upper": 0.5952
+    },
+    {
+      "team": "Curaçao",
+      "team_is": "Curaçao",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.3491,
+      "lower": -0.0817,
+      "upper": 0.7188
+    },
+    {
+      "team": "Czech Republic",
+      "team_is": "Tékkland",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.8096,
+      "lower": 0.6887,
+      "upper": 0.9332
+    },
+    {
+      "team": "Czech Republic",
+      "team_is": "Tékkland",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.8096,
+      "lower": 0.5668,
+      "upper": 1.0364
+    },
+    {
+      "team": "Czech Republic",
+      "team_is": "Tékkland",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.8096,
+      "lower": 0.4253,
+      "upper": 1.1501
+    },
+    {
+      "team": "DR Congo",
+      "team_is": "Kongó",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.5768,
+      "lower": 0.4553,
+      "upper": 0.6985
+    },
+    {
+      "team": "DR Congo",
+      "team_is": "Kongó",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.5768,
+      "lower": 0.3474,
+      "upper": 0.8067
+    },
+    {
+      "team": "DR Congo",
+      "team_is": "Kongó",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.5768,
+      "lower": 0.2019,
+      "upper": 0.9412
+    },
+    {
+      "team": "Ecuador",
+      "team_is": "Ekvador",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.4004,
+      "lower": 0.2232,
+      "upper": 0.5675
+    },
+    {
+      "team": "Ecuador",
+      "team_is": "Ekvador",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.4004,
+      "lower": 0.0538,
+      "upper": 0.7072
+    },
+    {
+      "team": "Ecuador",
+      "team_is": "Ekvador",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.4004,
+      "lower": -0.1536,
+      "upper": 0.8417
+    },
+    {
+      "team": "Egypt",
+      "team_is": "Egyptaland",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.856,
+      "lower": 0.7448,
+      "upper": 0.9621
+    },
+    {
+      "team": "Egypt",
+      "team_is": "Egyptaland",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.856,
+      "lower": 0.6381,
+      "upper": 1.0585
+    },
+    {
+      "team": "Egypt",
+      "team_is": "Egyptaland",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.856,
+      "lower": 0.5174,
+      "upper": 1.1697
+    },
+    {
+      "team": "England",
+      "team_is": "England",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 1.3161,
+      "lower": 1.2198,
+      "upper": 1.4105
+    },
+    {
+      "team": "England",
+      "team_is": "England",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 1.3161,
+      "lower": 1.1255,
+      "upper": 1.4975
+    },
+    {
+      "team": "England",
+      "team_is": "England",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 1.3161,
+      "lower": 1.0228,
+      "upper": 1.5986
+    },
+    {
+      "team": "France",
+      "team_is": "Frakkland",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 1.4344,
+      "lower": 1.3405,
+      "upper": 1.5368
+    },
+    {
+      "team": "France",
+      "team_is": "Frakkland",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 1.4344,
+      "lower": 1.238,
+      "upper": 1.6173
+    },
+    {
+      "team": "France",
+      "team_is": "Frakkland",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 1.4344,
+      "lower": 1.1329,
+      "upper": 1.7259
+    },
+    {
+      "team": "Germany",
+      "team_is": "Þýskaland",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 1.3369,
+      "lower": 1.2081,
+      "upper": 1.4491
+    },
+    {
+      "team": "Germany",
+      "team_is": "Þýskaland",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 1.3369,
+      "lower": 1.0838,
+      "upper": 1.5572
+    },
+    {
+      "team": "Germany",
+      "team_is": "Þýskaland",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 1.3369,
+      "lower": 0.9488,
+      "upper": 1.6888
+    },
+    {
+      "team": "Ghana",
+      "team_is": "Gana",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.545,
+      "lower": 0.4209,
+      "upper": 0.6613
+    },
+    {
+      "team": "Ghana",
+      "team_is": "Gana",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.545,
+      "lower": 0.3095,
+      "upper": 0.7586
+    },
+    {
+      "team": "Ghana",
+      "team_is": "Gana",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.545,
+      "lower": 0.1959,
+      "upper": 0.8955
+    },
+    {
+      "team": "Haiti",
+      "team_is": "Haítí",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.6972,
+      "lower": 0.5817,
+      "upper": 0.8086
+    },
+    {
+      "team": "Haiti",
+      "team_is": "Haítí",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.6972,
+      "lower": 0.4758,
+      "upper": 0.9091
+    },
+    {
+      "team": "Haiti",
+      "team_is": "Haítí",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.6972,
+      "lower": 0.3635,
+      "upper": 1.0213
+    },
+    {
+      "team": "Iran",
+      "team_is": "Íran",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.9257,
+      "lower": 0.8157,
+      "upper": 1.0296
+    },
+    {
+      "team": "Iran",
+      "team_is": "Íran",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.9257,
+      "lower": 0.7161,
+      "upper": 1.1212
+    },
+    {
+      "team": "Iran",
+      "team_is": "Íran",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.9257,
+      "lower": 0.5868,
+      "upper": 1.2276
+    },
+    {
+      "team": "Iraq",
+      "team_is": "Írak",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.3355,
+      "lower": 0.2017,
+      "upper": 0.4493
+    },
+    {
+      "team": "Iraq",
+      "team_is": "Írak",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.3355,
+      "lower": 0.0847,
+      "upper": 0.5555
+    },
+    {
+      "team": "Iraq",
+      "team_is": "Írak",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.3355,
+      "lower": -0.0603,
+      "upper": 0.6693
+    },
+    {
+      "team": "Ivory Coast",
+      "team_is": "Fílabeinsströndin",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.6522,
+      "lower": 0.5117,
+      "upper": 0.7831
+    },
+    {
+      "team": "Ivory Coast",
+      "team_is": "Fílabeinsströndin",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.6522,
+      "lower": 0.3758,
+      "upper": 0.895
+    },
+    {
+      "team": "Ivory Coast",
+      "team_is": "Fílabeinsströndin",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.6522,
+      "lower": 0.1967,
+      "upper": 1.0127
+    },
+    {
+      "team": "Japan",
+      "team_is": "Japan",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 1.3496,
+      "lower": 1.2507,
+      "upper": 1.4417
+    },
+    {
+      "team": "Japan",
+      "team_is": "Japan",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 1.3496,
+      "lower": 1.1502,
+      "upper": 1.5239
+    },
+    {
+      "team": "Japan",
+      "team_is": "Japan",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 1.3496,
+      "lower": 1.0446,
+      "upper": 1.6159
+    },
+    {
+      "team": "Jordan",
+      "team_is": "Jórdanía",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.8298,
+      "lower": 0.7288,
+      "upper": 0.9269
+    },
+    {
+      "team": "Jordan",
+      "team_is": "Jórdanía",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.8298,
+      "lower": 0.6356,
+      "upper": 1.0224
+    },
+    {
+      "team": "Jordan",
+      "team_is": "Jórdanía",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.8298,
+      "lower": 0.5082,
+      "upper": 1.1313
+    },
+    {
+      "team": "Mexico",
+      "team_is": "Mexíkó",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.8546,
+      "lower": 0.7273,
+      "upper": 0.9783
+    },
+    {
+      "team": "Mexico",
+      "team_is": "Mexíkó",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.8546,
+      "lower": 0.6102,
+      "upper": 1.0914
+    },
+    {
+      "team": "Mexico",
+      "team_is": "Mexíkó",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.8546,
+      "lower": 0.466,
+      "upper": 1.2212
+    },
+    {
+      "team": "Morocco",
+      "team_is": "Marokkó",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.9455,
+      "lower": 0.8227,
+      "upper": 1.0591
+    },
+    {
+      "team": "Morocco",
+      "team_is": "Marokkó",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.9455,
+      "lower": 0.696,
+      "upper": 1.1529
+    },
+    {
+      "team": "Morocco",
+      "team_is": "Marokkó",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.9455,
+      "lower": 0.5287,
+      "upper": 1.2689
+    },
+    {
+      "team": "Netherlands",
+      "team_is": "Holland",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 1.345,
+      "lower": 1.2359,
+      "upper": 1.4496
+    },
+    {
+      "team": "Netherlands",
+      "team_is": "Holland",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 1.345,
+      "lower": 1.1337,
+      "upper": 1.5379
+    },
+    {
+      "team": "Netherlands",
+      "team_is": "Holland",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 1.345,
+      "lower": 1.0028,
+      "upper": 1.6339
+    },
+    {
+      "team": "New Zealand",
+      "team_is": "Nýja-Sjáland",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.3554,
+      "lower": 0.1821,
+      "upper": 0.5213
+    },
+    {
+      "team": "New Zealand",
+      "team_is": "Nýja-Sjáland",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.3554,
+      "lower": 0.0243,
+      "upper": 0.6592
+    },
+    {
+      "team": "New Zealand",
+      "team_is": "Nýja-Sjáland",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.3554,
+      "lower": -0.1776,
+      "upper": 0.8007
+    },
+    {
+      "team": "Norway",
+      "team_is": "Noregur",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 1.4282,
+      "lower": 1.3157,
+      "upper": 1.5347
+    },
+    {
+      "team": "Norway",
+      "team_is": "Noregur",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 1.4282,
+      "lower": 1.2098,
+      "upper": 1.6319
+    },
+    {
+      "team": "Norway",
+      "team_is": "Noregur",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 1.4282,
+      "lower": 1.0819,
+      "upper": 1.7606
+    },
+    {
+      "team": "Panama",
+      "team_is": "Panama",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.6852,
+      "lower": 0.5833,
+      "upper": 0.7971
+    },
+    {
+      "team": "Panama",
+      "team_is": "Panama",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.6852,
+      "lower": 0.4702,
+      "upper": 0.8998
+    },
+    {
+      "team": "Panama",
+      "team_is": "Panama",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.6852,
+      "lower": 0.3552,
+      "upper": 1.0012
+    },
+    {
+      "team": "Paraguay",
+      "team_is": "Paragvæ",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.6255,
+      "lower": 0.4613,
+      "upper": 0.7702
+    },
+    {
+      "team": "Paraguay",
+      "team_is": "Paragvæ",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.6255,
+      "lower": 0.3164,
+      "upper": 0.902
+    },
+    {
+      "team": "Paraguay",
+      "team_is": "Paragvæ",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.6255,
+      "lower": 0.1584,
+      "upper": 1.037
+    },
+    {
+      "team": "Portugal",
+      "team_is": "Portúgal",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 1.3133,
+      "lower": 1.1783,
+      "upper": 1.4305
+    },
+    {
+      "team": "Portugal",
+      "team_is": "Portúgal",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 1.3133,
+      "lower": 1.0638,
+      "upper": 1.5309
+    },
+    {
+      "team": "Portugal",
+      "team_is": "Portúgal",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 1.3133,
+      "lower": 0.9418,
+      "upper": 1.6414
+    },
+    {
+      "team": "Qatar",
+      "team_is": "Katar",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.2595,
+      "lower": 0.094,
       "upper": 0.4082
     },
     {
-      "team": "Cape Verde",
-      "team_is": "Grænhöfðaeyjar",
-      "component": "defence",
+      "team": "Qatar",
+      "team_is": "Katar",
+      "component": "offence",
       "location": "avg",
       "coverage": 0.8,
-      "median": 0.2921,
-      "lower": 0.0557,
-      "upper": 0.5254
-    },
-    {
-      "team": "Cape Verde",
-      "team_is": "Grænhöfðaeyjar",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.2921,
-      "lower": -0.075,
-      "upper": 0.6697
-    },
-    {
-      "team": "Colombia",
-      "team_is": "Kólumbía",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 1.0639,
-      "lower": 0.9391,
-      "upper": 1.198
-    },
-    {
-      "team": "Colombia",
-      "team_is": "Kólumbía",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 1.0639,
-      "lower": 0.8238,
-      "upper": 1.3211
-    },
-    {
-      "team": "Colombia",
-      "team_is": "Kólumbía",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 1.0639,
-      "lower": 0.6875,
-      "upper": 1.4635
-    },
-    {
-      "team": "Croatia",
-      "team_is": "Króatía",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.795,
-      "lower": 0.6741,
-      "upper": 0.9083
-    },
-    {
-      "team": "Croatia",
-      "team_is": "Króatía",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.795,
-      "lower": 0.5692,
-      "upper": 1.0119
-    },
-    {
-      "team": "Croatia",
-      "team_is": "Króatía",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.795,
-      "lower": 0.4582,
-      "upper": 1.131
-    },
-    {
-      "team": "Curaçao",
-      "team_is": "Curaçao",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": -0.2236,
-      "lower": -0.3395,
-      "upper": -0.1091
-    },
-    {
-      "team": "Curaçao",
-      "team_is": "Curaçao",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": -0.2236,
-      "lower": -0.4456,
-      "upper": 0.0036
-    },
-    {
-      "team": "Curaçao",
-      "team_is": "Curaçao",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": -0.2236,
-      "lower": -0.5617,
-      "upper": 0.1382
-    },
-    {
-      "team": "Czech Republic",
-      "team_is": "Tékkland",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.3189,
-      "lower": 0.1943,
-      "upper": 0.4408
-    },
-    {
-      "team": "Czech Republic",
-      "team_is": "Tékkland",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.3189,
-      "lower": 0.0946,
-      "upper": 0.5483
-    },
-    {
-      "team": "Czech Republic",
-      "team_is": "Tékkland",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.3189,
-      "lower": -0.0472,
-      "upper": 0.668
-    },
-    {
-      "team": "DR Congo",
-      "team_is": "Kongó",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.7547,
-      "lower": 0.6335,
-      "upper": 0.8949
-    },
-    {
-      "team": "DR Congo",
-      "team_is": "Kongó",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.7547,
-      "lower": 0.5199,
-      "upper": 1.0197
-    },
-    {
-      "team": "DR Congo",
-      "team_is": "Kongó",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.7547,
-      "lower": 0.3917,
-      "upper": 1.1655
-    },
-    {
-      "team": "Ecuador",
-      "team_is": "Ekvador",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 1.1798,
-      "lower": 1.0342,
-      "upper": 1.3255
-    },
-    {
-      "team": "Ecuador",
-      "team_is": "Ekvador",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 1.1798,
-      "lower": 0.9181,
-      "upper": 1.4456
-    },
-    {
-      "team": "Ecuador",
-      "team_is": "Ekvador",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 1.1798,
-      "lower": 0.7973,
-      "upper": 1.5977
-    },
-    {
-      "team": "Egypt",
-      "team_is": "Egyptaland",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.7907,
-      "lower": 0.671,
-      "upper": 0.908
-    },
-    {
-      "team": "Egypt",
-      "team_is": "Egyptaland",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.7907,
-      "lower": 0.551,
-      "upper": 1.022
-    },
-    {
-      "team": "Egypt",
-      "team_is": "Egyptaland",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.7907,
-      "lower": 0.4389,
-      "upper": 1.1932
-    },
-    {
-      "team": "England",
-      "team_is": "England",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 1.0546,
-      "lower": 0.911,
-      "upper": 1.2047
-    },
-    {
-      "team": "England",
-      "team_is": "England",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 1.0546,
-      "lower": 0.7903,
-      "upper": 1.3415
-    },
-    {
-      "team": "England",
-      "team_is": "England",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 1.0546,
-      "lower": 0.6495,
-      "upper": 1.5159
-    },
-    {
-      "team": "France",
-      "team_is": "Frakkland",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.9898,
-      "lower": 0.8617,
-      "upper": 1.1178
-    },
-    {
-      "team": "France",
-      "team_is": "Frakkland",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.9898,
-      "lower": 0.7412,
-      "upper": 1.2327
-    },
-    {
-      "team": "France",
-      "team_is": "Frakkland",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.9898,
-      "lower": 0.627,
-      "upper": 1.3617
-    },
-    {
-      "team": "Germany",
-      "team_is": "Þýskaland",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.643,
-      "lower": 0.5333,
-      "upper": 0.7617
-    },
-    {
-      "team": "Germany",
-      "team_is": "Þýskaland",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.643,
-      "lower": 0.4253,
-      "upper": 0.8713
-    },
-    {
-      "team": "Germany",
-      "team_is": "Þýskaland",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.643,
-      "lower": 0.2955,
-      "upper": 0.9849
-    },
-    {
-      "team": "Ghana",
-      "team_is": "Gana",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.3722,
-      "lower": 0.2737,
-      "upper": 0.4829
-    },
-    {
-      "team": "Ghana",
-      "team_is": "Gana",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.3722,
-      "lower": 0.1829,
-      "upper": 0.5879
-    },
-    {
-      "team": "Ghana",
-      "team_is": "Gana",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.3722,
-      "lower": 0.0887,
-      "upper": 0.7179
-    },
-    {
-      "team": "Haiti",
-      "team_is": "Haítí",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": -0.0404,
-      "lower": -0.1673,
-      "upper": 0.082
-    },
-    {
-      "team": "Haiti",
-      "team_is": "Haítí",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": -0.0404,
-      "lower": -0.2781,
-      "upper": 0.1922
-    },
-    {
-      "team": "Haiti",
-      "team_is": "Haítí",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": -0.0404,
-      "lower": -0.3994,
-      "upper": 0.3258
-    },
-    {
-      "team": "Iran",
-      "team_is": "Íran",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.5018,
-      "lower": 0.3608,
-      "upper": 0.6483
-    },
-    {
-      "team": "Iran",
-      "team_is": "Íran",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.5018,
-      "lower": 0.2316,
-      "upper": 0.7895
-    },
-    {
-      "team": "Iran",
-      "team_is": "Íran",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.5018,
-      "lower": 0.1024,
-      "upper": 0.9636
-    },
-    {
-      "team": "Iraq",
-      "team_is": "Írak",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.2741,
-      "lower": 0.1646,
-      "upper": 0.3795
-    },
-    {
-      "team": "Iraq",
-      "team_is": "Írak",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.2741,
-      "lower": 0.0643,
-      "upper": 0.474
-    },
-    {
-      "team": "Iraq",
-      "team_is": "Írak",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.2741,
-      "lower": -0.0447,
-      "upper": 0.5942
-    },
-    {
-      "team": "Ivory Coast",
-      "team_is": "Fílabeinsströndin",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.7432,
-      "lower": 0.6136,
-      "upper": 0.8922
-    },
-    {
-      "team": "Ivory Coast",
-      "team_is": "Fílabeinsströndin",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.7432,
-      "lower": 0.493,
-      "upper": 1.0268
-    },
-    {
-      "team": "Ivory Coast",
-      "team_is": "Fílabeinsströndin",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.7432,
-      "lower": 0.3564,
-      "upper": 1.1842
-    },
-    {
-      "team": "Japan",
-      "team_is": "Japan",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.9486,
-      "lower": 0.8213,
-      "upper": 1.0869
-    },
-    {
-      "team": "Japan",
-      "team_is": "Japan",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.9486,
-      "lower": 0.7137,
-      "upper": 1.2038
-    },
-    {
-      "team": "Japan",
-      "team_is": "Japan",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.9486,
-      "lower": 0.596,
-      "upper": 1.3487
-    },
-    {
-      "team": "Jordan",
-      "team_is": "Jórdanía",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.0879,
-      "lower": -0.013,
-      "upper": 0.197
-    },
-    {
-      "team": "Jordan",
-      "team_is": "Jórdanía",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.0879,
-      "lower": -0.1062,
-      "upper": 0.2934
-    },
-    {
-      "team": "Jordan",
-      "team_is": "Jórdanía",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.0879,
-      "lower": -0.2044,
-      "upper": 0.414
-    },
-    {
-      "team": "Mexico",
-      "team_is": "Mexíkó",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.7226,
-      "lower": 0.6013,
-      "upper": 0.8543
-    },
-    {
-      "team": "Mexico",
-      "team_is": "Mexíkó",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.7226,
-      "lower": 0.4786,
-      "upper": 0.9755
-    },
-    {
-      "team": "Mexico",
-      "team_is": "Mexíkó",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.7226,
-      "lower": 0.3378,
-      "upper": 1.1673
-    },
-    {
-      "team": "Morocco",
-      "team_is": "Marokkó",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.9465,
-      "lower": 0.7883,
-      "upper": 1.1173
-    },
-    {
-      "team": "Morocco",
-      "team_is": "Marokkó",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.9465,
-      "lower": 0.6552,
-      "upper": 1.2643
-    },
-    {
-      "team": "Morocco",
-      "team_is": "Marokkó",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.9465,
-      "lower": 0.5048,
-      "upper": 1.4572
-    },
-    {
-      "team": "Netherlands",
-      "team_is": "Holland",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.7196,
-      "lower": 0.6056,
-      "upper": 0.8383
-    },
-    {
-      "team": "Netherlands",
-      "team_is": "Holland",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.7196,
-      "lower": 0.5007,
-      "upper": 0.9529
-    },
-    {
-      "team": "Netherlands",
-      "team_is": "Holland",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.7196,
-      "lower": 0.3665,
-      "upper": 1.0654
-    },
-    {
-      "team": "New Zealand",
-      "team_is": "Nýja-Sjáland",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.2405,
-      "lower": 0.1292,
-      "upper": 0.3518
-    },
-    {
-      "team": "New Zealand",
-      "team_is": "Nýja-Sjáland",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.2405,
-      "lower": 0.0269,
-      "upper": 0.4685
-    },
-    {
-      "team": "New Zealand",
-      "team_is": "Nýja-Sjáland",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.2405,
-      "lower": -0.0986,
-      "upper": 0.5744
-    },
-    {
-      "team": "Norway",
-      "team_is": "Noregur",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.4694,
-      "lower": 0.3417,
-      "upper": 0.6086
-    },
-    {
-      "team": "Norway",
-      "team_is": "Noregur",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.4694,
-      "lower": 0.2278,
-      "upper": 0.734
-    },
-    {
-      "team": "Norway",
-      "team_is": "Noregur",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.4694,
-      "lower": 0.0895,
-      "upper": 0.8644
-    },
-    {
-      "team": "Panama",
-      "team_is": "Panama",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.19,
-      "lower": 0.0947,
-      "upper": 0.2884
-    },
-    {
-      "team": "Panama",
-      "team_is": "Panama",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.19,
-      "lower": 0.0076,
-      "upper": 0.3767
-    },
-    {
-      "team": "Panama",
-      "team_is": "Panama",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.19,
-      "lower": -0.0963,
-      "upper": 0.4814
-    },
-    {
-      "team": "Paraguay",
-      "team_is": "Paragvæ",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 0.6282,
-      "lower": 0.5195,
-      "upper": 0.7521
-    },
-    {
-      "team": "Paraguay",
-      "team_is": "Paragvæ",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 0.6282,
-      "lower": 0.4193,
-      "upper": 0.8824
-    },
-    {
-      "team": "Paraguay",
-      "team_is": "Paragvæ",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 0.6282,
-      "lower": 0.2955,
-      "upper": 1.0346
-    },
-    {
-      "team": "Portugal",
-      "team_is": "Portúgal",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": 1.0044,
-      "lower": 0.878,
-      "upper": 1.1254
-    },
-    {
-      "team": "Portugal",
-      "team_is": "Portúgal",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": 1.0044,
-      "lower": 0.7676,
-      "upper": 1.2401
-    },
-    {
-      "team": "Portugal",
-      "team_is": "Portúgal",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.95,
-      "median": 1.0044,
-      "lower": 0.6309,
-      "upper": 1.3729
+      "median": 0.2595,
+      "lower": -0.0577,
+      "upper": 0.5302
     },
     {
       "team": "Qatar",
       "team_is": "Katar",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.5,
-      "median": -0.2868,
-      "lower": -0.4066,
-      "upper": -0.1698
-    },
-    {
-      "team": "Qatar",
-      "team_is": "Katar",
-      "component": "defence",
-      "location": "avg",
-      "coverage": 0.8,
-      "median": -0.2868,
-      "lower": -0.5445,
-      "upper": -0.0704
-    },
-    {
-      "team": "Qatar",
-      "team_is": "Katar",
-      "component": "defence",
+      "component": "offence",
       "location": "avg",
       "coverage": 0.95,
-      "median": -0.2868,
-      "lower": -0.7017,
-      "upper": 0.0274
+      "median": 0.2595,
+      "lower": -0.2486,
+      "upper": 0.6679
     },
     {
       "team": "Saudi Arabia",
       "team_is": "Sádi-Arabía",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.2933,
+      "lower": 0.1847,
+      "upper": 0.4015
+    },
+    {
+      "team": "Saudi Arabia",
+      "team_is": "Sádi-Arabía",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.2933,
+      "lower": 0.0887,
+      "upper": 0.5038
+    },
+    {
+      "team": "Saudi Arabia",
+      "team_is": "Sádi-Arabía",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.2933,
+      "lower": -0.0247,
+      "upper": 0.6113
+    },
+    {
+      "team": "Scotland",
+      "team_is": "Skotland",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.8681,
+      "lower": 0.7567,
+      "upper": 0.9804
+    },
+    {
+      "team": "Scotland",
+      "team_is": "Skotland",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.8681,
+      "lower": 0.6444,
+      "upper": 1.0864
+    },
+    {
+      "team": "Scotland",
+      "team_is": "Skotland",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.8681,
+      "lower": 0.5095,
+      "upper": 1.1972
+    },
+    {
+      "team": "Senegal",
+      "team_is": "Senegal",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 1.209,
+      "lower": 1.1047,
+      "upper": 1.3214
+    },
+    {
+      "team": "Senegal",
+      "team_is": "Senegal",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 1.209,
+      "lower": 1.0151,
+      "upper": 1.4233
+    },
+    {
+      "team": "Senegal",
+      "team_is": "Senegal",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 1.209,
+      "lower": 0.9004,
+      "upper": 1.5504
+    },
+    {
+      "team": "South Africa",
+      "team_is": "Suður-Afríka",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.5429,
+      "lower": 0.4249,
+      "upper": 0.6673
+    },
+    {
+      "team": "South Africa",
+      "team_is": "Suður-Afríka",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.5429,
+      "lower": 0.31,
+      "upper": 0.7708
+    },
+    {
+      "team": "South Africa",
+      "team_is": "Suður-Afríka",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.5429,
+      "lower": 0.17,
+      "upper": 0.8789
+    },
+    {
+      "team": "South Korea",
+      "team_is": "Suður-Kórea",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.9214,
+      "lower": 0.8067,
+      "upper": 1.0281
+    },
+    {
+      "team": "South Korea",
+      "team_is": "Suður-Kórea",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.9214,
+      "lower": 0.7052,
+      "upper": 1.1214
+    },
+    {
+      "team": "South Korea",
+      "team_is": "Suður-Kórea",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.9214,
+      "lower": 0.5763,
+      "upper": 1.2309
+    },
+    {
+      "team": "Spain",
+      "team_is": "Spánn",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 1.5609,
+      "lower": 1.4578,
+      "upper": 1.6552
+    },
+    {
+      "team": "Spain",
+      "team_is": "Spánn",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 1.5609,
+      "lower": 1.365,
+      "upper": 1.7439
+    },
+    {
+      "team": "Spain",
+      "team_is": "Spánn",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 1.5609,
+      "lower": 1.2598,
+      "upper": 1.8461
+    },
+    {
+      "team": "Sweden",
+      "team_is": "Svíþjóð",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 1.1155,
+      "lower": 1.0005,
+      "upper": 1.2304
+    },
+    {
+      "team": "Sweden",
+      "team_is": "Svíþjóð",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 1.1155,
+      "lower": 0.8771,
+      "upper": 1.3353
+    },
+    {
+      "team": "Sweden",
+      "team_is": "Svíþjóð",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 1.1155,
+      "lower": 0.7422,
+      "upper": 1.4562
+    },
+    {
+      "team": "Switzerland",
+      "team_is": "Sviss",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 1.2099,
+      "lower": 1.0976,
+      "upper": 1.3168
+    },
+    {
+      "team": "Switzerland",
+      "team_is": "Sviss",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 1.2099,
+      "lower": 0.9911,
+      "upper": 1.4198
+    },
+    {
+      "team": "Switzerland",
+      "team_is": "Sviss",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 1.2099,
+      "lower": 0.873,
+      "upper": 1.5205
+    },
+    {
+      "team": "Tunisia",
+      "team_is": "Túnis",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.6248,
+      "lower": 0.4991,
+      "upper": 0.7434
+    },
+    {
+      "team": "Tunisia",
+      "team_is": "Túnis",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.6248,
+      "lower": 0.3844,
+      "upper": 0.8463
+    },
+    {
+      "team": "Tunisia",
+      "team_is": "Túnis",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.6248,
+      "lower": 0.243,
+      "upper": 0.9513
+    },
+    {
+      "team": "Turkey",
+      "team_is": "Tyrkland",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 1.1521,
+      "lower": 1.0476,
+      "upper": 1.2514
+    },
+    {
+      "team": "Turkey",
+      "team_is": "Tyrkland",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 1.1521,
+      "lower": 0.9576,
+      "upper": 1.3491
+    },
+    {
+      "team": "Turkey",
+      "team_is": "Tyrkland",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 1.1521,
+      "lower": 0.8488,
+      "upper": 1.4712
+    },
+    {
+      "team": "United States",
+      "team_is": "Bandaríkin",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.5457,
+      "lower": 0.3154,
+      "upper": 0.7425
+    },
+    {
+      "team": "United States",
+      "team_is": "Bandaríkin",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.5457,
+      "lower": 0.11,
+      "upper": 0.9082
+    },
+    {
+      "team": "United States",
+      "team_is": "Bandaríkin",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.5457,
+      "lower": -0.1336,
+      "upper": 1.0789
+    },
+    {
+      "team": "Uruguay",
+      "team_is": "Úrúgvæ",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.9407,
+      "lower": 0.8087,
+      "upper": 1.0798
+    },
+    {
+      "team": "Uruguay",
+      "team_is": "Úrúgvæ",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.9407,
+      "lower": 0.6807,
+      "upper": 1.1827
+    },
+    {
+      "team": "Uruguay",
+      "team_is": "Úrúgvæ",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.9407,
+      "lower": 0.5234,
+      "upper": 1.3022
+    },
+    {
+      "team": "Uzbekistan",
+      "team_is": "Úsbekistan",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.6282,
+      "lower": 0.5019,
+      "upper": 0.7431
+    },
+    {
+      "team": "Uzbekistan",
+      "team_is": "Úsbekistan",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.6282,
+      "lower": 0.3836,
+      "upper": 0.8393
+    },
+    {
+      "team": "Uzbekistan",
+      "team_is": "Úsbekistan",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.6282,
+      "lower": 0.2333,
+      "upper": 0.9443
+    },
+    {
+      "team": "Algeria",
+      "team_is": "Alsír",
       "component": "defence",
       "location": "avg",
       "coverage": 0.5,
-      "median": 0.4215,
-      "lower": 0.3221,
+      "median": 0.6208,
+      "lower": 0.5036,
+      "upper": 0.744
+    },
+    {
+      "team": "Algeria",
+      "team_is": "Alsír",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.6208,
+      "lower": 0.4062,
+      "upper": 0.8584
+    },
+    {
+      "team": "Algeria",
+      "team_is": "Alsír",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.6208,
+      "lower": 0.2926,
+      "upper": 1.0097
+    },
+    {
+      "team": "Argentina",
+      "team_is": "Argentína",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 1.3305,
+      "lower": 1.1528,
+      "upper": 1.5184
+    },
+    {
+      "team": "Argentina",
+      "team_is": "Argentína",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 1.3305,
+      "lower": 0.9947,
+      "upper": 1.6817
+    },
+    {
+      "team": "Argentina",
+      "team_is": "Argentína",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 1.3305,
+      "lower": 0.8039,
+      "upper": 1.8633
+    },
+    {
+      "team": "Australia",
+      "team_is": "Ástralía",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.7348,
+      "lower": 0.6113,
+      "upper": 0.8674
+    },
+    {
+      "team": "Australia",
+      "team_is": "Ástralía",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.7348,
+      "lower": 0.4948,
+      "upper": 0.9932
+    },
+    {
+      "team": "Australia",
+      "team_is": "Ástralía",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.7348,
+      "lower": 0.3652,
+      "upper": 1.1391
+    },
+    {
+      "team": "Austria",
+      "team_is": "Austurríki",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.6629,
+      "lower": 0.5376,
+      "upper": 0.792
+    },
+    {
+      "team": "Austria",
+      "team_is": "Austurríki",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.6629,
+      "lower": 0.4293,
+      "upper": 0.9045
+    },
+    {
+      "team": "Austria",
+      "team_is": "Austurríki",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.6629,
+      "lower": 0.3002,
+      "upper": 1.0332
+    },
+    {
+      "team": "Belgium",
+      "team_is": "Belgía",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.746,
+      "lower": 0.6137,
+      "upper": 0.8793
+    },
+    {
+      "team": "Belgium",
+      "team_is": "Belgía",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.746,
+      "lower": 0.5004,
+      "upper": 1.0002
+    },
+    {
+      "team": "Belgium",
+      "team_is": "Belgía",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.746,
+      "lower": 0.3812,
+      "upper": 1.1423
+    },
+    {
+      "team": "Bosnia and Herzegovina",
+      "team_is": "Bosnía og Hersegóvína",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.07,
+      "lower": -0.0357,
+      "upper": 0.185
+    },
+    {
+      "team": "Bosnia and Herzegovina",
+      "team_is": "Bosnía og Hersegóvína",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.07,
+      "lower": -0.1259,
+      "upper": 0.2875
+    },
+    {
+      "team": "Bosnia and Herzegovina",
+      "team_is": "Bosnía og Hersegóvína",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.07,
+      "lower": -0.2409,
+      "upper": 0.3997
+    },
+    {
+      "team": "Brazil",
+      "team_is": "Brasilía",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.8533,
+      "lower": 0.7266,
+      "upper": 0.9889
+    },
+    {
+      "team": "Brazil",
+      "team_is": "Brasilía",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.8533,
+      "lower": 0.6103,
+      "upper": 1.1154
+    },
+    {
+      "team": "Brazil",
+      "team_is": "Brasilía",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.8533,
+      "lower": 0.4793,
+      "upper": 1.2431
+    },
+    {
+      "team": "Canada",
+      "team_is": "Kanada",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.6674,
+      "lower": 0.5481,
+      "upper": 0.7869
+    },
+    {
+      "team": "Canada",
+      "team_is": "Kanada",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.6674,
+      "lower": 0.4468,
+      "upper": 0.9184
+    },
+    {
+      "team": "Canada",
+      "team_is": "Kanada",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.6674,
+      "lower": 0.3316,
+      "upper": 1.0716
+    },
+    {
+      "team": "Cape Verde",
+      "team_is": "Grænhöfðaeyjar",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.2965,
+      "lower": 0.179,
+      "upper": 0.4278
+    },
+    {
+      "team": "Cape Verde",
+      "team_is": "Grænhöfðaeyjar",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.2965,
+      "lower": 0.0716,
+      "upper": 0.5403
+    },
+    {
+      "team": "Cape Verde",
+      "team_is": "Grænhöfðaeyjar",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.2965,
+      "lower": -0.0492,
+      "upper": 0.673
+    },
+    {
+      "team": "Colombia",
+      "team_is": "Kólumbía",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 1.0744,
+      "lower": 0.943,
+      "upper": 1.1991
+    },
+    {
+      "team": "Colombia",
+      "team_is": "Kólumbía",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 1.0744,
+      "lower": 0.8272,
+      "upper": 1.3293
+    },
+    {
+      "team": "Colombia",
+      "team_is": "Kólumbía",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 1.0744,
+      "lower": 0.6844,
+      "upper": 1.4811
+    },
+    {
+      "team": "Croatia",
+      "team_is": "Króatía",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.7896,
+      "lower": 0.6807,
+      "upper": 0.9042
+    },
+    {
+      "team": "Croatia",
+      "team_is": "Króatía",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.7896,
+      "lower": 0.5704,
+      "upper": 0.9997
+    },
+    {
+      "team": "Croatia",
+      "team_is": "Króatía",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.7896,
+      "lower": 0.4504,
+      "upper": 1.1256
+    },
+    {
+      "team": "Curaçao",
+      "team_is": "Curaçao",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -0.2257,
+      "lower": -0.3447,
+      "upper": -0.1094
+    },
+    {
+      "team": "Curaçao",
+      "team_is": "Curaçao",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -0.2257,
+      "lower": -0.446,
+      "upper": -0.0071
+    },
+    {
+      "team": "Curaçao",
+      "team_is": "Curaçao",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -0.2257,
+      "lower": -0.5595,
+      "upper": 0.117
+    },
+    {
+      "team": "Czech Republic",
+      "team_is": "Tékkland",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.3254,
+      "lower": 0.1957,
+      "upper": 0.441
+    },
+    {
+      "team": "Czech Republic",
+      "team_is": "Tékkland",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.3254,
+      "lower": 0.083,
+      "upper": 0.5398
+    },
+    {
+      "team": "Czech Republic",
+      "team_is": "Tékkland",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.3254,
+      "lower": -0.0528,
+      "upper": 0.673
+    },
+    {
+      "team": "DR Congo",
+      "team_is": "Kongó",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.7559,
+      "lower": 0.6272,
+      "upper": 0.8919
+    },
+    {
+      "team": "DR Congo",
+      "team_is": "Kongó",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.7559,
+      "lower": 0.5103,
+      "upper": 1.0222
+    },
+    {
+      "team": "DR Congo",
+      "team_is": "Kongó",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.7559,
+      "lower": 0.3813,
+      "upper": 1.1833
+    },
+    {
+      "team": "Ecuador",
+      "team_is": "Ekvador",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 1.1763,
+      "lower": 1.0411,
+      "upper": 1.3215
+    },
+    {
+      "team": "Ecuador",
+      "team_is": "Ekvador",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 1.1763,
+      "lower": 0.9166,
+      "upper": 1.4543
+    },
+    {
+      "team": "Ecuador",
+      "team_is": "Ekvador",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 1.1763,
+      "lower": 0.7833,
+      "upper": 1.6283
+    },
+    {
+      "team": "Egypt",
+      "team_is": "Egyptaland",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.8,
+      "lower": 0.6802,
+      "upper": 0.9201
+    },
+    {
+      "team": "Egypt",
+      "team_is": "Egyptaland",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.8,
+      "lower": 0.5738,
+      "upper": 1.0452
+    },
+    {
+      "team": "Egypt",
+      "team_is": "Egyptaland",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.8,
+      "lower": 0.4521,
+      "upper": 1.1654
+    },
+    {
+      "team": "England",
+      "team_is": "England",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 1.0517,
+      "lower": 0.9177,
+      "upper": 1.1955
+    },
+    {
+      "team": "England",
+      "team_is": "England",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 1.0517,
+      "lower": 0.7988,
+      "upper": 1.3305
+    },
+    {
+      "team": "England",
+      "team_is": "England",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 1.0517,
+      "lower": 0.6551,
+      "upper": 1.4922
+    },
+    {
+      "team": "France",
+      "team_is": "Frakkland",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.9922,
+      "lower": 0.8689,
+      "upper": 1.1279
+    },
+    {
+      "team": "France",
+      "team_is": "Frakkland",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.9922,
+      "lower": 0.7633,
+      "upper": 1.249
+    },
+    {
+      "team": "France",
+      "team_is": "Frakkland",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.9922,
+      "lower": 0.6221,
+      "upper": 1.3916
+    },
+    {
+      "team": "Germany",
+      "team_is": "Þýskaland",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.6479,
+      "lower": 0.5254,
+      "upper": 0.7681
+    },
+    {
+      "team": "Germany",
+      "team_is": "Þýskaland",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.6479,
+      "lower": 0.409,
+      "upper": 0.872
+    },
+    {
+      "team": "Germany",
+      "team_is": "Þýskaland",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.6479,
+      "lower": 0.295,
+      "upper": 0.9921
+    },
+    {
+      "team": "Ghana",
+      "team_is": "Gana",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.4001,
+      "lower": 0.3076,
       "upper": 0.5229
     },
     {
+      "team": "Ghana",
+      "team_is": "Gana",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.4001,
+      "lower": 0.2161,
+      "upper": 0.6213
+    },
+    {
+      "team": "Ghana",
+      "team_is": "Gana",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.4001,
+      "lower": 0.1184,
+      "upper": 0.7468
+    },
+    {
+      "team": "Haiti",
+      "team_is": "Haítí",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -0.0463,
+      "lower": -0.1677,
+      "upper": 0.0853
+    },
+    {
+      "team": "Haiti",
+      "team_is": "Haítí",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -0.0463,
+      "lower": -0.2817,
+      "upper": 0.1936
+    },
+    {
+      "team": "Haiti",
+      "team_is": "Haítí",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -0.0463,
+      "lower": -0.3924,
+      "upper": 0.3171
+    },
+    {
+      "team": "Iran",
+      "team_is": "Íran",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.5034,
+      "lower": 0.367,
+      "upper": 0.6361
+    },
+    {
+      "team": "Iran",
+      "team_is": "Íran",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.5034,
+      "lower": 0.255,
+      "upper": 0.7685
+    },
+    {
+      "team": "Iran",
+      "team_is": "Íran",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.5034,
+      "lower": 0.1182,
+      "upper": 0.9176
+    },
+    {
+      "team": "Iraq",
+      "team_is": "Írak",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.2723,
+      "lower": 0.1629,
+      "upper": 0.3849
+    },
+    {
+      "team": "Iraq",
+      "team_is": "Írak",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.2723,
+      "lower": 0.0623,
+      "upper": 0.48
+    },
+    {
+      "team": "Iraq",
+      "team_is": "Írak",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.2723,
+      "lower": -0.0425,
+      "upper": 0.5803
+    },
+    {
+      "team": "Ivory Coast",
+      "team_is": "Fílabeinsströndin",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.7506,
+      "lower": 0.61,
+      "upper": 0.8945
+    },
+    {
+      "team": "Ivory Coast",
+      "team_is": "Fílabeinsströndin",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.7506,
+      "lower": 0.4818,
+      "upper": 1.0205
+    },
+    {
+      "team": "Ivory Coast",
+      "team_is": "Fílabeinsströndin",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.7506,
+      "lower": 0.3238,
+      "upper": 1.2041
+    },
+    {
+      "team": "Japan",
+      "team_is": "Japan",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.9469,
+      "lower": 0.8149,
+      "upper": 1.0845
+    },
+    {
+      "team": "Japan",
+      "team_is": "Japan",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.9469,
+      "lower": 0.6983,
+      "upper": 1.2157
+    },
+    {
+      "team": "Japan",
+      "team_is": "Japan",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.9469,
+      "lower": 0.5752,
+      "upper": 1.3793
+    },
+    {
+      "team": "Jordan",
+      "team_is": "Jórdanía",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.098,
+      "lower": -0.0053,
+      "upper": 0.1973
+    },
+    {
+      "team": "Jordan",
+      "team_is": "Jórdanía",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.098,
+      "lower": -0.1083,
+      "upper": 0.2921
+    },
+    {
+      "team": "Jordan",
+      "team_is": "Jórdanía",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.098,
+      "lower": -0.2249,
+      "upper": 0.3909
+    },
+    {
+      "team": "Mexico",
+      "team_is": "Mexíkó",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.7296,
+      "lower": 0.6051,
+      "upper": 0.8702
+    },
+    {
+      "team": "Mexico",
+      "team_is": "Mexíkó",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.7296,
+      "lower": 0.4947,
+      "upper": 0.9968
+    },
+    {
+      "team": "Mexico",
+      "team_is": "Mexíkó",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.7296,
+      "lower": 0.3537,
+      "upper": 1.1685
+    },
+    {
+      "team": "Morocco",
+      "team_is": "Marokkó",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.9577,
+      "lower": 0.7864,
+      "upper": 1.128
+    },
+    {
+      "team": "Morocco",
+      "team_is": "Marokkó",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.9577,
+      "lower": 0.6366,
+      "upper": 1.2675
+    },
+    {
+      "team": "Morocco",
+      "team_is": "Marokkó",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.9577,
+      "lower": 0.5005,
+      "upper": 1.4652
+    },
+    {
+      "team": "Netherlands",
+      "team_is": "Holland",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.7144,
+      "lower": 0.5915,
+      "upper": 0.8371
+    },
+    {
+      "team": "Netherlands",
+      "team_is": "Holland",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.7144,
+      "lower": 0.4829,
+      "upper": 0.9477
+    },
+    {
+      "team": "Netherlands",
+      "team_is": "Holland",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.7144,
+      "lower": 0.3566,
+      "upper": 1.0874
+    },
+    {
+      "team": "New Zealand",
+      "team_is": "Nýja-Sjáland",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.2395,
+      "lower": 0.1214,
+      "upper": 0.3524
+    },
+    {
+      "team": "New Zealand",
+      "team_is": "Nýja-Sjáland",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.2395,
+      "lower": 0.0231,
+      "upper": 0.4566
+    },
+    {
+      "team": "New Zealand",
+      "team_is": "Nýja-Sjáland",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.2395,
+      "lower": -0.1027,
+      "upper": 0.5704
+    },
+    {
+      "team": "Norway",
+      "team_is": "Noregur",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.4764,
+      "lower": 0.3452,
+      "upper": 0.6051
+    },
+    {
+      "team": "Norway",
+      "team_is": "Noregur",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.4764,
+      "lower": 0.2351,
+      "upper": 0.7172
+    },
+    {
+      "team": "Norway",
+      "team_is": "Noregur",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.4764,
+      "lower": 0.094,
+      "upper": 0.867
+    },
+    {
+      "team": "Panama",
+      "team_is": "Panama",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.1801,
+      "lower": 0.0873,
+      "upper": 0.278
+    },
+    {
+      "team": "Panama",
+      "team_is": "Panama",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.1801,
+      "lower": -0.008,
+      "upper": 0.3749
+    },
+    {
+      "team": "Panama",
+      "team_is": "Panama",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.1801,
+      "lower": -0.1115,
+      "upper": 0.4778
+    },
+    {
+      "team": "Paraguay",
+      "team_is": "Paragvæ",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.6285,
+      "lower": 0.5139,
+      "upper": 0.7523
+    },
+    {
+      "team": "Paraguay",
+      "team_is": "Paragvæ",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.6285,
+      "lower": 0.4179,
+      "upper": 0.8634
+    },
+    {
+      "team": "Paraguay",
+      "team_is": "Paragvæ",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.6285,
+      "lower": 0.311,
+      "upper": 1.0046
+    },
+    {
+      "team": "Portugal",
+      "team_is": "Portúgal",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.9992,
+      "lower": 0.8682,
+      "upper": 1.1344
+    },
+    {
+      "team": "Portugal",
+      "team_is": "Portúgal",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.9992,
+      "lower": 0.7475,
+      "upper": 1.2472
+    },
+    {
+      "team": "Portugal",
+      "team_is": "Portúgal",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.9992,
+      "lower": 0.6234,
+      "upper": 1.3759
+    },
+    {
+      "team": "Qatar",
+      "team_is": "Katar",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -0.3001,
+      "lower": -0.4255,
+      "upper": -0.1836
+    },
+    {
+      "team": "Qatar",
+      "team_is": "Katar",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -0.3001,
+      "lower": -0.542,
+      "upper": -0.0839
+    },
+    {
+      "team": "Qatar",
+      "team_is": "Katar",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -0.3001,
+      "lower": -0.6975,
+      "upper": 0.0223
+    },
+    {
+      "team": "Saudi Arabia",
+      "team_is": "Sádi-Arabía",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.4211,
+      "lower": 0.3211,
+      "upper": 0.5206
+    },
+    {
       "team": "Saudi Arabia",
       "team_is": "Sádi-Arabía",
       "component": "defence",
       "location": "avg",
       "coverage": 0.8,
-      "median": 0.4215,
-      "lower": 0.2312,
-      "upper": 0.6061
+      "median": 0.4211,
+      "lower": 0.2278,
+      "upper": 0.62
     },
     {
       "team": "Saudi Arabia",
@@ -4392,9 +4392,9 @@
       "component": "defence",
       "location": "avg",
       "coverage": 0.95,
-      "median": 0.4215,
-      "lower": 0.1071,
-      "upper": 0.7285
+      "median": 0.4211,
+      "lower": 0.12,
+      "upper": 0.7348
     },
     {
       "team": "Scotland",
@@ -4402,9 +4402,9 @@
       "component": "defence",
       "location": "avg",
       "coverage": 0.5,
-      "median": 0.4152,
-      "lower": 0.3062,
-      "upper": 0.5234
+      "median": 0.4163,
+      "lower": 0.3031,
+      "upper": 0.5277
     },
     {
       "team": "Scotland",
@@ -4412,9 +4412,9 @@
       "component": "defence",
       "location": "avg",
       "coverage": 0.8,
-      "median": 0.4152,
-      "lower": 0.2141,
-      "upper": 0.6262
+      "median": 0.4163,
+      "lower": 0.2005,
+      "upper": 0.6345
     },
     {
       "team": "Scotland",
@@ -4422,9 +4422,9 @@
       "component": "defence",
       "location": "avg",
       "coverage": 0.95,
-      "median": 0.4152,
-      "lower": 0.0949,
-      "upper": 0.7465
+      "median": 0.4163,
+      "lower": 0.1006,
+      "upper": 0.7725
     },
     {
       "team": "Senegal",
@@ -4432,9 +4432,9 @@
       "component": "defence",
       "location": "avg",
       "coverage": 0.5,
-      "median": 0.7258,
-      "lower": 0.6063,
-      "upper": 0.8428
+      "median": 0.7193,
+      "lower": 0.5982,
+      "upper": 0.8497
     },
     {
       "team": "Senegal",
@@ -4442,9 +4442,9 @@
       "component": "defence",
       "location": "avg",
       "coverage": 0.8,
-      "median": 0.7258,
-      "lower": 0.5052,
-      "upper": 0.9657
+      "median": 0.7193,
+      "lower": 0.4845,
+      "upper": 0.9614
     },
     {
       "team": "Senegal",
@@ -4452,9 +4452,9 @@
       "component": "defence",
       "location": "avg",
       "coverage": 0.95,
-      "median": 0.7258,
-      "lower": 0.3626,
-      "upper": 1.0982
+      "median": 0.7193,
+      "lower": 0.3391,
+      "upper": 1.1007
     },
     {
       "team": "South Africa",
@@ -4462,9 +4462,9 @@
       "component": "defence",
       "location": "avg",
       "coverage": 0.5,
-      "median": 0.3822,
-      "lower": 0.2531,
-      "upper": 0.5093
+      "median": 0.3813,
+      "lower": 0.2554,
+      "upper": 0.514
     },
     {
       "team": "South Africa",
@@ -4472,9 +4472,9 @@
       "component": "defence",
       "location": "avg",
       "coverage": 0.8,
-      "median": 0.3822,
-      "lower": 0.1336,
-      "upper": 0.6271
+      "median": 0.3813,
+      "lower": 0.1368,
+      "upper": 0.6395
     },
     {
       "team": "South Africa",
@@ -4482,9 +4482,9 @@
       "component": "defence",
       "location": "avg",
       "coverage": 0.95,
-      "median": 0.3822,
-      "lower": -0.0007,
-      "upper": 0.772
+      "median": 0.3813,
+      "lower": 0.0092,
+      "upper": 0.7604
     },
     {
       "team": "South Korea",
@@ -4492,9 +4492,9 @@
       "component": "defence",
       "location": "avg",
       "coverage": 0.5,
-      "median": 0.4975,
-      "lower": 0.3856,
-      "upper": 0.6087
+      "median": 0.4925,
+      "lower": 0.3729,
+      "upper": 0.6064
     },
     {
       "team": "South Korea",
@@ -4502,9 +4502,9 @@
       "component": "defence",
       "location": "avg",
       "coverage": 0.8,
-      "median": 0.4975,
-      "lower": 0.2867,
-      "upper": 0.7079
+      "median": 0.4925,
+      "lower": 0.2724,
+      "upper": 0.7152
     },
     {
       "team": "South Korea",
@@ -4512,9 +4512,9 @@
       "component": "defence",
       "location": "avg",
       "coverage": 0.95,
-      "median": 0.4975,
-      "lower": 0.1857,
-      "upper": 0.8277
+      "median": 0.4925,
+      "lower": 0.161,
+      "upper": 0.8504
     },
     {
       "team": "Spain",
@@ -4522,9 +4522,9 @@
       "component": "defence",
       "location": "avg",
       "coverage": 0.5,
-      "median": 1.1868,
-      "lower": 1.0587,
-      "upper": 1.3257
+      "median": 1.1888,
+      "lower": 1.0601,
+      "upper": 1.3247
     },
     {
       "team": "Spain",
@@ -4532,9 +4532,9 @@
       "component": "defence",
       "location": "avg",
       "coverage": 0.8,
-      "median": 1.1868,
+      "median": 1.1888,
       "lower": 0.9393,
-      "upper": 1.4506
+      "upper": 1.4517
     },
     {
       "team": "Spain",
@@ -4542,9 +4542,9 @@
       "component": "defence",
       "location": "avg",
       "coverage": 0.95,
-      "median": 1.1868,
-      "lower": 0.805,
-      "upper": 1.5977
+      "median": 1.1888,
+      "lower": 0.8079,
+      "upper": 1.6187
     },
     {
       "team": "Sweden",
@@ -4552,9 +4552,9 @@
       "component": "defence",
       "location": "avg",
       "coverage": 0.5,
-      "median": 0.1674,
-      "lower": 0.0707,
-      "upper": 0.2752
+      "median": 0.1791,
+      "lower": 0.069,
+      "upper": 0.2785
     },
     {
       "team": "Sweden",
@@ -4562,9 +4562,9 @@
       "component": "defence",
       "location": "avg",
       "coverage": 0.8,
-      "median": 0.1674,
-      "lower": -0.0212,
-      "upper": 0.3647
+      "median": 0.1791,
+      "lower": -0.0234,
+      "upper": 0.3713
     },
     {
       "team": "Sweden",
@@ -4572,9 +4572,9 @@
       "component": "defence",
       "location": "avg",
       "coverage": 0.95,
-      "median": 0.1674,
-      "lower": -0.1181,
-      "upper": 0.4798
+      "median": 0.1791,
+      "lower": -0.1313,
+      "upper": 0.4887
     },
     {
       "team": "Switzerland",
@@ -4582,9 +4582,9 @@
       "component": "defence",
       "location": "avg",
       "coverage": 0.5,
-      "median": 0.6801,
-      "lower": 0.5744,
-      "upper": 0.7955
+      "median": 0.6773,
+      "lower": 0.5651,
+      "upper": 0.7935
     },
     {
       "team": "Switzerland",
@@ -4592,9 +4592,9 @@
       "component": "defence",
       "location": "avg",
       "coverage": 0.8,
-      "median": 0.6801,
-      "lower": 0.4727,
-      "upper": 0.904
+      "median": 0.6773,
+      "lower": 0.4721,
+      "upper": 0.9023
     },
     {
       "team": "Switzerland",
@@ -4602,9 +4602,9 @@
       "component": "defence",
       "location": "avg",
       "coverage": 0.95,
-      "median": 0.6801,
-      "lower": 0.3708,
-      "upper": 1.0451
+      "median": 0.6773,
+      "lower": 0.3648,
+      "upper": 1.0374
     },
     {
       "team": "Tunisia",
@@ -4612,9 +4612,9 @@
       "component": "defence",
       "location": "avg",
       "coverage": 0.5,
-      "median": 0.5712,
-      "lower": 0.4258,
-      "upper": 0.6972
+      "median": 0.5589,
+      "lower": 0.3992,
+      "upper": 0.6996
     },
     {
       "team": "Tunisia",
@@ -4622,9 +4622,9 @@
       "component": "defence",
       "location": "avg",
       "coverage": 0.8,
-      "median": 0.5712,
-      "lower": 0.2707,
-      "upper": 0.8166
+      "median": 0.5589,
+      "lower": 0.224,
+      "upper": 0.8117
     },
     {
       "team": "Tunisia",
@@ -4632,9 +4632,9 @@
       "component": "defence",
       "location": "avg",
       "coverage": 0.95,
-      "median": 0.5712,
-      "lower": 0.0511,
-      "upper": 0.9459
+      "median": 0.5589,
+      "lower": -0.02,
+      "upper": 0.9427
     },
     {
       "team": "Turkey",
@@ -4642,9 +4642,9 @@
       "component": "defence",
       "location": "avg",
       "coverage": 0.5,
-      "median": 0.4033,
-      "lower": 0.2977,
-      "upper": 0.5168
+      "median": 0.4078,
+      "lower": 0.3032,
+      "upper": 0.516
     },
     {
       "team": "Turkey",
@@ -4652,9 +4652,9 @@
       "component": "defence",
       "location": "avg",
       "coverage": 0.8,
-      "median": 0.4033,
-      "lower": 0.2061,
-      "upper": 0.623
+      "median": 0.4078,
+      "lower": 0.2072,
+      "upper": 0.6196
     },
     {
       "team": "Turkey",
@@ -4662,9 +4662,9 @@
       "component": "defence",
       "location": "avg",
       "coverage": 0.95,
-      "median": 0.4033,
-      "lower": 0.0995,
-      "upper": 0.7392
+      "median": 0.4078,
+      "lower": 0.1002,
+      "upper": 0.7721
     },
     {
       "team": "United States",
@@ -4672,9 +4672,9 @@
       "component": "defence",
       "location": "avg",
       "coverage": 0.5,
-      "median": 0.3404,
-      "lower": 0.1825,
-      "upper": 0.4689
+      "median": 0.3373,
+      "lower": 0.1782,
+      "upper": 0.4682
     },
     {
       "team": "United States",
@@ -4682,9 +4682,9 @@
       "component": "defence",
       "location": "avg",
       "coverage": 0.8,
-      "median": 0.3404,
-      "lower": 0.0326,
-      "upper": 0.5779
+      "median": 0.3373,
+      "lower": 0.0131,
+      "upper": 0.5836
     },
     {
       "team": "United States",
@@ -4692,9 +4692,9 @@
       "component": "defence",
       "location": "avg",
       "coverage": 0.95,
-      "median": 0.3404,
-      "lower": -0.1937,
-      "upper": 0.6936
+      "median": 0.3373,
+      "lower": -0.1891,
+      "upper": 0.6856
     },
     {
       "team": "Uruguay",
@@ -4702,9 +4702,9 @@
       "component": "defence",
       "location": "avg",
       "coverage": 0.5,
-      "median": 1.0866,
-      "lower": 0.9467,
-      "upper": 1.2271
+      "median": 1.0844,
+      "lower": 0.9469,
+      "upper": 1.2243
     },
     {
       "team": "Uruguay",
@@ -4712,9 +4712,9 @@
       "component": "defence",
       "location": "avg",
       "coverage": 0.8,
-      "median": 1.0866,
-      "lower": 0.8241,
-      "upper": 1.3494
+      "median": 1.0844,
+      "lower": 0.8122,
+      "upper": 1.3525
     },
     {
       "team": "Uruguay",
@@ -4722,9 +4722,9 @@
       "component": "defence",
       "location": "avg",
       "coverage": 0.95,
-      "median": 1.0866,
-      "lower": 0.6434,
-      "upper": 1.5284
+      "median": 1.0844,
+      "lower": 0.6451,
+      "upper": 1.5016
     },
     {
       "team": "Uzbekistan",
@@ -4732,9 +4732,9 @@
       "component": "defence",
       "location": "avg",
       "coverage": 0.5,
-      "median": 0.3522,
-      "lower": 0.2215,
-      "upper": 0.4871
+      "median": 0.357,
+      "lower": 0.2242,
+      "upper": 0.4783
     },
     {
       "team": "Uzbekistan",
@@ -4742,9 +4742,9 @@
       "component": "defence",
       "location": "avg",
       "coverage": 0.8,
-      "median": 0.3522,
-      "lower": 0.1111,
-      "upper": 0.6182
+      "median": 0.357,
+      "lower": 0.1076,
+      "upper": 0.6038
     },
     {
       "team": "Uzbekistan",
@@ -4752,9 +4752,9 @@
       "component": "defence",
       "location": "avg",
       "coverage": 0.95,
-      "median": 0.3522,
-      "lower": -0.0383,
-      "upper": 0.7561
+      "median": 0.357,
+      "lower": -0.0211,
+      "upper": 0.7327
     }
   ]
 }
