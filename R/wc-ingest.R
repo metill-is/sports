@@ -246,7 +246,11 @@ wc_ingest_shootouts <- function(structure,
 #' @param manual_overlay_path Optional CSV of operator-supplied scores
 #'   (`date, home_team, away_team, home_score, away_score`) merged onto martj42's
 #'   `NA`-score rows via [wc_apply_manual_results()]. Default
-#'   `data/wc/manual_results.csv`; skipped when absent.
+#'   `data/wc/manual_results.csv`; skipped when absent. Before the merge,
+#'   unplayed knockout fixture dates are corrected against the vendored
+#'   official calendar via [wc_correct_knockout_dates()] (martj42's upcoming
+#'   dates are unreliable; the 2026-07-06 incident published the wrong day for
+#'   two R16 ties).
 #' @return Invisibly, a list of row counts (`n_results`, `n_schedule`,
 #'   `n_teams`, `n_wc_teams`).
 #' @importFrom rlang .data
@@ -270,6 +274,11 @@ wc_ingest_internationals <- function(csv_path = here::here("data", "wc", "raw", 
       neutral = readr::col_logical()
     )
   )
+
+  # martj42's dates on not-yet-played knockout fixtures are unreliable (its
+  # cities are not): re-date them from the vendored official calendar BEFORE
+  # the overlay merge, so overlay rows key on corrected dates.
+  raw <- wc_correct_knockout_dates(raw)
 
   # Operator overlay: fill scores martj42 hasn't published yet (martj42 stays
   # canonical once it catches up). Default path => the CI cron honours it too.

@@ -29,7 +29,11 @@ be retained. Default 8.}
 \item{manual_overlay_path}{Optional CSV of operator-supplied scores
 (`date, home_team, away_team, home_score, away_score`) merged onto martj42's
 `NA`-score rows via [wc_apply_manual_results()]. Default
-`data/wc/manual_results.csv`; skipped when absent.}
+`data/wc/manual_results.csv`; skipped when absent. Before the merge,
+unplayed knockout fixture dates are corrected against the vendored
+official calendar via [wc_correct_knockout_dates()] (martj42's upcoming
+dates are unreliable; the 2026-07-06 incident published the wrong day for
+two R16 ties).}
 }
 \value{
 Invisibly, a list of row counts (`n_results`, `n_schedule`,
