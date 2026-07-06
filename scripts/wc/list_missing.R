@@ -30,6 +30,10 @@ raw <- readr::read_csv(csv_path, col_types = readr::cols(
   neutral = readr::col_logical()
 ))
 
+# Same official-calendar date correction ingest applies, so the scaffold rows
+# key on the dates wc_apply_manual_results() will see.
+raw <- wc_correct_knockout_dates(raw)
+
 missing <- wc_list_unscored_fixtures(raw, as_of = Sys.Date())
 
 if (nrow(missing) == 0L) {

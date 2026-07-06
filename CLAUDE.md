@@ -159,6 +159,16 @@ from martj42's `shootouts.csv` + the overlay's `pen_winner` (martj42 canonical).
 No re-fit is needed for new knockout results — pins act on the simulate step, so
 re-running `scripts/wc/forecast.R` alone re-publishes the conditioned forecast.
 
+**Knockout fixture dates are corrected at ingest** (2026-07-06 incident:
+martj42 dated all four remaining R16 ties on the round's first day, so the
+published forecast — and the platform matchday reel, keyed on exact
+`match_date` — carried 4 matches on 6 July instead of 2).
+`wc_correct_knockout_dates()` (`R/wc-schedule.R`) re-dates unplayed knockout
+rows to the stadium-local date of their official slot, venue-matched against
+the vendored `data/wc/structure/wc2026_schedule.csv`; unmappable rows keep
+martj42's date with a warning. `--list-missing` applies the same correction,
+so overlay rows always key on corrected dates.
+
 ## metill-platform integration
 
 The `metill-is/metill-platform` repo runs `pull-sports-data.yml` hourly:
