@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-06T15:26:11Z",
+  "generated_at": "2026-07-06T20:59:38Z",
   "overall": "WARN",
   "n_fail": 0,
   "n_warn": 1,
@@ -92,7 +92,7 @@
       "check": "capture_rate",
       "scope": "recommendations",
       "status": "OK",
-      "value": "60% (6/10 placed)",
+      "value": "70% (7/10 placed)",
       "threshold": ">= 70% placed"
     },
     {
