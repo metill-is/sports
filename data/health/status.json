@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-07-06T20:59:38Z",
+  "generated_at": "2026-07-07T14:25:39Z",
   "overall": "WARN",
   "n_fail": 0,
-  "n_warn": 1,
+  "n_warn": 4,
   "checks": [
     {
       "check": "fit_freshness",
@@ -36,21 +36,21 @@
       "check": "fit_freshness",
       "scope": "football_iceland male",
       "status": "OK",
-      "value": "2d old, current with results",
+      "value": "0d old, current with results",
       "threshold": "<= 2d"
     },
     {
       "check": "fit_freshness",
       "scope": "football_iceland female",
       "status": "OK",
-      "value": "1d old, current with results",
+      "value": "2d old, current with results",
       "threshold": "<= 2d"
     },
     {
       "check": "odds_freshness",
       "scope": "football_iceland",
-      "status": "OK",
-      "value": "odds cover upcoming fixtures (next in 0d)",
+      "status": "WARN",
+      "value": "next fixture in 2d, no upcoming odds scraped",
       "threshold": "odds for fixtures within 3d"
     },
     {
@@ -71,28 +71,28 @@
       "check": "divergence_drift",
       "scope": "football/iceland/male",
       "status": "OK",
-      "value": "0.175%",
+      "value": "0.325%",
       "threshold": "< 0.5%"
     },
     {
       "check": "rhat_drift",
       "scope": "football/iceland/male",
-      "status": "OK",
-      "value": "1.015",
+      "status": "WARN",
+      "value": "1.035",
       "threshold": "< 1.020"
     },
     {
       "check": "orphaned_bets",
       "scope": "ledger",
-      "status": "OK",
-      "value": "0",
+      "status": "WARN",
+      "value": "1",
       "threshold": "0 unsettled > 10d"
     },
     {
       "check": "capture_rate",
       "scope": "recommendations",
       "status": "OK",
-      "value": "70% (7/10 placed)",
+      "value": "78% (7/9 placed)",
       "threshold": ">= 70% placed"
     },
     {
