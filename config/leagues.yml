@@ -265,7 +265,7 @@ football_iceland:
         Grótta: Grótta kv                               # confirmed 2026-06-26 (Grótta kv v Völsungur kv)
         HK: HK kv                                       # pattern guess; verify on first odds appearance
         Keflavík: Keflavík kv                           # pattern guess; verify on first odds appearance
-        Selfoss: Selfoss kv                             # pattern guess; verify on first odds appearance
+        Selfoss: Selfoss kv                             # confirmed 2026-07-09 (Selfoss kv v KR kv)
         # Lengjan renders this women's side WITHOUT the accent ("Tindastoll kv"),
         # diverging from the canonical "Tindastóll" -- list both so the decode
         # accepts either (basketball uses yet another form, "UMF Tindastoll kv").
