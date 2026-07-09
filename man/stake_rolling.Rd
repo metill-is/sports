@@ -9,6 +9,7 @@ stake_rolling(
   initial_pool = NULL,
   daily_budget_frac = 0.05,
   daily_budget_min_isk = 1000,
+  min_bet = 0,
   ...
 )
 }
@@ -21,10 +22,18 @@ stake_rolling(
 \item{daily_budget_frac, daily_budget_min_isk}{Daily-budget cap parameters
 (defaults from `bankroll.yml`).}
 
+\item{min_bet}{Bookmaker minimum stake in ISK. A bet whose stake — after the
+daily-budget cap — is below it is dropped (never placed), so it contributes
+no stake and no pnl to the rolling pool, mirroring the live decider's
+`dropped_min_bet` stage. The cap is applied over the full slate first (as
+live portfolio scaling precedes the min-bet filter), then the floor. Default
+`0` = no floor.}
+
 \item{...}{Absorbs `ref_pool` (ignored) for a uniform stake-rule signature.}
 }
 \value{
-`universe` plus `stake`, `pnl`, `pool_before`.
+`universe` plus `stake`, `pnl`, `pool_before`; rows below `min_bet`
+  removed when a floor is set.
 }
 \description{
 Walks decide runs in chronological order. For each run, the pool is

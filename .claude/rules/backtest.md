@@ -16,6 +16,19 @@ Loads when working on `R/backtest-*.R`, `scripts/0Nb_backtest.R`, or
   (faithful rolling Kelly — compounding is baked into recorded stakes).
   Counterfactual bets use `kelly_raw * median(kelly/kelly_raw)` per run; these
   are flagged approximate in the report.
+- **Min-bet floor is opt-in (`min_bet`).** By default the stake rules
+  (`stake_fixed` / `stake_rolling`) apply **no** minimum — they place every bet
+  at `round(frac × pool)`, so ~82 % of football stakes land below Lengjan's
+  200 kr floor. This is the deliberate "idealised large-pool" view. Pass
+  `min_bet = <isk>` (forwarded through `bt_run`'s `...`) to **drop** any bet
+  whose stake — after the daily-budget cap — falls below it, mirroring the live
+  decider's `dropped_min_bet` stage (dropped bets contribute no pnl to the
+  rolling pool). The report carries both views: the headline/by-league sections
+  are no-floor; the "200 kr floor" section re-runs the same picks floored at
+  `config/leagues.yml::football_iceland.betting.min_bet`. The floor is a
+  stake-level row filter, not a fraction change — `bt_effective_fraction` is
+  unaffected. Regression-guarded by `min_bet = 0` tests in
+  `test-backtest-stake.R`.
 - **Default scope is football only.** The CLI (`scripts/0Nb_backtest.R`) and the
   report (`docs/reports/2026-backtest.qmd`) default to `leagues = "football"` —
   the backtest is meant to judge football specifically, and basketball/handball

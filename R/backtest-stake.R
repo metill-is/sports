@@ -43,10 +43,14 @@ bt_effective_fraction <- function(universe) {
 #' @param universe Tibble with `win`, `odds`, plus the columns
 #'   [bt_effective_fraction()] needs.
 #' @param ref_pool Constant pool in ISK.
+#' @param min_bet Bookmaker minimum stake in ISK. Bets whose computed stake
+#'   falls below it are dropped (rows removed) — never placed — mirroring the
+#'   live decider's `dropped_min_bet` stage. Default `0` = no floor.
 #' @param ... Absorbs `initial_pool` (ignored) for a uniform stake-rule signature.
-#' @return `universe` plus `stake`, `pnl`, `pool_before`.
+#' @return `universe` plus `stake`, `pnl`, `pool_before`; rows below `min_bet`
+#'   removed when a floor is set.
 #' @export
-stake_fixed <- function(universe, ref_pool = NULL, ...) {
+stake_fixed <- function(universe, ref_pool = NULL, min_bet = 0, ...) {
   if (is.null(ref_pool)) {
     dots <- list(...)
     ref_pool <- dots$initial_pool %||% load_bankroll()$initial_pool
@@ -58,7 +62,7 @@ stake_fixed <- function(universe, ref_pool = NULL, ...) {
     -universe$stake
   )
   universe$pool_before <- ref_pool
-  universe
+  universe[universe$stake >= min_bet, , drop = FALSE]
 }
 
 #' Rolling-bankroll stake rule (path-dependent; the money story).
@@ -75,18 +79,26 @@ stake_fixed <- function(universe, ref_pool = NULL, ...) {
 #' @param initial_pool Starting bankroll in ISK.
 #' @param daily_budget_frac,daily_budget_min_isk Daily-budget cap parameters
 #'   (defaults from `bankroll.yml`).
+#' @param min_bet Bookmaker minimum stake in ISK. A bet whose stake — after the
+#'   daily-budget cap — is below it is dropped (never placed), so it contributes
+#'   no stake and no pnl to the rolling pool, mirroring the live decider's
+#'   `dropped_min_bet` stage. The cap is applied over the full slate first (as
+#'   live portfolio scaling precedes the min-bet filter), then the floor. Default
+#'   `0` = no floor.
 #' @param ... Absorbs `ref_pool` (ignored) for a uniform stake-rule signature.
-#' @return `universe` plus `stake`, `pnl`, `pool_before`.
+#' @return `universe` plus `stake`, `pnl`, `pool_before`; rows below `min_bet`
+#'   removed when a floor is set.
 #' @export
 stake_rolling <- function(universe, initial_pool = NULL,
                           daily_budget_frac = 0.05,
-                          daily_budget_min_isk = 1000, ...) {
+                          daily_budget_min_isk = 1000, min_bet = 0, ...) {
   if (is.null(initial_pool)) initial_pool <- load_bankroll()$initial_pool
   frac <- bt_effective_fraction(universe)
   u <- universe
   u$stake <- NA_real_
   u$pnl <- NA_real_
   u$pool_before <- NA_real_
+  keep <- rep(TRUE, nrow(u))
 
   settled_md <- as.Date(character())
   settled_pnl <- numeric()
@@ -107,8 +119,12 @@ stake_rolling <- function(universe, initial_pool = NULL,
     u$stake[rm] <- stake_r
     u$pnl[rm] <- pnl_r
     u$pool_before[rm] <- pool_r
-    settled_md <- c(settled_md, u$match_date[rm])
-    settled_pnl <- c(settled_pnl, pnl_r)
+
+    below <- stake_r < min_bet
+    keep[rm[below]] <- FALSE
+    placed <- rm[!below]
+    settled_md <- c(settled_md, u$match_date[placed])
+    settled_pnl <- c(settled_pnl, u$pnl[placed])
   }
-  u
+  u[keep, , drop = FALSE]
 }

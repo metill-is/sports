@@ -223,6 +223,93 @@ bt_calibration(fixed, n_bins = 8) |>
   theme_minimal()
 ```
 
+## What we could actually place — the 200 kr floor
+
+The sections above are the **idealised** view: every +EV bet is placed at its
+Kelly-sized stake, however small — answering "what would these picks return with
+a bankroll large enough to place them all?" But Lengjan rejects any stake below
+its minimum, and the live decider drops those bets (`dropped_min_bet`). This
+section re-runs the same picks with that floor applied — dropping every bet whose
+Kelly stake, sized off the reference pool, falls below the minimum — so it shows
+only the **realisable** slate.
+
+```{r}
+#| label: floor-setup
+#| include: false
+min_bet <- load_leagues()[["football_iceland"]]$betting$min_bet %||% 200
+roll_floored <- bt_run(picks, results,
+  stake_rule = stake_rolling, initial_pool = initial_pool, min_bet = min_bet
+)
+fixed_floored <- bt_attach_division(
+  bt_run(picks, results,
+    stake_rule = stake_fixed, initial_pool = initial_pool, min_bet = min_bet
+  ),
+  results
+)
+n_all <- nrow(roll)
+n_kept <- nrow(roll_floored)
+have_floored <- n_kept > 0
+```
+
+```{r}
+#| label: floor-coverage
+#| output: asis
+cat(sprintf(
+  paste0(
+    "::: {.callout-note}\n",
+    "## %d of %d bets are placeable at the %d kr floor\n\n",
+    "Applying Lengjan's %d kr minimum drops **%d** bets (%.0f%%) whose Kelly ",
+    "stake fell below it — sized off the %s kr reference pool. What remains is ",
+    "the slate you could actually have placed.\n:::\n"
+  ),
+  n_kept, n_all, min_bet, min_bet,
+  n_all - n_kept, 100 * (1 - n_kept / n_all), scales::comma(initial_pool)
+))
+```
+
+```{r}
+#| label: floor-headline
+#| eval: !expr have_floored
+bind_rows(
+  bt_metrics(roll) |> mutate(view = "No floor — place everything"),
+  bt_metrics(roll_floored) |> mutate(view = paste0("With ", min_bet, " kr floor"))
+) |>
+  select(view, n_bets, total_staked, total_pnl, roi, hit_rate, max_drawdown) |>
+  gt(rowname_col = "view") |>
+  fmt_number(c(total_staked, total_pnl, max_drawdown), decimals = 0) |>
+  fmt_percent(c(roi, hit_rate), decimals = 1) |>
+  cols_label(
+    n_bets = "Bets", total_staked = "Staked", total_pnl = "PnL (ISK)",
+    roi = "ROI", hit_rate = "Hit rate", max_drawdown = "Max DD"
+  ) |>
+  tab_header("Rolling-bankroll performance — idealised vs realisable") |>
+  tab_source_note(
+    "Idealised places every bet; realisable keeps only stakes that clear Lengjan's floor."
+  )
+```
+
+```{r}
+#| label: floor-by-league
+#| eval: !expr have_floored
+bt_metrics(fixed_floored, by = c("sex", "division")) |>
+  mutate(
+    league = league_label(sex, division),
+    division = factor(division, div_levels)
+  ) |>
+  arrange(sex, division) |>
+  select(sex, league, n_bets, total_pnl, roi, hit_rate, avg_odds) |>
+  gt(groupname_col = "sex") |>
+  fmt_number(total_pnl, decimals = 0) |>
+  fmt_number(avg_odds, decimals = 2) |>
+  fmt_percent(c(roi, hit_rate), decimals = 1) |>
+  cols_label(
+    league = "League", n_bets = "Bets", total_pnl = "PnL (ISK)",
+    roi = "ROI", hit_rate = "Hit rate", avg_odds = "Avg odds"
+  ) |>
+  tab_header("Placeable-only performance by league (200 kr floor)") |>
+  tab_source_note("Per-league n is tiny after the floor — directional only.")
+```
+
 ## Walk-forward — does the model hold up out of sample?
 
 The sections above judge our *actual bets*. These judge the *model*: every row
@@ -445,6 +532,15 @@ bt_baselines(leagues = "football") |>
   `compute_settlement()` so win/push boundaries match the live decider.
 - **Obtainability:** odds are decide-time prices; some bets were never
   placeable (early-kickoff delisting). Pending/unsettled bets are excluded.
+- **Two stake views — idealised vs realisable.** The headline, by-dimension and
+  by-league sections place *every* +EV bet at its Kelly stake regardless of size
+  — the "large-pool" view answering what these picks return with a bankroll big
+  enough to place them all. The *200 kr floor* section re-runs the same picks
+  dropping any bet whose stake falls below Lengjan's minimum (mirroring live
+  `dropped_min_bet`) — the realisable slate. At the reference pool, ~82 % of
+  football bets are sub-floor, so the two views can diverge sharply: read the
+  floored ROI as what was actually placeable, the no-floor ROI as the idealised
+  large-pool return.
 - **Counterfactual stakes are approximate** for non-kept strategies
   (`portfolio_lambda` / calibration are not stored in `candidates`).
 - **Window** is short (candidates begin 2026-04-25) — per-cell slices with low

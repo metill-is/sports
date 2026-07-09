@@ -72,3 +72,60 @@ test_that("stake_rolling applies the daily-budget cap to an over-budget slate", 
   )
   expect_equal(out$stake, c(500, 500))
 })
+
+test_that("stake_fixed default (min_bet 0) keeps sub-floor bets", {
+  u <- dplyr::bind_rows(
+    make_settled_bet(win = TRUE, kelly = 0.04, odds = 2.0), # 400
+    make_settled_bet(win = TRUE, kelly = 0.005, odds = 2.0) # 50
+  )
+  out <- stake_fixed(u, ref_pool = 10000)
+  expect_equal(nrow(out), 2L)
+  expect_equal(out$stake, c(400, 50))
+})
+
+test_that("stake_fixed with min_bet drops bets below the floor", {
+  u <- dplyr::bind_rows(
+    make_settled_bet(win = TRUE, kelly = 0.04, odds = 2.0), # 400 kept
+    make_settled_bet(win = TRUE, kelly = 0.005, odds = 2.0) # 50 dropped
+  )
+  out <- stake_fixed(u, ref_pool = 10000, min_bet = 200)
+  expect_equal(nrow(out), 1L)
+  expect_equal(out$stake, 400)
+  expect_true(all(out$stake >= 200))
+})
+
+test_that("stake_rolling with min_bet drops sub-floor bets after the cap", {
+  # One run, two bets: 0.10*10000=1000 (kept), 0.005*10000=50 (below floor).
+  u <- dplyr::bind_rows(
+    make_settled_bet(win = TRUE, kelly = 0.10, odds = 2.0, run_id = "2026-05-01"),
+    make_settled_bet(win = TRUE, kelly = 0.005, odds = 2.0, run_id = "2026-05-01")
+  )
+  out <- stake_rolling(u,
+    initial_pool = 10000,
+    daily_budget_frac = 1.0, daily_budget_min_isk = 0, min_bet = 200
+  )
+  expect_equal(nrow(out), 1L)
+  expect_equal(out$stake, 1000)
+})
+
+test_that("stake_rolling min_bet: a dropped bet adds no pnl to a later run's pool", {
+  # Run 1 (05-01): winning bet sized 50 (< floor) -> dropped -> 0 pnl to pool.
+  # Run 2 (05-03): pool stays 10000 (not 10050), stake = 0.10 * 10000 = 1000.
+  u <- dplyr::bind_rows(
+    make_settled_bet(
+      win = TRUE, kelly = 0.005, odds = 2.0,
+      run_id = "2026-05-01", match_date = as.Date("2026-05-02")
+    ),
+    make_settled_bet(
+      win = FALSE, kelly = 0.10, odds = 2.0,
+      run_id = "2026-05-03", match_date = as.Date("2026-05-04")
+    )
+  )
+  out <- stake_rolling(u,
+    initial_pool = 10000,
+    daily_budget_frac = 1.0, daily_budget_min_isk = 0, min_bet = 200
+  )
+  expect_equal(nrow(out), 1L)
+  expect_equal(out$pool_before, 10000)
+  expect_equal(out$stake, 1000)
+})

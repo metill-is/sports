@@ -4,7 +4,7 @@
 \alias{stake_fixed}
 \title{Fixed-reference-pool stake rule (no compounding).}
 \usage{
-stake_fixed(universe, ref_pool = NULL, ...)
+stake_fixed(universe, ref_pool = NULL, min_bet = 0, ...)
 }
 \arguments{
 \item{universe}{Tibble with `win`, `odds`, plus the columns
@@ -12,10 +12,15 @@ stake_fixed(universe, ref_pool = NULL, ...)
 
 \item{ref_pool}{Constant pool in ISK.}
 
+\item{min_bet}{Bookmaker minimum stake in ISK. Bets whose computed stake
+falls below it are dropped (rows removed) — never placed — mirroring the
+live decider's `dropped_min_bet` stage. Default `0` = no floor.}
+
 \item{...}{Absorbs `initial_pool` (ignored) for a uniform stake-rule signature.}
 }
 \value{
-`universe` plus `stake`, `pnl`, `pool_before`.
+`universe` plus `stake`, `pnl`, `pool_before`; rows below `min_bet`
+  removed when a floor is set.
 }
 \description{
 Sizes every bet off a constant `ref_pool` so cross-strategy / cross-market
