@@ -104,7 +104,8 @@ for (sex in sexes) {
     if (is.null(fit)) next
     recs <- build_round_final_positions(
       fit, prep, results_all, schedule_season, R, cutoff, season,
-      league_divs, GENERATED_AT
+      league_divs, GENERATED_AT,
+      split_configs = .football_iceland_division_split(sex)
     )
     all_recs[[length(all_recs) + 1L]] <- recs
     rm(fit)

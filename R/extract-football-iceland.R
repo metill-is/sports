@@ -156,7 +156,8 @@ NULL
                                            sim_inputs = NULL,
                                            bracket_state = NULL,
                                            season_schedule = NULL,
-                                           fit_date = NULL) {
+                                           fit_date = NULL,
+                                           split_config = NULL) {
   top_results <- results[
     results$season == current_season & results$division == target_div, ,
     drop = FALSE
@@ -364,12 +365,15 @@ NULL
   # trailing first-leg games. Multiplicity is inferred from the most recent
   # completed season; single round-robin divisions keep the schedule path.
   multiplicity <- .division_rr_multiplicity_pfi(results, current_season, target_div)
-  br <- .league_base_and_remaining_pfi(
-    top_results, current_top_teams, season_schedule, target_div,
-    multiplicity = multiplicity
+  split_state <- .league_split_state_pfi(
+    results = results, current_season = current_season,
+    current_top_teams = current_top_teams,
+    season_schedule = season_schedule, target_div = target_div,
+    multiplicity = multiplicity,
+    split_config = split_config
   )
-  base_standings <- br$base_standings
-  remaining_fixtures <- br$remaining_fixtures
+  base_standings <- split_state$base_standings
+  remaining_fixtures <- split_state$remaining_fixtures
 
   has_sim_inputs <- !is.null(sim_inputs) &&
     is.data.frame(sim_inputs$team) && nrow(sim_inputs$team) > 0L
@@ -387,7 +391,9 @@ NULL
       sim_inputs_team    = sim_inputs$team,
       sim_inputs_scalar  = sim_inputs$scalar,
       remaining_fixtures = remaining_fixtures,
-      base_standings     = base_standings
+      base_standings     = base_standings,
+      split_format       = split_state$split_format,
+      split_groups       = split_state$split_groups
     )
     final_positions <- season_sim$final_positions
     points_distribution <- season_sim$points_distribution
@@ -435,6 +441,46 @@ NULL
     !is.na(played$home_score) & !is.na(played$away_score), ,
     drop = FALSE
   ]
+  base_standings <- .realised_league_table_pfi(played, current_top_teams)
+
+  played_pair <- paste(played$home_team, played$away_team)
+
+  remaining_fixtures <- if (isTRUE(multiplicity == 2L) &&
+    nrow(current_top_teams) >= 2L) {
+    # Double round-robin: derive the remaining fixtures structurally as every
+    # unplayed ordered (home, away) pair among the league's teams. KSÍ only
+    # dates the first single round-robin early in the season, so `season_schedule`
+    # misses every return-leg fixture; trusting it integrates the final table
+    # over a near-empty fixture set and pins the current leader at ~100 %.
+    # The simulator uses only (home, away) pairs (no dates), so this structural
+    # set is exact and complete. See `.complete_double_rr_remaining_pfi`.
+    .complete_double_rr_remaining_pfi(current_top_teams$team, played_pair)
+  } else if (!is.null(season_schedule) && nrow(season_schedule) > 0L) {
+    # Single round-robin (or unknown multiplicity): the schedule is the
+    # complete remaining set, so fall back to the published fixtures.
+    season_schedule |>
+      dplyr::filter(
+        .data$division == target_div,
+        .data$home_team %in% current_top_teams$team,
+        .data$away_team %in% current_top_teams$team
+      ) |>
+      dplyr::mutate(.pair = paste(.data$home_team, .data$away_team)) |>
+      dplyr::filter(!(.data$.pair %in% played_pair)) |>
+      dplyr::arrange(dplyr::desc(.data$match_date)) |>
+      dplyr::distinct(.data$.pair, .keep_all = TRUE) |>
+      dplyr::select("home_team", "away_team")
+  } else {
+    tibble::tibble(home_team = character(), away_team = character())
+  }
+
+  list(base_standings = base_standings, remaining_fixtures = remaining_fixtures)
+}
+
+# Realised league table (points / GD / GF / GA per team) from played matches,
+# with every `current_top_teams` team present (0s when unplayed). Extracted
+# from `.league_base_and_remaining_pfi` so the split-season carry-over base
+# (regular + played split matches) reuses the same tabulation.
+.realised_league_table_pfi <- function(played, current_top_teams) {
   realised <- if (nrow(played) > 0L) {
     played |>
       dplyr::mutate(
@@ -471,7 +517,7 @@ NULL
     )
   }
 
-  base_standings <- current_top_teams |>
+  current_top_teams |>
     dplyr::left_join(realised, by = "team") |>
     dplyr::mutate(
       base_points = dplyr::coalesce(.data$base_points, 0L),
@@ -479,38 +525,180 @@ NULL
       base_gd = dplyr::coalesce(.data$base_gd, 0L)
     ) |>
     dplyr::select("team", "base_points", "base_gd", "base_gf")
+}
 
-  played_pair <- paste(played$home_team, played$away_team)
-
-  remaining_fixtures <- if (isTRUE(multiplicity == 2L) &&
-    nrow(current_top_teams) >= 2L) {
-    # Double round-robin: derive the remaining fixtures structurally as every
-    # unplayed ordered (home, away) pair among the league's teams. KSÍ only
-    # dates the first single round-robin early in the season, so `season_schedule`
-    # misses every return-leg fixture; trusting it integrates the final table
-    # over a near-empty fixture set and pins the current leader at ~100 %.
-    # The simulator uses only (home, away) pairs (no dates), so this structural
-    # set is exact and complete. See `.complete_double_rr_remaining_pfi`.
-    .complete_double_rr_remaining_pfi(current_top_teams$team, played_pair)
-  } else if (!is.null(season_schedule) && nrow(season_schedule) > 0L) {
-    # Single round-robin (or unknown multiplicity): the schedule is the
-    # complete remaining set, so fall back to the published fixtures.
-    season_schedule |>
-      dplyr::filter(
-        .data$division == target_div,
-        .data$home_team %in% current_top_teams$team,
-        .data$away_team %in% current_top_teams$team
-      ) |>
-      dplyr::mutate(.pair = paste(.data$home_team, .data$away_team)) |>
-      dplyr::filter(!(.data$.pair %in% played_pair)) |>
-      dplyr::arrange(dplyr::desc(.data$match_date)) |>
-      dplyr::distinct(.data$.pair, .keep_all = TRUE) |>
-      dplyr::select("home_team", "away_team")
-  } else {
-    tibble::tibble(home_team = character(), away_team = character())
+# Assemble the season simulator's inputs for one division, split-aware.
+#
+# For flat divisions (`split_config = NULL`) this is a passthrough around
+# `.league_base_and_remaining_pfi`. For a division with a configured split
+# (config/leagues.yml::publish_divisions[*].split) it decides the phase:
+#
+# - Regular phase ongoing: regular base + remaining regular fixtures, plus
+#   `split_format` — `simulate_league_season()` simulates the split itself
+#   (per-draw membership + KSI-template fixtures).
+# - Regular phase complete: group membership from the realised regular table
+#   (points -> GD -> GF), overridden by observed appearances in the playoff
+#   result/schedule divisions (`<div>_UPPER_PO` / `<div>_LOWER_PO`) since
+#   KSI's deeper tiebreaks can diverge from ours; base becomes the full
+#   carry-over table (regular + played split matches); remaining fixtures are
+#   the scheduled valid unplayed split fixtures plus KSI-template completion
+#   for group pairs neither played nor scheduled (trust real data where it
+#   exists, complete structurally — same philosophy as the double-RR
+#   derivation). KSI placeholder schedule rows ("23. Umferð" / ".") are
+#   dropped by the team-membership filter.
+#
+# Returns list(base_standings, remaining_fixtures, split_format, split_groups)
+# — the last two feed `simulate_league_season()`'s arguments of the same name.
+.league_split_state_pfi <- function(results, current_season, current_top_teams,
+                                    season_schedule, target_div,
+                                    multiplicity = NA_integer_,
+                                    split_config = NULL) {
+  reg_played <- results[
+    results$season == current_season & results$division == target_div &
+      !is.na(results$home_score) & !is.na(results$away_score), ,
+    drop = FALSE
+  ]
+  br <- .league_base_and_remaining_pfi(
+    reg_played, current_top_teams, season_schedule, target_div,
+    multiplicity = multiplicity
+  )
+  if (is.null(split_config)) {
+    return(list(
+      base_standings = br$base_standings,
+      remaining_fixtures = br$remaining_fixtures,
+      split_format = NULL,
+      split_groups = NULL
+    ))
   }
 
-  list(base_standings = base_standings, remaining_fixtures = remaining_fixtures)
+  teams <- as.character(current_top_teams$team)
+  po_divs <- paste0(target_div, c("_UPPER_PO", "_LOWER_PO"))
+  po_played <- results[
+    results$season == current_season & results$division %in% po_divs &
+      !is.na(results$home_score) & !is.na(results$away_score) &
+      results$home_team %in% teams & results$away_team %in% teams, ,
+    drop = FALSE
+  ]
+
+  if (nrow(br$remaining_fixtures) > 0L) {
+    if (nrow(po_played) > 0L) {
+      warning(sprintf(
+        paste0(
+          ".league_split_state_pfi[%s]: %d split-phase result(s) present ",
+          "while %d regular fixture(s) remain; ignoring them."
+        ),
+        target_div, nrow(po_played), nrow(br$remaining_fixtures)
+      ), call. = FALSE)
+    }
+    return(list(
+      base_standings = br$base_standings,
+      remaining_fixtures = br$remaining_fixtures,
+      split_format = split_config,
+      split_groups = NULL
+    ))
+  }
+
+  # ---- Regular phase complete: derive membership + split fixtures ----------
+  upper_n <- as.integer(split_config$upper)
+  lower_n <- as.integer(split_config$lower)
+  bs <- br$base_standings
+  ranked_teams <- bs$team[order(-bs$base_points, -bs$base_gd, -bs$base_gf)]
+
+  po_sched <- if (!is.null(season_schedule) && nrow(season_schedule) > 0L) {
+    season_schedule[
+      season_schedule$division %in% po_divs &
+        season_schedule$home_team %in% teams &
+        season_schedule$away_team %in% teams, ,
+      drop = FALSE
+    ]
+  } else {
+    tibble::tibble(
+      home_team = character(), away_team = character(),
+      division = character(), match_date = as.Date(character())
+    )
+  }
+
+  observed <- dplyr::bind_rows(
+    po_played[, c("home_team", "away_team", "division")],
+    po_sched[, c("home_team", "away_team", "division")]
+  )
+  obs_of <- function(div) {
+    unique(as.character(unlist(
+      observed[observed$division == div, c("home_team", "away_team")]
+    )))
+  }
+  obs_upper <- obs_of(po_divs[1])
+  obs_lower <- obs_of(po_divs[2])
+  both <- intersect(obs_upper, obs_lower)
+  if (length(both) > 0L) {
+    warning(sprintf(
+      ".league_split_state_pfi[%s]: team(s) observed in both split groups: %s. Falling back to the computed ranking for them.",
+      target_div, paste(both, collapse = ", ")
+    ), call. = FALSE)
+    obs_upper <- setdiff(obs_upper, both)
+    obs_lower <- setdiff(obs_lower, both)
+  }
+  if (length(obs_upper) > upper_n || length(obs_lower) > lower_n) {
+    warning(sprintf(
+      ".league_split_state_pfi[%s]: observed group memberships exceed the configured sizes (%d upper / %d lower observed vs %d/%d); ignoring observations.",
+      target_div, length(obs_upper), length(obs_lower), upper_n, lower_n
+    ), call. = FALSE)
+    obs_upper <- character()
+    obs_lower <- character()
+  }
+
+  group <- setNames(rep(NA_character_, length(ranked_teams)), ranked_teams)
+  group[obs_upper] <- "upper"
+  group[obs_lower] <- "lower"
+  unobserved <- ranked_teams[is.na(group[ranked_teams])]
+  slots_upper <- upper_n - sum(group == "upper", na.rm = TRUE)
+  if (slots_upper > 0L) {
+    group[unobserved[seq_len(min(slots_upper, length(unobserved)))]] <- "upper"
+  }
+  group[is.na(group)] <- "lower"
+  split_groups <- tibble::tibble(
+    team = ranked_teams, group = unname(group[ranked_teams])
+  )
+
+  # Carry-over base: the split phase continues the regular table.
+  base_standings <- .realised_league_table_pfi(
+    dplyr::bind_rows(reg_played, po_played), current_top_teams
+  )
+
+  # Remaining split fixtures: scheduled real ones first (their orientation is
+  # authoritative), then template completion for uncovered group pairs.
+  unordered_pair <- function(h, a) paste(pmin(h, a), pmax(h, a))
+  played_pairs <- unordered_pair(po_played$home_team, po_played$away_team)
+  sched_fx <- po_sched |>
+    dplyr::mutate(.pu = unordered_pair(.data$home_team, .data$away_team)) |>
+    dplyr::filter(!(.data$.pu %in% played_pairs)) |>
+    dplyr::arrange(dplyr::desc(.data$match_date)) |>
+    dplyr::distinct(.data$.pu, .keep_all = TRUE)
+  covered <- c(played_pairs, sched_fx$.pu)
+
+  generated <- lapply(c("upper", "lower"), function(grp) {
+    gteams <- split_groups$team[split_groups$group == grp]
+    tpl <- .split_fixture_template(length(gteams))
+    gen <- tibble::tibble(
+      home_team = gteams[tpl$home_rank],
+      away_team = gteams[tpl$away_rank]
+    )
+    gen[!(unordered_pair(gen$home_team, gen$away_team) %in% covered), ,
+      drop = FALSE
+    ]
+  })
+
+  remaining_fixtures <- dplyr::bind_rows(
+    sched_fx[, c("home_team", "away_team")],
+    generated
+  )
+
+  list(
+    base_standings = base_standings,
+    remaining_fixtures = remaining_fixtures,
+    split_format = split_config,
+    split_groups = split_groups
+  )
 }
 
 # Structurally enumerate the remaining fixtures of a DOUBLE round-robin: every
@@ -1457,6 +1645,7 @@ extract_football_iceland <- function(fit, league, sex,
     NULL
   }
 
+  split_map <- .football_iceland_division_split(sex)
   per_div <- lapply(target_divs, function(target_div) {
     parts <- .extract_division_parquets_pfi(
       target_div           = target_div,
@@ -1472,7 +1661,8 @@ extract_football_iceland <- function(fit, league, sex,
       sim_inputs           = sim_inputs,
       bracket_state        = bracket_state,
       season_schedule      = season_schedule,
-      fit_date             = fit_date
+      fit_date             = fit_date,
+      split_config         = split_map[[target_div]]
     )
     lapply(parts, function(df) dplyr::mutate(df, division = target_div))
   })
