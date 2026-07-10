@@ -209,6 +209,37 @@ no-ops on these sports until the autumn 2026 season opener — see
   `(as_of, team, placement)`.
 - `meta.json` includes `sport` for all three publishers.
 
+## Split-season semantics (since 2026-07-10)
+
+Besta deild karla/kvenna have a split season (efri/neðri hluti):
+after the regular phase (22 rounds male / 18 female) the table splits
+into an upper/lower group (6/6 male, 6/4 female), each playing a
+single round-robin with **full carry-over** and a **group-locked**
+final table. Declared per cell in
+`config/leagues.yml::publish_divisions[*].split` and simulated by
+`simulate_league_season()` (two-phase: per-draw split assignment +
+KSÍ-template fixtures while the regular phase runs; known groups +
+scheduled/template-completed fixtures once it's over — assembled by
+`.league_split_state_pfi()`).
+
+Consequences for the JSONs:
+- `final_positions.json` / `final_positions_history.json` placements
+  are **full-season**: `placement = 1` = Íslandsmeistari; relegation
+  places are the bottom of the lower block. The `summary` `p_top_six`
+  stays (redundant-but-harmless once split membership is explicit).
+- `points_distribution.json` support includes split-phase games
+  (e.g. a BD karla leader can reach base + (remaining + 5) × 3).
+- `meta.json` carries an optional `split: {upper, lower}` object on
+  split cells (schema-validated both sides) — the platform renders
+  group boundaries + labels from it (coordinates with the platform's
+  site-label fix).
+- Format facts + verification evidence:
+  `docs/superpowers/specs/2026-07-10-split-season-simulator-design.md`.
+- Still open (flagged as follow-up chips): `standings.json`,
+  `next_games.json` and the xG/xPts round aggregation filter on
+  `division == "BD"` only, so they freeze/empty once the split-phase
+  divisions (`BD_UPPER_PO`/`BD_LOWER_PO`) take over (~6 Sep 2026).
+
 ## metill-platform consumption (as of 2026-05-25)
 
 Only football surfaces on the platform. Of the 10 football JSONs in
