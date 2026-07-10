@@ -128,3 +128,36 @@ test_that("validate_publish_dir() handles cup cells with is_cup=true", {
   )
   expect_gt(result$n_files, 0L)
 })
+
+test_that("meta.json schema accepts a well-formed split object and rejects a malformed one", {
+  base_meta <- list(
+    sport = "football", sex = "male", league = "Besta deild",
+    division = "BD", is_cup = FALSE, season = 2026L,
+    generated_at = "2026-07-10T12:00:00+0000", fit_date = "2026-07-10",
+    round = 14L, n_draws = 4000L
+  )
+
+  write_cell <- function(meta) {
+    tmp <- withr::local_tempdir(.local_envir = parent.frame())
+    cell <- file.path(tmp, "football", "iceland", "karla-bd")
+    dir.create(cell, recursive = TRUE)
+    jsonlite::write_json(meta, file.path(cell, "meta.json"),
+      auto_unbox = TRUE, null = "null"
+    )
+    tmp
+  }
+
+  good <- write_cell(c(base_meta, list(split = list(upper = 6L, lower = 6L))))
+  result_good <- validate_publish_dir(
+    good,
+    schema_dir = here::here("config", "publish-schemas")
+  )
+  expect_true(result_good$ok)
+
+  bad <- write_cell(c(base_meta, list(split = list(upper = "six"))))
+  result_bad <- validate_publish_dir(
+    bad,
+    schema_dir = here::here("config", "publish-schemas")
+  )
+  expect_false(result_bad$ok)
+})

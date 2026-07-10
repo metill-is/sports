@@ -66,6 +66,9 @@ test_that("publish_football_iceland: skip gracefully when backup fit absent", {
   expect_false(meta[["is_cup"]])
   expect_type(meta[["round"]], "integer")
   expect_type(meta[["n_draws"]], "integer")
+  # Split-season metadata for the BD cell (male: 6/6) -- lets the platform
+  # render group boundaries + labels from data.
+  expect_equal(meta[["split"]], list(upper = 6L, lower = 6L))
 
   # standings.json must be valid JSON with expected top-level keys
   standings <- jsonlite::read_json(file.path(out_dir, "standings.json"))
