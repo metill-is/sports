@@ -92,6 +92,36 @@ NULL
   )
 }
 
+# Per-sex map from canonical division code -> split-season format.
+# Returns a named list keyed by code; each element is either NULL (flat
+# league — no split) or list(upper = <int>, lower = <int>) from the entry's
+# optional `split` object in config/leagues.yml::publish_divisions. See the
+# split-season section of `simulate_league_season()` for the semantics.
+.football_iceland_division_split <- function(sex) {
+  stopifnot(sex %in% c("male", "female"))
+  cfg <- load_leagues()[["football_iceland"]][["publish_divisions"]][[sex]]
+  if (is.null(cfg) || length(cfg) == 0L) {
+    stop(
+      ".football_iceland_division_split: no publish_divisions[\"",
+      sex,
+      "\"] entry in config/leagues.yml.",
+      call. = FALSE
+    )
+  }
+  setNames(
+    lapply(cfg, function(d) {
+      if (is.null(d$split)) {
+        return(NULL)
+      }
+      list(
+        upper = as.integer(d$split$upper),
+        lower = as.integer(d$split$lower)
+      )
+    }),
+    vapply(cfg, function(d) d$code, character(1))
+  )
+}
+
 # Static map: canonical division code -> short ASCII badge code for
 # `next_games.json::division_code` (client-side filter key on metill-platform).
 # Values MUST match the schema regex ^[A-Z][A-Z0-9_]*$ at
