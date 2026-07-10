@@ -794,6 +794,12 @@ publish_football_iceland <- function(extracted,
   for (target_div in division_codes) {
     top_div <- target_div
     is_cup <- identical(target_div, "CUP")
+    div_split <- .football_iceland_division_split(sex)[[target_div]]
+    # For a split cell the season spans the regular division plus its
+    # split-phase playoff divisions -- every per-season surface below
+    # (standings, next_games, round counting, xG/xPts aggregation input)
+    # filters on the family, not the bare code.
+    family_divs <- .split_family_divisions_pfi(target_div, div_split)
     # Per-division extracted slice — already filtered to this division's
     # teams + matches by extract_football_iceland(). The publisher used
     # to apply `semi_join(current_top_teams)` defensively; with per-cell
@@ -818,7 +824,7 @@ publish_football_iceland <- function(extracted,
       tidyr::pivot_longer(c("home_team", "away_team"), values_to = "team") |>
       dplyr::distinct(.data$team)
 
-    top_teams_upcoming <- pred_d[pred_d$division == top_div, , drop = FALSE] |>
+    top_teams_upcoming <- pred_d[pred_d$division %in% family_divs, , drop = FALSE] |>
       dplyr::select("home_team", "away_team") |>
       tidyr::pivot_longer(c("home_team", "away_team"), values_to = "team") |>
       dplyr::distinct(.data$team)
@@ -827,7 +833,7 @@ publish_football_iceland <- function(extracted,
     }
 
     bd_played <- results[
-      results$season == current_season & results$division == top_div, ,
+      results$season == current_season & results$division %in% family_divs, ,
       drop = FALSE
     ]
     round_predictions <- .aggregate_round_predictions_pfi(
@@ -925,7 +931,7 @@ publish_football_iceland <- function(extracted,
     # ---- meta.json ----------------------------------------------------------
 
     round_num <- results[
-      results$season == current_season & results$division == top_div, ,
+      results$season == current_season & results$division %in% family_divs, ,
       drop = FALSE
     ] |>
       tidyr::pivot_longer(c("home_team", "away_team"), values_to = "team") |>
@@ -968,7 +974,6 @@ publish_football_iceland <- function(extracted,
       round        = as.integer(round_num),
       n_draws      = as.integer(n_draws)
     )
-    div_split <- .football_iceland_division_split(sex)[[target_div]]
     if (!is.null(div_split)) {
       # Split-season cell: final_positions placement is full-season
       # (1 = champion); the platform renders group boundaries from this.
@@ -1006,7 +1011,7 @@ publish_football_iceland <- function(extracted,
     if (nrow(predicted_with_division) > 0L) {
       next_games_out <- predicted_with_division |>
         dplyr::filter(
-          .data$division == top_div,
+          .data$division %in% family_divs,
           .data$match_date >= end_date,
           .data$match_date <= end_date + 14L
         ) |>
@@ -1073,9 +1078,44 @@ publish_football_iceland <- function(extracted,
     # ranked by their cup runs.
 
     bd_results <- results[
-      results$season == current_season & results$division == top_div, ,
+      results$season == current_season & results$division %in% family_divs, ,
       drop = FALSE
     ]
+
+    # Split-group membership for the group-locked rank. Derived once the
+    # split phase is observable (played playoff matches, or upcoming ones
+    # in the prediction window); until then the plain ranking IS the
+    # official table, so no lock applies.
+    split_groups_pub <- NULL
+    if (!is.null(div_split) && nrow(bd_results) > 0L) {
+      po_divs <- family_divs[-1]
+      po_observed <- dplyr::bind_rows(
+        bd_results[
+          bd_results$division %in% po_divs,
+          c("home_team", "away_team", "division")
+        ],
+        pred_d[
+          pred_d$division %in% po_divs,
+          c("home_team", "away_team", "division")
+        ]
+      )
+      if (nrow(po_observed) > 0L) {
+        reg_table <- .realised_league_table_pfi(
+          bd_results[bd_results$division == top_div, , drop = FALSE],
+          current_top_teams
+        )
+        ranked_teams <- reg_table$team[
+          order(-reg_table$base_points, -reg_table$base_gd, -reg_table$base_gf)
+        ]
+        split_groups_pub <- .split_group_membership_pfi(
+          ranked_teams = ranked_teams,
+          observed = po_observed,
+          upper_n = as.integer(div_split$upper),
+          lower_n = as.integer(div_split$lower),
+          target_div = target_div
+        )
+      }
+    }
 
     pad_form <- function(x, n = 5L) {
       tail(c(rep(NA_character_, n), x), n)
@@ -1123,10 +1163,22 @@ publish_football_iceland <- function(extracted,
           goals_against_trend = list(.data$ga),
           .by = "team"
         ) |>
+        dplyr::left_join(
+          if (is.null(split_groups_pub)) {
+            tibble::tibble(team = character(), .split_group = character())
+          } else {
+            dplyr::rename(split_groups_pub, .split_group = "group")
+          },
+          by = "team"
+        ) |>
         dplyr::arrange(
+          # Group-locked once the split is known: every efri team above
+          # every nedri team regardless of carried points (KSI rule).
+          dplyr::coalesce(.data$.split_group, "upper") != "upper",
           dplyr::desc(.data$points), dplyr::desc(.data$goal_diff),
           dplyr::desc(.data$goals_for)
         ) |>
+        dplyr::select(-".split_group") |>
         dplyr::mutate(
           rank = dplyr::row_number(),
           short = short_code(.data$team),
