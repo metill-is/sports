@@ -9,7 +9,9 @@ simulate_league_season(
   sim_inputs_scalar,
   remaining_fixtures,
   base_standings,
-  seed = NULL
+  seed = NULL,
+  split_format = NULL,
+  split_groups = NULL
 )
 }
 \arguments{
@@ -33,6 +35,15 @@ season). Defines the team set whose final positions are computed.}
 
 \item{seed}{Optional integer. When set, `set.seed()` is called once at the
 entry point so the simulation is reproducible.}
+
+\item{split_format}{Optional `list(upper = <int>, lower = <int>)` declaring
+a split-season format (see the split-season section). `upper + lower`
+must equal the number of league teams. `NULL` (default) = flat league.}
+
+\item{split_groups}{Optional tibble(`team`, `group`) with
+`group %in% c("upper", "lower")`, covering every league team — supply
+once the split membership is decided (regular phase complete). Implies a
+split-season format even when `split_format` is `NULL`.}
 }
 \value{
 A list with:
@@ -49,3 +60,28 @@ remaining fixture with a bivariate-Poisson scoreline, adds the realised
 difference -> goals for, and aggregates to per-(team, placement) and
 per-(team, points) probabilities.
 }
+\section{Split-season leagues (efri/neðri hluti)}{
+
+When `split_format` (or `split_groups`) is supplied the season has a
+Besta-deild-style split: after the regular phase the table divides into an
+upper and a lower group which each play a further single round-robin with
+FULL carry-over of points/GD/GF, and the final table is group-locked (every
+upper-group team ranks above every lower-group team regardless of points).
+`placement = 1` is then the champion of the whole season, and relegation
+places are the bottom of the lower block. Format facts verified 2026-07-10
+against KSI tables + ingested `BD_UPPER_PO`/`BD_LOWER_PO` results — see
+docs/superpowers/specs/2026-07-10-split-season-simulator-design.md.
+
+Two phases are supported:
+- Regular phase ongoing (`split_groups = NULL`): `remaining_fixtures` are
+  the remaining REGULAR fixtures. Per draw, the simulated regular table is
+  split `split_format$upper` / `split_format$lower`, the split fixtures are
+  generated from the deterministic KSI home-allocation template
+  (`.split_fixture_template`) applied to the draw's split ranks, and played
+  out with the same frozen-strength match model.
+- Split phase underway (`split_groups` supplied): membership is known;
+  the caller passes played split matches inside `base_standings` (full
+  carry-over makes that a plain sum) and only the remaining SPLIT fixtures
+  in `remaining_fixtures`. No fixtures are generated.
+}
+
