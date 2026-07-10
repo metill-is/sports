@@ -932,3 +932,55 @@ test_that(".build_bracket_state_pfi: SF leg beyond the prediction horizon is rec
   )
   expect_true(all(is.na(bs$rounds$SF$matches$known_winner))) # SF not played
 })
+
+test_that(".extract_division_parquets_pfi: split cell keeps split-phase predicted matches", {
+  teams8 <- LETTERS[1:8]
+  teams_df <- tibble::tibble(team = teams8, team_nr = seq_along(teams8))
+  results <- .mini_reg_results(teams8)
+
+  pgl <- tidyr::expand_grid(
+    .draw = 1:5,
+    tibble::tibble(
+      game_nr = c(1L, 2L),
+      home_team = c("A", "G"), away_team = c("B", "H"),
+      match_date = as.Date("2026-09-12"),
+      division = c("BD_UPPER_PO", "BD_LOWER_PO")
+    )
+  ) |>
+    dplyr::mutate(home_goals = 1, away_goals = 0)
+
+  empty_draws <- tibble::tibble(
+    team = character(), component = character(),
+    .draw = integer(), value = numeric()
+  )
+  empty_trajectory <- tibble::tibble(
+    round = integer(), team = character(), .draw = integer(),
+    component = character(), location = character(), value = numeric()
+  )
+  testthat::local_mocked_bindings(
+    .compute_team_strength_trajectory_pfi = function(...) empty_trajectory
+  )
+
+  extract_parts <- function(split_config) {
+    .extract_division_parquets_pfi(
+      target_div = "BD", fit = NULL, teams = teams_df, results = results,
+      current_season = 2026L,
+      posterior_goals_long = pgl,
+      team_strengths_draws = empty_draws,
+      home_advantage_draws = empty_draws,
+      n_pred_fit = 2L, n_pred_data = 2L,
+      sim_inputs = NULL, season_schedule = NULL,
+      split_config = split_config
+    )
+  }
+
+  parts <- extract_parts(list(upper = 4L, lower = 4L))
+  expect_setequal(
+    paste(parts$predicted_matches$home_team, parts$predicted_matches$away_team),
+    c("A B", "G H")
+  )
+  expect_equal(unique(parts$predicted_matches$count), 5L)
+
+  parts_flat <- extract_parts(NULL)
+  expect_equal(nrow(parts_flat$predicted_matches), 0L)
+})
