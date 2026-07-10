@@ -78,10 +78,12 @@ NULL
 # Build per-(BD-matchweek, team) trajectory of latent strength from a
 # single fit. Reads the full `offense[1..N_rounds, K]` and `defense[..]`
 # matrices and slices per-team round indices that correspond to each
-# team's BD-only chronological matches in the current season. Returns
-# a long tibble with (round, .draw, team, component, location, value)
-# where `round` is the BD matchweek (1, 2, 3, ...), not the model's
-# global per-team round index.
+# team's chronological matches within `top_div` (a vector of division
+# codes -- the cell's family, so a split cell's trajectory continues
+# through BD_UPPER_PO / BD_LOWER_PO rounds) in the current season.
+# Returns a long tibble with (round, .draw, team, component, location,
+# value) where `round` is the cell matchweek (1, 2, 3, ...), not the
+# model's global per-team round index.
 .compute_team_strength_trajectory_pfi <- function(fit,
                                                   results,
                                                   teams,
@@ -125,7 +127,7 @@ NULL
   bd_chrono <- long_all |>
     dplyr::filter(
       .data$season == current_season,
-      .data$division == top_div
+      .data$division %in% top_div
     ) |>
     dplyr::arrange(.data$team, .data$match_date) |>
     dplyr::group_by(.data$team) |>

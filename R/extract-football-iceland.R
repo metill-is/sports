@@ -169,6 +169,7 @@ NULL
                                            season_schedule = NULL,
                                            fit_date = NULL,
                                            split_config = NULL) {
+  family_divs <- .split_family_divisions_pfi(target_div, split_config)
   top_results <- results[
     results$season == current_season & results$division == target_div, ,
     drop = FALSE
@@ -203,7 +204,7 @@ NULL
     )
   } else {
     posterior_goals_long |>
-      dplyr::filter(.data$division == target_div) |>
+      dplyr::filter(.data$division %in% family_divs) |>
       dplyr::mutate(
         home_goals = as.integer(round(.data$home_goals)),
         away_goals = as.integer(round(.data$away_goals))
@@ -251,7 +252,7 @@ NULL
     teams = teams,
     current_top_teams = current_top_teams,
     current_season = current_season,
-    top_div = target_div
+    top_div = family_divs
   )
 
   round_strengths_quantiles <- if (nrow(trajectory_long) > 0L) {
