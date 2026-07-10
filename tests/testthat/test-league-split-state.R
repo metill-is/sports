@@ -158,3 +158,15 @@ test_that("phase 2: observed playoff appearances override the computed groups", 
   expect_equal(g$group[g$team == "D"], "lower")
   expect_setequal(g$team[g$group == "upper"], c("A", "B", "C", "E"))
 })
+
+test_that(".split_family_divisions_pfi: flat cell -> own code; split cell -> family", {
+  expect_equal(.split_family_divisions_pfi("BD", NULL), "BD")
+  expect_equal(
+    .split_family_divisions_pfi("BD", list(upper = 6L, lower = 6L)),
+    c("BD", "BD_UPPER_PO", "BD_LOWER_PO")
+  )
+  expect_equal(
+    .split_family_divisions_pfi("LD1", list(upper = 4L, lower = 4L)),
+    c("LD1", "LD1_UPPER_PO", "LD1_LOWER_PO")
+  )
+})
