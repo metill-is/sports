@@ -131,7 +131,17 @@
           "code":     { "type": "string", "minLength": 1 },
           "slug":     { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$" },
           "label_is": { "type": "string", "minLength": 1 },
-          "is_cup":   { "type": "boolean" }
+          "is_cup":   { "type": "boolean" },
+          "split": {
+            "type": "object",
+            "description": "Split-season format (efri/neðri hluti): after the regular phase the table splits into an upper group of `upper` and a lower group of `lower` teams, each playing a single round-robin with full carry-over and a group-locked final table. Absent = flat league.",
+            "required": ["upper", "lower"],
+            "additionalProperties": false,
+            "properties": {
+              "upper": { "type": "integer", "minimum": 2 },
+              "lower": { "type": "integer", "minimum": 2 }
+            }
+          }
         }
       }
     }

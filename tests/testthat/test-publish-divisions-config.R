@@ -8,15 +8,20 @@ test_that("publish_divisions: config block exists with both sexes", {
   expect_setequal(names(cfg), c("male", "female"))
 })
 
-test_that("publish_divisions: every entry has the 4 required fields", {
+test_that("publish_divisions: every entry has the 4 required fields and no unknown ones", {
   cfg <- load_leagues()[["football_iceland"]][["publish_divisions"]]
-  required <- sort(c("code", "slug", "label_is", "is_cup"))
+  required <- c("code", "slug", "label_is", "is_cup")
+  optional <- "split"
   for (sex_key in names(cfg)) {
     for (i in seq_along(cfg[[sex_key]])) {
       entry <- cfg[[sex_key]][[i]]
-      expect_equal(
-        sort(names(entry)), required,
-        info = sprintf("sex=%s entry %d missing fields", sex_key, i)
+      expect_true(
+        all(required %in% names(entry)),
+        info = sprintf("sex=%s entry %d missing required fields", sex_key, i)
+      )
+      expect_true(
+        all(names(entry) %in% c(required, optional)),
+        info = sprintf("sex=%s entry %d has unknown fields", sex_key, i)
       )
     }
   }
@@ -168,4 +173,26 @@ test_that("publish_football_iceland: every division_code emitted matches next_ga
       )
     }
   }
+})
+
+# ---- Split-season format config (efri/nedri hluti) --------------------------
+# Verified 2026-07-10 (design doc 2026-07-10-split-season-simulator-design.md):
+# men 12 teams split 6/6, women 10 teams split 6/4, single RR, full carry-over.
+
+test_that("publish_divisions: BD carries the verified split format per sex", {
+  cfg <- load_leagues()[["football_iceland"]][["publish_divisions"]]
+  bd_male <- Filter(function(e) identical(e$code, "BD"), cfg$male)[[1]]
+  bd_female <- Filter(function(e) identical(e$code, "BD"), cfg$female)[[1]]
+  expect_equal(bd_male$split, list(upper = 6L, lower = 6L))
+  expect_equal(bd_female$split, list(upper = 6L, lower = 4L))
+})
+
+test_that(".football_iceland_division_split: split config keyed by division code", {
+  m <- .football_iceland_division_split("male")
+  f <- .football_iceland_division_split("female")
+  expect_equal(m$BD, list(upper = 6L, lower = 6L))
+  expect_equal(f$BD, list(upper = 6L, lower = 4L))
+  expect_null(m$LD1)
+  expect_null(m$CUP)
+  expect_null(f$LD2)
 })

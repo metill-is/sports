@@ -294,13 +294,22 @@ football_iceland:
   # suffix under data/publish/football/iceland/{sex_folder}-{slug}/.
   publish_divisions:
     male:
-      - { code: BD,  slug: bd,     label_is: "Besta deild",   is_cup: false }
+      # split: efri/neðri hluti after the 22-round regular phase — single RR
+      # within each group, full carry-over, group-locked final table
+      # (verified 2026-07-10; docs/superpowers/specs/
+      # 2026-07-10-split-season-simulator-design.md).
+      - { code: BD,  slug: bd,     label_is: "Besta deild",   is_cup: false,
+          split: { upper: 6, lower: 6 } }
       - { code: LD1, slug: ld,     label_is: "Lengjudeild",   is_cup: false }
       - { code: LD2, slug: 2deild, label_is: "2. deild",      is_cup: false }
       - { code: LD3, slug: 3deild, label_is: "3. deild",      is_cup: false }
       - { code: CUP, slug: bikar,  label_is: "Mjólkurbikar",  is_cup: true  }
     female:
-      - { code: BD,  slug: bd,     label_is: "Besta deild",   is_cup: false }
+      # Women's split is asymmetric: 10 teams, 18 regular rounds, top 6 /
+      # bottom 4 (upper single RR = 5 games, lower = 3), same carry-over +
+      # group locking as the men's format (verified 2026-07-10).
+      - { code: BD,  slug: bd,     label_is: "Besta deild",   is_cup: false,
+          split: { upper: 6, lower: 4 } }
       - { code: LD1, slug: ld,     label_is: "Lengjudeild",   is_cup: false }
       - { code: LD2, slug: 2deild, label_is: "2. deild",      is_cup: false }
       - { code: CUP, slug: bikar,  label_is: "Bikar kvenna",  is_cup: true  }
