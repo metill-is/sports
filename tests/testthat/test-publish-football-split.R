@@ -138,3 +138,65 @@ test_that("split cell: next_games carries split-phase fixtures with BDU code", {
   expect_equal(grep("karla-bd/", v$errors, value = TRUE), character(0))
   expect_equal(grep("karla-bd/", v$unmatched, value = TRUE), character(0))
 })
+
+test_that("split cell: xG/xPts round aggregation crosses into the split phase", {
+  root <- withr::local_tempdir()
+  out <- withr::local_tempdir()
+  extracts_root <- withr::local_tempdir()
+  hist_root <- withr::local_tempdir()
+  end_date <- as.Date("2026-09-22")
+  .write_split_fixture_root(root, end_date)
+
+  # A pre-round extracts partition strictly before the first split kickoff,
+  # carrying the split matches stamped division = "BD" -- exactly what the
+  # split-aware extract layer writes for the BD cell.
+  pdir <- file.path(
+    extracts_root, "sport=football", "country=iceland", "sex=male",
+    "fit_date=2026-09-06"
+  )
+  dir.create(pdir, recursive = TRUE)
+  po_beliefs <- tidyr::expand_grid(
+    tibble::tibble(
+      home_team  = c("A", "G", "H", "G"),
+      away_team  = c("F", "H", "G", "H"),
+      match_date = as.Date(c(
+        "2026-09-07", "2026-09-07", "2026-09-14", "2026-09-21"
+      ))
+    ),
+    tibble::tibble(
+      home_goals = c(1L, 0L), away_goals = c(0L, 1L), count = c(30L, 10L)
+    )
+  ) |>
+    dplyr::mutate(division = "BD")
+  arrow::write_parquet(
+    po_beliefs, file.path(pdir, "predicted_matches.parquet")
+  )
+
+  .publish_split_fixture(
+    root, out, end_date,
+    extracts_root = extracts_root, hist_root = hist_root
+  )
+
+  standings <- jsonlite::fromJSON(
+    file.path(out, "football", "iceland", "karla-bd", "standings.json"),
+    simplifyDataFrame = TRUE
+  )
+  rows <- tibble::as_tibble(standings$rows)
+
+  # G's three split matches have pre-round predictions; the regular rounds
+  # have no qualifying earlier fit, so exactly the split matches accrue.
+  expect_equal(rows$n_predicted_matches[rows$team == "G"], 3L)
+  expect_false(is.na(rows$xpts[rows$team == "G"]))
+  expect_equal(rows$n_predicted_matches[rows$team == "B"], 0L)
+
+  # The history file carries the split matchweeks (15th+ chrono match).
+  hist <- jsonlite::fromJSON(
+    file.path(
+      hist_root, "football", "iceland", "karla-bd",
+      "round_predictions_history.json"
+    ),
+    simplifyDataFrame = TRUE
+  )
+  recs <- tibble::as_tibble(hist$records)
+  expect_true(all(c(15L, 16L, 17L) %in% recs$round[recs$team == "G"]))
+})
