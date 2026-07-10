@@ -122,6 +122,17 @@ NULL
   )
 }
 
+# Divisions comprising a publish cell's season. A flat cell maps to its own
+# code; a cell with a configured split (config/leagues.yml::
+# publish_divisions[*].split) also spans its split-phase playoff divisions --
+# post-split, the "BD season" is BD + BD_UPPER_PO + BD_LOWER_PO.
+.split_family_divisions_pfi <- function(target_div, split_config = NULL) {
+  if (is.null(split_config)) {
+    return(target_div)
+  }
+  c(target_div, paste0(target_div, c("_UPPER_PO", "_LOWER_PO")))
+}
+
 # Static map: canonical division code -> short ASCII badge code for
 # `next_games.json::division_code` (client-side filter key on metill-platform).
 # Values MUST match the schema regex ^[A-Z][A-Z0-9_]*$ at
