@@ -538,6 +538,56 @@ NULL
     dplyr::select("team", "base_points", "base_gd", "base_gf")
 }
 
+# Split-group membership for a completed regular phase. `ranked_teams` is the
+# regular-table ranking (points -> GD -> GF, best first); `observed` carries
+# (home_team, away_team, division) rows from split-phase results/schedules.
+# Observed appearances override the computed ranking (KSI's deeper tiebreaks
+# can diverge from ours); remaining teams fill the open upper slots by rank.
+# Shared by `.league_split_state_pfi()` and the publisher's standings block so
+# the two can never disagree on membership.
+.split_group_membership_pfi <- function(ranked_teams, observed,
+                                        upper_n, lower_n, target_div) {
+  po_divs <- paste0(target_div, c("_UPPER_PO", "_LOWER_PO"))
+  obs_of <- function(div) {
+    intersect(
+      unique(as.character(unlist(
+        observed[observed$division == div, c("home_team", "away_team")]
+      ))),
+      ranked_teams
+    )
+  }
+  obs_upper <- obs_of(po_divs[1])
+  obs_lower <- obs_of(po_divs[2])
+  both <- intersect(obs_upper, obs_lower)
+  if (length(both) > 0L) {
+    warning(sprintf(
+      ".split_group_membership_pfi[%s]: team(s) observed in both split groups: %s. Falling back to the computed ranking for them.",
+      target_div, paste(both, collapse = ", ")
+    ), call. = FALSE)
+    obs_upper <- setdiff(obs_upper, both)
+    obs_lower <- setdiff(obs_lower, both)
+  }
+  if (length(obs_upper) > upper_n || length(obs_lower) > lower_n) {
+    warning(sprintf(
+      ".split_group_membership_pfi[%s]: observed group memberships exceed the configured sizes (%d upper / %d lower observed vs %d/%d); ignoring observations.",
+      target_div, length(obs_upper), length(obs_lower), upper_n, lower_n
+    ), call. = FALSE)
+    obs_upper <- character()
+    obs_lower <- character()
+  }
+
+  group <- setNames(rep(NA_character_, length(ranked_teams)), ranked_teams)
+  group[obs_upper] <- "upper"
+  group[obs_lower] <- "lower"
+  unobserved <- ranked_teams[is.na(group[ranked_teams])]
+  slots_upper <- upper_n - sum(group == "upper", na.rm = TRUE)
+  if (slots_upper > 0L) {
+    group[unobserved[seq_len(min(slots_upper, length(unobserved)))]] <- "upper"
+  }
+  group[is.na(group)] <- "lower"
+  tibble::tibble(team = ranked_teams, group = unname(group[ranked_teams]))
+}
+
 # Assemble the season simulator's inputs for one division, split-aware.
 #
 # For flat divisions (`split_config = NULL`) this is a passthrough around
@@ -629,46 +679,14 @@ NULL
     )
   }
 
-  observed <- dplyr::bind_rows(
-    po_played[, c("home_team", "away_team", "division")],
-    po_sched[, c("home_team", "away_team", "division")]
-  )
-  obs_of <- function(div) {
-    unique(as.character(unlist(
-      observed[observed$division == div, c("home_team", "away_team")]
-    )))
-  }
-  obs_upper <- obs_of(po_divs[1])
-  obs_lower <- obs_of(po_divs[2])
-  both <- intersect(obs_upper, obs_lower)
-  if (length(both) > 0L) {
-    warning(sprintf(
-      ".league_split_state_pfi[%s]: team(s) observed in both split groups: %s. Falling back to the computed ranking for them.",
-      target_div, paste(both, collapse = ", ")
-    ), call. = FALSE)
-    obs_upper <- setdiff(obs_upper, both)
-    obs_lower <- setdiff(obs_lower, both)
-  }
-  if (length(obs_upper) > upper_n || length(obs_lower) > lower_n) {
-    warning(sprintf(
-      ".league_split_state_pfi[%s]: observed group memberships exceed the configured sizes (%d upper / %d lower observed vs %d/%d); ignoring observations.",
-      target_div, length(obs_upper), length(obs_lower), upper_n, lower_n
-    ), call. = FALSE)
-    obs_upper <- character()
-    obs_lower <- character()
-  }
-
-  group <- setNames(rep(NA_character_, length(ranked_teams)), ranked_teams)
-  group[obs_upper] <- "upper"
-  group[obs_lower] <- "lower"
-  unobserved <- ranked_teams[is.na(group[ranked_teams])]
-  slots_upper <- upper_n - sum(group == "upper", na.rm = TRUE)
-  if (slots_upper > 0L) {
-    group[unobserved[seq_len(min(slots_upper, length(unobserved)))]] <- "upper"
-  }
-  group[is.na(group)] <- "lower"
-  split_groups <- tibble::tibble(
-    team = ranked_teams, group = unname(group[ranked_teams])
+  split_groups <- .split_group_membership_pfi(
+    ranked_teams = ranked_teams,
+    observed = dplyr::bind_rows(
+      po_played[, c("home_team", "away_team", "division")],
+      po_sched[, c("home_team", "away_team", "division")]
+    ),
+    upper_n = upper_n, lower_n = lower_n,
+    target_div = target_div
   )
 
   # Carry-over base: the split phase continues the regular table.
