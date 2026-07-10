@@ -170,3 +170,42 @@ test_that(".split_family_divisions_pfi: flat cell -> own code; split cell -> fam
     c("LD1", "LD1_UPPER_PO", "LD1_LOWER_PO")
   )
 })
+
+test_that(".split_group_membership_pfi: fills open upper slots by rank", {
+  out <- .split_group_membership_pfi(
+    ranked_teams = c("A", "B", "C", "D"),
+    observed = tibble::tibble(
+      home_team = character(), away_team = character(), division = character()
+    ),
+    upper_n = 2L, lower_n = 2L, target_div = "BD"
+  )
+  expect_equal(out$team, c("A", "B", "C", "D"))
+  expect_equal(out$group, c("upper", "upper", "lower", "lower"))
+})
+
+test_that(".split_group_membership_pfi: observed appearance overrides rank", {
+  obs <- tibble::tibble(
+    home_team = "C", away_team = "A", division = "BD_UPPER_PO"
+  )
+  out <- .split_group_membership_pfi(
+    ranked_teams = c("A", "B", "C", "D"),
+    observed = obs, upper_n = 2L, lower_n = 2L, target_div = "BD"
+  )
+  expect_equal(out$group[out$team == "C"], "upper")
+  expect_equal(out$group[out$team == "B"], "lower")
+})
+
+test_that(".split_group_membership_pfi: both-groups conflict falls back with warning", {
+  obs <- tibble::tibble(
+    home_team = c("A", "A"), away_team = c("B", "C"),
+    division = c("BD_UPPER_PO", "BD_LOWER_PO")
+  )
+  expect_warning(
+    out <- .split_group_membership_pfi(
+      ranked_teams = c("A", "B", "C", "D"),
+      observed = obs, upper_n = 2L, lower_n = 2L, target_div = "BD"
+    ),
+    "observed in both split groups"
+  )
+  expect_equal(out$group, c("upper", "upper", "lower", "lower"))
+})
