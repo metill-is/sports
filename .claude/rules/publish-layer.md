@@ -235,10 +235,18 @@ Consequences for the JSONs:
   site-label fix).
 - Format facts + verification evidence:
   `docs/superpowers/specs/2026-07-10-split-season-simulator-design.md`.
-- Still open (flagged as follow-up chips): `standings.json`,
-  `next_games.json` and the xG/xPts round aggregation filter on
-  `division == "BD"` only, so they freeze/empty once the split-phase
-  divisions (`BD_UPPER_PO`/`BD_LOWER_PO`) take over (~6 Sep 2026).
+- `standings.json`, `next_games.json` and the xG/xPts round aggregation
+  are split-aware (since 2026-07-10, follow-up to the simulator): every
+  per-season filter reads the cell's division *family*
+  (`.split_family_divisions_pfi()` — BD + BD_UPPER_PO + BD_LOWER_PO for
+  a split cell), so split-phase matches tabulate into standings, ship in
+  `next_games.json` (`division_code` `BDU`/`BDL`), keep `meta.round`
+  counting, and keep cumulative xG/xPts accruing. Once split-phase
+  matches are observed (played, or upcoming in the prediction window)
+  the standings `rank` is group-locked — membership via
+  `.split_group_membership_pfi()`, shared with the season simulator —
+  so the platform can draw the group boundary from `rank` +
+  `meta.split` with no schema change.
 
 ## metill-platform consumption (as of 2026-05-25)
 
