@@ -184,6 +184,7 @@ hardcoding; `meta.schema.json` updated (additive, optional).
   (division-filtered to `BD`, so split-phase games vanish from the cell).
   Same root cause ("BD cell = division BD"), separate change — must land
   before the split (~6 Sep 2026). Spawned as a background-task chip.
+  *(Shipped 2026-07-10: `docs/superpowers/plans/2026-07-10-split-cell-publish-surfaces.md`.)*
 - **Women's 2025 playoff results missing** from `data/facts/results` (KSÍ
   discovery gap in `KSI_IDS`): the 2025 split verifiably happened (KSÍ tables);
   ~21 matches absent from training data. Separate ingest fix.
