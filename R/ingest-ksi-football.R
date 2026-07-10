@@ -64,8 +64,9 @@ KSI_IDS <- list(
   # Women's 2021-2025 IDs verified via /oll-mot/?...&gender=Konur
   # discovery endpoint on 2026-04-24; see KSÍ Historical Match Scraping
   # note in the Metill vault. Women's top flight began splitting into
-  # Efri/Neðri hluti in 2023 (one year later than men's). 2025 did not
-  # expose playoff IDs on the discovery endpoint.
+  # Efri/Neðri hluti in 2023 (one year later than men's). The 2025 split
+  # IDs were absent from the discovery endpoint on 2026-04-24 but exposed
+  # by 2026-07-10 (Efri 190360, Neðri 190355; verified 15 + 6 match rows).
   female = list(
     div1 = list(
       `2021` = 190045L, `2022` = 190196L, `2023` = 190222L,
@@ -84,10 +85,12 @@ KSI_IDS <- list(
       `2024` = 190130L, `2025` = 190356L, `2026` = 7058831L
     ),
     div1_upper_playoffs = list(
-      `2023` = 190172L, `2024` = 190137L, `2026` = 7025657L
+      `2023` = 190172L, `2024` = 190137L, `2025` = 190360L,
+      `2026` = 7025657L
     ),
     div1_lower_playoffs = list(
-      `2023` = 190176L, `2024` = 190140L, `2026` = 7025661L
+      `2023` = 190176L, `2024` = 190140L, `2025` = 190355L,
+      `2026` = 7025661L
     )
   )
 )
