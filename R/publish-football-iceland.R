@@ -966,6 +966,15 @@ publish_football_iceland <- function(extracted,
       round        = as.integer(round_num),
       n_draws      = as.integer(n_draws)
     )
+    div_split <- .football_iceland_division_split(sex)[[target_div]]
+    if (!is.null(div_split)) {
+      # Split-season cell: final_positions placement is full-season
+      # (1 = champion); the platform renders group boundaries from this.
+      meta$split <- list(
+        upper = as.integer(div_split$upper),
+        lower = as.integer(div_split$lower)
+      )
+    }
     write_json_consistent(
       meta,
       file.path(out_dir, "meta.json"),
