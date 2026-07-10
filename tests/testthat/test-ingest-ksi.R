@@ -170,6 +170,15 @@ test_that("KSI_IDS exposes men's + women's 2026 Mj\u00f3lkurbikar cup IDs", {
   expect_equal(KSI_IDS$female$cup[["2026"]], 7058831L)
 })
 
+test_that("KSI_IDS covers women's 2023-2026 top-flight split playoffs", {
+  for (slug in c("div1_upper_playoffs", "div1_lower_playoffs")) {
+    expect_true(all(c("2023", "2024", "2025", "2026") %in%
+      names(KSI_IDS$female[[slug]])))
+  }
+  expect_equal(KSI_IDS$female$div1_upper_playoffs[["2025"]], 190360L)
+  expect_equal(KSI_IDS$female$div1_lower_playoffs[["2025"]], 190355L)
+})
+
 test_that("parse_ksi_results_page drops bracket-header placeholder rows", {
   # Synthetic HTML mimicking a KSI cup page with one real match (Stjarnan vs
   # KR) and one bracket-header placeholder (home = round name, away = ".").
