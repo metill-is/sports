@@ -100,3 +100,65 @@ test_that("build_round_final_positions stamps as_of/round/division and rows sum 
   sums <- tapply(recs$probability, recs$team, sum)
   expect_true(all(abs(sums - 1) < 1e-9))
 })
+
+test_that("build_round_final_positions applies the split format when configured", {
+  teams <- LETTERS[1:8]
+  local_mocked_bindings(
+    .extract_sim_inputs_pfi = .mock_sim_inputs_fn(teams),
+    .package = "sports"
+  )
+  # Regular double round-robin complete: phase 2 -- groups locked from the
+  # realised table (A..D upper, E..H lower), split fixtures template-generated.
+  results <- .mini_reg_results(teams)
+  schedule <- tibble::tibble(
+    home_team = character(), away_team = character(),
+    division = character(), match_date = as.Date(character())
+  )
+  recs <- build_round_final_positions(
+    fit = NULL, prep = list(teams = tibble::tibble(team = teams)),
+    results = results, season_schedule = schedule,
+    round_idx = 14L, cutoff_date = as.Date("2026-06-01"),
+    season = 2026L, target_divs = "BD",
+    generated_at = "2026-07-10T00:00:00+0000",
+    split_configs = list(BD = list(upper = 4L, lower = 4L))
+  )
+  for (t in c("A", "B", "C", "D")) {
+    expect_equal(
+      sum(recs$probability[recs$team == t & recs$placement <= 4]), 1,
+      info = t
+    )
+  }
+  for (t in c("E", "F", "G", "H")) {
+    expect_equal(
+      sum(recs$probability[recs$team == t & recs$placement >= 5]), 1,
+      info = t
+    )
+  }
+})
+
+test_that("build_round_final_positions without split_configs keeps flat behaviour", {
+  teams <- LETTERS[1:8]
+  local_mocked_bindings(
+    .extract_sim_inputs_pfi = .mock_sim_inputs_fn(teams),
+    .package = "sports"
+  )
+  results <- .mini_reg_results(teams)
+  schedule <- tibble::tibble(
+    home_team = character(), away_team = character(),
+    division = character(), match_date = as.Date(character())
+  )
+  recs <- build_round_final_positions(
+    fit = NULL, prep = list(teams = tibble::tibble(team = teams)),
+    results = results, season_schedule = schedule,
+    round_idx = 14L, cutoff_date = as.Date("2026-06-01"),
+    season = 2026L, target_divs = "BD",
+    generated_at = "2026-07-10T00:00:00+0000"
+  )
+  # Season over, no split: deterministic flat ranking A..H.
+  expect_equal(
+    recs$probability[recs$team == "A" & recs$placement == 1], 1
+  )
+  expect_equal(
+    recs$probability[recs$team == "H" & recs$placement == 8], 1
+  )
+})

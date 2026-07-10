@@ -19,12 +19,18 @@ NULL
 #' @param season Integer season.
 #' @param target_divs League division codes (no CUP).
 #' @param generated_at ISO timestamp string stamped on every row.
+#' @param split_configs Optional named list keyed by division code mapping to
+#'   `list(upper, lower)` split formats (from
+#'   `.football_iceland_division_split(sex)`). Divisions without an entry are
+#'   simulated flat. See the split-season section of
+#'   [simulate_league_season()].
 #' @return tibble(as_of, generated_at, round, season, division, team,
 #'   placement, probability). Empty when no league team is covered.
 #' @export
 build_round_final_positions <- function(fit, prep, results, season_schedule,
                                         round_idx, cutoff_date, season,
-                                        target_divs, generated_at) {
+                                        target_divs, generated_at,
+                                        split_configs = NULL) {
   results <- results[
     !is.na(results$match_date) & results$match_date <= cutoff_date, ,
     drop = FALSE
@@ -48,13 +54,17 @@ build_round_final_positions <- function(fit, prep, results, season_schedule,
       return(NULL)
     }
     multiplicity <- .division_rr_multiplicity_pfi(results, season, div)
-    br <- .league_base_and_remaining_pfi(
-      top, ctt, season_schedule, div,
-      multiplicity = multiplicity
+    st <- .league_split_state_pfi(
+      results = results, current_season = season, current_top_teams = ctt,
+      season_schedule = season_schedule, target_div = div,
+      multiplicity = multiplicity,
+      split_config = split_configs[[div]]
     )
     sim <- simulate_league_season(
       sim_inputs$team, sim_inputs$scalar,
-      br$remaining_fixtures, br$base_standings
+      st$remaining_fixtures, st$base_standings,
+      split_format = st$split_format,
+      split_groups = st$split_groups
     )
     # division's own games-played round = min matches any of its teams has played
     div_round <- top |>
