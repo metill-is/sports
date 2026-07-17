@@ -514,6 +514,92 @@ test_that("wc_head_to_head returns coherent all-pairs probabilities", {
   }
 })
 
+test_that("wc_head_to_head conditions on played knockout results", {
+  s <- wc_structure()
+  teams <- unlist(s$groups, use.names = FALSE)
+  fx <- make_all_group_results_scored(s)
+  si <- make_sim_inputs(teams, n_draws = 30L)
+  base <- simulate_world_cup(si$team, si$scalar, fx, s,
+    pairing_seed = 5L, knockout_results = NULL
+  )
+  real_occ <- list(
+    occ_a = base$bracket_model$occ_a,
+    occ_b = base$bracket_model$occ_b
+  )
+  res <- wc_bronze_test_results(s, teams, real_occ)
+
+  h2h <- wc_head_to_head(si$team, si$scalar, fx, s,
+    k_replays = 20L, pairing_seed = 5L,
+    knockout_results = res$kr, shootout_winners = NULL
+  )
+
+  find_pair <- function(i1, j1) {
+    i0 <- min(i1, j1) - 1L
+    j0 <- max(i1, j1) - 1L
+    Filter(function(p) p$i == i0 && p$j == j0, h2h$pairs)[[1]]
+  }
+
+  # fully decided tournament => every furthest-round marginal is degenerate,
+  # with the exact bracket-shape counts per exit level (0..6)
+  peak <- vapply(h2h$team_marginals, function(m) max(unlist(m)), numeric(1))
+  expect_equal(peak, rep(1, length(teams)))
+  level_of <- vapply(h2h$team_marginals, function(m) which.max(unlist(m)) - 1L, integer(1))
+  expect_equal(
+    unname(table(factor(level_of, levels = 0:6))),
+    c(16L, 16L, 8L, 4L, 2L, 1L, 1L),
+    ignore_attr = TRUE
+  )
+
+  # the played R32 match 1: the slot-a winner goes farther w.p. 1, they met in
+  # the R32 w.p. 1, and the conditional win collapses onto the actual winner
+  a1 <- which(real_occ$occ_a[1, ] >= 0.9995)
+  b1 <- which(real_occ$occ_b[1, ] >= 0.9995)
+  pr <- find_pair(a1, b1)
+  expect_equal(pr$p_meet, 1)
+  expect_equal(pr$meet_by_round$R32, 1)
+  expect_equal(pr$p_tie, 0)
+  expect_equal(pr$p_i_farther, if (a1 < b1) 1 else 0)
+  expect_equal(pr$p_i_wins_if_meet, if (a1 < b1) 1 else 0)
+
+  # two R32 losers exit at the same level: certain tie, they never meet
+  b2 <- which(real_occ$occ_b[2, ] >= 0.9995)
+  pr <- find_pair(b1, b2)
+  expect_equal(pr$p_tie, 1)
+  expect_equal(pr$p_meet, 0)
+  expect_equal(pr$p_i_farther, 0)
+})
+
+test_that("wc_head_to_head pins partial knockout results and self-gates deeper rounds", {
+  s <- wc_structure()
+  teams <- unlist(s$groups, use.names = FALSE)
+  fx <- make_all_group_results_scored(s)
+  si <- make_sim_inputs(teams, n_draws = 30L)
+  base <- simulate_world_cup(si$team, si$scalar, fx, s,
+    pairing_seed = 5L, knockout_results = NULL
+  )
+  real_occ <- list(
+    occ_a = base$bracket_model$occ_a,
+    occ_b = base$bracket_model$occ_b
+  )
+  # wc_bronze_test_results appends results in bracket order: rows 1..16 = R32
+  r32_only <- wc_bronze_test_results(s, teams, real_occ)$kr[1:16, ]
+
+  h2h <- wc_head_to_head(si$team, si$scalar, fx, s,
+    k_replays = 20L, pairing_seed = 5L,
+    knockout_results = r32_only, shootout_winners = NULL
+  )
+
+  # every R32 loser is eliminated at level 1 w.p. 1
+  b_idx <- vapply(1:16, function(k) which(real_occ$occ_b[k, ] >= 0.9995), integer(1))
+  for (b in b_idx) {
+    expect_equal(h2h$team_marginals[[b]][[2]], 1)
+  }
+  # deeper rounds stay probabilistic: no team is a certain champion
+  champ_mass <- vapply(h2h$team_marginals, function(m) m[[7]], numeric(1))
+  expect_lt(max(champ_mass), 1)
+  expect_equal(sum(champ_mass), 1, tolerance = 1e-3)
+})
+
 test_that("simulate_world_cup collapses Third onto a played bronze result", {
   s <- wc_structure()
   teams <- unlist(s$groups, use.names = FALSE)
