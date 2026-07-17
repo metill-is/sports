@@ -10,7 +10,9 @@ wc_head_to_head(
   group_fixtures,
   structure,
   k_replays = 400L,
-  pairing_seed = 2026L
+  pairing_seed = 2026L,
+  knockout_results = NULL,
+  shootout_winners = NULL
 )
 }
 \arguments{
@@ -22,6 +24,18 @@ consumed by [simulate_world_cup()].}
 \item{k_replays}{Knockout playthroughs per posterior draw (default 400).}
 
 \item{pairing_seed}{Seed for the group-stage tiebreak + third allocation RNG.}
+
+\item{knockout_results}{Optional played-knockout-results tibble from
+[wc_knockout_results()]. When supplied, decided matches are pinned per draw
+(same [.wc_knockout_pins()] builder as [simulate_world_cup()], fed the
+draw's one-hot R32 occupancy) so every replay advances the actual winner —
+a settled pair's `p_i_farther` collapses to 0/1 and an eliminated team
+cannot meet anyone in later rounds. `NULL` (the default) leaves the
+head-to-head unconditioned. The bronze match is out of scope: both SF
+losers carry exit level 4 either way.}
+
+\item{shootout_winners}{Optional `pair_key -> winner` map from
+[wc_shootout_winners()] resolving knockouts level on score.}
 }
 \value{
 A list: `teams` (English, index order), `n_draws`, `k_replays`,

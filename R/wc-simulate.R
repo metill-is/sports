@@ -818,13 +818,24 @@ wc_knockout_predictions <- function(knockout_fixtures, sim_inputs_team,
 #' @param group_fixtures,structure As for [simulate_world_cup()].
 #' @param k_replays Knockout playthroughs per posterior draw (default 400).
 #' @param pairing_seed Seed for the group-stage tiebreak + third allocation RNG.
+#' @param knockout_results Optional played-knockout-results tibble from
+#'   [wc_knockout_results()]. When supplied, decided matches are pinned per draw
+#'   (same [.wc_knockout_pins()] builder as [simulate_world_cup()], fed the
+#'   draw's one-hot R32 occupancy) so every replay advances the actual winner —
+#'   a settled pair's `p_i_farther` collapses to 0/1 and an eliminated team
+#'   cannot meet anyone in later rounds. `NULL` (the default) leaves the
+#'   head-to-head unconditioned. The bronze match is out of scope: both SF
+#'   losers carry exit level 4 either way.
+#' @param shootout_winners Optional `pair_key -> winner` map from
+#'   [wc_shootout_winners()] resolving knockouts level on score.
 #' @return A list: `teams` (English, index order), `n_draws`, `k_replays`,
 #'   `pairs` (1128 rows, 0-based `i < j`), `team_marginals` (48x7 furthest-round
 #'   pmf, levels 0 group-exit .. 6 champion). Shape it for publishing with
 #'   [wc_head_to_head_payload()].
 #' @export
 wc_head_to_head <- function(sim_inputs_team, sim_inputs_scalar, group_fixtures,
-                            structure, k_replays = 400L, pairing_seed = 2026L) {
+                            structure, k_replays = 400L, pairing_seed = 2026L,
+                            knockout_results = NULL, shootout_winners = NULL) {
   if (!is.null(pairing_seed)) set.seed(pairing_seed)
   K <- as.integer(k_replays)
 
@@ -842,8 +853,10 @@ wc_head_to_head <- function(sim_inputs_team, sim_inputs_scalar, group_fixtures,
   br <- structure$bracket
   round_level <- c(R32 = 1L, R16 = 2L, QF = 3L, SF = 4L, Final = 5L)
   r32_rows <- which(br$round == "R32")
+  n32 <- length(r32_rows)
   max_m <- max(br$match_no)
   final_m <- br$match_no[br$round == "Final"]
+  pin_active <- !is.null(knockout_results) && nrow(knockout_results) > 0L
 
   sit <- sim_inputs_team[sim_inputs_team$team %in% teams, , drop = FALSE]
   draws_team <- split(sit, sit$.draw)
@@ -879,6 +892,21 @@ wc_head_to_head <- function(sim_inputs_team, sim_inputs_scalar, group_fixtures,
     cw <- pw / (pw + t(pw))
     cw[!is.finite(cw)] <- 0.5
 
+    # Pin played knockout results onto THIS draw's bracket: the same builder as
+    # simulate_world_cup(), fed the draw's one-hot R32 occupancy, so a pin only
+    # exists where the draw's bracket chain pairs the real-world competitors
+    # (self-gating round by round, exactly like the aggregate path).
+    pins <- list()
+    if (pin_active) {
+      occ_d_a <- matrix(0, n32, nt)
+      occ_d_b <- matrix(0, n32, nt)
+      occ_d_a[cbind(seq_len(n32), r$r32_a)] <- 1
+      occ_d_b[cbind(seq_len(n32), r$r32_b)] <- 1
+      pins <- .wc_knockout_pins(
+        br, teams, occ_d_a, occ_d_b, knockout_results, shootout_winners
+      )$pins
+    }
+
     # K-replay knockout for THIS draw's fixed R32 bracket.
     E <- matrix(0L, K, nt) # furthest round reached (0 = group exit)
     winner <- vector("list", max_m)
@@ -893,7 +921,15 @@ wc_head_to_head <- function(sim_inputs_team, sim_inputs_scalar, group_fixtures,
         A <- winner[[as.integer(sub("W", "", br$feeder_a[rr]))]]
         B <- winner[[as.integer(sub("W", "", br$feeder_b[rr]))]]
       }
-      a_wins <- stats::runif(K) < cw[cbind(A, B)]
+      # A pinned match's competitors are deterministic across replays (the pins
+      # builder only pins when the draw's bracket chain is certain), so forcing
+      # the winner by identity is exact.
+      pin <- pins[[as.character(m)]]
+      a_wins <- if (is.null(pin)) {
+        stats::runif(K) < cw[cbind(A, B)]
+      } else {
+        A == pin
+      }
       w <- ifelse(a_wins, A, B)
       l <- ifelse(a_wins, B, A)
       winner[[m]] <- w
