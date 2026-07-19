@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-19T10:04:57Z",
+  "generated_at": "2026-07-19T23:57:15Z",
   "season": 2026,
   "n_teams": 48,
   "records": [
@@ -85,17 +85,17 @@
       "team": "Argentina",
       "team_is": "Argentína",
       "round_name": "Champion",
-      "probability": 0.4578
-    },
-    {
-      "team": "Argentina",
-      "team_is": "Argentína",
-      "round_name": "Third",
       "probability": 0
     },
     {
       "team": "Argentina",
       "team_is": "Argentína",
+      "round_name": "Third",
+      "probability": 0
+    },
+    {
+      "team": "Argentina",
+      "team_is": "Argentína",
       "round_name": "Fourth",
       "probability": 0
     },
@@ -1957,7 +1957,7 @@
       "team": "Spain",
       "team_is": "Spánn",
       "round_name": "Champion",
-      "probability": 0.5422
+      "probability": 1
     },
     {
       "team": "Spain",
@@ -2312,18 +2312,18 @@
     {
       "team": "Spain",
       "team_is": "Spánn",
-      "p_champion": 0.5422,
-      "p_bronze": 0
-    },
-    {
-      "team": "Argentina",
-      "team_is": "Argentína",
-      "p_champion": 0.4578,
+      "p_champion": 1,
       "p_bronze": 0
     },
     {
       "team": "Algeria",
       "team_is": "Alsír",
+      "p_champion": 0,
+      "p_bronze": 0
+    },
+    {
+      "team": "Argentina",
+      "team_is": "Argentína",
       "p_champion": 0,
       "p_bronze": 0
     },
