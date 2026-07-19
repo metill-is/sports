@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-17T09:29:30Z",
+  "generated_at": "2026-07-19T10:04:57Z",
   "season": 2026,
   "n_teams": 48,
   "records": [
@@ -85,7 +85,7 @@
       "team": "Argentina",
       "team_is": "Argentína",
       "round_name": "Champion",
-      "probability": 0.4536
+      "probability": 0.4578
     },
     {
       "team": "Argentina",
@@ -811,13 +811,13 @@
       "team": "England",
       "team_is": "England",
       "round_name": "Third",
-      "probability": 0.4689
+      "probability": 1
     },
     {
       "team": "England",
       "team_is": "England",
       "round_name": "Fourth",
-      "probability": 0.5311
+      "probability": 0
     },
     {
       "team": "France",
@@ -859,13 +859,13 @@
       "team": "France",
       "team_is": "Frakkland",
       "round_name": "Third",
-      "probability": 0.5311
+      "probability": 0
     },
     {
       "team": "France",
       "team_is": "Frakkland",
       "round_name": "Fourth",
-      "probability": 0.4689
+      "probability": 1
     },
     {
       "team": "Germany",
@@ -1957,7 +1957,7 @@
       "team": "Spain",
       "team_is": "Spánn",
       "round_name": "Champion",
-      "probability": 0.5464
+      "probability": 0.5422
     },
     {
       "team": "Spain",
@@ -2312,13 +2312,13 @@
     {
       "team": "Spain",
       "team_is": "Spánn",
-      "p_champion": 0.5464,
+      "p_champion": 0.5422,
       "p_bronze": 0
     },
     {
       "team": "Argentina",
       "team_is": "Argentína",
-      "p_champion": 0.4536,
+      "p_champion": 0.4578,
       "p_bronze": 0
     },
     {
@@ -2415,13 +2415,13 @@
       "team": "England",
       "team_is": "England",
       "p_champion": 0,
-      "p_bronze": 0.4689
+      "p_bronze": 1
     },
     {
       "team": "France",
       "team_is": "Frakkland",
       "p_champion": 0,
-      "p_bronze": 0.5311
+      "p_bronze": 0
     },
     {
       "team": "Germany",
