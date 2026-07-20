@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-07-19T20:07:30Z",
+  "generated_at": "2026-07-20T14:00:03Z",
   "overall": "WARN",
   "n_fail": 0,
-  "n_warn": 3,
+  "n_warn": 4,
   "checks": [
     {
       "check": "fit_freshness",
@@ -36,14 +36,14 @@
       "check": "fit_freshness",
       "scope": "football_iceland male",
       "status": "OK",
-      "value": "0d old, current with results",
+      "value": "1d old, current with results",
       "threshold": "<= 2d"
     },
     {
       "check": "fit_freshness",
       "scope": "football_iceland female",
       "status": "OK",
-      "value": "0d old, current with results",
+      "value": "1d old, current with results",
       "threshold": "<= 2d"
     },
     {
@@ -98,8 +98,8 @@
     {
       "check": "placement_health",
       "scope": "auto_place",
-      "status": "OK",
-      "value": "no pending bets",
+      "status": "WARN",
+      "value": "1 pending, auto-place never run",
       "threshold": "healthy run < 14h when pending"
     },
     {
