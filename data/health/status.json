@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-21T20:20:01Z",
+  "generated_at": "2026-07-22T13:46:04Z",
   "overall": "WARN",
   "n_fail": 0,
   "n_warn": 4,
@@ -36,21 +36,21 @@
       "check": "fit_freshness",
       "scope": "football_iceland male",
       "status": "OK",
-      "value": "0d old, current with results",
+      "value": "1d old, current with results",
       "threshold": "<= 2d"
     },
     {
       "check": "fit_freshness",
       "scope": "football_iceland female",
       "status": "OK",
-      "value": "0d old, current with results",
+      "value": "1d old, current with results",
       "threshold": "<= 2d"
     },
     {
       "check": "odds_freshness",
       "scope": "football_iceland",
       "status": "OK",
-      "value": "odds cover upcoming fixtures (next in 0d)",
+      "value": "odds cover upcoming fixtures (next in 1d)",
       "threshold": "odds for fixtures within 3d"
     },
     {
@@ -92,7 +92,7 @@
       "check": "capture_rate",
       "scope": "recommendations",
       "status": "OK",
-      "value": "50% (7/14 placed)",
+      "value": "47% (7/15 placed)",
       "threshold": ">= 70% placed"
     },
     {
