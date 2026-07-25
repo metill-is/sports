@@ -2,21 +2,14 @@
 
 Bayesian sports prediction and automated betting for Icelandic football, basketball, and handball. **Consolidated monorepo** (pre-migration was four separate repos: `Sports/`, `lengjan-odds/`, `livesport-data/`, `lengjan-bets/` — all preserved under `_legacy/`).
 
-> **Current focus (2026-04-24):** 3 active Icelandic leagues only (`basketball_iceland`, `handball_iceland`, `football_iceland`). Non-Icelandic leagues paused and will be reactivated incrementally from later plans. All user-facing content is in Icelandic.
+> **Scope:** the three Icelandic leagues (`basketball_iceland`, `handball_iceland`,
+> `football_iceland`) plus the World Cup pipeline (`world-cup.yml`, `R/wc-*.R`).
+> Other non-Icelandic leagues are paused. All user-facing content is in Icelandic.
+> Authoritative list: `config/leagues.yml` + `scripts/00_active_competitions.R`.
 
 ## Status
 
 Migration complete (Plan 7, 2026-04-30). End-state design: [`docs/superpowers/specs/2026-04-24-sports-pipeline-redesign-design.md`](docs/superpowers/specs/2026-04-24-sports-pipeline-redesign-design.md). Implementation plans: [`docs/superpowers/plans/`](docs/superpowers/plans/).
-
-| Plan | Scope | Status |
-|---|---|---|
-| **1: Foundation + Storage + ETL** | Monorepo init, storage layer, ETL for odds + ledger | ✅ Complete |
-| **2: Ingest (federation scrapers) + historical backfill** | `R/ingest.R` + `R/ingest-*.R` (flat layout) — 3 federation scrapers (KSÍ / KKÍ / HSÍ) with `upsert_table` safe-merge semantics, historical match-data backfill | ✅ Complete — 9,914+ rows in `data/facts/results/` |
-| **3: Model layer** | `R/model-{prepare,fit,posteriors,league}.R` + 3 Stan models under `Stan/{league_key}/`, `beliefs/{latest,archive}/` snapshot + accretive tables, golden-output sanity gate vs `_legacy/*/results/*/fit.rds` backup | ✅ Complete |
-| **4: Decide + Publish** | Joint Kelly + portfolio + calibration → recommendations Parquet; football iceland 10/11-JSON publisher (per cell in `publish_divisions`: male BD/LD1/LD2/LD3/CUP, female BD/LD1/LD2/CUP) + basketball/handball 8-JSON publishers (seasonally paused) | ✅ Complete |
-| **5: Placer (local-only)** | `R/placer-*.R` ports `_legacy/lengjan-bets/`, dual-writes ledger CSV+Parquet during cutover, CI safety gate enforces local-only | ✅ Complete |
-| **6: Orchestration + CI + cutover** | `_targets.R` DAG + `run.R` CLI (later replaced by Plan 7), metill-platform `pull-sports-data.yml`, placer dual-write dropped | ✅ Complete (superseded by Plan 7 for CI topology) |
-| **7: Drop {targets}** | `_targets.R` + `run.R` replaced by 6 entry scripts (`scripts/0N_*.R`) with explicit freshness predicates; CI split into 6 workflows — 5 auto-running (ci-tests, scrape-results, scrape-odds, fit, decide-publish via `workflow_run`) + 1 manual-dispatch (republish); cross-workflow git race resolved | ✅ Complete |
 
 ## Directory structure
 
@@ -24,20 +17,7 @@ Migration complete (Plan 7, 2026-04-30). End-state design: [`docs/superpowers/sp
 sports/
 ├── scripts/0N_*.R       # Pipeline entry points (00–06); see Quick reference
 ├── config/              # leagues.yml + bankroll.yml + JSON Schema validators
-├── R/                   # R package source — see .claude/rules/ for per-area details
-│   ├── ingest-*.R       # Federation + Lengjan scrapers (KSÍ/KKÍ/HSÍ)
-│   ├── model-*.R        # → .claude/rules/model-decide.md
-│   ├── decide-*.R       # → .claude/rules/model-decide.md
-│   ├── publish-*.R      # → .claude/rules/publish-layer.md
-│   ├── extract-*.R      # Football per-fit extracts → publish-layer.md
-│   ├── simulate-cup-bracket.R  # Mjólkurbikar forward simulator
-│   ├── placer-*.R       # Local-only Lengjan placement → sports-betting.md
-│   ├── settle.R         # Settle layer (win/pnl) → sports-betting.md
-│   ├── commit-ledger.R  # Auto-commit ledger after placer/settle → git-hygiene.md
-│   ├── pipeline-freshness.R  # needs_refit / has_upcoming_games predicates
-│   ├── storage*.R       # Arrow schemas + write_table/read_table primitives
-│   ├── config.R         # leagues.yml + bankroll.yml loaders
-│   └── duckdb-views.R   # rebuild_duckdb() — SQL views over Parquet
+├── R/                   # R package source (see .claude/rules/ per area)
 ├── Stan/{league_key}/   # Per-league Stan models
 ├── data/                # Parquet stores (hive-partitioned, git-tracked)
 │   ├── facts/           # results, odds, schedules
@@ -126,48 +106,10 @@ print(DBI::dbGetQuery(con, "SELECT sport, country, COUNT(*) AS n, SUM(pnl) AS pn
 '
 ```
 
-### World Cup — manual refresh (martj42 lag)
+### World Cup
 
-martj42 backfills match scores ~1 day late, so during the tournament the daily
-`world-cup.yml` cron is structurally a day behind. To publish a forecast that
-includes scores martj42 hasn't logged yet:
-
-1. `scripts/wc/refresh_now.sh --list-missing` — prints the played-but-unscored
-   WC fixtures as CSV rows (team names already match martj42).
-2. Paste them into `data/wc/manual_results.csv` and fill `home_score,away_score`
-   (and `pen_winner` — the winning team's exact name — for a **knockout** match
-   level on score, i.e. decided on penalties; leave blank otherwise).
-3. `scripts/wc/refresh_now.sh` — pulls, ingests (overlay merged onto martj42's
-   `NA` rows), re-fits (~46 min), re-forecasts, shows the champion table +
-   `data/wc/forecast.html`, then on `y` commits + pushes and triggers the
-   metill-platform pull (`gh workflow run pull-sports-data.yml -R
-   metill-is/metill-platform`).
-
-The overlay is committed and self-draining: once martj42 publishes the real
-score, ingest warns and martj42 wins — delete that row. The manual path does not
-touch `data/wc/martj42_pointer.txt`, so the next cron run is unaffected. Flags:
-`--yes` (skip confirm), `--no-push` (preview only), `--no-pull` (offline).
-
-**Played knockouts condition the forecast automatically** (Phase 2, shipped
-2026-06-29). `wc_knockout_results()` reads played cross-group fixtures and
-`.wc_knockout_pins()` (`R/wc-knockout.R`) builds the `{match_no → winner}` pins
-that `simulate_world_cup()` passes to `wc_forward_bracket()` — so a decided
-match's winner advances w.p. 1 / loser 0 (placement collapses) and `bracket.json`
-gains a `played[]` field the platform renders as a settled fixture. Penalty
-winners come from `data/wc/shootouts.csv`, maintained by `wc_ingest_shootouts()`
-from martj42's `shootouts.csv` + the overlay's `pen_winner` (martj42 canonical).
-No re-fit is needed for new knockout results — pins act on the simulate step, so
-re-running `scripts/wc/forecast.R` alone re-publishes the conditioned forecast.
-
-**Knockout fixture dates are corrected at ingest** (2026-07-06 incident:
-martj42 dated all four remaining R16 ties on the round's first day, so the
-published forecast — and the platform matchday reel, keyed on exact
-`match_date` — carried 4 matches on 6 July instead of 2).
-`wc_correct_knockout_dates()` (`R/wc-schedule.R`) re-dates unplayed knockout
-rows to the stadium-local date of their official slot, venue-matched against
-the vendored `data/wc/structure/wc2026_schedule.csv`; unmappable rows keep
-martj42's date with a warning. `--list-missing` applies the same correction,
-so overlay rows always key on corrected dates.
+Tournament-time manual overlay refresh (martj42 score lag), knockout
+conditioning and ingest date-correction: **`/wc-refresh` skill**.
 
 ## metill-platform integration
 
@@ -186,22 +128,6 @@ To force a refresh without waiting for cron:
 ```bash
 gh workflow run pull-sports-data.yml --repo metill-is/metill-platform
 ```
-
-## Legacy archival
-
-`_legacy/{sports,lengjan-odds,livesport-data,lengjan-bets}/` is kept on disk
-for `git log --follow` history access. The corresponding GitHub repos are
-archived (read-only) post-cutover:
-
-```bash
-gh repo archive metill-is/sports          # the OLD sports repo, not this one
-gh repo archive metill-is/lengjan-odds
-gh repo archive metill-is/livesport-data
-gh repo archive metill-is/lengjan-bets
-```
-
-This is one-time post-cutover admin; the new monorepo is `metill-is/sports`
-(replacing the archived predecessor).
 
 ## Conventions
 
@@ -242,36 +168,20 @@ Internal schemas use English throughout. Canonical column names: `home_team` / `
 
 [`.claude/rules/ci-conventions.md`](.claude/rules/ci-conventions.md) — `PKG_SYSREQS: "false"` workaround (chromote / Launchpad PPA fragility), V8 from-source rebuild (libnode ABI mismatch), `workflow_run` glob trap (workflow `name:` fields must be glob-safe), workflow inventory. Loads when editing `.github/workflows/**`.
 
-### Placer (local-only)
+### Settle + health layers
 
-- `Rscript scripts/place_bets.R` is the public entrypoint. Default is dry-run; `--live` actually places. Always reads `LENGJAN_USER` / `LENGJAN_PASS` from `.Renviron`.
-- `Rscript scripts/preview_bets.R` shows pending bets without opening a browser.
-- `R/placer-*.R` is **never** wired into CI; the `test-placer-ci-isolation.R` test enforces this.
-- The placer is the only writer to `data/decisions/ledger/` (Parquet, canonical). Plan 6 cutover dropped the CSV dual-write default; opt-in via `dual_write_csv = TRUE` if a legacy CSV regression check is needed.
-- P1: idempotent (dedup against ledger). P2: ledger records actual Lengjan odds. P3: Kelly stake recomputed if odds drift. P4: bets no longer +EV are rejected.
+[`.claude/rules/settle-health.md`](.claude/rules/settle-health.md) — settle join keys,
+reschedule fallback, `pipeline_health()` composition, write-boundary guards.
+Loads on `R/{settle,health,storage-validate,decide-kelly}.R`,
+`scripts/0{6,7}_*.R`, `.github/workflows/healthcheck.yml`.
+Run `06_settle.R` **before** `04_decide.R` so `current_pool` reflects realised PnL.
 
-### Settle layer
+### Backtest harness
 
-`R/settle.R` exports `compute_settlement(bets, results, match_date_window_days)` and `settle_ledger(root, match_date_window_days)`. Joins ledger rows where `settled = FALSE` against `data/facts/results/` on `(sport, country, sex, match_date, home_team, away_team)`, computes `win` + `pnl` per market with strict-inequality boundaries (matching `decide-kelly.R::build_return_matrix` so calibration stays self-consistent with the EV used at placement). Already-settled rows are immutable (L4). Daily driver: `Rscript scripts/06_settle.R`. Run before `04_decide.R` so `current_pool = initial_pool + Σ(settled.pnl)` reflects realised PnL.
-
-**Reschedule fallback (default `match_date_window_days = 3`)** — bets the strict join leaves unsettled get a second-pass lookup against results within the window, keyed on `(sport, country, sex, home_team, away_team)`. The fallback only fires when the window contains exactly one candidate result for the bet; ambiguous pairings (e.g. cup tie + league leg within three days) stay unsettled. This handles ledger orphans created when Lengjan reschedules a fixture after placement — the placer freezes `match_date` at the original kick-off (L3/L4 spirit) and the federation results scraper writes the played match at the new date. The ledger row's `match_date` is never mutated; only `settled` / `win` / `pnl` flip, preserving L4.
-
-**Local-only by design** — both placer and settle write to `data/decisions/ledger/`, and `arrow::write_parquet` is read-then-write (not atomic), so adding a CI-host writer would race concurrent local placer runs and risk Parquet corruption. Promoting to a workflow would require atomic upsert semantics or a coordination mechanism.
-
-### Health & monitoring (2026-05-30)
-
-`R/health.R::pipeline_health(root, now)` is a **read-only** snapshot composing fit/odds freshness, persisted Stan-diagnostic drift (`data/beliefs/diagnostics/`, written per fit by `fit_league`), orphaned-bet, **placement-capture-rate** (recommendations for now-played matches that never reached the ledger — the forensic review found ~45% capture), and bankroll/drawdown checks into a `{check, scope, status, value, threshold}` tibble (`OK` < `WARN` < `FAIL`, plus `PAUSED` for off-season cells via `has_upcoming_games`). Thresholds are documented named constants in the function. `scripts/07_healthcheck.R` writes `data/health/status.json` + prints a summary; `healthcheck.yml` runs it twice daily and fails the run on `overall == FAIL` so GitHub's failure email fires (the alert channel — enable "Actions: failure" notifications in GitHub). The `/pipeline-doctor` skill + a SessionStart banner surface it interactively. All read-only on the ledger (CI-safe against the local placer); `tests/testthat/test-healthcheck-ci-isolation.R` enforces it. Triage playbooks: `docs/runbooks/`.
-
-Two write-boundary guards complement the snapshot: `validate_values()` (`R/storage-validate.R`, wired into `write_table`) rejects impossible scores / `odds <= 1` / out-of-range `p`; `validate_bet_inputs()` (`R/decide-kelly.R`) quarantines a non-finite `p` or `odds <= 1` into a loud `dropped_invalid_input` candidate stage before stake sizing. The Stan gate (`check_stan_diagnostics`) also now covers treedepth / E-BFMI / tail-ESS and returns its metrics for persistence.
-
-### Backtest harness (2026-05-30)
-
-`R/backtest-*.R` + `scripts/0Nb_backtest.R` + `docs/reports/2026-backtest.qmd`
-replay historical decisions against results to analyse strategy performance
-(PnL/ROI/calibration, by market/sex). Read-only, never on CI; reuses
-`compute_settlement()`. **Defaults to football only** (CLI + report); the engine
-stays general — widen with `--league all` when basketball/handball resume. See
-`.claude/rules/backtest.md`.
+[`.claude/rules/backtest.md`](.claude/rules/backtest.md) — replays historical
+decisions against results (PnL/ROI/calibration). Read-only, never on CI.
+Football-only by default. Loads on `R/backtest-*.R`, `scripts/0N{b,r}_*.R`,
+`docs/reports/2026-backtest.qmd`.
 
 ## Git hygiene
 

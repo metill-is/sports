@@ -220,5 +220,5 @@ already clean.
 
 If you encounter a git friction that this rule doesn't cover, append a short
 note to `~/.claude/projects/-Users-brynjolfurjonsson-sports/memory/MEMORY.md`
-under "Pipeline Gotchas", or invoke the `learner` agent at session end to
-propose updates. Patterns that recur across sessions belong here.
+under "Pipeline Gotchas", or run `/self-reflect` at session end to propose
+updates (the `learner` agent was retired into that skill). Patterns that recur across sessions belong here.

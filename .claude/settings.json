@@ -7,7 +7,7 @@
           {
             "type": "command",
             "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/pre-compact-context.sh",
-            "timeout": 5000
+            "timeout": 5
           }
         ]
       }
@@ -19,7 +19,7 @@
           {
             "type": "command",
             "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/pre-compact-context.sh",
-            "timeout": 5000
+            "timeout": 5
           }
         ]
       },
@@ -29,7 +29,7 @@
           {
             "type": "command",
             "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/health-banner.sh",
-            "timeout": 7000
+            "timeout": 7
           }
         ]
       }
@@ -41,7 +41,7 @@
           {
             "type": "command",
             "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/check-stan-syntax.sh",
-            "timeout": 10000,
+            "timeout": 10,
             "statusMessage": "Checking Stan syntax..."
           }
         ]

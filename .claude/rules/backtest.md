@@ -1,7 +1,13 @@
-# Backtest harness
+---
+paths:
+  - "R/backtest-*.R"
+  - "scripts/0Nb_backtest.R"
+  - "scripts/0Nr_replay.R"
+  - "docs/reports/2026-backtest.qmd"
+  - "tests/testthat/test-backtest-*.R"
+---
 
-Loads when working on `R/backtest-*.R`, `scripts/0Nb_backtest.R`, or
-`docs/reports/2026-backtest.qmd`.
+# Backtest harness
 
 - **Read-only on the money path.** The harness never writes the ledger and is
   never wired into CI. It reads `candidates` / `recommendations` / `results`.
