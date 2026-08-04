@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-08-03T20:26:48Z",
+  "generated_at": "2026-08-04T14:04:32Z",
   "overall": "WARN",
   "n_fail": 0,
-  "n_warn": 3,
+  "n_warn": 2,
   "checks": [
     {
       "check": "fit_freshness",
@@ -36,14 +36,14 @@
       "check": "fit_freshness",
       "scope": "football_iceland male",
       "status": "OK",
-      "value": "1d old, current with results",
+      "value": "0d old, current with results",
       "threshold": "<= 2d"
     },
     {
       "check": "fit_freshness",
       "scope": "football_iceland female",
       "status": "OK",
-      "value": "5d old, current with results",
+      "value": "6d old, current with results",
       "threshold": "<= 2d"
     },
     {
@@ -71,7 +71,7 @@
       "check": "divergence_drift",
       "scope": "football/iceland/male",
       "status": "OK",
-      "value": "0.150%",
+      "value": "0.100%",
       "threshold": "< 0.5%"
     },
     {
@@ -85,21 +85,21 @@
       "check": "orphaned_bets",
       "scope": "ledger",
       "status": "WARN",
-      "value": "12",
+      "value": "13",
       "threshold": "0 unsettled > 10d"
     },
     {
       "check": "capture_rate",
       "scope": "recommendations",
       "status": "OK",
-      "value": "57% (8/14 placed)",
+      "value": "54% (7/13 placed)",
       "threshold": ">= 70% placed"
     },
     {
       "check": "placement_health",
       "scope": "auto_place",
-      "status": "WARN",
-      "value": "1 pending, auto-place never run",
+      "status": "OK",
+      "value": "no pending bets",
       "threshold": "healthy run < 14h when pending"
     },
     {
