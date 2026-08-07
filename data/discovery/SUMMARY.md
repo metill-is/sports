@@ -1,6 +1,6 @@
 # Lengjan discovery — proposed competitions
 
-Generated: 2026-08-06T09:27:51Z
+Generated: 2026-08-07T07:57:03Z
 Unmodelled competitions offered (in our sports/countries): 0
 
 _No new modelled competitions to wire._
