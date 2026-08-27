@@ -262,23 +262,4 @@ jobs:
           # is never lost (it lives in data/facts/results) and the next fit
           # re-snapshots every still-upcoming fixture -- whereas the prior
           # behaviour threw away the entire ~49-min forecast on any conflict.
-          pushed=0
-          for attempt in 1 2 3 4 5; do
-            git fetch origin main
-            if ! git rebase -X theirs FETCH_HEAD; then
-              echo "::error::Unexpected non-content rebase failure (attempt $attempt)."
-              git rebase --abort || true
-              exit 1
-            fi
-            if git push; then
-              echo "Pushed forecast outputs on attempt $attempt."
-              pushed=1
-              break
-            fi
-            echo "::warning::Push rejected (origin advanced); retrying (attempt $attempt)."
-            sleep $((attempt * 3))
-          done
-          if [[ "$pushed" -ne 1 ]]; then
-            echo "::error::Could not push forecast outputs after 5 attempts."
-            exit 1
-          fi
+          .github/scripts/push-with-retry.sh --prefer-ours

@@ -66,5 +66,6 @@ jobs:
             exit 0
           fi
           git commit -m "data: federation scrape $(date -u +%Y-%m-%dT%H:%MZ)"
-          git pull --rebase origin main
-          git push
+          # Concurrent sibling workflows push to main constantly; retry the
+          # fetch/rebase/push cycle instead of losing the run to a race.
+          .github/scripts/push-with-retry.sh

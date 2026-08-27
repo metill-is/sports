@@ -160,3 +160,62 @@ Enforcement: `tests/testthat/test-placer-ci-isolation.R` greps every
 `.github/workflows/*.yml` and fails the build if any line references
 `R/placer-`, `place_bets`, `preview_bets`, `placer_pipeline`, or
 `LENGJAN_*`.
+
+## Pushing to main: always via `.github/scripts/push-with-retry.sh`
+
+Eight workflows commit generated data to main (fit, decide-publish,
+scrape-odds, scrape-results, healthcheck, discover-leagues, republish,
+world-cup). Each declares its **own** `concurrency` group, which serialises
+a workflow against itself but does nothing across workflows — so several are
+routinely in flight at once. On 2026-08-25 a stan fit pushed at 08:39, an
+odds scrape at 08:40 and a decide+publish at 08:44.
+
+**Do not "fix" this with a shared concurrency group.** That is what
+metill-platform does (`group: main-data-push`), and it works there because
+every data cron finishes in minutes. Here `fit` has a *median* runtime of
+~2 h (max ~4 h), so a shared group would queue a 4-minute healthcheck behind
+a 4-hour fit — and because GitHub keeps only one *pending* run per group,
+the scheduled runs behind it would be silently cancelled. The race is a
+seconds-long window at the end of a long job; serialising whole jobs to
+protect it is the wrong shape.
+
+The historic `git pull --rebase origin main && git push` had no retry and
+lost two ways:
+
+1. **Ref-lock race** — the rebase succeeds, then origin advances in the
+   milliseconds before the push:
+   `! [remote rejected] main -> main (cannot lock ref 'refs/heads/main': is
+   at d2f50f8 but expected 4f9776b)`. This killed a ~2 h stan fit
+   (run 32698702043, 2026-08-24).
+2. **Content conflict** — two writers regenerate the same paths and the
+   rebase stops with conflicts (97 in run 32827816691 on 2026-08-25; same
+   signature on 2026-08-10 and 2026-08-18).
+
+Both discard the entire run's output even though the work itself was fine.
+
+```yaml
+git commit -m "data: ..."
+.github/scripts/push-with-retry.sh                 # disjoint paths
+.github/scripts/push-with-retry.sh --prefer-ours   # regenerated output
+```
+
+**Which flag.** Plain retry is the default: it fixes the ref-lock race, and
+a genuine content conflict fails loudly because for a disjoint-path job that
+means something unexpected happened. `--prefer-ours` (which passes
+`-X theirs` — correct but backwards-reading, since rebase replays *our*
+commit, so "theirs" is our side) is only for jobs whose every written path
+is fully regenerated from the freshest inputs: `decide-publish`, `republish`
+and `world-cup`, all of which rewrite `data/publish/` wholesale.
+
+**Caveat before adding a new `--prefer-ours` caller.** A file that
+*accumulates* rather than being recomputed can lose a sibling's appended
+record for the one round where two runs overlapped —
+`data/beliefs/round_predictions_history/**/round_predictions_history.json`
+is an accumulator (see the roxygen on `publish_football_iceland()`), as is
+the WC `prediction_log.json`. That is a strictly smaller loss than the old
+behaviour, which threw away the whole run, and the next run re-accumulates.
+
+**Enforcement:** `tests/testthat/test-workflow-push-retry.R` fails the build
+if any workflow that creates a commit does not route its push through the
+script, if a bare `git push` / `git pull --rebase` reappears, or if
+`--prefer-ours` is added to a workflow outside the reviewed set.
