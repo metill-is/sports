@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-29T21:32:38Z",
+  "generated_at": "2026-08-30T16:01:44Z",
   "overall": "WARN",
   "n_fail": 0,
   "n_warn": 3,
@@ -36,14 +36,14 @@
       "check": "fit_freshness",
       "scope": "football_iceland male",
       "status": "OK",
-      "value": "1d old, current with results",
+      "value": "0d old, current with results",
       "threshold": "<= 2d"
     },
     {
       "check": "fit_freshness",
       "scope": "football_iceland female",
       "status": "OK",
-      "value": "1d old, current with results",
+      "value": "0d old, current with results",
       "threshold": "<= 2d"
     },
     {
@@ -64,7 +64,7 @@
       "check": "rhat_drift",
       "scope": "football/iceland/female",
       "status": "OK",
-      "value": "1.010",
+      "value": "1.013",
       "threshold": "< 1.020"
     },
     {
@@ -78,7 +78,7 @@
       "check": "rhat_drift",
       "scope": "football/iceland/male",
       "status": "OK",
-      "value": "1.013",
+      "value": "1.011",
       "threshold": "< 1.020"
     },
     {
@@ -99,7 +99,7 @@
       "check": "placement_health",
       "scope": "auto_place",
       "status": "WARN",
-      "value": "3 pending, auto-place never run",
+      "value": "2 pending, auto-place never run",
       "threshold": "healthy run < 14h when pending"
     },
     {
