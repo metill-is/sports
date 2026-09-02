@@ -113,8 +113,9 @@ commit at the same path are always stale.
 
 ## Before pushing to main
 
-The hourly `pull-sports-data` cron and the five CI workflows auto-commit to
-`main` constantly, so `main` almost always moves under you between sessions. A
+The five CI workflows auto-commit to `main` constantly (metill-platform's
+`pull-sports-data` only *reads* this repo — it commits to its own), so `main`
+almost always moves under you between sessions. A
 plain `git push` will be rejected as non-fast-forward (or, worse, you'll race a
 cron commit). Always re-sync first:
 

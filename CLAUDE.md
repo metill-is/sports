@@ -113,13 +113,20 @@ conditioning and ingest date-correction: **`/wc-refresh` skill**.
 
 ## metill-platform integration
 
-The `metill-is/metill-platform` repo runs `pull-sports-data.yml` hourly:
-clones `metill-is/sports`, rsyncs `data/publish/` into `data/ithrottir/`,
-commits if changed. A push to metill-platform triggers Fly.io auto-deploy.
+The `metill-is/metill-platform` repo runs `pull-sports-data.yml` **7×/day**
+(`25 7-12,19 * * *` — clustered on 07–12 UTC where real change lands, cut from
+hourly on 2026-09-02): clones `metill-is/sports`, rsyncs `data/publish/` into
+`data/ithrottir/`, commits **if the change is semantic**. Since 2026-09-02 it
+gates the commit on `scripts/ci_semantic_diff.py`, which ignores pure build
+stamps (`generated_at`) — so a republish that moves no number no longer commits
+or deploys. A push to metill-platform triggers Fly.io auto-deploy.
 
 Sports-side workflow:
 1. decide-publish.yml writes data/publish/{...}/*.json
-2. The push to main triggers metill-platform's pull-sports-data.yml
+2. metill-platform's pull-sports-data.yml **polls** and picks it up on its
+   next slot (it is not triggered by this push) — so expect up to a few hours'
+   propagation in-window, not seconds. `gh workflow run pull-sports-data.yml
+   --repo metill-is/metill-platform --ref main` forces it immediately.
    within the next hour
 3. metill-platform's commit deploys to fly.metill.is
 

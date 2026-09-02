@@ -93,13 +93,13 @@ meta-characters.
 |---|---|---|
 | `ci-tests.yml` | push, PR | `devtools::test()` |
 | `scrape-results.yml` | cron 1×/day | Federation results + schedules |
-| `scrape-odds.yml` | cron 3×/day | Lengjan odds snapshot |
+| `scrape-odds.yml` | cron 4×/day (08,11,14,20 UTC) | Lengjan odds snapshot |
 | `fit.yml` | `workflow_run` from scrape-results | Stan fit |
 | `decide-publish.yml` | `workflow_run` from fit AND scrape-odds | Recommendations + JSONs |
 | `republish.yml` | `workflow_dispatch` only | Re-run publish from existing extraction archive (lever for fast publisher iteration) |
 | `healthcheck.yml` | cron 2×/day + dispatch | Read-only `pipeline_health()` → `data/health/status.json`; commits if changed; fails the run on `overall == FAIL` so GitHub's failure email fires (the alert channel). `test-healthcheck-ci-isolation.R` proves it never writes the ledger. |
-| `world-cup.yml` | cron hourly (`17 * * * *`) + dispatch | HM 2026 forecast: download martj42 internationals → ingest → fit → simulate → publish `data/publish/world_cup/karla/*.json`. Self-contained (own ingest, no `workflow_run` parent). A cheap SHA pre-gate (`git ls-remote` martj42's tip vs the tracked `data/wc/martj42_pointer.txt`, read over raw.github — no clone of this ~11 GB repo) no-ops every poll where martj42 hasn't committed; the facts-diff is the precise second gate. See note below. |
-| `discover-leagues.yml` | cron 1×/day + dispatch | Read-only Lengjan competition-dropdown discovery → `data/discovery/proposals.json`; commits if changed. Surfaces via the `discovery` health WARN. References no placer token. |
+| `world-cup.yml` | **dispatch only** (cron retired 2026-09-02) | HM 2026 forecast: download martj42 internationals → ingest → fit → simulate → publish `data/publish/world_cup/karla/*.json`. Self-contained (own ingest, no `workflow_run` parent). A cheap SHA pre-gate (`git ls-remote` martj42's tip vs the tracked `data/wc/martj42_pointer.txt`, read over raw.github — no clone of this ~11 GB repo) no-ops every poll where martj42 hasn't committed; the facts-diff is the precise second gate. See note below. |
+| `discover-leagues.yml` | cron 2×/week (Mon+Thu) + dispatch | Read-only Lengjan competition-dropdown discovery → `data/discovery/proposals.json`; commits if changed. Surfaces via the `discovery` health WARN. References no placer token. |
 
 The `decide-publish` chain reading `workflow_run` from *both* parents
 is what keeps JSON outputs fresh on every odds scrape, not just on the
@@ -115,13 +115,17 @@ regenerable): the fit artefacts never reach git, so a downstream job
 would have nothing to consume. `scripts/wc/{ingest,fit,forecast}.R` must
 therefore execute in sequence in the same runner.
 
-The cron is **hourly** (`17 * * * *`, around the clock — minute 17 dodges
-top-of-hour scheduled-run congestion). Hourly rather than the old 2×/day
-morning window because, during the live tournament, martj42 posts results
-across the whole UTC day (2026 WC games kick off in North-American
-afternoons/evenings → late-UTC commits), not just the ~05:00–10:04 UTC
-qualifier-update window. The SHA pre-gate below makes frequent polling
-nearly free; the repo is public so Actions minutes are free anyway.
+**The cron was retired 2026-09-02** — the workflow is now `workflow_dispatch`
+only. It had been hourly (`17 * * * *`) as deliberate WC26-era cadence, because
+during the live tournament martj42 posts results across the whole UTC day (2026
+WC games kick off in North-American afternoons/evenings → late-UTC commits).
+Once the final was played on 2026-07-19 the tournament-window gate below made
+every subsequent firing a **provably dead branch**: ~720 no-op runs a month, each
+still doing a courtesy `git ls-remote` against martj42 for a result it could not
+act on. Last real output was 2026-07-19T23:57Z.
+
+To re-arm for the next cycle: bump `WC_END_DATE` and restore the `schedule:` key
+with `- cron: '17 * * * *'`.
 
 Three guards keep it cheap and self-terminating:
 
@@ -130,7 +134,7 @@ Three guards keep it cheap and self-terminating:
   on from the tracked pointer `data/wc/martj42_pointer.txt` (over
   raw.github, since this repo is public — a full checkout of this ~11 GB
   repo would defeat the point). If they match, the entire forecast job is
-  skipped, so the hourly cron is a sub-minute no-op on every poll where
+  skipped, so a poll is a sub-minute no-op whenever
   martj42 hasn't committed — it never pays R/CmdStan setup. The forecast
   job advances the pointer on **every** proceeding run (even a no-refit
   one), so a stale pointer can't make later polls re-ingest forever. A
@@ -147,13 +151,14 @@ Three guards keep it cheap and self-terminating:
   partitions byte-identically. `workflow_dispatch` with `force: true`
   bypasses both gates.
 - **Tournament-window gate.** The same `gate` job no-ops the run past
-  `WC_END_DATE` (2026-07-20) so the hourly cron auto-quiesces after the
-  final instead of refitting a finished bracket off later friendlies.
+  `WC_END_DATE` (2026-07-20) so the run auto-quiesces after the final
+  instead of refitting a finished bracket off later friendlies. This gate is
+  what made the retired cron provably dead rather than merely idle.
 
-Downstream is `metill-is/metill-platform`'s hourly `pull-sports-data.yml`,
-which already rsyncs the whole `data/publish/` tree (incl. `world_cup/`),
-so no metill-platform change was needed — same ≤1h freshness as the
-Icelandic leagues.
+Downstream is `metill-is/metill-platform`'s `pull-sports-data.yml` (7×/day
+since 2026-09-02, clustered 07–12 + 19 UTC), which already rsyncs the whole
+`data/publish/` tree (incl. `world_cup/`), so no metill-platform change was
+needed — freshness now ≤~4h in-window rather than ≤1h.
 
 The placer (`R/placer-*.R`) is **never** referenced from any workflow.
 Enforcement: `tests/testthat/test-placer-ci-isolation.R` greps every
