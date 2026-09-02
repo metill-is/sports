@@ -22,13 +22,18 @@ basketball_iceland:
     schedule: kki_basketball
     odds: lengjan_odds
   lengjan:
-    competitions:
-      # 2026-04-28: Lengjan restructured kvenna efri/neðri (30774/30773) into a
-      # single playoff umbrella per sex. Old IDs now return empty placeholder
-      # pages (identical char count, no team hits). Men's Bónusdeild is now
-      # also on Lengjan (was missing at migration time).
-      - { id: "1519", name: "Bónusdeild karla úrslitakeppni", sex: male }
-      - { id: "1528", name: "Bónusdeild kvenna úrslitakeppni", sex: female }
+    competitions: []
+    # D2 (2026-09-02): publish-only this season -- competitions emptied so the
+    # odds scrape has nothing to fetch, alongside betting.enabled: false below.
+    # The schema permits an empty array (competitions has no minItems). Restore
+    # these ids when betting resumes; they are last season's playoff umbrella
+    # and should be re-verified against Lengjan before use:
+    #  # 2026-04-28: Lengjan restructured kvenna efri/neðri (30774/30773) into a
+    #  # single playoff umbrella per sex. Old IDs now return empty placeholder
+    #  # pages (identical char count, no team hits). Men's Bónusdeild is now
+    #  # also on Lengjan (was missing at migration time).
+    #  - { id: "1519", name: "Bónusdeild karla úrslitakeppni", sex: male }
+    #  - { id: "1528", name: "Bónusdeild kvenna úrslitakeppni", sex: female }
     team_names:
       # Men's úrslitakeppni (id 1519). Lengjan uses bare team names for the
       # men's draw — verified against data/facts/odds 2026-04-29 scrape.
@@ -52,6 +57,10 @@ basketball_iceland:
         Stjarnan: Stjarnan kv
   stan_model: basketball_iceland/2d_student_t_scalarsigma.stan
   betting:
+    # D2 (2026-09-02): publish-only. Enforced at four layers via
+    # betting_enabled() -- odds ingest, decide, the placer loader and its
+    # pre-flight. Absent means enabled, so football is untouched.
+    enabled: false
     # kelly_frac is the §7.2 multiplicative shrinkage (Browne γ for finite-
     # horizon power utility). Iceland-tier ROI history (+9.18 % per
     # Sports/Knowledge/Betting Optimisation/Historical/roi-snapshot-2026-04-19)
@@ -86,8 +95,10 @@ handball_iceland:
     schedule: hsi_handball
     odds: lengjan_odds
   lengjan:
-    competitions:
-      - { id: "1269", name: "Olísdeild karla", sex: male }
+    competitions: []
+    # D2 (2026-09-02): publish-only this season -- see basketball_iceland above.
+    # Restore when betting resumes:
+    #  - { id: "1269", name: "Olísdeild karla", sex: male }
     team_names:
       male:
         Þór: Þór
@@ -102,6 +113,10 @@ handball_iceland:
       female: {}                       # No women's handball on Lengjan currently
   stan_model: handball_iceland/2d_student_t.stan
   betting:
+    # D2 (2026-09-02): publish-only. Enforced at four layers via
+    # betting_enabled() -- odds ingest, decide, the placer loader and its
+    # pre-flight. Absent means enabled, so football is untouched.
+    enabled: false
     # 2026-05-02: scaled to 25 % of Browne default (user request — overall
     # 75 % stake reduction). Pre-cut: 0.20.
     kelly_frac: 0.05         # §7.2 multiplicative shrinkage; quarter-of-Browne
