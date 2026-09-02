@@ -36,6 +36,8 @@ Every claim below was confirmed by reading source, not inferred.
 | N3 | Both registries are fixable, not merely rotatable | HSI ids are discoverable from hsi.is nav; `https://www.hsi.is/tournament/7643` is titled **"Grill 66 deild kvenna"**, recovering the id the code calls unrecoverable. KKI exposes ids in its own URLs: `kki.is/motamal/.../Leikir?league_id=190&season_id=130403` -- and 130403 *is* the registered male div1 2026 id. |
 | N4 | 2DT models **do** have per-round trajectories | `Stan/basketball_iceland/2d_student_t_scalarsigma.stan:157,164` declare `array[N_rounds] vector[K] offense`/`defense` as a random walk (`:168-173`). Earlier analysis wrongly called `round_strengths` impossible for 2DT. **bb/hb reach 10 artefacts, not 8.** |
 | N5 | Autoplace is armed | `is.metill.sports.autoplace` is loaded in `launchctl`; no `data/AUTO_PLACE_DISABLED` file exists. Both leagues are `active: true` with live Lengjan comps (bb 1519/1528, hb 1269). Repopulating schedules would stake real money on handball -- contradicting D2. |
+| N6 | **All KKI ids resolved live** | Read from kki.is in a browser 2026-09-02. `league_id` is stable, `season_id` rotates. Bonus karla 190 / 1.d karla 191 / Bonus kvenna 189 / 1.d kvenna 231; 2026-27 season_ids 132568 / 132571 / 132567 / 132570. **Every 2025-26 value matches the repo's existing `2026` key** (130403/130402/130422/130421), validating both the mapping and the closing-year convention. B3 needs no API probing. |
+| N7 | **KKI declares a stage dimension the repo never captures** | Every league page carries a `stig` filter: `Deildarkeppni` (regular season) vs `Urslitakeppni` (playoffs) -- 190: 300475/306658, 191: 300472/306497, 189: 300530/306645 **plus `A ridill` 305952 and `B ridill` 305951**, 231: 300529/306557. The `leikdagur` filter for Bonus karla lists 1..22 then `4 lida`, `8 lida`, `Urslit`. |
 
 ### The regular-season boundary (derived from data, 2026 season)
 
@@ -72,6 +74,12 @@ which plays a triple round-robin** (8 teams, 21 rounds). Consequences, all load-
 - **Basketball female 1D is genuinely irregular** (11 teams, so byes; one pair meets once and one meets
   four times). It is the cell that proves `expected_meetings` must be an assertion that can fail, never
   a source.
+- **N7 supersedes the inference.** KKI *declares* the boundary that the pair-meeting test *infers*, and
+  the two agree. It also resolves the women's Bonusdeild anomaly: the 137 rows are an 18-round double
+  round-robin **plus A/B group phases plus playoffs**, not a 2.44-meeting format. Capturing `stage` at
+  ingest makes D3 correct by construction rather than correct-on-2026-data; the round-derivation rule
+  becomes the fallback for any cell where stage is unavailable. **WS5 must establish whether the
+  Baskethotel XLSX export exposes stage, and record the decision either way.**
 - `meta.round = 22` for basketball male BD is **correct** -- it equals the regular-season length. The
   defect is that `standings.played` counts post-season games (up to 35), so "Umferdir eftir" renders
   **-13**.
@@ -199,12 +207,12 @@ Seed values: the existing `HSI_HISTORICAL_IDS` 2021-2025 entries, plus the six l
 
 ```r
 KKI_LEAGUE_IDS <- list(
-  male   = list(div1 = 190L,          div2 = NA_integer_),
-  female = list(div1 = NA_integer_,   div2 = NA_integer_)
+  male   = list(div1 = 190L, div2 = 191L),   # Bónus deild karla, 1. deild karla
+  female = list(div1 = 189L, div2 = 231L)    # Bónus deild kvenna, 1. deild kvenna
 )
 ```
 
-Only `male$div1 = 190` is known (N3). The other three seed as `NA_integer_` and are **resolved by the WS5 discovery pass**, which matches each competition page's title to the division; `kki_league_id()` aborts on an unresolved `NA` rather than silently fetching nothing, and a test asserts every `(sex, div)` in `publish_divisions` resolves to a non-NA id. `NA_integer_` is a typed, assertable absence -- not a placeholder. `KKI_SEASON_IDS` is retained verbatim as a verified cache for 2021-2026 — it is real, hand-verified data and throwing it away would be vandalism — but it stops being the only source.
+All four are **resolved** (N6) and each was cross-validated by confirming its 2025-26 `season_id` equals the value the repo already holds under key `2026`. `kki_league_id()` still aborts on an unresolved id rather than silently fetching nothing, and a test asserts every `(sex, div)` in `publish_divisions` resolves to a non-NA id -- that test now passes on real values. The discovery pass remains, because next July the *season* ids rotate again; the point of N6 is that discovery is cheap and proven, not that the registry is final. `KKI_SEASON_IDS` is retained verbatim as a verified cache for 2021-2026 — it is real, hand-verified data and throwing it away would be vandalism — but it stops being the only source.
 
 `kki_discover_season_ids(sex, div)` loads the league page under chromote (the season selector is JS-rendered, so a plain `httr` fetch returns an empty shell — same constraint the HSÍ scraper already lives with) and reads the selector's `(label, season_id)` options. `refresh_federation_seasons()` merges the result into `config/federation-seasons.json` alongside HSÍ's.
 
