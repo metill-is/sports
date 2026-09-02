@@ -47,3 +47,88 @@ test_that("disarming did not clobber the team_names maps", {
   expect_gt(length(lg$basketball_iceland$lengjan$team_names$female), 0L)
   expect_gt(length(lg$handball_iceland$lengjan$team_names$male), 0L)
 })
+
+# --- the decide-layer guard ---------------------------------------------------
+
+interlock_decide_setup <- function(root, match_date = Sys.Date() + 1L) {
+  set.seed(11)
+  write_table(tibble::tibble(
+    sport = "handball", country = "iceland", sex = "male",
+    fit_date = Sys.Date(), match_date = match_date,
+    home_team = "Valur", away_team = "FH",
+    draw_id = 1:1000L,
+    home_goals = rpois(1000, 30), away_goals = rpois(1000, 26)
+  ), "beliefs_latest", root = root)
+
+  write_table(tibble::tibble(
+    sport = "handball", country = "iceland",
+    scraped_at = Sys.time(), match_date = match_date,
+    home_team = "Valur", away_team = "FH",
+    market = "moneyline", outcome = c("home", "away"),
+    line = NA_real_, odds = c(2.60, 2.20)
+  ), "odds", root = root)
+}
+
+interlock_league <- function(enabled = NULL) {
+  betting <- list(
+    kelly_frac = 0.10, ev_threshold = 0.0,
+    markets = list(moneyline = TRUE, spread = FALSE, total = FALSE),
+    scoring = list(has_ties = TRUE, tie_threshold = 0.5),
+    min_bet = 1L, max_age_hours = 999999L
+  )
+  if (!is.null(enabled)) betting$enabled <- enabled
+  list(
+    sport = "handball", country = "iceland", sexes = "male",
+    active = TRUE, stan_model = "x.stan", betting = betting
+  )
+}
+
+interlock_bankroll <- function() {
+  list(
+    initial_pool = 23610, current_pool = 23610,
+    daily_budget_frac = 0.5, daily_budget_min_isk = 1000
+  )
+}
+
+interlock_decide <- function(root, enabled) {
+  suppressMessages(decide_league(
+    league = interlock_league(enabled), sex = "male",
+    root = root, bankroll = interlock_bankroll(), return_candidates = TRUE
+  ))
+}
+
+test_that("an ENABLED league produces candidates from this fixture", {
+  # Positive control. Without it, the disabled-league assertion below could
+  # pass because the fixture yields nothing, not because the guard fired --
+  # a test that proves the guard works when it does not.
+  root <- withr::local_tempdir()
+  interlock_decide_setup(root)
+  expect_gt(nrow(interlock_decide(root, enabled = NULL)), 0L)
+})
+
+test_that("decide_league returns nothing for a betting-disabled league", {
+  root <- withr::local_tempdir()
+  interlock_decide_setup(root)
+
+  expect_equal(nrow(interlock_decide(root, enabled = FALSE)), 0L)
+
+  # decide_write_empty() is a no-op (write_table() returns early on a zero-row
+  # frame), so no partition is created and read_table() sees nothing.
+  expect_equal(nrow(read_table("candidates", root = root)), 0L)
+  expect_equal(nrow(read_table("recommendations", root = root)), 0L)
+})
+
+test_that("the decide guard fires before any odds are read", {
+  # A disabled league with NO odds store at all must still exit cleanly rather
+  # than erroring -- proving the guard precedes the odds read.
+  root <- withr::local_tempdir()
+  set.seed(11)
+  write_table(tibble::tibble(
+    sport = "handball", country = "iceland", sex = "male",
+    fit_date = Sys.Date(), match_date = Sys.Date() + 1L,
+    home_team = "Valur", away_team = "FH", draw_id = 1:100L,
+    home_goals = rpois(100, 30), away_goals = rpois(100, 26)
+  ), "beliefs_latest", root = root)
+
+  expect_equal(nrow(interlock_decide(root, enabled = FALSE)), 0L)
+})
