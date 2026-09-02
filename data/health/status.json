@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-09-02T15:59:40Z",
+  "generated_at": "2026-09-02T21:37:27Z",
   "overall": "WARN",
   "n_fail": 0,
-  "n_warn": 3,
+  "n_warn": 2,
   "checks": [
     {
       "check": "fit_freshness",
@@ -49,8 +49,8 @@
     {
       "check": "odds_freshness",
       "scope": "football_iceland",
-      "status": "WARN",
-      "value": "next fixture in 2d, no upcoming odds scraped",
+      "status": "OK",
+      "value": "odds cover upcoming fixtures (next in 2d)",
       "threshold": "odds for fixtures within 3d"
     },
     {
