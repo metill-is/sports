@@ -6,28 +6,22 @@ name: World Cup Forecast
 # the forecast MUST consume it in the same run -- it can't be split across jobs.
 #
 # Downstream: this commits the 6 JSONs under data/publish/world_cup/karla/ to
-# metill-is/sports. The metill-platform `pull-sports-data.yml` cron (hourly)
-# already rsyncs the whole data/publish/ tree -> the /hm2026/ page, so no
-# metill-platform change is needed; freshness latency is <=1h, same as the
-# Icelandic football.
+# metill-is/sports. The metill-platform `pull-sports-data.yml` cron (7x daily
+# since 2026-09-02) already rsyncs the whole data/publish/ tree -> the /hm2026/
+# page, so no metill-platform change is needed.
 
 on:
-  schedule:
-    # Poll hourly, around the clock. The cheap SHA pre-gate (see the `gate` job)
-    # turns a poll with no new martj42 commit into a sub-minute no-op -- it never
-    # clones this ~11 GB repo or spins up R/CmdStan -- so frequent polling costs
-    # almost nothing (and this repo is public, so Actions minutes are free too).
-    #
-    # Hourly, not the old 2x/day morning window, because during the live
-    # tournament martj42 posts results across the whole UTC day: 2026 WC games
-    # kick off in North-American afternoons/evenings -> late-UTC commits, not just
-    # the ~05:00-10:04 UTC qualifier-update window the previous schedule targeted.
-    # Detection latency is then <=1h; the downstream metill-platform rsync
-    # (pull-sports-data.yml) is itself hourly, so polling faster buys nothing.
-    #
-    # Minute 17, not :00, to dodge the top-of-hour congestion that makes GitHub
-    # delay (and sometimes drop) scheduled runs.
-    - cron: '17 * * * *'
+  # No schedule. The WC 2026 final was played 2026-07-19 and the `gate` job below
+  # hard-stops past WC_END_DATE ('2026-07-20'): the `window` step string-compares
+  # today against it and sets proceed=false BEFORE the martj42 SHA is even read.
+  # So every scheduled firing since 20 July has been a provably dead branch, not
+  # merely an idle one -- ~720 no-op runs a month, each also doing a courtesy
+  # `git ls-remote` against martj42/international_results for a result it cannot
+  # act on. Verified 2026-09-02: last actual output was 2026-07-19T23:57Z.
+  #
+  # Hourly was deliberate WC26-era cadence (results arrived across the whole UTC
+  # day during the tournament). Re-arm for the next cycle by bumping WC_END_DATE
+  # and restoring `- cron: '17 * * * *'` under a `schedule:` key here.
   workflow_dispatch:
     inputs:
       force:

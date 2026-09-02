@@ -2,9 +2,14 @@ name: Discover Lengjan Leagues
 
 on:
   schedule:
-    # Once daily UTC, off the odds-scrape slots (8,11,14,20) and the
-    # healthcheck slots. Competitions appear at most a few times per season.
-    - cron: '40 6 * * *'
+    # Twice weekly (Mon + Thu) UTC, off the odds-scrape slots (8,11,14,20) and
+    # the healthcheck slots. Competitions appear at most a few times per season,
+    # so a daily poll was ~30x oversampling: cut 2026-09-02 alongside retiring
+    # the WC cron. Two slots rather than one because GitHub is currently dropping
+    # ~70% of scheduled triggers, so a single weekly slot would really fire about
+    # monthly. A missed discovery costs at most a few days' delay before a new
+    # competition is proposed -- nothing downstream is deadline-bound on it.
+    - cron: '40 6 * * 1,4'
   workflow_dispatch: {}
 
 permissions:
