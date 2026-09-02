@@ -49,6 +49,88 @@ fixture_division_teams <- function(sport, sex, division) {
   normalizePath(file.path(dirname(script), ".."), mustWork = FALSE)
 }
 
+# Single round-robin per (sport, sex, division, season). The home team of each
+# pair is indexed lower than the away team and wins by a margin that also orders
+# goal difference, so the realised table equals the team order -- a
+# deterministic standings target.
+#
+# Matches are packed at most 10 match-days deep (`per_day` below) so that even
+# football's 12-team BD round-robin (66 matches) finishes well before
+# FIXTURE_END_DATE. If it spilled past that date prepare_data() would fold the
+# overflow into pred_d via its upcoming-from-results union, making N_pred depend
+# on the division size.
+.fixture_results_one <- function(sport, sex, division, season, start_date) {
+  teams <- fixture_division_teams(sport, sex, division)
+  grid <- utils::combn(seq_along(teams), 2L)
+  n <- ncol(grid)
+  hi <- grid[1L, ]
+  ai <- grid[2L, ]
+  per_day <- ceiling(n / 10L)
+  day <- ceiling(seq_len(n) / per_day)
+  base <- switch(sport, basketball = 80L, handball = 24L, football = 1L)
+  tibble::tibble(
+    sport      = sport,
+    country    = "iceland",
+    sex        = sex,
+    season     = as.integer(season),
+    match_date = start_date + day,
+    home_team  = teams[hi],
+    away_team  = teams[ai],
+    home_score = as.integer(base + length(teams) - hi + 1L),
+    away_score = as.integer(base + length(teams) - ai),
+    division   = division,
+    round      = as.integer(day)
+  )
+}
+
+# All committed synthetic results rows.
+.fixture_results <- function() {
+  out <- list()
+  for (sport in names(FIXTURE_DIVISIONS)) {
+    for (sex in names(FIXTURE_DIVISIONS[[sport]])) {
+      for (division in names(FIXTURE_DIVISIONS[[sport]][[sex]])) {
+        # 2099 gives prepare_data a second season (season_first / N_seasons);
+        # 2100 is the current season the publishers summarise.
+        out[[length(out) + 1L]] <- .fixture_results_one(
+          sport, sex, division, 2099L, as.Date("2099-11-02")
+        )
+        out[[length(out) + 1L]] <- .fixture_results_one(
+          sport, sex, division, 2100L, as.Date("2100-01-02")
+        )
+      }
+    }
+  }
+  dplyr::bind_rows(out)
+}
+
+# Three upcoming matches per (sport, sex, division), all inside
+# [FIXTURE_END_DATE, FIXTURE_END_DATE + 14] so prepare_data()'s DEFAULT
+# schedule_horizon_days = 14L picks them up -- the publishers call
+# prepare_data() internally at the default and take no prep= argument.
+.fixture_schedules <- function() {
+  out <- list()
+  for (sport in names(FIXTURE_DIVISIONS)) {
+    for (sex in names(FIXTURE_DIVISIONS[[sport]])) {
+      for (division in names(FIXTURE_DIVISIONS[[sport]][[sex]])) {
+        teams <- fixture_division_teams(sport, sex, division)
+        out[[length(out) + 1L]] <- tibble::tibble(
+          sport        = sport,
+          country      = "iceland",
+          sex          = sex,
+          season       = 2100L,
+          match_date   = as.Date(c("2100-01-16", "2100-01-18", "2100-01-20")),
+          home_team    = teams[c(1L, 3L, 2L)],
+          away_team    = teams[c(2L, 4L, 3L)],
+          division     = division,
+          round        = c(90L, 91L, 92L),
+          kickoff_time = c("19:15", "19:15", "17:00")
+        )
+      }
+    }
+  }
+  dplyr::bind_rows(out)
+}
+
 # Regenerate all committed fixtures. Filled in over Tasks 2-8.
 make_extract_fixtures <- function(dest = NULL, quiet = FALSE) {
   if (is.null(dest)) {
@@ -57,9 +139,23 @@ make_extract_fixtures <- function(dest = NULL, quiet = FALSE) {
     dest <- file.path(root, "tests", "testthat", "fixtures")
   }
   dir.create(dest, recursive = TRUE, showWarnings = FALSE)
-  files <- character()
-  bytes <- 0L
-  if (!quiet) message("make_extract_fixtures: wrote ", length(files), " files")
+
+  facts_dir <- file.path(dest, "facts")
+  dir.create(facts_dir, recursive = TRUE, showWarnings = FALSE)
+  arrow::write_parquet(.fixture_results(), file.path(facts_dir, "results.parquet"))
+  arrow::write_parquet(.fixture_schedules(), file.path(facts_dir, "schedules.parquet"))
+  files <- c(
+    file.path(facts_dir, "results.parquet"),
+    file.path(facts_dir, "schedules.parquet")
+  )
+  bytes <- sum(file.info(files)$size)
+
+  if (!quiet) {
+    message(sprintf(
+      "make_extract_fixtures: %d files, %s KB",
+      length(files), format(round(bytes / 1024, 1))
+    ))
+  }
   invisible(list(bytes = bytes, files = files))
 }
 

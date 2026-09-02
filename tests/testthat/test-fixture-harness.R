@@ -19,3 +19,32 @@ test_that("the fixture generator is source-able without loading a package", {
   expect_silent(sys.source(gen, envir = env))
   expect_true(is.function(env$make_extract_fixtures))
 })
+
+test_that("the facts fixture drives prepare_data for all three sports", {
+  root <- fixture_facts_root()
+  leagues <- load_leagues()
+
+  cells <- list(
+    list(key = "basketball_iceland", sex = "male"),
+    list(key = "basketball_iceland", sex = "female"),
+    list(key = "handball_iceland", sex = "male"),
+    list(key = "handball_iceland", sex = "female"),
+    list(key = "football_iceland", sex = "male"),
+    list(key = "football_iceland", sex = "female")
+  )
+
+  for (cell in cells) {
+    prep <- suppressMessages(prepare_data(
+      leagues[[cell$key]], cell$sex,
+      end_date = FIXTURE_END_DATE, root = root
+    ))
+    info <- paste(cell$key, cell$sex)
+    # Training data present, upcoming fixtures inside the DEFAULT 14-day horizon.
+    expect_gt(nrow(prep$teams), 5L)
+    expect_gt(prep$stan_data$N, 10L)
+    expect_gt(nrow(prep$pred_d), 0L)
+    expect_equal(prep$stan_data$N_pred, nrow(prep$pred_d), info = info)
+    expect_true(all(prep$pred_d$match_date > FIXTURE_END_DATE), info = info)
+    expect_true(all(prep$pred_d$match_date <= FIXTURE_END_DATE + 14L), info = info)
+  }
+})
