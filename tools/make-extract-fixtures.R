@@ -177,6 +177,64 @@ fixture_division_teams <- function(sport, sex, division) {
   env
 }
 
+# Regenerate tests/testthat/fixtures/golden/football-publish-hashes.csv.
+#
+# Football's extracts partition is NOT committed -- see
+# build_football_extracts_fixture() in helper-extract-fixtures.R for why -- so
+# only the hash manifest is stored, and both this generator and the test
+# rebuild the partition from the same deterministic function.
+make_football_golden_hashes <- function(dest = NULL) {
+  root <- .fixture_gen_pkg_root()
+  stopifnot(!is.null(root))
+  if (is.null(dest)) {
+    dest <- file.path(root, "tests", "testthat", "fixtures", "golden")
+  }
+  dir.create(dest, recursive = TRUE, showWarnings = FALSE)
+
+  helpers <- file.path(root, "tests", "testthat")
+  env <- new.env(parent = environment())
+  for (h in c("helper-fixture-facts.R", "helper-stub-fit.R",
+              "helper-extract-fixtures.R")) {
+    sys.source(file.path(helpers, h), envir = env)
+  }
+
+  facts_root <- file.path(tempdir(), paste0("golden-facts-", Sys.getpid()))
+  unlink(facts_root, recursive = TRUE)
+  write_table(.fixture_results(), "results", root = facts_root)
+  write_table(.fixture_schedules(), "schedules", root = facts_root)
+
+  extracts_root <- file.path(tempdir(), paste0("golden-extracts-", Sys.getpid()))
+  out <- file.path(tempdir(), paste0("golden-out-", Sys.getpid()))
+  unlink(c(extracts_root, out), recursive = TRUE)
+  league <- load_leagues()[["football_iceland"]]
+  for (sex in c("male", "female")) {
+    env$build_football_extracts_fixture(facts_root, extracts_root, sex)
+    extracted <- read_extracted_football(
+      league, sex = sex, fit_date = FIXTURE_FIT_DATE, extracts_root = extracts_root
+    )
+    suppressWarnings(publish_football_iceland(
+      extracted = extracted, league = league, sex = sex,
+      end_date = FIXTURE_END_DATE, root = facts_root,
+      output_root = out, extracts_root = extracts_root,
+      archive_root = file.path(tempdir(), paste0("golden-archive-", Sys.getpid()))
+    ))
+  }
+  produced <- list.files(
+    file.path(out, "football"), pattern = "\\.json$",
+    recursive = TRUE, full.names = TRUE
+  )
+  manifest <- data.frame(
+    file = sub(paste0("^", out, "/"), "", produced),
+    sha256 = vapply(produced, env$publish_json_digest, character(1), USE.NAMES = FALSE),
+    stringsAsFactors = FALSE
+  )
+  manifest <- manifest[order(manifest$file), , drop = FALSE]
+  path <- file.path(dest, "football-publish-hashes.csv")
+  utils::write.csv(manifest, path, row.names = FALSE)
+  message("make_football_golden_hashes: ", nrow(manifest), " payloads -> ", path)
+  invisible(path)
+}
+
 # Regenerate all committed fixtures.
 make_extract_fixtures <- function(dest = NULL, quiet = FALSE) {
   if (is.null(dest)) {
@@ -219,5 +277,9 @@ make_extract_fixtures <- function(dest = NULL, quiet = FALSE) {
 
 if (sys.nframe() == 0L && !is.null(.fixture_gen_pkg_root())) {
   devtools::load_all(.fixture_gen_pkg_root(), quiet = TRUE)
-  make_extract_fixtures()
+  if ("--golden" %in% commandArgs(trailingOnly = TRUE)) {
+    make_football_golden_hashes()
+  } else {
+    make_extract_fixtures()
+  }
 }
