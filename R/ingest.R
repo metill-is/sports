@@ -154,9 +154,23 @@ ingest_one_league <- function(static, key, active_path) {
 #' @param lengjan Per-league `lengjan` slice (competitions + team_names).
 #' @param key League key.
 #' @param active_path Path to `config/active_competitions.json`.
+#' @param betting Per-league `betting` slice, or `NULL`. When
+#'   `betting$enabled` is `FALSE` the scrape is refused outright (decision D2
+#'   -- publish without betting). Trailing and defaulted so existing four-arg
+#'   calls keep working.
 #' @return Number of odds rows written (integer).
 #' @export
-ingest_one_lengjan <- function(static, lengjan, key, active_path) {
+ingest_one_lengjan <- function(static, lengjan, key, active_path,
+                               betting = NULL) {
+  # D2 interlock. Checked before the activation gate: a league we will never
+  # bet should not launch a browser even when it does have fixtures today.
+  # Emptying `lengjan.competitions` already leaves nothing to fetch; this is
+  # the second lock, so restoring the ids without re-enabling betting cannot
+  # silently re-arm the scrape.
+  if (!betting_enabled(list(betting = betting))) {
+    cli::cli_alert_info("{key}: skipped (betting disabled)")
+    return(0L)
+  }
   if (!.is_league_active(active_path, key)) {
     cli::cli_alert_info("{key}: skipped (no active fixtures)")
     return(0L)

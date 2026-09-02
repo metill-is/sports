@@ -4,7 +4,7 @@
 \alias{ingest_one_lengjan}
 \title{Run Lengjan odds ingest for a single league (DAG wrapper).}
 \usage{
-ingest_one_lengjan(static, lengjan, key, active_path)
+ingest_one_lengjan(static, lengjan, key, active_path, betting = NULL)
 }
 \arguments{
 \item{static}{Per-league static slice.}
@@ -14,6 +14,11 @@ ingest_one_lengjan(static, lengjan, key, active_path)
 \item{key}{League key.}
 
 \item{active_path}{Path to `config/active_competitions.json`.}
+
+\item{betting}{Per-league `betting` slice, or `NULL`. When
+`betting$enabled` is `FALSE` the scrape is refused outright (decision D2
+-- publish without betting). Trailing and defaulted so existing four-arg
+calls keep working.}
 }
 \value{
 Number of odds rows written (integer).

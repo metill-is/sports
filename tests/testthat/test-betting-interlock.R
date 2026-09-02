@@ -132,3 +132,48 @@ test_that("the decide guard fires before any odds are read", {
 
   expect_equal(nrow(interlock_decide(root, enabled = FALSE)), 0L)
 })
+
+# --- the odds-ingest guard ----------------------------------------------------
+
+test_that("ingest_one_lengjan scrapes nothing for a betting-disabled league", {
+  testthat::local_mocked_bindings(
+    .is_league_active = function(active_path, key) TRUE,
+    ingest_lengjan_odds = function(...) stop("scraper must not be reached")
+  )
+  res <- suppressMessages(ingest_one_lengjan(
+    list(sport = "handball", country = "iceland"),
+    list(competitions = list(list(id = "1269", name = "x", sex = "male"))),
+    "handball_iceland", "active.json",
+    betting = list(enabled = FALSE)
+  ))
+  expect_identical(res, 0L)
+})
+
+test_that("ingest_one_lengjan is unaffected when betting is absent", {
+  # Locks the existing four-arg contract: `betting` is trailing and defaulted.
+  testthat::local_mocked_bindings(
+    .is_league_active = function(active_path, key) TRUE,
+    ingest_lengjan_odds = function(...) 7L
+  )
+  res <- suppressMessages(ingest_one_lengjan(
+    list(sport = "football", country = "iceland"), list(),
+    "football_iceland", "active.json"
+  ))
+  expect_identical(res, 7L)
+})
+
+test_that("the odds guard fires before the activation gate", {
+  # A disabled league must not even consult active_competitions.json -- a
+  # league we will never bet should not launch a browser on a fixture day.
+  testthat::local_mocked_bindings(
+    .is_league_active = function(active_path, key) stop("gate must not be reached"),
+    ingest_lengjan_odds = function(...) stop("scraper must not be reached")
+  )
+  expect_identical(
+    suppressMessages(ingest_one_lengjan(
+      list(sport = "handball", country = "iceland"), list(),
+      "handball_iceland", "active.json", betting = list(enabled = FALSE)
+    )),
+    0L
+  )
+})

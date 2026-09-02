@@ -63,7 +63,10 @@ for (key in names(active)) {
 
   cli::cli_h2("{key}")
   n_inseason <- n_inseason + 1L
-  total_rows <- total_rows + ingest_one_lengjan(static, lengjan, key, active_path)
+  total_rows <- total_rows + ingest_one_lengjan(
+    static, lengjan, key, active_path,
+    betting = league_def[["betting"]]
+  )
 }
 
 # A run-wide 0-row result is usually benign, not an outage: between rounds --
