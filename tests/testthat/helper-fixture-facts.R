@@ -11,8 +11,11 @@ FIXTURE_FIT_DATE <- as.Date("2100-01-01")
 FIXTURE_N_DRAWS <- 50L
 
 FIXTURE_DIVISIONS <- list(
-  basketball = list(male = c(BD = 6L, `1D` = 6L), female = c(BD = 6L, `1D` = 6L)),
-  handball   = list(male = c(OD = 6L, G66 = 6L), female = c(OD = 6L, G66 = 6L)),
+  # BD / OD are 4 teams, not 6: team_strengths_quantiles is 9 cells x 99
+  # quantiles per team, and at 6 teams the committed extracts tree came to
+  # 318 KB -- past the 250 KB budget. Every non-top division stays at 6.
+  basketball = list(male = c(BD = 4L, `1D` = 6L), female = c(BD = 4L, `1D` = 6L)),
+  handball   = list(male = c(OD = 4L, G66 = 6L), female = c(OD = 4L, G66 = 6L)),
   football   = list(
     male   = c(BD = 12L, LD1 = 6L, LD2 = 6L, LD3 = 6L, CUP = 4L),
     female = c(BD = 10L, LD1 = 6L, LD2 = 6L, CUP = 4L)

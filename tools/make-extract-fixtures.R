@@ -19,8 +19,11 @@ FIXTURE_N_DRAWS <- 50L
 # config/leagues.yml (male 6/6, female 6/4), so it needs 12 / 10 teams.
 # MUST stay identical to tests/testthat/helper-fixture-facts.R.
 FIXTURE_DIVISIONS <- list(
-  basketball = list(male = c(BD = 6L, `1D` = 6L), female = c(BD = 6L, `1D` = 6L)),
-  handball   = list(male = c(OD = 6L, G66 = 6L), female = c(OD = 6L, G66 = 6L)),
+  # BD / OD are 4 teams, not 6: team_strengths_quantiles is 9 cells x 99
+  # quantiles per team, and at 6 teams the committed extracts tree came to
+  # 318 KB -- past the 250 KB budget. Every non-top division stays at 6.
+  basketball = list(male = c(BD = 4L, `1D` = 6L), female = c(BD = 4L, `1D` = 6L)),
+  handball   = list(male = c(OD = 4L, G66 = 6L), female = c(OD = 4L, G66 = 6L)),
   football   = list(
     male   = c(BD = 12L, LD1 = 6L, LD2 = 6L, LD3 = 6L, CUP = 4L),
     female = c(BD = 10L, LD1 = 6L, LD2 = 6L, CUP = 4L)
@@ -131,7 +134,50 @@ fixture_division_teams <- function(sport, sex, division) {
   dplyr::bind_rows(out)
 }
 
-# Regenerate all committed fixtures. Filled in over Tasks 2-8.
+# Generate the committed 2DT extracts tree by running the REAL extractors
+# against a stub fit -- so the fixture's schema is the extractor's own output,
+# not a hand-written guess that can drift from it.
+.write_2dt_extract_fixtures <- function(dest, facts_root, stub_env) {
+  extracts_root <- file.path(dest, "extracts")
+  unlink(file.path(extracts_root, "sport=basketball"), recursive = TRUE)
+  unlink(file.path(extracts_root, "sport=handball"), recursive = TRUE)
+
+  cfg <- list(
+    basketball = list(key = "basketball_iceland", fn = extract_basketball_iceland),
+    handball   = list(key = "handball_iceland", fn = extract_handball_iceland)
+  )
+  leagues <- load_leagues()
+  for (sport in names(cfg)) {
+    for (sex in c("male", "female")) {
+      league <- leagues[[cfg[[sport]]$key]]
+      prep <- prepare_data(league, sex, end_date = FIXTURE_END_DATE, root = facts_root)
+      fit <- stub_env$stub_fit(stub_env$stub_2dt_draws(
+        prep$teams$team, nrow(prep$pred_d), n_draws = FIXTURE_N_DRAWS
+      ))
+      cfg[[sport]]$fn(
+        fit = fit, league = league, sex = sex,
+        fit_date = FIXTURE_FIT_DATE,
+        end_date = FIXTURE_END_DATE,
+        root = facts_root,
+        extracts_root = extracts_root,
+        prep = prep
+      )
+    }
+  }
+  list.files(extracts_root, recursive = TRUE, full.names = TRUE)
+}
+
+# stub_fit() / stub_2dt_draws() live in the test helper, not the package, so
+# the generator sources it into a private env rather than duplicating it.
+.fixture_stub_env <- function(dest) {
+  env <- new.env(parent = globalenv())
+  helper <- file.path(dirname(dest), "helper-stub-fit.R")
+  stopifnot(file.exists(helper))
+  sys.source(helper, envir = env)
+  env
+}
+
+# Regenerate all committed fixtures.
 make_extract_fixtures <- function(dest = NULL, quiet = FALSE) {
   if (is.null(dest)) {
     root <- .fixture_gen_pkg_root()
@@ -148,12 +194,24 @@ make_extract_fixtures <- function(dest = NULL, quiet = FALSE) {
     file.path(facts_dir, "results.parquet"),
     file.path(facts_dir, "schedules.parquet")
   )
+
+  facts_root <- file.path(tempdir(), paste0("fixture-facts-", Sys.getpid()))
+  unlink(facts_root, recursive = TRUE)
+  dir.create(facts_root, recursive = TRUE, showWarnings = FALSE)
+  write_table(.fixture_results(), "results", root = facts_root)
+  write_table(.fixture_schedules(), "schedules", root = facts_root)
+
+  extract_files <- .write_2dt_extract_fixtures(
+    dest, facts_root, .fixture_stub_env(dest)
+  )
+  files <- c(files, extract_files)
   bytes <- sum(file.info(files)$size)
 
   if (!quiet) {
     message(sprintf(
-      "make_extract_fixtures: %d files, %s KB",
-      length(files), format(round(bytes / 1024, 1))
+      "make_extract_fixtures: %d files, %s KB (extracts tree: %s KB / 250 KB budget)",
+      length(files), format(round(bytes / 1024, 1)),
+      format(round(sum(file.info(extract_files)$size) / 1024, 1))
     ))
   }
   invisible(list(bytes = bytes, files = files))
