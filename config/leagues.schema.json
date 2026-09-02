@@ -79,6 +79,10 @@
           "additionalProperties": false,
           "required": ["kelly_frac", "ev_threshold", "markets", "scoring", "min_bet"],
           "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Publish-only switch. When false, decide/placer/odds-ingest refuse this league (spec 2026-09-02 §3, decision D2). Absent means enabled -- football carries no key."
+            },
             "kelly_frac": {
               "oneOf": [
                 { "type": "number", "minimum": 0, "maximum": 1 },
