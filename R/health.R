@@ -208,6 +208,17 @@ check_odds_freshness <- function(leagues, root, now, th) {
   rows <- list()
   for (key in names(leagues)) {
     lg <- leagues[[key]]
+    # D2 (spec 2026-09-02 section 3): a betting-disabled league is not scraped,
+    # so absent odds are correct rather than a breach. Report PAUSED -- which
+    # overall_health_status() does not escalate -- rather than letting the
+    # fixture-proximity rule below WARN every matchday of the season.
+    if (!betting_enabled(lg)) {
+      rows[[key]] <- health_row(
+        "odds_freshness", key, "PAUSED",
+        "betting disabled (betting.enabled: false)", thr_lbl
+      )
+      next
+    }
     static <- list(sport = lg$sport, country = lg$country)
     sch <- .schedule_frame(static, .cell_sexes(lg), root)
     if (nrow(sch) == 0L) next

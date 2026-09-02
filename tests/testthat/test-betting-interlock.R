@@ -256,3 +256,35 @@ test_that("load_recommendations drops disabled leagues under the SHIPPED config"
   out <- suppressMessages(load_recommendations(root))
   expect_setequal(out$sport, "football")
 })
+
+# --- health reporting ---------------------------------------------------------
+
+test_that("odds_freshness reports PAUSED for a betting-disabled league", {
+  root <- withr::local_tempdir()
+  write_table(tibble::tibble(
+    sport = "handball", country = "iceland", sex = "male",
+    season = 2027L, division = "OD",
+    match_date = Sys.Date() + 1L, round = 1L, kickoff_time = NA_character_,
+    home_team = "Valur", away_team = "FH"
+  ), "schedules", root = root)
+
+  lg <- list(handball_iceland = list(
+    sport = "handball", country = "iceland", sexes = "male",
+    betting = list(enabled = FALSE)
+  ))
+  out <- check_odds_freshness(lg, root = root, now = Sys.time(), th = health_thresholds())
+
+  expect_equal(nrow(out), 1L)
+  expect_equal(out$status, "PAUSED")
+  expect_match(out$value, "betting disabled")
+})
+
+test_that("PAUSED does not escalate the overall health status", {
+  # The whole point of PAUSED over WARN: a deliberately unscraped league must
+  # not turn the healthcheck permanently amber for the rest of the season.
+  rows <- dplyr::bind_rows(
+    health_row("odds_freshness", "handball_iceland", "PAUSED", "betting disabled", "x"),
+    health_row("fit_freshness", "football_iceland", "OK", "1d old", "<= 2d")
+  )
+  expect_equal(overall_health_status(rows), "OK")
+})
