@@ -20,7 +20,8 @@ load_recommendations <- function(root,
                                  leagues = NULL,
                                  today_only = FALSE,
                                  target_date = NULL,
-                                 run_date = NULL) {
+                                 run_date = NULL,
+                                 leagues_cfg = NULL) {
   # `read_table` already returns an empty tibble when the partition directory
   # is absent (storage.R:266), so the previous tryCatch was hiding genuine
   # read errors (corrupt Parquet, schema drift). Let real errors propagate.
@@ -51,7 +52,46 @@ load_recommendations <- function(root,
     recs <- recs[keep, , drop = FALSE]
   }
 
-  recs
+  drop_betting_disabled(recs, leagues_cfg = leagues_cfg)
+}
+
+#' Drop recommendations belonging to betting-disabled leagues.
+#'
+#' Decision D2 (spec 2026-09-02 section 3): a league may be modelled and
+#' published without being bet. The decide layer refuses to write such
+#' recommendations, but rows written *before* a league was disarmed outlive
+#' the config change, and `run_auto_place()` places every pending
+#' recommendation by design -- so the placer filters on read as well.
+#'
+#' @param recs Recommendation rows.
+#' @param leagues_cfg Named league config, defaulting to [load_leagues()].
+#'   Named distinctly from `load_recommendations()`'s `leagues`, which is a
+#'   character vector of keys to keep, not a config.
+#' @return `recs` without rows for betting-disabled leagues.
+#' @keywords internal
+#' @noRd
+drop_betting_disabled <- function(recs, leagues_cfg = NULL) {
+  if (nrow(recs) == 0L) {
+    return(recs)
+  }
+  if (is.null(leagues_cfg)) leagues_cfg <- load_leagues()
+
+  disabled <- names(leagues_cfg)[
+    !vapply(leagues_cfg, betting_enabled, logical(1))
+  ]
+  if (length(disabled) == 0L) {
+    return(recs)
+  }
+
+  drop <- paste0(recs$sport, "_", recs$country) %in% disabled
+  if (any(drop)) {
+    cli::cli_alert_warning(
+      "Dropping {sum(drop)} recommendation{?s} for betting-disabled \\
+       league{?s} (betting.enabled: false): \\
+       {.val {unique(paste0(recs$sport, '_', recs$country)[drop])}}"
+    )
+  }
+  recs[!drop, , drop = FALSE]
 }
 
 #' Anti-join recommendations against the placed-bet ledger.

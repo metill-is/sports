@@ -177,3 +177,82 @@ test_that("the odds guard fires before the activation gate", {
     0L
   )
 })
+
+# --- the placer guards --------------------------------------------------------
+
+interlock_recs <- function() {
+  tibble::tibble(
+    sport = c("handball", "football", "basketball"),
+    country = "iceland",
+    sex = "male",
+    match_date = Sys.Date() + 1L,
+    home_team = c("Valur", "KR", "Valur"),
+    away_team = c("FH", "Fram", "Njarðvík"),
+    market = "moneyline", outcome = "home", line = NA_real_,
+    p = 0.6, odds = 2.0, kelly = 0.05, bet_amount = 500
+  )
+}
+
+interlock_cfg <- function() {
+  list(
+    handball_iceland   = list(betting = list(enabled = FALSE)),
+    basketball_iceland = list(betting = list(enabled = FALSE)),
+    football_iceland   = list(betting = list(kelly_frac = 0.1))
+  )
+}
+
+test_that("drop_betting_disabled removes disabled leagues and keeps football", {
+  out <- suppressMessages(
+    drop_betting_disabled(interlock_recs(), leagues_cfg = interlock_cfg())
+  )
+  expect_equal(nrow(out), 1L)
+  expect_equal(out$sport, "football")
+})
+
+test_that("drop_betting_disabled is a no-op when nothing is disabled", {
+  cfg <- list(football_iceland = list(betting = list(kelly_frac = 0.1)))
+  recs <- interlock_recs()[2, , drop = FALSE]
+  expect_equal(nrow(drop_betting_disabled(recs, leagues_cfg = cfg)), 1L)
+})
+
+test_that("drop_betting_disabled tolerates zero rows", {
+  empty <- interlock_recs()[0, , drop = FALSE]
+  expect_equal(nrow(drop_betting_disabled(empty, leagues_cfg = interlock_cfg())), 0L)
+})
+
+test_that("validate_betting_enabled aborts naming every disabled league", {
+  expect_error(
+    validate_betting_enabled(interlock_cfg(), interlock_recs()),
+    "handball_iceland"
+  )
+  expect_error(
+    validate_betting_enabled(interlock_cfg(), interlock_recs()),
+    "basketball_iceland"
+  )
+})
+
+test_that("validate_betting_enabled passes when every rec is bettable", {
+  recs <- interlock_recs()[2, , drop = FALSE]
+  expect_true(validate_betting_enabled(interlock_cfg(), recs))
+})
+
+test_that("load_recommendations drops disabled leagues under the SHIPPED config", {
+  # End-to-end guard. The filter tests in test-placer-{load,preview}.R pin an
+  # explicit config so they keep testing the filter; this one deliberately uses
+  # the real config, so it fails if basketball or handball is ever re-armed
+  # without that being a considered decision.
+  root <- withr::local_tempdir()
+  write_table(tibble::tibble(
+    sport = c("basketball", "handball", "football"),
+    country = "iceland", sex = "male",
+    run_date = Sys.Date(),
+    match_date = Sys.Date() + 1L,
+    home_team = "A", away_team = "B",
+    market = "moneyline", outcome = "home", line = NA_real_,
+    p = 0.6, odds = 2.0, ev = 0.2, kelly = 0.05, bet_amount = 500,
+    run_id = as.POSIXct("2026-09-02", tz = "UTC")
+  ), "recommendations", root = root)
+
+  out <- suppressMessages(load_recommendations(root))
+  expect_setequal(out$sport, "football")
+})

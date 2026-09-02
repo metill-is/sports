@@ -28,10 +28,17 @@ test_that("preview_pending honours league filter", {
   ))
   write_table(recs, "recommendations", root = tmp)
 
+  # Filter-mechanism test: pin an explicit league config so it exercises the
+  # filter rather than the shipped betting policy. basketball_iceland is
+  # betting-disabled in production (D2), and load_recommendations() drops
+  # disabled leagues -- without this pin the assertion would pass for the
+  # wrong reason and stop testing the filter at all.
+  cfg <- list(basketball_iceland = list(betting = list(kelly_frac = 0.05)))
   out <- preview_pending(
     leagues = "basketball_iceland",
     target_date = as.Date("2026-04-27"),
-    root = tmp
+    root = tmp,
+    leagues_cfg = cfg
   )
   expect_equal(nrow(out), 1L)
   expect_equal(out$sport, "basketball")
