@@ -55,7 +55,7 @@ NULL
   centres <- seq(range_low, range_high, by = bw)
   posterior_goals |>
     dplyr::mutate(
-      diff_raw = .data$home_goals - .data$away_goals,
+      diff_raw = .data$home_score - .data$away_score,
       bucket = .bucket_centre_2dt(.data$diff_raw, bw, range_low, range_high)
     ) |>
     dplyr::count(.data$game_nr, .data$bucket, name = "n") |>
@@ -146,14 +146,10 @@ NULL
     range_low = bucket_low,
     range_high = bucket_high
   )
-  bins_nested <- bins |>
-    dplyr::group_by(.data$game_nr) |>
-    dplyr::summarise(
-      goal_diff_distribution = list(
-        tibble::tibble(diff = .data$diff, p = .data$p)
-      ),
-      .groups = "drop"
-    )
+  # tidyr::nest, not group_by + summarise(list(tibble(.data$diff, ...))): inside
+  # summarise() the .data pronoun exposes only group keys and columns created so
+  # far, so `.data$diff` there errors with "Column `diff` not found".
+  bins_nested <- tidyr::nest(bins, goal_diff_distribution = c("diff", "p"))
 
   per_match |>
     dplyr::left_join(bins_nested, by = "game_nr") |>

@@ -38,6 +38,7 @@ Imports:
     yaml
 Suggests:
     cmdstanr,
+    digest,
     testthat (>= 3.0.0)
 Remotes:
     stan-dev/cmdstanr
