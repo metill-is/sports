@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-09-03T15:47:11Z",
+  "generated_at": "2026-09-03T21:37:45Z",
   "overall": "WARN",
   "n_fail": 0,
-  "n_warn": 2,
+  "n_warn": 3,
   "checks": [
     {
       "check": "fit_freshness",
@@ -98,8 +98,8 @@
     {
       "check": "placement_health",
       "scope": "auto_place",
-      "status": "OK",
-      "value": "no pending bets",
+      "status": "WARN",
+      "value": "3 pending, auto-place never run",
       "threshold": "healthy run < 14h when pending"
     },
     {
