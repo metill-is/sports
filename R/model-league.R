@@ -296,8 +296,23 @@ fit_league <- function(league_key = NULL,
           prep = prep
         ),
         error = function(e) {
-          cli::cli_alert_warning(
-            "extract_{league$sport}_iceland failed: {conditionMessage(e)}"
+          # Abort, do not warn. The extracts tree is becoming the SOLE input
+          # to publish, so a swallowed failure here means the cell silently
+          # stops publishing -- the exact invisible breakage this workstream
+          # exists to remove, and how B5 (an exp() on an additive parameter)
+          # sat unexercised for months.
+          #
+          # Safe to abort: beliefs_latest / beliefs_archive are already
+          # written above (:248-264), so the fit's output survives and only
+          # the run goes red.
+          cli::cli_abort(
+            c(
+              "extract_{league$sport}_iceland({sex}) failed.",
+              "x" = conditionMessage(e),
+              "i" = "Beliefs were written; the extract partition was not, so
+                     this cell would publish nothing."
+            ),
+            call = NULL
           )
         }
       )
