@@ -1,31 +1,60 @@
 #' @include ingest.R
+#' @include federation-seasons.R
 NULL
 
-#' HSÍ handball source URL templates.
+#' HSÍ tournament ids, keyed by (sex, division, season).
 #'
-#' Layout: HSI_URLS[[sex]][[division_slug]][[kind]] where
-#' - sex: "male" or "female"
-#' - division_slug: "div1" (Olísdeild), "div2" (Grill 66), "cup" (male only),
-#'   "playoffs"
-#' - kind: "url" (current season page)
+#' Layout: `HSI_TOURNAMENT_IDS[[sex]][[division]][["<season>"]]` -> integer
+#' `mot_nr` used in `https://www.hsi.is/tournament/{mot_nr}`. Seasons are
+#' labelled by the closing calendar year (2025 = Sept 2024 - May 2025), the
+#' same convention as [hsi_current_season()].
 #'
-#' Current-season pages render both results and schedule tables. For
-#' tournament-style pages (cup, playoffs), HSÍ exposes tournament IDs that
-#' rotate each year and require updating at the start of each season; same for
-#' the `-2025-26` suffix on the league pages.
+#' This replaces the previous split between `HSI_URLS` (dated league slugs for
+#' whichever season happened to be current when a human last edited the file)
+#' and `HSI_HISTORICAL_IDS` (tournament ids for everything older). That split
+#' was the defect: the slug and the season stamp came from two independent
+#' sources and drifted apart every July, and `https://www.hsi.is/olis-deild-
+#' karla-2026-27` is a 404 because HSÍ now serves `/tournament/<id>` only.
+#' One shape, one key, one lookup.
+#'
+#' Provenance for every seeded value lives in `config/federation-seasons.json`,
+#' not in this comment -- see [read_federation_seasons()]. `cup` and `playoffs`
+#' have no 2027 entry: HSÍ has not created those tournaments yet, and
+#' [hsi_unresolved_seasons()] reports the gap rather than a guessed id filling
+#' it. Historical 2021-2025 values came from the legacy
+#' `_legacy/sports/handball/iceland/R/utils/{male,female}/download_historical_
+#' data_div{1,2}.R`.
 #' @keywords internal
 #' @noRd
-HSI_URLS <- list(
+HSI_TOURNAMENT_IDS <- list(
   male = list(
-    div1 = "https://www.hsi.is/olis-deild-karla-2025-26",
-    div2 = "https://www.hsi.is/grill-66-deild-karla-2025-26",
-    cup = "https://www.hsi.is/tournament/8437",
-    playoffs = "https://www.hsi.is/tournament/8427"
+    div1 = list(
+      "2021" = 5260L, "2022" = 5640L, "2023" = 6149L,
+      "2024" = 6983L, "2025" = 7641L, "2027" = 9142L
+    ),
+    div2 = list(
+      "2021" = 5262L, "2022" = 5643L, "2023" = 6143L,
+      "2024" = 6981L, "2025" = 7644L, "2027" = 9140L
+    ),
+    cup = list(
+      "2026" = 8437L
+    ),
+    playoffs = list(
+      "2026" = 8427L
+    )
   ),
   female = list(
-    div1 = "https://www.hsi.is/olis-deild-kvenna-1",
-    div2 = "https://www.hsi.is/grill-66-deild-kvenna-2025-26",
-    playoffs = "https://www.hsi.is/tournament/8430"
+    div1 = list(
+      "2021" = 5261L, "2022" = 5641L, "2023" = 6146L,
+      "2024" = 6982L, "2025" = 7642L, "2027" = 9141L
+    ),
+    div2 = list(
+      "2021" = 5263L, "2022" = 5642L, "2023" = 6148L,
+      "2024" = 6980L, "2027" = 9143L
+    ),
+    playoffs = list(
+      "2026" = 8430L
+    )
   )
 )
 
@@ -45,81 +74,6 @@ HSI_DIVISION_LABELS <- c(
   playoffs = "PO"
 )
 
-#' Historical HSÍ tournament IDs per (sex, division, season).
-#'
-#' Layout: `HSI_HISTORICAL_IDS[[sex]][[division]][[as.character(season)]]` →
-#' integer `mot_nr` used in `https://www.hsi.is/tournament/{mot_nr}`.
-#'
-#' Season labels follow the same convention as `hsi_current_season()` — the
-#' closing calendar year of the season span (e.g. 2025 = Sept 2024 – May 2025).
-#' Values extracted from legacy `_legacy/sports/handball/iceland/R/utils/
-#' {male,female}/download_historical_data_div{1,2,cup}.R`.
-#'
-#' Notes / caveats:
-#' - Male cup history is omitted: the legacy `download_historical_data_cup.R`
-#'   copy-pasted the div1 IDs for 2021–2024 (a bug — it would have scraped the
-#'   Olísdeild tournament and written rows labelled "cup"). The 2025–26 cup is
-#'   already the current tournament in `HSI_URLS[[male]][[cup]]`.
-#' - Female div2 2025 is omitted: the legacy file has "2025" = 7644, which is
-#'   a copy-paste from male div2 (same ID) — the genuine female Grill 66 2024–25
-#'   tournament ID is not recoverable from the legacy source.
-#' - Current-season tournament IDs live in `HSI_URLS` (league pages, not
-#'   tournament pages) and are handled separately.
-#' @keywords internal
-#' @noRd
-HSI_HISTORICAL_IDS <- list(
-  male = list(
-    div1 = list(
-      "2021" = 5260L,
-      "2022" = 5640L,
-      "2023" = 6149L,
-      "2024" = 6983L,
-      "2025" = 7641L
-    ),
-    div2 = list(
-      "2021" = 5262L,
-      "2022" = 5643L,
-      "2023" = 6143L,
-      "2024" = 6981L,
-      "2025" = 7644L
-    )
-  ),
-  female = list(
-    div1 = list(
-      "2021" = 5261L,
-      "2022" = 5641L,
-      "2023" = 6146L,
-      "2024" = 6982L,
-      "2025" = 7642L
-    ),
-    div2 = list(
-      "2021" = 5263L,
-      "2022" = 5642L,
-      "2023" = 6148L,
-      "2024" = 6980L
-    )
-  )
-)
-
-#' Build the tournament URL for a historical HSÍ (sex, division, season).
-#' @keywords internal
-#' @noRd
-hsi_historical_url <- function(sex, division, season) {
-  ids_sex <- HSI_HISTORICAL_IDS[[sex]]
-  if (is.null(ids_sex)) {
-    return(NULL)
-  }
-  ids_div <- ids_sex[[division]]
-  if (is.null(ids_div)) {
-    return(NULL)
-  }
-  mot_nr <- ids_div[[as.character(season)]]
-  if (is.null(mot_nr)) {
-    return(NULL)
-  }
-  sprintf("https://www.hsi.is/tournament/%d", as.integer(mot_nr))
-}
-
 #' Icelandic month-abbreviation → 2-digit month number map.
 #'
 #' HSÍ date strings look like "Fim. 12. mar. 26" — day, abbreviated month
@@ -134,22 +88,35 @@ HSI_MONTH_MAP <- c(
   okt = "10", "n\u00f3v" = "11", des = "12"
 )
 
-#' Build an HSÍ page URL for a given (sex, division) pair.
+#' Resolve an HSÍ tournament id for a (sex, division, season) triple.
 #'
-#' The `kind` arg is kept for API parity with other ingest modules but unused
-#' for HSÍ — the current-season page renders both results and schedule tables.
+#' Registry first, `config/federation-seasons.json` cache second, `NULL` third.
+#' `NULL` means do not fetch, which is the fail-safe direction -- an
+#' unregistered triple must never fall back to "some other season's page".
+#' Unknown sexes and divisions resolve to `NULL` rather than aborting, so a
+#' config typo skips one cell instead of taking the whole ingest down.
 #' @keywords internal
 #' @noRd
-hsi_url <- function(sex, division, season = NULL,
-                    kind = c("results", "schedule")) {
-  kind <- match.arg(kind)
-  if (!sex %in% names(HSI_URLS)) {
-    stop("Unknown sex for HSI: ", sex, call. = FALSE)
+hsi_tournament_id <- function(sex, division, season) {
+  key <- as.character(as.integer(season))
+  from_registry <- HSI_TOURNAMENT_IDS[[sex]][[division]][[key]]
+  if (!is.null(from_registry)) {
+    return(as.integer(from_registry))
   }
-  if (!division %in% names(HSI_URLS[[sex]])) {
-    stop("Unknown division for HSI sex=", sex, ": ", division, call. = FALSE)
+  federation_season_id("hsi", sex, division, season)
+}
+
+#' Build the HSÍ tournament URL for a (sex, division, season) triple.
+#'
+#' @return Character URL, or `NULL` when the triple has no resolvable id.
+#' @keywords internal
+#' @noRd
+hsi_url <- function(sex, division, season) {
+  id <- hsi_tournament_id(sex, division, season)
+  if (is.null(id) || is.na(id)) {
+    return(NULL)
   }
-  HSI_URLS[[sex]][[division]]
+  sprintf("https://www.hsi.is/tournament/%d", id)
 }
 
 #' Poll a table-returning callback until the last table's row count is stable.
