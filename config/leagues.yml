@@ -337,7 +337,15 @@ football_iceland:
       male:
         # Existing LD1 + men-only sex-disjoint entries:
         Þór: Þór Ak.
-        Víkingur R.: Víkingur Rvk
+        # Lengjan renamed this side mid-season (2026-07-17): that day's scrape
+        # carries the same fixture (Þór Ak. v Víkingur, 18 Jul) under BOTH
+        # strings, and every scrape since shows only "Víkingur Reykjavík".
+        # The old rendering stays listed — historical odds
+        # (2026-04-15..2026-07-17) and the backtest/replay decode path still
+        # read it. First element is the primary the placer types.
+        Víkingur R.:
+          - Víkingur Reykjavík          # primary: confirmed 2026-07-17 onward
+          - Víkingur Rvk                # historical: 2026-04-15..2026-07-17
         Þróttur R.: Þróttur Rvk
         Leiknir R.: Leiknir Rvk
         Ægir: Ægir

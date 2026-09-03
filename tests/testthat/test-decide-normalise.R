@@ -267,3 +267,73 @@ test_that("decide_league produces candidates for women's matches when odds use k
   expect_gt(nrow(cands), 0L)
   expect_true(any(cands$stage != "dropped_market_off"))
 })
+
+# ── Lengjan mid-season rename: "Víkingur Rvk" -> "Víkingur Reykjavík" ────────
+#
+# Bug context (found 2026-09-03; live since 2026-07-17). Lengjan renamed the
+# men's Besta deildin side's display string mid-season. The 2026-07-17 scrape
+# carries the SAME fixture (Þór Ak. v Víkingur, kickoff 2026-07-18) under BOTH
+# "Víkingur Rvk" and "Víkingur Reykjavík"; every scrape since shows only the
+# latter. team_names.male mapped canonical "Víkingur R." to "Víkingur Rvk"
+# alone, so the decode inverse map had no entry for the new rendering,
+# decide_league() warn-and-skipped every Víkingur fixture, and 8 Besta
+# deildin matches (2026-07-18 .. 2026-09-06) could never be bet —
+# football_iceland being the only betting-enabled league.
+#
+# These bind to the REAL config rather than a synthetic fixture, because what
+# regressed is config *content*: a later tidy-up that collapses the list back
+# to a scalar, or that replaces the historical rendering instead of appending
+# to it, must fail here. test_path() (not here::here()) so the repo root also
+# resolves correctly inside a git worktree.
+
+real_football_iceland <- function() {
+  cfg <- load_leagues(
+    path = testthat::test_path("..", "..", "config", "leagues.yml"),
+    schema_path = testthat::test_path("..", "..", "config", "leagues.schema.json")
+  )
+  cfg$football_iceland
+}
+
+test_that("real config decodes both Lengjan renderings of V\u00edkingur R. (male)", {
+  league <- real_football_iceland()
+
+  # Row 1 is the live fixture that was being dropped; row 2 is the pre-rename
+  # rendering that historical odds (2026-04-15 .. 2026-07-17) and the
+  # backtest/replay path still read.
+  odds <- tibble::tibble(
+    match_date = as.Date(c("2026-09-06", "2026-07-18")),
+    home_team = c("V\u00edkingur Reykjav\u00edk", "\u00de\u00f3r Ak."),
+    away_team = c("Fram", "V\u00edkingur Rvk"),
+    market = "moneyline", outcome = "home",
+    line = NA_real_, odds = 1.80,
+    scraped_at = as.POSIXct("2026-09-02 09:00:00", tz = "UTC")
+  )
+
+  out <- normalise_lengjan_team_names(odds, league, sex = "male")
+
+  # Both renderings must collapse onto the one canonical name that
+  # data/facts/results and data/beliefs/latest carry.
+  expect_equal(out$home_team, c("V\u00edkingur R.", "\u00de\u00f3r"))
+  expect_equal(out$away_team, c("Fram", "V\u00edkingur R."))
+})
+
+test_that("real config keeps the women's V\u00edkingur rendering decoding (female)", {
+  league <- real_football_iceland()
+
+  # The rename hit the men's side only — Lengjan still showed
+  # "Víkingur Rvk kv" on 2026-08-29. team_names is per-sex, so the female
+  # sub-map must keep decoding its own rendering independently of the male fix.
+  odds <- tibble::tibble(
+    match_date = as.Date("2026-09-07"),
+    home_team = "Stjarnan kv",
+    away_team = "V\u00edkingur Rvk kv",
+    market = "moneyline", outcome = "home",
+    line = NA_real_, odds = 2.10,
+    scraped_at = as.POSIXct("2026-09-02 09:00:00", tz = "UTC")
+  )
+
+  out <- normalise_lengjan_team_names(odds, league, sex = "female")
+
+  expect_equal(out$home_team, "Stjarnan")
+  expect_equal(out$away_team, "V\u00edkingur R.")
+})
