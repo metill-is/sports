@@ -327,3 +327,129 @@ test_that("the playoff deferral is loud on the real 2027 fetch path", {
                      grepl("no tournament id", warnings, fixed = TRUE)))
   expect_equal(nrow(out), 0L)
 })
+
+test_that("hsi_page_title strips the HSI suffix", {
+  html <- rvest::read_html(fixture("male_div1_current.html"), encoding = "UTF-8")
+  expect_equal(hsi_page_title(html), "Olís deild karla 2025-26")
+})
+
+test_that("parse_hsi_tournament_index reads ids and titles off a nav listing", {
+  doc <- rvest::read_html(paste0(
+    "<html><body><nav>",
+    "<a href='/tournament/9142'>Olís deild karla 2026-27</a>",
+    "<a href='/tournament/9140'>Grill 66 deild karla 2026-27</a>",
+    "<a href='/tournament/9141'>Olís deild kvenna 2026-27</a>",
+    "<a href='/tournament/9143'>Grill 66 deild kvenna umspil</a>",
+    "<a href='/tournament/9142'>Olís deild karla 2026-27</a>",
+    "<a href='/frettir/eitthvad'>Fréttir</a>",
+    "</nav></body></html>"
+  ))
+  idx <- parse_hsi_tournament_index(doc)
+  expect_named(idx, c("id", "title"))
+  expect_type(idx$id, "integer")
+  # Non-tournament links dropped, duplicate link deduplicated.
+  expect_equal(nrow(idx), 4L)
+  expect_setequal(idx$id, c(9142L, 9140L, 9141L, 9143L))
+})
+
+test_that("HSI_TITLE_PATTERNS maps every live nav title to one (sex, division)", {
+  titles <- c(
+    "Olís deild karla 2026-27",
+    "Grill 66 deild karla 2026-27",
+    "Olís deild kvenna 2026-27",
+    "Grill 66 deild kvenna umspil",
+    "Fréttir og viðburðir"
+  )
+  mapped <- .hsi_match_title(titles)
+  expect_equal(mapped$sex, c("male", "male", "female", "female", NA_character_))
+  expect_equal(
+    mapped$division,
+    c("div1", "div2", "div1", "div2", NA_character_)
+  )
+})
+
+test_that("hsi_discover_tournaments returns provenance-shaped rows", {
+  doc <- rvest::read_html(paste0(
+    "<html><body>",
+    "<a href='/tournament/9142'>Olís deild karla 2026-27</a>",
+    "<a href='/tournament/9141'>Olís deild kvenna 2026-27</a>",
+    "<a href='/tournament/1'>Handbolti á Íslandi</a>",
+    "</body></html>"
+  ))
+  testthat::local_mocked_bindings(fetch_hsi_html = function(url, ...) doc)
+  got <- hsi_discover_tournaments(season = 2027L, sleep_fn = .no_sleep)
+  expect_named(
+    got,
+    c("federation", "sex", "division", "season", "id", "title",
+      "source", "discovered_at", "verified", "note")
+  )
+  # Unmappable titles are dropped, not guessed at.
+  expect_equal(nrow(got), 2L)
+  expect_true(all(got$federation == "hsi"))
+  expect_true(all(got$source == "live"))
+  expect_true(all(got$verified))
+  expect_identical(
+    got$id[got$sex == "male" & got$division == "div1"], 9142L
+  )
+})
+
+test_that("a discovery pass merges into the cache without disturbing the registry", {
+  path <- withr::local_tempfile(fileext = ".json")
+  discovered <- tibble::tibble(
+    federation = "hsi", sex = "male", division = "playoffs",
+    season = 2027L, id = 9500L, title = "Úrslitakeppni karla 2026-27",
+    source = "live", discovered_at = format(Sys.Date()),
+    verified = TRUE, note = NA_character_
+  )
+  refresh_federation_seasons(discovered, path = path)
+  testthat::local_mocked_bindings(federation_seasons_path = function() path)
+  expect_equal(hsi_url("male", "playoffs", 2027L), "https://www.hsi.is/tournament/9500")
+  expect_equal(nrow(hsi_unresolved_seasons(2027L)), 2L)
+})
+
+test_that("the captured hsi.is index yields the four 2027 league ids", {
+  doc <- rvest::read_html(fixture("tournament_index.html"), encoding = "UTF-8")
+  idx <- parse_hsi_tournament_index(doc)
+  expect_true(all(c(9142L, 9140L, 9141L, 9143L) %in% idx$id))
+  # The nav's link text carries no sex -- "Olísdeildin" and "Grill 66 deildin"
+  # each appear twice, once per sex -- so the index alone cannot map a row to a
+  # (sex, division). This is the fact that forces the two-stage discovery, and
+  # it is asserted so a future nav redesign that DOES carry sex is noticed.
+  expect_true(all(is.na(.hsi_match_title(idx$title)$sex)))
+})
+
+test_that("hsi_discover_tournaments resolves sex from each tournament page title", {
+  index_doc <- rvest::read_html(fixture("tournament_index.html"), encoding = "UTF-8")
+  page_titles <- c(
+    "9142" = "Olís deild karla 2026-27 | HSÍ",
+    "9140" = "Grill 66 deild karla 2026-27 | HSÍ",
+    "9141" = "Olís deild kvenna 2026-27 | HSÍ",
+    "9143" = "Grill 66 deild kvenna 2026-27 | HSÍ",
+    "8437" = "Powerade bikarinn | HSÍ",
+    "8436" = "Powerade bikarinn | HSÍ",
+    "8361" = "EM 2026 | HSÍ",
+    "7840" = "Undankeppni EM 2028 | HSÍ"
+  )
+  testthat::local_mocked_bindings(
+    fetch_hsi_html = function(url, ...) {
+      id <- stringr::str_match(url, "/tournament/(\\d+)")[, 2L]
+      if (is.na(id)) {
+        return(index_doc)
+      }
+      rvest::read_html(paste0(
+        "<html><head><title>", page_titles[[id]], "</title></head><body></body></html>"
+      ))
+    }
+  )
+  got <- hsi_discover_tournaments(season = 2027L, sleep_fn = .no_sleep)
+  key <- paste(got$sex, got$division)
+  expect_identical(got$id[key == "male div1"], 9142L)
+  expect_identical(got$id[key == "male div2"], 9140L)
+  expect_identical(got$id[key == "female div1"], 9141L)
+  expect_identical(got$id[key == "female div2"], 9143L)
+  # The two cup ids and the two national-team tournaments do not map to a
+  # reachable (sex, division) and are dropped, not guessed at.
+  expect_false(any(got$id %in% c(8361L, 7840L, 8436L)))
+  expect_true(all(got$verified))
+  expect_true(all(got$source == "live"))
+})

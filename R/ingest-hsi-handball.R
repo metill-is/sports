@@ -700,6 +700,155 @@ fetch_schedule_hsi <- function(league, sex) {
   combined[combined$match_date >= Sys.Date(), , drop = FALSE]
 }
 
+#' Title patterns mapping an HSÍ tournament title to (sex, division).
+#'
+#' Ordered: the first match wins. The Grill 66 and Olís patterns are disjoint,
+#' but the ordering is kept explicit so adding a pattern later cannot silently
+#' shadow one. Icelandic characters are written as `\uXXXX` escapes, the same
+#' convention `HSI_MONTH_MAP` uses, so the source stays ASCII.
+#' @keywords internal
+#' @noRd
+HSI_TITLE_PATTERNS <- tibble::tibble(
+  pattern = c(
+    "^Ol\u00eds\\s*deild\\s+karla",
+    "^Grill\\s*66\\s*deild\\s+karla",
+    "^Ol\u00eds\\s*deild\\s+kvenna",
+    "^Grill\\s*66\\s*deild\\s+kvenna",
+    "^\u00darslitakeppni\\s+karla",
+    "^\u00darslitakeppni\\s+kvenna",
+    "^(Coca[- ]?Cola\\s+)?[Bb]ikar\\s*(keppni)?\\s+karla"
+  ),
+  sex = c("male", "male", "female", "female", "male", "female", "male"),
+  division = c("div1", "div2", "div1", "div2", "playoffs", "playoffs", "cup")
+)
+
+#' Map tournament titles to (sex, division); NA where no pattern matches.
+#'
+#' An unmappable title is dropped by the caller rather than guessed at -- the
+#' whole point of discovery is that it is more trustworthy than a guess.
+#' @keywords internal
+#' @noRd
+.hsi_match_title <- function(titles) {
+  sex <- rep(NA_character_, length(titles))
+  division <- rep(NA_character_, length(titles))
+  for (i in seq_len(nrow(HSI_TITLE_PATTERNS))) {
+    hit <- is.na(sex) &
+      stringr::str_detect(titles, HSI_TITLE_PATTERNS$pattern[[i]])
+    hit[is.na(hit)] <- FALSE
+    sex[hit] <- HSI_TITLE_PATTERNS$sex[[i]]
+    division[hit] <- HSI_TITLE_PATTERNS$division[[i]]
+  }
+  tibble::tibble(title = titles, sex = sex, division = division)
+}
+
+#' The page title of a rendered HSÍ page, without the " | HSÍ" suffix.
+#' @keywords internal
+#' @noRd
+hsi_page_title <- function(html) {
+  raw <- rvest::html_element(html, "title") |> rvest::html_text2()
+  stringr::str_trim(stringr::str_replace(raw, "\\s*\\|\\s*HS\u00cd\\s*$", ""))
+}
+
+#' Parse `/tournament/<id>` links and their titles out of a rendered page.
+#'
+#' Pure function -- network lives in [hsi_discover_tournaments()], so the title
+#' mapping stays fixture-testable.
+#'
+#' @param html xml_document.
+#' @return Tibble with `id` (integer) and `title` (character), deduplicated.
+#' @keywords internal
+#' @noRd
+parse_hsi_tournament_index <- function(html) {
+  links <- rvest::html_elements(html, "a[href*='/tournament/']")
+  if (length(links) == 0L) {
+    return(tibble::tibble(id = integer(), title = character()))
+  }
+  hrefs <- rvest::html_attr(links, "href")
+  ids <- suppressWarnings(as.integer(
+    stringr::str_match(hrefs, "/tournament/(\\d+)")[, 2L]
+  ))
+  titles <- stringr::str_trim(rvest::html_text2(links))
+
+  out <- tibble::tibble(id = ids, title = titles)
+  out <- out[!is.na(out$id) & nzchar(out$title), , drop = FALSE]
+  dplyr::distinct(out, .data$id, .keep_all = TRUE)
+}
+
+#' Discover HSÍ tournament ids for a season off the live site.
+#'
+#' This is what stops the registry being the thing that goes stale: it reads
+#' the ids HSÍ is actually serving today, rather than the ones a human typed
+#' last September. Merge the result with [refresh_federation_seasons()]; the
+#' registry then becomes a verified cache rather than the sole source.
+#'
+#' Two stages, because the index alone is not enough. Measured on the live
+#' page (2026-09-03) the nav's link text is sex-free -- "Olísdeildin",
+#' "Grill 66 deildin", "Powerade bikarinn", each appearing twice, once per sex
+#' -- so no pattern over the index can say which row is the women's. Each
+#' unmappable id is therefore resolved from its own tournament page's
+#' `<title>`, which does carry it ("Olís deild karla 2025-26"). An id that
+#' stays unmappable is dropped, never guessed.
+#'
+#' HSÍ's site is client-side rendered, so this goes through the existing
+#' chromote-backed [fetch_hsi_html()] -- a plain `httr` GET returns a shell.
+#'
+#' @param index_url Tournament index / navigation page.
+#' @param season Season to attribute the discovered ids to. The caller is
+#'   asserting "this index is showing season N"; `.assert_season_stamp()` is
+#'   what checks that assertion the first time each id is fetched.
+#' @param sleep_fn Sleep implementation between per-tournament fetches; see
+#'   [fetch_results_hsi()].
+#' @return Tibble shaped like the provenance cache.
+#' @importFrom rlang .data
+#' @keywords internal
+#' @noRd
+hsi_discover_tournaments <- function(index_url = "https://www.hsi.is/mot",
+                                     season = hsi_current_season(),
+                                     sleep_fn = Sys.sleep) {
+  html <- fetch_hsi_html(index_url, min_tables = 0L, min_rows = 0L)
+  idx <- parse_hsi_tournament_index(html)
+  if (nrow(idx) == 0L) {
+    return(.federation_seasons_empty())
+  }
+  mapped <- .hsi_match_title(idx$title)
+  titles <- idx$title
+
+  for (i in which(is.na(mapped$sex))) {
+    url <- sprintf("https://www.hsi.is/tournament/%d", idx$id[[i]])
+    page_title <- tryCatch(
+      hsi_page_title(fetch_hsi_html(url, min_tables = 0L, min_rows = 0L)),
+      error = function(e) {
+        cli::cli_warn(c(
+          "HSI discovery could not read the title of {url}",
+          "i" = "{conditionMessage(e)}"
+        ))
+        NA_character_
+      }
+    )
+    if (!is.na(page_title)) {
+      hit <- .hsi_match_title(page_title)
+      mapped$sex[[i]] <- hit$sex[[1L]]
+      mapped$division[[i]] <- hit$division[[1L]]
+      titles[[i]] <- page_title
+    }
+    sleep_fn(HSI_HISTORICAL_SLEEP_SECS)
+  }
+
+  out <- tibble::tibble(
+    federation = "hsi",
+    sex = mapped$sex,
+    division = mapped$division,
+    season = as.integer(season),
+    id = idx$id,
+    title = titles,
+    source = "live",
+    discovered_at = format(Sys.Date()),
+    verified = TRUE,
+    note = NA_character_
+  )
+  out[!is.na(out$sex) & !is.na(out$division), , drop = FALSE]
+}
+
 register_ingest_source(
   "hsi_handball",
   list(
