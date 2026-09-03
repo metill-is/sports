@@ -43,20 +43,9 @@ normalise_lengjan_team_names <- function(odds, league, sex) {
     return(odds)
   }
 
-  # WHY tag_utf8: R's list-name round-trip through symbols drops the UTF-8
-  # Encoding tag (yaml.load output, or inline `list("Grindavík" = ...)`,
-  # both lose it). Without re-tagging, character matching between
-  # arrow-Parquet-sourced strings (Encoding "UTF-8") and config-sourced
-  # strings (Encoding "unknown") fails under a C locale.
-  #
-  # Crucially we use `Encoding(x) <- "UTF-8"` (changes the tag only) rather
-  # than `enc2utf8(x)`, because the latter byte-escapes already-correct
-  # UTF-8 bytes when input is tagged "unknown" (e.g. "Grindavik" bytes
-  # `c3 ad` turn into the literal "Grindav<c3><ad>k" placeholder).
-  tag_utf8 <- function(x) {
-    Encoding(x) <- "UTF-8"
-    x
-  }
+  # `tag_utf8()` (R/config.R) is load-bearing here: config-sourced strings and
+  # Parquet-sourced strings carry different Encoding tags and compare unequal
+  # under a C locale. See its roxygen for why it is not `enc2utf8()`.
 
   # A canonical may map to several acceptable Lengjan renderings (list value);
   # the inverse must point every rendering at that one canonical. Repeat each

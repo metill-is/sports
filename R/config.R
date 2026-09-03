@@ -80,6 +80,25 @@ validate_leagues <- function(leagues, schema_path) {
   invisible(TRUE)
 }
 
+#' Tag a character vector as UTF-8 without transcoding its bytes.
+#'
+#' Strings that reach us from `yaml.load()` / R list names carry Encoding
+#' "unknown" while strings read back from Parquet carry "UTF-8". Under a C
+#' locale (the CI + `Rscript` default) the two compare unequal even when the
+#' bytes are identical, so every Icelandic name silently fails to match.
+#'
+#' Uses `Encoding(x) <- "UTF-8"` (retags only) rather than `enc2utf8()`, which
+#' byte-escapes already-correct UTF-8 bytes when the input is tagged "unknown"
+#' -- turning "Grindavik"'s `c3 ad` into the literal "Grindav<c3><ad>k".
+#'
+#' @param x A character vector.
+#' @return `x`, retagged.
+#' @noRd
+tag_utf8 <- function(x) {
+  Encoding(x) <- "UTF-8"
+  x
+}
+
 #' Normalise a per-sex team_names sub-map to canonical -> renderings form.
 #'
 #' A `team_names` value is either a single Lengjan rendering (scalar string) or
