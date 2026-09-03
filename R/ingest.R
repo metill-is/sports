@@ -115,6 +115,61 @@ ingest_league <- function(league, sex,
   !isFALSE(active$active[[key]])
 }
 
+#' Abort when a fetched page's dates disagree with the season requested.
+#'
+#' A federation tournament id is a literal that is correct when written and
+#' silently wrong later; nothing downstream notices, because a season-stamped
+#' hive partition accepts any rows it is handed. This guard is what makes that
+#' staleness loud. Icelandic winter seasons labelled `season` span calendar
+#' years `season - 1` (autumn) and `season` (spring), so more than `tol` of the
+#' parsed `match_date` years falling outside that pair means the page fetched is
+#' not the season asked for -- a stale slug, a mis-mapped id, or a federation
+#' URL-scheme change.
+#'
+#' Signals class `sports_season_stamp_error` so callers that otherwise degrade
+#' fetch failures to warnings can re-raise it rather than swallow it.
+#'
+#' @param rows Tibble with a `match_date` Date column, or NULL. Zero rows and
+#'   all-NA dates pass -- emptiness is a separate concern with its own checks.
+#' @param season Integer season requested.
+#' @param source Label naming the fetch, used in the abort message.
+#' @param tol Maximum tolerated fraction of out-of-span calendar years.
+#' @return `rows`, invisibly.
+#' @keywords internal
+#' @noRd
+.assert_season_stamp <- function(rows, season, source = "unknown", tol = 0.05) {
+  if (is.null(rows) || nrow(rows) == 0L) {
+    return(invisible(rows))
+  }
+  years <- as.integer(format(rows$match_date, "%Y"))
+  years <- years[!is.na(years)]
+  if (length(years) == 0L) {
+    return(invisible(rows))
+  }
+
+  season <- as.integer(season)
+  allowed <- c(season - 1L, season)
+  bad_frac <- mean(!(years %in% allowed))
+
+  if (bad_frac > tol) {
+    observed <- paste(sort(unique(years)), collapse = ", ")
+    cli::cli_abort(
+      c(
+        "Season stamp mismatch for {source}: asked for season {season}.",
+        "x" = paste0(
+          "{round(100 * bad_frac, 1)}% of {length(years)} parsed dates fall ",
+          "outside {allowed[1]}/{allowed[2]}."
+        ),
+        "i" = "Observed calendar years: {observed}.",
+        "i" = "The tournament id registered for this (sex, division, season) is stale or wrong."
+      ),
+      class = "sports_season_stamp_error"
+    )
+  }
+
+  invisible(rows)
+}
+
 #' Run federation ingest for a single league across all configured sexes.
 #'
 #' Called by `scripts/01_ingest_results.R` for each active league. Reads
