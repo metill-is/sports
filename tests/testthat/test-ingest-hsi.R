@@ -249,3 +249,81 @@ test_that("fetch_schedule_hsi re-raises a season-stamp abort past its warn handl
     class = "sports_season_stamp_error"
   )
 })
+
+test_that("cup and playoffs are explicitly deferred for 2027, not silently dropped", {
+  gaps <- hsi_unresolved_seasons(2027L)
+  expect_s3_class(gaps, "tbl_df")
+  expect_named(gaps, c("sex", "division", "season"))
+  expect_setequal(
+    paste(gaps$sex, gaps$division),
+    c("male cup", "male playoffs", "female playoffs")
+  )
+  # The four league cells DO resolve for 2027 -- the deferral is scoped.
+  expect_false(any(gaps$division %in% c("div1", "div2")))
+})
+
+test_that("hsi_unresolved_seasons scopes the gap to the season asked about", {
+  # 2026: male cup 8437 + both playoffs 8427/8430 are registered, but the four
+  # league cells are not (they were only ever reachable as dated slugs).
+  gaps26 <- hsi_unresolved_seasons(2026L)
+  expect_setequal(
+    paste(gaps26$sex, gaps26$division),
+    c("male div1", "male div2", "female div1", "female div2")
+  )
+  # 2024: every league cell registered, cup and playoffs never were.
+  gaps24 <- hsi_unresolved_seasons(2024L)
+  expect_false(any(gaps24$division %in% c("div1", "div2")))
+})
+
+test_that("an unresolved division warns and the rest of the ingest continues", {
+  testthat::local_mocked_bindings(
+    fetch_hsi_html = function(url, ...) {
+      rvest::read_html(fixture("male_div1_current.html"), encoding = "UTF-8")
+    },
+    hsi_url = function(sex, division, season) {
+      if (division == "div1") "https://www.hsi.is/tournament/8000" else NULL
+    }
+  )
+  warnings <- character()
+  out <- withCallingHandlers(
+    fetch_results_hsi(NULL, "male", seasons = 2026L, sleep_fn = .no_sleep),
+    warning = function(w) {
+      warnings <<- c(warnings, conditionMessage(w))
+      invokeRestart("muffleWarning")
+    }
+  )
+  expect_true(any(grepl("no tournament id for male/div2", warnings, fixed = TRUE)))
+  # div1 still came back: an unresolved division skips itself, not the league.
+  expect_equal(nrow(out), 132L)
+  expect_true(all(out$division == "OD"))
+})
+
+test_that("the playoff deferral is loud on the real 2027 fetch path", {
+  # Regression guard for the silent-drop risk this task exists to close.
+  # Before season-keying, playoffs and cup rode the current-season table and
+  # were fetched unconditionally; under the registry they resolve to NULL for
+  # 2027. `data/facts/results` holds PO rows for 2026 only, so a silent skip
+  # would be indistinguishable from ordinary off-season emptiness. The real
+  # registry is used here -- no hsi_url mock -- so this fails the day someone
+  # deletes the warning or the unresolved cells stop being reported.
+  testthat::local_mocked_bindings(
+    fetch_hsi_html = function(url, ...) {
+      xml2::read_html("<html><body><p>empty</p></body></html>")
+    }
+  )
+  warnings <- character()
+  out <- withCallingHandlers(
+    fetch_results_hsi(NULL, "male", seasons = 2027L, sleep_fn = .no_sleep),
+    warning = function(w) {
+      warnings <<- c(warnings, conditionMessage(w))
+      invokeRestart("muffleWarning")
+    }
+  )
+  expect_true(any(grepl("male/cup season=2027", warnings, fixed = TRUE)))
+  expect_true(any(grepl("male/playoffs season=2027", warnings, fixed = TRUE)))
+  # div1/div2 2027 DO resolve, so their absence here is a fetch/parse result,
+  # not an unresolved-id skip.
+  expect_false(any(grepl("male/div1 season=2027", warnings, fixed = TRUE) &
+                     grepl("no tournament id", warnings, fixed = TRUE)))
+  expect_equal(nrow(out), 0L)
+})

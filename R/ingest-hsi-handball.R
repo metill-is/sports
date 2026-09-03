@@ -119,6 +119,44 @@ hsi_url <- function(sex, division, season) {
   sprintf("https://www.hsi.is/tournament/%d", id)
 }
 
+#' Reachable HSÍ (sex, division) pairs with no resolvable id for a season.
+#'
+#' Before the season-keyed registry, `playoffs` and `cup` were fetched
+#' unconditionally from the current-season table, so they were scraped for
+#' whatever season happened to be current -- which is why `data/facts/results`
+#' holds PO rows for 2026 only. Under the registry they are ordinary
+#' (sex, division, season) triples, and HSÍ does not create the úrslitakeppni
+#' or the 2026-27 bikar tournaments until later in the season.
+#'
+#' Deferring them is correct; deferring them silently is not, because the
+#' absence is indistinguishable from ordinary off-season emptiness. This
+#' function names the gap so [fetch_results_hsi()] can warn and a later health
+#' check can raise it.
+#'
+#' @param season Integer season to check.
+#' @param sexes Sexes to check.
+#' @return Tibble with columns `sex`, `division`, `season`.
+#' @keywords internal
+#' @noRd
+hsi_unresolved_seasons <- function(season, sexes = c("male", "female")) {
+  rows <- list()
+  for (sex in sexes) {
+    for (div in hsi_divisions_for_sex(sex)) {
+      if (is.null(hsi_tournament_id(sex, div, season))) {
+        rows[[length(rows) + 1L]] <- tibble::tibble(
+          sex = sex, division = div, season = as.integer(season)
+        )
+      }
+    }
+  }
+  if (length(rows) == 0L) {
+    return(tibble::tibble(
+      sex = character(), division = character(), season = integer()
+    ))
+  }
+  dplyr::bind_rows(rows)
+}
+
 #' Poll a table-returning callback until the last table's row count is stable.
 #'
 #' HSÍ tournament pages render table shells (standings + results) quickly, but
