@@ -53,8 +53,9 @@ test_that("HSI_TOURNAMENT_IDS is one season-keyed registry with distinct ids", {
   flat <- unlist(ids, use.names = FALSE)
   expect_type(flat, "integer")
   expect_true(all(flat > 0L))
-  # 19 historical + 4 x 2027 league + male cup 2026 + 2 playoffs 2026.
-  expect_equal(length(flat), 26L)
+  # 19 historical + recovered female div2 2025 + 4 x 2027 league
+  # + male cup 2026 + 2 playoffs 2026.
+  expect_equal(length(flat), 27L)
   # Every id distinct. This is what catches the legacy copy-paste that put the
   # male div2 2025 id (7644) under female div2 2025.
   expect_equal(length(unique(flat)), length(flat))
@@ -87,8 +88,18 @@ test_that("hsi_url returns NULL rather than erroring on anything unregistered", 
   expect_null(hsi_url("male", "div1", 1999L))
   expect_null(hsi_url("other", "div1", 2024L))
   expect_null(hsi_url("male", "nonesuch", 2024L))
-  # The legacy hole this workstream recovers -- still open until Task 7.
-  expect_null(hsi_url("female", "div2", 2025L))
+})
+
+test_that("the recovered female div2 2025 id is registered and distinct", {
+  expect_equal(hsi_url("female", "div2", 2025L), "https://www.hsi.is/tournament/7643")
+  # 7644 is the male div2 2025 id -- the copy-paste this recovers from.
+  expect_equal(hsi_url("male", "div2", 2025L), "https://www.hsi.is/tournament/7644")
+  cache <- read_federation_seasons()
+  hit <- cache[cache$sex == "female" & cache$division == "div2" &
+                 !is.na(cache$season) & cache$season == 2025L, ]
+  expect_equal(nrow(hit), 1L)
+  expect_identical(hit$source, "inferred-verified")
+  expect_true(hit$verified)
 })
 
 test_that("hsi_current_season names the requested season and nothing else", {

@@ -29,6 +29,18 @@
       "federation": "hsi",
       "sex": "female",
       "division": "div2",
+      "season": 2025,
+      "id": 7643,
+      "title": "Grill 66 deild kvenna",
+      "source": "inferred-verified",
+      "discovered_at": "2026-09-03",
+      "verified": true,
+      "note": "Legacy source recorded 7644 (a male div2 copy-paste) and called the real id unrecoverable. 7643 verified 2026-09-03 on three independent checks: title pattern (Grill 66 deild kvenna), season stamp for 2025 (77 rows, 2024-09-12 to 2025-03-23), and an 8-club roster intersection with the known 2024 and 2026 female G66 squads. See scripts/0Nv_verify_hsi_7643.R."
+    },
+    {
+      "federation": "hsi",
+      "sex": "female",
+      "division": "div2",
       "season": 2027,
       "id": 9143,
       "title": "Grill 66 deild kvenna umspil",
