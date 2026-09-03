@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "entries": [
+    {
+      "federation": "hsi",
+      "sex": "female",
+      "division": "cup",
+      "season": null,
+      "id": 8436,
+      "title": "Bikar kvenna",
+      "source": "live-nav-unattributed",
+      "discovered_at": "2026-09-02",
+      "verified": false,
+      "note": "Observed but unreachable: hsi_divisions_for_sex('female') has no 'cup' division, so nothing would ever fetch it."
+    },
+    {
+      "federation": "hsi",
+      "sex": "female",
+      "division": "div1",
+      "season": 2027,
+      "id": 9141,
+      "title": "Olis deild kvenna 2026-27",
+      "source": "live-nav",
+      "discovered_at": "2026-09-02",
+      "verified": true,
+      "note": null
+    },
+    {
+      "federation": "hsi",
+      "sex": "female",
+      "division": "div2",
+      "season": 2027,
+      "id": 9143,
+      "title": "Grill 66 deild kvenna umspil",
+      "source": "live-nav",
+      "discovered_at": "2026-09-02",
+      "verified": true,
+      "note": "Nav title carries 'umspil'; confirm the 2026-27 female G66 format at first ingest."
+    },
+    {
+      "federation": "hsi",
+      "sex": "male",
+      "division": "cup",
+      "season": null,
+      "id": 8437,
+      "title": "Bikar karla",
+      "source": "live-nav-unattributed",
+      "discovered_at": "2026-09-02",
+      "verified": false,
+      "note": "Pre-change HSI_URLS attributed 8437 to 2025-26 (season 2026); it is still in the 2026-09-02 nav. Registered at 2026 in HSI_TOURNAMENT_IDS on the attributed evidence; season 2027 stays deferred until discovery attributes it."
+    },
+    {
+      "federation": "hsi",
+      "sex": "male",
+      "division": "div1",
+      "season": 2027,
+      "id": 9142,
+      "title": "Olis deild karla 2026-27",
+      "source": "live-nav",
+      "discovered_at": "2026-09-02",
+      "verified": true,
+      "note": null
+    },
+    {
+      "federation": "hsi",
+      "sex": "male",
+      "division": "div2",
+      "season": 2027,
+      "id": 9140,
+      "title": "Grill 66 deild karla 2026-27",
+      "source": "live-nav",
+      "discovered_at": "2026-09-02",
+      "verified": true,
+      "note": null
+    }
+  ]
+}
