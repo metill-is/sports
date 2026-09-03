@@ -497,15 +497,23 @@ hsi_current_season <- function(today = Sys.Date()) {
 #' @noRd
 HSI_HISTORICAL_SLEEP_SECS <- 3
 
-#' Fetch a single HSÍ page and parse into results rows.
+#' Fetch a single HSÍ tournament page and parse into results rows.
 #'
-#' Factored out of `fetch_results_hsi` so the current-season league URL and
-#' per-season historical tournament URLs share the same fetch + parse + error
-#' handling path.
+#' The ordinary-failure handler degrades a fetch error to a warning so one bad
+#' tournament page cannot take down a league's ingest. A season-stamp mismatch
+#' is deliberately NOT an ordinary failure: it means the id we hold is wrong,
+#' and warning about it would write the wrong rows anyway.
+#'
+#' The guard therefore runs OUTSIDE the `tryCatch`, not as a
+#' `sports_season_stamp_error =` handler that re-raises. `tryCatch()` nests its
+#' handlers -- the last one given is established outermost -- so a `stop(e)`
+#' from inside a specific handler is caught by that same call's `error =`
+#' handler and silently degraded to the warning it was trying to escape.
+#' Verified, not assumed: the re-raise form returns NULL with a warning.
 #' @keywords internal
 #' @noRd
 hsi_fetch_and_parse <- function(url, sex, div, division_label, season) {
-  tryCatch(
+  rows <- tryCatch(
     {
       html <- fetch_hsi_html(url)
       parse_hsi_results_page(
@@ -525,60 +533,61 @@ hsi_fetch_and_parse <- function(url, sex, div, division_label, season) {
       NULL
     }
   )
+  if (is.null(rows)) {
+    return(NULL)
+  }
+  .assert_season_stamp(
+    rows, season,
+    source = sprintf("hsi %s/%s results (%s)", sex, div, url)
+  )
+  rows
 }
 
 #' Source-module entrypoint: results for a (league, sex).
 #'
-#' Iterates over all configured divisions for the requested sex, fetching and
-#' parsing each HSÍ page, and combines into a single canonical tibble. Any
-#' per-(division, season) failure is logged via `cli::cli_warn` and skipped so
-#' one tournament-page glitch does not take down the league ingest.
+#' Iterates the configured divisions for the requested sex and, for each
+#' requested season, resolves a `/tournament/<id>` URL via [hsi_url()]. There is
+#' no current-vs-historical branch any more: every season is the same shape of
+#' lookup against the same registry, so "this season" stops being a special
+#' case that a human has to re-point every July.
 #'
-#' When `seasons` is `NULL`, hits only the current-season league pages in
-#' `HSI_URLS`. When `seasons` is specified, iterates over the requested seasons:
-#' - Current season → league URL from `HSI_URLS`
-#' - Past seasons → tournament URLs from `HSI_HISTORICAL_IDS`, with a short
-#'   inter-page sleep (`HSI_HISTORICAL_SLEEP_SECS`) to avoid overwhelming HSÍ.
+#' An unresolvable (sex, division, season) is skipped with a warning naming it,
+#' never silently -- see [hsi_unresolved_seasons()].
 #'
-#' Historical tournament pages use the same table structure as current-season
-#' pages per the legacy `read_page()` implementations, so the existing
-#' `parse_hsi_results_page()` parser applies unchanged.
-#'
-#' @param league Unused (included for source-module signature parity); HSI
-#'   URL wiring is fixed internally.
+#' @param league Unused (source-module signature parity).
 #' @param sex "male" or "female".
-#' @param seasons Optional integer vector restricting seasons. When `NULL`,
-#'   only the current season is fetched.
+#' @param seasons Optional integer vector. `NULL` means the current season only.
+#' @param sleep_fn Sleep implementation. Injected rather than mocked, because
+#'   `local_mocked_bindings()` cannot bind base functions -- the same seam
+#'   [poll_hsi_tables()] already uses.
 #' @keywords internal
 #' @noRd
-fetch_results_hsi <- function(league, sex, seasons = NULL) {
-  current <- hsi_current_season()
+fetch_results_hsi <- function(league, sex, seasons = NULL,
+                              sleep_fn = Sys.sleep) {
+  requested <- if (is.null(seasons)) {
+    hsi_current_season()
+  } else {
+    as.integer(seasons)
+  }
   divisions <- hsi_divisions_for_sex(sex)
-
-  # Decide which seasons to hit, per division. Current-season pages live in
-  # HSI_URLS; historical pages live in HSI_HISTORICAL_IDS (no historical cup
-  # data — see HSI_HISTORICAL_IDS docstring).
-  requested <- if (is.null(seasons)) current else as.integer(seasons)
-
   frames <- list()
 
   for (div in divisions) {
     division_label <- HSI_DIVISION_LABELS[[div]]
 
     for (season in requested) {
-      url <- NULL
-      if (season == current) {
-        url <- HSI_URLS[[sex]][[div]]
-      } else {
-        url <- hsi_historical_url(sex, div, season)
+      url <- hsi_url(sex, div, season)
+      if (is.null(url)) {
+        cli::cli_warn(
+          "HSI: no tournament id for {sex}/{div} season={season} -- skipped."
+        )
+        next
       }
-      if (is.null(url)) next # No mapping for this (sex, div, season).
 
       parsed <- hsi_fetch_and_parse(url, sex, div, division_label, season)
       if (!is.null(parsed)) frames[[length(frames) + 1L]] <- parsed
 
-      # Sleep between historical tournament fetches to avoid hammering HSÍ.
-      if (season != current) Sys.sleep(HSI_HISTORICAL_SLEEP_SECS)
+      sleep_fn(HSI_HISTORICAL_SLEEP_SECS)
     }
   }
 
@@ -590,11 +599,14 @@ fetch_results_hsi <- function(league, sex, seasons = NULL) {
 
 #' Source-module entrypoint: schedule (upcoming only) for a (league, sex).
 #'
-#' Iterates over all configured divisions, fetches each HSÍ page, and extracts
-#' the schedule table (if present). HSÍ league pages render the schedule as a
-#' 3rd table when there are unplayed matches; tournament pages render it as
-#' the last table. `parse_hsi_schedule_page` picks the first table that has
-#' `(dagsetning, lid)` without a score column.
+#' Same registry lookup as [fetch_results_hsi()], for the current season only,
+#' with the same season-stamp guard: a schedule scraped off a stale page is as
+#' wrong as results scraped off one, and schedules feed the fixture window that
+#' drives odds and decide. The guard sits outside the fetch `tryCatch` for the
+#' reason documented on [hsi_fetch_and_parse()].
+#'
+#' @param league Unused (source-module signature parity).
+#' @param sex "male" or "female".
 #' @keywords internal
 #' @noRd
 fetch_schedule_hsi <- function(league, sex) {
@@ -604,7 +616,13 @@ fetch_schedule_hsi <- function(league, sex) {
 
   for (div in divisions) {
     division_label <- HSI_DIVISION_LABELS[[div]]
-    url <- HSI_URLS[[sex]][[div]]
+    url <- hsi_url(sex, div, current)
+    if (is.null(url)) {
+      cli::cli_warn(
+        "HSI: no tournament id for {sex}/{div} season={current} -- schedule skipped."
+      )
+      next
+    }
 
     parsed <- tryCatch(
       {
@@ -627,6 +645,11 @@ fetch_schedule_hsi <- function(league, sex) {
       }
     )
     if (is.null(parsed)) next
+    # Outside the tryCatch on purpose -- see hsi_fetch_and_parse().
+    .assert_season_stamp(
+      parsed, current,
+      source = sprintf("hsi %s/%s schedule (%s)", sex, div, url)
+    )
     frames[[length(frames) + 1L]] <- parsed
   }
 
