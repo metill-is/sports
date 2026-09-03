@@ -185,11 +185,30 @@ NULL
   .summarise_quantile_band_2dt(all_draws, c("team", "component", "location"))
 }
 
-# Per-team home-advantage quantile bands. Mirrors football's
-# home_advantage_quantiles.parquet — exp-transformed log-multiplier.
+# Per-team home-advantage quantile bands.
+#
+# Shaped like football's home_advantage_quantiles.parquet, but the VALUES are
+# on a different scale and must NOT be transformed to match it. Football's
+# bivariate Poisson parameterises home advantage as a log-rate, so football's
+# extractor exponentiates to recover a multiplier, and halves the total to
+# split that multiplier per side. The 2DT models are additive in raw
+# points/goals:
+#   Stan/basketball_iceland/2d_student_t_scalarsigma.stan:112,116
+#     vector<lower = 0>[K] home_advantage_off / _def, prior normal(0, 10),
+#     entering the mean linearly at :264
+#   :277  home_advantage_tot = home_advantage_off + home_advantage_def
+# so there is no log to undo and nothing meaningful to halve. Publish the
+# parameter itself.
+#
+# This function previously carried football's exp() and /2 (B5, spec section
+# 8). Measured against the real stored basketball fit: raw totals span
+# 1.50..12.07 points, which exp(x/2) published as 2.12..420 -- plausible at
+# the bottom, absurd at the top, so it survived review. There is deliberately
+# no `transform` argument any more: the parameter is what invited the copy.
+# See test-extract-2dt-home-advantage-units.R.
 .compute_home_advantage_quantiles_2dt <- function(fit, teams,
                                                   current_top_teams) {
-  extract_one <- function(var, component, transform = identity) {
+  extract_one <- function(var, component) {
     fit$draws(var) |>
       posterior::as_draws_df() |>
       tibble::as_tibble() |>
@@ -198,7 +217,7 @@ NULL
         team_idx = as.integer(readr::parse_number(.data$name)),
         team = teams$team[.data$team_idx],
         component = component,
-        value = exp(transform(.data$value))
+        value = .data$value
       ) |>
       dplyr::select("team", "component", ".draw", "value")
   }
@@ -206,9 +225,7 @@ NULL
   home_adv_draws <- dplyr::bind_rows(
     extract_one("home_advantage_off", "offence"),
     extract_one("home_advantage_def", "defence"),
-    extract_one("home_advantage_tot", "total",
-      transform = function(x) x / 2
-    )
+    extract_one("home_advantage_tot", "total")
   ) |>
     dplyr::semi_join(current_top_teams, by = "team")
 
