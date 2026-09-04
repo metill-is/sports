@@ -153,3 +153,126 @@ test_that("no legacy football-only division helper survives in the live tree", {
     cat("\nsurviving references in:\n", paste(hits, collapse = "\n"), "\n")
   }
 })
+
+# ---- basketball + handball publish cells (Plan B WS7 task 5) ----------------
+
+test_that(".iceland_division_* return the basketball and handball cells", {
+  expected <- list(
+    basketball_iceland = list(
+      codes = c("BD", "1D"),
+      slugs = c(BD = "bd", `1D` = "1d"),
+      labels = c(BD = "B\u00f3nusdeild", `1D` = "1. deild"),
+      badges = c(BD = "BON", `1D` = "B1D")
+    ),
+    handball_iceland = list(
+      codes = c("OD", "G66"),
+      slugs = c(OD = "od", G66 = "g66"),
+      labels = c(OD = "Ol\u00edsdeild", G66 = "Grill 66-deild"),
+      badges = c(OD = "OD", G66 = "G66")
+    )
+  )
+  for (key in names(expected)) {
+    e <- expected[[key]]
+    for (sex_key in c("male", "female")) {
+      info <- paste(key, sex_key)
+      expect_identical(.iceland_division_codes(key, sex_key), e$codes, info = info)
+      expect_identical(.iceland_division_slugs(key, sex_key), e$slugs, info = info)
+      expect_identical(.iceland_division_labels(key, sex_key), e$labels, info = info)
+      expect_identical(.iceland_division_badges(key, sex_key), e$badges, info = info)
+      cup <- .iceland_division_is_cup(key, sex_key)
+      expect_false(any(cup), info = info)
+      # No split-season format in either sport, so no derived _PO badges.
+      expect_identical(names(.iceland_division_badges(key, sex_key)), e$codes, info = info)
+    }
+  }
+})
+
+test_that("every configured badge satisfies the next_games division_code pattern", {
+  # The one hard constraint on a badge. Basketball's code "1D" violates it on
+  # its own (leading digit), which is why code_badge exists as a separate key.
+  schema <- jsonlite::fromJSON(testthat::test_path(
+    "..", "..", "config", "publish-schemas", "football", "next_games.schema.json"
+  ))
+  pattern <- schema$properties$matches$items$properties$division_code$pattern
+  expect_true(nzchar(pattern))
+  n_checked <- 0L
+  for (key in c("football_iceland", "basketball_iceland", "handball_iceland")) {
+    for (sex_key in c("male", "female")) {
+      badges <- .iceland_division_badges(key, sex_key)
+      for (code in names(badges)) {
+        expect_match(
+          badges[[code]], pattern,
+          info = sprintf("%s %s %s", key, sex_key, code)
+        )
+        n_checked <- n_checked + 1L
+      }
+    }
+  }
+  expect_gt(n_checked, 0L)
+})
+
+test_that("expected_meetings is re-derived from data/facts/results, not restated", {
+  # This asserts against live git-tracked results. When a federation changes a
+  # competition format between seasons it is SUPPOSED to go red; the fix is to
+  # re-measure and rewrite the constant, never to loosen the assertion.
+  results <- read_table("results", root = testthat::test_path("..", "..", "data"))
+  season_max <- max(results$season, na.rm = TRUE)
+  n_checked <- 0L
+  for (key in c("basketball_iceland", "handball_iceland")) {
+    sport <- sub("_iceland$", "", key)
+    for (sex_key in c("male", "female")) {
+      em <- .iceland_division_expected_meetings(key, sex_key)
+      for (code in names(em)) {
+        cell <- results[
+          results$sport == sport & results$sex == sex_key &
+            results$season == season_max & results$division == code,
+        ]
+        if (nrow(cell) == 0L || is.na(em[[code]])) {
+          next
+        }
+        teams <- unique(c(cell$home_team, cell$away_team))
+        cut <- em[[code]] * (length(teams) - 1L)
+        reg <- cell[!is.na(cell$round) & cell$round <= cut, ]
+        pair <- paste(
+          pmin(reg$home_team, reg$away_team),
+          pmax(reg$home_team, reg$away_team),
+          sep = " v "
+        )
+        meetings <- table(pair)
+        info <- sprintf("%s %s %s season %d", key, sex_key, code, season_max)
+        # Every pair inside the regular-season cut meets exactly
+        # expected_meetings times, and every pair is present.
+        expect_setequal(as.integer(unique(meetings)), em[[code]])
+        expect_identical(
+          length(meetings),
+          as.integer(length(teams) * (length(teams) - 1L) / 2L),
+          info = info
+        )
+        n_checked <- n_checked + 1L
+      }
+    }
+  }
+  # 7 of the 8 cells carry expected_meetings; basketball female 1D is
+  # deliberately unset (an irregular 11-team cell -- 46 of 55 possible pairs
+  # inside the cut, meeting 1x/2x/4x -- so no constant is correct and the
+  # schedule derivation must be the only source).
+  expect_identical(n_checked, 7L)
+})
+
+test_that("basketball and handball configure no qualify cut (Plan B ID-B15)", {
+  # Measured teams reaching the post-season, season 2026: bb male BD 8 of 12,
+  # male 1D 8 of 12, female BD 10 of 10, female 1D 4 of 11. Four cells, four
+  # structures, and women's Bonusdeild carries every team through. No single
+  # per-division integer expresses that, so the key is absent and the publisher
+  # emits meta.qualify: null with no p_qualify rather than a plausible-looking
+  # number wearing a playoff label.
+  for (key in c("basketball_iceland", "handball_iceland")) {
+    for (sex_key in c("male", "female")) {
+      q <- .iceland_division_qualify(key, sex_key)
+      expect_length(q, length(.iceland_division_codes(key, sex_key)))
+      for (code in names(q)) {
+        expect_null(q[[code]], info = sprintf("%s %s %s", key, sex_key, code))
+      }
+    }
+  }
+})

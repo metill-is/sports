@@ -55,6 +55,45 @@ basketball_iceland:
         Tindastóll: UMF Tindastoll kv
         Ármann: Ármann kv
         Stjarnan: Stjarnan kv
+  # Publish cells. No cup division is ingested for basketball: the distinct
+  # `division` values in data/facts/results for season 2026 are exactly
+  # {BD, 1D}, so every entry is is_cup: false and there is no cup cell.
+  #
+  # code_badge: "1D" cannot be its own badge -- it starts with a digit and so
+  # fails next_games.json::division_code's ^[A-Z][A-Z0-9_]*$. BON keeps
+  # basketball's Bonusdeild off football's BD filter key on metill-platform.
+  #
+  # expected_meetings measured from data/facts/results season 2026 (see below
+  # per cell). It is an assertion and a fallback, never the source: n_rounds is
+  # derived from schedule + results. When a federation changes format this goes
+  # red in tests/testthat/test-iceland-division-helpers.R -- re-measure and
+  # rewrite the constant rather than loosening the test.
+  #
+  # No `qualify` key for either sex. Measured teams reaching the 2026
+  # post-season: male BD 8 of 12, male 1D 8 of 12, female BD 10 of 10, female
+  # 1D 4 of 11 -- four cells, four structures, and women's Bonusdeild carries
+  # every team through, so no single per-division integer expresses it
+  # (Plan B ID-B15). Absent = meta.qualify null and no p_qualify.
+  # relegation_slots is likewise omitted: no KKI regulation was resolved for it
+  # this session, and an unresolved number is omitted rather than guessed.
+  publish_divisions:
+    male:
+      # BD: 12 teams, cut at round <= 22 -> 132 matches, all 66 pairs exactly 2x.
+      # 1D: 12 teams, cut at round <= 22 -> 132 matches, all 66 pairs exactly 2x.
+      - { code: BD, slug: bd, label_is: "Bónusdeild", is_cup: false,
+          code_badge: BON, expected_meetings: 2 }
+      - { code: 1D, slug: 1d, label_is: "1. deild",    is_cup: false,
+          code_badge: B1D, expected_meetings: 2 }
+    female:
+      # BD: 10 teams, cut at round <= 18 -> 90 matches, all 45 pairs exactly 2x.
+      # 1D: expected_meetings DELIBERATELY OMITTED. 11 teams; inside any cut the
+      # pair table reads 1x1, 2x44, 4x1 over 46 of the 55 possible pairs -- a
+      # genuinely irregular format with byes, so there is no correct constant
+      # and the schedule-derived n_rounds must be the only source.
+      - { code: BD, slug: bd, label_is: "Bónusdeild", is_cup: false,
+          code_badge: BON, expected_meetings: 2 }
+      - { code: 1D, slug: 1d, label_is: "1. deild",    is_cup: false,
+          code_badge: B1D }
   stan_model: basketball_iceland/2d_student_t_scalarsigma.stan
   betting:
     # D2 (2026-09-02): publish-only. Enforced at four layers via
@@ -111,6 +150,32 @@ handball_iceland:
         HBH: HB Hafnarfjörður
         Valur: Valur
       female: {}                       # No women's handball on Lengjan currently
+  # Publish cells. Handball ingests a third division, PO, which is the shared
+  # post-season bracket rather than a league -- it is NOT a publish division and
+  # is deliberately absent here. No cup division is ingested, so both entries
+  # are is_cup: false and there is no cup cell.
+  #
+  # No `qualify` key: see the basketball block above (Plan B ID-B15). Measured
+  # 2026 post-season entrants are 8 (male) and 6 (female), but they enter a
+  # separate PO division rather than a top-N cut of this table.
+  # relegation_slots omitted -- no HSI regulation resolved this session.
+  publish_divisions:
+    male:
+      # OD:  12 teams, cut at round <= 22 -> 132 matches, all 66 pairs exactly 2x.
+      # G66: 12 teams, cut at round <= 22 -> 132 matches, all 66 pairs exactly 2x.
+      - { code: OD,  slug: od,  label_is: "Olísdeild",     is_cup: false,
+          code_badge: OD,  expected_meetings: 2 }
+      - { code: G66, slug: g66, label_is: "Grill 66-deild", is_cup: false,
+          code_badge: G66, expected_meetings: 2 }
+    female:
+      # TRIPLE round robin, both divisions: 8 teams, cut at round <= 21 -> 84
+      # matches, all 28 pairs exactly 3x. This is the cell that breaks the
+      # 2*(n_teams - 1) assumption -- measured 2026-09-04 from
+      # data/facts/results, not assumed (Plan B ID-B14).
+      - { code: OD,  slug: od,  label_is: "Olísdeild",     is_cup: false,
+          code_badge: OD,  expected_meetings: 3 }
+      - { code: G66, slug: g66, label_is: "Grill 66-deild", is_cup: false,
+          code_badge: G66, expected_meetings: 3 }
   stan_model: handball_iceland/2d_student_t.stan
   betting:
     # D2 (2026-09-02): publish-only. Enforced at four layers via
