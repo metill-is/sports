@@ -47,12 +47,17 @@ extract_partition_exists <- function(extracts_root, sport, country, sex) {
 #' @param end_date Publish cutoff `Date`, forwarded to the per-sport publisher.
 #'   Defaults to `Sys.Date()`, which is what production wants; a test or a
 #'   replay passes a fixed date so a far-future fixture is not filtered out.
+#' @param schema_dir Directory holding `<sport>/*.schema.json`. Overridable so a
+#'   test can validate against a staging tree (e.g.
+#'   `config/publish-schemas/_draft/`, where a sport's schemas are reviewed
+#'   before they are armed) without arming the real one for the live pipeline.
 #' @return invisible(NULL).
 #' @export
 publish_one <- function(static, betting, key, sex,
                         root = here::here("data"),
                         validate = TRUE,
-                        end_date = Sys.Date()) {
+                        end_date = Sys.Date(),
+                        schema_dir = here::here("config", "publish-schemas")) {
   league <- static
   league$betting <- betting
 
@@ -104,13 +109,16 @@ publish_one <- function(static, betting, key, sex,
     archive_root = archive_root
   )
   if (isTRUE(validate)) {
-    .validate_or_abort(output_root, sport = league$sport, key = key, sex = sex)
+    .validate_or_abort(
+      output_root,
+      sport = league$sport, key = key, sex = sex, schema_dir = schema_dir
+    )
   }
   invisible(NULL)
 }
 
-.validate_or_abort <- function(output_root, sport, key, sex) {
-  schema_dir <- here::here("config", "publish-schemas")
+.validate_or_abort <- function(output_root, sport, key, sex,
+                              schema_dir = here::here("config", "publish-schemas")) {
   sport_dir <- file.path(output_root, sport)
   if (!dir.exists(sport_dir) || !dir.exists(schema_dir)) {
     return(invisible(NULL))

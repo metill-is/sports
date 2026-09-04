@@ -11,7 +11,8 @@ publish_one(
   sex,
   root = here::here("data"),
   validate = TRUE,
-  end_date = Sys.Date()
+  end_date = Sys.Date(),
+  schema_dir = here::here("config", "publish-schemas")
 )
 }
 \arguments{
@@ -31,6 +32,11 @@ validated against `config/publish-schemas/<sport>/`. Failures abort.}
 \item{end_date}{Publish cutoff `Date`, forwarded to the per-sport publisher.
 Defaults to `Sys.Date()`, which is what production wants; a test or a
 replay passes a fixed date so a far-future fixture is not filtered out.}
+
+\item{schema_dir}{Directory holding `<sport>/*.schema.json`. Overridable so a
+test can validate against a staging tree (e.g.
+`config/publish-schemas/_draft/`, where a sport's schemas are reviewed
+before they are armed) without arming the real one for the live pipeline.}
 }
 \value{
 invisible(NULL).

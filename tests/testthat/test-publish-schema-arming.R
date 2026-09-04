@@ -72,3 +72,38 @@ test_that("arming one sport cannot abort another sport's publish", {
   expect_false(any(grepl("basketball", unlist(res$errors))))
   expect_false(any(grepl("basketball", res$unmatched)))
 })
+
+# ---- WS11 T1: an overridable schema_dir ------------------------------------
+#
+# Every later arming task needs to point the publisher at a schema directory
+# that is NOT config/publish-schemas/ -- `_draft/` while the bb/hb schemas are
+# being authored, a tempdir in the negative tests below. Without the parameter
+# the only way to exercise arming is to write into the real config tree, which
+# arms it for the live pipeline at the same time.
+#
+# SC-7 fixes the signature as
+#   publish_one(static, betting, key, sex, root, validate, end_date, schema_dir)
+# -- `end_date` seventh (WS9 T1), `schema_dir` EIGHTH. Both are passed by name
+# everywhere; nothing relies on position past `sex`.
+
+test_that(".validate_or_abort accepts an explicit schema_dir", {
+  out <- .arm_tree()
+  sch <- withr::local_tempdir()
+  file.copy(
+    here::here("config", "publish-schemas", "football"), sch,
+    recursive = TRUE
+  )
+  expect_no_error(.validate_or_abort(
+    out,
+    sport = "football", key = "football_iceland", sex = "male",
+    schema_dir = sch
+  ))
+})
+
+test_that("publish_one carries schema_dir as its eighth formal", {
+  fmls <- names(formals(publish_one))
+  expect_equal(
+    fmls,
+    c("static", "betting", "key", "sex", "root", "validate", "end_date", "schema_dir")
+  )
+})
