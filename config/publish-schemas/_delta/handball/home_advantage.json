@@ -1,0 +1,26 @@
+{
+  "description": "Home advantage for a 2DT sport is RAW GOALS -- the model is additive, there is no link to undo. Applying football's exp() to an additive parameter is the B5 bug. This bound is a gross-error guard only: exp() of a realistic ~1.5-goal handball edge is ~4.5 and stays inside it, so the exact check remains tests/testthat/test-extract-2dt-home-advantage-units.R.",
+  "properties": {
+    "records": {
+      "items": {
+        "properties": {
+          "median": {
+            "type": "number",
+            "minimum": -20,
+            "maximum": 20
+          },
+          "lower": {
+            "type": "number",
+            "minimum": -20,
+            "maximum": 20
+          },
+          "upper": {
+            "type": "number",
+            "minimum": -20,
+            "maximum": 20
+          }
+        }
+      }
+    }
+  }
+}

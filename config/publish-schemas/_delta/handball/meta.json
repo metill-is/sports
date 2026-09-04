@@ -1,0 +1,56 @@
+{
+  "description": "Per-cell metadata for handball. Schema v2 is REQUIRED here, unlike football's: these cells are new and emit the full v2 contract from their first publish, whereas the live football tree predates it.",
+  "required": [
+    "sport",
+    "sex",
+    "league",
+    "division",
+    "is_cup",
+    "season",
+    "generated_at",
+    "fit_date",
+    "round",
+    "n_draws",
+    "n_rounds",
+    "n_rounds_source",
+    "units",
+    "points",
+    "season_scope",
+    "postseason",
+    "qualify",
+    "relegation"
+  ],
+  "properties": {
+    "sport": {
+      "type": "string",
+      "enum": [
+        "handball"
+      ]
+    },
+    "split": null,
+    "season_scope": {
+      "enum": [
+        "regular_season"
+      ],
+      "description": "Narrowed: the published table is the regular season and the post-season is not modelled, so placement 1 is top of the regular-season table and NOT the title."
+    },
+    "postseason": {
+      "type": "object",
+      "description": "Non-nullable here: both 2DT sports have an urslitakeppni this model does not simulate, and saying so is the whole point of the D3 relabel.",
+      "required": [
+        "name_is",
+        "modelled"
+      ],
+      "properties": {
+        "name_is": {
+          "type": "string",
+          "minLength": 1
+        },
+        "modelled": {
+          "type": "boolean",
+          "const": false
+        }
+      }
+    }
+  }
+}

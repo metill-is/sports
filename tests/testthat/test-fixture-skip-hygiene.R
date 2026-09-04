@@ -93,7 +93,13 @@ test_that("the bb/hb publish + extract tests carry no skip gates", {
     # publishes block is the only proof that one 2DT abort cannot take
     # football's nine live cells down in the same run, which is precisely what
     # WS11's fail-closed validation default makes possible.
-    "test-pipeline-run-isolation.R"
+    "test-pipeline-run-isolation.R",
+    # WS11's bb/hb publish schemas. It is the only proof that the eight
+    # fixture-published cells satisfy the contract that is about to be armed on
+    # both sides of the metill-platform rsync, and the only place the D3
+    # p_top_six / p_winner refusal is checked in the CONTRACT rather than the
+    # payload.
+    "test-publish-schema-draft.R"
   )
   banned <- c("skip(", "skip_if(", "skip_if_not(", "skip_if_not_installed(", "Sys.getenv")
 

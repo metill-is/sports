@@ -1,0 +1,38 @@
+{
+  "required": [
+    "generated_at",
+    "season",
+    "n_teams",
+    "records",
+    "summary",
+    "basis"
+  ],
+  "properties": {
+    "basis": {
+      "enum": [
+        "regular_season_table"
+      ],
+      "description": "Narrowed: placements here are the REGULAR-season table. The post-season is unmodelled."
+    },
+    "summary": {
+      "items": {
+        "required": [
+          "team",
+          "p_top_of_table",
+          "p_relegation"
+        ],
+        "properties": {
+          "p_top_six": false,
+          "p_winner": false,
+          "p_top_of_table": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "P(placement == 1) in the regular-season table."
+          }
+        }
+      }
+    }
+  },
+  "description": "Refused outright, not merely optional. Measured on season 2026 the four basketball cells qualify 8 of 12, 8 of 12, 10 of 10 and 4 of 11 teams for the post-season -- four cells, four structures, one of which takes every team through -- and the league table decides the deildarmeistari while the Islandsmeistari comes out of an urslitakeppni this model does not simulate. A p_top_six or p_winner here would be a top-six number wearing a playoff label (design D3), so the contract rejects it rather than tolerating it."
+}

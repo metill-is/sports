@@ -1,0 +1,61 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/metill-is/sports/config/publish-schemas/home_advantage.schema.json",
+  "title": "data/publish/.../home_advantage.json",
+  "description": "Home advantage for a 2DT sport is RAW GOALS -- the model is additive, there is no link to undo. Applying football's exp() to an additive parameter is the B5 bug. This bound is a gross-error guard only: exp() of a realistic ~1.5-goal handball edge is ~4.5 and stays inside it, so the exact check remains tests/testthat/test-extract-2dt-home-advantage-units.R.",
+  "type": "object",
+  "required": [
+    "generated_at",
+    "records"
+  ],
+  "properties": {
+    "generated_at": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T"
+    },
+    "records": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "team",
+          "component",
+          "median",
+          "coverage",
+          "lower",
+          "upper"
+        ],
+        "properties": {
+          "team": {
+            "type": "string",
+            "minLength": 1
+          },
+          "component": {
+            "type": "string",
+            "minLength": 1
+          },
+          "median": {
+            "type": "number",
+            "minimum": -20,
+            "maximum": 20
+          },
+          "coverage": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "lower": {
+            "type": "number",
+            "minimum": -20,
+            "maximum": 20
+          },
+          "upper": {
+            "type": "number",
+            "minimum": -20,
+            "maximum": 20
+          }
+        }
+      }
+    }
+  }
+}

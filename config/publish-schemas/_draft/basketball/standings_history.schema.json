@@ -1,0 +1,133 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/metill-is/sports/config/publish-schemas/standings_history.schema.json",
+  "title": "data/publish/.../standings_history.json",
+  "description": "Per-round per-team cumulative-standings snapshots. The lookahead-free trajectory the cumulative_xpts_long() helper materialises. Empty for cup cells.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "records"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "records": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "as_of",
+          "generated_at",
+          "round",
+          "season",
+          "team",
+          "short",
+          "played",
+          "wins",
+          "draws",
+          "losses",
+          "goals_for",
+          "goals_against",
+          "goal_diff",
+          "points",
+          "xg_for",
+          "xg_against",
+          "xpts",
+          "n_predicted_matches",
+          "n_played_matches",
+          "rank"
+        ],
+        "properties": {
+          "as_of": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "generated_at": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T"
+          },
+          "round": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "season": {
+            "type": "integer",
+            "minimum": 2000
+          },
+          "team": {
+            "type": "string",
+            "minLength": 1
+          },
+          "short": {
+            "type": "string"
+          },
+          "played": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "wins": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "draws": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "losses": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "goals_for": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "goals_against": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "goal_diff": {
+            "type": "integer"
+          },
+          "points": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "xg_for": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "xg_against": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "xpts": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "n_predicted_matches": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "n_played_matches": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "rank": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      }
+    }
+  }
+}
