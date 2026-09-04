@@ -14,11 +14,21 @@
 extract_2dt_cell <- function(sport, sex, env = parent.frame(),
                              extra_results = NULL, extra_schedules = NULL) {
   root <- fixture_facts_root(env = env)
+  # write_table() REPLACES a partition, so injected rows must be unioned with
+  # what the fixture already wrote rather than written on their own.
   if (!is.null(extra_results)) {
-    write_table(extra_results, "results", root = root)
+    write_table(
+      dplyr::bind_rows(read_table("results", root = root), extra_results),
+      "results",
+      root = root
+    )
   }
   if (!is.null(extra_schedules)) {
-    write_table(extra_schedules, "schedules", root = root)
+    write_table(
+      dplyr::bind_rows(read_table("schedules", root = root), extra_schedules),
+      "schedules",
+      root = root
+    )
   }
   key <- paste0(sport, "_iceland")
   league <- load_leagues()[[key]]
@@ -171,4 +181,107 @@ test_that("a division whose fixtures have all been played still gets a table", {
   )
   expect_setequal(unique(fp$team), c("A", "B"))
   expect_equal(fp$probability[fp$team == "A" & fp$placement == 1L], 1)
+})
+
+# ---- The regular-season cut (D3) --------------------------------------------
+#
+# Basketball EMBEDS its urslitakeppni in the league division: KKI packages the
+# playoffs as extra rounds inside the SAME season_id
+# (R/ingest-kki-basketball.R:23-24), so `division == "BD"` carries both.
+# Measured on data/facts/results season 2026: male BD 162 rows of which 132 are
+# the 22-round regular season, female BD 137 of which 90 are the 18-round one.
+# Without the cut those post-season points feed .compute_base_points_2dt() and
+# the published table is simulated on them -- a wrong table, not an error.
+
+bb_postseason_results <- function(rounds = 7:10) {
+  teams <- fixture_division_teams("basketball", "male", "BD")
+  # BB M BD 04 is the fixture's WEAKEST team (it loses every regular-season
+  # match). Three post-season wins plus a fourth over the leader would hand it
+  # placement 1 if the playoff rounds reached the table.
+  tibble::tibble(
+    sport = "basketball", country = "iceland", sex = "male", season = 2100L,
+    match_date = as.Date("2100-01-08") + seq_along(rounds),
+    home_team = teams[4L],
+    away_team = teams[c(1L, 2L, 3L, 1L)][seq_along(rounds)],
+    home_score = 120L,
+    away_score = 70L,
+    division = "BD",
+    round = as.integer(rounds)
+  )
+}
+
+test_that("played post-season rounds never reach the 2DT league table", {
+  teams <- fixture_division_teams("basketball", "male", "BD")
+  cell <- extract_2dt_cell(
+    "basketball", "male",
+    extra_results = bb_postseason_results()
+  )
+
+  pd <- read_part(cell, "points_distribution")
+  pd_04 <- pd[pd$division == "BD" & pd$team == teams[4L], ]
+  # The weakest team finished the regular season on 0 points and has exactly
+  # one fixture left in the prediction window, so 2 is its ceiling. With the
+  # four playoff rounds counted its BASE alone is 8, and its support is 8..10.
+  expect_lte(max(pd_04$points), 2)
+
+  fp <- read_part(cell, "final_positions")
+  bd <- fp[fp$division == "BD" & fp$placement == 1L, ]
+  # 0 points with a ceiling of 2 cannot win a division whose leader is on 6.
+  # Uncounted, the injected playoff wins put it on 8 and it takes the title in
+  # 40 % of draws.
+  expect_equal(bd$probability[bd$team == teams[4L]], 0)
+  expect_gt(bd$probability[bd$team == teams[1L]], 0.5)
+})
+
+test_that("upcoming post-season fixtures publish but score no points", {
+  teams <- fixture_division_teams("basketball", "male", "BD")
+  # The fixture already schedules three BD matches on 16/18/20 Jan. These push
+  # the leader from 3 regular-season appearances to 8, well past the
+  # 2 * (4 - 1) = 6-round boundary.
+  extra <- tibble::tibble(
+    sport = "basketball", country = "iceland", sex = "male", season = 2100L,
+    match_date = as.Date(c(
+      "2100-01-22", "2100-01-24", "2100-01-26", "2100-01-28"
+    )),
+    home_team = teams[1L],
+    away_team = teams[c(3L, 4L, 2L, 3L)],
+    division = "BD",
+    round = c(93L, 94L, 95L, 96L),
+    kickoff_time = "19:15"
+  )
+  cell <- extract_2dt_cell("basketball", "male", extra_schedules = extra)
+
+  pm <- read_part(cell, "predicted_matches")
+  pm_bd <- pm[pm$division == "BD", ]
+  # A next game is a next game: every scheduled fixture is still published.
+  expect_equal(nrow(pm_bd), 7L)
+  expect_true(all(
+    as.Date(c("2100-01-26", "2100-01-28")) %in% as.Date(pm_bd$match_date)
+  ))
+
+  pd <- read_part(cell, "points_distribution")
+  pd_01 <- pd[pd$division == "BD" & pd$team == teams[1L], ]
+  # 6 realised points plus at most three COUNTING fixtures at 2 points each.
+  # Uncapped it is five fixtures, so 16.
+  expect_lte(max(pd_01$points), 12)
+})
+
+test_that("handball needs no cut because its post-season is its own division", {
+  # This is the whole justification for basketball being the only sport that
+  # needs the round cut, and it is a property of the federations, not of this
+  # code -- so it is asserted against live git-tracked results. If HSI ever
+  # folds the playoff back into OD the way KKI folds urslitakeppni into BD,
+  # this goes red and handball needs the same treatment.
+  results <- read_table("results", root = testthat::test_path("..", "..", "data"))
+  hb <- results[results$sport == "handball" & results$country == "iceland", ]
+  expect_gt(nrow(hb), 0L)
+
+  for (sex_key in c("male", "female")) {
+    codes <- .iceland_division_codes("handball_iceland", sex_key)
+    divisions <- unique(hb$division[hb$sex == sex_key])
+    # PO exists in the data and is NOT one of the published divisions, so the
+    # division filter alone already excludes it.
+    expect_true("PO" %in% divisions, info = sex_key)
+    expect_false("PO" %in% codes, info = sex_key)
+  }
 })

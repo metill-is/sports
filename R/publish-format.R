@@ -28,6 +28,37 @@
 # counts fluctuate with postponements, so the qualifying set is non-contiguous
 # in all four basketball cells (female 1D reads 3,5,5,5,4,5,6,5,6,4,6,5,4,5,4,
 # 5,7,5,2,2,2,1,1,1).
+#
+# ---- WHY the boundary is a ROUND CUT and not the KKI stage dimension --------
+#
+# KKI does label the two stages (finding N7: league 190 carries 300475
+# Deildarkeppni / 306658 Urslitakeppni; 191: 300472/306497; 189: 300530/306645
+# plus A ridill 305952 and B ridill 305951; 231: 300529/306557), so
+# `stage == "Deildarkeppni"` looks like the obvious filter. It is not available
+# and would not be sufficient:
+#
+# 1. `stage` is NOT in the data and cannot be put there from here. Adding it to
+#    `schemas()$results` is a schema migration: `validate_against_schema()`
+#    (R/storage.R) hard-fails on a missing schema column, which breaks every
+#    writer plus the exact-column-set assertion in
+#    tests/testthat/test-ingest-kki.R. Plan A deferred it for that reason.
+# 2. It would only ever cover basketball. Handball's post-season is a SEPARATE
+#    division (`PO` -- verified in data/facts/results season 2026: male 20 rows,
+#    female 16), already excluded by the division filter. A round rule has to
+#    exist regardless, so `stage` would be a second, partly-overlapping
+#    mechanism rather than a replacement.
+# 3. The round cut is locally checkable and a vendor stage label is not: the
+#    pair-meeting count is an assertion this repo can re-derive from its own
+#    parquet (tests/testthat/test-iceland-division-helpers.R does), whereas a
+#    federation label can only be trusted.
+# 4. `round` already means the right thing. `derive_league_round()`
+#    (R/derive-round.R) sets it to each team's cumulative appearance index
+#    within (sport, country, sex, season, division), taking the max of the two
+#    sides -- which is exactly the matchweek axis a boundary cuts on.
+#
+# FOLLOW-UP: if those KKI stage ids are ever ingested, `stage` becomes the
+# primary source and this round cut becomes its fallback and cross-check --
+# not the other way round.
 
 # Rows of `df` in one (season, division set) cell. NULL/0-row in, same out.
 # @noRd

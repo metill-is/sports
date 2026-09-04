@@ -1,4 +1,4 @@
-#' @include publish-iceland-2dt-helpers.R model-prepare.R storage.R
+#' @include publish-iceland-2dt-helpers.R model-prepare.R storage.R publish-divisions.R publish-format.R
 NULL
 
 # Shared extraction primitives for basketball + handball Iceland.
@@ -335,6 +335,57 @@ NULL
     dplyr::arrange(.data$team, .data$points)
 }
 
+# Which upcoming fixtures of `division` still belong to the REGULAR season.
+#
+# The played-rows cut (`.regular_season_results()`) handles history; this is its
+# forward half. A basketball cell's `pred_d` carries playoff fixtures inside the
+# league division exactly as its results do, and
+# `.compute_iter_team_points_2dt()` would add every one of them to the simulated
+# table. Walk the fixtures in date order, keeping one only while BOTH teams stay
+# at or below the boundary.
+#
+# `predicted_matches.parquet` is built from the UNCUT set on purpose: a next
+# game is a next game, and the platform's next_games panel should show a playoff
+# fixture. Only the league-table simulation is capped.
+#
+# NA `n_rounds` means no cap at all -- an unconfigured, genuinely irregular cell
+# (basketball female 1D) or a cup. Dropping every upcoming fixture there would
+# be far worse than counting a post-season one, and the caller surfaces the
+# caveat through `.publish_n_rounds()$source`.
+.regular_season_game_nrs_2dt <- function(pred_d, division, played_results,
+                                         n_rounds) {
+  rows <- pred_d[pred_d$division == division, , drop = FALSE]
+  if (nrow(rows) == 0L) {
+    return(integer())
+  }
+  if (length(n_rounds) != 1L || is.na(n_rounds)) {
+    return(rows$game_nr)
+  }
+  rows <- rows[order(rows$match_date, rows$game_nr), , drop = FALSE]
+
+  teams <- unique(c(
+    played_results$home_team, played_results$away_team,
+    rows$home_team, rows$away_team
+  ))
+  tally <- stats::setNames(integer(length(teams)), teams)
+  played <- table(c(played_results$home_team, played_results$away_team))
+  if (length(played) > 0L) {
+    tally[names(played)] <- as.integer(played)
+  }
+
+  keep <- logical(nrow(rows))
+  for (i in seq_len(nrow(rows))) {
+    home <- rows$home_team[[i]]
+    away <- rows$away_team[[i]]
+    if (tally[[home]] < n_rounds && tally[[away]] < n_rounds) {
+      tally[[home]] <- tally[[home]] + 1L
+      tally[[away]] <- tally[[away]] + 1L
+      keep[i] <- TRUE
+    }
+  }
+  rows$game_nr[keep]
+}
+
 # Shared orchestrator: takes a fit + sport-specific config and writes one
 # parquet per file type into the partition, each division-keyed file carrying a
 # `division` payload column covering every code in
@@ -362,6 +413,8 @@ NULL
   stopifnot(sex %in% c("male", "female"))
   stopifnot(sport %in% c("basketball", "handball"))
   divisions <- .iceland_division_codes(key, sex)
+  expected_meetings <- .iceland_division_expected_meetings(key, sex)
+  division_is_cup <- .iceland_division_is_cup(key, sex)
 
   if (is.null(extracts_root)) {
     extracts_root <- file.path(root, "beliefs", "extracts")
@@ -410,6 +463,12 @@ NULL
   # parquet scan order.
   results <- results[order(results$match_date), , drop = FALSE]
 
+  schedules <- read_table(
+    "schedules",
+    root = root,
+    filter = list(sport = league$sport, country = league$country, sex = sex)
+  )
+
   current_season <- if (nrow(results) > 0L) {
     max(results$season, na.rm = TRUE)
   } else {
@@ -440,8 +499,45 @@ NULL
 
   # ---- Per-division slices -------------------------------------------------
   per_div <- lapply(divisions, function(div) {
+    # THE REGULAR-SEASON CUT (D3). Basketball embeds its urslitakeppni in the
+    # league division -- KKI packages it as extra rounds inside the SAME
+    # season_id (R/ingest-kki-basketball.R:23-24) -- so without this the
+    # published table is simulated on post-season points. Measured on
+    # data/facts/results season 2026: male BD 162 rows -> 132, male 1D
+    # 159 -> 132, female BD 137 -> 90; all four handball cells unchanged,
+    # because handball's playoff is a separate division (`PO`).
+    #
+    # There is exactly ONE boundary function in the repo, in R/publish-format.R,
+    # and the publisher calls the same one: the extractor's cut and the
+    # publisher's cut must be the same cut or standings and final_positions
+    # disagree about which matches counted. WS8 applies it; WS10 re-derives the
+    # NUMBER from the same helper rather than from played + remaining, which
+    # would publish 35 rounds for a 22-round division.
+    rounds <- .publish_n_rounds(
+      results = results,
+      schedules = schedules,
+      season = current_season,
+      division_codes = div,
+      end_date = as.Date(end_date),
+      expected_meetings = expected_meetings[[div]],
+      is_cup = isTRUE(division_is_cup[[div]])
+    )
+
     top_results <- results[
       results$season == current_season & results$division == div, ,
+      drop = FALSE
+    ]
+    top_results <- .regular_season_results(top_results, rounds$n_rounds)
+
+    # The forward half of the same cut. predicted_matches stays UNCUT.
+    keep_game_nrs <- .regular_season_game_nrs_2dt(
+      pred_d, div, top_results, rounds$n_rounds
+    )
+    # Other divisions' rows are kept so the draw index stays complete even when
+    # this division has nothing left to play.
+    posterior_goals_div <- posterior_goals[
+      !(posterior_goals$division == div &
+        !(posterior_goals$game_nr %in% keep_game_nrs)), ,
       drop = FALSE
     ]
 
@@ -468,12 +564,12 @@ NULL
         home_advantage_draws, current_top_teams
       ),
       final_positions = .compute_final_positions_2dt(
-        posterior_goals, div, base_points,
+        posterior_goals_div, div, base_points,
         has_ties, tie_threshold,
         current_top_teams
       ),
       points_distribution = .compute_points_distribution_2dt(
-        posterior_goals, div, base_points,
+        posterior_goals_div, div, base_points,
         has_ties, tie_threshold,
         current_top_teams
       )
