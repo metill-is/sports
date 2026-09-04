@@ -459,3 +459,157 @@ test_that("n_rounds >= round holds for every shape the builder emits", {
     )
   }
 })
+
+# ---- Block E: the placement summary ------------------------------------------
+#
+# One builder for all three sports. Football keeps p_top_six as a DEPRECATED
+# ALIAS of p_qualify; basketball and handball emit neither p_top_six nor
+# p_winner, because their champion comes out of an urslitakeppni this model
+# does not simulate (design section 15, D3).
+
+.synthetic_final_positions <- function(n_teams = 6L) {
+  teams <- sprintf("T%02d", seq_len(n_teams))
+  # Row-stochastic per team: team i puts 0.5 on placement i and spreads the
+  # rest uniformly, so every headline probability below has a hand-checkable
+  # closed form.
+  tidyr::expand_grid(team = teams, placement = seq_len(n_teams)) |>
+    dplyr::mutate(
+      probability = dplyr::if_else(
+        .data$placement == match(.data$team, teams),
+        0.5, 0.5 / (n_teams - 1L)
+      )
+    )
+}
+
+.p_at <- function(fp, team, keep) {
+  rows <- fp[fp$team == team & keep(fp$placement), , drop = FALSE]
+  sum(rows$probability)
+}
+
+test_that("football keeps p_top_six as an alias of the configured qualify cut", {
+  fp <- .synthetic_final_positions(6L)
+  out <- .build_placement_summary(
+    fp, n_teams = 6L, basis = "final_table",
+    qualify = list(slots = 6L, label_is = "Efri hluti"),
+    relegation_slots = NA_integer_, emit_top_six_alias = TRUE
+  )
+  expect_equal(
+    names(out),
+    c("team", "p_qualify", "p_top_of_table", "p_winner", "p_top_six",
+      "p_relegation")
+  )
+  expect_equal(out$p_top_six, out$p_qualify, tolerance = 1e-12)
+  expect_equal(out$p_top_of_table, out$p_winner, tolerance = 1e-12)
+
+  # p_relegation with an UNSET relegation_slots must reproduce football's
+  # published expression byte for byte: placement >= n_teams - 1.
+  expect_equal(
+    out$p_relegation,
+    vapply(
+      out$team, function(t) .p_at(fp, t, function(p) p >= 6L - 1L), numeric(1),
+      USE.NAMES = FALSE
+    ),
+    tolerance = 1e-12
+  )
+  expect_equal(
+    out$p_top_of_table,
+    vapply(
+      out$team, function(t) .p_at(fp, t, function(p) p == 1L), numeric(1),
+      USE.NAMES = FALSE
+    ),
+    tolerance = 1e-12
+  )
+})
+
+test_that("a football cell with no qualify cut still publishes p_top_six", {
+  # LD1/LD2/LD3 carry no `qualify` -- only Besta deild does. p_top_six is not
+  # derived from qualify; it is the literal `placement <= 6L` football has
+  # always published, so dropping it here would be a silent field removal on
+  # six live cells.
+  out <- .build_placement_summary(
+    .synthetic_final_positions(6L), n_teams = 6L, basis = "final_table",
+    qualify = NULL, relegation_slots = NA_integer_, emit_top_six_alias = TRUE
+  )
+  expect_equal(
+    names(out),
+    c("team", "p_top_of_table", "p_winner", "p_top_six", "p_relegation")
+  )
+  expect_false("p_qualify" %in% names(out))
+})
+
+test_that("a regular-season table publishes neither p_winner nor p_top_six", {
+  fp <- .synthetic_final_positions(10L)
+  out <- .build_placement_summary(
+    fp, n_teams = 10L, basis = "regular_season_table",
+    qualify = NULL, relegation_slots = NA_integer_, emit_top_six_alias = FALSE
+  )
+  expect_equal(names(out), c("team", "p_top_of_table", "p_relegation"))
+  expect_false(any(c("p_winner", "p_top_six", "p_qualify") %in% names(out)))
+  expect_equal(
+    out$p_top_of_table,
+    vapply(
+      out$team, function(t) .p_at(fp, t, function(p) p == 1L), numeric(1),
+      USE.NAMES = FALSE
+    ),
+    tolerance = 1e-12
+  )
+})
+
+test_that("a configured qualify cut drives p_qualify on any basis", {
+  fp <- .synthetic_final_positions(12L)
+  out <- .build_placement_summary(
+    fp, n_teams = 12L, basis = "regular_season_table",
+    qualify = list(slots = 8L, label_is = "\u00darslitakeppni"),
+    relegation_slots = NA_integer_, emit_top_six_alias = FALSE
+  )
+  expect_equal(names(out), c("team", "p_qualify", "p_top_of_table", "p_relegation"))
+  expect_equal(
+    out$p_qualify,
+    vapply(
+      out$team, function(t) .p_at(fp, t, function(p) p <= 8L), numeric(1),
+      USE.NAMES = FALSE
+    ),
+    tolerance = 1e-12
+  )
+})
+
+test_that("relegation_slots 0 publishes present-and-zero, never a missing key", {
+  out <- .build_placement_summary(
+    .synthetic_final_positions(8L), n_teams = 8L,
+    basis = "regular_season_table", qualify = NULL,
+    relegation_slots = 0L, emit_top_six_alias = FALSE
+  )
+  expect_true("p_relegation" %in% names(out))
+  expect_equal(out$p_relegation, rep(0, 8L))
+})
+
+test_that("a configured relegation_slots replaces the hardcoded bottom two", {
+  fp <- .synthetic_final_positions(12L)
+  out <- .build_placement_summary(
+    fp, n_teams = 12L, basis = "regular_season_table", qualify = NULL,
+    relegation_slots = 3L, emit_top_six_alias = FALSE
+  )
+  expect_equal(
+    out$p_relegation,
+    vapply(
+      out$team, function(t) .p_at(fp, t, function(p) p > 12L - 3L), numeric(1),
+      USE.NAMES = FALSE
+    ),
+    tolerance = 1e-12
+  )
+})
+
+test_that("an empty final_positions yields the shape, not an error", {
+  empty <- sport_publish_profile("football")$empty_extracts$final_positions
+  out <- .build_placement_summary(
+    empty, n_teams = 0L, basis = "final_table",
+    qualify = list(slots = 6L, label_is = "Efri hluti"),
+    relegation_slots = NA_integer_, emit_top_six_alias = TRUE
+  )
+  expect_equal(nrow(out), 0L)
+  expect_equal(
+    names(out),
+    c("team", "p_qualify", "p_top_of_table", "p_winner", "p_top_six",
+      "p_relegation")
+  )
+})

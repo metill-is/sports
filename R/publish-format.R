@@ -293,3 +293,81 @@
     )
   )
 }
+
+
+# ---- The placement summary ---------------------------------------------------
+#
+# One builder for all three sports, replacing the football-only `top_six` block
+# and the 2DT publisher's mean-over-iterations form (which died with
+# publish_basketball_iceland).
+#
+# p_qualify is the GENERIC replacement for p_top_six, and it is emitted only
+# where a division actually configures a qualification cut. It does not
+# transfer to basketball or handball: measured on season 2026, male Bonusdeild
+# takes 8 of 12 through, male 1. deild 8 of 12, female Bonusdeild 10 of 10 and
+# female 1. deild 4 of 11. Four cells, four structures, and the women's top
+# flight takes EVERY team through -- no per-division integer expresses that,
+# and shipping one would be the "top-six number wearing a playoff label"
+# failure D3 exists to prevent (Plan B ID-B15). So bb/hb configure no
+# `qualify` and publish no p_qualify.
+
+#' Headline per-team probabilities for `final_positions.json`
+#'
+#' @param final_positions Tibble with `team`, `placement`, `probability`.
+#' @param n_teams Teams in the cell; only used by the legacy relegation rule.
+#' @param basis `"final_table"` or `"regular_season_table"`. `p_winner` is a
+#'   claim about the season's CHAMPION, so it is emitted only on a final table
+#'   -- a basketball league table decides the *deildarmeistari* and the
+#'   Islandsmeistari comes out of an unmodelled urslitakeppni (design 15).
+#' @param qualify `NULL`, or `list(slots, label_is)` from
+#'   `.iceland_division_qualify()`. `NULL` publishes no `p_qualify`.
+#' @param relegation_slots Teams relegated, or `NA_integer_`. `NA` keeps
+#'   football's published expression (`placement >= n_teams - 1`) verbatim;
+#'   `0` publishes zeros, present-and-zero rather than a missing key, so no
+#'   consumer needs a null branch for a bottom-tier division.
+#' @param emit_top_six_alias Football only. `p_top_six` is a DEPRECATED ALIAS
+#'   kept because metill-platform reads it today; it is the literal
+#'   `placement <= 6L` rule, NOT a function of `qualify`, so the five football
+#'   cells with no configured cut keep publishing it. Removed in the follow-up
+#'   commit whose only job is that removal, once the platform reads p_qualify.
+#' @return Tibble: `team`, `p_qualify` (when configured), `p_top_of_table`,
+#'   `p_winner` (final tables only), `p_top_six` (football only),
+#'   `p_relegation`.
+#' @noRd
+.build_placement_summary <- function(final_positions, n_teams, basis,
+                                     qualify = NULL,
+                                     relegation_slots = NA_integer_,
+                                     emit_top_six_alias = FALSE) {
+  stopifnot(basis %in% c("final_table", "regular_season_table"))
+  qualify_slots <- if (is.null(qualify)) NA_integer_ else as.integer(qualify$slots)
+  releg <- if (is.null(relegation_slots)) NA_integer_ else as.integer(relegation_slots)
+  releg_floor <- if (is.na(releg)) {
+    as.integer(n_teams) - 1L
+  } else {
+    as.integer(n_teams) - releg + 1L
+  }
+
+  out <- final_positions |>
+    dplyr::summarise(
+      p_qualify = sum(.data$probability[.data$placement <= qualify_slots]),
+      p_top_of_table = sum(.data$probability[.data$placement == 1L]),
+      p_winner = sum(.data$probability[.data$placement == 1L]),
+      p_top_six = sum(.data$probability[.data$placement <= 6L]),
+      p_relegation = if (identical(releg, 0L)) {
+        0
+      } else {
+        sum(.data$probability[.data$placement >= releg_floor])
+      },
+      .by = "team"
+    )
+
+  keep <- c(
+    "team",
+    if (!is.na(qualify_slots)) "p_qualify",
+    "p_top_of_table",
+    if (identical(basis, "final_table")) "p_winner",
+    if (isTRUE(emit_top_six_alias)) "p_top_six",
+    "p_relegation"
+  )
+  out[, keep, drop = FALSE]
+}
