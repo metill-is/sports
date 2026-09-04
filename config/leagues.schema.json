@@ -136,6 +136,31 @@
           "slug":     { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$" },
           "label_is": { "type": "string", "minLength": 1 },
           "is_cup":   { "type": "boolean" },
+          "code_badge": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{1,3}$",
+            "description": "Short badge used as next_games.division_code, which the publish schemas pattern as ^[A-Z][A-Z0-9_]*$. Needed wherever `code` is not itself a legal badge -- basketball's 1D starts with a digit. Defaults to `code` when absent."
+          },
+          "expected_meetings": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "How many times each pair meets in the regular season. 2 = double round robin; Icelandic women's handball plays 3. Omit where the format is irregular (basketball female 1D) and n_rounds is derived from the schedule instead."
+          },
+          "relegation_slots": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Teams relegated from this division. Omit where there is none."
+          },
+          "qualify": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["slots", "label_is"],
+            "properties": {
+              "slots": { "type": "integer", "minimum": 1 },
+              "label_is": { "type": "string", "minLength": 1 }
+            },
+            "description": "Post-season qualification cut, where one exists and is a simple top-N. Deliberately ABSENT for basketball and handball: their four cells have four different structures and women's Bonusdeild carries all ten teams through, so no single integer expresses it (Plan B ID-B15)."
+          },
           "split": {
             "type": "object",
             "description": "Split-season format (efri/neðri hluti): after the regular phase the table splits into an upper group of `upper` and a lower group of `lower` teams, each playing a single round-robin with full carry-over and a group-locked final table. Absent = flat league.",
