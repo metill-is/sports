@@ -30,22 +30,14 @@ odds late morning, so the pre-scrape slot false-FAILed on match days.
 
 ## Diagnose
 
-1. **Check the seasonal pause first.** Only `football_iceland` is active right
-   now; `basketball_iceland` / `handball_iceland` are off-season until autumn
-   2026 and produce no `odds_freshness` row at all (no upcoming fixture), which
-   is correct, not a fault.
-2. **Is it just a lull?** A `WARN` with "next fixture in 2–3d, no upcoming odds
-   scraped" during a between-match gap is benign and self-heals when Lengjan
-   posts. Confirm the next fixture really is a few days out
-   (`data/facts/schedules/`) — if so, stop here.
-3. **Did the odds scrape run?** `gh run list --repo metill-is/sports --workflow scrape-odds.yml --limit 6`.
-   The scrape **exits clean** when in-season leagues yield 0 rows (a between-rounds
-   gap is benign — staleness escalation is owned by this check, not the scrape).
-   So a green scrape that logged "wrote 0 rows … likely between rounds" is
-   expected during a lull; only a *red* scrape run signals a scraper fault.
-4. **Real stall (`FAIL`, fixture today, no odds):** inspect the latest scrape
-   run's logs for timeouts ("could not parse", chromote errors) vs a Lengjan
-   markup change, and confirm the fixture is one Lengjan actually prices.
+1. **Check whether the season has actually started.** Basketball and handball
+   resumed for 2026/27 (Olisdeild opened early September, Bonusdeild opens
+   2026-09-29/30 for three of four cells and 2026-10-08 for Bonusdeild karla).
+   They are no longer on seasonal pause, and both are configured
+   `betting.enabled: false` -- so they produce **no odds rows at all, by
+   design**, and `odds_freshness` has nothing to say about them. An absent
+   odds row for basketball or handball is correct, not a fault. Only
+   `football_iceland` is bet.
 
 ## Fix
 
