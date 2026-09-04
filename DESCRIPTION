@@ -88,6 +88,7 @@ Collate:
     'extract-handball-iceland.R'
     'extract-iceland-read.R'
     'extract-strength-trajectory.R'
+    'extracts-retention.R'
     'ingest.R'
     'federation-seasons.R'
     'gisko-backtest.R'
