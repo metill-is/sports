@@ -157,7 +157,13 @@ publish_one <- function(static, betting, key, sex,
     return(invisible(NULL))
   }
 
-  result <- validate_publish_dir(output_root, schema_dir = schema_dir)
+  # The sport's OWN subtree, with the sport named explicitly. Validating
+  # `output_root` here meant that arming ANY sport armed it inside every other
+  # sport's publish call, so basketball's stale JSON would abort football's
+  # publish -- and scripts/05_publish.R has no tryCatch, so the run would die
+  # before the commit step. Naming the sport is required: narrowing `dir`
+  # alone fails open (see test-publish-schema-arming.R).
+  result <- validate_publish_dir(sport_dir, schema_dir = schema_dir, sport = sport)
   if (isTRUE(result$ok)) {
     cli::cli_alert_success(
       "publish_one({key}/{sex}): schema validation passed ({result$n_passed}/{result$n_files} files)"

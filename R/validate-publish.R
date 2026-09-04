@@ -30,9 +30,11 @@
 #'   * `unmatched` — character vector of paths with no schema (informational)
 #' @export
 validate_publish_dir <- function(dir,
-                                 schema_dir = here::here("config", "publish-schemas")) {
+                                 schema_dir = here::here("config", "publish-schemas"),
+                                 sport = NULL) {
   stopifnot(dir.exists(dir))
   stopifnot(dir.exists(schema_dir))
+  stopifnot(is.null(sport) || (is.character(sport) && length(sport) == 1L))
 
   files <- list.files(dir, pattern = "\\.json$", recursive = TRUE, full.names = TRUE)
 
@@ -45,9 +47,14 @@ validate_publish_dir <- function(dir,
     rel <- sub(paste0("^", normalizePath(dir, mustWork = FALSE), "/?"), "", normalizePath(f, mustWork = FALSE))
     rel_parts <- strsplit(rel, "/", fixed = TRUE)[[1]]
     base <- basename(f)
-    sport <- rel_parts[1]
+    # When `dir` is the whole publish tree the first path segment IS the
+    # sport. When it is a single sport's subtree that segment is "iceland",
+    # no schema resolves, every file lands in `unmatched` and ok stays TRUE --
+    # validation silently doing nothing. So a caller narrowing `dir` to one
+    # sport MUST name it; there is a test pinning both behaviours.
+    file_sport <- if (is.null(sport)) rel_parts[1] else sport
 
-    schema_path <- .resolve_schema_path(schema_dir, sport, base)
+    schema_path <- .resolve_schema_path(schema_dir, file_sport, base)
 
     if (is.null(schema_path)) {
       unmatched <- c(unmatched, rel)
