@@ -257,3 +257,205 @@ test_that(".regular_season_results is the identity when n_rounds is unknown", {
   expect_equal(nrow(.regular_season_results(x, NA_integer_)), nrow(x))
   expect_identical(.regular_season_results(x, NA_integer_), x)
 })
+
+# ---- Block D: meta.json v2 assembly ------------------------------------------
+#
+# Key ORDER is asserted, not just membership: publish_json_digest() hashes
+# jsonlite::toJSON() of the parsed list, so order is part of the payload
+# identity and a silent re-order would otherwise slip past the golden net as a
+# "regenerate the hashes" chore.
+
+.meta_base <- function(division = "BD", round = 11L, split = TRUE) {
+  base <- list(
+    sport        = "football",
+    sex          = "male",
+    league       = "Besta deild",
+    division     = division,
+    is_cup       = FALSE,
+    season       = 2100L,
+    generated_at = "2100-01-15T00:00:00+0000",
+    fit_date     = "2100-01-01",
+    round        = round,
+    n_draws      = 50L
+  )
+  if (split) {
+    base$split <- list(upper = 6L, lower = 6L)
+  }
+  base
+}
+
+.meta_format <- function(n_rounds = 22L, source = "config") {
+  list(
+    n_rounds = n_rounds, source = source,
+    n_rounds_config = n_rounds, n_rounds_schedule = n_rounds, n_teams = 12L
+  )
+}
+
+.META_V2_KEYS <- c(
+  "sport", "sex", "league", "division", "is_cup", "season", "generated_at",
+  "fit_date", "round", "n_draws", "split",
+  "n_rounds", "n_rounds_source", "units", "points",
+  "season_scope", "postseason", "qualify", "relegation"
+)
+
+test_that("meta v2 appends to the v1 keys in a pinned order", {
+  meta <- .build_publish_meta(
+    base = .meta_base(),
+    profile = sport_publish_profile("football"),
+    format = .meta_format(),
+    division_cfg = list(
+      qualify = list(slots = 6L, label_is = "Efri hluti"),
+      relegation_slots = NA_integer_,
+      expected_meetings = NA_integer_
+    )
+  )
+  expect_equal(names(meta), .META_V2_KEYS)
+
+  # The v1 block is copied VERBATIM -- never re-ordered, never renamed.
+  base <- .meta_base()
+  for (k in names(base)) {
+    expect_equal(meta[[k]], base[[k]], info = k)
+  }
+
+  expect_equal(meta$n_rounds, 22L)
+  expect_equal(meta$n_rounds_source, "config")
+  expect_equal(meta$units$diff_bin_width, 1L)
+  expect_equal(meta$points, list(win = 3L, draw = 1L, loss = 0L))
+  expect_equal(meta$season_scope, "full_season")
+  expect_null(meta$postseason)
+  expect_true("postseason" %in% names(meta))
+  expect_equal(meta$qualify, list(slots = 6L, label_is = "Efri hluti"))
+  expect_true(is.na(meta$relegation$slots))
+})
+
+test_that("a cell with no split carries no split key at all", {
+  meta <- .build_publish_meta(
+    base = .meta_base(division = "LD1", split = FALSE),
+    profile = sport_publish_profile("football"),
+    format = .meta_format(),
+    division_cfg = list(
+      qualify = NULL, relegation_slots = NA_integer_,
+      expected_meetings = NA_integer_
+    )
+  )
+  expect_equal(names(meta), setdiff(.META_V2_KEYS, "split"))
+  # Absent qualification is a present key with a null value, never a missing
+  # key: the consumer branches on null, it never probes for the field.
+  expect_true("qualify" %in% names(meta))
+  expect_null(meta$qualify)
+})
+
+test_that("a cup publishes a null n_rounds rather than a wrong one", {
+  base <- .meta_base(division = "CUP", round = 1L, split = FALSE)
+  base$is_cup <- TRUE
+  meta <- .build_publish_meta(
+    base = base,
+    profile = sport_publish_profile("football"),
+    format = .meta_format(NA_integer_, "not_applicable"),
+    division_cfg = list(
+      qualify = NULL, relegation_slots = NA_integer_,
+      expected_meetings = NA_integer_
+    )
+  )
+  expect_true(is.na(meta$n_rounds))
+  expect_equal(meta$n_rounds_source, "not_applicable")
+  # na = "null" is write_json_consistent's default (R/storage.R), so the NA
+  # integer reaches the consumer as JSON null.
+  expect_equal(
+    as.character(jsonlite::toJSON(
+      meta["n_rounds"], auto_unbox = TRUE, na = "null", null = "null"
+    )),
+    "{\"n_rounds\":null}"
+  )
+})
+
+test_that("the D3 relabel is carried by the payload, not by the template", {
+  for (sport in c("basketball", "handball")) {
+    base <- .meta_base(division = "BD", round = 3L, split = FALSE)
+    base$sport <- sport
+    meta <- .build_publish_meta(
+      base = base,
+      profile = sport_publish_profile(sport),
+      format = .meta_format(9L, "config"),
+      division_cfg = list(
+        qualify = NULL, relegation_slots = NA_integer_,
+        expected_meetings = 3L
+      )
+    )
+    expect_equal(meta$season_scope, "regular_season", info = sport)
+    expect_equal(meta$postseason$name_is, "\u00darslitakeppni", info = sport)
+    expect_false(meta$postseason$modelled, info = sport)
+    expect_null(meta$qualify, info = sport)
+  }
+
+  football <- .build_publish_meta(
+    base = .meta_base(), profile = sport_publish_profile("football"),
+    format = .meta_format(),
+    division_cfg = list(
+      qualify = NULL, relegation_slots = NA_integer_,
+      expected_meetings = NA_integer_
+    )
+  )
+  expect_equal(football$season_scope, "full_season")
+  expect_null(football$postseason)
+})
+
+test_that("basketball's draw slot serialises as null, never as zero", {
+  base <- .meta_base(split = FALSE)
+  base$sport <- "basketball"
+  meta <- .build_publish_meta(
+    base = base, profile = sport_publish_profile("basketball"),
+    format = .meta_format(),
+    division_cfg = list(
+      qualify = NULL, relegation_slots = NA_integer_, expected_meetings = 2L
+    )
+  )
+  expect_null(meta$points$draw)
+  expect_equal(
+    as.character(jsonlite::toJSON(
+      meta["points"], auto_unbox = TRUE, na = "null", null = "null"
+    )),
+    "{\"points\":{\"win\":2,\"draw\":null,\"loss\":0}}"
+  )
+})
+
+test_that("the producer refuses to emit a round past the end of the season", {
+  # The whole point of the workstream: "Umferdir eftir" can never render a
+  # negative number, because the producer will not write the payload that
+  # would make it possible.
+  expect_error(
+    .build_publish_meta(
+      base = .meta_base(round = 35L),
+      profile = sport_publish_profile("basketball"),
+      format = .meta_format(22L, "config"),
+      division_cfg = list(
+        qualify = NULL, relegation_slots = NA_integer_, expected_meetings = 2L
+      )
+    ),
+    "BD"
+  )
+})
+
+test_that("n_rounds >= round holds for every shape the builder emits", {
+  shapes <- list(
+    list(round = 11L, fmt = .meta_format(22L, "config")),
+    list(round = 22L, fmt = .meta_format(22L, "config")),
+    list(round = 0L, fmt = .meta_format(NA_integer_, "none")),
+    list(round = 1L, fmt = .meta_format(NA_integer_, "not_applicable"))
+  )
+  for (s in shapes) {
+    meta <- .build_publish_meta(
+      base = .meta_base(round = s$round, split = FALSE),
+      profile = sport_publish_profile("football"),
+      format = s$fmt,
+      division_cfg = list(
+        qualify = NULL, relegation_slots = NA_integer_,
+        expected_meetings = NA_integer_
+      )
+    )
+    expect_true(
+      isTRUE(is.na(meta$n_rounds)) || meta$n_rounds >= meta$round,
+      info = paste(s$round, s$fmt$source)
+    )
+  }
+})

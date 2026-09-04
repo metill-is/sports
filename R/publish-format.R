@@ -216,3 +216,80 @@
   }
   out
 }
+
+
+# ---- meta.json v2 ------------------------------------------------------------
+#
+# WHY the producer assembles this and the consumer does not: the league format
+# and the points scheme are facts about the competition that the producer can
+# see in the data and the consumer cannot. metill-platform used to compute
+# `total_rounds = 2 * (n_teams - 1)` and `max_points = round * 3`; both are
+# wrong for basketball (2 points a win, embedded post-season) and the first is
+# wrong for women's handball (a triple round robin). Spec section 12.
+#
+# The v1 block is copied VERBATIM. Its ten keys are what every live football
+# cell publishes today, and the golden manifest hashes key ORDER as well as
+# values, so re-ordering them would be a silent payload change.
+
+#' Assemble a `meta.json` payload
+#'
+#' Appends the v2 block to the v1 keys the publisher already built. Key order
+#' is part of the contract -- see the note above.
+#'
+#' The D3 relabel (design section 15) is carried HERE, in the payload, rather
+#' than in a template: for basketball and handball the league table decides the
+#' *deildarmeistari* and the Islandsmeistari comes out of an unmodelled
+#' urslitakeppni, so `season_scope` and `postseason` exist precisely so a
+#' consumer cannot reuse football's champion copy for a sport where it is false.
+#'
+#' @param base The v1 key block, already ordered
+#'   (`sport` .. `n_draws`, plus `split` on a split-season cell).
+#' @param profile [`sport_publish_profile()`] for this sport.
+#' @param format A [`.publish_n_rounds()`] result.
+#' @param division_cfg `list(qualify, relegation_slots, expected_meetings)`,
+#'   assembled by the caller from the `.iceland_division_*()` accessors
+#'   indexed by division code. `qualify` is `NULL` or
+#'   `list(slots, label_is)`; an absent one publishes `qualify: null` and
+#'   suppresses `p_qualify` downstream, because four bb/hb cells have four
+#'   different post-season structures and no per-division integer expresses
+#'   them (Plan B ID-B15).
+#' @return Named list, written verbatim by `write_json_consistent()`.
+#' @noRd
+.build_publish_meta <- function(base, profile, format, division_cfg) {
+  stopifnot(is.list(base), is.list(profile), is.list(format))
+  n_rounds <- if (is.null(format$n_rounds)) NA_integer_ else as.integer(format$n_rounds)
+  round <- if (is.null(base$round)) NA_integer_ else as.integer(base$round)
+
+  # The guard the whole workstream exists for: a payload whose round exceeds
+  # its season length renders "Umferdir eftir" as a negative number. The
+  # producer refuses to write it rather than leaving the consumer to clamp.
+  if (!is.na(n_rounds) && !is.na(round) && round > n_rounds) {
+    cli::cli_abort(
+      c(
+        "{.field round} ({round}) exceeds {.field n_rounds} ({n_rounds}) for \
+         {base$sport} {base$sex} {base$division}.",
+        "i" = "Source of {.field n_rounds} was {.val {format$source}}.",
+        "i" = "A published cell with round > n_rounds renders a negative \
+               {.q Umfer\u00f0ir eftir}."
+      ),
+      call = NULL
+    )
+  }
+
+  relegation_slots <- division_cfg$relegation_slots
+  if (is.null(relegation_slots)) relegation_slots <- NA_integer_
+
+  c(
+    base,
+    list(
+      n_rounds        = n_rounds,
+      n_rounds_source = as.character(format$source),
+      units           = profile$units,
+      points          = profile$points,
+      season_scope    = profile$season_scope,
+      postseason      = profile$postseason,
+      qualify         = division_cfg$qualify,
+      relegation      = list(slots = as.integer(relegation_slots))
+    )
+  )
+}
