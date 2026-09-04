@@ -88,7 +88,12 @@ test_that("the bb/hb publish + extract tests carry no skip gates", {
     # WS12's format-agreement check. Its triple-round-robin case is the only
     # coverage of the fact that 2 * (n_teams - 1) is wrong for four of the
     # seven measured 2DT cells, which is why n_rounds is published at all.
-    "test-health-format-agreement.R"
+    "test-health-format-agreement.R",
+    # WS12's per-target failure isolation. Its basketball-fails-football-still-
+    # publishes block is the only proof that one 2DT abort cannot take
+    # football's nine live cells down in the same run, which is precisely what
+    # WS11's fail-closed validation default makes possible.
+    "test-pipeline-run-isolation.R"
   )
   banned <- c("skip(", "skip_if(", "skip_if_not(", "skip_if_not_installed(", "Sys.getenv")
 

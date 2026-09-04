@@ -161,3 +161,82 @@ publish_one <- function(static, betting, key, sex,
     )
   )
 }
+
+#' Publish every target, isolating a per-cell failure.
+#'
+#' The publish loop's failure policy, lifted out of `scripts/05_publish.R` so it
+#' is testable without spawning `Rscript`.
+#'
+#' WHY THIS EXISTS, and the asymmetry it removes. `scripts/05_publish.R` called
+#' `publish_one()` bare in a loop, and basketball precedes handball precedes
+#' football in `config/leagues.yml` order. Once `.validate_or_abort()`'s default
+#' inverts to fail-closed, the FIRST basketball or handball schema breach would
+#' therefore abort the whole run before football -- live and mid-season with
+#' nine publishing cells -- ever republished. One new sport's teething problem
+#' must not be able to take the established sport's output down.
+#'
+#' Failures are collected, not swallowed: the returned `failed` frame is what
+#' the script turns into `quit(status = 1L)`. Exit is non-zero when ANY target
+#' failed, not only when all did (INT-2) -- an all-failed rule is exactly the
+#' warn-and-exit-0 shape B4 hid in for months.
+#'
+#' `validate`, `end_date` and `schema_dir` are named formals rather than `...`
+#' so a replay or a draft-schema caller cannot silently lose one; production
+#' gets the same defaults `publish_one()` has.
+#'
+#' @param targets Tibble of `key`/`sex` rows from `resolve_targets()`.
+#' @param leagues Leagues list.
+#' @param root Storage root.
+#' @param validate,end_date,schema_dir Forwarded to `publish_fn` by name.
+#' @param publish_fn Injectable publisher; defaults to [publish_one()].
+#' @return `list(published = integer(1), failed = tibble(key, sex, message))`.
+#' @export
+run_publish_targets <- function(targets, leagues,
+                                root = here::here("data"),
+                                validate = TRUE,
+                                end_date = Sys.Date(),
+                                schema_dir = here::here("config", "publish-schemas"),
+                                publish_fn = publish_one) {
+  published <- 0L
+  failed <- list()
+
+  for (i in seq_len(nrow(targets))) {
+    row <- targets[i, ]
+    league_def <- leagues[[row$key]]
+    static <- league_def[c(
+      "sport", "country", "sexes", "active", "stan_model", "data_source"
+    )]
+    betting <- league_def$betting
+
+    cli::cli_h2("{row$key} ({row$sex})")
+    ok <- tryCatch(
+      {
+        publish_fn(
+          static, betting, row$key, row$sex,
+          root = root, validate = validate,
+          end_date = end_date, schema_dir = schema_dir
+        )
+        TRUE
+      },
+      error = function(e) {
+        cli::cli_alert_danger(
+          "publish failed for {row$key} ({row$sex}): {conditionMessage(e)}"
+        )
+        failed[[length(failed) + 1L]] <<- tibble::tibble(
+          key = row$key, sex = row$sex, message = conditionMessage(e)
+        )
+        FALSE
+      }
+    )
+    if (isTRUE(ok)) published <- published + 1L
+  }
+
+  list(
+    published = published,
+    failed = if (length(failed) == 0L) {
+      tibble::tibble(key = character(), sex = character(), message = character())
+    } else {
+      dplyr::bind_rows(failed)
+    }
+  )
+}

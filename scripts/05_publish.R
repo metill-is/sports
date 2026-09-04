@@ -22,15 +22,17 @@ if (nrow(targets) == 0L) {
 leagues <- load_leagues()
 
 cli::cli_h1("Publish ({nrow(targets)} (league, sex) pairs)")
-for (i in seq_len(nrow(targets))) {
-  row <- targets[i, ]
-  league_def <- leagues[[row$key]]
-  static <- league_def[c(
-    "sport", "country", "sexes", "active", "stan_model", "data_source"
-  )]
-  betting <- league_def$betting
+res <- run_publish_targets(targets, leagues)
+cli::cli_alert_success(
+  "Publish complete: {res$published}/{nrow(targets)} cell{?s} published"
+)
 
-  cli::cli_h2("{row$key} ({row$sex})")
-  publish_one(static, betting, row$key, row$sex)
+# Exit non-zero when ANY target failed, not only when all did. A partially
+# failed publish that exits 0 is the warn-and-exit-0 shape basketball and
+# handball hid in for months. The successful cells are already written, so a
+# red run still ships football's output.
+if (nrow(res$failed) > 0L) {
+  cli::cli_alert_danger("{nrow(res$failed)} publish target{?s} failed:")
+  print(as.data.frame(res$failed))
+  quit(save = "no", status = 1L)
 }
-cli::cli_alert_success("Publish complete")
