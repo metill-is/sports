@@ -110,6 +110,15 @@ NULL
     if (nrow(predicted) == 0L) {
       return(.next_games_empty_pfi())
     }
+    # Two callers, two shapes. read_extracted_iceland() splits the partition by
+    # `division` and then DROPS the column, so a per-division slice arrives
+    # without it; a raw partition-wide parquet arrives with it and must still be
+    # filtered. Restoring it from the cell's own family (first element = the
+    # cell's code) keeps one filter serving both, and keeps `division` in the
+    # output contract for the platform.
+    if (!"division" %in% names(predicted)) {
+      predicted$division <- family_divs[[1L]]
+    }
     out <- predicted |>
       dplyr::filter(
         .data$division %in% family_divs,

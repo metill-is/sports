@@ -824,7 +824,8 @@ publish_iceland_league <- function(extracted,
       !is.null(extracted$sim_inputs$scalar) &&
       nrow(extracted$sim_inputs$scalar) > 0L) {
       as.integer(dplyr::n_distinct(extracted$sim_inputs$scalar$.draw))
-    } else if (nrow(predicted_matches) > 0L) {
+    } else if (identical(profile$predicted_matches_shape, "scoreline_counts") &&
+      nrow(predicted_matches) > 0L) {
       per_match_count <- predicted_matches |>
         dplyr::summarise(
           s = sum(.data$count),
@@ -832,6 +833,12 @@ publish_iceland_league <- function(extracted,
         )
       as.integer(round(mean(per_match_count$s)))
     } else {
+      # The match-summary shape carries no per-draw count to recover the draw
+      # count from, and the reader does not surface the partition-level
+      # fit_meta table (it has no `division` column, so the per-division split
+      # empties it). meta.json v2 owns wiring n_draws for these sports; until
+      # then a 2DT cell reports 0 rather than crashing on a column football
+      # alone has.
       0L
     }
 

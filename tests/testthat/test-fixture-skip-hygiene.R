@@ -4,8 +4,13 @@
 
 test_that("the bb/hb publish + extract tests carry no skip gates", {
   guarded <- c(
-    "test-publish-basketball.R",
-    "test-publish-handball.R",
+    # SUPERSEDES test-publish-basketball.R and test-publish-handball.R, which
+    # this list used to name. WS9 unified publish_basketball_iceland() and
+    # publish_handball_iceland() into publish_iceland_league(), so there is no
+    # per-sport publisher left to have a per-sport test file. The B4 acceptance
+    # test is now the only proof the two sports publish at all -- a skip gate
+    # there would restore exactly the silence B4 hid in.
+    "test-publish-b4-acceptance.R",
     "test-extract-basketball-iceland.R",
     "test-extract-handball-iceland.R",
     # WS3's 2DT home-advantage units test (B5). Named here so it lands ungated

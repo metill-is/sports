@@ -19,7 +19,7 @@ publish_one(
 
 \item{betting}{Per-league `betting` slice.}
 
-\item{key}{League key (used only to dispatch to the per-sport publisher).}
+\item{key}{League key (used in messages and for schema validation).}
 
 \item{sex}{`"male"` or `"female"`.}
 
@@ -36,18 +36,17 @@ replay passes a fixed date so a far-future fixture is not filtered out.}
 invisible(NULL).
 }
 \description{
-Football iceland reads the per-fit extraction tree
-(`data/beliefs/extracts/sport=football/country=iceland/sex=Z/fit_date=*/`,
-the per-cell Parquets emitted by `extract_football_iceland()`) and
-dispatches to `publish_iceland_league(extracted, ...)`. Basketball and
-handball still read the fit RDS directly from
-`data/beliefs/fits/sport=X/country=Y/sex=Z/fit.rds` -- their migration
-to the extraction layer is deferred to the autumn 2026 cutover.
+Every sport reads the per-fit extraction tree
+(`data/beliefs/extracts/sport=X/country=Y/sex=Z/fit_date=*/`, the per-cell
+Parquets emitted by the sport's extractor) and publishes through
+[`publish_iceland_league()`]. There is no fit-RDS path: the RDS is
+gitignored and CI never produces one, so a publisher reading it skipped
+silently on CI forever -- basketball and handball had never published.
 }
 \details{
-Takes the static + betting slices separately because basketball/handball
-publishers branch on `betting.scoring` (tie thresholds); a `lengjan`
-change shouldn't trigger a republish.
+Takes the static + betting slices separately because the publish profile
+mirrors `betting.scoring` (tie thresholds); a `lengjan` change shouldn't
+trigger a republish.
 
 After a successful publish, the resulting JSONs are validated against
 `config/publish-schemas/<sport>/*.schema.json` via `validate_publish_dir()`.

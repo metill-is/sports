@@ -1,4 +1,4 @@
-#' @include publish-profile.R publish-next-games.R extract-iceland-read.R publish-iceland-league.R publish-basketball-iceland.R publish-handball-iceland.R validate-publish.R
+#' @include publish-profile.R publish-next-games.R extract-iceland-read.R publish-iceland-league.R validate-publish.R
 NULL
 
 #' Does an extract partition exist for this cell?
@@ -19,17 +19,16 @@ extract_partition_exists <- function(extracts_root, sport, country, sex) {
 
 #' Publish JSONs for a single (league x sex).
 #'
-#' Football iceland reads the per-fit extraction tree
-#' (`data/beliefs/extracts/sport=football/country=iceland/sex=Z/fit_date=*/`,
-#' the per-cell Parquets emitted by `extract_football_iceland()`) and
-#' dispatches to `publish_iceland_league(extracted, ...)`. Basketball and
-#' handball still read the fit RDS directly from
-#' `data/beliefs/fits/sport=X/country=Y/sex=Z/fit.rds` -- their migration
-#' to the extraction layer is deferred to the autumn 2026 cutover.
+#' Every sport reads the per-fit extraction tree
+#' (`data/beliefs/extracts/sport=X/country=Y/sex=Z/fit_date=*/`, the per-cell
+#' Parquets emitted by the sport's extractor) and publishes through
+#' [`publish_iceland_league()`]. There is no fit-RDS path: the RDS is
+#' gitignored and CI never produces one, so a publisher reading it skipped
+#' silently on CI forever -- basketball and handball had never published.
 #'
-#' Takes the static + betting slices separately because basketball/handball
-#' publishers branch on `betting.scoring` (tie thresholds); a `lengjan`
-#' change shouldn't trigger a republish.
+#' Takes the static + betting slices separately because the publish profile
+#' mirrors `betting.scoring` (tie thresholds); a `lengjan` change shouldn't
+#' trigger a republish.
 #'
 #' After a successful publish, the resulting JSONs are validated against
 #' `config/publish-schemas/<sport>/*.schema.json` via `validate_publish_dir()`.
@@ -40,7 +39,7 @@ extract_partition_exists <- function(extracts_root, sport, country, sex) {
 #'
 #' @param static Per-league static slice (sport, country, ...).
 #' @param betting Per-league `betting` slice.
-#' @param key League key (used only to dispatch to the per-sport publisher).
+#' @param key League key (used in messages and for schema validation).
 #' @param sex `"male"` or `"female"`.
 #' @param root Storage root.
 #' @param validate Logical. When `TRUE` (default) the published JSONs are
@@ -58,91 +57,54 @@ publish_one <- function(static, betting, key, sex,
   league$betting <- betting
 
   output_root <- file.path(root, "publish")
+  extracts_root <- file.path(root, "beliefs", "extracts")
+  archive_root <- file.path(root, "beliefs", "archive")
 
-  if (identical(key, "football_iceland")) {
-    extracts_root <- file.path(root, "beliefs", "extracts")
-    archive_root <- file.path(root, "beliefs", "archive")
-    extracted <- tryCatch(
-      read_extracted_iceland(
-        league = league,
-        sex = sex,
-        extracts_root = extracts_root
-      ),
-      error = function(e) {
-        # Re-raise loudly when a fit_date partition EXISTS but won't read (a
-        # corrupt / half-written extract) so the publish step fails rather than
-        # silently republishing yesterday's JSON. Stay quiet when there is no
-        # fit yet (no partition) -- a legitimate skip.
-        if (extract_partition_exists(
-          extracts_root, league$sport, league$country, sex
-        )) {
-          cli::cli_abort(
-            c(
-              "publish_one(football_iceland/{sex}): extract read failed despite an existing fit_date partition.",
-              "x" = conditionMessage(e),
-              "i" = "Likely a corrupt or incomplete extract write under {.path {extracts_root}}."
-            ),
-            call = NULL
-          )
-        }
-        cli::cli_alert_warning(
-          "publish_one(football_iceland/{sex}): {conditionMessage(e)} (no extract partition yet \u2014 skipping)"
-        )
-        NULL
-      }
-    )
-    if (is.null(extracted)) {
-      return(invisible(NULL))
-    }
-    publish_iceland_league(
-      extracted = extracted,
+  extracted <- tryCatch(
+    read_extracted_iceland(
       league = league,
       sex = sex,
-      end_date = end_date,
-      root = root,
-      output_root = output_root,
-      extracts_root = extracts_root,
-      archive_root = archive_root
-    )
-    if (isTRUE(validate)) {
-      .validate_or_abort(output_root, sport = "football", key = key, sex = sex)
+      extracts_root = extracts_root
+    ),
+    error = function(e) {
+      # Re-raise loudly when a fit_date partition EXISTS but won't read (a
+      # corrupt / half-written extract) so the publish step fails rather than
+      # silently republishing yesterday's JSON. Stay quiet when there is no
+      # fit yet (no partition) -- a legitimate skip.
+      if (extract_partition_exists(
+        extracts_root, league$sport, league$country, sex
+      )) {
+        cli::cli_abort(
+          c(
+            "publish_one({key}/{sex}): extract read failed despite an existing fit_date partition.",
+            "x" = conditionMessage(e),
+            "i" = "Likely a corrupt or incomplete extract write under {.path {extracts_root}}."
+          ),
+          call = NULL
+        )
+      }
+      cli::cli_alert_warning(
+        "publish_one({key}/{sex}): {conditionMessage(e)} (no extract partition yet \u2014 skipping)"
+      )
+      NULL
     }
-    return(invisible(NULL))
-  }
-
-  fit_path <- file.path(
-    root, "beliefs", "fits",
-    paste0("sport=", league$sport),
-    paste0("country=", league$country),
-    paste0("sex=", sex),
-    "fit.rds"
   )
-  if (!file.exists(fit_path)) {
-    cli::cli_alert_warning(
-      "No fit at {fit_path} -- skipping publish_{key}_{sex}"
-    )
+  if (is.null(extracted)) {
     return(invisible(NULL))
   }
-
-  dispatch <- list(
-    basketball_iceland = publish_basketball_iceland,
-    handball_iceland   = publish_handball_iceland
+  publish_iceland_league(
+    extracted = extracted,
+    league = league,
+    sex = sex,
+    profile = sport_publish_profile(league$sport),
+    end_date = end_date,
+    root = root,
+    output_root = output_root,
+    extracts_root = extracts_root,
+    archive_root = archive_root
   )
-  pub_fn <- dispatch[[key]]
-  if (is.null(pub_fn)) {
-    cli::cli_alert_info("No publish dispatcher for {key} -- skipping")
-    return(invisible(NULL))
-  }
-
-  fit <- readRDS(fit_path)
-  pub_fn(fit, league, sex = sex)
   if (isTRUE(validate)) {
-    .validate_or_abort(
-      output_root,
-      sport = league$sport,
-      key = key,
-      sex = sex
-    )
+    .validate_or_abort(output_root, sport = league$sport, key = key, sex = sex)
   }
   invisible(NULL)
 }

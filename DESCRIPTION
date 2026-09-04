@@ -109,8 +109,6 @@ Collate:
     'placer-place.R'
     'placer-validate.R'
     'placer-pipeline.R'
-    'publish-basketball-iceland.R'
-    'publish-handball-iceland.R'
     'publish-next-games.R'
     'validate-publish.R'
     'publish-pipeline.R'

@@ -152,3 +152,34 @@ test_that("both shapes degrade to the identical empty tibble", {
     vapply(empty_2dt, function(x) class(x)[[1]], character(1))
   )
 })
+
+test_that("match_summary accepts the reader's division-stripped per-cell slice", {
+  # read_extracted_iceland() filters predicted_matches by `division` and then
+  # DROPS the column, so the publisher hands this helper a slice without it.
+  # Reading the raw partition parquet (as the block above does) hides that:
+  # there the column is present. This is the shape production actually passes.
+  raw <- arrow::read_parquet(testthat::test_path(
+    "fixtures", "extracts", "sport=basketball", "country=iceland",
+    "sex=male", "fit_date=2100-01-01", "predicted_matches.parquet"
+  ))
+  bd <- raw[raw$division == "BD", , drop = FALSE]
+  bd$division <- NULL
+  expect_gt(nrow(bd), 0L)
+
+  out <- .next_games_rows_pfi(
+    predicted = tibble::as_tibble(bd),
+    profile = sport_publish_profile("basketball"),
+    pred_d = NULL,
+    family_divs = "BD",
+    division_badges = .iceland_division_badges("basketball_iceland", "male"),
+    end_date = FIXTURE_END_DATE
+  )
+
+  expect_equal(names(out), .NEXT_GAMES_CONTRACT)
+  expect_gt(nrow(out), 0L)
+  expect_setequal(unique(out$division), "BD")
+  expect_setequal(
+    unique(out$division_code),
+    unname(.iceland_division_badges("basketball_iceland", "male")[["BD"]])
+  )
+})

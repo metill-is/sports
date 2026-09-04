@@ -102,14 +102,6 @@ NULL
     dplyr::inner_join(pred_d[, pred_cols], by = "game_nr")
 }
 
-# 3-letter team code: strip whitespace + dots, uppercase, take first 3 chars.
-.short_code_2dt <- function(team) {
-  team |>
-    stringr::str_remove_all("\\s|\\.") |>
-    stringr::str_to_upper() |>
-    stringr::str_sub(1L, 3L)
-}
-
 # Pad form vector to length n with leading NA so jsonlite never collapses
 # a single-element list-column entry from ["W"] to "W".
 .pad_form_2dt <- function(x, n = 5L) {
@@ -141,96 +133,6 @@ NULL
       TRUE ~ 0L
     )
   }
-}
-
-# Per-team standings for the current top-division season. xG fields are
-# always shipped as NA (Student-t produces no Poisson xG aggregate); the
-# platform JS handles null via showExpectedCols.
-.compute_standings_rows_2dt <- function(top_results, has_ties = FALSE,
-                                        tie_threshold = 0) {
-  if (nrow(top_results) == 0L) {
-    return(tibble::tibble(
-      team = character(), short = character(),
-      played = integer(), wins = integer(), draws = integer(),
-      losses = integer(),
-      goals_for = integer(), goals_against = integer(),
-      goal_diff = integer(), points = integer(),
-      xg_for = numeric(), xg_against = numeric(), xpts = numeric(),
-      rank = integer(),
-      form = list(), xg_trend = list()
-    ))
-  }
-
-  long <- dplyr::bind_rows(
-    dplyr::transmute(top_results,
-      team = .data$home_team, match_date = .data$match_date,
-      gf = .data$home_score, ga = .data$away_score
-    ),
-    dplyr::transmute(top_results,
-      team = .data$away_team, match_date = .data$match_date,
-      gf = .data$away_score, ga = .data$home_score
-    )
-  )
-
-  if (has_ties) {
-    long <- dplyr::mutate(long,
-      result = dplyr::case_when(
-        abs(.data$gf - .data$ga) <= tie_threshold ~ "D",
-        .data$gf > .data$ga ~ "W",
-        TRUE ~ "L"
-      )
-    )
-  } else {
-    long <- dplyr::mutate(long,
-      result = dplyr::if_else(.data$gf > .data$ga, "W", "L")
-    )
-  }
-  long <- dplyr::arrange(long, .data$team, .data$match_date)
-
-  # Per-side points totals derived from the result column for consistency.
-  long <- dplyr::mutate(long,
-    side_points = dplyr::case_when(
-      .data$result == "W" ~ 2L,
-      .data$result == "D" ~ 1L,
-      TRUE ~ 0L
-    )
-  )
-
-  long |>
-    dplyr::summarise(
-      played = dplyr::n(),
-      wins = sum(.data$result == "W"),
-      draws = sum(.data$result == "D"),
-      losses = sum(.data$result == "L"),
-      goals_for = sum(.data$gf),
-      goals_against = sum(.data$ga),
-      goal_diff = .data$goals_for - .data$goals_against,
-      points = sum(.data$side_points),
-      form = list(.append_format_2dt(.data$result)),
-      xg_trend = list(numeric(0)),
-      .by = "team"
-    ) |>
-    dplyr::arrange(
-      dplyr::desc(.data$points), dplyr::desc(.data$goal_diff),
-      dplyr::desc(.data$goals_for)
-    ) |>
-    dplyr::mutate(
-      rank = dplyr::row_number(),
-      short = .short_code_2dt(.data$team),
-      xg_for = NA_real_, xg_against = NA_real_, xpts = NA_real_
-    ) |>
-    dplyr::select(
-      "team", "short", "played", "wins", "draws", "losses",
-      "goals_for", "goals_against", "goal_diff", "points",
-      "xg_for", "xg_against", "xpts",
-      "rank", "form", "xg_trend"
-    )
-}
-
-# Last-5 form indicator, padded to exactly five entries with leading NAs.
-# Wrapped to avoid leaking utils::tail through summarise() namespace handling.
-.append_format_2dt <- function(result_vec) {
-  .pad_form_2dt(utils::tail(result_vec, 5L))
 }
 
 # Per-draw per-team end-of-season points combining base (played) points
