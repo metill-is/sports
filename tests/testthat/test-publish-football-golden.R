@@ -40,10 +40,74 @@ test_that("football publish output is byte-identical to the golden manifest", {
 
   actual <- vapply(produced, publish_json_digest, character(1), USE.NAMES = FALSE)
   names(actual) <- rel
-  changed <- names(actual)[actual[golden$file] != golden$sha256]
+  # Index golden$file with a logical that is ALSO in golden order. Using
+  # names(actual) here (produced order) reported the wrong basenames whenever
+  # the two orders differ, which is exactly when a reader most needs the list.
+  changed <- golden$file[actual[golden$file] != golden$sha256]
   expect_equal(
     length(changed), 0L,
     info = paste("changed payloads:", paste(changed, collapse = ", "))
+  )
+})
+
+# THE BLAST-RADIUS PIN.
+#
+# The manifest above is football's only byte-level regression net, and
+# regenerating it to absorb an unexplained diff turns it into a rubber stamp.
+# meta.json v2 is additive by construction, so meta.json and
+# final_positions.json cannot stay byte-identical -- but nothing else may move,
+# and this block says so by name rather than leaving it to a commit message.
+#
+# It is vacuously true while the manifest is current (an empty changed set has
+# an empty setdiff) and becomes load-bearing the moment a future edit perturbs
+# standings.json, next_games.json, team_strengths.json, home_advantage.json,
+# points_distribution.json, standings_history.json, final_positions_history.json,
+# team_strengths_history.json, bracket.json or tournament_placements.json.
+#
+# NB the surfaces are NOT uniform across cells: 7 league cells hash 10 payloads
+# and the 2 bikar cells hash 11, so the set is expressed as a setdiff against
+# the two artefacts meta v2 explains, never as "the ten basenames football
+# emits".
+.GOLDEN_META_V2_MOVERS <- c("meta.json", "final_positions.json")
+
+test_that("only meta.json and final_positions.json may differ from the manifest", {
+  golden <- utils::read.csv(
+    testthat::test_path("fixtures", "golden", "football-publish-hashes.csv"),
+    stringsAsFactors = FALSE
+  )
+
+  facts_root <- fixture_facts_root()
+  extracts_root <- file.path(withr::local_tempdir(), "extracts")
+  out <- withr::local_tempdir()
+  league <- load_leagues()[["football_iceland"]]
+
+  for (sex in c("male", "female")) {
+    build_football_extracts_fixture(facts_root, extracts_root, sex)
+    extracted <- read_extracted_iceland(
+      league, sex = sex, fit_date = FIXTURE_FIT_DATE, extracts_root = extracts_root
+    )
+    suppressMessages(suppressWarnings(publish_iceland_league(
+      extracted = extracted, league = league, sex = sex,
+      end_date = FIXTURE_END_DATE,
+      root = facts_root,
+      output_root = out,
+      extracts_root = extracts_root,
+      archive_root = file.path(withr::local_tempdir(), "archive")
+    )))
+  }
+
+  produced <- list.files(
+    file.path(out, "football"), pattern = "\\.json$",
+    recursive = TRUE, full.names = TRUE
+  )
+  rel <- sub(paste0("^", out, "/"), "", produced)
+  actual <- vapply(produced, publish_json_digest, character(1), USE.NAMES = FALSE)
+  names(actual) <- rel
+  changed <- golden$file[actual[golden$file] != golden$sha256]
+
+  expect_equal(
+    setdiff(basename(changed), .GOLDEN_META_V2_MOVERS), character(),
+    info = paste("unexplained payloads:", paste(changed, collapse = ", "))
   )
 })
 
