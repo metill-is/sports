@@ -236,27 +236,50 @@ NULL
 # Per-draw per-team end-of-season points combining base (played) points
 # with future-fixture predictions. Returns a long tibble with `.draw`,
 # `team`, `points`.
+#
+# The team set is `base_points$team` -- every team that has PLAYED in the
+# division this season -- not merely the teams appearing in `posterior_goals`.
+# posterior_goals only covers the model's 14-day prediction window, so keying
+# the table off it dropped any team without a fixture in that window: a 6-team
+# division published a 4-team `final_positions` whose probabilities summed to
+# one over the wrong support. Those teams contribute their realised points and
+# no simulated ones, which is exactly right under this path's semantics.
 .compute_iter_team_points_2dt <- function(posterior_goals, top_div, base_points,
                                           has_ties = FALSE,
                                           tie_threshold = 0) {
+  empty <- tibble::tibble(
+    .draw = integer(), team = character(), points = numeric(),
+    base_points = integer()
+  )
   if (nrow(posterior_goals) == 0L) {
-    return(tibble::tibble(
-      .draw = integer(), team = character(), points = numeric(),
-      base_points = integer()
-    ))
+    return(empty)
   }
 
   pg_top <- posterior_goals |>
     dplyr::filter(.data$division == top_div)
 
-  if (nrow(pg_top) == 0L) {
-    return(tibble::tibble(
-      .draw = integer(), team = character(), points = numeric(),
-      base_points = integer()
-    ))
+  # `.draw` comes from the whole posterior, not this division's slice, so a
+  # division whose every fixture has already been played still gets its
+  # realised table across the full draw set.
+  all_draws <- sort(unique(posterior_goals$.draw))
+
+  played_only <- function(teams) {
+    if (length(teams) == 0L || length(all_draws) == 0L) {
+      return(empty)
+    }
+    tidyr::expand_grid(.draw = all_draws, team = teams) |>
+      dplyr::left_join(base_points, by = "team") |>
+      dplyr::mutate(
+        base_points = dplyr::coalesce(.data$base_points, 0L),
+        points = as.numeric(.data$base_points)
+      )
   }
 
-  pg_top |>
+  if (nrow(pg_top) == 0L) {
+    return(played_only(base_points$team))
+  }
+
+  simulated <- pg_top |>
     tidyr::pivot_longer(c("home_team", "away_team"), values_to = "team") |>
     dplyr::mutate(
       name = dplyr::if_else(.data$name == "home_team", "home", "away"),
@@ -271,6 +294,11 @@ NULL
       base_points = dplyr::coalesce(.data$base_points, 0L),
       points      = .data$points + .data$base_points
     )
+
+  dplyr::bind_rows(
+    simulated,
+    played_only(setdiff(base_points$team, simulated$team))
+  )
 }
 
 # Base (played) points for current-season top-division teams.

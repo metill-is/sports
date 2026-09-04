@@ -77,9 +77,16 @@ test_that("handball extracted team_strengths_quantiles covers the 9-cell grid", 
   expect_setequal(unique(ts$component), c("offence", "defence", "total"))
   expect_setequal(unique(ts$location), c("home", "away", "avg"))
   expect_setequal(unique(ts$quantile), seq_len(99L))
+  # Since the extractor loops over the configured publish divisions, the file
+  # spans OD + G66 and each division's slice carries its OWN teams.
+  expect_setequal(unique(ts$division), .iceland_division_codes("handball_iceland", "male"))
   expect_setequal(
-    unique(ts$team),
+    unique(ts$team[ts$division == "OD"]),
     fixture_division_teams("handball", "male", "OD")
+  )
+  expect_setequal(
+    unique(ts$team[ts$division == "G66"]),
+    fixture_division_teams("handball", "male", "G66")
   )
 })
 

@@ -76,12 +76,16 @@ NULL
 # Extract per-match posterior summaries to a tibble for the
 # predicted_matches.parquet artefact. Goal-diff distribution is binned;
 # basketball + handball publishers consume this for next_games panels.
+# `posterior_goals` is an optional hoist: the caller already computes it for the
+# league-table simulation, and pulling goals*_pred twice per extract is the one
+# avoidable duplicate read on this path. NULL keeps the standalone contract.
 .compute_predicted_matches_2dt <- function(fit, pred_d,
                                            bucket_width = 1L,
                                            bucket_low = -50L,
                                            bucket_high = 50L,
                                            has_ties = FALSE,
-                                           tie_threshold = 0) {
+                                           tie_threshold = 0,
+                                           posterior_goals = NULL) {
   if (nrow(pred_d) == 0L) {
     return(tibble::tibble(
       game_nr = integer(),
@@ -98,7 +102,9 @@ NULL
       goal_diff_distribution = list()
     ))
   }
-  posterior_goals <- .compute_posterior_goals_2dt(fit, pred_d)
+  if (is.null(posterior_goals)) {
+    posterior_goals <- .compute_posterior_goals_2dt(fit, pred_d)
+  }
   if (nrow(posterior_goals) == 0L) {
     return(tibble::tibble(
       game_nr = integer(),
@@ -329,12 +335,20 @@ NULL
     dplyr::arrange(.data$team, .data$points)
 }
 
-# Shared orchestrator: takes a fit + sport-specific config + writes the 5
-# expected parquets into the partition. Per-sport entry points configure
-# `sport`, `top_div`, score binning, has_ties.
+# Shared orchestrator: takes a fit + sport-specific config and writes one
+# parquet per file type into the partition, each division-keyed file carrying a
+# `division` payload column covering every code in
+# `config/leagues.yml::<key>.publish_divisions[[sex]]`.
+#
+# Shaped exactly like football's extract_football_iceland() /
+# .extract_division_parquets_pfi() pair: everything CROSS-division (the fit
+# pulls, prepare_data, the results read, posterior_goals, predicted_matches) is
+# computed ONCE above the loop, and the loop body only slices. The alternative
+# -- pulling inside -- is nine `fit$draws()` calls per division against a
+# 300-600 MB fit.
 .extract_2dt_iceland_pfi <- function(fit, league, sex,
                                      sport,
-                                     top_div = "BD",
+                                     key,
                                      bucket_width = 1L,
                                      bucket_low = -50L,
                                      bucket_high = 50L,
@@ -347,6 +361,7 @@ NULL
                                      prep = NULL) {
   stopifnot(sex %in% c("male", "female"))
   stopifnot(sport %in% c("basketball", "handball"))
+  divisions <- .iceland_division_codes(key, sex)
 
   if (is.null(extracts_root)) {
     extracts_root <- file.path(root, "beliefs", "extracts")
@@ -366,6 +381,17 @@ NULL
   teams <- prep$teams
   pred_d <- prep$pred_d
 
+  # WHY this guard: the per-round strength trajectory indexes the fit's
+  # `offense[r, k]` with each team's cumulative appearance index derived from
+  # the `results` set read below. That index only equals the model's own
+  # `round1`/`round2` (R/model-prepare.R:212-221) while the two sets are the
+  # same set. `prepare_data()` applies `training_filter` and this extractor does
+  # not, so a filtered league would desynchronise them and the trajectory would
+  # silently read a neighbouring round. Verified in config/leagues.yml: only
+  # football_iceland carries a training_filter, so this holds today and this
+  # line is what makes a future addition abort instead of publish nonsense.
+  stopifnot(is.null(league$training_filter))
+
   results <- read_table(
     "results",
     root = root,
@@ -379,84 +405,97 @@ NULL
     !is.na(results$home_score) & !is.na(results$away_score), ,
     drop = FALSE
   ]
+  # Same ordering prepare_data() applies before building its round index, so
+  # the appearance indices agree row-for-row rather than by luck of the
+  # parquet scan order.
+  results <- results[order(results$match_date), , drop = FALSE]
+
   current_season <- if (nrow(results) > 0L) {
     max(results$season, na.rm = TRUE)
   } else {
     as.integer(format(as.Date(end_date), "%Y"))
   }
-  top_results <- results[
-    results$season == current_season & results$division == top_div, ,
-    drop = FALSE
-  ]
 
-  current_top_teams <- if (nrow(top_results) > 0L) {
-    top_results |>
-      dplyr::select("home_team", "away_team") |>
-      tidyr::pivot_longer(c("home_team", "away_team"), values_to = "team") |>
-      dplyr::distinct(.data$team)
-  } else {
-    tibble::tibble(team = character())
-  }
+  # ---- Cross-division inputs, computed once --------------------------------
+  posterior_goals <- .compute_posterior_goals_2dt(fit, pred_d)
+  team_strengths_draws <- .extract_team_strength_draws_2dt(fit, teams)
+  home_advantage_draws <- .extract_home_advantage_draws_2dt(fit, teams)
 
+  # predicted_matches is cross-division and ALREADY carries `division` from
+  # pred_d, so it is filtered rather than stamped -- mutating a second division
+  # column onto it would silently overwrite the fixture's own division.
   predicted_matches <- .compute_predicted_matches_2dt(
     fit, pred_d,
     bucket_width = bucket_width,
     bucket_low = bucket_low,
     bucket_high = bucket_high,
     has_ties = has_ties,
-    tie_threshold = tie_threshold
+    tie_threshold = tie_threshold,
+    posterior_goals = posterior_goals
   )
+  predicted_matches <- predicted_matches[
+    predicted_matches$division %in% divisions, ,
+    drop = FALSE
+  ]
 
-  team_strengths_draws <- .extract_team_strength_draws_2dt(fit, teams)
-  home_advantage_draws <- .extract_home_advantage_draws_2dt(fit, teams)
+  # ---- Per-division slices -------------------------------------------------
+  per_div <- lapply(divisions, function(div) {
+    top_results <- results[
+      results$season == current_season & results$division == div, ,
+      drop = FALSE
+    ]
 
-  team_strengths_quantiles <- .compute_team_strengths_quantiles_2dt(
-    team_strengths_draws, current_top_teams
-  )
-  home_advantage_quantiles <- .compute_home_advantage_quantiles_2dt(
-    home_advantage_draws, current_top_teams
-  )
+    current_top_teams <- if (nrow(top_results) > 0L) {
+      top_results |>
+        dplyr::select("home_team", "away_team") |>
+        tidyr::pivot_longer(c("home_team", "away_team"), values_to = "team") |>
+        dplyr::distinct(.data$team)
+    } else {
+      tibble::tibble(team = character())
+    }
 
-  posterior_goals <- .compute_posterior_goals_2dt(fit, pred_d)
-  base_points <- .compute_base_points_2dt(
-    top_results,
-    has_ties = has_ties,
-    tie_threshold = tie_threshold
-  )
+    base_points <- .compute_base_points_2dt(
+      top_results,
+      has_ties = has_ties,
+      tie_threshold = tie_threshold
+    )
 
-  final_positions <- .compute_final_positions_2dt(
-    posterior_goals, top_div, base_points,
-    has_ties, tie_threshold,
-    current_top_teams
-  )
-  points_distribution <- .compute_points_distribution_2dt(
-    posterior_goals, top_div, base_points,
-    has_ties, tie_threshold,
-    current_top_teams
-  )
+    list(
+      team_strengths_quantiles = .compute_team_strengths_quantiles_2dt(
+        team_strengths_draws, current_top_teams
+      ),
+      home_advantage_quantiles = .compute_home_advantage_quantiles_2dt(
+        home_advantage_draws, current_top_teams
+      ),
+      final_positions = .compute_final_positions_2dt(
+        posterior_goals, div, base_points,
+        has_ties, tie_threshold,
+        current_top_teams
+      ),
+      points_distribution = .compute_points_distribution_2dt(
+        posterior_goals, div, base_points,
+        has_ties, tie_threshold,
+        current_top_teams
+      )
+    )
+  })
+  per_div <- lapply(seq_along(divisions), function(i) {
+    lapply(per_div[[i]], function(df) dplyr::mutate(df, division = divisions[i]))
+  })
+  names(per_div) <- divisions
 
-  # Write 5 parquets. Predicted_matches has a list-column
-  # (goal_diff_distribution) which arrow handles natively.
+  # Predicted_matches has a list-column (goal_diff_distribution) which arrow
+  # handles natively.
   arrow::write_parquet(
     predicted_matches,
     file.path(partition, "predicted_matches.parquet")
   )
-  arrow::write_parquet(
-    team_strengths_quantiles,
-    file.path(partition, "team_strengths_quantiles.parquet")
-  )
-  arrow::write_parquet(
-    home_advantage_quantiles,
-    file.path(partition, "home_advantage_quantiles.parquet")
-  )
-  arrow::write_parquet(
-    final_positions,
-    file.path(partition, "final_positions.parquet")
-  )
-  arrow::write_parquet(
-    points_distribution,
-    file.path(partition, "points_distribution.parquet")
-  )
+  for (ft in names(per_div[[1]])) {
+    arrow::write_parquet(
+      dplyr::bind_rows(lapply(per_div, function(d) d[[ft]])),
+      file.path(partition, paste0(ft, ".parquet"))
+    )
+  }
 
   invisible(NULL)
 }

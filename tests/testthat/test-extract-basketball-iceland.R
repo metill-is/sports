@@ -76,10 +76,16 @@ test_that("extracted team_strengths_quantiles covers the 9-cell grid", {
   expect_setequal(unique(ts$component), c("offence", "defence", "total"))
   expect_setequal(unique(ts$location), c("home", "away", "avg"))
   expect_setequal(unique(ts$quantile), seq_len(99L))
-  # Only the current top division (BD) is summarised.
+  # Since the extractor loops over the configured publish divisions, the file
+  # spans BD + 1D and each division's slice carries its OWN teams.
+  expect_setequal(unique(ts$division), .iceland_division_codes("basketball_iceland", "male"))
   expect_setequal(
-    unique(ts$team),
+    unique(ts$team[ts$division == "BD"]),
     fixture_division_teams("basketball", "male", "BD")
+  )
+  expect_setequal(
+    unique(ts$team[ts$division == "1D"]),
+    fixture_division_teams("basketball", "male", "1D")
   )
 })
 

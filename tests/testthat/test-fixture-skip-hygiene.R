@@ -43,7 +43,11 @@ test_that("the bb/hb publish + extract tests carry no skip gates", {
     # WS8's hoisted 2DT posterior pulls. The B5 units guarantee is now the
     # composition of the pull and the band, so this is the only place the pull
     # half is checked in isolation.
-    "test-extract-2dt-draw-pulls.R"
+    "test-extract-2dt-draw-pulls.R",
+    # WS8's multi-division 2DT extractor. It is the only proof that the second
+    # tier gets its own table rather than the top tier's base points, which is
+    # a wrong table rather than a visible error.
+    "test-extract-2dt-divisions.R"
   )
   banned <- c("skip(", "skip_if(", "skip_if_not(", "skip_if_not_installed(", "Sys.getenv")
 
