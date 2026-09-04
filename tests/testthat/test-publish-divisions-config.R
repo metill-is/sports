@@ -49,38 +49,38 @@ test_that("publish_divisions: every non-CUP code appears in training_filter.divi
   }
 })
 
-test_that(".football_iceland_division_codes: returns the expected set per sex", {
+test_that(".iceland_division_codes: returns the expected football set per sex", {
   expect_equal(
-    .football_iceland_division_codes("male"),
+    .iceland_division_codes("football_iceland", "male"),
     c("BD", "LD1", "LD2", "LD3", "CUP")
   )
   expect_equal(
-    .football_iceland_division_codes("female"),
+    .iceland_division_codes("football_iceland", "female"),
     c("BD", "LD1", "LD2", "CUP")
   )
 })
 
-test_that(".football_iceland_division_slugs: returns named vector matching consumer URL slugs", {
-  m <- .football_iceland_division_slugs("male")
+test_that(".iceland_division_slugs: returns named vector matching consumer URL slugs", {
+  m <- .iceland_division_slugs("football_iceland", "male")
   expect_equal(
     m,
     c(BD = "bd", LD1 = "ld", LD2 = "2deild", LD3 = "3deild", CUP = "bikar")
   )
-  f <- .football_iceland_division_slugs("female")
+  f <- .iceland_division_slugs("football_iceland", "female")
   expect_equal(
     f,
     c(BD = "bd", LD1 = "ld", LD2 = "2deild", CUP = "bikar")
   )
 })
 
-test_that(".football_iceland_division_labels: returns Icelandic display labels", {
-  m <- .football_iceland_division_labels("male")
+test_that(".iceland_division_labels: returns Icelandic display labels", {
+  m <- .iceland_division_labels("football_iceland", "male")
   expect_equal(m[["BD"]], "Besta deild")
   expect_equal(m[["LD2"]], "2. deild")
   expect_equal(m[["LD3"]], "3. deild")
   expect_equal(m[["CUP"]], "Mjólkurbikar")
 
-  f <- .football_iceland_division_labels("female")
+  f <- .iceland_division_labels("football_iceland", "female")
   # Women's cup has its own brand on Lengjan ("Bikar kvenna"); BD/LD1 share
   # the male labels because the rendered title is "{label} {sex_slug}" on the
   # consumer side and the sex differentiator comes from sex_slug, not label.
@@ -90,14 +90,14 @@ test_that(".football_iceland_division_labels: returns Icelandic display labels",
 })
 
 test_that("publish_divisions: sex helper errors for invalid sex", {
-  expect_error(.football_iceland_division_codes("nonsense"))
-  expect_error(.football_iceland_division_slugs("nonsense"))
-  expect_error(.football_iceland_division_labels("nonsense"))
+  expect_error(.iceland_division_codes("football_iceland", "nonsense"))
+  expect_error(.iceland_division_slugs("football_iceland", "nonsense"))
+  expect_error(.iceland_division_labels("football_iceland", "nonsense"))
 })
 
 test_that("publish_divisions: slugs collide-free per sex", {
   for (sex_key in c("male", "female")) {
-    slugs <- .football_iceland_division_slugs(sex_key)
+    slugs <- .iceland_division_slugs("football_iceland", sex_key)
     expect_equal(
       length(slugs), length(unique(slugs)),
       info = sprintf("slug collision in sex=%s", sex_key)
@@ -110,7 +110,7 @@ test_that("extract_football_iceland: target_divs validation rejects out-of-confi
   # Passing an explicit valid subset works
   expect_silent(
     stopifnot(
-      all(c("BD", "LD2") %in% .football_iceland_division_codes("male"))
+      all(c("BD", "LD2") %in% .iceland_division_codes("football_iceland", "male"))
     )
   )
   # The validator inside extract_football_iceland: passing LD4 for male should
@@ -145,26 +145,24 @@ test_that("publish_football_iceland: every division_code emitted matches next_ga
   pattern <- schema$properties$matches$items$properties$division_code$pattern
   expect_true(nzchar(pattern))
 
-  labels <- .football_iceland_division_code_labels()
-  # The recode map's own values must all be schema-compliant -- even those
-  # for codes that aren't currently in publish_divisions (e.g. _PO playoff
-  # codes), because they could land in `division` payloads via training
-  # data and ride through the recode unchanged otherwise.
-  for (code in names(labels)) {
-    expect_match(
-      labels[[code]], pattern,
-      info = sprintf(
-        "division_labels[%s] = '%s' violates schema pattern %s",
-        code, labels[[code]], pattern
-      )
-    )
-  }
-
-  # And the publisher's emitted division_code for every (sex, cell) pair
-  # in publish_divisions must match too.
+  # The recode map's own values must all be schema-compliant -- including the
+  # derived _UPPER_PO/_LOWER_PO badges, which land in `division` payloads via
+  # split-phase results and ride through the recode.
   for (sex_key in c("male", "female")) {
-    codes <- .football_iceland_division_codes(sex_key)
-    for (code in codes) {
+    labels <- .iceland_division_badges("football_iceland", sex_key)
+    for (code in names(labels)) {
+      expect_match(
+        labels[[code]], pattern,
+        info = sprintf(
+          "division_labels[%s][%s] = '%s' violates schema pattern %s",
+          sex_key, code, labels[[code]], pattern
+        )
+      )
+    }
+
+    # And the publisher's emitted division_code for every cell in
+    # publish_divisions must match too.
+    for (code in .iceland_division_codes("football_iceland", sex_key)) {
       emitted <- if (code %in% names(labels)) labels[[code]] else code
       expect_match(
         emitted, pattern,
@@ -189,9 +187,9 @@ test_that("publish_divisions: BD carries the verified split format per sex", {
   expect_equal(bd_female$split, list(upper = 6L, lower = 4L))
 })
 
-test_that(".football_iceland_division_split: split config keyed by division code", {
-  m <- .football_iceland_division_split("male")
-  f <- .football_iceland_division_split("female")
+test_that(".iceland_division_split: split config keyed by division code", {
+  m <- .iceland_division_split("football_iceland", "male")
+  f <- .iceland_division_split("football_iceland", "female")
   expect_equal(m$BD, list(upper = 6L, lower = 6L))
   expect_equal(f$BD, list(upper = 6L, lower = 4L))
   expect_null(m$LD1)
@@ -200,13 +198,15 @@ test_that(".football_iceland_division_split: split config keyed by division code
 })
 
 # ---- code_badge + qualify (Plan B WS7 task 2) -------------------------------
-# The badge map used to live in R as .football_iceland_division_code_labels().
+# The badge map used to live in R as a football-only static constant.
 # It moves into config so basketball's Bónusdeild (also coded BD) can carry its
 # own badge instead of colliding with football's BD on the consumer's filter
 # key. Values here MUST stay byte-identical to the retired R map.
 
 test_that("football publish_divisions carries the legacy badge map as code_badge", {
-  legacy <- .football_iceland_division_code_labels()
+  # Byte-identical to the values the retired static R badge map carried, which
+  # metill-platform's DIVISIONS dict mirrors.
+  legacy <- c(BD = "BD", LD1 = "LD", LD2 = "D2", LD3 = "D3", CUP = "MB")
   cfg <- load_leagues()[["football_iceland"]][["publish_divisions"]]
   n_checked <- 0L
   for (sex_key in names(cfg)) {

@@ -1,4 +1,4 @@
-#' @include model-prepare.R storage.R config.R publish-football-iceland.R
+#' @include model-prepare.R storage.R config.R publish-divisions.R publish-football-iceland.R
 NULL
 
 # ---- Internal helpers --------------------------------------------------------
@@ -23,105 +23,6 @@ NULL
     dplyr::ungroup()
 }
 
-# Per-sex publish division codes for football iceland.
-#
-# Reads `config/leagues.yml::football_iceland.publish_divisions[[sex]]` and
-# returns a character vector of `code` values (canonical Stan/results division
-# names — `BD`, `LD1`, `LD2`, `LD3`, `CUP`, etc.). Order is the YAML order.
-#
-# This replaces the pre-2026-05-24 file-scope constant
-# `.FOOTBALL_ICELAND_DIVISIONS_PFI <- c("BD", "LD1", "CUP")`. The constant
-# couldn't represent per-sex asymmetry (men publish LD2 + LD3; women publish
-# LD2 only — no women's 3. deild exists in Iceland).
-#
-# CUP rows skip the league-table simulation (final_positions /
-# points_distribution) since a knockout has no points table — those parquets
-# are written as empty tibbles for the CUP partition.
-.football_iceland_division_codes <- function(sex) {
-  stopifnot(sex %in% c("male", "female"))
-  cfg <- load_leagues()[["football_iceland"]][["publish_divisions"]][[sex]]
-  if (is.null(cfg) || length(cfg) == 0L) {
-    stop(
-      ".football_iceland_division_codes: no publish_divisions[\"",
-      sex,
-      "\"] entry in config/leagues.yml.",
-      call. = FALSE
-    )
-  }
-  vapply(cfg, function(d) d$code, character(1))
-}
-
-# Per-sex map from canonical division code -> URL/dir slug.
-# Returns a named character vector: c(BD = "bd", LD1 = "ld", LD2 = "2deild", ...)
-# Used by publish_football_iceland() to build output directory names matching
-# the metill-platform consumer's URL slugs.
-.football_iceland_division_slugs <- function(sex) {
-  stopifnot(sex %in% c("male", "female"))
-  cfg <- load_leagues()[["football_iceland"]][["publish_divisions"]][[sex]]
-  if (is.null(cfg) || length(cfg) == 0L) {
-    stop(
-      ".football_iceland_division_slugs: no publish_divisions[\"",
-      sex,
-      "\"] entry in config/leagues.yml.",
-      call. = FALSE
-    )
-  }
-  setNames(
-    vapply(cfg, function(d) d$slug, character(1)),
-    vapply(cfg, function(d) d$code, character(1))
-  )
-}
-
-# Per-sex map from canonical division code -> Icelandic display label.
-# Returns a named character vector: c(BD = "Besta deild", LD1 = "Lengjudeild", ...)
-# Used by publish_football_iceland() to populate `meta.json::league`.
-.football_iceland_division_labels <- function(sex) {
-  stopifnot(sex %in% c("male", "female"))
-  cfg <- load_leagues()[["football_iceland"]][["publish_divisions"]][[sex]]
-  if (is.null(cfg) || length(cfg) == 0L) {
-    stop(
-      ".football_iceland_division_labels: no publish_divisions[\"",
-      sex,
-      "\"] entry in config/leagues.yml.",
-      call. = FALSE
-    )
-  }
-  setNames(
-    vapply(cfg, function(d) d$label_is, character(1)),
-    vapply(cfg, function(d) d$code, character(1))
-  )
-}
-
-# Per-sex map from canonical division code -> split-season format.
-# Returns a named list keyed by code; each element is either NULL (flat
-# league — no split) or list(upper = <int>, lower = <int>) from the entry's
-# optional `split` object in config/leagues.yml::publish_divisions. See the
-# split-season section of `simulate_league_season()` for the semantics.
-.football_iceland_division_split <- function(sex) {
-  stopifnot(sex %in% c("male", "female"))
-  cfg <- load_leagues()[["football_iceland"]][["publish_divisions"]][[sex]]
-  if (is.null(cfg) || length(cfg) == 0L) {
-    stop(
-      ".football_iceland_division_split: no publish_divisions[\"",
-      sex,
-      "\"] entry in config/leagues.yml.",
-      call. = FALSE
-    )
-  }
-  setNames(
-    lapply(cfg, function(d) {
-      if (is.null(d$split)) {
-        return(NULL)
-      }
-      list(
-        upper = as.integer(d$split$upper),
-        lower = as.integer(d$split$lower)
-      )
-    }),
-    vapply(cfg, function(d) d$code, character(1))
-  )
-}
-
 # Divisions comprising a publish cell's season. A flat cell maps to its own
 # code; a cell with a configured split (config/leagues.yml::
 # publish_divisions[*].split) also spans its split-phase playoff divisions --
@@ -131,22 +32,6 @@ NULL
     return(target_div)
   }
   c(target_div, paste0(target_div, c("_UPPER_PO", "_LOWER_PO")))
-}
-
-# Static map: canonical division code -> short ASCII badge code for
-# `next_games.json::division_code` (client-side filter key on metill-platform).
-# Values MUST match the schema regex ^[A-Z][A-Z0-9_]*$ at
-# `config/publish-schemas/football/next_games.schema.json` -- regression-tested
-# in tests/testthat/test-publish-divisions-config.R. The platform's
-# DIVISIONS dict at app/routes/ithrottir.py mirrors these codes; coordinate
-# any change there.
-.football_iceland_division_code_labels <- function() {
-  c(
-    BD = "BD", LD1 = "LD", LD2 = "D2", LD3 = "D3",
-    LD4 = "D4", CUP = "MB",
-    BD_UPPER_PO = "BDU", BD_LOWER_PO = "BDL",
-    LD1_PO = "LDP"
-  )
 }
 
 # Per-division extraction. Returns a named list of 6 tibbles (one per parquet
@@ -1507,12 +1392,12 @@ extract_football_iceland <- function(fit, league, sex,
   stopifnot(sex %in% c("male", "female"))
   stopifnot(inherits(fit_date, "Date") || is.character(fit_date))
   if (is.null(target_divs)) {
-    target_divs <- .football_iceland_division_codes(sex)
+    target_divs <- .iceland_division_codes("football_iceland", sex)
   }
   stopifnot(
     is.character(target_divs),
     length(target_divs) >= 1L,
-    all(target_divs %in% .football_iceland_division_codes(sex))
+    all(target_divs %in% .iceland_division_codes("football_iceland", sex))
   )
 
   if (is.null(prep)) {
@@ -1675,7 +1560,7 @@ extract_football_iceland <- function(fit, league, sex,
     NULL
   }
 
-  split_map <- .football_iceland_division_split(sex)
+  split_map <- .iceland_division_split("football_iceland", sex)
   per_div <- lapply(target_divs, function(target_div) {
     parts <- .extract_division_parquets_pfi(
       target_div           = target_div,
@@ -1798,12 +1683,12 @@ read_extracted_football <- function(league, sex, fit_date = NULL,
   stopifnot(league$sport == "football", league$country == "iceland")
   stopifnot(sex %in% c("male", "female"))
   if (is.null(target_divs)) {
-    target_divs <- .football_iceland_division_codes(sex)
+    target_divs <- .iceland_division_codes("football_iceland", sex)
   }
   stopifnot(
     is.character(target_divs),
     length(target_divs) >= 1L,
-    all(target_divs %in% .football_iceland_division_codes(sex))
+    all(target_divs %in% .iceland_division_codes("football_iceland", sex))
   )
 
   file_types <- c(

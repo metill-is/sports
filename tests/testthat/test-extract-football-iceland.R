@@ -71,7 +71,7 @@ test_that("extract_football_iceland writes all 6 Parquets with expected schemas 
   )
   # Extract output should be restricted to the per-sex publish set, sourced from
   # config/leagues.yml::publish_divisions[[sex]]. Helper kept in sync with config.
-  publishable_divs <- .football_iceland_division_codes("male")
+  publishable_divs <- .iceland_division_codes("football_iceland", "male")
   if (nrow(pm) > 0L) {
     expect_true(all(pm$count > 0L))
     expect_true(is.integer(pm$home_goals))

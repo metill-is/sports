@@ -739,9 +739,9 @@ publish_football_iceland <- function(extracted,
   # "bikar" for the Mjólkurbikar tab. Driven by
   # config/leagues.yml::football_iceland.publish_divisions[[sex]] so adding
   # a new cell is a config-only change here.
-  division_dir_suffix <- .football_iceland_division_slugs(sex)
+  division_dir_suffix <- .iceland_division_slugs("football_iceland", sex)
   division_codes <- names(division_dir_suffix)
-  division_labels_is <- .football_iceland_division_labels(sex)
+  division_labels_is <- .iceland_division_labels("football_iceland", sex)
 
   # extracted shape: list keyed by division code (BD, LD1, ...) — see
   # read_extracted_football(). Each per-division list has the 6 parquet
@@ -794,7 +794,7 @@ publish_football_iceland <- function(extracted,
   for (target_div in division_codes) {
     top_div <- target_div
     is_cup <- identical(target_div, "CUP")
-    div_split <- .football_iceland_division_split(sex)[[target_div]]
+    div_split <- .iceland_division_split("football_iceland", sex)[[target_div]]
     # For a split cell the season spans the regular division plus its
     # split-phase playoff divisions -- every per-season surface below
     # (standings, next_games, round counting, xG/xPts aggregation input)
@@ -1006,7 +1006,7 @@ publish_football_iceland <- function(extracted,
       "\u00de\u00f3r", "\u00de\u00f3rsv\u00f6llur"
     )
 
-    division_labels <- .football_iceland_division_code_labels()
+    division_labels <- .iceland_division_badges("football_iceland", sex)
 
     if (nrow(predicted_with_division) > 0L) {
       next_games_out <- predicted_with_division |>

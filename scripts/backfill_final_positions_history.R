@@ -37,7 +37,9 @@ SEX_SLUG <- c(male = "karla", female = "kvenna")
 DIV_SLUG <- c(BD = "bd", LD1 = "ld", LD2 = "2deild", LD3 = "3deild")
 
 for (sex in sexes) {
-  league_divs <- setdiff(.football_iceland_division_codes(sex), "CUP")
+  league_divs <- setdiff(
+    .iceland_division_codes("football_iceland", sex), "CUP"
+  )
   results_all <- read_table("results",
     root = root,
     filter = list(sport = "football", country = "iceland", sex = sex)
@@ -105,7 +107,7 @@ for (sex in sexes) {
     recs <- build_round_final_positions(
       fit, prep, results_all, schedule_season, R, cutoff, season,
       league_divs, GENERATED_AT,
-      split_configs = .football_iceland_division_split(sex)
+      split_configs = .iceland_division_split("football_iceland", sex)
     )
     all_recs[[length(all_recs) + 1L]] <- recs
     rm(fit)

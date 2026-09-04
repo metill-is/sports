@@ -25,7 +25,7 @@ fixture_extracts_root <- function(sports = c("basketball", "handball"),
 # instead of stored. No RNG anywhere below.
 build_football_extracts_fixture <- function(facts_root, extracts_root, sex,
                                             fit_date = FIXTURE_FIT_DATE) {
-  divs <- .football_iceland_division_codes(sex)
+  divs <- .iceland_division_codes("football_iceland", sex)
   part <- file.path(
     extracts_root, "sport=football", "country=iceland",
     paste0("sex=", sex), paste0("fit_date=", format(fit_date, "%Y-%m-%d"))

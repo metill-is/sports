@@ -1,38 +1,52 @@
 # Sport-neutral publish-division accessors (R/publish-divisions.R).
 #
-# Block A is the football-unchanged proof: while the old
-# .football_iceland_division_* helpers are still live, the new accessors are
-# asserted byte-for-byte against them in the same process. That is a genuine
-# equivalence assertion, not a restatement of literals -- once WS7 task 4
-# deletes the originals this block is rewritten against config.
+# Blocks A and B pinned the accessors byte-for-byte against the five
+# five football-only division helpers they replace, in the same process, while
+# both were live. Those helpers are now deleted (spec section 9: no compatibility
+# aliases), so the same values are asserted against the literals that
+# equivalence proved -- football's nine published cells must not move.
 
-test_that(".iceland_division_* reproduce the football-only helpers exactly", {
-  for (sex_key in c("male", "female")) {
-    expect_identical(
-      .iceland_division_codes("football_iceland", sex_key),
-      .football_iceland_division_codes(sex_key),
-      info = sex_key
-    )
-    expect_identical(
-      .iceland_division_slugs("football_iceland", sex_key),
-      .football_iceland_division_slugs(sex_key),
-      info = sex_key
-    )
-    expect_identical(
-      .iceland_division_labels("football_iceland", sex_key),
-      .football_iceland_division_labels(sex_key),
-      info = sex_key
-    )
-    expect_identical(
-      .iceland_division_split("football_iceland", sex_key),
-      .football_iceland_division_split(sex_key),
-      info = sex_key
-    )
-  }
+test_that(".iceland_division_* return football's configured cells", {
+  expect_identical(
+    .iceland_division_codes("football_iceland", "male"),
+    c("BD", "LD1", "LD2", "LD3", "CUP")
+  )
+  expect_identical(
+    .iceland_division_codes("football_iceland", "female"),
+    c("BD", "LD1", "LD2", "CUP")
+  )
+  expect_identical(
+    .iceland_division_slugs("football_iceland", "male"),
+    c(BD = "bd", LD1 = "ld", LD2 = "2deild", LD3 = "3deild", CUP = "bikar")
+  )
+  expect_identical(
+    .iceland_division_slugs("football_iceland", "female"),
+    c(BD = "bd", LD1 = "ld", LD2 = "2deild", CUP = "bikar")
+  )
+  expect_identical(
+    unname(.iceland_division_labels("football_iceland", "male")[["CUP"]]),
+    "Mj\u00f3lkurbikar"
+  )
+  expect_identical(
+    unname(.iceland_division_labels("football_iceland", "female")[["CUP"]]),
+    "Bikar kvenna"
+  )
+  expect_identical(
+    .iceland_division_split("football_iceland", "male")$BD,
+    list(upper = 6L, lower = 6L)
+  )
+  expect_identical(
+    .iceland_division_split("football_iceland", "female")$BD,
+    list(upper = 6L, lower = 4L)
+  )
+  expect_null(.iceland_division_split("football_iceland", "male")$LD1)
 })
 
-test_that(".iceland_division_badges reproduces the static map where reachable", {
-  legacy <- .football_iceland_division_code_labels()
+test_that(".iceland_division_badges reproduces the retired static map", {
+  # These five are byte-identical to the values
+  # the retired football-only static badge map carried before the cutover, and
+  # metill-platform's DIVISIONS dict mirrors them.
+  legacy <- c(BD = "BD", LD1 = "LD", LD2 = "D2", LD3 = "D3", CUP = "MB")
   for (sex_key in c("male", "female")) {
     badges <- .iceland_division_badges("football_iceland", sex_key)
     shared <- intersect(names(badges), names(legacy))
@@ -44,12 +58,12 @@ test_that(".iceland_division_badges reproduces the static map where reachable", 
     expect_identical(badges[["BD_UPPER_PO"]], "BDU")
     expect_identical(badges[["BD_LOWER_PO"]], "BDL")
 
-    # LD1_PO and LD4 are in the retired static map but NOT here, deliberately.
-    # publish_football_iceland() filters `division %in% family_divs` before the
-    # recode, and family_divs is the target division plus only its own
-    # _UPPER_PO/_LOWER_PO (.split_family_divisions_pfi). LD1 carries no `split`
-    # and LD4 is in no publish_divisions list, so neither code can reach a
-    # payload. The football golden test is the empirical check on that trace.
+    # LD1_PO and LD4 were in the retired static map but are NOT here,
+    # deliberately. publish_football_iceland() filters
+    # `division %in% family_divs` before the recode, and family_divs is the
+    # target division plus only its own _UPPER_PO/_LOWER_PO
+    # (.split_family_divisions_pfi), so neither code can reach a payload. The
+    # football golden test is the empirical check on that trace.
     expect_false("LD1_PO" %in% names(badges))
     expect_false("LD4" %in% names(badges))
   }
@@ -111,5 +125,31 @@ test_that("every accessor stops on an unknown sex or a league with no publish_di
     # world_cup is a real pipeline namespace but not a config/leagues.yml league,
     # so it has no publish_divisions block at all.
     expect_error(accessors[[nm]]("world_cup", "male"), info = nm)
+  }
+})
+
+test_that("no legacy football-only division helper survives in the live tree", {
+  # Spec section 9: no compatibility aliases. Two live names for one symbol is
+  # exactly the drift the rename removes, so the absence is asserted rather
+  # than assumed.
+  #
+  # Scope is deliberately R/, scripts/, tests/testthat/ and man/ only.
+  # .claude/worktrees/ holds stale checkouts of the same files, and docs/ plus
+  # _legacy/ hold historical prose; a tree-wide grep could never go green.
+  root <- normalizePath(testthat::test_path("..", ".."))
+  hits <- withr::with_dir(root, suppressWarnings(system2(
+    "grep",
+    c(
+      "-rl", "--include=*.R", "--include=*.Rd", "--include=*.qmd",
+      # Assembled from pieces so this file is not itself a hit -- the grep
+      # scope deliberately includes tests/testthat.
+      shQuote(paste0("\\.football", "_iceland_division_")),
+      "R", "scripts", "tests/testthat", "man"
+    ),
+    stdout = TRUE
+  )))
+  expect_length(hits, 0L)
+  if (length(hits) > 0L) {
+    cat("\nsurviving references in:\n", paste(hits, collapse = "\n"), "\n")
   }
 })

@@ -54,7 +54,7 @@ test_that("the golden manifest covers every configured football cell", {
   )
   for (sex in c("male", "female")) {
     sex_folder <- if (sex == "male") "karla" else "kvenna"
-    for (slug in .football_iceland_division_slugs(sex)) {
+    for (slug in .iceland_division_slugs("football_iceland", sex)) {
       prefix <- file.path("football", "iceland", paste0(sex_folder, "-", slug))
       expect_true(
         any(startsWith(golden$file, prefix)),
