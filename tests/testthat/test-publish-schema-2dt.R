@@ -249,3 +249,51 @@ test_that("basketball and handball schemas are armed", {
     )
   }
 })
+
+test_that("the R and Python schema resolvers agree on every live case", {
+  # metill-platform/scripts/validate_publish.py::resolve_schema_path is the
+  # mirror of .resolve_schema_path here, and the two must not drift: the schema
+  # tree is rsynced from ONE clone at ONE SHA, so a resolver disagreement is
+  # the only way schema and JSON can skew.
+  #
+  # ONE LATENT DIVERGENCE, found by reading both and recorded rather than
+  # fixed: R uses the ANCHORED sub("\\.json$", ".schema.json", base) while
+  # Python uses the UNANCHORED name.replace(".json", ".schema.json"). They
+  # agree for every basename in use and would differ only for a name with an
+  # interior ".json" (e.g. "a.json.b.json"). The last block below asserts every
+  # published basename stays in the safe shape, so they cannot start to differ
+  # without a test failing first.
+  sd <- testthat::test_path("..", "..", "config", "publish-schemas")
+  cases <- list(
+    list(sport = "football", base = "meta.json", hit = TRUE),
+    list(sport = "basketball", base = "meta.json", hit = TRUE),
+    list(sport = "handball", base = "standings.json", hit = TRUE),
+    list(sport = "football", base = "tournament_placements.json", hit = TRUE),
+    # Neither 2DT sport ingests a knockout cup, so neither has this surface.
+    list(sport = "basketball", base = "tournament_placements.json", hit = FALSE),
+    list(sport = "handball", base = "tournament_placements.json", hit = FALSE),
+    # bracket.json has never had a schema, on either side.
+    list(sport = "football", base = "bracket.json", hit = FALSE),
+    # world_cup does not go through publish_one() and gets no schema.
+    list(sport = "world_cup", base = "meta.json", hit = FALSE),
+    # The generator's own directories must resolve as no sport at all.
+    list(sport = "_base", base = "meta.json", hit = FALSE),
+    list(sport = "_delta", base = "meta.json", hit = FALSE),
+    list(sport = "_draft", base = "meta.json", hit = FALSE)
+  )
+  for (case in cases) {
+    got <- .resolve_schema_path(sd, case$sport, case$base)
+    expect_equal(
+      !is.null(got), case$hit,
+      info = paste(case$sport, case$base)
+    )
+  }
+
+  # Every published basename is `[a-z_]+.json`, which is what keeps the
+  # anchored and unanchored replacements identical.
+  bases <- unique(basename(list.files(
+    here::here("data", "publish"),
+    pattern = "[.]json$", recursive = TRUE
+  )))
+  expect_true(all(grepl("^[a-z_]+\\.json$", bases)), info = paste(bases, collapse = ", "))
+})

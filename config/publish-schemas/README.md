@@ -149,8 +149,33 @@ cd ~/metill-platform && uv run --extra data python scripts/validate_publish.py \
 easy to skim past, so run it from `~/metill-platform`.)
 
 `_base/`, `_delta/`, `_draft/` and this README ride that rsync as inert extra
-files. If the noise ever matters the fix is an `--exclude '_*'` on the
-platform's schema rsync.
+files (~22 of them). If the noise ever matters the fix is an `--exclude '_*'`
+on the platform's schema rsync -- a change in metill-platform, not here.
+
+**Measured cross-repo proof, 2026-09-04.** The command above was run against a
+staged mirror holding the live football tree plus the eight bb/hb cells
+production will emit (fixture-published: no real 2DT fit has ever run, so this
+is the best proof available before one does):
+
+| state | passed | failed | unmatched | exit |
+|---|---|---|---|---|
+| basketball + handball schemas held out (pre-arming) | 92 | 0 | **90** | 0 |
+| armed | **172** | 0 | **10** | 0 |
+
+The pre-arming run is GREEN while 80 basketball and handball JSONs go entirely
+unchecked -- that is the fail-open this workstream closes, and it is why an
+exit code alone is not evidence. The 10 that remain unmatched after arming are
+the 8 `world_cup/` files (no schema by design: `publish_world_cup()` does not
+go through `publish_one()`) and football's two `bracket.json`, which has never
+had one.
+
+**One latent resolver divergence, recorded rather than fixed.** R uses the
+anchored `sub("\\.json$", ".schema.json", base)`; the Python mirror uses the
+unanchored `name.replace(".json", ".schema.json")`. Identical for every
+basename in use; they would differ only for a name with an interior `.json`.
+`tests/testthat/test-publish-schema-2dt.R` asserts every published basename
+matches `^[a-z_]+\.json$`, so they cannot start to differ without a test
+failing first.
 
 ## How drift surfaces
 
