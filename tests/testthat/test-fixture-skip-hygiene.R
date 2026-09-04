@@ -52,7 +52,11 @@ test_that("the bb/hb publish + extract tests carry no skip gates", {
     # the trajectory's global round index IS prepare_data's round1/round2, so a
     # skip would retire the check that the published trajectory reads the round
     # it claims to.
-    "test-extract-2dt-round-strengths.R"
+    "test-extract-2dt-round-strengths.R",
+    # WS8's partition-level fit_meta. It is the only assertion that the file
+    # carries NO division column, which is what stops the reader's per-division
+    # split from filtering it to zero rows on every cell.
+    "test-extract-fit-meta.R"
   )
   banned <- c("skip(", "skip_if(", "skip_if_not(", "skip_if_not_installed(", "Sys.getenv")
 

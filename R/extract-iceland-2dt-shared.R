@@ -655,5 +655,14 @@ NULL
     )
   }
 
+  # fit_meta describes the FIT, not a cell, so it is the one file in the
+  # partition with NO `division` column and must not enter the loop above. It
+  # carries the numbers the publisher would otherwise need a 300-600 MB fit in
+  # memory to recompute.
+  arrow::write_parquet(
+    .fit_meta_tibble(fit, fit_date, league$stan_model, sport),
+    file.path(partition, "fit_meta.parquet")
+  )
+
   invisible(NULL)
 }

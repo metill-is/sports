@@ -33,10 +33,11 @@ NULL
 # re-deriving the scales from the extractor source. `units$diff_bin_width` IS
 # read -- by the two 2DT extractor entry points.
 
-# Files every sport degrades gracefully on. `fit_meta` does not exist yet (it is
-# WS8's); listing it as OPTIONAL now is load-bearing, because `required_extracts`
-# drives the reader's completeness check and a newly-required file would mark
-# every existing on-disk football partition incomplete.
+# Files every sport degrades gracefully on. `fit_meta` is written by all three
+# extractors now, but it stays OPTIONAL: `required_extracts` drives the reader's
+# completeness check, and requiring it would mark every football partition
+# written before this contract existed incomplete -- i.e. it would retire the
+# whole replay history.
 .PUBLISH_OPTIONAL_ALWAYS <- "fit_meta"
 
 # The ten JSON basenames every Icelandic league cell publishes.
@@ -214,6 +215,33 @@ NULL
       ),
       has_ties = TRUE,
       tie_threshold = 0.5
+    )
+  )
+}
+
+# The one-row, partition-level provenance table every extractor writes.
+#
+# `model_units` names the scale the stored strength / home-advantage components
+# are on, and it comes from the SPORT rather than from config: the 2DT models are
+# additive in raw points/goals (Stan/basketball_iceland/
+# 2d_student_t_scalarsigma.stan:112,116) while football's bivariate Poisson
+# parameterises on the log scale (Stan/football_iceland/
+# bivariate_poisson_no_inflation.stan:155,185). Getting that wrong is the B5 bug
+# wearing a metadata label.
+#
+# No `division` column, deliberately -- see the write sites.
+# @noRd
+.fit_meta_tibble <- function(fit, fit_date, stan_model, sport) {
+  tibble::tibble(
+    n_draws = as.integer(posterior::ndraws(fit$draws("lp__"))),
+    fit_date = as.Date(fit_date),
+    stan_model = as.character(stan_model),
+    model_units = switch(
+      sport,
+      basketball = "points",
+      handball = "goals",
+      football = "log_rate",
+      cli::cli_abort("No model_units for sport {.val {sport}}.", call = NULL)
     )
   )
 }

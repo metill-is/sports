@@ -1592,6 +1592,14 @@ extract_football_iceland <- function(fit, league, sex,
     )
   }
 
+  # Partition-level, like sim_inputs -- NOT in the file_types loop above, which
+  # is division-bound. read_extracted_iceland() reaches it through the profile's
+  # optional slot, so an existing partition without it still reads.
+  arrow::write_parquet(
+    .fit_meta_tibble(fit, fit_date, league$stan_model, league$sport),
+    file.path(extracts_dir, "fit_meta.parquet")
+  )
+
   arrow::write_parquet(
     sim_inputs$team,
     file.path(extracts_dir, "sim_inputs_team.parquet")

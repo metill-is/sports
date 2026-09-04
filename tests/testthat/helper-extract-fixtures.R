@@ -104,6 +104,19 @@ build_football_extracts_fixture <- function(facts_root, extracts_root, sex,
       file.path(part, paste0(ft, ".parquet"))
     )
   }
+
+  # Partition-level, no division column -- the same contract the real extractor
+  # writes, so a publisher that starts requiring it finds it here too. Values are
+  # the fixture constants, not a fit: this builder never holds one.
+  arrow::write_parquet(
+    tibble::tibble(
+      n_draws = as.integer(FIXTURE_N_DRAWS),
+      fit_date = as.Date(fit_date),
+      stan_model = load_leagues()[["football_iceland"]]$stan_model,
+      model_units = "log_rate"
+    ),
+    file.path(part, "fit_meta.parquet")
+  )
   invisible(NULL)
 }
 
