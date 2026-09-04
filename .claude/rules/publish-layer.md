@@ -101,6 +101,63 @@ slug **must** be URL-safe (matches the schema's
 the producer side as long as the division's data already feeds the
 fit (via `training_filter.divisions` + an ingest source for matches).
 
+### Division accessors are sport-neutral (since 2026-09-04)
+
+`publish_divisions` is no longer football's alone. Every Icelandic
+league declares its own per-sex publish cells:
+
+| League | male | female |
+|---|---|---|
+| `football_iceland` | BD, LD1, LD2, LD3, CUP | BD, LD1, LD2, CUP |
+| `basketball_iceland` | BD, 1D | BD, 1D |
+| `handball_iceland` | OD, G66 | OD, G66 |
+
+They are read through nine accessors in `R/publish-divisions.R`, all
+`.iceland_division_*(key, sex)` where `key` is a `leagues.yml`
+top-level league key: `codes`, `slugs`, `labels`, `split`, `badges`,
+`is_cup`, `qualify`, `relegation`, `expected_meetings`. The
+football-only `.football_iceland_division_*` helpers they replace are
+**deleted, with no compatibility aliases** — two live names for one
+symbol is the drift this removed. Adding a publish cell is a config
+edit plus a metill-platform `DIVISIONS` entry, never an R edit.
+
+Four optional keys on a `publish_divisions` entry, all absent-safe:
+
+| Key | Contract |
+|---|---|
+| `code_badge` | Short ASCII badge emitted as `next_games.json::division_code`, which the publish schemas pattern as `^[A-Z][A-Z0-9_]*$`. Basketball's code `1D` fails that on its own (leading digit), which is why the key exists. Absent falls back to `code`. Every entry carrying a `split` also derives `<code>_UPPER_PO`/`_LOWER_PO` → `<badge>U`/`<badge>L`. |
+| `expected_meetings` | Times each pair meets in the **regular** season. An assertion and a fallback, **never the source** — `n_rounds` is derived from schedule + results (spec §12). Omit where the format is genuinely irregular (basketball female 1D). |
+| `qualify` | `{slots, label_is}`. Absent = `meta.qualify: null` and **no** `p_qualify`. It is the generic replacement for football's `p_top_six`, which does not transfer: Bónusdeild karla is 12 teams with 8 qualifying, and Bónusdeild kvenna carries all 10 through. |
+| `relegation_slots` | Teams relegated from this division. Replaces the hardcoded bottom-two rule (`placement >= n_teams - 1L`), which is wrong for a bottom-tier division where nothing is relegated. |
+
+Only football BD (both sexes) configures `qualify` today — `{slots: 6,
+label_is: "Efri hluti"}`, which is `split$upper`, so `p_qualify`
+reproduces the existing `placement <= 6L` rule exactly. Basketball and
+handball configure **no** `qualify` and **no** `relegation_slots`: four
+cells with four different post-season structures, and no regulation was
+resolved for the relegation counts. An unresolved number is omitted
+rather than guessed — absent publishes honest nulls, a wrong number
+silently mislabels a headline probability.
+
+`expected_meetings` values are measured from `data/facts/results`, not
+assumed. Icelandic women's handball plays a **triple** round robin
+(8 teams, 84 matches, 3 meetings per pair), so the `2*(n_teams - 1)`
+formula is wrong there. The assertion in
+`tests/testthat/test-iceland-division-helpers.R` re-derives every value
+from the parquet; when a federation changes format it is *supposed* to
+go red, and the fix is to re-measure and rewrite the constant, **not**
+to loosen the test.
+
+Only `football_iceland` carries a `training_filter` key
+(`config/leagues.yml` — its sole occurrence). The 2DT extractor's
+round-strength trajectory indexes on rounds derived from the unfiltered
+results, so it asserts `is.null(league$training_filter)`; adding a
+`training_filter` to basketball or handball will abort that extractor
+until the trajectory's round indexing is reworked.
+
+Note that this config layer publishes nothing on its own — it is inert
+until the extract, read and publish layers consume it.
+
 The per-cell extracted slice is pre-filtered to the division's teams +
 matches by the reader's `division` filter, so the publisher's loop
 body is mostly a render of `ext <- extracted[[target_div]]` rather

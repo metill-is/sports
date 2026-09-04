@@ -1,6 +1,15 @@
-# Schema + helper-shape tests for football_iceland.publish_divisions.
+# Schema + helper-shape tests for <league>.publish_divisions.
 # Lightweight (no Stan, no fit) — kept fast so the wiring is regression-tested
 # on every CI run, independent of the slow end-to-end fit-based tests.
+#
+# The field-set and collision invariants below are parameterised over all three
+# Icelandic leagues in one loop rather than copied per sport. The
+# training_filter block is deliberately NOT — only football_iceland carries a
+# training_filter key.
+
+ICELAND_LEAGUE_KEYS <- c(
+  "football_iceland", "basketball_iceland", "handball_iceland"
+)
 
 test_that("publish_divisions: config block exists with both sexes", {
   cfg <- load_leagues()[["football_iceland"]][["publish_divisions"]]
@@ -9,27 +18,36 @@ test_that("publish_divisions: config block exists with both sexes", {
 })
 
 test_that("publish_divisions: every entry has the 4 required fields and no unknown ones", {
-  cfg <- load_leagues()[["football_iceland"]][["publish_divisions"]]
   required <- c("code", "slug", "label_is", "is_cup")
   optional <- c(
     "split", "code_badge", "expected_meetings", "relegation_slots", "qualify"
   )
-  for (sex_key in names(cfg)) {
-    for (i in seq_along(cfg[[sex_key]])) {
-      entry <- cfg[[sex_key]][[i]]
-      expect_true(
-        all(required %in% names(entry)),
-        info = sprintf("sex=%s entry %d missing required fields", sex_key, i)
-      )
-      expect_true(
-        all(names(entry) %in% c(required, optional)),
-        info = sprintf("sex=%s entry %d has unknown fields", sex_key, i)
-      )
+  n_checked <- 0L
+  for (key in ICELAND_LEAGUE_KEYS) {
+    cfg <- load_leagues()[[key]][["publish_divisions"]]
+    expect_setequal(names(cfg), c("male", "female"))
+    for (sex_key in names(cfg)) {
+      for (i in seq_along(cfg[[sex_key]])) {
+        entry <- cfg[[sex_key]][[i]]
+        expect_true(
+          all(required %in% names(entry)),
+          info = sprintf("%s sex=%s entry %d missing required fields", key, sex_key, i)
+        )
+        expect_true(
+          all(names(entry) %in% c(required, optional)),
+          info = sprintf("%s sex=%s entry %d has unknown fields", key, sex_key, i)
+        )
+        n_checked <- n_checked + 1L
+      }
     }
   }
+  expect_identical(n_checked, 17L)
 })
 
 test_that("publish_divisions: every non-CUP code appears in training_filter.divisions", {
+  # Football-scoped on purpose: config/leagues.yml carries exactly one
+  # training_filter key and it is football's. Looping this over all three
+  # leagues would fail on a NULL rather than assert anything.
   league <- load_leagues()[["football_iceland"]]
   cfg <- league$publish_divisions
   training_divs <- league$training_filter$divisions
@@ -95,14 +113,29 @@ test_that("publish_divisions: sex helper errors for invalid sex", {
   expect_error(.iceland_division_labels("football_iceland", "nonsense"))
 })
 
-test_that("publish_divisions: slugs collide-free per sex", {
-  for (sex_key in c("male", "female")) {
-    slugs <- .iceland_division_slugs("football_iceland", sex_key)
-    expect_equal(
-      length(slugs), length(unique(slugs)),
-      info = sprintf("slug collision in sex=%s", sex_key)
-    )
+test_that("publish_divisions: slugs and badges collide-free per (league, sex)", {
+  # A slug collision silently overwrites one cell's output directory; a badge
+  # collision merges two divisions behind one filter key on metill-platform.
+  # Uniqueness is required WITHIN a (league, sex) cell only -- football BD and
+  # basketball BD legitimately share a code and a slug across sports, which is
+  # exactly why they carry different badges.
+  n_checked <- 0L
+  for (key in ICELAND_LEAGUE_KEYS) {
+    for (sex_key in c("male", "female")) {
+      slugs <- .iceland_division_slugs(key, sex_key)
+      badges <- .iceland_division_badges(key, sex_key)
+      expect_identical(
+        length(slugs), length(unique(slugs)),
+        info = sprintf("slug collision in %s sex=%s", key, sex_key)
+      )
+      expect_identical(
+        length(badges), length(unique(badges)),
+        info = sprintf("badge collision in %s sex=%s", key, sex_key)
+      )
+      n_checked <- n_checked + 1L
+    }
   }
+  expect_identical(n_checked, 6L)
 })
 
 test_that("extract_football_iceland: target_divs validation rejects out-of-config codes", {

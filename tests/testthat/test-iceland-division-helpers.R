@@ -276,3 +276,32 @@ test_that("basketball and handball configure no qualify cut (Plan B ID-B15)", {
     }
   }
 })
+
+test_that("the publish surface matches what is actually ingested", {
+  # Nothing is published that is not ingested, and nothing ingested is silently
+  # dropped -- except handball's PO, the shared post-season bracket, which is a
+  # division in results but not a league to publish. No CUP division exists for
+  # either sport (distinct 2026 values are basketball {BD, 1D} and handball
+  # {OD, G66, PO}), which is why every bb/hb entry is is_cup: false and there
+  # is no cup cell to build.
+  results <- read_table("results", root = testthat::test_path("..", "..", "data"))
+  season_max <- max(results$season, na.rm = TRUE)
+  not_a_publish_division <- "PO"
+  n_checked <- 0L
+  for (key in c("basketball_iceland", "handball_iceland")) {
+    sport <- sub("_iceland$", "", key)
+    for (sex_key in c("male", "female")) {
+      ingested <- unique(results$division[
+        results$sport == sport & results$sex == sex_key &
+          results$season == season_max
+      ])
+      expect_gt(length(ingested), 0L)
+      expect_setequal(
+        .iceland_division_codes(key, sex_key),
+        setdiff(ingested, not_a_publish_division)
+      )
+      n_checked <- n_checked + 1L
+    }
+  }
+  expect_identical(n_checked, 4L)
+})
