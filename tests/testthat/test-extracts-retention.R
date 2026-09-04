@@ -90,3 +90,16 @@ test_that("cells are pruned independently of one another", {
   expect_false(dir.exists(file.path(root, "sport=football", "country=iceland",
                                     "sex=male", "fit_date=2026-01-01")))
 })
+
+test_that("03_fit.R prunes only when something was actually fitted", {
+  # A skip-only fit run writes no new partition, so there is nothing to age
+  # out. Pruning anyway would delete history on a run that produced nothing --
+  # and every off-season day is a skip-only run.
+  src <- readLines(testthat::test_path("..", "..", "scripts", "03_fit.R"),
+                   warn = FALSE)
+  i <- grep("prune_extracts", src)
+  expect_length(i, 1L)
+  guard <- grep("if \\(fitted > 0L\\)", src)
+  expect_length(guard, 1L)
+  expect_lt(guard, i)   # the guard opens before the call
+})

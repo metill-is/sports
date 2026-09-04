@@ -53,3 +53,21 @@ for (i in seq_len(nrow(targets))) {
   fitted <- fitted + 1L
 }
 cli::cli_alert_success("Fit complete: {fitted} fitted, {skipped} skipped")
+
+# Retention. data/beliefs/extracts/ is git-tracked and committed by fit.yml on
+# every run, and it is the SOLE publish input, so it cannot simply be ignored.
+# Left unpruned it grew to 1.3 GB over 99 partitions (~22 MB per football fit,
+# ~24 fits a month). actions/checkout has no fetch-depth here, so every one of
+# the nine workflows pays that working-tree size on each run.
+#
+# Runs only when something was actually fitted: a skip-only run has written no
+# new partition, so there is nothing to age out and no reason to touch the tree.
+if (fitted > 0L) {
+  pruned <- prune_extracts(dry_run = FALSE)
+  if (nrow(pruned) > 0L) {
+    cli::cli_alert_info(
+      "Pruned {nrow(pruned)} old extract partition{?s} \\
+       ({round(sum(pruned$bytes) / 1024^2)} MB)."
+    )
+  }
+}
