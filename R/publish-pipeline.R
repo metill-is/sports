@@ -1,13 +1,13 @@
-#' @include publish-football-iceland.R publish-basketball-iceland.R publish-handball-iceland.R validate-publish.R
+#' @include publish-profile.R extract-iceland-read.R publish-football-iceland.R publish-basketball-iceland.R publish-handball-iceland.R validate-publish.R
 NULL
 
-#' Does a football-iceland extract partition exist for this cell?
+#' Does an extract partition exist for this cell?
 #'
 #' Distinguishes "no fit yet" (no partition -> a legitimate skip) from "a
 #' fit_date partition exists but won't read" (corrupt / half-written extract ->
 #' a loud failure) in publish_one().
 #' @noRd
-football_extract_partition_exists <- function(extracts_root, sport, country, sex) {
+extract_partition_exists <- function(extracts_root, sport, country, sex) {
   cell_dir <- file.path(
     extracts_root,
     paste0("sport=", sport),
@@ -59,7 +59,7 @@ publish_one <- function(static, betting, key, sex,
     extracts_root <- file.path(root, "beliefs", "extracts")
     archive_root <- file.path(root, "beliefs", "archive")
     extracted <- tryCatch(
-      read_extracted_football(
+      read_extracted_iceland(
         league = league,
         sex = sex,
         extracts_root = extracts_root
@@ -69,7 +69,7 @@ publish_one <- function(static, betting, key, sex,
         # corrupt / half-written extract) so the publish step fails rather than
         # silently republishing yesterday's JSON. Stay quiet when there is no
         # fit yet (no partition) -- a legitimate skip.
-        if (football_extract_partition_exists(
+        if (extract_partition_exists(
           extracts_root, league$sport, league$country, sex
         )) {
           cli::cli_abort(

@@ -6,7 +6,7 @@ NULL
 
 # Empty extracted-list slot — used when a division partition is missing
 # from the archive (e.g. legacy archives that only wrote BD). Mirrors the
-# schema of `read_extracted_football()` slots so the publisher's per-cell
+# schema of `read_extracted_iceland()` slots so the publisher's per-cell
 # loop can run against an "empty" division without special-casing.
 .empty_extracted_pfi <- function() {
   list(
@@ -634,7 +634,7 @@ NULL
 #'
 #' Phase 2 entrypoint: reads from the per-fit extraction archive (the 6
 #' Parquets written by [`extract_football_iceland()`]) instead of an
-#' in-memory fit RDS. Use [`read_extracted_football()`] to construct
+#' in-memory fit RDS. Use [`read_extracted_iceland()`] to construct
 #' `extracted`, or pass a hand-built list with the same shape (tests do
 #' the latter).
 #'
@@ -661,7 +661,7 @@ NULL
 #'   - `round_predictions_history.json` (every fit; empty `records` when
 #'     the archive lacks pre-round partitions yet)
 #'
-#' @param extracted Named list returned by [`read_extracted_football()`]:
+#' @param extracted Named list returned by [`read_extracted_iceland()`]:
 #'   six tibbles plus optionally `fit_date`. The required tibbles are
 #'   `predicted_matches`, `team_strengths_quantiles`,
 #'   `round_strengths_quantiles`, `home_advantage_quantiles`,
@@ -744,7 +744,7 @@ publish_football_iceland <- function(extracted,
   division_labels_is <- .iceland_division_labels("football_iceland", sex)
 
   # extracted shape: list keyed by division code (BD, LD1, ...) — see
-  # read_extracted_football(). Each per-division list has the 6 parquet
+  # read_extracted_iceland(). Each per-division list has the 6 parquet
   # tibbles. A non-FATAL legacy fallback: if `extracted` is flat (the
   # pre-2026-05-04 single-division shape), wrap it as BD-only and emit
   # empty cells for every other configured division.

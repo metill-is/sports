@@ -1,5 +1,5 @@
 # Build an `extracted` list from a CmdStanMCMC fit by chaining
-# extract_football_iceland() + read_extracted_football() through a tempdir.
+# extract_football_iceland() + read_extracted_iceland() through a tempdir.
 # Used by publish-football tests that exercise the per-cell publisher.
 #
 # The tempdir's lifetime is tied to the caller's frame via withr — one
@@ -15,7 +15,7 @@
       extracts_root = extract_dir
     )
   ))
-  read_extracted_football(
+  read_extracted_iceland(
     league,
     sex = sex,
     fit_date = end_date,

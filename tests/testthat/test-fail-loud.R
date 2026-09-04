@@ -7,14 +7,14 @@ test_that("odds_scrape_empty_failure fires only on a total in-season wipe-out", 
   expect_false(odds_scrape_empty_failure(n_inseason = 3, total_rows = 0, force = TRUE))
 })
 
-test_that("football_extract_partition_exists detects an existing fit_date partition", {
+test_that("extract_partition_exists detects an existing fit_date partition", {
   root <- withr::local_tempdir()
   cell <- file.path(
     root, "sport=football", "country=iceland", "sex=male", "fit_date=2026-05-30"
   )
   dir.create(cell, recursive = TRUE)
-  expect_true(football_extract_partition_exists(root, "football", "iceland", "male"))
-  expect_false(football_extract_partition_exists(root, "football", "iceland", "female"))
+  expect_true(extract_partition_exists(root, "football", "iceland", "male"))
+  expect_false(extract_partition_exists(root, "football", "iceland", "female"))
 })
 
 test_that("generate_active_competitions marks degraded on schedule fail-open", {

@@ -100,7 +100,7 @@ replay_football_iceland <- function(sex,
     )
   }
 
-  extracted <- read_extracted_football(
+  extracted <- read_extracted_iceland(
     league,
     sex = sex,
     fit_date = as_of,

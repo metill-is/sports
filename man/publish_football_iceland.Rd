@@ -17,7 +17,7 @@ publish_football_iceland(
 )
 }
 \arguments{
-\item{extracted}{Named list returned by [`read_extracted_football()`]:
+\item{extracted}{Named list returned by [`read_extracted_iceland()`]:
 six tibbles plus optionally `fit_date`. The required tibbles are
 `predicted_matches`, `team_strengths_quantiles`,
 `round_strengths_quantiles`, `home_advantage_quantiles`,
@@ -62,7 +62,7 @@ project's real beliefs tree.}
 \description{
 Phase 2 entrypoint: reads from the per-fit extraction archive (the 6
 Parquets written by [`extract_football_iceland()`]) instead of an
-in-memory fit RDS. Use [`read_extracted_football()`] to construct
+in-memory fit RDS. Use [`read_extracted_iceland()`] to construct
 `extracted`, or pass a hand-built list with the same shape (tests do
 the latter).
 }

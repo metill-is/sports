@@ -18,7 +18,7 @@ test_that("football publish output is byte-identical to the golden manifest", {
 
   for (sex in c("male", "female")) {
     build_football_extracts_fixture(facts_root, extracts_root, sex)
-    extracted <- read_extracted_football(
+    extracted <- read_extracted_iceland(
       league, sex = sex, fit_date = FIXTURE_FIT_DATE, extracts_root = extracts_root
     )
     suppressMessages(suppressWarnings(publish_football_iceland(

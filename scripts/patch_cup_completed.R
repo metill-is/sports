@@ -79,7 +79,7 @@ stopifnot(length(completed) >= 1L)
 
 # ---- 1. Patch the parquet (the source of truth the publisher reads) ---------
 # Discover the latest fit_date partition that carries a cup_bracket.parquet,
-# the same partition read_extracted_football() auto-selects at publish time.
+# the same partition read_extracted_iceland() auto-selects at publish time.
 extract_base <- here::here(
   "data", "beliefs", "extracts",
   "sport=football", "country=iceland", "sex=male"

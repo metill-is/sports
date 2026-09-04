@@ -209,7 +209,7 @@ make_football_golden_hashes <- function(dest = NULL) {
   league <- load_leagues()[["football_iceland"]]
   for (sex in c("male", "female")) {
     env$build_football_extracts_fixture(facts_root, extracts_root, sex)
-    extracted <- read_extracted_football(
+    extracted <- read_extracted_iceland(
       league, sex = sex, fit_date = FIXTURE_FIT_DATE, extracts_root = extracts_root
     )
     suppressWarnings(publish_football_iceland(
