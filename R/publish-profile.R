@@ -51,8 +51,8 @@ NULL
 
 # 0-row tibbles, one per extract file type. Shapes are transcribed from the
 # producers, not invented:
-#   football  -- R/extract-football-iceland.R (the `empty_tibbles` literal that
-#                read_extracted_football() used to carry)
+#   football  -- R/extract-football-iceland.R (the `empty_tibbles` literal the
+#                football-only reader used to carry inline)
 #   2DT       -- R/extract-iceland-2dt-shared.R's five writers, cross-checked
 #                against tests/testthat/fixtures/extracts/
 #   fit_meta  -- the partition-level contract in the Plan B design (one row:

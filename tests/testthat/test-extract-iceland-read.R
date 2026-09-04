@@ -1,5 +1,5 @@
-# One reader for all three Icelandic leagues. read_extracted_football() was
-# generalised by PARAMETERISATION -- the descending fit_date scan, the
+# One reader for all three Icelandic leagues. The football-only reader it
+# replaces was generalised by PARAMETERISATION -- the descending fit_date scan, the
 # completeness check and the per-division split exist exactly once -- so these
 # assertions cover a 2DT tree and the live football tree through the same
 # function.

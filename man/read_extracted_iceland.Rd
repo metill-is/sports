@@ -48,9 +48,9 @@ each by the in-payload `division` column, and returns a named list keyed by
 division code.
 }
 \details{
-Generalised from `read_extracted_football()` by PARAMETERISATION, not by
-copying: which files are required, which are optional and what an absent one
-degrades to all come from [`sport_publish_profile()`], and the division set
+Generalised from the football-only reader it replaces by PARAMETERISATION,
+not by copying: which files are required, which are optional and what an
+absent one degrades to all come from [`sport_publish_profile()`], and the division set
 comes from `config/leagues.yml::<key>.publish_divisions[[sex]]`. The
 descending `fit_date` scan, the completeness check, the per-division split,
 `sim_inputs` and `cup_bracket` are sport-agnostic and exist exactly once.
