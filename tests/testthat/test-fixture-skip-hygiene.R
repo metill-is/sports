@@ -84,7 +84,11 @@ test_that("the bb/hb publish + extract tests carry no skip gates", {
     # stopping a hand edit to a generated per-sport schema from being silently
     # reverted by the next render, and its ASCII block guards the verified
     # jsonlite <U+2014> corruption.
-    "test-publish-schema-generation.R"
+    "test-publish-schema-generation.R",
+    # WS12's format-agreement check. Its triple-round-robin case is the only
+    # coverage of the fact that 2 * (n_teams - 1) is wrong for four of the
+    # seven measured 2DT cells, which is why n_rounds is published at all.
+    "test-health-format-agreement.R"
   )
   banned <- c("skip(", "skip_if(", "skip_if_not(", "skip_if_not_installed(", "Sys.getenv")
 

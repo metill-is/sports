@@ -251,3 +251,128 @@ check_publish_freshness <- function(leagues,
     value = sprintf("%.0fh old; %d artefact(s)", age_h, length(have))
   )
 }
+
+#' Does a published cell's derived format still match its configured one?
+#'
+#' WARN only, never FAIL: a competition format change is a thing to look at,
+#' not an outage, and the alert channel is a twice-daily email.
+#'
+#' The motivating number is concrete. Icelandic women's handball plays a TRIPLE
+#' round robin -- 8 teams, 84 matches, 21 rounds, `meetings = 3` -- against
+#' `2 * (n_teams - 1) = 14`. Four of the seven measured 2DT cells disagree with
+#' that formula, which is why `n_rounds` is derived and published upstream at
+#' all instead of being recomputed by each consumer. When a federation changes a
+#' format mid-season the derived and configured numbers part company, and this
+#' is the row that says so -- with BOTH numbers in the value, because a WARN
+#' reading only "n_rounds disagrees" costs a diagnostic round trip every time it
+#' fires.
+#'
+#' Emits nothing at all for: a cup cell (INT-6 -- no league table, so
+#' `expected_meetings * (n_teams - 1)` is meaningless); a cell with no publish
+#' output or an unreadable `meta.json` (`check_publish_freshness()` owns that
+#' failure, and two checks reporting one fault is noise); a pre-v2 `meta.json`
+#' with no `n_rounds`; and a division with no configured `expected_meetings`,
+#' which is optional in the config schema and genuinely absent for female
+#' basketball 1D.
+#'
+#' A `config` value of `n_rounds_source` is never a disagreement: the configured
+#' `expected_meetings` is where that number came from, so it cannot disagree
+#' with itself. Only a `schedule`-derived count is compared.
+#'
+#' @param leagues Leagues list, read as passed in (INT-1).
+#' @param root Data root.
+#' @return A health tibble.
+#' @noRd
+check_publish_format_agreement <- function(leagues, root = here::here("data")) {
+  rows <- list()
+  for (key in names(leagues)) {
+    lg <- leagues[[key]]
+    if (!isTRUE(lg$active) || is.null(lg$publish_divisions)) next
+    for (sex in .cell_sexes(lg)) {
+      divs <- lg$publish_divisions[[sex]]
+      if (is.null(divs) || length(divs) == 0L) next
+      for (d in divs) {
+        row <- tryCatch(
+          .publish_format_row(lg, sex, d, root),
+          error = function(e) NULL
+        )
+        if (is.null(row)) next
+        rows[[length(rows) + 1L]] <- health_row(
+          "publish_format", paste(key, sex, d$code),
+          row$status, row$value, row$threshold
+        )
+      }
+    }
+  }
+  if (length(rows) == 0L) health_empty() else dplyr::bind_rows(rows)
+}
+
+#' @noRd
+.publish_format_row <- function(lg, sex, d, root) {
+  if (isTRUE(d$is_cup)) {
+    return(NULL)
+  }
+  dir <- .publish_cell_dir(root, lg$sport, sex, d$slug)
+  meta_path <- file.path(dir, "meta.json")
+  standings_path <- file.path(dir, "standings.json")
+  if (!file.exists(meta_path) || !file.exists(standings_path)) {
+    return(NULL)
+  }
+
+  meta <- jsonlite::read_json(meta_path, simplifyVector = FALSE)
+  if (is.null(meta$n_rounds) || is.null(meta$n_rounds_source)) {
+    return(NULL)
+  }
+  # Nothing configured to compare against is not a fault, and an OK row here
+  # would claim an agreement that was never checked.
+  if (is.null(d$expected_meetings) && is.null(d$qualify$slots)) {
+    return(NULL)
+  }
+
+  # The standings row count is the cheapest honest source of n_teams: it is
+  # what the publisher actually tabled for this cell.
+  standings <- jsonlite::read_json(standings_path, simplifyVector = FALSE)
+  n_teams <- length(standings$rows %||% list())
+  if (n_teams < 2L) {
+    return(NULL)
+  }
+
+  notes <- character()
+  status <- "OK"
+
+  meetings <- d$expected_meetings
+  if (!is.null(meetings) && identical(as.character(meta$n_rounds_source), "schedule")) {
+    derived <- as.integer(meetings) * (n_teams - 1L)
+    if (!identical(as.integer(meta$n_rounds), derived)) {
+      status <- "WARN"
+      notes <- c(notes, sprintf(
+        "published n_rounds=%d (from the schedule) vs %d configured (%d teams x %d meetings)",
+        as.integer(meta$n_rounds), derived, n_teams, as.integer(meetings)
+      ))
+    }
+  }
+
+  # SC-5: the configured shape is `qualify: {slots, label_is}`. There is no
+  # `qualify_slots` key anywhere -- writing one would fail leagues.yml schema
+  # validation and take every script in the repo down with it.
+  slots <- d$qualify$slots
+  if (!is.null(slots) && as.integer(slots) >= n_teams) {
+    status <- "WARN"
+    notes <- c(notes, sprintf(
+      "qualification cut takes %d of %d teams -- not a cut at all",
+      as.integer(slots), n_teams
+    ))
+  }
+
+  if (length(notes) == 0L) {
+    notes <- sprintf(
+      "n_rounds=%d (%s), %d teams",
+      as.integer(meta$n_rounds), meta$n_rounds_source, n_teams
+    )
+  }
+  list(
+    status = status,
+    value = paste(notes, collapse = "; "),
+    threshold = "config agreement"
+  )
+}
