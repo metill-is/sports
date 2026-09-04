@@ -56,6 +56,72 @@ KKI_SEASON_IDS <- list(
 #' @noRd
 KKI_DIVISION_LABELS <- c(div1 = "BD", div2 = "1D")
 
+#' Stable KKI competition identifiers, per (sex, division).
+#'
+#' `league_id` names the competition and does NOT change between seasons;
+#' `season_id` (see [KKI_SEASON_IDS]) rotates every July. Keying the registry
+#' on the stable half is what stops the ingest going silently blind each
+#' autumn: a missing `season_id` is now resolvable from kki.is rather than
+#' being a hand-edited integer that nobody remembers to bump (spec section 6,
+#' finding N3).
+#'
+#' Read live from kki.is on 2026-09-02 and cross-validated: for each of the
+#' four, the season selector's 2025-26 option equals the `season_id` this repo
+#' already holds under `KKI_SEASON_IDS[[sex]][[div]][["2026"]]`
+#' (190 -> 130403, 191 -> 130402, 189 -> 130422, 231 -> 130421). That
+#' agreement is what licenses trusting the same page for an unknown season.
+#'
+#' Source URL shape:
+#'   https://kki.is/motamal/leikir-og-urslit/motayfirlit/Leikir?league_id=<id>
+#' @keywords internal
+#' @noRd
+KKI_LEAGUE_IDS <- list(
+  male = list(
+    div1 = 190L,  # Bonusdeild karla
+    div2 = 191L   # 1. deild karla
+  ),
+  female = list(
+    div1 = 189L,  # Bonusdeild kvenna
+    div2 = 231L   # 1. deild kvenna
+  )
+)
+
+#' Resolve the stable KKI `league_id` for a (sex, division) cell.
+#'
+#' Aborts rather than returning NA on an unresolved cell: a NA id would build
+#' a syntactically valid URL that quietly returns nothing, which is the exact
+#' silent-blindness this registry exists to prevent.
+#'
+#' @param sex "male" or "female".
+#' @param division A key of [KKI_DIVISION_LABELS] ("div1" / "div2").
+#' @return Integer scalar.
+#' @keywords internal
+#' @noRd
+kki_league_id <- function(sex, division) {
+  if (!sex %in% names(KKI_LEAGUE_IDS)) {
+    cli::cli_abort("unknown KKI sex: {.val {sex}}", call = NULL)
+  }
+  by_div <- KKI_LEAGUE_IDS[[sex]]
+  if (!division %in% names(by_div)) {
+    cli::cli_abort(
+      "unknown KKI division: {.val {division}}",
+      call = NULL
+    )
+  }
+  id <- by_div[[division]]
+  if (length(id) != 1L || is.na(id)) {
+    cli::cli_abort(
+      c(
+        "KKI league_id for {.val {sex}}/{.val {division}} has not been resolved.",
+        "i" = "Discover it from the kki.is motayfirlit page and record it in
+               KKI_LEAGUE_IDS."
+      ),
+      call = NULL
+    )
+  }
+  as.integer(id)
+}
+
 #' Build a Baskethotel widget export URL.
 #' @param season_id Integer season identifier.
 #' @param type "results_only" or "schedule_only".

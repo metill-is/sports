@@ -54,3 +54,27 @@ test_that("KKI_SEASON_IDS covers at least the current season for each (sex, div)
   all_ids <- unlist(ids, use.names = FALSE)
   expect_true(all(all_ids > 0))
 })
+
+test_that("KKI_LEAGUE_IDS covers the full (sex, div) grid as typed integers", {
+  expect_setequal(names(KKI_LEAGUE_IDS), c("male", "female"))
+  for (sex in names(KKI_LEAGUE_IDS)) {
+    expect_setequal(names(KKI_LEAGUE_IDS[[sex]]), names(KKI_DIVISION_LABELS))
+    for (div in names(KKI_LEAGUE_IDS[[sex]])) {
+      expect_type(KKI_LEAGUE_IDS[[sex]][[div]], "integer")
+      expect_length(KKI_LEAGUE_IDS[[sex]][[div]], 1L)
+    }
+  }
+})
+
+test_that("kki_league_id returns the known id and aborts on an unknown cell", {
+  expect_identical(kki_league_id("male", "div1"), 190L)
+  expect_error(kki_league_id("male", "nosuchdiv"), "unknown KK. division")
+  expect_error(kki_league_id("nosuchsex", "div1"), "unknown KK. sex")
+})
+
+test_that("kki_league_id aborts, rather than returning NA, on an unresolved id", {
+  local_mocked_bindings(
+    KKI_LEAGUE_IDS = list(male = list(div1 = NA_integer_))
+  )
+  expect_error(kki_league_id("male", "div1"), "not been resolved")
+})
