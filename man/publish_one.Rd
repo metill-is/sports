@@ -55,9 +55,15 @@ mirrors `betting.scoring` (tie thresholds); a `lengjan` change shouldn't
 trigger a republish.
 
 After a successful publish, the resulting JSONs are validated against
-`config/publish-schemas/<sport>/*.schema.json` via `validate_publish_dir()`.
-Failures abort with the list of (file, error) entries -- the cron pipeline
-surfaces the message in its run log so drift between producer and
-platform-side consumer is caught locally. Set `validate = FALSE` for
-synthetic-data tests where the schema would reject the fixture by design.
+`config/publish-schemas/<sport>/*.schema.json` via `validate_publish_dir()`
+-- that sport's subtree only, with the sport named explicitly, so arming one
+sport can never abort another's publish. Failures abort with the list of
+(file, error) entries.
+
+The missing-schema default is FAIL-CLOSED: publishing a sport with no
+`config/publish-schemas/<sport>/` directory aborts rather than skipping with
+a note. A sport that can publish entirely unchecked while the pipeline stays
+green is the shape B4 hid in for months. Set `validate = FALSE` -- the
+documented escape hatch -- for a synthetic-data test whose payload the schema
+would reject by design; never loosen the default.
 }

@@ -31,11 +31,17 @@ extract_partition_exists <- function(extracts_root, sport, country, sex) {
 #' trigger a republish.
 #'
 #' After a successful publish, the resulting JSONs are validated against
-#' `config/publish-schemas/<sport>/*.schema.json` via `validate_publish_dir()`.
-#' Failures abort with the list of (file, error) entries -- the cron pipeline
-#' surfaces the message in its run log so drift between producer and
-#' platform-side consumer is caught locally. Set `validate = FALSE` for
-#' synthetic-data tests where the schema would reject the fixture by design.
+#' `config/publish-schemas/<sport>/*.schema.json` via `validate_publish_dir()`
+#' -- that sport's subtree only, with the sport named explicitly, so arming one
+#' sport can never abort another's publish. Failures abort with the list of
+#' (file, error) entries.
+#'
+#' The missing-schema default is FAIL-CLOSED: publishing a sport with no
+#' `config/publish-schemas/<sport>/` directory aborts rather than skipping with
+#' a note. A sport that can publish entirely unchecked while the pipeline stays
+#' green is the shape B4 hid in for months. Set `validate = FALSE` -- the
+#' documented escape hatch -- for a synthetic-data test whose payload the schema
+#' would reject by design; never loosen the default.
 #'
 #' @param static Per-league static slice (sport, country, ...).
 #' @param betting Per-league `betting` slice.
@@ -120,16 +126,47 @@ publish_one <- function(static, betting, key, sex,
 .validate_or_abort <- function(output_root, sport, key, sex,
                               schema_dir = here::here("config", "publish-schemas")) {
   sport_dir <- file.path(output_root, sport)
-  if (!dir.exists(sport_dir) || !dir.exists(schema_dir)) {
-    return(invisible(NULL))
+
+  # FAIL CLOSED on a missing schema root. It means a broken checkout, not a
+  # reason to publish unchecked.
+  if (!dir.exists(schema_dir)) {
+    cli::cli_abort(
+      c(
+        "publish_one({key}/{sex}): no schema root at {.path {schema_dir}}.",
+        "i" = "A missing schema root is a broken checkout, not a reason to
+               publish unvalidated."
+      ),
+      call = NULL
+    )
   }
-  if (!dir.exists(file.path(schema_dir, sport))) {
-    # No schemas for this sport yet (e.g. basketball / handball pre-F6).
-    # Skip with an informational note.
-    cli::cli_alert_info(
-      "publish_one({key}/{sex}): no schemas at {schema_dir}/{sport}/ -- skipping validation"
+
+  # The publisher just ran and wrote nothing for this sport. Worth a line in
+  # the log, but not a contract breach -- aborting here would turn every
+  # legitimate no-op into a red run.
+  if (!dir.exists(sport_dir)) {
+    cli::cli_alert_warning(
+      "publish_one({key}/{sex}): nothing written under {.path {sport_dir}} -- nothing to validate"
     )
     return(invisible(NULL))
+  }
+
+  # FAIL CLOSED on a sport with no schemas. This used to be an informational
+  # skip, which is the fail-open end of the contract and the same shape as B4:
+  # a sport could be completely unchecked while the pipeline stayed green. All
+  # three sports that reach publish_one() are armed as of 2026-09-04.
+  # publish_world_cup() (R/wc-publish.R) never calls publish_one() or this
+  # function -- verified by grep, and pinned by a test -- so world_cup, which
+  # has no schema directory by design, is untouched.
+  if (!dir.exists(file.path(schema_dir, sport))) {
+    cli::cli_abort(
+      c(
+        "publish_one({key}/{sex}): no schemas at {.path {file.path(schema_dir, sport)}}.",
+        "i" = "Add the sport's schemas (see config/publish-schemas/README.md),
+               or pass {.code validate = FALSE} for a synthetic-data test whose
+               payload the schema would reject by design."
+      ),
+      call = NULL
+    )
   }
 
   # The sport's OWN subtree, with the sport named explicitly. Validating

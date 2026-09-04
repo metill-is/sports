@@ -69,9 +69,14 @@ test_that("publish_one has no fit-RDS input left", {
   )
   expect_equal(grep("fit\\.rds", src, value = TRUE), character())
   expect_equal(grep('beliefs", "fits"', src, value = TRUE), character())
-  # And the argument list carries nothing fit-shaped.
+  # And the argument list carries nothing fit-shaped. This is the final SC-7
+  # signature: end_date seventh (WS9), schema_dir EIGHTH (WS11). Both are
+  # defaulted and passed by name everywhere.
   expect_equal(
     names(formals(publish_one)),
-    c("static", "betting", "key", "sex", "root", "validate", "end_date")
+    c(
+      "static", "betting", "key", "sex", "root", "validate", "end_date",
+      "schema_dir"
+    )
   )
 })

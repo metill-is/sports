@@ -6,6 +6,8 @@ paths:
   - "data/publish/**"
   - "data/beliefs/extracts/**"
   - "scripts/05_publish.R"
+  - "config/publish-schemas/**"
+  - "tools/gen-publish-schemas.R"
 ---
 
 # Publish Layer
@@ -209,15 +211,23 @@ Schema-only iterations on the publisher run via the `republish.yml`
 `workflow_dispatch` Action, which calls `scripts/05_publish.R` without
 re-fitting.
 
-## Basketball + handball (legacy fit-based path; seasonally paused)
+## Basketball + handball (extracts tree, since 2026-09-04)
 
-`publish_<sport>_iceland(fit, league, sex)` reads from the fit RDS at
-`data/beliefs/fits/sport=X/country=Y/sex=Z/fit.rds` and writes to
-`data/publish/{sport}/iceland/{karla,kvenna}/` (no division split —
-only the top division is modelled). Migration to the extraction layer
-+ a per-division split is deferred to the autumn 2026 cutover.
+There is no per-sport 2DT publisher any more. `publish_basketball_iceland()`
+and `publish_handball_iceland()` are DELETED, and both sports go through
+`publish_one()` → `publish_iceland_league()` on the same extracts path
+football uses, emitting the same ten JSONs per cell into
+`data/publish/{sport}/iceland/{sex}-{slug}/`. That was B4: the old publishers
+read `data/beliefs/fits/.../fit.rds`, a path `.gitignore` excludes and CI never
+produces, so they warned and returned `invisible(NULL)` — exit 0, nothing
+published, no health row — for months.
 
-**Currently paused.** Icelandic basketball + handball regular seasons
+The 32 un-suffixed JSONs those publishers left at
+`data/publish/{sport}/iceland/{karla,kvenna}/` were deleted on 2026-09-04 as
+the schema-arming precondition; `tests/testthat/test-publish-legacy-cells.R`
+stops that shape coming back.
+
+**Seasonally paused.** Icelandic basketball + handball regular seasons
 finished in late April 2026; the playoff brackets aren't modelled.
 CI's last basketball publish was 2026-04-29 (`f230c47`); last handball
 publish was 2026-04-30 (`a4741b0`). Fits may still occur if completed
@@ -380,13 +390,16 @@ Stjarnan and Breiðablik field handball and basketball teams under the same club
 name, so joining the static male-top-flight ground table on another sport would
 publish an outdoor football ground for an indoor fixture.
 
-**Schema state.** The v2 keys are not yet in
-`config/publish-schemas/football/*.schema.json`. Nothing there sets
-`additionalProperties: false`, so football still validates clean
-(`ok = TRUE, 92 files, 0 errors, 0 unmatched`, measured 2026-09-04). The exact
-shapes `_base` must gain — plus three `required`-array subtractions the bb/hb
-deltas need — are specified in the WS11 section of
-`docs/superpowers/plans/2026-09-04-plan-b-publish-layer.md`.
+**Schema state (2026-09-04).** The v2 keys are typed in
+`config/publish-schemas/_base/meta.json` and rendered into all three sports.
+They are REQUIRED for basketball and handball, whose cells are new and emit the
+full contract from their first publish, and OPTIONAL for football, whose live
+tree was published before v2 landed. `.validate_or_abort()` validates the
+publishing sport's whole subtree, not just the cell it wrote, so requiring a v2
+key of football today would make its next publish abort on its own
+not-yet-republished siblings — male failing on the four female cells and vice
+versa. Tightening football's `required` is a follow-up for whenever its tree is
+next fully republished.
 
 ## Schema features (as of 2026-05-03)
 
@@ -470,30 +483,58 @@ longer mirrors a file no consumer reads.
 
 See [memory: project_publish_consumers](../../.claude/projects/-Users-brynjolfurjonsson-sports/memory/project_publish_consumers.md).
 
-## Schema validation (since 2026-05-26)
+## Schema validation (since 2026-05-26; generated + fail-closed 2026-09-04)
 
 Every JSON the publishers emit is validated against
-`config/publish-schemas/<sport>/<file>.schema.json` (sport-namespaced) or
-`config/publish-schemas/<file>.schema.json` (sport-agnostic fallback) via
-`R/validate-publish.R::validate_publish_dir()`. `publish_one()` calls it
-at the end of each successful publish; on failure the daily-driver and
-`republish.yml` workflow both abort via `cli::cli_abort()`, leaving the
-previous JSONs on disk (writes are idempotent — no truncate-before-write).
+`config/publish-schemas/<sport>/<file>.schema.json` via
+`R/validate-publish.R::validate_publish_dir()`. `publish_one()` calls it at the
+end of each successful publish, and on failure aborts via `cli::cli_abort()`,
+leaving the previous JSONs on disk (writes are idempotent — no
+truncate-before-write). `config/publish-schemas/README.md` is the full
+contract; three things belong here because getting them wrong is silent.
 
-Today only football schemas exist (`config/publish-schemas/football/`).
-Basketball + handball legacy JSONs land in `unmatched` (informational,
-not errors) until F6 migrates them onto the football shape at the autumn
-2026 cutover. The unmatched path also lets future producer-side artefacts
-ship before their schema is written — the contract is opt-in per filename.
+**The per-sport schemas are GENERATED.** `config/publish-schemas/_base/` holds
+the shared contract as `<name>.json`; `_delta/<sport>/<name>.json` is an RFC-7386
+patch; `Rscript tools/gen-publish-schemas.R` renders `<sport>/<name>.schema.json`.
+Never hand-edit a file under `<sport>/` — the next render reverts it and
+`test-publish-schema-generation.R` goes red. Two traps the generator encodes: a
+delta touching `required` replaces the array WHOLESALE (forgetting an entry
+silently relaxes that sport's contract), and the whole tree is enforced pure
+ASCII because `jsonlite::toJSON()` renders a UTF-8 em-dash as the literal
+7-character string `<U+2014>` even when `Encoding()` says "UTF-8".
+`_base` files are named `<name>.json` rather than `<name>.schema.json`
+precisely so `_base` cannot resolve as if it were a sport.
+
+**Validation is scoped to the publishing sport's OWN subtree, with the sport
+named explicitly.** Validating the whole tree meant arming ANY sport armed it
+inside EVERY other sport's publish call, so one sport's bad JSON aborted
+another's publish. The obvious fix — narrowing `dir` to the sport subtree —
+fails OPEN: `validate_publish_dir()` derives the sport from the first path
+segment relative to `dir`, which for a subtree is `"iceland"`, so no schema
+resolves, every file lands in `unmatched` and it returns `ok = TRUE,
+n_files = 0` with nothing checked. The explicit `sport` argument IS the fix.
+A reviewer seeing only the path change should reject it.
+
+**The missing-schema default is fail-CLOSED.** A sport with no
+`config/publish-schemas/<sport>/` directory used to publish with an
+informational "skipping validation" note and exit 0 — the same
+unchecked-but-green shape as B4. It now aborts. All three sports that reach
+`publish_one()` are armed (football since 2026-05-26, basketball and handball
+since 2026-09-04). `publish_world_cup()` (`R/wc-publish.R`) never calls
+`publish_one()` or `.validate_or_abort()` — verified by grep and pinned by a
+test — so `world_cup`, which has no schema directory by design, is untouched.
+The escape hatch for a synthetic-data test whose payload the schema would
+reject by design is `validate = FALSE`, never loosening the default. A sport
+that published NOTHING stays a warning rather than an abort.
 
 Cross-repo: `metill-platform/scripts/validate_publish.py` mirrors the R
-validator using `fastjsonschema`. It runs inside `pull-sports-data.yml`
-between rsync and commit; exit-non-zero stops the workflow before the
-deploy-chain dispatch (F3) fires. Schemas ship from sports to platform
-via the same rsync — single source of truth at
-`config/publish-schemas/`, lands at `data/ithrottir-schemas/` on the
-platform side. See `config/publish-schemas/README.md` for the full
-contract.
+validator using `fastjsonschema`. It runs inside `pull-sports-data.yml` between
+rsync and commit; exit-non-zero stops the workflow before the deploy-chain
+dispatch fires and production stays on the last-known-good payload. Schemas
+ship via the same rsync from ONE clone at ONE SHA, so schema and JSON can never
+skew — which also means **arming a sport is immediate on the platform side**.
+Delete any non-conforming JSON for that sport BEFORE the arming commit, never
+after, or the platform validator fails closed and freezes the site.
 
 ## The stored quantile grid
 

@@ -107,3 +107,86 @@ test_that("publish_one carries schema_dir as its eighth formal", {
     c("static", "betting", "key", "sex", "root", "validate", "end_date", "schema_dir")
   )
 })
+
+# ---- WS11 T8: the missing-schema default is fail-CLOSED ---------------------
+#
+# Until now a sport with no config/publish-schemas/<sport>/ directory published
+# with an informational "skipping validation" note and exited 0. That is the
+# fail-open end of the contract, and it is the same shape as B4: a sport can be
+# completely unchecked and the pipeline stays green. All three sports that go
+# through publish_one() are now armed, so the default inverts.
+#
+# publish_world_cup() is NOT affected, re-verified by grep rather than trusted:
+# R/wc-publish.R contains no reference to publish_one, .validate_or_abort or
+# validate_publish_dir, and its only caller is scripts/wc/forecast.R. world_cup
+# has no schema directory and is not getting one.
+
+.sch_football_only <- function(env = parent.frame()) {
+  sch <- withr::local_tempdir(.local_envir = env)
+  file.copy(
+    here::here("config", "publish-schemas", "football"), sch,
+    recursive = TRUE
+  )
+  sch
+}
+
+test_that(".validate_or_abort aborts when a sport has no schema directory", {
+  out <- .arm_tree()
+  hb <- file.path(out, "handball", "iceland", "karla-od")
+  dir.create(hb, recursive = TRUE)
+  writeLines("{}", file.path(hb, "meta.json"))
+  sch <- .sch_football_only()
+
+  expect_error(
+    .validate_or_abort(
+      out,
+      sport = "handball", key = "handball_iceland", sex = "male",
+      schema_dir = sch
+    ),
+    "no schemas"
+  )
+  # ...and football, which IS armed there, still passes.
+  expect_no_error(.validate_or_abort(
+    out,
+    sport = "football", key = "football_iceland", sex = "male",
+    schema_dir = sch
+  ))
+})
+
+test_that(".validate_or_abort aborts when the schema ROOT is missing", {
+  # A missing schema root is a broken checkout, not a reason to publish
+  # unchecked.
+  out <- .arm_tree()
+  expect_error(.validate_or_abort(
+    out,
+    sport = "football", key = "football_iceland", sex = "male",
+    schema_dir = file.path(tempdir(), "definitely-not-a-schema-root")
+  ))
+})
+
+test_that("a sport that published nothing is a warning, not an abort", {
+  # The publisher just ran; an absent sport directory means it wrote nothing,
+  # which is worth a line in the log but is not a contract breach. Aborting
+  # here would turn every legitimate no-op into a red run.
+  out <- .arm_tree()
+  expect_no_error(suppressMessages(.validate_or_abort(
+    out,
+    sport = "handball", key = "handball_iceland", sex = "male",
+    schema_dir = here::here("config", "publish-schemas")
+  )))
+})
+
+test_that("publish_world_cup never reaches the validation path", {
+  # Re-grepped rather than trusted: the inversion above would otherwise abort
+  # world_cup, which has no schema directory by design.
+  src <- readLines(
+    testthat::test_path("..", "..", "R", "wc-publish.R"),
+    warn = FALSE
+  )
+  for (fn in c("publish_one", ".validate_or_abort", "validate_publish_dir")) {
+    expect_equal(grep(fn, src, fixed = TRUE), integer(), info = fn)
+  }
+  expect_null(.resolve_schema_path(
+    here::here("config", "publish-schemas"), "world_cup", "meta.json"
+  ))
+})
