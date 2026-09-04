@@ -220,7 +220,7 @@ ingest_one_league <- function(static, key, active_path,
     # An ERRORED fetch propagates: a broken scraper must red-X CI, and must
     # never be recorded, or it would accrue a zero streak and earn itself a
     # backoff that hides it.
-    n <- ingest_league(static, sex, seasons = NULL)
+    n <- ingest_league(static, sex, root = root, seasons = NULL)
     n <- if (is.null(n) || is.na(n)) 0L else as.integer(n)
 
     prev_streak <- if (is.null(log[[id]]$zero_streak)) {
