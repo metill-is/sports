@@ -1169,6 +1169,82 @@ SEQUENCING AND THE STOP POINT. Football is live and cron-published several times
 - INVARIANT (tested): data/publish/{basketball,handball}/iceland/ contains only directories matching ^(karla|kvenna)-[a-z0-9]+$.
 - tests/testthat/{test-publish-schema-arming.R, test-publish-schema-generation.R, test-publish-schema-2dt.R, test-publish-legacy-cells.R}  # no skip()/skip_if()/Sys.getenv anywhere.
 
+### WS10 handoff, measured 2026-09-04 — the exact v2 shapes `_base` must carry
+
+WS10 tasks 3-7 have landed. Task 8 was NOT executed as drafted: per SC-8 it
+must not hand-edit `config/publish-schemas/football/`, and WS11 task 3 (the
+generator plus `_base`/`_delta`) has not landed yet, so there is nothing to
+edit. This section is task 8's deliverable — the specification WS11 task 3
+folds into `_base`, and WS11 task 5 subtracts from in the bb/hb deltas.
+
+**Nothing is broken while this is pending.** Verified on freshly published
+football output from the pinned fixture: `validate_publish_dir(<out>/football,
+sport = "football")` returns `ok = TRUE, n_files = 92, n_errors = 0,
+unmatched = 0`. No schema in `config/publish-schemas/football/` sets
+`additionalProperties: false`, so the v2 keys are accepted as unknown-but-
+permitted and the arming order is unaffected.
+
+**Two corrections to WS11's own Consumes bullet, which is wrong as written.**
+
+1. `n_rounds_source` is NOT `{schedule, config}`. It has FOUR values —
+   `["config", "schedule", "none", "not_applicable"]` — and all four are
+   emitted today (football's two bikar cells publish `not_applicable`). A
+   two-value enum in `_base` rejects them.
+2. `p_qualify` is NOT on `points_distribution`, and it is not on every
+   `final_positions` either. It is emitted only where the division configures
+   a `qualify` cut, which today is football Besta deild (both sexes) alone. It
+   must be OPTIONAL in `_base`.
+
+**`_base/meta.schema.json`** — add to `properties`, and to `required` except
+where noted:
+
+| key | shape |
+|---|---|
+| `n_rounds` | `{"type": ["integer", "null"], "minimum": 1}` — null on a cup |
+| `n_rounds_source` | `{"enum": ["config", "schedule", "none", "not_applicable"]}` |
+| `units` | object, required `strength`, `home_advantage` (strings), `diff_bin_width` (integer >= 1) |
+| `points` | object, required `win` (integer), `draw` (`["integer","null"]` — basketball is null), `loss` (integer) |
+| `season_scope` | `{"enum": ["full_season", "regular_season"]}` |
+| `postseason` | `{"type": ["object", "null"]}` with `name_is` (string) + `modelled` (boolean). NOT in `required` — it is null for football |
+| `qualify` | `{"type": ["object", "null"]}` with `slots` (integer) + `label_is` (string). IN `required`, value nullable |
+| `relegation` | object, required `slots` (`["integer","null"]`; null everywhere today — no division configures `relegation_slots`) |
+
+The `division` pattern is already relaxed to `^[A-Z0-9][A-Z0-9_]*$` for
+basketball's `1D`; that stands (SC-10).
+
+**`_base/final_positions.schema.json`**:
+
+- add top-level `basis` `{"enum": ["final_table", "regular_season_table"]}`,
+  and to `required`.
+- `summary[]` items: add `p_top_of_table` (number 0-1) to `properties` AND to
+  `required` — every sport emits it. Add `p_qualify` (number 0-1) to
+  `properties` only, NOT to `required`.
+- MOVE `p_winner` and `p_top_six` OUT of `required` into optional. They are
+  football-only from here: `p_winner` is emitted only when
+  `basis == "final_table"`, and `p_top_six` is a deprecated football alias.
+  WS11 task 5's bb/hb deltas must then restate the whole `required` array
+  (RFC 7386 replaces arrays wholesale) as
+  `["team", "p_top_of_table", "p_relegation"]`.
+
+**`_base/points_distribution.schema.json`** — a THIRD subtraction WS11 has not
+budgeted for. Its `summary[]` `required` array currently lists `p_top_six`,
+`p_winner` and `p_relegation`. Basketball and handball emit
+`p_top_of_table` and `p_relegation` there instead, so `p_top_six` and
+`p_winner` must move to optional in `_base` and the bb/hb deltas must restate
+`required` as `["team", "mean_points", "median_points", "lower_80",
+"upper_80", "base_points", "p_top_of_table", "p_relegation"]`.
+
+`points_distribution.json` does NOT gain a top-level `basis`, contrary to
+WS10's own Produces list. It is one of the eight artefacts the golden
+regeneration asserts byte-identical, and adding a key there would have put a
+third basename in the changed set. If the platform needs the basis alongside
+the points distribution it reads it from `meta.season_scope`.
+
+**Follow-up that needs to exist as a tracked commit, not as prose:** removing
+the `p_top_six` alias (and its `emit_top_six_alias` argument in
+`.build_placement_summary()`) once metill-platform reads `p_qualify`. That
+commit collapses the points_distribution split above at the same time.
+
 ### Task 1: `.validate_or_abort()` gains a `schema_dir` parameter; `publish_one()` threads it
 
 **Files:**

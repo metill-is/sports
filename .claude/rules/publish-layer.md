@@ -264,6 +264,19 @@ the 2DT models are additive in raw points/goals while football's
 bivariate Poisson is on the log scale, and reading that off the wrong
 sport is the B5 bug wearing a metadata label.
 
+The reader surfaces it WHOLE, as `read_extracted_iceland()$fit_meta`, next to
+`sim_inputs` and `cup_bracket` — never inside a per-division slot. Running it
+through the split filtered it to zero rows on every cell, which is why every
+basketball and handball cell published `n_draws: 0` until 2026-09-04.
+`.read_partition_extract()` aborts if a partition-level file ever grows a
+`division` column, so the next such file cannot repeat it.
+
+`meta.json::n_draws` resolves in this order: football's per-fit `sim_inputs`
+scalar table, then its scoreline-count sum, then `fit_meta$n_draws`. fit_meta is
+authoritative and last on purpose — on a real football partition all three
+agree, so ordering it first would move no production number but would move the
+pinned fixture, whose synthetic counts round to 48 against a fit_meta of 50.
+
 It stays in `sport_publish_profile()$optional_extracts` for every sport.
 `required_extracts` drives the reader's partition-completeness check, so
 promoting it would mark every football partition written before the
@@ -290,6 +303,90 @@ all four handball cells unchanged.
 `predicted_matches.parquet` is built from the UNCUT fixture set — a next
 game is a next game — while the league-table simulation caps upcoming
 fixtures at the boundary.
+
+**Only a CONFIGURED boundary deletes played rows.** `.regular_season_cut(rows,
+format)` cuts at `.publish_n_rounds()$cut`, which is `n_rounds` when
+`source == "config"` and `NA` otherwise. A schedule-derived `n_rounds` is
+computed FROM the played and scheduled rows, so cutting those same rows by it
+is circular: it can never identify a post-season row, and it CAN delete
+regular-season rows wherever `round` is stamped on a different axis from
+appearance counting. Measured 2026-09-04: the schedule branch is the identity
+on real data in every cell (all nine football cells, basketball female 1D
+98 → 98), while the ungated filter deleted one played match from six football
+cells and one basketball cell of the synthetic fixture. The FORWARD half
+(`.regular_season_game_nrs_2dt()`) is deliberately NOT gated — capping how many
+fixtures remain is a question about season LENGTH, which both sources answer.
+
+## meta.json v2 + the D3 relabel (since 2026-09-04)
+
+Every published cell of all three sports is self-describing, so no consumer
+does league arithmetic. `metill-platform` used to compute
+`total_rounds = 2 * (n_teams - 1)` (`ithrottir.py:406`) and
+`max_points = round_num * 3` (`og.py:696`); both are facts the producer can see
+in the data and the consumer cannot.
+
+`.build_publish_meta()` (`R/publish-format.R`) copies the v1 ten-key block
+VERBATIM — key order is part of the payload identity, because
+`publish_json_digest()` hashes the parsed list — and appends, in this order:
+
+| key | contract |
+|---|---|
+| `n_rounds` | integer or null. Cups are null. |
+| `n_rounds_source` | `config` / `schedule` / `none` / `not_applicable`. |
+| `units` | `{strength, home_advantage, diff_bin_width}` from the profile. |
+| `points` | `{win, draw, loss}`; basketball's `draw` is **null**, not 0. |
+| `season_scope` | `full_season` (football) / `regular_season` (bb+hb). |
+| `postseason` | null (football) or `{name_is: "Úrslitakeppni", modelled: false}`. |
+| `qualify` | null, or `{slots, label_is}` from `.iceland_division_qualify()`. |
+| `relegation` | `{slots}`, null where unconfigured. |
+
+The builder ABORTS when `round > n_rounds`: a published cell that would render
+a negative "Umferðir eftir" is refused at the producer rather than clamped at
+the consumer.
+
+`final_positions.json` carries a top-level `basis` (`final_table` /
+`regular_season_table`) and its summary is built by
+`.build_placement_summary()`:
+
+- `p_top_of_table` = P(placement == 1) — every sport, under a name that cannot
+  be misread as *Íslandsmeistari*.
+- `p_winner` — **only** when `basis == "final_table"`. For basketball and
+  handball the league table decides the *deildarmeistari*; the Íslandsmeistari
+  comes out of an úrslitakeppni this model does not simulate (spec §15, D3).
+- `p_qualify` — only where the division configures `qualify`; football Besta
+  deild alone today, where it equals `p_top_six` exactly.
+- `p_top_six` — football only, the literal `placement <= 6L`, a DEPRECATED
+  alias kept because metill-platform reads it. It is not derived from
+  `qualify`, so the five football cells with no configured cut keep it.
+- `p_relegation` — `relegation_slots` unset keeps football's published
+  `placement >= n_teams - 1` expression verbatim; `0` publishes zeros,
+  present-and-zero rather than a missing key.
+
+`points_distribution.json`'s summary carries the placement columns it has
+always carried (football `p_top_six`/`p_winner`/`p_relegation`, bb/hb
+`p_top_of_table`/`p_relegation`) and gains no new key: it is one of the eight
+artefacts the golden manifest asserts byte-identical across the v2 change.
+
+**No `p_top_six`, `p_playoff` or qualification probability is emitted for
+basketball or handball.** Measured on season 2026, the four basketball cells
+qualify 8 of 12, 8 of 12, **10 of 10** and 4 of 11 teams for the post-season —
+four cells, four structures, and the women's Bónusdeild takes every team
+through. No per-division integer expresses that, and shipping one is the
+"top-six number wearing a playoff label" failure D3 exists to prevent.
+
+The venue lookup in `next_games.json` is football's alone
+(`.publish_venues_pfi()`, `R/publish-next-games.R`): Valur, KA, Fram, ÍBV,
+Stjarnan and Breiðablik field handball and basketball teams under the same club
+name, so joining the static male-top-flight ground table on another sport would
+publish an outdoor football ground for an indoor fixture.
+
+**Schema state.** The v2 keys are not yet in
+`config/publish-schemas/football/*.schema.json`. Nothing there sets
+`additionalProperties: false`, so football still validates clean
+(`ok = TRUE, 92 files, 0 errors, 0 unmatched`, measured 2026-09-04). The exact
+shapes `_base` must gain — plus three `required`-array subtractions the bb/hb
+deltas need — are specified in the WS11 section of
+`docs/superpowers/plans/2026-09-04-plan-b-publish-layer.md`.
 
 ## Schema features (as of 2026-05-03)
 
