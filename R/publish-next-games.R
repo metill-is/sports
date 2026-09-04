@@ -152,3 +152,32 @@ NULL
       "goal_diff_distribution"
     )
 }
+
+# Static home-ground lookup for the football male top flight, joined on the HOME
+# team. Returns NULL for every other sport, and that is the point rather than a
+# tidiness choice: Valur, KA, Fram, IBV, Stjarnan and Breidablik all field
+# handball and basketball teams under the SAME club name, so handing this table
+# to another sport publishes an outdoor football ground for an indoor fixture.
+# The 2DT sports have no ground table, so `venue` is null for them -- which is
+# what the platform's fixture card already treats as optional.
+# @noRd
+.publish_venues_pfi <- function(sport) {
+  if (!identical(sport, "football")) {
+    return(NULL)
+  }
+  tibble::tribble(
+    ~team, ~venue,
+    "Brei\u00f0ablik", "K\u00f3pavogsv\u00f6llur",
+    "FH", "Kaplakrikav\u00f6llur",
+    "Fram", "Laugardalsv\u00f6llur",
+    "KA", "KA-v\u00f6llurinn",
+    "KR", "KR-v\u00f6llur",
+    "Keflav\u00edk", "Nettov\u00f6llurinn",
+    "Stjarnan", "Stj\u00f6rnuv\u00f6llur",
+    "Valur", "Hl\u00ed\u00f0arendi",
+    "V\u00edkingur R.", "V\u00edkingsv\u00f6llur",
+    "\u00cdA", "Nor\u00f0ur\u00e1lsv\u00f6llurinn",
+    "\u00cdBV", "H\u00e1steinv\u00f6llur",
+    "\u00de\u00f3r", "\u00de\u00f3rsv\u00f6llur"
+  )
+}

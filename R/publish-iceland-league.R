@@ -924,22 +924,6 @@ publish_iceland_league <- function(extracted,
 
     # ---- next_games.json ----------------------------------------------------
 
-    male_top_division_venues <- tibble::tribble(
-      ~team, ~venue,
-      "Brei\u00f0ablik", "K\u00f3pavogsv\u00f6llur",
-      "FH", "Kaplakrikav\u00f6llur",
-      "Fram", "Laugardalsv\u00f6llur",
-      "KA", "KA-v\u00f6llurinn",
-      "KR", "KR-v\u00f6llur",
-      "Keflav\u00edk", "Nettov\u00f6llurinn",
-      "Stjarnan", "Stj\u00f6rnuv\u00f6llur",
-      "Valur", "Hl\u00ed\u00f0arendi",
-      "V\u00edkingur R.", "V\u00edkingsv\u00f6llur",
-      "\u00cdA", "Nor\u00f0ur\u00e1lsv\u00f6llurinn",
-      "\u00cdBV", "H\u00e1steinv\u00f6llur",
-      "\u00de\u00f3r", "\u00de\u00f3rsv\u00f6llur"
-    )
-
     next_games_out <- .next_games_rows_pfi(
       predicted = predicted_matches,
       profile = profile,
@@ -947,7 +931,7 @@ publish_iceland_league <- function(extracted,
       family_divs = family_divs,
       division_badges = .iceland_division_badges(league_key, sex),
       end_date = end_date,
-      venues = male_top_division_venues
+      venues = .publish_venues_pfi(league$sport)
     )
 
     write_json_consistent(

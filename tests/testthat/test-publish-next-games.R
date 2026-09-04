@@ -183,3 +183,19 @@ test_that("match_summary accepts the reader's division-stripped per-cell slice",
     unname(.iceland_division_badges("basketball_iceland", "male")[["BD"]])
   )
 })
+
+test_that("the football ground table is football's alone", {
+  # Valur, KA, Fram, IBV, Stjarnan and Breidablik all field handball and
+  # basketball teams under the SAME club name, so joining this static football
+  # table on another sport publishes an outdoor football ground for an indoor
+  # fixture. The fixture teams are synthetic, so no cross-cell payload
+  # assertion can catch it -- this is the check that can.
+  expect_null(.publish_venues_pfi("basketball"))
+  expect_null(.publish_venues_pfi("handball"))
+
+  fb <- .publish_venues_pfi("football")
+  expect_true(tibble::is_tibble(fb))
+  expect_equal(names(fb), c("team", "venue"))
+  expect_equal(nrow(fb), 12L)
+  expect_true("Valur" %in% fb$team)
+})
