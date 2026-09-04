@@ -15,10 +15,15 @@ same shape: **symptom -> diagnose -> fix -> verify**.
 
 ## First principles
 
-- **Confirm-intent before "fixing".** A `PAUSED` cell (basketball/handball
-  off-season) and the schedule fail-open are intentional, not faults. Several
-  workflow behaviours look like bugs but are by design (the decide-publish
-  dual-parent trigger; the kelly_frac operational cut). Surface, don't auto-fix.
+- **Confirm-intent before "fixing".** Several states that look like faults are
+  deliberate: a basketball/handball cell producing no ODDS (both are
+  `betting.enabled: false` -- publish-only, decision D2), the ingest backoff
+  reporting "treating as off-season", and the schedule fail-open. Several
+  workflow behaviours are likewise by design (the decide-publish dual-parent
+  trigger; the kelly_frac operational cut). Surface, don't auto-fix.
+  The old "`PAUSED` = basketball/handball off-season until autumn 2026"
+  reading is retired: as of 2026-09 both sports are in season and ingesting.
+  See [season-restart.md](season-restart.md).
 - **Never mutate the ledger by hand.** `data/decisions/ledger/` is the canonical
   money record (L1-L4). Bet parameters are frozen at write time; settlement only
   flips `settled` / `win` / `pnl`. See [orphaned-bet.md](orphaned-bet.md).
