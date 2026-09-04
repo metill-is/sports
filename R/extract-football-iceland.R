@@ -131,7 +131,7 @@ NULL
   # team's global round number; the helper maps that to division-specific
   # matchweeks. For LD this gives an LD-only round trajectory.
 
-  trajectory_long <- .compute_team_strength_trajectory_pfi(
+  trajectory_long <- .compute_team_strength_trajectory(
     fit = fit,
     results = results,
     teams = teams,

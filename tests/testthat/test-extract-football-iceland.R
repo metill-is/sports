@@ -958,7 +958,7 @@ test_that(".extract_division_parquets_pfi: split cell keeps split-phase predicte
     component = character(), location = character(), value = numeric()
   )
   testthat::local_mocked_bindings(
-    .compute_team_strength_trajectory_pfi = function(...) empty_trajectory
+    .compute_team_strength_trajectory = function(...) empty_trajectory
   )
 
   extract_parts <- function(split_config) {

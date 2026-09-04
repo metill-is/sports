@@ -34,7 +34,12 @@ test_that("the bb/hb publish + extract tests carry no skip gates", {
     # WS10's single-source-of-truth check on the goal-diff bin width. It is the
     # only thing stopping meta.units.diff_bin_width from drifting away from the
     # width the 2DT extractors actually binned with.
-    "test-publish-profile-units.R"
+    "test-publish-profile-units.R",
+    # WS8's sport-neutral per-round strength trajectory. It is the helper the
+    # bb/hb round_strengths_quantiles surface is built from, so a skip here
+    # would retire the only exact check of the (matchweek -> fit round index)
+    # mapping all three sports share.
+    "test-strength-trajectory.R"
   )
   banned <- c("skip(", "skip_if(", "skip_if_not(", "skip_if_not_installed(", "Sys.getenv")
 
