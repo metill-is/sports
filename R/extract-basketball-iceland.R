@@ -1,4 +1,4 @@
-#' @include extract-iceland-2dt-shared.R config.R
+#' @include extract-iceland-2dt-shared.R config.R publish-profile.R
 NULL
 
 #' Extract per-fit basketball iceland summaries to a Parquet partition.
@@ -58,7 +58,10 @@ extract_basketball_iceland <- function(fit, league, sex,
     sex = sex,
     sport = "basketball",
     top_div = "BD",
-    bucket_width = 5L,
+    # The bin width comes from the publish profile, not a literal: it is also
+    # published as meta.units.diff_bin_width, and two copies of the number
+    # drift. See tests/testthat/test-publish-profile-units.R.
+    bucket_width = sport_publish_profile("basketball")$units$diff_bin_width,
     bucket_low = -50L,
     bucket_high = 50L,
     has_ties = isTRUE(league$betting$scoring$has_ties),

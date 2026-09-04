@@ -30,7 +30,11 @@ test_that("the bb/hb publish + extract tests carry no skip gates", {
     # basketball data (playoff-overhang.parquet); a skip there would retire the
     # only proof that the embedded urslitakeppni is cut before the league table
     # is simulated.
-    "test-publish-format.R"
+    "test-publish-format.R",
+    # WS10's single-source-of-truth check on the goal-diff bin width. It is the
+    # only thing stopping meta.units.diff_bin_width from drifting away from the
+    # width the 2DT extractors actually binned with.
+    "test-publish-profile-units.R"
   )
   banned <- c("skip(", "skip_if(", "skip_if_not(", "skip_if_not_installed(", "Sys.getenv")
 
