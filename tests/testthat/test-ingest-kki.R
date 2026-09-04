@@ -131,3 +131,82 @@ test_that("the parser returns zero rows, not an error, on a page with no seasons
   expect_equal(nrow(got), 0L)
   expect_named(got, c("season", "season_id", "label"))
 })
+
+# --- WS5: fetch_kki resolves the current season only -------------------------
+
+test_that("fetch_kki defaults to the current season, not every registry key", {
+  # It used to iterate all of 2021-2026, re-downloading five historical
+  # seasons that cannot change: 2 sexes x 2 types x 2 divisions x 6 seasons =
+  # 48 XLSX downloads per ingest run. Now 2 divisions x 1 season per call.
+  calls <- new.env(parent = emptyenv())
+  calls$ids <- integer()
+
+  local_mocked_bindings(
+    kki_current_season = function(...) 2027L,
+    download_baskethotel_xlsx = function(season_id, type) {
+      calls$ids <- c(calls$ids, as.integer(season_id))
+      "stub.xlsx"
+    },
+    parse_baskethotel_xlsx = function(path, sport, country, sex, division,
+                                      season) {
+      tibble::tibble(
+        sport = sport, country = country, sex = sex, division = division,
+        season = season, match_date = as.Date("2026-10-08"),
+        home_team = "A", away_team = "B",
+        home_score = NA_real_, away_score = NA_real_
+      )
+    }
+  )
+
+  out <- fetch_kki(league = NULL, sex = "male", type = "schedule_only")
+
+  # Exactly the two male divisions' 2027 ids -- not 12 fetches.
+  expect_setequal(calls$ids, c(132568L, 132571L))
+  expect_equal(nrow(out), 2L)
+  expect_setequal(out$division, c("BD", "1D"))
+})
+
+test_that("an unresolved season_id warns loudly instead of silently skipping", {
+  local_mocked_bindings(
+    kki_season_id = function(...) NULL,
+    download_baskethotel_xlsx = function(...) stop("must not be reached")
+  )
+  # Both divisions warn, so collect rather than letting the second leak.
+  seen <- character()
+  withCallingHandlers(
+    fetch_kki(league = NULL, sex = "male", seasons = 2099L,
+              type = "schedule_only"),
+    warning = function(w) {
+      seen <<- c(seen, conditionMessage(w))
+      invokeRestart("muffleWarning")
+    }
+  )
+  expect_length(seen, 2L)
+  expect_true(all(grepl("no season_id resolved", seen)))
+  expect_true(any(grepl("div1", seen)) && any(grepl("div2", seen)))
+})
+
+test_that("fetch_kki aborts when the export's dates contradict the season", {
+  # The corruption this guards: an id that silently still serves last season
+  # would be written into a season=2027 hive partition. `season` is a
+  # partition column, so the wrong rows become indistinguishable on disk.
+  local_mocked_bindings(
+    kki_season_id = function(...) 999L,
+    download_baskethotel_xlsx = function(...) "stub.xlsx",
+    parse_baskethotel_xlsx = function(path, sport, country, sex, division,
+                                      season) {
+      tibble::tibble(
+        sport = sport, country = country, sex = sex, division = division,
+        season = season,
+        match_date = as.Date("2021-11-01") + 0:9,   # nowhere near 2027
+        home_team = "A", away_team = "B",
+        home_score = 80, away_score = 75
+      )
+    }
+  )
+  expect_error(
+    fetch_kki(league = NULL, sex = "male", seasons = 2027L,
+              type = "results_only"),
+    class = "sports_season_stamp_error"
+  )
+})
