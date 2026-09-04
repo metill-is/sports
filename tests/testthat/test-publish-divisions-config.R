@@ -11,7 +11,9 @@ test_that("publish_divisions: config block exists with both sexes", {
 test_that("publish_divisions: every entry has the 4 required fields and no unknown ones", {
   cfg <- load_leagues()[["football_iceland"]][["publish_divisions"]]
   required <- c("code", "slug", "label_is", "is_cup")
-  optional <- "split"
+  optional <- c(
+    "split", "code_badge", "expected_meetings", "relegation_slots", "qualify"
+  )
   for (sex_key in names(cfg)) {
     for (i in seq_along(cfg[[sex_key]])) {
       entry <- cfg[[sex_key]][[i]]
@@ -195,4 +197,41 @@ test_that(".football_iceland_division_split: split config keyed by division code
   expect_null(m$LD1)
   expect_null(m$CUP)
   expect_null(f$LD2)
+})
+
+# ---- code_badge + qualify (Plan B WS7 task 2) -------------------------------
+# The badge map used to live in R as .football_iceland_division_code_labels().
+# It moves into config so basketball's Bónusdeild (also coded BD) can carry its
+# own badge instead of colliding with football's BD on the consumer's filter
+# key. Values here MUST stay byte-identical to the retired R map.
+
+test_that("football publish_divisions carries the legacy badge map as code_badge", {
+  legacy <- .football_iceland_division_code_labels()
+  cfg <- load_leagues()[["football_iceland"]][["publish_divisions"]]
+  n_checked <- 0L
+  for (sex_key in names(cfg)) {
+    for (entry in cfg[[sex_key]]) {
+      expect_identical(
+        entry$code_badge, unname(legacy[[entry$code]]),
+        info = sprintf("sex=%s code=%s", sex_key, entry$code)
+      )
+      n_checked <- n_checked + 1L
+    }
+  }
+  expect_gt(n_checked, 0L)
+})
+
+test_that("football BD carries qualify {6, Efri hluti} for both sexes", {
+  # 6 is split$upper (config/leagues.yml BD entries, verified 2026-07-10), so
+  # p_qualify reproduces the existing p_top_six rule `placement <= 6L` at
+  # R/publish-football-iceland.R exactly. No other football cell qualifies.
+  cfg <- load_leagues()[["football_iceland"]][["publish_divisions"]]
+  for (sex_key in c("male", "female")) {
+    bd <- Filter(function(e) identical(e$code, "BD"), cfg[[sex_key]])[[1]]
+    expect_identical(bd$qualify, list(slots = 6L, label_is = "Efri hluti"))
+    others <- Filter(function(e) !identical(e$code, "BD"), cfg[[sex_key]])
+    for (entry in others) {
+      expect_null(entry$qualify, info = sprintf("sex=%s code=%s", sex_key, entry$code))
+    }
+  }
 })
