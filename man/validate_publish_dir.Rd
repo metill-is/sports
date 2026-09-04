@@ -4,7 +4,11 @@
 \alias{validate_publish_dir}
 \title{Validate every JSON in a publish tree against config/publish-schemas/*.}
 \usage{
-validate_publish_dir(dir, schema_dir = here::here("config", "publish-schemas"))
+validate_publish_dir(
+  dir,
+  schema_dir = here::here("config", "publish-schemas"),
+  sport = NULL
+)
 }
 \arguments{
 \item{dir}{Directory containing publish JSONs. Walked recursively.}

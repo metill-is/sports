@@ -93,6 +93,7 @@ Collate:
     'ingest-hsi-handball.R'
     'ingest-kki-basketball.R'
     'ingest-ksi-football.R'
+    'ingest-log.R'
     'model-fit.R'
     'model-posteriors.R'
     'model-league.R'
