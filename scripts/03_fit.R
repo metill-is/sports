@@ -29,30 +29,15 @@ if (nrow(targets) == 0L) {
 leagues <- load_leagues()
 
 cli::cli_h1("Fit Stan models ({nrow(targets)} candidate (league, sex) pairs)")
-fitted <- 0L
-skipped <- 0L
-for (i in seq_len(nrow(targets))) {
-  row <- targets[i, ]
-  league_def <- leagues[[row$key]]
-  static <- league_def[c(
-    "sport", "country", "sexes", "active", "stan_model", "data_source"
-  )]
-
-  # --force refits in-season leagues even without new games, but a bulk
-  # force still skips paused (off-season) leagues -- an explicit --league
-  # overrides that. See fit_skip_reason() for the full rule set.
-  skip <- fit_skip_reason(static, row$sex, opts$force, league_named)
-  if (!is.null(skip)) {
-    cli::cli_alert_info("Skipping {row$key} ({row$sex}): {skip}.")
-    skipped <- skipped + 1L
-    next
-  }
-
-  cli::cli_h2("{row$key} ({row$sex})")
-  fit_one(static, row$sex)
-  fitted <- fitted + 1L
-}
-cli::cli_alert_success("Fit complete: {fitted} fitted, {skipped} skipped")
+# --force refits in-season leagues even without new games, but a bulk force
+# still skips paused (off-season) leagues -- an explicit --league overrides
+# that. See fit_skip_reason() for the full rule set, and run_fit_targets() for
+# why one target's abort must not reach the next.
+res <- run_fit_targets(targets, leagues, force = opts$force, league_named = league_named)
+fitted <- res$fitted
+cli::cli_alert_success(
+  "Fit complete: {fitted} fitted, {res$skipped} skipped, {nrow(res$failed)} failed"
+)
 
 # Retention. data/beliefs/extracts/ is git-tracked and committed by fit.yml on
 # every run, and it is the SOLE publish input, so it cannot simply be ignored.
@@ -70,4 +55,15 @@ if (fitted > 0L) {
        ({round(sum(pruned$bytes) / 1024^2)} MB)."
     )
   }
+}
+
+# Exit non-zero when ANY target failed, not only when all did. A partially
+# failed fit that exits 0 is the warn-and-exit-0 shape basketball and handball
+# hid in for months. This runs AFTER the retention pass so a red run still
+# prunes, and fit.yml's commit step carries `if: always()` so the posteriors
+# that DID fit are committed rather than thrown away with the run.
+if (nrow(res$failed) > 0L) {
+  cli::cli_alert_danger("{nrow(res$failed)} fit target{?s} failed:")
+  print(as.data.frame(res$failed))
+  quit(save = "no", status = 1L)
 }

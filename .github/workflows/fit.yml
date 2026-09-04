@@ -74,6 +74,11 @@ jobs:
         run: Rscript scripts/03_fit.R $FORCE_FLAG $LEAGUE_FLAG
 
       - name: Commit if beliefs changed
+        # A partially failed fit run exits non-zero (one 2DT diagnostics-gate
+        # abort must not hide the targets that DID fit), but the posteriors it
+        # wrote are real and are the publish input. Without always(), a red run
+        # throws away football's fit along with basketball's failure.
+        if: always()
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"

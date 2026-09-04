@@ -336,3 +336,81 @@ fit_one <- function(static, sex) {
   beliefs <- fit_league(league = static, sex = sex)
   nrow(beliefs)
 }
+
+#' Fit every target, isolating a per-target abort.
+#'
+#' The fit loop's skip and failure policy, lifted out of `scripts/03_fit.R` so
+#' it is testable without spawning `Rscript` or compiling Stan.
+#'
+#' WHY THIS EXISTS. `fit_model()` ABORTS on a diagnostics-gate breach, and
+#' `fit_skip_reason()`'s own docstring records real off-season basketball
+#' R-hat/ESS breaches. Basketball (`config/leagues.yml`) precedes handball,
+#' which precedes football. So a single marginal 2DT fit taking the gate down
+#' killed football's fits in the same run -- and the first live 2DT fits in five
+#' months are the highest abort-risk event of the season, running FIRST in
+#' config order. Isolating per target means the run still goes red, but
+#' football's posterior is written and committed.
+#'
+#' Failures are collected, not swallowed: the returned `failed` frame is what
+#' the script turns into `quit(status = 1L)`, on ANY failure rather than only on
+#' all of them (INT-2).
+#'
+#' @param targets Tibble of `key`/`sex` rows from `resolve_targets()`.
+#' @param leagues Leagues list.
+#' @param force,league_named The `--force` flag and whether `--league` named one.
+#' @param root Storage root, forwarded to `skip_fn`.
+#' @param fit_fn Injectable fitter; defaults to [fit_one()].
+#' @param skip_fn Injectable skip rule; defaults to [fit_skip_reason()].
+#' @return `list(fitted, skipped, failed = tibble(key, sex, message))`.
+#' @export
+run_fit_targets <- function(targets, leagues, force, league_named,
+                            root = here::here("data"),
+                            fit_fn = fit_one,
+                            skip_fn = fit_skip_reason) {
+  fitted <- 0L
+  skipped <- 0L
+  failed <- list()
+
+  for (i in seq_len(nrow(targets))) {
+    row <- targets[i, ]
+    league_def <- leagues[[row$key]]
+    static <- league_def[c(
+      "sport", "country", "sexes", "active", "stan_model", "data_source"
+    )]
+
+    skip <- skip_fn(static, row$sex, force, league_named, root = root)
+    if (!is.null(skip)) {
+      cli::cli_alert_info("Skipping {row$key} ({row$sex}): {skip}.")
+      skipped <- skipped + 1L
+      next
+    }
+
+    cli::cli_h2("{row$key} ({row$sex})")
+    ok <- tryCatch(
+      {
+        fit_fn(static, row$sex)
+        TRUE
+      },
+      error = function(e) {
+        cli::cli_alert_danger(
+          "fit failed for {row$key} ({row$sex}): {conditionMessage(e)}"
+        )
+        failed[[length(failed) + 1L]] <<- tibble::tibble(
+          key = row$key, sex = row$sex, message = conditionMessage(e)
+        )
+        FALSE
+      }
+    )
+    if (isTRUE(ok)) fitted <- fitted + 1L
+  }
+
+  list(
+    fitted = fitted,
+    skipped = skipped,
+    failed = if (length(failed) == 0L) {
+      tibble::tibble(key = character(), sex = character(), message = character())
+    } else {
+      dplyr::bind_rows(failed)
+    }
+  )
+}

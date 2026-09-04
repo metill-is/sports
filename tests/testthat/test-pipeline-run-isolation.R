@@ -101,3 +101,98 @@ test_that("scripts/05_publish.R delegates and exits non-zero on ANY failure", {
   expect_true(any(grepl('quit(save = "no", status = 1L)', body, fixed = TRUE)))
   expect_false(any(grepl("publish_one(static, betting, row$key, row$sex)", body, fixed = TRUE)))
 })
+
+# ---- Task 6: fit-loop isolation --------------------------------------------
+
+test_that("a failing fit target does not stop the next one", {
+  # THE CORE CASE. Basketball precedes handball precedes football in
+  # config/leagues.yml, fit_model() aborts on a diagnostics-gate breach, and
+  # fit_skip_reason()'s own docstring records real off-season basketball
+  # R-hat/ESS breaches. The first live 2DT fits in five months are the
+  # highest abort-risk event of the season and they run BEFORE football.
+  res <- suppressMessages(run_fit_targets(
+    .iso_targets(), .iso_leagues(),
+    force = FALSE, league_named = FALSE, root = tempdir(),
+    fit_fn = function(static, sex) {
+      if (identical(static$sport, "basketball")) {
+        stop("divergent transitions after warmup")
+      }
+      1L
+    },
+    skip_fn = function(...) NULL
+  ))
+  expect_equal(res$fitted, 1L)
+  expect_equal(res$skipped, 0L)
+  expect_equal(nrow(res$failed), 1L)
+  expect_equal(res$failed$key, "basketball_iceland")
+  expect_match(res$failed$message, "divergent")
+})
+
+test_that("an all-green fit run counts every target", {
+  res <- suppressMessages(run_fit_targets(
+    .iso_targets(), .iso_leagues(),
+    force = FALSE, league_named = FALSE, root = tempdir(),
+    fit_fn = function(static, sex) 1L,
+    skip_fn = function(...) NULL
+  ))
+  expect_equal(res$fitted, 2L)
+  expect_equal(nrow(res$failed), 0L)
+})
+
+test_that("a skip reason increments skipped and never calls fit_fn", {
+  calls <- 0L
+  res <- suppressMessages(run_fit_targets(
+    .iso_targets(), .iso_leagues(),
+    force = FALSE, league_named = FALSE, root = tempdir(),
+    fit_fn = function(static, sex) {
+      calls <<- calls + 1L
+      1L
+    },
+    skip_fn = function(static, sex, force, league_named, ...) {
+      if (identical(static$sport, "basketball")) "no new games" else NULL
+    }
+  ))
+  expect_equal(calls, 1L)
+  expect_equal(res$skipped, 1L)
+  expect_equal(res$fitted, 1L)
+  expect_equal(nrow(res$failed), 0L)
+})
+
+test_that("a partial failure leaves a non-empty failed frame (INT-2)", {
+  res <- suppressMessages(run_fit_targets(
+    .iso_targets(), .iso_leagues(),
+    force = FALSE, league_named = FALSE, root = tempdir(),
+    fit_fn = function(static, sex) {
+      if (identical(static$sport, "basketball")) stop("boom") else 1L
+    },
+    skip_fn = function(...) NULL
+  ))
+  expect_gt(nrow(res$failed), 0L)
+})
+
+test_that("scripts/03_fit.R delegates and exits non-zero on ANY failure", {
+  src <- readLines(testthat::test_path("..", "..", "scripts", "03_fit.R"), warn = FALSE)
+  body <- src[!grepl("^\\s*#", src)]
+  expect_true(any(grepl("run_fit_targets", body, fixed = TRUE)))
+  expect_true(any(grepl('quit(save = "no", status = 1L)', body, fixed = TRUE)))
+  expect_false(any(grepl("fit_one(static, row$sex)", body, fixed = TRUE)))
+})
+
+test_that("fit.yml commits beliefs even when the fit step failed", {
+  # Located by step index and scanned forward, NOT by a whole-file grep for
+  # always(): a whole-file grep passes on an `if: always()` attached to any
+  # other step, which is the exact bug this assertion exists to catch. Without
+  # it, a run where football fitted and basketball aborted would throw away
+  # football's posterior along with the red run.
+  yml <- readLines(
+    testthat::test_path("..", "..", ".github", "workflows", "fit.yml"),
+    warn = FALSE
+  )
+  idx <- grep("^\\s*- name: Commit if beliefs changed\\s*$", yml)
+  expect_length(idx, 1L)
+  run_idx <- grep("^\\s*run:", yml)
+  run_idx <- run_idx[run_idx > idx][1]
+  expect_true(!is.na(run_idx))
+  step <- yml[(idx + 1L):(run_idx - 1L)]
+  expect_true(any(grepl("^\\s*if:\\s*always\\(\\)\\s*$", step)))
+})
