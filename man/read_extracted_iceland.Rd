@@ -37,7 +37,9 @@ when the `division` filter yields no rows).}
 Named list. Each requested division key (e.g. `"BD"`, `"1D"`) maps to
   a list of the required + optional tibbles, `division` column dropped after
   filtering. Plus `fit_date` (the `Date` of the partition that was loaded),
-  `sim_inputs` (list or `NULL`) and `cup_bracket` (list or `NULL`).
+  `fit_meta` (the partition-level provenance row -- 0-row when the partition
+  predates the contract), `sim_inputs` (list or `NULL`) and `cup_bracket`
+  (list or `NULL`).
 }
 \description{
 Reads the Parquet files written by the sport's extractor
