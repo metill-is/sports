@@ -235,6 +235,55 @@ make_football_golden_hashes <- function(dest = NULL) {
   invisible(path)
 }
 
+# The three basketball cells whose post-season is embedded in the league
+# division, plus the irregular fourth. KKI packages urslitakeppni as extra
+# rounds inside the SAME season_id (R/ingest-kki-basketball.R:23-24), so
+# `division == "BD"` carries the regular season AND the playoffs; without a
+# regular-season cut the published league table is simulated on post-season
+# points -- a silently wrong table, not a visible error.
+#
+# Measured 2026-09-04 against data/facts/results, season 2026:
+#   male   BD  162 rows, 12 teams, 132 regular (22 rounds) + 30 post-season
+#   male   1D  159 rows, 12 teams, 132 regular (22 rounds) + 27 post-season
+#   female BD  137 rows, 10 teams,  90 regular (18 rounds) + 47 post-season
+#   female 1D   98 rows, 11 teams -- the deliberately irregular cell: no
+#              configured expected_meetings, so n_rounds resolves off the
+#              schedule (24) and the round floor is 6
+#
+# Real team names are kept on purpose. The regular-season boundary is a
+# property of the real federation calendar; an anonymised copy would prove
+# nothing about it.
+# `root` is explicit so the generator also runs when this file is source()d
+# rather than executed: `.fixture_gen_pkg_root()` derives the package root from
+# the script's own --file= argument and is NULL under source().
+make_playoff_overhang_fixture <- function(dest = NULL,
+                                          root = .fixture_gen_pkg_root()) {
+  stopifnot(!is.null(root))
+  if (is.null(dest)) {
+    dest <- file.path(root, "tests", "testthat", "fixtures", "facts")
+  }
+  dir.create(dest, recursive = TRUE, showWarnings = FALSE)
+
+  rows <- arrow::open_dataset(file.path(root, "data", "facts", "results")) |>
+    dplyr::filter(
+      country == "iceland",
+      sport == "basketball",
+      season == 2026L,
+      division %in% c("BD", "1D")
+    ) |>
+    dplyr::collect() |>
+    dplyr::arrange(sex, division, match_date, home_team, away_team)
+
+  stopifnot(nrow(rows) == 556L)
+  path <- file.path(dest, "playoff-overhang.parquet")
+  arrow::write_parquet(rows, path)
+  message(sprintf(
+    "make_playoff_overhang_fixture: %d rows, %s KB -> %s",
+    nrow(rows), format(round(file.info(path)$size / 1024, 1)), path
+  ))
+  invisible(path)
+}
+
 # Regenerate all committed fixtures.
 make_extract_fixtures <- function(dest = NULL, quiet = FALSE) {
   if (is.null(dest)) {
@@ -250,7 +299,8 @@ make_extract_fixtures <- function(dest = NULL, quiet = FALSE) {
   arrow::write_parquet(.fixture_schedules(), file.path(facts_dir, "schedules.parquet"))
   files <- c(
     file.path(facts_dir, "results.parquet"),
-    file.path(facts_dir, "schedules.parquet")
+    file.path(facts_dir, "schedules.parquet"),
+    make_playoff_overhang_fixture(facts_dir)
   )
 
   facts_root <- file.path(tempdir(), paste0("fixture-facts-", Sys.getpid()))

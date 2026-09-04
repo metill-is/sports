@@ -25,7 +25,12 @@ test_that("the bb/hb publish + extract tests carry no skip gates", {
     "test-extract-iceland-read.R",
     # WS9's one next_games contract. Its match-summary block is the only proof
     # that bb/hb emit football's field names and goal_diff_distribution.
-    "test-publish-next-games.R"
+    "test-publish-next-games.R",
+    # WS10's regular-season boundary. Its Block A runs on committed REAL
+    # basketball data (playoff-overhang.parquet); a skip there would retire the
+    # only proof that the embedded urslitakeppni is cut before the league table
+    # is simulated.
+    "test-publish-format.R"
   )
   banned <- c("skip(", "skip_if(", "skip_if_not(", "skip_if_not_installed(", "Sys.getenv")
 
