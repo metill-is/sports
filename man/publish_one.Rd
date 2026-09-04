@@ -10,7 +10,8 @@ publish_one(
   key,
   sex,
   root = here::here("data"),
-  validate = TRUE
+  validate = TRUE,
+  end_date = Sys.Date()
 )
 }
 \arguments{
@@ -26,6 +27,10 @@ publish_one(
 
 \item{validate}{Logical. When `TRUE` (default) the published JSONs are
 validated against `config/publish-schemas/<sport>/`. Failures abort.}
+
+\item{end_date}{Publish cutoff `Date`, forwarded to the per-sport publisher.
+Defaults to `Sys.Date()`, which is what production wants; a test or a
+replay passes a fixed date so a far-future fixture is not filtered out.}
 }
 \value{
 invisible(NULL).

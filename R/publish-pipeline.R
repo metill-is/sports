@@ -45,11 +45,15 @@ extract_partition_exists <- function(extracts_root, sport, country, sex) {
 #' @param root Storage root.
 #' @param validate Logical. When `TRUE` (default) the published JSONs are
 #'   validated against `config/publish-schemas/<sport>/`. Failures abort.
+#' @param end_date Publish cutoff `Date`, forwarded to the per-sport publisher.
+#'   Defaults to `Sys.Date()`, which is what production wants; a test or a
+#'   replay passes a fixed date so a far-future fixture is not filtered out.
 #' @return invisible(NULL).
 #' @export
 publish_one <- function(static, betting, key, sex,
                         root = here::here("data"),
-                        validate = TRUE) {
+                        validate = TRUE,
+                        end_date = Sys.Date()) {
   league <- static
   league$betting <- betting
 
@@ -94,6 +98,7 @@ publish_one <- function(static, betting, key, sex,
       extracted = extracted,
       league = league,
       sex = sex,
+      end_date = end_date,
       root = root,
       output_root = output_root,
       extracts_root = extracts_root,
