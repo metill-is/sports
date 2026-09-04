@@ -122,6 +122,77 @@ kki_league_id <- function(sex, division) {
   as.integer(id)
 }
 
+#' KKI motayfirlit page URL for a competition (all seasons).
+#'
+#' The page's season selector is JS-rendered, so this must be fetched with
+#' `rvest::read_html_live()` (chromote), not a plain `httr` GET -- the same
+#' constraint the HSI scraper already lives with.
+#' @keywords internal
+#' @noRd
+kki_motayfirlit_url <- function(league_id) {
+  sprintf(
+    paste0(
+      "https://kki.is/motamal/leikir-og-urslit/motayfirlit/",
+      "Leikir?league_id=%d"
+    ),
+    as.integer(league_id)
+  )
+}
+
+#' Parse the season selector out of a KKI motayfirlit page.
+#'
+#' Pure and fixture-tested: no network. The page carries three unnamed
+#' `<select>` elements (season, `stig` / stage, `leikdagur` / matchday), so
+#' they cannot be told apart by attribute. The season one is identified by the
+#' SHAPE of its option labels -- `YYYY-YYYY` -- which is stable across the
+#' other two (whose labels are Icelandic words and bare round numbers).
+#'
+#' Season numbering follows this repo's convention throughout: the CLOSING
+#' calendar year. Label `2026-2027` is season `2027`.
+#'
+#' NB the page also exposes a stage dimension (`Deildarkeppni` vs
+#' `Urslitakeppni`) which this repo does not yet capture -- KKI packages the
+#' playoffs as extra rounds inside the same `season_id`, which is why
+#' basketball BD rows carry urslitakeppni matches. Capturing that stage split
+#' is deliberately deferred to the publish workstream that consumes it.
+#'
+#' @param html A parsed document, or a string/path accepted by
+#'   `rvest::read_html()`.
+#' @return Tibble with columns `season` (integer, closing year), `season_id`
+#'   (integer) and `label` (character), newest first. Zero rows when the page
+#'   has no season selector.
+#' @keywords internal
+#' @noRd
+parse_kki_season_options <- function(html) {
+  doc <- if (inherits(html, "xml_document")) html else rvest::read_html(html)
+  empty <- tibble::tibble(
+    season = integer(), season_id = integer(), label = character()
+  )
+
+  opts <- rvest::html_elements(doc, "select option")
+  if (length(opts) == 0L) {
+    return(empty)
+  }
+  label <- trimws(rvest::html_text(opts))
+  value <- trimws(rvest::html_attr(opts, "value"))
+
+  # `YYYY-YYYY` is what distinguishes the season selector from the stage and
+  # matchday ones. A blank value is the "Veldu timabil" placeholder.
+  keep <- !is.na(value) & nzchar(value) &
+    grepl("^[0-9]{4}\\s*-\\s*[0-9]{4}$", label)
+  if (!any(keep)) {
+    return(empty)
+  }
+
+  label <- label[keep]
+  tibble::tibble(
+    season = as.integer(sub("^[0-9]{4}\\s*-\\s*", "", label)),
+    season_id = as.integer(value[keep]),
+    label = label
+  ) |>
+    dplyr::arrange(dplyr::desc(.data$season))
+}
+
 #' Build a Baskethotel widget export URL.
 #' @param season_id Integer season identifier.
 #' @param type "results_only" or "schedule_only".
