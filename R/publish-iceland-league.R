@@ -474,16 +474,21 @@ NULL
   }, numeric(1))
 }
 
-#' Publish football Iceland posterior summaries as JSON
+#' Publish an Icelandic league's posterior summaries as JSON
 #'
-#' Phase 2 entrypoint: reads from the per-fit extraction archive (the 6
-#' Parquets written by [`extract_football_iceland()`]) instead of an
-#' in-memory fit RDS. Use [`read_extracted_iceland()`] to construct
-#' `extracted`, or pass a hand-built list with the same shape (tests do
-#' the latter).
+#' The one publisher for all three Icelandic leagues. Reads from the per-fit
+#' extraction tree (the Parquets written by the sport's extractor) rather than
+#' an in-memory fit RDS -- use [`read_extracted_iceland()`] to construct
+#' `extracted`, or pass a hand-built list with the same shape (tests do the
+#' latter).
+#'
+#' Everything that used to be a `sport == "football"` literal is now data:
+#' the division set comes from `config/leagues.yml::<key>.publish_divisions`
+#' via the `.iceland_division_*()` accessors, and the sport-specific
+#' behaviour comes from `profile` (see [`sport_publish_profile()`]).
 #'
 #' Writes seven snapshot JSONs into
-#' `output_root/football/iceland/{karla|kvenna}/`:
+#' `output_root/<sport>/iceland/{karla|kvenna}-{slug}/`:
 #'   - `meta.json`
 #'   - `next_games.json`
 #'   - `standings.json`
@@ -511,14 +516,16 @@ NULL
 #'   `round_strengths_quantiles`, `home_advantage_quantiles`,
 #'   `final_positions`, `points_distribution`.
 #' @param league A single entry from `load_leagues()` (must have `sport`
-#'   and `country` set).
+#'   and `country` set). Its `<sport>_<country>` key must exist in
+#'   `config/leagues.yml`.
 #' @param sex `"male"` or `"female"`.
+#' @param profile Per-sport publish profile; see [`sport_publish_profile()`].
 #' @param end_date Training cutoff passed to `prepare_data()`. Default
 #'   `Sys.Date()`.
 #' @param root Data root for `read_table()`. Default `here::here("data")`.
 #' @param output_root Root for JSON output. Default
 #'   `here::here("data", "publish")`.
-#' @param extracts_root Root of the per-fit football extracts tree used to
+#' @param extracts_root Root of the per-fit extracts tree used to
 #'   source pre-round xG / xPts predictions and the preseason team-strength
 #'   baseline. Default `here::here("data", "beliefs", "extracts")`.
 #' @param archive_root Root of the beliefs archive (`part-0.parquet`,
@@ -538,21 +545,24 @@ NULL
 #' @return `invisible(NULL)`.
 #' @importFrom rlang .data
 #' @export
-publish_football_iceland <- function(extracted,
-                                     league,
-                                     sex,
-                                     end_date = Sys.Date(),
-                                     root = here::here("data"),
-                                     output_root = here::here(
-                                       "data", "publish"
-                                     ),
-                                     extracts_root = here::here(
-                                       "data", "beliefs", "extracts"
-                                     ),
-                                     archive_root = here::here(
-                                       "data", "beliefs", "archive"
-                                     ),
-                                     round_predictions_history_root = NULL) {
+publish_iceland_league <- function(extracted,
+                                   league,
+                                   sex,
+                                   profile = sport_publish_profile(
+                                     league$sport
+                                   ),
+                                   end_date = Sys.Date(),
+                                   root = here::here("data"),
+                                   output_root = here::here(
+                                     "data", "publish"
+                                   ),
+                                   extracts_root = here::here(
+                                     "data", "beliefs", "extracts"
+                                   ),
+                                   archive_root = here::here(
+                                     "data", "beliefs", "archive"
+                                   ),
+                                   round_predictions_history_root = NULL) {
   if (is.null(round_predictions_history_root)) {
     round_predictions_history_root <- file.path(
       dirname(output_root),
@@ -561,8 +571,14 @@ publish_football_iceland <- function(extracted,
   }
   stopifnot(sex %in% c("male", "female"))
   stopifnot(!is.null(league$sport), !is.null(league$country))
-  stopifnot(league$sport == "football", league$country == "iceland")
+  stopifnot(league$sport %in% c("football", "basketball", "handball"))
+  stopifnot(league$country == "iceland")
   stopifnot(inherits(end_date, "Date"))
+  # DERIVED, then asserted -- the `<sport>_<country>` convention holds for all
+  # three Icelandic leagues today, but a future league that breaks it must
+  # fail here rather than silently read another cell's publish_divisions.
+  league_key <- paste0(league$sport, "_", league$country)
+  stopifnot(league_key %in% names(load_leagues()))
   # WHY: meta.json::fit_date must reflect the partition the publisher
   # actually read from, not the caller's `end_date`. Otherwise a refit
   # failure that falls back to stale extracts ships a meta.json claiming
@@ -572,20 +588,18 @@ publish_football_iceland <- function(extracted,
   } else {
     end_date
   }
-  required_slots <- c(
-    "predicted_matches", "team_strengths_quantiles",
-    "round_strengths_quantiles", "home_advantage_quantiles",
-    "final_positions", "points_distribution"
-  )
+  required_slots <- profile$required_extracts
+  empty_slot <- function() profile$empty_extracts
   # Canonical filter codes (matching results$division), mapped to URL-friendly
   # display suffixes for the output directory name. LD1 -> "ld" because the
   # platform's URL slug is /lengja/ -> karla-ld/, not karla-ld1/. CUP ->
   # "bikar" for the Mjólkurbikar tab. Driven by
   # config/leagues.yml::football_iceland.publish_divisions[[sex]] so adding
   # a new cell is a config-only change here.
-  division_dir_suffix <- .iceland_division_slugs("football_iceland", sex)
+  division_dir_suffix <- .iceland_division_slugs(league_key, sex)
   division_codes <- names(division_dir_suffix)
-  division_labels_is <- .iceland_division_labels("football_iceland", sex)
+  division_labels_is <- .iceland_division_labels(league_key, sex)
+  division_is_cup <- .iceland_division_is_cup(league_key, sex)
 
   # extracted shape: list keyed by division code (BD, LD1, ...) — see
   # read_extracted_iceland(). Each per-division list has the 6 parquet
@@ -597,19 +611,19 @@ publish_football_iceland <- function(extracted,
     fit_date_keep <- extracted$fit_date
     extracted <- list(BD = flat_legacy)
     for (div in setdiff(division_codes, "BD")) {
-      extracted[[div]] <- .empty_extracted_pfi()
+      extracted[[div]] <- empty_slot()
     }
     extracted$fit_date <- fit_date_keep
   }
   for (div in division_codes) {
     if (is.null(extracted[[div]])) {
-      extracted[[div]] <- .empty_extracted_pfi()
+      extracted[[div]] <- empty_slot()
     }
     div_slots <- if (is.list(extracted[[div]])) names(extracted[[div]]) else character()
     missing_slots <- setdiff(required_slots, div_slots)
     if (length(missing_slots) > 0L) {
       stop(
-        "publish_football_iceland: extracted$", div,
+        "publish_iceland_league: extracted$", div,
         " is missing slots: ", paste(missing_slots, collapse = ", "),
         call. = FALSE
       )
@@ -637,8 +651,8 @@ publish_football_iceland <- function(extracted,
 
   for (target_div in division_codes) {
     top_div <- target_div
-    is_cup <- identical(target_div, "CUP")
-    div_split <- .iceland_division_split("football_iceland", sex)[[target_div]]
+    is_cup <- isTRUE(division_is_cup[[target_div]])
+    div_split <- .iceland_division_split(league_key, sex)[[target_div]]
     # For a split cell the season spans the regular division plus its
     # split-phase playoff divisions -- every per-season surface below
     # (standings, next_games, round counting, xG/xPts aggregation input)
@@ -649,10 +663,10 @@ publish_football_iceland <- function(extracted,
     # to apply `semi_join(current_top_teams)` defensively; with per-cell
     # extracts those filters are redundant (and would no-op anyway).
     ext <- extracted[[target_div]]
-    if (is.null(ext)) ext <- .empty_extracted_pfi()
+    if (is.null(ext)) ext <- empty_slot()
     out_dir <- file.path(
       output_root,
-      "football",
+      league$sport,
       "iceland",
       sprintf("%s-%s", sex_folder, division_dir_suffix[[target_div]])
     )
@@ -793,7 +807,7 @@ publish_football_iceland <- function(extracted,
 
     league_label <- division_labels_is[[target_div]]
     meta <- list(
-      sport        = "football",
+      sport        = league$sport,
       sex          = sex,
       league       = league_label,
       division     = target_div,
@@ -838,10 +852,10 @@ publish_football_iceland <- function(extracted,
 
     next_games_out <- .next_games_rows_pfi(
       predicted = predicted_matches,
-      profile = sport_publish_profile("football"),
+      profile = profile,
       pred_d = pred_d,
       family_divs = family_divs,
-      division_badges = .iceland_division_badges("football_iceland", sex),
+      division_badges = .iceland_division_badges(league_key, sex),
       end_date = end_date,
       venues = male_top_division_venues
     )
@@ -1154,7 +1168,7 @@ publish_football_iceland <- function(extracted,
 
     round_predictions_dir <- file.path(
       round_predictions_history_root,
-      "football", "iceland",
+      league$sport, "iceland",
       sprintf("%s-%s", sex_folder, division_dir_suffix[[target_div]])
     )
     dir.create(round_predictions_dir, recursive = TRUE, showWarnings = FALSE)
@@ -1392,7 +1406,7 @@ publish_football_iceland <- function(extracted,
 
     n_files <- length(list.files(out_dir, pattern = "\\.json$"))
     message(sprintf(
-      "publish_football_iceland: wrote %d JSONs to %s", n_files, out_dir
+      "publish_iceland_league: wrote %d JSONs to %s", n_files, out_dir
     ))
   }
 

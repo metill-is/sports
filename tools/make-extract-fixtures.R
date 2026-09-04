@@ -220,7 +220,7 @@ make_football_golden_hashes <- function(dest = NULL) {
     extracted <- read_extracted_iceland(
       league, sex = sex, fit_date = FIXTURE_FIT_DATE, extracts_root = extracts_root
     )
-    suppressWarnings(publish_football_iceland(
+    suppressWarnings(publish_iceland_league(
       extracted = extracted, league = league, sex = sex,
       end_date = FIXTURE_END_DATE, root = facts_root,
       output_root = out, extracts_root = extracts_root,

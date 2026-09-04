@@ -1,4 +1,4 @@
-#' @include model-prepare.R storage.R config.R publish-divisions.R publish-football-iceland.R
+#' @include model-prepare.R storage.R config.R publish-divisions.R publish-iceland-league.R
 NULL
 
 # ---- Internal helpers --------------------------------------------------------

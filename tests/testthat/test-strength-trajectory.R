@@ -1,5 +1,5 @@
 # The per-round strength trajectory is SPORT-NEUTRAL. It used to live in
-# R/publish-football-iceland.R under a `_pfi` name, which was a lie the moment
+# R/publish-iceland-league.R under a `_pfi` name, which was a lie the moment
 # the 2DT extractor needed it: football
 # (Stan/football_iceland/bivariate_poisson_no_inflation.stan:188,195) and both
 # 2DT models (Stan/basketball_iceland/2d_student_t_scalarsigma.stan:157,164)

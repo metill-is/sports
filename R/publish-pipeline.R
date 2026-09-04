@@ -1,4 +1,4 @@
-#' @include publish-profile.R publish-next-games.R extract-iceland-read.R publish-football-iceland.R publish-basketball-iceland.R publish-handball-iceland.R validate-publish.R
+#' @include publish-profile.R publish-next-games.R extract-iceland-read.R publish-iceland-league.R publish-basketball-iceland.R publish-handball-iceland.R validate-publish.R
 NULL
 
 #' Does an extract partition exist for this cell?
@@ -22,7 +22,7 @@ extract_partition_exists <- function(extracts_root, sport, country, sex) {
 #' Football iceland reads the per-fit extraction tree
 #' (`data/beliefs/extracts/sport=football/country=iceland/sex=Z/fit_date=*/`,
 #' the per-cell Parquets emitted by `extract_football_iceland()`) and
-#' dispatches to `publish_football_iceland(extracted, ...)`. Basketball and
+#' dispatches to `publish_iceland_league(extracted, ...)`. Basketball and
 #' handball still read the fit RDS directly from
 #' `data/beliefs/fits/sport=X/country=Y/sex=Z/fit.rds` -- their migration
 #' to the extraction layer is deferred to the autumn 2026 cutover.
@@ -94,7 +94,7 @@ publish_one <- function(static, betting, key, sex,
     if (is.null(extracted)) {
       return(invisible(NULL))
     }
-    publish_football_iceland(
+    publish_iceland_league(
       extracted = extracted,
       league = league,
       sex = sex,

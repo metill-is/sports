@@ -3,7 +3,7 @@ NULL
 
 # ---- The per-round strength trajectory, shared by all three sports ----------
 #
-# This helper used to live in R/publish-football-iceland.R under a `_pfi`
+# This helper used to live in R/publish-iceland-league.R under a `_pfi`
 # suffix. The suffix was a lie: nothing in it is football-specific. All three
 # production models declare the SAME latent surface with the SAME names and
 # shapes --

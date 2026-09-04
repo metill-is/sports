@@ -21,7 +21,7 @@ test_that("the grid covers every quantile the publisher actually needs", {
   # If someone adds a coverage band whose tails are not stored, this fails
   # here at test time rather than silently publishing NA intervals.
   src <- readLines(testthat::test_path("..", "..", "R",
-                                       "publish-football-iceland.R"),
+                                       "publish-iceland-league.R"),
                    warn = FALSE)
   line <- grep("^\\s*needed <- c\\(", src, value = TRUE)
   expect_length(line, 1L)

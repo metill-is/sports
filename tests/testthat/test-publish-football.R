@@ -8,7 +8,7 @@ backup_fit_path <- function(sex) {
   file.path(root, "Sports", "football", "iceland", "results", sex, "fit.rds")
 }
 
-test_that("publish_football_iceland: skip gracefully when backup fit absent", {
+test_that("publish_iceland_league: skip gracefully when backup fit absent", {
   skip_if_no_football_fit <- function(sex = "male") {
     fit_path <- backup_fit_path(sex)
     if (!file.exists(fit_path)) {
@@ -31,7 +31,7 @@ test_that("publish_football_iceland: skip gracefully when backup fit absent", {
     sex = "male", end_date = as.Date("2026-04-25")
   )
   suppressWarnings(
-    publish_football_iceland(
+    publish_iceland_league(
       extracted = extracted,
       league = league,
       sex = "male",
@@ -83,7 +83,7 @@ test_that("publish_football_iceland: skip gracefully when backup fit absent", {
   expect_true(all(c("generated_at", "records") %in% names(ha)))
 })
 
-test_that("publish_football_iceland female: writes the 7 always-on JSONs", {
+test_that("publish_iceland_league female: writes the 7 always-on JSONs", {
   fit_path <- backup_fit_path("female")
   if (!file.exists(fit_path)) {
     testthat::skip("legacy female football fit unavailable")
@@ -102,7 +102,7 @@ test_that("publish_football_iceland female: writes the 7 always-on JSONs", {
     sex = "female", end_date = as.Date("2026-04-25")
   )
   suppressWarnings(
-    publish_football_iceland(
+    publish_iceland_league(
       extracted = extracted,
       league = league,
       sex = "female",
@@ -133,7 +133,7 @@ test_that("publish_football_iceland female: writes the 7 always-on JSONs", {
   expect_true(all(c("generated_at", "season", "rows") %in% names(standings)))
 })
 
-test_that("publish_football_iceland: output_root creates directory", {
+test_that("publish_iceland_league: output_root creates directory", {
   fit_path <- backup_fit_path("male")
   if (!file.exists(fit_path)) {
     testthat::skip("legacy male football fit unavailable")
@@ -154,7 +154,7 @@ test_that("publish_football_iceland: output_root creates directory", {
     sex = "male", end_date = as.Date("2026-04-25")
   )
   suppressWarnings(
-    publish_football_iceland(
+    publish_iceland_league(
       extracted = extracted,
       league = league,
       sex = "male",
@@ -243,7 +243,7 @@ test_that(".append_to_history_pfi tolerates a missing or malformed file", {
 
 # ---- History integration tests --------------------------------------------
 
-test_that("publish_football_iceland writes team_strengths_history.json (male)", {
+test_that("publish_iceland_league writes team_strengths_history.json (male)", {
   fit_path <- backup_fit_path("male")
   if (!file.exists(fit_path)) {
     testthat::skip("legacy male football fit unavailable")
@@ -262,7 +262,7 @@ test_that("publish_football_iceland writes team_strengths_history.json (male)", 
     sex = "male", end_date = as.Date("2026-04-25")
   )
   suppressWarnings(
-    publish_football_iceland(
+    publish_iceland_league(
       extracted = extracted,
       league = league,
       sex = "male",
@@ -290,7 +290,7 @@ test_that("publish_football_iceland writes team_strengths_history.json (male)", 
   expect_setequal(unique(parsed$records$coverage), c(0.5, 0.8, 0.95))
 })
 
-test_that("publish_football_iceland writes team_strengths_history.json (female)", {
+test_that("publish_iceland_league writes team_strengths_history.json (female)", {
   fit_path <- backup_fit_path("female")
   if (!file.exists(fit_path)) {
     testthat::skip("legacy female football fit unavailable")
@@ -309,7 +309,7 @@ test_that("publish_football_iceland writes team_strengths_history.json (female)"
     sex = "female", end_date = as.Date("2026-04-25")
   )
   suppressWarnings(
-    publish_football_iceland(
+    publish_iceland_league(
       extracted = extracted,
       league = league,
       sex = "female",
@@ -326,7 +326,7 @@ test_that("publish_football_iceland writes team_strengths_history.json (female)"
   expect_equal(parsed$schema_version, 1L)
 })
 
-test_that("publish_football_iceland writes standings_history.json when matches have been played", {
+test_that("publish_iceland_league writes standings_history.json when matches have been played", {
   fit_path_m <- backup_fit_path("male")
   fit_path_f <- backup_fit_path("female")
   if (!file.exists(fit_path_m) || !file.exists(fit_path_f)) {
@@ -351,13 +351,13 @@ test_that("publish_football_iceland writes standings_history.json when matches h
     sex = "female", end_date = as.Date("2026-04-25")
   )
   suppressWarnings({
-    publish_football_iceland(
+    publish_iceland_league(
       extracted = extracted_m,
       league = league,
       sex = "male",
       end_date = as.Date("2026-04-25"), output_root = out
     )
-    publish_football_iceland(
+    publish_iceland_league(
       extracted = extracted_f,
       league = league,
       sex = "female",
@@ -392,7 +392,7 @@ test_that("publish_football_iceland writes standings_history.json when matches h
   }
 })
 
-test_that("publish_football_iceland: re-running dedups history on (round, team, ...)", {
+test_that("publish_iceland_league: re-running dedups history on (round, team, ...)", {
   # Multiple fits within the same matchweek collapse to one row per
   # (round, team, component, location, coverage); latest fit wins. This
   # keeps the strength-trajectory chart plotting one point per matchweek
@@ -415,13 +415,13 @@ test_that("publish_football_iceland: re-running dedups history on (round, team, 
     sex = "male", end_date = as.Date("2026-04-25")
   )
   suppressWarnings({
-    publish_football_iceland(
+    publish_iceland_league(
       extracted = extracted,
       league = league,
       sex = "male",
       end_date = as.Date("2026-04-25"), output_root = out
     )
-    publish_football_iceland(
+    publish_iceland_league(
       extracted = extracted,
       league = league,
       sex = "male",
@@ -439,7 +439,7 @@ test_that("publish_football_iceland: re-running dedups history on (round, team, 
   expect_equal(nrow(parsed$records), n_unique)
 })
 
-test_that("publish_football_iceland: BD output unchanged after target_div refactor (regression)", {
+test_that("publish_iceland_league: BD output unchanged after target_div refactor (regression)", {
   fit_path <- backup_fit_path("male")
   if (!file.exists(fit_path)) {
     testthat::skip("legacy football fit unavailable")
@@ -458,7 +458,7 @@ test_that("publish_football_iceland: BD output unchanged after target_div refact
     sex = "male", end_date = as.Date("2026-04-25")
   )
   suppressWarnings(
-    publish_football_iceland(
+    publish_iceland_league(
       extracted = extracted,
       league = league,
       sex = "male",
@@ -476,7 +476,7 @@ test_that("publish_football_iceland: BD output unchanged after target_div refact
   expect_equal(length(standings$rows), 12)
 })
 
-test_that("publish_football_iceland: writes karla-bd/ and karla-ld/ dirs", {
+test_that("publish_iceland_league: writes karla-bd/ and karla-ld/ dirs", {
   fit_path <- backup_fit_path("male")
   if (!file.exists(fit_path)) {
     testthat::skip("legacy football fit unavailable")
@@ -495,7 +495,7 @@ test_that("publish_football_iceland: writes karla-bd/ and karla-ld/ dirs", {
     sex = "male", end_date = as.Date("2026-04-25")
   )
   suppressWarnings(
-    publish_football_iceland(
+    publish_iceland_league(
       extracted = extracted,
       league = league,
       sex = "male",
@@ -532,7 +532,7 @@ test_that("publish_football_iceland: writes karla-bd/ and karla-ld/ dirs", {
   expect_equal(length(ld_standings$rows), 12)
 })
 
-test_that("publish_football_iceland: writes karla-bikar/ with is_cup=true and empty league-table JSONs", {
+test_that("publish_iceland_league: writes karla-bikar/ with is_cup=true and empty league-table JSONs", {
   fit_path <- backup_fit_path("male")
   if (!file.exists(fit_path)) {
     testthat::skip("legacy football fit unavailable")
@@ -551,7 +551,7 @@ test_that("publish_football_iceland: writes karla-bikar/ with is_cup=true and em
     sex = "male", end_date = as.Date("2026-04-25")
   )
   suppressWarnings(
-    publish_football_iceland(
+    publish_iceland_league(
       extracted = extracted,
       league = league,
       sex = "male",
@@ -588,7 +588,7 @@ test_that("publish_football_iceland: writes karla-bikar/ with is_cup=true and em
   expect_equal(length(points_dist$records), 0L)
 })
 
-test_that("publish_football_iceland: per-division next_games is filtered by division", {
+test_that("publish_iceland_league: per-division next_games is filtered by division", {
   fit_path <- backup_fit_path("male")
   if (!file.exists(fit_path)) {
     testthat::skip("legacy football fit unavailable")
@@ -607,7 +607,7 @@ test_that("publish_football_iceland: per-division next_games is filtered by divi
     sex = "male", end_date = as.Date("2026-04-25")
   )
   suppressWarnings(
-    publish_football_iceland(
+    publish_iceland_league(
       extracted = extracted,
       league = league,
       sex = "male",
@@ -633,7 +633,7 @@ test_that("publish_football_iceland: per-division next_games is filtered by divi
   }
 })
 
-test_that("publish_football_iceland: per-division team_strengths scoped to division teams", {
+test_that("publish_iceland_league: per-division team_strengths scoped to division teams", {
   fit_path <- backup_fit_path("male")
   if (!file.exists(fit_path)) {
     testthat::skip("legacy football fit unavailable")
@@ -652,7 +652,7 @@ test_that("publish_football_iceland: per-division team_strengths scoped to divis
     sex = "male", end_date = as.Date("2026-04-25")
   )
   suppressWarnings(
-    publish_football_iceland(
+    publish_iceland_league(
       extracted = extracted,
       league = league,
       sex = "male",
@@ -678,7 +678,7 @@ test_that("publish_football_iceland: per-division team_strengths scoped to divis
   expect_length(intersect(bd_teams, ld_teams), 0)
 })
 
-test_that("publish_football_iceland: embeds preseason field when prior fit exists", {
+test_that("publish_iceland_league: embeds preseason field when prior fit exists", {
   fit_path <- backup_fit_path("male")
   if (!file.exists(fit_path)) {
     testthat::skip("legacy football fit unavailable")
@@ -728,7 +728,7 @@ test_that("publish_football_iceland: embeds preseason field when prior fit exist
   )
 
   suppressWarnings(
-    publish_football_iceland(
+    publish_iceland_league(
       extracted = extracted,
       league = league,
       sex = "male",
@@ -757,7 +757,7 @@ test_that("publish_football_iceland: embeds preseason field when prior fit exist
   expect_true(sample$preseason$median <= sample$preseason$upper)
 })
 
-test_that("publish_football_iceland: meta.json::fit_date reflects extracts partition, not end_date", {
+test_that("publish_iceland_league: meta.json::fit_date reflects extracts partition, not end_date", {
   # The publisher previously stamped meta.json::fit_date with
   # format(end_date, "%Y-%m-%d") -- which lies whenever the latest
   # available extracts are older than `end_date` (e.g. a fit failed so
@@ -783,7 +783,7 @@ test_that("publish_football_iceland: meta.json::fit_date reflects extracts parti
   expect_equal(extracted$fit_date, as.Date("2026-04-09"))
 
   suppressWarnings(
-    publish_football_iceland(
+    publish_iceland_league(
       extracted = extracted,
       league = league,
       sex = "male",
@@ -798,7 +798,7 @@ test_that("publish_football_iceland: meta.json::fit_date reflects extracts parti
   expect_equal(meta[["fit_date"]], "2026-04-09")
 })
 
-test_that("publish_football_iceland: omits preseason when no prior fit exists", {
+test_that("publish_iceland_league: omits preseason when no prior fit exists", {
   fit_path <- backup_fit_path("male")
   if (!file.exists(fit_path)) {
     testthat::skip("legacy football fit unavailable")
@@ -821,7 +821,7 @@ test_that("publish_football_iceland: omits preseason when no prior fit exists", 
   )
 
   suppressWarnings(
-    publish_football_iceland(
+    publish_iceland_league(
       extracted = extracted,
       league = league,
       sex = "male",

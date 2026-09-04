@@ -4,7 +4,7 @@
 #
 # Replay infrastructure already exists end-to-end: fit_league(end_date=)
 # can fit "as of" any past date, extract_football_iceland() persists the
-# per-fit posterior summaries, and publish_football_iceland() can render
+# per-fit posterior summaries, and publish_iceland_league() can render
 # from any fit_date partition. This script wires those into a single
 # CLI so ad-hoc backfills, what-if analyses, and cumulative-xPts
 # backtests don't require editing 03b_backfill_football_iceland.R.

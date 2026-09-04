@@ -171,7 +171,7 @@ NULL
       optional_extracts = c("tournament_placements", .PUBLISH_OPTIONAL_ALWAYS),
       empty_extracts = .publish_empty_extracts("scoreline_counts"),
       predicted_matches_shape = "scoreline_counts",
-      # Strength bands are stored RAW (R/publish-football-iceland.R:47-61 applies
+      # Strength bands are stored RAW (R/publish-iceland-league.R:47-61 applies
       # no transform); home advantage is stored already exponentiated, with the
       # `total` component halved for the per-side split
       # (R/extract-football-iceland.R:1523-1547).
@@ -195,7 +195,7 @@ NULL
       points = list(win = 3L, draw = 1L, loss = 0L),
       units = list(
         # offence/defence/total enter the bivariate-Poisson mean additively
-        # inside exp() (R/publish-football-iceland.R:1028), and the extractor
+        # inside exp() (R/publish-iceland-league.R:1028), and the extractor
         # stores the parameter untransformed.
         strength = "log_goals",
         home_advantage = "goal_multiplier",

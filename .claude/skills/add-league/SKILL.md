@@ -156,7 +156,7 @@ Football iceland has the full publisher (11–12 JSONs per cell across
 `publish_divisions`, driven by `config/leagues.yml::football_iceland.publish_divisions`
 — see [project_publish_divisions_config](../../../../.claude/projects/-Users-brynjolfurjonsson-sports/memory/project_publish_divisions_config.md));
 basketball + handball are scaffolds (meta + next_games only). To add full
-publishing for a new league, mirror `R/publish-football-iceland.R` under a new
+publishing for a new league, mirror `R/publish-iceland-league.R` under a new
 file and register it in `R/publish-pipeline.R::publish_one()`. New cells for an
 existing league require adding entries under `publish_divisions` _and_ a
 matching `DIVISIONS` entry in `metill-platform/app/routes/ithrottir.py` —

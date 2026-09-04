@@ -114,7 +114,7 @@ arrow::write_parquet(
 )
 
 # ---- 2. Re-derive bracket.json FROM the patched parquet ----------------------
-# Mirrors R/publish-football-iceland.R: read the parquet payload, write it
+# Mirrors R/publish-iceland-league.R: read the parquet payload, write it
 # verbatim. Deriving the json from the parquet (rather than patching the json
 # independently) guarantees the two artifacts can never diverge.
 bj_path <- here::here(

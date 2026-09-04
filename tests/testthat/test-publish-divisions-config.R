@@ -162,9 +162,9 @@ test_that("extract_football_iceland: target_divs validation rejects out-of-confi
   )
 })
 
-test_that("publish_football_iceland: every division_code emitted matches next_games schema regex", {
+test_that("publish_iceland_league: every division_code emitted matches next_games schema regex", {
   # WHY: 2deild/3deild cells added 2026-05-24 introduced non-ASCII recode
-  # outputs "ÖD"/"ÞD" into publish_football_iceland()'s
+  # outputs "ÖD"/"ÞD" into publish_iceland_league()'s
   # division_labels map, which the JSON schema's
   # ^[A-Z][A-Z0-9_]*$ pattern rejects -- decide-publish.yml then aborts.
   # This test parameterises over every cell in publish_divisions.{male,female}
@@ -257,7 +257,7 @@ test_that("football publish_divisions carries the legacy badge map as code_badge
 test_that("football BD carries qualify {6, Efri hluti} for both sexes", {
   # 6 is split$upper (config/leagues.yml BD entries, verified 2026-07-10), so
   # p_qualify reproduces the existing p_top_six rule `placement <= 6L` at
-  # R/publish-football-iceland.R exactly. No other football cell qualifies.
+  # R/publish-iceland-league.R exactly. No other football cell qualifies.
   cfg <- load_leagues()[["football_iceland"]][["publish_divisions"]]
   for (sex_key in c("male", "female")) {
     bd <- Filter(function(e) identical(e$code, "BD"), cfg[[sex_key]])[[1]]

@@ -253,7 +253,7 @@ test_that("team_strengths_quantiles q=50 matches publisher's median per cell", {
     extracts_root = out
   )
   suppressWarnings(suppressMessages(
-    publish_football_iceland(
+    publish_iceland_league(
       extracted = extracted,
       league = league,
       sex = "male",
@@ -481,7 +481,7 @@ test_that("final_positions.parquet matches publisher's final_positions.json", {
     extracts_root = out
   )
   suppressWarnings(suppressMessages(
-    publish_football_iceland(
+    publish_iceland_league(
       extracted = extracted,
       league = league,
       sex = "male",

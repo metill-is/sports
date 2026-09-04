@@ -59,7 +59,7 @@ test_that(".iceland_division_badges reproduces the retired static map", {
     expect_identical(badges[["BD_LOWER_PO"]], "BDL")
 
     # LD1_PO and LD4 were in the retired static map but are NOT here,
-    # deliberately. publish_football_iceland() filters
+    # deliberately. publish_iceland_league() filters
     # `division %in% family_divs` before the recode, and family_divs is the
     # target division plus only its own _UPPER_PO/_LOWER_PO
     # (.split_family_divisions_pfi), so neither code can reach a payload. The

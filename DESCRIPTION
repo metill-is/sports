@@ -54,7 +54,7 @@ Collate:
     'auto-place.R'
     'round-cutoff.R'
     'model-prepare.R'
-    'publish-football-iceland.R'
+    'publish-iceland-league.R'
     'publish-divisions.R'
     'extract-football-iceland.R'
     'simulate-league-season.R'
