@@ -37,6 +37,7 @@ NULL
 prune_extracts <- function(root = here::here("data", "beliefs", "extracts"),
                            keep_days = 14L,
                            keep_min = 3L,
+                           keep_season_anchor = TRUE,
                            now = Sys.Date(),
                            dry_run = TRUE) {
   stopifnot(keep_min >= 1L)
@@ -65,13 +66,38 @@ prune_extracts <- function(root = here::here("data", "beliefs", "extracts"),
 
   cutoff <- as.Date(now) - as.integer(keep_days)
 
+  # Season anchors. `.read_preseason_team_strengths_pfi()` walks the extracts
+  # tree looking for a fit STRICTLY EARLIER than a division's season start, to
+  # publish team_strengths.json's `preseason` block. It has no archive
+  # fallback, so if the season's first partition is pruned the block silently
+  # vanishes -- and nothing catches it: `preseason` is optional in the schema,
+  # and the golden fixture writes a single partition that IS the fit being
+  # published, so its hashes already encode a no-preseason payload. Keeping the
+  # earliest partition per (cell, season) costs one partition per season and is
+  # what makes the surface survivable.
+  meta$season <- .extract_partition_season(meta$fit_date)
+
+  anchors <- if (isTRUE(keep_season_anchor)) {
+    meta |>
+      dplyr::group_by(.data$cell, .data$season) |>
+      dplyr::slice_min(.data$fit_date, n = 1L, with_ties = FALSE) |>
+      dplyr::ungroup() |>
+      dplyr::pull("path")
+  } else {
+    character()
+  }
+
   drop <- meta |>
     dplyr::group_by(.data$cell) |>
     # rank 1 is the newest. Keep it and the next keep_min - 1 whatever their
     # age -- this is the clause that protects a dormant seasonal cell.
     dplyr::mutate(rank = rank(-as.numeric(.data$fit_date), ties.method = "first")) |>
     dplyr::ungroup() |>
-    dplyr::filter(.data$rank > as.integer(keep_min), .data$fit_date < cutoff)
+    dplyr::filter(
+      .data$rank > as.integer(keep_min),
+      .data$fit_date < cutoff,
+      !.data$path %in% anchors
+    )
 
   if (nrow(drop) == 0L) {
     return(empty)
@@ -89,4 +115,23 @@ prune_extracts <- function(root = here::here("data", "beliefs", "extracts"),
   drop |>
     dplyr::select("sport", "country", "sex", "fit_date", "path", "bytes") |>
     dplyr::arrange(.data$sport, .data$sex, .data$fit_date)
+}
+
+
+#' Anchor bucket for a `fit_date` -- the CALENDAR year, deliberately.
+#'
+#' Not the closing-season convention `hsi_current_season()` uses. That would be
+#' actively wrong for football, whose season runs April to October inside ONE
+#' calendar year: its July-onwards fits would be filed as next season, so the
+#' real season's anchor would look like a straggler and be pruned -- exactly
+#' the bug this anchor exists to prevent.
+#'
+#' The calendar year is correct for football and merely generous for the 2DT
+#' sports, whose Oct-May season spans two calendar years and so keeps two
+#' anchors instead of one. One extra partition per cell per season is a cheap
+#' price for a rule that cannot mis-file the surface it protects.
+#' @keywords internal
+#' @noRd
+.extract_partition_season <- function(fit_date) {
+  as.integer(format(fit_date, "%Y"))
 }
