@@ -4,6 +4,10 @@
 # assertions cover a 2DT tree and the live football tree through the same
 # function.
 
+# The reader's non-division slots. `fit_meta` joins them because it is
+# PARTITION-level -- see the block below.
+.READER_PARTITION_SLOTS <- c("fit_date", "sim_inputs", "cup_bracket", "fit_meta")
+
 test_that("read_extracted_iceland splits a 2DT partition by division", {
   league <- load_leagues()[["basketball_iceland"]]
   root <- fixture_extracts_root("basketball")
@@ -14,10 +18,21 @@ test_that("read_extracted_iceland splits a 2DT partition by division", {
   )
 
   expect_setequal(
-    setdiff(names(out), c("fit_date", "sim_inputs", "cup_bracket")),
+    setdiff(names(out), .READER_PARTITION_SLOTS),
     .iceland_division_codes("basketball_iceland", "male")
   )
   expect_equal(out$fit_date, FIXTURE_FIT_DATE)
+
+  # fit_meta is PARTITION-level: one row about the fit, no `division` column.
+  # It is surfaced whole rather than split, because splitting a division-free
+  # table by division filters it to zero rows on every cell -- which is how
+  # every 2DT cell came to publish n_draws: 0.
+  expect_equal(nrow(out$fit_meta), 1L)
+  expect_false("division" %in% names(out$fit_meta))
+  expect_equal(out$fit_meta$n_draws, FIXTURE_N_DRAWS)
+  for (code in .iceland_division_codes("basketball_iceland", "male")) {
+    expect_null(out[[code]]$fit_meta, info = code)
+  }
 
   profile <- sport_publish_profile("basketball")
   for (code in .iceland_division_codes("basketball_iceland", "male")) {
@@ -85,11 +100,40 @@ test_that("absent OPTIONAL parquets degrade to 0-row tibbles", {
       sex = "female", fit_date = FIXTURE_FIT_DATE, extracts_root = root
     )
     code <- .iceland_division_codes(paste0(sport, "_iceland"), "female")[[1]]
-    for (optional in optionals) {
+    # Partition-level optionals degrade in the partition slot, division-keyed
+    # ones in every division slot -- the same 0-row tibble either way.
+    for (optional in setdiff(optionals, .READER_PARTITION_SLOTS)) {
       expect_equal(nrow(out[[code]][[optional]]), 0L, info = optional)
       expect_true(tibble::is_tibble(out[[code]][[optional]]), info = optional)
     }
+    for (optional in intersect(optionals, .READER_PARTITION_SLOTS)) {
+      expect_equal(nrow(out[[optional]]), 0L, info = optional)
+      expect_true(tibble::is_tibble(out[[optional]]), info = optional)
+    }
   }
+})
+
+test_that("a partition-level extract carrying a division column is refused", {
+  # The guard that stops the n_draws-0 class of bug from recurring on the next
+  # partition-level file: if fit_meta ever grows a `division` column, the
+  # reader aborts instead of silently surfacing a cell's slice as the fit's
+  # provenance.
+  root <- fixture_extracts_root("handball")
+  part <- file.path(
+    root, "sport=handball", "country=iceland", "sex=male",
+    paste0("fit_date=", format(FIXTURE_FIT_DATE, "%Y-%m-%d"))
+  )
+  fm <- arrow::read_parquet(file.path(part, "fit_meta.parquet"))
+  fm$division <- "OD"
+  arrow::write_parquet(fm, file.path(part, "fit_meta.parquet"))
+
+  expect_error(
+    read_extracted_iceland(
+      load_leagues()[["handball_iceland"]],
+      sex = "male", fit_date = FIXTURE_FIT_DATE, extracts_root = root
+    ),
+    "division"
+  )
 })
 
 test_that("a 2DT partition missing round_strengths_quantiles is INCOMPLETE", {
@@ -125,7 +169,7 @@ test_that("football still reads through the generalised reader", {
   )
 
   expect_setequal(
-    setdiff(names(out), c("fit_date", "sim_inputs", "cup_bracket")),
+    setdiff(names(out), .READER_PARTITION_SLOTS),
     .iceland_division_codes("football_iceland", "male")
   )
   expect_true(
