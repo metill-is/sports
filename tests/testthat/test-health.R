@@ -434,3 +434,97 @@ test_that("check_placement_health FAILs when last healthy run is very stale", {
   )
   expect_equal(check_placement_health(root, Sys.time(), th)$status, "FAIL")
 })
+
+# ---- WS12 T5: the publish and season checks are composed in ----------------
+#
+# Nine checks were composed before this and NOT ONE read data/publish/, which
+# is how basketball and handball stayed dark for months behind a green
+# pipeline.
+#
+# The plan claimed the proof was an overall OK -> FAIL delta on this fixture.
+# MEASURED, and it is not: pre-composition this tempdir already returns FAIL,
+# because fit_freshness fires on a root with no fit at all. The load-bearing
+# assertion is therefore the publish_freshness row EXISTING and reporting FAIL
+# with a per-cell scope -- overall is asserted only as a shape check.
+
+.bb_health_league <- function() {
+  list(basketball_iceland = list(
+    sport = "basketball", country = "iceland", sexes = list("male"),
+    active = TRUE,
+    data_source = list(results = "kki_basketball"),
+    publish_divisions = list(male = list(
+      list(code = "BD", slug = "bd", label_is = "Bonusdeild", is_cup = FALSE)
+    ))
+  ))
+}
+
+test_that("pipeline_health composes the publish and season checks", {
+  root <- withr::local_tempdir()
+  # In-season: has_upcoming_games() reads Sys.Date() internally and ignores the
+  # injected clock, so the fixture must use a real future date.
+  write_table(
+    tibble::tibble(
+      sport = "basketball", country = "iceland", sex = "male", season = 2027L,
+      match_date = Sys.Date() + 3L, home_team = "A", away_team = "B",
+      division = "BD", round = 1L, kickoff_time = NA_character_
+    ),
+    "schedules",
+    root = root
+  )
+
+  out <- suppressWarnings(pipeline_health(
+    root = root, now = Sys.time(), leagues = .bb_health_league()
+  ))
+
+  expect_true(any(out$check == "publish_freshness"))
+  expect_true(any(out$check == "season_resolution"))
+  # publish_format emits no row here (nothing published to compare), which is
+  # correct -- the composition is proved by the check running without erroring
+  # into a check_error row rather than by it manufacturing one.
+  expect_false(any(out$check == "check_error"))
+  expect_equal(overall_health_status(out), "FAIL")
+  expect_equal(
+    out$status[out$check == "publish_freshness"], "FAIL"
+  )
+  # The existing shape invariant still holds.
+  expect_true(all(out$status %in% c("OK", "WARN", "FAIL", "PAUSED")))
+})
+
+test_that("pipeline_health emits a publish_format row when there is one to emit", {
+  root <- withr::local_tempdir()
+  write_table(
+    tibble::tibble(
+      sport = "basketball", country = "iceland", sex = "male", season = 2027L,
+      match_date = Sys.Date() + 3L, home_team = "A", away_team = "B",
+      division = "BD", round = 1L, kickoff_time = NA_character_
+    ),
+    "schedules",
+    root = root
+  )
+  cell <- .publish_cell_dir(root, "basketball", "male", "bd")
+  dir.create(cell, recursive = TRUE, showWarnings = FALSE)
+  jsonlite::write_json(
+    list(
+      sport = "basketball", sex = "male", division = "BD", is_cup = FALSE,
+      generated_at = format(Sys.time(), "%Y-%m-%dT%H:%M:%S%z"),
+      n_rounds = 6L, n_rounds_source = "schedule"
+    ),
+    file.path(cell, "meta.json"),
+    auto_unbox = TRUE
+  )
+  jsonlite::write_json(
+    list(season = 2027L, rows = list(
+      list(team = "A"), list(team = "B"), list(team = "C"), list(team = "D")
+    )),
+    file.path(cell, "standings.json"),
+    auto_unbox = TRUE
+  )
+  leagues <- .bb_health_league()
+  leagues$basketball_iceland$publish_divisions$male[[1]]$expected_meetings <- 2L
+
+  out <- suppressWarnings(pipeline_health(
+    root = root, now = Sys.time(), leagues = leagues
+  ))
+  expect_true(any(out$check == "publish_format"))
+  expect_false(any(out$check == "check_error"))
+})

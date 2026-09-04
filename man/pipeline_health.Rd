@@ -18,7 +18,8 @@ A tibble with columns `check`, `scope`, `status`, `value`, `threshold`.
 }
 \description{
 Composes freshness, persisted Stan-diagnostics drift, orphaned-bet,
-placement-capture-rate, and bankroll checks into one tibble of
+placement-capture-rate, bankroll, publish-freshness, season-resolution and
+publish-format checks into one tibble of
 `{check, scope, status, value, threshold}`
 rows. `status` is one of `OK` < `WARN` < `FAIL`, plus `PAUSED` for a cell
 that is intentionally off-season (no upcoming games — reuses
@@ -28,4 +29,19 @@ over committed Parquet; nothing is written, so this is safe to run on CI
 against the local-only ledger (a reader cannot race the placer's
 non-atomic write). Each sub-check is wrapped so one failure degrades to a
 single `check_error` row rather than aborting the whole snapshot.
+}
+\details{
+The three publish-side checks were added 2026-09-04. Until then NOTHING here
+read `data/publish/`, which is how basketball and handball published nothing
+at all from the Plan-7 cutover to 2026-09 while every composed check stayed
+green. `check_publish_freshness()` is the row that would have said so.
+
+HONEST LIMIT. The alert channel is a GitHub workflow-failure email: signal,
+not a pager. `healthcheck.yml` runs twice daily and fails the run on
+`overall == "FAIL"`; there is no push notification, no escalation and no
+on-call, so a FAIL is noticed within roughly twelve hours if the maintainer
+reads mail and not at all if they do not. Because the channel is that
+low-bandwidth, a permanently-WARN check is worse than no check -- which is
+why `check_season_resolution()` scopes FAIL to the league divisions and
+leaves federation-deferred cups at WARN.
 }

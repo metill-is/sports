@@ -516,7 +516,8 @@ check_placement_health <- function(root, now, th) {
 #' Read-only pipeline health snapshot.
 #'
 #' Composes freshness, persisted Stan-diagnostics drift, orphaned-bet,
-#' placement-capture-rate, and bankroll checks into one tibble of
+#' placement-capture-rate, bankroll, publish-freshness, season-resolution and
+#' publish-format checks into one tibble of
 #' `{check, scope, status, value, threshold}`
 #' rows. `status` is one of `OK` < `WARN` < `FAIL`, plus `PAUSED` for a cell
 #' that is intentionally off-season (no upcoming games — reuses
@@ -526,6 +527,20 @@ check_placement_health <- function(root, now, th) {
 #' against the local-only ledger (a reader cannot race the placer's
 #' non-atomic write). Each sub-check is wrapped so one failure degrades to a
 #' single `check_error` row rather than aborting the whole snapshot.
+#'
+#' The three publish-side checks were added 2026-09-04. Until then NOTHING here
+#' read `data/publish/`, which is how basketball and handball published nothing
+#' at all from the Plan-7 cutover to 2026-09 while every composed check stayed
+#' green. `check_publish_freshness()` is the row that would have said so.
+#'
+#' HONEST LIMIT. The alert channel is a GitHub workflow-failure email: signal,
+#' not a pager. `healthcheck.yml` runs twice daily and fails the run on
+#' `overall == "FAIL"`; there is no push notification, no escalation and no
+#' on-call, so a FAIL is noticed within roughly twelve hours if the maintainer
+#' reads mail and not at all if they do not. Because the channel is that
+#' low-bandwidth, a permanently-WARN check is worse than no check -- which is
+#' why `check_season_resolution()` scopes FAIL to the league divisions and
+#' leaves federation-deferred cups at WARN.
 #'
 #' @param root Data root. Default `here::here("data")`.
 #' @param now Reference time (POSIXct). Default `Sys.time()`.
@@ -552,7 +567,12 @@ pipeline_health <- function(root = here::here("data"),
     safe(check_capture_rate(root, now, th)),
     safe(check_placement_health(root, now, th)),
     safe(check_bankroll(root, th)),
-    safe(check_discovery(root, th))
+    safe(check_discovery(root, th)),
+    # The publish-side checks sort last so the new rows read as a block in the
+    # printed table.
+    safe(check_publish_freshness(leagues, root, now, th)),
+    safe(check_season_resolution(leagues, root, now)),
+    safe(check_publish_format_agreement(leagues, root))
   )
 }
 

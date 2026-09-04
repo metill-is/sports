@@ -12,6 +12,8 @@ same shape: **symptom -> diagnose -> fix -> verify**.
 | `orphaned_bets` WARN, `bankroll` FAIL | [orphaned-bet.md](orphaned-bet.md) |
 | `decide-publish.yml` red on "Value validation" / "Schema validation" | [schema-abort.md](schema-abort.md) |
 | fly.metill.is stale despite fresh `data/publish/` JSONs | [metill-platform-desync.md](metill-platform-desync.md) |
+| `publish_freshness` FAIL, `publish_format` WARN | [stale-publish.md](stale-publish.md) |
+| `season_resolution` FAIL (a federation season id will not resolve) | [season-restart.md](season-restart.md) |
 
 ## First principles
 
