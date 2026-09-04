@@ -156,30 +156,65 @@ NULL
     dplyr::arrange(.data$match_date, .data$game_nr)
 }
 
-# Build the 9-cell strength grid (component × location) for the top-
-# division teams, quantile-summarised. Replicates football's shape but
-# without per-division filtering (basketball/handball model one division
-# only).
-.compute_team_strengths_quantiles_2dt <- function(fit, teams,
-                                                  current_top_teams) {
-  draws_home <- dplyr::bind_rows(
+# The six raw (component x location) team-strength blocks, pulled ONCE.
+#
+# Mirrors football's hoist (R/extract-football-iceland.R:1514-1521): the pull is
+# cross-division, so it belongs above the division loop, not inside the quantile
+# helper. Inside, a two-division cell would make nine `fit$draws()` calls per
+# division against a 300-600 MB fit.
+#
+# No `avg` block here on purpose -- `avg` is a PER-DRAW mean the quantile helper
+# computes, so the interval reflects the joint posterior rather than a post-hoc
+# average of two independently-summarised bands.
+.extract_team_strength_draws_2dt <- function(fit, teams) {
+  dplyr::bind_rows(
     .extract_team_draws_2dt(fit, "cur_offense_home", teams, "offence", "home"),
     .extract_team_draws_2dt(fit, "cur_defense_home", teams, "defence", "home"),
-    .extract_team_draws_2dt(fit, "cur_strength_home", teams, "total", "home")
-  )
-  draws_away <- dplyr::bind_rows(
+    .extract_team_draws_2dt(fit, "cur_strength_home", teams, "total", "home"),
     .extract_team_draws_2dt(fit, "cur_offense_away", teams, "offence", "away"),
     .extract_team_draws_2dt(fit, "cur_defense_away", teams, "defence", "away"),
     .extract_team_draws_2dt(fit, "cur_strength_away", teams, "total", "away")
   )
-  draws_avg <- dplyr::bind_rows(draws_home, draws_away) |>
+}
+
+# The three home-advantage components, pulled ONCE. Same hoist, same reason.
+# NOTE the deliberate absence of any transform -- see the B5 block below.
+.extract_home_advantage_draws_2dt <- function(fit, teams) {
+  extract_one <- function(var, component) {
+    fit$draws(var) |>
+      posterior::as_draws_df() |>
+      tibble::as_tibble() |>
+      tidyr::pivot_longer(c(-".chain", -".draw", -".iteration")) |>
+      dplyr::mutate(
+        team_idx = as.integer(readr::parse_number(.data$name)),
+        team = teams$team[.data$team_idx],
+        component = component,
+        value = .data$value
+      ) |>
+      dplyr::select("team", "component", ".draw", "value")
+  }
+
+  dplyr::bind_rows(
+    extract_one("home_advantage_off", "offence"),
+    extract_one("home_advantage_def", "defence"),
+    extract_one("home_advantage_tot", "total")
+  )
+}
+
+# Build the 9-cell strength grid (component × location) for the top-
+# division teams, quantile-summarised. Replicates football's shape,
+# including the hoisted draws argument: the pull is cross-division, the
+# semi_join is what makes the band per-division.
+.compute_team_strengths_quantiles_2dt <- function(team_strengths_draws,
+                                                  current_top_teams) {
+  team_strengths_avg <- team_strengths_draws |>
     dplyr::summarise(
       value = mean(.data$value),
       .by = c(".draw", "team", "component")
     ) |>
     dplyr::mutate(location = "avg")
 
-  all_draws <- dplyr::bind_rows(draws_home, draws_away, draws_avg) |>
+  all_draws <- dplyr::bind_rows(team_strengths_draws, team_strengths_avg) |>
     dplyr::semi_join(current_top_teams, by = "team")
 
   .summarise_quantile_band_2dt(all_draws, c("team", "component", "location"))
@@ -206,27 +241,12 @@ NULL
 # the bottom, absurd at the top, so it survived review. There is deliberately
 # no `transform` argument any more: the parameter is what invited the copy.
 # See test-extract-2dt-home-advantage-units.R.
-.compute_home_advantage_quantiles_2dt <- function(fit, teams,
+#
+# The pull now lives in .extract_home_advantage_draws_2dt(); the units guarantee
+# is the composition of the two, and neither half may reintroduce a transform.
+.compute_home_advantage_quantiles_2dt <- function(home_advantage_draws,
                                                   current_top_teams) {
-  extract_one <- function(var, component) {
-    fit$draws(var) |>
-      posterior::as_draws_df() |>
-      tibble::as_tibble() |>
-      tidyr::pivot_longer(c(-".chain", -".draw", -".iteration")) |>
-      dplyr::mutate(
-        team_idx = as.integer(readr::parse_number(.data$name)),
-        team = teams$team[.data$team_idx],
-        component = component,
-        value = .data$value
-      ) |>
-      dplyr::select("team", "component", ".draw", "value")
-  }
-
-  home_adv_draws <- dplyr::bind_rows(
-    extract_one("home_advantage_off", "offence"),
-    extract_one("home_advantage_def", "defence"),
-    extract_one("home_advantage_tot", "total")
-  ) |>
+  home_adv_draws <- home_advantage_draws |>
     dplyr::semi_join(current_top_teams, by = "team")
 
   .summarise_quantile_band_2dt(home_adv_draws, c("team", "component"))
@@ -387,11 +407,14 @@ NULL
     tie_threshold = tie_threshold
   )
 
+  team_strengths_draws <- .extract_team_strength_draws_2dt(fit, teams)
+  home_advantage_draws <- .extract_home_advantage_draws_2dt(fit, teams)
+
   team_strengths_quantiles <- .compute_team_strengths_quantiles_2dt(
-    fit, teams, current_top_teams
+    team_strengths_draws, current_top_teams
   )
   home_advantage_quantiles <- .compute_home_advantage_quantiles_2dt(
-    fit, teams, current_top_teams
+    home_advantage_draws, current_top_teams
   )
 
   posterior_goals <- .compute_posterior_goals_2dt(fit, pred_d)

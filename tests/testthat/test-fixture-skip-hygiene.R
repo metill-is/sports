@@ -39,7 +39,11 @@ test_that("the bb/hb publish + extract tests carry no skip gates", {
     # bb/hb round_strengths_quantiles surface is built from, so a skip here
     # would retire the only exact check of the (matchweek -> fit round index)
     # mapping all three sports share.
-    "test-strength-trajectory.R"
+    "test-strength-trajectory.R",
+    # WS8's hoisted 2DT posterior pulls. The B5 units guarantee is now the
+    # composition of the pull and the band, so this is the only place the pull
+    # half is checked in isolation.
+    "test-extract-2dt-draw-pulls.R"
   )
   banned <- c("skip(", "skip_if(", "skip_if_not(", "skip_if_not_installed(", "Sys.getenv")
 

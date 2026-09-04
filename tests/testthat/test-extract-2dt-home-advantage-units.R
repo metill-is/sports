@@ -16,6 +16,12 @@
 # review while the top of the same column is absurd -- which is why it would
 # have shipped.
 #
+# Since WS8 task 3 the pull and the band are two functions:
+# .extract_home_advantage_draws_2dt() reads the posterior,
+# .compute_home_advantage_quantiles_2dt() filters and quantiles it. The
+# units guarantee is the COMPOSITION, so these call sites exercise both --
+# an exp() reintroduced in either half moves the numbers below.
+#
 # This file has no skip() by design -- see spec section 4 assertion 7.
 
 ha_stub <- function(off, def, k = 2L, n_draws = 8L) {
@@ -54,7 +60,10 @@ test_that("WS2's stub_fit() exposes the $draws(var) contract this file needs", {
 test_that("2DT home advantage publishes raw points, not exp() of them", {
   teams <- ha_teams()
   out <- .compute_home_advantage_quantiles_2dt(
-    ha_stub(off = 1.5, def = 2.5), teams, teams["team"]
+    .extract_home_advantage_draws_2dt(
+      ha_stub(off = 1.5, def = 2.5), teams
+    ),
+    teams["team"]
   )
 
   val <- function(comp) unique(round(out$value[out$component == comp], 6))
@@ -72,7 +81,10 @@ test_that("the total component is not halved", {
   # would still publish 2.0 here.
   teams <- ha_teams()
   out <- .compute_home_advantage_quantiles_2dt(
-    ha_stub(off = 3.0, def = 5.0), teams, teams["team"]
+    .extract_home_advantage_draws_2dt(
+      ha_stub(off = 3.0, def = 5.0), teams
+    ),
+    teams["team"]
   )
   expect_equal(unique(round(out$value[out$component == "total"], 6)), 8.0)
 })
@@ -81,7 +93,10 @@ test_that("a realistic home edge does not publish as an absurd multiplier", {
   # The empirical top of the range: 12.07 raw points published as exp(6.035).
   teams <- ha_teams()
   out <- .compute_home_advantage_quantiles_2dt(
-    ha_stub(off = 6.0, def = 6.07), teams, teams["team"]
+    .extract_home_advantage_draws_2dt(
+      ha_stub(off = 6.0, def = 6.07), teams
+    ),
+    teams["team"]
   )
   tot <- unique(round(out$value[out$component == "total"], 4))
   expect_equal(tot, 12.07)
