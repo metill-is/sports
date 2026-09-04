@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/metill-is/sports/config/publish-schemas/final_positions.schema.json",
   "title": "data/publish/.../final_positions.json",
-  "description": "Per-team probability of finishing in each placement (1..n_teams) at season end. `summary` carries the headline aggregates per team (p_top_six, p_winner, p_relegation). Empty for cup cells.",
+  "description": "Per-team probability of finishing in each placement (1..n_teams). `basis` says whether that is the final table or the regular-season table. `summary` carries the headline aggregates per team. Empty for cup cells.",
   "type": "object",
   "required": [
     "generated_at",
@@ -79,9 +79,28 @@
             "type": "number",
             "minimum": 0,
             "maximum": 1
+          },
+          "p_top_of_table": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Probability of finishing first in the table this cell publishes. Sport-neutral: under basis=final_table it is the title probability, under regular_season_table it is top of the regular season."
+          },
+          "p_qualify": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Probability of making the division's configured qualification cut. Emitted only where meta.qualify is non-null."
           }
         }
       }
+    },
+    "basis": {
+      "enum": [
+        "final_table",
+        "regular_season_table"
+      ],
+      "description": "What a placement MEANS. `final_table` = the season's final standing, so placement 1 is the title. `regular_season_table` = the regular season only, with the post-season unmodelled, so placement 1 is top of the regular-season table and NOT the champion."
     }
   }
 }

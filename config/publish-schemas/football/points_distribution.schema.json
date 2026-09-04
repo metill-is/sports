@@ -94,6 +94,12 @@
             "type": "number",
             "minimum": 0,
             "maximum": 1
+          },
+          "p_top_of_table": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Probability of finishing first in the table this cell publishes; see meta.season_scope for what that table is. There is deliberately no top-level `basis` here -- read it from meta.season_scope."
           }
         }
       }

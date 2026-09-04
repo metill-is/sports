@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/metill-is/sports/config/publish-schemas/meta.schema.json",
   "title": "data/publish/.../meta.json",
-  "description": "Per-cell metadata: identity (sport/sex/league/division/is_cup), provenance (fit_date, generated_at), and Stan-run scalars (n_draws, round). Schema v1 -- additive changes only without bumping.",
+  "description": "Per-cell metadata: identity (sport/sex/league/division/is_cup), provenance (fit_date, generated_at), and Stan-run scalars (n_draws, round). Schema v2 (2026-09): adds units, points, n_rounds, n_rounds_source, season_scope, postseason, qualify and relegation. Additive changes only without bumping. The v2 keys are typed here but not in `required`, because the live football tree predates them; each sport's delta requires the ones it emits.",
   "type": "object",
   "required": [
     "sport",
@@ -64,6 +64,136 @@
     "n_draws": {
       "type": "integer",
       "minimum": 1
+    },
+    "n_rounds": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1,
+      "description": "Rounds in the REGULAR season, derived upstream and published so a consumer never has to guess it. null on a cup. It is not 2*(n_teams-1): Icelandic women's handball plays a triple round robin (8 teams, 84 fixtures, 21 rounds)."
+    },
+    "n_rounds_source": {
+      "enum": [
+        "config",
+        "schedule",
+        "none",
+        "not_applicable"
+      ],
+      "description": "Where n_rounds came from. `config` = the division's configured expected_meetings (wins); `schedule` = derived from the season's fixture count; `none` = neither was available; `not_applicable` = a cup, which has no round count."
+    },
+    "units": {
+      "type": "object",
+      "description": "The scale the published strength and home-advantage bands are on, and the goal-difference bin width the extractor binned with. The 2DT models are additive in raw points/goals; football's bivariate Poisson is on the log scale. Getting this wrong is a home edge of 4 points publishing as 54.6.",
+      "required": [
+        "strength",
+        "home_advantage",
+        "diff_bin_width"
+      ],
+      "properties": {
+        "strength": {
+          "type": "string",
+          "minLength": 1
+        },
+        "home_advantage": {
+          "type": "string",
+          "minLength": 1
+        },
+        "diff_bin_width": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "points": {
+      "type": "object",
+      "description": "The league points scheme. `draw` is null where a draw is impossible (basketball), so no consumer infers one from a 0.",
+      "required": [
+        "win",
+        "draw",
+        "loss"
+      ],
+      "properties": {
+        "win": {
+          "type": "integer"
+        },
+        "draw": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "loss": {
+          "type": "integer"
+        }
+      }
+    },
+    "season_scope": {
+      "enum": [
+        "full_season",
+        "regular_season"
+      ],
+      "description": "What the published table and placement grid cover. `regular_season` means the post-season is NOT modelled, so placement 1 is top of the regular-season table and not the title."
+    },
+    "postseason": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "The unmodelled post-season, or null where there is none. Present so a consumer can say what the published table stops short of.",
+      "required": [
+        "name_is",
+        "modelled"
+      ],
+      "properties": {
+        "name_is": {
+          "type": "string",
+          "minLength": 1
+        },
+        "modelled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "qualify": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "The configured qualification cut, or null where the division has none. Only football's Besta deild configures one today: no single per-division integer describes basketball's four different post-season structures, one of which takes every team through.",
+      "required": [
+        "slots",
+        "label_is"
+      ],
+      "properties": {
+        "slots": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "label_is": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "relegation": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "The configured relegation cut. `slots` is null where no division configures relegation_slots, which is everywhere today.",
+      "required": [
+        "slots"
+      ],
+      "properties": {
+        "slots": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        }
+      }
     },
     "split": {
       "type": "object",
