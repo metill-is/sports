@@ -62,11 +62,14 @@ test_that("required / optional extracts match what each extractor writes", {
     )
   )
   for (sport in c("basketball", "handball")) {
+    # The 2DT extractor writes the same six division-keyed parquets football
+    # does since WS8, round_strengths_quantiles included.
     expect_setequal(
       sport_publish_profile(sport)$required_extracts,
       c(
         "predicted_matches", "team_strengths_quantiles",
-        "home_advantage_quantiles", "final_positions", "points_distribution"
+        "round_strengths_quantiles", "home_advantage_quantiles",
+        "final_positions", "points_distribution"
       )
     )
   }
@@ -90,14 +93,19 @@ test_that("round_strengths_quantiles and tournament_placements are placed per sp
 
   for (sport in c("basketball", "handball")) {
     profile <- sport_publish_profile(sport)
+    # REQUIRED for the 2DT sports too since WS8: all three Stan models declare
+    # the same `array[N_rounds] vector[K] offense`/`defense` surface, the
+    # extractor writes it, and there is no pre-contract bb/hb partition on disk
+    # for the requirement to strand.
     expect_true(
-      "round_strengths_quantiles" %in% profile$optional_extracts,
-      info = sport
-    )
-    expect_false(
       "round_strengths_quantiles" %in% profile$required_extracts,
       info = sport
     )
+    expect_false(
+      "round_strengths_quantiles" %in% profile$optional_extracts,
+      info = sport
+    )
+    expect_setequal(profile$required_extracts, football$required_extracts)
     expect_false(
       "tournament_placements" %in%
         c(profile$required_extracts, profile$optional_extracts),

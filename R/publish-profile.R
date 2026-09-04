@@ -125,15 +125,18 @@ NULL
     "final_positions",
     "points_distribution"
   )
-  # The 2DT extractor writes five parquets today
-  # (R/extract-iceland-2dt-shared.R). `round_strengths_quantiles` is WS8's and
-  # must stay OPTIONAL until it exists on disk.
-  twodt_required <- setdiff(football_required, "round_strengths_quantiles")
+  # The 2DT extractor now writes the same six division-keyed parquets football
+  # does, `round_strengths_quantiles` included: all three Stan models declare
+  # the identical `array[N_rounds] vector[K] offense` / `defense` surface. It is
+  # REQUIRED rather than optional because data/beliefs/extracts/ holds no
+  # basketball or handball partition at all yet -- there is no pre-contract
+  # history for it to mark incomplete, unlike football's.
+  twodt_required <- football_required
 
   twodt <- function(units, has_ties, tie_threshold) {
     list(
       required_extracts = twodt_required,
-      optional_extracts = c("round_strengths_quantiles", .PUBLISH_OPTIONAL_ALWAYS),
+      optional_extracts = .PUBLISH_OPTIONAL_ALWAYS,
       empty_extracts = .publish_empty_extracts("match_summary"),
       predicted_matches_shape = "match_summary",
       # The 2DT models are additive in raw points/goals -- there is no link to

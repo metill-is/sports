@@ -13,7 +13,11 @@ FIXTURE_N_DRAWS <- 50L
 FIXTURE_DIVISIONS <- list(
   # BD / OD are 4 teams, not 6: team_strengths_quantiles is 9 cells x 99
   # quantiles per team, and at 6 teams the committed extracts tree came to
-  # 318 KB -- past the 250 KB budget. Every non-top division stays at 6.
+  # 318 KB -- past the then-250 KB budget. Every non-top division stays at 6,
+  # which is also what makes the two divisions differ in size and so exercises
+  # the extractor's per-division scoping. The budget is now 2048 KB (see
+  # test-fixture-harness.R) because round_strengths_quantiles adds a matchweek
+  # dimension to the same 9 x 99 grid.
   basketball = list(male = c(BD = 4L, `1D` = 6L), female = c(BD = 4L, `1D` = 6L)),
   handball   = list(male = c(OD = 4L, G66 = 6L), female = c(OD = 4L, G66 = 6L)),
   football   = list(

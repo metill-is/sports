@@ -49,49 +49,78 @@ test_that("the facts fixture drives prepare_data for all three sports", {
   }
 })
 
-test_that("the committed 2DT extracts fixture has the 5-parquet contract", {
+test_that("the committed 2DT extracts fixture has the 7-parquet contract", {
   base <- testthat::test_path("fixtures", "extracts")
   stamp <- paste0("fit_date=", format(FIXTURE_FIT_DATE, "%Y-%m-%d"))
 
-  five <- c(
-    "predicted_matches.parquet", "team_strengths_quantiles.parquet",
-    "home_advantage_quantiles.parquet", "final_positions.parquet",
-    "points_distribution.parquet"
+  # expect_setequal, not `%in%`: the committed fixture IS the extractor's own
+  # output, so an extra or missing file is a contract change and must surface
+  # here rather than be absorbed silently.
+  division_keyed <- c(
+    "predicted_matches", "team_strengths_quantiles",
+    "round_strengths_quantiles", "home_advantage_quantiles",
+    "final_positions", "points_distribution"
   )
   cols <- list(
     team_strengths_quantiles = c("team", "component", "location", "quantile", "value"),
+    round_strengths_quantiles = c("round", "team", "component", "location", "quantile", "value"),
     home_advantage_quantiles = c("team", "component", "quantile", "value"),
     final_positions = c("team", "placement", "probability"),
     points_distribution = c("team", "points", "probability")
   )
 
   for (sport in c("basketball", "handball")) {
+    key <- paste0(sport, "_iceland")
     for (sex in c("male", "female")) {
       part <- file.path(
         base, paste0("sport=", sport), "country=iceland",
         paste0("sex=", sex), stamp
       )
       expect_true(dir.exists(part), info = part)
-      # `%in%`, not setequal: a later workstream adds fit_meta +
-      # round_strengths_quantiles.
-      expect_true(all(five %in% list.files(part)), info = part)
+      expect_setequal(
+        list.files(part),
+        paste0(c(division_keyed, "fit_meta"), ".parquet")
+      )
 
-      for (ft in names(cols)) {
+      divs <- .iceland_division_codes(key, sex)
+      for (ft in division_keyed) {
         df <- arrow::read_parquet(file.path(part, paste0(ft, ".parquet")))
-        expect_true(all(cols[[ft]] %in% names(df)), info = paste(part, ft))
         expect_gt(nrow(df), 0L)
+        expect_setequal(unique(df$division), divs)
+        if (!is.null(cols[[ft]])) {
+          expect_true(all(cols[[ft]] %in% names(df)), info = paste(part, ft))
+        }
       }
+
+      # fit_meta is partition-level. A `division` column here would mean the
+      # reader's per-division split filters it to zero rows on every cell.
+      fm <- arrow::read_parquet(file.path(part, "fit_meta.parquet"))
+      expect_equal(nrow(fm), 1L)
+      expect_false("division" %in% names(fm))
     }
   }
 })
 
-test_that("the committed extracts fixture stays inside the 250 KB budget", {
+test_that("the committed extracts fixture stays inside its size budget", {
   files <- list.files(
     testthat::test_path("fixtures", "extracts"),
     recursive = TRUE, full.names = TRUE
   )
   expect_gt(length(files), 0L)
-  expect_lt(sum(file.info(files)$size), 250L * 1024L)
+  # MEASURED 2026-09-04 after the 7-parquet, two-division regeneration:
+  # 28 files, 2,021,428 bytes. Was 250 KB over 20 five-parquet files.
+  #
+  # The whole 8x is round_strengths_quantiles: 1,495,260 of those bytes across
+  # the four partitions. It is 99 quantiles over a 9-cell (component x location)
+  # grid for every (team, matchweek) pair -- 37,422 rows per partition against
+  # team_strengths_quantiles' 8,910 -- and the values are posterior draws, which
+  # do not compress.
+  #
+  # Do NOT meet this budget by shrinking the fixture. The two-division shape and
+  # the 99-quantile grid ARE the contract under test; FIXTURE_DIVISIONS keeps
+  # BD/OD at 4 teams for the old budget's sake and cutting further would stop
+  # the second division from being exercised at a different size to the first.
+  expect_lt(sum(file.info(files)$size), 2048L * 1024L)
 })
 
 test_that("fixture_extracts_root materialises a readable tree", {

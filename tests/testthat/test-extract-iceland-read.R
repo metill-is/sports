@@ -61,10 +61,10 @@ test_that("read_extracted_iceland aborts when a REQUIRED parquet is missing", {
 })
 
 test_that("absent OPTIONAL parquets degrade to 0-row tibbles", {
-  # This is the committed fixture's own state -- it carries the five 2DT
-  # parquets and neither round_strengths_quantiles nor fit_meta -- so the
-  # default case for basketball and handball is "reads fine, optional files
-  # empty". Without that the publisher could not run before WS8 lands.
+  # A partition written before a file type existed must still read. The
+  # committed fixture now carries every file the extractor writes (WS8), so the
+  # older shape is reproduced by DELETING the optional files from the temp copy
+  # rather than by relying on the fixture being incomplete.
   for (sport in c("basketball", "handball")) {
     league <- load_leagues()[[paste0(sport, "_iceland")]]
     root <- fixture_extracts_root(sport)
@@ -72,19 +72,45 @@ test_that("absent OPTIONAL parquets degrade to 0-row tibbles", {
       root, paste0("sport=", sport), "country=iceland", "sex=female",
       paste0("fit_date=", format(FIXTURE_FIT_DATE, "%Y-%m-%d"))
     )
-    expect_false(file.exists(file.path(part, "round_strengths_quantiles.parquet")))
-    expect_false(file.exists(file.path(part, "fit_meta.parquet")))
+    optionals <- sport_publish_profile(sport)$optional_extracts
+    expect_gt(length(optionals), 0L)
+    for (optional in optionals) {
+      path <- file.path(part, paste0(optional, ".parquet"))
+      expect_true(file.exists(path), info = optional)
+      expect_true(file.remove(path))
+    }
 
     out <- read_extracted_iceland(
       league,
       sex = "female", fit_date = FIXTURE_FIT_DATE, extracts_root = root
     )
     code <- .iceland_division_codes(paste0(sport, "_iceland"), "female")[[1]]
-    for (optional in sport_publish_profile(sport)$optional_extracts) {
+    for (optional in optionals) {
       expect_equal(nrow(out[[code]][[optional]]), 0L, info = optional)
       expect_true(tibble::is_tibble(out[[code]][[optional]]), info = optional)
     }
   }
+})
+
+test_that("a 2DT partition missing round_strengths_quantiles is INCOMPLETE", {
+  # It is a required extract for the 2DT sports, unlike football's fit_meta:
+  # data/beliefs/extracts/ holds no basketball or handball partition at all, so
+  # there is no pre-contract history for the requirement to strand.
+  league <- load_leagues()[["basketball_iceland"]]
+  root <- fixture_extracts_root("basketball")
+  part <- file.path(
+    root, "sport=basketball", "country=iceland", "sex=male",
+    paste0("fit_date=", format(FIXTURE_FIT_DATE, "%Y-%m-%d"))
+  )
+  expect_true(file.remove(file.path(part, "round_strengths_quantiles.parquet")))
+
+  expect_error(
+    read_extracted_iceland(
+      league,
+      sex = "male", fit_date = FIXTURE_FIT_DATE, extracts_root = root
+    ),
+    "is incomplete"
+  )
 })
 
 test_that("football still reads through the generalised reader", {
