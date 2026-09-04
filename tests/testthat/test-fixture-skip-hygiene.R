@@ -70,7 +70,11 @@ test_that("the bb/hb publish + extract tests carry no skip gates", {
     # WS10's cross-cell next_games lock. It is the only check that the bin
     # widths in next_games.json match the width meta.units declares, which is
     # what makes the units claim falsifiable rather than decorative.
-    "test-publish-next-games-contract.R"
+    "test-publish-next-games-contract.R",
+    # WS12's publish-freshness check. Its "in-season, active, no publish output
+    # and no extract partition -> FAIL" block is the single assertion that
+    # would have made B4 visible; a skip gate there restores the silence.
+    "test-health-publish-freshness.R"
   )
   banned <- c("skip(", "skip_if(", "skip_if_not(", "skip_if_not_installed(", "Sys.getenv")
 

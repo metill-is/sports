@@ -23,7 +23,14 @@ health_thresholds <- function() {
     capture_warn_rate = 0.7, # placed/recommended below this -> WARN
     capture_fail_rate = 0.3, # below this -> FAIL (near-total placement collapse)
     placement_stale_warn_hours = 6, # pending bets + last healthy run older -> WARN
-    placement_stale_fail_hours = 14 # ...older still -> FAIL
+    placement_stale_fail_hours = 14, # ...older still -> FAIL
+    # A published cell older than this is stale. Judgement, not measurement:
+    # decide-publish commits roughly 4x/day (git log -3 -- data/publish/ on
+    # 2026-09-02 shows 12:37Z, 18:00Z, 22:27Z), so 36h is a full day of missed
+    # runs plus slack. Too tight and every quiet weekend goes red; too loose
+    # and a two-day publish outage looks healthy. Revisit after the first
+    # month of bb/hb publishing, citing observed inter-commit gaps.
+    publish_max_age_hours = 36
   )
 }
 
