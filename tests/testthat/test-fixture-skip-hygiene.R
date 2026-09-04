@@ -61,7 +61,16 @@ test_that("the bb/hb publish + extract tests carry no skip gates", {
     # WS8's partition-level fit_meta. It is the only assertion that the file
     # carries NO division column, which is what stops the reader's per-division
     # split from filtering it to zero rows on every cell.
-    "test-extract-fit-meta.R"
+    "test-extract-fit-meta.R",
+    # WS10's meta v2 contract. It publishes all 17 cells and is the only place
+    # the D3 relabel is checked in the PAYLOAD -- season_scope, postseason,
+    # final_positions.basis, and the assertion that no bb/hb JSON carries
+    # p_winner, p_top_six or the word Islandsmeistari.
+    "test-publish-meta-contract.R",
+    # WS10's cross-cell next_games lock. It is the only check that the bin
+    # widths in next_games.json match the width meta.units declares, which is
+    # what makes the units claim falsifiable rather than decorative.
+    "test-publish-next-games-contract.R"
   )
   banned <- c("skip(", "skip_if(", "skip_if_not(", "skip_if_not_installed(", "Sys.getenv")
 
