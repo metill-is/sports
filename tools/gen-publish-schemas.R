@@ -51,7 +51,7 @@
 # validator -- that is how a sport's schemas get committed, reviewed and
 # rsynced to metill-platform while staying completely inert. Arming a sport is
 # adding it here plus one `git mv`.
-SCHEMA_ARMED_SPORTS <- c("football")
+SCHEMA_ARMED_SPORTS <- c("football", "basketball", "handball")
 
 .SCHEMA_DRAFT_DIR <- "_draft"
 

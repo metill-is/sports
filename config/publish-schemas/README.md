@@ -17,11 +17,15 @@ config/publish-schemas/
 +-- _delta/<sport>/           # per-sport RFC-7386 patches; SOURCE
 +-- _draft/<sport>/           # rendered but NOT armed (resolves nowhere)
 +-- football/                 # rendered + committed; ARMED
++-- basketball/               #   "
++-- handball/                 #   "
 ```
 
-Basketball and handball are not here yet: WS11 authors their deltas, renders
-them into `_draft/` and arms them with a `git mv` once the stale June cells are
-gone (see **Arming a sport**).
+All three sports are armed as of 2026-09-04. Basketball and handball were
+authored under `_draft/`, proved against eight fixture-published cells, and
+moved into place by one `git mv` only after the 32 stale pre-division JSONs
+were deleted -- in that order, because arming with non-conforming JSON on disk
+freezes the site.
 
 `_base/`, `_delta/` and `_draft/` are **sources and staging**, never resolved
 by either validator. The per-sport directories are **generated output** and are

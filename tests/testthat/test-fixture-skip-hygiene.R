@@ -99,7 +99,7 @@ test_that("the bb/hb publish + extract tests carry no skip gates", {
     # both sides of the metill-platform rsync, and the only place the D3
     # p_top_six / p_winner refusal is checked in the CONTRACT rather than the
     # payload.
-    "test-publish-schema-draft.R",
+    "test-publish-schema-2dt.R",
     # WS11's arming precondition. It is the only assertion that the stale
     # pre-division bb/hb cells stay deleted and that the publish tree stays
     # clear of metill-platform's rsync floor.

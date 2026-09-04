@@ -1,20 +1,21 @@
-# The basketball and handball publish schemas, staged under
-# config/publish-schemas/_draft/ where they resolve in NEITHER validator.
+# The basketball and handball publish schemas, ARMED.
 #
-# WHY a draft stage at all. The schema tree rsyncs to metill-platform as
-# data/ithrottir-schemas/ from ONE clone at ONE SHA, 7x/day. The moment
-# config/publish-schemas/<sport>/ exists, the platform's validate_publish.py
-# fails closed for that sport on the very next pull -- and any non-conforming
-# JSON already sitting in data/publish/ then freezes fly.metill.is on the
-# last-known-good payload. Both resolvers try exactly
-# <root>/<sport>/<name>.schema.json then <root>/<name>.schema.json, and no
-# publish JSON can have `_draft` as its first path segment, so a draft can be
-# committed, reviewed and rsynced while staying completely inert.
+# They were authored and proved under config/publish-schemas/_draft/, which
+# resolves in NEITHER validator, and moved into place by a single `git mv` only
+# once the stale June cells were deleted. The staging was not ceremony: the
+# schema tree rsyncs to metill-platform as data/ithrottir-schemas/ from ONE
+# clone at ONE SHA, 7x/day, so the moment config/publish-schemas/<sport>/
+# exists the platform's validate_publish.py fails closed for that sport on the
+# very next pull -- and any non-conforming JSON still sitting in data/publish/
+# would then freeze fly.metill.is on the last-known-good payload.
+#
+# Rollback is `git rm -r config/publish-schemas/<sport>` plus reverting one
+# line of tools/gen-publish-schemas.R. No JSON is touched either way.
 
 .DRAFT_SPORTS <- c("basketball", "handball")
 
 .draft_dir <- function() {
-  testthat::test_path("..", "..", "config", "publish-schemas", "_draft")
+  testthat::test_path("..", "..", "config", "publish-schemas")
 }
 
 .publish_2dt_fixture_cells <- function(env = parent.frame()) {
@@ -46,7 +47,7 @@
   root
 }
 
-test_that("the draft schemas accept every fixture-published bb/hb cell", {
+test_that("the armed schemas accept every fixture-published bb/hb cell", {
   root <- .publish_2dt_fixture_cells()
   for (sport in .DRAFT_SPORTS) {
     res <- validate_publish_dir(
@@ -63,23 +64,33 @@ test_that("the draft schemas accept every fixture-published bb/hb cell", {
   }
 })
 
-test_that("the draft tree is inert in the real validator", {
-  # Belt and braces on the arming order: with the REAL schema_dir the same
-  # cells are still entirely unvalidated.
-  root <- .publish_2dt_fixture_cells()
+test_that("the generator's source directories are still inert", {
+  # The mirror of the pre-arming assertion. _base and _delta ride the rsync to
+  # metill-platform as extra files; neither resolver can reach them, because no
+  # publish JSON can have one of them as its first path segment and _base's
+  # files are named <name>.json rather than <name>.schema.json.
   for (d in c("_base", "_delta", "_draft")) {
     expect_null(.resolve_schema_path(
       testthat::test_path("..", "..", "config", "publish-schemas"),
       d, "meta.json"
     ))
   }
-  res <- validate_publish_dir(
-    file.path(root, "publish", "basketball"),
-    schema_dir = testthat::test_path("..", "..", "config", "publish-schemas"),
-    sport = "basketball"
-  )
-  expect_equal(res$n_files, 0L)
-  expect_gt(length(res$unmatched), 0L)
+})
+
+test_that("the armed schemas really are in force, not resolving to nothing", {
+  # The failure this guards is silent: a schema_dir that resolves nothing
+  # returns ok = TRUE with n_files = 0, which reads exactly like success.
+  root <- .publish_2dt_fixture_cells()
+  for (sport in .DRAFT_SPORTS) {
+    res <- validate_publish_dir(
+      file.path(root, "publish", sport),
+      schema_dir = testthat::test_path("..", "..", "config", "publish-schemas"),
+      sport = sport
+    )
+    expect_gt(res$n_files, 0L)
+    expect_length(res$unmatched, 0L)
+    expect_true(res$ok, info = sport)
+  }
 })
 
 test_that("the bb/hb schemas REJECT the football-only placement labels", {
@@ -224,5 +235,17 @@ test_that("each sport's delta file set equals the JSON surfaces it declares", {
       "..", "..", "config", "publish-schemas", "_delta", sport,
       "tournament_placements.json"
     )))
+  }
+})
+
+test_that("basketball and handball schemas are armed", {
+  for (sport in .DRAFT_SPORTS) {
+    expect_false(
+      is.null(.resolve_schema_path(
+        testthat::test_path("..", "..", "config", "publish-schemas"),
+        sport, "meta.json"
+      )),
+      info = sport
+    )
   }
 })
