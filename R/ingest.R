@@ -188,15 +188,66 @@ ingest_league <- function(league, sex,
 #'   `upsert_table()` deduplicates on disk. Use only as a "did anything
 #'   happen" indicator.
 #' @export
-ingest_one_league <- function(static, key, active_path) {
-  if (!.is_league_active(active_path, key)) {
-    cli::cli_alert_info("{key}: skipped (no active fixtures)")
-    return(0L)
-  }
+ingest_one_league <- function(static, key, active_path,
+                              root = here::here("data"),
+                              force = FALSE,
+                              offseason_min_interval_hours = 24,
+                              now = Sys.time()) {
+  # `active_path` is retained for call-site compatibility but deliberately no
+  # longer consulted. It gated on config/active_competitions.json, which is
+  # derived solely from data/facts/schedules rows -- rows only this function
+  # can write. A league whose fixtures had all been played could therefore
+  # never write the rows that would mark it active again (spec section 7).
+  # `.is_league_active()` survives for ingest_one_lengjan(), where the gate is
+  # correct: odds genuinely do not exist outside a fixture window, and that
+  # loop is not closed.
+  log <- read_ingest_log(root)
   total <- 0L
+
   for (sex in static$sexes) {
-    total <- total + ingest_league(static, sex, seasons = NULL)
+    id <- paste0(key, "/", sex)
+    if (!isTRUE(force) && .ingest_backoff(
+      log[[id]], now,
+      min_interval_hours = offseason_min_interval_hours
+    )) {
+      cli::cli_alert_info(
+        "{key}/{sex}: dormant, last tried
+         {log[[id]]$last_attempt_at} -- treating as off-season."
+      )
+      next
+    }
+
+    # An ERRORED fetch propagates: a broken scraper must red-X CI, and must
+    # never be recorded, or it would accrue a zero streak and earn itself a
+    # backoff that hides it.
+    n <- ingest_league(static, sex, seasons = NULL)
+    n <- if (is.null(n) || is.na(n)) 0L else as.integer(n)
+
+    prev_streak <- if (is.null(log[[id]]$zero_streak)) {
+      0L
+    } else {
+      as.integer(log[[id]]$zero_streak)
+    }
+    if (n == 0L && prev_streak == 0L) {
+      # The one genuinely ambiguous case -- season end, or a scraper that has
+      # started returning nothing without erroring -- so it is made loud
+      # rather than silently absorbed.
+      cli::cli_warn(c(
+        "{key}/{sex}: fetch returned 0 rows for the first time.",
+        "i" = "Last non-empty fetch: {log[[id]]$last_nonzero_at %||% 'never'}.",
+        "i" = "Season end, or a silently-empty scraper. Both look like this."
+      ))
+    } else if (n == 0L) {
+      cli::cli_alert_info(
+        "{key}/{sex}: 0 rows ({prev_streak + 1L} in a row) -- off-season."
+      )
+    }
+
+    record_ingest_attempt(key, sex, n, now = now, root = root)
+    log <- read_ingest_log(root)
+    total <- total + n
   }
+
   total
 }
 
