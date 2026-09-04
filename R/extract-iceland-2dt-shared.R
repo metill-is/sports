@@ -21,11 +21,13 @@ NULL
       out_cols
     )))
   }
-  probs <- seq(0.01, 0.99, by = 0.01)
+  # Only the stored grid, not all 99 percentiles -- see PUBLISH_QUANTILE_GRID
+  # for why this is wider than what the publisher currently reads.
+  probs <- PUBLISH_QUANTILE_GRID / 100
   draws |>
     dplyr::group_by(dplyr::across(dplyr::all_of(group_keys))) |>
     dplyr::group_modify(~ tibble::tibble(
-      quantile = seq_len(99L),
+      quantile = PUBLISH_QUANTILE_GRID,
       value = unname(stats::quantile(
         .x$value,
         probs = probs,

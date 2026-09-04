@@ -114,6 +114,7 @@ Collate:
     'publish-next-games.R'
     'validate-publish.R'
     'publish-pipeline.R'
+    'publish-quantile-grid.R'
     'replay.R'
     'schedule-active.R'
     'simulate-cup-bracket.R'

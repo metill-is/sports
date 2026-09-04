@@ -400,6 +400,9 @@ NULL
 # documented in the extraction-layer design.
 .intervals_from_quantiles_pfi <- function(quantiles, group_keys) {
   needed <- c(2L, 3L, 10L, 25L, 50L, 75L, 90L, 97L, 98L)
+  if (nrow(quantiles) > 0L) {
+    .assert_quantiles_available(quantiles$quantile, needed, "intervals")
+  }
   wide <- quantiles |>
     dplyr::filter(.data$quantile %in% needed) |>
     tidyr::pivot_wider(

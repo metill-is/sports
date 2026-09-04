@@ -64,7 +64,8 @@ test_that("the trajectory covers the full grid with no gaps and no NAs", {
 
   expect_setequal(unique(df$component), c("offence", "defence", "total"))
   expect_setequal(unique(df$location), c("home", "away", "avg"))
-  expect_setequal(unique(df$quantile), seq_len(99L))
+  # The stored grid, not all 99 percentiles -- see PUBLISH_QUANTILE_GRID.
+  expect_setequal(unique(df$quantile), PUBLISH_QUANTILE_GRID)
   expect_false(anyNA(df$value))
 
   for (div in unique(df$division)) {

@@ -87,7 +87,7 @@ test_that("extract_football_iceland writes all 6 Parquets with expected schemas 
   )
   expect_setequal(unique(ts$component), c("offence", "defence", "total"))
   expect_setequal(unique(ts$location), c("home", "away", "avg"))
-  expect_setequal(unique(ts$quantile), 1:99)
+  expect_setequal(unique(ts$quantile), PUBLISH_QUANTILE_GRID)
   expect_true(all(ts$division %in% publishable_divs))
 
   rs <- arrow::read_parquet(file.path(fit_dir, "round_strengths_quantiles.parquet"))

@@ -398,6 +398,39 @@ via the same rsync — single source of truth at
 platform side. See `config/publish-schemas/README.md` for the full
 contract.
 
+## The stored quantile grid
+
+Extract parquets carry `PUBLISH_QUANTILE_GRID` (R/publish-quantile-grid.R) --
+**23 quantiles, not all 99**. The grid is every 5th percentile plus `2, 3, 97,
+98` for the 95% band's interpolated tails; `1` and `99` are excluded as the
+noisiest tails of a 4000-draw posterior that nothing publishes.
+
+Why it is not 99: the only consumer, `.intervals_from_quantiles_pfi()`,
+filters to nine quantiles on its first line and discards the rest. Storing all
+99 meant ~90% of the largest artefact in the repo was computed, written,
+committed to git and shallow-cloned by nine CI workflows in order to be thrown
+away -- football's `round_strengths_quantiles.parquet` alone was 8.0 MB of a
+22 MB partition. It does not compress either: `value` held 1,001,475 distinct
+doubles across 1,001,484 rows, so parquet's dictionary and RLE encodings have
+nothing to work with. Trimming is ~30% off every partition, and the computed
+intervals are byte-identical (proved by running both through
+`.intervals_from_quantiles_pfi` on a real partition).
+
+Why it is not the nine that are used: storing exactly what today's publisher
+wants bakes a presentation choice into stored data, and changing a coverage
+band would then need a REFIT rather than a republish. The extra ~1 MB per
+partition buys any 5%-granular band without refitting.
+
+**Adding a coverage band.** Extend `needed` in
+`.intervals_from_quantiles_pfi()` AND `PUBLISH_QUANTILE_GRID` together. If you
+forget the grid, `test-publish-quantile-grid.R` fails at test time, and at
+runtime `.assert_quantiles_available()` aborts rather than letting
+`pivot_wider()` silently produce NA bands. A quantile that was never written
+cannot be recovered by republishing -- it needs a new fit.
+
+Partitions written before this change carry all 99 and still read correctly
+(the grid is a subset), and they age out via `prune_extracts()`.
+
 ## Daily driver
 
 `Rscript scripts/05_publish.R`. Wires fresh-fit-on-demand via

@@ -46,7 +46,7 @@ build_football_extracts_fixture <- function(facts_root, extracts_root, sex,
       location = c("home", "away", "avg")
     )
     ts <- grid |>
-      tidyr::expand_grid(quantile = seq_len(99L)) |>
+      tidyr::expand_grid(quantile = PUBLISH_QUANTILE_GRID) |>
       dplyr::mutate(
         value = round(
           centre[.data$team] + 0.4 * stats::qnorm(.data$quantile / 100),
@@ -60,7 +60,7 @@ build_football_extracts_fixture <- function(facts_root, extracts_root, sex,
       dplyr::select("round", "team", "component", "location", "quantile", "value", "division")
     ha <- tidyr::expand_grid(
       team = teams, component = c("offence", "defence", "total"),
-      quantile = seq_len(99L)
+      quantile = PUBLISH_QUANTILE_GRID
     ) |>
       dplyr::mutate(
         value = round(0.15 + 0.05 * stats::qnorm(.data$quantile / 100), 4L),
