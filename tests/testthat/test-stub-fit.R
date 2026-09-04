@@ -36,9 +36,64 @@ test_that("stub_2dt_draws covers the whole 2DT variable surface", {
     )
   }
 
+  expect_true(all(c("offense", "defense") %in% names(d)))
+
   joint <- fit$draws(c("goals1_pred", "goals2_pred"))
   expect_length(posterior::variables(joint), 8L)
   expect_s3_class(posterior::as_draws_df(joint), "draws_df")
+})
+
+test_that("stub_2dt_draws emits the offense/defense round arrays", {
+  d <- stub_2dt_draws(
+    teams = c("A", "B", "C"), n_pred = 4L, n_draws = 20L, n_rounds = 5L
+  )
+  expect_true(all(c("offense", "defense") %in% names(d)))
+  expect_equal(ncol(d$offense), 5L * 3L)
+  expect_equal(ncol(d$defense), 5L * 3L)
+  # `array[N_rounds] vector[K]` flattens with the FIRST index fastest, which is
+  # what cmdstanr emits and what posterior reassembles into (draws, N, K).
+  expect_equal(colnames(d$offense)[1:2], c("offense[1,1]", "offense[2,1]"))
+  expect_equal(colnames(d$offense)[6], "offense[1,2]")
+
+  rv <- posterior::as_draws_rvars(stub_fit(d)$draws("offense"))
+  expect_equal(dim(posterior::draws_of(rv$offense)), c(20L, 5L, 3L))
+})
+
+test_that("stub_2dt_draws derives cur_* from the final round, as Stan does", {
+  # Stan/basketball_iceland/2d_student_t_scalarsigma.stan:279-289 defines every
+  # cur_* quantity off offense[N_rounds] / defense[N_rounds] plus the home
+  # advantages. A stub that generates them independently makes any
+  # trajectory-vs-cur_strength identity check a coincidence.
+  n_rounds <- 5L
+  d <- stub_2dt_draws(
+    teams = c("A", "B", "C"), n_pred = 4L, n_draws = 20L, n_rounds = n_rounds
+  )
+  for (k in 1:3) {
+    last_off <- d$offense[, sprintf("offense[%d,%d]", n_rounds, k)]
+    last_def <- d$defense[, sprintf("defense[%d,%d]", n_rounds, k)]
+    expect_equal(unname(d$cur_offense_away[, k]), unname(last_off), tolerance = 0)
+    expect_equal(unname(d$cur_defense_away[, k]), unname(last_def), tolerance = 0)
+    expect_equal(
+      unname(d$cur_offense_home[, k]),
+      unname(last_off + d$home_advantage_off[, k]),
+      tolerance = 0
+    )
+    expect_equal(
+      unname(d$cur_strength_home[, k]),
+      unname(d$cur_offense_home[, k] + d$cur_defense_home[, k]),
+      tolerance = 0
+    )
+    expect_equal(
+      unname(d$cur_strength_away[, k]),
+      unname(last_off + last_def),
+      tolerance = 0
+    )
+    expect_equal(
+      unname(d$home_advantage_tot[, k]),
+      unname(d$home_advantage_off[, k] + d$home_advantage_def[, k]),
+      tolerance = 0
+    )
+  }
 })
 
 test_that("stub_2dt_draws honours pinned constants", {

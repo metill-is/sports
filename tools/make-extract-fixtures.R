@@ -151,8 +151,12 @@ fixture_division_teams <- function(sport, sex, division) {
     for (sex in c("male", "female")) {
       league <- leagues[[cfg[[sport]]$key]]
       prep <- prepare_data(league, sex, end_date = FIXTURE_END_DATE, root = facts_root)
+      # n_rounds, like n_pred, is sized from THIS prepare_data() call: the
+      # round-strength trajectory indexes offense[global_round, k] with an index
+      # derived from the same results set.
       fit <- stub_env$stub_fit(stub_env$stub_2dt_draws(
-        prep$teams$team, nrow(prep$pred_d), n_draws = FIXTURE_N_DRAWS
+        prep$teams$team, nrow(prep$pred_d), n_draws = FIXTURE_N_DRAWS,
+        n_rounds = prep$stan_data$N_rounds
       ))
       cfg[[sport]]$fn(
         fit = fit, league = league, sex = sex,
