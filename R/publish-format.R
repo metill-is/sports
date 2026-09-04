@@ -108,6 +108,36 @@
   results[is.na(results$round) | results$round <= n_rounds, , drop = FALSE]
 }
 
+#' Apply the regular-season boundary, when there is one
+#'
+#' The gate is the point. `n_rounds` has two sources and only one of them is a
+#' BOUNDARY:
+#'
+#' * `"config"` -- `expected_meetings * (n_teams - 1)` is an independent fact
+#'   about the competition format. Played rows past it are post-season, and
+#'   basketball's embedded urslitakeppni is exactly that (male BD 162 -> 132).
+#' * `"schedule"` -- derived FROM the played and scheduled rows themselves.
+#'   Cutting those same rows by it is circular: it can never identify a
+#'   post-season row, and it CAN delete regular-season rows wherever `round` is
+#'   stamped on a different axis from appearance counting.
+#'
+#' Measured 2026-09-04: the schedule branch is the identity on real data in
+#' every cell (all nine football cells, basketball female 1D 98 -> 98), so the
+#' gate costs nothing there; on the synthetic fixture the ungated filter
+#' deleted one played match from six football cells and one basketball cell.
+#'
+#' The FORWARD half of the cut (`.regular_season_game_nrs_2dt()`) is NOT gated:
+#' capping how many fixtures are left to play is a question about season
+#' length, which both sources answer.
+#'
+#' @param results Results tibble carrying `round`.
+#' @param format A [`.publish_n_rounds()`] result.
+#' @return `results`, filtered when the boundary is authoritative.
+#' @noRd
+.regular_season_cut <- function(results, format) {
+  .regular_season_results(results, format$cut)
+}
+
 #' How many rounds the regular season has
 #'
 #' Two independent derivations, both always returned:
@@ -153,7 +183,11 @@
     list(
       n_rounds = n_rounds, source = source,
       n_rounds_config = cfg, n_rounds_schedule = sched,
-      n_teams = n_teams
+      n_teams = n_teams,
+      # The BOUNDARY, which is not the same thing as the LENGTH. Only a
+      # configured `expected_meetings` is evidence that played rows past it are
+      # post-season; see `.regular_season_cut()`.
+      cut = if (identical(source, "config")) as.integer(n_rounds) else NA_integer_
     )
   }
 
@@ -298,8 +332,7 @@
 # ---- The placement summary ---------------------------------------------------
 #
 # One builder for all three sports, replacing the football-only `top_six` block
-# and the 2DT publisher's mean-over-iterations form (which died with
-# publish_basketball_iceland).
+# and the mean-over-iterations form the retired per-sport 2DT publisher used.
 #
 # p_qualify is the GENERIC replacement for p_top_six, and it is emitted only
 # where a division actually configures a qualification cut. It does not

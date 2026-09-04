@@ -613,3 +613,83 @@ test_that("an empty final_positions yields the shape, not an error", {
       "p_relegation")
   )
 })
+
+# ---- Block F: only a CONFIGURED boundary may delete played rows --------------
+#
+# The cut exists to remove an embedded post-season, and the only evidence that
+# one exists is a configured `expected_meetings` the played rows exceed. A
+# schedule-derived n_rounds is computed FROM those same rows, so cutting them
+# by it is circular: it can never identify a post-season row, and it CAN delete
+# regular-season rows wherever `round` is stamped on a different axis from
+# appearance counting.
+#
+# Measured 2026-09-04. On real data the schedule branch is the identity in
+# every cell (all nine football cells; basketball female 1D 98 -> 98), so
+# gating it costs nothing. On the synthetic fixture -- whose `round` is a
+# match-day index, not derive_league_round()'s appearance index -- the ungated
+# cut deleted one legitimate row from six football cells and one basketball
+# cell.
+
+.fixture_cell_rows <- function(sport, sex, division, env = parent.frame()) {
+  root <- fixture_facts_root(env)
+  results <- read_table("results", root = root)
+  schedules <- read_table("schedules", root = root)
+  keep <- function(df) {
+    df[
+      df$sport == sport & df$sex == sex & df$division == division &
+        df$season == 2100L, ,
+      drop = FALSE
+    ]
+  }
+  list(results = keep(results), schedules = keep(schedules))
+}
+
+test_that("a configured boundary is the cut; a schedule-derived one is not", {
+  cell <- .fixture_cell_rows("football", "male", "LD1")
+  n <- .publish_n_rounds(
+    results = cell$results, schedules = cell$schedules, season = 2100L,
+    division_codes = "LD1", end_date = FIXTURE_END_DATE,
+    expected_meetings = NULL
+  )
+  expect_equal(n$source, "schedule")
+  # The fixture stamps `round` as a match-day index, so max(round) exceeds the
+  # appearance-derived n_rounds. A raw row filter would delete a played match.
+  expect_gt(max(cell$results$round), n$n_rounds)
+  expect_lt(nrow(.regular_season_results(cell$results, n$n_rounds)),
+            nrow(cell$results))
+
+  expect_true(is.na(n$cut))
+  expect_equal(nrow(.regular_season_cut(cell$results, n)), nrow(cell$results))
+})
+
+test_that("the configured boundary still cuts basketball's post-season", {
+  bd_male <- .overhang_cell("male", "BD")
+  n <- .publish_n_rounds(
+    results = bd_male, schedules = bd_male[0, , drop = FALSE],
+    season = 2026L, division_codes = "BD",
+    end_date = as.Date("2026-06-01"), expected_meetings = 2L
+  )
+  expect_equal(n$source, "config")
+  expect_equal(n$cut, 22L)
+  expect_equal(nrow(.regular_season_cut(bd_male, n)), 132L)
+})
+
+test_that("a cup and an empty cell both cut nothing", {
+  cell <- .fixture_cell_rows("football", "male", "CUP")
+  n <- .publish_n_rounds(
+    results = cell$results, schedules = cell$schedules, season = 2100L,
+    division_codes = "CUP", end_date = FIXTURE_END_DATE,
+    expected_meetings = 2L, is_cup = TRUE
+  )
+  expect_equal(n$source, "not_applicable")
+  expect_true(is.na(n$cut))
+  expect_equal(nrow(.regular_season_cut(cell$results, n)), nrow(cell$results))
+
+  empty <- cell$results[0, , drop = FALSE]
+  none <- .publish_n_rounds(
+    results = empty, schedules = empty, season = 2100L,
+    division_codes = "CUP", end_date = FIXTURE_END_DATE
+  )
+  expect_equal(none$source, "none")
+  expect_true(is.na(none$cut))
+})

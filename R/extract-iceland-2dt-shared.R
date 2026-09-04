@@ -529,7 +529,7 @@ NULL
       results$season == current_season & results$division == div, ,
       drop = FALSE
     ]
-    top_results <- .regular_season_results(top_results, rounds$n_rounds)
+    top_results <- .regular_season_cut(top_results, rounds)
 
     # The forward half of the same cut. predicted_matches stays UNCUT.
     keep_game_nrs <- .regular_season_game_nrs_2dt(
