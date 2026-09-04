@@ -43,6 +43,18 @@ NULL
 }
 
 
+# The league points scheme as a plain named integer vector, from the sport's
+# publish profile. `draw` is NULL in a profile whose sport cannot draw
+# (basketball), which must read as a zero WEIGHT rather than as a dropped term
+# -- `c(win = 2L, draw = NULL, loss = 0L)` silently produces a 2-element vector.
+.publish_points_scheme <- function(profile) {
+  pick <- function(k) {
+    v <- profile$points[[k]]
+    if (is.null(v)) 0L else as.integer(v)
+  }
+  c(win = pick("win"), draw = pick("draw"), loss = pick("loss"))
+}
+
 # Extract per-team draws for a single Stan parameter vector indexed by team.
 .extract_team_draws_pfi <- function(fit, var, teams, component, location) {
   fit$draws(var) |>
@@ -261,17 +273,21 @@ NULL
 #
 # Matches whose matchweek has no pre-round archive partition are silently
 # skipped -- pre-archive early-season rounds simply do not appear.
+.empty_round_predictions_pfi <- function() {
+  tibble::tibble(
+    round = integer(), team = character(), fit_date = character(),
+    n_matches = integer(),
+    xg_for = numeric(), xg_against = numeric(), xpts = numeric(),
+    p_win = numeric(), p_draw = numeric(), p_loss = numeric()
+  )
+}
+
 .aggregate_round_predictions_pfi <- function(played_matches,
                                              extracts_root, archive_root,
                                              sport, country, sex,
                                              target_div = "BD") {
   if (nrow(played_matches) == 0L) {
-    return(tibble::tibble(
-      round = integer(), team = character(), fit_date = character(),
-      n_matches = integer(),
-      xg_for = numeric(), xg_against = numeric(), xpts = numeric(),
-      p_win = numeric(), p_draw = numeric(), p_loss = numeric()
-    ))
+    return(.empty_round_predictions_pfi())
   }
 
   with_mw <- .assign_matchweeks_pfi(played_matches)
@@ -373,12 +389,7 @@ NULL
 
   result <- dplyr::bind_rows(rounds)
   if (nrow(result) == 0L) {
-    return(tibble::tibble(
-      round = integer(), team = character(), fit_date = character(),
-      n_matches = integer(),
-      xg_for = numeric(), xg_against = numeric(), xpts = numeric(),
-      p_win = numeric(), p_draw = numeric(), p_loss = numeric()
-    ))
+    return(.empty_round_predictions_pfi())
   }
 
   result |>
@@ -630,6 +641,8 @@ publish_iceland_league <- function(extracted,
     }
   }
 
+  points_scheme <- .publish_points_scheme(profile)
+
   sex_folder <- if (sex == "male") "karla" else "kvenna"
 
   # Reconstruct prep purely for division metadata + venue lookup. The
@@ -652,7 +665,15 @@ publish_iceland_league <- function(extracted,
   for (target_div in division_codes) {
     top_div <- target_div
     is_cup <- isTRUE(division_is_cup[[target_div]])
-    div_split <- .iceland_division_split(league_key, sex)[[target_div]]
+    # Gated: a sport with no split format never derives a split family, never
+    # group-locks the standings rank and never emits meta.split. One predicate
+    # switches the whole machinery because everything downstream keys off
+    # `div_split` being non-NULL.
+    div_split <- if ("split" %in% profile$surfaces) {
+      .iceland_division_split(league_key, sex)[[target_div]]
+    } else {
+      NULL
+    }
     # For a split cell the season spans the regular division plus its
     # split-phase playoff divisions -- every per-season surface below
     # (standings, next_games, round counting, xG/xPts aggregation input)
@@ -694,15 +715,24 @@ publish_iceland_league <- function(extracted,
       results$season == current_season & results$division %in% family_divs, ,
       drop = FALSE
     ]
-    round_predictions <- .aggregate_round_predictions_pfi(
-      played_matches = bd_played[, c("home_team", "away_team", "match_date")],
-      extracts_root = extracts_root,
-      archive_root = archive_root,
-      sport = league$sport, country = league$country, sex = sex,
-      target_div = target_div
-    )
+    # Gated: xG / xPts are a football surface. A sport without it skips the
+    # pre-round archive scan entirely and its standings ship the same columns
+    # as null -- config/publish-schemas/.../standings.schema.json already types
+    # them ["number","null"], which is why one schema shape serves all three.
+    has_xg <- "xg" %in% profile$surfaces
+    round_predictions <- if (has_xg) {
+      .aggregate_round_predictions_pfi(
+        played_matches = bd_played[, c("home_team", "away_team", "match_date")],
+        extracts_root = extracts_root,
+        archive_root = archive_root,
+        sport = league$sport, country = league$country, sex = sex,
+        target_div = target_div
+      )
+    } else {
+      .empty_round_predictions_pfi()
+    }
 
-    team_expected <- if (nrow(bd_played) > 0L) {
+    team_expected <- if (has_xg && nrow(bd_played) > 0L) {
       played_per_team <- bd_played |>
         tidyr::pivot_longer(
           c("home_team", "away_team"),
@@ -953,7 +983,9 @@ publish_iceland_league <- function(extracted,
           goals_for = sum(.data$gf),
           goals_against = sum(.data$ga),
           goal_diff = .data$goals_for - .data$goals_against,
-          points = 3L * .data$wins + .data$draws,
+          points = points_scheme[["win"]] * .data$wins +
+            points_scheme[["draw"]] * .data$draws +
+            points_scheme[["loss"]] * .data$losses,
           form = list(pad_form(tail(.data$result, 5L))),
           goals_trend = list(.data$gf),
           goals_against_trend = list(.data$ga),
@@ -1079,7 +1111,8 @@ publish_iceland_league <- function(extracted,
     # first played kickoff in the current season. Used by the platform's
     # forest plot to render a baseline (red) sub-row beneath each team.
     # NULL preseason → field omitted (frontend treats absence as "no row").
-    preseason_intervals <- if (nrow(bd_played) > 0L) {
+    preseason_intervals <- if ("preseason_strengths" %in% profile$surfaces &&
+      nrow(bd_played) > 0L) {
       .read_preseason_team_strengths_pfi(
         extracts_root = extracts_root,
         sport = league$sport, country = league$country, sex = sex,
@@ -1166,41 +1199,43 @@ publish_iceland_league <- function(extracted,
     # OUT of output_root (data/publish/) to avoid bloating the rsync
     # mirror -- F7 from docs/audits/2026-05-25-pipeline-cross-project-review.html.
 
-    round_predictions_dir <- file.path(
-      round_predictions_history_root,
-      league$sport, "iceland",
-      sprintf("%s-%s", sex_folder, division_dir_suffix[[target_div]])
-    )
-    dir.create(round_predictions_dir, recursive = TRUE, showWarnings = FALSE)
-    round_predictions_path <- file.path(
-      round_predictions_dir, "round_predictions_history.json"
-    )
-    if (nrow(round_predictions) > 0L) {
-      round_predictions_history_row <- round_predictions |>
-        dplyr::mutate(
-          generated_at = generated_at,
-          season = current_season
-        ) |>
-        dplyr::select(
-          "fit_date", "generated_at", "round", "season",
-          "team", "n_matches",
-          "xg_for", "xg_against", "xpts",
-          "p_win", "p_draw", "p_loss"
+    if ("round_predictions_history" %in% profile$surfaces) {
+      round_predictions_dir <- file.path(
+        round_predictions_history_root,
+        league$sport, "iceland",
+        sprintf("%s-%s", sex_folder, division_dir_suffix[[target_div]])
+      )
+      dir.create(round_predictions_dir, recursive = TRUE, showWarnings = FALSE)
+      round_predictions_path <- file.path(
+        round_predictions_dir, "round_predictions_history.json"
+      )
+      if (nrow(round_predictions) > 0L) {
+        round_predictions_history_row <- round_predictions |>
+          dplyr::mutate(
+            generated_at = generated_at,
+            season = current_season
+          ) |>
+          dplyr::select(
+            "fit_date", "generated_at", "round", "season",
+            "team", "n_matches",
+            "xg_for", "xg_against", "xpts",
+            "p_win", "p_draw", "p_loss"
+          )
+        .append_to_history_pfi(
+          round_predictions_path,
+          round_predictions_history_row,
+          key_cols = c("round", "team")
         )
-      .append_to_history_pfi(
-        round_predictions_path,
-        round_predictions_history_row,
-        key_cols = c("round", "team")
-      )
-    } else if (!file.exists(round_predictions_path)) {
-      write_json_consistent(
-        list(schema_version = 1L, records = list()),
-        round_predictions_path,
-        auto_unbox = TRUE,
-        dataframe = "rows",
-        digits = 5,
-        na = "null"
-      )
+      } else if (!file.exists(round_predictions_path)) {
+        write_json_consistent(
+          list(schema_version = 1L, records = list()),
+          round_predictions_path,
+          auto_unbox = TRUE,
+          dataframe = "rows",
+          digits = 5,
+          na = "null"
+        )
+      }
     }
 
     # ---- final_positions.json + points_distribution.json --------------------
@@ -1353,7 +1388,7 @@ publish_iceland_league <- function(extracted,
     # Bracket-progression probabilities from the R-side simulator. The
     # extract layer writes this parquet only for the CUP cell; BD/LD1 emit
     # an empty placeholder so the JSON endpoint is stable.
-    if (is_cup) {
+    if (is_cup && "cup_bracket" %in% profile$surfaces) {
       tournament_placements <- ext$tournament_placements
       if (nrow(tournament_placements) > 0L) {
         champion_summary <- tournament_placements |>
