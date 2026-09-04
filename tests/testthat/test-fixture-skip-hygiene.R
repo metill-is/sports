@@ -74,7 +74,17 @@ test_that("the bb/hb publish + extract tests carry no skip gates", {
     # WS12's publish-freshness check. Its "in-season, active, no publish output
     # and no extract partition -> FAIL" block is the single assertion that
     # would have made B4 visible; a skip gate there restores the silence.
-    "test-health-publish-freshness.R"
+    "test-health-publish-freshness.R",
+    # WS12's season-resolution check. It is what distinguishes "the season is
+    # genuinely over" from "the scraper went blind in October" -- two states
+    # that are identical in the results table -- so a skip retires the only
+    # alarm for a silent federation-id regression.
+    "test-health-season-resolution.R",
+    # WS11's schema generator. Its byte-equality block is the only thing
+    # stopping a hand edit to a generated per-sport schema from being silently
+    # reverted by the next render, and its ASCII block guards the verified
+    # jsonlite <U+2014> corruption.
+    "test-publish-schema-generation.R"
   )
   banned <- c("skip(", "skip_if(", "skip_if_not(", "skip_if_not_installed(", "Sys.getenv")
 
