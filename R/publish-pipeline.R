@@ -1,4 +1,4 @@
-#' @include publish-profile.R extract-iceland-read.R publish-football-iceland.R publish-basketball-iceland.R publish-handball-iceland.R validate-publish.R
+#' @include publish-profile.R publish-next-games.R extract-iceland-read.R publish-football-iceland.R publish-basketball-iceland.R publish-handball-iceland.R validate-publish.R
 NULL
 
 #' Does an extract partition exist for this cell?

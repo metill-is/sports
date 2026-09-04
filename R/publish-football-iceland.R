@@ -912,20 +912,6 @@ publish_football_iceland <- function(extracted,
 
     predicted_matches <- ext$predicted_matches
 
-    predicted_with_division <- if (nrow(predicted_matches) > 0L) {
-      predicted_matches |>
-        dplyr::left_join(
-          pred_d |> dplyr::distinct(
-            .data$home_team, .data$away_team,
-            .data$match_date, .data$division
-          ),
-          by = c("home_team", "away_team", "match_date")
-        )
-    } else {
-      predicted_matches |>
-        dplyr::mutate(division = character(0))
-    }
-
     generated_at <- format(Sys.time(), "%Y-%m-%dT%H:%M:%S%z")
 
     # ---- meta.json ----------------------------------------------------------
@@ -1006,63 +992,15 @@ publish_football_iceland <- function(extracted,
       "\u00de\u00f3r", "\u00de\u00f3rsv\u00f6llur"
     )
 
-    division_labels <- .iceland_division_badges("football_iceland", sex)
-
-    if (nrow(predicted_with_division) > 0L) {
-      next_games_out <- predicted_with_division |>
-        dplyr::filter(
-          .data$division %in% family_divs,
-          .data$match_date >= end_date,
-          .data$match_date <= end_date + 14L
-        ) |>
-        dplyr::mutate(goal_diff = .data$home_goals - .data$away_goals) |>
-        dplyr::summarise(
-          total = sum(.data$count),
-          mean_home_goals = sum(.data$home_goals * .data$count) / sum(.data$count),
-          mean_away_goals = sum(.data$away_goals * .data$count) / sum(.data$count),
-          mean_goal_diff = sum(.data$goal_diff * .data$count) / sum(.data$count),
-          p_home_win = sum(.data$count[.data$goal_diff > 0]) / sum(.data$count),
-          p_draw = sum(.data$count[.data$goal_diff == 0]) / sum(.data$count),
-          p_away_win = sum(.data$count[.data$goal_diff < 0]) / sum(.data$count),
-          # NB: tibble::tibble() has no data-mask context, so .data$goal_diff
-          # would fail with "Column `goal_diff` not found in `.data`". Bare
-          # symbols resolve via summarise()'s outer mask before the call.
-          goal_diff_distribution = list(
-            tibble::tibble(diff = goal_diff, count = count) |>
-              dplyr::summarise(n = sum(.data$count), .by = "diff") |>
-              dplyr::mutate(p = .data$n / sum(.data$n)) |>
-              dplyr::arrange(.data$diff) |>
-              dplyr::select("diff", "p")
-          ),
-          .by = c("division", "match_date", "home_team", "away_team")
-        ) |>
-        dplyr::arrange(.data$match_date, .data$home_team, .data$away_team) |>
-        dplyr::left_join(male_top_division_venues, by = c("home_team" = "team")) |>
-        dplyr::mutate(
-          division_code = dplyr::recode(
-            .data$division, !!!division_labels,
-            .default = .data$division
-          ),
-          date = format(.data$match_date, "%Y-%m-%d")
-        ) |>
-        dplyr::select(
-          "date", "venue", "division", "division_code",
-          home = "home_team", away = "away_team",
-          "mean_home_goals", "mean_away_goals", "mean_goal_diff",
-          "p_home_win", "p_draw", "p_away_win",
-          "goal_diff_distribution"
-        )
-    } else {
-      next_games_out <- tibble::tibble(
-        date = character(), venue = character(),
-        division = character(), division_code = character(),
-        home = character(), away = character(),
-        mean_home_goals = numeric(), mean_away_goals = numeric(),
-        mean_goal_diff = numeric(), p_home_win = numeric(),
-        p_draw = numeric(), p_away_win = numeric(),
-        goal_diff_distribution = list()
-      )
-    }
+    next_games_out <- .next_games_rows_pfi(
+      predicted = predicted_matches,
+      profile = sport_publish_profile("football"),
+      pred_d = pred_d,
+      family_divs = family_divs,
+      division_badges = .iceland_division_badges("football_iceland", sex),
+      end_date = end_date,
+      venues = male_top_division_venues
+    )
 
     write_json_consistent(
       list(generated_at = generated_at, matches = next_games_out),

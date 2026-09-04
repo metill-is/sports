@@ -22,7 +22,10 @@ test_that("the bb/hb publish + extract tests carry no skip gates", {
     "test-publish-profile.R",
     # WS9's one reader. Its bb/hb blocks are the only proof that the
     # generalised reader splits a 2DT partition by division at all.
-    "test-extract-iceland-read.R"
+    "test-extract-iceland-read.R",
+    # WS9's one next_games contract. Its match-summary block is the only proof
+    # that bb/hb emit football's field names and goal_diff_distribution.
+    "test-publish-next-games.R"
   )
   banned <- c("skip(", "skip_if(", "skip_if_not(", "skip_if_not_installed(", "Sys.getenv")
 
