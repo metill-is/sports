@@ -1,0 +1,23 @@
+{
+  "properties": {
+    "split": {
+      "type": "object",
+      "description": "Split-season format (efri/nedri hluti): after the regular phase the table splits into an upper group of `upper` and a lower group of `lower` teams (single round-robin each, full carry-over, group-locked final table). Absent = flat league. With this field present, final_positions placement semantics are full-season: placement 1 = champion; relegation places are the bottom of the lower block.",
+      "required": [
+        "upper",
+        "lower"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "upper": {
+          "type": "integer",
+          "minimum": 2
+        },
+        "lower": {
+          "type": "integer",
+          "minimum": 2
+        }
+      }
+    }
+  }
+}
