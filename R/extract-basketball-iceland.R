@@ -14,6 +14,11 @@ NULL
 #'   binned `goal_diff_distribution` list-column).
 #' * `team_strengths_quantiles.parquet` — 9-cell strength grid
 #'   (component × location) quantile bands per team in the division.
+#' * `round_strengths_quantiles.parquet` — the same grid per division
+#'   matchweek, from the model's `offense`/`defense` random walk. NOT
+#'   football-specific: the 2DT models declare the identical
+#'   `array[N_rounds] vector[K]` surface
+#'   (Stan/basketball_iceland/2d_student_t_scalarsigma.stan:157,164).
 #' * `home_advantage_quantiles.parquet` — per-team home-advantage
 #'   quantile bands by component (offence / defence / total).
 #' * `final_positions.parquet` — per-team placement probability
@@ -23,6 +28,11 @@ NULL
 #'
 #' `tournament_placements`, `sim_inputs_team` and `sim_inputs_scalar` stay
 #' football-only — basketball models no knockout cup.
+#'
+#' The league table and the trajectory are scoped to the REGULAR season.
+#' KKI packages urslitakeppni as extra rounds inside the same `division`
+#' and the same `season_id`, so without that cut the published table is
+#' simulated on post-season points. See R/publish-format.R.
 #'
 #' Basketball-specific configuration vs the shared 2DT extractor: no draws
 #' (`has_ties = FALSE`), goal-diff binned in 5-point buckets across

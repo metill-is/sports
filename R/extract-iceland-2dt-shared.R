@@ -556,10 +556,72 @@ NULL
       tie_threshold = tie_threshold
     )
 
+    # ---- round_strengths_quantiles ----------------------------------------
+    # Shaped after football's block (R/extract-football-iceland.R:127-158) and
+    # calling the SAME helper: all three Stan models declare
+    # `array[N_rounds] vector[K] offense` / `defense` plus `vector[K]
+    # home_advantage_off` / `_def`, so no variable-name parameterisation is
+    # needed and none is done. The earlier claim that a 2DT round trajectory was
+    # impossible was wrong about the models, and this comment is what stops it
+    # being re-derived.
+    #
+    # `results` is passed UNCUT and the cut is applied to the OUTPUT instead.
+    # The helper derives each team's global round with a row_number() over the
+    # results it is handed, and that index addresses `offense[r, k]` -- so it
+    # must see the same set `prepare_data()` modelled. Cutting rows out of the
+    # input would renumber every later appearance and silently shift the
+    # trajectory onto neighbouring rounds.
+    #
+    # The output `round` is the team's own division matchweek, so the cut is a
+    # PER-TEAM cap: a team keeps as many matchweeks as it has rows surviving
+    # `.regular_season_results()`. That is the same row set the league table is
+    # built from, which a flat `round <= n_rounds` filter would not be -- the
+    # boundary counts rounds, and a team with games in hand has fewer
+    # appearances than the round number its matches carry.
+    trajectory_long <- .compute_team_strength_trajectory(
+      fit = fit,
+      results = results,
+      teams = teams,
+      current_top_teams = current_top_teams,
+      current_season = current_season,
+      top_div = div
+    )
+    if (nrow(trajectory_long) > 0L) {
+      regular_appearances <- table(c(
+        top_results$home_team, top_results$away_team
+      ))
+      cap <- regular_appearances[trajectory_long$team]
+      trajectory_long <- trajectory_long[
+        !is.na(cap) & trajectory_long$round <= as.integer(cap), ,
+        drop = FALSE
+      ]
+    }
+
+    round_strengths_quantiles <- if (nrow(trajectory_long) > 0L) {
+      trajectory_avg <- trajectory_long |>
+        dplyr::summarise(
+          value = mean(.data$value),
+          .by = c(".draw", "round", "team", "component")
+        ) |>
+        dplyr::mutate(location = "avg")
+
+      dplyr::bind_rows(trajectory_long, trajectory_avg) |>
+        .summarise_quantile_band_2dt(
+          c("round", "team", "component", "location")
+        )
+    } else {
+      tibble::tibble(
+        round = integer(), team = character(),
+        component = character(), location = character(),
+        quantile = integer(), value = numeric()
+      )
+    }
+
     list(
       team_strengths_quantiles = .compute_team_strengths_quantiles_2dt(
         team_strengths_draws, current_top_teams
       ),
+      round_strengths_quantiles = round_strengths_quantiles,
       home_advantage_quantiles = .compute_home_advantage_quantiles_2dt(
         home_advantage_draws, current_top_teams
       ),
