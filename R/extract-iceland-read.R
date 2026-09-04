@@ -39,7 +39,9 @@ NULL
 #' @return Named list. Each requested division key (e.g. `"BD"`, `"1D"`) maps to
 #'   a list of the required + optional tibbles, `division` column dropped after
 #'   filtering. Plus `fit_date` (the `Date` of the partition that was loaded),
-#'   `sim_inputs` (list or `NULL`) and `cup_bracket` (list or `NULL`).
+#'   `fit_meta` (the partition-level provenance row -- 0-row when the partition
+#'   predates the contract), `sim_inputs` (list or `NULL`) and `cup_bracket`
+#'   (list or `NULL`).
 #' @export
 read_extracted_iceland <- function(league, sex, fit_date = NULL,
                                    extracts_root = here::here(
@@ -129,10 +131,18 @@ read_extracted_iceland <- function(league, sex, fit_date = NULL,
 
   empty_tibbles <- profile$empty_extracts
 
-  # Optional file types (football's `tournament_placements`, the 2DT sports'
-  # `round_strengths_quantiles`, and `fit_meta` on both) degrade to a 0-row
+  # Optional file types (football's `tournament_placements`) degrade to a 0-row
   # tibble when absent: they are read but never gate partition completeness.
-  per_division_file_types <- c(file_types, profile$optional_extracts)
+  #
+  # `fit_meta` is excluded because it is PARTITION-LEVEL -- one row describing
+  # the fit, with no `division` column by design. Running it through the
+  # per-division split filtered it to zero rows on every cell, which is why
+  # every 2DT cell published `n_draws: 0` (the football branch happened to
+  # recover the count from its scoreline table instead). It is surfaced whole,
+  # as `out$fit_meta`, alongside `sim_inputs` and `cup_bracket`.
+  per_division_file_types <- setdiff(
+    c(file_types, profile$optional_extracts), .PUBLISH_PARTITION_LEVEL_EXTRACTS
+  )
   parquets <- lapply(per_division_file_types, function(ft) {
     p <- file.path(fit_dir, paste0(ft, ".parquet"))
     if (file.exists(p)) {
@@ -191,6 +201,35 @@ read_extracted_iceland <- function(league, sex, fit_date = NULL,
     NULL
   }
 
+  # Partition-level provenance: n_draws, fit_date, stan_model, model_units.
+  # Optional -- football partitions written before the contract existed have
+  # none, and `required_extracts` deliberately does not gate on it.
+  out$fit_meta <- .read_partition_extract(
+    fit_dir, "fit_meta", empty_tibbles[["fit_meta"]]
+  )
+
   out$fit_date <- fit_date_out
   out
+}
+
+# A partition-level (division-free) extract file, or its empty shape.
+# @noRd
+.read_partition_extract <- function(fit_dir, file_type, empty) {
+  p <- file.path(fit_dir, paste0(file_type, ".parquet"))
+  if (!file.exists(p)) {
+    return(empty)
+  }
+  df <- tibble::as_tibble(arrow::read_parquet(p))
+  if ("division" %in% names(df)) {
+    cli::cli_abort(
+      c(
+        "{.file {basename(p)}} carries a {.field division} column.",
+        "i" = "Partition-level extracts describe the FIT, not a cell -- a
+               {.field division} column here means the extractor put it in a
+               division-keyed write loop."
+      ),
+      call = NULL
+    )
+  }
+  df
 }

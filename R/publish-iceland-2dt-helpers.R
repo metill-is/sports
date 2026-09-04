@@ -252,16 +252,3 @@ NULL
     ) |>
     dplyr::semi_join(top_teams_filter, by = "team")
 }
-
-# Round number = min completed appearances across teams in current top
-# division (postponed fixtures don't overstate progress).
-.compute_round_num_2dt <- function(top_results) {
-  if (nrow(top_results) == 0L) {
-    return(0L)
-  }
-  counts <- top_results |>
-    tidyr::pivot_longer(c("home_team", "away_team"), values_to = "team") |>
-    dplyr::count(.data$team) |>
-    dplyr::pull("n")
-  if (length(counts) == 0L) 0L else as.integer(min(counts))
-}

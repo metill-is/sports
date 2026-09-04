@@ -611,6 +611,12 @@ publish_iceland_league <- function(extracted,
   division_codes <- names(division_dir_suffix)
   division_labels_is <- .iceland_division_labels(league_key, sex)
   division_is_cup <- .iceland_division_is_cup(league_key, sex)
+  # meta v2's per-division attributes, all absent-safe. Read through the typed
+  # accessors rather than the raw config entry: `qualify` is NULL or
+  # list(slots, label_is), the other two are NA_integer_ where unset.
+  division_qualify <- .iceland_division_qualify(league_key, sex)
+  division_relegation <- .iceland_division_relegation(league_key, sex)
+  division_meetings <- .iceland_division_expected_meetings(league_key, sex)
 
   # extracted shape: list keyed by division code (BD, LD1, ...) — see
   # read_extracted_iceland(). Each per-division list has the 6 parquet
@@ -661,6 +667,20 @@ publish_iceland_league <- function(extracted,
     !is.na(results$home_score) & !is.na(results$away_score), ,
     drop = FALSE
   ]
+
+  # Forward fixtures, read once per (league, sex). They are the FALLBACK source
+  # of n_rounds for a cell with no configured `expected_meetings` -- the only
+  # such cell today is basketball's irregular 11-team female 1. deild. A root
+  # with no schedules partition at all degrades to NULL rather than aborting a
+  # publish: an absent fixture list is a missing fallback, not a broken cell.
+  schedules <- tryCatch(
+    read_table(
+      "schedules",
+      root   = root,
+      filter = list(sport = league$sport, country = league$country, sex = sex)
+    ),
+    error = function(e) NULL
+  )
 
   for (target_div in division_codes) {
     top_div <- target_div
@@ -804,14 +824,29 @@ publish_iceland_league <- function(extracted,
 
     # ---- meta.json ----------------------------------------------------------
 
-    round_num <- results[
-      results$season == current_season & results$division %in% family_divs, ,
-      drop = FALSE
-    ] |>
-      tidyr::pivot_longer(c("home_team", "away_team"), values_to = "team") |>
-      dplyr::count(.data$team) |>
-      dplyr::pull("n") |>
-      (\(x) if (length(x) == 0L) 0L else min(x))()
+    # One derivation of the season's shape, shared with the extractor
+    # (R/publish-format.R). `round` is the floor over the cell's teams with
+    # post-season rows excluded, so basketball male Bonusdeild reads 22 of 22
+    # rather than 35 of 22 -- the -13 "Umferdir eftir" the platform would
+    # otherwise render.
+    division_cfg <- list(
+      qualify = division_qualify[[target_div]],
+      relegation_slots = division_relegation[[target_div]],
+      expected_meetings = division_meetings[[target_div]]
+    )
+    format_facts <- .publish_n_rounds(
+      results = results,
+      schedules = schedules,
+      season = current_season,
+      division_codes = family_divs,
+      end_date = end_date,
+      expected_meetings = division_cfg$expected_meetings,
+      is_cup = is_cup
+    )
+    round_num <- .publish_round(
+      results, current_season, family_divs,
+      n_rounds = format_facts$n_rounds, cut = format_facts$cut
+    )
 
     # Source n_draws from the per-fit sim_inputs first (always populated when
     # the fit ran), then fall back to predicted_matches' per-match count for
@@ -832,18 +867,28 @@ publish_iceland_league <- function(extracted,
           .by = c("home_team", "away_team", "match_date")
         )
       as.integer(round(mean(per_match_count$s)))
+    } else if (!is.null(extracted$fit_meta) &&
+      nrow(extracted$fit_meta) > 0L &&
+      !is.na(extracted$fit_meta$n_draws[[1L]])) {
+      # The match-summary shape carries no per-draw count to recover the count
+      # from, so the 2DT sports read the partition-level fit_meta table. It was
+      # already written by both extractors; the reader was splitting it by
+      # `division`, a column it deliberately does not have, which emptied it on
+      # every cell and is why every basketball and handball cell published
+      # `n_draws: 0`.
+      #
+      # It sits BELOW the two football branches on purpose: on a real football
+      # partition all three agree (the scoreline counts sum to the draw count),
+      # so ordering fit_meta first would move no production number but would
+      # move the pinned fixture, whose synthetic counts round to 48 against a
+      # fit_meta of 50.
+      as.integer(extracted$fit_meta$n_draws[[1L]])
     } else {
-      # The match-summary shape carries no per-draw count to recover the draw
-      # count from, and the reader does not surface the partition-level
-      # fit_meta table (it has no `division` column, so the per-division split
-      # empties it). meta.json v2 owns wiring n_draws for these sports; until
-      # then a 2DT cell reports 0 rather than crashing on a column football
-      # alone has.
       0L
     }
 
     league_label <- division_labels_is[[target_div]]
-    meta <- list(
+    meta_base <- list(
       sport        = league$sport,
       sex          = sex,
       league       = league_label,
@@ -858,15 +903,23 @@ publish_iceland_league <- function(extracted,
     if (!is.null(div_split)) {
       # Split-season cell: final_positions placement is full-season
       # (1 = champion); the platform renders group boundaries from this.
-      meta$split <- list(
+      meta_base$split <- list(
         upper = as.integer(div_split$upper),
         lower = as.integer(div_split$lower)
       )
     }
+    meta <- .build_publish_meta(
+      base = meta_base, profile = profile,
+      format = format_facts, division_cfg = division_cfg
+    )
     write_json_consistent(
       meta,
       file.path(out_dir, "meta.json"),
-      auto_unbox = TRUE
+      # null = "null" so `postseason` (football), `points$draw` (basketball)
+      # and an unconfigured `qualify` reach the consumer as JSON null instead
+      # of as an empty object. No v1 key is ever NULL, so the football payload
+      # is unaffected by the flag itself.
+      auto_unbox = TRUE, null = "null"
     )
 
     # ---- next_games.json ----------------------------------------------------
@@ -914,6 +967,12 @@ publish_iceland_league <- function(extracted,
       results$season == current_season & results$division %in% family_divs, ,
       drop = FALSE
     ]
+    # THE REGULAR-SEASON BOUNDARY, the same call the extractor makes. Basketball
+    # embeds its urslitakeppni in the league division, so without this the
+    # standings, the base points feeding points_distribution and the as_of
+    # stamp all count post-season matches -- while final_positions, cut at
+    # extract time, does not. The two cuts must be the same cut.
+    bd_results <- .regular_season_cut(bd_results, format_facts)
 
     # Split-group membership for the group-locked rank. Derived once the
     # split phase is observable (played playoff matches, or upcoming ones
@@ -1255,23 +1314,27 @@ publish_iceland_league <- function(extracted,
     if (nrow(final_positions) > 0L) {
       n_teams_top <- length(unique(final_positions$team))
 
-      top_six <- final_positions |>
-        dplyr::summarise(
-          p_top_six = sum(.data$probability[.data$placement <= 6L]),
-          p_winner = sum(.data$probability[.data$placement == 1L]),
-          p_relegation = sum(
-            .data$probability[.data$placement >= n_teams_top - 1L]
-          ),
-          .by = "team"
-        )
+      placement_summary <- .build_placement_summary(
+        final_positions,
+        n_teams = n_teams_top,
+        basis = profile$placement_basis,
+        qualify = division_cfg$qualify,
+        relegation_slots = division_cfg$relegation_slots,
+        # Football only, and deprecated: see .build_placement_summary().
+        emit_top_six_alias = identical(league$sport, "football")
+      )
 
       write_json_consistent(
         list(
           generated_at = generated_at,
           season       = current_season,
+          # What a placement MEANS. "regular_season_table" says the champion of
+          # this table is the deildarmeistari and the Islandsmeistari comes out
+          # of an urslitakeppni the model does not simulate (design 15, D3).
+          basis        = profile$placement_basis,
           n_teams      = n_teams_top,
           records      = final_positions,
-          summary      = top_six
+          summary      = placement_summary
         ),
         file.path(out_dir, "final_positions.json"),
         auto_unbox = TRUE, dataframe = "rows", digits = 5
@@ -1316,6 +1379,25 @@ publish_iceland_league <- function(extracted,
         ) |>
         dplyr::summarise(base_points = sum(.data$points), .by = "team")
 
+      # points_distribution.json's summary carries the placement columns it has
+      # always carried and gains nothing here. It is one of the eight artefacts
+      # the meta v2 golden regeneration asserts BYTE-IDENTICAL, so the generic
+      # pair (p_qualify / p_top_of_table) lives in final_positions.json only;
+      # the commit that retires the p_top_six alias collapses both at once.
+      # bb/hb have no p_top_six and no p_winner to carry, so they ship
+      # p_top_of_table in their place.
+      points_placement <- placement_summary[
+        , intersect(
+          if ("p_top_six" %in% names(placement_summary)) {
+            c("team", "p_top_six", "p_winner", "p_relegation")
+          } else {
+            c("team", "p_top_of_table", "p_relegation")
+          },
+          names(placement_summary)
+        ),
+        drop = FALSE
+      ]
+
       points_summary <- points_distribution |>
         dplyr::group_by(.data$team) |>
         dplyr::summarise(
@@ -1332,7 +1414,7 @@ publish_iceland_league <- function(extracted,
         ) |>
         dplyr::left_join(base_points, by = "team") |>
         dplyr::mutate(base_points = dplyr::coalesce(.data$base_points, 0L)) |>
-        dplyr::left_join(top_six, by = "team")
+        dplyr::left_join(points_placement, by = "team")
 
       write_json_consistent(
         list(
@@ -1348,6 +1430,7 @@ publish_iceland_league <- function(extracted,
       write_json_consistent(
         list(
           generated_at = generated_at, season = current_season,
+          basis = profile$placement_basis,
           n_teams = 0L, records = list(), summary = list()
         ),
         file.path(out_dir, "final_positions.json"),

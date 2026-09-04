@@ -233,13 +233,17 @@
 #' @param results Results tibble.
 #' @param season Season to slice to.
 #' @param division_codes Division codes in this publish cell.
-#' @param n_rounds From [`.publish_n_rounds()`]; `NA` disables both the cut and
-#'   the clamp.
+#' @param n_rounds From [`.publish_n_rounds()`]; the CLAMP. `NA` disables it.
+#' @param cut The boundary to drop post-season rows at, normally
+#'   `.publish_n_rounds()$cut`. Defaults to `n_rounds`, which is the same thing
+#'   whenever the boundary is configured. See [`.regular_season_cut()`] for why
+#'   the two are not always equal.
 #' @return Integer, clamped into `[0, n_rounds]` when `n_rounds` is finite.
 #' @noRd
-.publish_round <- function(results, season, division_codes, n_rounds) {
+.publish_round <- function(results, season, division_codes, n_rounds,
+                           cut = n_rounds) {
   rows <- .publish_cell_rows(results, season, division_codes)
-  rows <- .regular_season_results(rows, n_rounds)
+  rows <- .regular_season_results(rows, cut)
   apps <- .publish_appearances(rows)
   if (length(apps) == 0L) {
     return(0L)

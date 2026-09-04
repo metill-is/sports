@@ -40,6 +40,12 @@ NULL
 # whole replay history.
 .PUBLISH_OPTIONAL_ALWAYS <- "fit_meta"
 
+# Extracts with NO `division` payload column. They describe the FIT, not a
+# cell, so the reader must surface them whole instead of running them through
+# its per-division split -- a split filters them to zero rows on every cell,
+# which is how every 2DT cell came to publish `n_draws: 0`.
+.PUBLISH_PARTITION_LEVEL_EXTRACTS <- "fit_meta"
+
 # The ten JSON basenames every Icelandic league cell publishes.
 .PUBLISH_COMMON_SURFACES <- c(
   "meta", "next_games",
