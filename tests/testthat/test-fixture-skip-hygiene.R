@@ -15,7 +15,11 @@ test_that("the bb/hb publish + extract tests carry no skip gates", {
     # asserts against live git-tracked data/facts/results, so a skip gate there
     # would silently retire the only check that a federation format change is
     # caught.
-    "test-iceland-division-helpers.R"
+    "test-iceland-division-helpers.R",
+    # WS9's per-sport publish registry. It is the sole author of every
+    # "does this sport do X" fact, so a skip here would silently retire the
+    # bb/hb half of the contract.
+    "test-publish-profile.R"
   )
   banned <- c("skip(", "skip_if(", "skip_if_not(", "skip_if_not_installed(", "Sys.getenv")
 

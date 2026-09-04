@@ -108,6 +108,7 @@ Collate:
     'publish-handball-iceland.R'
     'validate-publish.R'
     'publish-pipeline.R'
+    'publish-profile.R'
     'replay.R'
     'schedule-active.R'
     'simulate-cup-bracket.R'
