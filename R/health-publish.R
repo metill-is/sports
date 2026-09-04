@@ -92,3 +92,162 @@ NULL
   }
   unique(unname(.PUBLISH_SURFACE_FILES[keep]))
 }
+
+#' Is every in-season publishing cell actually publishing, and recently?
+#'
+#' One row per (league, sex, division) in `publish_divisions`, for active
+#' leagues only. Statuses, and why each is the severity it is:
+#'
+#' * `PAUSED` -- the cell has no upcoming fixture inside
+#'   [has_upcoming_games()]'s horizon. Genuinely off-season; not a fault.
+#' * `FAIL` -- in-season and there is no publish directory, no `meta.json`, an
+#'   unparseable or stale `generated_at`, or an EXPECTED artefact is missing.
+#'   The in-season-with-nothing-on-disk case is the one this check exists for:
+#'   it is precisely the state basketball and handball were in from the Plan-7
+#'   cutover to 2026-09, and calling it `PAUSED` would re-hide exactly the
+#'   breakage the check was built to find. When there is also no extract
+#'   partition the value says so, because that names the real cause -- the fit
+#'   ran but the extractor did not, or neither ran, and the publisher had
+#'   nothing to read.
+#' * `WARN` -- an UNEXPECTED extra artefact and nothing else wrong. The
+#'   comparison is deliberately asymmetric (INT-3): a missing artefact is a 404
+#'   on metill-platform, while an extra one is leftover output from an older
+#'   shape -- worth looking at, not an outage.
+#'
+#' Every filesystem read is wrapped, so a corrupt `meta.json` becomes a FAIL
+#' row with a scope rather than an abort. [pipeline_health()]'s `safe()` wrapper
+#' would otherwise collapse the whole check into a single `check_error` row and
+#' lose every cell's identity.
+#'
+#' HONEST LIMIT. The alert channel is a GitHub workflow-failure email. That is
+#' signal, not a pager: `healthcheck.yml` runs twice daily and fails the run on
+#' `overall == "FAIL"`; there is no push notification, no escalation and no
+#' on-call. A FAIL introduced here is noticed within roughly twelve hours if the
+#' maintainer reads mail, and not at all if they do not. Because the channel is
+#' that low-bandwidth, a check that is permanently WARN is worse than no check.
+#'
+#' @param leagues Leagues list. Read as the object passed in -- never via
+#'   `load_leagues()` or the `.iceland_division_*()` accessors, which call it
+#'   internally with no injection seam and would make every test read the real
+#'   `config/leagues.yml`.
+#' @param root Data root.
+#' @param now Reference time.
+#' @param th Thresholds from [health_thresholds()].
+#' @param surfaces_for Injectable `sport -> character()` surface lookup.
+#' @param extract_exists_fn Injectable `extract_partition_exists()`.
+#' @return A health tibble of `check`/`scope`/`status`/`value`/`threshold`.
+#' @noRd
+check_publish_freshness <- function(leagues,
+                                    root = here::here("data"),
+                                    now = Sys.time(),
+                                    th = health_thresholds(),
+                                    surfaces_for = .publish_surfaces,
+                                    extract_exists_fn = extract_partition_exists) {
+  max_age <- th$publish_max_age_hours
+  thr_lbl <- paste0(max_age, "h")
+  extracts_root <- file.path(root, "beliefs", "extracts")
+  rows <- list()
+
+  for (key in names(leagues)) {
+    lg <- leagues[[key]]
+    if (!isTRUE(lg$active) || is.null(lg$publish_divisions)) next
+
+    for (sex in .cell_sexes(lg)) {
+      divs <- lg$publish_divisions[[sex]]
+      if (is.null(divs) || length(divs) == 0L) next
+
+      upcoming <- tryCatch(
+        has_upcoming_games(
+          list(sport = lg$sport, country = lg$country), sex,
+          root = root
+        ),
+        error = function(e) FALSE
+      )
+
+      for (d in divs) {
+        scope <- paste(key, sex, d$code)
+        row <- tryCatch(
+          .publish_cell_status(
+            lg, sex, d, root, extracts_root, now, max_age,
+            upcoming, surfaces_for, extract_exists_fn
+          ),
+          error = function(e) list(status = "FAIL", value = conditionMessage(e))
+        )
+        rows[[length(rows) + 1L]] <- health_row(
+          "publish_freshness", scope, row$status, row$value, thr_lbl
+        )
+      }
+    }
+  }
+
+  if (length(rows) == 0L) health_empty() else dplyr::bind_rows(rows)
+}
+
+#' @noRd
+.publish_cell_status <- function(lg, sex, d, root, extracts_root, now, max_age,
+                                 upcoming, surfaces_for, extract_exists_fn) {
+  if (!isTRUE(upcoming)) {
+    return(list(status = "PAUSED", value = "no upcoming games (off-season)"))
+  }
+
+  dir <- .publish_cell_dir(root, lg$sport, sex, d$slug)
+  meta_path <- file.path(dir, "meta.json")
+
+  if (!dir.exists(dir) || !file.exists(meta_path)) {
+    have_extract <- isTRUE(tryCatch(
+      extract_exists_fn(extracts_root, lg$sport, lg$country, sex),
+      error = function(e) FALSE
+    ))
+    what <- if (dir.exists(dir)) "meta.json missing" else "no publish output"
+    why <- if (have_extract) {
+      "; the extract partition exists, so the publisher ran and wrote nothing"
+    } else {
+      paste0(
+        "; no extract partition for this cell either -- the fit ran but the ",
+        "extractor did not, or neither ran, so the publisher had nothing to read"
+      )
+    }
+    return(list(status = "FAIL", value = paste0(what, " (in-season)", why)))
+  }
+
+  meta <- jsonlite::read_json(meta_path, simplifyVector = FALSE)
+  stamp <- .parse_publish_stamp(meta$generated_at)
+  if (is.na(stamp)) {
+    return(list(
+      status = "FAIL",
+      value = sprintf("unparseable generated_at (%s)", meta$generated_at %||% "absent")
+    ))
+  }
+  age_h <- as.numeric(difftime(now, stamp, units = "hours"))
+  if (age_h > max_age) {
+    return(list(status = "FAIL", value = sprintf("%.0fh old", age_h)))
+  }
+
+  have <- tools::file_path_sans_ext(list.files(dir, pattern = "[.]json$"))
+  want <- .expected_publish_artefacts(lg$sport, isTRUE(d$is_cup), surfaces_for)
+  missing <- setdiff(want, have)
+  extra <- setdiff(have, want)
+
+  if (length(missing) > 0L) {
+    return(list(
+      status = "FAIL",
+      value = sprintf(
+        "%.0fh old; missing artefact(s): %s",
+        age_h, paste(sort(missing), collapse = ", ")
+      )
+    ))
+  }
+  if (length(extra) > 0L) {
+    return(list(
+      status = "WARN",
+      value = sprintf(
+        "%.0fh old; unexpected artefact(s): %s",
+        age_h, paste(sort(extra), collapse = ", ")
+      )
+    ))
+  }
+  list(
+    status = "OK",
+    value = sprintf("%.0fh old; %d artefact(s)", age_h, length(have))
+  )
+}
