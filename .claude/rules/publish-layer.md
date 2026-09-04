@@ -236,14 +236,60 @@ no-ops on these sports until the autumn 2026 season opener — see
   `kvenna-{bd,ld,2deild,bikar}` (4) — i.e. `10×7 + 11×2 = 92` JSONs
   per fit. (`round_predictions_history.json` moved out of
   `data/publish/` in F7 — see consumption note below.)
-- Per-fit extracts: 9 parquets — the 7 per-cell file types
+- Per-fit football extracts: 10 parquets — the 7 per-cell file types
   (`predicted_matches`, `team_strengths_quantiles`,
   `round_strengths_quantiles`, `home_advantage_quantiles`,
   `final_positions`, `points_distribution`, `tournament_placements`)
   plus 2 shared bracket-simulator inputs (`sim_inputs_team`,
-  `sim_inputs_scalar`).
+  `sim_inputs_scalar`) and `fit_meta`.
+- Per-fit basketball / handball extracts (since 2026-09-04): 7 parquets —
+  the 6 division-keyed file types football has minus
+  `tournament_placements` (neither sport models a knockout cup), plus
+  `fit_meta`. Each division-keyed file carries a `division` payload column
+  spanning `publish_divisions[[sex]]` — basketball `{BD, 1D}`, handball
+  `{OD, G66}` — exactly as football's do.
 - Basketball + handball: same 7 snapshots plus
   `final_positions_history.json` per sex (8 × 2 = 16 each).
+
+### `fit_meta.parquet` is partition-level (since 2026-09-04)
+
+One row per `fit_date=` partition on all three sports: `n_draws` (integer),
+`fit_date` (Date), `stan_model` (character, from `leagues.yml`),
+`model_units` (character — `points` basketball, `goals` handball,
+`log_rate` football). It is the ONLY file in a partition with no
+`division` column, so it must never enter an extractor's division-keyed
+write loop and the reader must not split it — a split filters it to zero
+rows on every cell. `model_units` comes from the SPORT, not from config:
+the 2DT models are additive in raw points/goals while football's
+bivariate Poisson is on the log scale, and reading that off the wrong
+sport is the B5 bug wearing a metadata label.
+
+It stays in `sport_publish_profile()$optional_extracts` for every sport.
+`required_extracts` drives the reader's partition-completeness check, so
+promoting it would mark every football partition written before the
+contract existed incomplete — i.e. retire the replay history the extracts
+tree exists for. `round_strengths_quantiles` IS required for all three
+sports, because no basketball or handball partition predates it.
+
+### The regular-season boundary is applied at extract time too
+
+Basketball embeds its úrslitakeppni in the league division (KKÍ packages
+it as extra rounds inside the same `season_id`), so the 2DT extractor
+cuts before computing base points, the placement simulation and the round
+trajectory. There is exactly ONE boundary function in the repo —
+`.publish_n_rounds()` / `.regular_season_results()` in
+`R/publish-format.R` — and both the extractor and the publisher call it,
+because the two cuts must be the same cut or standings and
+`final_positions` disagree about which matches counted. Handball needs no
+cut: its playoff is a separate division (`PO`), already excluded by the
+division filter. Measured 2026-09-04 on season 2026: basketball male BD
+162 → 132 rows, male 1D 159 → 132, female BD 137 → 90, female 1D 98 → 98
+(unset `expected_meetings`, so the schedule derivation is the source);
+all four handball cells unchanged.
+
+`predicted_matches.parquet` is built from the UNCUT fixture set — a next
+game is a next game — while the league-table simulation caps upcoming
+fixtures at the boundary.
 
 ## Schema features (as of 2026-05-03)
 
