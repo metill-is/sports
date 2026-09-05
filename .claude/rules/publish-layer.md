@@ -620,3 +620,22 @@ Partitions written before this change carry all 99 and still read correctly
 
 `Rscript scripts/05_publish.R`. Wires fresh-fit-on-demand via
 `R/publish-pipeline.R::publish_one()`.
+
+## Stage, validate, swap (2026-09-05)
+
+`publish_one()` publishes into a staging copy of the (sport, sex) cells,
+validates the staging tree, and only then swaps those cells into
+`data/publish/`. A cell that fails the contract leaves the previous output
+byte-identical (or, on a first publish, leaves no cell at all). WHY: the
+workflows commit with `if: always()` and stage the whole publish tree, so a
+rejected cell used to reach `main` anyway -- the first real handball publish
+put four cells with `as_of = "-Inf"` there. The staging copy is seeded with
+the cell's current files because the history JSONs accrete by reading the
+existing file, and `round_predictions_history_root` is passed explicitly
+(the publisher derives it from `dirname(output_root)` when NULL, which under
+staging would be the temp tree). Two more first-publish rules from the same
+day: a division with no played match stamps `as_of` with the snapshot date,
+and a division's team set is the season's teams (results union scheduled
+fixtures), so `team_strengths`, `home_advantage`, `points_distribution` and
+`final_positions` always name the same teams.
+
