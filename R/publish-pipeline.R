@@ -3,7 +3,8 @@ NULL
 
 #' Does an extract partition exist for this cell?
 #'
-#' Distinguishes "no fit yet" (no partition -> a legitimate skip) from "a
+#' Distinguishes "no fit yet" (no partition -> a legitimate skip, but ONLY
+#' while the league has no upcoming games; in season it is an abort) from "a
 #' fit_date partition exists but won't read" (corrupt / half-written extract ->
 #' a loud failure) in publish_one().
 #' @noRd
@@ -80,8 +81,7 @@ publish_one <- function(static, betting, key, sex,
     error = function(e) {
       # Re-raise loudly when a fit_date partition EXISTS but won't read (a
       # corrupt / half-written extract) so the publish step fails rather than
-      # silently republishing yesterday's JSON. Stay quiet when there is no
-      # fit yet (no partition) -- a legitimate skip.
+      # silently republishing yesterday's JSON.
       if (extract_partition_exists(
         extracts_root, league$sport, league$country, sex
       )) {
@@ -94,8 +94,24 @@ publish_one <- function(static, betting, key, sex,
           call = NULL
         )
       }
+      # No partition at all. That is a legitimate skip ONLY while the league
+      # has no upcoming games. Once fixtures sit inside has_upcoming_games()'s
+      # horizon, a missing extract is the silent breakage this pipeline hid
+      # for months (design \u00a713): the fit never ran, or ran without the
+      # extractor. The run must go red, not exit 0 -- run_publish_targets()
+      # records the abort and football's cells still publish and commit.
+      if (has_upcoming_games(league, sex, root = root)) {
+        cli::cli_abort(
+          c(
+            "publish_one({key}/{sex}): no extract partition for an in-season cell.",
+            "x" = conditionMessage(e),
+            "i" = "Fixtures fall inside has_upcoming_games()'s horizon but no fit has been extracted under {.path {extracts_root}}."
+          ),
+          call = NULL
+        )
+      }
       cli::cli_alert_warning(
-        "publish_one({key}/{sex}): {conditionMessage(e)} (no extract partition yet \u2014 skipping)"
+        "publish_one({key}/{sex}): {conditionMessage(e)} (no extract partition yet and no upcoming games \u2014 skipping)"
       )
       NULL
     }
