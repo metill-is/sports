@@ -1,3 +1,15 @@
+# The date a snapshot is "as of": the last played match, or -- when the
+# division has no played match yet (handball kvenna OD on 2026-09-05, one round
+# into the season) -- the snapshot date itself. max() of an empty vector is
+# -Inf, and format(-Inf) is the string "-Inf", which the schema caught but
+# which would otherwise have published as a date key.
+.as_of_stamp <- function(played, end_date) {
+  if (nrow(played) == 0L || all(is.na(played$match_date))) {
+    return(format(end_date, "%Y-%m-%d"))
+  }
+  format(max(played$match_date, na.rm = TRUE), "%Y-%m-%d")
+}
+
 #' @include model-prepare.R storage.R config.R
 NULL
 
@@ -1148,7 +1160,7 @@ publish_iceland_league <- function(extracted,
         list(
           generated_at = generated_at,
           season       = current_season,
-          as_of        = format(max(bd_results$match_date), "%Y-%m-%d"),
+          as_of        = .as_of_stamp(bd_results, end_date),
           rows         = standings_rows
         ),
         file.path(out_dir, "standings.json"),
@@ -1161,7 +1173,7 @@ publish_iceland_league <- function(extracted,
       # against the same set of played fixtures replace rather than duplicate.
       standings_history_row <- standings_rows |>
         dplyr::mutate(
-          as_of        = format(max(bd_results$match_date), "%Y-%m-%d"),
+          as_of        = .as_of_stamp(bd_results, end_date),
           generated_at = generated_at,
           round        = as.integer(round_num),
           season       = current_season
@@ -1378,7 +1390,7 @@ publish_iceland_league <- function(extracted,
 
       final_positions_history_row <- final_positions |>
         dplyr::mutate(
-          as_of        = format(max(bd_results$match_date), "%Y-%m-%d"),
+          as_of        = .as_of_stamp(bd_results, end_date),
           generated_at = generated_at,
           round        = as.integer(round_num),
           season       = current_season
