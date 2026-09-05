@@ -3,8 +3,12 @@ NULL
 
 #' Does an extract partition exist for this cell?
 #'
-#' Distinguishes "no fit yet" (no partition -> a legitimate skip, but ONLY
-#' while the league has no upcoming games; in season it is an abort) from "a
+#' Writes into a staging copy of the cell, validates it, and only then swaps
+#' it into `data/publish/`, so a cell that fails the contract never reaches
+#' the output tree (the workflows' `if: always()` commit step stages the
+#' whole tree). Distinguishes "no fit yet" (no partition -> a legitimate
+#' skip, but ONLY while the league has no upcoming games; in season it is an
+#' abort) from "a
 #' fit_date partition exists but won't read" (corrupt / half-written extract ->
 #' a loud failure) in publish_one().
 #' @noRd
