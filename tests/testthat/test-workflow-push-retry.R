@@ -90,10 +90,19 @@ test_that("push-with-retry.sh exists, is executable, and is valid bash", {
 test_that("--prefer-ours is confined to workflows that fully regenerate output", {
   # `-X theirs` supersedes a sibling's version of a conflicting file. That is
   # only safe where every path the job writes is recomputed from the freshest
-  # inputs. These three regenerate data/publish/ (and the WC tree) wholesale;
-  # the scrapers and the fit write disjoint paths and must fail loudly on a
-  # conflict instead, because a conflict there means something unexpected.
-  allowed <- c("decide-publish.yml", "republish.yml", "world-cup.yml")
+  # inputs. Three regenerate data/publish/ (and the WC tree) wholesale, and
+  # the fit regenerates each fit_date partition it writes; the scrapers write
+  # disjoint paths and must fail loudly on a conflict instead, because a
+  # conflict there means something unexpected.
+  # fit.yml joined the list on 2026-09-05: two fit runs in the same
+  # concurrency group can both fit the same cell on the same day (the queued
+  # run's checkout predates the running run's push by seconds), and each
+  # writes the same fit_date=<today> partition under data/beliefs/. Run
+  # 33960811873 fitted handball's first two cells of the season, then lost the
+  # whole commit to a binary add/add conflict on football's parquets. Every
+  # path fit.yml stages is regenerated from the freshest data by the run that
+  # writes it, so the later fit is authoritative.
+  allowed <- c("decide-publish.yml", "republish.yml", "world-cup.yml", "fit.yml")
   skip_if_not(dir.exists(workflow_dir), "workflow dir not present")
   files <- list.files(workflow_dir, pattern = "\\.ya?ml$", full.names = TRUE)
 
@@ -110,4 +119,18 @@ test_that("--prefer-ours is confined to workflows that fully regenerate output",
       )
     )
   }
+})
+
+test_that("fit.yml prefers its own side on a same-partition conflict", {
+  # The positive half of the allowlist above: a queued fit that collides with
+  # the previous run's push must keep its fit, not discard three hours of
+  # sampling. Located by step and scanned forward, like the always() test.
+  yml <- readLines(
+    testthat::test_path("..", "..", ".github", "workflows", "fit.yml"),
+    warn = FALSE
+  )
+  idx <- grep("^\\s*- name: Commit if beliefs changed\\s*$", yml)
+  expect_length(idx, 1L)
+  step <- yml[idx:length(yml)]
+  expect_true(any(grepl("push-with-retry.sh --prefer-ours", step, fixed = TRUE)))
 })
