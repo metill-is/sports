@@ -170,6 +170,37 @@ fit_league <- function(league_key = NULL,
     schedule_horizon_days = schedule_horizon_days
   )
 
+  # Nothing to predict -> refuse BEFORE sampling. On 2026-09-05 a forced
+  # basketball fit ran its chains for 100 minutes with N_pred = 0 (the
+  # season's first fixture lay beyond the 14-day horizon), then failed in the
+  # extractor on "Can't find goals1_pred, goals2_pred". prepare_data() knew
+  # that before a single draw. The daily path never reaches this line --
+  # fit_skip_reason() pauses a league with no upcoming game -- so it fires on
+  # a forced or --league run, where the operator needs a plain answer. Round
+  # mode is exempt: a per-round replay legitimately reaches the season's end
+  # with nothing left to predict and keeps its historical behaviour.
+  if (is.null(round_cutoff) && nrow(prep$pred_d) == 0L) {
+    sched <- tryCatch(
+      read_table(
+        "schedules",
+        root = root,
+        filter = list(sport = league$sport, country = league$country, sex = sex)
+      ),
+      error = function(e) NULL
+    )
+    upcoming <- if (!is.null(sched)) sched$match_date[!is.na(sched$match_date) & sched$match_date > end_date] else as.Date(character())
+    first_fixture <- if (length(upcoming)) format(min(upcoming)) else "none scheduled"
+    gap <- if (length(upcoming)) as.integer(min(upcoming) - end_date) else NA_integer_
+    cli::cli_abort(
+      c(
+        "fit_league({league$sport}/{league$country}/{sex}): no fixture inside the {schedule_horizon_days}-day horizon after {format(end_date)} -- nothing to predict, refusing to sample.",
+        "i" = "First scheduled fixture: {first_fixture}{if (!is.na(gap)) paste0(' (', gap, ' days out)') else ''}.",
+        "i" = "Wait until it enters the horizon, or pass a wider schedule_horizon_days."
+      ),
+      call = NULL
+    )
+  }
+
   fit <- fit_model(
     stan_data       = prep$stan_data,
     stan_model_path = stan_path,

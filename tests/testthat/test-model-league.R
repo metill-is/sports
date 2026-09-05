@@ -1,3 +1,13 @@
+# The mini schedule fixture is dated when it was cut, so under a wall-clock
+# end_date nothing falls inside the 14-day prediction horizon and fit_league()
+# now refuses to sample (no fixture inside the horizon -> nothing to predict).
+# These tests exercise the write paths with a mocked sampler, so give them a
+# fixture inside the horizon, relative to today (time-bomb rule).
+.inside_horizon <- function(schedules, end_date = Sys.Date()) {
+  schedules$match_date <- end_date + 3L
+  schedules
+}
+
 test_that("fit_league writes beliefs_latest and beliefs_archive", {
   root <- withr::local_tempdir()
   results <- arrow::read_parquet(
@@ -7,7 +17,7 @@ test_that("fit_league writes beliefs_latest and beliefs_archive", {
     testthat::test_path("fixtures", "model", "mini_schedules.parquet")
   )
   write_table(results, "results", root = root)
-  write_table(schedules, "schedules", root = root)
+  write_table(.inside_horizon(schedules), "schedules", root = root)
 
   mini_league <- list(
     sport = "basketball", country = "iceland",
@@ -83,7 +93,7 @@ test_that("fit_league (write_archive = FALSE) only writes latest", {
     testthat::test_path("fixtures", "model", "mini_schedules.parquet")
   )
   write_table(results, "results", root = root)
-  write_table(schedules, "schedules", root = root)
+  write_table(.inside_horizon(schedules), "schedules", root = root)
 
   mini_league <- list(
     sport = "basketball", country = "iceland", sexes = "male",
@@ -137,7 +147,7 @@ test_that("fit_league(football iceland) skips beliefs_archive by default", {
   results$home_score <- results$home_score %% 6L
   results$away_score <- results$away_score %% 6L
   write_table(results, "results", root = root)
-  write_table(schedules, "schedules", root = root)
+  write_table(.inside_horizon(schedules), "schedules", root = root)
 
   mini_league <- list(
     sport = "football", country = "iceland", sexes = "male",
@@ -192,7 +202,7 @@ test_that("fit_league(football iceland, force_archive_write = TRUE) bypasses the
   results$home_score <- results$home_score %% 6L
   results$away_score <- results$away_score %% 6L
   write_table(results, "results", root = root)
-  write_table(schedules, "schedules", root = root)
+  write_table(.inside_horizon(schedules), "schedules", root = root)
 
   mini_league <- list(
     sport = "football", country = "iceland", sexes = "male",
@@ -275,6 +285,14 @@ test_that("fit_league ABORTS when the extractor fails, rather than warning", {
     home_team = rep(c("A", "B"), 5), away_team = rep(c("B", "A"), 5),
     home_score = 80, away_score = 75
   ), "results", root = root)
+  # One fixture inside the 14-day horizon after the test's end_date, so
+  # fit_league() has something to predict and reaches the (mocked) extractor
+  # instead of refusing to sample.
+  write_table(tibble::tibble(
+    sport = "basketball", country = "iceland", sex = "male", season = 2100L,
+    match_date = as.Date("2100-01-14"), home_team = "A", away_team = "B",
+    division = "BD", round = 6L, kickoff_time = "19:15"
+  ), "schedules", root = root)
 
   fake_fit <- structure(
     list(save_object = function(file) saveRDS(NULL, file)),
@@ -304,4 +322,34 @@ test_that("fit_league ABORTS when the extractor fails, rather than warning", {
 
   # Beliefs survived the abort -- the fit's work is not thrown away.
   expect_gt(nrow(read_table("beliefs_latest", root = root)), 0L)
+})
+
+# ---- A fit with nothing to predict refuses BEFORE sampling ---------------------
+
+test_that("fit_league aborts before sampling when no fixture is inside the horizon", {
+  # 2026-09-05: a forced basketball fit sampled for 100 minutes, then the
+  # extractor failed on "Can't find goals1_pred, goals2_pred" -- the model had
+  # been given N_pred = 0 because basketball's first fixture (29 Sept) lay
+  # beyond the 14-day horizon. prepare_data() knew that before a single draw.
+  env <- environment()
+  root <- fixture_facts_root(env)
+  schedules <- read_table("schedules", root = root)
+  # Push every handball male fixture well past the horizon (time-bomb rule:
+  # relative to the end_date the test passes, not to the wall clock).
+  hit <- schedules$sport == "handball" & schedules$sex == "male"
+  schedules$match_date[hit] <- as.Date("2100-03-01")
+  write_table(schedules, "schedules", root = root)
+  league <- load_leagues()[["handball_iceland"]]
+  started <- Sys.time()
+  expect_error(
+    suppressMessages(fit_league(
+      league = league, sex = "male", end_date = as.Date("2100-01-15"),
+      root = root, write_archive = FALSE
+    )),
+    "no fixture inside the .*horizon"
+  )
+  # Refusing must be immediate: a guard that lets sampling start first is not
+  # the guard this test is for.
+  expect_lt(as.numeric(difftime(Sys.time(), started, units = "secs")), 60)
+  expect_false(dir.exists(file.path(root, "beliefs", "latest", "sport=handball")))
 })
