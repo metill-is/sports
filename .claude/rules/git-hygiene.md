@@ -125,9 +125,11 @@ git -C /Users/brynjolfurjonsson/sports rebase origin/main
 git -C /Users/brynjolfurjonsson/sports push
 ```
 
-This is for the direct-push case only. The PR path below stays preferred —
-`gh pr merge --rebase --auto --delete-branch` still works because the repo now
-has auto-merge enabled, so keep the `--auto` recommendation.
+This is for the direct-push case only. The PR path below stays preferred, but
+**not with `--auto`**: GitHub only enables auto-merge on a base branch whose
+rules carry a requirement (checks or reviews), and `protect-main` deliberately
+has none, so `gh pr merge --auto` fails with `Pull request Branch does not have
+required protected branch rules` (observed on PR #78, 2026-09-05).
 
 ## Branch protection (`protect-main` ruleset)
 
@@ -209,9 +211,13 @@ fast-forward pushes never trip). But the PR-and-auto-merge pattern is preferred
 because:
 - A push needs a clean local working tree (or stash dance) every time. A PR
   branch can be created without disturbing the working tree on main.
-- `gh pr merge --rebase --auto --delete-branch` works even when no checks are
-  required — auto-merge fires immediately if checks pass (or instantly if none
-  exist), and the branch is cleaned up server-side.
+- `gh pr merge --rebase --delete-branch` (no `--auto`, see above) merges the
+  moment you run it and cleans the branch up server-side. `ci-tests.yml` runs
+  `devtools::test()` on every pull_request, so run `gh pr checks <n> --watch`
+  first — nothing blocks the merge on a red check. Rebase is refused
+  (`This branch can't be rebased`) when any commit in the branch is empty,
+  e.g. a record-only milestone commit; use `--merge` for that PR rather than
+  dropping the record (PR #78 landed that way).
 - The PR view gives a reviewable diff before commit lands on main.
 
 Use direct push only for trivial single-line fixes when the working tree is
