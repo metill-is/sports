@@ -27,7 +27,16 @@ test_that("cumulative_xpts_long: returns a long tibble across cells with parsed 
   )
   expect_true(all(required_cols %in% names(out)))
 
-  expect_setequal(unique(out$sport), "football")
+  # The sports present are exactly the sports whose cells publish a
+  # standings_history.json -- derived from the tree, not restated. This used
+  # to assert "football" alone and went red the hour handball's cells landed
+  # (2026-09-05); a data-backed test picks its expectation from the data.
+  sports_on_disk <- unique(basename(dirname(dirname(dirname(list.files(
+    here::here("data", "publish"),
+    pattern = "^standings_history\\.json$", recursive = TRUE, full.names = TRUE
+  ))))))
+  expect_true("football" %in% sports_on_disk)
+  expect_setequal(unique(out$sport), sports_on_disk)
   expect_setequal(unique(out$country), "iceland")
   expect_true(all(unique(out$sex) %in% c("male", "female")))
   expect_true(length(unique(out$division)) >= 1L)
