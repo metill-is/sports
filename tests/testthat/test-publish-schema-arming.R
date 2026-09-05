@@ -190,3 +190,106 @@ test_that("publish_world_cup never reaches the validation path", {
     here::here("config", "publish-schemas"), "world_cup", "meta.json"
   ))
 })
+
+# ---- A rejected publish leaves the last valid output untouched --------------
+#
+# publish_one() wrote straight into output_root and validated afterwards, so
+# a cell whose JSON failed the contract still sat on disk -- and fit.yml's
+# always() commit step, which stages the whole publish tree, committed it.
+# On 2026-09-05 the first real handball publish put four contract-breaking
+# cells on main (as_of = "-Inf", home_advantage upper > cap). The platform's
+# own validator fails closed so nothing deployed, but main carried invalid
+# data and the live-tree schema test went red. The output tree must only
+# ever hold cells that passed.
+
+.strict_schema_dir <- function(env) {
+  # The real handball schemas, with meta.json additionally REQUIRING a key no
+  # publisher emits -- every handball cell must fail validation.
+  sch <- withr::local_tempdir(.local_envir = env)
+  real <- here::here("config", "publish-schemas")
+  file.copy(file.path(real, "handball"), sch, recursive = TRUE)
+  p <- file.path(sch, "handball", "meta.schema.json")
+  m <- jsonlite::fromJSON(p, simplifyVector = FALSE)
+  m$required <- c(m$required, "definitely_not_emitted")
+  jsonlite::write_json(m, p, auto_unbox = TRUE, pretty = TRUE)
+  sch
+}
+
+test_that("a publish that fails validation leaves the previous output byte-identical", {
+  env <- environment()
+  root <- fixture_facts_root(env)
+  extracts <- file.path(root, "beliefs", "extracts")
+  dir.create(extracts, recursive = TRUE, showWarnings = FALSE)
+  file.copy(testthat::test_path("fixtures", "extracts", "sport=handball"), extracts, recursive = TRUE)
+  league <- load_leagues()[["handball_iceland"]]
+  st <- league[c("sport", "country", "sexes", "active", "stan_model", "data_source", "publish_divisions")]
+
+  # First, a valid publish so the cells exist.
+  suppressMessages(suppressWarnings(publish_one(
+    st, league$betting, "handball_iceland", "male",
+    root = root, validate = FALSE, end_date = FIXTURE_END_DATE
+  )))
+  cells <- file.path(root, "publish", "handball", "iceland", c("karla-od", "karla-g66"))
+  before <- lapply(cells, function(d) {
+    fs <- sort(list.files(d, full.names = TRUE))
+    stats::setNames(vapply(fs, function(f) digest::digest(f, file = TRUE), character(1)), basename(fs))
+  })
+  expect_true(all(lengths(before) > 0L))
+
+  # Then a publish that must fail the contract.
+  expect_error(
+    suppressMessages(suppressWarnings(publish_one(
+      st, league$betting, "handball_iceland", "male",
+      root = root, validate = TRUE, end_date = FIXTURE_END_DATE,
+      schema_dir = .strict_schema_dir(env)
+    ))),
+    "do not match"
+  )
+  after <- lapply(cells, function(d) {
+    fs <- sort(list.files(d, full.names = TRUE))
+    stats::setNames(vapply(fs, function(f) digest::digest(f, file = TRUE), character(1)), basename(fs))
+  })
+  expect_identical(after, before)
+})
+
+test_that("a first publish that fails validation leaves no cell behind", {
+  env <- environment()
+  root <- fixture_facts_root(env)
+  extracts <- file.path(root, "beliefs", "extracts")
+  dir.create(extracts, recursive = TRUE, showWarnings = FALSE)
+  file.copy(testthat::test_path("fixtures", "extracts", "sport=handball"), extracts, recursive = TRUE)
+  league <- load_leagues()[["handball_iceland"]]
+  st <- league[c("sport", "country", "sexes", "active", "stan_model", "data_source", "publish_divisions")]
+  expect_error(
+    suppressMessages(suppressWarnings(publish_one(
+      st, league$betting, "handball_iceland", "female",
+      root = root, validate = TRUE, end_date = FIXTURE_END_DATE,
+      schema_dir = .strict_schema_dir(env)
+    ))),
+    "do not match"
+  )
+  expect_false(dir.exists(file.path(root, "publish", "handball", "iceland", "kvenna-od")))
+  expect_false(dir.exists(file.path(root, "publish", "handball", "iceland", "kvenna-g66")))
+})
+
+test_that("staging does not move football's round_predictions_history accumulator", {
+  # publish_iceland_league() derives round_predictions_history_root from
+  # dirname(output_root) when it is not given. With the publisher now writing
+  # into a staging directory, that default would put football's xG
+  # accumulator into the staging tree and delete it with it -- silently
+  # freezing the standings' xG columns. publish_one() must pass the real root.
+  env <- environment()
+  root <- fixture_facts_root(env)
+  extracts <- file.path(root, "beliefs", "extracts")
+  dir.create(extracts, recursive = TRUE, showWarnings = FALSE)
+  build_football_extracts_fixture(root, extracts, "male")
+  league <- load_leagues()[["football_iceland"]]
+  st <- league[c("sport", "country", "sexes", "active", "stan_model", "data_source", "publish_divisions")]
+  suppressMessages(suppressWarnings(publish_one(
+    st, league$betting, "football_iceland", "male",
+    root = root, validate = FALSE, end_date = FIXTURE_END_DATE
+  )))
+  acc <- file.path(root, "beliefs", "round_predictions_history")
+  expect_true(dir.exists(acc), info = acc)
+  expect_gt(length(list.files(acc, recursive = TRUE)), 0L)
+})
