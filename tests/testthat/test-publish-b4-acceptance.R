@@ -172,3 +172,28 @@ test_that("bb/hb next_games uses football's field names, not the 2DT ones", {
   expect_true("basketball/karla-bd" %in% non_empty)
   expect_true("handball/karla-od" %in% non_empty)
 })
+
+test_that("base_points agrees with the standings table, on the sport's own scheme", {
+  # Review finding: points_distribution.json recomputed base_points with a
+  # hardcoded 3/1/0, so every basketball cell published 3 x wins against a
+  # standings table built on 2 x wins from the SAME matches. The page would
+  # have shown a team whose current points (54) exceeded its projected final
+  # points (~37) -- a team losing 17 points by playing on. Nothing caught it:
+  # no test asserted base_points at all, and the schema only requires the key
+  # to be present.
+  root <- .b4_publish_all()
+
+  for (sport in names(.B4_CELLS)) for (cd in .B4_CELLS[[sport]]) {
+    dir <- file.path(root, "publish", sport, "iceland", cd)
+    st <- jsonlite::fromJSON(file.path(dir, "standings.json"))
+    pd <- jsonlite::fromJSON(file.path(dir, "points_distribution.json"))
+    if (is.null(st$rows) || !nrow(st$rows)) next
+    a <- st$rows[order(st$rows$team), c("team", "points")]
+    b <- pd$summary[order(pd$summary$team), c("team", "base_points")]
+    expect_identical(a$team, b$team, info = cd)
+    expect_identical(
+      as.integer(a$points), as.integer(b$base_points),
+      info = paste(cd, "standings.points vs base_points")
+    )
+  }
+})

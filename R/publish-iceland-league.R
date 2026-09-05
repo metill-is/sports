@@ -1355,10 +1355,17 @@ publish_iceland_league <- function(extracted,
         ) |>
         dplyr::mutate(
           name = dplyr::if_else(.data$name == "home_team", "home", "away"),
+          # The SPORT's scheme, not football's. This block used to hardcode
+          # 3/1/0, so every basketball cell published base_points = 3 x wins
+          # against a standings table built on 2 x wins from the same data --
+          # a team whose "current points" exceeded its own projected final
+          # points. points_scheme is c(win, draw, loss) from the profile, and
+          # is literally c(3L, 1L, 0L) for football, so football's bytes and
+          # its golden hashes are unchanged.
           points = dplyr::case_when(
-            .data$result == "tie" ~ 1L,
-            .data$result == .data$name ~ 3L,
-            TRUE ~ 0L
+            .data$result == "tie" ~ points_scheme[["draw"]],
+            .data$result == .data$name ~ points_scheme[["win"]],
+            TRUE ~ points_scheme[["loss"]]
           )
         ) |>
         dplyr::summarise(base_points = sum(.data$points), .by = "team")
