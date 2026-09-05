@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-09-04T21:15:38Z",
-  "overall": "WARN",
-  "n_fail": 0,
-  "n_warn": 3,
+  "generated_at": "2026-09-05T14:31:07Z",
+  "overall": "FAIL",
+  "n_fail": 6,
+  "n_warn": 6,
   "checks": [
     {
       "check": "fit_freshness",
@@ -21,30 +21,44 @@
     {
       "check": "fit_freshness",
       "scope": "handball_iceland male",
-      "status": "PAUSED",
-      "value": "no upcoming games",
-      "threshold": "n/a"
+      "status": "FAIL",
+      "value": "123d old, results pending fit",
+      "threshold": "<= 2d"
     },
     {
       "check": "fit_freshness",
       "scope": "handball_iceland female",
-      "status": "PAUSED",
-      "value": "no upcoming games",
-      "threshold": "n/a"
+      "status": "FAIL",
+      "value": "115d old, results pending fit",
+      "threshold": "<= 2d"
     },
     {
       "check": "fit_freshness",
       "scope": "football_iceland male",
       "status": "OK",
-      "value": "1d old, current with results",
+      "value": "0d old, current with results",
       "threshold": "<= 2d"
     },
     {
       "check": "fit_freshness",
       "scope": "football_iceland female",
       "status": "OK",
-      "value": "5d old, current with results",
+      "value": "6d old, current with results",
       "threshold": "<= 2d"
+    },
+    {
+      "check": "odds_freshness",
+      "scope": "basketball_iceland",
+      "status": "PAUSED",
+      "value": "betting disabled (betting.enabled: false)",
+      "threshold": "odds for fixtures within 3d"
+    },
+    {
+      "check": "odds_freshness",
+      "scope": "handball_iceland",
+      "status": "PAUSED",
+      "value": "betting disabled (betting.enabled: false)",
+      "threshold": "odds for fixtures within 3d"
     },
     {
       "check": "odds_freshness",
@@ -71,14 +85,14 @@
       "check": "divergence_drift",
       "scope": "football/iceland/male",
       "status": "OK",
-      "value": "0.075%",
+      "value": "0.000%",
       "threshold": "< 0.5%"
     },
     {
       "check": "rhat_drift",
       "scope": "football/iceland/male",
       "status": "OK",
-      "value": "1.011",
+      "value": "1.010",
       "threshold": "< 1.020"
     },
     {
@@ -99,7 +113,7 @@
       "check": "placement_health",
       "scope": "auto_place",
       "status": "WARN",
-      "value": "2 pending, auto-place never run",
+      "value": "1 pending, auto-place never run",
       "threshold": "healthy run < 14h when pending"
     },
     {
@@ -115,6 +129,167 @@
       "status": "OK",
       "value": "0",
       "threshold": "0 un-actioned modelled competitions"
+    },
+    {
+      "check": "publish_freshness",
+      "scope": "basketball_iceland male BD",
+      "status": "PAUSED",
+      "value": "no upcoming games (off-season)",
+      "threshold": "36h"
+    },
+    {
+      "check": "publish_freshness",
+      "scope": "basketball_iceland male 1D",
+      "status": "PAUSED",
+      "value": "no upcoming games (off-season)",
+      "threshold": "36h"
+    },
+    {
+      "check": "publish_freshness",
+      "scope": "basketball_iceland female BD",
+      "status": "PAUSED",
+      "value": "no upcoming games (off-season)",
+      "threshold": "36h"
+    },
+    {
+      "check": "publish_freshness",
+      "scope": "basketball_iceland female 1D",
+      "status": "PAUSED",
+      "value": "no upcoming games (off-season)",
+      "threshold": "36h"
+    },
+    {
+      "check": "publish_freshness",
+      "scope": "handball_iceland male OD",
+      "status": "FAIL",
+      "value": "no publish output (in-season); no extract partition for this cell either -- the fit ran but the extractor did not, or neither ran, so the publisher had nothing to read",
+      "threshold": "36h"
+    },
+    {
+      "check": "publish_freshness",
+      "scope": "handball_iceland male G66",
+      "status": "FAIL",
+      "value": "no publish output (in-season); no extract partition for this cell either -- the fit ran but the extractor did not, or neither ran, so the publisher had nothing to read",
+      "threshold": "36h"
+    },
+    {
+      "check": "publish_freshness",
+      "scope": "handball_iceland female OD",
+      "status": "FAIL",
+      "value": "no publish output (in-season); no extract partition for this cell either -- the fit ran but the extractor did not, or neither ran, so the publisher had nothing to read",
+      "threshold": "36h"
+    },
+    {
+      "check": "publish_freshness",
+      "scope": "handball_iceland female G66",
+      "status": "FAIL",
+      "value": "no publish output (in-season); no extract partition for this cell either -- the fit ran but the extractor did not, or neither ran, so the publisher had nothing to read",
+      "threshold": "36h"
+    },
+    {
+      "check": "publish_freshness",
+      "scope": "football_iceland male BD",
+      "status": "OK",
+      "value": "3h old; 10 artefact(s)",
+      "threshold": "36h"
+    },
+    {
+      "check": "publish_freshness",
+      "scope": "football_iceland male LD1",
+      "status": "OK",
+      "value": "3h old; 10 artefact(s)",
+      "threshold": "36h"
+    },
+    {
+      "check": "publish_freshness",
+      "scope": "football_iceland male LD2",
+      "status": "OK",
+      "value": "3h old; 10 artefact(s)",
+      "threshold": "36h"
+    },
+    {
+      "check": "publish_freshness",
+      "scope": "football_iceland male LD3",
+      "status": "OK",
+      "value": "3h old; 10 artefact(s)",
+      "threshold": "36h"
+    },
+    {
+      "check": "publish_freshness",
+      "scope": "football_iceland male CUP",
+      "status": "OK",
+      "value": "3h old; 12 artefact(s)",
+      "threshold": "36h"
+    },
+    {
+      "check": "publish_freshness",
+      "scope": "football_iceland female BD",
+      "status": "OK",
+      "value": "3h old; 10 artefact(s)",
+      "threshold": "36h"
+    },
+    {
+      "check": "publish_freshness",
+      "scope": "football_iceland female LD1",
+      "status": "OK",
+      "value": "3h old; 10 artefact(s)",
+      "threshold": "36h"
+    },
+    {
+      "check": "publish_freshness",
+      "scope": "football_iceland female LD2",
+      "status": "OK",
+      "value": "3h old; 10 artefact(s)",
+      "threshold": "36h"
+    },
+    {
+      "check": "publish_freshness",
+      "scope": "football_iceland female CUP",
+      "status": "OK",
+      "value": "3h old; 12 artefact(s)",
+      "threshold": "36h"
+    },
+    {
+      "check": "season_resolution",
+      "scope": "kki",
+      "status": "OK",
+      "value": "season 2027 resolves for every division",
+      "threshold": "no gaps"
+    },
+    {
+      "check": "season_resolution",
+      "scope": "hsi male cup",
+      "status": "WARN",
+      "value": "no resolvable id for season 2027 (federation-deferred cup/playoffs; created later in the season)",
+      "threshold": "deferred ok"
+    },
+    {
+      "check": "season_resolution",
+      "scope": "hsi male playoffs",
+      "status": "WARN",
+      "value": "no resolvable id for season 2027 (federation-deferred cup/playoffs; created later in the season)",
+      "threshold": "deferred ok"
+    },
+    {
+      "check": "season_resolution",
+      "scope": "hsi female playoffs",
+      "status": "WARN",
+      "value": "no resolvable id for season 2027 (federation-deferred cup/playoffs; created later in the season)",
+      "threshold": "deferred ok"
+    },
+    {
+      "check": "publish_format",
+      "scope": "football_iceland male BD",
+      "status": "OK",
+      "value": "n_rounds=22 (schedule), 12 teams",
+      "threshold": "config agreement"
+    },
+    {
+      "check": "publish_format",
+      "scope": "football_iceland female BD",
+      "status": "OK",
+      "value": "n_rounds=18 (schedule), 10 teams",
+      "threshold": "config agreement"
     }
   ]
 }
