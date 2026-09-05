@@ -119,6 +119,29 @@ publish_one <- function(static, betting, key, sex,
   if (is.null(extracted)) {
     return(invisible(NULL))
   }
+  # Stage, validate, then swap. The publisher used to write straight into
+  # output_root and validate afterwards, so a cell whose JSON failed the
+  # contract still sat on disk -- and the workflows' always() commit step,
+  # which stages the whole publish tree, committed it (2026-09-05: four
+  # handball cells with as_of = "-Inf" reached main). The output tree must
+  # only ever hold cells that passed. This sex's current cells seed the
+  # staging copy because the history files accrete by reading the existing
+  # JSON from the cell directory; only this sex's cells are swapped back.
+  staging_root <- tempfile("publish-staging-")
+  on.exit(unlink(staging_root, recursive = TRUE), add = TRUE)
+  staging <- file.path(staging_root, "publish")
+  sex_folder <- if (sex == "male") "karla" else "kvenna"
+  cell_names <- paste0(sex_folder, "-", unlist(.iceland_division_slugs(key, sex), use.names = FALSE))
+  sport_out <- file.path(output_root, league$sport, "iceland")
+  sport_stage <- file.path(staging, league$sport, "iceland")
+  dir.create(sport_stage, recursive = TRUE, showWarnings = FALSE)
+  for (cell in cell_names) {
+    src <- file.path(sport_out, cell)
+    if (dir.exists(src)) {
+      file.copy(src, sport_stage, recursive = TRUE)
+    }
+  }
+
   publish_iceland_league(
     extracted = extracted,
     league = league,
@@ -126,15 +149,29 @@ publish_one <- function(static, betting, key, sex,
     profile = sport_publish_profile(league$sport),
     end_date = end_date,
     root = root,
-    output_root = output_root,
+    output_root = staging,
     extracts_root = extracts_root,
-    archive_root = archive_root
+    archive_root = archive_root,
+    # Explicit: the publisher derives this from dirname(output_root) when
+    # NULL, which under staging would be the temp tree, deleted on exit.
+    round_predictions_history_root = file.path(root, "beliefs", "round_predictions_history")
   )
   if (isTRUE(validate)) {
     .validate_or_abort(
-      output_root,
+      staging,
       sport = league$sport, key = key, sex = sex, schema_dir = schema_dir
     )
+  }
+
+  dir.create(sport_out, recursive = TRUE, showWarnings = FALSE)
+  for (cell in cell_names) {
+    src <- file.path(sport_stage, cell)
+    if (!dir.exists(src)) {
+      next
+    }
+    dst <- file.path(sport_out, cell)
+    unlink(dst, recursive = TRUE)
+    file.copy(src, sport_out, recursive = TRUE)
   }
   invisible(NULL)
 }
