@@ -16,6 +16,12 @@ test_that("the bb/hb publish + extract tests carry no skip gates", {
     # WS3's 2DT home-advantage units test (B5). Named here so it lands ungated
     # from day one; this file asserts hygiene only, never that test's content.
     "test-extract-2dt-home-advantage-units.R",
+    # Football's HALF of the same B5 contract. It is the ONLY executable check
+    # of football's exp() / exp(x/2) units: the golden manifest cannot reach
+    # them (its fixture synthesises home_advantage_quantiles closed-form and
+    # calls no extractor), so a skip gate here restores exactly the
+    # unchecked-but-green state the correction in that file describes.
+    "test-extract-football-home-advantage-units.R",
     "test-extract-2dt-tiebreak.R",
     # WS7's sport-neutral division accessors. Its expected_meetings block
     # asserts against live git-tracked data/facts/results, so a skip gate there

@@ -106,16 +106,45 @@ test_that("a realistic home edge does not publish as an absurd multiplier", {
 # Football regression guard: deliberately NOT a source grep for "exp(".
 # The plan proposed one, but this file's own header explains the bug and so
 # contains that string; a text guard would be fragile in both directions.
-# tests/testthat/test-publish-football-golden.R is the real net -- it sha256s
-# home_advantage.json for all nine football cells, so any leak of this fix
-# into R/extract-football-iceland.R's separate `extract_home_adv` closure
-# (:1638, which correctly keeps exp() and /2 because football's parameter IS
-# a log-rate) changes those hashes and fails there.
-test_that("football's home-advantage extractor is a separate closure", {
+#
+# CORRECTION (2026-09-05). This block used to name
+# tests/testthat/test-publish-football-golden.R as "the real net", on the
+# grounds that it sha256s home_advantage.json for all nine football cells. That
+# was FALSE. The golden test builds its input with
+# build_football_extracts_fixture() (helper-extract-fixtures.R), which
+# SYNTHESISES home_advantage_quantiles closed-form as
+# `round(0.15 + 0.05 * qnorm(quantile / 100), 4)` and hardcodes
+# `model_units = "log_rate"`. It holds no fit and calls no extractor: rebinding
+# extract_football_iceland() to a function that stop()s leaves all 21 of its
+# assertions green. Its 92 hashes pin publish_iceland_league() only, so a leak
+# of this fix into football's extract layer would NOT have moved them. (The
+# closure it cited as `:1638` was in fact at R/extract-football-iceland.R:1525.)
+#
+# The real net is now executable and lives in
+# tests/testthat/test-extract-football-home-advantage-units.R, which asserts
+# football's units directly on .extract_home_advantage_draws_pfi(): offence and
+# defence are exp(x) and the total is exp(x / 2) -- the mirror image of the
+# assertions above, so a fix propagating the wrong way is caught in both
+# directions.
+test_that("the two sports pull home advantage through separate functions", {
   # Cheap structural assertion that the two sports do not share this code
   # path, so fixing one cannot silently alter the other.
-  fb <- readLines("../../R/extract-football-iceland.R", warn = FALSE)
+  fb <- readLines("../../R/publish-iceland-league.R", warn = FALSE)
   tdt <- readLines("../../R/extract-iceland-2dt-shared.R", warn = FALSE)
-  expect_true(any(grepl("extract_home_adv <- function", fb, fixed = TRUE)))
-  expect_false(any(grepl("extract_home_adv <- function", tdt, fixed = TRUE)))
+  expect_true(any(grepl(
+    ".extract_home_advantage_draws_pfi <- function", fb,
+    fixed = TRUE
+  )))
+  expect_false(any(grepl(
+    ".extract_home_advantage_draws_pfi <- function", tdt,
+    fixed = TRUE
+  )))
+  expect_true(any(grepl(
+    ".extract_home_advantage_draws_2dt <- function", tdt,
+    fixed = TRUE
+  )))
+  expect_false(any(grepl(
+    ".extract_home_advantage_draws_2dt <- function", fb,
+    fixed = TRUE
+  )))
 })

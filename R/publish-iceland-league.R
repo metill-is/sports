@@ -72,6 +72,49 @@ NULL
     )
 }
 
+# Extract per-team home-advantage draws, on FOOTBALL's units.
+#
+# Football parameterises home advantage on the LOG scale (bivariate Poisson),
+# so the published value is the multiplier exp(x), and the TOTAL is that
+# multiplier split per side as exp(x / 2). That is the exact mirror image of
+# the 2DT sports, whose home_advantage_* are raw points/goals and are published
+# untransformed -- see .extract_home_advantage_draws_2dt() in
+# R/extract-iceland-2dt-shared.R, and B5 (spec 2026-09-02 section 8) for the
+# bug that copying football's transform onto them produced.
+#
+# It is a named internal rather than a closure inside
+# extract_football_iceland() so the units are EXECUTABLE. The golden manifest
+# cannot reach them: its fixture synthesises home_advantage_quantiles
+# closed-form and never holds a fit, so rebinding extract_football_iceland() to
+# a function that stop()s leaves all 21 of its assertions green. Football's
+# half of the B5 contract is
+# tests/testthat/test-extract-football-home-advantage-units.R, and it needs
+# this seam to exist.
+.extract_home_advantage_draws_pfi <- function(fit, teams) {
+  extract_one <- function(var, component, transform = identity) {
+    fit$draws(var) |>
+      posterior::as_draws_df() |>
+      tibble::as_tibble() |>
+      tidyr::pivot_longer(c(-".chain", -".draw", -".iteration")) |>
+      dplyr::mutate(
+        team_idx  = as.integer(readr::parse_number(.data$name)),
+        team      = teams$team[.data$team_idx],
+        component = component,
+        value     = exp(transform(.data$value))
+      ) |>
+      dplyr::select("team", "component", ".draw", "value")
+  }
+
+  dplyr::bind_rows(
+    extract_one("home_advantage_off", "offence"),
+    extract_one("home_advantage_def", "defence"),
+    # The halving sits INSIDE the exp(): it splits one log multiplier per side.
+    extract_one("home_advantage_tot", "total",
+      transform = function(x) x / 2
+    )
+  )
+}
+
 .summarise_team_intervals_pfi <- function(draws, coverages = c(0.5, 0.8, 0.95)) {
   group_keys <- c("team", "component", "location")
   if ("round" %in% names(draws)) {

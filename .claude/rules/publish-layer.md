@@ -288,6 +288,26 @@ the 2DT models are additive in raw points/goals while football's
 bivariate Poisson is on the log scale, and reading that off the wrong
 sport is the B5 bug wearing a metadata label.
 
+### Home-advantage units are per-sport, and both halves are unit-tested
+
+Football's home advantage is a LOG-rate: `.extract_home_advantage_draws_pfi()`
+(`R/publish-iceland-league.R`, beside its sibling `.extract_team_draws_pfi()`)
+publishes `exp(x)` for offence and defence and `exp(x / 2)` for the total. The
+2DT sports' `home_advantage_*` are raw points/goals:
+`.extract_home_advantage_draws_2dt()` (`R/extract-iceland-2dt-shared.R`)
+publishes the parameter itself. That asymmetry IS B5, and each direction has
+its own test — `test-extract-football-home-advantage-units.R` and
+`test-extract-2dt-home-advantage-units.R`.
+
+**The golden manifest does not cover this.** It was cited as football's
+regression net until 2026-09-05; it is not. `build_football_extracts_fixture()`
+synthesises `home_advantage_quantiles` closed-form and hardcodes
+`model_units`, so the golden test holds no fit and calls no extractor —
+rebinding `extract_football_iceland()` to a function that `stop()`s leaves all
+21 of its assertions green. Its 92 hashes pin `publish_iceland_league()` only.
+Anything in the EXTRACT layer needs a test that actually runs it, which is why
+football's pull is a named internal rather than a closure.
+
 The reader surfaces it WHOLE, as `read_extracted_iceland()$fit_meta`, next to
 `sim_inputs` and `cup_bracket` — never inside a per-division slot. Running it
 through the split filtered it to zero rows on every cell, which is why every

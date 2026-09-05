@@ -1522,27 +1522,7 @@ extract_football_iceland <- function(fit, league, sex,
     .extract_team_draws_pfi(fit, "cur_strength_away", teams, "total", "away")
   )
 
-  extract_home_adv <- function(var, component, transform = identity) {
-    fit$draws(var) |>
-      posterior::as_draws_df() |>
-      tibble::as_tibble() |>
-      tidyr::pivot_longer(c(-".chain", -".draw", -".iteration")) |>
-      dplyr::mutate(
-        team_idx  = as.integer(readr::parse_number(.data$name)),
-        team      = teams$team[.data$team_idx],
-        component = component,
-        value     = exp(transform(.data$value))
-      ) |>
-      dplyr::select("team", "component", ".draw", "value")
-  }
-
-  home_advantage_draws <- dplyr::bind_rows(
-    extract_home_adv("home_advantage_off", "offence"),
-    extract_home_adv("home_advantage_def", "defence"),
-    extract_home_adv("home_advantage_tot", "total",
-      transform = function(x) x / 2
-    )
-  )
+  home_advantage_draws <- .extract_home_advantage_draws_pfi(fit, teams)
 
   # Cup bracket simulator inputs: per-draw raw model parameters + bracket state.
   # `sim_inputs` is always extracted (cheap, ~5 MB on disk). `bracket_state`
