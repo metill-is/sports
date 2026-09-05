@@ -280,16 +280,30 @@ test_that("every configured badge satisfies the next_games division_code pattern
   expect_gt(n_checked, 0L)
 })
 
+# The newest season of a (sport, sex) that is MATURE: at least half the median
+# match count across that cell's seasons. The two data-backed tests below used
+# max(results$season) across ALL sports, which on handball's first matchday
+# (2026-09-05: 4 and 1 rows in season 2027) asserted a completed round-robin
+# on a season one round old -- and read basketball, with no 2027 rows at all,
+# as "nothing ingested". A format assertion belongs on the last completed
+# season; the running one is watched by check_publish_format_agreement().
+.mature_season <- function(results, sport, sex) {
+  cell <- results[results$sport == sport & results$sex == sex & !is.na(results$season), ]
+  counts <- table(cell$season)
+  ok <- counts >= stats::median(counts) / 2
+  max(as.integer(names(counts)[ok]))
+}
+
 test_that("expected_meetings is re-derived from data/facts/results, not restated", {
   # This asserts against live git-tracked results. When a federation changes a
   # competition format between seasons it is SUPPOSED to go red; the fix is to
   # re-measure and rewrite the constant, never to loosen the assertion.
   results <- read_table("results", root = testthat::test_path("..", "..", "data"))
-  season_max <- max(results$season, na.rm = TRUE)
   n_checked <- 0L
   for (key in c("basketball_iceland", "handball_iceland")) {
     sport <- sub("_iceland$", "", key)
     for (sex_key in c("male", "female")) {
+      season_max <- .mature_season(results, sport, sex_key)
       em <- .iceland_division_expected_meetings(key, sex_key)
       for (code in names(em)) {
         cell <- results[
@@ -354,12 +368,12 @@ test_that("the publish surface matches what is actually ingested", {
   # {OD, G66, PO}), which is why every bb/hb entry is is_cup: false and there
   # is no cup cell to build.
   results <- read_table("results", root = testthat::test_path("..", "..", "data"))
-  season_max <- max(results$season, na.rm = TRUE)
   not_a_publish_division <- "PO"
   n_checked <- 0L
   for (key in c("basketball_iceland", "handball_iceland")) {
     sport <- sub("_iceland$", "", key)
     for (sex_key in c("male", "female")) {
+      season_max <- .mature_season(results, sport, sex_key)
       ingested <- unique(results$division[
         results$sport == sport & results$sex == sex_key &
           results$season == season_max
