@@ -617,6 +617,8 @@ publish_iceland_league <- function(extracted,
   division_qualify <- .iceland_division_qualify(league_key, sex)
   division_relegation <- .iceland_division_relegation(league_key, sex)
   division_meetings <- .iceland_division_expected_meetings(league_key, sex)
+  division_regular_rounds <-
+    .iceland_division_regular_season_rounds(league_key, sex)
 
   # extracted shape: list keyed by division code (BD, LD1, ...) — see
   # read_extracted_iceland(). Each per-division list has the 6 parquet
@@ -832,7 +834,8 @@ publish_iceland_league <- function(extracted,
     division_cfg <- list(
       qualify = division_qualify[[target_div]],
       relegation_slots = division_relegation[[target_div]],
-      expected_meetings = division_meetings[[target_div]]
+      expected_meetings = division_meetings[[target_div]],
+      regular_season_rounds = division_regular_rounds[[target_div]]
     )
     format_facts <- .publish_n_rounds(
       results = results,
@@ -841,6 +844,7 @@ publish_iceland_league <- function(extracted,
       division_codes = family_divs,
       end_date = end_date,
       expected_meetings = division_cfg$expected_meetings,
+      regular_season_rounds = division_cfg$regular_season_rounds,
       is_cup = is_cup
     )
     round_num <- .publish_round(

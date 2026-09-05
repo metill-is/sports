@@ -113,18 +113,21 @@
 #' The gate is the point. `n_rounds` has two sources and only one of them is a
 #' BOUNDARY:
 #'
-#' * `"config"` -- `expected_meetings * (n_teams - 1)` is an independent fact
+#' * `"config"` -- a stated `regular_season_rounds`, or
+#'   `expected_meetings * (n_teams - 1)`. Either way it is an independent fact
 #'   about the competition format. Played rows past it are post-season, and
-#'   basketball's embedded urslitakeppni is exactly that (male BD 162 -> 132).
+#'   basketball's embedded urslitakeppni is exactly that (male BD 162 -> 132,
+#'   female 1D 98 -> 89).
 #' * `"schedule"` -- derived FROM the played and scheduled rows themselves.
 #'   Cutting those same rows by it is circular: it can never identify a
 #'   post-season row, and it CAN delete regular-season rows wherever `round` is
 #'   stamped on a different axis from appearance counting.
 #'
 #' Measured 2026-09-04: the schedule branch is the identity on real data in
-#' every cell (all nine football cells, basketball female 1D 98 -> 98), so the
-#' gate costs nothing there; on the synthetic fixture the ungated filter
-#' deleted one played match from six football cells and one basketball cell.
+#' every cell (all nine football cells, and basketball female 1D 98 -> 98 while
+#' that cell still had no configured boundary), so the gate costs nothing
+#' there; on the synthetic fixture the ungated filter deleted one played match
+#' from six football cells and one basketball cell.
 #'
 #' The FORWARD half of the cut (`.regular_season_game_nrs_2dt()`) is NOT gated:
 #' capping how many fixtures are left to play is a question about season
@@ -142,16 +145,32 @@
 #'
 #' Two independent derivations, both always returned:
 #'
-#' * `n_rounds_config` -- `expected_meetings * (n_teams - 1)`, from
-#'   `config/leagues.yml::<key>.publish_divisions`. This is the authority where
-#'   it is set (basketball BD/1D 2, handball male 2, handball female 3).
+#' * `n_rounds_config` -- the CONFIGURED boundary, from
+#'   `config/leagues.yml::<key>.publish_divisions`. Two keys can supply it and
+#'   `regular_season_rounds` wins: it states the last regular round outright,
+#'   while `expected_meetings` states meetings per pair and the boundary is
+#'   derived as `expected_meetings * (n_teams - 1)` (basketball BD/1D 2,
+#'   handball male 2, handball female 3).
 #' * `n_rounds_schedule` -- the largest number of matches any one team has
-#'   played (after the config cut) plus has left scheduled. Fills the gap for a
-#'   cell with no configured meetings, e.g. the irregular 11-team female 1D.
+#'   played (after the config cut) plus has left scheduled. The fallback for a
+#'   cell that configures neither key.
 #'
-#' Verified 2026-09-04: basketball male BD 22 both ways, female BD 18 both ways,
-#' female 1D 24 off the schedule alone; synthetic handball female OD 3 * (4 - 1)
-#' = 9, never 2 * (4 - 1) = 6.
+#' WHY `regular_season_rounds` exists at all. Basketball female 1. deild plays
+#' 10 teams over rounds 1-18 and then an embedded 4-team promotion playoff over
+#' rounds 19-24 which brings in an ELEVENTH team (measured on
+#' `data/facts/results` season 2026: 89 rows over 10 teams inside the cut, 9
+#' rows over 4 teams past it, Hamar/Thor appearing only in the playoff). No
+#' meetings-per-pair constant survives that -- the pair table inside the cut is
+#' 44 pairs twice and one pair once, and `n_teams` counted over the whole
+#' season is 11 -- so the number cannot be derived and has to be stated. Left
+#' to the schedule fallback the cell published its playoff as regular season,
+#' `n_rounds` 24, and a `meta.round` of 6 (the floor over appearances, i.e.
+#' the playoff-only team's 6 games) for a season that had finished.
+#'
+#' Verified 2026-09-04: basketball male BD 22 both ways, female BD 18 both ways;
+#' synthetic handball female OD 3 * (4 - 1) = 9, never 2 * (4 - 1) = 6.
+#' Verified 2026-09-05: female 1D 24 off the schedule alone (meta.round 6), 18
+#' with the boundary stated (98 rows -> 89, meta.round 17).
 #'
 #' @param results Played rows (needs `season`, `division`, `round`,
 #'   `home_team`, `away_team`).
@@ -161,13 +180,17 @@
 #' @param end_date Publish cutoff; only fixtures strictly after it are "left to
 #'   play".
 #' @param expected_meetings Configured meetings per pair, or `NULL`.
+#' @param regular_season_rounds The last regular-season round, stated outright,
+#'   or `NULL`. Takes precedence over `expected_meetings`; both yield
+#'   `source == "config"`, and both set the `cut`.
 #' @param is_cup A knockout has no rounds in the league sense at all.
 #' @return `list(n_rounds, source, n_rounds_config, n_rounds_schedule,
-#'   n_teams)`. `source` is one of `"config"`, `"schedule"`, `"none"`,
+#'   n_teams, cut)`. `source` is one of `"config"`, `"schedule"`, `"none"`,
 #'   `"not_applicable"`.
 #' @noRd
 .publish_n_rounds <- function(results, schedules, season, division_codes,
                               end_date, expected_meetings = NULL,
+                              regular_season_rounds = NULL,
                               is_cup = FALSE) {
   played <- .publish_cell_rows(results, season, division_codes)
   upcoming <- .publish_cell_rows(schedules, season, division_codes)
@@ -185,8 +208,9 @@
       n_rounds_config = cfg, n_rounds_schedule = sched,
       n_teams = n_teams,
       # The BOUNDARY, which is not the same thing as the LENGTH. Only a
-      # configured `expected_meetings` is evidence that played rows past it are
-      # post-season; see `.regular_season_cut()`.
+      # CONFIGURED boundary -- `regular_season_rounds`, or the
+      # `expected_meetings` derivation -- is evidence that played rows past it
+      # are post-season; see `.regular_season_cut()`.
       cut = if (identical(source, "config")) as.integer(n_rounds) else NA_integer_
     )
   }
@@ -197,7 +221,14 @@
     return(shape(NA_integer_, "not_applicable", NA_integer_, NA_integer_))
   }
 
-  cfg <- if (!is.null(expected_meetings) && !is.na(expected_meetings) &&
+  # The stated boundary is the authority. It is a fact about the federation's
+  # calendar, whereas the meetings derivation is a formula over whatever teams
+  # happen to appear -- and the cell that needs it is precisely the one whose
+  # team set is inflated by the post-season it is meant to cut.
+  cfg <- if (!is.null(regular_season_rounds) &&
+    !is.na(regular_season_rounds)) {
+    as.integer(regular_season_rounds)
+  } else if (!is.null(expected_meetings) && !is.na(expected_meetings) &&
     n_teams >= 2L) {
     as.integer(expected_meetings * (n_teams - 1L))
   } else {

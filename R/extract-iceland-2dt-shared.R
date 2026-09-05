@@ -440,6 +440,7 @@ NULL
   stopifnot(sport %in% c("basketball", "handball"))
   divisions <- .iceland_division_codes(key, sex)
   expected_meetings <- .iceland_division_expected_meetings(key, sex)
+  regular_season_rounds <- .iceland_division_regular_season_rounds(key, sex)
   division_is_cup <- .iceland_division_is_cup(key, sex)
 
   if (is.null(extracts_root)) {
@@ -546,6 +547,7 @@ NULL
       division_codes = div,
       end_date = as.Date(end_date),
       expected_meetings = expected_meetings[[div]],
+      regular_season_rounds = regular_season_rounds[[div]],
       is_cup = isTRUE(division_is_cup[[div]])
     )
 

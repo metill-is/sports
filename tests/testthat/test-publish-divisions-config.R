@@ -20,7 +20,8 @@ test_that("publish_divisions: config block exists with both sexes", {
 test_that("publish_divisions: every entry has the 4 required fields and no unknown ones", {
   required <- c("code", "slug", "label_is", "is_cup")
   optional <- c(
-    "split", "code_badge", "expected_meetings", "relegation_slots", "qualify"
+    "split", "code_badge", "expected_meetings", "relegation_slots", "qualify",
+    "regular_season_rounds"
   )
   n_checked <- 0L
   for (key in ICELAND_LEAGUE_KEYS) {

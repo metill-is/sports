@@ -91,6 +91,74 @@ test_that(".iceland_division_qualify returns NULL where unconfigured", {
   }
 })
 
+test_that(".iceland_division_regular_season_rounds names exactly one cell", {
+  # It is the escape hatch for a format `expected_meetings` cannot describe, so
+  # it should stay rare: any second cell carrying it is a claim that a second
+  # federation calendar is irregular, and that claim wants its own measurement.
+  configured <- list()
+  for (key in c("football_iceland", "basketball_iceland", "handball_iceland")) {
+    for (sex_key in c("male", "female")) {
+      codes <- .iceland_division_codes(key, sex_key)
+      rsr <- .iceland_division_regular_season_rounds(key, sex_key)
+      expect_type(rsr, "integer")
+      expect_length(rsr, length(codes))
+      expect_identical(names(rsr), codes)
+      for (code in codes[!is.na(rsr)]) {
+        configured[[length(configured) + 1L]] <- c(key, sex_key, code)
+      }
+    }
+  }
+  expect_identical(configured, list(c("basketball_iceland", "female", "1D")))
+  expect_identical(
+    .iceland_division_regular_season_rounds("basketball_iceland", "female")[["1D"]],
+    18L
+  )
+})
+
+test_that("regular_season_rounds is re-derived from data/facts/results, not restated", {
+  # The same contract the expected_meetings block above holds itself to: the
+  # constant is a MEASUREMENT, and a federation format change is supposed to
+  # turn this red so the number is re-measured rather than the test loosened.
+  #
+  # basketball female 1D, season 2026: rounds 1-18 are the regular season and
+  # rounds 19-24 are a 4-team promotion playoff that brings in an eleventh team.
+  results <- read_table("results", root = testthat::test_path("..", "..", "data"))
+  cell <- results[
+    results$sport == "basketball" & results$country == "iceland" &
+      results$sex == "female" & results$division == "1D" &
+      results$season == 2026L, ,
+    drop = FALSE
+  ]
+  boundary <- .iceland_division_regular_season_rounds(
+    "basketball_iceland", "female"
+  )[["1D"]]
+  expect_equal(boundary, 18L)
+
+  regular <- cell[cell$round <= boundary, , drop = FALSE]
+  post <- cell[cell$round > boundary, , drop = FALSE]
+  expect_equal(nrow(cell), 98L)
+  expect_equal(nrow(regular), 89L)
+  expect_equal(nrow(post), 9L)
+
+  reg_teams <- unique(c(regular$home_team, regular$away_team))
+  all_teams <- unique(c(cell$home_team, cell$away_team))
+  post_teams <- unique(c(post$home_team, post$away_team))
+  expect_length(reg_teams, 10L)
+  expect_length(all_teams, 11L)
+  # The whole reason `expected_meetings * (n_teams - 1)` cannot express this:
+  # the post-season introduces a team that plays no regular round at all.
+  expect_length(post_teams, 4L)
+  expect_length(setdiff(all_teams, reg_teams), 1L)
+
+  # ... and inside the cut the pair table is not a constant either.
+  pair <- paste(
+    pmin(regular$home_team, regular$away_team),
+    pmax(regular$home_team, regular$away_team),
+    sep = " v "
+  )
+  expect_setequal(as.integer(unique(table(pair))), c(1L, 2L))
+})
+
 test_that(".iceland_division_relegation / _expected_meetings are all-NA for football", {
   for (sex_key in c("male", "female")) {
     codes <- .iceland_division_codes("football_iceland", sex_key)
@@ -117,9 +185,10 @@ test_that("every accessor stops on an unknown sex or a league with no publish_di
     is_cup = .iceland_division_is_cup,
     qualify = .iceland_division_qualify,
     relegation = .iceland_division_relegation,
-    expected_meetings = .iceland_division_expected_meetings
+    expected_meetings = .iceland_division_expected_meetings,
+    regular_season_rounds = .iceland_division_regular_season_rounds
   )
-  expect_length(accessors, 9L)
+  expect_length(accessors, 10L)
   for (nm in names(accessors)) {
     expect_error(accessors[[nm]]("football_iceland", "nonsense"), info = nm)
     # world_cup is a real pipeline namespace but not a config/leagues.yml league,

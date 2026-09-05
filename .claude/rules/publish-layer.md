@@ -123,12 +123,13 @@ football-only `.football_iceland_division_*` helpers they replace are
 symbol is the drift this removed. Adding a publish cell is a config
 edit plus a metill-platform `DIVISIONS` entry, never an R edit.
 
-Four optional keys on a `publish_divisions` entry, all absent-safe:
+Five optional keys on a `publish_divisions` entry, all absent-safe:
 
 | Key | Contract |
 |---|---|
 | `code_badge` | Short ASCII badge emitted as `next_games.json::division_code`, which the publish schemas pattern as `^[A-Z][A-Z0-9_]*$`. Basketball's code `1D` fails that on its own (leading digit), which is why the key exists. Absent falls back to `code`. Every entry carrying a `split` also derives `<code>_UPPER_PO`/`_LOWER_PO` → `<badge>U`/`<badge>L`. |
 | `expected_meetings` | Times each pair meets in the **regular** season. An assertion and a fallback, **never the source** — `n_rounds` is derived from schedule + results (spec §12). Omit where the format is genuinely irregular (basketball female 1D). |
+| `regular_season_rounds` | The last regular round, **stated outright**. Unlike `expected_meetings` this IS a source: it sets both `n_rounds` and the `cut`, ahead of the meetings derivation and ahead of the schedule. One cell carries it — basketball female 1D, see below. |
 | `qualify` | `{slots, label_is}`. Absent = `meta.qualify: null` and **no** `p_qualify`. It is the generic replacement for football's `p_top_six`, which does not transfer: Bónusdeild karla is 12 teams with 8 qualifying, and Bónusdeild kvenna carries all 10 through. |
 | `relegation_slots` | Teams relegated from this division. Replaces the hardcoded bottom-two rule (`placement >= n_teams - 1L`), which is wrong for a bottom-tier division where nothing is relegated. |
 
@@ -140,6 +141,19 @@ cells with four different post-season structures, and no regulation was
 resolved for the relegation counts. An unresolved number is omitted
 rather than guessed — absent publishes honest nulls, a wrong number
 silently mislabels a headline probability.
+
+Basketball female 1D is the cell where no meetings-per-pair constant works.
+Measured on `data/facts/results` season 2026 (2026-09-05): rounds 1-18 are 89
+matches over 10 teams (44 pairs twice, 1 pair once), and rounds 19-24 are an
+embedded 4-team promotion playoff — Þór Ak. v Fjölnir, Hamar/Þór v Selfoss,
+then Hamar/Þór v Fjölnir — which brings in an **eleventh** team, Hamar/Þór,
+who plays no regular round at all. So `expected_meetings * (n_teams - 1)` is
+unusable in both directions. Left to the schedule derivation the cell published
+`n_rounds` 24 and `meta.round` **6** — the floor over appearances, i.e.
+Hamar/Þór's six playoff games — for a season that had finished, with the
+playoff tabled as regular season. With `regular_season_rounds: 18` the cut
+drops 98 rows to 89 and `meta.round` reads 17 (89 matches over 10 teams is 17.8
+appearances each, and the round is the floor).
 
 `expected_meetings` values are measured from `data/facts/results`, not
 assumed. Icelandic women's handball plays a **triple** round robin
@@ -307,8 +321,9 @@ because the two cuts must be the same cut or standings and
 cut: its playoff is a separate division (`PO`), already excluded by the
 division filter. Measured 2026-09-04 on season 2026: basketball male BD
 162 → 132 rows, male 1D 159 → 132, female BD 137 → 90, female 1D 98 → 98
-(unset `expected_meetings`, so the schedule derivation is the source);
-all four handball cells unchanged.
+(unset `expected_meetings`, so the schedule derivation was the source); all
+four handball cells unchanged. Re-measured 2026-09-05, female 1D now cuts
+98 → 89 off the `regular_season_rounds: 18` it gained.
 
 `predicted_matches.parquet` is built from the UNCUT fixture set — a next
 game is a next game — while the league-table simulation caps upcoming
@@ -316,7 +331,8 @@ fixtures at the boundary.
 
 **Only a CONFIGURED boundary deletes played rows.** `.regular_season_cut(rows,
 format)` cuts at `.publish_n_rounds()$cut`, which is `n_rounds` when
-`source == "config"` and `NA` otherwise. A schedule-derived `n_rounds` is
+`source == "config"` — a stated `regular_season_rounds`, or the
+`expected_meetings` derivation — and `NA` otherwise. A schedule-derived `n_rounds` is
 computed FROM the played and scheduled rows, so cutting those same rows by it
 is circular: it can never identify a post-season row, and it CAN delete
 regular-season rows wherever `round` is stamped on a different axis from

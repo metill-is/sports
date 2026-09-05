@@ -75,9 +75,12 @@ test_that("the cut holds across all three configured basketball cells", {
   }
 })
 
-test_that("an unconfigured cell falls back to the schedule derivation", {
-  # female 1D: 11 teams, no configured expected_meetings -- the deliberately
-  # irregular cell (per-round counts fluctuate: 3,5,5,5,4,5,6,5,6,4,...).
+test_that("a cell with no configured boundary at all falls back to the schedule", {
+  # The fallback branch in isolation: NEITHER `expected_meetings` NOR
+  # `regular_season_rounds` passed. This is what basketball female 1D used to
+  # be configured as, and the two assertions at the bottom are the exact
+  # defect the explicit boundary fixes -- 24 rounds for an 18-round regular
+  # season, and a meta.round of 6 on a season that has finished.
   x <- .overhang_cell("female", "1D")
   expect_equal(nrow(x), 98L)
 
@@ -93,6 +96,56 @@ test_that("an unconfigured cell falls back to the schedule derivation", {
   expect_equal(n$n_rounds_schedule, 24L)
   # The round floor, not the ceiling: the least-progressed team has played 6.
   expect_equal(.publish_round(x, 2026L, "1D", n$n_rounds), 6L)
+})
+
+test_that("an explicit regular_season_rounds cuts the embedded promotion playoff", {
+  # basketball female 1D is the cell no meetings-per-pair constant describes.
+  # Measured on the committed real-federation rows, season 2026: rounds 1-18
+  # are 89 matches over 10 teams (44 pairs 2x + 1 pair 1x), then rounds 19-24
+  # are a 4-team promotion playoff -- Thor Ak. v Fjolnir and Hamar/Thor v
+  # Selfoss, then Hamar/Thor v Fjolnir -- which brings in an ELEVENTH team,
+  # Hamar/Thor, who plays no regular round at all. That is why
+  # expected_meetings * (n_teams - 1) cannot work in either direction, and why
+  # the boundary has to be stated outright.
+  x <- .overhang_cell("female", "1D")
+  expect_equal(nrow(x), 98L)
+
+  n <- .publish_n_rounds(
+    results = x, schedules = x[0, , drop = FALSE],
+    season = 2026L, division_codes = "1D",
+    end_date = as.Date("2026-06-01"), expected_meetings = NULL,
+    regular_season_rounds = 18L
+  )
+  expect_equal(n$source, "config")
+  expect_equal(n$n_rounds, 18L)
+  expect_equal(n$cut, 18L)
+  expect_equal(n$n_rounds_config, 18L)
+
+  regular <- .regular_season_cut(x, n)
+  expect_equal(nrow(regular), 89L)
+  expect_length(unique(c(regular$home_team, regular$away_team)), 10L)
+  expect_false("Hamar/\u00de\u00f3r" %in% c(regular$home_team, regular$away_team))
+  # 89 matches over 10 teams is 17.8 appearances each, and meta.round is the
+  # FLOOR, so 17 -- not 18. Against an uncut 24-round season it read 6.
+  expect_equal(.publish_round(x, 2026L, "1D", n$n_rounds, n$cut), 17L)
+})
+
+test_that("regular_season_rounds beats the expected_meetings derivation", {
+  # Both configured and disagreeing: the explicit boundary is the authority,
+  # because it is a statement about the calendar rather than a formula over
+  # whatever teams happen to appear.
+  bd_male <- .overhang_cell("male", "BD")
+  n <- .publish_n_rounds(
+    results = bd_male, schedules = bd_male[0, , drop = FALSE],
+    season = 2026L, division_codes = "BD",
+    end_date = as.Date("2026-06-01"), expected_meetings = 2L,
+    regular_season_rounds = 20L
+  )
+  expect_equal(n$source, "config")
+  expect_equal(n$n_rounds, 20L)
+  expect_equal(n$cut, 20L)
+  expect_equal(n$n_rounds_config, 20L)
+  expect_lt(nrow(.regular_season_cut(bd_male, n)), 132L)
 })
 
 # ---- Block B: the synthetic facts fixture ------------------------------------
@@ -692,4 +745,19 @@ test_that("a cup and an empty cell both cut nothing", {
   )
   expect_equal(none$source, "none")
   expect_true(is.na(none$cut))
+})
+
+test_that("is_cup still wins over an explicit regular_season_rounds", {
+  # The same precedence the configured `expected_meetings` already loses to: a
+  # bracket has no matchweeks whatever the config says.
+  cell <- .fixture_cell_rows("football", "male", "CUP")
+  n <- .publish_n_rounds(
+    results = cell$results, schedules = cell$schedules, season = 2100L,
+    division_codes = "CUP", end_date = FIXTURE_END_DATE,
+    expected_meetings = 2L, regular_season_rounds = 4L, is_cup = TRUE
+  )
+  expect_equal(n$source, "not_applicable")
+  expect_true(is.na(n$n_rounds))
+  expect_true(is.na(n$cut))
+  expect_equal(nrow(.regular_season_cut(cell$results, n)), nrow(cell$results))
 })

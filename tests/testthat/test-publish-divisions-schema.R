@@ -34,12 +34,24 @@
 .base_div <- list(code = "BD", slug = "bd", label_is = "Besta deild",
                   is_cup = FALSE)
 
-test_that("the four new optional keys are accepted", {
+test_that("the five optional keys are accepted", {
   d <- utils::modifyList(.base_div, list(
     code_badge = "BD", expected_meetings = 2L, relegation_slots = 2L,
+    regular_season_rounds = 18L,
     qualify = list(slots = 6L, label_is = "Efri hluti")
   ))
   expect_no_error(load_leagues(path = .div_write(list(d))))
+})
+
+test_that("regular_season_rounds must be a positive integer", {
+  # It is a round NUMBER, so 0 is not a boundary and a fraction is not a round.
+  for (bad in list(0L, -1L, "18")) {
+    d <- utils::modifyList(.base_div, list(regular_season_rounds = bad))
+    expect_error(
+      load_leagues(path = .div_write(list(d))),
+      "leagues.yml failed schema validation"
+    )
+  }
 })
 
 test_that("additionalProperties:false is still armed after the edit", {

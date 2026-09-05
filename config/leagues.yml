@@ -86,14 +86,24 @@ basketball_iceland:
           code_badge: B1D, expected_meetings: 2 }
     female:
       # BD: 10 teams, cut at round <= 18 -> 90 matches, all 45 pairs exactly 2x.
-      # 1D: expected_meetings DELIBERATELY OMITTED. 11 teams; inside any cut the
-      # pair table reads 1x1, 2x44, 4x1 over 46 of the 55 possible pairs -- a
-      # genuinely irregular format with byes, so there is no correct constant
-      # and the schedule-derived n_rounds must be the only source.
+      # 1D: expected_meetings cannot express this cell, so the boundary is
+      # STATED as regular_season_rounds instead. Measured on data/facts/results
+      # season 2026 (2026-09-05): rounds 1-18 are 89 matches over 10 teams
+      # (44 pairs 2x + 1 pair 1x); rounds 19-24 are a 4-team promotion playoff
+      # -- Þór Ak. v Fjölnir and Hamar/Þór v Selfoss, then Hamar/Þór v
+      # Fjölnir -- which brings in an ELEVENTH team, Hamar/Þór, who plays no
+      # regular round at all. So expected_meetings * (n_teams - 1) is wrong in
+      # both directions, and the schedule fallback published the playoff AS the
+      # regular season: n_rounds 24, and meta.round 6 (the floor over
+      # appearances, i.e. Hamar/Þór's 6 playoff games) for a finished season.
+      # With the boundary stated: 98 rows -> 89, n_rounds 18, meta.round 17.
+      # Re-measured by tests/testthat/test-iceland-division-helpers.R against
+      # live data/facts/results -- when KKÍ changes the format that goes red,
+      # and the fix is to re-measure the constant, not to loosen the test.
       - { code: BD, slug: bd, label_is: "Bónusdeild", is_cup: false,
           code_badge: BON, expected_meetings: 2 }
       - { code: 1D, slug: 1d, label_is: "1. deild",    is_cup: false,
-          code_badge: B1D }
+          code_badge: B1D, regular_season_rounds: 18 }
   stan_model: basketball_iceland/2d_student_t_scalarsigma.stan
   betting:
     # D2 (2026-09-02): publish-only. Enforced at four layers via

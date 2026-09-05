@@ -124,10 +124,28 @@ NULL
   .name_by_code(vapply(cfg, function(d) .as_opt_int(d$relegation_slots), integer(1)), cfg)
 }
 
+# code -> the last round of the REGULAR season, stated outright, NA_integer_
+# where unset. Unlike `expected_meetings` this IS a source: `.publish_n_rounds()`
+# gives it precedence over the meetings derivation AND over the schedule, and it
+# sets the cut. It exists for the one cell no meetings-per-pair constant can
+# describe -- basketball female 1. deild, 10 teams over rounds 1-18 and then an
+# embedded 4-team promotion playoff over rounds 19-24 that brings in an
+# ELEVENTH team, so both `expected_meetings` and `n_teams` are unusable.
+.iceland_division_regular_season_rounds <- function(key, sex) {
+  cfg <- .iceland_division_entries(
+    key, sex, ".iceland_division_regular_season_rounds"
+  )
+  .name_by_code(
+    vapply(cfg, function(d) .as_opt_int(d$regular_season_rounds), integer(1)),
+    cfg
+  )
+}
+
 # code -> times each pair meets in the REGULAR season, NA_integer_ where unset.
 # This is an assertion and a fallback, never the source: n_rounds is derived
-# from schedule + results, and an unset value (basketball female 1D, a genuinely
-# irregular 11-team cell) means the schedule derivation is the only source.
+# from schedule + results. An unset value means the boundary comes from
+# `regular_season_rounds` (basketball female 1D) or, failing that, from the
+# schedule derivation alone.
 .iceland_division_expected_meetings <- function(key, sex) {
   cfg <- .iceland_division_entries(
     key, sex, ".iceland_division_expected_meetings"

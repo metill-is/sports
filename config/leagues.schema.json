@@ -144,12 +144,17 @@
           "expected_meetings": {
             "type": "integer",
             "minimum": 1,
-            "description": "How many times each pair meets in the regular season. 2 = double round robin; Icelandic women's handball plays 3. Omit where the format is irregular (basketball female 1D) and n_rounds is derived from the schedule instead."
+            "description": "How many times each pair meets in the regular season. 2 = double round robin; Icelandic women's handball plays 3. Omit where the format is irregular (basketball female 1D) -- state the boundary with regular_season_rounds there, or fall back to the schedule derivation."
           },
           "relegation_slots": {
             "type": "integer",
             "minimum": 0,
             "description": "Teams relegated from this division. Omit where there is none."
+          },
+          "regular_season_rounds": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "The last round of the REGULAR season, stated outright. Unlike expected_meetings this IS a source: it sets n_rounds and the boundary played rows past it are cut at, and it takes precedence over the expected_meetings derivation. Use it only where no meetings-per-pair constant can work -- basketball female 1. deild is the one such cell, 10 teams over rounds 1-18 and then an embedded 4-team promotion playoff over rounds 19-24 that brings in an eleventh team."
           },
           "qualify": {
             "type": "object",
