@@ -569,11 +569,23 @@ NULL
       drop = FALSE
     ]
 
-    current_top_teams <- if (nrow(top_results) > 0L) {
-      top_results |>
-        dplyr::select("home_team", "away_team") |>
+    # The division's team set is the SEASON's teams: those that have played
+    # inside the regular cut AND those only scheduled so far. From played
+    # results alone, handball one round into 2026-27 published strengths and
+    # home advantage for the 8 men's teams that had played and none of the
+    # other 16, while final_positions (simulated on the schedule) covered all
+    # 24 -- two surfaces from one fit disagreeing on who is in the league.
+    # Only teams the fit knows reach pred_d, so the union adds no stranger.
+    scheduled_top <- pred_d[pred_d$division == div, c("home_team", "away_team"), drop = FALSE]
+    current_top_teams <- dplyr::bind_rows(
+      top_results[, c("home_team", "away_team"), drop = FALSE],
+      scheduled_top
+    )
+    current_top_teams <- if (nrow(current_top_teams) > 0L) {
+      current_top_teams |>
         tidyr::pivot_longer(c("home_team", "away_team"), values_to = "team") |>
-        dplyr::distinct(.data$team)
+        dplyr::distinct(.data$team) |>
+        dplyr::arrange(.data$team)
     } else {
       tibble::tibble(team = character())
     }
