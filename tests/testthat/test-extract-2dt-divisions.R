@@ -285,3 +285,53 @@ test_that("handball needs no cut because its post-season is its own division", {
     expect_false("PO" %in% codes, info = sex_key)
   }
 })
+
+# ---- The team set is the SEASON's teams, not the teams that have played ------
+#
+# current_top_teams came from top_results alone, so on 2026-09-05 -- handball
+# one round in -- team_strengths, home_advantage and points_distribution
+# covered the 8 men's teams that had played and none of the other 16, while
+# final_positions (simulated on the schedule) covered all 24. Two surfaces
+# built from the same fit disagreed on who is in the league.
+
+test_that("a team scheduled but not yet played this season is in every division surface", {
+  # HAM OD 03 and HAM OD 04 keep their prior-season (2099) results so the fit
+  # knows them; their current-season rows are dropped and a current-season
+  # fixture between them is scheduled inside the horizon.
+  env <- environment()
+  root <- fixture_facts_root(env = env)
+  results <- read_table("results", root = root)
+  drop <- results$sport == "handball" & results$sex == "male" & results$season == 2100 &
+    (results$home_team %in% c("HAM OD 03", "HAM OD 04") | results$away_team %in% c("HAM OD 03", "HAM OD 04"))
+  expect_gt(sum(drop), 0L)
+  write_table(results[!drop, ], "results", root = root)
+  schedules <- read_table("schedules", root = root)
+  extra <- schedules[schedules$sport == "handball" & schedules$sex == "male" & schedules$division == "OD", ][1, ]
+  extra$home_team <- "HAM OD 03"
+  extra$away_team <- "HAM OD 04"
+  extra$match_date <- as.Date("2100-01-17")
+  write_table(dplyr::bind_rows(schedules, extra), "schedules", root = root)
+
+  league <- load_leagues()[["handball_iceland"]]
+  st <- suppressMessages(local_stub_2dt(league, "male", root = root))
+  extracts_root <- file.path(withr::local_tempdir(.local_envir = env), "extracts")
+  suppressMessages(extract_handball_iceland(
+    fit = st$fit, league = league, sex = "male",
+    fit_date = FIXTURE_FIT_DATE, end_date = FIXTURE_END_DATE,
+    root = root, extracts_root = extracts_root, prep = st$prep
+  ))
+  part <- file.path(extracts_root, "sport=handball", "country=iceland", "sex=male",
+                    paste0("fit_date=", format(FIXTURE_FIT_DATE, "%Y-%m-%d")))
+  for (ft in c("team_strengths_quantiles", "home_advantage_quantiles", "points_distribution", "final_positions")) {
+    d <- arrow::read_parquet(file.path(part, paste0(ft, ".parquet")))
+    od <- unique(d$team[d$division == "OD"])
+    expect_true(all(c("HAM OD 03", "HAM OD 04") %in% od), info = ft)
+  }
+  # And the same team set on every surface: what the table simulates is who
+  # the strengths describe.
+  teams_by <- lapply(c("team_strengths_quantiles", "home_advantage_quantiles", "points_distribution", "final_positions"), function(ft) {
+    d <- arrow::read_parquet(file.path(part, paste0(ft, ".parquet")))
+    sort(unique(d$team[d$division == "OD"]))
+  })
+  expect_true(all(vapply(teams_by, identical, logical(1), teams_by[[4]])))
+})
