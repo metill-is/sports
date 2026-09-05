@@ -100,4 +100,12 @@ jobs:
           git commit -m "data: stan fit $(date -u +%Y-%m-%dT%H:%MZ)"
           # Concurrent sibling workflows push to main constantly; retry the
           # fetch/rebase/push cycle instead of losing the run to a race.
-          .github/scripts/push-with-retry.sh
+          # --prefer-ours: two fit runs in this concurrency group can fit the
+          # same cell on the same day (the queued run's checkout predates the
+          # running run's push by seconds), and both write the same
+          # fit_date=<today> partition. Run 33960811873 (2026-09-05) fitted
+          # handball's first two cells of the season and then lost the whole
+          # commit to a binary add/add conflict on football's parquets. Every
+          # path staged above is regenerated from the freshest data by the run
+          # that writes it, so the later fit is authoritative.
+          .github/scripts/push-with-retry.sh --prefer-ours
