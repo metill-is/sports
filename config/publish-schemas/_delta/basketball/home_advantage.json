@@ -1,5 +1,5 @@
 {
-  "description": "Home advantage for a 2DT sport is RAW POINTS -- the model is additive, there is no link to undo. Applying football's exp() to an additive 4-point parameter published a home edge of 54.6 and every schema in the tree accepted it (B5). This bound rejects that shape. It is a gross-error guard, not a complete B5 detector: a real Icelandic basketball home edge is a few points, and +/-30 is deliberately generous. The exact check is tests/testthat/test-extract-2dt-home-advantage-units.R.",
+  "description": "Home advantage for a 2DT sport is RAW POINTS -- the model is additive, there is no link to undo. Applying football's exp() to an additive 4-point parameter published a home edge of 54.6 and every schema in the tree accepted it (B5). median and lower stay within +/-30 and reject that shape. upper is wider on purpose: the per-team prior is normal(0,10) on each side, so a team with one match carries a 95% upper of ~35-45 that is the model's honest uncertainty, not a units error -- and a cap that rejects it darkens the whole cell. The exact check is tests/testthat/test-extract-2dt-home-advantage-units.R.",
   "properties": {
     "records": {
       "items": {
@@ -16,8 +16,8 @@
           },
           "upper": {
             "type": "number",
-            "minimum": -30,
-            "maximum": 30
+            "minimum": -80,
+            "maximum": 80
           }
         }
       }
