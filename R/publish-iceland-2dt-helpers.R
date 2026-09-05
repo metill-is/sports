@@ -151,10 +151,18 @@ NULL
                                           tie_threshold = 0) {
   empty <- tibble::tibble(
     .draw = integer(), team = character(), points = numeric(),
-    base_points = integer()
+    base_points = integer(), point_diff = numeric()
   )
   if (nrow(posterior_goals) == 0L) {
     return(empty)
+  }
+
+  # `base_diff` is a tiebreaker added after this function's callers existed, so
+  # a hand-built base_points (tests, and any caller predating it) may not carry
+  # it. Absent means "no realised difference to carry", i.e. 0 -- never an
+  # error, and never silently dropping the column downstream.
+  if (!"base_diff" %in% names(base_points)) {
+    base_points$base_diff <- 0
   }
 
   pg_top <- posterior_goals |>
@@ -173,7 +181,8 @@ NULL
       dplyr::left_join(base_points, by = "team") |>
       dplyr::mutate(
         base_points = dplyr::coalesce(.data$base_points, 0L),
-        points = as.numeric(.data$base_points)
+        points = as.numeric(.data$base_points),
+        point_diff = as.numeric(dplyr::coalesce(.data$base_diff, 0))
       )
   }
 
@@ -188,14 +197,26 @@ NULL
       points = .points_2dt(
         .data$home_score, .data$away_score, .data$name,
         has_ties = has_ties, tie_threshold = tie_threshold
+      ),
+      sim_diff = dplyr::if_else(
+        .data$name == "home",
+        .data$home_score - .data$away_score,
+        .data$away_score - .data$home_score
       )
     ) |>
-    dplyr::summarise(points = sum(.data$points), .by = c(".draw", "team")) |>
+    dplyr::summarise(
+      points = sum(.data$points),
+      sim_diff = sum(.data$sim_diff),
+      .by = c(".draw", "team")
+    ) |>
     dplyr::left_join(base_points, by = "team") |>
     dplyr::mutate(
       base_points = dplyr::coalesce(.data$base_points, 0L),
-      points      = .data$points + .data$base_points
-    )
+      points      = .data$points + .data$base_points,
+      point_diff  = .data$sim_diff +
+        as.numeric(dplyr::coalesce(.data$base_diff, 0))
+    ) |>
+    dplyr::select(-"sim_diff")
 
   dplyr::bind_rows(
     simulated,
@@ -218,7 +239,21 @@ NULL
         has_ties = has_ties, tie_threshold = tie_threshold
       )
     ) |>
-    dplyr::summarise(base_points = sum(.data$points), .by = "team")
+    dplyr::summarise(
+      base_points = sum(.data$points),
+      # Point/goal difference over played matches. Carried purely as a
+      # TIEBREAKER: without it, teams level on points were ranked by fixture
+      # order, which published a confident title-race call that was an
+      # artefact of the calendar. Football already ranks points -> gd -> gf.
+      base_diff = sum(
+        dplyr::if_else(
+          .data$name == "home",
+          .data$home_score - .data$away_score,
+          .data$away_score - .data$home_score
+        )
+      ),
+      .by = "team"
+    )
 }
 
 # Home-advantage intervals on the natural (additive) scale -- unlike

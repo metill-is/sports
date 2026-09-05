@@ -16,6 +16,7 @@ test_that("the bb/hb publish + extract tests carry no skip gates", {
     # WS3's 2DT home-advantage units test (B5). Named here so it lands ungated
     # from day one; this file asserts hygiene only, never that test's content.
     "test-extract-2dt-home-advantage-units.R",
+    "test-extract-2dt-tiebreak.R",
     # WS7's sport-neutral division accessors. Its expected_meetings block
     # asserts against live git-tracked data/facts/results, so a skip gate there
     # would silently retire the only check that a federation format change is

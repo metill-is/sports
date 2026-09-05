@@ -283,8 +283,32 @@ NULL
     ))
   }
 
+  # Rank points -> point difference -> a per-(draw, team) jitter.
+  #
+  # Ranking on points alone left ties to ROW ORDER, i.e. to whichever tied team
+  # happened to have the earlier upcoming fixture in pred_d. With 2 points a
+  # win over 22 rounds exact ties are common, so a genuine 0.37/0.36 title race
+  # published as 0.62/0.11 -- a confident-looking call that was an artefact of
+  # the fixture calendar. Football never had this: it ranks points -> gd -> gf
+  # (R/extract-football-iceland.R:554).
+  #
+  # The jitter settles the residual EXACT (points, point_diff) ties. It must
+  # vary per draw, or a team would win every tie in every draw and we would
+  # have swapped one systematic bias for another; across 4000 draws it splits
+  # the placement mass evenly in expectation. Seeded, and the caller's RNG
+  # state is preserved, so output stays reproducible.
+  iter_team_points$.tiebreak <- withr::with_preserve_seed({
+    set.seed(20260905L)
+    stats::runif(nrow(iter_team_points))
+  })
+
   iter_positions <- iter_team_points |>
-    dplyr::arrange(.data$.draw, dplyr::desc(.data$points)) |>
+    dplyr::arrange(
+      .data$.draw,
+      dplyr::desc(.data$points),
+      dplyr::desc(.data$point_diff),
+      .data$.tiebreak
+    ) |>
     dplyr::mutate(placement = dplyr::row_number(), .by = ".draw")
 
   n_teams_top <- iter_positions |>
