@@ -37,12 +37,16 @@ it is testable without spawning `Rscript` or compiling Stan.
 \details{
 WHY THIS EXISTS. `fit_model()` ABORTS on a diagnostics-gate breach, and
 `fit_skip_reason()`'s own docstring records real off-season basketball
-R-hat/ESS breaches. Basketball (`config/leagues.yml`) precedes handball,
-which precedes football. So a single marginal 2DT fit taking the gate down
-killed football's fits in the same run -- and the first live 2DT fits in five
-months are the highest abort-risk event of the season, running FIRST in
-config order. Isolating per target means the run still goes red, but
-football's posterior is written and committed.
+R-hat/ESS breaches. A bare loop meant a single marginal 2DT fit taking the
+gate down killed every target after it in the same run -- and the first live
+2DT fits in five months are the highest abort-risk event of the season.
+Isolating per target means the run still goes red, but every posterior that
+did fit is written and committed.
+
+Two defences, deliberately separate. [order_fit_targets()] decides WHICH
+target a `fit.yml` timeout cuts (a publish-only one, never the betting
+league); isolation decides that an abort in one target cannot reach the
+next or hide behind exit 0. Neither substitutes for the other.
 
 Failures are collected, not swallowed: the returned `failed` frame is what
 the script turns into `quit(status = 1L)`, on ANY failure rather than only on

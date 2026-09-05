@@ -12,6 +12,11 @@
 # months, or a single bb/hb schema breach once WS11 inverts the validation
 # default to fail-closed -- takes FOOTBALL down in the same run, and football
 # is live and mid-season with nine publishing cells.
+#
+# The FIT loop now runs the betting-enabled league first (order_fit_targets(),
+# tests at the bottom of this file) so a fit.yml timeout cuts a publish-only
+# target instead. The PUBLISH loop still walks config order. Isolation is what
+# protects the targets after a failure in either loop, whatever the order.
 
 .iso_targets <- function() {
   tibble::tibble(
@@ -105,11 +110,14 @@ test_that("scripts/05_publish.R delegates and exits non-zero on ANY failure", {
 # ---- Task 6: fit-loop isolation --------------------------------------------
 
 test_that("a failing fit target does not stop the next one", {
-  # THE CORE CASE. Basketball precedes handball precedes football in
-  # config/leagues.yml, fit_model() aborts on a diagnostics-gate breach, and
+  # THE CORE CASE. fit_model() aborts on a diagnostics-gate breach, and
   # fit_skip_reason()'s own docstring records real off-season basketball
   # R-hat/ESS breaches. The first live 2DT fits in five months are the
-  # highest abort-risk event of the season and they run BEFORE football.
+  # highest abort-risk event of the season. This fixture leaves BOTH leagues
+  # betting-enabled so config order holds and the abort really does precede
+  # the surviving target; in production order_fit_targets() runs football
+  # first, and isolation is then what keeps a basketball abort from taking
+  # handball down or hiding behind exit 0.
   res <- suppressMessages(run_fit_targets(
     .iso_targets(), .iso_leagues(),
     force = FALSE, league_named = FALSE, root = tempdir(),
@@ -230,4 +238,79 @@ test_that("fit.yml commits beliefs even when the fit step failed", {
   expect_true(!is.na(run_idx))
   step <- yml[(idx + 1L):(run_idx - 1L)]
   expect_true(any(grepl("^\\s*if:\\s*always\\(\\)\\s*$", step)))
+})
+
+# ---- Fit-target priority: the fit.yml budget ------------------------------
+
+test_that("betting-enabled leagues fit before publish-only leagues", {
+  # WHY. fit.yml runs every target inside ONE job. Football alone took 196 min
+  # on 2026-08-28 (male 126, female 70) against the 240-min cap, and the two
+  # May 2026 runs that fitted all three sports hit 236 and 240 min (one failed,
+  # one cancelled by the timeout). Targets used to run in config order --
+  # basketball, handball, football -- so on the day all six refit, the target
+  # the timeout cut was FOOTBALL: the only league whose posterior the decide
+  # layer turns into recommendations that the autoplace agent stakes real money
+  # on. A stale publish-only fit is a stale page; a stale betting fit is money.
+  # betting_enabled() is the data-driven expression of that difference, so no
+  # sport name is hardcoded and a league that is armed later moves up on its
+  # own.
+  leagues <- .iso_leagues()
+  leagues$basketball_iceland$betting$enabled <- FALSE
+  seen <- character()
+  suppressMessages(run_fit_targets(
+    .iso_targets(), leagues,
+    force = FALSE, league_named = FALSE, root = tempdir(),
+    fit_fn = function(static, sex) {
+      seen <<- c(seen, static$sport)
+      1L
+    },
+    skip_fn = function(...) NULL
+  ))
+  expect_equal(seen, c("football", "basketball"))
+})
+
+test_that("order_fit_targets keeps config order inside each priority tier", {
+  # Stability matters: the sexes of one league stay adjacent and in their
+  # declared order, and two publish-only leagues keep their relative order,
+  # so a reordering can never interleave a league's rows or shuffle the log.
+  targets <- tibble::tibble(
+    key = c(
+      "basketball_iceland", "basketball_iceland",
+      "handball_iceland", "handball_iceland",
+      "football_iceland", "football_iceland"
+    ),
+    sex = rep(c("male", "female"), 3L)
+  )
+  leagues <- list(
+    basketball_iceland = list(betting = list(enabled = FALSE)),
+    handball_iceland = list(betting = list(enabled = FALSE)),
+    football_iceland = list(betting = list())
+  )
+  out <- order_fit_targets(targets, leagues)
+  expect_equal(
+    paste(out$key, out$sex),
+    c(
+      "football_iceland male", "football_iceland female",
+      "basketball_iceland male", "basketball_iceland female",
+      "handball_iceland male", "handball_iceland female"
+    )
+  )
+  # And a no-op when every league is in the same tier.
+  all_on <- lapply(leagues, function(l) list(betting = list()))
+  expect_equal(order_fit_targets(targets, all_on), targets)
+})
+
+test_that("fit.yml's job budget is the hosted-runner maximum", {
+  # Ordering alone does not buy the minutes. The six-target day is ~196 min of
+  # football plus four 2DT fits, and 240 is already breached by football alone
+  # on a slow runner (a 241-min cancel on 2026-08-19). 360 is GitHub's ceiling
+  # for a hosted job; a lower value here is a decision, not a default, and
+  # whoever lowers it should have to read this.
+  yml <- readLines(
+    testthat::test_path("..", "..", ".github", "workflows", "fit.yml"),
+    warn = FALSE
+  )
+  budget <- grep("^\\s*timeout-minutes:", yml, value = TRUE)
+  expect_length(budget, 1L)
+  expect_equal(as.integer(sub(".*:\\s*", "", budget)), 360L)
 })

@@ -8,6 +8,7 @@ prune_extracts(
   root = here::here("data", "beliefs", "extracts"),
   keep_days = 14L,
   keep_min = 3L,
+  keep_season_anchor = TRUE,
   now = Sys.Date(),
   dry_run = TRUE
 )
