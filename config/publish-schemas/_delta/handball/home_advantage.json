@@ -1,5 +1,5 @@
 {
-  "description": "Home advantage for a 2DT sport is RAW GOALS -- the model is additive, there is no link to undo. Applying football's exp() to an additive parameter is the B5 bug. This bound is a gross-error guard only: exp() of a realistic ~1.5-goal handball edge is ~4.5 and stays inside it, so the exact check remains tests/testthat/test-extract-2dt-home-advantage-units.R.",
+  "description": "Home advantage for a 2DT sport is RAW GOALS -- the model is additive, there is no link to undo. Applying football's exp() to an additive parameter is the B5 bug. median and lower stay within +/-20 as the gross-error guard (exp() of a realistic ~1.5-goal edge is ~4.5 and stays inside; a B5-shaped 54.6 does not). upper is wider on purpose: the per-team prior is normal(0,10) on each side, so a team with one match (Vidir, Grill 66 karla, 2026-09-05) carries a 95% upper of ~35 that is the model's honest uncertainty, not a units error -- and a cap that rejects it darkens the whole cell. The exact units check remains tests/testthat/test-extract-2dt-home-advantage-units.R.",
   "properties": {
     "records": {
       "items": {
@@ -16,8 +16,8 @@
           },
           "upper": {
             "type": "number",
-            "minimum": -20,
-            "maximum": 20
+            "minimum": -60,
+            "maximum": 60
           }
         }
       }
