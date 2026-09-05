@@ -36,7 +36,7 @@ to a tempdir or `data/publish_replay/<date>/` for what-if work.}
 
 \item{round_predictions_history_root}{Optional override for the
 publisher-internal `round_predictions_history.json` tree. Defaults
-to a sibling of `output_root` via `publish_football_iceland()`.}
+to a sibling of `output_root` via `publish_iceland_league()`.}
 
 \item{schedule_horizon_days}{Days ahead of `as_of` to include in
 predictions. Default `200L` to mirror `03b_backfill_*`.}

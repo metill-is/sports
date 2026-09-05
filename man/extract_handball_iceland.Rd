@@ -35,20 +35,25 @@ extract_handball_iceland(
 \item{prep}{Optional pre-built `prepare_data()` result.}
 }
 \value{
-`invisible(NULL)`. Writes 5 Parquet files to the partition.
+`invisible(NULL)`. Writes the partition's Parquet files.
 }
 \description{
-Writes 5 Parquet files under
+Writes one Parquet file per file type under
 `<extracts_root>/sport=handball/country=iceland/sex=<sex>/fit_date=<D>/`,
 same shape as `extract_basketball_iceland()`. See that function's
 roxygen for the file-by-file contract; this entry point differs only
 in the per-sport config it passes through to the shared 2DT
-extractor.
+extractor. The `division` column spans
+`config/leagues.yml::handball_iceland.publish_divisions[[sex]]`
+(`OD` + `G66`).
 }
 \details{
-Handball-specific configuration vs the shared 2DT extractor:
-top division `"BD"`, draws permitted (`has_ties = TRUE` if the league
-config sets it; default per `config/leagues.yml::handball_iceland.
-betting.scoring`), goal-diff binned in 2-point buckets across
-[-20, +20] to match the score scale.
+Handball-specific configuration vs the shared 2DT extractor: draws
+permitted (`has_ties = TRUE` if the league config sets it; default per
+`config/leagues.yml::handball_iceland.betting.scoring`), goal-diff binned
+in 2-point buckets across [-20, +20] to match the score scale.
+
+Handball's post-season is a SEPARATE division (`PO`), not extra rounds
+inside `OD`, so unlike basketball it needs no regular-season round cut --
+the division filter already excludes it.
 }

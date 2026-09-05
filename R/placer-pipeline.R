@@ -101,6 +101,10 @@ place_bets <- function(leagues = NULL,
   # 4. Validate schema + team-name wiring BEFORE Chrome launches
   validate_recommendations_schema(recs)
   validate_team_names_config(leagues_cfg, recs)
+  # D2 interlock: refuse a betting-disabled league here too. load_recommendations()
+  # already drops these rows, so reaching this abort means a caller bypassed the
+  # loader -- exactly when failing loudly beats filtering silently.
+  validate_betting_enabled(leagues_cfg, recs)
 
   # 5. Upfront confirmation (interactive + live)
   if (interactive && !dry_run) {

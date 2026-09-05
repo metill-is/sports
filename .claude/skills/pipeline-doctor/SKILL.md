@@ -43,6 +43,9 @@ For every `WARN`/`FAIL` row, map the `check` to its runbook in
 | `divergence_drift` / `rhat_drift` WARN | model degrading under the abort gate | `docs/runbooks/failed-fit.md` |
 | `orphaned_bets` WARN | a bet whose match never settled | `docs/runbooks/orphaned-bet.md` |
 | `bankroll` FAIL | realised PnL ran the pool to/under zero | `docs/runbooks/orphaned-bet.md` |
+| `publish_freshness` FAIL | publish skipped or stale; extracts missing | `docs/runbooks/stale-publish.md` |
+| `season_resolution` FAIL | a federation season id will not resolve | `docs/runbooks/season-restart.md` |
+| `publish_format` WARN | the competition format changed | `docs/runbooks/stale-publish.md` |
 | `check_error` | a health sub-check itself errored | inspect the message; usually a missing/corrupt partition |
 
 Confirm-intent before "fixing": a `PAUSED` cell (basketball/handball off-season)

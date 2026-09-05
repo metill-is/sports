@@ -79,7 +79,7 @@ stopifnot(length(completed) >= 1L)
 
 # ---- 1. Patch the parquet (the source of truth the publisher reads) ---------
 # Discover the latest fit_date partition that carries a cup_bracket.parquet,
-# the same partition read_extracted_football() auto-selects at publish time.
+# the same partition read_extracted_iceland() auto-selects at publish time.
 extract_base <- here::here(
   "data", "beliefs", "extracts",
   "sport=football", "country=iceland", "sex=male"
@@ -114,7 +114,7 @@ arrow::write_parquet(
 )
 
 # ---- 2. Re-derive bracket.json FROM the patched parquet ----------------------
-# Mirrors R/publish-football-iceland.R: read the parquet payload, write it
+# Mirrors R/publish-iceland-league.R: read the parquet payload, write it
 # verbatim. Deriving the json from the parquet (rather than patching the json
 # independently) guarantees the two artifacts can never diverge.
 bj_path <- here::here(

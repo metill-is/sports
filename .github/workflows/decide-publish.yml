@@ -51,6 +51,14 @@ jobs:
         run: Rscript scripts/05_publish.R
 
       - name: Commit if outputs changed
+        # Mirrors fit.yml. run_publish_targets() isolates per-cell failures and
+        # scripts/05_publish.R exits non-zero if ANY cell failed (a red run
+        # must not hide a broken cell), but the JSONs the surviving cells wrote
+        # are real. Without always(), one basketball failure would throw away
+        # football's nine published cells AND the decide layer's
+        # recommendations from the same run -- and basketball is target #1 of 6
+        # because resolve_targets() walks config/leagues.yml order.
+        if: always()
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"

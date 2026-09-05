@@ -1,4 +1,4 @@
-# Tests for the round-predictions pipeline added to publish_football_iceland:
+# Tests for the round-predictions pipeline added to publish_iceland_league:
 # pre-round (frozen) xG/xPts/xPoints per (matchweek, team), sourced from the
 # beliefs archive (the latest fit_date strictly less than the matchweek's
 # first kickoff). The point of the freeze is to prevent retroactive
@@ -297,7 +297,7 @@ test_that(".aggregate_round_predictions_pfi: xpts equals 3*p_win + p_draw", {
   }
 })
 
-# ---- Integration: publish_football_iceland writes round_predictions_history --
+# ---- Integration: publish_iceland_league writes round_predictions_history --
 
 backup_fit_path_rp <- function(sex) {
   root <- Sys.getenv(
@@ -307,7 +307,7 @@ backup_fit_path_rp <- function(sex) {
   file.path(root, "Sports", "football", "iceland", "results", sex, "fit.rds")
 }
 
-test_that("publish_football_iceland: empty archive -> empty history JSON, NA standings xG", {
+test_that("publish_iceland_league: empty archive -> empty history JSON, NA standings xG", {
   fit_path <- backup_fit_path_rp("male")
   if (!file.exists(fit_path)) testthat::skip("legacy football fit unavailable")
   if (!dir.exists(here::here("data", "facts", "results"))) {
@@ -326,7 +326,7 @@ test_that("publish_football_iceland: empty archive -> empty history JSON, NA sta
   )
 
   suppressWarnings(
-    publish_football_iceland(
+    publish_iceland_league(
       extracted = extracted,
       league = league,
       sex = "male",
@@ -371,7 +371,7 @@ test_that("publish_football_iceland: empty archive -> empty history JSON, NA sta
   }
 })
 
-test_that("publish_football_iceland: partial archive -> partial cumulative xG with coverage indicators", {
+test_that("publish_iceland_league: partial archive -> partial cumulative xG with coverage indicators", {
   # Lookahead-free cumulative xG. With archive coverage for some rounds
   # but not all, we expect:
   #   * xg_for / xg_against / xpts are non-null (partial cumulative sums)
@@ -404,7 +404,7 @@ test_that("publish_football_iceland: partial archive -> partial cumulative xG wi
   )
 
   suppressWarnings(
-    publish_football_iceland(
+    publish_iceland_league(
       extracted = extracted,
       league = league,
       sex = "male",
@@ -487,7 +487,7 @@ test_that("team_strengths_history covers every played matchweek from a single fi
   )
 
   suppressWarnings(
-    publish_football_iceland(
+    publish_iceland_league(
       extracted = extracted,
       league = league,
       sex = "male",
@@ -505,7 +505,7 @@ test_that("team_strengths_history covers every played matchweek from a single fi
   expect_true(all(c(1L, 2L, 3L, 4L) %in% rounds))
 })
 
-test_that("publish_football_iceland: standings xg_trend serialises as array (auto_unbox guard)", {
+test_that("publish_iceland_league: standings xg_trend serialises as array (auto_unbox guard)", {
   # Regression: jsonlite::write_json(auto_unbox = TRUE) unboxes length-1
   # vectors, which broke the website's standings-table.js when only one
   # matchweek had a pre-round fit. The publisher must keep xg_trend as a
@@ -530,7 +530,7 @@ test_that("publish_football_iceland: standings xg_trend serialises as array (aut
   )
 
   suppressWarnings(
-    publish_football_iceland(
+    publish_iceland_league(
       extracted = extracted,
       league = league,
       sex = "male",

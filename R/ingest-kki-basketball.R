@@ -23,6 +23,14 @@ BASKETHOTEL_API <- "a0d07178160bf749eb6e5e761fc623fe42e2bb57"
 #' No separate cup / playoffs season IDs: KKÍ packages post-season as extra
 #' rounds inside the regular-season `season_id` export ("Deildarkeppni").
 #'
+#' 2027 (the 2026-27 season) was resolved from the kki.is motayfirlit season
+#' selector rather than probed, then VERIFIED live on 2026-09-04 by fetching
+#' each schedule export: male div1 132568 (132 fixtures, 12 teams,
+#' 2026-10-08..2027-03-30), male div2 132571 (132, 12), female div1 132567
+#' (90, 10, 2026-09-29..2027-03-02), female div2 132570 (132, 12). Row counts
+#' are exactly n*(n-1), a full double round robin, and every date falls in
+#' {2026, 2027} so `.assert_season_stamp()` accepts them.
+#'
 #' Caveat: the 2025 male div1 ID `190366` that appeared in legacy notes is
 #' **invalid** — the XLSX comes back header-only (6230 bytes). The correct
 #' 2024–2025 male div1 is `128582`.
@@ -32,21 +40,25 @@ KKI_SEASON_IDS <- list(
   male = list(
     div1 = list(
       `2021` = 118319L, `2022` = 121197L, `2023` = 124655L,
-      `2024` = 127358L, `2025` = 128582L, `2026` = 130403L
+      `2024` = 127358L, `2025` = 128582L, `2026` = 130403L,
+      `2027` = 132568L
     ),
     div2 = list(
       `2021` = 118315L, `2022` = 121191L, `2023` = 124650L,
-      `2024` = 127380L, `2025` = 128589L, `2026` = 130402L
+      `2024` = 127380L, `2025` = 128589L, `2026` = 130402L,
+      `2027` = 132571L
     )
   ),
   female = list(
     div1 = list(
       `2021` = 118325L, `2022` = 121199L, `2023` = 124654L,
-      `2024` = 127289L, `2025` = 128585L, `2026` = 130422L
+      `2024` = 127289L, `2025` = 128585L, `2026` = 130422L,
+      `2027` = 132567L
     ),
     div2 = list(
       `2021` = 118317L, `2022` = 121195L, `2023` = 124651L,
-      `2024` = 127381L, `2025` = 128590L, `2026` = 130421L
+      `2024` = 127381L, `2025` = 128590L, `2026` = 130421L,
+      `2027` = 132570L
     )
   )
 )
@@ -55,6 +67,208 @@ KKI_SEASON_IDS <- list(
 #' @keywords internal
 #' @noRd
 KKI_DIVISION_LABELS <- c(div1 = "BD", div2 = "1D")
+
+#' Stable KKI competition identifiers, per (sex, division).
+#'
+#' `league_id` names the competition and does NOT change between seasons;
+#' `season_id` (see [KKI_SEASON_IDS]) rotates every July. Keying the registry
+#' on the stable half is what stops the ingest going silently blind each
+#' autumn: a missing `season_id` is now resolvable from kki.is rather than
+#' being a hand-edited integer that nobody remembers to bump (spec section 6,
+#' finding N3).
+#'
+#' Read live from kki.is on 2026-09-02 and cross-validated: for each of the
+#' four, the season selector's 2025-26 option equals the `season_id` this repo
+#' already holds under `KKI_SEASON_IDS[[sex]][[div]][["2026"]]`
+#' (190 -> 130403, 191 -> 130402, 189 -> 130422, 231 -> 130421). That
+#' agreement is what licenses trusting the same page for an unknown season.
+#'
+#' Source URL shape:
+#'   https://kki.is/motamal/leikir-og-urslit/motayfirlit/Leikir?league_id=<id>
+#' @keywords internal
+#' @noRd
+KKI_LEAGUE_IDS <- list(
+  male = list(
+    div1 = 190L,  # Bonusdeild karla
+    div2 = 191L   # 1. deild karla
+  ),
+  female = list(
+    div1 = 189L,  # Bonusdeild kvenna
+    div2 = 231L   # 1. deild kvenna
+  )
+)
+
+#' Resolve the stable KKI `league_id` for a (sex, division) cell.
+#'
+#' Aborts rather than returning NA on an unresolved cell: a NA id would build
+#' a syntactically valid URL that quietly returns nothing, which is the exact
+#' silent-blindness this registry exists to prevent.
+#'
+#' @param sex "male" or "female".
+#' @param division A key of [KKI_DIVISION_LABELS] ("div1" / "div2").
+#' @return Integer scalar.
+#' @keywords internal
+#' @noRd
+kki_league_id <- function(sex, division) {
+  if (!sex %in% names(KKI_LEAGUE_IDS)) {
+    cli::cli_abort("unknown KKI sex: {.val {sex}}", call = NULL)
+  }
+  by_div <- KKI_LEAGUE_IDS[[sex]]
+  if (!division %in% names(by_div)) {
+    cli::cli_abort(
+      "unknown KKI division: {.val {division}}",
+      call = NULL
+    )
+  }
+  id <- by_div[[division]]
+  if (length(id) != 1L || is.na(id)) {
+    cli::cli_abort(
+      c(
+        "KKI league_id for {.val {sex}}/{.val {division}} has not been resolved.",
+        "i" = "Discover it from the kki.is motayfirlit page and record it in
+               KKI_LEAGUE_IDS."
+      ),
+      call = NULL
+    )
+  }
+  as.integer(id)
+}
+
+#' KKI motayfirlit page URL for a competition (all seasons).
+#'
+#' The page's season selector is JS-rendered, so this must be fetched with
+#' `rvest::read_html_live()` (chromote), not a plain `httr` GET -- the same
+#' constraint the HSI scraper already lives with.
+#' @keywords internal
+#' @noRd
+kki_motayfirlit_url <- function(league_id) {
+  sprintf(
+    paste0(
+      "https://kki.is/motamal/leikir-og-urslit/motayfirlit/",
+      "Leikir?league_id=%d"
+    ),
+    as.integer(league_id)
+  )
+}
+
+#' Parse the season selector out of a KKI motayfirlit page.
+#'
+#' Pure and fixture-tested: no network. The page carries three unnamed
+#' `<select>` elements (season, `stig` / stage, `leikdagur` / matchday), so
+#' they cannot be told apart by attribute. The season one is identified by the
+#' SHAPE of its option labels -- `YYYY-YYYY` -- which is stable across the
+#' other two (whose labels are Icelandic words and bare round numbers).
+#'
+#' Season numbering follows this repo's convention throughout: the CLOSING
+#' calendar year. Label `2026-2027` is season `2027`.
+#'
+#' NB the page also exposes a stage dimension (`Deildarkeppni` vs
+#' `Urslitakeppni`) which this repo does not yet capture -- KKI packages the
+#' playoffs as extra rounds inside the same `season_id`, which is why
+#' basketball BD rows carry urslitakeppni matches. Capturing that stage split
+#' is deliberately deferred to the publish workstream that consumes it.
+#'
+#' @param html A parsed document, or a string/path accepted by
+#'   `rvest::read_html()`.
+#' @return Tibble with columns `season` (integer, closing year), `season_id`
+#'   (integer) and `label` (character), newest first. Zero rows when the page
+#'   has no season selector.
+#' @keywords internal
+#' @noRd
+parse_kki_season_options <- function(html) {
+  doc <- if (inherits(html, "xml_document")) html else rvest::read_html(html)
+  empty <- tibble::tibble(
+    season = integer(), season_id = integer(), label = character()
+  )
+
+  opts <- rvest::html_elements(doc, "select option")
+  if (length(opts) == 0L) {
+    return(empty)
+  }
+  label <- trimws(rvest::html_text(opts))
+  value <- trimws(rvest::html_attr(opts, "value"))
+
+  # `YYYY-YYYY` is what distinguishes the season selector from the stage and
+  # matchday ones. A blank value is the "Veldu timabil" placeholder.
+  keep <- !is.na(value) & nzchar(value) &
+    grepl("^[0-9]{4}\\s*-\\s*[0-9]{4}$", label)
+  if (!any(keep)) {
+    return(empty)
+  }
+
+  label <- label[keep]
+  tibble::tibble(
+    season = as.integer(sub("^[0-9]{4}\\s*-\\s*", "", label)),
+    season_id = as.integer(value[keep]),
+    label = label
+  ) |>
+    dplyr::arrange(dplyr::desc(.data$season))
+}
+
+#' Current KKI season, as the closing calendar year.
+#'
+#' The Icelandic basketball season spans October to May, so from July onwards
+#' the current season is the one closing next year. Matches
+#' `hsi_current_season()`, and the `KKI_SEASON_IDS` key convention where
+#' "2026" is the 2025-26 season.
+#' @keywords internal
+#' @noRd
+kki_current_season <- function(today = Sys.Date()) {
+  yr <- as.integer(format(today, "%Y"))
+  mo <- as.integer(format(today, "%m"))
+  if (mo >= 7L) yr + 1L else yr
+}
+
+#' Resolve a KKI `season_id` for a (sex, division, season).
+#'
+#' Registry first (hand-verified, offline), then the federation provenance
+#' cache. Returns NULL when neither knows -- callers treat NULL as
+#' do-not-fetch and report it, rather than fetching nothing silently.
+#' @keywords internal
+#' @noRd
+kki_season_id <- function(sex, division, season,
+                          path = federation_seasons_path()) {
+  key <- as.character(as.integer(season))
+  registry <- KKI_SEASON_IDS[[sex]][[division]][[key]]
+  if (!is.null(registry) && !is.na(registry)) {
+    return(as.integer(registry))
+  }
+  cached <- tryCatch(
+    federation_season_id("kki", sex, division, as.integer(season), path = path),
+    error = function(e) NULL
+  )
+  if (!is.null(cached) && !is.na(cached)) {
+    return(as.integer(cached))
+  }
+  NULL
+}
+
+#' KKI (sex, division) cells with no resolvable id for `season`.
+#'
+#' The KKI analogue of `hsi_unresolved_seasons()`. A cell listed here is one
+#' the ingest will skip, so it is reported rather than being indistinguishable
+#' from an off-season.
+#' @keywords internal
+#' @noRd
+kki_unresolved_seasons <- function(season, sexes = c("male", "female"),
+                                   path = federation_seasons_path()) {
+  rows <- list()
+  for (sex in sexes) {
+    for (div in names(KKI_DIVISION_LABELS)) {
+      if (is.null(kki_season_id(sex, div, season, path = path))) {
+        rows[[length(rows) + 1L]] <- tibble::tibble(
+          sex = sex, division = div, season = as.integer(season)
+        )
+      }
+    }
+  }
+  if (length(rows) == 0L) {
+    return(tibble::tibble(
+      sex = character(), division = character(), season = integer()
+    ))
+  }
+  dplyr::bind_rows(rows)
+}
 
 #' Build a Baskethotel widget export URL.
 #' @param season_id Integer season identifier.
@@ -189,26 +403,42 @@ fetch_kki <- function(league, sex, seasons = NULL,
   type <- match.arg(type)
   stopifnot(sex %in% names(KKI_SEASON_IDS))
 
-  sex_map <- KKI_SEASON_IDS[[sex]]
+  # Default to the CURRENT season only. This used to iterate every registry
+  # key, so a routine ingest re-downloaded five historical seasons that can
+  # never change -- 2 sexes x 2 types x 2 divisions x 6 seasons = 48 XLSX
+  # downloads a day. Pass `seasons` explicitly to backfill.
+  target_seasons <- if (is.null(seasons)) {
+    kki_current_season()
+  } else {
+    as.integer(seasons)
+  }
+
   frames <- list()
 
-  for (div in names(sex_map)) {
+  for (div in names(KKI_DIVISION_LABELS)) {
     division_label <- KKI_DIVISION_LABELS[[div]]
-    season_map <- sex_map[[div]]
-    season_keys <- names(season_map)
-    if (!is.null(seasons)) {
-      season_keys <- intersect(season_keys, as.character(seasons))
-    }
 
-    for (season_key in season_keys) {
-      season_id <- season_map[[season_key]]
-      season_int <- as.integer(season_key)
+    for (season_int in target_seasons) {
+      season_int <- as.integer(season_int)
+      season_id <- kki_season_id(sex, div, season_int)
+
+      if (is.null(season_id)) {
+        # Report, do not skip silently. An unresolved id is indistinguishable
+        # from an off-season in the log otherwise, which is how the registry
+        # going stale each July stayed invisible.
+        cli::cli_warn(c(
+          "KKI {sex}/{div} season={season_int}: no season_id resolved -- skipped.",
+          "i" = "Refresh from the kki.is motayfirlit selector
+                 (parse_kki_season_options)."
+        ))
+        next
+      }
 
       path <- tryCatch(
         download_baskethotel_xlsx(season_id, type = type),
         error = function(e) {
           cli::cli_warn(c(
-            "Baskethotel download failed for {sex}/{div}/{season_key}",
+            "Baskethotel download failed for {sex}/{div}/{season_int}",
             "i" = "{conditionMessage(e)}"
           ))
           NULL
@@ -224,6 +454,16 @@ fetch_kki <- function(league, sex, seasons = NULL,
         division = division_label,
         season = season_int
       )
+
+      # Deliberately OUTSIDE the tryCatch above: a re-raise from inside a
+      # class-specific handler is caught by that same tryCatch's `error=`
+      # handler, which would degrade this abort back into the warning it
+      # exists to escape.
+      .assert_season_stamp(
+        parsed, season_int,
+        source = sprintf("kki %s/%s season_id=%s", sex, div, season_id)
+      )
+
       frames[[length(frames) + 1L]] <- parsed
     }
   }

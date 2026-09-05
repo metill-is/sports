@@ -210,3 +210,22 @@ filter_leagues <- function(leagues, sport = NULL, country = NULL,
 
   leagues[keep]
 }
+
+#' Is betting enabled for a league?
+#'
+#' Reads `betting$enabled` from a league definition. The key is optional in
+#' `config/leagues.schema.json`, so an absent key means enabled and only an
+#' explicit `enabled: false` disarms a league. This is the single predicate
+#' consulted by the odds-ingest guard ([ingest_one_lengjan()]), the decide
+#' guard ([decide_league()]), the placer's recommendation loader
+#' ([load_recommendations()]) and the placer pre-flight
+#' ([validate_betting_enabled()]) -- so a league can never be disabled in one
+#' layer while another stays armed.
+#'
+#' @param league A league definition (an element of [load_leagues()]), or any
+#'   list carrying a `betting` slice.
+#' @return `TRUE` unless `betting$enabled` is exactly `FALSE`.
+#' @export
+betting_enabled <- function(league) {
+  !isFALSE(league$betting$enabled)
+}

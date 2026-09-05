@@ -1,31 +1,60 @@
 #' @include ingest.R
+#' @include federation-seasons.R
 NULL
 
-#' HSÍ handball source URL templates.
+#' HSÍ tournament ids, keyed by (sex, division, season).
 #'
-#' Layout: HSI_URLS[[sex]][[division_slug]][[kind]] where
-#' - sex: "male" or "female"
-#' - division_slug: "div1" (Olísdeild), "div2" (Grill 66), "cup" (male only),
-#'   "playoffs"
-#' - kind: "url" (current season page)
+#' Layout: `HSI_TOURNAMENT_IDS[[sex]][[division]][["<season>"]]` -> integer
+#' `mot_nr` used in `https://www.hsi.is/tournament/{mot_nr}`. Seasons are
+#' labelled by the closing calendar year (2025 = Sept 2024 - May 2025), the
+#' same convention as [hsi_current_season()].
 #'
-#' Current-season pages render both results and schedule tables. For
-#' tournament-style pages (cup, playoffs), HSÍ exposes tournament IDs that
-#' rotate each year and require updating at the start of each season; same for
-#' the `-2025-26` suffix on the league pages.
+#' This replaces the previous split between `HSI_URLS` (dated league slugs for
+#' whichever season happened to be current when a human last edited the file)
+#' and `HSI_HISTORICAL_IDS` (tournament ids for everything older). That split
+#' was the defect: the slug and the season stamp came from two independent
+#' sources and drifted apart every July, and `https://www.hsi.is/olis-deild-
+#' karla-2026-27` is a 404 because HSÍ now serves `/tournament/<id>` only.
+#' One shape, one key, one lookup.
+#'
+#' Provenance for every seeded value lives in `config/federation-seasons.json`,
+#' not in this comment -- see [read_federation_seasons()]. `cup` and `playoffs`
+#' have no 2027 entry: HSÍ has not created those tournaments yet, and
+#' [hsi_unresolved_seasons()] reports the gap rather than a guessed id filling
+#' it. Historical 2021-2025 values came from the legacy
+#' `_legacy/sports/handball/iceland/R/utils/{male,female}/download_historical_
+#' data_div{1,2}.R`.
 #' @keywords internal
 #' @noRd
-HSI_URLS <- list(
+HSI_TOURNAMENT_IDS <- list(
   male = list(
-    div1 = "https://www.hsi.is/olis-deild-karla-2025-26",
-    div2 = "https://www.hsi.is/grill-66-deild-karla-2025-26",
-    cup = "https://www.hsi.is/tournament/8437",
-    playoffs = "https://www.hsi.is/tournament/8427"
+    div1 = list(
+      "2021" = 5260L, "2022" = 5640L, "2023" = 6149L,
+      "2024" = 6983L, "2025" = 7641L, "2027" = 9142L
+    ),
+    div2 = list(
+      "2021" = 5262L, "2022" = 5643L, "2023" = 6143L,
+      "2024" = 6981L, "2025" = 7644L, "2027" = 9140L
+    ),
+    cup = list(
+      "2026" = 8437L
+    ),
+    playoffs = list(
+      "2026" = 8427L
+    )
   ),
   female = list(
-    div1 = "https://www.hsi.is/olis-deild-kvenna-1",
-    div2 = "https://www.hsi.is/grill-66-deild-kvenna-2025-26",
-    playoffs = "https://www.hsi.is/tournament/8430"
+    div1 = list(
+      "2021" = 5261L, "2022" = 5641L, "2023" = 6146L,
+      "2024" = 6982L, "2025" = 7642L, "2027" = 9141L
+    ),
+    div2 = list(
+      "2021" = 5263L, "2022" = 5642L, "2023" = 6148L,
+      "2024" = 6980L, "2025" = 7643L, "2027" = 9143L
+    ),
+    playoffs = list(
+      "2026" = 8430L
+    )
   )
 )
 
@@ -45,81 +74,6 @@ HSI_DIVISION_LABELS <- c(
   playoffs = "PO"
 )
 
-#' Historical HSÍ tournament IDs per (sex, division, season).
-#'
-#' Layout: `HSI_HISTORICAL_IDS[[sex]][[division]][[as.character(season)]]` →
-#' integer `mot_nr` used in `https://www.hsi.is/tournament/{mot_nr}`.
-#'
-#' Season labels follow the same convention as `hsi_current_season()` — the
-#' closing calendar year of the season span (e.g. 2025 = Sept 2024 – May 2025).
-#' Values extracted from legacy `_legacy/sports/handball/iceland/R/utils/
-#' {male,female}/download_historical_data_div{1,2,cup}.R`.
-#'
-#' Notes / caveats:
-#' - Male cup history is omitted: the legacy `download_historical_data_cup.R`
-#'   copy-pasted the div1 IDs for 2021–2024 (a bug — it would have scraped the
-#'   Olísdeild tournament and written rows labelled "cup"). The 2025–26 cup is
-#'   already the current tournament in `HSI_URLS[[male]][[cup]]`.
-#' - Female div2 2025 is omitted: the legacy file has "2025" = 7644, which is
-#'   a copy-paste from male div2 (same ID) — the genuine female Grill 66 2024–25
-#'   tournament ID is not recoverable from the legacy source.
-#' - Current-season tournament IDs live in `HSI_URLS` (league pages, not
-#'   tournament pages) and are handled separately.
-#' @keywords internal
-#' @noRd
-HSI_HISTORICAL_IDS <- list(
-  male = list(
-    div1 = list(
-      "2021" = 5260L,
-      "2022" = 5640L,
-      "2023" = 6149L,
-      "2024" = 6983L,
-      "2025" = 7641L
-    ),
-    div2 = list(
-      "2021" = 5262L,
-      "2022" = 5643L,
-      "2023" = 6143L,
-      "2024" = 6981L,
-      "2025" = 7644L
-    )
-  ),
-  female = list(
-    div1 = list(
-      "2021" = 5261L,
-      "2022" = 5641L,
-      "2023" = 6146L,
-      "2024" = 6982L,
-      "2025" = 7642L
-    ),
-    div2 = list(
-      "2021" = 5263L,
-      "2022" = 5642L,
-      "2023" = 6148L,
-      "2024" = 6980L
-    )
-  )
-)
-
-#' Build the tournament URL for a historical HSÍ (sex, division, season).
-#' @keywords internal
-#' @noRd
-hsi_historical_url <- function(sex, division, season) {
-  ids_sex <- HSI_HISTORICAL_IDS[[sex]]
-  if (is.null(ids_sex)) {
-    return(NULL)
-  }
-  ids_div <- ids_sex[[division]]
-  if (is.null(ids_div)) {
-    return(NULL)
-  }
-  mot_nr <- ids_div[[as.character(season)]]
-  if (is.null(mot_nr)) {
-    return(NULL)
-  }
-  sprintf("https://www.hsi.is/tournament/%d", as.integer(mot_nr))
-}
-
 #' Icelandic month-abbreviation → 2-digit month number map.
 #'
 #' HSÍ date strings look like "Fim. 12. mar. 26" — day, abbreviated month
@@ -134,22 +88,73 @@ HSI_MONTH_MAP <- c(
   okt = "10", "n\u00f3v" = "11", des = "12"
 )
 
-#' Build an HSÍ page URL for a given (sex, division) pair.
+#' Resolve an HSÍ tournament id for a (sex, division, season) triple.
 #'
-#' The `kind` arg is kept for API parity with other ingest modules but unused
-#' for HSÍ — the current-season page renders both results and schedule tables.
+#' Registry first, `config/federation-seasons.json` cache second, `NULL` third.
+#' `NULL` means do not fetch, which is the fail-safe direction -- an
+#' unregistered triple must never fall back to "some other season's page".
+#' Unknown sexes and divisions resolve to `NULL` rather than aborting, so a
+#' config typo skips one cell instead of taking the whole ingest down.
 #' @keywords internal
 #' @noRd
-hsi_url <- function(sex, division, season = NULL,
-                    kind = c("results", "schedule")) {
-  kind <- match.arg(kind)
-  if (!sex %in% names(HSI_URLS)) {
-    stop("Unknown sex for HSI: ", sex, call. = FALSE)
+hsi_tournament_id <- function(sex, division, season) {
+  key <- as.character(as.integer(season))
+  from_registry <- HSI_TOURNAMENT_IDS[[sex]][[division]][[key]]
+  if (!is.null(from_registry)) {
+    return(as.integer(from_registry))
   }
-  if (!division %in% names(HSI_URLS[[sex]])) {
-    stop("Unknown division for HSI sex=", sex, ": ", division, call. = FALSE)
+  federation_season_id("hsi", sex, division, season)
+}
+
+#' Build the HSÍ tournament URL for a (sex, division, season) triple.
+#'
+#' @return Character URL, or `NULL` when the triple has no resolvable id.
+#' @keywords internal
+#' @noRd
+hsi_url <- function(sex, division, season) {
+  id <- hsi_tournament_id(sex, division, season)
+  if (is.null(id) || is.na(id)) {
+    return(NULL)
   }
-  HSI_URLS[[sex]][[division]]
+  sprintf("https://www.hsi.is/tournament/%d", id)
+}
+
+#' Reachable HSÍ (sex, division) pairs with no resolvable id for a season.
+#'
+#' Before the season-keyed registry, `playoffs` and `cup` were fetched
+#' unconditionally from the current-season table, so they were scraped for
+#' whatever season happened to be current -- which is why `data/facts/results`
+#' holds PO rows for 2026 only. Under the registry they are ordinary
+#' (sex, division, season) triples, and HSÍ does not create the úrslitakeppni
+#' or the 2026-27 bikar tournaments until later in the season.
+#'
+#' Deferring them is correct; deferring them silently is not, because the
+#' absence is indistinguishable from ordinary off-season emptiness. This
+#' function names the gap so [fetch_results_hsi()] can warn and a later health
+#' check can raise it.
+#'
+#' @param season Integer season to check.
+#' @param sexes Sexes to check.
+#' @return Tibble with columns `sex`, `division`, `season`.
+#' @keywords internal
+#' @noRd
+hsi_unresolved_seasons <- function(season, sexes = c("male", "female")) {
+  rows <- list()
+  for (sex in sexes) {
+    for (div in hsi_divisions_for_sex(sex)) {
+      if (is.null(hsi_tournament_id(sex, div, season))) {
+        rows[[length(rows) + 1L]] <- tibble::tibble(
+          sex = sex, division = div, season = as.integer(season)
+        )
+      }
+    }
+  }
+  if (length(rows) == 0L) {
+    return(tibble::tibble(
+      sex = character(), division = character(), season = integer()
+    ))
+  }
+  dplyr::bind_rows(rows)
 }
 
 #' Poll a table-returning callback until the last table's row count is stable.
@@ -530,15 +535,23 @@ hsi_current_season <- function(today = Sys.Date()) {
 #' @noRd
 HSI_HISTORICAL_SLEEP_SECS <- 3
 
-#' Fetch a single HSÍ page and parse into results rows.
+#' Fetch a single HSÍ tournament page and parse into results rows.
 #'
-#' Factored out of `fetch_results_hsi` so the current-season league URL and
-#' per-season historical tournament URLs share the same fetch + parse + error
-#' handling path.
+#' The ordinary-failure handler degrades a fetch error to a warning so one bad
+#' tournament page cannot take down a league's ingest. A season-stamp mismatch
+#' is deliberately NOT an ordinary failure: it means the id we hold is wrong,
+#' and warning about it would write the wrong rows anyway.
+#'
+#' The guard therefore runs OUTSIDE the `tryCatch`, not as a
+#' `sports_season_stamp_error =` handler that re-raises. `tryCatch()` nests its
+#' handlers -- the last one given is established outermost -- so a `stop(e)`
+#' from inside a specific handler is caught by that same call's `error =`
+#' handler and silently degraded to the warning it was trying to escape.
+#' Verified, not assumed: the re-raise form returns NULL with a warning.
 #' @keywords internal
 #' @noRd
 hsi_fetch_and_parse <- function(url, sex, div, division_label, season) {
-  tryCatch(
+  rows <- tryCatch(
     {
       html <- fetch_hsi_html(url)
       parse_hsi_results_page(
@@ -558,60 +571,61 @@ hsi_fetch_and_parse <- function(url, sex, div, division_label, season) {
       NULL
     }
   )
+  if (is.null(rows)) {
+    return(NULL)
+  }
+  .assert_season_stamp(
+    rows, season,
+    source = sprintf("hsi %s/%s results (%s)", sex, div, url)
+  )
+  rows
 }
 
 #' Source-module entrypoint: results for a (league, sex).
 #'
-#' Iterates over all configured divisions for the requested sex, fetching and
-#' parsing each HSÍ page, and combines into a single canonical tibble. Any
-#' per-(division, season) failure is logged via `cli::cli_warn` and skipped so
-#' one tournament-page glitch does not take down the league ingest.
+#' Iterates the configured divisions for the requested sex and, for each
+#' requested season, resolves a `/tournament/<id>` URL via [hsi_url()]. There is
+#' no current-vs-historical branch any more: every season is the same shape of
+#' lookup against the same registry, so "this season" stops being a special
+#' case that a human has to re-point every July.
 #'
-#' When `seasons` is `NULL`, hits only the current-season league pages in
-#' `HSI_URLS`. When `seasons` is specified, iterates over the requested seasons:
-#' - Current season → league URL from `HSI_URLS`
-#' - Past seasons → tournament URLs from `HSI_HISTORICAL_IDS`, with a short
-#'   inter-page sleep (`HSI_HISTORICAL_SLEEP_SECS`) to avoid overwhelming HSÍ.
+#' An unresolvable (sex, division, season) is skipped with a warning naming it,
+#' never silently -- see [hsi_unresolved_seasons()].
 #'
-#' Historical tournament pages use the same table structure as current-season
-#' pages per the legacy `read_page()` implementations, so the existing
-#' `parse_hsi_results_page()` parser applies unchanged.
-#'
-#' @param league Unused (included for source-module signature parity); HSI
-#'   URL wiring is fixed internally.
+#' @param league Unused (source-module signature parity).
 #' @param sex "male" or "female".
-#' @param seasons Optional integer vector restricting seasons. When `NULL`,
-#'   only the current season is fetched.
+#' @param seasons Optional integer vector. `NULL` means the current season only.
+#' @param sleep_fn Sleep implementation. Injected rather than mocked, because
+#'   `local_mocked_bindings()` cannot bind base functions -- the same seam
+#'   [poll_hsi_tables()] already uses.
 #' @keywords internal
 #' @noRd
-fetch_results_hsi <- function(league, sex, seasons = NULL) {
-  current <- hsi_current_season()
+fetch_results_hsi <- function(league, sex, seasons = NULL,
+                              sleep_fn = Sys.sleep) {
+  requested <- if (is.null(seasons)) {
+    hsi_current_season()
+  } else {
+    as.integer(seasons)
+  }
   divisions <- hsi_divisions_for_sex(sex)
-
-  # Decide which seasons to hit, per division. Current-season pages live in
-  # HSI_URLS; historical pages live in HSI_HISTORICAL_IDS (no historical cup
-  # data — see HSI_HISTORICAL_IDS docstring).
-  requested <- if (is.null(seasons)) current else as.integer(seasons)
-
   frames <- list()
 
   for (div in divisions) {
     division_label <- HSI_DIVISION_LABELS[[div]]
 
     for (season in requested) {
-      url <- NULL
-      if (season == current) {
-        url <- HSI_URLS[[sex]][[div]]
-      } else {
-        url <- hsi_historical_url(sex, div, season)
+      url <- hsi_url(sex, div, season)
+      if (is.null(url)) {
+        cli::cli_warn(
+          "HSI: no tournament id for {sex}/{div} season={season} -- skipped."
+        )
+        next
       }
-      if (is.null(url)) next # No mapping for this (sex, div, season).
 
       parsed <- hsi_fetch_and_parse(url, sex, div, division_label, season)
       if (!is.null(parsed)) frames[[length(frames) + 1L]] <- parsed
 
-      # Sleep between historical tournament fetches to avoid hammering HSÍ.
-      if (season != current) Sys.sleep(HSI_HISTORICAL_SLEEP_SECS)
+      sleep_fn(HSI_HISTORICAL_SLEEP_SECS)
     }
   }
 
@@ -623,11 +637,14 @@ fetch_results_hsi <- function(league, sex, seasons = NULL) {
 
 #' Source-module entrypoint: schedule (upcoming only) for a (league, sex).
 #'
-#' Iterates over all configured divisions, fetches each HSÍ page, and extracts
-#' the schedule table (if present). HSÍ league pages render the schedule as a
-#' 3rd table when there are unplayed matches; tournament pages render it as
-#' the last table. `parse_hsi_schedule_page` picks the first table that has
-#' `(dagsetning, lid)` without a score column.
+#' Same registry lookup as [fetch_results_hsi()], for the current season only,
+#' with the same season-stamp guard: a schedule scraped off a stale page is as
+#' wrong as results scraped off one, and schedules feed the fixture window that
+#' drives odds and decide. The guard sits outside the fetch `tryCatch` for the
+#' reason documented on [hsi_fetch_and_parse()].
+#'
+#' @param league Unused (source-module signature parity).
+#' @param sex "male" or "female".
 #' @keywords internal
 #' @noRd
 fetch_schedule_hsi <- function(league, sex) {
@@ -637,7 +654,13 @@ fetch_schedule_hsi <- function(league, sex) {
 
   for (div in divisions) {
     division_label <- HSI_DIVISION_LABELS[[div]]
-    url <- HSI_URLS[[sex]][[div]]
+    url <- hsi_url(sex, div, current)
+    if (is.null(url)) {
+      cli::cli_warn(
+        "HSI: no tournament id for {sex}/{div} season={current} -- schedule skipped."
+      )
+      next
+    }
 
     parsed <- tryCatch(
       {
@@ -660,6 +683,11 @@ fetch_schedule_hsi <- function(league, sex) {
       }
     )
     if (is.null(parsed)) next
+    # Outside the tryCatch on purpose -- see hsi_fetch_and_parse().
+    .assert_season_stamp(
+      parsed, current,
+      source = sprintf("hsi %s/%s schedule (%s)", sex, div, url)
+    )
     frames[[length(frames) + 1L]] <- parsed
   }
 
@@ -670,6 +698,155 @@ fetch_schedule_hsi <- function(league, sex) {
   # with empty result cells for the away-win / bye cases).
   combined <- dplyr::bind_rows(frames)
   combined[combined$match_date >= Sys.Date(), , drop = FALSE]
+}
+
+#' Title patterns mapping an HSÍ tournament title to (sex, division).
+#'
+#' Ordered: the first match wins. The Grill 66 and Olís patterns are disjoint,
+#' but the ordering is kept explicit so adding a pattern later cannot silently
+#' shadow one. Icelandic characters are written as `\uXXXX` escapes, the same
+#' convention `HSI_MONTH_MAP` uses, so the source stays ASCII.
+#' @keywords internal
+#' @noRd
+HSI_TITLE_PATTERNS <- tibble::tibble(
+  pattern = c(
+    "^Ol\u00eds\\s*deild\\s+karla",
+    "^Grill\\s*66\\s*deild\\s+karla",
+    "^Ol\u00eds\\s*deild\\s+kvenna",
+    "^Grill\\s*66\\s*deild\\s+kvenna",
+    "^\u00darslitakeppni\\s+karla",
+    "^\u00darslitakeppni\\s+kvenna",
+    "^(Coca[- ]?Cola\\s+)?[Bb]ikar\\s*(keppni)?\\s+karla"
+  ),
+  sex = c("male", "male", "female", "female", "male", "female", "male"),
+  division = c("div1", "div2", "div1", "div2", "playoffs", "playoffs", "cup")
+)
+
+#' Map tournament titles to (sex, division); NA where no pattern matches.
+#'
+#' An unmappable title is dropped by the caller rather than guessed at -- the
+#' whole point of discovery is that it is more trustworthy than a guess.
+#' @keywords internal
+#' @noRd
+.hsi_match_title <- function(titles) {
+  sex <- rep(NA_character_, length(titles))
+  division <- rep(NA_character_, length(titles))
+  for (i in seq_len(nrow(HSI_TITLE_PATTERNS))) {
+    hit <- is.na(sex) &
+      stringr::str_detect(titles, HSI_TITLE_PATTERNS$pattern[[i]])
+    hit[is.na(hit)] <- FALSE
+    sex[hit] <- HSI_TITLE_PATTERNS$sex[[i]]
+    division[hit] <- HSI_TITLE_PATTERNS$division[[i]]
+  }
+  tibble::tibble(title = titles, sex = sex, division = division)
+}
+
+#' The page title of a rendered HSÍ page, without the " | HSÍ" suffix.
+#' @keywords internal
+#' @noRd
+hsi_page_title <- function(html) {
+  raw <- rvest::html_element(html, "title") |> rvest::html_text2()
+  stringr::str_trim(stringr::str_replace(raw, "\\s*\\|\\s*HS\u00cd\\s*$", ""))
+}
+
+#' Parse `/tournament/<id>` links and their titles out of a rendered page.
+#'
+#' Pure function -- network lives in [hsi_discover_tournaments()], so the title
+#' mapping stays fixture-testable.
+#'
+#' @param html xml_document.
+#' @return Tibble with `id` (integer) and `title` (character), deduplicated.
+#' @keywords internal
+#' @noRd
+parse_hsi_tournament_index <- function(html) {
+  links <- rvest::html_elements(html, "a[href*='/tournament/']")
+  if (length(links) == 0L) {
+    return(tibble::tibble(id = integer(), title = character()))
+  }
+  hrefs <- rvest::html_attr(links, "href")
+  ids <- suppressWarnings(as.integer(
+    stringr::str_match(hrefs, "/tournament/(\\d+)")[, 2L]
+  ))
+  titles <- stringr::str_trim(rvest::html_text2(links))
+
+  out <- tibble::tibble(id = ids, title = titles)
+  out <- out[!is.na(out$id) & nzchar(out$title), , drop = FALSE]
+  dplyr::distinct(out, .data$id, .keep_all = TRUE)
+}
+
+#' Discover HSÍ tournament ids for a season off the live site.
+#'
+#' This is what stops the registry being the thing that goes stale: it reads
+#' the ids HSÍ is actually serving today, rather than the ones a human typed
+#' last September. Merge the result with [refresh_federation_seasons()]; the
+#' registry then becomes a verified cache rather than the sole source.
+#'
+#' Two stages, because the index alone is not enough. Measured on the live
+#' page (2026-09-03) the nav's link text is sex-free -- "Olísdeildin",
+#' "Grill 66 deildin", "Powerade bikarinn", each appearing twice, once per sex
+#' -- so no pattern over the index can say which row is the women's. Each
+#' unmappable id is therefore resolved from its own tournament page's
+#' `<title>`, which does carry it ("Olís deild karla 2025-26"). An id that
+#' stays unmappable is dropped, never guessed.
+#'
+#' HSÍ's site is client-side rendered, so this goes through the existing
+#' chromote-backed [fetch_hsi_html()] -- a plain `httr` GET returns a shell.
+#'
+#' @param index_url Tournament index / navigation page.
+#' @param season Season to attribute the discovered ids to. The caller is
+#'   asserting "this index is showing season N"; `.assert_season_stamp()` is
+#'   what checks that assertion the first time each id is fetched.
+#' @param sleep_fn Sleep implementation between per-tournament fetches; see
+#'   [fetch_results_hsi()].
+#' @return Tibble shaped like the provenance cache.
+#' @importFrom rlang .data
+#' @keywords internal
+#' @noRd
+hsi_discover_tournaments <- function(index_url = "https://www.hsi.is/mot",
+                                     season = hsi_current_season(),
+                                     sleep_fn = Sys.sleep) {
+  html <- fetch_hsi_html(index_url, min_tables = 0L, min_rows = 0L)
+  idx <- parse_hsi_tournament_index(html)
+  if (nrow(idx) == 0L) {
+    return(.federation_seasons_empty())
+  }
+  mapped <- .hsi_match_title(idx$title)
+  titles <- idx$title
+
+  for (i in which(is.na(mapped$sex))) {
+    url <- sprintf("https://www.hsi.is/tournament/%d", idx$id[[i]])
+    page_title <- tryCatch(
+      hsi_page_title(fetch_hsi_html(url, min_tables = 0L, min_rows = 0L)),
+      error = function(e) {
+        cli::cli_warn(c(
+          "HSI discovery could not read the title of {url}",
+          "i" = "{conditionMessage(e)}"
+        ))
+        NA_character_
+      }
+    )
+    if (!is.na(page_title)) {
+      hit <- .hsi_match_title(page_title)
+      mapped$sex[[i]] <- hit$sex[[1L]]
+      mapped$division[[i]] <- hit$division[[1L]]
+      titles[[i]] <- page_title
+    }
+    sleep_fn(HSI_HISTORICAL_SLEEP_SECS)
+  }
+
+  out <- tibble::tibble(
+    federation = "hsi",
+    sex = mapped$sex,
+    division = mapped$division,
+    season = as.integer(season),
+    id = idx$id,
+    title = titles,
+    source = "live",
+    discovered_at = format(Sys.Date()),
+    verified = TRUE,
+    note = NA_character_
+  )
+  out[!is.na(out$sex) & !is.na(out$division), , drop = FALSE]
 }
 
 register_ingest_source(

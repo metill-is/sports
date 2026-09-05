@@ -12,13 +12,20 @@ same shape: **symptom -> diagnose -> fix -> verify**.
 | `orphaned_bets` WARN, `bankroll` FAIL | [orphaned-bet.md](orphaned-bet.md) |
 | `decide-publish.yml` red on "Value validation" / "Schema validation" | [schema-abort.md](schema-abort.md) |
 | fly.metill.is stale despite fresh `data/publish/` JSONs | [metill-platform-desync.md](metill-platform-desync.md) |
+| `publish_freshness` FAIL, `publish_format` WARN | [stale-publish.md](stale-publish.md) |
+| `season_resolution` FAIL (a federation season id will not resolve) | [season-restart.md](season-restart.md) |
 
 ## First principles
 
-- **Confirm-intent before "fixing".** A `PAUSED` cell (basketball/handball
-  off-season) and the schedule fail-open are intentional, not faults. Several
-  workflow behaviours look like bugs but are by design (the decide-publish
-  dual-parent trigger; the kelly_frac operational cut). Surface, don't auto-fix.
+- **Confirm-intent before "fixing".** Several states that look like faults are
+  deliberate: a basketball/handball cell producing no ODDS (both are
+  `betting.enabled: false` -- publish-only, decision D2), the ingest backoff
+  reporting "treating as off-season", and the schedule fail-open. Several
+  workflow behaviours are likewise by design (the decide-publish dual-parent
+  trigger; the kelly_frac operational cut). Surface, don't auto-fix.
+  The old "`PAUSED` = basketball/handball off-season until autumn 2026"
+  reading is retired: as of 2026-09 both sports are in season and ingesting.
+  See [season-restart.md](season-restart.md).
 - **Never mutate the ledger by hand.** `data/decisions/ledger/` is the canonical
   money record (L1-L4). Bet parameters are frozen at write time; settlement only
   flips `settled` / `win` / `pnl`. See [orphaned-bet.md](orphaned-bet.md).

@@ -22,13 +22,18 @@ basketball_iceland:
     schedule: kki_basketball
     odds: lengjan_odds
   lengjan:
-    competitions:
-      # 2026-04-28: Lengjan restructured kvenna efri/neðri (30774/30773) into a
-      # single playoff umbrella per sex. Old IDs now return empty placeholder
-      # pages (identical char count, no team hits). Men's Bónusdeild is now
-      # also on Lengjan (was missing at migration time).
-      - { id: "1519", name: "Bónusdeild karla úrslitakeppni", sex: male }
-      - { id: "1528", name: "Bónusdeild kvenna úrslitakeppni", sex: female }
+    competitions: []
+    # D2 (2026-09-02): publish-only this season -- competitions emptied so the
+    # odds scrape has nothing to fetch, alongside betting.enabled: false below.
+    # The schema permits an empty array (competitions has no minItems). Restore
+    # these ids when betting resumes; they are last season's playoff umbrella
+    # and should be re-verified against Lengjan before use:
+    #  # 2026-04-28: Lengjan restructured kvenna efri/neðri (30774/30773) into a
+    #  # single playoff umbrella per sex. Old IDs now return empty placeholder
+    #  # pages (identical char count, no team hits). Men's Bónusdeild is now
+    #  # also on Lengjan (was missing at migration time).
+    #  - { id: "1519", name: "Bónusdeild karla úrslitakeppni", sex: male }
+    #  - { id: "1528", name: "Bónusdeild kvenna úrslitakeppni", sex: female }
     team_names:
       # Men's úrslitakeppni (id 1519). Lengjan uses bare team names for the
       # men's draw — verified against data/facts/odds 2026-04-29 scrape.
@@ -50,8 +55,67 @@ basketball_iceland:
         Tindastóll: UMF Tindastoll kv
         Ármann: Ármann kv
         Stjarnan: Stjarnan kv
+  # Publish cells. No cup division is ingested for basketball: the distinct
+  # `division` values in data/facts/results for season 2026 are exactly
+  # {BD, 1D}, so every entry is is_cup: false and there is no cup cell.
+  #
+  # code_badge: "1D" cannot be its own badge -- it starts with a digit and so
+  # fails next_games.json::division_code's ^[A-Z][A-Z0-9_]*$. BON keeps
+  # basketball's Bonusdeild off football's BD filter key on metill-platform.
+  #
+  # expected_meetings measured from data/facts/results season 2026 (see below
+  # per cell). It is an assertion and a fallback, never the source: n_rounds is
+  # derived from schedule + results. When a federation changes format this goes
+  # red in tests/testthat/test-iceland-division-helpers.R -- re-measure and
+  # rewrite the constant rather than loosening the test.
+  #
+  # No `qualify` key for either sex. Measured teams reaching the 2026
+  # post-season: male BD 8 of 12, male 1D 8 of 12, female BD 10 of 10, female
+  # 1D 4 of 11 -- four cells, four structures, and women's Bonusdeild carries
+  # every team through, so no single per-division integer expresses it
+  # (Plan B ID-B15). Absent = meta.qualify null and no p_qualify.
+  # relegation_slots is likewise omitted: no KKI regulation was resolved for it
+  # this session, and an unresolved number is omitted rather than guessed.
+  # Omitting it means meta.relegation is null AND no p_relegation is published
+  # for the cell (2026-09-05). Falling back to football's hardcoded bottom-two
+  # rule is not a conservative default -- 1. deild is the bottom tier, so
+  # nothing is relegated from it and a "Fallhaetta" column there is false
+  # rather than uncertain. Configure the number when KKI's regulation is
+  # resolved and the key turns itself on.
+  publish_divisions:
+    male:
+      # BD: 12 teams, cut at round <= 22 -> 132 matches, all 66 pairs exactly 2x.
+      # 1D: 12 teams, cut at round <= 22 -> 132 matches, all 66 pairs exactly 2x.
+      - { code: BD, slug: bd, label_is: "Bónusdeild", is_cup: false,
+          code_badge: BON, expected_meetings: 2 }
+      - { code: 1D, slug: 1d, label_is: "1. deild",    is_cup: false,
+          code_badge: B1D, expected_meetings: 2 }
+    female:
+      # BD: 10 teams, cut at round <= 18 -> 90 matches, all 45 pairs exactly 2x.
+      # 1D: expected_meetings cannot express this cell, so the boundary is
+      # STATED as regular_season_rounds instead. Measured on data/facts/results
+      # season 2026 (2026-09-05): rounds 1-18 are 89 matches over 10 teams
+      # (44 pairs 2x + 1 pair 1x); rounds 19-24 are a 4-team promotion playoff
+      # -- Þór Ak. v Fjölnir and Hamar/Þór v Selfoss, then Hamar/Þór v
+      # Fjölnir -- which brings in an ELEVENTH team, Hamar/Þór, who plays no
+      # regular round at all. So expected_meetings * (n_teams - 1) is wrong in
+      # both directions, and the schedule fallback published the playoff AS the
+      # regular season: n_rounds 24, and meta.round 6 (the floor over
+      # appearances, i.e. Hamar/Þór's 6 playoff games) for a finished season.
+      # With the boundary stated: 98 rows -> 89, n_rounds 18, meta.round 17.
+      # Re-measured by tests/testthat/test-iceland-division-helpers.R against
+      # live data/facts/results -- when KKÍ changes the format that goes red,
+      # and the fix is to re-measure the constant, not to loosen the test.
+      - { code: BD, slug: bd, label_is: "Bónusdeild", is_cup: false,
+          code_badge: BON, expected_meetings: 2 }
+      - { code: 1D, slug: 1d, label_is: "1. deild",    is_cup: false,
+          code_badge: B1D, regular_season_rounds: 18 }
   stan_model: basketball_iceland/2d_student_t_scalarsigma.stan
   betting:
+    # D2 (2026-09-02): publish-only. Enforced at four layers via
+    # betting_enabled() -- odds ingest, decide, the placer loader and its
+    # pre-flight. Absent means enabled, so football is untouched.
+    enabled: false
     # kelly_frac is the §7.2 multiplicative shrinkage (Browne γ for finite-
     # horizon power utility). Iceland-tier ROI history (+9.18 % per
     # Sports/Knowledge/Betting Optimisation/Historical/roi-snapshot-2026-04-19)
@@ -86,8 +150,10 @@ handball_iceland:
     schedule: hsi_handball
     odds: lengjan_odds
   lengjan:
-    competitions:
-      - { id: "1269", name: "Olísdeild karla", sex: male }
+    competitions: []
+    # D2 (2026-09-02): publish-only this season -- see basketball_iceland above.
+    # Restore when betting resumes:
+    #  - { id: "1269", name: "Olísdeild karla", sex: male }
     team_names:
       male:
         Þór: Þór
@@ -100,8 +166,40 @@ handball_iceland:
         HBH: HB Hafnarfjörður
         Valur: Valur
       female: {}                       # No women's handball on Lengjan currently
+  # Publish cells. Handball ingests a third division, PO, which is the shared
+  # post-season bracket rather than a league -- it is NOT a publish division and
+  # is deliberately absent here. No cup division is ingested, so both entries
+  # are is_cup: false and there is no cup cell.
+  #
+  # No `qualify` key: see the basketball block above (Plan B ID-B15). Measured
+  # 2026 post-season entrants are 8 (male) and 6 (female), but they enter a
+  # separate PO division rather than a top-N cut of this table.
+  # relegation_slots omitted -- no HSI regulation resolved this session, so
+  # meta.relegation is null and no p_relegation is published for these cells
+  # (2026-09-05); Grill 66 is the bottom tier and relegates nobody in any case.
+  publish_divisions:
+    male:
+      # OD:  12 teams, cut at round <= 22 -> 132 matches, all 66 pairs exactly 2x.
+      # G66: 12 teams, cut at round <= 22 -> 132 matches, all 66 pairs exactly 2x.
+      - { code: OD,  slug: od,  label_is: "Olísdeild",     is_cup: false,
+          code_badge: OD,  expected_meetings: 2 }
+      - { code: G66, slug: g66, label_is: "Grill 66-deild", is_cup: false,
+          code_badge: G66, expected_meetings: 2 }
+    female:
+      # TRIPLE round robin, both divisions: 8 teams, cut at round <= 21 -> 84
+      # matches, all 28 pairs exactly 3x. This is the cell that breaks the
+      # 2*(n_teams - 1) assumption -- measured 2026-09-04 from
+      # data/facts/results, not assumed (Plan B ID-B14).
+      - { code: OD,  slug: od,  label_is: "Olísdeild",     is_cup: false,
+          code_badge: OD,  expected_meetings: 3 }
+      - { code: G66, slug: g66, label_is: "Grill 66-deild", is_cup: false,
+          code_badge: G66, expected_meetings: 3 }
   stan_model: handball_iceland/2d_student_t.stan
   betting:
+    # D2 (2026-09-02): publish-only. Enforced at four layers via
+    # betting_enabled() -- odds ingest, decide, the placer loader and its
+    # pre-flight. Absent means enabled, so football is untouched.
+    enabled: false
     # 2026-05-02: scaled to 25 % of Browne default (user request — overall
     # 75 % stake reduction). Pre-cut: 0.20.
     kelly_frac: 0.05         # §7.2 multiplicative shrinkage; quarter-of-Browne
@@ -298,21 +396,42 @@ football_iceland:
       # within each group, full carry-over, group-locked final table
       # (verified 2026-07-10; docs/superpowers/specs/
       # 2026-07-10-split-season-simulator-design.md).
+      #
+      # code_badge is the short ASCII filter key emitted as
+      # next_games.json::division_code. The values below are lifted VERBATIM
+      # from the retired R map .football_iceland_division_code_labels() and are
+      # mirrored by metill-platform's DIVISIONS dict -- changing one requires
+      # changing both. They exist in config (not R) so basketball's
+      # Bónusdeild, also coded BD, can carry its own badge instead of
+      # colliding with football's BD on the consumer's filter key.
+      #
+      # qualify.slots on BD is split.upper (6), so p_qualify reproduces the
+      # existing p_top_six rule `placement <= 6L` exactly. No other football
+      # cell has a qualification cut.
       - { code: BD,  slug: bd,     label_is: "Besta deild",   is_cup: false,
+          code_badge: BD, qualify: { slots: 6, label_is: "Efri hluti" },
           split: { upper: 6, lower: 6 } }
-      - { code: LD1, slug: ld,     label_is: "Lengjudeild",   is_cup: false }
-      - { code: LD2, slug: 2deild, label_is: "2. deild",      is_cup: false }
-      - { code: LD3, slug: 3deild, label_is: "3. deild",      is_cup: false }
-      - { code: CUP, slug: bikar,  label_is: "Mjólkurbikar",  is_cup: true  }
+      - { code: LD1, slug: ld,     label_is: "Lengjudeild",   is_cup: false,
+          code_badge: LD }
+      - { code: LD2, slug: 2deild, label_is: "2. deild",      is_cup: false,
+          code_badge: D2 }
+      - { code: LD3, slug: 3deild, label_is: "3. deild",      is_cup: false,
+          code_badge: D3 }
+      - { code: CUP, slug: bikar,  label_is: "Mjólkurbikar",  is_cup: true,
+          code_badge: MB }
     female:
       # Women's split is asymmetric: 10 teams, 18 regular rounds, top 6 /
       # bottom 4 (upper single RR = 5 games, lower = 3), same carry-over +
       # group locking as the men's format (verified 2026-07-10).
       - { code: BD,  slug: bd,     label_is: "Besta deild",   is_cup: false,
+          code_badge: BD, qualify: { slots: 6, label_is: "Efri hluti" },
           split: { upper: 6, lower: 4 } }
-      - { code: LD1, slug: ld,     label_is: "Lengjudeild",   is_cup: false }
-      - { code: LD2, slug: 2deild, label_is: "2. deild",      is_cup: false }
-      - { code: CUP, slug: bikar,  label_is: "Bikar kvenna",  is_cup: true  }
+      - { code: LD1, slug: ld,     label_is: "Lengjudeild",   is_cup: false,
+          code_badge: LD }
+      - { code: LD2, slug: 2deild, label_is: "2. deild",      is_cup: false,
+          code_badge: D2 }
+      - { code: CUP, slug: bikar,  label_is: "Bikar kvenna",  is_cup: true,
+          code_badge: MB }
   betting:
     # kelly_frac is the §7.2 multiplicative shrinkage. Female cell stays
     # tighter — first Icelandic women's football season, thin history.

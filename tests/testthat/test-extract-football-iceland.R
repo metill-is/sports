@@ -71,7 +71,7 @@ test_that("extract_football_iceland writes all 6 Parquets with expected schemas 
   )
   # Extract output should be restricted to the per-sex publish set, sourced from
   # config/leagues.yml::publish_divisions[[sex]]. Helper kept in sync with config.
-  publishable_divs <- .football_iceland_division_codes("male")
+  publishable_divs <- .iceland_division_codes("football_iceland", "male")
   if (nrow(pm) > 0L) {
     expect_true(all(pm$count > 0L))
     expect_true(is.integer(pm$home_goals))
@@ -87,7 +87,7 @@ test_that("extract_football_iceland writes all 6 Parquets with expected schemas 
   )
   expect_setequal(unique(ts$component), c("offence", "defence", "total"))
   expect_setequal(unique(ts$location), c("home", "away", "avg"))
-  expect_setequal(unique(ts$quantile), 1:99)
+  expect_setequal(unique(ts$quantile), PUBLISH_QUANTILE_GRID)
   expect_true(all(ts$division %in% publishable_divs))
 
   rs <- arrow::read_parquet(file.path(fit_dir, "round_strengths_quantiles.parquet"))
@@ -246,14 +246,14 @@ test_that("team_strengths_quantiles q=50 matches publisher's median per cell", {
       extracts_root = out
     )
   ))
-  extracted <- read_extracted_football(
+  extracted <- read_extracted_iceland(
     league,
     sex = "male",
     fit_date = as.Date("2026-05-03"),
     extracts_root = out
   )
   suppressWarnings(suppressMessages(
-    publish_football_iceland(
+    publish_iceland_league(
       extracted = extracted,
       league = league,
       sex = "male",
@@ -294,7 +294,7 @@ test_that("team_strengths_quantiles q=50 matches publisher's median per cell", {
   expect_true(all(abs(joined$median - joined$q50_value) < 1e-3))
 })
 
-# ---- read_extracted_football() ----------------------------------------------
+# ---- read_extracted_iceland() ----------------------------------------------
 
 # Build a "modern" partition (6 parquets at fit_date=*/, with `division` payload).
 # `divisions = c("BD", "LD1")` writes both; payload identifies which sub-dir.
@@ -318,7 +318,7 @@ test_that("team_strengths_quantiles q=50 matches publisher's median per cell", {
   invisible(fit_dir)
 }
 
-test_that("read_extracted_football: latest auto-discovery picks newest complete partition", {
+test_that("read_extracted_iceland: latest auto-discovery picks newest complete partition", {
   tmp <- withr::local_tempdir()
   base <- file.path(tmp, "sport=football", "country=iceland", "sex=male")
   .write_extracts_partition(base, "2026-04-29",
@@ -329,12 +329,12 @@ test_that("read_extracted_football: latest auto-discovery picks newest complete 
   )
 
   league <- list(sport = "football", country = "iceland")
-  out <- read_extracted_football(league, sex = "male", extracts_root = tmp)
+  out <- read_extracted_iceland(league, sex = "male", extracts_root = tmp)
   expect_equal(out$fit_date, as.Date("2026-05-03"))
   expect_equal(out$BD$predicted_matches$d, "2026-05-03")
 })
 
-test_that("read_extracted_football: returns BD-only when LD1 rows absent", {
+test_that("read_extracted_iceland: returns BD-only when LD1 rows absent", {
   tmp <- withr::local_tempdir()
   base <- file.path(tmp, "sport=football", "country=iceland", "sex=male")
   .write_extracts_partition(base, "2026-05-01",
@@ -343,14 +343,14 @@ test_that("read_extracted_football: returns BD-only when LD1 rows absent", {
   )
 
   league <- list(sport = "football", country = "iceland")
-  out <- read_extracted_football(league, sex = "male", extracts_root = tmp)
+  out <- read_extracted_iceland(league, sex = "male", extracts_root = tmp)
   expect_equal(out$fit_date, as.Date("2026-05-01"))
   expect_equal(out$BD$predicted_matches$d, "bd-only")
   expect_equal(nrow(out$LD1$predicted_matches), 0L)
   expect_equal(nrow(out$LD1$final_positions), 0L)
 })
 
-test_that("read_extracted_football: explicit fit_date loads exactly that partition", {
+test_that("read_extracted_iceland: explicit fit_date loads exactly that partition", {
   tmp <- withr::local_tempdir()
   base <- file.path(tmp, "sport=football", "country=iceland", "sex=female")
   .write_extracts_partition(base, "2026-04-25",
@@ -361,7 +361,7 @@ test_that("read_extracted_football: explicit fit_date loads exactly that partiti
   )
 
   league <- list(sport = "football", country = "iceland")
-  out <- read_extracted_football(
+  out <- read_extracted_iceland(
     league,
     sex = "female",
     fit_date = as.Date("2026-04-25"),
@@ -371,16 +371,16 @@ test_that("read_extracted_football: explicit fit_date loads exactly that partiti
   expect_equal(out$BD$predicted_matches$d, "2026-04-25")
 })
 
-test_that("read_extracted_football: errors when no extracts directory exists", {
+test_that("read_extracted_iceland: errors when no extracts directory exists", {
   tmp <- withr::local_tempdir()
   league <- list(sport = "football", country = "iceland")
   expect_error(
-    read_extracted_football(league, sex = "male", extracts_root = tmp),
+    read_extracted_iceland(league, sex = "male", extracts_root = tmp),
     "No extracts directory"
   )
 })
 
-test_that("read_extracted_football: errors when no partition is complete", {
+test_that("read_extracted_iceland: errors when no partition is complete", {
   tmp <- withr::local_tempdir()
   base <- file.path(tmp, "sport=football", "country=iceland", "sex=male")
   pdir <- file.path(base, "fit_date=2026-04-24")
@@ -392,12 +392,12 @@ test_that("read_extracted_football: errors when no partition is complete", {
 
   league <- list(sport = "football", country = "iceland")
   expect_error(
-    read_extracted_football(league, sex = "male", extracts_root = tmp),
+    read_extracted_iceland(league, sex = "male", extracts_root = tmp),
     "complete extracted set"
   )
 })
 
-test_that("read_extracted_football: explicit fit_date errors when partition is incomplete", {
+test_that("read_extracted_iceland: explicit fit_date errors when partition is incomplete", {
   tmp <- withr::local_tempdir()
   base <- file.path(tmp, "sport=football", "country=iceland", "sex=male")
   pdir <- file.path(base, "fit_date=2026-05-01")
@@ -408,7 +408,7 @@ test_that("read_extracted_football: explicit fit_date errors when partition is i
   )
   league <- list(sport = "football", country = "iceland")
   expect_error(
-    read_extracted_football(
+    read_extracted_iceland(
       league,
       sex = "male",
       fit_date = as.Date("2026-05-01"),
@@ -418,7 +418,7 @@ test_that("read_extracted_football: explicit fit_date errors when partition is i
   )
 })
 
-test_that("read_extracted_football: round-trips with extract_football_iceland", {
+test_that("read_extracted_iceland: round-trips with extract_football_iceland", {
   fit_path <- backup_fit_path_extract("male")
   if (!file.exists(fit_path)) testthat::skip("legacy football fit unavailable")
   if (!dir.exists(here::here("data", "facts", "results"))) {
@@ -439,7 +439,7 @@ test_that("read_extracted_football: round-trips with extract_football_iceland", 
     )
   ))
 
-  loaded <- read_extracted_football(
+  loaded <- read_extracted_iceland(
     league,
     sex = "male",
     extracts_root = out
@@ -474,14 +474,14 @@ test_that("final_positions.parquet matches publisher's final_positions.json", {
       extracts_root = out
     )
   ))
-  extracted <- read_extracted_football(
+  extracted <- read_extracted_iceland(
     league,
     sex = "male",
     fit_date = as.Date("2026-05-03"),
     extracts_root = out
   )
   suppressWarnings(suppressMessages(
-    publish_football_iceland(
+    publish_iceland_league(
       extracted = extracted,
       league = league,
       sex = "male",
@@ -559,7 +559,7 @@ test_that("extract_football_iceland: CUP target_div writes empty final_positions
   }
 })
 
-test_that("read_extracted_football: CUP slot present in default target_divs", {
+test_that("read_extracted_iceland: CUP slot present in default target_divs", {
   tmp <- withr::local_tempdir()
   base <- file.path(tmp, "sport=football", "country=iceland", "sex=male")
   .write_extracts_partition(base, "2026-05-12",
@@ -568,7 +568,7 @@ test_that("read_extracted_football: CUP slot present in default target_divs", {
   )
 
   league <- list(sport = "football", country = "iceland")
-  out <- read_extracted_football(league, sex = "male", extracts_root = tmp)
+  out <- read_extracted_iceland(league, sex = "male", extracts_root = tmp)
   expect_true("CUP" %in% names(out))
   expect_equal(out$CUP$predicted_matches$marker, "v1")
 })
@@ -958,7 +958,7 @@ test_that(".extract_division_parquets_pfi: split cell keeps split-phase predicte
     component = character(), location = character(), value = numeric()
   )
   testthat::local_mocked_bindings(
-    .compute_team_strength_trajectory_pfi = function(...) empty_trajectory
+    .compute_team_strength_trajectory = function(...) empty_trajectory
   )
 
   extract_parts <- function(split_config) {

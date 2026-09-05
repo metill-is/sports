@@ -15,10 +15,12 @@ NULL
 preview_pending <- function(leagues = NULL,
                             today_only = FALSE,
                             target_date = NULL,
-                            root = here::here("data")) {
+                            root = here::here("data"),
+                            leagues_cfg = NULL) {
   recs <- load_recommendations(
     root = root, leagues = leagues,
-    today_only = today_only, target_date = target_date
+    today_only = today_only, target_date = target_date,
+    leagues_cfg = leagues_cfg
   )
   if (nrow(recs) == 0L) {
     cli::cli_alert_info("No pending recommendations.")

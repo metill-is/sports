@@ -37,19 +37,26 @@ point at a tempdir.}
 passed, the function skips its own `prepare_data()` call.}
 }
 \value{
-`invisible(NULL)`. Writes 5 Parquet files to the partition.
+`invisible(NULL)`. Writes the partition's Parquet files.
 }
 \description{
-Writes 5 Parquet files under
-`<extracts_root>/sport=basketball/country=iceland/sex=<sex>/fit_date=<D>/`:
+Writes one Parquet file per file type under
+`<extracts_root>/sport=basketball/country=iceland/sex=<sex>/fit_date=<D>/`.
+Every file below carries a `division` payload column spanning
+`config/leagues.yml::basketball_iceland.publish_divisions[[sex]]`
+(`BD` + `1D`); the reader splits on it.
 }
 \details{
 * `predicted_matches.parquet` — per-match posterior summaries (mean
   home / away score, mean goal-diff, p_home_win / p_away_win, plus a
   binned `goal_diff_distribution` list-column).
 * `team_strengths_quantiles.parquet` — 9-cell strength grid
-  (component × location) quantile bands per team in the current top
-  division.
+  (component × location) quantile bands per team in the division.
+* `round_strengths_quantiles.parquet` — the same grid per division
+  matchweek, from the model's `offense`/`defense` random walk. NOT
+  football-specific: the 2DT models declare the identical
+  `array[N_rounds] vector[K]` surface
+  (Stan/basketball_iceland/2d_student_t_scalarsigma.stan:157,164).
 * `home_advantage_quantiles.parquet` — per-team home-advantage
   quantile bands by component (offence / defence / total).
 * `final_positions.parquet` — per-team placement probability
@@ -57,13 +64,15 @@ Writes 5 Parquet files under
 * `points_distribution.parquet` — per-team discrete points-total
   distribution.
 
-The 4 football-specific extracts (`round_strengths_quantiles`,
-`tournament_placements`, `sim_inputs_team`, `sim_inputs_scalar`) are
-intentionally skipped — basketball doesn't currently model a knockout
-cup, and the per-round strength projection is football-specific.
+`tournament_placements`, `sim_inputs_team` and `sim_inputs_scalar` stay
+football-only — basketball models no knockout cup.
 
-Basketball-specific configuration vs the shared 2DT extractor:
-top division `"BD"` (Bónusdeild), no draws (`has_ties = FALSE`),
-goal-diff binned in 5-point buckets across [-50, +50] to match the
-score scale.
+The league table and the trajectory are scoped to the REGULAR season.
+KKI packages urslitakeppni as extra rounds inside the same `division`
+and the same `season_id`, so without that cut the published table is
+simulated on post-season points. See R/publish-format.R.
+
+Basketball-specific configuration vs the shared 2DT extractor: no draws
+(`has_ties = FALSE`), goal-diff binned in 5-point buckets across
+[-50, +50] to match the score scale.
 }

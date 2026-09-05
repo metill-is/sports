@@ -1,4 +1,4 @@
-#' @include model-league.R extract-football-iceland.R publish-football-iceland.R
+#' @include model-league.R extract-football-iceland.R publish-iceland-league.R
 NULL
 
 #' Replay the football iceland publisher for a historical date.
@@ -40,7 +40,7 @@ NULL
 #' @param archive_root Beliefs archive root.
 #' @param round_predictions_history_root Optional override for the
 #'   publisher-internal `round_predictions_history.json` tree. Defaults
-#'   to a sibling of `output_root` via `publish_football_iceland()`.
+#'   to a sibling of `output_root` via `publish_iceland_league()`.
 #' @param schedule_horizon_days Days ahead of `as_of` to include in
 #'   predictions. Default `200L` to mirror `03b_backfill_*`.
 #' @return `invisible(NULL)`.
@@ -100,7 +100,7 @@ replay_football_iceland <- function(sex,
     )
   }
 
-  extracted <- read_extracted_football(
+  extracted <- read_extracted_iceland(
     league,
     sex = sex,
     fit_date = as_of,
@@ -120,7 +120,7 @@ replay_football_iceland <- function(sex,
   if (!is.null(round_predictions_history_root)) {
     publish_args$round_predictions_history_root <- round_predictions_history_root
   }
-  do.call(publish_football_iceland, publish_args)
+  do.call(publish_iceland_league, publish_args)
 
   invisible(NULL)
 }

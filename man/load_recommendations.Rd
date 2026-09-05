@@ -9,7 +9,8 @@ load_recommendations(
   leagues = NULL,
   today_only = FALSE,
   target_date = NULL,
-  run_date = NULL
+  run_date = NULL,
+  leagues_cfg = NULL
 )
 }
 \arguments{

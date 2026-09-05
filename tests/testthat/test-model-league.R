@@ -38,6 +38,12 @@ test_that("fit_league writes beliefs_latest and beliefs_archive", {
   testthat::local_mocked_bindings(
     fit_model = function(...) fake_fit,
     extract_posteriors = function(...) fake_beliefs,
+    # `fake_fit` carries only save_object(), so the real extractor would fail
+    # on fit$draws(). Since WS3 that failure ABORTS rather than warning, so it
+    # is mocked here: this block covers the beliefs write path, and extraction
+    # has its own coverage in test-extract-{basketball,handball}-iceland.R and
+    # test-extract-2dt-home-advantage-units.R.
+    extract_basketball_iceland = function(...) invisible(NULL),
     .package = "sports"
   )
 
@@ -249,4 +255,53 @@ test_that("fit_league errors when the Stan model file is missing", {
     ),
     "Stan model missing"
   )
+})
+
+test_that("fit_league ABORTS when the extractor fails, rather than warning", {
+  # WS3: a swallowed extract failure means the cell silently stops publishing,
+  # because the extracts tree is the sole publish input. Beliefs are written
+  # before the extract runs, so aborting costs nothing already computed.
+  root <- withr::local_tempdir()
+  mini_league <- list(
+    sport = "basketball", country = "iceland",
+    stan_model = "basketball_iceland/2d_student_t_scalarsigma.stan",
+    betting = list(scoring = list(has_ties = FALSE, tie_threshold = 0))
+  )
+  write_table(tibble::tibble(
+    sport = "basketball", country = "iceland", sex = "male",
+    season = 2100L, division = "BD",
+    match_date = as.Date("2100-01-02") + 0:9,
+    round = 1L,
+    home_team = rep(c("A", "B"), 5), away_team = rep(c("B", "A"), 5),
+    home_score = 80, away_score = 75
+  ), "results", root = root)
+
+  fake_fit <- structure(
+    list(save_object = function(file) saveRDS(NULL, file)),
+    class = "CmdStanMCMC"
+  )
+  testthat::local_mocked_bindings(
+    fit_model = function(...) fake_fit,
+    extract_posteriors = function(...) tibble::tibble(
+      sport = "basketball", country = "iceland", sex = "male",
+      fit_date = as.Date("2100-01-11"),
+      match_date = as.Date("2100-02-01"),
+      home_team = "A", away_team = "B", draw_id = 1:10L,
+      home_goals = runif(10, 70, 100), away_goals = runif(10, 70, 100)
+    ),
+    extract_basketball_iceland = function(...) stop("simulated extract failure"),
+    .package = "sports"
+  )
+
+  expect_error(
+    fit_league(
+      league = mini_league, sex = "male",
+      fit_date = as.Date("2100-01-11"), root = root,
+      stan_dir = here::here("Stan")
+    ),
+    "extract_basketball_iceland"
+  )
+
+  # Beliefs survived the abort -- the fit's work is not thrown away.
+  expect_gt(nrow(read_table("beliefs_latest", root = root)), 0L)
 })

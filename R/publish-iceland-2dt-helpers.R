@@ -102,14 +102,6 @@ NULL
     dplyr::inner_join(pred_d[, pred_cols], by = "game_nr")
 }
 
-# 3-letter team code: strip whitespace + dots, uppercase, take first 3 chars.
-.short_code_2dt <- function(team) {
-  team |>
-    stringr::str_remove_all("\\s|\\.") |>
-    stringr::str_to_upper() |>
-    stringr::str_sub(1L, 3L)
-}
-
 # Pad form vector to length n with leading NA so jsonlite never collapses
 # a single-element list-column entry from ["W"] to "W".
 .pad_form_2dt <- function(x, n = 5L) {
@@ -143,134 +135,93 @@ NULL
   }
 }
 
-# Per-team standings for the current top-division season. xG fields are
-# always shipped as NA (Student-t produces no Poisson xG aggregate); the
-# platform JS handles null via showExpectedCols.
-.compute_standings_rows_2dt <- function(top_results, has_ties = FALSE,
-                                        tie_threshold = 0) {
-  if (nrow(top_results) == 0L) {
-    return(tibble::tibble(
-      team = character(), short = character(),
-      played = integer(), wins = integer(), draws = integer(),
-      losses = integer(),
-      goals_for = integer(), goals_against = integer(),
-      goal_diff = integer(), points = integer(),
-      xg_for = numeric(), xg_against = numeric(), xpts = numeric(),
-      rank = integer(),
-      form = list(), xg_trend = list()
-    ))
-  }
-
-  long <- dplyr::bind_rows(
-    dplyr::transmute(top_results,
-      team = .data$home_team, match_date = .data$match_date,
-      gf = .data$home_score, ga = .data$away_score
-    ),
-    dplyr::transmute(top_results,
-      team = .data$away_team, match_date = .data$match_date,
-      gf = .data$away_score, ga = .data$home_score
-    )
-  )
-
-  if (has_ties) {
-    long <- dplyr::mutate(long,
-      result = dplyr::case_when(
-        abs(.data$gf - .data$ga) <= tie_threshold ~ "D",
-        .data$gf > .data$ga ~ "W",
-        TRUE ~ "L"
-      )
-    )
-  } else {
-    long <- dplyr::mutate(long,
-      result = dplyr::if_else(.data$gf > .data$ga, "W", "L")
-    )
-  }
-  long <- dplyr::arrange(long, .data$team, .data$match_date)
-
-  # Per-side points totals derived from the result column for consistency.
-  long <- dplyr::mutate(long,
-    side_points = dplyr::case_when(
-      .data$result == "W" ~ 2L,
-      .data$result == "D" ~ 1L,
-      TRUE ~ 0L
-    )
-  )
-
-  long |>
-    dplyr::summarise(
-      played = dplyr::n(),
-      wins = sum(.data$result == "W"),
-      draws = sum(.data$result == "D"),
-      losses = sum(.data$result == "L"),
-      goals_for = sum(.data$gf),
-      goals_against = sum(.data$ga),
-      goal_diff = .data$goals_for - .data$goals_against,
-      points = sum(.data$side_points),
-      form = list(.append_format_2dt(.data$result)),
-      xg_trend = list(numeric(0)),
-      .by = "team"
-    ) |>
-    dplyr::arrange(
-      dplyr::desc(.data$points), dplyr::desc(.data$goal_diff),
-      dplyr::desc(.data$goals_for)
-    ) |>
-    dplyr::mutate(
-      rank = dplyr::row_number(),
-      short = .short_code_2dt(.data$team),
-      xg_for = NA_real_, xg_against = NA_real_, xpts = NA_real_
-    ) |>
-    dplyr::select(
-      "team", "short", "played", "wins", "draws", "losses",
-      "goals_for", "goals_against", "goal_diff", "points",
-      "xg_for", "xg_against", "xpts",
-      "rank", "form", "xg_trend"
-    )
-}
-
-# Last-5 form indicator, padded to exactly five entries with leading NAs.
-# Wrapped to avoid leaking utils::tail through summarise() namespace handling.
-.append_format_2dt <- function(result_vec) {
-  .pad_form_2dt(utils::tail(result_vec, 5L))
-}
-
 # Per-draw per-team end-of-season points combining base (played) points
 # with future-fixture predictions. Returns a long tibble with `.draw`,
 # `team`, `points`.
+#
+# The team set is `base_points$team` -- every team that has PLAYED in the
+# division this season -- not merely the teams appearing in `posterior_goals`.
+# posterior_goals only covers the model's 14-day prediction window, so keying
+# the table off it dropped any team without a fixture in that window: a 6-team
+# division published a 4-team `final_positions` whose probabilities summed to
+# one over the wrong support. Those teams contribute their realised points and
+# no simulated ones, which is exactly right under this path's semantics.
 .compute_iter_team_points_2dt <- function(posterior_goals, top_div, base_points,
                                           has_ties = FALSE,
                                           tie_threshold = 0) {
+  empty <- tibble::tibble(
+    .draw = integer(), team = character(), points = numeric(),
+    base_points = integer(), point_diff = numeric()
+  )
   if (nrow(posterior_goals) == 0L) {
-    return(tibble::tibble(
-      .draw = integer(), team = character(), points = numeric(),
-      base_points = integer()
-    ))
+    return(empty)
+  }
+
+  # `base_diff` is a tiebreaker added after this function's callers existed, so
+  # a hand-built base_points (tests, and any caller predating it) may not carry
+  # it. Absent means "no realised difference to carry", i.e. 0 -- never an
+  # error, and never silently dropping the column downstream.
+  if (!"base_diff" %in% names(base_points)) {
+    base_points$base_diff <- 0
   }
 
   pg_top <- posterior_goals |>
     dplyr::filter(.data$division == top_div)
 
-  if (nrow(pg_top) == 0L) {
-    return(tibble::tibble(
-      .draw = integer(), team = character(), points = numeric(),
-      base_points = integer()
-    ))
+  # `.draw` comes from the whole posterior, not this division's slice, so a
+  # division whose every fixture has already been played still gets its
+  # realised table across the full draw set.
+  all_draws <- sort(unique(posterior_goals$.draw))
+
+  played_only <- function(teams) {
+    if (length(teams) == 0L || length(all_draws) == 0L) {
+      return(empty)
+    }
+    tidyr::expand_grid(.draw = all_draws, team = teams) |>
+      dplyr::left_join(base_points, by = "team") |>
+      dplyr::mutate(
+        base_points = dplyr::coalesce(.data$base_points, 0L),
+        points = as.numeric(.data$base_points),
+        point_diff = as.numeric(dplyr::coalesce(.data$base_diff, 0))
+      )
   }
 
-  pg_top |>
+  if (nrow(pg_top) == 0L) {
+    return(played_only(base_points$team))
+  }
+
+  simulated <- pg_top |>
     tidyr::pivot_longer(c("home_team", "away_team"), values_to = "team") |>
     dplyr::mutate(
       name = dplyr::if_else(.data$name == "home_team", "home", "away"),
       points = .points_2dt(
         .data$home_score, .data$away_score, .data$name,
         has_ties = has_ties, tie_threshold = tie_threshold
+      ),
+      sim_diff = dplyr::if_else(
+        .data$name == "home",
+        .data$home_score - .data$away_score,
+        .data$away_score - .data$home_score
       )
     ) |>
-    dplyr::summarise(points = sum(.data$points), .by = c(".draw", "team")) |>
+    dplyr::summarise(
+      points = sum(.data$points),
+      sim_diff = sum(.data$sim_diff),
+      .by = c(".draw", "team")
+    ) |>
     dplyr::left_join(base_points, by = "team") |>
     dplyr::mutate(
       base_points = dplyr::coalesce(.data$base_points, 0L),
-      points      = .data$points + .data$base_points
-    )
+      points      = .data$points + .data$base_points,
+      point_diff  = .data$sim_diff +
+        as.numeric(dplyr::coalesce(.data$base_diff, 0))
+    ) |>
+    dplyr::select(-"sim_diff")
+
+  dplyr::bind_rows(
+    simulated,
+    played_only(setdiff(base_points$team, simulated$team))
+  )
 }
 
 # Base (played) points for current-season top-division teams.
@@ -288,7 +239,21 @@ NULL
         has_ties = has_ties, tie_threshold = tie_threshold
       )
     ) |>
-    dplyr::summarise(base_points = sum(.data$points), .by = "team")
+    dplyr::summarise(
+      base_points = sum(.data$points),
+      # Point/goal difference over played matches. Carried purely as a
+      # TIEBREAKER: without it, teams level on points were ranked by fixture
+      # order, which published a confident title-race call that was an
+      # artefact of the calendar. Football already ranks points -> gd -> gf.
+      base_diff = sum(
+        dplyr::if_else(
+          .data$name == "home",
+          .data$home_score - .data$away_score,
+          .data$away_score - .data$home_score
+        )
+      ),
+      .by = "team"
+    )
 }
 
 # Home-advantage intervals on the natural (additive) scale -- unlike
@@ -321,17 +286,4 @@ NULL
       .by = c("team", "component")
     ) |>
     dplyr::semi_join(top_teams_filter, by = "team")
-}
-
-# Round number = min completed appearances across teams in current top
-# division (postponed fixtures don't overstate progress).
-.compute_round_num_2dt <- function(top_results) {
-  if (nrow(top_results) == 0L) {
-    return(0L)
-  }
-  counts <- top_results |>
-    tidyr::pivot_longer(c("home_team", "away_team"), values_to = "team") |>
-    dplyr::count(.data$team) |>
-    dplyr::pull("n")
-  if (length(counts) == 0L) 0L else as.integer(min(counts))
 }

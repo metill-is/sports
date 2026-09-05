@@ -1,20 +1,25 @@
-#' @include extract-iceland-2dt-shared.R config.R
+#' @include extract-iceland-2dt-shared.R config.R publish-profile.R
 NULL
 
 #' Extract per-fit handball iceland summaries to a Parquet partition.
 #'
-#' Writes 5 Parquet files under
+#' Writes one Parquet file per file type under
 #' `<extracts_root>/sport=handball/country=iceland/sex=<sex>/fit_date=<D>/`,
 #' same shape as `extract_basketball_iceland()`. See that function's
 #' roxygen for the file-by-file contract; this entry point differs only
 #' in the per-sport config it passes through to the shared 2DT
-#' extractor.
+#' extractor. The `division` column spans
+#' `config/leagues.yml::handball_iceland.publish_divisions[[sex]]`
+#' (`OD` + `G66`).
 #'
-#' Handball-specific configuration vs the shared 2DT extractor:
-#' top division `"BD"`, draws permitted (`has_ties = TRUE` if the league
-#' config sets it; default per `config/leagues.yml::handball_iceland.
-#' betting.scoring`), goal-diff binned in 2-point buckets across
-#' [-20, +20] to match the score scale.
+#' Handball-specific configuration vs the shared 2DT extractor: draws
+#' permitted (`has_ties = TRUE` if the league config sets it; default per
+#' `config/leagues.yml::handball_iceland.betting.scoring`), goal-diff binned
+#' in 2-point buckets across [-20, +20] to match the score scale.
+#'
+#' Handball's post-season is a SEPARATE division (`PO`), not extra rounds
+#' inside `OD`, so unlike basketball it needs no regular-season round cut --
+#' the division filter already excludes it.
 #'
 #' @param fit CmdStanMCMC fit object.
 #' @param league League list with sport == "handball" and country == "iceland".
@@ -26,7 +31,7 @@ NULL
 #' @param extracts_root Optional override; defaults to
 #'   `file.path(root, "beliefs", "extracts")`.
 #' @param prep Optional pre-built `prepare_data()` result.
-#' @return `invisible(NULL)`. Writes 5 Parquet files to the partition.
+#' @return `invisible(NULL)`. Writes the partition's Parquet files.
 #' @export
 extract_handball_iceland <- function(fit, league, sex,
                                      fit_date = Sys.Date(),
@@ -42,8 +47,11 @@ extract_handball_iceland <- function(fit, league, sex,
     league = league,
     sex = sex,
     sport = "handball",
-    top_div = "OD",
-    bucket_width = 2L,
+    key = "handball_iceland",
+    # The bin width comes from the publish profile, not a literal: it is also
+    # published as meta.units.diff_bin_width, and two copies of the number
+    # drift. See tests/testthat/test-publish-profile-units.R.
+    bucket_width = sport_publish_profile("handball")$units$diff_bin_width,
     bucket_low = -20L,
     bucket_high = 20L,
     has_ties = isTRUE(league$betting$scoring$has_ties),

@@ -39,7 +39,7 @@ is required for correct team-index -> name mapping).}
 
 \item{split_configs}{Optional named list keyed by division code mapping to
 `list(upper, lower)` split formats (from
-`.football_iceland_division_split(sex)`). Divisions without an entry are
+`.iceland_division_split("football_iceland", sex)`). Divisions without an entry are
 simulated flat. See the split-season section of
 [simulate_league_season()].}
 }

@@ -1,4 +1,4 @@
-#' @include model-prepare.R storage.R config.R publish-football-iceland.R
+#' @include model-prepare.R storage.R config.R publish-divisions.R publish-iceland-league.R
 NULL
 
 # ---- Internal helpers --------------------------------------------------------
@@ -9,11 +9,13 @@ NULL
 # Uses group_modify rather than reframe to dodge dplyr's per-row recycle
 # heuristics on multi-column same-length expressions inside .by.
 .summarise_quantile_band_pfi <- function(draws, group_keys) {
-  probs <- seq(0.01, 0.99, by = 0.01)
+  # Only the stored grid, not all 99 percentiles -- see PUBLISH_QUANTILE_GRID
+  # for why this is wider than what the publisher currently reads.
+  probs <- PUBLISH_QUANTILE_GRID / 100
   draws |>
     dplyr::group_by(dplyr::across(dplyr::all_of(group_keys))) |>
     dplyr::group_modify(~ tibble::tibble(
-      quantile = seq_len(99L),
+      quantile = PUBLISH_QUANTILE_GRID,
       value = unname(stats::quantile(
         .x$value,
         probs = probs,
@@ -21,105 +23,6 @@ NULL
       ))
     )) |>
     dplyr::ungroup()
-}
-
-# Per-sex publish division codes for football iceland.
-#
-# Reads `config/leagues.yml::football_iceland.publish_divisions[[sex]]` and
-# returns a character vector of `code` values (canonical Stan/results division
-# names — `BD`, `LD1`, `LD2`, `LD3`, `CUP`, etc.). Order is the YAML order.
-#
-# This replaces the pre-2026-05-24 file-scope constant
-# `.FOOTBALL_ICELAND_DIVISIONS_PFI <- c("BD", "LD1", "CUP")`. The constant
-# couldn't represent per-sex asymmetry (men publish LD2 + LD3; women publish
-# LD2 only — no women's 3. deild exists in Iceland).
-#
-# CUP rows skip the league-table simulation (final_positions /
-# points_distribution) since a knockout has no points table — those parquets
-# are written as empty tibbles for the CUP partition.
-.football_iceland_division_codes <- function(sex) {
-  stopifnot(sex %in% c("male", "female"))
-  cfg <- load_leagues()[["football_iceland"]][["publish_divisions"]][[sex]]
-  if (is.null(cfg) || length(cfg) == 0L) {
-    stop(
-      ".football_iceland_division_codes: no publish_divisions[\"",
-      sex,
-      "\"] entry in config/leagues.yml.",
-      call. = FALSE
-    )
-  }
-  vapply(cfg, function(d) d$code, character(1))
-}
-
-# Per-sex map from canonical division code -> URL/dir slug.
-# Returns a named character vector: c(BD = "bd", LD1 = "ld", LD2 = "2deild", ...)
-# Used by publish_football_iceland() to build output directory names matching
-# the metill-platform consumer's URL slugs.
-.football_iceland_division_slugs <- function(sex) {
-  stopifnot(sex %in% c("male", "female"))
-  cfg <- load_leagues()[["football_iceland"]][["publish_divisions"]][[sex]]
-  if (is.null(cfg) || length(cfg) == 0L) {
-    stop(
-      ".football_iceland_division_slugs: no publish_divisions[\"",
-      sex,
-      "\"] entry in config/leagues.yml.",
-      call. = FALSE
-    )
-  }
-  setNames(
-    vapply(cfg, function(d) d$slug, character(1)),
-    vapply(cfg, function(d) d$code, character(1))
-  )
-}
-
-# Per-sex map from canonical division code -> Icelandic display label.
-# Returns a named character vector: c(BD = "Besta deild", LD1 = "Lengjudeild", ...)
-# Used by publish_football_iceland() to populate `meta.json::league`.
-.football_iceland_division_labels <- function(sex) {
-  stopifnot(sex %in% c("male", "female"))
-  cfg <- load_leagues()[["football_iceland"]][["publish_divisions"]][[sex]]
-  if (is.null(cfg) || length(cfg) == 0L) {
-    stop(
-      ".football_iceland_division_labels: no publish_divisions[\"",
-      sex,
-      "\"] entry in config/leagues.yml.",
-      call. = FALSE
-    )
-  }
-  setNames(
-    vapply(cfg, function(d) d$label_is, character(1)),
-    vapply(cfg, function(d) d$code, character(1))
-  )
-}
-
-# Per-sex map from canonical division code -> split-season format.
-# Returns a named list keyed by code; each element is either NULL (flat
-# league — no split) or list(upper = <int>, lower = <int>) from the entry's
-# optional `split` object in config/leagues.yml::publish_divisions. See the
-# split-season section of `simulate_league_season()` for the semantics.
-.football_iceland_division_split <- function(sex) {
-  stopifnot(sex %in% c("male", "female"))
-  cfg <- load_leagues()[["football_iceland"]][["publish_divisions"]][[sex]]
-  if (is.null(cfg) || length(cfg) == 0L) {
-    stop(
-      ".football_iceland_division_split: no publish_divisions[\"",
-      sex,
-      "\"] entry in config/leagues.yml.",
-      call. = FALSE
-    )
-  }
-  setNames(
-    lapply(cfg, function(d) {
-      if (is.null(d$split)) {
-        return(NULL)
-      }
-      list(
-        upper = as.integer(d$split$upper),
-        lower = as.integer(d$split$lower)
-      )
-    }),
-    vapply(cfg, function(d) d$code, character(1))
-  )
 }
 
 # Divisions comprising a publish cell's season. A flat cell maps to its own
@@ -131,22 +34,6 @@ NULL
     return(target_div)
   }
   c(target_div, paste0(target_div, c("_UPPER_PO", "_LOWER_PO")))
-}
-
-# Static map: canonical division code -> short ASCII badge code for
-# `next_games.json::division_code` (client-side filter key on metill-platform).
-# Values MUST match the schema regex ^[A-Z][A-Z0-9_]*$ at
-# `config/publish-schemas/football/next_games.schema.json` -- regression-tested
-# in tests/testthat/test-publish-divisions-config.R. The platform's
-# DIVISIONS dict at app/routes/ithrottir.py mirrors these codes; coordinate
-# any change there.
-.football_iceland_division_code_labels <- function() {
-  c(
-    BD = "BD", LD1 = "LD", LD2 = "D2", LD3 = "D3",
-    LD4 = "D4", CUP = "MB",
-    BD_UPPER_PO = "BDU", BD_LOWER_PO = "BDL",
-    LD1_PO = "LDP"
-  )
 }
 
 # Per-division extraction. Returns a named list of 6 tibbles (one per parquet
@@ -246,7 +133,7 @@ NULL
   # team's global round number; the helper maps that to division-specific
   # matchweeks. For LD this gives an LD-only round trajectory.
 
-  trajectory_long <- .compute_team_strength_trajectory_pfi(
+  trajectory_long <- .compute_team_strength_trajectory(
     fit = fit,
     results = results,
     teams = teams,
@@ -1507,12 +1394,12 @@ extract_football_iceland <- function(fit, league, sex,
   stopifnot(sex %in% c("male", "female"))
   stopifnot(inherits(fit_date, "Date") || is.character(fit_date))
   if (is.null(target_divs)) {
-    target_divs <- .football_iceland_division_codes(sex)
+    target_divs <- .iceland_division_codes("football_iceland", sex)
   }
   stopifnot(
     is.character(target_divs),
     length(target_divs) >= 1L,
-    all(target_divs %in% .football_iceland_division_codes(sex))
+    all(target_divs %in% .iceland_division_codes("football_iceland", sex))
   )
 
   if (is.null(prep)) {
@@ -1635,27 +1522,7 @@ extract_football_iceland <- function(fit, league, sex,
     .extract_team_draws_pfi(fit, "cur_strength_away", teams, "total", "away")
   )
 
-  extract_home_adv <- function(var, component, transform = identity) {
-    fit$draws(var) |>
-      posterior::as_draws_df() |>
-      tibble::as_tibble() |>
-      tidyr::pivot_longer(c(-".chain", -".draw", -".iteration")) |>
-      dplyr::mutate(
-        team_idx  = as.integer(readr::parse_number(.data$name)),
-        team      = teams$team[.data$team_idx],
-        component = component,
-        value     = exp(transform(.data$value))
-      ) |>
-      dplyr::select("team", "component", ".draw", "value")
-  }
-
-  home_advantage_draws <- dplyr::bind_rows(
-    extract_home_adv("home_advantage_off", "offence"),
-    extract_home_adv("home_advantage_def", "defence"),
-    extract_home_adv("home_advantage_tot", "total",
-      transform = function(x) x / 2
-    )
-  )
+  home_advantage_draws <- .extract_home_advantage_draws_pfi(fit, teams)
 
   # Cup bracket simulator inputs: per-draw raw model parameters + bracket state.
   # `sim_inputs` is always extracted (cheap, ~5 MB on disk). `bracket_state`
@@ -1675,7 +1542,7 @@ extract_football_iceland <- function(fit, league, sex,
     NULL
   }
 
-  split_map <- .football_iceland_division_split(sex)
+  split_map <- .iceland_division_split("football_iceland", sex)
   per_div <- lapply(target_divs, function(target_div) {
     parts <- .extract_division_parquets_pfi(
       target_div           = target_div,
@@ -1707,6 +1574,14 @@ extract_football_iceland <- function(fit, league, sex,
     )
   }
 
+  # Partition-level, like sim_inputs -- NOT in the file_types loop above, which
+  # is division-bound. read_extracted_iceland() reaches it through the profile's
+  # optional slot, so an existing partition without it still reads.
+  arrow::write_parquet(
+    .fit_meta_tibble(fit, fit_date, league$stan_model, league$sport),
+    file.path(extracts_dir, "fit_meta.parquet")
+  )
+
   arrow::write_parquet(
     sim_inputs$team,
     file.path(extracts_dir, "sim_inputs_team.parquet")
@@ -1721,7 +1596,7 @@ extract_football_iceland <- function(fit, league, sex,
   # `bracket_state`, which is transient and never persisted — the publisher
   # only sees parquet outputs. Serialise the nested payload to a one-cell JSON
   # string column so it survives the parquet round-trip in
-  # read_extracted_football(); the publisher writes it verbatim to bracket.json.
+  # read_extracted_iceland(); the publisher writes it verbatim to bracket.json.
   cup_bracket <- if (!is.null(bracket_state)) {
     .build_cup_bracket_payload_pfi(
       bracket_state = bracket_state,
@@ -1755,219 +1630,4 @@ extract_football_iceland <- function(fit, league, sex,
     if (is.null(cup_bracket)) "absent (no live frontier)" else "built"
   ))
   invisible(NULL)
-}
-
-#' Load a per-fit football iceland extraction partition
-#'
-#' Reads the six Parquet files written by [`extract_football_iceland()`] from
-#' `data/beliefs/extracts/sport=football/country=iceland/sex=Z/fit_date=D/`,
-#' splits each by the in-payload `division` column, and returns a named list
-#' keyed by division code.
-#'
-#' Auto-discovery (default `fit_date = NULL`) walks the `fit_date=*`
-#' partitions in descending order and returns the first one that contains
-#' all six expected files. BD is always required (the platform always renders
-#' the BD page); an absent `"LD1"` slice degrades to empty tibbles for the
-#' LD1 cell.
-#'
-#' @param league League list with `sport == "football"` and
-#'   `country == "iceland"`.
-#' @param sex `"male"` or `"female"`.
-#' @param fit_date `Date` or `NULL`. When `NULL` (default), reads the latest
-#'   partition that contains the full six-file extracted set.
-#' @param extracts_root Beliefs extracts root.
-#'   Default `here::here("data", "beliefs", "extracts")`.
-#' @param target_divs Character vector of divisions to load. When `NULL`
-#'   (default), resolves to the per-sex publish set from
-#'   `config/leagues.yml::football_iceland.publish_divisions[[sex]]`. Returned
-#'   list always includes a slot per requested division (with empty-tibble
-#'   parquets when the `division` filter yields no rows).
-#' @return Named list. Each requested division key (e.g. `"BD"`, `"LD1"`)
-#'   maps to a list with the six tibbles
-#'   (`predicted_matches`, `team_strengths_quantiles`,
-#'   `round_strengths_quantiles`, `home_advantage_quantiles`,
-#'   `final_positions`, `points_distribution`) — `division` column dropped
-#'   after filtering. Plus `fit_date` (the `Date` of the partition that was
-#'   loaded).
-#' @export
-read_extracted_football <- function(league, sex, fit_date = NULL,
-                                    extracts_root = here::here(
-                                      "data", "beliefs", "extracts"
-                                    ),
-                                    target_divs = NULL) {
-  stopifnot(league$sport == "football", league$country == "iceland")
-  stopifnot(sex %in% c("male", "female"))
-  if (is.null(target_divs)) {
-    target_divs <- .football_iceland_division_codes(sex)
-  }
-  stopifnot(
-    is.character(target_divs),
-    length(target_divs) >= 1L,
-    all(target_divs %in% .football_iceland_division_codes(sex))
-  )
-
-  file_types <- c(
-    "predicted_matches",
-    "team_strengths_quantiles",
-    "round_strengths_quantiles",
-    "home_advantage_quantiles",
-    "final_positions",
-    "points_distribution"
-  )
-  expected <- paste0(file_types, ".parquet")
-
-  base <- file.path(
-    extracts_root,
-    paste0("sport=", league$sport),
-    paste0("country=", league$country),
-    paste0("sex=", sex)
-  )
-  if (!dir.exists(base)) {
-    stop("No extracts directory at ", base, call. = FALSE)
-  }
-
-  .partition_is_complete <- function(fit_dir) {
-    all(file.exists(file.path(fit_dir, expected)))
-  }
-
-  if (is.null(fit_date)) {
-    parts <- list.dirs(base, full.names = TRUE, recursive = FALSE)
-    fit_dirs <- parts[grepl("/fit_date=", parts)]
-    if (length(fit_dirs) == 0L) {
-      stop("No fit_date partitions under ", base, call. = FALSE)
-    }
-    fit_dates_chr <- sub(".*fit_date=", "", fit_dirs)
-    ord <- order(as.Date(fit_dates_chr), decreasing = TRUE)
-    fit_dir <- NULL
-    for (i in ord) {
-      d <- fit_dirs[i]
-      if (.partition_is_complete(d)) {
-        fit_dir <- d
-        break
-      }
-    }
-    if (is.null(fit_dir)) {
-      stop(
-        "No fit_date partition under ", base,
-        " contains a complete extracted set. ",
-        "Force-trigger fit.yml or run extract_football_iceland() locally.",
-        call. = FALSE
-      )
-    }
-    fit_date_out <- as.Date(sub(".*fit_date=", "", fit_dir))
-  } else {
-    fit_date_out <- as.Date(fit_date)
-    fit_dir <- file.path(
-      base, paste0("fit_date=", format(fit_date_out, "%Y-%m-%d"))
-    )
-    if (!dir.exists(fit_dir)) {
-      stop("Extracts partition not found: ", fit_dir, call. = FALSE)
-    }
-    if (!.partition_is_complete(fit_dir)) {
-      stop(
-        "Extracts partition ", fit_dir,
-        " is incomplete (one or more of: ",
-        paste(expected, collapse = ", "), "). ",
-        "Re-run extract_football_iceland() against this fit.",
-        call. = FALSE
-      )
-    }
-  }
-
-  empty_tibbles <- list(
-    predicted_matches = tibble::tibble(
-      home_team = character(), away_team = character(),
-      match_date = as.Date(character()),
-      home_goals = integer(), away_goals = integer(),
-      count = integer()
-    ),
-    team_strengths_quantiles = tibble::tibble(
-      team = character(), component = character(), location = character(),
-      quantile = integer(), value = numeric()
-    ),
-    round_strengths_quantiles = tibble::tibble(
-      round = integer(), team = character(),
-      component = character(), location = character(),
-      quantile = integer(), value = numeric()
-    ),
-    home_advantage_quantiles = tibble::tibble(
-      team = character(), component = character(),
-      quantile = integer(), value = numeric()
-    ),
-    final_positions = tibble::tibble(
-      team = character(), placement = integer(), probability = numeric()
-    ),
-    points_distribution = tibble::tibble(
-      team = character(), points = integer(), probability = numeric()
-    ),
-    tournament_placements = tibble::tibble(
-      team = character(), round_name = character(),
-      probability = numeric()
-    )
-  )
-
-  # `tournament_placements.parquet` is a soft-required 7th file: produced by
-  # extracts since the cup-bracket simulator landed. Older partitions
-  # (pre-simulator) don't have it; we degrade gracefully to an empty tibble.
-  per_division_file_types <- c(file_types, "tournament_placements")
-  parquets <- lapply(per_division_file_types, function(ft) {
-    p <- file.path(fit_dir, paste0(ft, ".parquet"))
-    if (file.exists(p)) {
-      arrow::read_parquet(p)
-    } else {
-      empty_tibbles[[ft]]
-    }
-  })
-  names(parquets) <- per_division_file_types
-
-  read_one_division <- function(target_div) {
-    out <- lapply(per_division_file_types, function(ft) {
-      df <- parquets[[ft]]
-      if (!"division" %in% names(df) || nrow(df) == 0L) {
-        return(empty_tibbles[[ft]])
-      }
-      df <- df[df$division == target_div, , drop = FALSE]
-      df$division <- NULL
-      tibble::as_tibble(df)
-    })
-    names(out) <- per_division_file_types
-    out
-  }
-
-  out <- lapply(target_divs, read_one_division)
-  names(out) <- target_divs
-
-  # Optional shared sim_inputs (per-draw model parameters; not per-division).
-  # Absent for pre-simulator partitions; the publisher only reads these when
-  # it needs to re-run the simulator with non-default tiebreak / pairing opts.
-  sim_inputs_team_path <- file.path(fit_dir, "sim_inputs_team.parquet")
-  sim_inputs_scalar_path <- file.path(fit_dir, "sim_inputs_scalar.parquet")
-  out$sim_inputs <- if (file.exists(sim_inputs_team_path) &&
-    file.exists(sim_inputs_scalar_path)) {
-    list(
-      team   = tibble::as_tibble(arrow::read_parquet(sim_inputs_team_path)),
-      scalar = tibble::as_tibble(arrow::read_parquet(sim_inputs_scalar_path))
-    )
-  } else {
-    NULL
-  }
-
-  # Optional pre-built cup `bracket.json` payload (a single JSON-string cell;
-  # written by extract_football_iceland() only when a live cup frontier
-  # exists). Parsed back to the nested list the publisher serialises verbatim.
-  # Absent for non-cup fits and for cup fits with no live frontier.
-  cup_bracket_path <- file.path(fit_dir, "cup_bracket.parquet")
-  out$cup_bracket <- if (file.exists(cup_bracket_path)) {
-    pj <- arrow::read_parquet(cup_bracket_path)$payload_json
-    if (length(pj) >= 1L && !is.na(pj[[1]])) {
-      jsonlite::fromJSON(pj[[1]], simplifyVector = FALSE)
-    } else {
-      NULL
-    }
-  } else {
-    NULL
-  }
-
-  out$fit_date <- fit_date_out
-  out
 }

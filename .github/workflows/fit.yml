@@ -27,7 +27,13 @@ jobs:
   fit:
     if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 240
+    # 360 is GitHub's ceiling for a hosted job. Football alone took 196 min on
+    # 2026-08-28 (male 126, female 70), and a slow runner cancelled a
+    # football-only run at 241 min on 2026-08-19; the six-target day adds four
+    # 2DT fits on top of that. run_fit_targets() fits the betting league first
+    # so a timeout cuts a publish-only target, and the commit step below still
+    # commits whatever did fit. test-pipeline-run-isolation.R pins this value.
+    timeout-minutes: 360
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
@@ -74,6 +80,11 @@ jobs:
         run: Rscript scripts/03_fit.R $FORCE_FLAG $LEAGUE_FLAG
 
       - name: Commit if beliefs changed
+        # A partially failed fit run exits non-zero (one 2DT diagnostics-gate
+        # abort must not hide the targets that DID fit), but the posteriors it
+        # wrote are real and are the publish input. Without always(), a red run
+        # throws away football's fit along with basketball's failure.
+        if: always()
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"

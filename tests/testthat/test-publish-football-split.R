@@ -64,7 +64,7 @@
                                    )) {
   league <- load_leagues()[["football_iceland"]]
   suppressWarnings(suppressMessages(
-    publish_football_iceland(
+    publish_iceland_league(
       extracted = .split_test_extracted(end_date),
       league = league, sex = "male", end_date = end_date,
       root = root, output_root = out,

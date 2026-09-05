@@ -1,0 +1,61 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/metill-is/sports/config/publish-schemas/home_advantage.schema.json",
+  "title": "data/publish/.../home_advantage.json",
+  "description": "Home advantage for a 2DT sport is RAW POINTS -- the model is additive, there is no link to undo. Applying football's exp() to an additive 4-point parameter published a home edge of 54.6 and every schema in the tree accepted it (B5). This bound rejects that shape. It is a gross-error guard, not a complete B5 detector: a real Icelandic basketball home edge is a few points, and +/-30 is deliberately generous. The exact check is tests/testthat/test-extract-2dt-home-advantage-units.R.",
+  "type": "object",
+  "required": [
+    "generated_at",
+    "records"
+  ],
+  "properties": {
+    "generated_at": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T"
+    },
+    "records": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "team",
+          "component",
+          "median",
+          "coverage",
+          "lower",
+          "upper"
+        ],
+        "properties": {
+          "team": {
+            "type": "string",
+            "minLength": 1
+          },
+          "component": {
+            "type": "string",
+            "minLength": 1
+          },
+          "median": {
+            "type": "number",
+            "minimum": -30,
+            "maximum": 30
+          },
+          "coverage": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "lower": {
+            "type": "number",
+            "minimum": -30,
+            "maximum": 30
+          },
+          "upper": {
+            "type": "number",
+            "minimum": -30,
+            "maximum": 30
+          }
+        }
+      }
+    }
+  }
+}

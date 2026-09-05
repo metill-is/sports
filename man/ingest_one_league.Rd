@@ -4,7 +4,15 @@
 \alias{ingest_one_league}
 \title{Run federation ingest for a single league across all configured sexes.}
 \usage{
-ingest_one_league(static, key, active_path)
+ingest_one_league(
+  static,
+  key,
+  active_path,
+  root = here::here("data"),
+  force = FALSE,
+  offseason_min_interval_hours = 24,
+  now = Sys.time()
+)
 }
 \arguments{
 \item{static}{Per-league static slice (sport, country, sexes, active,

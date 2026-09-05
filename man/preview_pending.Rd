@@ -8,7 +8,8 @@ preview_pending(
   leagues = NULL,
   today_only = FALSE,
   target_date = NULL,
-  root = here::here("data")
+  root = here::here("data"),
+  leagues_cfg = NULL
 )
 }
 \arguments{

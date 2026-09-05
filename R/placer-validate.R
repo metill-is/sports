@@ -152,3 +152,51 @@ validate_recommendations_schema <- function(recs) {
 
   invisible(TRUE)
 }
+
+#' Abort if any recommendation belongs to a betting-disabled league.
+#'
+#' Placer pre-flight, mirroring [validate_team_names_config()]: runs before
+#' the browser is launched so a policy breach fails fast and loudly rather
+#' than part-way through a placement run. Decision D2 (spec 2026-09-02
+#' section 3).
+#'
+#' `load_recommendations()` already drops these rows, so reaching this error
+#' means a caller bypassed the loader -- which is exactly when a loud abort
+#' is wanted rather than a silent filter.
+#'
+#' @param leagues Named league config from [load_leagues()].
+#' @param recs Recommendation rows about to be placed.
+#' @return `invisible(TRUE)`, or stops naming every offending league.
+#' @export
+validate_betting_enabled <- function(leagues, recs) {
+  if (!is.list(leagues)) {
+    stop(
+      "validate_betting_enabled: `leagues` must be a named list ",
+      "from load_leagues()",
+      call. = FALSE
+    )
+  }
+  if (nrow(recs) == 0L) {
+    return(invisible(TRUE))
+  }
+  missing_input <- setdiff(c("sport", "country"), names(recs))
+  if (length(missing_input) > 0L) {
+    stop(
+      "validate_betting_enabled: `recs` missing column(s): ",
+      paste(missing_input, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  disabled <- names(leagues)[!vapply(leagues, betting_enabled, logical(1))]
+  offending <- intersect(unique(paste0(recs$sport, "_", recs$country)), disabled)
+  if (length(offending) > 0L) {
+    stop(
+      "validate_betting_enabled: refusing to place bets on ",
+      "betting-disabled league(s): ", paste(offending, collapse = ", "),
+      ". Set betting.enabled: true in config/leagues.yml to re-arm.",
+      call. = FALSE
+    )
+  }
+  invisible(TRUE)
+}

@@ -21,7 +21,7 @@ NULL
 #' @param generated_at ISO timestamp string stamped on every row.
 #' @param split_configs Optional named list keyed by division code mapping to
 #'   `list(upper, lower)` split formats (from
-#'   `.football_iceland_division_split(sex)`). Divisions without an entry are
+#'   `.iceland_division_split("football_iceland", sex)`). Divisions without an entry are
 #'   simulated flat. See the split-season section of
 #'   [simulate_league_season()].
 #' @return tibble(as_of, generated_at, round, season, division, team,

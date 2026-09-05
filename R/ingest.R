@@ -115,6 +115,61 @@ ingest_league <- function(league, sex,
   !isFALSE(active$active[[key]])
 }
 
+#' Abort when a fetched page's dates disagree with the season requested.
+#'
+#' A federation tournament id is a literal that is correct when written and
+#' silently wrong later; nothing downstream notices, because a season-stamped
+#' hive partition accepts any rows it is handed. This guard is what makes that
+#' staleness loud. Icelandic winter seasons labelled `season` span calendar
+#' years `season - 1` (autumn) and `season` (spring), so more than `tol` of the
+#' parsed `match_date` years falling outside that pair means the page fetched is
+#' not the season asked for -- a stale slug, a mis-mapped id, or a federation
+#' URL-scheme change.
+#'
+#' Signals class `sports_season_stamp_error` so callers that otherwise degrade
+#' fetch failures to warnings can re-raise it rather than swallow it.
+#'
+#' @param rows Tibble with a `match_date` Date column, or NULL. Zero rows and
+#'   all-NA dates pass -- emptiness is a separate concern with its own checks.
+#' @param season Integer season requested.
+#' @param source Label naming the fetch, used in the abort message.
+#' @param tol Maximum tolerated fraction of out-of-span calendar years.
+#' @return `rows`, invisibly.
+#' @keywords internal
+#' @noRd
+.assert_season_stamp <- function(rows, season, source = "unknown", tol = 0.05) {
+  if (is.null(rows) || nrow(rows) == 0L) {
+    return(invisible(rows))
+  }
+  years <- as.integer(format(rows$match_date, "%Y"))
+  years <- years[!is.na(years)]
+  if (length(years) == 0L) {
+    return(invisible(rows))
+  }
+
+  season <- as.integer(season)
+  allowed <- c(season - 1L, season)
+  bad_frac <- mean(!(years %in% allowed))
+
+  if (bad_frac > tol) {
+    observed <- paste(sort(unique(years)), collapse = ", ")
+    cli::cli_abort(
+      c(
+        "Season stamp mismatch for {source}: asked for season {season}.",
+        "x" = paste0(
+          "{round(100 * bad_frac, 1)}% of {length(years)} parsed dates fall ",
+          "outside {allowed[1]}/{allowed[2]}."
+        ),
+        "i" = "Observed calendar years: {observed}.",
+        "i" = "The tournament id registered for this (sex, division, season) is stale or wrong."
+      ),
+      class = "sports_season_stamp_error"
+    )
+  }
+
+  invisible(rows)
+}
+
 #' Run federation ingest for a single league across all configured sexes.
 #'
 #' Called by `scripts/01_ingest_results.R` for each active league. Reads
@@ -133,15 +188,66 @@ ingest_league <- function(league, sex,
 #'   `upsert_table()` deduplicates on disk. Use only as a "did anything
 #'   happen" indicator.
 #' @export
-ingest_one_league <- function(static, key, active_path) {
-  if (!.is_league_active(active_path, key)) {
-    cli::cli_alert_info("{key}: skipped (no active fixtures)")
-    return(0L)
-  }
+ingest_one_league <- function(static, key, active_path,
+                              root = here::here("data"),
+                              force = FALSE,
+                              offseason_min_interval_hours = 24,
+                              now = Sys.time()) {
+  # `active_path` is retained for call-site compatibility but deliberately no
+  # longer consulted. It gated on config/active_competitions.json, which is
+  # derived solely from data/facts/schedules rows -- rows only this function
+  # can write. A league whose fixtures had all been played could therefore
+  # never write the rows that would mark it active again (spec section 7).
+  # `.is_league_active()` survives for ingest_one_lengjan(), where the gate is
+  # correct: odds genuinely do not exist outside a fixture window, and that
+  # loop is not closed.
+  log <- read_ingest_log(root)
   total <- 0L
+
   for (sex in static$sexes) {
-    total <- total + ingest_league(static, sex, seasons = NULL)
+    id <- paste0(key, "/", sex)
+    if (!isTRUE(force) && .ingest_backoff(
+      log[[id]], now,
+      min_interval_hours = offseason_min_interval_hours
+    )) {
+      cli::cli_alert_info(
+        "{key}/{sex}: dormant, last tried
+         {log[[id]]$last_attempt_at} -- treating as off-season."
+      )
+      next
+    }
+
+    # An ERRORED fetch propagates: a broken scraper must red-X CI, and must
+    # never be recorded, or it would accrue a zero streak and earn itself a
+    # backoff that hides it.
+    n <- ingest_league(static, sex, root = root, seasons = NULL)
+    n <- if (is.null(n) || is.na(n)) 0L else as.integer(n)
+
+    prev_streak <- if (is.null(log[[id]]$zero_streak)) {
+      0L
+    } else {
+      as.integer(log[[id]]$zero_streak)
+    }
+    if (n == 0L && prev_streak == 0L) {
+      # The one genuinely ambiguous case -- season end, or a scraper that has
+      # started returning nothing without erroring -- so it is made loud
+      # rather than silently absorbed.
+      cli::cli_warn(c(
+        "{key}/{sex}: fetch returned 0 rows for the first time.",
+        "i" = "Last non-empty fetch: {log[[id]]$last_nonzero_at %||% 'never'}.",
+        "i" = "Season end, or a silently-empty scraper. Both look like this."
+      ))
+    } else if (n == 0L) {
+      cli::cli_alert_info(
+        "{key}/{sex}: 0 rows ({prev_streak + 1L} in a row) -- off-season."
+      )
+    }
+
+    record_ingest_attempt(key, sex, n, now = now, root = root)
+    log <- read_ingest_log(root)
+    total <- total + n
   }
+
   total
 }
 
@@ -154,9 +260,23 @@ ingest_one_league <- function(static, key, active_path) {
 #' @param lengjan Per-league `lengjan` slice (competitions + team_names).
 #' @param key League key.
 #' @param active_path Path to `config/active_competitions.json`.
+#' @param betting Per-league `betting` slice, or `NULL`. When
+#'   `betting$enabled` is `FALSE` the scrape is refused outright (decision D2
+#'   -- publish without betting). Trailing and defaulted so existing four-arg
+#'   calls keep working.
 #' @return Number of odds rows written (integer).
 #' @export
-ingest_one_lengjan <- function(static, lengjan, key, active_path) {
+ingest_one_lengjan <- function(static, lengjan, key, active_path,
+                               betting = NULL) {
+  # D2 interlock. Checked before the activation gate: a league we will never
+  # bet should not launch a browser even when it does have fixtures today.
+  # Emptying `lengjan.competitions` already leaves nothing to fetch; this is
+  # the second lock, so restoring the ids without re-enabling betting cannot
+  # silently re-arm the scrape.
+  if (!betting_enabled(list(betting = betting))) {
+    cli::cli_alert_info("{key}: skipped (betting disabled)")
+    return(0L)
+  }
   if (!.is_league_active(active_path, key)) {
     cli::cli_alert_info("{key}: skipped (no active fixtures)")
     return(0L)

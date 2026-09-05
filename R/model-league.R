@@ -296,8 +296,23 @@ fit_league <- function(league_key = NULL,
           prep = prep
         ),
         error = function(e) {
-          cli::cli_alert_warning(
-            "extract_{league$sport}_iceland failed: {conditionMessage(e)}"
+          # Abort, do not warn. The extracts tree is becoming the SOLE input
+          # to publish, so a swallowed failure here means the cell silently
+          # stops publishing -- the exact invisible breakage this workstream
+          # exists to remove, and how B5 (an exp() on an additive parameter)
+          # sat unexercised for months.
+          #
+          # Safe to abort: beliefs_latest / beliefs_archive are already
+          # written above (:248-264), so the fit's output survives and only
+          # the run goes red.
+          cli::cli_abort(
+            c(
+              "extract_{league$sport}_iceland({sex}) failed.",
+              "x" = conditionMessage(e),
+              "i" = "Beliefs were written; the extract partition was not, so
+                     this cell would publish nothing."
+            ),
+            call = NULL
           )
         }
       )
@@ -320,4 +335,127 @@ fit_league <- function(league_key = NULL,
 fit_one <- function(static, sex) {
   beliefs <- fit_league(league = static, sex = sex)
   nrow(beliefs)
+}
+
+#' Order fit targets so a timeout cuts a publish-only league, never the betting one.
+#'
+#' `fit.yml` runs every (league, sex) target inside ONE job with a fixed
+#' `timeout-minutes` budget. Football alone took 196 min on 2026-08-28 (male
+#' 126, female 70) against the then-240-min cap, and the two May 2026 runs that
+#' fitted all three sports hit 236 and 240 min (one failed, one cancelled by
+#' the timeout). In `config/leagues.yml` order -- basketball, handball,
+#' football -- the target a timeout cuts is the LAST one, and that was
+#' football: the only league whose posterior the decide layer turns into
+#' recommendations that the autoplace agent stakes real money on. A stale
+#' publish-only fit is a stale page; a stale betting fit is money.
+#'
+#' [betting_enabled()] is the data-driven expression of that difference, so no
+#' sport name is hardcoded here and a league that is armed later moves up on
+#' its own. The sort is stable: within a tier, config order (and each league's
+#' declared sex order) is preserved, so a league's rows are never interleaved.
+#'
+#' @param targets Tibble of `key`/`sex` rows from `resolve_targets()`.
+#' @param leagues Leagues list; each `leagues[[key]]` may carry a `betting`
+#'   slice. A missing league or slice counts as betting-enabled (the
+#'   [betting_enabled()] default), which keeps the conservative tier on top.
+#' @return `targets` reordered; identical to the input when every league is in
+#'   the same tier.
+#' @export
+order_fit_targets <- function(targets, leagues) {
+  if (nrow(targets) == 0L) {
+    return(targets)
+  }
+  armed <- vapply(
+    targets$key,
+    function(k) betting_enabled(leagues[[k]]),
+    logical(1),
+    USE.NAMES = FALSE
+  )
+  # order() leaves ties in their original order; !armed puts TRUE first.
+  targets[order(!armed), , drop = FALSE]
+}
+
+#' Fit every target, isolating a per-target abort.
+#'
+#' The fit loop's skip and failure policy, lifted out of `scripts/03_fit.R` so
+#' it is testable without spawning `Rscript` or compiling Stan.
+#'
+#' WHY THIS EXISTS. `fit_model()` ABORTS on a diagnostics-gate breach, and
+#' `fit_skip_reason()`'s own docstring records real off-season basketball
+#' R-hat/ESS breaches. A bare loop meant a single marginal 2DT fit taking the
+#' gate down killed every target after it in the same run -- and the first live
+#' 2DT fits in five months are the highest abort-risk event of the season.
+#' Isolating per target means the run still goes red, but every posterior that
+#' did fit is written and committed.
+#'
+#' Two defences, deliberately separate. [order_fit_targets()] decides WHICH
+#' target a `fit.yml` timeout cuts (a publish-only one, never the betting
+#' league); isolation decides that an abort in one target cannot reach the
+#' next or hide behind exit 0. Neither substitutes for the other.
+#'
+#' Failures are collected, not swallowed: the returned `failed` frame is what
+#' the script turns into `quit(status = 1L)`, on ANY failure rather than only on
+#' all of them (INT-2).
+#'
+#' @param targets Tibble of `key`/`sex` rows from `resolve_targets()`.
+#' @param leagues Leagues list.
+#' @param force,league_named The `--force` flag and whether `--league` named one.
+#' @param root Storage root, forwarded to `skip_fn`.
+#' @param fit_fn Injectable fitter; defaults to [fit_one()].
+#' @param skip_fn Injectable skip rule; defaults to [fit_skip_reason()].
+#' @return `list(fitted, skipped, failed = tibble(key, sex, message))`.
+#' @export
+run_fit_targets <- function(targets, leagues, force, league_named,
+                            root = here::here("data"),
+                            fit_fn = fit_one,
+                            skip_fn = fit_skip_reason) {
+  fitted <- 0L
+  skipped <- 0L
+  failed <- list()
+
+  # A timeout cuts the LAST target; make sure that is never the betting league.
+  targets <- order_fit_targets(targets, leagues)
+
+  for (i in seq_len(nrow(targets))) {
+    row <- targets[i, ]
+    league_def <- leagues[[row$key]]
+    static <- league_def[c(
+      "sport", "country", "sexes", "active", "stan_model", "data_source"
+    )]
+
+    skip <- skip_fn(static, row$sex, force, league_named, root = root)
+    if (!is.null(skip)) {
+      cli::cli_alert_info("Skipping {row$key} ({row$sex}): {skip}.")
+      skipped <- skipped + 1L
+      next
+    }
+
+    cli::cli_h2("{row$key} ({row$sex})")
+    ok <- tryCatch(
+      {
+        fit_fn(static, row$sex)
+        TRUE
+      },
+      error = function(e) {
+        cli::cli_alert_danger(
+          "fit failed for {row$key} ({row$sex}): {conditionMessage(e)}"
+        )
+        failed[[length(failed) + 1L]] <<- tibble::tibble(
+          key = row$key, sex = row$sex, message = conditionMessage(e)
+        )
+        FALSE
+      }
+    )
+    if (isTRUE(ok)) fitted <- fitted + 1L
+  }
+
+  list(
+    fitted = fitted,
+    skipped = skipped,
+    failed = if (length(failed) == 0L) {
+      tibble::tibble(key = character(), sex = character(), message = character())
+    } else {
+      dplyr::bind_rows(failed)
+    }
+  )
 }

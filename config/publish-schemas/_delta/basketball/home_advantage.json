@@ -1,0 +1,26 @@
+{
+  "description": "Home advantage for a 2DT sport is RAW POINTS -- the model is additive, there is no link to undo. Applying football's exp() to an additive 4-point parameter published a home edge of 54.6 and every schema in the tree accepted it (B5). This bound rejects that shape. It is a gross-error guard, not a complete B5 detector: a real Icelandic basketball home edge is a few points, and +/-30 is deliberately generous. The exact check is tests/testthat/test-extract-2dt-home-advantage-units.R.",
+  "properties": {
+    "records": {
+      "items": {
+        "properties": {
+          "median": {
+            "type": "number",
+            "minimum": -30,
+            "maximum": 30
+          },
+          "lower": {
+            "type": "number",
+            "minimum": -30,
+            "maximum": 30
+          },
+          "upper": {
+            "type": "number",
+            "minimum": -30,
+            "maximum": 30
+          }
+        }
+      }
+    }
+  }
+}

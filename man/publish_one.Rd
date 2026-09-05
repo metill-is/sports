@@ -10,7 +10,9 @@ publish_one(
   key,
   sex,
   root = here::here("data"),
-  validate = TRUE
+  validate = TRUE,
+  end_date = Sys.Date(),
+  schema_dir = here::here("config", "publish-schemas")
 )
 }
 \arguments{
@@ -18,7 +20,7 @@ publish_one(
 
 \item{betting}{Per-league `betting` slice.}
 
-\item{key}{League key (used only to dispatch to the per-sport publisher).}
+\item{key}{League key (used in messages and for schema validation).}
 
 \item{sex}{`"male"` or `"female"`.}
 
@@ -26,28 +28,42 @@ publish_one(
 
 \item{validate}{Logical. When `TRUE` (default) the published JSONs are
 validated against `config/publish-schemas/<sport>/`. Failures abort.}
+
+\item{end_date}{Publish cutoff `Date`, forwarded to the per-sport publisher.
+Defaults to `Sys.Date()`, which is what production wants; a test or a
+replay passes a fixed date so a far-future fixture is not filtered out.}
+
+\item{schema_dir}{Directory holding `<sport>/*.schema.json`. Overridable so a
+test can validate against a staging tree (e.g.
+`config/publish-schemas/_draft/`, where a sport's schemas are reviewed
+before they are armed) without arming the real one for the live pipeline.}
 }
 \value{
 invisible(NULL).
 }
 \description{
-Football iceland reads the per-fit extraction tree
-(`data/beliefs/extracts/sport=football/country=iceland/sex=Z/fit_date=*/`,
-the per-cell Parquets emitted by `extract_football_iceland()`) and
-dispatches to `publish_football_iceland(extracted, ...)`. Basketball and
-handball still read the fit RDS directly from
-`data/beliefs/fits/sport=X/country=Y/sex=Z/fit.rds` -- their migration
-to the extraction layer is deferred to the autumn 2026 cutover.
+Every sport reads the per-fit extraction tree
+(`data/beliefs/extracts/sport=X/country=Y/sex=Z/fit_date=*/`, the per-cell
+Parquets emitted by the sport's extractor) and publishes through
+[`publish_iceland_league()`]. There is no fit-RDS path: the RDS is
+gitignored and CI never produces one, so a publisher reading it skipped
+silently on CI forever -- basketball and handball had never published.
 }
 \details{
-Takes the static + betting slices separately because basketball/handball
-publishers branch on `betting.scoring` (tie thresholds); a `lengjan`
-change shouldn't trigger a republish.
+Takes the static + betting slices separately because the publish profile
+mirrors `betting.scoring` (tie thresholds); a `lengjan` change shouldn't
+trigger a republish.
 
 After a successful publish, the resulting JSONs are validated against
-`config/publish-schemas/<sport>/*.schema.json` via `validate_publish_dir()`.
-Failures abort with the list of (file, error) entries -- the cron pipeline
-surfaces the message in its run log so drift between producer and
-platform-side consumer is caught locally. Set `validate = FALSE` for
-synthetic-data tests where the schema would reject the fixture by design.
+`config/publish-schemas/<sport>/*.schema.json` via `validate_publish_dir()`
+-- that sport's subtree only, with the sport named explicitly, so arming one
+sport can never abort another's publish. Failures abort with the list of
+(file, error) entries.
+
+The missing-schema default is FAIL-CLOSED: publishing a sport with no
+`config/publish-schemas/<sport>/` directory aborts rather than skipping with
+a note. A sport that can publish entirely unchecked while the pipeline stays
+green is the shape B4 hid in for months. Set `validate = FALSE` -- the
+documented escape hatch -- for a synthetic-data test whose payload the schema
+would reject by design; never loosen the default.
 }
