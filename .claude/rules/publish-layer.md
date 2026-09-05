@@ -131,7 +131,7 @@ Five optional keys on a `publish_divisions` entry, all absent-safe:
 | `expected_meetings` | Times each pair meets in the **regular** season. An assertion and a fallback, **never the source** — `n_rounds` is derived from schedule + results (spec §12). Omit where the format is genuinely irregular (basketball female 1D). |
 | `regular_season_rounds` | The last regular round, **stated outright**. Unlike `expected_meetings` this IS a source: it sets both `n_rounds` and the `cut`, ahead of the meetings derivation and ahead of the schedule. One cell carries it — basketball female 1D, see below. |
 | `qualify` | `{slots, label_is}`. Absent = `meta.qualify: null` and **no** `p_qualify`. It is the generic replacement for football's `p_top_six`, which does not transfer: Bónusdeild karla is 12 teams with 8 qualifying, and Bónusdeild kvenna carries all 10 through. |
-| `relegation_slots` | Teams relegated from this division. Replaces the hardcoded bottom-two rule (`placement >= n_teams - 1L`), which is wrong for a bottom-tier division where nothing is relegated. |
+| `relegation_slots` | Teams relegated from this division. Replaces the hardcoded bottom-two rule (`placement >= n_teams - 1L`), which is wrong for a bottom-tier division where nothing is relegated. Absent = `meta.relegation: null` and **no** `p_relegation` — the same absent-means-omitted rule `qualify` follows. Football's nine cells are the one exception, see below. |
 
 Only football BD (both sexes) configures `qualify` today — `{slots: 6,
 label_is: "Efri hluti"}`, which is `split$upper`, so `p_qualify`
@@ -404,9 +404,20 @@ the consumer.
 - `p_top_six` — football only, the literal `placement <= 6L`, a DEPRECATED
   alias kept because metill-platform reads it. It is not derived from
   `qualify`, so the five football cells with no configured cut keep it.
-- `p_relegation` — `relegation_slots` unset keeps football's published
-  `placement >= n_teams - 1` expression verbatim; `0` publishes zeros,
-  present-and-zero rather than a missing key.
+- `p_relegation` — emitted **only** where the division configures
+  `relegation_slots`, exactly as `p_qualify` is emitted only where `qualify` is
+  (ID-B15). `0` publishes zeros, present-and-zero rather than a missing key.
+  All eight bb/hb cells leave it unset — no KKÍ or HSÍ regulation was
+  resolved — so **none of them emits `p_relegation`**; for a bottom-tier
+  division (basketball 1. deild, handball Grill 66) nothing is relegated at
+  all, so football's hardcoded rule published a "Fallhætta" headline that was
+  false, not merely uncertain. Football's nine cells keep that expression
+  verbatim under `emit_legacy_relegation`, a DEPRECATED alias on the same
+  footing as `emit_top_six_alias`, because they are live and metill-platform
+  reads the key; retire it by configuring `relegation_slots` on them, which
+  reproduces the same numbers from a stated fact. Consequently `p_relegation`
+  is `required` in football's `final_positions` / `points_distribution`
+  schemas and merely optional in basketball's and handball's.
 
 `points_distribution.json`'s summary carries the placement columns it has
 always carried (football `p_top_six`/`p_winner`/`p_relegation`, bb/hb

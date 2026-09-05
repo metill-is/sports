@@ -378,6 +378,16 @@
 # and shipping one would be the "top-six number wearing a playoff label"
 # failure D3 exists to prevent (Plan B ID-B15). So bb/hb configure no
 # `qualify` and publish no p_qualify.
+#
+# p_relegation follows the SAME rule, for the same reason. `relegation_slots`
+# is unconfigured on all eight bb/hb cells -- no KKI or HSI regulation was
+# resolved for them -- so an unconfigured cell emits no p_relegation at all.
+# Falling back to football's hardcoded `placement >= n_teams - 1` is not a
+# conservative default: for a bottom-tier division (basketball 1. deild,
+# handball Grill 66) NOTHING is relegated, so that column is a "Fallhaetta"
+# headline that is simply false, not merely uncertain. Football's nine live
+# cells keep the expression under `emit_legacy_relegation`, a deprecated alias
+# on the same footing as `emit_top_six_alias`, so their payloads do not move.
 
 #' Headline per-team probabilities for `final_positions.json`
 #'
@@ -389,23 +399,31 @@
 #'   Islandsmeistari comes out of an unmodelled urslitakeppni (design 15).
 #' @param qualify `NULL`, or `list(slots, label_is)` from
 #'   `.iceland_division_qualify()`. `NULL` publishes no `p_qualify`.
-#' @param relegation_slots Teams relegated, or `NA_integer_`. `NA` keeps
-#'   football's published expression (`placement >= n_teams - 1`) verbatim;
-#'   `0` publishes zeros, present-and-zero rather than a missing key, so no
-#'   consumer needs a null branch for a bottom-tier division.
+#' @param relegation_slots Teams relegated, or `NA_integer_`. A configured
+#'   value is what makes `p_relegation` publishable at all; `0` publishes
+#'   zeros, present-and-zero rather than a missing key, so no consumer needs a
+#'   null branch for a division that relegates nobody. `NA` emits NO
+#'   `p_relegation` unless `emit_legacy_relegation` asks for football's.
 #' @param emit_top_six_alias Football only. `p_top_six` is a DEPRECATED ALIAS
 #'   kept because metill-platform reads it today; it is the literal
 #'   `placement <= 6L` rule, NOT a function of `qualify`, so the five football
 #'   cells with no configured cut keep publishing it. Removed in the follow-up
 #'   commit whose only job is that removal, once the platform reads p_qualify.
+#' @param emit_legacy_relegation Football only, and DEPRECATED for the same
+#'   reason `emit_top_six_alias` is: the nine live football cells publish
+#'   `p_relegation` from the hardcoded `placement >= n_teams - 1` rule and the
+#'   platform reads it. Retire it by configuring `relegation_slots` on those
+#'   cells, which reproduces the same numbers from a stated fact rather than
+#'   from an assumption.
 #' @return Tibble: `team`, `p_qualify` (when configured), `p_top_of_table`,
 #'   `p_winner` (final tables only), `p_top_six` (football only),
-#'   `p_relegation`.
+#'   `p_relegation` (configured cells, plus football's legacy alias).
 #' @noRd
 .build_placement_summary <- function(final_positions, n_teams, basis,
                                      qualify = NULL,
                                      relegation_slots = NA_integer_,
-                                     emit_top_six_alias = FALSE) {
+                                     emit_top_six_alias = FALSE,
+                                     emit_legacy_relegation = FALSE) {
   stopifnot(basis %in% c("final_table", "regular_season_table"))
   qualify_slots <- if (is.null(qualify)) NA_integer_ else as.integer(qualify$slots)
   releg <- if (is.null(relegation_slots)) NA_integer_ else as.integer(relegation_slots)
@@ -435,7 +453,7 @@
     "p_top_of_table",
     if (identical(basis, "final_table")) "p_winner",
     if (isTRUE(emit_top_six_alias)) "p_top_six",
-    "p_relegation"
+    if (!is.na(releg) || isTRUE(emit_legacy_relegation)) "p_relegation"
   )
   out[, keep, drop = FALSE]
 }

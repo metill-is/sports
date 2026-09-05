@@ -76,6 +76,12 @@ basketball_iceland:
   # (Plan B ID-B15). Absent = meta.qualify null and no p_qualify.
   # relegation_slots is likewise omitted: no KKI regulation was resolved for it
   # this session, and an unresolved number is omitted rather than guessed.
+  # Omitting it means meta.relegation is null AND no p_relegation is published
+  # for the cell (2026-09-05). Falling back to football's hardcoded bottom-two
+  # rule is not a conservative default -- 1. deild is the bottom tier, so
+  # nothing is relegated from it and a "Fallhaetta" column there is false
+  # rather than uncertain. Configure the number when KKI's regulation is
+  # resolved and the key turns itself on.
   publish_divisions:
     male:
       # BD: 12 teams, cut at round <= 22 -> 132 matches, all 66 pairs exactly 2x.
@@ -168,7 +174,9 @@ handball_iceland:
   # No `qualify` key: see the basketball block above (Plan B ID-B15). Measured
   # 2026 post-season entrants are 8 (male) and 6 (female), but they enter a
   # separate PO division rather than a top-N cut of this table.
-  # relegation_slots omitted -- no HSI regulation resolved this session.
+  # relegation_slots omitted -- no HSI regulation resolved this session, so
+  # meta.relegation is null and no p_relegation is published for these cells
+  # (2026-09-05); Grill 66 is the bottom tier and relegates nobody in any case.
   publish_divisions:
     male:
       # OD:  12 teams, cut at round <= 22 -> 132 matches, all 66 pairs exactly 2x.

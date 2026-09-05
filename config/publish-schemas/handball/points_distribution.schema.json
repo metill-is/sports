@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/metill-is/sports/config/publish-schemas/points_distribution.schema.json",
   "title": "data/publish/.../points_distribution.json",
-  "description": "Refused outright, not merely optional. Measured on season 2026 the four basketball cells qualify 8 of 12, 8 of 12, 10 of 10 and 4 of 11 teams for the post-season -- four cells, four structures, one of which takes every team through -- and the league table decides the deildarmeistari while the Islandsmeistari comes out of an urslitakeppni this model does not simulate. A p_top_six or p_winner here would be a top-six number wearing a playoff label (design D3), so the contract rejects it rather than tolerating it.",
+  "description": "Refused outright, not merely optional. Measured on season 2026 the four basketball cells qualify 8 of 12, 8 of 12, 10 of 10 and 4 of 11 teams for the post-season -- four cells, four structures, one of which takes every team through -- and the league table decides the deildarmeistari while the Islandsmeistari comes out of an urslitakeppni this model does not simulate. A p_top_six or p_winner here would be a top-six number wearing a playoff label (design D3), so the contract rejects it rather than tolerating it. p_relegation is OPTIONAL rather than required: `relegation_slots` is unconfigured on all eight basketball and handball cells (no KKI or HSI regulation was resolved), and for a bottom-tier division -- basketball 1. deild, handball Grill 66 -- nothing is relegated at all, so football's hardcoded bottom-two rule would publish a Fallhaetta headline that is false rather than merely uncertain. The producer emits the key exactly where the division configures the number, mirroring p_qualify (ID-B15); configuring relegation_slots is what turns it on.",
   "type": "object",
   "required": [
     "generated_at",
@@ -56,8 +56,7 @@
           "lower_80",
           "upper_80",
           "base_points",
-          "p_top_of_table",
-          "p_relegation"
+          "p_top_of_table"
         ],
         "properties": {
           "team": {

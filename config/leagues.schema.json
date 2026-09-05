@@ -149,7 +149,7 @@
           "relegation_slots": {
             "type": "integer",
             "minimum": 0,
-            "description": "Teams relegated from this division. Omit where there is none."
+            "description": "Teams relegated from this division. Omitting it means meta.relegation is null AND no p_relegation is published for the cell -- the same absent-means-omitted rule qualify follows. Omit where no federation regulation has been resolved, or where nothing is relegated at all; 0 publishes an explicit zero instead."
           },
           "regular_season_rounds": {
             "type": "integer",

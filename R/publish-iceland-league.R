@@ -1351,8 +1351,13 @@ publish_iceland_league <- function(extracted,
         basis = profile$placement_basis,
         qualify = division_cfg$qualify,
         relegation_slots = division_cfg$relegation_slots,
-        # Football only, and deprecated: see .build_placement_summary().
-        emit_top_six_alias = identical(league$sport, "football")
+        # Football only, and both deprecated: see .build_placement_summary().
+        # p_relegation is emitted where `relegation_slots` is configured, the
+        # way p_qualify is emitted where `qualify` is; football additionally
+        # keeps its hardcoded bottom-two expression under the same key because
+        # its nine cells are live and metill-platform reads it.
+        emit_top_six_alias = identical(league$sport, "football"),
+        emit_legacy_relegation = identical(league$sport, "football")
       )
 
       write_json_consistent(

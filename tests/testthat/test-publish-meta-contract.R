@@ -178,6 +178,52 @@ test_that("no bb/hb payload carries a champion probability or the word Islandsme
   }
 })
 
+test_that("p_relegation ships only where the division configures relegation_slots", {
+  # ID-B15's rule, applied to relegation. meta.relegation.slots is null on all
+  # eight bb/hb cells because no KKI or HSI regulation was resolved for them --
+  # and a bottom-tier division (basketball 1. deild, handball Grill 66)
+  # relegates nobody at all, so football's hardcoded `placement >= n_teams - 1`
+  # published a "Fallhaetta" column that is meaningless there rather than
+  # merely uncertain. Football keeps the same expression under the same key as
+  # a DEPRECATED ALIAS, exactly like p_top_six, because its nine cells are live
+  # and metill-platform reads it.
+  out <- .publish_all_cells()
+  n_bb_hb <- 0L
+  n_football <- 0L
+  for (cell in .published_cells(out)) {
+    id <- paste(cell$sport, cell$sex, cell$division)
+    slots <- .iceland_division_relegation(cell$key, cell$sex)[[cell$division]]
+    meta <- .read_cell_json(cell, "meta.json")
+    for (file in c("final_positions.json", "points_distribution.json")) {
+      payload <- .read_cell_json(cell, file)
+      if (length(payload$summary) == 0L) {
+        next
+      }
+      keys <- names(payload$summary[[1L]])
+      info <- paste(id, file)
+      if (identical(cell$sport, "football")) {
+        expect_true("p_relegation" %in% keys, info = info)
+        n_football <- n_football + 1L
+      } else {
+        # The configuration and the payload have to agree, in both directions.
+        expect_true(is.na(slots), info = info)
+        expect_null(meta$relegation$slots, info = info)
+        expect_false("p_relegation" %in% keys, info = info)
+        n_bb_hb <- n_bb_hb + 1L
+      }
+    }
+  }
+  # 8 bb/hb cells x 2 artefacts, and 9 football cells x 2. The football count
+  # includes the two bikar cells: in PRODUCTION a cup ships an empty
+  # final_positions placeholder (the extractor short-circuits the league-table
+  # simulation for CUP), but build_football_extracts_fixture() synthesises one
+  # for every configured division, so here they carry a summary too. Either
+  # way the assertion above is the point -- the counts only prove the loop
+  # reached every cell rather than silently skipping them all.
+  expect_identical(n_bb_hb, 16L)
+  expect_identical(n_football, 18L)
+})
+
 test_that("Umferdir eftir cannot go negative on the real overhang data", {
   # The concrete blocker, on the committed real-federation rows rather than on
   # a fit. Basketball male Bonusdeild season 2026 has 162 played rows and

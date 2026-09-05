@@ -544,7 +544,8 @@ test_that("football keeps p_top_six as an alias of the configured qualify cut", 
   out <- .build_placement_summary(
     fp, n_teams = 6L, basis = "final_table",
     qualify = list(slots = 6L, label_is = "Efri hluti"),
-    relegation_slots = NA_integer_, emit_top_six_alias = TRUE
+    relegation_slots = NA_integer_, emit_top_six_alias = TRUE,
+    emit_legacy_relegation = TRUE
   )
   expect_equal(
     names(out),
@@ -581,7 +582,8 @@ test_that("a football cell with no qualify cut still publishes p_top_six", {
   # six live cells.
   out <- .build_placement_summary(
     .synthetic_final_positions(6L), n_teams = 6L, basis = "final_table",
-    qualify = NULL, relegation_slots = NA_integer_, emit_top_six_alias = TRUE
+    qualify = NULL, relegation_slots = NA_integer_, emit_top_six_alias = TRUE,
+    emit_legacy_relegation = TRUE
   )
   expect_equal(
     names(out),
@@ -596,7 +598,7 @@ test_that("a regular-season table publishes neither p_winner nor p_top_six", {
     fp, n_teams = 10L, basis = "regular_season_table",
     qualify = NULL, relegation_slots = NA_integer_, emit_top_six_alias = FALSE
   )
-  expect_equal(names(out), c("team", "p_top_of_table", "p_relegation"))
+  expect_equal(names(out), c("team", "p_top_of_table"))
   expect_false(any(c("p_winner", "p_top_six", "p_qualify") %in% names(out)))
   expect_equal(
     out$p_top_of_table,
@@ -615,11 +617,70 @@ test_that("a configured qualify cut drives p_qualify on any basis", {
     qualify = list(slots = 8L, label_is = "\u00darslitakeppni"),
     relegation_slots = NA_integer_, emit_top_six_alias = FALSE
   )
-  expect_equal(names(out), c("team", "p_qualify", "p_top_of_table", "p_relegation"))
+  expect_equal(names(out), c("team", "p_qualify", "p_top_of_table"))
   expect_equal(
     out$p_qualify,
     vapply(
       out$team, function(t) .p_at(fp, t, function(p) p <= 8L), numeric(1),
+      USE.NAMES = FALSE
+    ),
+    tolerance = 1e-12
+  )
+})
+
+test_that("an unconfigured relegation cut emits no p_relegation at all", {
+  # ID-B15's rule, applied to relegation the way it already applies to
+  # qualification: an unresolved number is OMITTED, not guessed. Football's
+  # hardcoded `placement >= n_teams - 1` is a claim about the competition, and
+  # it is simply false for a bottom-tier division -- basketball 1. deild and
+  # handball Grill 66 relegate nobody, so "Fallhaetta" there is meaningless.
+  # No KKI or HSI regulation was resolved for any of the eight bb/hb cells,
+  # which is why none of them configures `relegation_slots`.
+  fp <- .synthetic_final_positions(10L)
+  out <- .build_placement_summary(
+    fp, n_teams = 10L, basis = "regular_season_table",
+    qualify = NULL, relegation_slots = NA_integer_
+  )
+  expect_false("p_relegation" %in% names(out))
+  expect_equal(names(out), c("team", "p_top_of_table"))
+})
+
+test_that("football keeps its legacy bottom-two p_relegation verbatim", {
+  # A DEPRECATED ALIAS, exactly like p_top_six: the nine live football cells
+  # publish it today and metill-platform reads it, so the flag exists to keep
+  # those payloads byte-identical while the generic rule tightens underneath.
+  # The expression is not derived from any configured number.
+  fp <- .synthetic_final_positions(10L)
+  out <- .build_placement_summary(
+    fp, n_teams = 10L, basis = "final_table",
+    qualify = NULL, relegation_slots = NA_integer_,
+    emit_top_six_alias = TRUE, emit_legacy_relegation = TRUE
+  )
+  expect_true("p_relegation" %in% names(out))
+  expect_equal(
+    out$p_relegation,
+    vapply(
+      out$team, function(t) .p_at(fp, t, function(p) p >= 10L - 1L), numeric(1),
+      USE.NAMES = FALSE
+    ),
+    tolerance = 1e-12
+  )
+})
+
+test_that("a configured relegation_slots emits p_relegation with no legacy flag", {
+  # The forward path: once a federation regulation IS resolved for a bb/hb
+  # cell, configuring the number is the whole change -- no R edit, and no
+  # legacy flag.
+  fp <- .synthetic_final_positions(10L)
+  out <- .build_placement_summary(
+    fp, n_teams = 10L, basis = "regular_season_table",
+    qualify = NULL, relegation_slots = 2L
+  )
+  expect_true("p_relegation" %in% names(out))
+  expect_equal(
+    out$p_relegation,
+    vapply(
+      out$team, function(t) .p_at(fp, t, function(p) p >= 9L), numeric(1),
       USE.NAMES = FALSE
     ),
     tolerance = 1e-12
@@ -657,7 +718,8 @@ test_that("an empty final_positions yields the shape, not an error", {
   out <- .build_placement_summary(
     empty, n_teams = 0L, basis = "final_table",
     qualify = list(slots = 6L, label_is = "Efri hluti"),
-    relegation_slots = NA_integer_, emit_top_six_alias = TRUE
+    relegation_slots = NA_integer_, emit_top_six_alias = TRUE,
+    emit_legacy_relegation = TRUE
   )
   expect_equal(nrow(out), 0L)
   expect_equal(
