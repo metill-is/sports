@@ -178,6 +178,41 @@ test_that("scripts/03_fit.R delegates and exits non-zero on ANY failure", {
   expect_false(any(grepl("fit_one(static, row$sex)", body, fixed = TRUE)))
 })
 
+test_that("every committing workflow commits even when its step failed", {
+  # Generalised from the fit.yml-only version: the review found
+  # decide-publish.yml and republish.yml had the SAME hazard and no guard, so
+  # one basketball publish failure would discard football's nine published
+  # cells AND the decide layer's recommendations from the same run. Basketball
+  # is target #1 of 6 because resolve_targets() walks config/leagues.yml order,
+  # so it is the most likely cell to fail first.
+  #
+  # Located by step index and scanned forward, NOT by a whole-file grep for
+  # always(): a whole-file grep passes on an `if: always()` attached to any
+  # other step (healthcheck.yml has one), which is the exact bug this exists
+  # to catch.
+  targets <- list(
+    c("fit.yml", "Commit if beliefs changed"),
+    c("decide-publish.yml", "Commit if outputs changed"),
+    c("republish.yml", "Commit if outputs changed")
+  )
+  for (t in targets) {
+    yml <- readLines(
+      testthat::test_path("..", "..", ".github", "workflows", t[1]),
+      warn = FALSE
+    )
+    idx <- grep(paste0("^\\s*- name: ", t[2], "\\s*$"), yml)
+    expect_length(idx, 1L)
+    run_idx <- grep("^\\s*run:", yml)
+    run_idx <- run_idx[run_idx > idx][1]
+    expect_true(!is.na(run_idx), info = t[1])
+    step <- yml[(idx + 1L):(run_idx - 1L)]
+    expect_true(
+      any(grepl("^\\s*if:\\s*always\\(\\)\\s*$", step)),
+      info = paste(t[1], "->", t[2])
+    )
+  }
+})
+
 test_that("fit.yml commits beliefs even when the fit step failed", {
   # Located by step index and scanned forward, NOT by a whole-file grep for
   # always(): a whole-file grep passes on an `if: always()` attached to any
