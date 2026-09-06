@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-05T20:56:59Z",
+  "generated_at": "2026-09-06T14:52:58Z",
   "overall": "WARN",
   "n_fail": 0,
   "n_warn": 5,
@@ -22,28 +22,28 @@
       "check": "fit_freshness",
       "scope": "handball_iceland male",
       "status": "OK",
-      "value": "0d old, current with results",
+      "value": "1d old, current with results",
       "threshold": "<= 2d"
     },
     {
       "check": "fit_freshness",
       "scope": "handball_iceland female",
       "status": "OK",
-      "value": "0d old, current with results",
+      "value": "1d old, current with results",
       "threshold": "<= 2d"
     },
     {
       "check": "fit_freshness",
       "scope": "football_iceland male",
       "status": "OK",
-      "value": "0d old, current with results",
+      "value": "1d old, current with results",
       "threshold": "<= 2d"
     },
     {
       "check": "fit_freshness",
       "scope": "football_iceland female",
       "status": "OK",
-      "value": "6d old, current with results",
+      "value": "0d old, current with results",
       "threshold": "<= 2d"
     },
     {
@@ -69,6 +69,34 @@
     },
     {
       "check": "divergence_drift",
+      "scope": "basketball/iceland/female",
+      "status": "OK",
+      "value": "0.000%",
+      "threshold": "< 0.5%"
+    },
+    {
+      "check": "rhat_drift",
+      "scope": "basketball/iceland/female",
+      "status": "OK",
+      "value": "1.009",
+      "threshold": "< 1.020"
+    },
+    {
+      "check": "divergence_drift",
+      "scope": "basketball/iceland/male",
+      "status": "OK",
+      "value": "0.000%",
+      "threshold": "< 0.5%"
+    },
+    {
+      "check": "rhat_drift",
+      "scope": "basketball/iceland/male",
+      "status": "OK",
+      "value": "1.013",
+      "threshold": "< 1.020"
+    },
+    {
+      "check": "divergence_drift",
       "scope": "football/iceland/female",
       "status": "OK",
       "value": "0.000%",
@@ -78,7 +106,7 @@
       "check": "rhat_drift",
       "scope": "football/iceland/female",
       "status": "OK",
-      "value": "1.013",
+      "value": "1.009",
       "threshold": "< 1.020"
     },
     {
@@ -134,7 +162,7 @@
       "check": "capture_rate",
       "scope": "recommendations",
       "status": "OK",
-      "value": "75% (9/12 placed)",
+      "value": "79% (11/14 placed)",
       "threshold": ">= 70% placed"
     },
     {
@@ -190,91 +218,91 @@
       "check": "publish_freshness",
       "scope": "handball_iceland male OD",
       "status": "OK",
-      "value": "4h old; 10 artefact(s)",
+      "value": "3h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "handball_iceland male G66",
       "status": "OK",
-      "value": "4h old; 10 artefact(s)",
+      "value": "3h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "handball_iceland female OD",
       "status": "OK",
-      "value": "4h old; 10 artefact(s)",
+      "value": "3h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "handball_iceland female G66",
       "status": "OK",
-      "value": "4h old; 10 artefact(s)",
+      "value": "3h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "football_iceland male BD",
       "status": "OK",
-      "value": "4h old; 10 artefact(s)",
+      "value": "3h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "football_iceland male LD1",
       "status": "OK",
-      "value": "4h old; 10 artefact(s)",
+      "value": "3h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "football_iceland male LD2",
       "status": "OK",
-      "value": "4h old; 10 artefact(s)",
+      "value": "3h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "football_iceland male LD3",
       "status": "OK",
-      "value": "4h old; 10 artefact(s)",
+      "value": "3h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "football_iceland male CUP",
       "status": "OK",
-      "value": "4h old; 12 artefact(s)",
+      "value": "3h old; 12 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "football_iceland female BD",
       "status": "OK",
-      "value": "4h old; 10 artefact(s)",
+      "value": "3h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "football_iceland female LD1",
       "status": "OK",
-      "value": "4h old; 10 artefact(s)",
+      "value": "3h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "football_iceland female LD2",
       "status": "OK",
-      "value": "4h old; 10 artefact(s)",
+      "value": "3h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "football_iceland female CUP",
       "status": "OK",
-      "value": "4h old; 12 artefact(s)",
+      "value": "3h old; 12 artefact(s)",
       "threshold": "36h"
     },
     {
@@ -309,14 +337,21 @@
       "check": "publish_format",
       "scope": "handball_iceland male OD",
       "status": "OK",
-      "value": "n_rounds=22 (config), 6 teams",
+      "value": "n_rounds=22 (config), 8 teams",
       "threshold": "config agreement"
     },
     {
       "check": "publish_format",
       "scope": "handball_iceland male G66",
       "status": "OK",
-      "value": "n_rounds=22 (config), 2 teams",
+      "value": "n_rounds=22 (config), 8 teams",
+      "threshold": "config agreement"
+    },
+    {
+      "check": "publish_format",
+      "scope": "handball_iceland female OD",
+      "status": "OK",
+      "value": "n_rounds=27 (config), 8 teams",
       "threshold": "config agreement"
     },
     {
