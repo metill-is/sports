@@ -266,8 +266,30 @@ prepare_data <- function(league,
     ) |>
     dplyr::arrange(.data$match_date)
 
-  # Division as integer factor (1 = first level, 2 = second, ...)
-  div_levels <- sort(unique(model_d$division))
+  # Division as integer factor (1 = first level, 2 = second, ...).
+  #
+  # Levels are the training divisions first, then any division that occurs ONLY
+  # in the upcoming fixtures. A fixture can be scheduled in a division that has
+  # no played matches yet -- the playoff codes are the standard case
+  # (`LD1_PO` fixtures on 2026-09-09 were the first of their division ever
+  # scheduled). Deriving the levels from `model_d` alone maps such a fixture to
+  # `NA`, cmdstanr rejects `pred_division` outright ("Variable 'pred_division'
+  # has NA values"), and the whole (league, sex) cell fails to fit -- taking
+  # every other fixture in the cell down with it. That is what broke
+  # football_iceland male on 2026-09-07 and 2026-09-08.
+  #
+  # Unseen levels are APPENDED rather than merged-and-re-sorted so that the
+  # training `division` indices stay stable regardless of what is on the
+  # schedule. No Stan model in this repo indexes anything by division (football
+  # does not declare the variable; handball and basketball declare it but never
+  # reference it), so an appended level is inert -- it only has to be a
+  # non-NA integer >= 1 to satisfy the `array[N_pred] int<lower=1>` declaration.
+  train_div_levels <- sort(unique(model_d$division))
+  pred_only_div_levels <- setdiff(
+    sort(unique(as.character(next_games$division))),
+    train_div_levels
+  )
+  div_levels <- c(train_div_levels, pred_only_div_levels)
   model_d$division_int <- as.integer(factor(model_d$division, levels = div_levels))
 
   N_rounds <- max(c(model_d$home_round, model_d$away_round))
@@ -334,6 +356,22 @@ prepare_data <- function(league,
     pred_d$division_int <- as.integer(
       factor(pred_d$division, levels = div_levels)
     )
+
+    # Defence in depth. div_levels above is built from the union of training and
+    # fixture divisions, so this cannot fire today -- but cmdstanr's own message
+    # names only the variable, not the offending value, and a silent NA here
+    # kills the entire cell. Fail with the division code that caused it.
+    if (anyNA(pred_d$division_int)) {
+      bad <- sort(unique(as.character(
+        pred_d$division[is.na(pred_d$division_int)]
+      )))
+      cli::cli_abort(c(
+        "Upcoming fixtures carry division(s) with no factor level.",
+        x = "Unmapped division(s): {.val {bad}}.",
+        i = "div_levels: {.val {div_levels}}.",
+        i = "Passing NA in {.arg pred_division} makes cmdstanr reject the fit."
+      ))
+    }
   } else {
     time_to_next <- numeric(0)
     top_teams_df <- teams[0L, , drop = FALSE]
