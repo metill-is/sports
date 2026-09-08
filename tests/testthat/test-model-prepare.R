@@ -255,3 +255,74 @@ test_that("prepare_data without training_filter retains all matches (default)", 
   expect_equal(out$stan_data$N, 6L)
   expect_equal(nrow(out$teams), 4L)
 })
+
+
+# Regression: a fixture in a division that has never been played.
+#
+# Playoff divisions enter the schedule before any of their matches exist --
+# football_iceland male broke on 2026-09-07/08 when LD1_PO fixtures were
+# scheduled with zero LD1_PO results. Deriving the factor levels from the
+# training results alone mapped them to NA, and cmdstanr rejects the fit with
+# "Variable 'pred_division' has NA values", taking the whole (league, sex) cell
+# down -- including every fixture in a division that was perfectly fine.
+test_that("prepare_data maps fixture-only divisions to a real level, not NA", {
+  root <- setup_mini_root()
+
+  # Re-write the schedules so one fixture sits in a division with no results.
+  schedules <- arrow::read_parquet(testthat::test_path(
+    "fixtures", "model", "mini_schedules.parquet"
+  ))
+  schedules$division[1] <- "D_PO"
+  write_table(schedules, "schedules", root = root)
+
+  league <- list(
+    sport = "basketball", country = "iceland", sexes = "male",
+    stan_model = "basketball_iceland/2d_student_t_scalarsigma.stan"
+  )
+  out <- prepare_data(league,
+    sex = "male", end_date = as.Date("2026-04-24"),
+    schedule_horizon_days = 60L, root = root
+  )
+  sd <- out$stan_data
+
+  # The whole point: no NA reaches cmdstanr.
+  expect_false(anyNA(sd$pred_division))
+  # array[N_pred] int<lower=1> in the Stan data block.
+  expect_true(all(sd$pred_division >= 1L))
+
+  # The unseen division gets a level beyond the training ones rather than
+  # colliding with an existing division's index.
+  po_idx <- sd$pred_division[out$pred_d$division == "D_PO"]
+  expect_length(po_idx, 1L)
+  expect_true(all(po_idx > max(sd$division)))
+})
+
+# Invariance: what is on the SCHEDULE must not renumber the TRAINING divisions.
+# Appending unseen levels rather than sorting the union is what buys this; a
+# sorted union would silently shift every training division index whenever a
+# playoff code sorted before an existing one.
+test_that("fixture-only divisions do not renumber training division indices", {
+  league <- list(
+    sport = "basketball", country = "iceland", sexes = "male",
+    stan_model = "basketball_iceland/2d_student_t_scalarsigma.stan"
+  )
+  args <- list(
+    sex = "male", end_date = as.Date("2026-04-24"),
+    schedule_horizon_days = 60L
+  )
+
+  root_plain <- setup_mini_root()
+  base <- do.call(prepare_data, c(list(league), args, list(root = root_plain)))
+
+  root_po <- setup_mini_root()
+  schedules <- arrow::read_parquet(testthat::test_path(
+    "fixtures", "model", "mini_schedules.parquet"
+  ))
+  # "A_PO" deliberately sorts BEFORE the real divisions D1/D2 -- under a sorted
+  # union it would take level 1 and shift D1/D2 up by one.
+  schedules$division[1] <- "A_PO"
+  write_table(schedules, "schedules", root = root_po)
+  with_po <- do.call(prepare_data, c(list(league), args, list(root = root_po)))
+
+  expect_identical(with_po$stan_data$division, base$stan_data$division)
+})
