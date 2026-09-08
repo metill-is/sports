@@ -40,6 +40,19 @@ coerce_array_fields <- function(leagues) {
     if (!is.null(l$sexes) && !is.list(l$sexes)) {
       l$sexes <- as.list(l$sexes)
     }
+    # A length-1 character vector is unboxed to a JSON scalar by
+    # toJSON(auto_unbox = TRUE), so a single-element YAML sequence fails the
+    # schema's "must be array". Both of these are free-length lists that can
+    # legitimately hold exactly one code -- exclude_divisions does today
+    # ([LD1_PO]) -- so both must be forced to a JSON array.
+    if (!is.null(l$betting$exclude_divisions) &&
+      !is.list(l$betting$exclude_divisions)) {
+      l$betting$exclude_divisions <- as.list(l$betting$exclude_divisions)
+    }
+    if (!is.null(l$training_filter$divisions) &&
+      !is.list(l$training_filter$divisions)) {
+      l$training_filter$divisions <- as.list(l$training_filter$divisions)
+    }
     # lengjan$competitions is already a list-of-lists in yaml.load output; leave alone.
     leagues[[key]] <- l
   }

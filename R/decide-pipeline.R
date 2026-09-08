@@ -125,6 +125,13 @@ decide_league <- function(league_key = NULL, league = NULL, sex,
     return(invisible(empty_return()))
   }
 
+  # Division exclusions: drop bets in divisions we model but will not price.
+  odds <- drop_excluded_divisions(odds, league, sex, root = root)
+  if (nrow(odds) == 0L) {
+    if (write) decide_write_empty(league, sex, run_id, root)
+    return(invisible(empty_return()))
+  }
+
   # Markets toggle: drop bets where markets[[market]] is FALSE
   market_kept <- vapply(odds$market, function(m) isTRUE(betting$markets[[m]]), logical(1))
   odds_on <- odds[market_kept, , drop = FALSE]
@@ -415,4 +422,70 @@ decide_one <- function(static, lengjan, betting, sex, bankroll) {
   league$betting <- betting
   recs <- decide_league(league = league, sex = sex, bankroll = bankroll)
   nrow(recs)
+}
+
+
+#' Drop odds rows whose fixture sits in an excluded division.
+#'
+#' Some divisions are modelled and published but must never be bet. The
+#' Lengjudeild promotion umspil (`LD1_PO`) is the motivating case: its ties are
+#' two-legged, so the second leg is played conditional on the first leg's
+#' aggregate -- a side two goals up defends -- while the bivariate-Poisson model
+#' prices every fixture independently. Its final is also at a neutral venue, so
+#' the fitted home-advantage term is wrong by construction. Both make the price
+#' wrong in a way no amount of calibration fixes.
+#'
+#' `odds` carries no `division` column, so the division is joined from
+#' `schedules` on (`match_date`, `home_team`, `away_team`). By this point
+#' `prepare_odds()` has already run `normalise_lengjan_team_names()`
+#' (`R/decide-odds.R:78`), so both sides carry canonical federation names.
+#'
+#' A fixture absent from `schedules` (rescheduled, renamed) keeps its odds: the
+#' guard's job is to exclude a known-bad division, not to require schedule
+#' coverage. Failing open here is deliberate -- failing closed would silently
+#' stop betting a whole league the first time a fixture key drifted.
+#'
+#' No-op when `betting$exclude_divisions` is unset, which is every league today
+#' except football_iceland.
+#'
+#' @param odds Odds tibble from [prepare_odds()].
+#' @param league League config list.
+#' @param sex "male" or "female".
+#' @param root Data root.
+#' @return `odds` with excluded-division rows removed.
+#' @keywords internal
+#' @noRd
+drop_excluded_divisions <- function(odds, league, sex, root) {
+  exclude <- unlist(league$betting$exclude_divisions %||% character(0))
+  if (length(exclude) == 0L || nrow(odds) == 0L) {
+    return(odds)
+  }
+
+  sched <- read_table(
+    "schedules",
+    root = root,
+    filter = list(sport = league$sport, country = league$country, sex = sex)
+  )
+  if (nrow(sched) == 0L || !"division" %in% names(sched)) {
+    return(odds)
+  }
+
+  keys <- unique(sched[
+    sched$division %in% exclude,
+    c("match_date", "home_team", "away_team"),
+    drop = FALSE
+  ])
+  if (nrow(keys) == 0L) {
+    return(odds)
+  }
+
+  drop <- paste(odds$match_date, odds$home_team, odds$away_team) %in%
+    paste(keys$match_date, keys$home_team, keys$away_team)
+  if (any(drop)) {
+    cli::cli_alert_info(
+      "{league$sport}/{league$country}/{sex}: dropped {sum(drop)} odds row{?s} \\
+       in excluded division{?s} {.val {exclude}}"
+    )
+  }
+  odds[!drop, , drop = FALSE]
 }

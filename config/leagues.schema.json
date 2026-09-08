@@ -79,6 +79,11 @@
           "additionalProperties": false,
           "required": ["kelly_frac", "ev_threshold", "markets", "scoring", "min_bet"],
           "properties": {
+            "exclude_divisions": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Division codes that are modelled (and may be published) but must never be priced or bet. Deliberately NOT an enum: a future BD_*_PO, LD2_PO or a renamed federation code must be expressible without a schema change. Enforced by drop_excluded_divisions() in R/decide-pipeline.R."
+            },
             "enabled": {
               "type": "boolean",
               "description": "Publish-only switch. When false, decide/placer/odds-ingest refuse this league (spec 2026-09-02 §3, decision D2). Absent means enabled -- football carries no key."

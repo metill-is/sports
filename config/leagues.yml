@@ -411,6 +411,21 @@ football_iceland:
       - { code: BD,  slug: bd,     label_is: "Besta deild",   is_cup: false,
           code_badge: BD, qualify: { slots: 6, label_is: "Efri hluti" },
           split: { upper: 6, lower: 6 } }
+      # Do NOT add a `split:` block here to fix an empty next_games.json.
+      # LD1's postseason is LD1_PO, a 4-team promotion umspil (two-legged
+      # semi-finals + a final), NOT a bisection of the table. `split:` would
+      # pass validation, fabricate ~30 fixtures that do not exist via the
+      # split fixture template, and publish a simulated split season for a
+      # league that finished at its full 132 matches.
+      #
+      # `regular_season_rounds` does not help either: derive_league_round()
+      # restarts appearance numbering per (sport, country, sex, season,
+      # division), so LD1_PO rows carry rounds 1-2 and pass any `round <= 22`
+      # cut. Representing the umspil needs a real postseason concept, not a
+      # reuse of either mechanism -- deliberately not built for 2026, since
+      # the LD1 table is genuinely final and `qualify` is null, so nothing
+      # published is wrong. The omission is that the page shows no upcoming
+      # fixtures. See tests/testthat/test-iceland-division-helpers.R.
       - { code: LD1, slug: ld,     label_is: "Lengjudeild",   is_cup: false,
           code_badge: LD }
       - { code: LD2, slug: 2deild, label_is: "2. deild",      is_cup: false,
@@ -426,6 +441,10 @@ football_iceland:
       - { code: BD,  slug: bd,     label_is: "Besta deild",   is_cup: false,
           code_badge: BD, qualify: { slots: 6, label_is: "Efri hluti" },
           split: { upper: 6, lower: 4 } }
+      # No women's Lengjudeild umspil exists: KSI_IDS has no `div2_playoffs`
+      # bucket under `female` at all, and LD1 kvenna has never split or had a
+      # playoff in any ingested season (90 matches in 2021-2025). Same
+      # prohibition as the men's entry above applies if that ever changes.
       - { code: LD1, slug: ld,     label_is: "Lengjudeild",   is_cup: false,
           code_badge: LD }
       - { code: LD2, slug: 2deild, label_is: "2. deild",      is_cup: false,
@@ -433,6 +452,19 @@ football_iceland:
       - { code: CUP, slug: bikar,  label_is: "Bikar kvenna",  is_cup: true,
           code_badge: MB }
   betting:
+    # Divisions we model and (may) publish but must never price.
+    #
+    # LD1_PO is the Lengjudeild promotion umspil: two-legged semi-finals
+    # (2026-09-09 and 2026-09-13), then a final at Laugardalsvöllur. Both
+    # properties break the model's pricing assumptions -- leg 2 is played
+    # conditional on the first leg's aggregate (a side two up defends) while
+    # the bivariate-Poisson prices each fixture independently, and a neutral
+    # final makes the fitted home-advantage term wrong by construction.
+    # No Lengjan competition id is wired for the umspil today, so this is a
+    # tripwire rather than an active filter -- it exists so that a future
+    # discovery run wiring one cannot start placing mispriced bets silently.
+    # Enforced by drop_excluded_divisions() in R/decide-pipeline.R.
+    exclude_divisions: [LD1_PO]
     # kelly_frac is the §7.2 multiplicative shrinkage. Female cell stays
     # tighter — first Icelandic women's football season, thin history.
     # 2026-05-02: scaled to 25 % of Browne defaults. Pre-cut: male 0.20, female 0.10.
