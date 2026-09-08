@@ -341,3 +341,101 @@ test_that("decide_league clamps kelly_frac at kelly_ceiling (K5 invariant)", {
   expect_lt(ratio, 0.255)
   expect_gt(ratio, 0.245)
 })
+
+
+# --- division exclusions --------------------------------------------------
+# Some divisions are modelled but must never be priced. LD1_PO (the Lengjudeild
+# promotion umspil) is two-legged, so leg 2 is played conditional on the first
+# leg's aggregate while the bivariate-Poisson prices each fixture independently;
+# its final is also at a neutral venue. No Lengjan comp id is wired for it
+# today, so the guard is a tripwire against a future discovery run silently
+# turning mispriced bets on.
+
+.excl_odds <- function() {
+  tibble::tibble(
+    match_date = as.Date(c("2026-09-09", "2026-09-09", "2026-09-12")),
+    home_team  = c("Njarðvík", "HK", "Selfoss"),
+    away_team  = c("Þróttur R.", "Fylkir", "KFG"),
+    market     = "moneyline",
+    outcome    = "home",
+    odds       = 2.0
+  )
+}
+
+.excl_root <- function(env = parent.frame()) {
+  root <- withr::local_tempdir(.local_envir = env)
+  write_table(
+    tibble::tibble(
+      sport = "football", country = "iceland", sex = "male", season = 2026L,
+      match_date = as.Date(c("2026-09-09", "2026-09-09", "2026-09-12")),
+      home_team  = c("Njarðvík", "HK", "Selfoss"),
+      away_team  = c("Þróttur R.", "Fylkir", "KFG"),
+      division   = c("LD1_PO", "LD1_PO", "LD2"),
+      round      = NA_integer_,
+      kickoff_time = NA_character_
+    ),
+    "schedules", root = root
+  )
+  root
+}
+
+test_that("drop_excluded_divisions removes only the excluded division's rows", {
+  league <- list(
+    sport = "football", country = "iceland",
+    betting = list(exclude_divisions = "LD1_PO")
+  )
+  out <- drop_excluded_divisions(
+    .excl_odds(), league, "male", root = .excl_root()
+  )
+  expect_equal(nrow(out), 1L)
+  expect_equal(out$home_team, "Selfoss")
+})
+
+test_that("drop_excluded_divisions is a byte-identical no-op when unset", {
+  odds <- .excl_odds()
+  league <- list(sport = "football", country = "iceland", betting = list())
+  # No exclude_divisions -> must not even read schedules, and must return the
+  # input untouched. Every other league in config/leagues.yml relies on this.
+  expect_identical(
+    drop_excluded_divisions(odds, league, "male", root = .excl_root()),
+    odds
+  )
+})
+
+test_that("drop_excluded_divisions fails OPEN on a fixture missing from schedules", {
+  # A rescheduled or renamed fixture has no schedules row, so no division can be
+  # joined. Keeping it is deliberate: the guard excludes a known-bad division,
+  # it does not require schedule coverage. Failing closed here would silently
+  # stop betting a whole league the first time a fixture key drifted.
+  odds <- tibble::tibble(
+    match_date = as.Date("2026-09-30"),
+    home_team = "Vestri", away_team = "Grótta",
+    market = "moneyline", outcome = "home", odds = 2.0
+  )
+  league <- list(
+    sport = "football", country = "iceland",
+    betting = list(exclude_divisions = "LD1_PO")
+  )
+  expect_equal(
+    nrow(drop_excluded_divisions(odds, league, "male", root = .excl_root())),
+    1L
+  )
+})
+
+test_that("football_iceland excludes LD1_PO and declares no LD1 split", {
+  # Tripwire, not a restatement of config. Two independent ways a future
+  # session could re-arm this defect:
+  #   1. dropping exclude_divisions, which would let a newly-discovered Lengjan
+  #      umspil comp id start placing two-legged bets the model cannot price;
+  #   2. adding a `split:` block to LD1 to fix its empty next_games.json, which
+  #      would fabricate ~30 fixtures via the split template and publish a
+  #      simulated split season for a league that finished at 132 matches.
+  lg <- load_leagues()[["football_iceland"]]
+  expect_true("LD1_PO" %in% lg$betting$exclude_divisions)
+
+  for (sx in c("male", "female")) {
+    ld1 <- Filter(function(d) d$code == "LD1", lg$publish_divisions[[sx]])
+    expect_length(ld1, 1L)
+    expect_null(ld1[[1]]$split)
+  }
+})
