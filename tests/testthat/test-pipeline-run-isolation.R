@@ -314,3 +314,43 @@ test_that("fit.yml's job budget is the hosted-runner maximum", {
   expect_length(budget, 1L)
   expect_equal(as.integer(sub(".*:\\s*", "", budget)), 360L)
 })
+
+
+test_that("workflow_run-triggered jobs still run on a FAILED upstream", {
+  # The mirror of the always() guard above, one level up. fit.yml commits the
+  # beliefs of the cells that DID fit even when another cell failed -- but
+  # decide-publish.yml then gated its whole job on
+  # `workflow_run.conclusion == 'success'`, so that committed output was never
+  # decided on or published. One bad cell blocked publishing for EVERY league:
+  # football_iceland male's `pred_division` NA skipped Decide + Publish on
+  # 2026-09-07 and 2026-09-08 (runs 34120814324 and 34219303990).
+  #
+  # A workflow_run job that admits `success` must therefore also admit
+  # `failure`. `cancelled` / `skipped` / `timed_out` stay excluded -- those
+  # upstreams produced nothing to act on.
+  ymls <- list.files(
+    testthat::test_path("..", "..", ".github", "workflows"),
+    pattern = "\\.ya?ml$", full.names = TRUE
+  )
+  triggered <- Filter(
+    function(f) any(grepl("^\\s*workflow_run:", readLines(f, warn = FALSE))),
+    ymls
+  )
+  # Guards the guard: if the trigger style is ever renamed, fail loudly rather
+  # than vacuously passing over an empty set.
+  expect_gt(length(triggered), 0L)
+
+  for (f in triggered) {
+    txt <- paste(readLines(f, warn = FALSE), collapse = " ")
+    if (!grepl("workflow_run\\.conclusion", txt)) next
+    expect_true(
+      grepl("conclusion\\s*==\\s*'failure'", txt),
+      info = paste(
+        basename(f),
+        "gates on workflow_run.conclusion but never admits 'failure' --",
+        "a partially failed upstream that still committed output would be",
+        "silently discarded."
+      )
+    )
+  }
+})

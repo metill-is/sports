@@ -16,7 +16,20 @@ concurrency:
 
 jobs:
   decide-publish:
-    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    # Run on a completed-but-FAILED upstream too, not only on success.
+    # fit.yml's own commit step is `if: always()` precisely because a partially
+    # failed fit still commits real beliefs for the cells that did fit. Gating
+    # here on `success` threw that output away and blocked decide + publish for
+    # EVERY league because one cell failed -- football_iceland male's
+    # `pred_division` NA skipped this workflow on 2026-09-07 and 2026-09-08.
+    # `failure` is allowed; `cancelled` / `skipped` / `timed_out` are not, since
+    # those upstreams produced nothing to act on. The upstream still concludes
+    # `failure` and still emails, so the alert channel is unchanged -- per-cell
+    # containment belongs in run_publish_targets(), not in this gate.
+    if: >-
+      ${{ github.event_name == 'workflow_dispatch'
+          || github.event.workflow_run.conclusion == 'success'
+          || github.event.workflow_run.conclusion == 'failure' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
 

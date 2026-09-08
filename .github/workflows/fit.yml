@@ -25,7 +25,16 @@ concurrency:
 
 jobs:
   fit:
-    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    # Same contract as decide-publish.yml: a partially failed upstream still
+    # committed real data. scrape-results is fit's ONLY scheduled trigger (1x
+    # daily), so gating on `success` here means one federation scraper erroring
+    # costs a whole day of fits for every league with no fallback path.
+    # 03_fit.R re-reads the facts store and skips cells with no new results, so
+    # running against a partial scrape is safe and usually a no-op.
+    if: >-
+      ${{ github.event_name == 'workflow_dispatch'
+          || github.event.workflow_run.conclusion == 'success'
+          || github.event.workflow_run.conclusion == 'failure' }}
     runs-on: ubuntu-latest
     # 360 is GitHub's ceiling for a hosted job. Football alone took 196 min on
     # 2026-08-28 (male 126, female 70), and a slow runner cancelled a
