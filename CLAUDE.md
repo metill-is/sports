@@ -69,7 +69,11 @@ authoritative mapping rather than mirroring them here.
 ```bash
 # Development
 Rscript -e 'devtools::load_all()'
-Rscript -e 'devtools::test()'
+# UTF-8 is load-bearing: the shell exports LC_CTYPE=C, and under US-ASCII the
+# HSI fixture parse silently drops its Icelandic rows -- 3 test-ingest-hsi.R
+# assertions then fail (132 vs 108) on an UNCHANGED fixture. CI runners are
+# UTF-8, so a C-locale failure never reproduces there.
+LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 Rscript -e 'devtools::test()'
 
 # Run the pipeline (daily driver -- one entry script per layer)
 Rscript scripts/00_active_competitions.R              # write active_competitions.json
