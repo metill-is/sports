@@ -112,6 +112,26 @@
               "null"
             ]
           },
+          "goals_for_predicted": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "goals_against_predicted": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "points_predicted": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
           "n_predicted_matches": {
             "type": "integer",
             "minimum": 0

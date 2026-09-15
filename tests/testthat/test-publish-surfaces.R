@@ -20,7 +20,8 @@
 # observable effect at all -- the gate would be untestable rather than tested.
 .SURFACES_ARCHIVE_FIT_DATE <- as.Date("2100-01-02")
 
-.build_preround_archive <- function(facts_root, archive_root, sex) {
+.build_preround_archive <- function(facts_root, archive_root, sex,
+                                    max_preround_date = NULL) {
   results <- read_table(
     "results",
     root = facts_root,
@@ -32,6 +33,9 @@
       !is.na(results$home_score), ,
     drop = FALSE
   ]
+  if (!is.null(max_preround_date)) {
+    played <- played[played$match_date <= max_preround_date, , drop = FALSE]
+  }
   # Four deterministic "draws" per match, centred on the observed scoreline.
   draws <- dplyr::bind_rows(lapply(0:3, function(k) {
     tibble::tibble(
@@ -53,7 +57,8 @@
 }
 
 .publish_football_with_profile <- function(profile, sex = "male",
-                                           env = parent.frame()) {
+                                           env = parent.frame(),
+                                           preround_max_date = NULL) {
   facts_root <- fixture_facts_root(env)
   extracts_root <- file.path(
     withr::local_tempdir(.local_envir = env), "extracts"
@@ -70,7 +75,10 @@
     fit_date = .SURFACES_PRESEASON_FIT_DATE
   )
   build_football_extracts_fixture(facts_root, extracts_root, sex)
-  .build_preround_archive(facts_root, archive_root, sex)
+  .build_preround_archive(
+    facts_root, archive_root, sex,
+    max_preround_date = preround_max_date
+  )
 
   extracted <- read_extracted_iceland(
     league,
@@ -188,4 +196,64 @@ test_that("the points scheme comes from the profile, not a 3-1-0 literal", {
     .publish_points_scheme(sport_publish_profile("basketball")),
     c(win = 2L, draw = 0L, loss = 0L)
   )
+})
+
+# ---- Coverage alignment between the actual and expected halves ------------
+# The standings Delta columns subtract expected from actual. Those halves were
+# never over the same matches: goals_for/points span every played round,
+# xg_for/xpts only the rounds that resolved a pre-round fit. Live, that was 12
+# of 23 -- Delta collapsed to roughly goals_for/2 and flipped sign for teams
+# near the mean. goals_for_predicted / points_predicted are the like-for-like
+# base, and goals_trend is now round-aligned with xg_trend rather than being a
+# per-match series over everything.
+
+test_that("the expected and actual halves of the standings cover the same rounds", {
+  on <- .publish_football_with_profile(sport_publish_profile("football"))
+  st <- .cell_json(on$out, "karla-bd", "standings.json")
+  scored <- Filter(function(r) !is.null(r$xg_for), st$rows)
+  expect_gt(length(scored), 0L)
+
+  for (r in scored) {
+    id <- r$team
+    expect_false(is.null(r$goals_for_predicted), info = id)
+    expect_false(is.null(r$points_predicted), info = id)
+    # Same number of rounds on both sides, so Fravik's per-index zip is honest.
+    expect_equal(length(r$goals_trend), length(r$xg_trend), info = id)
+    # The trend IS the predicted-round total, not a separate series.
+    expect_equal(
+      sum(unlist(r$goals_trend)), r$goals_for_predicted,
+      tolerance = 1e-9, info = id
+    )
+    expect_equal(
+      sum(unlist(r$goals_against_trend)), r$goals_against_predicted,
+      tolerance = 1e-9, info = id
+    )
+    # A modelled subset can never exceed the full season.
+    expect_lte(r$goals_for_predicted, r$goals_for)
+    expect_lte(r$points_predicted, r$points)
+  }
+})
+
+test_that("partial pre-round coverage shrinks the predicted base below the season total", {
+  # Model only the season's opening day, leaving later rounds unmodelled --
+  # the shape the live tree is permanently in, because extracts retention
+  # deletes the old fits that later rounds would need.
+  partial <- .publish_football_with_profile(
+    sport_publish_profile("football"),
+    preround_max_date = as.Date("2100-01-03")
+  )
+  st <- .cell_json(partial$out, "karla-bd", "standings.json")
+  scored <- Filter(function(r) !is.null(r$xg_for), st$rows)
+  expect_gt(length(scored), 0L)
+
+  shrunk <- Filter(function(r) r$goals_for_predicted < r$goals_for, scored)
+  expect_gt(length(shrunk), 0L)
+
+  for (r in scored) {
+    expect_equal(length(r$goals_trend), length(r$xg_trend), info = r$team)
+    expect_equal(
+      sum(unlist(r$goals_trend)), r$goals_for_predicted,
+      tolerance = 1e-9, info = r$team
+    )
+  }
 })

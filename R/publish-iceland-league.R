@@ -333,14 +333,31 @@ NULL
     round = integer(), team = character(), fit_date = character(),
     n_matches = integer(),
     xg_for = numeric(), xg_against = numeric(), xpts = numeric(),
-    p_win = numeric(), p_draw = numeric(), p_loss = numeric()
+    p_win = numeric(), p_draw = numeric(), p_loss = numeric(),
+    goals_for_actual = numeric(), goals_against_actual = numeric(),
+    pts_actual = numeric()
+  )
+}
+
+# League points for one finished match, from the sport's scheme. NA in, NA out:
+# a caller that passed no scores must not be handed a silent zero, which would
+# read as "played and lost" rather than "not known".
+.match_points_pfi <- function(gf, ga, points) {
+  dplyr::case_when(
+    is.na(gf) | is.na(ga) ~ NA_real_,
+    gf > ga ~ as.numeric(points[["win"]]),
+    gf < ga ~ as.numeric(points[["loss"]]),
+    TRUE ~ as.numeric(points[["draw"]])
   )
 }
 
 .aggregate_round_predictions_pfi <- function(played_matches,
                                              extracts_root, archive_root,
                                              sport, country, sex,
-                                             target_div = "BD") {
+                                             target_div = "BD",
+                                             points = c(
+                                               win = 3L, draw = 1L, loss = 0L
+                                             )) {
   if (nrow(played_matches) == 0L) {
     return(.empty_round_predictions_pfi())
   }
@@ -403,10 +420,34 @@ NULL
         .by = c("home_team", "away_team", "match_date")
       ) |>
       dplyr::mutate(
-        xpts_home = 3 * .data$p_home_win + .data$p_draw_match,
-        xpts_away = 3 * .data$p_away_win + .data$p_draw_match
+        xpts_home = points[["win"]] * .data$p_home_win +
+          points[["draw"]] * .data$p_draw_match,
+        xpts_away = points[["win"]] * .data$p_away_win +
+          points[["draw"]] * .data$p_draw_match
       ) |>
       dplyr::select(-"total")
+
+    # The ACTUAL result of each match this round modelled. The standings Delta
+    # columns subtract expected from actual, and those two halves have to cover
+    # the same matches: goals_for spans every played round, xg_for only the
+    # rounds that resolved a pre-round fit. On the live Besta deild that was 12
+    # of 23, so Delta collapsed to roughly goals_for/2 and flipped sign for any
+    # team near the mean. Callers that pass only the join keys get NA here and
+    # the standings keep their full-season base.
+    if (all(c("home_score", "away_score") %in% names(round_matches))) {
+      per_match <- per_match |>
+        dplyr::left_join(
+          round_matches |>
+            dplyr::select(
+              "home_team", "away_team", "match_date",
+              "home_score", "away_score"
+            ),
+          by = c("home_team", "away_team", "match_date")
+        )
+    } else {
+      per_match$home_score <- NA_real_
+      per_match$away_score <- NA_real_
+    }
 
     home_side <- per_match |>
       dplyr::transmute(
@@ -414,7 +455,12 @@ NULL
         xg_for = .data$xg_home, xg_against = .data$xg_away,
         xpts = .data$xpts_home,
         p_win = .data$p_home_win, p_draw = .data$p_draw_match,
-        p_loss = .data$p_away_win
+        p_loss = .data$p_away_win,
+        goals_for_actual = as.numeric(.data$home_score),
+        goals_against_actual = as.numeric(.data$away_score),
+        pts_actual = .match_points_pfi(
+          .data$home_score, .data$away_score, points
+        )
       )
     away_side <- per_match |>
       dplyr::transmute(
@@ -422,7 +468,12 @@ NULL
         xg_for = .data$xg_away, xg_against = .data$xg_home,
         xpts = .data$xpts_away,
         p_win = .data$p_away_win, p_draw = .data$p_draw_match,
-        p_loss = .data$p_home_win
+        p_loss = .data$p_home_win,
+        goals_for_actual = as.numeric(.data$away_score),
+        goals_against_actual = as.numeric(.data$home_score),
+        pts_actual = .match_points_pfi(
+          .data$away_score, .data$home_score, points
+        )
       )
 
     rounds[[i]] <- dplyr::bind_rows(home_side, away_side) |>
@@ -434,6 +485,9 @@ NULL
         p_win = mean(.data$p_win),
         p_draw = mean(.data$p_draw),
         p_loss = mean(.data$p_loss),
+        goals_for_actual = sum(.data$goals_for_actual),
+        goals_against_actual = sum(.data$goals_against_actual),
+        pts_actual = sum(.data$pts_actual),
         .by = "team"
       ) |>
       dplyr::mutate(
@@ -452,7 +506,8 @@ NULL
     dplyr::select(
       "round", "team", "fit_date", "n_matches",
       "xg_for", "xg_against", "xpts",
-      "p_win", "p_draw", "p_loss"
+      "p_win", "p_draw", "p_loss",
+      "goals_for_actual", "goals_against_actual", "pts_actual"
     ) |>
     dplyr::arrange(.data$round, .data$team)
 }
@@ -799,11 +854,17 @@ publish_iceland_league <- function(extracted,
     has_xg <- "xg" %in% profile$surfaces
     round_predictions <- if (has_xg) {
       .aggregate_round_predictions_pfi(
-        played_matches = bd_played[, c("home_team", "away_team", "match_date")],
+        # Scores travel too: the aggregation sums the ACTUAL goals and points
+        # of the rounds it manages to model, which is the like-for-like base
+        # the standings Delta columns subtract the expected values from.
+        played_matches = bd_played[, c(
+          "home_team", "away_team", "match_date", "home_score", "away_score"
+        )],
         extracts_root = extracts_root,
         archive_root = archive_root,
         sport = league$sport, country = league$country, sex = sex,
-        target_div = target_div
+        target_div = target_div,
+        points = points_scheme
       )
     } else {
       .empty_round_predictions_pfi()
@@ -826,8 +887,13 @@ publish_iceland_league <- function(extracted,
             xpts = NA_real_,
             n_predicted_matches = 0L,
             n_played_matches = .data$played_count,
+            goals_for_predicted = NA_real_,
+            goals_against_predicted = NA_real_,
+            points_predicted = NA_real_,
             xg_trend = list(I(numeric(0))),
-            xg_against_trend = list(I(numeric(0)))
+            xg_against_trend = list(I(numeric(0))),
+            goals_trend = list(I(numeric(0))),
+            goals_against_trend = list(I(numeric(0)))
           )
       } else {
         team_pred <- round_predictions |>
@@ -837,8 +903,15 @@ publish_iceland_league <- function(extracted,
             xg_for_sum = sum(.data$xg_for),
             xg_against_sum = sum(.data$xg_against),
             xpts_sum = sum(.data$xpts),
+            goals_for_pred_sum = sum(.data$goals_for_actual),
+            goals_against_pred_sum = sum(.data$goals_against_actual),
+            points_pred_sum = sum(.data$pts_actual),
             xg_trend = list(.data$xg_for),
             xg_against_trend = list(.data$xg_against),
+            # Same rounds, same order as xg_trend -- this pairing is the whole
+            # point, because the Fravik sparkline zips the two by index.
+            goals_trend = list(.data$goals_for_actual),
+            goals_against_trend = list(.data$goals_against_actual),
             .by = "team"
           )
 
@@ -858,6 +931,16 @@ publish_iceland_league <- function(extracted,
             xpts = dplyr::if_else(
               .data$n_predicted_matches > 0L, .data$xpts_sum, NA_real_
             ),
+            goals_for_predicted = dplyr::if_else(
+              .data$n_predicted_matches > 0L, .data$goals_for_pred_sum, NA_real_
+            ),
+            goals_against_predicted = dplyr::if_else(
+              .data$n_predicted_matches > 0L,
+              .data$goals_against_pred_sum, NA_real_
+            ),
+            points_predicted = dplyr::if_else(
+              .data$n_predicted_matches > 0L, .data$points_pred_sum, NA_real_
+            ),
             xg_trend = lapply(.data$xg_trend, function(x) {
               if (is.null(x)) I(numeric(0)) else I(x)
             }),
@@ -867,8 +950,11 @@ publish_iceland_league <- function(extracted,
           ) |>
           dplyr::select(
             "team", "xg_for", "xg_against", "xpts",
+            "goals_for_predicted", "goals_against_predicted",
+            "points_predicted",
             "n_predicted_matches", "n_played_matches",
-            "xg_trend", "xg_against_trend"
+            "xg_trend", "xg_against_trend",
+            "goals_trend", "goals_against_trend"
           )
       }
     } else {
@@ -1125,6 +1211,7 @@ publish_iceland_league <- function(extracted,
 
       if (!is.null(team_expected)) {
         standings_rows <- standings_rows |>
+          dplyr::select(-c("goals_trend", "goals_against_trend")) |>
           dplyr::left_join(team_expected, by = "team") |>
           dplyr::mutate(
             xg_trend = lapply(.data$xg_trend, function(x) {
@@ -1132,12 +1219,22 @@ publish_iceland_league <- function(extracted,
             }),
             xg_against_trend = lapply(.data$xg_against_trend, function(x) {
               if (is.null(x)) I(numeric(0)) else I(x)
-            })
+            }),
+            goals_trend = lapply(.data$goals_trend, function(x) {
+              if (is.null(x)) I(numeric(0)) else I(x)
+            }),
+            goals_against_trend = lapply(
+              .data$goals_against_trend,
+              function(x) if (is.null(x)) I(numeric(0)) else I(x)
+            )
           )
       } else {
         standings_rows <- standings_rows |>
           dplyr::mutate(
             xg_for = NA_real_, xg_against = NA_real_, xpts = NA_real_,
+            goals_for_predicted = NA_real_,
+            goals_against_predicted = NA_real_,
+            points_predicted = NA_real_,
             n_predicted_matches = 0L,
             n_played_matches = as.integer(.data$played),
             xg_trend = list(I(numeric(0))),
@@ -1150,6 +1247,7 @@ publish_iceland_league <- function(extracted,
           "team", "short", "played", "wins", "draws", "losses",
           "goals_for", "goals_against", "goal_diff", "points",
           "xg_for", "xg_against", "xpts",
+          "goals_for_predicted", "goals_against_predicted", "points_predicted",
           "n_predicted_matches", "n_played_matches",
           "rank", "form",
           "xg_trend", "xg_against_trend",
