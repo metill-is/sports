@@ -131,8 +131,10 @@ test_that("empty_extracts covers every file type with a 0-row tibble", {
 })
 
 test_that("the football-only surfaces are football-only", {
+  # "xg" left this list when handball took it -- ownership is asserted in
+  # test-publish-2dt-round-predictions.R instead.
   football_only <- c(
-    "round_predictions_history", "xg", "cup_bracket", "split",
+    "round_predictions_history", "cup_bracket", "split",
     "preseason_strengths"
   )
   expect_true(all(football_only %in% sport_publish_profile("football")$surfaces))

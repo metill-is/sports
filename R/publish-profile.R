@@ -63,6 +63,20 @@ NULL
 #                against tests/testthat/fixtures/extracts/
 #   fit_meta  -- the partition-level contract in the Plan B design (one row:
 #                n_draws, fit_date, stan_model, model_units)
+# The cell-directory JSON basenames a sport publishes.
+#
+# `surfaces` is overloaded: most entries name a cell JSON, but several switch on
+# a computation instead ("xg", "split", "preseason_strengths") or write outside
+# the cell directory ("round_predictions_history"). That distinction is already
+# enumerated once, as .PUBLISH_SURFACE_FILES in R/health-publish.R, so derive
+# from it rather than restating it as a second list that can drift.
+.publish_cell_surfaces <- function(sport) {
+  intersect(
+    sport_publish_profile(sport)$surfaces,
+    names(.PUBLISH_SURFACE_FILES)
+  )
+}
+
 .publish_empty_extracts <- function(shape) {
   shared <- list(
     team_strengths_quantiles = tibble::tibble(
@@ -139,7 +153,8 @@ NULL
   # history for it to mark incomplete, unlike football's.
   twodt_required <- football_required
 
-  twodt <- function(units, has_ties, tie_threshold) {
+  twodt <- function(units, has_ties, tie_threshold,
+                    extra_surfaces = character()) {
     list(
       required_extracts = twodt_required,
       optional_extracts = .PUBLISH_OPTIONAL_ALWAYS,
@@ -154,7 +169,7 @@ NULL
         home_advantage = "identity",
         home_advantage_total = "identity"
       ),
-      surfaces = .PUBLISH_COMMON_SURFACES,
+      surfaces = c(.PUBLISH_COMMON_SURFACES, extra_surfaces),
       has_ties = has_ties,
       tie_threshold = tie_threshold,
       points = list(
@@ -223,7 +238,11 @@ NULL
         strength = "goals", home_advantage = "goals", diff_bin_width = 2L
       ),
       has_ties = TRUE,
-      tie_threshold = 0.5
+      tie_threshold = 0.5,
+      # Goals carry over from football unchanged, so "Vaent mork" and xPts mean
+      # the same thing to a reader. Basketball is deliberately left off:
+      # expected *points* on a ~90-point game is a different claim.
+      extra_surfaces = "xg"
     )
   )
 }

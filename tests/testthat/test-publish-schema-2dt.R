@@ -57,7 +57,7 @@ test_that("the armed schemas accept every fixture-published bb/hb cell", {
     expect_length(res$unmatched, 0L)
     expect_equal(
       res$n_files,
-      4L * length(sport_publish_profile(sport)$surfaces),
+      4L * length(sports:::.publish_cell_surfaces(sport)),
       info = sport
     )
     expect_true(res$ok, info = paste(sport, paste(res$errors, collapse = " | ")))
