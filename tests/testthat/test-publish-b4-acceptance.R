@@ -84,7 +84,7 @@ test_that("all eight bb/hb cells publish from extracts with no fit RDS", {
 test_that("each bb/hb cell ships exactly the sport's profile surfaces", {
   root <- .b4_publish_all()
   for (sport in names(.B4_CELLS)) {
-    expected <- paste0(sort(sport_publish_profile(sport)$surfaces), ".json")
+    expected <- paste0(sort(sports:::.publish_cell_surfaces(sport)), ".json")
     for (cell in .B4_CELLS[[sport]]) {
       files <- list.files(
         file.path(root, "publish", sport, "iceland", cell),

@@ -401,31 +401,59 @@ NULL
 
     if (nrow(beliefs) == 0L) next
 
-    # Normalise both schemas into (home_goals, away_goals, count). The
-    # extracts `predicted_matches.parquet` carries `count` per integer-pair
-    # (post-aggregation); the legacy `part-0.parquet` carries one row per
-    # draw, so treat its rows as count=1.
-    if (!"count" %in% names(beliefs)) {
-      beliefs$count <- 1L
+    # Which shape this FILE is, not which shape the sport prefers.
+    # .find_pre_round_fit_path_pfi() picks the newest fit across the extracts
+    # tree (match_summary for the 2DT sports) and the archive tree (always
+    # long-form scorelines). prune_extracts() deletes old extracts partitions
+    # and nothing prunes the archive, so a 2DT round resolves to a long-form
+    # archive file as soon as retention bites. Keying this on the sport aborts
+    # the whole cell there, with the publish pipeline's per-cell tryCatch
+    # leaving yesterday's JSON on disk and the site quietly serving stale data.
+    per_match <- if ("mean_home_goals" %in% names(beliefs)) {
+      # The 2DT extractors already reduced the posterior to exactly the five
+      # quantities the scoreline path derives -- see
+      # .summarise_predicted_matches_2dt(). Rename rather than recompute;
+      # this shape carries no scorelines to recompute them from.
+      beliefs |>
+        dplyr::transmute(
+          home_team = .data$home_team,
+          away_team = .data$away_team,
+          match_date = .data$match_date,
+          xg_home = .data$mean_home_goals,
+          xg_away = .data$mean_away_goals,
+          p_home_win = .data$p_home_win,
+          p_draw_match = .data$p_draw,
+          p_away_win = .data$p_away_win
+        )
+    } else {
+      # Normalise both scoreline schemas into (home_goals, away_goals, count).
+      # The extracts `predicted_matches.parquet` carries `count` per
+      # integer-pair (post-aggregation); the legacy `part-0.parquet` carries
+      # one row per draw, so treat its rows as count=1.
+      if (!"count" %in% names(beliefs)) {
+        beliefs$count <- 1L
+      }
+
+      beliefs |>
+        dplyr::summarise(
+          total = sum(.data$count),
+          xg_home = sum(.data$home_goals * .data$count) / sum(.data$count),
+          xg_away = sum(.data$away_goals * .data$count) / sum(.data$count),
+          p_home_win = sum(.data$count[.data$home_goals > .data$away_goals]) / sum(.data$count),
+          p_draw_match = sum(.data$count[.data$home_goals == .data$away_goals]) / sum(.data$count),
+          p_away_win = sum(.data$count[.data$home_goals < .data$away_goals]) / sum(.data$count),
+          .by = c("home_team", "away_team", "match_date")
+        ) |>
+        dplyr::select(-"total")
     }
 
-    per_match <- beliefs |>
-      dplyr::summarise(
-        total = sum(.data$count),
-        xg_home = sum(.data$home_goals * .data$count) / sum(.data$count),
-        xg_away = sum(.data$away_goals * .data$count) / sum(.data$count),
-        p_home_win = sum(.data$count[.data$home_goals > .data$away_goals]) / sum(.data$count),
-        p_draw_match = sum(.data$count[.data$home_goals == .data$away_goals]) / sum(.data$count),
-        p_away_win = sum(.data$count[.data$home_goals < .data$away_goals]) / sum(.data$count),
-        .by = c("home_team", "away_team", "match_date")
-      ) |>
+    per_match <- per_match |>
       dplyr::mutate(
         xpts_home = points[["win"]] * .data$p_home_win +
           points[["draw"]] * .data$p_draw_match,
         xpts_away = points[["win"]] * .data$p_away_win +
           points[["draw"]] * .data$p_draw_match
-      ) |>
-      dplyr::select(-"total")
+      )
 
     # The ACTUAL result of each match this round modelled. The standings Delta
     # columns subtract expected from actual, and those two halves have to cover

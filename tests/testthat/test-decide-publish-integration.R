@@ -69,7 +69,7 @@ test_that("any live basketball or handball cell ships the full profile contract"
       expect_match(cell, "^(karla|kvenna)-[a-z0-9]+$")
       expect_setequal(
         list.files(file.path(dir, cell), pattern = "[.]json$"),
-        paste0(sport_publish_profile(sport)$surfaces, ".json")
+        paste0(sports:::.publish_cell_surfaces(sport), ".json")
       )
     }
   }
