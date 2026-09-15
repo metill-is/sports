@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-09-14T11:20:46Z",
+  "generated_at": "2026-09-15T10:45:46Z",
   "lookahead_days": 14,
   "degraded": false,
   "active": {
-    "basketball_iceland": false,
+    "basketball_iceland": true,
     "handball_iceland": true,
     "football_iceland": true
   }
