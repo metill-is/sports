@@ -215,7 +215,8 @@ test_that(".aggregate_round_predictions_pfi: returns one row per (round, team) w
     c(
       "round", "team", "fit_date", "n_matches",
       "xg_for", "xg_against", "xpts",
-      "p_win", "p_draw", "p_loss"
+      "p_win", "p_draw", "p_loss",
+      "goals_for_actual", "goals_against_actual", "pts_actual"
     )
   )
   expect_equal(nrow(out), 4L)
