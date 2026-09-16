@@ -345,8 +345,9 @@ test_that("fit_skip_reason() still applies the no-new-games guard to a named, un
 # 2026-09-16 §8, F15). Dates are far-future and `today` is injected.
 
 .seed_refit_cell <- function(root, fit_date, predicted = NULL,
-                             schedule = NULL, store = "extracts") {
-  cell <- c("sport=basketball", "country=iceland", "sex=male")
+                             schedule = NULL, store = "extracts",
+                             sport = "basketball") {
+  cell <- c(paste0("sport=", sport), "country=iceland", "sex=male")
   at <- function(...) do.call(fs::path, as.list(c(root, ...)))
 
   results_dir <- at("facts", "results", cell, "season=2100")
@@ -388,6 +389,15 @@ test_that("fit_skip_reason() still applies the no-new-games guard to a named, un
 }
 
 .bb_static <- list(sport = "basketball", country = "iceland")
+.hb_static <- list(sport = "handball", country = "iceland")
+
+# The archive's long-form prediction rows for one A v B fixture.
+.archive_rows <- function(dates, division = "BD") {
+  tibble::tibble(
+    match_date = as.Date(dates), home_team = "A", away_team = "B",
+    division = division, draw_id = 1:3, home_goals = 80, away_goals = 75
+  )
+}
 
 test_that("needs_refit() is TRUE when the horizon holds only fixtures the newest fit never predicted", {
   root <- withr::local_tempdir()
@@ -451,4 +461,55 @@ test_that("needs_refit() does not trigger on a prediction file it cannot read", 
   )
   fs::file_create(fs::path(fit_dir, "predicted_matches.parquet"))
   expect_false(needs_refit(.bb_static, "male", root = root, today = as.Date("2100-09-20")))
+})
+
+test_that("needs_refit() reads the newest fit's predictions from both stores together", {
+  # One fit writes both stores, and they disagree on purpose: extracts keep
+  # only the publish divisions' predictions, the archive keeps them all. After
+  # handball's regular season the extract predicts nothing, while the archive
+  # holds the play-off (PO) fixtures -- a window of PO games is covered.
+  po_fixture <- .fixture_rows("2100-04-25")
+  po_fixture$division <- "PO"
+  root <- withr::local_tempdir()
+  .seed_refit_cell(root, "2100-04-20",
+    predicted = .fixture_rows(character()), sport = "handball"
+  )
+  .seed_refit_cell(root, "2100-04-20",
+    predicted = .archive_rows("2100-04-25", division = "PO"),
+    schedule = po_fixture, store = "archive", sport = "handball"
+  )
+  expect_false(needs_refit(.hb_static, "male", root = root, today = as.Date("2100-04-21")))
+})
+
+test_that("needs_refit() ignores fixtures with a team that has never played", {
+  # prepare_data() drops a fixture whose team has no result, so no fit can
+  # predict it: a window holding only such fixtures would start a fit every
+  # day, and each would abort on an empty prediction set.
+  unknown_only <- withr::local_tempdir()
+  .seed_refit_cell(unknown_only, "2100-04-02",
+    predicted = .fixture_rows("2100-04-05"),
+    schedule = .fixture_rows("2100-09-29", home = "U", away = "A")
+  )
+  expect_false(needs_refit(.bb_static, "male", root = unknown_only, today = as.Date("2100-09-20")))
+
+  # The filter is per fixture: a known pairing beside it still counts.
+  mixed <- withr::local_tempdir()
+  .seed_refit_cell(mixed, "2100-04-02",
+    predicted = .fixture_rows("2100-04-05"),
+    schedule = .fixture_rows(
+      c("2100-09-29", "2100-09-30"),
+      home = c("U", "A"), away = c("A", "B")
+    )
+  )
+  expect_true(needs_refit(.bb_static, "male", root = mixed, today = as.Date("2100-09-20")))
+})
+
+test_that("an unreadable shard does not hide the readable predictions beside it", {
+  root <- withr::local_tempdir()
+  fit_dir <- .seed_refit_cell(root, "2100-04-02",
+    predicted = .archive_rows("2100-04-05"),
+    schedule = .fixture_rows("2100-09-29"), store = "archive"
+  )
+  fs::file_create(fs::path(fit_dir, "part-1.parquet"))
+  expect_true(needs_refit(.bb_static, "male", root = root, today = as.Date("2100-09-20")))
 })

@@ -16,7 +16,9 @@
 #'
 #' Also returns `TRUE` when fixtures fall inside the next `horizon_days` and
 #' the newest fit predicted none of them -- the season-rollover case, where
-#' nothing has been played since the last fit (spec 2026-09-16 §8).
+#' nothing has been played since the last fit (spec 2026-09-16 §8). Only
+#' fixtures a fit could predict count: both teams must have a completed
+#' result, because `prepare_data()` drops any other fixture.
 #'
 #' @param static Per-league static slice with `$sport` and `$country`.
 #' @param sex `"male"` or `"female"`.
@@ -92,7 +94,8 @@ needs_refit <- function(static, sex, root = here::here("data"),
   latest_match > last_fit ||
     .horizon_unpredicted(
       static, sex, root,
-      today = as.Date(today), horizon_days = horizon_days
+      today = as.Date(today), horizon_days = horizon_days,
+      completed = completed
     )
 }
 
@@ -105,10 +108,17 @@ needs_refit <- function(static, sex, root = here::here("data"),
 # the rule exists for -- a season rollover and a long break -- because a fit
 # made before either predicted nothing inside today's window.
 #
-# An unreadable or missing prediction file is "unknown", and unknown does not
+# Only a fixture a fit COULD predict counts. prepare_data() drops any fixture
+# with a team that has no completed result, so a window holding only those
+# (a newcomer's first games -- 2026 football had 02-24 to 02-27 holding only
+# Ulfarnir v Hamar) would start a fit every day, and every one would abort on
+# an empty prediction set.
+#
+# An unreadable or missing prediction set is "unknown", and unknown does not
 # start a fit. A cell with no fit at all never gets here: needs_refit() has
 # already returned TRUE.
-.horizon_unpredicted <- function(static, sex, root, today, horizon_days) {
+.horizon_unpredicted <- function(static, sex, root, today, horizon_days,
+                                 completed) {
   sched <- read_table(
     "schedules",
     root = root,
@@ -117,9 +127,11 @@ needs_refit <- function(static, sex, root = here::here("data"),
   if (nrow(sched) == 0L) {
     return(FALSE)
   }
+  known <- unique(c(completed$home_team, completed$away_team))
   in_window <- !is.na(sched$match_date) &
     sched$match_date > today &
-    sched$match_date <= today + as.integer(horizon_days)
+    sched$match_date <= today + as.integer(horizon_days) &
+    sched$home_team %in% known & sched$away_team %in% known
   if (!any(in_window)) {
     return(FALSE)
   }
@@ -133,9 +145,16 @@ needs_refit <- function(static, sex, root = here::here("data"),
   !any(key(sched[in_window, , drop = FALSE]) %in% key(predicted))
 }
 
-# The fixtures the newest fit predicted, from whichever store holds that fit:
-# extracts/ (predicted_matches.parquet) or archive/ (long-form beliefs). On a
-# date tie the extracts partition wins. NULL when nothing readable exists.
+# The fixtures the newest fit predicted, read from BOTH stores at that fit
+# date: extracts/ (predicted_matches.parquet) and archive/ (long-form
+# beliefs). One fit writes both, and they differ: the extract keeps only the
+# publish divisions' fixtures, the archive keeps them all -- handball's
+# play-off (PO) games included. Reading the extract alone on a tie left every
+# PO fixture uncovered, so handball refit daily through its play-offs.
+#
+# Each file is read on its own. An unreadable one is skipped, so one corrupt
+# archive shard no longer hides the readable predictions beside it. NULL when
+# no file at that date could be read.
 .latest_predicted_fixtures <- function(static, sex, root) {
   cell <- c(
     paste0("sport=", static$sport),
@@ -163,25 +182,29 @@ needs_refit <- function(static, sex, root = here::here("data"),
   if (nrow(parts) == 0L) {
     return(NULL)
   }
-  newest <- parts[order(-as.numeric(parts$fit_date), parts$store != "extracts"), ][1, ]
-  files <- if (identical(newest$store, "extracts")) {
-    fs::path(newest$path, "predicted_matches.parquet")
-  } else {
-    fs::dir_ls(newest$path, glob = "*.parquet")
-  }
-  files <- files[fs::file_exists(files)]
-  if (length(files) == 0L) {
-    return(NULL)
-  }
-  tryCatch(
-    dplyr::bind_rows(lapply(files, function(f) {
+  newest <- parts[parts$fit_date == max(parts$fit_date), , drop = FALSE]
+  files <- unlist(lapply(seq_len(nrow(newest)), function(i) {
+    if (identical(newest$store[[i]], "extracts")) {
+      file.path(newest$path[[i]], "predicted_matches.parquet")
+    } else {
+      as.character(fs::dir_ls(newest$path[[i]], glob = "*.parquet"))
+    }
+  }))
+  files <- files[file.exists(files)]
+  tables <- lapply(files, function(f) {
+    tryCatch(
       tibble::as_tibble(arrow::read_parquet(
         f,
         col_select = c("home_team", "away_team", "match_date")
-      ))
-    })),
-    error = function(e) NULL
-  )
+      )),
+      error = function(e) NULL
+    )
+  })
+  tables <- Filter(Negate(is.null), tables)
+  if (length(tables) == 0L) {
+    return(NULL)
+  }
+  dplyr::bind_rows(tables)
 }
 
 #' Are there any matches scheduled in the next `days` days?

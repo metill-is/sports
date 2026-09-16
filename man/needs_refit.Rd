@@ -45,5 +45,7 @@ when no game has been played since the last fit.
 \details{
 Also returns `TRUE` when fixtures fall inside the next `horizon_days` and
 the newest fit predicted none of them -- the season-rollover case, where
-nothing has been played since the last fit (spec 2026-09-16 §8).
+nothing has been played since the last fit (spec 2026-09-16 §8). Only
+fixtures a fit could predict count: both teams must have a completed
+result, because `prepare_data()` drops any other fixture.
 }
