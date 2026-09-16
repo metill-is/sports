@@ -153,6 +153,18 @@ NULL
   .name_by_code(vapply(cfg, function(d) .as_opt_int(d$expected_meetings), integer(1)), cfg)
 }
 
+# code -> the season this division is held on, NA_integer_ where unset. A held
+# division ignores its future schedule and never resolves past this season
+# (`.current_season_2dt()`), so the platform's min_season gate keeps it out of
+# view until the key is removed (spec 2026-09-16 §5.1).
+.iceland_division_preseason_hold <- function(key, sex) {
+  cfg <- .iceland_division_entries(key, sex, ".iceland_division_preseason_hold")
+  .name_by_code(
+    vapply(cfg, function(d) .as_opt_int(d$preseason_hold), integer(1)),
+    cfg
+  )
+}
+
 .name_by_code <- function(x, cfg) {
   stats::setNames(x, vapply(cfg, function(d) d$code, character(1)))
 }

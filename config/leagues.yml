@@ -106,10 +106,15 @@ basketball_iceland:
       # Re-measured by tests/testthat/test-iceland-division-helpers.R against
       # live data/facts/results -- when KKÍ changes the format that goes red,
       # and the fix is to re-measure the constant, not to loosen the test.
+      # preseason_hold: 2026 -- the 2027 season (12 teams, reserve sides renamed
+      # between seasons, 22 rounds) is not modelled yet. Held, the division keeps
+      # publishing 2026 and metill-platform keeps it out of view (spec
+      # 2026-09-16 section 5.1). Release it once the aliases are confirmed with
+      # KKI and regular_season_rounds is re-measured for the new format.
       - { code: BD, slug: bd, label_is: "Bónusdeild", is_cup: false,
           code_badge: BON, expected_meetings: 2 }
       - { code: 1D, slug: 1d, label_is: "1. deild",    is_cup: false,
-          code_badge: B1D, regular_season_rounds: 18 }
+          code_badge: B1D, regular_season_rounds: 18, preseason_hold: 2026 }
   stan_model: basketball_iceland/2d_student_t_scalarsigma.stan
   betting:
     # D2 (2026-09-02): publish-only. Enforced at four layers via

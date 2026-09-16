@@ -180,6 +180,11 @@
               "upper": { "type": "integer", "minimum": 2 },
               "lower": { "type": "integer", "minimum": 2 }
             }
+          },
+          "preseason_hold": {
+            "type": "integer",
+            "minimum": 2000,
+            "description": "Hold this division on the given season: the 2DT season resolver ignores its future schedule and never moves past this season, so metill-platform's min_season gate keeps the cell out of view. For a division whose next season is not modelled yet (basketball female 1. deild, 2027: renamed reserve sides and a new 12-team format). Remove the key to release it. Spec 2026-09-16 section 5.1."
           }
         }
       }
