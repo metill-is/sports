@@ -197,7 +197,12 @@
   played <- .publish_cell_rows(results, season, division_codes)
   upcoming <- .publish_cell_rows(schedules, season, division_codes)
   if (!is.null(upcoming) && nrow(upcoming) > 0L) {
-    upcoming <- upcoming[upcoming$match_date > end_date, , drop = FALSE]
+    # An undated row is neither side of end_date; left to the bare comparison
+    # it came back as an all-NA row and counted as one more team.
+    upcoming <- upcoming[
+      !is.na(upcoming$match_date) & upcoming$match_date > end_date, ,
+      drop = FALSE
+    ]
   }
 
   n_teams <- length(unique(c(

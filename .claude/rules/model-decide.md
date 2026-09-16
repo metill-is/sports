@@ -47,7 +47,14 @@ paths:
 - Daily driver: `Rscript scripts/03_fit.R`. The `needs_refit()`
   predicate in `R/pipeline-freshness.R` short-circuits (league × sex)
   pairs whose last `fit_date` is at least the latest completed
-  `match_date`. Use `--force` to refit unconditionally. Run detached
+  `match_date` — unless the next 14 days hold fixtures the newest fit
+  predicted none of (the pre-season / long-break rule, spec 2026-09-16
+  §8). That rule reads the newest fit's predictions from `extracts/` and
+  `archive/` together (the extract keeps only publish divisions, so
+  handball's `PO` games live in the archive), skips unreadable files one
+  by one, and ignores fixtures with a team that has no completed result
+  (`prepare_data()` drops those, so no fit could ever cover them). Use
+  `--force` to refit unconditionally. Run detached
   for long backfills (wall-clock several hours with 1000 MCMC iters):
   ```
   nohup Rscript scripts/03_fit.R --force > /tmp/fit.log 2>&1 & disown

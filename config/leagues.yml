@@ -195,6 +195,12 @@ handball_iceland:
       # matches, all 28 pairs exactly 3x. This is the cell that breaks the
       # 2*(n_teams - 1) assumption -- measured 2026-09-04 from
       # data/facts/results, not assumed (Plan B ID-B14).
+      # REMINDER (2026-09-16): OD becomes a DOUBLE round robin of 10 teams in
+      # 2027 (spec 2026-09-16 F17). The 2027 schedule overrides the 3 below only
+      # while the 8 -> 10 roster change is visible; from 2028 this value wins
+      # again and the cell would read 3 * 9 = 27 rounds. Set it to 2 once 2027
+      # is the mature season -- test-iceland-division-helpers.R goes red then,
+      # and that is the signal. Not before.
       - { code: OD,  slug: od,  label_is: "Olísdeild",     is_cup: false,
           code_badge: OD,  expected_meetings: 3 }
       - { code: G66, slug: g66, label_is: "Grill 66-deild", is_cup: false,

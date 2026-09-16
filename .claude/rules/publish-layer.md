@@ -114,23 +114,25 @@ league declares its own per-sex publish cells:
 | `basketball_iceland` | BD, 1D | BD, 1D |
 | `handball_iceland` | OD, G66 | OD, G66 |
 
-They are read through nine accessors in `R/publish-divisions.R`, all
+They are read through eleven accessors in `R/publish-divisions.R`, all
 `.iceland_division_*(key, sex)` where `key` is a `leagues.yml`
 top-level league key: `codes`, `slugs`, `labels`, `split`, `badges`,
-`is_cup`, `qualify`, `relegation`, `expected_meetings`. The
+`is_cup`, `qualify`, `relegation`, `regular_season_rounds`,
+`expected_meetings`, `preseason_hold`. The
 football-only `.football_iceland_division_*` helpers they replace are
 **deleted, with no compatibility aliases** — two live names for one
 symbol is the drift this removed. Adding a publish cell is a config
 edit plus a metill-platform `DIVISIONS` entry, never an R edit.
 
-Five optional keys on a `publish_divisions` entry, all absent-safe:
+Six optional keys on a `publish_divisions` entry, all absent-safe:
 
 | Key | Contract |
 |---|---|
 | `code_badge` | Short ASCII badge emitted as `next_games.json::division_code`, which the publish schemas pattern as `^[A-Z][A-Z0-9_]*$`. Basketball's code `1D` fails that on its own (leading digit), which is why the key exists. Absent falls back to `code`. Every entry carrying a `split` also derives `<code>_UPPER_PO`/`_LOWER_PO` → `<badge>U`/`<badge>L`. |
-| `expected_meetings` | Times each pair meets in the **regular** season. An assertion and a fallback, **never the source** — `n_rounds` is derived from schedule + results (spec §12). Omit where the format is genuinely irregular (basketball female 1D). |
+| `expected_meetings` | Times each pair meets in the **regular** season. Football: an assertion and a fallback, **never the source** — `n_rounds` is derived from schedule + results (spec §12). Basketball/handball: one of three meetings sources, ranked by `.division_format_2dt()` (see *2DT season and format* below) — the season's own fixture list overrides it only on a roster-size change. Omit where the format is genuinely irregular (basketball female 1D). |
 | `regular_season_rounds` | The last regular round, **stated outright**. Unlike `expected_meetings` this IS a source: it sets both `n_rounds` and the `cut`, ahead of the meetings derivation and ahead of the schedule. One cell carries it — basketball female 1D, see below. |
 | `qualify` | `{slots, label_is}`. Absent = `meta.qualify: null` and **no** `p_qualify`. It is the generic replacement for football's `p_top_six`, which does not transfer: Bónusdeild karla is 12 teams with 8 qualifying, and Bónusdeild kvenna carries all 10 through. |
+| `preseason_hold` | Basketball/handball only. A season (integer) the division is pinned to: `.current_season_2dt()` ignores its schedule and resolves to the latest season at or before the hold with played results, even once the next season starts. A hold on a season the division has no results for is inert. Basketball female 1D sets `2026` (its 2027 aliases and format are unresolved), so the cell keeps publishing 2026 and metill-platform keeps it out of view. Remove the key to release it. |
 | `relegation_slots` | Teams relegated from this division. Replaces the hardcoded bottom-two rule (`placement >= n_teams - 1L`), which is wrong for a bottom-tier division where nothing is relegated. Absent = `meta.relegation: null` and **no** `p_relegation` — the same absent-means-omitted rule `qualify` follows. Football's nine cells are the one exception, see below. |
 
 Only football BD (both sexes) configures `qualify` today — `{slots: 6,
@@ -360,8 +362,10 @@ appearance counting. Measured 2026-09-04: the schedule branch is the identity
 on real data in every cell (all nine football cells, basketball female 1D
 98 → 98), while the ungated filter deleted one played match from six football
 cells and one basketball cell of the synthetic fixture. The FORWARD half
-(`.regular_season_game_nrs_2dt()`) is deliberately NOT gated — capping how many
-fixtures remain is a question about season LENGTH, which both sources answer.
+(`.remaining_fixtures_2dt()`, which replaced `.regular_season_game_nrs_2dt()` on
+2026-09-16) is deliberately NOT gated — capping how many fixtures remain is a
+question about season LENGTH, which both sources answer: with meetings unknown
+it caps each side's schedule at `n_rounds` (`max_games`).
 
 ## meta.json v2 + the D3 relabel (since 2026-09-04)
 
@@ -379,6 +383,7 @@ VERBATIM — key order is part of the payload identity, because
 |---|---|
 | `n_rounds` | integer or null. Cups are null. |
 | `n_rounds_source` | `config` / `schedule` / `none` / `not_applicable`. |
+| `n_rounds_meetings_source` | Basketball/handball only, directly after `n_rounds_source`: where the meetings count behind `n_rounds` came from — `schedule` / `config` / `prior_results` / `none` / `not_applicable`. Absent on football, whose key order the golden manifest hashes. |
 | `units` | `{strength, home_advantage, diff_bin_width}` from the profile. |
 | `points` | `{win, draw, loss}`; basketball's `draw` is **null**, not 0. |
 | `season_scope` | `full_season` (football) / `regular_season` (bb+hb). |
@@ -389,6 +394,44 @@ VERBATIM — key order is part of the payload identity, because
 The builder ABORTS when `round > n_rounds`: a published cell that would render
 a negative "Umferðir eftir" is refused at the producer rather than clamped at
 the consumer.
+
+## 2DT season and format (since 2026-09-16)
+
+Basketball and handball (`profile$season_rule == "schedule_aware"`) resolve
+the season, the format and the remaining fixtures differently from football,
+which keeps `max(results$season)` (D5). Spec:
+`docs/superpowers/specs/2026-09-16-2dt-full-season-projection-design.md`.
+
+- **Season.** `.current_season_2dt()` (`R/season-structure-2dt.R`) is the
+  latest season with a played result on or before `end_date`, or with a
+  fixture after it, so a published next season is current before its first
+  match. `preseason_hold` pins a division (above).
+- **The extract decides the published season.** A new season's schedule lands
+  weeks before a refit can use it, while the publisher runs several times a
+  day. So the 2DT extractor stamps `final_positions.parquet` and
+  `points_distribution.parquet` with a `season` column (the season it
+  simulated), `read_extracted_iceland()` lifts it into a per-division
+  `simulated_season` integer and drops the column (no published record gains
+  a key), and `.publish_season_2dt()` labels the whole cell with it — meta,
+  round, format, standings, history, team list. When the resolver has moved
+  past the extract it only logs that a refit is due. An extract without the
+  stamp (written before 2026-09-16) publishes under the old results-only rule.
+  Without this, last season's table went out as the new season at round 0 and
+  wrote a permanent round-0 heatmap step.
+- **Format.** `.division_format_2dt()` ranks the meetings-per-pairing sources:
+  the season's own fixture list, when it is a complete, self-consistent list
+  AND either agrees with `expected_meetings` (or none is set) or the roster
+  size changed since the last completed season (F17: women's Olísdeild 8 → 10,
+  triple → double round robin); then `expected_meetings`; then the last
+  completed season's results. A stated `regular_season_rounds` makes the
+  meetings `not_applicable`. The source is published as
+  `meta.n_rounds_meetings_source`.
+- **Pre-season history.** With no played match in the season,
+  `final_positions_history.json` rows carry the extract's fit date as `as_of`,
+  so republishing one fit replaces its round-0 step instead of adding one.
+- **Team list.** The season's results ∪ its schedule rows, so
+  `home_advantage.json` covers every team before the first fixture enters
+  Stan's 14-day window.
 
 `final_positions.json` carries a top-level `basis` (`final_table` /
 `regular_season_table`) and its summary is built by

@@ -120,6 +120,22 @@ test_that("a format change at the season boundary follows the new schedule (F17)
   )
 })
 
+test_that("a brand-new division has no prior roster, so a disagreeing schedule defers to config", {
+  # The same 10-team double round robin as F17, but the division has never
+  # played: its league's only results are another division's. With no prior
+  # season there is no roster change to confirm, so config wins.
+  new <- LETTERS[1:10]
+  next_season <- .dated(.double_rr(new), 2101L, start = as.Date("2100-09-05"))
+  elsewhere <- .dated(.double_rr(LETTERS[11:14]), 2100L, division = "G66", scored = TRUE)
+  expect_false(.division_size_changed_2dt(elsewhere, next_season, 2101L, "OD"))
+  expect_identical(
+    .division_format_2dt(elsewhere, next_season, 2101L, "OD",
+      expected_meetings = 3L, regular_season_rounds = NA_integer_
+    ),
+    list(meetings = 3L, source = "config")
+  )
+})
+
 test_that("a partial fixture list is not a format signal", {
   # Rejected by the BALANCE gate, not coverage or agreement: coverage is
   # 15/15 and agreement is 12/15 = 0.8 (both pass), but all three return legs

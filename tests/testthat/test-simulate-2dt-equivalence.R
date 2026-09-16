@@ -30,10 +30,12 @@
 EQUIV_NOISE_SD <- c(basketball = 10, handball = 3)
 # Per-fixture tolerances. Each difference of two 2000-draw estimates has a
 # sampling sd near 0.037 (IQR ratio) and 0.03 (Spearman), so these sit about
-# five sds out. Calibrated 2026-09-16 by replaying every fixture under 200
-# seeds against these fits' fixed Stan draws: the largest deviations were 0.14
-# and 0.11. The PIT threshold holds the 24 KS tests' joint false-alarm rate
-# near 2% should the draws ever change (another platform, a new CmdStan).
+# five sds out. Calibrated 2026-09-16 with tools/calibrate-2dt-equivalence.R,
+# which replays every fixture under 200 seeds against these fits' fixed Stan
+# draws: the largest deviations were 0.14 and 0.11 (and 0.046 against the
+# P(home win) check's 0.06, the tightest margin). The PIT threshold holds the
+# 24 KS tests' joint false-alarm rate near 2% should the draws ever change
+# (another platform, a new CmdStan) -- re-run that script when they do.
 EQUIV_IQR_TOL <- 0.20
 EQUIV_SPEARMAN_TOL <- 0.15
 EQUIV_PIT_MIN_P <- 0.001

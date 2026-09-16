@@ -205,6 +205,33 @@ test_that("a double round robin resolves to 2 * (n_teams - 1)", {
   expect_equal(.publish_round(hb_m, 2100L, "OD", n$n_rounds), 3L)
 })
 
+test_that("an undated schedule row is not a team", {
+  # A fixture with no date is neither before nor after end_date. Subsetting on
+  # the NA comparison kept it as an all-NA row, which counted as a fifth team:
+  # 2 * (5 - 1) = 8 rounds for a 4-team double round robin.
+  root <- fixture_facts_root()
+  results <- read_table("results", root = root)
+  schedules <- read_table("schedules", root = root)
+  cell <- function(df) {
+    df[
+      df$sport == "handball" & df$sex == "male" &
+        df$division == "OD" & df$season == 2100L, ,
+      drop = FALSE
+    ]
+  }
+  sc_m <- cell(schedules)
+  undated <- sc_m[1, ]
+  undated$match_date <- as.Date(NA)
+
+  n <- .publish_n_rounds(
+    results = cell(results), schedules = dplyr::bind_rows(sc_m, undated),
+    season = 2100L, division_codes = "OD", end_date = FIXTURE_END_DATE,
+    expected_meetings = 2L
+  )
+  expect_equal(n$n_teams, 4L)
+  expect_equal(n$n_rounds, 6L)
+})
+
 test_that("the schedule derivation counts appearances, never schedules$round", {
   root <- fixture_facts_root()
   results <- read_table("results", root = root)
