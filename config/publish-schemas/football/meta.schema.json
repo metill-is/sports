@@ -47,7 +47,8 @@
     "season": {
       "type": "integer",
       "minimum": 2000,
-      "maximum": 2100
+      "maximum": 2200,
+      "description": "The season the cell describes. The bounds are a typo guard only; the test fixture's far-future seasons run 2099-2101, and a 2DT cell between seasons publishes the next one."
     },
     "generated_at": {
       "type": "string",
@@ -81,6 +82,16 @@
         "not_applicable"
       ],
       "description": "Where n_rounds came from. `config` = the division's configured expected_meetings (wins); `schedule` = derived from the season's fixture count; `none` = neither was available; `not_applicable` = a cup, which has no round count."
+    },
+    "n_rounds_meetings_source": {
+      "enum": [
+        "schedule",
+        "config",
+        "prior_results",
+        "none",
+        "not_applicable"
+      ],
+      "description": "Basketball and handball only (additive, 2026-09-16): where the meetings-per-pairing count behind n_rounds came from. `schedule` = the season's own complete fixture list; `config` = the division's expected_meetings; `prior_results` = the last completed season; `none` = no count, n_rounds fell back to the schedule; `not_applicable` = the division states regular_season_rounds instead. When set, n_rounds_source reads `config` whatever this says."
     },
     "units": {
       "type": "object",

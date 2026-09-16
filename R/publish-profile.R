@@ -27,6 +27,8 @@ NULL
 #   season_scope            meta    -- what the published table covers
 #   postseason              meta    -- the unmodelled post-season, or NULL
 #   placement_basis         final_positions -- what a placement means
+#   season_rule             publisher -- "results" | "schedule_aware": how the
+#                                   current season is resolved (spec 2026-09-16 §5)
 #
 # `value_link`, `units$strength` and `units$home_advantage` are not read by any
 # caller yet; they exist so WS8 and WS10 consume this one registry rather than
@@ -182,7 +184,11 @@ NULL
       units = units,
       season_scope = "regular_season",
       postseason = list(name_is = "\u00darslitakeppni", modelled = FALSE),
-      placement_basis = "regular_season_table"
+      placement_basis = "regular_season_table",
+      # The season is read off the schedule as well as the results, so a
+      # published next season is current before its first match (spec
+      # 2026-09-16 §5). Football keeps "results" (D5).
+      season_rule = "schedule_aware"
     )
   }
 
@@ -224,7 +230,8 @@ NULL
       ),
       season_scope = "full_season",
       postseason = NULL,
-      placement_basis = "final_table"
+      placement_basis = "final_table",
+      season_rule = "results"
     ),
     basketball = twodt(
       units = list(

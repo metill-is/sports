@@ -787,6 +787,8 @@ publish_iceland_league <- function(extracted,
   division_meetings <- .iceland_division_expected_meetings(league_key, sex)
   division_regular_rounds <-
     .iceland_division_regular_season_rounds(league_key, sex)
+  division_hold <- .iceland_division_preseason_hold(league_key, sex)
+  schedule_aware <- identical(profile$season_rule, "schedule_aware")
 
   # extracted shape: list keyed by division code (BD, LD1, ...) — see
   # read_extracted_iceland(). Each per-division list has the 6 parquet
@@ -883,7 +885,18 @@ publish_iceland_league <- function(extracted,
     )
     dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
 
-    current_season <- max(results$season, na.rm = TRUE)
+    # The 2DT sports read the season off the schedule as well as the results,
+    # so a published next season is current before its first match; the
+    # extractor calls the same helper, so the two layers agree (spec
+    # 2026-09-16 §5). Football keeps its own rule (D5).
+    current_season <- if (schedule_aware) {
+      .current_season_2dt(
+        results, schedules, end_date, target_div,
+        hold = division_hold[[target_div]]
+      )
+    } else {
+      max(results$season, na.rm = TRUE)
+    }
 
     current_top_teams <- results[
       results$season == current_season & results$division == top_div, ,
@@ -1036,16 +1049,32 @@ publish_iceland_league <- function(extracted,
       expected_meetings = division_meetings[[target_div]],
       regular_season_rounds = division_regular_rounds[[target_div]]
     )
+    # 2DT: meetings per pairing from the season's own fixtures where they form
+    # a complete list (§6, F17) -- the same call the extractor makes.
+    division_format <- if (schedule_aware) {
+      .division_format_2dt(
+        results, schedules, current_season, target_div,
+        expected_meetings = division_cfg$expected_meetings,
+        regular_season_rounds = division_cfg$regular_season_rounds
+      )
+    } else {
+      NULL
+    }
     format_facts <- .publish_n_rounds(
       results = results,
       schedules = schedules,
       season = current_season,
       division_codes = family_divs,
       end_date = end_date,
-      expected_meetings = division_cfg$expected_meetings,
+      expected_meetings = if (is.null(division_format)) {
+        division_cfg$expected_meetings
+      } else {
+        division_format$meetings
+      },
       regular_season_rounds = division_cfg$regular_season_rounds,
       is_cup = is_cup
     )
+    format_facts$meetings_source <- division_format$source
     round_num <- .publish_round(
       results, current_season, family_divs,
       n_rounds = format_facts$n_rounds, cut = format_facts$cut

@@ -218,3 +218,10 @@ test_that("an unknown sport aborts and names the known ones", {
   expect_error(sport_publish_profile(NA_character_))
   expect_error(sport_publish_profile(c("football", "handball")))
 })
+
+test_that("only the 2DT sports read the season off the schedule (spec 2026-09-16 D5)", {
+  expect_identical(sport_publish_profile("football")$season_rule, "results")
+  for (sport in c("basketball", "handball")) {
+    expect_identical(sport_publish_profile(sport)$season_rule, "schedule_aware", info = sport)
+  }
+})

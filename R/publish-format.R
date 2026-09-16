@@ -316,7 +316,8 @@
 #' @param base The v1 key block, already ordered
 #'   (`sport` .. `n_draws`, plus `split` on a split-season cell).
 #' @param profile [`sport_publish_profile()`] for this sport.
-#' @param format A [`.publish_n_rounds()`] result.
+#' @param format A [`.publish_n_rounds()`] result. May carry
+#'   `meetings_source` (2DT), published as `n_rounds_meetings_source`.
 #' @param division_cfg `list(qualify, relegation_slots, expected_meetings)`,
 #'   assembled by the caller from the `.iceland_division_*()` accessors
 #'   indexed by division code. `qualify` is `NULL` or
@@ -350,11 +351,22 @@
   relegation_slots <- division_cfg$relegation_slots
   if (is.null(relegation_slots)) relegation_slots <- NA_integer_
 
+  # Where the meetings count behind n_rounds came from -- 2DT cells only, so
+  # football's key order (hashed by the golden manifest) is untouched.
+  meetings_source <- if (is.null(format$meetings_source)) {
+    list()
+  } else {
+    list(n_rounds_meetings_source = as.character(format$meetings_source))
+  }
+
   c(
     base,
     list(
       n_rounds        = n_rounds,
-      n_rounds_source = as.character(format$source),
+      n_rounds_source = as.character(format$source)
+    ),
+    meetings_source,
+    list(
       units           = profile$units,
       points          = profile$points,
       season_scope    = profile$season_scope,
