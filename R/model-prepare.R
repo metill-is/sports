@@ -56,6 +56,55 @@ filter_results_by_top_divisions <- function(results, divisions, lookback_days,
   ]
 }
 
+#' The result set a fit is trained on.
+#'
+#' The one definition of "the matches the model saw", shared by
+#' [prepare_data()] and `extract_football_iceland()`'s strength trajectory.
+#' The trajectory reads `offense[round, team]` at each team's appearance count
+#' over the rows it is handed, so the two must agree row for row: a
+#' `training_filter` applied on one side only shifts the published trajectory
+#' onto neighbouring rounds, silently.
+#'
+#' @param results `results` rows for one (sport, country, sex).
+#' @param league League config entry; its `training_filter` is applied when set.
+#' @param end_date Training cutoff (inclusive).
+#' @param from_season Optional; drop matches with `season < from_season`.
+#' @param verbose Report how many matches `training_filter` kept.
+#' @return Scored matches on or before `end_date`, filtered, ordered by
+#'   `match_date`.
+#' @noRd
+model_training_results <- function(results, league, end_date,
+                                   from_season = NULL, verbose = FALSE) {
+  if (!is.null(from_season)) {
+    results <- results[results$season >= as.integer(from_season), , drop = FALSE]
+  }
+  results <- results[results$match_date <= end_date, , drop = FALSE]
+  results <- results[
+    !is.na(results$home_score) & !is.na(results$away_score), ,
+    drop = FALSE
+  ]
+
+  tf <- league$training_filter
+  if (!is.null(tf) && length(tf$divisions) > 0L &&
+    !is.null(tf$lookback_days)) {
+    n_before <- nrow(results)
+    results <- filter_results_by_top_divisions(
+      results,
+      divisions     = tf$divisions,
+      lookback_days = as.integer(tf$lookback_days),
+      end_date      = end_date
+    )
+    if (isTRUE(verbose)) {
+      cli::cli_alert_info(
+        "training_filter: kept {nrow(results)}/{n_before} matches \\
+        (divisions={.val {tf$divisions}}, lookback={tf$lookback_days}d)"
+      )
+    }
+  }
+
+  results[order(results$match_date), , drop = FALSE]
+}
+
 #' Build stan_data + pred_d + teams from the facts store.
 #'
 #' Reads `data/facts/results/` and `data/facts/schedules/` for the given
@@ -97,32 +146,10 @@ prepare_data <- function(league,
     filter = list(sport = league$sport, country = league$country, sex = sex)
   )
 
-  if (!is.null(from_season)) {
-    results <- results[results$season >= as.integer(from_season), , drop = FALSE]
-  }
-  results <- results[results$match_date <= end_date, , drop = FALSE]
-  results <- results[
-    !is.na(results$home_score) & !is.na(results$away_score), ,
-    drop = FALSE
-  ]
-
-  tf <- league$training_filter
-  if (!is.null(tf) && length(tf$divisions) > 0L &&
-    !is.null(tf$lookback_days)) {
-    n_before <- nrow(results)
-    results <- filter_results_by_top_divisions(
-      results,
-      divisions     = tf$divisions,
-      lookback_days = as.integer(tf$lookback_days),
-      end_date      = end_date
-    )
-    cli::cli_alert_info(
-      "training_filter: kept {nrow(results)}/{n_before} matches \\
-      (divisions={.val {tf$divisions}}, lookback={tf$lookback_days}d)"
-    )
-  }
-
-  results <- results[order(results$match_date), , drop = FALSE]
+  results <- model_training_results(
+    results, league,
+    end_date = end_date, from_season = from_season, verbose = TRUE
+  )
   results$game_nr <- seq_len(nrow(results))
 
   # -- Team registry ---------------------------------------------------------

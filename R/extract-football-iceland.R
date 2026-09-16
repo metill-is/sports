@@ -41,6 +41,8 @@ NULL
 # writes one parquet per file type with `division` as a payload column.
 # Cross-division inputs (`posterior_goals_long`, `team_strengths_draws`,
 # `home_advantage_draws`, `results`, `teams`) are computed once by the caller.
+# `model_results` is the subset the fit was trained on (see
+# model_training_results()); only the strength trajectory reads it.
 .extract_division_parquets_pfi <- function(target_div,
                                            fit,
                                            teams,
@@ -55,7 +57,8 @@ NULL
                                            bracket_state = NULL,
                                            season_schedule = NULL,
                                            fit_date = NULL,
-                                           split_config = NULL) {
+                                           split_config = NULL,
+                                           model_results = results) {
   family_divs <- .split_family_divisions_pfi(target_div, split_config)
   top_results <- results[
     results$season == current_season & results$division == target_div, ,
@@ -135,7 +138,7 @@ NULL
 
   trajectory_long <- .compute_team_strength_trajectory(
     fit = fit,
-    results = results,
+    results = model_results,
     teams = teams,
     current_top_teams = current_top_teams,
     current_season = current_season,
@@ -1434,6 +1437,12 @@ extract_football_iceland <- function(fit, league, sex,
   } else {
     as.integer(format(as.Date(end_date), "%Y"))
   }
+  # The rows the fit was trained on (`training_filter` applied), for the
+  # strength trajectory alone -- it indexes the fit by appearance count, so it
+  # must see exactly this set. Standings, the cup bracket and the division's
+  # team list keep the full `results`: a cup tie against an amateur side is
+  # still a real result.
+  model_results <- model_training_results(results, league, end_date = end_date)
 
   # Full-season schedule for the league final-position simulation. Read once
   # (all divisions); `.extract_division_parquets_pfi()` filters to its division
@@ -1549,6 +1558,7 @@ extract_football_iceland <- function(fit, league, sex,
       fit                  = fit,
       teams                = teams,
       results              = results,
+      model_results        = model_results,
       current_season       = current_season,
       posterior_goals_long = posterior_goals_long,
       team_strengths_draws = team_strengths_draws,

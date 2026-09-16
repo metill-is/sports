@@ -356,10 +356,13 @@ fit_league <- function(league_key = NULL,
 #' Fit a single (league x sex) and return belief row count.
 #'
 #' Takes the per-league "static" slice (sport, country, stan_model, sexes,
-#' data_source) rather than the full leagues config — keeps callers from
-#' re-loading the full config per call.
+#' data_source, and `training_filter` when the league has one) rather than the
+#' full leagues config — keeps callers from re-loading the full config per
+#' call. Anything [prepare_data()] or [fit_league()] reads off the league must
+#' be in the slice; a field left out is silently `NULL`.
 #'
-#' @param static Per-league static slice (sport, country, stan_model, sexes, data_source).
+#' @param static Per-league static slice (sport, country, stan_model, sexes,
+#'   data_source, training_filter).
 #' @param sex `"male"` or `"female"`.
 #' @return Integer count of belief rows written.
 #' @export
@@ -453,6 +456,12 @@ run_fit_targets <- function(targets, leagues, force, league_named,
     static <- league_def[c(
       "sport", "country", "sexes", "active", "stan_model", "data_source"
     )]
+    # prepare_data() reads `training_filter` off this slice, and nothing else
+    # restores it: without this line every daily football fit trained on the
+    # unfiltered store (n_obs 4120 vs 2974 on 2026-09-16), while replay,
+    # backtests and backfills -- which pass the full config entry -- did not.
+    # `$<-` with NULL is a no-op, so leagues without a filter stay unchanged.
+    static$training_filter <- league_def$training_filter
 
     skip <- skip_fn(static, row$sex, force, league_named, root = root)
     if (!is.null(skip)) {

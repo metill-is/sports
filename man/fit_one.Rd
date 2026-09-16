@@ -7,7 +7,8 @@
 fit_one(static, sex)
 }
 \arguments{
-\item{static}{Per-league static slice (sport, country, stan_model, sexes, data_source).}
+\item{static}{Per-league static slice (sport, country, stan_model, sexes,
+data_source, training_filter).}
 
 \item{sex}{`"male"` or `"female"`.}
 }
@@ -16,6 +17,8 @@ Integer count of belief rows written.
 }
 \description{
 Takes the per-league "static" slice (sport, country, stan_model, sexes,
-data_source) rather than the full leagues config — keeps callers from
-re-loading the full config per call.
+data_source, and `training_filter` when the league has one) rather than the
+full leagues config — keeps callers from re-loading the full config per
+call. Anything [prepare_data()] or [fit_league()] reads off the league must
+be in the slice; a field left out is silently `NULL`.
 }

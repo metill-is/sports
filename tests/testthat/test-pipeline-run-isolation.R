@@ -178,6 +178,46 @@ test_that("a partial failure leaves a non-empty failed frame (INT-2)", {
   expect_gt(nrow(res$failed), 0L)
 })
 
+test_that("run_fit_targets hands fit_fn the league's training_filter", {
+  # prepare_data() applies `league$training_filter`, and fit_league() reads it
+  # only off the league it is handed. run_fit_targets() passed a whitelisted
+  # slice without it, so every daily football fit since the filter landed
+  # (f17db2f1d, 2026-05-21) trained on the unfiltered store: n_obs 4120 on
+  # 2026-09-16 where the filter keeps 2974. Same class as the handball
+  # `betting` slice fixed in 369b31d35.
+  tf <- list(divisions = list("BD", "LD1"), lookback_days = 365L)
+  leagues <- .iso_leagues()
+  leagues$football_iceland$training_filter <- tf
+
+  seen <- list()
+  suppressMessages(run_fit_targets(
+    .iso_targets(), leagues,
+    force = FALSE, league_named = FALSE, root = tempdir(),
+    fit_fn = function(static, sex) {
+      seen[[static$sport]] <<- static
+      1L
+    },
+    skip_fn = function(...) NULL
+  ))
+  expect_identical(seen$football$training_filter, tf)
+  expect_null(seen$basketball$training_filter)
+})
+
+test_that("run_fit_targets keeps the production config's training_filter", {
+  cfg <- load_leagues()
+  seen <- NULL
+  suppressMessages(run_fit_targets(
+    tibble::tibble(key = "football_iceland", sex = "male"), cfg,
+    force = FALSE, league_named = FALSE, root = tempdir(),
+    fit_fn = function(static, sex) {
+      seen <<- static
+      1L
+    },
+    skip_fn = function(...) NULL
+  ))
+  expect_identical(seen$training_filter, cfg$football_iceland$training_filter)
+})
+
 test_that("scripts/03_fit.R delegates and exits non-zero on ANY failure", {
   src <- readLines(testthat::test_path("..", "..", "scripts", "03_fit.R"), warn = FALSE)
   body <- src[!grepl("^\\s*#", src)]
