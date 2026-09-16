@@ -27,8 +27,8 @@ FIXTURE_DIVISIONS <- list(
   # test-fixture-harness.R) because round_strengths_quantiles adds a matchweek
   # dimension to the same 9 x 99 grid.
   basketball = list(male = c(BD = 4L, `1D` = 6L), female = c(BD = 4L, `1D` = 6L)),
-  handball   = list(male = c(OD = 4L, G66 = 6L), female = c(OD = 4L, G66 = 6L)),
-  football   = list(
+  handball = list(male = c(OD = 4L, G66 = 6L), female = c(OD = 4L, G66 = 6L)),
+  football = list(
     male   = c(BD = 12L, LD1 = 6L, LD2 = 6L, LD3 = 6L, CUP = 4L),
     female = c(BD = 10L, LD1 = 6L, LD2 = 6L, CUP = 4L)
   )
@@ -50,9 +50,13 @@ fixture_division_teams <- function(sport, sex, division) {
 .fixture_gen_pkg_root <- function() {
   args <- commandArgs(trailingOnly = FALSE)
   hit <- grep("^--file=", args, value = TRUE)
-  if (length(hit) != 1L) return(NULL)
+  if (length(hit) != 1L) {
+    return(NULL)
+  }
   script <- sub("^--file=", "", hit)
-  if (basename(script) != "make-extract-fixtures.R") return(NULL)
+  if (basename(script) != "make-extract-fixtures.R") {
+    return(NULL)
+  }
   normalizePath(file.path(dirname(script), ".."), mustWork = FALSE)
 }
 
@@ -74,7 +78,11 @@ fixture_division_teams <- function(sport, sex, division) {
   ai <- grid[2L, ]
   per_day <- ceiling(n / 10L)
   day <- ceiling(seq_len(n) / per_day)
-  base <- switch(sport, basketball = 80L, handball = 24L, football = 1L)
+  base <- switch(sport,
+    basketball = 80L,
+    handball = 24L,
+    football = 1L
+  )
   tibble::tibble(
     sport      = sport,
     country    = "iceland",
@@ -159,8 +167,11 @@ fixture_division_teams <- function(sport, sex, division) {
       # round-strength trajectory indexes offense[global_round, k] with an index
       # derived from the same results set.
       fit <- stub_env$stub_fit(stub_env$stub_2dt_draws(
-        prep$teams$team, nrow(prep$pred_d), n_draws = FIXTURE_N_DRAWS,
-        n_rounds = prep$stan_data$N_rounds
+        prep$teams$team, nrow(prep$pred_d),
+        n_draws = FIXTURE_N_DRAWS,
+        n_rounds = prep$stan_data$N_rounds,
+        n_seasons = prep$stan_data$N_seasons,
+        level = if (identical(sport, "basketball")) 85 else 26
       ))
       cfg[[sport]]$fn(
         fit = fit, league = league, sex = sex,
@@ -201,8 +212,10 @@ make_football_golden_hashes <- function(dest = NULL) {
 
   helpers <- file.path(root, "tests", "testthat")
   env <- new.env(parent = environment())
-  for (h in c("helper-fixture-facts.R", "helper-stub-fit.R",
-              "helper-extract-fixtures.R")) {
+  for (h in c(
+    "helper-fixture-facts.R", "helper-stub-fit.R",
+    "helper-extract-fixtures.R"
+  )) {
     sys.source(file.path(helpers, h), envir = env)
   }
 
@@ -218,7 +231,8 @@ make_football_golden_hashes <- function(dest = NULL) {
   for (sex in c("male", "female")) {
     env$build_football_extracts_fixture(facts_root, extracts_root, sex)
     extracted <- read_extracted_iceland(
-      league, sex = sex, fit_date = FIXTURE_FIT_DATE, extracts_root = extracts_root
+      league,
+      sex = sex, fit_date = FIXTURE_FIT_DATE, extracts_root = extracts_root
     )
     suppressWarnings(publish_iceland_league(
       extracted = extracted, league = league, sex = sex,
@@ -228,7 +242,8 @@ make_football_golden_hashes <- function(dest = NULL) {
     ))
   }
   produced <- list.files(
-    file.path(out, "football"), pattern = "\\.json$",
+    file.path(out, "football"),
+    pattern = "\\.json$",
     recursive = TRUE, full.names = TRUE
   )
   manifest <- data.frame(

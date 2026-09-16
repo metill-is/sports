@@ -81,9 +81,12 @@ stub_fit <- function(draws_list) {
 #' @param constants Named list of `variable = value`; every element of that
 #'   variable is pinned to `value` (used by callers that need an exactly-known
 #'   posterior, e.g. a units assertion).
+#' @param n_seasons Length of `mean_goals` -- pass `prep$stan_data$N_seasons`.
+#' @param level Centre of `mean_goals` (points or goals per team per game).
 #' @return Named list suitable for `stub_fit()`.
 stub_2dt_draws <- function(teams, n_pred, n_draws = 50L, seed = 2100L,
-                           n_rounds = 10L, constants = list()) {
+                           n_rounds = 10L, constants = list(),
+                           n_seasons = 2L, level = 26) {
   stopifnot(
     is.character(teams), length(teams) >= 2L, n_pred >= 1L, n_rounds >= 1L
   )
@@ -161,28 +164,54 @@ stub_2dt_draws <- function(teams, n_pred, n_draws = 50L, seed = 2100L,
     cur_defense_away + home_advantage_def, "cur_defense_home"
   )
 
-  list(
-    cur_offense_home   = cur_offense_home,
-    cur_defense_home   = cur_defense_home,
-    cur_strength_home  = named(
+  core <- list(
+    cur_offense_home = cur_offense_home,
+    cur_defense_home = cur_defense_home,
+    cur_strength_home = named(
       cur_offense_home + cur_defense_home, "cur_strength_home"
     ),
-    cur_offense_away   = cur_offense_away,
-    cur_defense_away   = cur_defense_away,
-    cur_strength_away  = named(
+    cur_offense_away = cur_offense_away,
+    cur_defense_away = cur_defense_away,
+    cur_strength_away = named(
       cur_offense_away + cur_defense_away, "cur_strength_away"
     ),
-    offense            = offense,
-    defense            = defense,
+    offense = offense,
+    defense = defense,
     home_advantage_off = home_advantage_off,
     home_advantage_def = home_advantage_def,
     home_advantage_tot = named(
       home_advantage_off + home_advantage_def, "home_advantage_tot"
     ),
-    goals1_pred        = block("goals1_pred", n_pred, rep(24, n_pred), 4),
-    goals2_pred        = block("goals2_pred", n_pred, rep(22, n_pred), 4),
-    lp__               = block("lp__", 1L, -1234, 5, indexed = FALSE)
+    goals1_pred = block("goals1_pred", n_pred, rep(24, n_pred), 4),
+    goals2_pred = block("goals2_pred", n_pred, rep(22, n_pred), 4),
+    lp__ = block("lp__", 1L, -1234, 5, indexed = FALSE)
   )
+
+  # The Student-t and scoring-level surface the season simulation reads
+  # (R/simulate-2dt.R). Drawn AFTER everything above, so every variable above
+  # keeps its exact values -- the committed extracts fixture depends on them.
+  # Small scales keep the fixture's simulated tables ordered like its
+  # deterministic results.
+  sigma_team <- block("sigma_team", k, rep(2, k), 0.1)
+  c(core, list(
+    nu = block("nu", 1L, 12, 0.5, indexed = FALSE),
+    mean_goals = block("mean_goals", n_seasons, rep(level, n_seasons), 0.3),
+    delta_mean_goals = block("delta_mean_goals", 1L, 0.5, 0.1, indexed = FALSE),
+    sigma_mean_goals = abs(
+      block("sigma_mean_goals", 1L, 0.5, 0.05, indexed = FALSE)
+    ),
+    sigma = abs(block("sigma", 1L, 2, 0.1, indexed = FALSE)),
+    alpha_rho = block("alpha_rho", 1L, 0, 0.1, indexed = FALSE),
+    beta_rho = block("beta_rho", 1L, 0, 0.001, indexed = FALSE),
+    beta2_rho = block("beta2_rho", 1L, 0, 0.001, indexed = FALSE),
+    beta3_rho = block("beta3_rho", 1L, 0, 0.0001, indexed = FALSE),
+    rho = block("rho", 1L, 0.1, 0.05, indexed = FALSE),
+    sigma_team = abs(sigma_team),
+    mean_sigma_team = block("mean_sigma_team", 1L, log(2), 0.05, indexed = FALSE),
+    scale_sigma_team = abs(
+      block("scale_sigma_team", 1L, 0.2, 0.02, indexed = FALSE)
+    )
+  ))
 }
 
 #' Prepare data once, then build a stub sized from that exact `pred_d`.
@@ -202,7 +231,9 @@ local_stub_2dt <- function(league, sex, end_date = FIXTURE_END_DATE, root,
       n_pred = nrow(prep$pred_d),
       n_draws = n_draws,
       n_rounds = prep$stan_data$N_rounds,
-      constants = constants
+      constants = constants,
+      n_seasons = prep$stan_data$N_seasons,
+      level = if (identical(league$sport, "basketball")) 85 else 26
     )),
     prep = prep
   )

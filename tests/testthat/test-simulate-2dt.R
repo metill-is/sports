@@ -88,3 +88,59 @@ test_that(".match_fn_2dt dispatches by sport and declares its columns", {
   expect_identical(attr(.match_fn_2dt("handball"), "team_cols"), "sigma_team")
   expect_error(.match_fn_2dt("football"), "2DT")
 })
+
+test_that(".extract_sim_inputs_2dt returns the simulator's columns, draw-aligned", {
+  teams <- tibble::tibble(team = c("A", "B", "C"))
+  fit <- stub_fit(stub_2dt_draws(
+    teams$team,
+    n_pred = 1L, n_draws = 20L, n_seasons = 3L, level = 85
+  ))
+  bb <- .extract_sim_inputs_2dt(fit, teams, "basketball", n_seasons = 3L)
+  expect_setequal(names(bb$team), c(
+    "team", ".draw", "cur_offense", "cur_defense",
+    "home_advantage_off", "home_advantage_def"
+  ))
+  expect_equal(nrow(bb$team), 60L)
+  expect_setequal(names(bb$scalar), c(
+    ".draw", "mean_goals_fit", "delta_mean_goals", "sigma_mean_goals", "nu",
+    "sigma", "alpha_rho", "beta_rho", "beta2_rho", "beta3_rho"
+  ))
+  expect_identical(bb$scalar$.draw, sort(bb$scalar$.draw))
+
+  # cur_offense is the strength WITHOUT home advantage, i.e. offense[N_rounds].
+  raw <- posterior::as_draws_df(fit$draws("cur_offense_away"))
+  b <- bb$team[bb$team$team == "B", ]
+  expect_equal(b$cur_offense[order(b$.draw)], raw[["cur_offense_away[2]"]])
+  # The level is the LAST fitted season's.
+  lv <- posterior::as_draws_df(fit$draws("mean_goals"))
+  expect_equal(bb$scalar$mean_goals_fit, lv[["mean_goals[3]"]])
+
+  hb <- .extract_sim_inputs_2dt(fit, teams, "handball", n_seasons = 3L)
+  expect_true("sigma_team" %in% names(hb$team))
+  expect_setequal(
+    setdiff(names(hb$scalar), c(
+      ".draw", "mean_goals_fit", "delta_mean_goals", "sigma_mean_goals", "nu"
+    )),
+    c("rho", "mean_sigma_team", "scale_sigma_team")
+  )
+})
+
+test_that(".extract_sim_inputs_2dt drops team indices the team list does not cover", {
+  fit <- stub_fit(stub_2dt_draws(c("A", "B", "C"), n_pred = 1L, n_draws = 5L))
+  out <- .extract_sim_inputs_2dt(
+    fit, tibble::tibble(team = c("A", "B")), "basketball",
+    n_seasons = 2L
+  )
+  expect_setequal(unique(out$team$team), c("A", "B"))
+})
+
+test_that("a season the fit has not seen is stepped forward on the model's trend (F12)", {
+  sc <- tibble::tibble(
+    .draw = 1:3, mean_goals_fit = 80, delta_mean_goals = 2,
+    sigma_mean_goals = 1.5, z_level = c(-1, 0, 1)
+  )
+  expect_equal(.season_level_2dt(sc, 0L)$mean_goals, c(80, 80, 80))
+  expect_equal(.season_level_2dt(sc, 1L)$mean_goals, c(80.5, 82, 83.5))
+  expect_equal(.season_level_2dt(sc, 2L)$mean_goals, 84 + sqrt(2) * 1.5 * c(-1, 0, 1))
+  expect_error(.season_level_2dt(sc, -1L))
+})
