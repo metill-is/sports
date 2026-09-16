@@ -54,7 +54,7 @@
       "type": "integer",
       "minimum": 2000,
       "maximum": 2200,
-      "description": "The season the cell describes. The bounds are a typo guard only; the test fixture's far-future seasons run 2099-2101, and a 2DT cell between seasons publishes the next one."
+      "description": "The season the cell describes. The bounds are a range guard against typos, not a statement about which seasons are valid."
     },
     "generated_at": {
       "type": "string",
@@ -87,7 +87,7 @@
         "none",
         "not_applicable"
       ],
-      "description": "Where n_rounds came from. `config` = the division's configured expected_meetings (wins); `schedule` = derived from the season's fixture count; `none` = neither was available; `not_applicable` = a cup, which has no round count."
+      "description": "Where n_rounds came from. `config` = computed from a meetings-per-pairing count, or taken from the division's stated regular_season_rounds; it wins over the schedule. For basketball and handball the meetings count's own source is in n_rounds_meetings_source. `schedule` = derived from the season's fixture count; `none` = neither was available; `not_applicable` = a cup, which has no round count."
     },
     "n_rounds_meetings_source": {
       "enum": [
@@ -97,7 +97,7 @@
         "none",
         "not_applicable"
       ],
-      "description": "Basketball and handball only (additive, 2026-09-16): where the meetings-per-pairing count behind n_rounds came from. `schedule` = the season's own complete fixture list; `config` = the division's expected_meetings; `prior_results` = the last completed season; `none` = no count, n_rounds fell back to the schedule; `not_applicable` = the division states regular_season_rounds instead. When set, n_rounds_source reads `config` whatever this says."
+      "description": "Basketball and handball only (additive, 2026-09-16): where the meetings-per-pairing count behind n_rounds came from. `schedule` = the season's own complete fixture list; `config` = the division's expected_meetings; `prior_results` = the last completed season. With any of these three, n_rounds_source is `config` (on a cell of two or more teams). `none` = no meetings count was available, so n_rounds_source is `schedule` or `none`. `not_applicable` = the division states regular_season_rounds instead of a meetings count, and n_rounds_source is `config`."
     },
     "units": {
       "type": "object",

@@ -4,7 +4,10 @@
 # as_of = "-Inf". The handball schema rejected the cell, which is how it was
 # caught; a schema that accepted it would have published a plausible-looking
 # JSON whose date key was the string "-Inf". The honest as_of for a snapshot
-# with nothing played is the snapshot date.
+# with nothing played is the snapshot date -- except in
+# final_positions_history.json, which is keyed on as_of: there a 2DT cell
+# stamps the FIT date, so republishing the same fit on a later day replaces its
+# rows instead of adding a heatmap step (spec 2026-09-16, Task 14 review).
 
 .facts_without_division_results <- function(env, sport, sex, division) {
   root <- fixture_facts_root(env)
@@ -14,7 +17,7 @@
   root
 }
 
-test_that("a division with no played match stamps as_of with the snapshot date", {
+test_that("a division with no played match stamps the snapshot date, and its history the fit date", {
   root <- .facts_without_division_results(environment(), "handball", "female", "OD")
   extracts <- file.path(root, "beliefs", "extracts")
   dir.create(extracts, recursive = TRUE, showWarnings = FALSE)
@@ -32,7 +35,7 @@ test_that("a division with no played match stamps as_of with the snapshot date",
   hist <- jsonlite::fromJSON(file.path(cell, "final_positions_history.json"))
   as_of <- unique(hist$records$as_of)
   expect_true(all(grepl("^\\d{4}-\\d{2}-\\d{2}$", as_of)), info = paste(as_of, collapse = ","))
-  expect_identical(as_of, expected)
+  expect_identical(as_of, format(FIXTURE_FIT_DATE, "%Y-%m-%d"))
 })
 
 test_that("a division with played matches keeps as_of = last match date", {

@@ -898,13 +898,33 @@ publish_iceland_league <- function(extracted,
       max(results$season, na.rm = TRUE)
     }
 
-    current_top_teams <- results[
-      results$season == current_season & results$division == top_div, ,
-      drop = FALSE
-    ] |>
-      dplyr::select("home_team", "away_team") |>
-      tidyr::pivot_longer(c("home_team", "away_team"), values_to = "team") |>
-      dplyr::distinct(.data$team)
+    current_top_teams <- if (schedule_aware) {
+      # A 2DT season can be current before its first match, so its results
+      # alone may name no team. Its schedule names them all, and it is the
+      # fallback below when the first fixture lies past pred_d's 14-day
+      # window -- without it home_advantage.json kept no team pre-season.
+      season_rows <- function(df) {
+        if (is.null(df) || nrow(df) == 0L) {
+          return(tibble::tibble(home_team = character(), away_team = character()))
+        }
+        df[
+          df$season == current_season & df$division %in% family_divs,
+          c("home_team", "away_team"),
+          drop = FALSE
+        ]
+      }
+      dplyr::bind_rows(season_rows(results), season_rows(schedules)) |>
+        tidyr::pivot_longer(c("home_team", "away_team"), values_to = "team") |>
+        dplyr::distinct(.data$team)
+    } else {
+      results[
+        results$season == current_season & results$division == top_div, ,
+        drop = FALSE
+      ] |>
+        dplyr::select("home_team", "away_team") |>
+        tidyr::pivot_longer(c("home_team", "away_team"), values_to = "team") |>
+        dplyr::distinct(.data$team)
+    }
 
     top_teams_upcoming <- pred_d[pred_d$division %in% family_divs, , drop = FALSE] |>
       dplyr::select("home_team", "away_team") |>
@@ -1563,9 +1583,18 @@ publish_iceland_league <- function(extracted,
         auto_unbox = TRUE, dataframe = "rows", digits = 5
       )
 
+      # Before a 2DT season's first match there is no played date to stamp,
+      # and .as_of_stamp() would fall back to the publish date -- one more
+      # heatmap step for every republish of the same fit. The fit date is
+      # what identifies that snapshot. Football keeps its stamp (D5).
+      history_as_of <- if (schedule_aware && !is_cup && nrow(bd_results) == 0L) {
+        format(fit_date_stamp, "%Y-%m-%d")
+      } else {
+        .as_of_stamp(bd_results, end_date)
+      }
       final_positions_history_row <- final_positions |>
         dplyr::mutate(
-          as_of        = .as_of_stamp(bd_results, end_date),
+          as_of        = history_as_of,
           generated_at = generated_at,
           round        = as.integer(round_num),
           season       = current_season
