@@ -4,7 +4,13 @@
 \alias{needs_refit}
 \title{Decide whether a (league, sex) pair needs refitting.}
 \usage{
-needs_refit(static, sex, root = here::here("data"))
+needs_refit(
+  static,
+  sex,
+  root = here::here("data"),
+  today = Sys.Date(),
+  horizon_days = 14L
+)
 }
 \arguments{
 \item{static}{Per-league static slice with `$sport` and `$country`.}
@@ -12,6 +18,11 @@ needs_refit(static, sex, root = here::here("data"))
 \item{sex}{`"male"` or `"female"`.}
 
 \item{root}{Filesystem root (defaults to `here::here("data")`).}
+
+\item{today}{Reference date for the fixture horizon. Default `Sys.Date()`.}
+
+\item{horizon_days}{Horizon in days; keep equal to `fit_league()`'s
+`schedule_horizon_days` (14).}
 }
 \value{
 Logical scalar.
@@ -30,4 +41,9 @@ carries yesterday's fit — defensive complement to the atomic
 stage-then-rename in `write_table()`, audit 2026-05-15 §H + I2).
 Returns `FALSE` when no results exist (cannot fit on empty data) or
 when no game has been played since the last fit.
+}
+\details{
+Also returns `TRUE` when fixtures fall inside the next `horizon_days` and
+the newest fit predicted none of them -- the season-rollover case, where
+nothing has been played since the last fit (spec 2026-09-16 §8).
 }
