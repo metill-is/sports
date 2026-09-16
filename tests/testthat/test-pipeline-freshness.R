@@ -513,3 +513,130 @@ test_that("an unreadable shard does not hide the readable predictions beside it"
   fs::file_create(fs::path(fit_dir, "part-1.parquet"))
   expect_true(needs_refit(.bb_static, "male", root = root, today = as.Date("2100-09-20")))
 })
+
+# --- needs_refit(): football's training_filter -------------------------------
+# The daily football fit trains on model_training_results(): only matches
+# between teams that played a filter division inside the lookback window.
+# needs_refit() must reason over those same rows, or it starts fits for
+# fixtures and results the fit never sees -- and a fit whose window holds only
+# such fixtures aborts on an empty prediction set, every day.
+
+.fb_static <- list(
+  sport = "football", country = "iceland",
+  training_filter = list(
+    divisions = list("BD", "BD_UPPER_PO", "BD_LOWER_PO", "LD1", "LD2", "LD3"),
+    lookback_days = 365L
+  )
+)
+.fb_unfiltered <- .fb_static[c("sport", "country")]
+
+.fb_rows <- function(home, away, dates, division, scored = TRUE) {
+  dates <- as.Date(dates)
+  out <- tibble::tibble(
+    sport = "football", country = "iceland", sex = "male",
+    season = as.integer(format(dates, "%Y")),
+    match_date = dates, home_team = home, away_team = away,
+    division = division, round = NA_integer_
+  )
+  if (scored) {
+    out$home_score <- 1L
+    out$away_score <- 0L
+  } else {
+    out$kickoff_time <- NA_character_
+  }
+  out
+}
+
+# Every team here has results. Q1/Q2 played BD inside the lookback window, so
+# the filter keeps them. U1/U2 only ever played LD4, and O1/O2 played BD three
+# seasons ago (Ulfarnir and Hamar in 2026: cup and LD4 results, no top-four
+# tier in the last 365 days), so the filter drops all four. The newest fit
+# predicted a Q1 v Q2 fixture outside today's window.
+.seed_filtered_football <- function(root, fit_date = "2100-09-01",
+                                    extra_results = NULL, schedule = NULL) {
+  write_table(
+    dplyr::bind_rows(
+      .fb_rows("Q1", "Q2", "2100-08-30", "BD"),
+      .fb_rows("U1", "U2", "2100-08-30", "LD4"),
+      .fb_rows("O1", "O2", "2097-08-30", "BD"),
+      extra_results
+    ),
+    "results",
+    root = root
+  )
+  if (!is.null(schedule)) {
+    write_table(schedule, "schedules", root = root)
+  }
+  cell <- c("sport=football", "country=iceland", "sex=male")
+  at <- function(...) do.call(fs::path, as.list(c(root, ...)))
+  latest_dir <- at("beliefs", "latest", cell)
+  fs::dir_create(latest_dir)
+  fs::file_create(fs::path(latest_dir, "part-0.parquet"))
+  fit_dir <- at("beliefs", "extracts", cell, paste0("fit_date=", fit_date))
+  fs::dir_create(fit_dir)
+  arrow::write_parquet(
+    .fixture_rows("2100-09-05", home = "Q1", away = "Q2"),
+    fs::path(fit_dir, "predicted_matches.parquet")
+  )
+  invisible(root)
+}
+
+test_that("needs_refit() ignores horizon fixtures the training_filter keeps out of the fit", {
+  today <- as.Date("2100-09-20")
+  # Both teams of every fixture have results; none passes the filter, and the
+  # mixed pairing fails on U1 alone.
+  window <- dplyr::bind_rows(
+    .fb_rows("U1", "U2", "2100-09-25", "LD4", scored = FALSE),
+    .fb_rows("O1", "O2", "2100-09-26", "CUP", scored = FALSE),
+    .fb_rows("Q1", "U1", "2100-09-27", "CUP", scored = FALSE)
+  )
+  filtered_only <- withr::local_tempdir()
+  .seed_filtered_football(filtered_only, schedule = window)
+  # The fit this would start predicts nothing, and aborts on that.
+  prep <- suppressMessages(
+    prepare_data(.fb_static, "male", end_date = today, root = filtered_only)
+  )
+  expect_equal(nrow(prep$pred_d), 0L)
+  expect_false(needs_refit(.fb_static, "male", root = filtered_only, today = today))
+  # A league without a filter still counts them: its fit keeps these teams.
+  expect_true(needs_refit(.fb_unfiltered, "male", root = filtered_only, today = today))
+
+  # A qualifying pairing in the same window is one the fit predicts.
+  qualifying <- withr::local_tempdir()
+  .seed_filtered_football(qualifying, schedule = dplyr::bind_rows(
+    window,
+    .fb_rows("Q2", "Q1", "2100-09-28", "BD", scored = FALSE)
+  ))
+  prep <- suppressMessages(
+    prepare_data(.fb_static, "male", end_date = today, root = qualifying)
+  )
+  expect_equal(nrow(prep$pred_d), 1L)
+  expect_true(needs_refit(.fb_static, "male", root = qualifying, today = today))
+})
+
+test_that("needs_refit() does not count a result the training_filter drops as a played game", {
+  today <- as.Date("2100-09-20")
+  # After the 09-01 fit: an LD4 game and a cup tie between dropped teams.
+  dropped <- withr::local_tempdir()
+  .seed_filtered_football(dropped, extra_results = dplyr::bind_rows(
+    .fb_rows("U2", "U1", "2100-09-10", "LD4"),
+    .fb_rows("O1", "U1", "2100-09-12", "CUP")
+  ))
+  expect_false(needs_refit(.fb_static, "male", root = dropped, today = today))
+  expect_true(needs_refit(.fb_unfiltered, "male", root = dropped, today = today))
+
+  kept <- withr::local_tempdir()
+  .seed_filtered_football(kept, extra_results = .fb_rows(
+    "Q2", "Q1", "2100-09-10", "BD"
+  ))
+  expect_true(needs_refit(.fb_static, "male", root = kept, today = today))
+})
+
+test_that("needs_refit() is FALSE when the training_filter leaves nothing to fit", {
+  # The same answer as a store with no completed result: there is nothing to
+  # train on, so no fit is due even though none exists.
+  root <- withr::local_tempdir()
+  write_table(.fb_rows("U1", "U2", "2100-08-30", "LD4"), "results", root = root)
+  expect_false(needs_refit(.fb_static, "male", root = root, today = as.Date("2100-09-20")))
+  expect_true(needs_refit(.fb_unfiltered, "male", root = root, today = as.Date("2100-09-20")))
+})

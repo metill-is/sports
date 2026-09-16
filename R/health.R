@@ -90,7 +90,13 @@ check_fit_freshness <- function(leagues, root, now, th) {
   rows <- list()
   for (key in names(leagues)) {
     lg <- leagues[[key]]
-    static <- list(sport = lg$sport, country = lg$country)
+    # `training_filter` too: needs_refit() applies it, as the daily fit does
+    # (run_fit_targets() hands the fit the same field). Without it health
+    # counted results the fit drops and FAILed a fit 03_fit.R would not redo.
+    static <- list(
+      sport = lg$sport, country = lg$country,
+      training_filter = lg$training_filter
+    )
     for (sx in .cell_sexes(lg)) {
       scope <- paste(key, sx)
       upcoming <- tryCatch(has_upcoming_games(static, sx, root = root),

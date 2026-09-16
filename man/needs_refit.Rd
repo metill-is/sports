@@ -13,13 +13,15 @@ needs_refit(
 )
 }
 \arguments{
-\item{static}{Per-league static slice with `$sport` and `$country`.}
+\item{static}{Per-league static slice with `$sport` and `$country`, plus
+`$training_filter` when the league has one.}
 
 \item{sex}{`"male"` or `"female"`.}
 
 \item{root}{Filesystem root (defaults to `here::here("data")`).}
 
-\item{today}{Reference date for the fixture horizon. Default `Sys.Date()`.}
+\item{today}{Reference date: the training cutoff (as `fit_league()`'s
+`end_date`) and the start of the fixture horizon. Default `Sys.Date()`.}
 
 \item{horizon_days}{Horizon in days; keep equal to `fit_league()`'s
 `schedule_horizon_days` (14).}
@@ -46,6 +48,12 @@ when no game has been played since the last fit.
 Also returns `TRUE` when fixtures fall inside the next `horizon_days` and
 the newest fit predicted none of them -- the season-rollover case, where
 nothing has been played since the last fit (spec 2026-09-16 §8). Only
-fixtures a fit could predict count: both teams must have a completed
-result, because `prepare_data()` drops any other fixture.
+fixtures a fit could predict count: both teams must be in the training set
+below, because `prepare_data()` drops any other fixture.
+
+Both rules reason over the rows the fit trains on,
+`model_training_results(completed, static, end_date = today)`: a league's
+`training_filter` applies here exactly as in `prepare_data()`. A result the
+filter drops is not a played game, and a cell whose filter keeps no result
+is treated like one with no results at all.
 }

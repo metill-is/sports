@@ -17,19 +17,28 @@
 #' Also returns `TRUE` when fixtures fall inside the next `horizon_days` and
 #' the newest fit predicted none of them -- the season-rollover case, where
 #' nothing has been played since the last fit (spec 2026-09-16 §8). Only
-#' fixtures a fit could predict count: both teams must have a completed
-#' result, because `prepare_data()` drops any other fixture.
+#' fixtures a fit could predict count: both teams must be in the training set
+#' below, because `prepare_data()` drops any other fixture.
 #'
-#' @param static Per-league static slice with `$sport` and `$country`.
+#' Both rules reason over the rows the fit trains on,
+#' `model_training_results(completed, static, end_date = today)`: a league's
+#' `training_filter` applies here exactly as in `prepare_data()`. A result the
+#' filter drops is not a played game, and a cell whose filter keeps no result
+#' is treated like one with no results at all.
+#'
+#' @param static Per-league static slice with `$sport` and `$country`, plus
+#'   `$training_filter` when the league has one.
 #' @param sex `"male"` or `"female"`.
 #' @param root Filesystem root (defaults to `here::here("data")`).
-#' @param today Reference date for the fixture horizon. Default `Sys.Date()`.
+#' @param today Reference date: the training cutoff (as `fit_league()`'s
+#'   `end_date`) and the start of the fixture horizon. Default `Sys.Date()`.
 #' @param horizon_days Horizon in days; keep equal to `fit_league()`'s
 #'   `schedule_horizon_days` (14).
 #' @return Logical scalar.
 #' @export
 needs_refit <- function(static, sex, root = here::here("data"),
                         today = Sys.Date(), horizon_days = 14L) {
+  today <- as.Date(today)
   results <- read_table(
     "results",
     root = root,
@@ -42,10 +51,13 @@ needs_refit <- function(static, sex, root = here::here("data"),
   completed <- dplyr::filter(
     results, !is.na(.data$home_score), !is.na(.data$away_score)
   )
-  if (nrow(completed) == 0L) {
+  # What the fit would train on today: fit_league()'s end_date defaults to
+  # today, and `static` carries the league's training_filter.
+  trained <- model_training_results(completed, static, end_date = today)
+  if (nrow(trained) == 0L) {
     return(FALSE)
   }
-  latest_match <- max(completed$match_date)
+  latest_match <- max(trained$match_date)
 
   # If beliefs/latest/ is missing or empty for this cell, force a refit
   # regardless of what archive says. This catches the failure mode where a
@@ -94,8 +106,8 @@ needs_refit <- function(static, sex, root = here::here("data"),
   latest_match > last_fit ||
     .horizon_unpredicted(
       static, sex, root,
-      today = as.Date(today), horizon_days = horizon_days,
-      completed = completed
+      today = today, horizon_days = horizon_days,
+      trained = trained
     )
 }
 
@@ -109,16 +121,19 @@ needs_refit <- function(static, sex, root = here::here("data"),
 # made before either predicted nothing inside today's window.
 #
 # Only a fixture a fit COULD predict counts. prepare_data() drops any fixture
-# with a team that has no completed result, so a window holding only those
-# (a newcomer's first games -- 2026 football had 02-24 to 02-27 holding only
-# Ulfarnir v Hamar) would start a fit every day, and every one would abort on
-# an empty prediction set.
+# with a team outside its training set, so a window holding only those would
+# start a fit every day, and every one would abort on an empty prediction set.
+# `trained` is that set, and the league's training_filter is what shrinks it:
+# 2026 football had 02-24 to 02-27 holding only Ulfarnir v Hamar. Both teams
+# had results (cup, and LD4 for Hamar), but neither had played a filter
+# division in the 365 days before, so the filtered fit did not know them. A
+# team with no result at all is outside the set too.
 #
 # An unreadable or missing prediction set is "unknown", and unknown does not
 # start a fit. A cell with no fit at all never gets here: needs_refit() has
 # already returned TRUE.
 .horizon_unpredicted <- function(static, sex, root, today, horizon_days,
-                                 completed) {
+                                 trained) {
   sched <- read_table(
     "schedules",
     root = root,
@@ -127,7 +142,7 @@ needs_refit <- function(static, sex, root = here::here("data"),
   if (nrow(sched) == 0L) {
     return(FALSE)
   }
-  known <- unique(c(completed$home_team, completed$away_team))
+  known <- unique(c(trained$home_team, trained$away_team))
   in_window <- !is.na(sched$match_date) &
     sched$match_date > today &
     sched$match_date <= today + as.integer(horizon_days) &

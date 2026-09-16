@@ -283,7 +283,8 @@ test_that("odds_freshness falls back to expecting odds everywhere with no candid
 # wiped-latest guard), and an archive fit_date= partition (needs_refit's
 # last_fit source). result_date <= fit_date => fit current; result_date >
 # fit_date => fit behind the data.
-.seed_fit <- function(root, fit_date, result_date, sex = "male") {
+.seed_fit <- function(root, fit_date, result_date, sex = "male",
+                      division = NA_character_) {
   rd <- fs::path(
     root, "facts", "results",
     "sport=football", "country=iceland", paste0("sex=", sex), "season=2026"
@@ -293,7 +294,7 @@ test_that("odds_freshness falls back to expecting odds everywhere with no candid
     tibble::tibble(
       home_team = "A", away_team = "B",
       match_date = as.Date(result_date), home_score = 1L, away_score = 0L,
-      division = NA_character_, round = NA_integer_
+      division = division, round = NA_integer_
     ),
     fs::path(rd, "part-0.parquet")
   )
@@ -347,6 +348,41 @@ test_that("fit_freshness WARNs when behind but only mildly stale", {
   .seed_fit(root, fit_date = "2026-06-01", result_date = "2026-06-02")
   res <- check_fit_freshness(.fb_league, root, now, health_thresholds())
   expect_equal(res$status, "WARN")
+})
+
+test_that("fit_freshness applies the league's training_filter, as the fit does", {
+  # The daily football fit drops results outside its training_filter, so a new
+  # result it drops leaves the fit current and 03_fit.R does not refit. Health
+  # built its slice without the filter, counted that result, and FAILed.
+  # Dates follow the real clock: needs_refit()'s lookback window does.
+  root <- withr::local_tempdir()
+  today <- Sys.Date()
+  now <- as.POSIXct(paste(format(today), "12:00"), tz = "UTC")
+  write_table(.mini_sched(today + 5L), "schedules", root = root)
+  .seed_fit(root, fit_date = today - 6L, result_date = today - 6L, division = "BD")
+  arrow::write_parquet(
+    tibble::tibble(
+      home_team = "C", away_team = "D",
+      match_date = today - 2L, home_score = 2L, away_score = 1L,
+      division = "LD4", round = NA_integer_
+    ),
+    fs::path(
+      root, "facts", "results",
+      "sport=football", "country=iceland", "sex=male", "season=2026",
+      "part-1.parquet"
+    )
+  )
+  # Without a filter the LD4 result is one the fit has not seen.
+  unfiltered <- check_fit_freshness(.fb_league, root, now, health_thresholds())
+  expect_equal(unfiltered$status, "FAIL")
+
+  filtered <- .fb_league
+  filtered$football_iceland$training_filter <- list(
+    divisions = list("BD", "LD1"), lookback_days = 365L
+  )
+  res <- check_fit_freshness(filtered, root, now, health_thresholds())
+  expect_equal(res$status, "OK")
+  expect_match(res$value, "current with results")
 })
 
 test_that("check_capture_rate is OK at high capture and OK on thin data", {
