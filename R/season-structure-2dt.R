@@ -214,7 +214,7 @@ MULTIPLICITY_SCHEDULE_BALANCE <- 0.1
 # that is set (`.cap_side_games_2dt()`); with neither, the schedule as is.
 .remaining_fixtures_2dt <- function(teams, played, scheduled, meetings,
                                     max_games = NA_integer_) {
-  teams <- sort(unique(as.character(teams)))
+  teams <- sort(unique(as.character(teams)), method = "radix")
   sched <- if (is.null(scheduled) || nrow(scheduled) == 0L) {
     tibble::tibble(
       home_team = character(), away_team = character(),
@@ -227,7 +227,11 @@ MULTIPLICITY_SCHEDULE_BALANCE <- 0.1
       drop = FALSE
     ]
   }
-  sched <- sched[order(sched$match_date), , drop = FALSE]
+  # Same-day fixtures are ordered by name, not by storage order.
+  sched <- sched[
+    order(sched$match_date, sched$home_team, sched$away_team, method = "radix"), ,
+    drop = FALSE
+  ]
   if (!.is_set_2dt(meetings)) {
     return(.cap_side_games_2dt(sched, played, max_games))
   }
@@ -247,10 +251,7 @@ MULTIPLICITY_SCHEDULE_BALANCE <- 0.1
     k <- key(h, a)
     if (k %in% names(played_n)) as.integer(played_n[[k]]) else 0L
   }
-  sched_pair <- key(
-    pmin(sched$home_team, sched$away_team),
-    pmax(sched$home_team, sched$away_team)
-  )
+  sched_pair <- .pair_key_2dt(sched$home_team, sched$away_team)
 
   out_h <- character()
   out_a <- character()
@@ -326,6 +327,17 @@ MULTIPLICITY_SCHEDULE_BALANCE <- 0.1
   out[keep, , drop = FALSE]
 }
 
+# An unordered pairing's key, "lo|hi" with the two names in C-locale (radix)
+# order -- the order `.remaining_fixtures_2dt()` sorts `teams` in, so it matches
+# the combn() pairs there whatever the session's collation. pmin()/pmax()
+# compare strings by locale collation and can disagree with that order once a
+# name is accented ("Álftanes" v "Breiðablik").
+.pair_key_2dt <- function(x, y) {
+  names_c <- sort(unique(c(x, y)), method = "radix")
+  x_first <- match(x, names_c) <= match(y, names_c)
+  paste(ifelse(x_first, x, y), ifelse(x_first, y, x), sep = "|")
+}
+
 # ---- Base table ----------------------------------------------------------------
 
 # The realised table the season simulation starts from: every division team,
@@ -339,7 +351,7 @@ MULTIPLICITY_SCHEDULE_BALANCE <- 0.1
 # and goals for.
 .base_standings_2dt <- function(played, teams, has_ties = FALSE,
                                 tie_threshold = 0) {
-  teams <- sort(unique(as.character(teams)))
+  teams <- sort(unique(as.character(teams)), method = "radix")
   if (!is.null(played)) {
     played <- played[
       !is.na(played$home_score) & !is.na(played$away_score), ,

@@ -298,6 +298,10 @@ NULL
 # Not called by the extractor since 2026-09-16 -- the season table comes from
 # simulate_league_season() -- but kept: it is the Stan-window oracle that
 # test-simulate-2dt-equivalence.R compares the R generators against.
+# test-extract-2dt-tiebreak.R and the direct-call tests in
+# test-extract-2dt-divisions.R still exercise it (and
+# .compute_points_distribution_2dt()), but they now guard the oracle only,
+# not the published tables.
 .compute_final_positions_2dt <- function(posterior_goals, top_div,
                                          base_points, has_ties,
                                          tie_threshold,
@@ -497,12 +501,18 @@ NULL
   # Season-simulation inputs, pulled once (spec 2026-09-16 §4). Seeded from
   # fit_date, so re-extracting a fit reproduces its tables and the committed
   # fixture does not churn.
+  #
+  # Every random stream gets its own seed: the league-wide level shock here
+  # (`sim_seed + 1`) and each division's simulation below (`sim_seed + 1 +` its
+  # position). One seed for all of them replayed a single stream everywhere,
+  # so a newcomer's strength shock equalled the level shock draw for draw and
+  # every division simulated on the same numbers.
   sim_seed <- as.integer(format(as.Date(fit_date), "%Y%m%d"))
   sim_inputs <- .extract_sim_inputs_2dt(
     fit, teams, sport, n_seasons = prep$stan_data$N_seasons
   )
   sim_inputs$scalar$z_level <- withr::with_seed(
-    sim_seed, stats::rnorm(nrow(sim_inputs$scalar))
+    sim_seed + 1L, stats::rnorm(nrow(sim_inputs$scalar))
   )
   match_fn <- .match_fn_2dt(sport)
   points_fn <- .points_fn_2dt(has_ties, tie_threshold)
@@ -580,10 +590,12 @@ NULL
     # Read through the publisher's empty-safe helpers: a cell with no schedule
     # table at all reads as a zero-COLUMN tibble, and `$` on that warns.
     season_fixtures <- .publish_cell_rows(schedules, season_div, div)
+    # Radix = C-locale order: team order drives the generated fixtures and the
+    # per-(draw, team) jitter, so it must not follow the session's collation.
     div_teams <- sort(unique(c(
       .publish_appearances(top_results),
       .publish_appearances(season_fixtures)
-    )))
+    )), method = "radix")
     # The strength surfaces describe only teams the fit knows.
     current_top_teams <- tibble::tibble(
       team = div_teams[div_teams %in% teams$team]
@@ -618,7 +630,7 @@ NULL
     } else {
       max(0L, as.integer(season_div - last_fitted_season))
     }
-    season_sim <- withr::with_seed(sim_seed, {
+    season_sim <- withr::with_seed(sim_seed + 1L + match(div, divisions), {
       div_inputs <- .add_new_team_priors_2dt(sim_inputs, div_teams)
       simulate_league_season(
         sim_inputs_team = div_inputs$team,

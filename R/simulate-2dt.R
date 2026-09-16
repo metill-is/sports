@@ -204,7 +204,7 @@ NEW_TEAM_PRIOR_SPREAD <- 1.5
 
 .add_new_team_priors_2dt <- function(sim_inputs, division_teams) {
   team <- sim_inputs$team
-  new <- sort(setdiff(division_teams, unique(team$team)))
+  new <- sort(setdiff(division_teams, unique(team$team)), method = "radix")
   if (length(new) == 0L) {
     return(sim_inputs)
   }

@@ -9,8 +9,11 @@
 # The fixture's handball men's OD (4 teams) between seasons: the 2100 season
 # is complete, the 2101 double round robin is published a week apart from
 # FIXTURE_END_DATE + 1, so only its first two games sit inside Stan's window.
+#
+# `burn` draws that many uniforms between the stub fit and the extract, so the
+# extractor starts from a different global RNG state (the stub seeds it).
 .preseason_cell <- function(new_team = NULL, drop_pair = NULL, n_draws = 50L,
-                            env = parent.frame()) {
+                            burn = 0L, env = parent.frame()) {
   root <- fixture_facts_root(env = env)
   teams <- fixture_division_teams("handball", "male", "OD")
   season_teams <- c(teams, new_team)
@@ -32,6 +35,7 @@
 
   league <- load_leagues()[["handball_iceland"]]
   st <- suppressMessages(local_stub_2dt(league, "male", root = root, n_draws = n_draws))
+  stats::runif(burn)
   extracts_root <- file.path(withr::local_tempdir(.local_envir = env), "extracts")
   suppressMessages(extract_handball_iceland(
     fit = st$fit, league = league, sex = "male",
@@ -83,7 +87,11 @@ test_that("a scheduled team with no history is tabled below the division median 
 })
 
 test_that("re-extracting the same fit reproduces its tables", {
-  a <- .preseason_cell()$read("final_positions")
-  b <- .preseason_cell()$read("final_positions")
-  expect_identical(a, b)
+  # local_stub_2dt() calls set.seed(), so two plain calls would enter the
+  # extractor with the same global RNG state and match whether or not the
+  # extractor seeds itself. The burn moves that state for the second call.
+  a <- .preseason_cell(burn = 0L)
+  b <- .preseason_cell(burn = 7L)
+  expect_identical(a$read("final_positions"), b$read("final_positions"))
+  expect_identical(a$read("points_distribution"), b$read("points_distribution"))
 })
