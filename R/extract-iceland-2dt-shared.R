@@ -85,12 +85,13 @@ NULL
 #
 # NOT from `league$betting$scoring`, which is where this used to be read.
 # run_fit_targets() hands the extractor a WHITELISTED league slice built from
-# c("sport", "country", "sexes", "active", "stan_model", "data_source")
-# (R/model-league.R:453) -- no `betting`. So `isTRUE(NULL)` gave has_ties = FALSE
-# and the is.null() fallback gave tie_threshold = 0 on every production fit, and
-# handball published p_draw = 0 for every match while its own meta.points.draw
-# said 1. The season simulation was the worse half: it ran over a league where a
-# draw could not occur, so every published points total came out even.
+# c("sport", "country", "sexes", "active", "stan_model", "data_source"), plus
+# `training_filter` when set -- no `betting`. So `isTRUE(NULL)` gave
+# has_ties = FALSE and the is.null() fallback gave tie_threshold = 0 on every
+# production fit, and handball published p_draw = 0 for every match while its
+# own meta.points.draw said 1. The season simulation was the worse half: it ran
+# over a league where a draw could not occur, so every published points total
+# came out even.
 #
 # The profile is keyed by sport and resolved on demand, so nothing can strip it
 # in transit. It is also already the source of truth for meta.points, which is
@@ -196,10 +197,10 @@ NULL
 
 # The six raw (component x location) team-strength blocks, pulled ONCE.
 #
-# Mirrors football's hoist (R/extract-football-iceland.R:1514-1521): the pull is
-# cross-division, so it belongs above the division loop, not inside the quantile
-# helper. Inside, a two-division cell would make nine `fit$draws()` calls per
-# division against a 300-600 MB fit.
+# Mirrors football's hoist (the `team_strengths_draws` pull in
+# extract_football_iceland()): the pull is cross-division, so it belongs above
+# the division loop, not inside the quantile helper. Inside, a two-division cell
+# would make nine `fit$draws()` calls per division against a 300-600 MB fit.
 #
 # No `avg` block here on purpose -- `avg` is a PER-DRAW mean the quantile helper
 # computes, so the interval reflects the joint posterior rather than a post-hoc
@@ -328,7 +329,7 @@ NULL
   # win over 22 rounds exact ties are common, so a genuine 0.37/0.36 title race
   # published as 0.62/0.11 -- a confident-looking call that was an artefact of
   # the fixture calendar. Football never had this: it ranks points -> gd -> gf
-  # (R/extract-football-iceland.R:554).
+  # (`.league_split_state_pfi()`).
   #
   # The jitter settles the residual EXACT (points, point_diff) ties. It must
   # vary per draw, or a team would win every tie in every draw and we would
@@ -449,15 +450,20 @@ NULL
   teams <- prep$teams
   pred_d <- prep$pred_d
 
-  # WHY this guard: the per-round strength trajectory indexes the fit's
-  # `offense[r, k]` with each team's cumulative appearance index derived from
-  # the `results` set read below. That index only equals the model's own
-  # `round1`/`round2` (R/model-prepare.R:212-221) while the two sets are the
-  # same set. `prepare_data()` applies `training_filter` and this extractor does
-  # not, so a filtered league would desynchronise them and the trajectory would
-  # silently read a neighbouring round. Verified in config/leagues.yml: only
-  # football_iceland carries a training_filter, so this holds today and this
-  # line is what makes a future addition abort instead of publish nonsense.
+  # WHY this guard: `results` below is ONE set serving two masters. The
+  # per-round strength trajectory indexes the fit's `offense[r, k]` with each
+  # team's cumulative appearance index over it, which equals the model's own
+  # `round1`/`round2` (prepare_data()'s per-team `home_round`/`away_round`)
+  # only while both are built from the same rows -- hence
+  # model_training_results(), the helper prepare_data() itself calls. But the
+  # same set also feeds the published tables (season, regular-season cut,
+  # standings, remaining fixtures), and a `training_filter` would strip real
+  # matches out of those. extract_football_iceland() keeps two sets for this
+  # (`model_results` for the trajectory, the full `results` for tables); a
+  # 2DT league needs that split before it can carry a filter. Only
+  # football_iceland carries one (config/leagues.yml), so this holds today and
+  # this line is what makes a future addition abort instead of publish tables
+  # with matches missing.
   stopifnot(is.null(league$training_filter))
 
   results <- read_table(
@@ -465,17 +471,11 @@ NULL
     root = root,
     filter = list(sport = league$sport, country = league$country, sex = sex)
   )
-  results <- results[
-    !is.na(results$match_date) & results$match_date <= end_date, ,
-    drop = FALSE
-  ]
-  results <- results[
-    !is.na(results$home_score) & !is.na(results$away_score), ,
-    drop = FALSE
-  ]
+  results <- model_training_results(results, league, end_date = end_date)
   # Same ordering prepare_data() applies before building its round index, so
   # the appearance indices agree row-for-row rather than by luck of the
-  # parquet scan order.
+  # parquet scan order. model_training_results() already returns this order;
+  # the line keeps the dependency visible where the index is built.
   results <- results[order(results$match_date), , drop = FALSE]
 
   schedules <- read_table(
@@ -644,7 +644,8 @@ NULL
     })
 
     # ---- round_strengths_quantiles ----------------------------------------
-    # Shaped after football's block (R/extract-football-iceland.R:127-158) and
+    # Shaped after football's block (`round_strengths_quantiles` in
+    # `.extract_division_parquets_pfi()`) and
     # calling the SAME helper: all three Stan models declare
     # `array[N_rounds] vector[K] offense` / `defense` plus `vector[K]
     # home_advantage_off` / `_def`, so no variable-name parameterisation is
