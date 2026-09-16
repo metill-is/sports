@@ -115,10 +115,11 @@ test_that("local_stub_2dt sizes goals*_pred from prepare_data's own pred_d", {
   league <- load_leagues()[["basketball_iceland"]]
   st <- suppressMessages(local_stub_2dt(league, "male", root = root))
 
-  # The publishers call prepare_data() internally at the DEFAULT
-  # schedule_horizon_days = 14L and take no prep= argument, so a stub sized at
-  # any other horizon would make .compute_posterior_goals_2dt warn and return
-  # zero rows. Assert the match rather than trusting it.
+  # The extractors take prep= (fit_league passes its own), but
+  # publish_iceland_league() still rebuilds prep at the DEFAULT
+  # schedule_horizon_days = 14L, so a stub sized at any other horizon would
+  # make .compute_posterior_goals_2dt warn and return zero rows. Assert the
+  # match rather than trusting it.
   expect_equal(
     max(as.integer(sub(
       ".*\\[(\\d+)\\]$", "\\1",

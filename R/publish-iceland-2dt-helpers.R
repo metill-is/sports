@@ -45,8 +45,10 @@ NULL
 }
 
 # Pivot goals1_pred/goals2_pred draws + join pred_d (continuous Student-t
-# scores). Returns NULL with a warning if the fit's N_pred disagrees with
-# the prepared pred_d (caller writes empty placeholder JSONs).
+# scores). Returns an EMPTY tibble with a warning if the fit's N_pred
+# disagrees with the prepared pred_d; the caller then writes an empty
+# predicted_matches. Only counts are compared, so the fit and the caller must
+# share one prep object (fit_league() passes its own to the extractor).
 .compute_posterior_goals_2dt <- function(fit, pred_d) {
   raw <- fit$draws(c("goals1_pred", "goals2_pred")) |>
     posterior::as_draws_df() |>
@@ -212,8 +214,8 @@ NULL
     dplyr::left_join(base_points, by = "team") |>
     dplyr::mutate(
       base_points = dplyr::coalesce(.data$base_points, 0L),
-      points      = .data$points + .data$base_points,
-      point_diff  = .data$sim_diff +
+      points = .data$points + .data$base_points,
+      point_diff = .data$sim_diff +
         as.numeric(dplyr::coalesce(.data$base_diff, 0))
     ) |>
     dplyr::select(-"sim_diff")
