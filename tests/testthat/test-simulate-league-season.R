@@ -375,3 +375,103 @@ test_that("a fixed seed yields identical output under a split", {
   expect_equal(o1$final_positions, o2$final_positions)
   expect_equal(o1$points_distribution, o2$points_distribution)
 })
+
+# ---- Byte-identity guard for the 2DT generalisation (spec 2026-09-16 D2) ----
+# The digests were taken from the simulator BEFORE the refactor (sports
+# 32275bdef, 2026-09-16). A change to either is a change to football's
+# published tables: find the cause, never re-take the digest.
+
+.golden_digest <- function(out) {
+  digest::digest(
+    as.character(jsonlite::toJSON(out, digits = NA)),
+    algo = "sha256", serialize = FALSE
+  )
+}
+
+.golden_case <- function() {
+  teams <- sprintf("T%02d", 1:12)
+  strengths <- stats::setNames(lapply(seq_along(teams), function(i) {
+    c(0.04 * (6 - i), 0.03 * (6 - i), 0.2, 0.1)
+  }), teams)
+  grid <- expand.grid(home_team = teams, away_team = teams, stringsAsFactors = FALSE)
+  list(
+    si = .league_inputs(strengths, 400L),
+    fixtures = tibble::as_tibble(grid[grid$home_team != grid$away_team, ]),
+    base = .spread_base(teams, rep(c(10, 10, 9, 9, 8, 8), 2))
+  )
+}
+
+test_that("football's flat season simulation is unchanged (golden)", {
+  g <- .golden_case()
+  out <- simulate_league_season(g$si$team, g$si$scalar, g$fixtures, g$base, seed = 20260916L)
+  expect_identical(
+    .golden_digest(out),
+    "96b7c05939f0d90224735582cade0b7d14e9c72adbfeeb938fc15898dba8279b"
+  )
+})
+
+test_that("football's split season simulation is unchanged (golden)", {
+  g <- .golden_case()
+  out <- simulate_league_season(
+    g$si$team, g$si$scalar, g$fixtures, g$base, seed = 20260916L,
+    split_format = list(upper = 6L, lower = 6L)
+  )
+  expect_identical(
+    .golden_digest(out),
+    "80562a07aedf8ba5346dab5bd7a3c8d2426d9df0e7237a748dbaf29e4ff90323"
+  )
+})
+
+# ---- .rank_table_slss(): lexicographic, sport-agnostic ranking --------------
+
+# The ranking the simulator used before 2026-09-16, kept as the oracle.
+.packed_rank <- function(pts, gd, gf, teams, group = NULL) {
+  key <- pts * 1e6 + gd * 1e3 + gf
+  if (!is.null(group)) key <- group * 1e12 + key
+  out <- t(apply(key, 1L, function(r) rank(-r, ties.method = "first")))
+  if (nrow(key) == 1L) out <- matrix(out, nrow = 1L)
+  colnames(out) <- teams
+  out
+}
+
+test_that("with tie_break = 'first' the ranking equals the packed key on football tables", {
+  set.seed(7)
+  nd <- 300L
+  teams <- sprintf("T%02d", 1:12)
+  pts <- matrix(sample(20:40, nd * 12, replace = TRUE), nd, 12)
+  gd <- matrix(sample(-3:3, nd * 12, replace = TRUE), nd, 12)
+  gf <- matrix(sample(20:23, nd * 12, replace = TRUE), nd, 12)
+  grp <- matrix(rep(rep(c(TRUE, FALSE), each = 6), each = nd), nd, 12)
+  expect_identical(.rank_table_slss(pts, gd, gf, teams), .packed_rank(pts, gd, gf, teams))
+  expect_identical(
+    .rank_table_slss(pts, gd, gf, teams, group = grp),
+    .packed_rank(pts, gd, gf, teams, group = grp)
+  )
+  one <- function(m) m[1, , drop = FALSE]
+  expect_identical(
+    .rank_table_slss(one(pts), one(gd), one(gf), teams),
+    .packed_rank(one(pts), one(gd), one(gf), teams)
+  )
+})
+
+test_that("goal difference outranks goals for however large the scores (F5)", {
+  pts <- matrix(c(10, 10), 1)
+  gd <- matrix(c(5, 4), 1)
+  gf <- matrix(c(1000, 2100), 1)
+  expect_identical(.rank_table_slss(pts, gd, gf, c("A", "B"))[1, ], c(A = 1L, B = 2L))
+  # The packed key gets this wrong: basketball goals-for swamps the difference.
+  expect_identical(.packed_rank(pts, gd, gf, c("A", "B"))[1, ], c(A = 2L, B = 1L))
+})
+
+test_that("tie_break = 'jitter' splits exact ties evenly and leaves the caller's RNG alone", {
+  nd <- 4000L
+  z <- matrix(0, nd, 2)
+  set.seed(11)
+  before <- stats::runif(1)
+  set.seed(11)
+  pl <- .rank_table_slss(z, z, z, c("A", "B"), tie_break = "jitter")
+  expect_identical(stats::runif(1), before)
+  expect_lt(abs(mean(pl[, "A"] == 1L) - 0.5), 0.03)
+  expect_identical(pl, .rank_table_slss(z, z, z, c("A", "B"), tie_break = "jitter"))
+  expect_true(all(.rank_table_slss(z, z, z, c("A", "B"))[, "A"] == 1L))
+})

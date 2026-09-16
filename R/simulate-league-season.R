@@ -193,8 +193,9 @@ simulate_league_season <- function(sim_inputs_team,
   HAD <- to_matrix("home_advantage_def")
 
   pts <- matrix(0L, nd, n_teams, dimnames = list(NULL, teams))
-  gd <- matrix(0L, nd, n_teams, dimnames = list(NULL, teams))
-  gf <- matrix(0L, nd, n_teams, dimnames = list(NULL, teams))
+  # Double, not integer: 2DT scores are continuous and would be truncated.
+  gd <- matrix(0, nd, n_teams, dimnames = list(NULL, teams))
+  gf <- matrix(0, nd, n_teams, dimnames = list(NULL, teams))
 
   fx <- remaining_fixtures[
     remaining_fixtures$home_team %in% teams &
@@ -230,18 +231,17 @@ simulate_league_season <- function(sim_inputs_team,
   # Add the realised (already-played) table.
   bs <- base_standings[match(teams, base_standings$team), , drop = FALSE]
   pts <- sweep(pts, 2L, as.integer(bs$base_points), `+`)
-  gd <- sweep(gd, 2L, as.integer(bs$base_gd), `+`)
-  gf <- sweep(gf, 2L, as.integer(bs$base_gf), `+`)
+  gd <- sweep(gd, 2L, as.numeric(bs$base_gd), `+`)
+  gf <- sweep(gf, 2L, as.numeric(bs$base_gf), `+`)
 
-  # Rank each draw's table by points -> goal difference -> goals for (desc).
-  # Packed key is order-preserving for football magnitudes (|gd| << 1000,
-  # gf << 1000); ties broken deterministically by team order via "first".
+  # Rank each draw's table by points -> goal difference -> goals for (desc);
+  # see `.rank_table_slss()`.
   if (has_split) {
     if (is.null(split_groups)) {
       # Phase 1: split membership decided by each draw's simulated regular
       # table, then the split fixtures are generated from the KSI template
       # (keyed by split rank) and played with the same match model.
-      split_placement <- .rank_rows_desc_slss(pts * 1e6 + gd * 1e3 + gf, teams)
+      split_placement <- .rank_table_slss(pts, gd, gf, teams)
       # Inverse permutation: ord[draw, p] = column index of the p-th team.
       ord <- matrix(0L, nd, n_teams)
       ord[cbind(rep(seq_len(nd), n_teams), as.vector(split_placement))] <-
@@ -287,11 +287,11 @@ simulate_league_season <- function(sim_inputs_team,
     # Group-locked final table: every upper-group team ranks above every
     # lower-group team regardless of carried points (2024: nedri winner on 37
     # pts still 7th behind efri's last on 34).
-    key <- in_upper * 1e12 + pts * 1e6 + gd * 1e3 + gf
+    group <- in_upper
   } else {
-    key <- pts * 1e6 + gd * 1e3 + gf
+    group <- NULL
   }
-  placement <- .rank_rows_desc_slss(key, teams)
+  placement <- .rank_table_slss(pts, gd, gf, teams, group = group)
 
   final_positions <- lapply(seq_len(n_teams), function(j) {
     counts <- tabulate(placement[, j], nbins = n_teams)
@@ -348,19 +348,50 @@ simulate_league_season <- function(sim_inputs_team,
   )
 }
 
-#' Rank each row's packed table key descending (1 = best)
+#' Rank each draw's table (1 = best)
 #'
-#' @param key Numeric matrix (draws x teams) of packed ranking keys.
+#' Lexicographic: split group (upper first), then points, goal difference and
+#' goals for, all descending. This replaces a packed numeric key
+#' (`pts * 1e6 + gd * 1e3 + gf`) that was only order-preserving for football's
+#' small integer scores: a basketball season's goals-for (~2000) swamps goal
+#' difference (spec 2026-09-16 F5). For every football table the two orders are
+#' identical.
+#'
+#' Residual exact ties: `"first"` gives them to the earlier column (the
+#' `base_standings` team order), as football always has. `"jitter"` breaks them
+#' with a per-(draw, team) uniform under a fixed seed, with the caller's RNG
+#' state preserved -- a team must not win every tie in every draw, or one
+#' systematic bias is swapped for another (see `.compute_final_positions_2dt`).
+#'
+#' @param pts,gd,gf Numeric matrices (draws x teams).
 #' @param teams Character vector naming the columns.
-#' @return Integer matrix (draws x teams) of placements, ties broken
-#'   deterministically by team order.
+#' @param group Optional logical matrix; `TRUE` ranks above `FALSE`.
+#' @param tie_break `"first"` or `"jitter"`.
+#' @return Integer matrix (draws x teams) of placements.
 #' @noRd
-.rank_rows_desc_slss <- function(key, teams) {
-  placement <- t(apply(key, 1L, function(r) rank(-r, ties.method = "first")))
-  if (nrow(key) == 1L) {
-    placement <- matrix(placement, nrow = 1L)
+.rank_table_slss <- function(pts, gd, gf, teams, group = NULL,
+                             tie_break = c("first", "jitter")) {
+  tie_break <- match.arg(tie_break)
+  nd <- nrow(pts)
+  nt <- ncol(pts)
+  # Column-major positions of every cell.
+  draw <- rep(seq_len(nd), times = nt)
+  col <- rep(seq_len(nt), each = nd)
+  last <- if (identical(tie_break, "jitter")) {
+    withr::with_preserve_seed({
+      set.seed(20260905L)
+      stats::runif(nd * nt)
+    })
+  } else {
+    col
   }
-  colnames(placement) <- teams
+  grp <- if (is.null(group)) numeric(nd * nt) else as.numeric(group)
+  o <- order(
+    draw, -grp, -as.vector(pts), -as.vector(gd), -as.vector(gf), last
+  )
+  placement <- matrix(0L, nd, nt, dimnames = list(NULL, teams))
+  # `o` walks draw 1's teams best-first, then draw 2's, ...
+  placement[cbind(draw[o], col[o])] <- rep(seq_len(nt), times = nd)
   placement
 }
 
