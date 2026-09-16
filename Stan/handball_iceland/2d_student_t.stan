@@ -97,7 +97,7 @@ parameters {
   // Non-centred lognormal hierarchy on per-team RW SD:
   //   sigma_off[k] = exp(mean_sigma_off + z_sigma_off[k] * scale_sigma_off).
   // mean_sigma_off ~ normal(-1.5, 2) on the log scale puts typical RW SD ~ exp(-1.5) ~ 0.22
-  // goals per sqrt-week (small round-to-round drift); scale_sigma_off ~ exponential(2)
+  // goals per sqrt-day (small round-to-round drift); scale_sigma_off ~ exponential(2)
   // (mean 0.5) governs between-team variation; z_sigma_off ~ std_normal are per-team draws.
   vector[K] z_sigma_off;
   real<lower = 0> scale_sigma_off;
@@ -182,12 +182,12 @@ transformed parameters {
   // at every i because each innovation is sum-to-zero.
   array[N_rounds] vector[K] offense;
   // sigma_off[k]: per-team RW SD on the natural (positive) scale, derived from the
-  // lognormal hierarchy. Typical magnitude ~exp(-1.5) ~ 0.22 goals per sqrt-week.
+  // lognormal hierarchy. Typical magnitude ~exp(-1.5) ~ 0.22 goals per sqrt-day.
   vector<lower = 0>[K] sigma_off = exp(mean_sigma_off + z_sigma_off * scale_sigma_off);
 
   // defense[i, k]: defensive analogue of offense[i, k] -- same units, same sum-to-zero.
   array[N_rounds] vector[K] defense;
-  // sigma_def[k]: per-team defensive RW SD (mean_sigma_def -> exp() ~ 0.14 goals/sqrt-week).
+  // sigma_def[k]: per-team defensive RW SD (mean_sigma_def -> exp() ~ 0.14 goals/sqrt-day).
   vector<lower = 0>[K] sigma_def = exp(mean_sigma_def + z_sigma_def * scale_sigma_def);
 
   // Initialize first round
