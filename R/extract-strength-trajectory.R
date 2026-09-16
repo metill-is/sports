@@ -32,7 +32,8 @@ NULL
 # The caller is therefore responsible for handing over the same `results` set
 # `prepare_data()` modelled -- a `training_filter`, or a post-season cut applied
 # before this call, desynchronises `global_round` from the fit and the
-# trajectory silently reads a neighbouring round.
+# trajectory silently reads a neighbouring round. `model_training_results()`
+# (R/model-prepare.R) is that set; prepare_data() builds its round index from it.
 
 # Build per-(BD-matchweek, team) trajectory of latent strength from a
 # single fit. Reads the full `offense[1..N_rounds, K]` and `defense[..]`

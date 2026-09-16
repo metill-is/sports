@@ -984,3 +984,94 @@ test_that(".extract_division_parquets_pfi: split cell keeps split-phase predicte
   parts_flat <- extract_parts(NULL)
   expect_equal(nrow(parts_flat$predicted_matches), 0L)
 })
+
+test_that("extract_football_iceland: the strength trajectory reads the results the fit modelled", {
+  # .compute_team_strength_trajectory() turns each team's appearance count into
+  # the index it reads `offense[round, team]` at, so it must be handed the SAME
+  # result set prepare_data() modelled. prepare_data() applies
+  # `league$training_filter`; the extractor used to hand over the raw store,
+  # which agreed only while the daily fit was (wrongly) unfiltered. Measured on
+  # 2026-09-16 data: a filtered fit read against raw results shifts 132/264
+  # male and 90/180 female BD (team, matchweek) cells, by up to 6 and 16 rounds.
+  root <- withr::local_tempdir()
+  row <- function(date, div, home, away, hs, as, rnd) {
+    tibble::tibble(
+      sport = "football", country = "iceland", sex = "male", season = 2100L,
+      match_date = as.Date(date), home_team = home, away_team = away,
+      home_score = hs, away_score = as, division = div, round = rnd
+    )
+  }
+  # M never plays in a training division, so the filter drops this cup tie --
+  # and with it A's first appearance, which renumbers both of A's BD rounds.
+  write_table(dplyr::bind_rows(
+    row("2100-05-01", "CUP", "M", "A", 0L, 3L, 1L),
+    row("2100-05-10", "BD", "A", "B", 1L, 1L, 1L),
+    row("2100-05-17", "BD", "B", "A", 2L, 0L, 2L)
+  ), "results", root = root)
+  write_table(tibble::tibble(
+    sport = "football", country = "iceland", sex = "male", season = 2100L,
+    match_date = as.Date("2100-05-24"), home_team = "A", away_team = "B",
+    division = "BD", round = 3L, kickoff_time = NA_character_
+  ), "schedules", root = root)
+
+  league <- load_leagues()[["football_iceland"]]
+  expect_false(is.null(league$training_filter))
+  end_date <- as.Date("2100-05-20")
+  prep <- suppressMessages(
+    prepare_data(league, "male", end_date = end_date, root = root)
+  )
+  expect_equal(prep$stan_data$N, 2L)
+
+  one_draw <- function(v) {
+    m <- matrix(v, nrow = 5L, ncol = 1L)
+    m
+  }
+  g1 <- one_draw(1)
+  colnames(g1) <- "goals1_pred[1]"
+  g2 <- one_draw(0)
+  colnames(g2) <- "goals2_pred[1]"
+  fit <- stub_fit(list(goals1_pred = g1, goals2_pred = g2, lp__ = one_draw(-1)))
+
+  empty_draws <- tibble::tibble(
+    .draw = integer(), team = character(), component = character(),
+    location = character(), value = numeric()
+  )
+  seen <- NULL
+  testthat::local_mocked_bindings(
+    .extract_team_draws_pfi = function(...) empty_draws,
+    .extract_home_advantage_draws_pfi = function(...) empty_draws,
+    .extract_sim_inputs_pfi = function(...) list(team = NULL, scalar = NULL),
+    .compute_team_strength_trajectory = function(fit, results, ...) {
+      seen <<- results
+      rlang::abort("trajectory reached", class = "trajectory_reached")
+    }
+  )
+  expect_error(
+    suppressMessages(extract_football_iceland(
+      fit, league,
+      sex = "male", fit_date = end_date, end_date = end_date,
+      root = root, prep = prep,
+      extracts_root = file.path(root, "extracts"), target_divs = "BD"
+    )),
+    class = "trajectory_reached"
+  )
+
+  scored <- seen[!is.na(seen$home_score) & !is.na(seen$away_score), , drop = FALSE]
+  expect_equal(nrow(scored), prep$stan_data$N)
+  expect_false(any(c(scored$home_team, scored$away_team) == "M"))
+
+  # Re-derive each side's appearance index the way the trajectory helper does
+  # and require it to equal the round index the model was fit with.
+  scored <- scored[order(scored$match_date), , drop = FALSE]
+  long <- tibble::tibble(
+    game = rep(seq_len(nrow(scored)), 2L),
+    side = rep(c("home", "away"), each = nrow(scored)),
+    team = c(scored$home_team, scored$away_team),
+    match_date = rep(scored$match_date, 2L)
+  ) |>
+    dplyr::arrange(.data$team, .data$match_date) |>
+    dplyr::mutate(round = dplyr::row_number(), .by = "team") |>
+    dplyr::arrange(.data$game)
+  expect_equal(long$round[long$side == "home"], prep$stan_data$round1)
+  expect_equal(long$round[long$side == "away"], prep$stan_data$round2)
+})
