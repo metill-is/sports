@@ -175,6 +175,36 @@ NULL
   )
 }
 
+# The standings pair for a cell with no table rows. Two different cells land
+# here and only one of them may lose its history:
+#   * a cup, which has no league table at all -- any prior records are stale
+#     and the append helper would otherwise keep them;
+#   * a league before its first match of the season. Truncating there erased
+#     every earlier season's history on the first pre-season publish (spec
+#     2026-09-16 §9.1), so a league keeps what it has. A league cell that has
+#     never published still gets an empty file, because the publish schema
+#     set expects one.
+.write_empty_standings_pfi <- function(out_dir, generated_at, season,
+                                       end_date, is_cup) {
+  write_json_consistent(
+    list(
+      generated_at = generated_at, season = season,
+      as_of = format(end_date, "%Y-%m-%d"), rows = list()
+    ),
+    file.path(out_dir, "standings.json"),
+    auto_unbox = TRUE, dataframe = "rows", digits = 5, na = "null"
+  )
+  history_path <- file.path(out_dir, "standings_history.json")
+  if (isTRUE(is_cup) || !file.exists(history_path)) {
+    write_json_consistent(
+      list(schema_version = 1L, records = list()),
+      history_path,
+      auto_unbox = TRUE, dataframe = "rows", digits = 5, na = "null"
+    )
+  }
+  invisible(NULL)
+}
+
 # Assign each match a "matchweek" derived from team-chronological match counts.
 # matchweek(m) = max(home_team_chrono_idx_after_m, away_team_chrono_idx_after_m).
 # A team's chrono_idx is its 1-based position when its played matches are
@@ -1318,22 +1348,12 @@ publish_iceland_league <- function(extracted,
         key_cols = c("as_of", "team")
       )
     } else {
-      write_json_consistent(
-        list(
-          generated_at = generated_at, season = current_season,
-          as_of = format(end_date, "%Y-%m-%d"), rows = list()
-        ),
-        file.path(out_dir, "standings.json"),
-        auto_unbox = TRUE, dataframe = "rows", digits = 5, na = "null"
-      )
-      # Truncate standings_history.json to empty too: when the cell has no
-      # league-table semantics (cups) any prior records are stale and the
-      # append helper would otherwise keep them. Mirrors the pattern below
-      # for final_positions_history.json.
-      write_json_consistent(
-        list(schema_version = 1L, records = list()),
-        file.path(out_dir, "standings_history.json"),
-        auto_unbox = TRUE, dataframe = "rows", digits = 5, na = "null"
+      .write_empty_standings_pfi(
+        out_dir,
+        generated_at = generated_at,
+        season = current_season,
+        end_date = end_date,
+        is_cup = is_cup
       )
     }
 
