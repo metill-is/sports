@@ -81,6 +81,36 @@ NULL
 # `posterior_goals` is an optional hoist: the caller already computes it for the
 # league-table simulation, and pulling goals*_pred twice per extract is the one
 # avoidable duplicate read on this path. NULL keeps the standalone contract.
+# Tie handling for a 2DT sport, from the publish profile.
+#
+# NOT from `league$betting$scoring`, which is where this used to be read.
+# run_fit_targets() hands the extractor a WHITELISTED league slice built from
+# c("sport", "country", "sexes", "active", "stan_model", "data_source")
+# (R/model-league.R:453) -- no `betting`. So `isTRUE(NULL)` gave has_ties = FALSE
+# and the is.null() fallback gave tie_threshold = 0 on every production fit, and
+# handball published p_draw = 0 for every match while its own meta.points.draw
+# said 1. The season simulation was the worse half: it ran over a league where a
+# draw could not occur, so every published points total came out even.
+#
+# The profile is keyed by sport and resolved on demand, so nothing can strip it
+# in transit. It is also already the source of truth for meta.points, which is
+# what made the contradiction visible in the first place.
+#
+# Note both halves are needed: 2DT posterior scores are continuous
+# (multi_student_t_rng, never rounded), so P(diff == 0) is exactly 0 and
+# has_ties = TRUE at a threshold of 0 is indistinguishable from FALSE.
+.tie_params_pfi <- function(sport) {
+  profile <- sport_publish_profile(sport)
+  list(
+    has_ties = isTRUE(profile$has_ties),
+    tie_threshold = if (is.null(profile$tie_threshold)) {
+      0
+    } else {
+      profile$tie_threshold
+    }
+  )
+}
+
 .compute_predicted_matches_2dt <- function(fit, pred_d,
                                            bucket_width = 1L,
                                            bucket_low = -50L,

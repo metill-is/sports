@@ -54,12 +54,8 @@ extract_handball_iceland <- function(fit, league, sex,
     bucket_width = sport_publish_profile("handball")$units$diff_bin_width,
     bucket_low = -20L,
     bucket_high = 20L,
-    has_ties = isTRUE(league$betting$scoring$has_ties),
-    tie_threshold = if (is.null(league$betting$scoring$tie_threshold)) {
-      0
-    } else {
-      league$betting$scoring$tie_threshold
-    },
+    has_ties = .tie_params_pfi("handball")$has_ties,
+    tie_threshold = .tie_params_pfi("handball")$tie_threshold,
     fit_date = fit_date,
     end_date = end_date,
     root = root,

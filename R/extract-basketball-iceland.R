@@ -73,12 +73,8 @@ extract_basketball_iceland <- function(fit, league, sex,
     bucket_width = sport_publish_profile("basketball")$units$diff_bin_width,
     bucket_low = -50L,
     bucket_high = 50L,
-    has_ties = isTRUE(league$betting$scoring$has_ties),
-    tie_threshold = if (is.null(league$betting$scoring$tie_threshold)) {
-      0
-    } else {
-      league$betting$scoring$tie_threshold
-    },
+    has_ties = .tie_params_pfi("basketball")$has_ties,
+    tie_threshold = .tie_params_pfi("basketball")$tie_threshold,
     fit_date = fit_date,
     end_date = end_date,
     root = root,
