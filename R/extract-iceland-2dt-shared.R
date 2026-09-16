@@ -294,6 +294,10 @@ NULL
 # final_positions.parquet. Computed via per-draw simulation of remaining
 # matches given the model's posterior; the existing
 # .compute_iter_team_points_2dt() handles the per-draw bookkeeping.
+#
+# Not called by the extractor since 2026-09-16 -- the season table comes from
+# simulate_league_season() -- but kept: it is the Stan-window oracle that
+# test-simulate-2dt-equivalence.R compares the R generators against.
 .compute_final_positions_2dt <- function(posterior_goals, top_div,
                                          base_points, has_ties,
                                          tie_threshold,
@@ -391,57 +395,6 @@ NULL
     dplyr::arrange(.data$team, .data$points)
 }
 
-# Which upcoming fixtures of `division` still belong to the REGULAR season.
-#
-# The played-rows cut (`.regular_season_results()`) handles history; this is its
-# forward half. A basketball cell's `pred_d` carries playoff fixtures inside the
-# league division exactly as its results do, and
-# `.compute_iter_team_points_2dt()` would add every one of them to the simulated
-# table. Walk the fixtures in date order, keeping one only while BOTH teams stay
-# at or below the boundary.
-#
-# `predicted_matches.parquet` is built from the UNCUT set on purpose: a next
-# game is a next game, and the platform's next_games panel should show a playoff
-# fixture. Only the league-table simulation is capped.
-#
-# NA `n_rounds` means no cap at all -- an unconfigured, genuinely irregular cell
-# (basketball female 1D) or a cup. Dropping every upcoming fixture there would
-# be far worse than counting a post-season one, and the caller surfaces the
-# caveat through `.publish_n_rounds()$source`.
-.regular_season_game_nrs_2dt <- function(pred_d, division, played_results,
-                                         n_rounds) {
-  rows <- pred_d[pred_d$division == division, , drop = FALSE]
-  if (nrow(rows) == 0L) {
-    return(integer())
-  }
-  if (length(n_rounds) != 1L || is.na(n_rounds)) {
-    return(rows$game_nr)
-  }
-  rows <- rows[order(rows$match_date, rows$game_nr), , drop = FALSE]
-
-  teams <- unique(c(
-    played_results$home_team, played_results$away_team,
-    rows$home_team, rows$away_team
-  ))
-  tally <- stats::setNames(integer(length(teams)), teams)
-  played <- table(c(played_results$home_team, played_results$away_team))
-  if (length(played) > 0L) {
-    tally[names(played)] <- as.integer(played)
-  }
-
-  keep <- logical(nrow(rows))
-  for (i in seq_len(nrow(rows))) {
-    home <- rows$home_team[[i]]
-    away <- rows$away_team[[i]]
-    if (tally[[home]] < n_rounds && tally[[away]] < n_rounds) {
-      tally[[home]] <- tally[[home]] + 1L
-      tally[[away]] <- tally[[away]] + 1L
-      keep[i] <- TRUE
-    }
-  }
-  rows$game_nr[keep]
-}
-
 # Shared orchestrator: takes a fit + sport-specific config and writes one
 # parquet per file type into the partition, each division-keyed file carrying a
 # `division` payload column covering every code in
@@ -472,6 +425,7 @@ NULL
   expected_meetings <- .iceland_division_expected_meetings(key, sex)
   regular_season_rounds <- .iceland_division_regular_season_rounds(key, sex)
   division_is_cup <- .iceland_division_is_cup(key, sex)
+  division_hold <- .iceland_division_preseason_hold(key, sex)
 
   if (is.null(extracts_root)) {
     extracts_root <- file.path(root, "beliefs", "extracts")
@@ -526,16 +480,32 @@ NULL
     filter = list(sport = league$sport, country = league$country, sex = sex)
   )
 
-  current_season <- if (nrow(results) > 0L) {
+  # The fit's scoring level belongs to the latest season it has results for;
+  # a division projecting a later season steps it forward (F12). Each
+  # division resolves its own season below.
+  last_fitted_season <- if (nrow(results) > 0L) {
     max(results$season, na.rm = TRUE)
   } else {
-    as.integer(format(as.Date(end_date), "%Y"))
+    NA_integer_
   }
 
   # ---- Cross-division inputs, computed once --------------------------------
   posterior_goals <- .compute_posterior_goals_2dt(fit, pred_d)
   team_strengths_draws <- .extract_team_strength_draws_2dt(fit, teams)
   home_advantage_draws <- .extract_home_advantage_draws_2dt(fit, teams)
+
+  # Season-simulation inputs, pulled once (spec 2026-09-16 §4). Seeded from
+  # fit_date, so re-extracting a fit reproduces its tables and the committed
+  # fixture does not churn.
+  sim_seed <- as.integer(format(as.Date(fit_date), "%Y%m%d"))
+  sim_inputs <- .extract_sim_inputs_2dt(
+    fit, teams, sport, n_seasons = prep$stan_data$N_seasons
+  )
+  sim_inputs$scalar$z_level <- withr::with_seed(
+    sim_seed, stats::rnorm(nrow(sim_inputs$scalar))
+  )
+  match_fn <- .match_fn_2dt(sport)
+  points_fn <- .points_fn_2dt(has_ties, tie_threshold)
 
   # predicted_matches is cross-division and ALREADY carries `division` from
   # pred_d, so it is filtered rather than stamped -- mutating a second division
@@ -556,6 +526,21 @@ NULL
 
   # ---- Per-division slices -------------------------------------------------
   per_div <- lapply(divisions, function(div) {
+    # The division's own season: its schedule counts as well as its results,
+    # so a published next season is current before its first match (spec
+    # 2026-09-16 §5). A held division stays on its held season (§5.1).
+    season_div <- .current_season_2dt(
+      results, schedules, end_date, div,
+      hold = division_hold[[div]]
+    )
+    # Meetings per pairing, from the season's own fixtures where they form a
+    # complete list (§6, F17). The publisher calls the same helper.
+    division_format <- .division_format_2dt(
+      results, schedules, season_div, div,
+      expected_meetings = expected_meetings[[div]],
+      regular_season_rounds = regular_season_rounds[[div]]
+    )
+
     # THE REGULAR-SEASON CUT (D3). Basketball embeds its urslitakeppni in the
     # league division -- KKI packages it as extra rounds inside the SAME
     # season_id (R/ingest-kki-basketball.R:23-24) -- so without this the
@@ -573,58 +558,78 @@ NULL
     rounds <- .publish_n_rounds(
       results = results,
       schedules = schedules,
-      season = current_season,
+      season = season_div,
       division_codes = div,
       end_date = as.Date(end_date),
-      expected_meetings = expected_meetings[[div]],
+      expected_meetings = division_format$meetings,
       regular_season_rounds = regular_season_rounds[[div]],
       is_cup = isTRUE(division_is_cup[[div]])
     )
 
     top_results <- results[
-      results$season == current_season & results$division == div, ,
+      results$season == season_div & results$division == div, ,
       drop = FALSE
     ]
     top_results <- .regular_season_cut(top_results, rounds)
 
-    # The forward half of the same cut. predicted_matches stays UNCUT.
-    keep_game_nrs <- .regular_season_game_nrs_2dt(
-      pred_d, div, top_results, rounds$n_rounds
+    # The division's teams are the SEASON's: those who have played inside the
+    # regular cut and those only scheduled so far. From played results alone,
+    # handball one round into 2026-27 published 8 of its 24 teams on some
+    # surfaces and all 24 on others.
+    #
+    # Read through the publisher's empty-safe helpers: a cell with no schedule
+    # table at all reads as a zero-COLUMN tibble, and `$` on that warns.
+    season_fixtures <- .publish_cell_rows(schedules, season_div, div)
+    div_teams <- sort(unique(c(
+      .publish_appearances(top_results),
+      .publish_appearances(season_fixtures)
+    )))
+    # The strength surfaces describe only teams the fit knows.
+    current_top_teams <- tibble::tibble(
+      team = div_teams[div_teams %in% teams$team]
     )
-    # Other divisions' rows are kept so the draw index stays complete even when
-    # this division has nothing left to play.
-    posterior_goals_div <- posterior_goals[
-      !(posterior_goals$division == div &
-        !(posterior_goals$game_nr %in% keep_game_nrs)), ,
-      drop = FALSE
-    ]
 
-    # The division's team set is the SEASON's teams: those that have played
-    # inside the regular cut AND those only scheduled so far. From played
-    # results alone, handball one round into 2026-27 published strengths and
-    # home advantage for the 8 men's teams that had played and none of the
-    # other 16, while final_positions (simulated on the schedule) covered all
-    # 24 -- two surfaces from one fit disagreeing on who is in the league.
-    # Only teams the fit knows reach pred_d, so the union adds no stranger.
-    scheduled_top <- pred_d[pred_d$division == div, c("home_team", "away_team"), drop = FALSE]
-    current_top_teams <- dplyr::bind_rows(
-      top_results[, c("home_team", "away_team"), drop = FALSE],
-      scheduled_top
-    )
-    current_top_teams <- if (nrow(current_top_teams) > 0L) {
-      current_top_teams |>
-        tidyr::pivot_longer(c("home_team", "away_team"), values_to = "team") |>
-        dplyr::distinct(.data$team) |>
-        dplyr::arrange(.data$team)
-    } else {
-      tibble::tibble(team = character())
+    # ---- final_positions + points_distribution: the whole regular season ---
+    # Realised results plus a simulation of every remaining regular-season
+    # fixture from the fit's latest-round strengths, not the ~2 rounds inside
+    # Stan's 14-day prediction window (spec 2026-09-16 §1-§2, F1). Stan's
+    # window now feeds predicted_matches (next_games) and nothing else.
+    upcoming <- if (nrow(season_fixtures) > 0L) {
+      season_fixtures[
+        !is.na(season_fixtures$match_date) &
+          season_fixtures$match_date > as.Date(end_date), ,
+        drop = FALSE
+      ]
     }
-
-    base_points <- .compute_base_points_2dt(
-      top_results,
-      has_ties = has_ties,
-      tie_threshold = tie_threshold
+    remaining <- .remaining_fixtures_2dt(
+      teams = div_teams,
+      played = top_results,
+      scheduled = upcoming,
+      meetings = division_format$meetings,
+      # Where meetings are unknown, the boundary caps each side's schedule.
+      max_games = rounds$n_rounds
     )
+    base_standings <- .base_standings_2dt(
+      top_results, div_teams,
+      has_ties = has_ties, tie_threshold = tie_threshold
+    )
+    seasons_ahead <- if (is.na(last_fitted_season)) {
+      0L
+    } else {
+      max(0L, as.integer(season_div - last_fitted_season))
+    }
+    season_sim <- withr::with_seed(sim_seed, {
+      div_inputs <- .add_new_team_priors_2dt(sim_inputs, div_teams)
+      simulate_league_season(
+        sim_inputs_team = div_inputs$team,
+        sim_inputs_scalar = .season_level_2dt(div_inputs$scalar, seasons_ahead),
+        remaining_fixtures = remaining,
+        base_standings = base_standings,
+        match_fn = match_fn,
+        points_fn = points_fn,
+        tie_break = "jitter"
+      )
+    })
 
     # ---- round_strengths_quantiles ----------------------------------------
     # Shaped after football's block (R/extract-football-iceland.R:127-158) and
@@ -653,7 +658,7 @@ NULL
       results = results,
       teams = teams,
       current_top_teams = current_top_teams,
-      current_season = current_season,
+      current_season = season_div,
       top_div = div
     )
     if (nrow(trajectory_long) > 0L) {
@@ -695,16 +700,8 @@ NULL
       home_advantage_quantiles = .compute_home_advantage_quantiles_2dt(
         home_advantage_draws, current_top_teams
       ),
-      final_positions = .compute_final_positions_2dt(
-        posterior_goals_div, div, base_points,
-        has_ties, tie_threshold,
-        current_top_teams
-      ),
-      points_distribution = .compute_points_distribution_2dt(
-        posterior_goals_div, div, base_points,
-        has_ties, tie_threshold,
-        current_top_teams
-      )
+      final_positions = season_sim$final_positions,
+      points_distribution = season_sim$points_distribution
     )
   })
   per_div <- lapply(seq_along(divisions), function(i) {

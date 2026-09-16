@@ -267,6 +267,47 @@ test_that("unknown meetings fall back to the schedule alone", {
   expect_identical(.pairs(out), "A B")
 })
 
+test_that("unknown meetings with a stated game count cap each side's schedule", {
+  # Basketball women's 1D states regular_season_rounds instead of meetings,
+  # and its schedule can carry an embedded play-off. A fixture is kept only
+  # while BOTH sides are below the count, counting what each has played.
+  teams <- c("A", "B", "C", "D")
+  played <- tibble::tibble(
+    home_team = c("A", "B", "A", "B"), away_team = c("C", "C", "D", "D")
+  )
+  # A and B have each played max_games - 1; the rows arrive out of date order.
+  sched <- tibble::tibble(
+    home_team = c("B", "A", "A"), away_team = c("C", "C", "B"),
+    match_date = as.Date(c("2100-02-03", "2100-02-02", "2100-02-01"))
+  )
+  out <- .remaining_fixtures_2dt(teams, played, sched,
+    meetings = NA_integer_, max_games = 3L
+  )
+  expect_identical(.pairs(out), "A B")
+
+  # Without a count the schedule passes through whole, in date order.
+  expect_identical(
+    .pairs(.remaining_fixtures_2dt(teams, played, sched, meetings = NA_integer_)),
+    c("A B", "A C", "B C")
+  )
+  # Known meetings ignore the count: the structural derivation governs.
+  expect_identical(
+    .remaining_fixtures_2dt(teams, played, sched, meetings = 2L, max_games = 3L),
+    .remaining_fixtures_2dt(teams, played, sched, meetings = 2L)
+  )
+})
+
+test_that("a stated game count with nothing played caps from zero", {
+  sched <- tibble::tibble(
+    home_team = c("A", "A", "B"), away_team = c("B", "C", "C"),
+    match_date = as.Date(c("2100-02-01", "2100-02-02", "2100-02-03"))
+  )
+  out <- .remaining_fixtures_2dt(c("A", "B", "C"), NULL, sched,
+    meetings = NA_integer_, max_games = 1L
+  )
+  expect_identical(.pairs(out), "A B")
+})
+
 # ---- .base_standings_2dt() --------------------------------------------------
 
 test_that("the base table carries every division team, played or not", {

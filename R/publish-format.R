@@ -129,9 +129,11 @@
 #' there; on the synthetic fixture the ungated filter deleted one played match
 #' from six football cells and one basketball cell.
 #'
-#' The FORWARD half of the cut (`.regular_season_game_nrs_2dt()`) is NOT gated:
-#' capping how many fixtures are left to play is a question about season
-#' length, which both sources answer.
+#' The FORWARD half of the cut is NOT gated: `.remaining_fixtures_2dt()` caps
+#' what is left to play at each pairing's meetings, and only where the meetings
+#' are unknown caps each side's games at `n_rounds`, whatever its source
+#' (R/season-structure-2dt.R). Capping how many fixtures are left to play is a
+#' question about season length, which both sources answer.
 #'
 #' @param results Results tibble carrying `round`.
 #' @param format A [`.publish_n_rounds()`] result.

@@ -22,7 +22,8 @@ NULL
 #' * `home_advantage_quantiles.parquet` — per-team home-advantage
 #'   quantile bands by component (offence / defence / total).
 #' * `final_positions.parquet` — per-team placement probability
-#'   (1..n_teams) at season end.
+#'   (1..n_teams) at the end of the REGULAR season: realised results plus a
+#'   simulation of every remaining fixture (`simulate_league_season()`).
 #' * `points_distribution.parquet` — per-team discrete points-total
 #'   distribution.
 #'

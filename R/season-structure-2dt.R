@@ -210,8 +210,10 @@ MULTIPLICITY_SCHEDULE_BALANCE <- 0.1
 # is generated, alternating venues (F16). This replaces the per-team cap that
 # counted last season's games (F9) and any dependence on Stan's 14-day window.
 #
-# Unknown `meetings` returns the schedule as is.
-.remaining_fixtures_2dt <- function(teams, played, scheduled, meetings) {
+# Unknown `meetings` returns the schedule, capped per side at `max_games` when
+# that is set (`.cap_side_games_2dt()`); with neither, the schedule as is.
+.remaining_fixtures_2dt <- function(teams, played, scheduled, meetings,
+                                    max_games = NA_integer_) {
   teams <- sort(unique(as.character(teams)))
   sched <- if (is.null(scheduled) || nrow(scheduled) == 0L) {
     tibble::tibble(
@@ -227,7 +229,7 @@ MULTIPLICITY_SCHEDULE_BALANCE <- 0.1
   }
   sched <- sched[order(sched$match_date), , drop = FALSE]
   if (!.is_set_2dt(meetings)) {
-    return(tibble::tibble(home_team = sched$home_team, away_team = sched$away_team))
+    return(.cap_side_games_2dt(sched, played, max_games))
   }
   if (length(teams) < 2L) {
     return(tibble::tibble(home_team = character(), away_team = character()))
@@ -285,6 +287,43 @@ MULTIPLICITY_SCHEDULE_BALANCE <- 0.1
     }
   }
   tibble::tibble(home_team = out_h, away_team = out_a)
+}
+
+# The forward half of a stated game count, for a cell whose meetings are unknown
+# (basketball women's 1D states `regular_season_rounds`, and KKI embeds its
+# play-off in the same division). Walk the schedule in date order and keep a
+# fixture only while BOTH sides are below `max_games`, counting the games each
+# has already played in `played` -- which the caller limits to this season, so
+# last season's games no longer eat into the count (F9). Unset `max_games`
+# keeps every row.
+.cap_side_games_2dt <- function(sched, played, max_games) {
+  out <- tibble::tibble(home_team = sched$home_team, away_team = sched$away_team)
+  if (!.is_set_2dt(max_games) || nrow(out) == 0L) {
+    return(out)
+  }
+  cap <- as.integer(max_games)
+  apps <- if (is.null(played) || nrow(played) == 0L) {
+    character()
+  } else {
+    c(played$home_team, played$away_team)
+  }
+  sides <- unique(c(apps, out$home_team, out$away_team))
+  tally <- stats::setNames(integer(length(sides)), sides)
+  if (length(apps) > 0L) {
+    seen <- table(apps)
+    tally[names(seen)] <- as.integer(seen)
+  }
+  keep <- logical(nrow(out))
+  for (i in seq_len(nrow(out))) {
+    home <- out$home_team[[i]]
+    away <- out$away_team[[i]]
+    if (tally[[home]] < cap && tally[[away]] < cap) {
+      tally[[home]] <- tally[[home]] + 1L
+      tally[[away]] <- tally[[away]] + 1L
+      keep[i] <- TRUE
+    }
+  }
+  out[keep, , drop = FALSE]
 }
 
 # ---- Base table ----------------------------------------------------------------

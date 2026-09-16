@@ -219,17 +219,16 @@ test_that("played post-season rounds never reach the 2DT league table", {
 
   pd <- read_part(cell, "points_distribution")
   pd_04 <- pd[pd$division == "BD" & pd$team == teams[4L], ]
-  # The weakest team finished the regular season on 0 points and has exactly
-  # one fixture left in the prediction window, so 2 is its ceiling. With the
-  # four playoff rounds counted its BASE alone is 8, and its support is 8..10.
-  expect_lte(max(pd_04$points), 2)
+  # The weakest team finished its three regular games on 0 points and has its
+  # three return legs left, so 6 is its ceiling. With the four playoff rounds
+  # counted its BASE alone would be 8.
+  expect_lte(max(pd_04$points), 6)
 
   fp <- read_part(cell, "final_positions")
   bd <- fp[fp$division == "BD" & fp$placement == 1L, ]
-  # 0 points with a ceiling of 2 cannot win a division whose leader is on 6.
-  # Uncounted, the injected playoff wins put it on 8 and it takes the title in
+  # Counted, the injected playoff wins put it on 8 and it took the title in
   # 40 % of draws.
-  expect_equal(bd$probability[bd$team == teams[4L]], 0)
+  expect_lt(bd$probability[bd$team == teams[4L]], 0.05)
   expect_gt(bd$probability[bd$team == teams[1L]], 0.5)
 })
 
@@ -261,8 +260,9 @@ test_that("upcoming post-season fixtures publish but score no points", {
 
   pd <- read_part(cell, "points_distribution")
   pd_01 <- pd[pd$division == "BD" & pd$team == teams[1L], ]
-  # 6 realised points plus at most three COUNTING fixtures at 2 points each.
-  # Uncapped it is five fixtures, so 16.
+  # 6 realised points plus its three return legs at 2 points each. The
+  # scheduled games past the double round robin are skipped; counted, the
+  # ceiling would be 16.
   expect_lte(max(pd_01$points), 12)
 })
 
