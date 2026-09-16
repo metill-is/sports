@@ -45,3 +45,220 @@ NULL
   }
   season
 }
+
+# ---- Format -------------------------------------------------------------------
+
+# When the season's own fixture list is trusted as a format statement: it must
+# name (nearly) every pairing, agree with itself on one meetings count, and
+# give every team about the same number of games. A partial list -- a few
+# dated fixtures, or a regular season with its play-offs appended -- fails at
+# least one test and falls through to config.
+MULTIPLICITY_SCHEDULE_COVERAGE <- 0.9
+MULTIPLICITY_SCHEDULE_AGREEMENT <- 0.75
+MULTIPLICITY_SCHEDULE_BALANCE <- 0.1
+
+# Meetings per pairing for one division's season (spec 2026-09-16 §6).
+#
+# Order: the season's own fixtures, then config `expected_meetings`, then the
+# last completed season's results. The season's own fixtures come first
+# because formats change between seasons: women's Olisdeild went from a triple
+# round robin of 8 (2026) to a double of 10 (2027) while config and history
+# both still said 3 (F17).
+#
+# Config comes before history, the reverse of the spec. History is read with
+# football's `.division_rr_multiplicity_pfi()`, whose max over pairs reads
+# basketball's embedded urslitakeppni as 4-5 meetings; a stated format beats
+# that guess, and on every configured cell the two agree anyway.
+#
+# A stated `regular_season_rounds` means no meetings constant describes the
+# cell (basketball female 1D); the meetings stay unknown and the remaining
+# fixtures are the schedule's.
+.division_format_2dt <- function(results, schedules, season, division,
+                                 expected_meetings = NA_integer_,
+                                 regular_season_rounds = NA_integer_) {
+  if (.is_set_2dt(regular_season_rounds)) {
+    return(list(meetings = NA_integer_, source = "not_applicable"))
+  }
+  from_schedule <- .schedule_meetings_2dt(results, schedules, season, division)
+  if (!is.na(from_schedule)) {
+    return(list(meetings = from_schedule, source = "schedule"))
+  }
+  if (.is_set_2dt(expected_meetings)) {
+    return(list(meetings = as.integer(expected_meetings), source = "config"))
+  }
+  prior <- .division_rr_multiplicity_pfi(results, season, division)
+  if (!is.na(prior)) {
+    return(list(meetings = as.integer(prior), source = "prior_results"))
+  }
+  list(meetings = NA_integer_, source = "none")
+}
+
+# The modal meetings count over the season's played and scheduled fixtures
+# (de-duplicated on date: the current season's schedule keeps its played
+# rows), or NA when the list is not a trustworthy format statement.
+.schedule_meetings_2dt <- function(results, schedules, season, division) {
+  cols <- c("home_team", "away_team", "match_date")
+  pick <- function(df) {
+    if (is.null(df) || nrow(df) == 0L) {
+      return(NULL)
+    }
+    df[df$season == season & df$division == division &
+      !is.na(df$match_date), cols, drop = FALSE]
+  }
+  fx <- dplyr::distinct(dplyr::bind_rows(pick(results), pick(schedules)))
+  if (nrow(fx) == 0L) {
+    return(NA_integer_)
+  }
+  teams <- unique(c(fx$home_team, fx$away_team))
+  n_pairs <- length(teams) * (length(teams) - 1L) / 2L
+  pair <- paste(
+    pmin(fx$home_team, fx$away_team), pmax(fx$home_team, fx$away_team),
+    sep = "|"
+  )
+  meetings <- as.integer(table(pair))
+  if (n_pairs < 1L || length(meetings) / n_pairs < MULTIPLICITY_SCHEDULE_COVERAGE) {
+    return(NA_integer_)
+  }
+  counts <- table(meetings)
+  top <- max(counts)
+  if (top / length(meetings) < MULTIPLICITY_SCHEDULE_AGREEMENT) {
+    return(NA_integer_)
+  }
+  games <- as.integer(table(c(fx$home_team, fx$away_team)))
+  slack <- max(1L, as.integer(floor(MULTIPLICITY_SCHEDULE_BALANCE * max(games))))
+  if (max(games) - min(games) > slack) {
+    return(NA_integer_)
+  }
+  # A tie between two counts takes the larger: the fuller format.
+  max(as.integer(names(counts)[counts == top]))
+}
+
+# ---- Remaining fixtures ------------------------------------------------------
+
+# Every fixture of the season still to be played, derived structurally
+# (football's approach, R/extract-football-iceland.R): each pairing meets
+# `meetings` times in all, each side hosting at most ceiling(meetings / 2).
+#
+# Scheduled fixtures are taken first, in date order, because their venues are
+# real; a scheduled game beyond the pairing's meetings (an embedded play-off)
+# or on a venue already used up is skipped. What the schedule does not cover
+# is generated, alternating venues (F16). This replaces the per-team cap that
+# counted last season's games (F9) and any dependence on Stan's 14-day window.
+#
+# Unknown `meetings` returns the schedule as is.
+.remaining_fixtures_2dt <- function(teams, played, scheduled, meetings) {
+  teams <- sort(unique(as.character(teams)))
+  sched <- if (is.null(scheduled) || nrow(scheduled) == 0L) {
+    tibble::tibble(
+      home_team = character(), away_team = character(),
+      match_date = as.Date(character())
+    )
+  } else {
+    scheduled[
+      scheduled$home_team %in% teams & scheduled$away_team %in% teams,
+      c("home_team", "away_team", "match_date"),
+      drop = FALSE
+    ]
+  }
+  sched <- sched[order(sched$match_date), , drop = FALSE]
+  if (!.is_set_2dt(meetings)) {
+    return(tibble::tibble(home_team = sched$home_team, away_team = sched$away_team))
+  }
+  if (length(teams) < 2L) {
+    return(tibble::tibble(home_team = character(), away_team = character()))
+  }
+
+  m <- as.integer(meetings)
+  cap <- (m + 1L) %/% 2L
+  key <- function(h, a) paste(h, a, sep = "|")
+  played_n <- if (is.null(played) || nrow(played) == 0L) {
+    integer()
+  } else {
+    table(key(played$home_team, played$away_team))
+  }
+  n_played <- function(h, a) {
+    k <- key(h, a)
+    if (k %in% names(played_n)) as.integer(played_n[[k]]) else 0L
+  }
+  sched_pair <- key(
+    pmin(sched$home_team, sched$away_team),
+    pmax(sched$home_team, sched$away_team)
+  )
+
+  out_h <- character()
+  out_a <- character()
+  pairs <- utils::combn(teams, 2L)
+  for (j in seq_len(ncol(pairs))) {
+    a <- pairs[1L, j]
+    b <- pairs[2L, j]
+    n_ab <- n_played(a, b)
+    n_ba <- n_played(b, a)
+    for (r in which(sched_pair == key(a, b))) {
+      if (n_ab + n_ba >= m) {
+        break
+      }
+      if (sched$home_team[r] == a && n_ab < cap) {
+        out_h <- c(out_h, a)
+        out_a <- c(out_a, b)
+        n_ab <- n_ab + 1L
+      } else if (sched$home_team[r] == b && n_ba < cap) {
+        out_h <- c(out_h, b)
+        out_a <- c(out_a, a)
+        n_ba <- n_ba + 1L
+      }
+    }
+    while (n_ab + n_ba < m) {
+      if (n_ab <= n_ba && n_ab < cap) {
+        out_h <- c(out_h, a)
+        out_a <- c(out_a, b)
+        n_ab <- n_ab + 1L
+      } else {
+        out_h <- c(out_h, b)
+        out_a <- c(out_a, a)
+        n_ba <- n_ba + 1L
+      }
+    }
+  }
+  tibble::tibble(home_team = out_h, away_team = out_a)
+}
+
+# ---- Base table ----------------------------------------------------------------
+
+# The realised table the season simulation starts from: every division team,
+# played or not, with points on the published 2DT scheme.
+.base_standings_2dt <- function(played, teams, has_ties = FALSE,
+                                tie_threshold = 0) {
+  teams <- sort(unique(as.character(teams)))
+  if (is.null(played) || nrow(played) == 0L) {
+    return(tibble::tibble(
+      team = teams, base_points = 0L, base_gd = 0L, base_gf = 0L
+    ))
+  }
+  side <- function(name) {
+    is_home <- identical(name, "home")
+    tibble::tibble(
+      team = if (is_home) played$home_team else played$away_team,
+      gf = if (is_home) played$home_score else played$away_score,
+      ga = if (is_home) played$away_score else played$home_score,
+      pts = .points_2dt(
+        played$home_score, played$away_score, name,
+        has_ties = has_ties, tie_threshold = tie_threshold
+      )
+    )
+  }
+  realised <- dplyr::bind_rows(side("home"), side("away")) |>
+    dplyr::summarise(
+      base_points = sum(.data$pts),
+      base_gd = sum(.data$gf - .data$ga),
+      base_gf = sum(.data$gf),
+      .by = "team"
+    )
+  tibble::tibble(team = teams) |>
+    dplyr::left_join(realised, by = "team") |>
+    dplyr::transmute(
+      team = .data$team,
+      base_points = as.integer(dplyr::coalesce(.data$base_points, 0L)),
+      base_gd = as.integer(dplyr::coalesce(.data$base_gd, 0L)),
+      base_gf = as.integer(dplyr::coalesce(.data$base_gf, 0L))
+    )
+}
