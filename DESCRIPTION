@@ -117,6 +117,7 @@ Collate:
     'publish-quantile-grid.R'
     'replay.R'
     'schedule-active.R'
+    'simulate-2dt.R'
     'simulate-cup-bracket.R'
     'storage-validate.R'
     'wc-structure.R'
