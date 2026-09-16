@@ -181,3 +181,75 @@ NULL
     sqrt(k) * scalar$sigma_mean_goals * scalar$z_level
   scalar
 }
+
+# ---- Teams without history ------------------------------------------------------
+
+# A scheduled team the fit has never seen (a promoted reserve side, a new
+# club) would otherwise empty the whole table: simulate_league_season() stops
+# on a team without draws, and the extractor used to skip the division (F7).
+# It gets prior draws instead (spec 2026-09-16 §7, D8), per draw:
+#   * centre: the mean offence and mean defence of the division's
+#     NEW_TEAM_PRIOR_BOTTOM_N weakest rated teams by offence + defence (a
+#     higher defence concedes less). One set of teams for both components
+#     keeps them coherent;
+#   * spread: NEW_TEAM_PRIOR_SPREAD x the rated division's between-team SD;
+#   * home advantage: the rated division's mean;
+#   * handball sigma_team: exp(mean_sigma_team + scale_sigma_team * z), the
+#     model's own hierarchy.
+# Random-walk step sizes are not drawn: strengths are frozen (D3). A division
+# with fewer rated teams than NEW_TEAM_PRIOR_BOTTOM_N borrows the whole
+# league. Such a team still has no next_games rows until it has been fitted.
+NEW_TEAM_PRIOR_BOTTOM_N <- 2L
+NEW_TEAM_PRIOR_SPREAD <- 1.5
+
+.add_new_team_priors_2dt <- function(sim_inputs, division_teams) {
+  team <- sim_inputs$team
+  new <- sort(setdiff(division_teams, unique(team$team)))
+  if (length(new) == 0L) {
+    return(sim_inputs)
+  }
+  rated <- team[team$team %in% division_teams, , drop = FALSE]
+  if (length(unique(rated$team)) < NEW_TEAM_PRIOR_BOTTOM_N) {
+    rated <- team
+  }
+  if (length(unique(rated$team)) < NEW_TEAM_PRIOR_BOTTOM_N) {
+    stop(
+      ".add_new_team_priors_2dt: fewer than ", NEW_TEAM_PRIOR_BOTTOM_N,
+      " rated teams in the whole fit; cannot place ",
+      paste(new, collapse = ", "), ".",
+      call. = FALSE
+    )
+  }
+  bottom <- seq_len(NEW_TEAM_PRIOR_BOTTOM_N)
+  per_draw <- rated |>
+    dplyr::mutate(total = .data$cur_offense + .data$cur_defense) |>
+    dplyr::summarise(
+      centre_off = mean(.data$cur_offense[order(.data$total)][bottom]),
+      centre_def = mean(.data$cur_defense[order(.data$total)][bottom]),
+      spread_off = NEW_TEAM_PRIOR_SPREAD * stats::sd(.data$cur_offense),
+      spread_def = NEW_TEAM_PRIOR_SPREAD * stats::sd(.data$cur_defense),
+      ha_off = mean(.data$home_advantage_off),
+      ha_def = mean(.data$home_advantage_def),
+      .by = ".draw"
+    )
+
+  grid <- tidyr::expand_grid(team = new, .draw = per_draw$.draw)
+  pd <- per_draw[match(grid$.draw, per_draw$.draw), , drop = FALSE]
+  n <- nrow(grid)
+  added <- tibble::tibble(
+    team = grid$team,
+    .draw = grid$.draw,
+    cur_offense = pd$centre_off + pd$spread_off * stats::rnorm(n),
+    cur_defense = pd$centre_def + pd$spread_def * stats::rnorm(n),
+    home_advantage_off = pd$ha_off,
+    home_advantage_def = pd$ha_def
+  )
+  if ("sigma_team" %in% names(team)) {
+    sc <- sim_inputs$scalar[match(grid$.draw, sim_inputs$scalar$.draw), , drop = FALSE]
+    added$sigma_team <- exp(
+      sc$mean_sigma_team + sc$scale_sigma_team * stats::rnorm(n)
+    )
+  }
+  sim_inputs$team <- dplyr::bind_rows(team, added[, names(team)])
+  sim_inputs
+}

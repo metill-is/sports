@@ -144,3 +144,48 @@ test_that("a season the fit has not seen is stepped forward on the model's trend
   expect_equal(.season_level_2dt(sc, 2L)$mean_goals, 84 + sqrt(2) * 1.5 * c(-1, 0, 1))
   expect_error(.season_level_2dt(sc, -1L))
 })
+
+.rated_inputs <- function(n_draws = 4000L, handball = FALSE) {
+  teams <- paste0("T", 1:5)
+  team <- tidyr::expand_grid(team = teams, .draw = seq_len(n_draws))
+  i <- match(team$team, teams)
+  team$cur_offense <- c(4, 2, 0, -2, -4)[i]
+  team$cur_defense <- c(2, 1, 0, -1, -2)[i]
+  team$home_advantage_off <- c(1, 2, 3, 4, 5)[i]
+  team$home_advantage_def <- 1
+  if (handball) team$sigma_team <- 5
+  scalar <- tibble::tibble(
+    .draw = seq_len(n_draws), mean_sigma_team = log(4), scale_sigma_team = 0.2
+  )
+  list(team = team, scalar = scalar)
+}
+
+test_that("a team without history is centred on the division's bottom two (§7)", {
+  set.seed(5)
+  out <- .add_new_team_priors_2dt(.rated_inputs(), c(paste0("T", 1:5), "NEW"))
+  new <- out$team[out$team$team == "NEW", ]
+  expect_equal(nrow(new), 4000L)
+  # Bottom two by offence + defence are T5 and T4: offence -3, defence -1.5.
+  expect_lt(abs(mean(new$cur_offense) + 3), 0.25)
+  expect_lt(abs(mean(new$cur_defense) + 1.5), 0.12)
+  # Spread: 1.5 x the rated division's between-team SD.
+  expect_lt(abs(stats::sd(new$cur_offense) / (1.5 * stats::sd(c(4, 2, 0, -2, -4))) - 1), 0.05)
+  expect_equal(unique(new$home_advantage_off), 3)
+  expect_equal(unique(new$home_advantage_def), 1)
+  expect_false("sigma_team" %in% names(out$team))
+})
+
+test_that("handball newcomers draw sigma_team from the fitted hierarchy", {
+  set.seed(6)
+  # A division with one rated team borrows the whole league's bottom two.
+  out <- .add_new_team_priors_2dt(.rated_inputs(handball = TRUE), c("T1", "NEW"))
+  new <- out$team[out$team$team == "NEW", ]
+  expect_lt(abs(mean(log(new$sigma_team)) - log(4)), 0.02)
+  expect_lt(abs(stats::sd(log(new$sigma_team)) - 0.2), 0.01)
+  expect_lt(abs(mean(new$cur_offense) + 3), 0.25)
+})
+
+test_that("a division whose teams are all rated is returned unchanged", {
+  si <- .rated_inputs(10L)
+  expect_identical(.add_new_team_priors_2dt(si, paste0("T", 1:5)), si)
+})
