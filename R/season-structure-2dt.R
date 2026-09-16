@@ -16,34 +16,46 @@ NULL
 # successor's first match, so a pre-season forecast showed last season's
 # table. Football keeps that rule (D5): KSI publishes its schedule in halves.
 #
-# `hold` pins a division (config `preseason_hold`): its schedule is ignored and
-# the result never passes the held season, even once the next season starts.
+# `hold` pins a division (config `preseason_hold`) to the latest season at or
+# before `hold` in which it has played results: its schedule is ignored and the
+# result never passes that season, even once the next season starts.
+#
+# A hold is relative to the data, not to the calendar. A division with NO played
+# results at or before `hold` is not held at all and resolves exactly as if
+# unheld. Pinning it to a season it has no rows for would publish an empty
+# cell -- which is what the real `preseason_hold: 2026` did to the test
+# fixture's 2099-2101 basketball women's 1D.
 .current_season_2dt <- function(results, schedules, end_date, division,
                                 hold = NA_integer_) {
   end_date <- as.Date(end_date)
-  seasons <- integer()
+  played_seasons <- integer()
   if (!is.null(results) && nrow(results) > 0L) {
     played <- results$division %in% division &
       !is.na(results$match_date) & results$match_date <= end_date &
       !is.na(results$home_score) & !is.na(results$away_score)
-    seasons <- c(seasons, results$season[played])
+    played_seasons <- results$season[played]
   }
-  held <- .is_set_2dt(hold)
-  if (!held && !is.null(schedules) && nrow(schedules) > 0L) {
+  played_seasons <- played_seasons[!is.na(played_seasons)]
+
+  if (.is_set_2dt(hold)) {
+    held <- played_seasons[played_seasons <= as.integer(hold)]
+    if (length(held) > 0L) {
+      return(as.integer(max(held)))
+    }
+  }
+
+  seasons <- played_seasons
+  if (!is.null(schedules) && nrow(schedules) > 0L) {
     ahead <- schedules$division %in% division &
       !is.na(schedules$match_date) & schedules$match_date > end_date
     seasons <- c(seasons, schedules$season[ahead])
   }
   seasons <- seasons[!is.na(seasons)]
-  season <- if (length(seasons) == 0L) {
+  if (length(seasons) == 0L) {
     as.integer(format(end_date, "%Y"))
   } else {
     as.integer(max(seasons))
   }
-  if (held) {
-    season <- min(season, as.integer(hold))
-  }
-  season
 }
 
 # ---- Format -------------------------------------------------------------------

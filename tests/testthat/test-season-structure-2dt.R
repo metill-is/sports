@@ -49,6 +49,34 @@ test_that("a held division ignores its schedule and never passes its hold", {
   )
 })
 
+test_that("a hold on a season the division has no results for is inert", {
+  # config/leagues.yml holds basketball women's 1D on a real year (2026); the
+  # test fixture's seasons are 2099-2101. Pinned to a season with no rows, the
+  # held cell would publish nothing at all, so such a hold resolves as unheld.
+  played <- dplyr::bind_rows(
+    .res(2099, "1D", "2099-03-01"), .res(2100, "1D")
+  )
+  ahead <- .sch(2101, "1D", "2100-09-29")
+  expect_identical(
+    .current_season_2dt(played, ahead, .end, "1D", hold = 2026L),
+    2101L
+  )
+  expect_identical(
+    .current_season_2dt(played, ahead, .end, "1D", hold = 2026L),
+    .current_season_2dt(played, ahead, .end, "1D")
+  )
+})
+
+test_that("a hold between results seasons pins the latest one at or before it", {
+  played <- dplyr::bind_rows(
+    .res(2098, "1D", "2098-03-01"), .res(2100, "1D")
+  )
+  expect_identical(
+    .current_season_2dt(played, .sch(2101, "1D", "2100-09-29"), .end, "1D", hold = 2099L),
+    2098L
+  )
+})
+
 test_that("results after end_date do not count and an empty cell uses the calendar year", {
   expect_identical(
     .current_season_2dt(.res(2101, date = "2100-10-01"), NULL, .end, "BD"),

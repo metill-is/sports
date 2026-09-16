@@ -184,7 +184,7 @@
           "preseason_hold": {
             "type": "integer",
             "minimum": 2000,
-            "description": "Hold this division on the given season: the 2DT season resolver ignores its future schedule and never moves past this season, so metill-platform's min_season gate keeps the cell out of view. For a division whose next season is not modelled yet (basketball female 1. deild, 2027: renamed reserve sides and a new 12-team format). Remove the key to release it. Spec 2026-09-16 section 5.1."
+            "description": "Hold this division on the given season: the 2DT season resolver ignores its future schedule and never moves past this season, so metill-platform's min_season gate keeps the cell out of view. The hold is relative to the data: it pins the latest season at or before this one with played results, and a hold on a season the division has no results for is inert (the division resolves as if unheld). For a division whose next season is not modelled yet (basketball female 1. deild, 2027: renamed reserve sides and a new 12-team format). Remove the key to release it. Spec 2026-09-16 section 5.1."
           }
         }
       }

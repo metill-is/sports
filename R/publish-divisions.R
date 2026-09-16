@@ -156,7 +156,9 @@ NULL
 # code -> the season this division is held on, NA_integer_ where unset. A held
 # division ignores its future schedule and never resolves past this season
 # (`.current_season_2dt()`), so the platform's min_season gate keeps it out of
-# view until the key is removed (spec 2026-09-16 §5.1).
+# view until the key is removed (spec 2026-09-16 §5.1). A hold on a season the
+# division has no played results for (at or before it) is inert: the division
+# resolves as if unheld.
 .iceland_division_preseason_hold <- function(key, sex) {
   cfg <- .iceland_division_entries(key, sex, ".iceland_division_preseason_hold")
   .name_by_code(
