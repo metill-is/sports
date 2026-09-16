@@ -6,7 +6,8 @@
 # extract is always taken at FIXTURE_END_DATE; `publish_end_date` moves only
 # the publish, so a second call with `reuse_extract = TRUE` republishes the
 # same fit on a later day. (Not `extract = FALSE`: R would partially match
-# that name to `.hb_publish()`'s `extracts_root`.)
+# that name to `.hb_publish()`'s `extracts_root`.) The publish call's messages
+# are muffled and returned as the `messages` attribute of the league path.
 .publish_2dt <- function(sport, sex, root, out, extracts_root,
                          publish_end_date = FIXTURE_END_DATE,
                          reuse_extract = FALSE) {
@@ -28,14 +29,21 @@
     sex = sex, fit_date = FIXTURE_FIT_DATE,
     extracts_root = extracts_root
   )
-  suppressMessages(suppressWarnings(publish_iceland_league(
-    extracted = extracted, league = league, sex = sex,
-    end_date = publish_end_date,
-    root = root, output_root = out, extracts_root = extracts_root,
-    archive_root = file.path(root, "beliefs", "archive"),
-    round_predictions_history_root = file.path(root, "beliefs", "round_predictions_history")
-  )))
-  file.path(out, sport, "iceland")
+  messages <- character()
+  withCallingHandlers(
+    suppressWarnings(publish_iceland_league(
+      extracted = extracted, league = league, sex = sex,
+      end_date = publish_end_date,
+      root = root, output_root = out, extracts_root = extracts_root,
+      archive_root = file.path(root, "beliefs", "archive"),
+      round_predictions_history_root = file.path(root, "beliefs", "round_predictions_history")
+    )),
+    message = function(m) {
+      messages <<- c(messages, conditionMessage(m))
+      invokeRestart("muffleMessage")
+    }
+  )
+  structure(file.path(out, sport, "iceland"), messages = messages)
 }
 
 .hb_publish <- function(root, out, extracts_root, ...) {
@@ -111,6 +119,93 @@ test_that("a cell between seasons publishes the new season at round 0 and keeps 
   )
   expect_true(v$ok, info = paste(v$errors, collapse = "\n"))
   expect_gt(v$n_passed, 0L)
+})
+
+# The OD partition's parquets that carry the simulated season, rewritten
+# without it -- the shape of a partition written before the extractor stamped
+# the season.
+.strip_extract_season <- function(extracts_root) {
+  part <- file.path(
+    extracts_root, "sport=handball", "country=iceland", "sex=male",
+    paste0("fit_date=", format(FIXTURE_FIT_DATE, "%Y-%m-%d"))
+  )
+  for (ft in c("final_positions", "points_distribution")) {
+    path <- file.path(part, paste0(ft, ".parquet"))
+    df <- arrow::read_parquet(path)
+    df$season <- NULL
+    arrow::write_parquet(df, path)
+  }
+}
+
+test_that("a new season's schedule does not relabel a fit made before it", {
+  # The schedule lands weeks before a refit can run. Until then the newest
+  # extract still holds last season's table, and it must publish as last
+  # season -- not as the new season at round 0, which would also write a
+  # permanent round-0 step into the heatmap history.
+  root <- fixture_facts_root()
+  out <- file.path(withr::local_tempdir(), "publish")
+  extracts_root <- file.path(withr::local_tempdir(), "extracts")
+
+  cell <- .hb_publish(root, out, extracts_root)
+  before <- jsonlite::read_json(file.path(cell, "final_positions_history.json"))
+  expect_gt(length(before$records), 0L)
+
+  # 2101 is scheduled from the next day; the SAME extract is republished.
+  .schedule_od_2101(root, offset = 1L)
+  league_dir <- .publish_2dt(
+    "handball", "male", root, out, extracts_root,
+    reuse_extract = TRUE
+  )
+  cell <- file.path(league_dir, "karla-od")
+
+  meta <- jsonlite::read_json(file.path(cell, "meta.json"))
+  expect_identical(meta$season, 2100L)
+  expect_identical(meta$round, 3L)
+  expect_identical(meta$n_rounds, 6L)
+
+  fp <- jsonlite::read_json(file.path(cell, "final_positions.json"))
+  expect_identical(fp$season, 2100L)
+  expect_identical(fp$n_teams, 4L)
+  # The season travels in the extract but never reaches a published record.
+  expect_false("season" %in% unlist(lapply(fp$records, names)))
+  pd <- jsonlite::read_json(file.path(cell, "points_distribution.json"))
+  expect_identical(pd$season, 2100L)
+  expect_false("season" %in% unlist(lapply(pd$records, names)))
+
+  st <- jsonlite::read_json(file.path(cell, "standings.json"))
+  expect_identical(st$season, 2100L)
+  expect_length(st$rows, 4L)
+
+  fph <- jsonlite::read_json(file.path(cell, "final_positions_history.json"))
+  expect_length(fph$records, length(before$records))
+  expect_identical(unique(vapply(fph$records, function(r) r$season, 0L)), 2100L)
+  expect_false(any(vapply(fph$records, function(r) r$round, 0L) == 0L))
+
+  # The resolver is ahead of the extract: that is a refit due, and it is said.
+  expect_true(
+    any(grepl("refit", attr(league_dir, "messages"), ignore.case = TRUE)),
+    info = paste(attr(league_dir, "messages"), collapse = "\n")
+  )
+})
+
+test_that("an extract that does not name its season publishes the results season", {
+  # A partition written before the extractor stamped the season cannot say
+  # which season it simulated. It was simulated under the results-only rule,
+  # so that is the rule it publishes under, schedule or no schedule.
+  root <- fixture_facts_root()
+  out <- file.path(withr::local_tempdir(), "publish")
+  extracts_root <- file.path(withr::local_tempdir(), "extracts")
+
+  .hb_publish(root, out, extracts_root)
+  .strip_extract_season(extracts_root)
+  .schedule_od_2101(root, offset = 1L)
+  cell <- .hb_publish(root, out, extracts_root, reuse_extract = TRUE)
+
+  meta <- jsonlite::read_json(file.path(cell, "meta.json"))
+  expect_identical(meta$season, 2100L)
+  fp <- jsonlite::read_json(file.path(cell, "final_positions.json"))
+  expect_identical(fp$season, 2100L)
+  expect_identical(fp$n_teams, 4L)
 })
 
 test_that("a new season beyond Stan's window still covers every team, and a republish adds no heatmap step", {

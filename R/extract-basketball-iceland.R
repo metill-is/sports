@@ -27,6 +27,10 @@ NULL
 #' * `points_distribution.parquet` — per-team discrete points-total
 #'   distribution.
 #'
+#' `final_positions` and `points_distribution` also carry `season`, the season
+#' the division was simulated for; [read_extracted_iceland()] lifts it out as
+#' `simulated_season`, and the publisher labels the cell with it.
+#'
 #' `tournament_placements`, `sim_inputs_team` and `sim_inputs_scalar` stay
 #' football-only — basketball models no knockout cup.
 #'

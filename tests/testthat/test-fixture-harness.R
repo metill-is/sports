@@ -65,8 +65,10 @@ test_that("the committed 2DT extracts fixture has the 7-parquet contract", {
     team_strengths_quantiles = c("team", "component", "location", "quantile", "value"),
     round_strengths_quantiles = c("round", "team", "component", "location", "quantile", "value"),
     home_advantage_quantiles = c("team", "component", "quantile", "value"),
-    final_positions = c("team", "placement", "probability"),
-    points_distribution = c("team", "points", "probability")
+    # `season`: the season each division was simulated for, which the reader
+    # lifts out before anything is published.
+    final_positions = c("team", "placement", "probability", "season"),
+    points_distribution = c("team", "points", "probability", "season")
   )
 
   for (sport in c("basketball", "handball")) {

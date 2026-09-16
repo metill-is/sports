@@ -886,13 +886,16 @@ publish_iceland_league <- function(extracted,
     dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
 
     # The 2DT sports read the season off the schedule as well as the results,
-    # so a published next season is current before its first match; the
-    # extractor calls the same helper, so the two layers agree (spec
-    # 2026-09-16 §5). Football keeps its own rule (D5).
+    # so a published next season is current before its first match (spec
+    # 2026-09-16 §5) -- but only once a fit has simulated it. The season is the
+    # one the extract recorded, which is what its tables describe; every
+    # season-dependent surface below follows it. Football keeps its own rule
+    # (D5).
     current_season <- if (schedule_aware) {
-      .current_season_2dt(
-        results, schedules, end_date, target_div,
-        hold = division_hold[[target_div]]
+      .publish_season_2dt(
+        ext[["simulated_season"]], results, schedules, end_date, target_div,
+        hold = division_hold[[target_div]],
+        cell = paste(league$sport, sex, target_div)
       )
     } else {
       max(results$season, na.rm = TRUE)

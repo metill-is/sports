@@ -712,8 +712,19 @@ NULL
       home_advantage_quantiles = .compute_home_advantage_quantiles_2dt(
         home_advantage_draws, current_top_teams
       ),
-      final_positions = season_sim$final_positions,
-      points_distribution = season_sim$points_distribution
+      # The two season tables carry the season they were simulated for. A new
+      # season's schedule lands weeks before a refit can run, and the
+      # publisher, which resolves the season from TODAY's data, would
+      # otherwise label this table with a season it does not describe. The
+      # reader lifts the column out before anything is published.
+      final_positions = dplyr::mutate(
+        season_sim$final_positions,
+        season = season_div
+      ),
+      points_distribution = dplyr::mutate(
+        season_sim$points_distribution,
+        season = season_div
+      )
     )
   })
   per_div <- lapply(seq_along(divisions), function(i) {

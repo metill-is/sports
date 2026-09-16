@@ -136,6 +136,46 @@ test_that("a partition-level extract carrying a division column is refused", {
   )
 })
 
+test_that("the simulated season is lifted out of the 2DT season tables", {
+  # The extractor stamps each division's final_positions / points_distribution
+  # with the season it simulated. The reader turns that into one integer per
+  # division and drops the column: the tables' records are published verbatim.
+  league <- load_leagues()[["handball_iceland"]]
+  root <- fixture_extracts_root("handball")
+  out <- read_extracted_iceland(
+    league,
+    sex = "male", fit_date = FIXTURE_FIT_DATE, extracts_root = root
+  )
+  for (code in .iceland_division_codes("handball_iceland", "male")) {
+    expect_identical(out[[code]][["simulated_season"]], 2100L, info = code)
+    expect_named(
+      out[[code]]$final_positions, c("team", "placement", "probability")
+    )
+    expect_named(
+      out[[code]]$points_distribution, c("team", "points", "probability")
+    )
+  }
+})
+
+test_that("season tables naming two seasons for one division are refused", {
+  root <- fixture_extracts_root("handball")
+  part <- file.path(
+    root, "sport=handball", "country=iceland", "sex=male",
+    paste0("fit_date=", format(FIXTURE_FIT_DATE, "%Y-%m-%d"))
+  )
+  pd <- arrow::read_parquet(file.path(part, "points_distribution.parquet"))
+  pd$season[pd$division == "OD"] <- 2101L
+  arrow::write_parquet(pd, file.path(part, "points_distribution.parquet"))
+
+  expect_error(
+    read_extracted_iceland(
+      load_leagues()[["handball_iceland"]],
+      sex = "male", fit_date = FIXTURE_FIT_DATE, extracts_root = root
+    ),
+    "more than one season"
+  )
+})
+
 test_that("a 2DT partition missing round_strengths_quantiles is INCOMPLETE", {
   # It is a required extract for the 2DT sports, unlike football's fit_meta:
   # data/beliefs/extracts/ holds no basketball or handball partition at all, so
@@ -180,6 +220,8 @@ test_that("football still reads through the generalised reader", {
   expect_gt(nrow(out$BD$predicted_matches), 0L)
   # tournament_placements is football's optional 7th file and IS in the fixture.
   expect_gt(nrow(out$BD$tournament_placements), 0L)
+  # Football's extracts record no simulated season; its publisher never asks.
+  expect_null(out$BD[["simulated_season"]])
 })
 
 test_that("extract_partition_exists is sport-neutral", {

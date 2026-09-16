@@ -58,6 +58,43 @@ NULL
   }
 }
 
+# The season a schedule-aware cell publishes: the one its extract simulated.
+#
+# A new season's schedule is ingested weeks before a refit can use it --
+# fit_skip_reason() waits for a game inside 14 days, and fit_league() refuses
+# an empty prediction window -- while the publisher runs several times a day.
+# Resolving the season from today's data alone labelled last season's table
+# as the new season at round 0, and wrote a permanent round-0 step into
+# final_positions_history. So the extract decides everything season-dependent
+# in the cell, and a resolver that has moved past it only logs that a refit is
+# due.
+#
+# An extract that does not record its season (written before the extractor
+# stamped it) was simulated under the results-only rule, so it publishes under
+# that rule: the league-sex's latest season with a played result, exactly as
+# the publisher resolved it before the schedule counted.
+.publish_season_2dt <- function(simulated_season, results, schedules,
+                                end_date, division, hold = NA_integer_,
+                                cell = division) {
+  if (!.is_set_2dt(simulated_season)) {
+    return(max(results$season, na.rm = TRUE))
+  }
+  simulated_season <- as.integer(simulated_season)
+  resolved <- .current_season_2dt(
+    results, schedules, end_date, division,
+    hold = hold
+  )
+  if (resolved > simulated_season) {
+    cli::cli_inform(c(
+      "!" = "{cell}: the data now say season {resolved}, but the newest
+             extract simulated {simulated_season}; publishing
+             {simulated_season}.",
+      "i" = "A refit is due before season {resolved} can publish."
+    ))
+  }
+  simulated_season
+}
+
 # ---- Format -------------------------------------------------------------------
 
 # When the season's own fixture list is trusted as a format statement: it must

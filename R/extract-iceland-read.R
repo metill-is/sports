@@ -38,7 +38,9 @@ NULL
 #' @param profile Per-sport publish profile; see [`sport_publish_profile()`].
 #' @return Named list. Each requested division key (e.g. `"BD"`, `"1D"`) maps to
 #'   a list of the required + optional tibbles, `division` column dropped after
-#'   filtering. Plus `fit_date` (the `Date` of the partition that was loaded),
+#'   filtering, plus a `simulated_season` integer where the partition records
+#'   the season its tables were simulated for (the 2DT sports). Plus
+#'   `fit_date` (the `Date` of the partition that was loaded),
 #'   `fit_meta` (the partition-level provenance row -- 0-row when the partition
 #'   predates the contract), `sim_inputs` (list or `NULL`) and `cup_bracket`
 #'   (list or `NULL`).
@@ -164,7 +166,7 @@ read_extracted_iceland <- function(league, sex, fit_date = NULL,
       tibble::as_tibble(df)
     })
     names(out) <- per_division_file_types
-    out
+    .lift_simulated_season(out, target_div)
   }
 
   out <- lapply(target_divs, read_one_division)
@@ -210,6 +212,45 @@ read_extracted_iceland <- function(league, sex, fit_date = NULL,
 
   out$fit_date <- fit_date_out
   out
+}
+
+# The season a 2DT division's tables were simulated for, lifted out of them.
+#
+# The 2DT extractor stamps it as a `season` column on final_positions and
+# points_distribution, because the publisher resolves the season from the
+# data as of TODAY: between a new season's schedule landing and the first
+# refit that can use it, the newest extract still holds last season's table.
+# Here the column becomes one integer, `simulated_season`, and leaves both
+# tables -- their records are published verbatim, and a `season` key there is
+# no part of the published contract.
+#
+# No slot at all when nothing carries the column: football, and a 2DT
+# partition written before the extractor stamped it. A division with no rows
+# has no season to lift either.
+# @noRd
+.lift_simulated_season <- function(tables, division) {
+  seasons <- integer()
+  for (ft in intersect(c("final_positions", "points_distribution"), names(tables))) {
+    df <- tables[[ft]]
+    if ("season" %in% names(df)) {
+      seasons <- c(seasons, as.integer(df$season))
+      tables[[ft]] <- df[setdiff(names(df), "season")]
+    }
+  }
+  seasons <- unique(seasons[!is.na(seasons)])
+  if (length(seasons) > 1L) {
+    cli::cli_abort(
+      c(
+        "Division {.val {division}}'s season tables name more than one season: {.val {seasons}}.",
+        "i" = "One extract simulates one season per division; re-run the extractor."
+      ),
+      call = NULL
+    )
+  }
+  if (length(seasons) == 1L) {
+    tables$simulated_season <- seasons
+  }
+  tables
 }
 
 # A partition-level (division-free) extract file, or its empty shape.
