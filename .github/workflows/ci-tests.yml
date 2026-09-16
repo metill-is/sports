@@ -17,6 +17,9 @@ jobs:
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       R_KEEP_PKG_SOURCE: yes
+      # Same pin as fit.yml / world-cup.yml, and the same cache key below, so a
+      # PR run restores the toolchain those workflows already built on main.
+      CMDSTAN_VERSION: '2.38.0'
 
     steps:
       - uses: actions/checkout@v5
@@ -40,6 +43,22 @@ jobs:
           DOWNLOAD_STATIC_LIBV8: "1"
         run: |
           Rscript -e 'install.packages("V8", type = "source", repos = c(CRAN = "https://cloud.r-project.org"))'
+
+      # Without the cmdstan toolchain, test-stan-compile.R and the fit_model
+      # test in test-model-fit.R both skip ("cmdstan not installed"), so no
+      # Stan model was compiled by any CI run: a broken .stan file passed green.
+      # The cmdstanr R package already arrives via DESCRIPTION's
+      # `Remotes: stan-dev/cmdstanr`; only the toolchain was missing.
+      - name: Cache CmdStan installation
+        id: cache-cmdstan
+        uses: actions/cache@v5
+        with:
+          path: ~/.cmdstan
+          key: cmdstan-${{ env.CMDSTAN_VERSION }}-ubuntu-latest
+
+      - name: Install CmdStan if not cached
+        if: steps.cache-cmdstan.outputs.cache-hit != 'true'
+        run: Rscript -e 'cmdstanr::install_cmdstan(version = Sys.getenv("CMDSTAN_VERSION"), cores = 2)'
 
       - name: Run tests
         run: |
