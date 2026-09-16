@@ -20,6 +20,74 @@ NULL
 # match scores, and the cup bracket. No random-walk drift is projected forward;
 # that is a deliberate consistency choice (the model itself freezes strength at
 # the training cutoff for all predictions).
+#
+# The match model, points rule and tie-break are injected (`match_fn`,
+# `points_fn`, `tie_break`); football's are the defaults, and the 2DT sports
+# supply their own (R/simulate-2dt.R).
+
+# ---- Match models -------------------------------------------------------------
+#
+# A match model plays one fixture across every posterior draw at once. It is a
+# function `(home, away, scalars)` returning `list(home, away)` score vectors.
+# `home` and `away` are named lists of draw-aligned vectors: `off`, `def` (the
+# home side's already carry its home advantage, on both) and every extra team
+# column the model declares. `scalars` is the scalar input sorted by `.draw`.
+#
+# A model declares the columns it reads, so the simulator can refuse bad inputs
+# before any work and name what is missing (spec 2026-09-16 §3).
+
+.new_match_fn <- function(fn, scalar_cols, team_cols = character()) {
+  stopifnot(
+    is.function(fn), is.character(scalar_cols), is.character(team_cols)
+  )
+  structure(fn, scalar_cols = scalar_cols, team_cols = team_cols)
+}
+
+# Football: frozen-strength bivariate Poisson (`.simulate_match_goals_slss`).
+.match_fn_football <- .new_match_fn(
+  function(home, away, scalars) {
+    .simulate_match_goals_slss(
+      off_h = home$off, def_h = home$def,
+      off_a = away$off, def_a = away$def,
+      mlg = scalars$mean_log_goals,
+      amu3 = scalars$alpha_mu3,
+      bmu3 = scalars$beta_mu3_strength_diff
+    )
+  },
+  scalar_cols = c("mean_log_goals", "alpha_mu3", "beta_mu3_strength_diff")
+)
+
+# Football: 3 / 1 / 0 on exact equality.
+.points_fn_football <- function(g_h, g_a) {
+  list(
+    home = ifelse(g_h > g_a, 3L, ifelse(g_h == g_a, 1L, 0L)),
+    away = ifelse(g_a > g_h, 3L, ifelse(g_h == g_a, 1L, 0L))
+  )
+}
+
+.require_cols_slss <- function(df, cols, what) {
+  missing <- setdiff(cols, names(df))
+  if (length(missing) > 0L) {
+    stop(
+      "simulate_league_season: ", what,
+      " lacks column(s) the match model needs: ",
+      paste(missing, collapse = ", "), ".",
+      call. = FALSE
+    )
+  }
+  invisible(df)
+}
+
+.check_points_slss <- function(p) {
+  if (!is.integer(p$home) || !is.integer(p$away)) {
+    stop(
+      "simulate_league_season: `points_fn` must return integer points ",
+      "(list(home, away)); points_distribution tabulates exact totals.",
+      call. = FALSE
+    )
+  }
+  p
+}
 
 #' Simulate a league's remaining season across posterior draws
 #'
@@ -53,11 +121,12 @@ NULL
 #'   in `remaining_fixtures`. No fixtures are generated.
 #'
 #' @param sim_inputs_team Tibble with columns `team`, `.draw`, `cur_offense`,
-#'   `cur_defense`, `home_advantage_off`, `home_advantage_def` (raw log-scale,
-#'   latest-round strengths). Produced by `.extract_sim_inputs_pfi()`.
-#' @param sim_inputs_scalar Tibble with columns `.draw`, `mean_log_goals`,
-#'   `alpha_mu3`, `beta_mu3_strength_diff`. Produced by
-#'   `.extract_sim_inputs_pfi()`.
+#'   `cur_defense`, `home_advantage_off`, `home_advantage_def` (latest-round
+#'   strengths, on the match model's own scale), plus any team columns
+#'   `match_fn` declares. Football's comes from `.extract_sim_inputs_pfi()`.
+#' @param sim_inputs_scalar Tibble with `.draw` plus the scalar columns
+#'   `match_fn` declares (football: `mean_log_goals`, `alpha_mu3`,
+#'   `beta_mu3_strength_diff`).
 #' @param remaining_fixtures Tibble with columns `home_team`, `away_team` — the
 #'   unplayed fixtures of the season for this division. May be empty (season
 #'   over), in which case placements are the deterministic ranking of the
@@ -75,6 +144,14 @@ NULL
 #'   `group %in% c("upper", "lower")`, covering every league team — supply
 #'   once the split membership is decided (regular phase complete). Implies a
 #'   split-season format even when `split_format` is `NULL`.
+#' @param match_fn Match model built with `.new_match_fn()`: `(home, away,
+#'   scalars)` -> `list(home, away)` score vectors, one element per draw.
+#'   Default: football's bivariate Poisson.
+#' @param points_fn `(g_h, g_a)` -> `list(home, away)` of INTEGER points.
+#'   Default: 3/1/0 on exact equality.
+#' @param tie_break `"first"` (default) gives exact points/GD/GF ties to the
+#'   earlier `base_standings` team, as football always has; `"jitter"` breaks
+#'   them with a seeded per-(draw, team) uniform, as the 2DT sports need.
 #'
 #' @return A list with:
 #'   - `final_positions`: tibble(`team`, `placement`, `probability`) — one row
@@ -90,19 +167,37 @@ simulate_league_season <- function(sim_inputs_team,
                                    base_standings,
                                    seed = NULL,
                                    split_format = NULL,
-                                   split_groups = NULL) {
+                                   split_groups = NULL,
+                                   match_fn = .match_fn_football,
+                                   points_fn = .points_fn_football,
+                                   tie_break = c("first", "jitter")) {
+  tie_break <- match.arg(tie_break)
   stopifnot(
     is.data.frame(sim_inputs_team),
     is.data.frame(sim_inputs_scalar),
     is.data.frame(remaining_fixtures),
     is.data.frame(base_standings),
-    all(c(
-      "team", ".draw", "cur_offense", "cur_defense",
-      "home_advantage_off", "home_advantage_def"
-    ) %in% names(sim_inputs_team)),
-    all(c(".draw", "mean_log_goals", "alpha_mu3", "beta_mu3_strength_diff")
-    %in% names(sim_inputs_scalar)),
+    is.function(points_fn),
     all(c("team", "base_points", "base_gd", "base_gf") %in% names(base_standings))
+  )
+  if (!is.function(match_fn) || is.null(attr(match_fn, "scalar_cols"))) {
+    stop(
+      "simulate_league_season: `match_fn` must be built with .new_match_fn(), ",
+      "which records the columns it reads.",
+      call. = FALSE
+    )
+  }
+  extra_cols <- attr(match_fn, "team_cols")
+  team_cols <- c(
+    "cur_offense", "cur_defense", "home_advantage_off", "home_advantage_def",
+    extra_cols
+  )
+  .require_cols_slss(
+    sim_inputs_team, c("team", ".draw", team_cols), "sim_inputs_team"
+  )
+  .require_cols_slss(
+    sim_inputs_scalar, c(".draw", attr(match_fn, "scalar_cols")),
+    "sim_inputs_scalar"
   )
 
   if (!is.null(seed)) {
@@ -163,9 +258,7 @@ simulate_league_season <- function(sim_inputs_team,
   scalar <- sim_inputs_scalar[order(sim_inputs_scalar$.draw), , drop = FALSE]
   draw_order <- scalar$.draw
   nd <- length(draw_order)
-  mlg <- scalar$mean_log_goals
-  amu3 <- scalar$alpha_mu3
-  bmu3 <- scalar$beta_mu3_strength_diff
+  draws <- seq_len(nd)
 
   st <- sim_inputs_team[sim_inputs_team$team %in% teams, , drop = FALSE]
   missing_teams <- setdiff(teams, unique(st$team))
@@ -187,10 +280,21 @@ simulate_league_season <- function(sim_inputs_team,
     w <- w[match(draw_order, w$.draw), , drop = FALSE]
     as.matrix(w[, teams, drop = FALSE])
   }
-  OFF <- to_matrix("cur_offense")
-  DEF <- to_matrix("cur_defense")
-  HAO <- to_matrix("home_advantage_off")
-  HAD <- to_matrix("home_advantage_def")
+  M <- lapply(stats::setNames(team_cols, team_cols), to_matrix)
+
+  # One side of a fixture, draw-aligned. `idx` is a (draw, team column) index
+  # matrix. The home side carries its home advantage on BOTH offence and
+  # defence, as every model here does; declared extra columns (handball's
+  # sigma_team) travel unchanged.
+  side <- function(idx, home) {
+    off <- M$cur_offense[idx]
+    def <- M$cur_defense[idx]
+    if (home) {
+      off <- off + M$home_advantage_off[idx]
+      def <- def + M$home_advantage_def[idx]
+    }
+    c(list(off = off, def = def), lapply(M[extra_cols], function(m) m[idx]))
+  }
 
   pts <- matrix(0L, nd, n_teams, dimnames = list(NULL, teams))
   # Double, not integer: 2DT scores are continuous and would be truncated.
@@ -203,29 +307,18 @@ simulate_league_season <- function(sim_inputs_team,
     drop = FALSE
   ]
   for (i in seq_len(nrow(fx))) {
-    h <- as.character(fx$home_team[i])
-    a <- as.character(fx$away_team[i])
+    idx_h <- cbind(draws, match(as.character(fx$home_team[i]), teams))
+    idx_a <- cbind(draws, match(as.character(fx$away_team[i]), teams))
 
-    # Home team gets the offensive + defensive home advantage.
-    goals <- .simulate_match_goals_slss(
-      off_h = OFF[, h] + HAO[, h],
-      def_h = DEF[, h] + HAD[, h],
-      off_a = OFF[, a],
-      def_a = DEF[, a],
-      mlg = mlg, amu3 = amu3, bmu3 = bmu3
-    )
-    g_h <- goals$home
-    g_a <- goals$away
+    goals <- match_fn(side(idx_h, home = TRUE), side(idx_a, home = FALSE), scalar)
+    p <- .check_points_slss(points_fn(goals$home, goals$away))
 
-    home_pts <- ifelse(g_h > g_a, 3L, ifelse(g_h == g_a, 1L, 0L))
-    away_pts <- ifelse(g_a > g_h, 3L, ifelse(g_h == g_a, 1L, 0L))
-
-    pts[, h] <- pts[, h] + home_pts
-    pts[, a] <- pts[, a] + away_pts
-    gf[, h] <- gf[, h] + g_h
-    gf[, a] <- gf[, a] + g_a
-    gd[, h] <- gd[, h] + (g_h - g_a)
-    gd[, a] <- gd[, a] + (g_a - g_h)
+    pts[idx_h] <- pts[idx_h] + p$home
+    pts[idx_a] <- pts[idx_a] + p$away
+    gf[idx_h] <- gf[idx_h] + goals$home
+    gf[idx_a] <- gf[idx_a] + goals$away
+    gd[idx_h] <- gd[idx_h] + (goals$home - goals$away)
+    gd[idx_a] <- gd[idx_a] + (goals$away - goals$home)
   }
 
   # Add the realised (already-played) table.
@@ -241,7 +334,7 @@ simulate_league_season <- function(sim_inputs_team,
       # Phase 1: split membership decided by each draw's simulated regular
       # table, then the split fixtures are generated from the KSI template
       # (keyed by split rank) and played with the same match model.
-      split_placement <- .rank_table_slss(pts, gd, gf, teams)
+      split_placement <- .rank_table_slss(pts, gd, gf, teams, tie_break = tie_break)
       # Inverse permutation: ord[draw, p] = column index of the p-th team.
       ord <- matrix(0L, nd, n_teams)
       ord[cbind(rep(seq_len(nd), n_teams), as.vector(split_placement))] <-
@@ -253,27 +346,20 @@ simulate_league_season <- function(sim_inputs_team,
       )) {
         tpl <- .split_fixture_template(g$size)
         for (k in seq_len(nrow(tpl))) {
-          idx_h <- cbind(seq_len(nd), ord[, g$offset + tpl$home_rank[k]])
-          idx_a <- cbind(seq_len(nd), ord[, g$offset + tpl$away_rank[k]])
+          idx_h <- cbind(draws, ord[, g$offset + tpl$home_rank[k]])
+          idx_a <- cbind(draws, ord[, g$offset + tpl$away_rank[k]])
 
-          goals <- .simulate_match_goals_slss(
-            off_h = OFF[idx_h] + HAO[idx_h],
-            def_h = DEF[idx_h] + HAD[idx_h],
-            off_a = OFF[idx_a],
-            def_a = DEF[idx_a],
-            mlg = mlg, amu3 = amu3, bmu3 = bmu3
+          goals <- match_fn(
+            side(idx_h, home = TRUE), side(idx_a, home = FALSE), scalar
           )
-          g_h <- goals$home
-          g_a <- goals$away
+          p <- .check_points_slss(points_fn(goals$home, goals$away))
 
-          pts[idx_h] <- pts[idx_h] +
-            ifelse(g_h > g_a, 3L, ifelse(g_h == g_a, 1L, 0L))
-          pts[idx_a] <- pts[idx_a] +
-            ifelse(g_a > g_h, 3L, ifelse(g_h == g_a, 1L, 0L))
-          gf[idx_h] <- gf[idx_h] + g_h
-          gf[idx_a] <- gf[idx_a] + g_a
-          gd[idx_h] <- gd[idx_h] + (g_h - g_a)
-          gd[idx_a] <- gd[idx_a] + (g_a - g_h)
+          pts[idx_h] <- pts[idx_h] + p$home
+          pts[idx_a] <- pts[idx_a] + p$away
+          gf[idx_h] <- gf[idx_h] + goals$home
+          gf[idx_a] <- gf[idx_a] + goals$away
+          gd[idx_h] <- gd[idx_h] + (goals$home - goals$away)
+          gd[idx_a] <- gd[idx_a] + (goals$away - goals$home)
         }
       }
       in_upper <- split_placement <= upper_size
@@ -291,7 +377,10 @@ simulate_league_season <- function(sim_inputs_team,
   } else {
     group <- NULL
   }
-  placement <- .rank_table_slss(pts, gd, gf, teams, group = group)
+  placement <- .rank_table_slss(
+    pts, gd, gf, teams,
+    group = group, tie_break = tie_break
+  )
 
   final_positions <- lapply(seq_len(n_teams), function(j) {
     counts <- tabulate(placement[, j], nbins = n_teams)

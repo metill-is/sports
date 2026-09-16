@@ -475,3 +475,113 @@ test_that("tie_break = 'jitter' splits exact ties evenly and leaves the caller's
   expect_identical(pl, .rank_table_slss(z, z, z, c("A", "B"), tie_break = "jitter"))
   expect_true(all(.rank_table_slss(z, z, z, c("A", "B"))[, "A"] == 1L))
 })
+
+# ---- Injected behaviours (spec 2026-09-16 §2-§3) ---------------------------
+
+.two_team_case <- function(n_draws = 200L) {
+  list(
+    si = .league_inputs(list(A = c(0, 0, 0, 0), B = c(0, 0, 0, 0)), n_draws),
+    base = .base(list("A", 0, 0, 0), list("B", 0, 0, 0)),
+    fixtures = tibble::tibble(home_team = c("A", "B"), away_team = c("B", "A"))
+  )
+}
+
+test_that("a custom points rule sets the table's points", {
+  k <- .two_team_case()
+  two_nil <- function(g_h, g_a) {
+    list(home = ifelse(g_h > g_a, 2L, 0L), away = ifelse(g_a > g_h, 2L, 0L))
+  }
+  out <- simulate_league_season(
+    k$si$team, k$si$scalar, k$fixtures, k$base, seed = 3L, points_fn = two_nil
+  )
+  expect_true(all(out$points_distribution$points %in% c(0L, 2L, 4L)))
+})
+
+test_that("points_fn must return integer points", {
+  k <- .two_team_case(5L)
+  dbl <- function(g_h, g_a) {
+    list(home = as.numeric(g_h > g_a), away = as.numeric(g_a > g_h))
+  }
+  expect_error(
+    simulate_league_season(k$si$team, k$si$scalar, k$fixtures, k$base, points_fn = dbl),
+    "integer points"
+  )
+})
+
+test_that("a match model receives its declared team columns on both sides", {
+  seen <- new.env()
+  spy <- .new_match_fn(
+    function(home, away, scalars) {
+      seen$home <- home
+      seen$away <- away
+      list(home = rep(1, nrow(scalars)), away = rep(0, nrow(scalars)))
+    },
+    scalar_cols = "level", team_cols = "spread"
+  )
+  team <- tibble::tibble(
+    team = rep(c("A", "B"), each = 3), .draw = rep(1:3, 2),
+    cur_offense = rep(c(1, 2), each = 3),
+    cur_defense = rep(c(10, 20), each = 3),
+    home_advantage_off = rep(c(0.1, 0.2), each = 3),
+    home_advantage_def = rep(c(0.01, 0.02), each = 3),
+    spread = rep(c(5, 7), each = 3)
+  )
+  scalar <- tibble::tibble(.draw = 1:3, level = 0)
+  base <- .base(list("A", 0, 0, 0), list("B", 0, 0, 0))
+  out <- simulate_league_season(
+    team, scalar, tibble::tibble(home_team = "A", away_team = "B"), base,
+    match_fn = spy
+  )
+  # Home advantage lands on BOTH the home offence and the home defence.
+  expect_equal(seen$home$off, rep(1.1, 3))
+  expect_equal(seen$home$def, rep(10.01, 3))
+  expect_equal(seen$away$off, rep(2, 3))
+  expect_equal(seen$away$def, rep(20, 3))
+  expect_equal(seen$home$spread, rep(5, 3))
+  expect_equal(seen$away$spread, rep(7, 3))
+  fp <- out$final_positions
+  expect_equal(fp$probability[fp$team == "A" & fp$placement == 1L], 1)
+})
+
+test_that("the columns a match model lacks are named", {
+  spy <- .new_match_fn(
+    function(home, away, scalars) NULL,
+    scalar_cols = "level", team_cols = "spread"
+  )
+  si <- .league_inputs(list(A = c(0, 0, 0, 0)), 5L)
+  base <- .base(list("A", 0, 0, 0))
+  expect_error(
+    simulate_league_season(si$team, si$scalar, .no_fixtures(), base, match_fn = spy),
+    "spread"
+  )
+  si$team$spread <- 1
+  expect_error(
+    simulate_league_season(si$team, si$scalar, .no_fixtures(), base, match_fn = spy),
+    "level"
+  )
+  expect_error(
+    simulate_league_season(
+      si$team, si$scalar, .no_fixtures(), base, match_fn = function(...) NULL
+    ),
+    ".new_match_fn"
+  )
+  si$scalar$mean_log_goals <- NULL
+  expect_error(
+    simulate_league_season(si$team, si$scalar, .no_fixtures(), base),
+    "mean_log_goals"
+  )
+})
+
+test_that("jitter tie-breaking shares an exact tie instead of giving it to team order", {
+  si <- .league_inputs(list(A = c(0, 0, 0, 0), B = c(0, 0, 0, 0)), 2000L)
+  base <- .base(list("A", 5, 0, 0), list("B", 5, 0, 0))
+  first <- simulate_league_season(si$team, si$scalar, .no_fixtures(), base)$final_positions
+  jitter <- simulate_league_season(
+    si$team, si$scalar, .no_fixtures(), base, tie_break = "jitter"
+  )$final_positions
+  expect_equal(first$probability[first$team == "A" & first$placement == 1L], 1)
+  expect_lt(
+    abs(jitter$probability[jitter$team == "A" & jitter$placement == 1L] - 0.5),
+    0.05
+  )
+})

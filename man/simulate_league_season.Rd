@@ -11,17 +11,21 @@ simulate_league_season(
   base_standings,
   seed = NULL,
   split_format = NULL,
-  split_groups = NULL
+  split_groups = NULL,
+  match_fn = .match_fn_football,
+  points_fn = .points_fn_football,
+  tie_break = c("first", "jitter")
 )
 }
 \arguments{
 \item{sim_inputs_team}{Tibble with columns `team`, `.draw`, `cur_offense`,
-`cur_defense`, `home_advantage_off`, `home_advantage_def` (raw log-scale,
-latest-round strengths). Produced by `.extract_sim_inputs_pfi()`.}
+`cur_defense`, `home_advantage_off`, `home_advantage_def` (latest-round
+strengths, on the match model's own scale), plus any team columns
+`match_fn` declares. Football's comes from `.extract_sim_inputs_pfi()`.}
 
-\item{sim_inputs_scalar}{Tibble with columns `.draw`, `mean_log_goals`,
-`alpha_mu3`, `beta_mu3_strength_diff`. Produced by
-`.extract_sim_inputs_pfi()`.}
+\item{sim_inputs_scalar}{Tibble with `.draw` plus the scalar columns
+`match_fn` declares (football: `mean_log_goals`, `alpha_mu3`,
+`beta_mu3_strength_diff`).}
 
 \item{remaining_fixtures}{Tibble with columns `home_team`, `away_team` — the
 unplayed fixtures of the season for this division. May be empty (season
@@ -44,6 +48,17 @@ must equal the number of league teams. `NULL` (default) = flat league.}
 `group %in% c("upper", "lower")`, covering every league team — supply
 once the split membership is decided (regular phase complete). Implies a
 split-season format even when `split_format` is `NULL`.}
+
+\item{match_fn}{Match model built with `.new_match_fn()`: `(home, away,
+scalars)` -> `list(home, away)` score vectors, one element per draw.
+Default: football's bivariate Poisson.}
+
+\item{points_fn}{`(g_h, g_a)` -> `list(home, away)` of INTEGER points.
+Default: 3/1/0 on exact equality.}
+
+\item{tie_break}{`"first"` (default) gives exact points/GD/GF ties to the
+earlier `base_standings` team, as football always has; `"jitter"` breaks
+them with a seeded per-(draw, team) uniform, as the 2DT sports need.}
 }
 \value{
 A list with:
