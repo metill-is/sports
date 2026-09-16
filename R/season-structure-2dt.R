@@ -65,6 +65,18 @@ MULTIPLICITY_SCHEDULE_BALANCE <- 0.1
 # round robin of 8 (2026) to a double of 10 (2027) while config and history
 # both still said 3 (F17).
 #
+# A schedule that AGREES with a stated `expected_meetings` -- or that has no
+# config to agree or disagree with -- is trusted outright. A schedule that
+# DISAGREES with a stated config is trusted only when the division's roster
+# size changed since the last completed prior season, the exact signal F17's
+# 8 -> 10 jump carried. `.schedule_meetings_2dt()`'s own gates (coverage,
+# agreement, balance) catch most partial lists, but not all: three balanced,
+# fully-covering return legs (every team gets exactly one, e.g. a
+# double-round-robin caught one match day in) can clear all three at once. On
+# an unchanged roster that disagreeing reading is far more likely such a
+# partial list than a real reform, and needs a config edit to be believed, so
+# it falls through to config instead of overriding it.
+#
 # Config comes before history, the reverse of the spec. History is read with
 # football's `.division_rr_multiplicity_pfi()`, whose max over pairs reads
 # basketball's embedded urslitakeppni as 4-5 meetings; a stated format beats
@@ -81,7 +93,11 @@ MULTIPLICITY_SCHEDULE_BALANCE <- 0.1
   }
   from_schedule <- .schedule_meetings_2dt(results, schedules, season, division)
   if (!is.na(from_schedule)) {
-    return(list(meetings = from_schedule, source = "schedule"))
+    agrees <- !.is_set_2dt(expected_meetings) ||
+      as.integer(expected_meetings) == from_schedule
+    if (agrees || .division_size_changed_2dt(results, schedules, season, division)) {
+      return(list(meetings = from_schedule, source = "schedule"))
+    }
   }
   if (.is_set_2dt(expected_meetings)) {
     return(list(meetings = as.integer(expected_meetings), source = "config"))
@@ -91,6 +107,40 @@ MULTIPLICITY_SCHEDULE_BALANCE <- 0.1
     return(list(meetings = as.integer(prior), source = "prior_results"))
   }
   list(meetings = NA_integer_, source = "none")
+}
+
+# Whether the division's roster size in `season` (teams named in that
+# season's results or schedule rows, played or not) differs from its roster
+# size in the last completed prior season (teams named in that season's
+# PLAYED results). With no prior season to compare against there is nothing
+# to confirm a change against, so this reports no change -- and, in
+# `.division_format_2dt()`, config wins.
+.division_size_changed_2dt <- function(results, schedules, season, division) {
+  teams_of <- function(df, seasons, played_only = FALSE) {
+    if (is.null(df) || nrow(df) == 0L) {
+      return(character())
+    }
+    rows <- df$division == division & df$season %in% seasons
+    if (played_only) {
+      rows <- rows & !is.na(df$home_score) & !is.na(df$away_score)
+    }
+    unique(c(df$home_team[rows], df$away_team[rows]))
+  }
+  current <- unique(c(
+    teams_of(results, season), teams_of(schedules, season)
+  ))
+  prior_seasons <- if (is.null(results) || nrow(results) == 0L) {
+    integer()
+  } else {
+    played <- results$division == division & results$season < season &
+      !is.na(results$home_score) & !is.na(results$away_score)
+    results$season[played]
+  }
+  if (length(prior_seasons) == 0L) {
+    return(FALSE)
+  }
+  prior <- teams_of(results, max(prior_seasons), played_only = TRUE)
+  length(current) != length(prior)
 }
 
 # The modal meetings count over the season's played and scheduled fixtures
@@ -129,7 +179,10 @@ MULTIPLICITY_SCHEDULE_BALANCE <- 0.1
   if (max(games) - min(games) > slack) {
     return(NA_integer_)
   }
-  # A tie between two counts takes the larger: the fuller format.
+  # Agreement >= MULTIPLICITY_SCHEDULE_AGREEMENT (0.75) means the modal count
+  # holds more than half the pairs, so it is unique -- two counts could not
+  # both clear a majority share. max() here just extracts that one value from
+  # the (length-one) subset; it is not resolving a tie.
   max(as.integer(names(counts)[counts == top]))
 }
 
@@ -226,9 +279,22 @@ MULTIPLICITY_SCHEDULE_BALANCE <- 0.1
 
 # The realised table the season simulation starts from: every division team,
 # played or not, with points on the published 2DT scheme.
+#
+# A stray unscored row in `played` (NA home/away score -- a postponed or
+# not-yet-played fixture that ended up in the played list) is dropped before
+# tabulating rather than summed: `sum()` on any NA propagates, and the
+# subsequent `coalesce(., 0L)` -- meant only for teams with no rows at all --
+# would then silently zero out an otherwise-decisive team's goal difference
+# and goals for.
 .base_standings_2dt <- function(played, teams, has_ties = FALSE,
                                 tie_threshold = 0) {
   teams <- sort(unique(as.character(teams)))
+  if (!is.null(played)) {
+    played <- played[
+      !is.na(played$home_score) & !is.na(played$away_score), ,
+      drop = FALSE
+    ]
+  }
   if (is.null(played) || nrow(played) == 0L) {
     return(tibble::tibble(
       team = teams, base_points = 0L, base_gd = 0L, base_gf = 0L

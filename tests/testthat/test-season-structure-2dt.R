@@ -93,6 +93,9 @@ test_that("a format change at the season boundary follows the new schedule (F17)
 })
 
 test_that("a partial fixture list is not a format signal", {
+  # Rejected by the BALANCE gate, not coverage or agreement: coverage is
+  # 15/15 and agreement is 12/15 = 0.8 (both pass), but all three return legs
+  # involve team A, so A plays 8 games against 5-6 for everyone else.
   teams <- LETTERS[1:6]
   played <- .dated(.single_rr(teams), 2100L, scored = TRUE)
   legs <- .single_rr(teams)[1:3, ]
@@ -106,6 +109,46 @@ test_that("a partial fixture list is not a format signal", {
       expected_meetings = 2L, regular_season_rounds = NA_integer_
     ),
     list(meetings = 2L, source = "config")
+  )
+})
+
+test_that("a schedule disagreeing with an unchanged-size config falls through", {
+  # Three DISJOINT return legs (B-A, D-C, F-E: every team gets exactly one)
+  # pass coverage (15/15), agreement (12/15 = 0.8) and balance (every team
+  # plays 6) all at once -- .schedule_meetings_2dt() alone reads this as a
+  # clean double-round-robin-in-progress at 1 meeting so far. The roster is
+  # the same 6 teams as the last completed season (2099), so nothing here
+  # says the format actually changed: the disagreeing schedule does not
+  # override config.
+  teams <- LETTERS[1:6]
+  played <- .dated(.single_rr(teams), 2100L, scored = TRUE)
+  return_legs <- .dated(
+    tibble::tibble(home_team = c("B", "D", "F"), away_team = c("A", "C", "E")),
+    2100L,
+    start = as.Date("2100-02-01")
+  )
+  prior <- .dated(.double_rr(teams), 2099L, scored = TRUE)
+  expect_identical(
+    .division_format_2dt(dplyr::bind_rows(played, prior), return_legs, 2100L, "OD",
+      expected_meetings = 2L, regular_season_rounds = NA_integer_
+    ),
+    list(meetings = 2L, source = "config")
+  )
+})
+
+test_that("the same balanced list is trusted when there is no config to disagree with", {
+  teams <- LETTERS[1:6]
+  played <- .dated(.single_rr(teams), 2100L, scored = TRUE)
+  return_legs <- .dated(
+    tibble::tibble(home_team = c("B", "D", "F"), away_team = c("A", "C", "E")),
+    2100L,
+    start = as.Date("2100-02-01")
+  )
+  expect_identical(
+    .division_format_2dt(played, return_legs, 2100L, "OD",
+      expected_meetings = NA_integer_, regular_season_rounds = NA_integer_
+    ),
+    list(meetings = 1L, source = "schedule")
   )
 })
 
@@ -183,6 +226,13 @@ test_that("scheduled venues are kept and a venue already used up is skipped", {
   expect_identical(.pairs(out), "B A")
 })
 
+test_that("a side already at its home cap does not host again", {
+  played <- tibble::tibble(home_team = c("A", "A"), away_team = c("B", "B"))
+  expect_equal(nrow(.remaining_fixtures_2dt(c("A", "B"), played, NULL, meetings = 2L)), 0L)
+  out <- .remaining_fixtures_2dt(c("A", "B"), played, NULL, meetings = 3L)
+  expect_identical(.pairs(out), "B A")
+})
+
 test_that("unknown meetings fall back to the schedule alone", {
   sched <- tibble::tibble(home_team = "A", away_team = "B", match_date = as.Date("2100-02-01"))
   out <- .remaining_fixtures_2dt(c("A", "B", "C"), NULL, sched, meetings = NA_integer_)
@@ -205,4 +255,29 @@ test_that("the base table carries every division team, played or not", {
   expect_identical(bb$team, c("A", "B"))
   expect_identical(bb$base_points, c(0L, 0L))
   expect_identical(bb$base_gf, c(0L, 0L))
+})
+
+test_that("a decisive result sums correctly and an unscored row is ignored", {
+  played <- tibble::tibble(
+    home_team = "A", away_team = "B", home_score = 30L, away_score = 25L
+  )
+  out <- .base_standings_2dt(played, c("A", "B"), has_ties = TRUE, tie_threshold = 0.5)
+  expect_identical(out$team, c("A", "B"))
+  expect_identical(out$base_points, c(2L, 0L))
+  expect_identical(out$base_gd, c(5L, -5L))
+  expect_identical(out$base_gf, c(30L, 25L))
+
+  # A stray unscored row (a postponed or not-yet-played fixture that ended up
+  # in `played`) must not perturb the tabulated table at all.
+  unscored <- dplyr::bind_rows(
+    played,
+    tibble::tibble(
+      home_team = "A", away_team = "B",
+      home_score = NA_integer_, away_score = NA_integer_
+    )
+  )
+  expect_identical(
+    .base_standings_2dt(unscored, c("A", "B"), has_ties = TRUE, tie_threshold = 0.5),
+    out
+  )
 })
