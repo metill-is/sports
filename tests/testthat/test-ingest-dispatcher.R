@@ -96,24 +96,31 @@ test_that("ingest_league applies data_source.team_aliases before writing", {
   register_ingest_source("alias_stub", fake)
   on.exit(unregister_ingest_source("alias_stub"), add = TRUE)
 
-  # A named list, as yaml::yaml.load() returns a mapping.
+  # A named list, as yaml::yaml.load() returns a mapping. Men's only.
   aliases <- list("Þór Ak.", "Þór Þ.")
   names(aliases) <- c(thor_ak_long, thor_th_long)
   league <- list(
     sport = "basketball", country = "iceland",
     data_source = list(
       results = "alias_stub", schedule = "alias_stub",
-      team_aliases = aliases
+      team_aliases = list(male = aliases)
     )
   )
 
   tmp <- withr::local_tempdir()
   ingest_league(league, "male", root = tmp)
+  ingest_league(league, "female", root = tmp)
 
-  r <- read_table("results", root = tmp, filter = list(sport = "basketball"))
-  s <- read_table("schedules", root = tmp, filter = list(sport = "basketball"))
+  r <- read_table("results", root = tmp, filter = list(sex = "male"))
+  s <- read_table("schedules", root = tmp, filter = list(sex = "male"))
   expect_equal(r$home_team, "Þór Ak.")
   expect_equal(r$away_team, "B")
   expect_equal(s$home_team, "C")
   expect_equal(s$away_team, "Þór Þ.")
+
+  # The women's store keeps the source spelling: no female map is configured.
+  rf <- read_table("results", root = tmp, filter = list(sex = "female"))
+  sf <- read_table("schedules", root = tmp, filter = list(sex = "female"))
+  expect_equal(rf$home_team, thor_ak_long)
+  expect_equal(sf$away_team, thor_th_long)
 })

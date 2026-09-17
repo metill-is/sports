@@ -20,8 +20,12 @@
             "odds":     { "type": ["string", "null"] },
             "team_aliases": {
               "type": "object",
-              "description": "{source_name: stored_name}; ingest_league() rewrites results and schedules team names before writing.",
-              "additionalProperties": { "type": "string", "minLength": 1 }
+              "additionalProperties": false,
+              "description": "Per-sex {source_name: stored_name}; ingest_league() rewrites that sex's results and schedules team names before writing. A value may not map to itself or be another alias key (checked in load_leagues()).",
+              "properties": {
+                "male":   { "type": "object", "additionalProperties": { "type": "string", "minLength": 1 } },
+                "female": { "type": "object", "additionalProperties": { "type": "string", "minLength": 1 } }
+              }
             }
           }
         },

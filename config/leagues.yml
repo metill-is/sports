@@ -21,20 +21,31 @@ basketball_iceland:
     results: kki_basketball
     schedule: kki_basketball
     odds: lengjan_odds
-    # team_aliases direction: {source_name: stored_name}, applied by
-    # ingest_league() to results AND schedules before they are written.
-    # Baskethotel serves season 2021 under long-form names and 2022 onward
-    # under the short forms; both pairs share a home venue in the export's
-    # leikvollur column (Höllin Ak / Icelandic Glacial höllin), and the 2027
-    # schedule still uses the short forms. Unaliased, the men's fit carried
+    # team_aliases: per sex, {source_name: stored_name}, applied by
+    # ingest_league() to that sex's results AND schedules before they are
+    # written. Per sex because the same spelling can name a different side in
+    # the other league (the open "is women's Þór Þ. Hamar/Þór?" question). Every
+    # source spelling must point straight at the stored name: load_leagues()
+    # rejects a self-map and a value that is also a key.
+    # Men's: Baskethotel serves season 2021 under long-form names and 2022
+    # onward under the short forms; both pairs share a home venue in the
+    # export's leikvollur column (Höllin Ak / Icelandic Glacial höllin), and the
+    # 2027 schedule still uses the short forms. Unaliased, the men's fit carried
     # both spellings as separate teams (K 30 instead of 28).
     # Adding an entry does NOT rewrite rows already stored (upsert keys on team
-    # names): re-normalise the stored partitions in the same change with
-    # scripts/renormalise_team_aliases.R --apply --
-    # tests/testthat/test-ingest-integration.R fails until you do.
+    # names): re-normalise them in the same change -- dry run first, then
+    # `Rscript scripts/renormalise_team_aliases.R --apply`;
+    # tests/testthat/test-ingest-integration.R fails until you do. If the entry
+    # renames a side that is still playing, the facts are not the only store
+    # keyed on its name: also update lengjan.team_names, metill-platform's name
+    # and crest maps, and force a refit (a rename adds no match, so
+    # needs_refit() does not fire on it). Past fits keep the old name -- the
+    # publisher reads extracts/ and round_predictions_history across fits by
+    # team name -- so a mid-season rename splits that side's history there.
     team_aliases:
-      Þór Akureyri: Þór Ak.
-      Þór Þorlákshöfn: Þór Þ.
+      male:
+        Þór Akureyri: Þór Ak.
+        Þór Þorlákshöfn: Þór Þ.
   lengjan:
     competitions: []
     # D2 (2026-09-02): publish-only this season -- competitions emptied so the
@@ -124,9 +135,9 @@ basketball_iceland:
       # between seasons, 22 rounds) is not modelled yet. Held, the division keeps
       # publishing 2026 and metill-platform keeps it out of view (spec
       # 2026-09-16 section 5.1). Release it once the aliases are confirmed with
-      # KKI (add them to data_source.team_aliases above, then run
-      # scripts/renormalise_team_aliases.R) and regular_season_rounds is
-      # re-measured for the new format.
+      # KKI (add them under data_source.team_aliases.female above, then run
+      # scripts/renormalise_team_aliases.R --apply) and regular_season_rounds
+      # is re-measured for the new format.
       - { code: BD, slug: bd, label_is: "Bónusdeild", is_cup: false,
           code_badge: BON, expected_meetings: 2 }
       - { code: 1D, slug: 1d, label_is: "1. deild",    is_cup: false,
