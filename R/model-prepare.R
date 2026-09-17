@@ -56,33 +56,86 @@ filter_results_by_top_divisions <- function(results, divisions, lookback_days,
   ]
 }
 
+#' Walkover scorelines by sport.
+#'
+#' A forfeited game is recorded at the sport's walkover score: 20-0 in
+#' basketball (FIBA, which KKI follows) and 10-0 in handball (HSI). Neither is
+#' a played result -- nobody scores 0 in a basketball game -- so neither says
+#' anything about strength, and a thin-data team whose history ends in
+#' forfeits needs an implausible random-walk jump to fit them. Measured
+#' 2026-09-17: 5 men's and 2 women's basketball forfeits, 5 men's and 1
+#' women's handball. Football is absent on purpose: its 3-0 walkover cannot be
+#' told apart from a played 3-0.
+#' @noRd
+.FORFEIT_SCORES <- c(basketball = 20L, handball = 10L)
+
+#' Which rows are forfeits under their sport's walkover score.
+#'
+#' @param results Rows with `home_score` / `away_score`.
+#' @param sport One sport name; a sport without a walkover score (football, or
+#'   `NULL`) flags nothing.
+#' @return Logical vector, one per row.
+#' @noRd
+.is_forfeit <- function(results, sport) {
+  if (length(sport) != 1L || !sport %in% names(.FORFEIT_SCORES)) {
+    return(rep(FALSE, nrow(results)))
+  }
+  w <- .FORFEIT_SCORES[[sport]]
+  home <- results$home_score
+  away <- results$away_score
+  !is.na(home) & !is.na(away) &
+    ((home == w & away == 0L) | (home == 0L & away == w))
+}
+
+#' Scored matches on or before `end_date`: every played result.
+#'
+#' What a league TABLE counts, forfeits included. [model_training_results()]
+#' narrows this to what the model trains on.
+#' @noRd
+.played_results <- function(results, end_date, from_season = NULL) {
+  if (!is.null(from_season)) {
+    results <- results[results$season >= as.integer(from_season), , drop = FALSE]
+  }
+  results <- results[results$match_date <= end_date, , drop = FALSE]
+  results[
+    !is.na(results$home_score) & !is.na(results$away_score), ,
+    drop = FALSE
+  ]
+}
+
 #' The result set a fit is trained on.
 #'
 #' The one definition of "the matches the model saw", shared by
-#' [prepare_data()] and `extract_football_iceland()`'s strength trajectory.
-#' The trajectory reads `offense[round, team]` at each team's appearance count
-#' over the rows it is handed, so the two must agree row for row: a
-#' `training_filter` applied on one side only shifts the published trajectory
-#' onto neighbouring rounds, silently.
+#' [prepare_data()], the strength trajectories of both Iceland extractors and
+#' `needs_refit()`. The trajectory reads `offense[round, team]` at each team's
+#' appearance count over the rows it is handed, so they must agree row for
+#' row: a row dropped on one side only shifts the published trajectory onto
+#' neighbouring rounds, silently.
+#'
+#' Two things drop rows beyond `.played_results()`: forfeits (see
+#' `.FORFEIT_SCORES`) and the league's `training_filter`. Both leave real
+#' results out, so a league table is built from `.played_results()` instead.
 #'
 #' @param results `results` rows for one (sport, country, sex).
-#' @param league League config entry; its `training_filter` is applied when set.
+#' @param league League config entry; its `sport` sets the walkover score and
+#'   its `training_filter` is applied when set.
 #' @param end_date Training cutoff (inclusive).
 #' @param from_season Optional; drop matches with `season < from_season`.
-#' @param verbose Report how many matches `training_filter` kept.
+#' @param verbose Report how many forfeits and `training_filter` matches were
+#'   dropped.
 #' @return Scored matches on or before `end_date`, filtered, ordered by
 #'   `match_date`.
 #' @noRd
 model_training_results <- function(results, league, end_date,
                                    from_season = NULL, verbose = FALSE) {
-  if (!is.null(from_season)) {
-    results <- results[results$season >= as.integer(from_season), , drop = FALSE]
+  results <- .played_results(results, end_date, from_season)
+  forfeit <- .is_forfeit(results, league$sport)
+  if (any(forfeit)) {
+    if (isTRUE(verbose)) {
+      cli::cli_alert_info("Dropped {sum(forfeit)} forfeit{?s} from training.")
+    }
+    results <- results[!forfeit, , drop = FALSE]
   }
-  results <- results[results$match_date <= end_date, , drop = FALSE]
-  results <- results[
-    !is.na(results$home_score) & !is.na(results$away_score), ,
-    drop = FALSE
-  ]
 
   tf <- league$training_filter
   if (!is.null(tf) && length(tf$divisions) > 0L &&

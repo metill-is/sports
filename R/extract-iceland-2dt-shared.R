@@ -450,32 +450,39 @@ NULL
   teams <- prep$teams
   pred_d <- prep$pred_d
 
-  # WHY this guard: `results` below is ONE set serving two masters. The
-  # per-round strength trajectory indexes the fit's `offense[r, k]` with each
-  # team's cumulative appearance index over it, which equals the model's own
-  # `round1`/`round2` (prepare_data()'s per-team `home_round`/`away_round`)
-  # only while both are built from the same rows -- hence
-  # model_training_results(), the helper prepare_data() itself calls. But the
-  # same set also feeds the published tables (season, regular-season cut,
-  # standings, remaining fixtures), and a `training_filter` would strip real
-  # matches out of those. extract_football_iceland() keeps two sets for this
-  # (`model_results` for the trajectory, the full `results` for tables); a
-  # 2DT league needs that split before it can carry a filter. Only
-  # football_iceland carries one (config/leagues.yml), so this holds today and
-  # this line is what makes a future addition abort instead of publish tables
-  # with matches missing.
+  # TWO result sets, as in extract_football_iceland(). The per-round strength
+  # trajectory indexes the fit's `offense[r, k]` with each team's cumulative
+  # appearance index, which equals the model's own `round1`/`round2`
+  # (prepare_data()'s per-team `home_round`/`away_round`) only while both are
+  # built from the same rows -- hence `model_results`, from
+  # model_training_results(), the helper prepare_data() itself calls. The
+  # published tables (season, regular-season cut, standings, remaining
+  # fixtures) read `results`, every played match: model_training_results()
+  # drops forfeits, and a forfeit win is still two points in the table and a
+  # pairing that must not be simulated again.
+  #
+  # The guard: a `training_filter` would drop real matches from
+  # `model_results` too, and no 2DT test covers what that does to a division
+  # whose filtered-out teams still play in it. Only football_iceland carries a
+  # filter (config/leagues.yml); this line makes a 2DT one abort until such a
+  # test exists.
   stopifnot(is.null(league$training_filter))
 
-  results <- read_table(
+  results_all <- read_table(
     "results",
     root = root,
     filter = list(sport = league$sport, country = league$country, sex = sex)
   )
-  results <- model_training_results(results, league, end_date = end_date)
+  model_results <- model_training_results(
+    results_all, league,
+    end_date = end_date
+  )
   # Same ordering prepare_data() applies before building its round index, so
   # the appearance indices agree row-for-row rather than by luck of the
   # parquet scan order. model_training_results() already returns this order;
   # the line keeps the dependency visible where the index is built.
+  model_results <- model_results[order(model_results$match_date), , drop = FALSE]
+  results <- .played_results(results_all, end_date)
   results <- results[order(results$match_date), , drop = FALSE]
 
   schedules <- read_table(
@@ -487,8 +494,8 @@ NULL
   # The fit's scoring level belongs to the latest season it has results for;
   # a division projecting a later season steps it forward (F12). Each
   # division resolves its own season below.
-  last_fitted_season <- if (nrow(results) > 0L) {
-    max(results$season, na.rm = TRUE)
+  last_fitted_season <- if (nrow(model_results) > 0L) {
+    max(model_results$season, na.rm = TRUE)
   } else {
     NA_integer_
   }
@@ -509,7 +516,8 @@ NULL
   # every division simulated on the same numbers.
   sim_seed <- as.integer(format(as.Date(fit_date), "%Y%m%d"))
   sim_inputs <- .extract_sim_inputs_2dt(
-    fit, teams, sport, n_seasons = prep$stan_data$N_seasons
+    fit, teams, sport,
+    n_seasons = prep$stan_data$N_seasons
   )
   sim_inputs$scalar$z_level <- withr::with_seed(
     sim_seed + 1L, stats::rnorm(nrow(sim_inputs$scalar))
@@ -653,30 +661,38 @@ NULL
     # impossible was wrong about the models, and this comment is what stops it
     # being re-derived.
     #
-    # `results` is passed UNCUT and the cut is applied to the OUTPUT instead.
-    # The helper derives each team's global round with a row_number() over the
-    # results it is handed, and that index addresses `offense[r, k]` -- so it
-    # must see the same set `prepare_data()` modelled. Cutting rows out of the
-    # input would renumber every later appearance and silently shift the
-    # trajectory onto neighbouring rounds.
+    # `model_results` is passed UNCUT and the cut is applied to the OUTPUT
+    # instead. The helper derives each team's global round with a row_number()
+    # over the results it is handed, and that index addresses `offense[r, k]`
+    # -- so it must see the same set `prepare_data()` modelled. Cutting rows
+    # out of the input would renumber every later appearance and silently
+    # shift the trajectory onto neighbouring rounds.
     #
     # The output `round` is the team's own division matchweek, so the cut is a
-    # PER-TEAM cap: a team keeps as many matchweeks as it has rows surviving
-    # `.regular_season_results()`. That is the same row set the league table is
-    # built from, which a flat `round <= n_rounds` filter would not be -- the
-    # boundary counts rounds, and a team with games in hand has fewer
-    # appearances than the round number its matches carry.
+    # PER-TEAM cap: a team keeps as many matchweeks as it has MODELLED rows
+    # surviving `.regular_season_cut()`. A flat `round <= n_rounds` filter
+    # would not be that -- the boundary counts rounds, and a team with games
+    # in hand has fewer appearances than the round number its matches carry.
+    # The cut is row-wise on `round`, so applying it to the modelled rows keeps
+    # exactly the table's rows less any forfeit, which is not a fit round.
     trajectory_long <- .compute_team_strength_trajectory(
       fit = fit,
-      results = results,
+      results = model_results,
       teams = teams,
       current_top_teams = current_top_teams,
       current_season = season_div,
       top_div = div
     )
     if (nrow(trajectory_long) > 0L) {
+      modelled_regular <- .regular_season_cut(
+        model_results[
+          model_results$season == season_div & model_results$division == div, ,
+          drop = FALSE
+        ],
+        rounds
+      )
       regular_appearances <- table(c(
-        top_results$home_team, top_results$away_team
+        modelled_regular$home_team, modelled_regular$away_team
       ))
       cap <- regular_appearances[trajectory_long$team]
       trajectory_long <- trajectory_long[

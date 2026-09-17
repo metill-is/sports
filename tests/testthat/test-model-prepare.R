@@ -326,3 +326,76 @@ test_that("fixture-only divisions do not renumber training division indices", {
 
   expect_identical(with_po$stan_data$division, base$stan_data$division)
 })
+
+# ---------------------------------------------------------------------------
+# Forfeits (2026-09-17)
+# ---------------------------------------------------------------------------
+#
+# A forfeited 2DT game is recorded at the sport's walkover score -- 20-0 in
+# basketball (FIBA), 10-0 in handball (HSI). Neither is a played result, and a
+# thin-data team whose history ends in forfeits (Throttur V., men's basketball:
+# 25 games, the last three 20-0 / 0-20) needs an ~80-point random-walk jump in
+# two days to fit them. That team's volatility then mixed badly enough to fail
+# the Stan diagnostic gate on 2026-09-16, twice, on identical training data
+# that had passed on 2026-09-05.
+
+forfeit_rows <- function(sport, home_score, away_score) {
+  tibble::tibble(
+    sport = sport,
+    home_team = paste0("H", seq_along(home_score)),
+    away_team = paste0("A", seq_along(home_score)),
+    match_date = as.Date("2100-01-01") + seq_along(home_score),
+    division = "BD",
+    season = 2100L,
+    home_score = as.integer(home_score),
+    away_score = as.integer(away_score)
+  )
+}
+
+test_that("model_training_results drops basketball forfeits in either direction", {
+  # 126-19 is a real women's 1. deild blowout (KR-IR, 2024-01-05) and stays.
+  results <- forfeit_rows("basketball", c(20, 0, 126, 85, 20), c(0, 20, 19, 80, 2))
+  kept <- model_training_results(
+    results, list(sport = "basketball"), end_date = as.Date("2100-02-01")
+  )
+  expect_equal(kept$home_score, c(126L, 85L, 20L))
+  expect_equal(kept$away_score, c(19L, 80L, 2L))
+})
+
+test_that("model_training_results drops handball forfeits in either direction", {
+  results <- forfeit_rows("handball", c(10, 0, 31, 10), c(0, 10, 27, 1))
+  kept <- model_training_results(
+    results, list(sport = "handball"), end_date = as.Date("2100-02-01")
+  )
+  expect_equal(kept$home_score, c(31L, 10L))
+  expect_equal(kept$away_score, c(27L, 1L))
+})
+
+test_that("model_training_results keeps football's 3-0, which a forfeit shares", {
+  results <- forfeit_rows("football", c(3, 0, 20, 10), c(0, 3, 0, 0))
+  kept <- model_training_results(
+    results, list(sport = "football"), end_date = as.Date("2100-02-01")
+  )
+  expect_equal(nrow(kept), 4L)
+})
+
+test_that("prepare_data does not train on a forfeit", {
+  root <- setup_mini_root()
+  results <- arrow::read_parquet(testthat::test_path(
+    "fixtures", "model", "mini_results.parquet"
+  ))
+  results$home_score[1] <- 20L
+  results$away_score[1] <- 0L
+  write_table(results, "results", root = root)
+  league <- list(
+    sport = "basketball", country = "iceland", sexes = "male",
+    stan_model = "basketball_iceland/2d_student_t_scalarsigma.stan"
+  )
+  out <- prepare_data(league,
+    sex = "male", end_date = as.Date("2026-04-24"),
+    schedule_horizon_days = 60L, root = root
+  )
+  # 6 matches without the forfeit (see the no-training_filter test above).
+  expect_equal(out$stan_data$N, 5L)
+  expect_false(any(out$stan_data$goals1 == 20L & out$stan_data$goals2 == 0L))
+})
