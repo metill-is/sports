@@ -147,11 +147,11 @@ check_team_names_injective <- function(leagues) {
 #' Assert every league's per-sex team_aliases map settles in one pass.
 #'
 #' [.apply_team_aliases()] looks each name up once. A self-map (`A: A`) marks
-#' rows stale that never move, and a value that is itself a key (`A: B`,
-#' `B: C`, or the swap `A: B`, `B: A`) makes ingest store a name the store must
-#' not hold and keeps [renormalise_team_aliases()] from settling. Checked per
-#' sex: the maps are independent, so a name may be stored for one sex and an
-#' alias key for the other.
+#' rows stale that never move. A value that is itself a key makes ingest store
+#' a name the store must not hold: a chain (`A: B`, `B: C`) then needs one
+#' [renormalise_team_aliases()] run per link, and a cycle (`A: B`, `B: A`)
+#' never settles. Checked per sex: the maps are independent, so a name may be
+#' stored for one sex and an alias key for the other.
 #' @noRd
 check_team_aliases <- function(leagues) {
   for (key in names(leagues)) {
@@ -170,12 +170,13 @@ check_team_aliases <- function(leagues) {
           call = NULL
         )
       }
-      chained <- unique(map[map %in% names(map)])
-      if (length(chained) > 0L) {
+      linked <- map %in% names(map)
+      if (any(linked)) {
+        links <- paste0(names(map)[linked], " -> ", map[linked])
         cli::cli_abort(
           c(
             "{label} team_aliases maps to a name that is also an alias key:",
-            "x" = "{.val {chained}}",
+            "x" = "{links}",
             "i" = "Point every source spelling straight at the stored name."
           ),
           call = NULL

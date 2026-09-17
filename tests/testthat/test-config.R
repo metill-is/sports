@@ -336,7 +336,7 @@ test_that("check_team_aliases rejects a chain and a cycle", {
   chain <- list(a = list(data_source = list(team_aliases = list(
     female = list(A = "B", B = "C")
   ))))
-  expect_error(check_team_aliases(chain), "also an alias")
+  expect_error(check_team_aliases(chain), "A -> B")
   swap <- list(a = list(data_source = list(team_aliases = list(
     male = list(A = "B", B = "A")
   ))))

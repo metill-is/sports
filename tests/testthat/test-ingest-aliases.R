@@ -97,6 +97,35 @@ test_that("a colliding partition aborts before any partition is written", {
   expect_true("Long A" %in% c(r2100$home_team, r2100$away_team))
 })
 
+test_that("a collision in schedules stops the results rewrite too", {
+  # results are planned before schedules: a writer that flushed each table as
+  # it finished would already have rewritten the clean results partition.
+  root <- alias_root()
+  write_table(
+    alias_rows(
+      "schedules", "male", 2101, c("Long A", "A"), c("C", "C"),
+      date = "2101-02-01"
+    ) |> dplyr::mutate(match_date = as.Date("2101-02-01")),
+    "schedules",
+    root = root
+  )
+  expect_error(
+    renormalise_team_aliases(alias_leagues(), root = root, apply = TRUE),
+    "schedules male/2101"
+  )
+  r2100 <- read_table("results", root = root, filter = list(sex = "male", season = 2100L))
+  expect_true("Long A" %in% c(r2100$home_team, r2100$away_team))
+})
+
+test_that("each sex is rewritten with its own map", {
+  root <- alias_root()
+  leagues <- alias_leagues(female = list(`Long A` = "A kv"))
+  plan <- renormalise_team_aliases(leagues, root = root, apply = TRUE)
+  expect_setequal(unique(plan$sex), c("male", "female"))
+  expect_equal(stored(root, "results", "male"), c("A", "B", "C"))
+  expect_equal(stored(root, "results", "female"), c("A kv", "B"))
+})
+
 test_that("a stored row with a missing team name does not break the count", {
   root <- alias_root()
   write_table(

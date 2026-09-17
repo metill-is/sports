@@ -39,7 +39,9 @@ basketball_iceland:
     # renames a side that is still playing, the facts are not the only store
     # keyed on its name: also update lengjan.team_names, metill-platform's name
     # and crest maps, and force a refit (a rename adds no match, so
-    # needs_refit() does not fire on it).
+    # needs_refit() does not fire on it). Past fits keep the old name -- the
+    # publisher reads extracts/ and round_predictions_history across fits by
+    # team name -- so a mid-season rename splits that side's history there.
     team_aliases:
       male:
         Þór Akureyri: Þór Ak.
