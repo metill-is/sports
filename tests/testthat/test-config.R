@@ -295,3 +295,58 @@ test_that("check_team_names_injective passes injective + team_names-less leagues
 test_that("load_leagues runs the injectivity guard on the real config", {
   expect_type(load_leagues(), "list")
 })
+
+# --- data_source.team_aliases (2026-09-17) -----------------------------------
+# Per sex, like lengjan.team_names: a club rename or a reserve-side spelling is
+# a fact about one sex's competition, and a flat map rewrote both.
+
+test_that("leagues schema takes team_aliases per sex and rejects a flat map", {
+  per_sex <- list(basketball_iceland = minimal_league(list(
+    data_source = list(team_aliases = list(male = list(`Long A` = "A")))
+  )))
+  expect_true(validate_leagues(per_sex, schema_path()))
+
+  flat <- list(basketball_iceland = minimal_league(list(
+    data_source = list(team_aliases = list(`Long A` = "A"))
+  )))
+  expect_error(validate_leagues(flat, schema_path()), "schema validation")
+})
+
+test_that("check_team_aliases passes per-sex maps and leagues without one", {
+  leagues <- list(
+    a = list(data_source = list(team_aliases = list(
+      male = list(`Long A` = "A", `Long B` = "B"),
+      female = list(`Long A` = "A kv")
+    ))),
+    b = list(sport = "handball")
+  )
+  expect_invisible(check_team_aliases(leagues))
+})
+
+test_that("check_team_aliases rejects a self-map", {
+  leagues <- list(a = list(data_source = list(team_aliases = list(
+    male = list(A = "A")
+  ))))
+  expect_error(check_team_aliases(leagues), "maps to itself")
+})
+
+test_that("check_team_aliases rejects a chain and a cycle", {
+  # One lookup pass stores A rows as B, itself an alias key: ingest writes a
+  # name the store must not hold, and re-normalising never settles.
+  chain <- list(a = list(data_source = list(team_aliases = list(
+    female = list(A = "B", B = "C")
+  ))))
+  expect_error(check_team_aliases(chain), "also an alias")
+  swap <- list(a = list(data_source = list(team_aliases = list(
+    male = list(A = "B", B = "A")
+  ))))
+  expect_error(check_team_aliases(swap), "also an alias")
+})
+
+test_that("a stored name may be an alias key for the other sex only", {
+  leagues <- list(a = list(data_source = list(team_aliases = list(
+    male = list(X = "Y"),
+    female = list(Y = "Z")
+  ))))
+  expect_invisible(check_team_aliases(leagues))
+})

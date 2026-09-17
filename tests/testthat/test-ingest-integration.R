@@ -79,18 +79,20 @@ test_that("no stored row carries a name that data_source.team_aliases rewrites",
   skip_if_no_data()
   leagues <- load_leagues()
   for (key in names(leagues)) {
-    aliases <- names(leagues[[key]]$data_source$team_aliases)
-    if (length(aliases) == 0L) next
     lg <- leagues[[key]]
-    for (table in c("results", "schedules")) {
-      rows <- read_table(
-        table,
-        filter = list(sport = lg$sport, country = lg$country)
-      )
-      stale <- sort(unique(intersect(
-        c(rows$home_team, rows$away_team), aliases
-      )))
-      expect_identical(stale, character(), label = paste(key, table))
+    by_sex <- lg$data_source$team_aliases
+    for (sx in names(by_sex)) {
+      aliases <- names(unlist(by_sex[[sx]]))
+      for (table in c("results", "schedules")) {
+        rows <- read_table(
+          table,
+          filter = list(sport = lg$sport, country = lg$country, sex = sx)
+        )
+        stale <- sort(unique(intersect(
+          c(rows$home_team, rows$away_team), aliases
+        )))
+        expect_identical(stale, character(), label = paste(key, sx, table))
+      }
     }
   }
 })

@@ -24,6 +24,7 @@ load_leagues <- function(path = here::here("config", "leagues.yml"),
     }
     validate_leagues(leagues, schema_path)
     check_team_names_injective(leagues)
+    check_team_aliases(leagues)
   }
 
   leagues
@@ -138,6 +139,48 @@ check_team_names_injective <- function(leagues) {
     if (is.null(tn_all)) next
     for (sx in names(tn_all)) {
       assert_injective_map(tn_all[[sx]], label = paste0(key, " (", sx, ")"))
+    }
+  }
+  invisible(TRUE)
+}
+
+#' Assert every league's per-sex team_aliases map settles in one pass.
+#'
+#' [.apply_team_aliases()] looks each name up once. A self-map (`A: A`) marks
+#' rows stale that never move, and a value that is itself a key (`A: B`,
+#' `B: C`, or the swap `A: B`, `B: A`) makes ingest store a name the store must
+#' not hold and keeps [renormalise_team_aliases()] from settling. Checked per
+#' sex: the maps are independent, so a name may be stored for one sex and an
+#' alias key for the other.
+#' @noRd
+check_team_aliases <- function(leagues) {
+  for (key in names(leagues)) {
+    by_sex <- leagues[[key]]$data_source$team_aliases
+    for (sx in names(by_sex)) {
+      map <- unlist(by_sex[[sx]])
+      if (length(map) == 0L) next
+      label <- paste0(key, " (", sx, ")")
+      self <- names(map)[names(map) == map]
+      if (length(self) > 0L) {
+        cli::cli_abort(
+          c(
+            "{label} team_aliases has an alias that maps to itself:",
+            "x" = "{.val {self}}"
+          ),
+          call = NULL
+        )
+      }
+      chained <- unique(map[map %in% names(map)])
+      if (length(chained) > 0L) {
+        cli::cli_abort(
+          c(
+            "{label} team_aliases maps to a name that is also an alias key:",
+            "x" = "{.val {chained}}",
+            "i" = "Point every source spelling straight at the stored name."
+          ),
+          call = NULL
+        )
+      }
     }
   }
   invisible(TRUE)

@@ -45,8 +45,8 @@ get_ingest_source <- function(name) {
 #' Reads `league$data_source$results` and `league$data_source$schedule` to pick
 #' the right source module, calls `fetch_results` / `fetch_schedule`, and writes
 #' to `data/facts/\{results,schedules\}/` via `write_table()`. Team names listed
-#' in `league$data_source$team_aliases` are rewritten to their stored spelling
-#' first.
+#' in `league$data_source$team_aliases[[sex]]` are rewritten to their stored
+#' spelling first.
 #'
 #' @param league A single entry from `load_leagues()`.
 #' @param sex "male" or "female".
@@ -66,8 +66,9 @@ ingest_league <- function(league, sex,
   # A federation can rename a club between seasons (KKÍ: "Þór Akureyri" in
   # 2021, "Þór Ak." since). Normalise before the upsert, whose natural key
   # includes the team names -- a renamed row written unaliased is a second
-  # team to prepare_data(), not a correction of the first.
-  aliases <- league$data_source$team_aliases
+  # team to prepare_data(), not a correction of the first. The map is per sex:
+  # the same spelling can name a different side in the other sex's league.
+  aliases <- league$data_source$team_aliases[[sex]]
   results <- .apply_team_aliases(results, aliases)
   schedule <- .apply_team_aliases(schedule, aliases)
 
@@ -114,9 +115,9 @@ ingest_league <- function(league, sex,
 #' Rewrite source team names to their stored spelling.
 #'
 #' @param df A results or schedules frame (may be empty).
-#' @param aliases `data_source$team_aliases`: a named list or vector,
-#'   `{source_name: stored_name}`. `NULL` or empty is a no-op.
-#' @return `df` with `home_team` / `away_team` rewritten.
+#' @param aliases One sex's `data_source$team_aliases` map: a named list or
+#'   vector, `{source_name: stored_name}`. `NULL` or empty is a no-op.
+#' @return `df` with `home_team` / `away_team` rewritten as character.
 #' @keywords internal
 #' @noRd
 .apply_team_aliases <- function(df, aliases) {
@@ -125,10 +126,101 @@ ingest_league <- function(league, sex,
   }
   map <- unlist(aliases)
   for (col in c("home_team", "away_team")) {
-    hit <- df[[col]] %in% names(map)
-    df[[col]][hit] <- unname(map[df[[col]][hit]])
+    # as.character(): indexing `map` by a factor would use its integer codes.
+    x <- as.character(df[[col]])
+    hit <- x %in% names(map)
+    x[hit] <- unname(map[x[hit]])
+    df[[col]] <- x
   }
   df
+}
+
+#' Bring stored results + schedules into line with `team_aliases`.
+#'
+#' [ingest_league()] aliases newly fetched rows only, and [upsert_table()] keys
+#' on team names, so rows already on disk keep the source spelling until this
+#' runs. Run it (`scripts/renormalise_team_aliases.R --apply`) in the same
+#' change that adds an alias; `tests/testthat/test-ingest-integration.R` stays
+#' red until you do.
+#'
+#' Two passes. The first plans every (league, table, sex, season) partition
+#' that holds an alias key and aborts if aliasing any of them would collapse
+#' two rows onto one natural key; only then does the second write, one
+#' partition at a time through [write_table()]'s staged replace. An abort
+#' therefore leaves the store untouched.
+#'
+#' @param leagues Named list from [load_leagues()].
+#' @param root Data root.
+#' @param apply Write the rewritten partitions. `FALSE` (the default) only
+#'   reports.
+#' @return Invisibly, one row per moved row: `league`, `table`, `sex`,
+#'   `season`, `match_date`, `division` and the `home_` / `away_` names
+#'   `before` and `after`. Zero rows when the store is already normalised.
+#' @keywords internal
+#' @noRd
+renormalise_team_aliases <- function(leagues, root = here::here("data"),
+                                     apply = FALSE) {
+  planned <- list()
+  for (key in names(leagues)) {
+    lg <- leagues[[key]]
+    by_sex <- lg$data_source$team_aliases
+    for (table in c("results", "schedules")) {
+      for (sx in names(by_sex)) {
+        aliases <- by_sex[[sx]]
+        if (length(aliases) == 0L) next
+        rows <- read_table(
+          table,
+          root = root,
+          filter = list(sport = lg$sport, country = lg$country, sex = sx)
+        )
+        if (nrow(rows) == 0L) next
+        keys <- names(unlist(aliases))
+        stale <- rows$home_team %in% keys | rows$away_team %in% keys
+        for (season in sort(unique(rows$season[stale]))) {
+          before <- rows[rows$season == season, , drop = FALSE]
+          after <- .apply_team_aliases(before, aliases)
+          if (anyDuplicated(after[, natural_key_for(table)]) > 0L) {
+            cli::cli_abort(
+              "{key} {table} {sx}/{season}: aliasing creates duplicate natural keys; nothing was written.",
+              call = NULL
+            )
+          }
+          # `!=` is NA for a missing name; %in% TRUE counts those as unmoved.
+          moved <- (before$home_team != after$home_team) %in% TRUE |
+            (before$away_team != after$away_team) %in% TRUE
+          planned[[length(planned) + 1L]] <- list(
+            table = table,
+            after = after,
+            diff = tibble::tibble(
+              league = key, table = table, sex = sx,
+              season = as.integer(season),
+              match_date = before$match_date[moved],
+              division = before$division[moved],
+              home_before = before$home_team[moved],
+              home_after = after$home_team[moved],
+              away_before = before$away_team[moved],
+              away_after = after$away_team[moved]
+            )
+          )
+        }
+      }
+    }
+  }
+
+  if (isTRUE(apply)) {
+    for (p in planned) write_table(p$after, p$table, root = root)
+  }
+  diff <- dplyr::bind_rows(lapply(planned, `[[`, "diff"))
+  if (nrow(diff) == 0L) {
+    diff <- tibble::tibble(
+      league = character(), table = character(), sex = character(),
+      season = integer(), match_date = as.Date(character()),
+      division = character(), home_before = character(),
+      home_after = character(), away_before = character(),
+      away_after = character()
+    )
+  }
+  invisible(diff)
 }
 
 #' Schedule-active gate used by all DAG wrappers.
