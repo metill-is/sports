@@ -1,5 +1,75 @@
 {
-  "generated_at": "2026-09-14T13:23:23Z",
-  "competitions": [],
+  "generated_at": "2026-09-17T12:06:45Z",
+  "competitions": [
+    {
+      "sport": "football",
+      "country": "iceland",
+      "comp_id": "27521",
+      "lengjan_name": "Besta deild kv. efri hluti",
+      "inferred_sex": "female",
+      "inferred_division": "BD",
+      "classify_confidence": "high",
+      "modelled": true,
+      "status": "new",
+      "proposed_team_names": [
+        {
+          "lengjan": "Breiðablik kv",
+          "canonical_guess": "Breiðablik",
+          "confidence": "high"
+        },
+        {
+          "lengjan": "Grindavik/Njarðvík kv",
+          "canonical_guess": "Grindavík/Njarðvík",
+          "confidence": "high"
+        }
+      ]
+    },
+    {
+      "sport": "football",
+      "country": "iceland",
+      "comp_id": "27524",
+      "lengjan_name": "Besta deild kv. neðri hluti",
+      "inferred_sex": "female",
+      "inferred_division": "BD",
+      "classify_confidence": "high",
+      "modelled": true,
+      "status": "new",
+      "proposed_team_names": [
+        {
+          "lengjan": "Fram kv",
+          "canonical_guess": "Fram",
+          "confidence": "high"
+        },
+        {
+          "lengjan": "Víkingur Rvk kv",
+          "canonical_guess": "Víkingur R.",
+          "confidence": "high"
+        }
+      ]
+    },
+    {
+      "sport": "football",
+      "country": "iceland",
+      "comp_id": "28069",
+      "lengjan_name": "Lengjudeild karla - Umspil",
+      "inferred_sex": "male",
+      "inferred_division": "LD1",
+      "classify_confidence": "high",
+      "modelled": true,
+      "status": "new",
+      "proposed_team_names": [
+        {
+          "lengjan": "Þróttur RVK",
+          "canonical_guess": "Þróttur R.",
+          "confidence": "high"
+        },
+        {
+          "lengjan": "Fylkir",
+          "canonical_guess": "Fylkir",
+          "confidence": "high"
+        }
+      ]
+    }
+  ],
   "unmodelled_offered_count": 0
 }
