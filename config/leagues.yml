@@ -21,6 +21,20 @@ basketball_iceland:
     results: kki_basketball
     schedule: kki_basketball
     odds: lengjan_odds
+    # team_aliases direction: {source_name: stored_name}, applied by
+    # ingest_league() to results AND schedules before they are written.
+    # Baskethotel serves season 2021 under long-form names and 2022 onward
+    # under the short forms; both pairs share a home venue in the export's
+    # leikvollur column (Höllin Ak / Icelandic Glacial höllin), and the 2027
+    # schedule still uses the short forms. Unaliased, the men's fit carried
+    # both spellings as separate teams (K 30 instead of 28).
+    # Adding an entry does NOT rewrite rows already stored (upsert keys on team
+    # names): re-normalise the stored partitions in the same change with
+    # scripts/renormalise_team_aliases.R --apply --
+    # tests/testthat/test-ingest-integration.R fails until you do.
+    team_aliases:
+      Þór Akureyri: Þór Ak.
+      Þór Þorlákshöfn: Þór Þ.
   lengjan:
     competitions: []
     # D2 (2026-09-02): publish-only this season -- competitions emptied so the
@@ -110,7 +124,9 @@ basketball_iceland:
       # between seasons, 22 rounds) is not modelled yet. Held, the division keeps
       # publishing 2026 and metill-platform keeps it out of view (spec
       # 2026-09-16 section 5.1). Release it once the aliases are confirmed with
-      # KKI and regular_season_rounds is re-measured for the new format.
+      # KKI (add them to data_source.team_aliases above, then run
+      # scripts/renormalise_team_aliases.R) and regular_season_rounds is
+      # re-measured for the new format.
       - { code: BD, slug: bd, label_is: "Bónusdeild", is_cup: false,
           code_badge: BON, expected_meetings: 2 }
       - { code: 1D, slug: 1d, label_is: "1. deild",    is_cup: false,

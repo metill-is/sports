@@ -17,7 +17,12 @@
           "properties": {
             "results":  { "type": "string" },
             "schedule": { "type": "string" },
-            "odds":     { "type": ["string", "null"] }
+            "odds":     { "type": ["string", "null"] },
+            "team_aliases": {
+              "type": "object",
+              "description": "{source_name: stored_name}; ingest_league() rewrites results and schedules team names before writing.",
+              "additionalProperties": { "type": "string", "minLength": 1 }
+            }
           }
         },
         "lengjan": {

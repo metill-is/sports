@@ -210,3 +210,16 @@ test_that("fetch_kki aborts when the export's dates contradict the season", {
     class = "sports_season_stamp_error"
   )
 })
+
+test_that("KKI's long-form Thor names alias to the short forms used since 2022", {
+  # Baskethotel serves season 2021 as "Thor Akureyri" / "Thor Thorlakshofn"
+  # and 2022 onward as "Thor Ak." / "Thor Th." -- same clubs (same home
+  # venues in the export's leikvollur column). Unaliased, prepare_data() gave
+  # each club two team indices and split its history (K = 30, not 28).
+  aliases <- load_leagues()$basketball_iceland$data_source$team_aliases
+  expect_identical(aliases[["Þór Akureyri"]], "Þór Ak.")
+  expect_identical(
+    aliases[["Þór Þorlákshöfn"]],
+    "Þór Þ."
+  )
+})
