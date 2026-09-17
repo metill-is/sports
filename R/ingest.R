@@ -44,7 +44,9 @@ get_ingest_source <- function(name) {
 #'
 #' Reads `league$data_source$results` and `league$data_source$schedule` to pick
 #' the right source module, calls `fetch_results` / `fetch_schedule`, and writes
-#' to `data/facts/\{results,schedules\}/` via `write_table()`.
+#' to `data/facts/\{results,schedules\}/` via `write_table()`. Team names listed
+#' in `league$data_source$team_aliases` are rewritten to their stored spelling
+#' first.
 #'
 #' @param league A single entry from `load_leagues()`.
 #' @param sex "male" or "female".
@@ -60,6 +62,14 @@ ingest_league <- function(league, sex,
 
   results <- results_mod$fetch_results(league, sex, seasons = seasons)
   schedule <- schedule_mod$fetch_schedule(league, sex)
+
+  # A federation can rename a club between seasons (KKÍ: "Þór Akureyri" in
+  # 2021, "Þór Ak." since). Normalise before the upsert, whose natural key
+  # includes the team names -- a renamed row written unaliased is a second
+  # team to prepare_data(), not a correction of the first.
+  aliases <- league$data_source$team_aliases
+  results <- .apply_team_aliases(results, aliases)
+  schedule <- .apply_team_aliases(schedule, aliases)
 
   # kickoff_time is captured in the shared KSÍ parser and rides along on
   # results, but the results schema has no such column -- drop it so results
@@ -99,6 +109,26 @@ ingest_league <- function(league, sex,
   }
 
   invisible(as.integer(nrow(results) + nrow(schedule)))
+}
+
+#' Rewrite source team names to their stored spelling.
+#'
+#' @param df A results or schedules frame (may be empty).
+#' @param aliases `data_source$team_aliases`: a named list or vector,
+#'   `{source_name: stored_name}`. `NULL` or empty is a no-op.
+#' @return `df` with `home_team` / `away_team` rewritten.
+#' @keywords internal
+#' @noRd
+.apply_team_aliases <- function(df, aliases) {
+  if (length(aliases) == 0L || nrow(df) == 0L) {
+    return(df)
+  }
+  map <- unlist(aliases)
+  for (col in c("home_team", "away_team")) {
+    hit <- df[[col]] %in% names(map)
+    df[[col]][hit] <- unname(map[df[[col]][hit]])
+  }
+  df
 }
 
 #' Schedule-active gate used by all DAG wrappers.

@@ -71,3 +71,26 @@ test_that("no duplicate matches per (sport, sex, match_date, home_team, away_tea
   )
   expect_equal(length(key), length(unique(key)))
 })
+
+test_that("no stored row carries a name that data_source.team_aliases rewrites", {
+  # upsert_table() keys on team names, so adding an alias does not rewrite
+  # rows already on disk -- the stored partitions must be re-normalised in the
+  # same change. An alias key found here means that step was skipped.
+  skip_if_no_data()
+  leagues <- load_leagues()
+  for (key in names(leagues)) {
+    aliases <- names(leagues[[key]]$data_source$team_aliases)
+    if (length(aliases) == 0L) next
+    lg <- leagues[[key]]
+    for (table in c("results", "schedules")) {
+      rows <- read_table(
+        table,
+        filter = list(sport = lg$sport, country = lg$country)
+      )
+      stale <- sort(unique(intersect(
+        c(rows$home_team, rows$away_team), aliases
+      )))
+      expect_identical(stale, character(), label = paste(key, table))
+    }
+  }
+})

@@ -21,5 +21,7 @@ Integer count of rows written (results + schedules), invisibly.
 \description{
 Reads `league$data_source$results` and `league$data_source$schedule` to pick
 the right source module, calls `fetch_results` / `fetch_schedule`, and writes
-to `data/facts/\{results,schedules\}/` via `write_table()`.
+to `data/facts/\{results,schedules\}/` via `write_table()`. Team names listed
+in `league$data_source$team_aliases` are rewritten to their stored spelling
+first.
 }
