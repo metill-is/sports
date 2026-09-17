@@ -167,11 +167,15 @@ go red, and the fix is to re-measure and rewrite the constant, **not**
 to loosen the test.
 
 Only `football_iceland` carries a `training_filter` key
-(`config/leagues.yml` — its sole occurrence). The 2DT extractor's
-round-strength trajectory indexes on rounds derived from the unfiltered
-results, so it asserts `is.null(league$training_filter)`; adding a
-`training_filter` to basketball or handball will abort that extractor
-until the trajectory's round indexing is reworked.
+(`config/leagues.yml` — its sole occurrence). Both Iceland extractors
+keep two result sets: `model_results` (`model_training_results()`, which
+also drops forfeits) for the strength trajectory, and every played result
+(`.played_results()`) for tables, seasons and remaining fixtures — a
+forfeit win is two points in the table and a pairing that must not be
+simulated again. The 2DT extractor still asserts
+`is.null(league$training_filter)`: no 2DT test covers a division whose
+filtered-out teams still play in it, so adding a filter to basketball or
+handball aborts that extractor until one does.
 
 Note that this config layer publishes nothing on its own — it is inert
 until the extract, read and publish layers consume it.

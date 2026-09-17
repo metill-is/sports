@@ -38,6 +38,18 @@ paths:
   which store is canonical for that cell.
 - `prepare_data()` is pure — reads Parquet facts, returns
   `list(stan_data, pred_d, teams)`. No file I/O beyond `read_table()`.
+- What a fit trains on is `model_training_results()` (`R/model-prepare.R`),
+  shared by `prepare_data()`, both Iceland extractors' strength
+  trajectories and `needs_refit()`. It drops two kinds of real result:
+  the league's `training_filter`, and **forfeits** — the sport's walkover
+  score in `.FORFEIT_SCORES` (basketball 20-0, handball 10-0; football has
+  none, its 3-0 is indistinguishable from a played one). A league table
+  counts forfeits, so it is built from `.played_results()` instead.
+  Why forfeits: Þróttur V. (men's basketball) ended its 25-game history on
+  three 20-0 / 0-20 walkovers, and the fit failed the Stan diagnostic gate
+  on that team's volatility on 2026-09-16, twice, on data that had passed
+  on 2026-09-05. A gate failure that names one team's parameters is a data
+  question before it is a sampler question.
 - `fit_model()` is a pure cmdstanr wrapper — takes stan_data + stan_path,
   returns the fit. Callers save to disk.
 - `extract_posteriors()` materialises posterior draws as the canonical

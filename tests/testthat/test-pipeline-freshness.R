@@ -640,3 +640,47 @@ test_that("needs_refit() is FALSE when the training_filter leaves nothing to fit
   expect_false(needs_refit(.fb_static, "male", root = root, today = as.Date("2100-09-20")))
   expect_true(needs_refit(.fb_unfiltered, "male", root = root, today = as.Date("2100-09-20")))
 })
+
+# --- needs_refit(): forfeits --------------------------------------------------
+# A walkover is not a fit observation (model_training_results()), so one logged
+# after the newest fit is not a new game to refit for.
+
+test_that("needs_refit() does not count a forfeit as a played game", {
+  today <- as.Date("2100-04-06")
+  for (static in list(.bb_static, .hb_static)) {
+    walkover <- c(basketball = 20L, handball = 10L)[[static$sport]]
+    root <- withr::local_tempdir()
+    .seed_refit_cell(root, "2100-04-02",
+      predicted = .fixture_rows("2100-04-10"),
+      schedule = .fixture_rows("2100-04-10"),
+      sport = static$sport
+    )
+    later <- fs::path(
+      root, "facts", "results", paste0("sport=", static$sport),
+      "country=iceland", "sex=male", "season=2100", "part-1.parquet"
+    )
+    arrow::write_parquet(
+      tibble::tibble(
+        home_team = "A", away_team = "B", match_date = as.Date("2100-04-04"),
+        home_score = 0L, away_score = walkover, division = "BD", round = 23L
+      ),
+      later
+    )
+    expect_false(
+      needs_refit(static, "male", root = root, today = today),
+      info = static$sport
+    )
+
+    arrow::write_parquet(
+      tibble::tibble(
+        home_team = "A", away_team = "B", match_date = as.Date("2100-04-04"),
+        home_score = 1L, away_score = walkover, division = "BD", round = 23L
+      ),
+      later
+    )
+    expect_true(
+      needs_refit(static, "male", root = root, today = today),
+      info = static$sport
+    )
+  }
+})
