@@ -417,15 +417,63 @@ NULL
                                      bucket_width = 1L,
                                      bucket_low = -50L,
                                      bucket_high = 50L,
-                                     has_ties = FALSE,
-                                     tie_threshold = 0,
-                                     fit_date = Sys.Date(),
+                                     has_ties = NULL,
+                                     tie_threshold = NULL,
+                                     fit_date,
                                      end_date = fit_date,
                                      root = here::here("data"),
                                      extracts_root = NULL,
                                      prep = NULL) {
   stopifnot(sex %in% c("male", "female"))
   stopifnot(sport %in% c("basketball", "handball"))
+
+  # `fit_date` is REQUIRED, not defaulted to Sys.Date(). Three things derive
+  # from it -- the partition key (`fit_date=<D>`), the season simulation's RNG
+  # seed (`sim_seed`, below) and, through `end_date`, the results/schedule
+  # cut-off -- so an accidental "today" does not degrade the output, it
+  # relabels it: a re-extract of an August fit would land in a today-stamped
+  # partition, seeded on today and cut at today, and the "re-extracting a fit
+  # reproduces its tables" promise made at `sim_seed` would be quietly false.
+  # Both entry points (extract_handball_iceland() /
+  # extract_basketball_iceland()) always pass it, so nothing legitimate relied
+  # on the default. The check is explicit rather than left to lazy evaluation
+  # so the failure names the argument, instead of surfacing as an error inside
+  # as.Date() several statements later; the length/NA arm catches the other
+  # silent shape, an explicit NULL, which would collapse the partition path to
+  # character(0) and make dir.create() a no-op.
+  if (missing(fit_date) || length(fit_date) != 1L || is.na(fit_date)) {
+    cli::cli_abort(
+      c(
+        "{.arg fit_date} must be a single non-missing date.",
+        "i" = "It keys the partition, seeds the simulation and cuts the data.",
+        "i" = "Pass the fit's own date; it must never fall back to today."
+      ),
+      call = NULL
+    )
+  }
+
+  # Tie handling is RESOLVED from `sport`, never defaulted. These two arguments
+  # used to default to FALSE / 0, which is the exact shape of the incident
+  # documented at `.tie_params_pfi()` above: the league slice reaching the
+  # extractor had already lost `betting`, the defaults quietly took over, and
+  # handball published p_draw = 0 for every match while its season simulation
+  # ran over a league in which a draw could not occur. FALSE / 0 is a perfectly
+  # valid scoring rule for basketball, so nothing downstream could tell the
+  # default apart from a deliberate setting -- which is why the only safe
+  # default is no default at all. NULL now falls back to the sport's publish
+  # profile, the same source `meta.points` is published from, i.e. the source
+  # whose disagreement made the incident visible in the first place. An
+  # explicit value is still honoured (both entry points pass one, itself
+  # resolved from that profile, and the equivalence tools do the same), but a
+  # silently tie-less handball extract is no longer reachable.
+  tie_params <- .tie_params_pfi(sport)
+  if (is.null(has_ties)) {
+    has_ties <- tie_params$has_ties
+  }
+  if (is.null(tie_threshold)) {
+    tie_threshold <- tie_params$tie_threshold
+  }
+
   divisions <- .iceland_division_codes(key, sex)
   expected_meetings <- .iceland_division_expected_meetings(key, sex)
   regular_season_rounds <- .iceland_division_regular_season_rounds(key, sex)

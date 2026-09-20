@@ -31,6 +31,16 @@ non-atomic write). Each sub-check is wrapped so one failure degrades to a
 single `check_error` row rather than aborting the whole snapshot.
 }
 \details{
+`check_error` is the one check name that means "this did not run", as
+opposed to every other name, which means "this ran and judged". Such rows
+are always `FAIL`, never `WARN`: the sole alert channel fires on
+`overall == "FAIL"` (see HONEST LIMIT below), so a crashed check reported as
+`WARN` was invisible to the only thing watching. They are emitted for a
+`load_leagues()` failure (scope `load_leagues`, which used to be swallowed
+into an empty, green snapshot), for a per-cell read failure inside
+[check_fit_freshness()] (scope = the cell), and by the `safe()` wrapper for
+anything else that aborts (scope `pipeline_health`).
+
 The three publish-side checks were added 2026-09-04. Until then NOTHING here
 read `data/publish/`, which is how basketball and handball published nothing
 at all from the Plan-7 cutover to 2026-09 while every composed check stayed

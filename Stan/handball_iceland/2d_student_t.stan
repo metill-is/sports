@@ -9,6 +9,12 @@
  * - Prediction-related data
  */
 data {
+  // NOTE (2026-09-20): the prediction-horizon inputs (N_top_teams, top_teams,
+  // time_to_next_games, pred_timediff1/2) were removed. They were supplied by
+  // model-prepare and then never read: the forward random walk they existed to
+  // drive was never run, so forecasts did not widen with horizon and the data
+  // only implied a capability the model did not have. Restore them together
+  // with the propagation if that is ever implemented.
   int<lower=0> K;                     // Number of teams
   int<lower=0> N;                     // Number of games
   int<lower=0> N_rounds;              // Number of rounds
@@ -23,16 +29,9 @@ data {
   array[N] int<lower=0> goals2;       // Goals scored by team 2 (away)
   array[N] int<lower=1> division;  // Division ID for each game
   
-  // Prediction data
-  int<lower = 0> N_top_teams;
-  array[N_top_teams] int<lower=0> top_teams;
-  vector[N_top_teams] time_to_next_games;
-
   int<lower=0> N_pred;                // Number of games to predict
   array[N_pred] int<lower=1, upper=K> team1_pred;  // Team 1 ID for each prediction game
   array[N_pred] int<lower=1, upper=K> team2_pred;  // Team 2 ID for each prediction game
-  vector[N_pred] pred_timediff1;
-  vector[N_pred] pred_timediff2;
   array[N_pred] int<lower=1> pred_division;  // Division ID for each prediction game
 }
 
@@ -49,10 +48,6 @@ transformed data {
     }
   }
 
-  vector[N_top_teams] delta_t_top = sqrt(time_to_next_games);
-  vector[N_pred] pred_delta_t1 = sqrt(pred_timediff1);
-  vector[N_pred] pred_delta_t2 = sqrt(pred_timediff2);
-
   matrix[K, N_rounds] rest_days;
   for (k in 1:K) {
     for (n in 1:N_rounds) {
@@ -60,16 +55,6 @@ transformed data {
     }
   }
 
-  vector[N_top_teams] rest_days_top;
-  for (n in 1:N_top_teams) {
-    rest_days_top[n] = time_to_next_games[n] <= 7 ? time_to_next_games[n] : 7;
-  }
-  vector[N_pred] pred_rest_days1;
-  vector[N_pred] pred_rest_days2;
-  for (n in 1:N_pred) {
-    pred_rest_days1[n] = pred_timediff1[n] <= 7 ? pred_timediff1[n] : 7;
-    pred_rest_days2[n] = pred_timediff2[n] <= 7 ? pred_timediff2[n] : 7;
-  }
 }
 
 /**
@@ -133,7 +118,6 @@ parameters {
   real<lower = 0> sigma_mean_goals;
   // z_mean_goals: standardised seasonal innovations; std_normal.
   array[N_seasons - 1] real z_mean_goals;
-
 
   // ===== Home advantage (per team, strict positive) =====
 
@@ -261,7 +245,6 @@ model {
   delta_mean_goals ~ normal(0, 10);
   sigma_mean_goals ~ exponential(2);
   z_mean_goals ~ std_normal();
-
 
   // Priors for scale, shape and correlation
   rho ~ uniform(-1, 1);

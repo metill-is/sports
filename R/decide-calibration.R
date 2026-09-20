@@ -9,9 +9,14 @@ NULL
 #'
 #' multiplier = (prior_weight * prior_ratio + sum(win)) / (prior_weight + sum(p))
 #'
-#' Returns `prior_ratio` when no settled history exists at any of three points:
-#' the ledger directory is absent, no rows are present for the (sport, country)
-#' partition, or no rows survive the (sex, settled, non-NA) filter.
+#' Falls back to `prior_ratio` when no settled history exists at any of three
+#' points: the ledger directory is absent, no rows are present for the
+#' (sport, country) partition, or no rows survive the (sex, settled, non-NA)
+#' filter. The return carries WHICH of those happened, because the multiplier
+#' alone cannot say: "no settled history at all", "400 settled bets and
+#' genuinely well calibrated" and "evidence so bad the raw ratio was clamped up
+#' to the floor" all reduce to one number on a real-money staking path. `n`,
+#' `raw_ratio`, `clamped` and `basis` are what keep them distinguishable.
 #'
 #' @param league List with `sport` + `country`.
 #' @param sex "male" or "female".
@@ -29,10 +34,20 @@ NULL
 #'   the sample is large or strongly biased; prior_weight = 10 would track
 #'   short runs of luck more aggressively.
 #' @param prior_ratio Prior calibration ratio. 1.0 = model is well-calibrated.
-#'   Default 1.0. Also the value returned in all empty-history paths.
+#'   Default 1.0. Also the multiplier returned in all empty-history paths.
 #' @param floor Lower clamp on multiplier. Default 0.5.
 #' @param ceiling Upper clamp. Default 1.5.
-#' @return Numeric scalar in `[floor, ceiling]`, rounded to 3 decimals.
+#' @return A list of the multiplier AND the evidence behind it:
+#'   * `multiplier` — numeric in `[floor, ceiling]`, rounded to 3 decimals.
+#'     This is the value that scales `kelly_frac`.
+#'   * `n` — integer count of settled bets the estimate rests on; `0` on every
+#'     empty-history path.
+#'   * `raw_ratio` — the unclamped, unrounded Beta-Binomial ratio, or
+#'     `NA_real_` when there was no evidence to compute one.
+#'   * `clamped` — `TRUE` when `floor`/`ceiling` bit, i.e. `multiplier` is a
+#'     boundary rather than what the ledger actually estimated.
+#'   * `basis` — one of `"evidence"`, `"no_ledger_dir"`, `"no_partition_rows"`,
+#'     `"no_settled_rows"`, `"ledger_read_error"`.
 #' @export
 compute_calibration <- function(league, sex,
                                 market = NULL,
@@ -42,30 +57,43 @@ compute_calibration <- function(league, sex,
   stopifnot(sex %in% c("male", "female"))
   stopifnot(!is.null(league$sport), !is.null(league$country))
 
+  # Every no-evidence exit returns the same multiplier a perfectly calibrated
+  # long history would. `basis` is the only thing that tells them apart, so it
+  # is set on each one rather than left to the caller to infer.
+  no_evidence <- function(basis) {
+    list(
+      multiplier = prior_ratio, n = 0L, raw_ratio = NA_real_,
+      clamped = FALSE, basis = basis
+    )
+  }
+
   ledger_dir <- file.path(root, "decisions", "ledger")
   if (!dir.exists(ledger_dir)) {
-    return(prior_ratio)
+    return(no_evidence("no_ledger_dir"))
   }
 
   # Distinguish "no data yet" (silent fall-through) from "data exists but
-  # unreadable" (signal to the caller via message). read_table itself returns
-  # an empty tibble for missing-partition cases, so any error here is genuine.
+  # unreadable" (signal to the caller via message + `basis`). read_table itself
+  # returns an empty tibble for missing-partition cases, so any error here is
+  # genuine.
+  read_failed <- FALSE
   led <- tryCatch(
     read_table("ledger",
       root = root,
       filter = list(sport = league$sport, country = league$country)
     ),
     error = function(e) {
-      message(
-        "compute_calibration: ledger read failed (", conditionMessage(e),
-        "). Returning prior_ratio."
-      )
+      read_failed <<- TRUE
+      cli::cli_warn(c(
+        "compute_calibration: ledger read failed; falling back to prior_ratio",
+        "i" = "{conditionMessage(e)}"
+      ))
       tibble::tibble()
     }
   )
 
   if (nrow(led) == 0L) {
-    return(prior_ratio)
+    return(no_evidence(if (read_failed) "ledger_read_error" else "no_partition_rows"))
   }
 
   # Filter to settled bets matching sex with non-NA win + p.
@@ -77,7 +105,7 @@ compute_calibration <- function(league, sex,
   }
 
   if (nrow(led) == 0L) {
-    return(prior_ratio)
+    return(no_evidence("no_settled_rows"))
   }
 
   # sum() on a logical vector counts TRUEs; the prior !is.na guard already
@@ -85,11 +113,31 @@ compute_calibration <- function(league, sex,
   actual_wins <- sum(led$win)
   expected_wins <- sum(led$p)
 
-  multiplier <- (prior_weight * prior_ratio + actual_wins) /
+  raw_ratio <- (prior_weight * prior_ratio + actual_wins) /
     (prior_weight + expected_wins)
 
-  clamped <- max(floor, min(ceiling, multiplier))
-  round(clamped, 3)
+  clamped <- raw_ratio < floor || raw_ratio > ceiling
+  multiplier <- round(max(floor, min(ceiling, raw_ratio)), 3)
+
+  if (clamped) {
+    # A clamp is the ledger's own estimate being overruled: the stake that
+    # goes out is the boundary, not what the evidence said. Silently returning
+    # the boundary made a 0.31 ratio indistinguishable from a floor-grazing
+    # 0.49, and both from a deliberate floor setting -- say it out loud.
+    cell <- paste0(
+      league$sport, "/", league$country, " ", sex,
+      if (is.null(market)) "" else paste0(" [", market, "]")
+    )
+    cli::cli_alert_warning(
+      "compute_calibration: {cell} raw ratio {round(raw_ratio, 3)} clamped to \\
+       {multiplier} on n = {nrow(led)} settled bet{?s}."
+    )
+  }
+
+  list(
+    multiplier = multiplier, n = nrow(led), raw_ratio = raw_ratio,
+    clamped = clamped, basis = "evidence"
+  )
 }
 
 #' Resolve K2 — per-market calibration multipliers with aggregate fallback.
@@ -114,21 +162,34 @@ compute_calibration <- function(league, sex,
 #' @param root Data root. Default `here::here("data")`.
 #' @param ... Forwarded to [compute_calibration()] (prior_weight, prior_ratio,
 #'   floor, ceiling).
-#' @return Named list with `aggregate` always present and per-market keys
-#'   only where `n >= k2_min_n`. Per-market keys mirror the `market` column
-#'   of the recommendations Parquet (`moneyline`, `spread`, `total`, ...).
+#' @return Named list of bare numeric multipliers, with `aggregate` always
+#'   present and per-market keys only where `n >= k2_min_n`. Per-market keys
+#'   mirror the `market` column of the recommendations Parquet (`moneyline`,
+#'   `spread`, `total`, ...). The per-key evidence records from
+#'   [compute_calibration()] (`n`, `raw_ratio`, `clamped`, `basis`) ride along
+#'   in the `"evidence"` attribute, so a caller can audit WHY a multiplier is
+#'   what it is; the list values themselves stay scalar because `decide_league()`
+#'   indexes them per bet with `vapply(..., numeric(1))`.
 #' @export
 compute_calibrations <- function(league, sex,
                                  k2_min_n = 100L,
                                  root = here::here("data"),
                                  ...) {
   stopifnot(sex %in% c("male", "female"))
-  out <- list(aggregate = compute_calibration(league, sex, root = root, ...))
+  agg <- compute_calibration(league, sex, root = root, ...)
+  out <- list(aggregate = agg$multiplier)
+  evidence <- list(aggregate = agg)
+  # Every exit below is an early return, so attach the evidence in one place
+  # rather than at four; the closure reads `out`/`evidence` as they stand.
+  finish <- function() {
+    attr(out, "evidence") <- evidence
+    out
+  }
 
   # Discover which markets cross the K2 threshold for this (sport, country, sex).
   ledger_dir <- file.path(root, "decisions", "ledger")
   if (!dir.exists(ledger_dir)) {
-    return(out)
+    return(finish())
   }
   led <- tryCatch(
     read_table("ledger",
@@ -138,23 +199,25 @@ compute_calibrations <- function(league, sex,
     error = function(e) tibble::tibble()
   )
   if (nrow(led) == 0L) {
-    return(out)
+    return(finish())
   }
   led <- led[!is.na(led$sex) & led$sex == sex, , drop = FALSE]
   led <- led[!is.na(led$settled) & led$settled, , drop = FALSE]
   led <- led[!is.na(led$win) & !is.na(led$p), , drop = FALSE]
   if (nrow(led) == 0L) {
-    return(out)
+    return(finish())
   }
 
   counts <- table(led$market)
   for (mkt in names(counts)) {
     if (counts[[mkt]] >= k2_min_n) {
-      out[[mkt]] <- compute_calibration(
+      res <- compute_calibration(
         league, sex,
         market = mkt, root = root, ...
       )
+      out[[mkt]] <- res$multiplier
+      evidence[[mkt]] <- res
     }
   }
-  out
+  finish()
 }

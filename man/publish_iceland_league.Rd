@@ -93,6 +93,15 @@ there is relevant data:
   - `final_positions_history.json` (every fit with played top-flight
     matches)
 
+None of the three is ever truncated by an empty slot: a fit with nothing
+to contribute leaves the published history intact and warns. They are only
+written empty on a cell's first publish, so the schema set is complete.
+
+Each cell is published ATOMICALLY: its artefacts are written to a staging
+directory and moved into place together, so a cell on disk is always one
+fit's output throughout and never a fresh `meta.json` over stale
+projections.
+
 Plus one publisher-internal accretive file written under
 `round_predictions_history_root` (kept out of `output_root` because
 metill-platform has no consumer for it):

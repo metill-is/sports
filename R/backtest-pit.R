@@ -61,19 +61,39 @@ bt_predicted_empty <- function() {
   )
 }
 
-#' Load every saved football_iceland predicted-matches extract for a sex.
+#' Load every saved predicted-matches extract for one sport/country and sex.
 #'
-#' Reads each `beliefs/extracts/.../sex=<s>/fit_date=<F>/predicted_matches.parquet`
+#' Reads each
+#' `beliefs/extracts/sport=<sport>/country=<country>/sex=<s>/fit_date=<F>/predicted_matches.parquet`
 #' (the posterior-predictive score histogram) and row-binds them, attaching `sex`
 #' and `fit_date` from the hive path. Read-only.
+#'
+#' Every diagnostic in this file is built on the LONG-FORM extract shape: one row
+#' per `(home_goals, away_goals)` cell carrying a posterior-draw `count`, i.e. a
+#' joint score pmf. Football writes that shape. The 2DT sports (handball,
+#' basketball) currently write a PRUNED extract holding only
+#' `goal_diff_distribution` plus outcome probabilities, from which no scoreline
+#' marginal can be formed -- so pointing this loader at them is a data gap, not a
+#' code path. Abort naming the file rather than row-bind a foreign schema and
+#' fail three calls later on a missing `home_goals`.
 #' @param root Data root holding `beliefs/extracts/`.
 #' @param sex Character vector of sexes to load. Default both.
 #' @param season Optional integer year; filters fit_dates to that season.
+#' @param sport,country Scalar hive partition the extracts sit under. The
+#'   defaults keep every existing caller on `football`/`iceland`.
 #' @return Tibble of all fit_dates' predicted matches, or the empty schema.
 #' @export
 bt_load_predicted <- function(root = here::here("data"),
-                              sex = c("male", "female"), season = NULL) {
-  base <- file.path(root, "beliefs", "extracts", "sport=football", "country=iceland")
+                              sex = c("male", "female"), season = NULL,
+                              sport = "football", country = "iceland") {
+  if (length(sport) != 1L || length(country) != 1L) {
+    cli::cli_abort("{.arg sport} and {.arg country} must each name one partition.")
+  }
+  base <- file.path(
+    root, "beliefs", "extracts",
+    paste0("sport=", sport), paste0("country=", country)
+  )
+  need <- c("home_goals", "away_goals", "count")
   out <- list()
   for (s in sex) {
     ext_dir <- file.path(base, paste0("sex=", s))
@@ -86,6 +106,16 @@ bt_load_predicted <- function(root = here::here("data"),
       if (!file.exists(p)) next
       pm <- arrow::read_parquet(p)
       if (nrow(pm) == 0L) next
+      absent <- setdiff(need, names(pm))
+      if (length(absent) > 0L) {
+        cli::cli_abort(c(
+          "{.path {p}} is not a long-form predicted-matches extract.",
+          x = "Missing column{?s}: {.field {absent}}.",
+          i = "The PIT, draw-rate and scoreline diagnostics need the \\
+               per-scoreline posterior-draw histogram; the pruned 2DT extract \\
+               carries only a goal-difference distribution."
+        ))
+      }
       pm$sex <- s
       pm$fit_date <- as.Date(fd)
       out[[length(out) + 1L]] <- pm
@@ -134,7 +164,7 @@ bt_pit_empty <- function() {
     sex = character(), match_date = as.Date(character()),
     home_team = character(), away_team = character(),
     division = character(), marginal = character(),
-    observed = numeric(), u = numeric()
+    observed = numeric(), lo = numeric(), hi = numeric(), u = numeric()
   )
 }
 
@@ -142,15 +172,21 @@ bt_pit_empty <- function() {
 #'
 #' For each match, builds the as-of predictive pmf of the marginal (`total`,
 #' `diff`, `home`, `away`) from the posterior-draw counts, looks up the observed
-#' value from `results`, and computes the randomised PIT ([bt_rpit()]). The match
-#' key is the federation-name `(sex, match_date, home_team, away_team)`, clean
-#' between extracts and results.
+#' value from `results`, and returns BOTH the deterministic PIT band
+#' `[lo, hi] = [F(y-1), F(y)]` ([bt_pit_bounds()]) and one randomised draw from
+#' inside it ([bt_rpit()]). The match key is the federation-name
+#' `(sex, match_date, home_team, away_team)`, clean between extracts and results.
+#'
+#' `u` is a single seeded realisation, fit for plotting a histogram but NOT for
+#' deciding a verdict: a pass/fail read off one randomisation is decided by
+#' `seed`, not by the model. `lo`/`hi` carry the randomisation-free content so
+#' [bt_pit_uniformity()] can average its statistics over many draws instead.
 #' @param predicted Output of [bt_load_predicted()].
 #' @param results Results store (`home_score`, `away_score`, key cols).
 #' @param marginal Score marginal to transform.
-#' @param seed RNG seed for the PIT randomisation (reproducible).
+#' @param seed RNG seed for the displayed `u` randomisation (reproducible).
 #' @return Tibble `(sex, match_date, home_team, away_team, division, marginal,
-#'   observed, u)`, one row per scored match.
+#'   observed, lo, hi, u)`, one row per scored match.
 #' @export
 bt_pit_values <- function(predicted, results,
                           marginal = c("total", "diff", "home", "away"),
@@ -180,36 +216,182 @@ bt_pit_values <- function(predicted, results,
   pmf$.k <- bt_match_key(pmf)
   pmf_by <- split(pmf, pmf$.k)
   mk <- bt_match_key(matches)
+  # Carry the band, not just a point inside it. The band is a fact about the
+  # predictive; which point of it `u` lands on is a coin toss, and a verdict
+  # computed from one toss is a property of `seed`. Downstream re-randomises
+  # from (lo, hi) many times and averages -- see bt_pit_uniformity().
+  bands <- vapply(seq_len(nrow(matches)), function(i) {
+    sub <- pmf_by[[mk[i]]]
+    bt_pit_bounds(sub$mval, sub$weight, matches$observed[i])
+  }, numeric(2))
+  matches$lo <- bands[1L, ]
+  matches$hi <- bands[2L, ]
+  # One runif(n) draws the same stream as n successive runif(1) calls, so the
+  # displayed `u` is unchanged from the per-match bt_rpit() loop this replaces.
   withr::with_seed(seed, {
-    matches$u <- vapply(seq_len(nrow(matches)), function(i) {
-      sub <- pmf_by[[mk[i]]]
-      bt_rpit(sub$mval, sub$weight, matches$observed[i])
-    }, numeric(1))
+    matches$u <- matches$lo + stats::runif(nrow(matches)) * (matches$hi - matches$lo)
   })
   matches$marginal <- marginal
-  tibble::as_tibble(matches[, c(key, "division", "marginal", "observed", "u")])
+  tibble::as_tibble(
+    matches[, c(key, "division", "marginal", "observed", "lo", "hi", "u")]
+  )
 }
 
-#' Uniformity summary of PIT values (KS test against Uniform(0,1)).
+#' Empty uniformity-summary tibble (the verdict schema).
+#' @noRd
+bt_pit_uniformity_empty <- function() {
+  tibble::tibble(
+    n = integer(), ks_stat = numeric(), ks_p = numeric(), mean_u = numeric(),
+    var_u = numeric(), var_z = numeric(), var_p = numeric(),
+    n_rand = integer(), verdict = character()
+  )
+}
+
+#' Uniformity verdict for PIT values (KS + a dispersion test, min-n guarded).
 #'
-#' A calibrated predictive yields `u ~ Uniform(0,1)`; a small `ks_p` (or a
-#' visibly U-/hump-shaped histogram) flags miscalibration of the predictive
-#' distribution's shape.
-#' @param pit Tibble with a numeric `u` column (e.g. from [bt_pit_values()]).
+#' A calibrated predictive yields `u ~ Uniform(0,1)`. This is the only numeric
+#' calibration verdict the dashboard ships, so it reports three complementary
+#' statistics rather than one, and never returns a bare `NA` that a reader can
+#' mistake for "fine":
+#'
+#' * `mean_u` — location. Detects a biased predictive (systematically too high
+#'   or too low), around 0.5 when unbiased.
+#' * `ks_stat` / `ks_p` — Kolmogorov-Smirnov against `Uniform(0,1)`. General
+#'   purpose, but driven by the largest CDF gap, so it is comparatively weak
+#'   against a symmetric U-shape whose CDF tracks the diagonal in the middle.
+#' * `var_u` / `var_z` / `var_p` — dispersion, and the statistic with real power
+#'   against precisely the over-confidence this file exists to detect. Under
+#'   uniformity `Var(u) = 1/12` and the sample variance is asymptotically normal
+#'   with `sd = sqrt(1 / (180 n))` (from `mu4 - sigma^4 = 1/80 - 1/144 = 1/180`).
+#'   `var_z > 0` means the PIT histogram is U-shaped: too much mass in the
+#'   tails, i.e. an UNDER-dispersed, over-confident predictive. `var_z < 0`
+#'   means a central hump, i.e. an over-dispersed one.
+#'
+#' Randomisation: the discrete PIT only pins each match to a band
+#' `[lo, hi]`, so any statistic computed from one draw inside those bands is
+#' itself random. When `pit` carries `lo`/`hi` (as [bt_pit_values()] emits) the
+#' bands are re-randomised `n_rand` times, seeded and so reproducible, without
+#' the verdict being decided by the seed. Each statistic is summarised over those
+#' draws in the way that keeps it self-consistent:
+#'
+#' * `mean_u` is not randomised at all. The limit the draws converge on is the
+#'   mean of the band midpoints, so that is reported directly -- exact, and free
+#'   of both seed and Monte Carlo error.
+#' * `var_u` is the MEAN over draws, with Monte Carlo error falling like
+#'   `1 / sqrt(n_rand)`; `var_z`/`var_p` are derived FROM it, so the trio agrees
+#'   by construction.
+#' * `ks_stat`/`ks_p` come from ONE representative draw: the realisation whose
+#'   statistic sits nearest the median. Averaging the two independently would
+#'   report a p-value that is not the p-value of the reported statistic -- the
+#'   old pair could not both be true. Since the KS p-value is a strictly
+#'   decreasing function of the statistic at fixed `n`, a draw central in the
+#'   statistic is equally central in the p-value, so this pair is a genuine test
+#'   result AND both halves are still a central summary over the draws (with an
+#'   even `n_rand` it is one of the two middle order statistics rather than the
+#'   interpolated median). Far steadier than the `n_rand = 1` seed lottery.
+#'
+#' Given only a `u` column the function degenerates to that single realisation
+#' (`n_rand = 1`) and the old seed-dependence applies; prefer passing the bands.
+#'
+#' @param pit Tibble with a numeric `u` column, and ideally the `lo`/`hi` PIT
+#'   band columns from [bt_pit_values()].
 #' @param by Optional grouping columns.
-#' @return One row (or per group) of `(n, ks_stat, ks_p, mean_u)`.
+#' @param min_n Minimum usable PIT values before any test statistic is reported.
+#'   Below it the row comes back flagged `"insufficient_data"` with the KS and
+#'   dispersion statistics `NA`, rather than silently unstable numbers. `mean_u`
+#'   still reports: it is a plain location summary, unbiased for 0.5 under
+#'   uniformity at any `n`, and needs none of the large-sample approximation the
+#'   others rest on. Default 30.
+#' @param n_rand Randomisation draws to summarise over when `lo`/`hi` are
+#'   present. Default 50. Reported back as `n_rand`, which is 0 on the
+#'   `"insufficient_data"` row because no draw was needed there.
+#' @param alpha Two-sided level at which `ks_p`/`var_p` set `verdict`.
+#'   Default 0.05.
+#' @param seed RNG seed for the randomisation draws (reproducible).
+#' @return One row (or per group) of `(n, ks_stat, ks_p, mean_u, var_u, var_z,
+#'   var_p, n_rand, verdict)`. `verdict` is `"insufficient_data"` (n below
+#'   `min_n`), `"flagged"` (some test rejects uniformity at `alpha`) or `"ok"`
+#'   -- `"ok"` meaning no evidence AGAINST calibration at this sample size, not
+#'   evidence of calibration.
 #' @export
-bt_pit_uniformity <- function(pit, by = NULL) {
+bt_pit_uniformity <- function(pit, by = NULL, min_n = 30L, n_rand = 50L,
+                              alpha = 0.05, seed = 1L) {
+  min_n <- max(2L, as.integer(min_n))
   one <- function(d) {
-    u <- d$u[is.finite(d$u)]
-    if (length(u) < 2L) {
-      return(tibble::tibble(n = length(u), ks_stat = NA_real_, ks_p = NA_real_, mean_u = mean(u)))
+    # Represent the single-`u` fallback as a degenerate band lo == hi == u, so
+    # both paths run identical code and the fallback reproduces the old result
+    # exactly (a draw inside a zero-width band is its endpoint).
+    if (all(c("lo", "hi") %in% names(d))) {
+      keep <- is.finite(d$lo) & is.finite(d$hi)
+      lo <- d$lo[keep]
+      hi <- d$hi[keep]
+      draws <- max(1L, as.integer(n_rand))
+    } else {
+      lo <- hi <- d$u[is.finite(d$u)]
+      draws <- 1L
     }
-    k <- suppressWarnings(stats::ks.test(u, "punif"))
-    tibble::tibble(n = length(u), ks_stat = unname(k$statistic), ks_p = k$p.value, mean_u = mean(u))
+    n <- length(lo)
+
+    # `mean_u` needs no randomisation: E[u_i] is the band midpoint, so averaging
+    # mean(u) over draws just converges on the mean of the midpoints. Report that
+    # limit directly -- exact, seed-free, and on the degenerate lo == hi fallback
+    # identical to mean(u).
+    mean_u <- if (n > 0L) mean((lo + hi) / 2) else NA_real_
+
+    # A calibration verdict is the evidence that any of these forecasts are any
+    # good; on a thin sample there IS no verdict. Returning NA here let a reader
+    # take "no answer" for "nothing wrong" -- name the reason instead. `mean_u`
+    # survives the guard: it is a moment, not a test, unbiased for 0.5 under
+    # uniformity at any n, whereas the KS test and the whole variance arm lean on
+    # a large-n approximation that a thin sample does not support.
+    if (n < min_n) {
+      cli::cli_alert_warning(
+        "bt_pit_uniformity: {n} usable PIT value{?s} (< min_n = {min_n}); \\
+         reporting verdict = insufficient_data (mean_u only)."
+      )
+      return(tibble::tibble(
+        n = n, ks_stat = NA_real_, ks_p = NA_real_, mean_u = mean_u,
+        var_u = NA_real_, var_z = NA_real_, var_p = NA_real_,
+        n_rand = 0L, verdict = "insufficient_data"
+      ))
+    }
+
+    stats_r <- withr::with_seed(seed, {
+      vapply(seq_len(draws), function(r) {
+        u <- lo + stats::runif(n) * (hi - lo)
+        k <- suppressWarnings(stats::ks.test(u, "punif"))
+        c(ks_stat = unname(k$statistic), ks_p = k$p.value, var_u = stats::var(u))
+      }, numeric(3))
+    })
+
+    # Report the KS pair from ONE realisation, not as two independent means: a
+    # mean p-value is not the p-value of a mean statistic, and the old pair could
+    # not both be true. The KS p-value is strictly decreasing in the statistic at
+    # fixed n, so the draw central in the statistic is equally central in p --
+    # the pair is internally consistent AND both halves stay a central summary
+    # over `draws`, far steadier than the n_rand = 1 seed lottery.
+    ks_r <- stats_r["ks_stat", ]
+    j <- which.min(abs(ks_r - stats::median(ks_r)))
+    ks_stat <- ks_r[[j]]
+    ks_p <- stats_r["ks_p", j]
+
+    # The dispersion arm keeps the mean: var_u is a moment, and var_z/var_p are
+    # computed FROM the averaged var_u rather than averaged alongside it.
+    var_u <- mean(stats_r["var_u", ])
+    var_z <- (var_u - 1 / 12) / sqrt(1 / (180 * n))
+    var_p <- 2 * stats::pnorm(-abs(var_z))
+    # na.rm + isTRUE so a degenerate KS p-value cannot turn the comparison into
+    # NA and abort the whole dashboard render inside `if`.
+    p_min <- suppressWarnings(min(c(ks_p, var_p), na.rm = TRUE))
+    tibble::tibble(
+      n = n, ks_stat = ks_stat, ks_p = ks_p,
+      mean_u = mean_u, var_u = var_u,
+      var_z = var_z, var_p = var_p, n_rand = draws,
+      verdict = if (isTRUE(p_min < alpha)) "flagged" else "ok"
+    )
   }
   if (nrow(pit) == 0L) {
-    return(tibble::tibble(n = integer(), ks_stat = numeric(), ks_p = numeric(), mean_u = numeric()))
+    return(bt_pit_uniformity_empty())
   }
   if (is.null(by)) {
     return(one(pit))

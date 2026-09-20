@@ -29,7 +29,8 @@
 #' @param show_progress Print cmdstanr progress bar? Default TRUE.
 #' @param check_diagnostics If `TRUE` (default), call
 #'   [check_stan_diagnostics()] after sampling and abort with a clear
-#'   diagnostic on divergent transitions, R-hat, or ESS problems. Set to
+#'   diagnostic on divergent transitions, R-hat, or ESS problems — or on a
+#'   fit whose diagnostics could not be read at all. Set to
 #'   `FALSE` only for explicit pre-flight model exploration where you
 #'   know the fit will be poor.
 #' @param max_divergent_frac Maximum allowed fraction of post-warmup
@@ -141,7 +142,10 @@ fit_model <- function(stan_data,
 #'
 #' Defensive by construction: every cmdstanr accessor is wrapped so a partial
 #' fit, a legacy cmdstanr version, or a stubbed test fit yields `NA` for the
-#' missing metric rather than erroring. Gates downstream skip any `NA` metric.
+#' missing metric rather than erroring. Gates downstream skip any `NA` metric
+#' — but since 2026-09-20 [evaluate_stan_diagnostics()] reports *which* gates
+#' it had to skip, so a wholesale accessor failure (every metric `NA`, every
+#' gate skipped) can no longer be mistaken for a clean fit.
 #'
 #' @keywords internal
 #' @noRd
@@ -214,6 +218,15 @@ extract_stan_metrics <- function(fit) {
 #' messages are preserved verbatim from the pre-2026-05-30 gate so existing
 #' callers and tests see identical text.
 #'
+#' The returned vector carries two attributes recording gate *coverage*:
+#' `gates_evaluated` and `gates_skipped`, each a character vector of gate
+#' names. They are attributes rather than a list return so every existing
+#' caller (`length(msgs)`, `paste(msgs, collapse = ...)`) keeps working
+#' unchanged. Callers that care whether the fit was actually checked — as
+#' opposed to merely not flagged — must read `gates_evaluated`: an empty
+#' message vector with zero evaluated gates is an unchecked fit, not a clean
+#' one.
+#'
 #' @keywords internal
 #' @noRd
 evaluate_stan_diagnostics <- function(metrics,
@@ -226,68 +239,83 @@ evaluate_stan_diagnostics <- function(metrics,
   m <- metrics
   msgs <- character(0)
 
-  if (!is.na(m$div_frac) && m$div_frac > max_divergent_frac) {
-    msgs <- c(msgs, sprintf(
-      paste0(
-        "Stan diagnostic gate: %d divergent transitions in %d ",
-        "post-warmup iterations (%.2f%%) > %.2f%% threshold. ",
-        "Posterior is unreliable; do not promote to beliefs/latest. ",
-        "Reparameterise, raise adapt_delta, or inspect the data."
-      ),
-      m$n_divergent, m$total_iter, m$div_frac * 100, max_divergent_frac * 100
-    ))
+  # Gate-coverage bookkeeping. A gate whose metric is NA never runs, and until
+  # 2026-09-20 that silence was indistinguishable from a pass: when a cmdstanr
+  # accessor threw inside extract_stan_metrics() *every* metric degraded to NA,
+  # so every gate skipped and the empty message vector was read upstream as
+  # "clean fit" — a fail-OPEN gate on the path that feeds beliefs/latest and
+  # the placer. Recording which gates ran lets the caller tell an unchecked
+  # fit from a checked one; the skipping itself stays deliberate, so a partial
+  # accessor failure still lets the gates that *can* run, run.
+  evaluated <- character(0)
+  skipped <- character(0)
+
+  # `breached` and `msg` are promises forced only once the metric is known to
+  # be non-NA, so a skipped gate never compares against NA nor sprintf()s one
+  # into a message. `if (breached)` rather than `isTRUE(breached)` on purpose:
+  # a non-NA metric against an NA threshold must still error loudly, exactly
+  # as the pre-2026-09-20 `!is.na(x) && x > thr` form did.
+  gate <- function(name, value, breached, msg) {
+    if (is.na(value)) {
+      skipped <<- c(skipped, name)
+      return(invisible(NULL))
+    }
+    evaluated <<- c(evaluated, name)
+    if (breached) msgs <<- c(msgs, msg)
+    invisible(NULL)
   }
-  if (!is.na(m$max_rhat) && m$max_rhat > max_rhat) {
-    msgs <- c(msgs, sprintf(
-      paste0(
-        "Stan diagnostic gate: max R-hat %.3f on parameter %s ",
-        "exceeds %.2f. Chains have not mixed; the posterior is not ",
-        "trustworthy. Increase iter_warmup or reparameterise."
-      ),
-      m$max_rhat, m$worst_rhat_var, max_rhat
-    ))
-  }
-  if (!is.na(m$min_ess_bulk) && m$min_ess_bulk < min_ess_bulk) {
-    msgs <- c(msgs, sprintf(
-      paste0(
-        "Stan diagnostic gate: min bulk ESS %.0f on parameter %s ",
-        "below %d. Too few effective samples for stable summaries. ",
-        "Increase iter_sampling or reduce model autocorrelation."
-      ),
-      m$min_ess_bulk, m$worst_ess_bulk_var, as.integer(min_ess_bulk)
-    ))
-  }
-  if (!is.na(m$treedepth_frac) && m$treedepth_frac > max_treedepth_frac) {
-    msgs <- c(msgs, sprintf(
-      paste0(
-        "Stan diagnostic gate: %d of %d post-warmup iterations (%.2f%%) ",
-        "saturated max treedepth, above the %.2f%% threshold. NUTS is ",
-        "hitting the depth limit; raise max_treedepth or reparameterise."
-      ),
-      m$n_max_treedepth, m$total_iter, m$treedepth_frac * 100, max_treedepth_frac * 100
-    ))
-  }
-  if (!is.na(m$min_ebfmi) && m$min_ebfmi < min_ebfmi) {
-    msgs <- c(msgs, sprintf(
-      paste0(
-        "Stan diagnostic gate: min E-BFMI %.3f below %.2f. Low energy ",
-        "fraction of missing information; momentum resampling is ",
-        "inefficient. Reparameterise the scale/variance parameters."
-      ),
-      m$min_ebfmi, min_ebfmi
-    ))
-  }
-  if (!is.na(m$min_ess_tail) && m$min_ess_tail < min_ess_tail) {
-    msgs <- c(msgs, sprintf(
-      paste0(
-        "Stan diagnostic gate: min tail ESS %.0f on parameter %s below ",
-        "%d. Tail quantiles are unreliable \u2014 the spread/total stakes ",
-        "depend on them. Increase iter_sampling."
-      ),
-      m$min_ess_tail, m$worst_ess_tail_var, as.integer(min_ess_tail)
-    ))
-  }
-  msgs
+
+  gate("divergences", m$div_frac, m$div_frac > max_divergent_frac, sprintf(
+    paste0(
+      "Stan diagnostic gate: %d divergent transitions in %d ",
+      "post-warmup iterations (%.2f%%) > %.2f%% threshold. ",
+      "Posterior is unreliable; do not promote to beliefs/latest. ",
+      "Reparameterise, raise adapt_delta, or inspect the data."
+    ),
+    m$n_divergent, m$total_iter, m$div_frac * 100, max_divergent_frac * 100
+  ))
+  gate("R-hat", m$max_rhat, m$max_rhat > max_rhat, sprintf(
+    paste0(
+      "Stan diagnostic gate: max R-hat %.3f on parameter %s ",
+      "exceeds %.2f. Chains have not mixed; the posterior is not ",
+      "trustworthy. Increase iter_warmup or reparameterise."
+    ),
+    m$max_rhat, m$worst_rhat_var, max_rhat
+  ))
+  gate("bulk ESS", m$min_ess_bulk, m$min_ess_bulk < min_ess_bulk, sprintf(
+    paste0(
+      "Stan diagnostic gate: min bulk ESS %.0f on parameter %s ",
+      "below %d. Too few effective samples for stable summaries. ",
+      "Increase iter_sampling or reduce model autocorrelation."
+    ),
+    m$min_ess_bulk, m$worst_ess_bulk_var, as.integer(min_ess_bulk)
+  ))
+  gate("treedepth", m$treedepth_frac, m$treedepth_frac > max_treedepth_frac, sprintf(
+    paste0(
+      "Stan diagnostic gate: %d of %d post-warmup iterations (%.2f%%) ",
+      "saturated max treedepth, above the %.2f%% threshold. NUTS is ",
+      "hitting the depth limit; raise max_treedepth or reparameterise."
+    ),
+    m$n_max_treedepth, m$total_iter, m$treedepth_frac * 100, max_treedepth_frac * 100
+  ))
+  gate("E-BFMI", m$min_ebfmi, m$min_ebfmi < min_ebfmi, sprintf(
+    paste0(
+      "Stan diagnostic gate: min E-BFMI %.3f below %.2f. Low energy ",
+      "fraction of missing information; momentum resampling is ",
+      "inefficient. Reparameterise the scale/variance parameters."
+    ),
+    m$min_ebfmi, min_ebfmi
+  ))
+  gate("tail ESS", m$min_ess_tail, m$min_ess_tail < min_ess_tail, sprintf(
+    paste0(
+      "Stan diagnostic gate: min tail ESS %.0f on parameter %s below ",
+      "%d. Tail quantiles are unreliable \u2014 the spread/total stakes ",
+      "depend on them. Increase iter_sampling."
+    ),
+    m$min_ess_tail, m$worst_ess_tail_var, as.integer(min_ess_tail)
+  ))
+
+  structure(msgs, gates_evaluated = evaluated, gates_skipped = skipped)
 }
 
 #' Abort if a Stan fit's posterior is unreliable.
@@ -300,6 +328,10 @@ evaluate_stan_diagnostics <- function(metrics,
 #' approximate-inference crashing left the converged-but-bad full-NUTS
 #' failure mode uncovered. Audit 2026-05-15 §I. 2026-05-30: also gates
 #' treedepth saturation, E-BFMI, and tail ESS, and returns the metrics.
+#' 2026-09-20: the gate was itself fail-open — a cmdstanr accessor failure
+#' NA'd every metric, every gate skipped, and this function reported success
+#' on a fit nothing had inspected. It now warns whenever a gate had to be
+#' skipped, and aborts when *no* gate could be evaluated at all.
 #'
 #' @param fit A `CmdStanMCMC` fit returned by `cmdstan_model()$sample()`.
 #' @param max_divergent_frac Numeric in `[0, 1]`. Default `0.01`.
@@ -314,7 +346,8 @@ evaluate_stan_diagnostics <- function(metrics,
 #' @return Invisibly a named list of extracted diagnostic metrics
 #'   (`div_frac`, `treedepth_frac`, `min_ebfmi`, `max_rhat`,
 #'   `min_ess_bulk`, `min_ess_tail`, ...), on success. Stops with a clear
-#'   diagnostic on failure.
+#'   diagnostic on failure — either a breached threshold, or no evaluable
+#'   gate at all. A partial skip (some metrics `NA`) warns and returns.
 #' @keywords internal
 #' @export
 check_stan_diagnostics <- function(fit,
@@ -334,6 +367,41 @@ check_stan_diagnostics <- function(fit,
     min_ebfmi = min_ebfmi,
     min_ess_tail = min_ess_tail
   )
+  evaluated <- attr(msgs, "gates_evaluated")
+  skipped <- attr(msgs, "gates_skipped")
+
+  # A skipped gate is not a passed gate. Fit time is the only moment anyone is
+  # watching, so name the skips here: the persisted diagnostics row records the
+  # counts, but nobody opens that store until something has already gone wrong.
+  # Only for a *partial* skip — an all-skipped fit aborts below, which names
+  # the same gates, and calling that "partially checked" would understate it.
+  if (length(skipped) > 0L && length(evaluated) > 0L) {
+    n_gates <- length(evaluated) + length(skipped)
+    cli::cli_alert_warning(
+      paste0(
+        "Stan diagnostic gate: {length(skipped)} of {n_gates} gates could ",
+        "not be evaluated (metric was NA): {.val {skipped}}. The fit is ",
+        "only partially checked."
+      )
+    )
+  }
+
+  # Zero evaluable gates is indistinguishable from an unchecked fit, and an
+  # unchecked posterior is precisely what this gate exists to keep out of
+  # beliefs/latest and the placer. Route it down the same abort path a breach
+  # takes rather than returning success on an all-NA metric list.
+  if (length(evaluated) == 0L) {
+    msgs <- c(msgs, sprintf(
+      paste0(
+        "Stan diagnostic gate: no gate could be evaluated \u2014 every ",
+        "diagnostic metric was NA (gates skipped: %s). The fit is ",
+        "UNCHECKED, not clean: cmdstanr's $diagnostic_summary() and ",
+        "$summary() accessors both failed. Do not promote to ",
+        "beliefs/latest."
+      ),
+      paste(skipped, collapse = ", ")
+    ))
+  }
   if (length(msgs) > 0L) {
     stop(paste(msgs, collapse = "\n"), call. = FALSE)
   }
@@ -348,6 +416,12 @@ check_stan_diagnostics <- function(fit,
 #' while still under 1%, or R-hat drifting toward 1.05 — becomes observable over
 #' time. Best-effort: a write failure warns rather than aborting the fit.
 #'
+#' `gates_evaluated` / `gates_skipped` (added 2026-09-20) count how many of the
+#' six thresholds could actually be checked, so a `passed = TRUE` row can never
+#' again mean "nothing was checked". They are written ahead of being added to
+#' `schemas()$fit_diagnostics`; `read_table()` opens this store with
+#' `unify_schemas = TRUE`, so partitions written before today null-fill.
+#'
 #' @keywords internal
 #' @noRd
 persist_fit_diagnostics <- function(fit, league, sex, fit_date,
@@ -357,7 +431,14 @@ persist_fit_diagnostics <- function(fit, league, sex, fit_date,
                                     chains = NA_integer_,
                                     root = here::here("data")) {
   m <- extract_stan_metrics(fit)
-  passed <- length(evaluate_stan_diagnostics(m)) == 0L
+  msgs <- evaluate_stan_diagnostics(m)
+  n_evaluated <- length(attr(msgs, "gates_evaluated"))
+  n_skipped <- length(attr(msgs, "gates_skipped"))
+  # `passed` must mean "the gates ran and none breached", never "no gate ran".
+  # An all-NA metric row previously landed here as passed = TRUE, i.e. the
+  # drift-tracking store recording a clean bill of health for a fit nothing
+  # had inspected — the same fail-open hole as the abort gate itself.
+  passed <- length(msgs) == 0L && n_evaluated > 0L
   row <- tibble::tibble(
     sport = league$sport,
     country = league$country,
@@ -376,6 +457,8 @@ persist_fit_diagnostics <- function(fit, league, sex, fit_date,
     adapt_delta = as.numeric(adapt_delta),
     iter_sampling = as.integer(iter_sampling),
     chains = as.integer(chains),
+    gates_evaluated = as.integer(n_evaluated),
+    gates_skipped = as.integer(n_skipped),
     passed = passed
   )
   tryCatch(

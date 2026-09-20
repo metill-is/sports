@@ -46,7 +46,10 @@ NULL
 # @param profile `sport_publish_profile(<sport>)`.
 # @param pred_d The model's prediction frame; the ONLY source of the `division`
 #   column for the scoreline-counts shape (football's predicted_matches carries
-#   no division). Ignored for the match-summary shape, which already has one.
+#   no division). It must cover every `predicted` fixture inside the publish
+#   window -- one it misses has no division and would be dropped unseen, so the
+#   scoreline-counts branch aborts instead. Ignored for the match-summary
+#   shape, which already has one.
 # @param family_divs Division codes this cell publishes (a split-season cell
 #   carries its playoff codes too).
 # @param division_badges Named `code -> badge` map, from
@@ -58,7 +61,8 @@ NULL
 # @noRd
 .next_games_rows_pfi <- function(predicted, profile, pred_d = NULL,
                                  family_divs, division_badges, end_date,
-                                 horizon_days = 14L, venues = NULL) {
+                                 horizon_days = 14L, venues = NULL,
+                                 is_cup = FALSE) {
   stopifnot(is.data.frame(predicted))
   shape <- profile$predicted_matches_shape
 
@@ -77,6 +81,53 @@ NULL
     }
     if (nrow(predicted) == 0L) {
       return(.next_games_empty_pfi())
+    }
+    # `division` reaches this branch only through the join above, so a fixture
+    # `pred_d` does not cover carries NA and the `%in% family_divs` filter below
+    # removes it without a word -- the published fixture strip just gets shorter
+    # while every remaining number still looks right. Refuse that.
+    #
+    # Scoped to the publish window on purpose. `predicted` is read from a stored
+    # extract while `pred_d` is rebuilt by the publisher's own prepare_data(),
+    # so an extract from an earlier fit_date legitimately still carries fixtures
+    # that have since been PLAYED and have therefore left the prediction frame
+    # (it is built from schedules/results at or after `end_date`). Those sit
+    # before the window, were never going to be published, and must not fail an
+    # otherwise healthy publish. An uncovered fixture INSIDE the window is the
+    # defect: predictions exist for it and it would have been published.
+    #
+    # Cups are exempt, and not as a convenience: an uncovered cup fixture is the
+    # DOCUMENTED normal state. publish-iceland-league.R says so at the n_draws
+    # fallback -- "cup matches stay out of pred_d while KSI has not yet drawn
+    # the bracket" -- so for a cup cell the NA-division rows carry no signal at
+    # all and aborting on them would take every cup publish down. The league
+    # case, where pred_d is built from the same fixture frame, is the one where
+    # an uncovered fixture means something has gone wrong.
+    orphans <- if (isTRUE(is_cup)) {
+      predicted[0L, , drop = FALSE]
+    } else {
+      predicted |>
+        dplyr::filter(
+          is.na(.data$division),
+          .data$match_date >= end_date,
+          .data$match_date <= end_date + horizon_days
+        ) |>
+        dplyr::distinct(.data$match_date, .data$home_team, .data$away_team)
+    }
+    if (nrow(orphans) > 0L) {
+      bad <- sprintf(
+        "%s v %s on %s", orphans$home_team, orphans$away_team,
+        format(orphans$match_date, "%Y-%m-%d")
+      )
+      cli::cli_abort(
+        c(
+          "Upcoming fixture(s) in the publish window carry no division: {.val {bad}}.",
+          x = "They would be dropped from next_games.json unseen, publishing a short fixture strip.",
+          i = "`division` is joined from {.arg pred_d} on (home_team, away_team, match_date), and these fixtures are not in it.",
+          i = "Usually a team-name mismatch, or a stored extract out of step with the schedule store."
+        ),
+        call = NULL
+      )
     }
     out <- predicted |>
       dplyr::filter(

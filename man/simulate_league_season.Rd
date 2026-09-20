@@ -30,7 +30,9 @@ strengths, on the match model's own scale), plus any team columns
 \item{remaining_fixtures}{Tibble with columns `home_team`, `away_team` — the
 unplayed fixtures of the season for this division. May be empty (season
 over), in which case placements are the deterministic ranking of the
-realised table.}
+realised table. Every team named must appear in `base_standings$team`: an
+unknown name is an error, never a dropped fixture, because dropping one
+would simulate a season shorter than the one still to be played.}
 
 \item{base_standings}{Tibble with one row per league team: `team`,
 `base_points`, `base_gd`, `base_gf` — the realised points / goal

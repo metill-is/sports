@@ -22,3 +22,9 @@ full leagues config — keeps callers from re-loading the full config per
 call. Anything [prepare_data()] or [fit_league()] reads off the league must
 be in the slice; a field left out is silently `NULL`.
 }
+\details{
+Passes no seed, so [fit_league()] derives a deterministic one from the fit's
+identity (sport, country, sex, `fit_date`) — see its `seed` parameter. This
+is the path every production fit takes, so this is where reproducibility of
+the published posteriors is won or lost.
+}

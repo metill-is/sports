@@ -19,6 +19,12 @@
  */
 
 data {
+  // NOTE (2026-09-20): the prediction-horizon inputs (N_top_teams, top_teams,
+  // time_to_next_games, pred_timediff1/2) were removed. They were supplied by
+  // model-prepare and then never read: the forward random walk they existed to
+  // drive was never run, so forecasts did not widen with horizon and the data
+  // only implied a capability the model did not have. Restore them together
+  // with the propagation if that is ever implemented.
   int<lower=0> K;
   int<lower=0> N;
   int<lower=0> N_rounds;
@@ -30,16 +36,9 @@ data {
   array[N] int<lower=0> goals1;
   array[N] int<lower=0> goals2;
 
-  // Prediction data (declared for data-contract parity with BVP; unused here)
-  int<lower=0> N_top_teams;
-  array[N_top_teams] int<lower=0> top_teams;
-  vector[N_top_teams] time_to_next_games;
-
   int<lower=0> N_pred;
   array[N_pred] int<lower=1, upper=K> team1_pred;
   array[N_pred] int<lower=1, upper=K> team2_pred;
-  vector[N_pred] pred_timediff1;
-  vector[N_pred] pred_timediff2;
 }
 
 transformed data {

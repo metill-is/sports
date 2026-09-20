@@ -18,16 +18,23 @@ bt_pit_values(
 
 \item{marginal}{Score marginal to transform.}
 
-\item{seed}{RNG seed for the PIT randomisation (reproducible).}
+\item{seed}{RNG seed for the displayed `u` randomisation (reproducible).}
 }
 \value{
 Tibble `(sex, match_date, home_team, away_team, division, marginal,
-  observed, u)`, one row per scored match.
+  observed, lo, hi, u)`, one row per scored match.
 }
 \description{
 For each match, builds the as-of predictive pmf of the marginal (`total`,
 `diff`, `home`, `away`) from the posterior-draw counts, looks up the observed
-value from `results`, and computes the randomised PIT ([bt_rpit()]). The match
-key is the federation-name `(sex, match_date, home_team, away_team)`, clean
-between extracts and results.
+value from `results`, and returns BOTH the deterministic PIT band
+`[lo, hi] = [F(y-1), F(y)]` ([bt_pit_bounds()]) and one randomised draw from
+inside it ([bt_rpit()]). The match key is the federation-name
+`(sex, match_date, home_team, away_team)`, clean between extracts and results.
+}
+\details{
+`u` is a single seeded realisation, fit for plotting a histogram but NOT for
+deciding a verdict: a pass/fail read off one randomisation is decided by
+`seed`, not by the model. `lo`/`hi` carry the randomisation-free content so
+[bt_pit_uniformity()] can average its statistics over many draws instead.
 }

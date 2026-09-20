@@ -8,7 +8,7 @@ extract_handball_iceland(
   fit,
   league,
   sex,
-  fit_date = Sys.Date(),
+  fit_date,
   end_date = fit_date,
   root = here::here("data"),
   extracts_root = NULL,
@@ -22,8 +22,10 @@ extract_handball_iceland(
 
 \item{sex}{`"male"` or `"female"`.}
 
-\item{fit_date}{Date stamp written into the partition path. Default
-`Sys.Date()`.}
+\item{fit_date}{Required; there is deliberately no `Sys.Date()` fallback.
+Date stamp written into the partition path, which also seeds the season
+simulation and, through `end_date`, cuts the results/schedule. Pass the
+fit's own date when re-extracting a historical fit.}
 
 \item{end_date}{Date for filtering results / schedule. Default `fit_date`.}
 

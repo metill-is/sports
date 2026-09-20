@@ -56,6 +56,109 @@ filter_results_by_top_divisions <- function(results, divisions, lookback_days,
   ]
 }
 
+#' The complete set of `training_filter` keys.
+#'
+#' Mirrors `training_filter.properties` in `config/leagues.schema.json`, which
+#' is `additionalProperties: false`. A key added there but not here makes the
+#' first fit that uses it abort, which is the direction of failure we want: a
+#' key this layer does not read must never look as though it was applied.
+#' @noRd
+.TRAINING_FILTER_KEYS <- c("divisions", "lookback_days")
+
+#' Validate a league's `training_filter` entry, or abort.
+#'
+#' An ABSENT filter is the normal case -- only `football_iceland` carries one
+#' -- and stays silent. A filter that is PRESENT but incomplete must not. The
+#' guard this replaces was `length(tf$divisions) > 0L &&
+#' !is.null(tf$lookback_days)`: with either key missing or misspelled it fell
+#' straight through to unfiltered training and reported success. `$` partial
+#' matching hides a misspelling rather than exposing it -- `divisions:` typed
+#' as `division:` resolves to `NULL` from here, indistinguishable from "this
+#' league has no filter".
+#'
+#' That exact shape -- a config key quietly absent, the pipeline carrying on --
+#' has already shipped twice in this repo: the whitelist that dropped `betting`
+#' and gave handball `p_draw = 0`, and the whitelist that dropped
+#' `training_filter` and trained football on 4120 rows instead of 2974 for
+#' weeks before anyone noticed. `config/leagues.schema.json` pins the same
+#' shape, but only for entries that came through [load_leagues()] with
+#' validation on; the daily fit hands us a code-built slice (see
+#' `run_fit_targets()`) and the tests hand us literals, and the schema sees
+#' neither.
+#'
+#' @param tf A league's `training_filter` entry, or `NULL` when it has none.
+#' @return `TRUE` when a usable filter is configured, `FALSE` when none is.
+#'   Aborts when one is configured but cannot be applied as written.
+#' @noRd
+.check_training_filter <- function(tf) {
+  if (is.null(tf)) {
+    return(FALSE)
+  }
+
+  # Aliased without the leading dot: cli reads `{.NAME}` inside an inline
+  # expression as a style class, not a variable.
+  expected_keys <- .TRAINING_FILTER_KEYS
+
+  abort_tf <- function(...) {
+    cli::cli_abort(c(
+      "League has a {.field training_filter} that cannot be applied.",
+      ...,
+      i = "Expected exactly {.val {expected_keys}} \\
+           (see {.file config/leagues.schema.json}).",
+      i = "Skipping it silently would train on the unfiltered store and \\
+           still report success -- the failure this guard exists to stop."
+    ))
+  }
+
+  if (!is.list(tf)) {
+    abort_tf(x = "It is {.cls {class(tf)}}, not a list of settings.")
+  }
+
+  # An unnamed element is as unreadable as a misspelt one, so treat both the
+  # same rather than letting `setdiff(NULL, ...)` call an unnamed list clean.
+  keys <- names(tf)
+  if (is.null(keys)) keys <- rep("", length(tf))
+
+  unknown <- setdiff(keys, .TRAINING_FILTER_KEYS)
+  if (length(unknown) > 0L) {
+    unknown[!nzchar(unknown)] <- "<unnamed>"
+    abort_tf(
+      x = "Unrecognised key{?s}: {.val {unknown}}.",
+      i = "A key this layer does not read is a misspelling, not an option."
+    )
+  }
+
+  missing_keys <- setdiff(.TRAINING_FILTER_KEYS, keys)
+  if (length(missing_keys) > 0L) {
+    abort_tf(x = "Missing key{?s}: {.val {missing_keys}}.")
+  }
+
+  # `coerce_array_fields()` may have turned `divisions` into a list, so flatten
+  # before checking. A nested element would survive `length() > 0L` and then be
+  # mangled by `%in%`'s `as.character()` into a literal "c(\"BD\", \"LD1\")",
+  # matching no division and quietly emptying the training set.
+  divisions <- unlist(tf$divisions, use.names = FALSE)
+  if (length(divisions) == 0L || !is.character(divisions) ||
+    anyNA(divisions) || !all(nzchar(divisions))) {
+    abort_tf(x = "{.field divisions} must be one or more non-empty \\
+                  division codes.")
+  }
+
+  lookback <- tf$lookback_days
+  if (length(lookback) != 1L || !is.numeric(lookback) || is.na(lookback) ||
+    lookback < 1) {
+    abort_tf(
+      x = "{.field lookback_days} must be a single number >= 1; \\
+           got {.val {lookback}}.",
+      i = "A non-numeric or NA value makes `window_start` NA, and subsetting \\
+           on an NA date comparison returns rows of NAs rather than dropping \\
+           them."
+    )
+  }
+
+  TRUE
+}
+
 #' Walkover scorelines by sport.
 #'
 #' A forfeited game is recorded at the sport's walkover score: 20-0 in
@@ -118,7 +221,9 @@ filter_results_by_top_divisions <- function(results, divisions, lookback_days,
 #'
 #' @param results `results` rows for one (sport, country, sex).
 #' @param league League config entry; its `sport` sets the walkover score and
-#'   its `training_filter` is applied when set.
+#'   its `training_filter` is applied when set. A `training_filter` that is
+#'   present but unusable aborts (see `.check_training_filter()`) rather than
+#'   falling through to unfiltered training.
 #' @param end_date Training cutoff (inclusive).
 #' @param from_season Optional; drop matches with `season < from_season`.
 #' @param verbose Report how many forfeits and `training_filter` matches were
@@ -138,19 +243,19 @@ model_training_results <- function(results, league, end_date,
   }
 
   tf <- league$training_filter
-  if (!is.null(tf) && length(tf$divisions) > 0L &&
-    !is.null(tf$lookback_days)) {
+  if (.check_training_filter(tf)) {
+    divisions <- unlist(tf$divisions, use.names = FALSE)
     n_before <- nrow(results)
     results <- filter_results_by_top_divisions(
       results,
-      divisions     = tf$divisions,
+      divisions     = divisions,
       lookback_days = as.integer(tf$lookback_days),
       end_date      = end_date
     )
     if (isTRUE(verbose)) {
       cli::cli_alert_info(
         "training_filter: kept {nrow(results)}/{n_before} matches \\
-        (divisions={.val {tf$divisions}}, lookback={tf$lookback_days}d)"
+        (divisions={.val {divisions}}, lookback={tf$lookback_days}d)"
       )
     }
   }
@@ -394,16 +499,14 @@ prepare_data <- function(league,
       dplyr::mutate(team_game = dplyr::row_number()) |>
       dplyr::ungroup()
 
-    first_upcoming <- upcoming_per_team |>
-      dplyr::filter(.data$team_game == 1L) |>
-      dplyr::select("team", next_date = "match_date") |>
-      dplyr::inner_join(latest_game_dates, by = "team") |>
-      dplyr::mutate(
-        timediff = pmin(as.numeric(.data$next_date - .data$latest_date), 100)
-      )
-
-    time_to_next <- first_upcoming$timediff
-    top_teams_df <- teams[teams$team %in% first_upcoming$team, , drop = FALSE]
+    # NOTE (2026-09-20): the `first_upcoming` / `top_teams` /
+    # `time_to_next_games` builder and its correspondence assertion were
+    # removed together with the Stan-side prediction-horizon inputs. They fed a
+    # forward random walk that was computed and then discarded, so no model
+    # declares them any more. Nothing below needs a team's first upcoming
+    # fixture as a separate table: `pred_timediffs` derives every fixture's own
+    # gap, falling back to `latest_date` for a team's first upcoming game, so
+    # the whole block died with the Stan inputs.
 
     pred_timediffs <- upcoming_per_team |>
       dplyr::inner_join(latest_game_dates, by = "team") |>
@@ -453,8 +556,6 @@ prepare_data <- function(league,
       ))
     }
   } else {
-    time_to_next <- numeric(0)
-    top_teams_df <- teams[0L, , drop = FALSE]
     pred_d <- tibble::tibble(
       game_nr = integer(0),
       match_date = as.Date(character()),
@@ -487,12 +588,7 @@ prepare_data <- function(league,
     division             = as.integer(model_d$division_int),
     team1_pred           = as.integer(pred_d$home_nr),
     team2_pred           = as.integer(pred_d$away_nr),
-    pred_timediff1       = as.numeric(pred_d$home_timediff),
-    pred_timediff2       = as.numeric(pred_d$away_timediff),
-    pred_division        = as.integer(pred_d$division_int),
-    time_to_next_games   = as.numeric(time_to_next),
-    top_teams            = as.integer(top_teams_df$team_nr),
-    N_top_teams          = nrow(top_teams_df)
+    pred_division        = as.integer(pred_d$division_int)
   )
 
   list(

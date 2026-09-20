@@ -289,11 +289,25 @@ NULL
   }
 
   if (teams_covered) {
+    # Seeded from fit_date, as the cup pairing draw above and the 2DT
+    # extractor (`extract-iceland-2dt-shared.R`) already are. Unseeded, the
+    # simulation's `rpois` draws came off the ambient RNG, so re-extracting
+    # one fit published different title / relegation probabilities every
+    # time — the Stan seed alone does not make the tables reproducible.
+    # Each division gets its own stream (offset by the division code) so two
+    # divisions in one fit are not simulated on the identical draw sequence.
+    league_seed_base <- if (!is.null(fit_date)) {
+      as.integer(format(as.Date(fit_date), "%Y%m%d"))
+    } else {
+      42L
+    }
+    league_seed <- league_seed_base + sum(utf8ToInt(target_div))
     season_sim <- simulate_league_season(
       sim_inputs_team    = sim_inputs$team,
       sim_inputs_scalar  = sim_inputs$scalar,
       remaining_fixtures = remaining_fixtures,
       base_standings     = base_standings,
+      seed               = league_seed,
       split_format       = split_state$split_format,
       split_groups       = split_state$split_groups
     )
@@ -769,6 +783,9 @@ NULL
 #       - matches: tibble(home_team, away_team, venue, known_winner) when
 #         pairings_known; NULL otherwise. `known_winner` is the team name
 #         for played matches, NA for upcoming.
+#       - partial_pairs: character vector of the ties that WERE found, set
+#         only when the round is neither complete nor empty. Its presence
+#         is an error the simulator aborts on — never a re-draw.
 #
 # Returns NULL when fewer than 8 cup matches with 16 distinct teams are
 # available (e.g. cup season hasn't reached R16 yet).
@@ -948,6 +965,15 @@ NULL
     }
   }
 
+  # Three states, not two. NO rows for a round means it is legitimately
+  # undrawn, and the simulator's uniform re-pairing of the previous round's
+  # winners IS the forecast for a draw that has not been made. SOME but not
+  # all of the ties is a fault in this builder or the store behind it (a leg
+  # beyond `prepare_data()`'s prediction horizon with no `schedule` passed
+  # in, a dropped TBD stub, a mis-ranked window). Reporting that as undrawn
+  # discarded the real pairings AND every played-match pin, and the
+  # simulator then re-paired the whole round at random without a word;
+  # `partial_pairs` marks it so `.cup_round_matches_pfi()` can stop the run.
   build_round <- function(ranks) {
     m <- bracket_matches |> dplyr::filter(.data$rank %in% ranks)
     if (nrow(m) == length(ranks)) {
@@ -960,8 +986,18 @@ NULL
           known_winner = m$known_winner
         )
       )
-    } else {
+    } else if (nrow(m) == 0L) {
       list(pairings_known = FALSE, matches = NULL)
+    } else {
+      # `matches` stays NULL so every downstream `isTRUE(pairings_known)`
+      # reader (the frontier walk, `completed[]`, the bracket payload)
+      # behaves exactly as it does for an undrawn round; only the simulator
+      # reads `partial_pairs`, and it aborts.
+      list(
+        pairings_known = FALSE,
+        matches        = NULL,
+        partial_pairs  = paste(m$home_team, "-", m$away_team)
+      )
     }
   }
 

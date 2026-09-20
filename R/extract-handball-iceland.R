@@ -24,8 +24,10 @@ NULL
 #' @param fit CmdStanMCMC fit object.
 #' @param league League list with sport == "handball" and country == "iceland".
 #' @param sex `"male"` or `"female"`.
-#' @param fit_date Date stamp written into the partition path. Default
-#'   `Sys.Date()`.
+#' @param fit_date Required; there is deliberately no `Sys.Date()` fallback.
+#'   Date stamp written into the partition path, which also seeds the season
+#'   simulation and, through `end_date`, cuts the results/schedule. Pass the
+#'   fit's own date when re-extracting a historical fit.
 #' @param end_date Date for filtering results / schedule. Default `fit_date`.
 #' @param root Data root. Default `here::here("data")`.
 #' @param extracts_root Optional override; defaults to
@@ -34,13 +36,31 @@ NULL
 #' @return `invisible(NULL)`. Writes the partition's Parquet files.
 #' @export
 extract_handball_iceland <- function(fit, league, sex,
-                                     fit_date = Sys.Date(),
+                                     fit_date,
                                      end_date = fit_date,
                                      root = here::here("data"),
                                      extracts_root = NULL,
                                      prep = NULL) {
   stopifnot(league$sport == "handball", league$country == "iceland")
   stopifnot(sex %in% c("male", "female"))
+
+  # `fit_date` is required HERE, not only in `.extract_2dt_iceland_pfi()`. That
+  # helper's missing() guard could never fire while this entry point defaulted
+  # to `Sys.Date()`, because the default was always passed down as a value --
+  # so re-extracting an August fit still landed in a today-stamped partition,
+  # seeded on today and cut at today. Checked explicitly rather than left to
+  # the raw missing-argument error the `fit_date = fit_date` promise would
+  # raise, so the failure names the entry point the caller actually used; the
+  # shape checks (length, NA, NULL) stay in the shared extractor.
+  if (missing(fit_date)) {
+    cli::cli_abort(
+      c(
+        "{.arg fit_date} is required.",
+        "i" = "It keys the partition, seeds the simulation and cuts the data.",
+        "x" = "No {.code Sys.Date()} fallback: pass the fit's own date."
+      )
+    )
+  }
 
   .extract_2dt_iceland_pfi(
     fit = fit,
