@@ -46,8 +46,10 @@ NULL
 #' @param fit CmdStanMCMC fit object.
 #' @param league League list with sport == "basketball" and country == "iceland".
 #' @param sex `"male"` or `"female"`.
-#' @param fit_date Date stamp written into the partition path. Default
-#'   `Sys.Date()`; pass an explicit `as_of` when re-running historically.
+#' @param fit_date Required; there is deliberately no `Sys.Date()` fallback.
+#'   Date stamp written into the partition path, which also seeds the season
+#'   simulation and, through `end_date`, cuts the results/schedule. Pass the
+#'   fit's own date when re-extracting a historical fit.
 #' @param end_date Date for filtering results / schedule. Default `fit_date`.
 #' @param root Data root. Default `here::here("data")`.
 #' @param extracts_root Optional override for the extracts root.
@@ -58,13 +60,27 @@ NULL
 #' @return `invisible(NULL)`. Writes the partition's Parquet files.
 #' @export
 extract_basketball_iceland <- function(fit, league, sex,
-                                       fit_date = Sys.Date(),
+                                       fit_date,
                                        end_date = fit_date,
                                        root = here::here("data"),
                                        extracts_root = NULL,
                                        prep = NULL) {
   stopifnot(league$sport == "basketball", league$country == "iceland")
   stopifnot(sex %in% c("male", "female"))
+
+  # Required here, not only in `.extract_2dt_iceland_pfi()` -- same reason as
+  # `extract_handball_iceland()`: a defaulted `Sys.Date()` is still a value, so
+  # it sailed past the shared extractor's missing() guard and silently
+  # relabelled a historical re-extract as today's partition, seed and cut-off.
+  if (missing(fit_date)) {
+    cli::cli_abort(
+      c(
+        "{.arg fit_date} is required.",
+        "i" = "It keys the partition, seeds the simulation and cuts the data.",
+        "x" = "No {.code Sys.Date()} fallback: pass the fit's own date."
+      )
+    )
+  }
 
   .extract_2dt_iceland_pfi(
     fit = fit,

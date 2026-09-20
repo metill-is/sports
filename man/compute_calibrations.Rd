@@ -26,9 +26,14 @@ Default `100` per K2 in `sports-betting.md`.}
 floor, ceiling).}
 }
 \value{
-Named list with `aggregate` always present and per-market keys
-  only where `n >= k2_min_n`. Per-market keys mirror the `market` column
-  of the recommendations Parquet (`moneyline`, `spread`, `total`, ...).
+Named list of bare numeric multipliers, with `aggregate` always
+  present and per-market keys only where `n >= k2_min_n`. Per-market keys
+  mirror the `market` column of the recommendations Parquet (`moneyline`,
+  `spread`, `total`, ...). The per-key evidence records from
+  [compute_calibration()] (`n`, `raw_ratio`, `clamped`, `basis`) ride along
+  in the `"evidence"` attribute, so a caller can audit WHY a multiplier is
+  what it is; the list values themselves stay scalar because `decide_league()`
+  indexes them per bet with `vapply(..., numeric(1))`.
 }
 \description{
 Returns a named list with an `aggregate` multiplier plus a per-market

@@ -205,6 +205,66 @@ NULL
   invisible(NULL)
 }
 
+# TRUE when a history JSON already holds records worth protecting.
+#
+# Gates the "this round contributed nothing" warnings below so they fire for
+# the cells that actually lose something. A cup has no league table and no
+# final positions, so it lands in the empty-slot branch on EVERY publish;
+# warning on mere existence of the file would put the same two lines in every
+# run's log and teach the operator to scroll past the one run where a league
+# cell really did go dark. Missing or malformed files read as empty -- the
+# same tolerance .append_to_history_pfi() applies to them.
+.history_has_records_pfi <- function(path) {
+  if (!file.exists(path)) {
+    return(FALSE)
+  }
+  tryCatch(
+    NROW(jsonlite::fromJSON(path, simplifyDataFrame = TRUE)$records) > 0L,
+    error = function(e) FALSE
+  )
+}
+
+# Move a fully-written staging directory into the live cell directory, remove
+# the staging directory, and return the number of artefacts committed.
+#
+# Moves FILE BY FILE rather than swapping the directories: the staging dir is
+# a child of the cell, so each rename(2) is same-filesystem and atomic, and
+# the cell directory itself is never absent. A directory swap would have to
+# unlink the live cell first, and metill-platform mirrors this tree with
+# rsync -- a mirror landing in that window would see the cell vanish. The
+# per-file move also means every committed artefact is WHOLE, which an
+# in-place publish could not promise: write_json_consistent() truncates its
+# target before writing, so a crash mid-write left a half-written JSON on a
+# path the consumer was about to copy.
+.commit_staged_cell_pfi <- function(staging_dir, cell_dir) {
+  staged <- list.files(staging_dir, pattern = "\\.json$")
+  moved <- vapply(
+    staged,
+    function(f) {
+      isTRUE(suppressWarnings(file.rename(
+        file.path(staging_dir, f), file.path(cell_dir, f)
+      )))
+    },
+    logical(1L)
+  )
+  if (!all(moved)) {
+    # LOUD, because a half-committed cell is exactly the mixed-vintage state
+    # the staging exists to prevent: the artefacts that did move are this
+    # fit's and the rest are the previous fit's. Nothing here can put that
+    # back, so name it and abort rather than let the publish report success.
+    cli::cli_abort(c(
+      "Failed to commit the staged publish for {.path {cell_dir}}.",
+      "x" = "Could not move {.file {staged[!moved]}} into place.",
+      "!" = "{sum(moved)} of {length(staged)} artefact{?s} had already moved,
+             so this cell now mixes two fits and must be republished before
+             it is mirrored.",
+      "i" = "Check the permissions and free space on {.path {cell_dir}}."
+    ))
+  }
+  unlink(staging_dir, recursive = TRUE)
+  length(staged)
+}
+
 # Assign each match a "matchweek" derived from team-chronological match counts.
 # matchweek(m) = max(home_team_chrono_idx_after_m, away_team_chrono_idx_after_m).
 # A team's chrono_idx is its 1-based position when its played matches are
@@ -683,6 +743,15 @@ NULL
 #'   - `final_positions_history.json` (every fit with played top-flight
 #'     matches)
 #'
+#' None of the three is ever truncated by an empty slot: a fit with nothing
+#' to contribute leaves the published history intact and warns. They are only
+#' written empty on a cell's first publish, so the schema set is complete.
+#'
+#' Each cell is published ATOMICALLY: its artefacts are written to a staging
+#' directory and moved into place together, so a cell on disk is always one
+#' fit's output throughout and never a fresh `meta.json` over stale
+#' projections.
+#'
 #' Plus one publisher-internal accretive file written under
 #' `round_predictions_history_root` (kept out of `output_root` because
 #' metill-platform has no consumer for it):
@@ -854,6 +923,15 @@ publish_iceland_league <- function(extracted,
     error = function(e) NULL
   )
 
+  # Per-cell staging directories, accumulated as the loop creates them and
+  # read once at exit. A cell that aborts part-way through has committed
+  # nothing (its published JSONs are untouched) but has left a half-written
+  # staging dir inside the cell, and the consumer mirrors this tree wholesale
+  # -- so clear them on every exit path, normal or error. Committed cells have
+  # already removed theirs and unlink() on a missing path is a no-op.
+  staging_dirs <- character()
+  on.exit(unlink(staging_dirs, recursive = TRUE), add = TRUE)
+
   for (target_div in division_codes) {
     top_div <- target_div
     is_cup <- isTRUE(division_is_cup[[target_div]])
@@ -877,13 +955,56 @@ publish_iceland_league <- function(extracted,
     # extracts those filters are redundant (and would no-op anyway).
     ext <- extracted[[target_div]]
     if (is.null(ext)) ext <- empty_slot()
-    out_dir <- file.path(
+    cell_dir <- file.path(
       output_root,
       league$sport,
       "iceland",
       sprintf("%s-%s", sex_folder, division_dir_suffix[[target_div]])
     )
+    dir.create(cell_dir, recursive = TRUE, showWarnings = FALSE)
+
+    # STAGE THE CELL, THEN COMMIT IT IN ONE GO. The ten artefacts below are
+    # written one at a time and meta.json goes FIRST, so any exception after
+    # that write used to leave the cell serving a fresh meta.json -- today's
+    # generated_at, fit_date and round -- stapled to yesterday's
+    # final_positions, points_distribution and home_advantage. That cell looks
+    # freshly published and is internally inconsistent, and since
+    # metill-platform rsyncs whatever is on disk the inconsistency reaches the
+    # site and the betting pipeline wearing a current timestamp. Writing into
+    # a staging directory and moving the lot into place only once every
+    # artefact has been written makes the cell either fully this fit or fully
+    # the last one, never a mixture.
+    #
+    # The staging dir is a CHILD of the cell so the commit is a same-
+    # filesystem rename(2), and it is hidden so the recursive list.files() in
+    # validate_publish() does not descend into it (all.files = FALSE skips
+    # dot-directories). `out_dir` is rebound to it rather than renaming ~20
+    # write sites, which also guarantees no artefact is left writing straight
+    # to the live cell.
+    out_dir <- file.path(cell_dir, ".staging")
+    # A run killed outright (OOM, CI timeout) skips the on.exit cleanup, so
+    # never inherit a staging dir: its contents would be committed as if this
+    # run had written them.
+    unlink(out_dir, recursive = TRUE)
     dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
+    staging_dirs <- c(staging_dirs, out_dir)
+    # Seed the staging dir with what is published now. The history files are
+    # read-modify-write (.append_to_history_pfi() appends to whatever it finds
+    # at the path) and three branches below key "has this cell ever
+    # published?" on file.exists(), so an unseeded staging dir would read as a
+    # first publish and truncate every one of them.
+    published_json <- list.files(
+      cell_dir,
+      pattern = "\\.json$", full.names = TRUE
+    )
+    if (length(published_json) > 0L &&
+      !all(file.copy(published_json, out_dir, overwrite = TRUE))) {
+      cli::cli_abort(c(
+        "Could not seed the publish staging area for {.path {cell_dir}}.",
+        "x" = "Publishing on a partial seed would truncate this cell's
+               accretive history files."
+      ))
+    }
 
     # The 2DT sports read the season off the schedule as well as the results,
     # so a published next season is current before its first match (spec
@@ -1186,7 +1307,8 @@ publish_iceland_league <- function(extracted,
       family_divs = family_divs,
       division_badges = .iceland_division_badges(league_key, sex),
       end_date = end_date,
-      venues = .publish_venues_pfi(league$sport)
+      venues = .publish_venues_pfi(league$sport),
+      is_cup = is_cup
     )
 
     write_json_consistent(
@@ -1468,9 +1590,12 @@ publish_iceland_league <- function(extracted,
     # ---- team_strengths_history.json ----------------------------------------
 
     rs_filtered <- ext$round_strengths_quantiles
+    team_strengths_history_path <- file.path(
+      out_dir, "team_strengths_history.json"
+    )
 
-    team_strengths_history_row <- if (nrow(rs_filtered) > 0L) {
-      rs_filtered |>
+    if (nrow(rs_filtered) > 0L) {
+      team_strengths_history_row <- rs_filtered |>
         .intervals_from_quantiles_pfi(
           c("round", "team", "component", "location")
         ) |>
@@ -1484,20 +1609,43 @@ publish_iceland_league <- function(extracted,
           "team", "component", "location", "coverage",
           "median", "lower", "upper"
         )
-    } else {
-      tibble::tibble(
-        fit_date = character(), generated_at = character(),
-        round = integer(), season = integer(),
-        team = character(), component = character(),
-        location = character(), coverage = numeric(),
-        median = numeric(), lower = numeric(), upper = numeric()
+      write_json_consistent(
+        list(schema_version = 1L, records = team_strengths_history_row),
+        team_strengths_history_path,
+        auto_unbox = TRUE, dataframe = "rows", digits = 5, na = "null"
       )
+    } else if (!file.exists(team_strengths_history_path)) {
+      # A cell that has never published still gets the file, because the
+      # publish schema set expects one per cell. `records = list()` serialises
+      # to the same `[]` the typed empty tibble used to produce, so the bytes
+      # (and the golden hashes over them) are unchanged.
+      write_json_consistent(
+        list(schema_version = 1L, records = list()),
+        team_strengths_history_path,
+        auto_unbox = TRUE, dataframe = "rows", digits = 5, na = "null"
+      )
+    } else {
+      # AN EMPTY SLOT NO LONGER TRUNCATES. This file used to be rewritten
+      # unconditionally, so an empty round_strengths_quantiles slot -- a
+      # failed fit, a pruned extract partition, a division missing from the
+      # extract -- blanked the whole strength trajectory while the run
+      # reported success. Unlike the two appended histories this one IS
+      # rebuildable, but only from a LATER good fit: between the empty
+      # publish and that fit the platform's forest plot has no baseline to
+      # draw, and if the extract never comes back the file stays empty
+      # forever. Last fit's trajectory is a coherent, self-dating snapshot;
+      # an empty one is nothing. Keep it and say so.
+      if (.history_has_records_pfi(team_strengths_history_path)) {
+        cell_label <- paste(league$sport, sex, target_div)
+        cli::cli_warn(c(
+          "No round strengths extracted for {.val {cell_label}}.",
+          "!" = "team_strengths_history.json left as published rather than
+                 blanked; it still holds the previous fit's trajectory.",
+          "i" = "Check its {.field generated_at} before reading it as
+                 current."
+        ))
+      }
     }
-    write_json_consistent(
-      list(schema_version = 1L, records = team_strengths_history_row),
-      file.path(out_dir, "team_strengths_history.json"),
-      auto_unbox = TRUE, dataframe = "rows", digits = 5, na = "null"
-    )
 
     # ---- round_predictions_history.json -------------------------------------
     # WHY: this file accumulates per-(round, team) predictions across fits
@@ -1706,22 +1854,45 @@ publish_iceland_league <- function(extracted,
         file.path(out_dir, "points_distribution.json"),
         auto_unbox = TRUE, dataframe = "rows", digits = 5
       )
-      # Always (re)write the history file when the snapshot is empty —
-      # any pre-existing rows here are stale (e.g. BD-team rows written
-      # into an LD cell by an earlier publisher version that didn't apply
-      # the per-division `semi_join`). The append helper never retroacts
-      # on stale rows, so the only safe move is to truncate to empty when
-      # we have no current top-flight to project. The frontend's defensive
-      # filter (see metill-platform finishing-heatmap.js) catches what
-      # this misses for files already in flight.
+      # NEVER TRUNCATE AN ACCRETIVE FILE ON AN EMPTY SLOT.
+      # final_positions_history.json is the only record of what the model
+      # believed about the final table at each past round, and nothing can
+      # rebuild a past round once its fit is pruned. This branch used to
+      # (re)write it to empty unconditionally, so ONE missing or empty
+      # per-division extract partition -- a failed fit, a pruned partition, a
+      # division absent from the extract -- silently destroyed a whole
+      # season of published heatmap history in a run that then reported
+      # success. A round that projects nothing contributes nothing; it does
+      # not get to erase the rounds that did.
+      #
+      # This supersedes the stale-row argument the truncation used to rest on
+      # (BD-team rows written into an LD cell by a publisher version
+      # predating the per-division `semi_join`): those rows are bounded and
+      # historical, the frontend's defensive filter (metill-platform
+      # finishing-heatmap.js) already drops them, and the truncation took
+      # good history with it every single time it fired.
       final_positions_history_path <- file.path(
         out_dir, "final_positions_history.json"
       )
-      write_json_consistent(
-        list(schema_version = 1L, records = list()),
-        final_positions_history_path,
-        auto_unbox = TRUE, dataframe = "rows", digits = 5, na = "null"
-      )
+      if (!file.exists(final_positions_history_path)) {
+        # A cell that has never published still gets the file: the publish
+        # schema set expects one per cell. Same rule as
+        # .write_empty_standings_pfi() applies to standings_history.json.
+        write_json_consistent(
+          list(schema_version = 1L, records = list()),
+          final_positions_history_path,
+          auto_unbox = TRUE, dataframe = "rows", digits = 5, na = "null"
+        )
+      } else if (.history_has_records_pfi(final_positions_history_path)) {
+        cell_label <- paste(league$sport, sex, target_div)
+        cli::cli_warn(c(
+          "No final positions simulated for {.val {cell_label}}.",
+          "!" = "final_positions_history.json left as published rather than
+                 truncated; this round contributed no rows to it.",
+          "i" = "A repeat here means the cell's extract slot is empty --
+                 check the fit and the extract partition, not the publisher."
+        ))
+      }
     }
 
     # ---- home_advantage.json ------------------------------------------------
@@ -1791,9 +1962,14 @@ publish_iceland_league <- function(extracted,
       }
     }
 
-    n_files <- length(list.files(out_dir, pattern = "\\.json$"))
+    # Every artefact for this cell is now written. Only here does any of it
+    # become visible to the consumer. The count is unchanged: the staging dir
+    # was seeded from the live cell, so it holds the same file SET (including
+    # any artefact this run did not rewrite, such as a cup's bracket.json on a
+    # round with no live frontier).
+    n_files <- .commit_staged_cell_pfi(out_dir, cell_dir)
     message(sprintf(
-      "publish_iceland_league: wrote %d JSONs to %s", n_files, out_dir
+      "publish_iceland_league: wrote %d JSONs to %s", n_files, cell_dir
     ))
   }
 

@@ -46,6 +46,24 @@ basketball_iceland:
       male:
         Þór Akureyri: Þór Ak.
         Þór Þorlákshöfn: Þór Þ.
+      # Women's: KKÍ has spelled the SAME 1. deild side four ways in four
+      # consecutive seasons -- "Stjarnan U" (2024, 21 games), "Stjarnan u"
+      # (2025, 18), "Stjarnan b" (2026, 18) and "Stjarnan u" again in the 2027
+      # schedule (22). There is never more than one Stjarnan entry in a given
+      # (season, sex, division) for 1D, and the senior side plays BD as plain
+      # "Stjarnan", so these are one team under an unstable source spelling,
+      # not a B team and a youth team. Unaliased, the 2027 schedule published a
+      # fixture for "Stjarnan u" -- a name absent from team_strengths,
+      # standings and final_positions -- and metill.is rendered a confident
+      # 97% forecast for a side the fit had never seen.
+      # Keflavík's reserve side drifts the same way: "Keflavík U" (2024) then
+      # "Keflavík b" (2025 and the 2027 schedule). Same test as Stjarnan --
+      # never two Keflavík reserve entries in one (season, division), and the
+      # senior side plays BD as plain "Keflavík".
+      female:
+        Stjarnan U: Stjarnan b
+        Stjarnan u: Stjarnan b
+        Keflavík U: Keflavík b
   lengjan:
     competitions: []
     # D2 (2026-09-02): publish-only this season -- competitions emptied so the

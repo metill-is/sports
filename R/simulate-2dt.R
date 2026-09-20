@@ -220,6 +220,39 @@ NEW_TEAM_PRIOR_SPREAD <- 1.5
       call. = FALSE
     )
   }
+  # Announce it. Handing a team prior draws is a real modelling event -- its
+  # whole season is simulated from the division's weakest pair rather than from
+  # anything it has done -- and until 2026-09-20 this file emitted no message of
+  # any kind, so it happened invisibly. That is how "Stjarnan u" came to be
+  # forecast at 97% on metill.is: KKI had spelled an existing side a new way, the
+  # extractor took the string at face value, and it was prior-rated in silence
+  # rather than recognised as a team the fit already knew under another name.
+  # A genuinely promoted club reaching a division before its first fit is the
+  # legitimate case and stays supported; it just no longer passes unremarked.
+  cli::cli_alert_warning(
+    "Prior-rating {length(new)} unfitted team{?s} in this division: {.val {new}}."
+  )
+  # A new name that collapses onto a rated one once case and a reserve suffix
+  # are removed is the signature of source-spelling drift, not a new club --
+  # exactly the Stjarnan U/u/b and Keflavik U/b pattern. Cheap to check, and the
+  # remedy is a data_source.team_aliases entry, so name it.
+  .strip_variant <- function(x) {
+    sub("\\s+(?:[buBU2]|unglinga)$", "", trimws(x))
+  }
+  collides <- new[tolower(.strip_variant(new)) %in%
+    tolower(.strip_variant(unique(rated$team)))]
+  if (length(collides) > 0L) {
+    cli::cli_warn(c(
+      "Unfitted team{?s} {.val {collides}} look{?s/} like a respelling of a \\
+       team this division already rates.",
+      i = "Prior-rating a respelling splits one side's history in two and \\
+           publishes a forecast for a team the fit never saw.",
+      i = "If it is the same side, add a {.field data_source.team_aliases} \\
+           entry in {.file config/leagues.yml} and run \\
+           {.code scripts/renormalise_team_aliases.R --apply}."
+    ))
+  }
+
   bottom <- seq_len(NEW_TEAM_PRIOR_BOTTOM_N)
   per_draw <- rated |>
     dplyr::mutate(total = .data$cur_offense + .data$cur_defense) |>

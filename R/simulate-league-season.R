@@ -130,7 +130,9 @@ NULL
 #' @param remaining_fixtures Tibble with columns `home_team`, `away_team` — the
 #'   unplayed fixtures of the season for this division. May be empty (season
 #'   over), in which case placements are the deterministic ranking of the
-#'   realised table.
+#'   realised table. Every team named must appear in `base_standings$team`: an
+#'   unknown name is an error, never a dropped fixture, because dropping one
+#'   would simulate a season shorter than the one still to be played.
 #' @param base_standings Tibble with one row per league team: `team`,
 #'   `base_points`, `base_gd`, `base_gf` — the realised points / goal
 #'   difference / goals for from already-played matches (0 for an unplayed
@@ -301,11 +303,49 @@ simulate_league_season <- function(sim_inputs_team,
   gd <- matrix(0, nd, n_teams, dimnames = list(NULL, teams))
   gf <- matrix(0, nd, n_teams, dimnames = list(NULL, teams))
 
-  fx <- remaining_fixtures[
-    remaining_fixtures$home_team %in% teams &
-      remaining_fixtures$away_team %in% teams, ,
-    drop = FALSE
-  ]
+  # Every remaining fixture must name two teams of the final table. Dropping an
+  # unmatched one (as this used to) simulates a SHORT season -- fewer matches
+  # than are actually left to play -- and skews every published probability
+  # (title, top six, relegation) with nothing in the log to show for it. That is
+  # how one club spelled four ways across four KKI seasons reached the platform
+  # as a confident 97 % on 2026-09-20.
+  #
+  # Refusing excludes nothing legitimate: every caller already narrows its own
+  # fixture set to the same team set the standings are built from, so a name
+  # that survives that is a naming defect, not an ordinary exclusion.
+  # `.league_base_and_remaining_pfi()` either enumerates the pairs structurally
+  # from `current_top_teams` or filters the KSI schedule to it (which is where
+  # the placeholder schedule rows are dropped); `.league_split_state_pfi()`
+  # filters the playoff schedule the same way and generates the rest from
+  # `split_groups`; the 2DT extractor builds `.remaining_fixtures_2dt()` from
+  # the division's own team list, and a team the fit has never rated is given
+  # prior draws (`.add_new_team_priors_2dt()`) rather than left out.
+  if (nrow(remaining_fixtures) > 0L) {
+    # A fixture frame without the team columns is the same failure by another
+    # route: `$` would return NULL and every fixture would vanish silently.
+    .require_cols_slss(
+      remaining_fixtures, c("home_team", "away_team"), "remaining_fixtures"
+    )
+    unknown <- setdiff(
+      unique(c(
+        as.character(remaining_fixtures$home_team),
+        as.character(remaining_fixtures$away_team)
+      )),
+      teams
+    )
+    if (length(unknown) > 0L) {
+      cli::cli_abort(
+        c(
+          "simulate_league_season: remaining fixture team(s) absent from the final table: {.val {unknown}}.",
+          x = "Simulating without them would play a short season and skew every placement and points probability.",
+          i = "`base_standings` teams: {.val {teams}}.",
+          i = "Usually one club spelled two ways: add an alias under the sport's {.field data_source.team_aliases} and renormalise the stored rows."
+        ),
+        call = NULL
+      )
+    }
+  }
+  fx <- remaining_fixtures
   for (i in seq_len(nrow(fx))) {
     idx_h <- cbind(draws, match(as.character(fx$home_team[i]), teams))
     idx_a <- cbind(draws, match(as.character(fx$away_team[i]), teams))

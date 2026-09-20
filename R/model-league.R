@@ -21,6 +21,40 @@ NULL
   as.numeric(v)
 }
 
+# Derive a deterministic sampler seed from a fit's own identity.
+#
+# WHY: the production path (`fit_one()` -> `fit_league()`) passed no seed and
+# `fit_league()`'s own default was NULL, so cmdstanr drew a fresh random seed
+# on every run. A published forecast therefore could not be regenerated from
+# its stored inputs -- and these posteriors both get quoted in articles and
+# size real-money stakes, so "roughly the same numbers" is not good enough.
+#
+# A fixed constant would be worse than no fix: every refit of every league
+# would replay one PRNG stream. Keying on the fit's identity instead means a
+# refit of the SAME fit reproduces it exactly, while the next fit_date (or the
+# next round, in round mode) gets a fresh stream.
+#
+# The key is deliberately the `fit_diagnostics` partition key (sport, country,
+# sex, fit_date), so the seed behind any persisted fit is recoverable from its
+# diagnostics row via `sports:::.fit_seed()` -- no second source of truth to
+# drift out of sync with the row.
+#
+# djb2 in plain R rather than a hash from a package, for two reasons: the
+# intermediate stays below 2^53 so double arithmetic is exact (h * 33 with
+# h < 2^31 peaks around 7.1e10), and the mapping cannot drift when a
+# dependency changes its hash implementation -- a derivation that silently
+# changes under you is not a reproducibility guarantee. Folded into
+# [1, 2^31 - 1] because Stan wants a positive int32 seed. NULL components
+# (`season`/`round_cutoff` outside round mode) drop out of the key.
+.fit_seed <- function(...) {
+  key <- paste(as.character(c(...)), collapse = "|")
+  h <- 5381
+  for (b in as.integer(charToRaw(enc2utf8(key)))) {
+    h <- (h * 33 + b) %% 2147483647
+  }
+  as.integer(h) + 1L
+}
+
 #' End-to-end: prepare data, fit Stan, extract posteriors, write beliefs.
 #'
 #' Supports two call modes:
@@ -55,7 +89,15 @@ NULL
 #'   hit 7% divergent transitions at the default and tripped the diagnostic
 #'   gate. Set `SPORTS_FIT_ADAPT_DELTA=0.99` to escalate if 0.95 still fails.
 #' @param chains Number of MCMC chains. Passed to `fit_model()`.
-#' @param seed Integer seed for reproducibility. NULL = cmdstanr default.
+#' @param seed Integer seed for reproducibility. `NULL` (the default, and what
+#'   the production `fit_one()` path uses) derives one deterministically from
+#'   the fit's own identity -- sport, country, sex, `fit_date`, plus `season`
+#'   and `round_cutoff` in round mode -- so a refit of the same fit reproduces
+#'   it exactly while successive fits draw fresh streams. Those are the
+#'   `fit_diagnostics` partition columns, so the seed behind a persisted fit is
+#'   recoverable from its diagnostics row with `sports:::.fit_seed()`. Pass an
+#'   integer to pin the stream explicitly (replay and the walk-forward
+#'   backtest pin one per `run_date`); an explicit seed is used as given.
 #' @param from_season Optional integer: earliest season to include in training data.
 #' @param schedule_horizon_days Days ahead of `end_date` to include from schedule. Default 14.
 #' @param write_archive Write `beliefs/archive/` in addition to `beliefs/latest/`? Default TRUE.
@@ -200,6 +242,26 @@ fit_league <- function(league_key = NULL,
       call = NULL
     )
   }
+
+  # Resolve the seed BEFORE sampling so the run has a recorded, reproducible
+  # stream. A NULL here used to reach cmdstanr, which then picked a random
+  # seed that was never written down anywhere. `.fit_seed()` keys on the same
+  # columns the diagnostics row is partitioned by, so the fit is regenerable
+  # from what gets persisted below. An explicit caller seed wins untouched.
+  if (is.null(seed)) {
+    seed <- .fit_seed(
+      league$sport, league$country, sex, format(as.Date(fit_date)),
+      season, round_cutoff
+    )
+  }
+  # Announce it either way. The diagnostics row carries the key the seed is
+  # derived from, but only for the `method = "sample"` daily path; a
+  # pathfinder/variational or round-mode fit writes no diagnostics row at all,
+  # and an operator staring at a run log should not have to re-derive the seed
+  # to know which stream produced the numbers in front of them.
+  cli::cli_alert_info(
+    "fit_league({league$sport}/{league$country}/{sex}): sampler seed = {seed}"
+  )
 
   fit <- fit_model(
     stan_data       = prep$stan_data,
@@ -360,6 +422,11 @@ fit_league <- function(league_key = NULL,
 #' full leagues config — keeps callers from re-loading the full config per
 #' call. Anything [prepare_data()] or [fit_league()] reads off the league must
 #' be in the slice; a field left out is silently `NULL`.
+#'
+#' Passes no seed, so [fit_league()] derives a deterministic one from the fit's
+#' identity (sport, country, sex, `fit_date`) — see its `seed` parameter. This
+#' is the path every production fit takes, so this is where reproducibility of
+#' the published posteriors is won or lost.
 #'
 #' @param static Per-league static slice (sport, country, stan_model, sexes,
 #'   data_source, training_filter).

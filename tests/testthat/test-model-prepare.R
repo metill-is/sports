@@ -36,14 +36,29 @@ test_that("prepare_data builds a stan_data list with all expected fields", {
     "team1", "team2", "round1", "round2",
     "time_between_matches",
     "goals1", "goals2", "division", "season", "season_first",
-    "team1_pred", "team2_pred",
-    "pred_timediff1", "pred_timediff2", "pred_division",
-    "time_to_next_games", "top_teams", "N_top_teams"
+    "team1_pred", "team2_pred", "pred_division"
   )
   expect_true(all(required %in% names(sd)),
     info = paste(
       "missing:",
       paste(setdiff(required, names(sd)), collapse = ", ")
+    )
+  )
+
+  # The prediction-horizon inputs (2026-09-20) must stay gone. They drove a
+  # forward random walk that no Stan model in this repo declares any more, so
+  # re-introducing them on the R side alone would silently rebuild data that is
+  # computed on every fit and then thrown away -- the exact dead weight the
+  # removal was for. cmdstanr ignores unused entries, so only this assertion
+  # catches a regression.
+  removed <- c(
+    "pred_timediff1", "pred_timediff2",
+    "time_to_next_games", "top_teams", "N_top_teams"
+  )
+  expect_false(any(removed %in% names(sd)),
+    info = paste(
+      "unexpectedly present:",
+      paste(intersect(removed, names(sd)), collapse = ", ")
     )
   )
 
@@ -356,7 +371,8 @@ test_that("model_training_results drops basketball forfeits in either direction"
   # 126-19 is a real women's 1. deild blowout (KR-IR, 2024-01-05) and stays.
   results <- forfeit_rows("basketball", c(20, 0, 126, 85, 20), c(0, 20, 19, 80, 2))
   kept <- model_training_results(
-    results, list(sport = "basketball"), end_date = as.Date("2100-02-01")
+    results, list(sport = "basketball"),
+    end_date = as.Date("2100-02-01")
   )
   expect_equal(kept$home_score, c(126L, 85L, 20L))
   expect_equal(kept$away_score, c(19L, 80L, 2L))
@@ -365,7 +381,8 @@ test_that("model_training_results drops basketball forfeits in either direction"
 test_that("model_training_results drops handball forfeits in either direction", {
   results <- forfeit_rows("handball", c(10, 0, 31, 10), c(0, 10, 27, 1))
   kept <- model_training_results(
-    results, list(sport = "handball"), end_date = as.Date("2100-02-01")
+    results, list(sport = "handball"),
+    end_date = as.Date("2100-02-01")
   )
   expect_equal(kept$home_score, c(31L, 10L))
   expect_equal(kept$away_score, c(27L, 1L))
@@ -374,7 +391,8 @@ test_that("model_training_results drops handball forfeits in either direction", 
 test_that("model_training_results keeps football's 3-0, which a forfeit shares", {
   results <- forfeit_rows("football", c(3, 0, 20, 10), c(0, 3, 0, 0))
   kept <- model_training_results(
-    results, list(sport = "football"), end_date = as.Date("2100-02-01")
+    results, list(sport = "football"),
+    end_date = as.Date("2100-02-01")
   )
   expect_equal(nrow(kept), 4L)
 })

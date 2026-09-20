@@ -84,6 +84,15 @@ latest_fit_date <- function(static, sex, root) {
 #' and fit age only sets the *severity* once the fit is genuinely behind the
 #' data. Off-season cells (no upcoming games) are PAUSED, as before. This
 #' mirrors the match-proximity fix applied to `check_odds_freshness`.
+#'
+#' Neither predicate is allowed to fail into a healthy answer: an error from
+#' either yields a per-cell `check_error` FAIL row naming the message. Both
+#' already return `FALSE` for a missing or empty partition, so an error is
+#' never the benign case -- it is data this snapshot could not read, and
+#' reading that as "off-season" or "current with results" is exactly the silent
+#' green the check exists to prevent. The catch is per cell rather than left to
+#' `pipeline_health()`'s `safe()` wrapper, which would collapse every other
+#' cell's row into one `check_error` row and lose their identity.
 #' @noRd
 check_fit_freshness <- function(leagues, root, now, th) {
   today <- as.Date(now, tz = "UTC")
@@ -99,9 +108,22 @@ check_fit_freshness <- function(leagues, root, now, th) {
     )
     for (sx in .cell_sexes(lg)) {
       scope <- paste(key, sx)
+      # Captured, not coerced: `error = function(e) FALSE` made an unreadable
+      # schedule partition indistinguishable from a genuine off-season, and
+      # PAUSED is the one status overall_health_status() never escalates -- so
+      # a corrupt partition reported as "intentionally paused" and the whole
+      # snapshot stayed green.
       upcoming <- tryCatch(has_upcoming_games(static, sx, root = root),
-        error = function(e) FALSE
+        error = function(e) e
       )
+      if (inherits(upcoming, "error")) {
+        rows[[scope]] <- health_row(
+          "check_error", scope, "FAIL",
+          paste0("has_upcoming_games() errored: ", conditionMessage(upcoming)),
+          "n/a"
+        )
+        next
+      }
       if (!isTRUE(upcoming)) {
         rows[[scope]] <- health_row(
           "fit_freshness", scope, "PAUSED", "no upcoming games", "n/a"
@@ -116,9 +138,23 @@ check_fit_freshness <- function(leagues, root, now, th) {
         next
       }
       age <- as.numeric(today - fd)
+      # Same reason as above, and worse: `error = function(e) FALSE` landed on
+      # the `!isTRUE(behind)` branch, so an unreadable results or beliefs
+      # partition was reported OK with the value "current with results" -- the
+      # snapshot asserted the fit was up to date on data it had just failed to
+      # read. needs_refit() returns FALSE on its own for empty results, so an
+      # error here is always a real read failure.
       behind <- tryCatch(needs_refit(static, sx, root = root),
-        error = function(e) FALSE
+        error = function(e) e
       )
+      if (inherits(behind, "error")) {
+        rows[[scope]] <- health_row(
+          "check_error", scope, "FAIL",
+          paste0("needs_refit() errored: ", conditionMessage(behind)),
+          "n/a"
+        )
+        next
+      }
       status <- if (!isTRUE(behind)) {
         "OK"
       } else if (age > th$fit_age_fail_days) {
@@ -534,6 +570,16 @@ check_placement_health <- function(root, now, th) {
 #' non-atomic write). Each sub-check is wrapped so one failure degrades to a
 #' single `check_error` row rather than aborting the whole snapshot.
 #'
+#' `check_error` is the one check name that means "this did not run", as
+#' opposed to every other name, which means "this ran and judged". Such rows
+#' are always `FAIL`, never `WARN`: the sole alert channel fires on
+#' `overall == "FAIL"` (see HONEST LIMIT below), so a crashed check reported as
+#' `WARN` was invisible to the only thing watching. They are emitted for a
+#' `load_leagues()` failure (scope `load_leagues`, which used to be swallowed
+#' into an empty, green snapshot), for a per-cell read failure inside
+#' [check_fit_freshness()] (scope = the cell), and by the `safe()` wrapper for
+#' anything else that aborts (scope `pipeline_health`).
+#'
 #' The three publish-side checks were added 2026-09-04. Until then NOTHING here
 #' read `data/publish/`, which is how basketball and handball published nothing
 #' at all from the Plan-7 cutover to 2026-09 while every composed check stayed
@@ -557,15 +603,46 @@ pipeline_health <- function(root = here::here("data"),
                             now = Sys.time(),
                             leagues = NULL) {
   th <- health_thresholds()
+  # A config that will not parse is the loudest failure in this file, not an
+  # empty clean report. Coerced to `list()`, every per-league check returned
+  # zero rows and overall_health_status() collapsed to "OK": the snapshot went
+  # green *because* its central input was unreadable. Aborting would be worse
+  # than a row -- 07_healthcheck.R would die before writing status.json, and
+  # healthcheck.yml's `if: always()` alert step would then read the last
+  # COMMITTED snapshot and decide on stale data -- so the message is carried
+  # into a FAIL row and the root-scoped checks below still run.
+  config_error <- NULL
   if (is.null(leagues)) {
-    leagues <- tryCatch(load_leagues(), error = function(e) list())
+    leagues <- tryCatch(load_leagues(), error = function(e) {
+      config_error <<- conditionMessage(e)
+      list()
+    })
   }
+  # A sub-check that CRASHED is not a soft signal. This used to downgrade any
+  # error to WARN, but the only alert channel -- healthcheck.yml failing the run
+  # on `overall == "FAIL"` so GitHub emails the maintainer -- fires on FAIL
+  # alone, so a crashed check was unreachable by it: the snapshot silently lost
+  # a whole check's worth of coverage and nobody was told. Crashes therefore
+  # FAIL. The severity vocabulary is deliberately unchanged (OK < WARN < FAIL,
+  # plus PAUSED) -- a fourth status would drop straight out of
+  # 07_healthcheck.R's `status %in% c("WARN", "FAIL")` breach printer and out of
+  # write_health_status()'s n_fail/n_warn counts. What separates a crash from a
+  # breached threshold is the `check` column: "check_error" means the check
+  # itself died, any other name means it ran and judged.
   safe <- function(expr) {
     tryCatch(expr, error = function(e) {
-      health_row("check_error", "pipeline_health", "WARN", conditionMessage(e), "n/a")
+      health_row("check_error", "pipeline_health", "FAIL", conditionMessage(e), "n/a")
     })
   }
   dplyr::bind_rows(
+    if (is.null(config_error)) {
+      NULL
+    } else {
+      health_row(
+        "check_error", "load_leagues", "FAIL",
+        paste0("load_leagues() errored: ", config_error), "config parses"
+      )
+    },
     safe(check_fit_freshness(leagues, root, now, th)),
     safe(check_odds_freshness(leagues, root, now, th)),
     safe(check_diagnostics_drift(root, th)),

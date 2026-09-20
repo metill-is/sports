@@ -36,7 +36,8 @@ Default `100`; tail quantiles drive the spread/total stakes.}
 Invisibly a named list of extracted diagnostic metrics
   (`div_frac`, `treedepth_frac`, `min_ebfmi`, `max_rhat`,
   `min_ess_bulk`, `min_ess_tail`, ...), on success. Stops with a clear
-  diagnostic on failure.
+  diagnostic on failure — either a breached threshold, or no evaluable
+  gate at all. A partial skip (some metrics `NA`) warns and returns.
 }
 \description{
 Pre-2026-05-15 no R-side code inspected the cmdstanr fit's diagnostics
@@ -47,5 +48,9 @@ become live bets via the placer. The 2026-04-12 memory note about
 approximate-inference crashing left the converged-but-bad full-NUTS
 failure mode uncovered. Audit 2026-05-15 §I. 2026-05-30: also gates
 treedepth saturation, E-BFMI, and tail ESS, and returns the metrics.
+2026-09-20: the gate was itself fail-open — a cmdstanr accessor failure
+NA'd every metric, every gate skipped, and this function reported success
+on a fit nothing had inspected. It now warns whenever a gate had to be
+skipped, and aborts when *no* gate could be evaluated at all.
 }
 \keyword{internal}

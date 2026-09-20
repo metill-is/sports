@@ -55,7 +55,15 @@ gate. Set `SPORTS_FIT_ADAPT_DELTA=0.99` to escalate if 0.95 still fails.}
 
 \item{chains}{Number of MCMC chains. Passed to `fit_model()`.}
 
-\item{seed}{Integer seed for reproducibility. NULL = cmdstanr default.}
+\item{seed}{Integer seed for reproducibility. `NULL` (the default, and what
+the production `fit_one()` path uses) derives one deterministically from
+the fit's own identity -- sport, country, sex, `fit_date`, plus `season`
+and `round_cutoff` in round mode -- so a refit of the same fit reproduces
+it exactly while successive fits draw fresh streams. Those are the
+`fit_diagnostics` partition columns, so the seed behind a persisted fit is
+recoverable from its diagnostics row with `sports:::.fit_seed()`. Pass an
+integer to pin the stream explicitly (replay and the walk-forward
+backtest pin one per `run_date`); an explicit seed is used as given.}
 
 \item{from_season}{Optional integer: earliest season to include in training data.}
 

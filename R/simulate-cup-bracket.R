@@ -92,6 +92,110 @@ NULL
 
 # ---- One-draw bracket walker -----------------------------------------------
 
+# Resolve one round's pairings from `bracket_state$rounds[[round_name]]`.
+#
+# Returns the round's match tibble when the draw is known, or NULL when the
+# round is legitimately undrawn — KSÍ has not made the draw yet, so the
+# caller pairs the previous round's winners uniformly at random, which IS
+# the forecast for a free draw.
+#
+# WHY this is strict about every other shape: the walker used to treat the
+# drawn case as a narrow `if` and send *everything else* down the random
+# branch. A round that was half-built, row-short, or mis-shaped therefore
+# became a uniform re-pairing with no message at all. For a late round that
+# merely throws away information; for the entry round it discards the real
+# draw AND every played-match pin, and the simulator then publishes a
+# plausible, wholly fictional bracket into a public forecast and the
+# betting pipeline. Exactly one shape means "undrawn" — `pairings_known`
+# FALSE, no matches attached, and no `partial_pairs`: the builder found
+# NONE of the round's ties. A round it found only SOME of carries
+# `partial_pairs` and aborts here, because the real draw exists and
+# re-pairing over it is the failure above. Anything else is a bug in
+# `.build_bracket_state_pfi()` or a corrupted store, and must stop the run.
+.cup_round_matches_pfi <- function(round, round_name, n_m) {
+  if (!is.list(round)) {
+    cli::cli_abort(c(
+      "Cup round {.val {round_name}} is missing or malformed in {.arg bracket_state$rounds}.",
+      "x" = "Expected a list; got {.cls {class(round)}}.",
+      "i" = "An undrawn round still needs an entry: {.code list(pairings_known = FALSE, matches = NULL)}."
+    ))
+  }
+
+  known <- round$pairings_known
+  if (!is.logical(known) || length(known) != 1L || is.na(known)) {
+    cli::cli_abort(c(
+      "Cup round {.val {round_name}} has a malformed {.field pairings_known}.",
+      "x" = "Expected a single non-NA logical; got {.cls {class(known)}} of length {length(known)}.",
+      "i" = "Without a usable flag the round's real draw cannot be told apart from an undrawn one."
+    ))
+  }
+
+  n_rows <- if (is.null(round$matches)) 0L else nrow(round$matches)
+
+  if (!known) {
+    # A round the builder saw only PART of is not undrawn. It is the one
+    # shape that reaches here looking exactly like a free draw while the
+    # real ties already exist — a quarter-final leg dropped because it sits
+    # beyond the model's prediction horizon, a filtered TBD stub, a
+    # mis-ranked bracket window. Re-pairing the survivors at random then
+    # throws away the drawn ties AND every played-match pin, and publishes a
+    # bracket that simply is not the competition being played.
+    if (length(round$partial_pairs) > 0L) {
+      cli::cli_abort(c(
+        "Cup round {.val {round_name}} is only partly drawn: {length(round$partial_pairs)} of {n_m} tie{?s} found.",
+        "x" = "Found {.val {round$partial_pairs}}.",
+        "i" = "Complete the round in {.fun .build_bracket_state_pfi} — a missing leg usually means it lies beyond {.fun prepare_data}'s prediction horizon and the raw schedule store was not passed in."
+      ))
+    }
+
+    # Pairings carried under a FALSE flag are a contradiction: either the
+    # draw is known and the flag is wrong, or the rows are stale. Falling
+    # through to the random branch would silently bin a real draw, which is
+    # the failure this guard exists for.
+    if (n_rows > 0L) {
+      cli::cli_abort(c(
+        "Cup round {.val {round_name}} is flagged undrawn but carries {n_rows} match row{?s}.",
+        "x" = "{.field pairings_known} is FALSE while {.field matches} is non-empty.",
+        "i" = "Set {.field pairings_known} to TRUE for a drawn round, or drop the rows — the simulator will not re-draw over real pairings."
+      ))
+    }
+    return(NULL)
+  }
+
+  if (!is.data.frame(round$matches)) {
+    cli::cli_abort(c(
+      "Cup round {.val {round_name}} is flagged drawn but has no match table.",
+      "x" = "{.field pairings_known} is TRUE while {.field matches} is {.cls {class(round$matches)}}.",
+      "i" = "A drawn round must carry its {n_m} pairing{?s}."
+    ))
+  }
+
+  # A row-count mismatch is the dangerous case: a partly-populated round
+  # (say 3 of 4 quarter-finals scraped) used to be discarded wholesale and
+  # re-drawn at random, so the published bracket disagreed with the
+  # competition while looking entirely normal.
+  if (n_rows != n_m) {
+    cli::cli_abort(c(
+      "Cup round {.val {round_name}} has {n_rows} match row{?s}; expected {n_m}.",
+      "i" = "A short or over-long round means the bracket builder mis-ranked the cup matches — fix the state rather than simulating a different competition."
+    ))
+  }
+
+  # venue and known_winner are read positionally per match. A missing venue
+  # column silently degrades every tie to neutral (no home advantage), so
+  # check the full contract rather than only the pairing columns.
+  required <- c("home_team", "away_team", "venue", "known_winner")
+  missing_cols <- setdiff(required, names(round$matches))
+  if (length(missing_cols) > 0L) {
+    cli::cli_abort(c(
+      "Cup round {.val {round_name}} is missing match column{?s} {.val {missing_cols}}.",
+      "i" = "Required: {.val {required}}."
+    ))
+  }
+
+  round$matches
+}
+
 # Walks R16 -> (QF draw) -> QF -> (SF draw) -> SF -> Final for one draw.
 #
 # Returns a named integer vector: team -> max round reached.
@@ -121,9 +225,12 @@ NULL
   round_reached <- stats::setNames(rep(0L, length(cup_teams)), cup_teams)
 
   # The bracket walker. Each round either has known pairings (from results /
-  # schedule) or has its pairings simulated via a uniform random permutation
-  # of the previous round's winners. Per-match outcomes are similarly either
-  # known (played match) or simulated via sim_match.
+  # schedule) or is explicitly undrawn, in which case its pairings are
+  # simulated via a uniform random permutation of the previous round's
+  # winners. Any other shape aborts in .cup_round_matches_pfi() — a
+  # malformed round must not decay into a random re-pairing. Per-match
+  # outcomes are similarly either known (played match) or simulated via
+  # sim_match.
   ROUND_SEQ <- c("R16", "R8", "SF", "Final")
   ROUND_SIZE <- c(R16 = 8L, R8 = 4L, SF = 2L, Final = 1L)
 
@@ -133,10 +240,19 @@ NULL
     round <- bracket_state$rounds[[round_name]]
     n_m <- ROUND_SIZE[[round_name]]
 
-    if (isTRUE(round$pairings_known) && !is.null(round$matches) &&
-      nrow(round$matches) == n_m) {
-      matches <- round$matches
-    } else {
+    matches <- .cup_round_matches_pfi(round, round_name, n_m)
+    if (is.null(matches)) {
+      # Genuinely undrawn round: a uniform permutation of the surviving
+      # teams is the correct forecast for a free draw that has not been
+      # made yet. Guard the pool size first — a short winner list would
+      # index past the end and yield NA "teams", which .simulate_cup_match_pfi
+      # then fails on with an opaque subscript error one layer down.
+      if (length(current_winners) != 2L * n_m) {
+        cli::cli_abort(c(
+          "Cannot draw cup round {.val {round_name}}: {length(current_winners)} team{?s} available, {2L * n_m} needed.",
+          "i" = "The previous round produced the wrong number of winners — check {.field cup_teams} and the round sizes."
+        ))
+      }
       perm <- sample.int(length(current_winners))
       paired <- current_winners[perm]
       matches <- tibble::tibble(
@@ -193,8 +309,10 @@ default_tiebreak_opts <- function(max_iter = 50L) {
 #' remaining cup bracket (R16 -> QF -> SF -> Final) using a bivariate-Poisson
 #' match model. Per-match tiebreaking is rejection-sampling at the 90'
 #' lambdas (no separate ET / shootout model — see [`default_tiebreak_opts()`]).
-#' Pairings for rounds beyond R16 are drawn uniformly at random per draw
-#' unless `bracket_state$qf_pairings_known` / `$sf_pairings_known` is `TRUE`.
+#' A round whose pairings are known is walked exactly as drawn, played-match
+#' pins included; a round explicitly marked undrawn is paired uniformly at
+#' random per posterior draw. Any other round shape is an error, never a
+#' silent re-draw — see `bracket_state` below.
 #' Aggregates outcomes to cumulative per-(team, round_name) probabilities.
 #'
 #' @param sim_inputs_team Tibble with columns `team`, `.draw`, `cur_offense`,
@@ -203,13 +321,22 @@ default_tiebreak_opts <- function(max_iter = 50L) {
 #' @param sim_inputs_scalar Tibble with columns `.draw`, `mean_log_goals`,
 #'   `alpha_mu3`, `beta_mu3_strength_diff`. Produced by
 #'   `.extract_sim_inputs_pfi()`.
-#' @param bracket_state Named list:
-#'   - `r16`: 8-row tibble with `home_team`, `away_team`, `venue` ("home" /
-#'     "away" / "neutral"), `known_winner` (team name string or `NA`).
-#'   - `qf_pairings_known` (logical, default `FALSE`).
-#'   - `qf` (optional): 4-row tibble with `prev_left`, `prev_right` (1..8
-#'     match-number indices into R16), `venue`.
-#'   - `sf_pairings_known`, `sf` (analogous, 2 rows).
+#' @param bracket_state Named list, as built by `.build_bracket_state_pfi()`:
+#'   - `cup_teams`: character(16) — the R16 entrants.
+#'   - `rounds`: named list keyed `"R16"`, `"R8"`, `"SF"`, `"Final"`. Each
+#'     entry is a list of `pairings_known` (a single non-`NA` logical) and
+#'     `matches`. When `pairings_known` is `TRUE`, `matches` is a data frame
+#'     with exactly 8 / 4 / 2 / 1 rows and columns `home_team`, `away_team`,
+#'     `venue` ("home" / "away" / "neutral") and `known_winner` (team name
+#'     for a played match, `NA` otherwise). When it is `FALSE` the round is
+#'     undrawn, `matches` must be absent, and the pairings are drawn
+#'     uniformly at random per posterior draw. A round the builder found
+#'     only some of the ties for is neither: it carries `partial_pairs`
+#'     (the ties it did find) and aborts.
+#'   Any other shape — a missing round, a non-logical `pairings_known`, a
+#'   row-count mismatch, missing match columns, a partly-drawn round, or
+#'   pairings carried under `pairings_known = FALSE` — aborts. Randomising over a malformed round
+#'   would publish a bracket that does not match the real competition.
 #' @param tiebreak_opts Optional override of [`default_tiebreak_opts()`].
 #' @param pairing_seed Optional integer. When set, `set.seed()` is called
 #'   once at the entry point so the full simulation is reproducible.

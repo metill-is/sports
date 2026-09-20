@@ -63,7 +63,8 @@ leapfrog stepsize, fewer divergences, slower warmup.}
 
 \item{check_diagnostics}{If `TRUE` (default), call
 [check_stan_diagnostics()] after sampling and abort with a clear
-diagnostic on divergent transitions, R-hat, or ESS problems. Set to
+diagnostic on divergent transitions, R-hat, or ESS problems — or on a
+fit whose diagnostics could not be read at all. Set to
 `FALSE` only for explicit pre-flight model exploration where you
 know the fit will be poor.}
 

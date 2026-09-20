@@ -24,10 +24,26 @@ ledger_row <- function(sport = "basketball", country = "iceland", sex = "male",
 test_that("compute_calibration returns prior_ratio with empty ledger", {
   tmp <- withr::local_tempdir()
   league <- list(sport = "basketball", country = "iceland")
-  expect_equal(
-    compute_calibration(league, sex = "male", root = tmp),
-    1.0
-  )
+  out <- compute_calibration(league, sex = "male", root = tmp)
+  expect_equal(out$multiplier, 1.0)
+  # The multiplier alone cannot say "we know nothing" -- the evidence fields do.
+  expect_identical(out$n, 0L)
+  expect_true(is.na(out$raw_ratio))
+  expect_false(out$clamped)
+  expect_identical(out$basis, "no_ledger_dir")
+})
+
+test_that("compute_calibration separates a partition miss from an absent ledger", {
+  # The ledger store exists, but holds nothing for this (sport, country).
+  root <- setup_ledger(do.call(rbind, lapply(1:5, function(i) {
+    ledger_row(sport = "handball")
+  })))
+  league <- list(sport = "basketball", country = "iceland")
+
+  out <- compute_calibration(league, sex = "male", root = root)
+  expect_equal(out$multiplier, 1.0)
+  expect_identical(out$n, 0L)
+  expect_identical(out$basis, "no_partition_rows")
 })
 
 test_that("compute_calibration returns the closed-form multiplier", {
@@ -46,7 +62,12 @@ test_that("compute_calibration returns the closed-form multiplier", {
     prior_weight = 30, prior_ratio = 1.0,
     floor = 0.5, ceiling = 1.5
   )
-  expect_equal(out, round(37 / 35, 3))
+  expect_equal(out$multiplier, round(37 / 35, 3))
+  # raw_ratio is the unrounded, unclamped estimate the multiplier came from.
+  expect_equal(out$raw_ratio, 37 / 35)
+  expect_identical(out$n, 10L)
+  expect_false(out$clamped)
+  expect_identical(out$basis, "evidence")
 })
 
 test_that("compute_calibration filters by sex", {
@@ -57,23 +78,34 @@ test_that("compute_calibration filters by sex", {
   root <- setup_ledger(rows)
   league <- list(sport = "basketball", country = "iceland")
 
-  male_mult <- compute_calibration(league, sex = "male", root = root)
-  female_mult <- compute_calibration(league, sex = "female", root = root)
+  male <- compute_calibration(league, sex = "male", root = root)
+  female <- compute_calibration(league, sex = "female", root = root)
   # Male: all win, p=0.5 -> high multiplier
-  expect_gt(male_mult, 1.0)
+  expect_gt(male$multiplier, 1.0)
   # Female: all lose, p=0.5 -> low multiplier
-  expect_lt(female_mult, 1.0)
+  expect_lt(female$multiplier, 1.0)
+  # Each cell rests on its own 10 rows, not the pooled 20.
+  expect_identical(male$n, 10L)
+  expect_identical(female$n, 10L)
 })
 
 test_that("compute_calibration clamps to [floor, ceiling]", {
-  # 1000 wins, p = 0.05 each -> multiplier ~= 1000 / 50 = 20 -> clamped to 1.5
+  # 1000 wins, p = 0.05 each -> raw ratio = (30 + 1000) / (30 + 50) = 12.875,
+  # clamped to the 1.5 ceiling.
   rows <- do.call(rbind, lapply(1:1000, function(i) ledger_row(win = TRUE, p = 0.05)))
   root <- setup_ledger(rows)
   league <- list(sport = "basketball", country = "iceland")
-  expect_equal(
-    compute_calibration(league, sex = "male", root = root),
-    1.5
+
+  # A clamp overrules the ledger's own estimate, so it says so out loud.
+  expect_message(
+    out <- compute_calibration(league, sex = "male", root = root),
+    "clamped"
   )
+  expect_equal(out$multiplier, 1.5)
+  expect_true(out$clamped)
+  expect_equal(out$raw_ratio, 1030 / 80)
+  expect_identical(out$n, 1000L)
+  expect_identical(out$basis, "evidence")
 })
 
 test_that("compute_calibration ignores unsettled bets", {
@@ -86,7 +118,61 @@ test_that("compute_calibration ignores unsettled bets", {
   league <- list(sport = "basketball", country = "iceland")
   out <- compute_calibration(league, sex = "male", root = root)
   # multiplier = (30*1 + 0) / (30 + 5*0.6) = 30 / 33 = 0.909
-  expect_equal(out, round(30 / 33, 3))
+  expect_equal(out$multiplier, round(30 / 33, 3))
+  # n counts settled evidence only -- the 5 unsettled rows are not evidence.
+  expect_identical(out$n, 5L)
+  expect_identical(out$basis, "evidence")
+})
+
+test_that("no history, good calibration and a floored estimate are distinguishable", {
+  # The reason compute_calibration returns evidence rather than a bare number:
+  # on a real-money staking path all three of these hand the caller the SAME
+  # multiplier, and only `basis` / `n` / `clamped` say which one it is.
+  league <- list(sport = "basketball", country = "iceland")
+
+  # (a) Nothing settled yet -- the ledger has rows, none of them are evidence.
+  none_root <- setup_ledger(do.call(rbind, lapply(1:20, function(i) {
+    ledger_row(win = TRUE, p = 0.5, settled = FALSE)
+  })))
+  none <- compute_calibration(league, sex = "male", root = none_root)
+
+  # (b) 100 settled bets at p = 0.5 with 50 wins -> (30 + 50) / (30 + 50) = 1.0
+  #     exactly. Genuinely well calibrated on a real sample.
+  good_root <- setup_ledger(do.call(rbind, lapply(1:100, function(i) {
+    ledger_row(win = (i <= 50), p = 0.5)
+  })))
+  good <- compute_calibration(league, sex = "male", root = good_root)
+
+  # (c) 100 settled losses -> raw ratio 30/80 = 0.375, clamped UP to a floor of
+  #     1.0. Evidence this bad staking at full size is the failure the evidence
+  #     record exists to surface.
+  bad_root <- setup_ledger(do.call(rbind, lapply(1:100, function(i) {
+    ledger_row(win = FALSE, p = 0.5)
+  })))
+  suppressMessages(
+    floored <- compute_calibration(league, sex = "male", root = bad_root, floor = 1.0)
+  )
+
+  # Same number out of all three ...
+  expect_equal(none$multiplier, 1.0)
+  expect_equal(good$multiplier, 1.0)
+  expect_equal(floored$multiplier, 1.0)
+
+  # ... and the evidence is the only thing that tells them apart.
+  expect_identical(none$basis, "no_settled_rows")
+  expect_identical(none$n, 0L)
+  expect_true(is.na(none$raw_ratio))
+  expect_false(none$clamped)
+
+  expect_identical(good$basis, "evidence")
+  expect_identical(good$n, 100L)
+  expect_equal(good$raw_ratio, 1.0)
+  expect_false(good$clamped)
+
+  expect_identical(floored$basis, "evidence")
+  expect_identical(floored$n, 100L)
+  expect_equal(floored$raw_ratio, 30 / 80)
+  expect_true(floored$clamped)
 })
 
 # ── K2 market-split (audit 2026-05-15 §C) ────────────────────────────────────
@@ -103,12 +189,16 @@ test_that("compute_calibration with market= filters to that market only", {
   tot <- compute_calibration(league, sex = "male", market = "total", root = root)
   agg <- compute_calibration(league, sex = "male", root = root)
   # Moneyline all-win: multiplier > 1
-  expect_gt(mny, 1.0)
+  expect_gt(mny$multiplier, 1.0)
   # Total all-loss: multiplier < 1
-  expect_lt(tot, 1.0)
+  expect_lt(tot$multiplier, 1.0)
   # Aggregate sits between
-  expect_gt(agg, tot)
-  expect_lt(agg, mny)
+  expect_gt(agg$multiplier, tot$multiplier)
+  expect_lt(agg$multiplier, mny$multiplier)
+  # Each split rests on its own 10 rows; the aggregate on all 20.
+  expect_identical(mny$n, 10L)
+  expect_identical(tot$n, 10L)
+  expect_identical(agg$n, 20L)
 })
 
 test_that("compute_calibrations returns aggregate when no market crosses K2 threshold", {
@@ -119,6 +209,8 @@ test_that("compute_calibrations returns aggregate when no market crosses K2 thre
   league <- list(sport = "basketball", country = "iceland")
   out <- compute_calibrations(league, sex = "male", root = root)
   expect_named(out, "aggregate") # No per-market keys (< 100 settled)
+  # Values stay bare numerics for decide_league()'s vapply(..., numeric(1)).
+  expect_type(out$aggregate, "double")
 })
 
 test_that("compute_calibrations promotes a market once it crosses K2_min_n", {
@@ -139,6 +231,15 @@ test_that("compute_calibrations promotes a market once it crosses K2_min_n", {
   # Sanity: per-market moneyline should not equal aggregate (within rounding) —
   # the splits resolve different underlying populations.
   expect_true(abs(out$moneyline - out$aggregate) > 1e-6)
+
+  # The evidence behind each multiplier rides along so an operator can audit
+  # WHY a market was promoted and what its multiplier rests on.
+  ev <- attr(out, "evidence")
+  expect_setequal(names(ev), c("aggregate", "moneyline"))
+  expect_identical(ev$aggregate$basis, "evidence")
+  expect_identical(ev$aggregate$n, 150L)
+  expect_identical(ev$moneyline$n, 120L)
+  expect_equal(ev$moneyline$multiplier, out$moneyline)
 })
 
 test_that("compute_calibrations k2_min_n override re-tunes the split threshold", {

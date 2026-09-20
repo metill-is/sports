@@ -2,20 +2,89 @@
 % Please edit documentation in R/backtest-pit.R
 \name{bt_pit_uniformity}
 \alias{bt_pit_uniformity}
-\title{Uniformity summary of PIT values (KS test against Uniform(0,1)).}
+\title{Uniformity verdict for PIT values (KS + a dispersion test, min-n guarded).}
 \usage{
-bt_pit_uniformity(pit, by = NULL)
+bt_pit_uniformity(
+  pit,
+  by = NULL,
+  min_n = 30L,
+  n_rand = 50L,
+  alpha = 0.05,
+  seed = 1L
+)
 }
 \arguments{
-\item{pit}{Tibble with a numeric `u` column (e.g. from [bt_pit_values()]).}
+\item{pit}{Tibble with a numeric `u` column, and ideally the `lo`/`hi` PIT
+band columns from [bt_pit_values()].}
 
 \item{by}{Optional grouping columns.}
+
+\item{min_n}{Minimum usable PIT values before any test statistic is reported.
+Below it the row comes back flagged `"insufficient_data"` with the KS and
+dispersion statistics `NA`, rather than silently unstable numbers. `mean_u`
+still reports: it is a plain location summary, unbiased for 0.5 under
+uniformity at any `n`, and needs none of the large-sample approximation the
+others rest on. Default 30.}
+
+\item{n_rand}{Randomisation draws to summarise over when `lo`/`hi` are
+present. Default 50. Reported back as `n_rand`, which is 0 on the
+`"insufficient_data"` row because no draw was needed there.}
+
+\item{alpha}{Two-sided level at which `ks_p`/`var_p` set `verdict`.
+Default 0.05.}
+
+\item{seed}{RNG seed for the randomisation draws (reproducible).}
 }
 \value{
-One row (or per group) of `(n, ks_stat, ks_p, mean_u)`.
+One row (or per group) of `(n, ks_stat, ks_p, mean_u, var_u, var_z,
+  var_p, n_rand, verdict)`. `verdict` is `"insufficient_data"` (n below
+  `min_n`), `"flagged"` (some test rejects uniformity at `alpha`) or `"ok"`
+  -- `"ok"` meaning no evidence AGAINST calibration at this sample size, not
+  evidence of calibration.
 }
 \description{
-A calibrated predictive yields `u ~ Uniform(0,1)`; a small `ks_p` (or a
-visibly U-/hump-shaped histogram) flags miscalibration of the predictive
-distribution's shape.
+A calibrated predictive yields `u ~ Uniform(0,1)`. This is the only numeric
+calibration verdict the dashboard ships, so it reports three complementary
+statistics rather than one, and never returns a bare `NA` that a reader can
+mistake for "fine":
+}
+\details{
+* `mean_u` — location. Detects a biased predictive (systematically too high
+  or too low), around 0.5 when unbiased.
+* `ks_stat` / `ks_p` — Kolmogorov-Smirnov against `Uniform(0,1)`. General
+  purpose, but driven by the largest CDF gap, so it is comparatively weak
+  against a symmetric U-shape whose CDF tracks the diagonal in the middle.
+* `var_u` / `var_z` / `var_p` — dispersion, and the statistic with real power
+  against precisely the over-confidence this file exists to detect. Under
+  uniformity `Var(u) = 1/12` and the sample variance is asymptotically normal
+  with `sd = sqrt(1 / (180 n))` (from `mu4 - sigma^4 = 1/80 - 1/144 = 1/180`).
+  `var_z > 0` means the PIT histogram is U-shaped: too much mass in the
+  tails, i.e. an UNDER-dispersed, over-confident predictive. `var_z < 0`
+  means a central hump, i.e. an over-dispersed one.
+
+Randomisation: the discrete PIT only pins each match to a band
+`[lo, hi]`, so any statistic computed from one draw inside those bands is
+itself random. When `pit` carries `lo`/`hi` (as [bt_pit_values()] emits) the
+bands are re-randomised `n_rand` times, seeded and so reproducible, without
+the verdict being decided by the seed. Each statistic is summarised over those
+draws in the way that keeps it self-consistent:
+
+* `mean_u` is not randomised at all. The limit the draws converge on is the
+  mean of the band midpoints, so that is reported directly -- exact, and free
+  of both seed and Monte Carlo error.
+* `var_u` is the MEAN over draws, with Monte Carlo error falling like
+  `1 / sqrt(n_rand)`; `var_z`/`var_p` are derived FROM it, so the trio agrees
+  by construction.
+* `ks_stat`/`ks_p` come from ONE representative draw: the realisation whose
+  statistic sits nearest the median. Averaging the two independently would
+  report a p-value that is not the p-value of the reported statistic -- the
+  old pair could not both be true. Since the KS p-value is a strictly
+  decreasing function of the statistic at fixed `n`, a draw central in the
+  statistic is equally central in the p-value, so this pair is a genuine test
+  result AND both halves are still a central summary over the draws (with an
+  even `n_rand` it is one of the two middle order statistics rather than the
+  interpolated median). Far steadier than the `n_rand = 1` seed lottery.
+
+Given only a `u` column the function degenerates to that single realisation
+(`n_rand = 1`) and the old seed-dependence applies; prefer passing the bands.
 }

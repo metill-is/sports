@@ -21,13 +21,22 @@ simulate_cup_bracket(
 `alpha_mu3`, `beta_mu3_strength_diff`. Produced by
 `.extract_sim_inputs_pfi()`.}
 
-\item{bracket_state}{Named list:
-- `r16`: 8-row tibble with `home_team`, `away_team`, `venue` ("home" /
-  "away" / "neutral"), `known_winner` (team name string or `NA`).
-- `qf_pairings_known` (logical, default `FALSE`).
-- `qf` (optional): 4-row tibble with `prev_left`, `prev_right` (1..8
-  match-number indices into R16), `venue`.
-- `sf_pairings_known`, `sf` (analogous, 2 rows).}
+\item{bracket_state}{Named list, as built by `.build_bracket_state_pfi()`:
+- `cup_teams`: character(16) — the R16 entrants.
+- `rounds`: named list keyed `"R16"`, `"R8"`, `"SF"`, `"Final"`. Each
+  entry is a list of `pairings_known` (a single non-`NA` logical) and
+  `matches`. When `pairings_known` is `TRUE`, `matches` is a data frame
+  with exactly 8 / 4 / 2 / 1 rows and columns `home_team`, `away_team`,
+  `venue` ("home" / "away" / "neutral") and `known_winner` (team name
+  for a played match, `NA` otherwise). When it is `FALSE` the round is
+  undrawn, `matches` must be absent, and the pairings are drawn
+  uniformly at random per posterior draw. A round the builder found
+  only some of the ties for is neither: it carries `partial_pairs`
+  (the ties it did find) and aborts.
+Any other shape — a missing round, a non-logical `pairings_known`, a
+row-count mismatch, missing match columns, a partly-drawn round, or
+pairings carried under `pairings_known = FALSE` — aborts. Randomising over a malformed round
+would publish a bracket that does not match the real competition.}
 
 \item{tiebreak_opts}{Optional override of [`default_tiebreak_opts()`].}
 
@@ -46,7 +55,9 @@ For each posterior draw of team-strength parameters, forward-simulates the
 remaining cup bracket (R16 -> QF -> SF -> Final) using a bivariate-Poisson
 match model. Per-match tiebreaking is rejection-sampling at the 90'
 lambdas (no separate ET / shootout model — see [`default_tiebreak_opts()`]).
-Pairings for rounds beyond R16 are drawn uniformly at random per draw
-unless `bracket_state$qf_pairings_known` / `$sf_pairings_known` is `TRUE`.
+A round whose pairings are known is walked exactly as drawn, played-match
+pins included; a round explicitly marked undrawn is paired uniformly at
+random per posterior draw. Any other round shape is an error, never a
+silent re-draw — see `bracket_state` below.
 Aggregates outcomes to cumulative per-(team, round_name) probabilities.
 }

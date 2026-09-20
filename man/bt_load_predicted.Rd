@@ -2,12 +2,14 @@
 % Please edit documentation in R/backtest-pit.R
 \name{bt_load_predicted}
 \alias{bt_load_predicted}
-\title{Load every saved football_iceland predicted-matches extract for a sex.}
+\title{Load every saved predicted-matches extract for one sport/country and sex.}
 \usage{
 bt_load_predicted(
   root = here::here("data"),
   sex = c("male", "female"),
-  season = NULL
+  season = NULL,
+  sport = "football",
+  country = "iceland"
 )
 }
 \arguments{
@@ -16,12 +18,26 @@ bt_load_predicted(
 \item{sex}{Character vector of sexes to load. Default both.}
 
 \item{season}{Optional integer year; filters fit_dates to that season.}
+
+\item{sport, country}{Scalar hive partition the extracts sit under. The
+defaults keep every existing caller on `football`/`iceland`.}
 }
 \value{
 Tibble of all fit_dates' predicted matches, or the empty schema.
 }
 \description{
-Reads each `beliefs/extracts/.../sex=<s>/fit_date=<F>/predicted_matches.parquet`
+Reads each
+`beliefs/extracts/sport=<sport>/country=<country>/sex=<s>/fit_date=<F>/predicted_matches.parquet`
 (the posterior-predictive score histogram) and row-binds them, attaching `sex`
 and `fit_date` from the hive path. Read-only.
+}
+\details{
+Every diagnostic in this file is built on the LONG-FORM extract shape: one row
+per `(home_goals, away_goals)` cell carrying a posterior-draw `count`, i.e. a
+joint score pmf. Football writes that shape. The 2DT sports (handball,
+basketball) currently write a PRUNED extract holding only
+`goal_diff_distribution` plus outcome probabilities, from which no scoreline
+marginal can be formed -- so pointing this loader at them is a data gap, not a
+code path. Abort naming the file rather than row-bind a foreign schema and
+fail three calls later on a missing `home_goals`.
 }

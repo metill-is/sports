@@ -37,14 +37,24 @@ the sample is large or strongly biased; prior_weight = 10 would track
 short runs of luck more aggressively.}
 
 \item{prior_ratio}{Prior calibration ratio. 1.0 = model is well-calibrated.
-Default 1.0. Also the value returned in all empty-history paths.}
+Default 1.0. Also the multiplier returned in all empty-history paths.}
 
 \item{floor}{Lower clamp on multiplier. Default 0.5.}
 
 \item{ceiling}{Upper clamp. Default 1.5.}
 }
 \value{
-Numeric scalar in `[floor, ceiling]`, rounded to 3 decimals.
+A list of the multiplier AND the evidence behind it:
+  * `multiplier` — numeric in `[floor, ceiling]`, rounded to 3 decimals.
+    This is the value that scales `kelly_frac`.
+  * `n` — integer count of settled bets the estimate rests on; `0` on every
+    empty-history path.
+  * `raw_ratio` — the unclamped, unrounded Beta-Binomial ratio, or
+    `NA_real_` when there was no evidence to compute one.
+  * `clamped` — `TRUE` when `floor`/`ceiling` bit, i.e. `multiplier` is a
+    boundary rather than what the ledger actually estimated.
+  * `basis` — one of `"evidence"`, `"no_ledger_dir"`, `"no_partition_rows"`,
+    `"no_settled_rows"`, `"ledger_read_error"`.
 }
 \description{
 Reads settled bets from `data/decisions/ledger/` and computes a
@@ -54,7 +64,12 @@ Beta-Binomial smoothing starts updating from bet 1.
 \details{
 multiplier = (prior_weight * prior_ratio + sum(win)) / (prior_weight + sum(p))
 
-Returns `prior_ratio` when no settled history exists at any of three points:
-the ledger directory is absent, no rows are present for the (sport, country)
-partition, or no rows survive the (sex, settled, non-NA) filter.
+Falls back to `prior_ratio` when no settled history exists at any of three
+points: the ledger directory is absent, no rows are present for the
+(sport, country) partition, or no rows survive the (sex, settled, non-NA)
+filter. The return carries WHICH of those happened, because the multiplier
+alone cannot say: "no settled history at all", "400 settled bets and
+genuinely well calibrated" and "evidence so bad the raw ratio was clamped up
+to the floor" all reduce to one number on a real-money staking path. `n`,
+`raw_ratio`, `clamped` and `basis` are what keep them distinguishable.
 }
