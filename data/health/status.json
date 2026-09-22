@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-21T22:25:48Z",
+  "generated_at": "2026-09-22T16:13:21Z",
   "overall": "WARN",
   "n_fail": 0,
   "n_warn": 6,
@@ -8,28 +8,28 @@
       "check": "fit_freshness",
       "scope": "basketball_iceland male",
       "status": "OK",
-      "value": "1d old, current with results",
+      "value": "2d old, current with results",
       "threshold": "<= 2d"
     },
     {
       "check": "fit_freshness",
       "scope": "basketball_iceland female",
       "status": "OK",
-      "value": "1d old, current with results",
+      "value": "2d old, current with results",
       "threshold": "<= 2d"
     },
     {
       "check": "fit_freshness",
       "scope": "handball_iceland male",
       "status": "OK",
-      "value": "4d old, current with results",
+      "value": "5d old, current with results",
       "threshold": "<= 2d"
     },
     {
       "check": "fit_freshness",
       "scope": "handball_iceland female",
       "status": "OK",
-      "value": "0d old, current with results",
+      "value": "1d old, current with results",
       "threshold": "<= 2d"
     },
     {
@@ -43,7 +43,7 @@
       "check": "fit_freshness",
       "scope": "football_iceland female",
       "status": "OK",
-      "value": "1d old, current with results",
+      "value": "2d old, current with results",
       "threshold": "<= 2d"
     },
     {
@@ -162,7 +162,7 @@
       "check": "capture_rate",
       "scope": "recommendations",
       "status": "OK",
-      "value": "56% (5/9 placed)",
+      "value": "50% (4/8 placed)",
       "threshold": ">= 70% placed"
     },
     {
@@ -190,56 +190,56 @@
       "check": "publish_freshness",
       "scope": "basketball_iceland male BD",
       "status": "OK",
-      "value": "8h old; 10 artefact(s)",
+      "value": "3h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "basketball_iceland male 1D",
       "status": "OK",
-      "value": "8h old; 10 artefact(s)",
+      "value": "3h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "basketball_iceland female BD",
       "status": "OK",
-      "value": "8h old; 10 artefact(s)",
+      "value": "3h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "basketball_iceland female 1D",
       "status": "OK",
-      "value": "8h old; 10 artefact(s)",
+      "value": "3h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "handball_iceland male OD",
       "status": "OK",
-      "value": "8h old; 10 artefact(s)",
+      "value": "3h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "handball_iceland male G66",
       "status": "OK",
-      "value": "8h old; 10 artefact(s)",
+      "value": "3h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "handball_iceland female OD",
       "status": "OK",
-      "value": "8h old; 10 artefact(s)",
+      "value": "3h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "handball_iceland female G66",
       "status": "OK",
-      "value": "8h old; 10 artefact(s)",
+      "value": "3h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
@@ -281,28 +281,28 @@
       "check": "publish_freshness",
       "scope": "football_iceland female BD",
       "status": "OK",
-      "value": "8h old; 10 artefact(s)",
+      "value": "3h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "football_iceland female LD1",
       "status": "OK",
-      "value": "8h old; 10 artefact(s)",
+      "value": "3h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "football_iceland female LD2",
       "status": "OK",
-      "value": "8h old; 10 artefact(s)",
+      "value": "3h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "football_iceland female CUP",
       "status": "OK",
-      "value": "8h old; 12 artefact(s)",
+      "value": "3h old; 12 artefact(s)",
       "threshold": "36h"
     },
     {
