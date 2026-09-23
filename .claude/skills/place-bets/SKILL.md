@@ -38,7 +38,8 @@ Present the output to the user. Then ask:
 **Listen for adjustments:**
 
 - "Skip #3 and #7" — `place_bets.R` has no `--exclude` flag; tell the user
-  they can answer `n` at the per-bet prompt instead.
+  the placer cannot skip single bets (the per-bet `n` prompt never waits under
+  `Rscript`; see Step 2), so narrow with `--league`/`--today`/`--date` instead.
 - "Only the handball ones" — use `--league handball_iceland`.
 - "Only today" — use `--today`.
 - Any other changes the user mentions.
@@ -48,44 +49,42 @@ Present the output to the user. Then ask:
 Once the user confirms, run the placer. Default is dry-run; **`--live` is the
 only flag that actually places money**.
 
-`--live` enables per-bet confirmation in the terminal by default (each bet
-requires `y/n/q`). Pair with `--no-confirm` to skip prompts.
+Under `Rscript`, `--live` on its own places nothing: `readline()` returns "" without
+waiting (non-interactive R), so the upfront `Place these bets? (y/n)` prompt reads an
+empty answer and the run stops with "Cancelled by user." before login. Once the user
+has confirmed the bet slip in chat, run it with `--live --no-confirm`, as in the
+recipes below; the global ask rule on `place_bets.R --live` stops the command for
+their approval before anything is placed.
 
 **Default (all pending):**
 
 ```bash
-Rscript scripts/place_bets.R --live
+Rscript scripts/place_bets.R --live --no-confirm
 ```
 
 **Filtered to a league:**
 
 ```bash
-Rscript scripts/place_bets.R --live --league football_iceland
+Rscript scripts/place_bets.R --live --no-confirm --league football_iceland
 ```
 
 **Filtered to today's matches:**
 
 ```bash
-Rscript scripts/place_bets.R --live --today
+Rscript scripts/place_bets.R --live --no-confirm --today
 ```
 
 **Filtered to a specific match date:**
 
 ```bash
-Rscript scripts/place_bets.R --live --date 2026-04-26
+Rscript scripts/place_bets.R --live --no-confirm --date 2026-04-26
 ```
 
 **Show the browser** (adds `--show-browser`; useful when diagnosing login or DOM
 issues — the placer is otherwise headless):
 
 ```bash
-Rscript scripts/place_bets.R --live --show-browser
-```
-
-**No per-bet prompts:**
-
-```bash
-Rscript scripts/place_bets.R --live --no-confirm
+Rscript scripts/place_bets.R --live --no-confirm --show-browser
 ```
 
 After placement completes, summarise what was placed (status `placed`) and what
@@ -110,8 +109,8 @@ The placer enforces the four placement rules from
 - **"No leagues with team_names config"** → a league in `recommendations/` has
   no `lengjan$team_names` map in `config/leagues.yml`. Add it, then re-run.
 - **"missing team_names for: <team>"** → recommendation has a team not keyed in
-  `config/leagues.yml`. For women's leagues this is a known gap (sex-agnostic
-  schema; see [project_team_names_schema](../../../../.claude/projects/-Users-brynjolfurjonsson-sports/memory/project_team_names_schema.md)).
+  `config/leagues.yml` under `lengjan.team_names.<sex>` (per-sex map; see
+  `config/leagues.schema.json`).
 - **"All recommendations have already been placed"** → ledger dedup ate
   everything; nothing to do.
 - **Browser fails to launch / login fails** → check Chrome is installed and
