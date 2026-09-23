@@ -33,10 +33,12 @@ odds late morning, so the pre-scrape slot false-FAILed on match days.
 1. **Check whether the season has actually started.** Basketball and handball
    resumed for 2026/27 (Olisdeild opened early September, Bonusdeild opens
    2026-09-29/30 for three of four cells and 2026-10-08 for Bonusdeild karla).
-   They are no longer on seasonal pause, and both are configured
-   `betting.enabled: false` -- so they produce **no odds rows at all, by
-   design**, and `odds_freshness` has nothing to say about them. An absent
-   odds row for basketball or handball is correct, not a fault. Only
+   Since 2026-09-23 both are scraped from Lengjan's JSON API
+   (`lengjan.source: api`): handball at `betting.mode: paper` (Olísdeild
+   karla, comp 1269), basketball at `betting.mode: scrape` with no
+   competitions wired until the 2026-27 Bónus deild appears. Below `manual`,
+   `odds_freshness` caps a stall at WARN, and a league with no competitions
+   reports PAUSED. Icelandic handball odds may post only on matchday. Only
    `football_iceland` is bet.
 
 ## Fix
