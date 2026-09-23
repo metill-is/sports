@@ -2,15 +2,12 @@
 name: add-league
 description: Use when adding a new league to the monorepo. Walks through leagues.yml, Stan model, ingest source, team_names invariant, and verification.
 argument-hint: "[sport] [country]"
-context: fork
-effort: high
 ---
 
 # /add-league — Add a new league to the monorepo
 
-The post-Plan-6 monorepo simplifies the old four-step "create directory + bets.yml +
-team_names CSV + symlinks" dance into a single source of truth: `config/leagues.yml`.
-Most additions touch three files.
+The single source of truth is `config/leagues.yml`; most additions touch three
+files.
 
 > The current scope is the three active Icelandic leagues. When extending beyond
 > Iceland, the dead `_legacy/` paths in `_legacy/{sports,lengjan-odds,…}` are
@@ -50,9 +47,11 @@ basketball_norway:
   lengjan:
     competitions:
       - { id: "1234", name: "BLNO", sex: male }
-    team_names:
-      Bærum: Bærum Basket
-      # ... canonical pipeline name → Lengjan display name
+    team_names:                       # per-sex; the schema requires both keys
+      male:
+        Bærum: Bærum Basket
+        # ... canonical pipeline name → Lengjan display name
+      female: {}
   stan_model: basketball_norway/2d_student_t_scalarsigma.stan
   betting:
     kelly_frac: 0.10                  # conservative for new leagues
@@ -118,12 +117,9 @@ To populate: after a first odds scrape (`Rscript scripts/02_scrape_odds.R --leag
 the canonical names are visible in `data/facts/odds/`; the Lengjan display
 names are in the same rows. Diff them and add any rows where they differ.
 
-> Known limitation: the schema is sex-agnostic. Teams that appear in both
-> male and female schedules under different Lengjan names (e.g. `Fram` /
-> `Fram kv`) cannot be represented in a single map. For now, leave shared
-> teams out and document in a comment — they'll error out at validate time
-> with a clear "missing team_names for: …" message. See
-> [project_team_names_schema](../../../../.claude/projects/-Users-brynjolfurjonsson-sports/memory/project_team_names_schema.md).
+The map is per-sex (`team_names.male` / `team_names.female`, see
+`config/leagues.schema.json`), so a team Lengjan renders differently by sex
+(e.g. `Fram` / `Fram kv`) is keyed separately under each.
 
 ## Step 6: Run the data + fit pipeline
 
@@ -153,8 +149,7 @@ echo "PID $! — log: $LOG"
 ## Step 7: (Optional) wire up publish
 
 Football iceland has the full publisher (11–12 JSONs per cell across
-`publish_divisions`, driven by `config/leagues.yml::football_iceland.publish_divisions`
-— see [project_publish_divisions_config](../../../../.claude/projects/-Users-brynjolfurjonsson-sports/memory/project_publish_divisions_config.md));
+`publish_divisions`, driven by `config/leagues.yml::football_iceland.publish_divisions`);
 basketball + handball are scaffolds (meta + next_games only). To add full
 publishing for a new league, mirror `R/publish-iceland-league.R` under a new
 file and register it in `R/publish-pipeline.R::publish_one()`. New cells for an
@@ -173,7 +168,6 @@ dispatcher uses sport-level routing.
 - [ ] (If new federation) `R/ingest-{federation}-{sport}.R` written + registered
 - [ ] (If new federation) ingest test added
 - [ ] `lengjan.team_names` populated for any teams that appear in odds scrape
-- [ ] Dry-run lists expected targets
 - [ ] `scripts/01_ingest_results.R --league {key}` succeeds (results in Parquet)
 - [ ] `scripts/02_scrape_odds.R --league {key}` succeeds (odds rows in Parquet)
 - [ ] First fit converges (no divergences, ESS > 400, R̂ < 1.01)

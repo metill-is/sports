@@ -4,10 +4,9 @@ paths:
   - "**/*.r"
 ---
 
-# R Code Conventions (Workspace-wide)
+# R Code Conventions
 
-- Use `box::use()` for module imports. Exception: interactive/fitting scripts may use `library()`.
-- Export module functions with `#' @export` roxygen tags.
+- Code in `R/` is package code: declare deps in DESCRIPTION and call `pkg::fn()`, never `box::use()`; `#' @export` the public API, `#' @noRd` for internal helpers. Interactive/fitting scripts may use `library()`.
 - Use `here::here()` for all file paths — never hardcode absolute paths.
 - Base pipe `|>` preferred over `%>%`.
 - Tidyverse style: `snake_case`, verbs for function names.

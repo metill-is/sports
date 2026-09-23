@@ -2,7 +2,8 @@
 name: wc-refresh
 description: Use during a World Cup tournament when the published forecast is missing scores martj42 hasn't logged yet — the manual overlay refresh that pulls, ingests, re-fits, re-forecasts and pushes. Also covers how played knockouts condition the forecast and how knockout fixture dates are corrected at ingest.
 argument-hint: "[list-missing|refresh|no-push]"
-allowed-tools: Bash, Read, Edit, Glob, Grep
+allowed-tools: Bash(scripts/wc/refresh_now.sh --list-missing), Bash(scripts/wc/refresh_now.sh --no-push*), Bash(Rscript scripts/wc/forecast.R*), Read, Edit, Glob, Grep
+disable-model-invocation: true
 ---
 
 # World Cup — manual refresh (martj42 lag)

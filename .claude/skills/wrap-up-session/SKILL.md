@@ -1,6 +1,6 @@
 ---
 name: wrap-up-session
-description: Use at the end of a work session to verify local main is in sync with origin/main, no leaked stashes/branches/worktrees, and any session WIP is either committed or consciously preserved. Closes the loop on git hygiene.
+description: Use when cron data commits have moved origin/main under local work in the sports repo, or stashes, local branches, extra worktrees or open PRs are left over. Reconciles main with origin/main and triages each leftover to a known-clean state.
 ---
 
 # /wrap-up-session — End-of-session consolidation checklist
@@ -84,29 +84,13 @@ gh pr list --state open
 For each open PR: either merge (if CI green) or note as deliberately pending.
 Stale open PRs are noise.
 
-## 6. Self-update check
-
-If during the session you encountered a friction not covered by existing
-rules/skills, propose an update before ending:
-
-- Recurring git issues → append to `.claude/rules/git-hygiene.md`
-- Recurring pipeline issues → update `CLAUDE.md` or `.claude/rules/sports-betting.md`
-- Operational patterns → add a memory note at
-  `~/.claude/projects/-Users-brynjolfurjonsson-sports/memory/` and link from
-  `MEMORY.md`
-
-For a deeper sweep across recent transcripts: invoke the `learner` agent
-(`Agent(subagent_type: "learner", ...)`) to review session patterns and
-propose CLAUDE.md / skill updates.
-
 ## Done state
 
-After running through all six steps you should see:
+After running through all five steps you should see:
 - 1 worktree, 1 branch, both tracking origin/main exactly
 - 0 stashes
 - Working tree contains only categorised, conscious WIP
 - 0 stale open PRs
-- Any new patterns captured in rules / memory
 
 ## Reference
 

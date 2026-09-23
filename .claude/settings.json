@@ -1,28 +1,6 @@
 {
   "hooks": {
-    "PreCompact": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/pre-compact-context.sh",
-            "timeout": 5
-          }
-        ]
-      }
-    ],
     "SessionStart": [
-      {
-        "matcher": "compact",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/pre-compact-context.sh",
-            "timeout": 5
-          }
-        ]
-      },
       {
         "matcher": "startup|resume",
         "hooks": [
@@ -46,6 +24,16 @@
           }
         ]
       }
+    ]
+  },
+  "claudeMdExcludes": [
+    "**/_legacy/**/CLAUDE.md"
+  ],
+  "permissions": {
+    "ask": [
+      "Bash(*auto_place*)",
+      "Bash(*install-autoplace*)",
+      "Bash(*is.metill.sports.autoplace*)"
     ]
   }
 }

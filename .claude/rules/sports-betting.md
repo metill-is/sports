@@ -58,6 +58,8 @@ data/decisions/ledger/sport=*/country=*/   (Parquet, append-only, immutable per 
 
 CSV dual-write was retired by Plan 6; Parquet is canonical.
 
+**Ledger storage:** As of Plan 6 cutover, Parquet at `data/decisions/ledger/` is the canonical ledger store. `append_to_ledger()`'s `dual_write_csv` argument defaults to `FALSE`; set `TRUE` only for opt-in regression-testing against the legacy CSV at `_legacy/sports/{sport}/{country}/history/bets_log.csv`.
+
 ## `config/leagues.yml::*.betting` schema (post Plan 7a)
 
 ```yaml
@@ -142,6 +144,8 @@ bet_amount = round(kelly × current_pool)
 - **P2** — Ledger records *actual* Lengjan odds (`odds_placed`), not the recommendation's odds.
 - **P3** — If live odds drift > 1 % from the recommendation, recompute Kelly stake at the new odds.
 - **P4** — Reject if the bet is no longer +EV at live odds (status `not_positive_ev`).
+
+**DOM odds parser:** A pure `parse_actual_odds_from_dom(html)` (exported from `R/placer-place.R`) mirrors the JS regex chain inline in `click_market_button` / `click_table_button`. Both click helpers re-parse the chosen button's `outerHTML` and verify the JS-reported odds against the R-side parse — a Lengjan UI deploy that changes the odds-element structure now surfaces as either a `parse_actual_odds_from_dom: could not parse` error or an `Odds parser disagreement` error, rather than silent wrong odds. The parser is fixture-tested in `tests/testthat/test-placer-place.R`.
 
 ### Ledger immutability (L1–L4)
 

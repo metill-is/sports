@@ -3,7 +3,6 @@ name: sports-update
 description: Use when refreshing models or running the full pipeline. Runs ingest + odds + fit + decide + publish for specified leagues.
 argument-hint: "[ingest|odds|fit|decide|publish|all] [--league LEAGUE] [--sex male|female] [--force]"
 context: fork
-effort: high
 ---
 
 # /sports-update — Full pipeline update
@@ -119,17 +118,19 @@ Or, more uniformly, via DuckDB:
 Rscript -e 'sports::rebuild_duckdb(); con <- DBI::dbConnect(duckdb::duckdb(), "sports.duckdb", read_only = TRUE); print(DBI::dbGetQuery(con, "SELECT sport, country, MAX(scraped_at) FROM odds GROUP BY 1,2"))'
 ```
 
-## Step 5: Offer to commit
+## Step 5: Report what to commit
 
-If the pipeline modified `data/`, offer to commit. Tracked Parquet stores
+This skill runs in a fork, which cannot ask the user. If the pipeline modified
+`data/`, report it and suggest a commit to the caller. Tracked Parquet stores
 should be committed alongside model/code changes; ad-hoc rebuilds without
 data changes are fine to leave uncommitted.
 
 ```bash
-cd /Users/brynjolfurjonsson/sports && git add data/ config/ && git status
+cd /Users/brynjolfurjonsson/sports && git status --short data/ config/
 ```
 
-Only commit if the user confirms. Use a descriptive message such as
+Do not stage or commit here: the main session asks the user and commits. Suggest
+a descriptive message such as
 `"Refresh fits + publish ({date})"` or `"Scrape odds ({date})"`.
 
 ## Common workflows

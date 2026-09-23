@@ -125,7 +125,7 @@ paths:
   (basketball/football use per-sex; handball uses scalar).
   Browne-grounded defaults: male 0.20, female 0.10–0.15. Note: per
   the 2026-05-02 operational override
-  ([memory: project_kelly_frac_cut_2026_05_02](../../.claude/projects/-Users-brynjolfurjonsson-sports/memory/project_kelly_frac_cut_2026_05_02.md)),
+  ([memory: project_kelly_frac_cut_2026_05_02](/Users/brynjolfurjonsson/.claude/projects/-Users-brynjolfurjonsson-sports/memory/project_kelly_frac_cut_2026_05_02.md)),
   per-cell values are currently scaled to ~25 % of the Browne defaults.
 - Daily driver: `Rscript scripts/04_decide.R`. Wall-clock ~seconds.
   Runs on every odds scrape via `decide-publish.yml`'s `workflow_run`

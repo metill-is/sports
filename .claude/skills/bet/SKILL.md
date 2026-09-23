@@ -38,10 +38,7 @@ the ledger (i.e. what would actually be placed):
 Rscript scripts/preview_bets.R
 ```
 
-Present the table to the user. Then suggest:
-
-- "Want me to refresh recommendations? (`/bet --all` or `/sports-update`)"
-- "Want me to actually place these? (`/place-bets`)"
+Present the table to the user.
 
 If `recommendations/` is empty or stale, run the decide layer first
 (Mode 2 below).

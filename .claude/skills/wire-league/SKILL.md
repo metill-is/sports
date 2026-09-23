@@ -2,8 +2,6 @@
 name: wire-league
 description: Use when Lengjan has started listing a league we already model and a discovery proposal needs turning into a config edit. Reads data/discovery/proposals.json, drafts the leagues.yml competition entry + team_names, verifies via a dry decide, and presents the diff for review.
 argument-hint: "[comp_id]"
-context: fork
-effort: high
 ---
 
 # /wire-league — Turn a discovery proposal into a config edit
