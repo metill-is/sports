@@ -58,6 +58,42 @@ add_virtual_partitions <- function(df, table) {
   df
 }
 
+#' Add any missing optional columns (see [optional_columns()]) as typed NA.
+#' @noRd
+fill_optional_columns <- function(df, table) {
+  opt <- optional_columns(table)
+  for (nm in setdiff(names(opt), names(df))) {
+    df[[nm]] <- rep(opt[[nm]], nrow(df))
+  }
+  df
+}
+
+#' Explicit read schema for a table whose fragments cannot be unified.
+#'
+#' The odds store mixes `scraped_at` as timestamp[us, tz=UTC] (148 files) and
+#' tz-naive timestamp[us] (47 files; counted 2026-09-23), so
+#' `unify_schemas = TRUE` fails and Arrow's default open takes the first
+#' fragment's schema -- silently dropping any column added later (odds.sex,
+#' odds.event_id, ...). Casting every fragment to this schema null-fills absent
+#' columns and reads the tz-naive values as the same UTC instants (verified
+#' 2026-09-23: 66,336 rows either way). Timestamps are microsecond because that
+#' is what arrow writes from POSIXct; a second-unit schema fails with "would
+#' lose data". Hive partition columns are strings, as the default open infers.
+#' @noRd
+read_schema <- function(table) {
+  s <- schemas()[[table]]
+  fields <- lapply(s$names, function(nm) {
+    type <- s$GetFieldByName(nm)$type
+    if (grepl("^timestamp", type$ToString())) {
+      type <- arrow::timestamp(unit = "us", timezone = "UTC")
+    }
+    arrow::field(nm, type)
+  })
+  parts <- setdiff(table_partitions()[[table]], s$names)
+  fields <- c(fields, lapply(parts, function(p) arrow::field(p, arrow::string())))
+  do.call(arrow::schema, fields)
+}
+
 #' Validate a data frame against a schema.
 #' Raises a diagnostic error on the first problem found; returns `invisible(TRUE)`
 #' on success so the caller can keep using the original (augmented) data frame
@@ -156,7 +192,7 @@ write_table <- function(df, table, root = here::here("data")) {
     return(invisible(NULL))
   }
 
-  df <- add_virtual_partitions(df, table)
+  df <- fill_optional_columns(add_virtual_partitions(df, table), table)
   validate_against_schema(df, table)
   validate_values(df, table)
   partitions <- table_partitions()[[table]]
@@ -235,7 +271,7 @@ natural_key_for <- function(table) {
       "home_team", "away_team"
     ),
     odds = c(
-      "sport", "country", "scraped_at", "match_date",
+      "sport", "country", "sex", "scraped_at", "match_date",
       "home_team", "away_team", "market", "outcome", "line"
     ),
     stop("upsert_table not supported for table: ", table, call. = FALSE)
@@ -281,7 +317,7 @@ upsert_table <- function(df, table, root = here::here("data"),
     return(invisible(NULL))
   }
 
-  df <- add_virtual_partitions(df, table)
+  df <- fill_optional_columns(add_virtual_partitions(df, table), table)
   partitions <- table_partitions()[[table]]
   nat_key <- natural_key_for(table)
 
@@ -314,6 +350,10 @@ upsert_table <- function(df, table, root = here::here("data"),
       read_table(table, root = root, filter = part_filter),
       error = function(e) tibble::tibble()
     )
+    # A partition written before a column became optional lacks it; fill it so
+    # the natural-key check below merges instead of overwriting the partition
+    # (spec 2026-09-23 Review Focus 1: odds snapshots cannot be re-scraped).
+    if (nrow(existing) > 0L) existing <- fill_optional_columns(existing, table)
 
     if (!is.null(snapshot_future_by) && nrow(existing) > 0) {
       missing_scope <- setdiff(
@@ -393,12 +433,15 @@ read_table <- function(table, root = here::here("data"), filter = list()) {
   # null-filled for the older partitions, instead of being silently dropped by
   # Arrow's default first-fragment-wins inference. The odds store carries a
   # pre-existing scraped_at tz inconsistency (timestamp[us, tz=UTC] vs
-  # timestamp[us]) that unification cannot merge; there we fall back to the
-  # default open, preserving today's behaviour. Arrow raises the merge error at
+  # timestamp[us]) that unification cannot merge; there we fall back to an
+  # explicit read schema (read_schema()), which reads every fragment and keeps
+  # columns added after the first. Arrow raises the merge error at
   # open time, so this tryCatch catches it before any collect.
   ds <- tryCatch(
     arrow::open_dataset(src, partitioning = partitioning, unify_schemas = TRUE),
-    error = function(e) arrow::open_dataset(src, partitioning = partitioning)
+    error = function(e) {
+      arrow::open_dataset(src, partitioning = partitioning, schema = read_schema(table))
+    }
   )
 
   if (length(filter) > 0) {

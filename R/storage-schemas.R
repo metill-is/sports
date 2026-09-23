@@ -39,16 +39,23 @@ schemas <- function() {
       kickoff_time = arrow::string()
     ),
     odds = arrow::schema(
-      sport       = arrow::string(),
-      country     = arrow::string(),
-      scraped_at  = ts,
-      match_date  = arrow::date32(),
-      home_team   = arrow::string(),
-      away_team   = arrow::string(),
-      market      = arrow::string(),
-      outcome     = arrow::string(),
-      line        = arrow::float64(),
-      odds        = arrow::float64()
+      sport          = arrow::string(),
+      country        = arrow::string(),
+      scraped_at     = ts,
+      match_date     = arrow::date32(),
+      home_team      = arrow::string(),
+      away_team      = arrow::string(),
+      market         = arrow::string(),
+      outcome        = arrow::string(),
+      line           = arrow::float64(),
+      odds           = arrow::float64(),
+      # Nullable, added 2026-09-23 with the Lengjan JSON-API scraper (spec
+      # 2026-09-23 WS2). Writers may omit them -- optional_columns() fills typed
+      # NA -- so DOM-scraper rows and all earlier history carry NA.
+      sex            = arrow::string(),
+      event_id       = arrow::string(),
+      competition_id = arrow::string(),
+      kickoff_at     = ts
     ),
     beliefs_latest = arrow::schema(
       sport       = arrow::string(),
@@ -161,5 +168,28 @@ schemas <- function() {
       chains          = arrow::int32(),
       passed          = arrow::bool()
     )
+  )
+}
+
+#' Nullable columns a writer may omit, with the typed NA each is filled with.
+#'
+#' Schema evolution without touching every writer: `write_table()` and
+#' `upsert_table()` add any of these a frame lacks before validating, so legacy
+#' writers (the DOM scraper, test fixtures, the ETL) keep working and legacy
+#' partitions merge cleanly with new rows.
+#'
+#' @param table Table name.
+#' @return Named list: column name -> length-1 typed NA; `list()` when the
+#'   table has no optional columns.
+#' @noRd
+optional_columns <- function(table) {
+  switch(table,
+    odds = list(
+      sex = NA_character_,
+      event_id = NA_character_,
+      competition_id = NA_character_,
+      kickoff_at = .POSIXct(NA_real_, tz = "UTC")
+    ),
+    list()
   )
 }
