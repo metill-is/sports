@@ -2,12 +2,12 @@ name: Scrape Lengjan Odds
 
 on:
   schedule:
-    # 4x daily UTC. The 11:00 slot exists because Lengjan sometimes posts
-    # same-day odds late morning (2026-06-10: posted ~11:00 for evening
-    # kickoffs) -- without it those odds wait for the 14:00 cycle, recs
-    # regenerate hours later, and the 12:00 healthcheck can false-FAIL on
-    # "fixture today, no odds scraped".
-    - cron: '0 8,11,14,20 * * *'
+    # 5x daily UTC at minute 17, not :00 -- GitHub queues :00 crons hardest
+    # and this job ran 2-4.5h behind them (2026-09-08), so the 11:00 slot
+    # (Lengjan posts same-day odds late morning, 2026-06-10) was rarely
+    # honoured. 17:17 adds a pre-kickoff snapshot for Icelandic evening games,
+    # whose handball odds may post only on matchday (spec 2026-09-23 WS9).
+    - cron: '17 8,11,14,17,20 * * *'
   workflow_dispatch: {}
 
 permissions:

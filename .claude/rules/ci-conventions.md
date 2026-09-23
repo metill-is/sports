@@ -93,7 +93,7 @@ meta-characters.
 |---|---|---|
 | `ci-tests.yml` | push, PR | `devtools::test()` |
 | `scrape-results.yml` | cron 1×/day | Federation results + schedules |
-| `scrape-odds.yml` | cron 4×/day (08,11,14,20 UTC) | Lengjan odds snapshot |
+| `scrape-odds.yml` | cron 5×/day (08,11,14,17,20 UTC, minute 17) | Lengjan odds snapshot (Chromote DOM for football; JSON API for handball/basketball) |
 | `fit.yml` | `workflow_run` from scrape-results | Stan fit |
 | `decide-publish.yml` | `workflow_run` from fit AND scrape-odds | Recommendations + JSONs |
 | `republish.yml` | `workflow_dispatch` only | Re-run publish from existing extraction archive (lever for fast publisher iteration) |
