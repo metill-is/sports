@@ -97,7 +97,8 @@ test_that("ingest_one_lengjan soft-fails an API fetch error to 0 rows", {
         class = c("lengjan_fetch_error", "error", "condition"),
         list(message = "Lengjan API /current-program: HTTP 503")
       ))
-    }
+    },
+    ingest_lengjan_odds = function(...) stop("DOM path taken")
   )
   res <- suppressMessages(ingest_one_lengjan(
     list(sport = "handball", country = "iceland"),
