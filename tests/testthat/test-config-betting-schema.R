@@ -83,3 +83,52 @@ test_that("betting.enabled rejects a non-boolean", {
     "enabled|boolean"
   )
 })
+
+# --- 2026-09-23 WS1/WS2: betting.mode, lengjan.source, competition division ---
+
+test_that("schema accepts every betting.mode stage", {
+  for (m in c("off", "scrape", "paper", "manual", "auto")) {
+    expect_no_error(load_leagues(path = .bt_write(.bt_league(mode = m))))
+  }
+})
+
+test_that("schema rejects an unknown betting.mode", {
+  expect_error(
+    load_leagues(path = .bt_write(.bt_league(mode = "live"))),
+    "schema validation"
+  )
+})
+
+test_that("an unquoted YAML `mode: off` loads as mode off", {
+  # yaml::yaml.load("mode: off") is FALSE (YAML 1.1). load_leagues() maps it
+  # back before validating, so a hand-edited config neither fails the string
+  # schema nor aborts every pipeline script.
+  txt <- yaml::as.yaml(list(handball_iceland = .bt_league()))
+  txt <- sub("  betting:\n", "  betting:\n    mode: off\n", txt, fixed = TRUE)
+  tmp <- withr::local_tempfile(fileext = ".yml")
+  writeLines(txt, tmp)
+  lg <- load_leagues(path = tmp)
+  expect_equal(betting_mode(lg$handball_iceland), "off")
+})
+
+test_that("schema rejects betting.mode and betting.enabled together", {
+  expect_error(
+    load_leagues(path = .bt_write(.bt_league(mode = "paper", enabled = FALSE))),
+    "schema validation"
+  )
+})
+
+test_that("schema accepts lengjan.source and a competition division", {
+  lg <- .bt_league(mode = "scrape")
+  lg$lengjan <- list(
+    source = "api",
+    competitions = list(list(id = "1269", name = "x", sex = "male", division = "OD"))
+  )
+  expect_no_error(load_leagues(path = .bt_write(lg)))
+})
+
+test_that("schema rejects an unknown lengjan.source", {
+  lg <- .bt_league()
+  lg$lengjan <- list(source = "html", competitions = list())
+  expect_error(load_leagues(path = .bt_write(lg)), "schema validation")
+})

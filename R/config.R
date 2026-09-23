@@ -18,6 +18,8 @@ load_leagues <- function(path = here::here("config", "leagues.yml"),
     )
   }
 
+  leagues <- normalise_betting_modes(leagues)
+
   if (isTRUE(validate)) {
     if (!file.exists(schema_path)) {
       stop("leagues.schema.json not found: ", schema_path, call. = FALSE)
@@ -268,21 +270,81 @@ filter_leagues <- function(leagues, sport = NULL, country = NULL,
   leagues[keep]
 }
 
-#' Is betting enabled for a league?
+#' The betting ladder, lowest stage first (spec 2026-09-23 WS1).
 #'
-#' Reads `betting$enabled` from a league definition. The key is optional in
-#' `config/leagues.schema.json`, so an absent key means enabled and only an
-#' explicit `enabled: false` disarms a league. This is the single predicate
-#' consulted by the odds-ingest guard ([ingest_one_lengjan()]), the decide
-#' guard ([decide_league()]), the placer's recommendation loader
-#' ([load_recommendations()]) and the placer pre-flight
-#' ([validate_betting_enabled()]) -- so a league can never be disabled in one
-#' layer while another stays armed.
+#' `off`: nothing. `scrape`: odds only. `paper`: + decide (candidates and
+#' recommendations the placer never places). `manual`: + `place_bets.R`.
+#' `auto`: + the unattended launchd placer.
+#' @noRd
+.BETTING_MODES <- c("off", "scrape", "paper", "manual", "auto")
+
+#' A league's stage on the betting ladder.
+#'
+#' Reads `betting$mode`. Without it the legacy boolean decides: an explicit
+#' `enabled: false` is `"off"`; anything else (absent key, `TRUE`, no betting
+#' block) is `"auto"`, so football, which carries neither key, is unchanged.
+#' The schema forbids setting both keys.
 #'
 #' @param league A league definition (an element of [load_leagues()]), or any
 #'   list carrying a `betting` slice.
-#' @return `TRUE` unless `betting$enabled` is exactly `FALSE`.
+#' @return One of `"off"`, `"scrape"`, `"paper"`, `"manual"`, `"auto"`.
+#' @export
+betting_mode <- function(league) {
+  mode <- league$betting$mode
+  # YAML 1.1 reads an unquoted `off` as FALSE (see normalise_betting_modes()).
+  if (isFALSE(mode)) {
+    return("off")
+  }
+  if (!is.null(mode)) {
+    if (!(is.character(mode) && length(mode) == 1L && mode %in% .BETTING_MODES)) {
+      stop(
+        "betting.mode must be one of: ", paste(.BETTING_MODES, collapse = ", "),
+        call. = FALSE
+      )
+    }
+    return(mode)
+  }
+  if (isFALSE(league$betting$enabled)) "off" else "auto"
+}
+
+#' Is a league at or above a stage of the betting ladder?
+#'
+#' Each layer asks for the stage it needs: odds ingest `"scrape"`, decide
+#' `"paper"`, the placer `"manual"`, the unattended placer `"auto"`.
+#'
+#' @param league A league definition.
+#' @param stage One of `"off"`, `"scrape"`, `"paper"`, `"manual"`, `"auto"`.
+#' @return `TRUE` or `FALSE`.
+#' @export
+betting_mode_at_least <- function(league, stage) {
+  stage <- match.arg(stage, .BETTING_MODES)
+  match(betting_mode(league), .BETTING_MODES) >= match(stage, .BETTING_MODES)
+}
+
+#' Does the decide layer run for a league?
+#'
+#' `betting.mode` at least `"paper"`. Kept under this name for readers that
+#' predate the ladder -- [order_fit_targets()] fits these leagues first, which
+#' is right for paper leagues too (their recommendations want fresh fits).
+#'
+#' @param league A league definition.
+#' @return `TRUE` when decide runs for the league.
 #' @export
 betting_enabled <- function(league) {
-  !isFALSE(league$betting$enabled)
+  betting_mode_at_least(league, "paper")
+}
+
+#' Map a YAML-boolean `betting.mode` back to `"off"`.
+#'
+#' YAML 1.1 (the `yaml` package) reads an unquoted `mode: off` as logical
+#' `FALSE` -- the "Norway problem". Undone before schema validation so a
+#' hand-written `off` loads instead of failing the string schema.
+#' @noRd
+normalise_betting_modes <- function(leagues) {
+  for (key in names(leagues)) {
+    if (isFALSE(leagues[[key]]$betting$mode)) {
+      leagues[[key]]$betting$mode <- "off"
+    }
+  }
+  leagues
 }
