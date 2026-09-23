@@ -236,3 +236,107 @@ lengjan_markets_to_odds <- function(markets) {
   out <- out[out$market == "moneyline" | is.finite(out$line), , drop = FALSE]
   out[, c("event_id", "market", "outcome", "line", "odds"), drop = FALSE]
 }
+
+#' Canonical odds rows for one league from a parsed program and markets.
+#'
+#' An event belongs to the league when its sport matches and its competition
+#' id is one of the league's `lengjan.competitions`; the row takes that
+#' competition's `sex`. Team names stay as Lengjan renders them -- decide maps
+#' them to canonical per sex ([normalise_lengjan_team_names()]).
+#' `match_date` is the kickoff's UTC date: Iceland keeps UTC all year.
+#'
+#' @param events Output of [parse_lengjan_program()].
+#' @param markets Output of [parse_lengjan_markets()].
+#' @param league A league definition carrying `sport`, `country`, `lengjan`.
+#' @param scraped_at Single timestamp for the run.
+#' @return Tibble matching `schemas()$odds`.
+#' @export
+lengjan_api_odds_rows <- function(events, markets, league, scraped_at) {
+  comps <- league$lengjan$competitions %||% list()
+  comp_ids <- vapply(comps, function(cp) as.character(cp$id), character(1))
+  comp_sex <- stats::setNames(
+    vapply(comps, function(cp) as.character(cp$sex), character(1)),
+    comp_ids
+  )
+  ev <- events[events$sport_id == .lengjan_sport_id(league$sport) &
+    events$competition_id %in% comp_ids, , drop = FALSE]
+  j <- dplyr::inner_join(lengjan_markets_to_odds(markets), ev, by = "event_id")
+  j <- j[!is.na(j$home_team) & !is.na(j$away_team), , drop = FALSE]
+  if (nrow(j) == 0L) {
+    return(empty_lengjan_api_odds())
+  }
+  tibble::tibble(
+    sport = league$sport, country = league$country,
+    scraped_at = rep(scraped_at, nrow(j)),
+    match_date = as.Date(j$kickoff_at, tz = "UTC"),
+    home_team = j$home_team, away_team = j$away_team,
+    market = j$market, outcome = j$outcome, line = j$line, odds = j$odds,
+    sex = unname(comp_sex[j$competition_id]),
+    event_id = j$event_id, competition_id = j$competition_id,
+    kickoff_at = j$kickoff_at
+  )
+}
+
+#' @noRd
+empty_lengjan_api_odds <- function() {
+  tibble::tibble(
+    sport = character(), country = character(),
+    scraped_at = as.POSIXct(character(), tz = "UTC"),
+    match_date = as.Date(character()),
+    home_team = character(), away_team = character(),
+    market = character(), outcome = character(),
+    line = numeric(), odds = numeric(),
+    sex = character(), event_id = character(), competition_id = character(),
+    kickoff_at = as.POSIXct(character(), tz = "UTC")
+  )
+}
+
+#' Scrape odds from Lengjan's JSON API for leagues and upsert them.
+#'
+#' One program request, then markets for the leagues' open events in batches
+#' of 20 -- typically 2-4 requests in all. The API counterpart of
+#' [ingest_lengjan_odds()] (the Chromote DOM scraper), chosen per league by
+#' `lengjan.source: api` in [ingest_one_lengjan()].
+#'
+#' @param leagues Named list of league definitions (each with `lengjan`).
+#' @param scraped_at Single timestamp for the whole run.
+#' @param root Storage root.
+#' @param fetch_program,fetch_markets Injectable fetchers; tests pass fixtures.
+#' @return Number of odds rows written (invisible integer).
+#' @export
+ingest_lengjan_api <- function(leagues, scraped_at = Sys.time(),
+                               root = here::here("data"),
+                               fetch_program = lengjan_fetch_program,
+                               fetch_markets = lengjan_fetch_markets) {
+  stopifnot(is.list(leagues), length(leagues) > 0L)
+  events <- parse_lengjan_program(fetch_program())
+
+  wanted <- character(0)
+  for (lg in leagues) {
+    ids <- vapply(lg$lengjan$competitions %||% list(), function(cp) {
+      as.character(cp$id)
+    }, character(1))
+    hit <- events$sport_id == .lengjan_sport_id(lg$sport) &
+      events$competition_id %in% ids & events$market_count > 0L
+    wanted <- c(wanted, events$event_id[hit])
+  }
+  wanted <- unique(wanted)
+  if (length(wanted) == 0L) {
+    cli::cli_alert_info("Lengjan API: no open markets for {.val {names(leagues)}}")
+    return(invisible(0L))
+  }
+
+  markets <- parse_lengjan_markets(fetch_markets(wanted))
+  rows <- dplyr::bind_rows(lapply(leagues, lengjan_api_odds_rows,
+    events = events, markets = markets, scraped_at = scraped_at
+  ))
+  if (nrow(rows) == 0L) {
+    cli::cli_alert_info("Lengjan API: {length(wanted)} event{?s} but no mappable odds")
+    return(invisible(0L))
+  }
+  upsert_table(rows, "odds", root = root)
+  cli::cli_alert_success(
+    "Lengjan API: wrote {nrow(rows)} odds rows for {length(wanted)} event{?s}"
+  )
+  invisible(nrow(rows))
+}

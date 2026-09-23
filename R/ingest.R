@@ -379,7 +379,7 @@ ingest_one_league <- function(static, key, active_path,
 #' don't bust this target's cache.
 #'
 #' @param static Per-league static slice.
-#' @param lengjan Per-league `lengjan` slice (competitions + team_names).
+#' @param lengjan Per-league \code{lengjan} slice (source, competitions, team_names).
 #' @param key League key.
 #' @param active_path Path to `config/active_competitions.json`.
 #' @param betting Per-league `betting` slice, or `NULL`. Odds are scraped from
@@ -404,8 +404,17 @@ ingest_one_lengjan <- function(static, lengjan, key, active_path,
   }
   league <- static
   league$lengjan <- lengjan
+  # lengjan.source picks the scraper (spec 2026-09-23 WS2/WS3): "api" is the
+  # JSON API, anything else (absent = football until its Milestone B cutover)
+  # the Chromote DOM scraper. Both raise lengjan_fetch_error on transport
+  # failure, soft-failed below.
+  scrape_fn <- if (identical(lengjan$source, "api")) {
+    ingest_lengjan_api
+  } else {
+    ingest_lengjan_odds
+  }
   tryCatch(
-    as.integer(ingest_lengjan_odds(stats::setNames(list(league), key))),
+    as.integer(scrape_fn(stats::setNames(list(league), key))),
     lengjan_fetch_error = function(e) {
       # A navigate/fetch timeout that survived every retry is transient and
       # external (Lengjan-side latency or runner-network), not a scraper bug.
@@ -414,7 +423,7 @@ ingest_one_lengjan <- function(static, lengjan, key, active_path,
       # healthcheck's match-proximity odds_freshness check. Parse failures raise
       # plain errors (no lengjan_fetch_error class) and so still abort the run.
       cli::cli_alert_warning(
-        "{key}: Lengjan fetch timed out after retries ({conditionMessage(e)}); skipping this run. odds_freshness escalates if a fixture is imminent."
+        "{key}: Lengjan fetch failed after retries ({conditionMessage(e)}); skipping this run. odds_freshness escalates if a fixture is imminent."
       )
       0L
     }

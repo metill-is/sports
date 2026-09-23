@@ -9,7 +9,7 @@ ingest_one_lengjan(static, lengjan, key, active_path, betting = NULL)
 \arguments{
 \item{static}{Per-league static slice.}
 
-\item{lengjan}{Per-league `lengjan` slice (competitions + team_names).}
+\item{lengjan}{Per-league \code{lengjan} slice (source, competitions, team_names).}
 
 \item{key}{League key.}
 
