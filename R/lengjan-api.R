@@ -25,7 +25,7 @@ lengjan_api_get <- function(path, query = list()) {
     httr2::req_url_path_append(path) |>
     httr2::req_url_query(!!!query) |>
     httr2::req_user_agent(.LENGJAN_UA) |>
-    httr2::req_retry(max_tries = 3L) |>
+    httr2::req_retry(max_tries = 3L, retry_on_failure = TRUE) |>
     httr2::req_timeout(30L)
   resp <- tryCatch(.lengjan_perform(req), error = function(e) e)
   if (inherits(resp, "error")) {

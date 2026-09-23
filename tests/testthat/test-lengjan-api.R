@@ -107,3 +107,27 @@ test_that("lengjan_api_get raises lengjan_fetch_error on transport failure", {
   testthat::local_mocked_bindings(.lengjan_perform = function(req) stop("Could not resolve host"))
   expect_error(lengjan_api_get("current-program"), class = "lengjan_fetch_error")
 })
+
+test_that("lengjan_api_get retries transport failures and sends the pipeline UA", {
+  captured <- NULL
+  testthat::local_mocked_bindings(.lengjan_perform = function(req) {
+    captured <<- req
+    stop("offline")
+  })
+  expect_error(
+    lengjan_api_get("markets", list(`eventIds[0]` = "1", live = "false")),
+    class = "lengjan_fetch_error"
+  )
+  # httr2 retries only HTTP 429/503 unless retry_on_failure is set, so a
+  # timeout or DNS blip would otherwise zero the league's odds for the run.
+  expect_true(captured$policies$retry_on_failure)
+  expect_equal(captured$policies$retry_max_tries, 3L)
+  expect_identical(
+    captured$options$useragent,
+    "sports-pipeline (+https://github.com/metill-is/sports)"
+  )
+  expect_true(startsWith(captured$url, "https://games.lotto.is/api/proxy/lengjan/markets"))
+  q <- httr2::url_parse(captured$url)$query
+  expect_identical(q$live, "false")
+  expect_identical(q[["eventIds[0]"]], "1")
+})
