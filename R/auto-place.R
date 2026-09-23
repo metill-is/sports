@@ -164,6 +164,22 @@ auto_place_decide <- function(kill_switched, locked, sync_ok, pending_n, daily_r
   "place"
 }
 
+#' League keys the unattended placer may act on.
+#'
+#' Only `betting.mode` "auto" (spec 2026-09-23 WS1). A "manual" league is
+#' placed by a human running `scripts/place_bets.R --league <key>`; "paper"
+#' and below are never placed.
+#'
+#' @param leagues_cfg Named league config (from [load_leagues()]).
+#' @return Character vector of league keys (possibly empty).
+#' @export
+auto_place_leagues <- function(leagues_cfg) {
+  keep <- vapply(leagues_cfg, betting_mode_at_least, logical(1), stage = "auto")
+  # as.character(): names(list()) is NULL, and a NULL `leagues` means "all
+  # leagues" downstream -- an empty config must place nothing, not everything.
+  as.character(names(leagues_cfg)[keep])
+}
+
 #' Run one unattended placement cycle (kill -> lock -> sync -> gate ->
 #' daily-cap -> place), recording the outcome to the status store.
 #'
@@ -179,6 +195,7 @@ auto_place_decide <- function(kill_switched, locked, sync_ok, pending_n, daily_r
 #'   choice for unattended/launchd runs (no dependency on an active GUI session).
 #'   Set `FALSE` to watch a visible browser during a supervised run; the
 #'   human-paced `sample_delay()` in the placer applies either way.
+#' @param leagues_cfg Named league config; \code{NULL} (default) reads [load_leagues()] after the sync, so a config change pulled this cycle applies this cycle.
 #' @return The recorded status list, invisibly.
 #' @export
 run_auto_place <- function(root = here::here("data"),
@@ -186,7 +203,8 @@ run_auto_place <- function(root = here::here("data"),
                            sync_fn = sync_recs,
                            place_fn = place_bets,
                            bankroll_fn = function() load_bankroll(ledger_root = root),
-                           headless = TRUE) {
+                           headless = TRUE,
+                           leagues_cfg = NULL) {
   if (placement_kill_switched(root)) {
     return(record_placement_status("disabled", run_at = now, root = root))
   }
@@ -196,7 +214,24 @@ run_auto_place <- function(root = here::here("data"),
   on.exit(release_auto_place_lock(root), add = TRUE)
 
   sync_ok <- isTRUE(tryCatch(sync_fn(here::here()), error = function(e) FALSE))
-  pending <- tryCatch(suppressMessages(preview_pending(root = root)),
+  # Read the ladder after the sync: a betting.mode change pulled this cycle
+  # applies this cycle. Only "auto" leagues are placed unattended. A config the
+  # sync pulled that fails to load is recorded before re-throwing, as a
+  # placement error is: scripts/auto_place.R only logs what it catches.
+  if (is.null(leagues_cfg)) {
+    leagues_cfg <- tryCatch(load_leagues(), error = function(e) {
+      record_placement_status(
+        paste0("failed:config: ", conditionMessage(e)),
+        run_at = now, root = root
+      )
+      stop(e)
+    })
+  }
+  auto_keys <- auto_place_leagues(leagues_cfg)
+  pending <- tryCatch(
+    suppressMessages(preview_pending(
+      leagues = auto_keys, root = root, leagues_cfg = leagues_cfg
+    )),
     error = function(e) tibble::tibble()
   )
   n_pending <- nrow(pending)
@@ -213,7 +248,10 @@ run_auto_place <- function(root = here::here("data"),
   }
 
   res <- tryCatch(
-    place_fn(dry_run = FALSE, interactive = FALSE, headless = headless, root = root),
+    place_fn(
+      leagues = auto_keys, dry_run = FALSE, interactive = FALSE,
+      headless = headless, root = root
+    ),
     error = function(e) {
       record_placement_status(paste0("failed:", conditionMessage(e)),
         n_pending = n_pending, run_at = now, root = root
