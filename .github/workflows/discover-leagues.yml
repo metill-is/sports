@@ -2,7 +2,7 @@ name: Discover Lengjan Leagues
 
 on:
   schedule:
-    # Twice weekly (Mon + Thu) UTC, off the odds-scrape slots (8,11,14,20) and
+    # Twice weekly (Mon + Thu) UTC, off the odds-scrape slots (minute 17 of 8,11,14,17,20) and
     # the healthcheck slots. Competitions appear at most a few times per season,
     # so a daily poll was ~30x oversampling: cut 2026-09-02 alongside retiring
     # the WC cron. Two slots rather than one because GitHub is currently dropping
@@ -35,11 +35,6 @@ jobs:
           r-version: 'release'
           use-public-rspm: true
 
-      - uses: browser-actions/setup-chrome@v2
-        id: setup-chrome
-        with:
-          chrome-version: stable
-
       - uses: r-lib/actions/setup-r-dependencies@v2
         env:
           PKG_SYSREQS: "false"
@@ -47,7 +42,6 @@ jobs:
           dependencies: '"hard"'
           extra-packages: |
             any::devtools
-            any::chromote
 
       - name: Reinstall V8 from source with bundled static libv8
         env:
@@ -56,8 +50,6 @@ jobs:
           Rscript -e 'install.packages("V8", type = "source", repos = c(CRAN = "https://cloud.r-project.org"))'
 
       - name: Discover Lengjan leagues
-        env:
-          CHROMOTE_CHROME: ${{ steps.setup-chrome.outputs.chrome-path }}
         run: Rscript scripts/0N_discover.R
 
       - name: Commit if discovery changed

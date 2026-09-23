@@ -2,16 +2,14 @@
 % Please edit documentation in R/discover-lengjan.R
 \name{propose_team_names}
 \alias{propose_team_names}
-\title{Draft team_names for a competition by scraping its page once.}
+\title{Draft team_names for a competition from the program's participants.}
 \usage{
-propose_team_names(comp_id, sport, country, sex, session, known_teams)
+propose_team_names(comp_id, events, known_teams)
 }
 \arguments{
-\item{comp_id}{Lengjan competition ID.}
+\item{comp_id}{Lengjan competition id.}
 
-\item{sport, country, sex}{Context.}
-
-\item{session}{A live `chromote::ChromoteSession`.}
+\item{events}{Output of [parse_lengjan_program()].}
 
 \item{known_teams}{Canonical team names to match against.}
 }
@@ -19,5 +17,5 @@ propose_team_names(comp_id, sport, country, sex, session, known_teams)
 Tibble `{lengjan, canonical_guess, confidence}`.
 }
 \description{
-Draft team_names for a competition by scraping its page once.
+Draft team_names for a competition from the program's participants.
 }

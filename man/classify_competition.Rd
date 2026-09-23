@@ -7,18 +7,20 @@
 classify_competition(lengjan_name, sport, country)
 }
 \arguments{
-\item{lengjan_name}{Competition display name from the dropdown.}
+\item{lengjan_name}{Competition display name from Lengjan.}
 
-\item{sport, country}{Pass-through context (reserved for sport-specific rules).}
+\item{sport}{"football", "handball" or "basketball".}
+
+\item{country}{Pass-through context.}
 }
 \value{
 Tibble `{sex, division, confidence}` (one row).
 }
 \description{
 Deterministic, advisory name match. Sex from a "kvenna"/"kv" marker;
-division from the league-name pattern. A name that matches no division
-pattern is `division = NA`, `confidence = "low"` -- surfaced for a human,
-never auto-wired. Patterns are ASCII except the basketball "Bonusdeild" name,
-written with a `ó` escape (R-source non-ASCII rule); the cup matches the
-ASCII substring "bikar", so it needs no escape.
+division from the league-name pattern, per sport -- each federation has its
+own codes (football BD/LD1-4, handball OD/G66, basketball BD/1D; spec
+2026-09-23 WS4). A name that matches no pattern is `division = NA`,
+`confidence = "low"` -- surfaced for a human, never auto-wired. Non-ASCII
+letters are written as `\\u` escapes (R-source non-ASCII rule).
 }
