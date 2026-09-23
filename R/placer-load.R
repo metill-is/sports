@@ -55,19 +55,18 @@ load_recommendations <- function(root,
   drop_betting_disabled(recs, leagues_cfg = leagues_cfg)
 }
 
-#' Drop recommendations belonging to betting-disabled leagues.
+#' Drop recommendations from leagues below `betting.mode` "manual".
 #'
-#' Decision D2 (spec 2026-09-02 section 3): a league may be modelled and
-#' published without being bet. The decide layer refuses to write such
-#' recommendations, but rows written *before* a league was disarmed outlive
-#' the config change, and `run_auto_place()` places every pending
-#' recommendation by design -- so the placer filters on read as well.
+#' Spec 2026-09-23 WS1: a "paper" league's recommendations exist to be read,
+#' never placed, and rows written before a league was lowered outlive the
+#' config change -- `run_auto_place()` places every pending recommendation by
+#' design, so the placer filters on read as well.
 #'
 #' @param recs Recommendation rows.
 #' @param leagues_cfg Named league config, defaulting to [load_leagues()].
 #'   Named distinctly from `load_recommendations()`'s `leagues`, which is a
 #'   character vector of keys to keep, not a config.
-#' @return `recs` without rows for betting-disabled leagues.
+#' @return `recs` without rows for leagues below "manual".
 #' @keywords internal
 #' @noRd
 drop_betting_disabled <- function(recs, leagues_cfg = NULL) {
@@ -77,7 +76,7 @@ drop_betting_disabled <- function(recs, leagues_cfg = NULL) {
   if (is.null(leagues_cfg)) leagues_cfg <- load_leagues()
 
   disabled <- names(leagues_cfg)[
-    !vapply(leagues_cfg, betting_enabled, logical(1))
+    !vapply(leagues_cfg, betting_mode_at_least, logical(1), stage = "manual")
   ]
   if (length(disabled) == 0L) {
     return(recs)
@@ -86,8 +85,8 @@ drop_betting_disabled <- function(recs, leagues_cfg = NULL) {
   drop <- paste0(recs$sport, "_", recs$country) %in% disabled
   if (any(drop)) {
     cli::cli_alert_warning(
-      "Dropping {sum(drop)} recommendation{?s} for betting-disabled \\
-       league{?s} (betting.enabled: false): \\
+      "Dropping {sum(drop)} recommendation{?s} for league{?s} below \\
+       betting.mode manual: \\
        {.val {unique(paste0(recs$sport, '_', recs$country)[drop])}}"
     )
   }

@@ -15,10 +15,10 @@ ingest_one_lengjan(static, lengjan, key, active_path, betting = NULL)
 
 \item{active_path}{Path to `config/active_competitions.json`.}
 
-\item{betting}{Per-league `betting` slice, or `NULL`. When
-`betting$enabled` is `FALSE` the scrape is refused outright (decision D2
--- publish without betting). Trailing and defaulted so existing four-arg
-calls keep working.}
+\item{betting}{Per-league `betting` slice, or `NULL`. Odds are scraped from
+`betting.mode` "scrape" up (spec 2026-09-23 WS1); at "off" the scrape is
+refused outright. Trailing and defaulted so existing four-arg calls keep
+working.}
 }
 \value{
 Number of odds rows written (integer).

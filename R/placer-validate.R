@@ -153,7 +153,7 @@ validate_recommendations_schema <- function(recs) {
   invisible(TRUE)
 }
 
-#' Abort if any recommendation belongs to a betting-disabled league.
+#' Abort if any recommendation belongs to a league below `betting.mode` manual.
 #'
 #' Placer pre-flight, mirroring [validate_team_names_config()]: runs before
 #' the browser is launched so a policy breach fails fast and loudly rather
@@ -188,13 +188,15 @@ validate_betting_enabled <- function(leagues, recs) {
     )
   }
 
-  disabled <- names(leagues)[!vapply(leagues, betting_enabled, logical(1))]
+  disabled <- names(leagues)[
+    !vapply(leagues, betting_mode_at_least, logical(1), stage = "manual")
+  ]
   offending <- intersect(unique(paste0(recs$sport, "_", recs$country)), disabled)
   if (length(offending) > 0L) {
     stop(
       "validate_betting_enabled: refusing to place bets on ",
-      "betting-disabled league(s): ", paste(offending, collapse = ", "),
-      ". Set betting.enabled: true in config/leagues.yml to re-arm.",
+      "league(s) below betting.mode manual: ", paste(offending, collapse = ", "),
+      ". Set betting.mode: manual (or auto) in config/leagues.yml to arm.",
       call. = FALSE
     )
   }
