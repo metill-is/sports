@@ -31,7 +31,7 @@ choice for unattended/launchd runs (no dependency on an active GUI session).
 Set `FALSE` to watch a visible browser during a supervised run; the
 human-paced `sample_delay()` in the placer applies either way.}
 
-\item{leagues_cfg}{Named league config; \code{NULL} (default) reads [load_leagues()] after the sync, so a config change pulled this cycle applies this cycle.}
+\item{leagues_cfg}{Named league config; \code{NULL} (default) reads [load_leagues()] after a successful sync, so a config change pulled this cycle applies this cycle; a refused sync reads no config and records \code{sync_failed}.}
 }
 \value{
 The recorded status list, invisibly.

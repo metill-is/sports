@@ -195,7 +195,7 @@ auto_place_leagues <- function(leagues_cfg) {
 #'   choice for unattended/launchd runs (no dependency on an active GUI session).
 #'   Set `FALSE` to watch a visible browser during a supervised run; the
 #'   human-paced `sample_delay()` in the placer applies either way.
-#' @param leagues_cfg Named league config; \code{NULL} (default) reads [load_leagues()] after the sync, so a config change pulled this cycle applies this cycle.
+#' @param leagues_cfg Named league config; \code{NULL} (default) reads [load_leagues()] after a successful sync, so a config change pulled this cycle applies this cycle; a refused sync reads no config and records \code{sync_failed}.
 #' @return The recorded status list, invisibly.
 #' @export
 run_auto_place <- function(root = here::here("data"),
@@ -218,7 +218,11 @@ run_auto_place <- function(root = here::here("data"),
   # applies this cycle. Only "auto" leagues are placed unattended. A config the
   # sync pulled that fails to load is recorded before re-throwing, as a
   # placement error is: scripts/auto_place.R only logs what it catches.
-  if (is.null(leagues_cfg)) {
+  # WHY sync_ok first: a refused sync may mean a feature branch is checked out.
+  # Its config must not turn the run into a failed:* status, under which
+  # scripts/auto_place.R would commit ledger rows off-main; sync_failed skips
+  # that commit, so with no config read nothing is placed and it is recorded.
+  if (is.null(leagues_cfg) && sync_ok) {
     leagues_cfg <- tryCatch(load_leagues(), error = function(e) {
       record_placement_status(
         paste0("failed:config: ", conditionMessage(e)),
@@ -227,7 +231,11 @@ run_auto_place <- function(root = here::here("data"),
       stop(e)
     })
   }
-  auto_keys <- auto_place_leagues(leagues_cfg)
+  auto_keys <- if (is.null(leagues_cfg)) {
+    character(0)
+  } else {
+    auto_place_leagues(leagues_cfg)
+  }
   pending <- tryCatch(
     suppressMessages(preview_pending(
       leagues = auto_keys, root = root, leagues_cfg = leagues_cfg

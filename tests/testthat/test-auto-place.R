@@ -437,3 +437,28 @@ test_that("run_auto_place hands place_fn only the auto leagues", {
   expect_identical(got, "football_iceland")
   expect_equal(read_placement_status(root)$status, "placed")
 })
+
+test_that("run_auto_place reads no config after a refused sync (Ruling R3)", {
+  # A refused sync may mean a feature branch is checked out: its leagues.yml
+  # must not turn the run into failed:*, under which scripts/auto_place.R
+  # would commit ledger rows off-main. sync_failed skips that commit.
+  root <- withr::local_tempdir()
+  seed_pending_rec(root)
+  load_called <- FALSE
+  testthat::local_mocked_bindings(
+    load_leagues = function(...) {
+      load_called <<- TRUE
+      stop("leagues.yml failed schema validation")
+    }
+  )
+  expect_no_error(
+    run_auto_place(
+      root = root, now = as.POSIXct("2026-06-01 12:00:00", tz = "UTC"),
+      sync_fn = function(...) FALSE,
+      place_fn = function(...) stop("must not be reached"),
+      bankroll_fn = .ap_bankroll
+    )
+  )
+  expect_equal(read_placement_status(root)$status, "sync_failed")
+  expect_false(load_called)
+})
