@@ -289,6 +289,15 @@ football_iceland:
       - { id: "813",   name: "Mjólkurbikar karla",       sex: male   }
       - { id: "1581",  name: "2. deild karla",           sex: male   }
       - { id: "1568",  name: "Besta deild kvenna",       sex: female }
+      # Women's BD neðri hluti (bottom-4 split, BD_LOWER_PO) -- comp 27524,
+      # added 2026-09-23. The post-split women's fixtures no longer list under
+      # 1568: none of the five split games played 17-19 Sep got odds. First
+      # listed event 4622914, Valur kv v Víkingur Rvk kv (25 Sep 18:00Z). All
+      # four lower-group sides (Valur, Víkingur R., Fram, Þór/KA) are already
+      # mapped in team_names.female and confirmed in data/facts/odds. The efri
+      # hluti counterpart (cf. men's 20443) was NOT listed on 2026-09-23 --
+      # wire it via /wire-league once discover-leagues proposes it.
+      - { id: "27524", name: "Besta deild kv. neðri hluti", sex: female }
       # Women's cup — confirmed live 2026-06-16 (ÍBV kv v FH kv, 17 Jún) at
       # competition id 2410. Lengjan labels it "Mjólkurbikar kvenna"; the same
       # cell is "Bikar kvenna" on the publish side (publish_divisions.female.CUP).
@@ -405,8 +414,8 @@ football_iceland:
           - Grindavík / Njarðvík kv                     # primary: accented, SPACES around slash (confirmed 2026-05-18)
           - Grindavik/Njarðvík kv                       # variant: plain 'i', bare slash (confirmed 2026-06-16)
         Valur: Valur kv                                 # confirmed 2026-05-18
-        Stjarnan: Stjarnan kv                           # identity-pattern guess; first fixture 2026-05-20 vs Grindavík/Njarðvík
-        Þór/KA: Þór/KA kv                               # identity-pattern guess; first fixture 2026-05-20 vs Breiðablik. Verify on first odds appearance (Lengjan may use spaces — c.f. Grindavík/Njarðvík)
+        Stjarnan: Stjarnan kv                           # confirmed 2026-05-20 (Grindavík / Njarðvík kv v Stjarnan kv)
+        Þór/KA: Þór/KA kv                               # confirmed 2026-05-20 (Þór/KA kv v Breiðablik kv; bare slash, no spaces)
         # Women's Lengjudeild (1. deild kvenna) teams -- comp 4670, added
         # 2026-06-21. KR / Haukar renderings CONFIRMED (21 Jun scrape); the
         # other 8 are "<name> kv" pattern-guesses -- a wrong guess fails safe
