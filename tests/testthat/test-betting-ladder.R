@@ -42,3 +42,17 @@ test_that("betting_enabled is exactly 'mode at least paper'", {
   expect_false(betting_enabled(list(betting = list(enabled = FALSE))))
   expect_true(betting_enabled(list(sport = "football")))
 })
+
+test_that("betting_mode_at_least fails closed on an invalid stage", {
+  # match.arg() would map NULL to "off" (TRUE for every league) and
+  # partial-match "p" to "paper"; the placer gates must never do either.
+  auto <- list(betting = list(mode = "auto"))
+  bad <- list(NULL, "p", character(0), NA_character_, c("paper", "auto"))
+  for (stage in bad) {
+    expect_error(
+      betting_mode_at_least(auto, stage),
+      "stage must be one of",
+      info = deparse(stage)
+    )
+  }
+})

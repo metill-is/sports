@@ -9,7 +9,9 @@ betting_mode_at_least(league, stage)
 \arguments{
 \item{league}{A league definition.}
 
-\item{stage}{One of `"off"`, `"scrape"`, `"paper"`, `"manual"`, `"auto"`.}
+\item{stage}{One of `"off"`, `"scrape"`, `"paper"`, `"manual"`, `"auto"`,
+matched exactly. Anything else (`NULL`, `NA`, a partial or vector value)
+is an error, so a gate fails closed rather than defaulting to `"off"`.}
 }
 \value{
 `TRUE` or `FALSE`.

@@ -313,11 +313,19 @@ betting_mode <- function(league) {
 #' `"paper"`, the placer `"manual"`, the unattended placer `"auto"`.
 #'
 #' @param league A league definition.
-#' @param stage One of `"off"`, `"scrape"`, `"paper"`, `"manual"`, `"auto"`.
+#' @param stage One of `"off"`, `"scrape"`, `"paper"`, `"manual"`, `"auto"`,
+#'   matched exactly. Anything else (`NULL`, `NA`, a partial or vector value)
+#'   is an error, so a gate fails closed rather than defaulting to `"off"`.
 #' @return `TRUE` or `FALSE`.
 #' @export
 betting_mode_at_least <- function(league, stage) {
-  stage <- match.arg(stage, .BETTING_MODES)
+  if (!(is.character(stage) && length(stage) == 1L && !is.na(stage) && stage %in% .BETTING_MODES)) {
+    stop(
+      "betting_mode_at_least: stage must be one of: ",
+      paste(.BETTING_MODES, collapse = ", "),
+      call. = FALSE
+    )
+  }
   match(betting_mode(league), .BETTING_MODES) >= match(stage, .BETTING_MODES)
 }
 
