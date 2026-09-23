@@ -105,6 +105,7 @@ Collate:
     'health-season.R'
     'ingest-ksi-football.R'
     'ingest-log.R'
+    'lengjan-api.R'
     'model-fit.R'
     'model-posteriors.R'
     'model-league.R'
