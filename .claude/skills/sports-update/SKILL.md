@@ -8,7 +8,7 @@ agent: general-purpose
 
 # /sports-update — Full pipeline update
 
-Wraps the five `scripts/0N_*.R` entry points for the active Icelandic
+Wraps the `scripts/0N_*.R` entry points for the active Icelandic
 leagues. Each script has its own freshness guard: `02_scrape_odds.R`
 skips when there are no upcoming games; `03_fit.R` skips when no new
 games have been played since the last fit. Pass `--force` to bypass.
@@ -19,7 +19,7 @@ Pick the default selector based on the user's phrasing:
 
 | User phrasing                                                 | Default action                              |
 | ------------------------------------------------------------- | ------------------------------------------- |
-| "run the pipeline", "update the models", "refresh", "full update" | Run all five scripts in order              |
+| "run the pipeline", "update the models", "refresh", "full update" | Run the full chain in order (Step 3)       |
 | "just refresh fits" / "rescrape odds" / "republish"           | Run a single script (mapping below)         |
 | explicit `--league`, `--sex`                                  | Honour the user                             |
 

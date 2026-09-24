@@ -32,7 +32,7 @@ Rscript scripts/preview_bets.R --date 2026-04-26
 
 Present the output to the user. Then ask:
 
-- "Want me to place all of these, or do you want to skip/adjust any?"
+- "Want me to place all of these? I can narrow by league or date, but the placer can't skip single bets."
 - If there are bets on multiple dates, ask whether to place all dates or just today/tomorrow.
 
 **Listen for adjustments:**

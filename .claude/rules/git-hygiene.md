@@ -1,8 +1,9 @@
 # Git Hygiene (Sports Repo)
 
-This repo runs hot — seven scheduled GitHub workflows commit to `main` throughout the day
-(`scrape-results`, `scrape-odds`, `fit`, `decide-publish`, `healthcheck`,
-`discover-leagues`, `republish`; `world-cup` is dispatch-only). A working session that takes hours typically sees ~10
+This repo runs hot — six GitHub workflows commit to `main` automatically throughout the day
+(`scrape-results`, `scrape-odds`, `healthcheck` and `discover-leagues` on cron;
+`fit` and `decide-publish` chained by `workflow_run`); `republish` and
+`world-cup` are dispatch-only. A working session that takes hours typically sees ~10
 upstream commits land while you work. The patterns below keep local state in
 sync without losing anything.
 
@@ -100,12 +101,16 @@ When pop conflicts, decide per file:
   keep the stash.
 - **Binary file conflict** (parquet, etc.) → `git checkout --ours <path>` to
   keep your working tree's version, `--theirs` to take the stash's. Then
-  `git add` to mark resolved.
+  `git add` to mark resolved. **Never do this for a ledger parquet**
+  (`data/decisions/ledger/`): either side can hold money rows or settle flips
+  that the other lacks, so merge them row-wise (read both with arrow, union
+  the rows, and keep the more-settled state where rows overlap). Ledger rows
+  shouldn't reach a stash at all; commit them first (path-restricted).
 
 ## Stash discipline
 
 After every sync, `git stash list`. A stash that wasn't auto-dropped means a
-conflict happened — investigate and either resolve or drop. Stashes silently
+conflict happened — investigate, then resolve it, or drop it after asking the user (a drop is unrecoverable). Stashes silently
 accumulate over weeks if ignored; today the repo had 6.
 
 A stash's content typically degrades over time as the surrounding code on main
@@ -118,7 +123,7 @@ commit at the same path are always stale.
 
 ## Before pushing to main
 
-The seven scheduled CI workflows auto-commit to `main` constantly (metill-platform's
+The six automatic CI workflows commit to `main` constantly (metill-platform's
 `pull-sports-data` only *reads* this repo — it commits to its own), so `main`
 almost always moves under you between sessions. A
 plain `git push` will be rejected as non-fast-forward (or, worse, you'll race a

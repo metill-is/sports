@@ -22,6 +22,10 @@ and stop. The rest of this skill is for the dirty case.
 
 ## Sync (dirty working tree)
 
+If `data/decisions/ledger/` is dirty, commit it first (path-restricted:
+`git add -A data/decisions/ledger/ && git commit -m "data(ledger): commit pending rows" -- data/decisions/ledger/`).
+Ledger rows are real money and never go through a stash.
+
 ```bash
 git -C /Users/brynjolfurjonsson/sports stash push -u -m "sync-main on $(date +%F): WIP"
 git -C /Users/brynjolfurjonsson/sports pull --rebase origin main
@@ -35,10 +39,12 @@ Expected outcomes (in order of likelihood):
    (typical for `data/decisions/candidates/.../run_date=*/`,
    `data/facts/odds/.../scraped_date=*/`). The stash is preserved at
    `stash@{0}` for inspection. Working tree has origin/main's canonical
-   version. Usually safe to `git stash drop stash@{0}` after confirming the
-   stashed content was just stale local pipeline outputs.
+   version. Once you have confirmed the stashed content is only stale local
+   pipeline outputs, ask the user before `git stash drop stash@{0}` (a drop
+   is unrecoverable).
 3. **Conflict**: text or binary file conflict on a path you do care about.
-   See `.claude/rules/git-hygiene.md` § "When pop conflicts".
+   See the "When pop conflicts" paragraph under "The cron-collision sync
+   pattern" in `.claude/rules/git-hygiene.md`.
 
 ## Verification
 

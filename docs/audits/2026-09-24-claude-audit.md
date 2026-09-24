@@ -32,6 +32,8 @@ Checks that passed:
   world-cup.yml has no schedule: key (dispatch-only; last scheduled run 2026-09-02T09:36Z),
   so seven workflows commit on a schedule.
   Fix: "Seven scheduled CI workflows (plus the dispatch-only world-cup.yml)".
+  CORRECTED by the verification pass: republish.yml is dispatch-only too, and fit/decide-publish
+  are chained by workflow_run. So six workflows commit automatically (four on cron), not seven.
 
 [INFO] CLAUDE.md:1c — Scope blockquote lists the World Cup pipeline alongside the live leagues
   Fix: mark it dormant (dispatch-only since 2026-09) so it isn't read as an active surface.
@@ -288,7 +290,7 @@ The proposal `foreground-edit-before-background-launch` was skipped, as the owne
 - **sports-update:** the three paths fixed; `agent: general-purpose` added.
 - **wrap-up-session:** gains an AskUserQuestion gate before `stash drop`, `branch -D` and `worktree remove`; a worktree-based stash-rescue recipe replaces the dead pointer; the description no longer overlaps sync-main.
 - **sports-betting.md:** the "Skill reference" section now states the invariant the test actually enforces.
-- **CLAUDE.md** (177 → 172 lines) **and git-hygiene.md:** "seven scheduled workflows"; the WC pipeline marked dormant; Status and Directory structure folded into "Source registry and design"; the autoplace bullet cut to a pointer.
+- **CLAUDE.md** (177 → 172 lines) **and git-hygiene.md:** the workflow count (first "seven scheduled", corrected to six automatic in the verification round below); the WC pipeline marked dormant; Status and Directory structure folded into "Source registry and design"; the autoplace bullet cut to a pointer.
 - **settings.json:** the Stan hook is split into two handlers, `if: Edit(**/*.stan)` and `if: Write(**/*.stan)` (`if` takes exactly one rule, per the hooks docs). Verified live with `claude -p`: a broken `.stan` file under `Stan/` got the stanc blocking error, from one handler only.
 - **Rule globs:** removed `**/*.r` and the redundant `R/publish-pipeline.R`.
 - The three config-reading test files pass: skill-conventions, placer-ci-isolation, publish-refactor-hygiene (0 failed, 0 errors).
@@ -319,3 +321,25 @@ The proposal `foreground-edit-before-background-launch` was skipped, as the owne
 - Removing worktrees: this needs the owner's confirmation (wrap-up-session's own new gate).
   - Removable: `.worktrees/fix-kki-thor-alias` (detached at a commit on main, clean) and `.worktrees/fix-alias-followups` (PR #92 squash-merged as d7da31da1).
   - Keep: `sharp-jepsen-e3a666` (PR #94 open), plus the two detached 2026-09-03 worktrees, whose work is now safe on the rescue branches.
+
+### Verification round (workflow wf_ec8ba5fd-ce2: 4 read-only lens judges, 0 dead)
+
+The judges returned 22 findings. Each one was re-checked here before any fix.
+- **1 refuted:** the handball go-live date. d2693ad3f added all four handball cells on 2026-09-05.
+- **The rest confirmed and fixed:**
+  - My workflow count was still wrong. It is now six automatic (four cron, plus fit and decide-publish via workflow_run); republish and world-cup are dispatch-only.
+  - The WC cron was retired on 2026-09-02 (cf3497aea, PR #77), not at the tournament's end.
+  - **High (older than this session):** wrap-up-session step 4 said a modified ledger could be left for the next sync's stash, which contradicts "the ledger always commits". It now says to commit it, path-restricted.
+  - sync-main dropped a stash without asking, and git-hygiene's stash discipline allowed the same. Both now ask first; sync-main also commits the ledger before stashing.
+  - git-hygiene allowed `--ours`/`--theirs` on ledger parquets. It now requires a row-wise merge.
+  - wrap-up-session merged PRs without asking. Merges are now on its ask-first list.
+  - CLAUDE.md's quick reference had `place_bets.R --live` as "actually place". It is now `--live --no-confirm` with the confirm-in-chat condition, matching 5f964656c.
+  - The CLAUDE.md Skills section omitted /pipeline-doctor and /wc-refresh.
+  - place-bets offered to skip single bets, which the placer can't do.
+  - sports-update said "five" scripts for a seven-script chain.
+  - A sync-main pointer named a git-hygiene section that doesn't exist.
+  - The kelly_frac memory lacked the PR #95 betting modes: only football stakes real money.
+  - The WC memory dropped the 2026-06-21 start of hourly polling.
+  - The icelandic-focus description dated the pause without a source.
+  - The vault note's per-sport gate was a paraphrase; it now quotes spec §8's Gate 1, Gate 2 and graduation criteria.
+  - The slimming had dropped harness history from both memory and vault. It is now preserved in the vault note's "Harness implementation notes (PR #40)" section.

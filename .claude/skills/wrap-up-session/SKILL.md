@@ -1,6 +1,6 @@
 ---
 name: wrap-up-session
-description: Use when ending a session in the sports repo, or when stashes, local branches, extra worktrees or open PRs are left over. Triages each leftover to a known-clean state and asks before dropping or deleting anything; syncing main itself is /sync-main.
+description: Use when ending a session in the sports repo, or when stashes, local branches, extra worktrees or open PRs are left over. Triages each leftover to a known-clean state and asks before dropping, deleting or merging anything; syncing main itself is /sync-main.
 ---
 
 # /wrap-up-session — End-of-session consolidation checklist
@@ -8,11 +8,13 @@ description: Use when ending a session in the sports repo, or when stashes, loca
 This repo accumulates clutter quickly because cron commits race against local
 work. Run this skill before closing a session to reach a known-clean state.
 
-**Ask before destroying anything.** Steps 2 and 3 only *propose* drops. Collect
-every stash to drop, branch to `git branch -D` and worktree to remove into one
-list, each with its evidence (e.g. "subsumed by 1a2b3c on main", "merged as
-PR #N"), and confirm it with AskUserQuestion before running any `stash drop`,
-`branch -D` or `worktree remove`. None of these can be undone in practice.
+**Ask before destroying or shipping anything.** Steps 2, 3 and 5 only
+*propose* actions. Collect every stash to drop, branch to `git branch -D`,
+worktree to remove and PR to merge into one list, each with its evidence
+(e.g. "subsumed by 1a2b3c on main", "merged as PR #N", "CI green"), and
+confirm it with AskUserQuestion before running any `stash drop`, `branch -D`,
+`worktree remove` or `gh pr merge`. Drops and deletions can't be undone in
+practice, and a merge pushes to `main`, which metill-platform deploys from.
 
 ## 1. Branch + worktree alignment
 
@@ -82,9 +84,15 @@ Categorise each entry:
 - **Source code WIP** (R/, scripts/, tests/, .claude/rules/, CLAUDE.md, etc.) →
   commit to a branch before ending the session, even if not pushed. Untracked
   source code that disappears in a `rm -rf .` is real risk.
-- **Local pipeline data** (modified data/decisions/ledger/, untracked data/
-  partitions for today's date) → safe to leave as long as you understand it
-  will be stashed at next sync. Cron will refresh via its own commits.
+- **Ledger** (any change under `data/decisions/ledger/`) → commit it now,
+  path-restricted:
+  `git -C /Users/brynjolfurjonsson/sports add -A data/decisions/ledger/ && git -C /Users/brynjolfurjonsson/sports commit -m "data(ledger): commit pending rows" -- data/decisions/ledger/`.
+  Ledger rows are real money. Never leave them for the next sync's stash
+  (see git-hygiene.md), and the pre-commit hook blocks every other commit
+  until they are in.
+- **Local pipeline data** (untracked data/ partitions for today's date) →
+  safe to leave as long as you understand it will be stashed at next sync.
+  Cron will refresh via its own commits.
 - **Generated docs** (man/*.Rd) → if accompanying a source change, commit
   together; if orphaned, run `Rscript -e 'devtools::document()'` to confirm
   they're current and either commit or stash.
@@ -95,7 +103,7 @@ Categorise each entry:
 gh pr list --state open
 ```
 
-For each open PR: either merge (if CI green) or note as deliberately pending.
+For each open PR, propose merging it (if CI is green) or noting it as deliberately pending. Merges go on the ask-first list above.
 Stale open PRs are noise.
 
 ## Done state

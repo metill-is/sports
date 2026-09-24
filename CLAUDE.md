@@ -4,7 +4,7 @@ Bayesian sports prediction and automated betting for Icelandic football, basketb
 
 > **Scope:** the three Icelandic leagues (`basketball_iceland`, `handball_iceland`,
 > `football_iceland`) plus the World Cup pipeline (`world-cup.yml`, `R/wc-*.R`),
-> dormant since the 2026 tournament (dispatch-only, no schedule).
+> dormant since the 2026 tournament (dispatch-only since 2026-09-02).
 > Other non-Icelandic leagues are paused. All user-facing content is in Icelandic.
 > Authoritative list: `config/leagues.yml` + `scripts/00_active_competitions.R`.
 
@@ -64,7 +64,7 @@ Rscript scripts/0Nr_replay.R --league football_iceland --sex male --as-of 2026-0
 
 # Local placer (NEVER on CI). Default is dry-run; --live opts in to placement.
 Rscript scripts/place_bets.R                          # dry-run (default)
-Rscript scripts/place_bets.R --live                   # actually place
+Rscript scripts/place_bets.R --live --no-confirm      # actually place: only after the slip is confirmed in chat (--live alone stops at a y/n prompt Rscript can't answer)
 Rscript scripts/preview_bets.R                        # no browser
 
 # Rebuild sports.duckdb after fresh Parquet writes
@@ -142,11 +142,11 @@ Football-only by default. Loads on `R/backtest-*.R`, `scripts/0N{b,r}_*.R`,
 
 ## Git hygiene
 
-Seven scheduled CI workflows commit to `main` throughout the day (`world-cup.yml` is dispatch-only), so local working trees drift quickly. The cron-collision sync pattern (stash → pull --rebase → pop), stash discipline and the ledger's always-commit layers are in [`.claude/rules/git-hygiene.md`](./.claude/rules/git-hygiene.md); branch protection and PR vs direct push are in [`docs/runbooks/git-main-branch.md`](docs/runbooks/git-main-branch.md). Operational helpers: `/sync-main` (mid-session re-alignment) and `/wrap-up-session` (end-of-session consolidation checklist).
+Six CI workflows commit to `main` automatically throughout the day (four on cron, plus `fit` and `decide-publish` chained by `workflow_run`; `republish` and `world-cup` are dispatch-only), so local working trees drift quickly. The cron-collision sync pattern (stash → pull --rebase → pop), stash discipline and the ledger's always-commit layers are in [`.claude/rules/git-hygiene.md`](./.claude/rules/git-hygiene.md); branch protection and PR vs direct push are in [`docs/runbooks/git-main-branch.md`](docs/runbooks/git-main-branch.md). Operational helpers: `/sync-main` (mid-session re-alignment) and `/wrap-up-session` (end-of-session consolidation checklist).
 
 ## Skills
 
-The pipeline skills under `.claude/skills/` (`/bet`, `/sports-update`, `/add-league`, `/wire-league`, `/place-bets`) call `scripts/0N_*.R` directly. The git-hygiene skills (`/sync-main`, `/wrap-up-session`) handle cron-collision sync and end-of-session consolidation. Drift back to legacy invocations is guarded by `tests/testthat/test-skill-conventions.R`, which fails the build if any skill references `lengjan-bets/`, `lengjan-odds/`, `Sports/{sport}/{country}/`, the `--sync` flag, or the legacy `Rscript run.R --step` pattern.
+The pipeline skills under `.claude/skills/` (`/bet`, `/sports-update`, `/add-league`, `/wire-league`, `/place-bets`) call `scripts/0N_*.R` directly. The git-hygiene skills (`/sync-main`, `/wrap-up-session`) handle cron-collision sync and end-of-session consolidation. `/pipeline-doctor` runs the read-only health snapshot, and `/wc-refresh` (the World Cup overlay refresh) is user-invocable only (`disable-model-invocation: true`). Drift back to legacy invocations is guarded by `tests/testthat/test-skill-conventions.R`, which fails the build if any skill references `lengjan-bets/`, `lengjan-odds/`, `Sports/{sport}/{country}/`, the `--sync` flag, or the legacy `Rscript run.R --step` pattern.
 
 **Do not add `disable-model-invocation: true` to the five pipeline skills.** They are intentionally model-invocable.
 
