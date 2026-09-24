@@ -191,15 +191,12 @@ CI; `test-placer-ci-isolation.R` forbids `auto_place`/`autoplace`/`AUTO_PLACE`/
 
 ## Skill reference
 
-The four skills under `.claude/skills/` are model-invocable and intentionally
-unforked (see `tests/testthat/test-skill-conventions.R`):
-
-| Skill | Purpose |
-|---|---|
-| `/bet` | Show current recommendations or run the decide layer to refresh |
-| `/place-bets` | Preview pending bets, then place after user confirmation |
-| `/sports-update` | Run the full pipeline (ingest + odds + fit + decide + publish) |
-| `/add-league` | Walk-through to add a new league to `config/leagues.yml` |
+Skill list and invocation policy: CLAUDE.md "Skills". The invariant enforced
+here is narrower: `/bet` and `/place-bets` are presentational and must not set
+`context: fork` (`tests/testthat/test-skill-conventions.R`), because a forked
+skill's output never reaches the UI. `/place-bets` places real money only
+after the user confirms the bet slip in chat, behind the global `ask` rule on
+`place_bets.R --live`.
 
 ## Key gotchas
 

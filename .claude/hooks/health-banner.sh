@@ -10,6 +10,14 @@ set -uo pipefail
 root="${CLAUDE_PROJECT_DIR:-.}"
 status="${root}/data/health/status.json"
 
+# The ledger pre-commit hook (tools/git-hooks/pre-commit) is live only while
+# core.hooksPath points at tools/git-hooks. On 2026-09-24 an unknown writer had
+# set it to the absolute .git/hooks, silently disabling it (git-hygiene.md).
+hooks_path=$(git -C "$root" config --get core.hooksPath 2>/dev/null || true)
+if [ "$hooks_path" != "tools/git-hooks" ]; then
+  echo "WARNING: ledger pre-commit hook inactive (core.hooksPath='${hooks_path}'). Fix: bash tools/install-hooks.sh"
+fi
+
 [ -f "$status" ] || exit 0
 command -v jq >/dev/null 2>&1 || exit 0
 

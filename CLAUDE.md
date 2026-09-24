@@ -3,20 +3,19 @@
 Bayesian sports prediction and automated betting for Icelandic football, basketball, and handball. **Consolidated monorepo** (pre-migration was four separate repos: `Sports/`, `lengjan-odds/`, `livesport-data/`, `lengjan-bets/` — all preserved under `_legacy/`).
 
 > **Scope:** the three Icelandic leagues (`basketball_iceland`, `handball_iceland`,
-> `football_iceland`) plus the World Cup pipeline (`world-cup.yml`, `R/wc-*.R`).
+> `football_iceland`) plus the World Cup pipeline (`world-cup.yml`, `R/wc-*.R`),
+> dormant since the 2026 tournament (dispatch-only, no schedule).
 > Other non-Icelandic leagues are paused. All user-facing content is in Icelandic.
 > Authoritative list: `config/leagues.yml` + `scripts/00_active_competitions.R`.
 
-## Status
-
-Migration complete (Plan 7, 2026-04-30). End-state design: [`docs/superpowers/specs/2026-04-24-sports-pipeline-redesign-design.md`](docs/superpowers/specs/2026-04-24-sports-pipeline-redesign-design.md). Implementation plans: [`docs/superpowers/plans/`](docs/superpowers/plans/).
-
-## Directory structure
+## Source registry and design
 
 File-level annotations (e.g. which scraper covers which federation, which Stan
 model is used per league) live in `R/ingest.R::ingest_league()` (the source
 registry) and `config/leagues.yml::*.stan_model`. Read those for the
-authoritative mapping rather than mirroring them here.
+authoritative mapping rather than mirroring them here. End-state design:
+[`docs/superpowers/specs/2026-04-24-sports-pipeline-redesign-design.md`](docs/superpowers/specs/2026-04-24-sports-pipeline-redesign-design.md);
+implementation plans: [`docs/superpowers/plans/`](docs/superpowers/plans/).
 
 ## Local-only subsystem
 
@@ -29,12 +28,8 @@ authoritative mapping rather than mirroring them here.
 - **Unattended placement (opt-in):** `scripts/auto_place.R` via the launchd
   agent `is.metill.sports.autoplace` (installed by `tools/install-autoplace.sh`).
   Kill switch: `touch data/AUTO_PLACE_DISABLED`. Health: the `placement_health`
-  check in `/pipeline-doctor`. Design + plan under `docs/superpowers/`.
-  Like the other ledger-writing wrappers it calls `commit_ledger_changes()`
-  after each run, and `sync_recs()` rescue-commits any ledger rows a crashed
-  run left uncommitted before its stash → pull → pop sync (2026-06-10
-  incident). Run log: `~/Library/Logs/sports-autoplace.log`.
-  **Background-git warning:** this job syncs `~/sports` (stash → pull --rebase → pop) on its own schedule and rescue-commits only the ledger, so commit other tracked generated data promptly (2026-06-11 backfill-clobber incident).
+  check in `/pipeline-doctor`. Run log: `~/Library/Logs/sports-autoplace.log`.
+  **Background-git warning:** this job syncs `~/sports` (stash → pull --rebase → pop) on its own schedule and rescue-commits only the ledger, so commit other tracked generated data promptly (2026-06-11 backfill-clobber incident). The ledger's commit layers are in `.claude/rules/git-hygiene.md`.
 
 ## Quick reference
 
@@ -147,7 +142,7 @@ Football-only by default. Loads on `R/backtest-*.R`, `scripts/0N{b,r}_*.R`,
 
 ## Git hygiene
 
-Eight CI workflows commit to `main` throughout the day, so local working trees drift quickly. The cron-collision sync pattern (stash → pull --rebase → pop), stash discipline and the ledger's always-commit layers are in [`.claude/rules/git-hygiene.md`](./.claude/rules/git-hygiene.md); branch protection and PR vs direct push are in [`docs/runbooks/git-main-branch.md`](docs/runbooks/git-main-branch.md). Operational helpers: `/sync-main` (mid-session re-alignment) and `/wrap-up-session` (end-of-session consolidation checklist).
+Seven scheduled CI workflows commit to `main` throughout the day (`world-cup.yml` is dispatch-only), so local working trees drift quickly. The cron-collision sync pattern (stash → pull --rebase → pop), stash discipline and the ledger's always-commit layers are in [`.claude/rules/git-hygiene.md`](./.claude/rules/git-hygiene.md); branch protection and PR vs direct push are in [`docs/runbooks/git-main-branch.md`](docs/runbooks/git-main-branch.md). Operational helpers: `/sync-main` (mid-session re-alignment) and `/wrap-up-session` (end-of-session consolidation checklist).
 
 ## Skills
 

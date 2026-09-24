@@ -18,6 +18,14 @@
         "hooks": [
           {
             "type": "command",
+            "if": "Edit(**/*.stan)",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/check-stan-syntax.sh",
+            "timeout": 10,
+            "statusMessage": "Checking Stan syntax..."
+          },
+          {
+            "type": "command",
+            "if": "Write(**/*.stan)",
             "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/check-stan-syntax.sh",
             "timeout": 10,
             "statusMessage": "Checking Stan syntax..."

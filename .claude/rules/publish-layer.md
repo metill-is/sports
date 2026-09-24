@@ -2,7 +2,6 @@
 paths:
   - "R/publish-*.R"
   - "R/extract-*.R"
-  - "R/publish-pipeline.R"
   - "scripts/05_publish.R"
   - "config/publish-schemas/**"
   - "tools/gen-publish-schemas.R"

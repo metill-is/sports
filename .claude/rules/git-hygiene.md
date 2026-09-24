@@ -1,8 +1,8 @@
 # Git Hygiene (Sports Repo)
 
-This repo runs hot — eight GitHub workflows commit to `main` throughout the day
+This repo runs hot — seven scheduled GitHub workflows commit to `main` throughout the day
 (`scrape-results`, `scrape-odds`, `fit`, `decide-publish`, `healthcheck`,
-`discover-leagues`, `republish`, `world-cup`). A working session that takes hours typically sees ~10
+`discover-leagues`, `republish`; `world-cup` is dispatch-only). A working session that takes hours typically sees ~10
 upstream commits land while you work. The patterns below keep local state in
 sync without losing anything.
 
@@ -46,7 +46,12 @@ Three enforcement layers are active, covering different failure modes:
    while `data/decisions/ledger/` has unstaged or untracked changes. This
    catches the "next commit on something else silently leaves the ledger
    behind, a later reset destroys it" pattern. One-time activation per
-   clone: `bash tools/install-hooks.sh`.
+   clone: `bash tools/install-hooks.sh`. **Check it is live:**
+   `git config --get core.hooksPath` must print `tools/git-hooks`. On
+   2026-09-24 it read the absolute `.git/hooks` (no `pre-commit` there),
+   which silently disabled the hook; the writer is unknown and
+   `metill-platform`/`esbvaktin` carried the same value. The SessionStart
+   health banner now warns when it drifts.
 
 `place_bets()` and `settle_ledger()` themselves never touch git — only the
 script wrappers and `sync_recs()` do. Library callers and the test suite are
@@ -113,7 +118,7 @@ commit at the same path are always stale.
 
 ## Before pushing to main
 
-The eight CI workflows auto-commit to `main` constantly (metill-platform's
+The seven scheduled CI workflows auto-commit to `main` constantly (metill-platform's
 `pull-sports-data` only *reads* this repo — it commits to its own), so `main`
 almost always moves under you between sessions. A
 plain `git push` will be rejected as non-fast-forward (or, worse, you'll race a

@@ -1,12 +1,18 @@
 ---
 name: wrap-up-session
-description: Use when cron data commits have moved origin/main under local work in the sports repo, or stashes, local branches, extra worktrees or open PRs are left over. Reconciles main with origin/main and triages each leftover to a known-clean state.
+description: Use when ending a session in the sports repo, or when stashes, local branches, extra worktrees or open PRs are left over. Triages each leftover to a known-clean state and asks before dropping or deleting anything; syncing main itself is /sync-main.
 ---
 
 # /wrap-up-session — End-of-session consolidation checklist
 
 This repo accumulates clutter quickly because cron commits race against local
 work. Run this skill before closing a session to reach a known-clean state.
+
+**Ask before destroying anything.** Steps 2 and 3 only *propose* drops. Collect
+every stash to drop, branch to `git branch -D` and worktree to remove into one
+list, each with its evidence (e.g. "subsumed by 1a2b3c on main", "merged as
+PR #N"), and confirm it with AskUserQuestion before running any `stash drop`,
+`branch -D` or `worktree remove`. None of these can be undone in practice.
 
 ## 1. Branch + worktree alignment
 
@@ -33,14 +39,22 @@ git -C /Users/brynjolfurjonsson/sports stash list
 ```
 
 For each stash, decide:
-- **Mine, transient (e.g. "WIP pre-sync 2026-XX-XX")**: drop after confirming
-  pop succeeded earlier in the session.
+- **Mine, transient (e.g. "WIP pre-sync 2026-XX-XX")**: propose dropping once
+  you have confirmed the pop succeeded earlier in the session.
 - **Older, content already on main**: `git stash show --stat stash@{N}` then
   spot-check that each text-file delta has an equivalent on main (grep for
-  symbols, roxygen tags). If subsumed, drop.
-- **Older, contains unique unmerged work**: extract via PR (see
-  `.claude/rules/git-hygiene.md` for the cherry-pick-from-stash pattern), then
-  drop.
+  symbols, roxygen tags). If subsumed, propose dropping.
+- **Older, contains unique unmerged work**: extract it onto a branch in a new
+  worktree (the main checkout must stay on `main` for the autoplace sync),
+  then PR it and propose dropping the stash:
+
+  ```bash
+  git -C /Users/brynjolfurjonsson/sports worktree add .worktrees/rescue-<topic> -b rescue/<topic> origin/main
+  git -C /Users/brynjolfurjonsson/sports/.worktrees/rescue-<topic> checkout 'stash@{N}' -- <paths>
+  ```
+
+  Restore only the text files that carry the unique work. Binary parquets
+  older than the latest cron commit at the same path are stale.
 
 The goal is `git stash list` returns empty.
 
@@ -52,7 +66,7 @@ git -C /Users/brynjolfurjonsson/sports branch | grep -v '^\* main$'
 
 For each branch:
 - If it has no unique commits vs main and no unique uncommitted work:
-  `git branch -D <name>`.
+  propose `git branch -D <name>`.
 - If it has unique commits worth keeping: PR them or accept that the branch is
   a permanent local archive. Note in MEMORY.md if the latter.
 - If the branch has uncommitted WIP, `git stash` it on the branch first or

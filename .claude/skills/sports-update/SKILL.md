@@ -3,6 +3,7 @@ name: sports-update
 description: Use when refreshing models or running the full pipeline. Runs ingest + odds + fit + decide + publish for specified leagues.
 argument-hint: "[ingest|odds|fit|decide|publish|all] [--league LEAGUE] [--sex male|female] [--force]"
 context: fork
+agent: general-purpose
 ---
 
 # /sports-update — Full pipeline update
@@ -108,9 +109,9 @@ After completion, check the relevant Parquet stores:
 | --------- | ----------------------------------------------------------------------------------------- |
 | `ingest`  | `data/facts/results/sport=*/country=*/` partitions touched recently                       |
 | `odds`    | `data/facts/odds/sport=*/country=*/scraped_date=*/` has a fresh `scraped_date`            |
-| `fit`     | `data/beliefs/latest/sport=*/country=*/sex=*/beliefs.parquet` mtime is recent             |
+| `fit`     | `data/beliefs/latest/sport=*/country=*/sex=*/part-0.parquet` mtime is recent             |
 | `decide`  | `data/decisions/recommendations/sport=*/country=*/run_date=*/` has a fresh `run_date`     |
-| `publish` | `data/publish/{football,basketball,handball}/iceland/{karla,kvenna}/*.json` mtime is recent |
+| `publish` | `data/publish/{football,basketball,handball}/iceland/{karla,kvenna}-*/*.json` mtime is recent |
 
 Or, more uniformly, via DuckDB:
 
@@ -173,5 +174,5 @@ Rscript scripts/05_publish.R
 - League registry: `config/leagues.yml`
 - Per-step R modules: `R/{ingest,model,decide,publish}-*.R`
 - Stan models: `Stan/{league_key}/{file}.stan`
-- Publishing scaffolds: `R/publish-{football,basketball,handball}-iceland.R`
+- Publish layer: `R/publish-pipeline.R` (`run_publish_targets()`, called by `scripts/05_publish.R`) and `R/publish-iceland-league.R` (`publish_iceland_league()`, per league)
 - Bet placement (separate, local-only): `/place-bets` skill
