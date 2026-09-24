@@ -289,11 +289,17 @@ natural_key_for <- function(table) {
 #' When the new frame collides with an existing row on the natural match key,
 #' the NEW row wins — this lets corrections (e.g. finalised scores) propagate.
 #'
-#' Currently supports `"results"` and `"schedules"`. Other tables fall through
-#' to `natural_key_for()` which raises a clear error.
+#' Currently supports `"results"`, `"schedules"` and `"odds"`. Other tables
+#' fall through to `natural_key_for()` which raises a clear error.
+#'
+#' A partition that exists but cannot be read is treated as empty (and so
+#' overwritten) for `"results"` and `"schedules"`, which can be re-ingested.
+#' For `"odds"` the read error propagates instead and nothing is written:
+#' snapshots cannot be re-scraped. An absent table directory is not an error
+#' ([read_table()] returns an empty tibble), so a first write still works.
 #'
 #' @param df A tibble or data frame matching the schema for `table`.
-#' @param table One of `"results"`, `"schedules"`.
+#' @param table One of `"results"`, `"schedules"`, `"odds"`.
 #' @param root Filesystem root (defaults to `here::here("data")`).
 #' @param snapshot_future_by Optional character vector of scope columns (e.g.
 #'   `"division"`). When set, the incoming frame is treated as the
@@ -346,10 +352,18 @@ upsert_table <- function(df, table, root = here::here("data"),
     }
     new_rows <- df[mask, , drop = FALSE]
 
-    existing <- tryCatch(
-      read_table(table, root = root, filter = part_filter),
-      error = function(e) tibble::tibble()
-    )
+    # Odds snapshots cannot be re-scraped, so for odds a read error must
+    # propagate: swallowing it as "no existing rows" would overwrite the
+    # partition and silently drop the day's earlier snapshots (final review
+    # F4). Other tables keep the swallow: their rows are re-ingestable.
+    existing <- if (identical(table, "odds")) {
+      read_table(table, root = root, filter = part_filter)
+    } else {
+      tryCatch(
+        read_table(table, root = root, filter = part_filter),
+        error = function(e) tibble::tibble()
+      )
+    }
     # A partition written before a column became optional lacks it; fill it so
     # the natural-key check below merges instead of overwriting the partition
     # (spec 2026-09-23 Review Focus 1: odds snapshots cannot be re-scraped).
