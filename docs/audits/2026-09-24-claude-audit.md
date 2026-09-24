@@ -24,7 +24,8 @@ Checks that passed:
 - 1a: 177 lines, at or under the 200-line limit.
 - 1b: every required section is present: overview and scope, quick reference, conventions, Obsidian Output with `Handoff:`, and the Things 3 area ID.
 - 1c: no TODO, FIXME or HACK comments. Every repo-rooted path resolves. All 9 named functions resolve (`ingest_league`, `rebuild_duckdb`, `commit_ledger_changes`, `sync_recs`, `fit_league`, `decide_league`, `pipeline_health`, `void_bet`, `wc_correct_knockout_dates`). `Rscript`, `R`, `gh`, `git` and `quarto` are all installed.
-- 1f: the Metill vault, `Sports/Sports Handoff.md` (last modified 2026-09-24 07:56), `Sports/Sessions/` and all 5 Knowledge topic `_MOC.md` files exist.
+- 1f: the Metill vault, `Sports/Sports Handoff.md` (last modified 2026-09-24 07:56) and all 5 Knowledge topic `_MOC.md` files exist.
+  **Correction (made while applying fixes):** `Sports/Sessions/` (17 notes) and `Sports/log.md` also exist and are in active use (entries from today). The Vault Guide says there is deliberately *no* `Sports/Sessions/`, and that Sports sessions and log entries route to the vault root. So this is a guide-vs-practice conflict, not a pass. It is left for the owner to settle: update the guide, or migrate the notes.
 
 ```
 [INFO] CLAUDE.md:1c — "Eight CI workflows commit to main throughout the day" (also git-hygiene.md:3 and :116)
@@ -272,3 +273,49 @@ Frontmatter effort:/model: with stated reason:  N/A     — none set
 Context budget within window threshold:         PASS    — 1M: ~20.5k all-in (warn 50k); 200k would WARN (global layer)
 State-claims in always-loaded docs are true:    FAIL    — ledger pre-commit hook claimed active; core.hooksPath disables it
 ```
+
+---
+
+## Fixes applied (2026-09-24, same session)
+
+The proposal `foreground-edit-before-background-launch` was skipped, as the owner asked.
+
+**Tracked (commit 2189fe3d2):**
+- **FAIL, ledger hook:** re-ran `bash tools/install-hooks.sh`, so `core.hooksPath` is now `tools/git-hooks` in main and all worktrees. `git hook run pre-commit` exits 0 on a clean ledger.
+  - Mutation test in a scratch repo: a dirty-ledger commit is blocked (exit 1) with `tools/git-hooks`, and goes through (exit 0) with the absolute `.git/hooks` value. That is the bug, reproduced.
+  - git-hygiene.md now says how to check the hook is live, and `health-banner.sh` prints a WARNING at session start when `core.hooksPath` drifts. The guard was tested against the scratch repo (warns) and the real repo (quiet).
+  - Who wrote the bad value is still unknown. metill-platform and esbvaktin carry the same absolute value, which is harmless there (no tracked hook dir; esbvaktin's pre-commit-framework hook lives in `.git/hooks`).
+- **sports-update:** the three paths fixed; `agent: general-purpose` added.
+- **wrap-up-session:** gains an AskUserQuestion gate before `stash drop`, `branch -D` and `worktree remove`; a worktree-based stash-rescue recipe replaces the dead pointer; the description no longer overlaps sync-main.
+- **sports-betting.md:** the "Skill reference" section now states the invariant the test actually enforces.
+- **CLAUDE.md** (177 → 172 lines) **and git-hygiene.md:** "seven scheduled workflows"; the WC pipeline marked dormant; Status and Directory structure folded into "Source registry and design"; the autoplace bullet cut to a pointer.
+- **settings.json:** the Stan hook is split into two handlers, `if: Edit(**/*.stan)` and `if: Write(**/*.stan)` (`if` takes exactly one rule, per the hooks docs). Verified live with `claude -p`: a broken `.stan` file under `Stan/` got the stanc blocking error, from one handler only.
+- **Rule globs:** removed `**/*.r` and the redundant `R/publish-pipeline.R`.
+- The three config-reading test files pass: skill-conventions, placer-ci-isolation, publish-refactor-hygiene (0 failed, 0 errors).
+
+**Local and untracked:**
+- `settings.local.json`: removed `Bash(python3 -)` and the two one-off rules; added `obsidian` to `enabledMcpjsonServers`. `claude mcp list` now shows obsidian `✔ Connected`.
+- Codex port: `.agents/skills/*/SKILL.md` and `.codex/hooks/*.sh` are now symlinks into `.claude/` (the metill-platform precedent), so they can no longer drift. Removed the stale PreCompact wiring and the `pre-compact-context.sh` copy, which was byte-identical to the git-tracked original at 98502a08a^. It is still untracked and not ignored, as in metill-platform.
+- Worktree commits `58e515356` (Víkingur Reykjavík rendering, plus tests) and `8313435b4` (team-names health check, 200 lines) were reachable only through detached worktree HEADs and were never merged. They are now pinned as `rescue/vikingur-rendering-2026-09-03` and `rescue/team-names-health-2026-09-03`.
+
+**Memory:**
+- kelly_frac: football is half-Browne since 39921152f.
+- BB/HB parity: PR #54 merged; all 8 cells live (basketball since 2026-09-15/17).
+- Two dangling links fixed.
+- World Cup memory rewritten as a closed record. The `hm2026` route shipped; the WC schemas never did.
+- Icelandic focus cut to its non-CLAUDE.md content. **An extra wrong claim was found:** `--league` does *not* override `active: false`, because `01_ingest_results.R` stops.
+- Methodology verdict cut to its operational core. **An extra wrong claim was found:** PR #40 had merged (2026-06-16) but the memory said it was open.
+- Pre-edit copies were backed up to the session scratchpad.
+
+**Vault (Metill):**
+- New note `Sports/Knowledge/Betting Optimisation/Historical/methodology-verdict-2026-06-13.md`. Its re-opening gates are taken from spec §3.3 and §4.5, not paraphrased.
+- Rows added to the Betting Optimisation MOC: the new note, plus the unlisted 2026-06-21 bet-sizing audit.
+- The WC Accountability note stays in place (its inbound links are path-qualified, one in the append-only `log.md`) and is now linked from the Publish Pipeline MOC.
+
+**Not applied:**
+- Global duplicate skill listings (metill-ehf, vault-health-auditor): these live outside the project.
+- The "Use when…" description style: optional, INFO only.
+- A `compact` SessionStart hook: its removal was deliberate.
+- Removing worktrees: this needs the owner's confirmation (wrap-up-session's own new gate).
+  - Removable: `.worktrees/fix-kki-thor-alias` (detached at a commit on main, clean) and `.worktrees/fix-alias-followups` (PR #92 squash-merged as d7da31da1).
+  - Keep: `sharp-jepsen-e3a666` (PR #94 open), plus the two detached 2026-09-03 worktrees, whose work is now safe on the rescue branches.
