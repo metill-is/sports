@@ -64,7 +64,7 @@ Rscript scripts/0Nr_replay.R --league football_iceland --sex male --as-of 2026-0
 
 # Local placer (NEVER on CI). Default is dry-run; --live opts in to placement.
 Rscript scripts/place_bets.R                          # dry-run (default)
-Rscript scripts/place_bets.R --live --no-confirm      # actually place: only after the slip is confirmed in chat (--live alone stops at a y/n prompt Rscript can't answer)
+Rscript scripts/place_bets.R --live --no-confirm      # actually place: only after the slip is confirmed in chat (--live alone places nothing: under Rscript the y/n readline() returns "" and the run cancels)
 Rscript scripts/preview_bets.R                        # no browser
 
 # Rebuild sports.duckdb after fresh Parquet writes

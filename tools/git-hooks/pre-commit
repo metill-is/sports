@@ -41,9 +41,11 @@ if [ -n "$ledger_dirty" ]; then
   that destroyed 6 bets on 2026-05-08 (see commit 121710d).
 
   Resolve by picking one:
-    (a) Include them in this commit:  git add data/decisions/ledger/
-    (b) Stash them temporarily:        git stash push -u -- data/decisions/ledger/
-    (c) If they are genuinely junk:    git checkout -- data/decisions/ledger/
+    (a) Commit them first, on their own (path-restricted):
+          git add -A data/decisions/ledger/ && git commit -m "data(ledger): commit pending rows" -- data/decisions/ledger/
+    (b) Include them in this commit:  git add -A data/decisions/ledger/
+    (c) Only after the user confirms they are junk:  git checkout -- data/decisions/ledger/
+  Do not stash them: money rows never go through a stash (.claude/rules/git-hygiene.md).
 
   Unstaged/untracked ledger files:
 EOF

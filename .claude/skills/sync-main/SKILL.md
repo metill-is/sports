@@ -23,7 +23,7 @@ and stop. The rest of this skill is for the dirty case.
 ## Sync (dirty working tree)
 
 If `data/decisions/ledger/` is dirty, commit it first (path-restricted:
-`git add -A data/decisions/ledger/ && git commit -m "data(ledger): commit pending rows" -- data/decisions/ledger/`).
+`git -C /Users/brynjolfurjonsson/sports add -A data/decisions/ledger/ && git -C /Users/brynjolfurjonsson/sports commit -m "data(ledger): commit pending rows" -- data/decisions/ledger/`).
 Ledger rows are real money and never go through a stash.
 
 ```bash
