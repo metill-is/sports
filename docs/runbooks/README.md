@@ -18,8 +18,10 @@ same shape: **symptom -> diagnose -> fix -> verify**.
 ## First principles
 
 - **Confirm-intent before "fixing".** Several states that look like faults are
-  deliberate: a basketball/handball cell producing no ODDS (both are
-  `betting.enabled: false` -- publish-only, decision D2), the ingest backoff
+  deliberate: a basketball cell with no odds
+  (`betting.mode: scrape`, no competitions wired yet) or a handball cell
+  whose recommendations are never placed (`betting.mode: paper`; both
+  spec 2026-09-23), the ingest backoff
   reporting "treating as off-season", and the schedule fail-open. Several
   workflow behaviours are likewise by design (the decide-publish dual-parent
   trigger; the kelly_frac operational cut). Surface, don't auto-fix.

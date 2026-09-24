@@ -4,16 +4,18 @@
 \alias{lengjan_list_competitions}
 \title{List every competition Lengjan currently offers for a (sport, country).}
 \usage{
-lengjan_list_competitions(sport, country, session)
+lengjan_list_competitions(sport, country, events)
 }
 \arguments{
-\item{sport, country}{Canonical names ("football", "iceland").}
+\item{sport, country}{Canonical names ("handball", "iceland").}
 
-\item{session}{A live `chromote::ChromoteSession`.}
+\item{events}{Output of [parse_lengjan_program()].}
 }
 \value{
 Tibble `{sport, country, comp_id, lengjan_name}` (possibly empty).
 }
 \description{
-List every competition Lengjan currently offers for a (sport, country).
+Read from the JSON program, not the site's country dropdown: Icelandic
+events carry no `countryCode`, so the dropdown omits Iceland for every sport
+(spec 2026-09-23 L4); [parse_lengjan_program()] falls back to `countryName`.
 }

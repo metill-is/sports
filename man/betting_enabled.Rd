@@ -2,24 +2,18 @@
 % Please edit documentation in R/config.R
 \name{betting_enabled}
 \alias{betting_enabled}
-\title{Is betting enabled for a league?}
+\title{Does the decide layer run for a league?}
 \usage{
 betting_enabled(league)
 }
 \arguments{
-\item{league}{A league definition (an element of [load_leagues()]), or any
-list carrying a `betting` slice.}
+\item{league}{A league definition.}
 }
 \value{
-`TRUE` unless `betting$enabled` is exactly `FALSE`.
+`TRUE` when decide runs for the league.
 }
 \description{
-Reads `betting$enabled` from a league definition. The key is optional in
-`config/leagues.schema.json`, so an absent key means enabled and only an
-explicit `enabled: false` disarms a league. This is the single predicate
-consulted by the odds-ingest guard ([ingest_one_lengjan()]), the decide
-guard ([decide_league()]), the placer's recommendation loader
-([load_recommendations()]) and the placer pre-flight
-([validate_betting_enabled()]) -- so a league can never be disabled in one
-layer while another stays armed.
+`betting.mode` at least `"paper"`. Kept under this name for readers that
+predate the ladder -- [order_fit_targets()] fits these leagues first, which
+is right for paper leagues too (their recommendations want fresh fits).
 }

@@ -37,9 +37,12 @@ if (!fs::file_exists(active_path)) {
 }
 
 cli::cli_h1("Scrape odds ({length(active)} Lengjan-eligible leagues)")
-n_inseason <- 0L
-total_rows <- 0L
-for (key in names(active)) {
+# One league's plain error (e.g. an unexpected Lengjan API shape on the
+# handball path) must not stop the leagues after it: config order puts
+# football, the live money path, last. run_per_league() contains each failure
+# and the run still ends red below. A lengjan_fetch_error never reaches it --
+# ingest_one_lengjan() soft-fails that to 0 rows, as before.
+scrape_one <- function(key) {
   league_def <- active[[key]]
   static <- league_def[c(
     "sport", "country", "sexes", "active", "stan_model", "data_source"
@@ -58,16 +61,19 @@ for (key in names(active)) {
     cli::cli_alert_info(
       "Skipping {key}: no games in the next 14 days (use --force to override)."
     )
-    next
+    return(NULL) # out of season: not counted in n_inseason
   }
 
   cli::cli_h2("{key}")
-  n_inseason <- n_inseason + 1L
-  total_rows <- total_rows + ingest_one_lengjan(
+  ingest_one_lengjan(
     static, lengjan, key, active_path,
     betting = league_def[["betting"]]
   )
 }
+res <- run_per_league(names(active), scrape_one, what = "odds scrape")
+scraped <- Filter(Negate(is.null), res$results)
+n_inseason <- length(scraped) + nrow(res$failed)
+total_rows <- sum(vapply(scraped, as.integer, integer(1)))
 
 # A run-wide 0-row result is usually benign, not an outage: between rounds --
 # and football is the only in-season Lengjan league while basketball + handball
@@ -87,4 +93,13 @@ if (odds_scrape_empty_failure(n_inseason, total_rows, force = opts$force)) {
   cli::cli_alert_success(
     "Odds scrape complete ({total_rows} rows, {n_inseason} in-season league(s))"
   )
+}
+
+# Exit non-zero when ANY league failed, after every other league has scraped.
+# scrape-odds.yml still commits what the surviving leagues wrote (its commit
+# step runs on failure too), and the red run keeps the failure visible.
+if (nrow(res$failed) > 0L) {
+  cli::cli_alert_danger("{nrow(res$failed)} league{?s} failed to scrape:")
+  print(as.data.frame(res$failed))
+  quit(save = "no", status = 1L)
 }

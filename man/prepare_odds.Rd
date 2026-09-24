@@ -17,10 +17,10 @@ prepare_odds(
 \arguments{
 \item{league}{List with `sport` + `country`.}
 
-\item{sex}{"male" or "female". Lengjan odds are sex-agnostic per
-competition; the parameter is here for symmetry but does not filter.
-Sex-aware handling happens at the kelly_joint stage where beliefs are
-sex-keyed.}
+\item{sex}{"male" or "female". Rows carrying a non-NA `sex` (stamped by the
+JSON-API scraper from the Lengjan competition, spec 2026-09-23 WS2) are
+kept only for that sex; NA rows (DOM scraper, history) are sex-agnostic
+and kept for both, as before -- the per-sex team_names join then decides.}
 
 \item{end_date}{Drop matches before this date. Default today.}
 

@@ -1,43 +1,3 @@
-test_that("parse_competition_dropdown extracts comp_id + name from the league select", {
-  html <- rvest::read_html(testthat::test_path("fixtures", "lengjan-parent-page.html"))
-  comps <- parse_competition_dropdown(html)
-
-  expect_s3_class(comps, "tbl_df")
-  expect_named(comps, c("comp_id", "lengjan_name"))
-  expect_true(nrow(comps) >= 1L)
-  expect_true(all(nzchar(comps$comp_id))) # placeholder ("" value) dropped
-  expect_false(any(comps$lengjan_name == "Veldu deild"))
-  expect_true("746" %in% comps$comp_id) # Besta deild karla, present at capture
-})
-
-test_that("parse_competition_dropdown returns empty tibble when no league select present", {
-  html <- rvest::read_html("<html><body><p>no selects</p></body></html>")
-  comps <- parse_competition_dropdown(html)
-  expect_named(comps, c("comp_id", "lengjan_name"))
-  expect_equal(nrow(comps), 0L)
-})
-
-test_that("parse_competition_dropdown finds the league select when placeholder is not first", {
-  # Placeholder option "Veldu deild" is the SECOND option (not first).
-  # The function must still identify this as the league select and return
-  # only the real options (value != "").
-  html_str <- paste0(
-    "<html><body>",
-    "<select>",
-    '<option value="100">Foo</option>',
-    '<option value="">Veldu deild</option>',
-    '<option value="200">Bar</option>',
-    "</select>",
-    "</body></html>"
-  )
-  html <- rvest::read_html(html_str)
-  comps <- parse_competition_dropdown(html)
-  expect_s3_class(comps, "tbl_df")
-  expect_named(comps, c("comp_id", "lengjan_name"))
-  expect_equal(sort(comps$comp_id), c("100", "200"))
-  expect_false(any(comps$lengjan_name == "Veldu deild"))
-})
-
 test_that("classify_competition maps Icelandic names to (sex, division)", {
   expect_equal(
     classify_competition("Besta deild karla", "football", "iceland")[c("sex", "division")],
@@ -201,4 +161,65 @@ test_that("write_discovery_proposal writes an empty competitions array cleanly",
   )
   back <- jsonlite::read_json(path)
   expect_equal(length(back$competitions), 0L)
+})
+
+test_that("classify_competition knows handball and basketball divisions", {
+  expect_equal(
+    classify_competition("Olísdeild karla", "handball", "iceland")[c("sex", "division")],
+    tibble::tibble(sex = "male", division = "OD")
+  )
+  expect_equal(classify_competition("Olísdeild kvenna", "handball", "iceland")$sex, "female")
+  expect_equal(classify_competition("Grill 66 deild karla", "handball", "iceland")$division, "G66")
+  expect_equal(classify_competition("Bónusdeild karla", "basketball", "iceland")$division, "BD")
+  expect_equal(
+    classify_competition("1. deild kvenna", "basketball", "iceland")[c("sex", "division")],
+    tibble::tibble(sex = "female", division = "1D")
+  )
+  expect_equal(classify_competition("Powerade bikarinn", "handball", "iceland")$division, "CUP")
+  # Football keeps its own vocabulary: "1. deild" is not a football code.
+  expect_true(is.na(classify_competition("1. deild karla", "football", "iceland")$division))
+})
+
+test_that("lengjan_list_competitions lists Icelandic competitions per sport", {
+  ev <- parse_lengjan_program(.fx("current-program.json"))
+  hb <- lengjan_list_competitions("handball", "iceland", ev)
+  expect_equal(hb$comp_id, "1269")
+  expect_equal(hb$lengjan_name, "Olísdeild karla")
+  fb <- lengjan_list_competitions("football", "iceland", ev)
+  expect_setequal(fb$comp_id, c("27524", "20442"))
+  # The fixture's only basketball event is the WNBA (country US).
+  expect_equal(nrow(lengjan_list_competitions("basketball", "iceland", ev)), 0L)
+})
+
+test_that("propose_team_names drafts from the program's participants", {
+  ev <- parse_lengjan_program(.fx("current-program.json"))
+  tn <- propose_team_names("1269", ev, known_teams = c("FH", "Haukar", "Valur"))
+  expect_setequal(tn$lengjan, c("FH", "Haukar"))
+  expect_true(all(tn$confidence == "high"))
+})
+
+test_that("discover_new_competitions visits a scrape-mode league with no competitions", {
+  ev <- parse_lengjan_program(.fx("current-program.json"))
+  leagues <- list(handball_iceland = list(
+    sport = "handball", country = "iceland", active = TRUE,
+    lengjan = list(competitions = list()),
+    betting = list(mode = "scrape"),
+    publish_divisions = list(male = list(list(code = "OD"), list(code = "G66")))
+  ))
+  res <- discover_new_competitions(leagues, events = ev, root = withr::local_tempdir())
+  expect_length(res$competitions, 1L)
+  f <- res$competitions[[1L]]
+  expect_equal(f$comp_id, "1269")
+  expect_equal(f$inferred_division, "OD")
+  expect_equal(f$inferred_sex, "male")
+})
+
+test_that("discover_new_competitions skips a league at betting.mode off", {
+  ev <- parse_lengjan_program(.fx("current-program.json"))
+  leagues <- list(handball_iceland = list(
+    sport = "handball", country = "iceland", active = TRUE,
+    lengjan = list(competitions = list()), betting = list(mode = "off")
+  ))
+  res <- discover_new_competitions(leagues, events = ev, root = withr::local_tempdir())
+  expect_length(res$competitions, 0L)
 })

@@ -2,7 +2,7 @@
 % Please edit documentation in R/placer-validate.R
 \name{validate_betting_enabled}
 \alias{validate_betting_enabled}
-\title{Abort if any recommendation belongs to a betting-disabled league.}
+\title{Abort if any recommendation belongs to a league below `betting.mode` manual.}
 \usage{
 validate_betting_enabled(leagues, recs)
 }

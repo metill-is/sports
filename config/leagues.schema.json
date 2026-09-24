@@ -32,6 +32,11 @@
         "lengjan": {
           "type": "object",
           "properties": {
+            "source": {
+              "type": "string",
+              "enum": ["api", "dom"],
+              "description": "Which Lengjan scraper serves this league: api = the public JSON API (R/lengjan-api.R), dom = the Chromote DOM scraper (R/ingest-lengjan-odds.R). Absent means dom (spec 2026-09-23 WS2/WS3)."
+            },
             "competitions": {
               "type": "array",
               "items": {
@@ -40,7 +45,11 @@
                 "properties": {
                   "id":   { "type": "string" },
                   "name": { "type": "string" },
-                  "sex":  { "type": "string", "enum": ["male", "female"] }
+                  "sex":  { "type": "string", "enum": ["male", "female"] },
+                  "division": {
+                    "type": "string",
+                    "description": "Division code this competition covers (e.g. OD, BD). Optional; when every competition of a league carries one, odds_freshness expects odds only in these (sex, division) cells (spec 2026-09-23 WS7)."
+                  }
                 }
               }
             },
@@ -87,7 +96,13 @@
           "type": "object",
           "additionalProperties": false,
           "required": ["kelly_frac", "ev_threshold", "markets", "scoring", "min_bet"],
+          "not": { "required": ["mode", "enabled"] },
           "properties": {
+            "mode": {
+              "type": "string",
+              "enum": ["off", "scrape", "paper", "manual", "auto"],
+              "description": "Betting ladder (spec 2026-09-23 WS1): off < scrape (odds only) < paper (+ decide; recommendations never placed) < manual (+ place_bets.R) < auto (+ launchd autoplace). Absent: `enabled` decides (false -> off, else auto). Never set both."
+            },
             "exclude_divisions": {
               "type": "array",
               "items": { "type": "string" },
@@ -95,7 +110,7 @@
             },
             "enabled": {
               "type": "boolean",
-              "description": "Publish-only switch. When false, decide/placer/odds-ingest refuse this league (spec 2026-09-02 §3, decision D2). Absent means enabled -- football carries no key."
+              "description": "Legacy switch, superseded by `mode` (spec 2026-09-23 WS1): false is mode off, true or absent is mode auto. Kept so configs that predate the ladder still load. Never set together with `mode`."
             },
             "kelly_frac": {
               "oneOf": [

@@ -1,71 +1,55 @@
 # R/discover-lengjan.R
-#' @include ingest-lengjan-odds.R storage.R config.R
+#' @include ingest-lengjan-odds.R lengjan-api.R storage.R config.R
 NULL
-
-#' Parse the Lengjan "Veldu deild" competition dropdown.
-#'
-#' The parent listing page (no `competition=` query param) renders three
-#' `<select>`s: sport, country, and league ("Veldu deild"). The league select's
-#' `<option value>` is the competition ID and the text is Lengjan's display name.
-#' We identify the league select by its placeholder option text rather than
-#' position, so a layout reorder does not silently pick the wrong dropdown.
-#'
-#' @param html Parsed HTML (from `rvest::read_html()`).
-#' @return Tibble `{comp_id, lengjan_name}`; empty-with-columns if absent.
-#' @export
-parse_competition_dropdown <- function(html) {
-  empty <- tibble::tibble(comp_id = character(0), lengjan_name = character(0))
-  selects <- rvest::html_elements(html, "select")
-  if (length(selects) == 0L) {
-    return(empty)
-  }
-  for (sel in selects) {
-    opts <- rvest::html_elements(sel, "option")
-    if (length(opts) == 0L) next
-    txt <- rvest::html_text2(opts)
-    Encoding(txt) <- "UTF-8"
-    if (!any(trimws(txt) == "Veldu deild", na.rm = TRUE)) next
-    vals <- rvest::html_attr(opts, "value")
-    keep <- !is.na(vals) & nzchar(vals)
-    return(tibble::tibble(
-      comp_id = as.character(vals[keep]),
-      lengjan_name = trimws(txt[keep])
-    ))
-  }
-  empty
-}
 
 #' Classify a Lengjan competition name into (sex, division).
 #'
 #' Deterministic, advisory name match. Sex from a "kvenna"/"kv" marker;
-#' division from the league-name pattern. A name that matches no division
-#' pattern is `division = NA`, `confidence = "low"` -- surfaced for a human,
-#' never auto-wired. Patterns are ASCII except the basketball "Bonusdeild" name,
-#' written with a `ó` escape (R-source non-ASCII rule); the cup matches the
-#' ASCII substring "bikar", so it needs no escape.
+#' division from the league-name pattern, per sport -- each federation has its
+#' own codes (football BD/LD1-4, handball OD/G66, basketball BD/1D; spec
+#' 2026-09-23 WS4). A name that matches no pattern is `division = NA`,
+#' `confidence = "low"` -- surfaced for a human, never auto-wired. Non-ASCII
+#' letters are written as `\\u` escapes (R-source non-ASCII rule).
 #'
-#' @param lengjan_name Competition display name from the dropdown.
-#' @param sport,country Pass-through context (reserved for sport-specific rules).
+#' @param lengjan_name Competition display name from Lengjan.
+#' @param sport "football", "handball" or "basketball".
+#' @param country Pass-through context.
 #' @return Tibble `{sex, division, confidence}` (one row).
 #' @export
 classify_competition <- function(lengjan_name, sport, country) {
   nm <- lengjan_name
   Encoding(nm) <- "UTF-8"
-  female <- grepl("kvenna", nm, ignore.case = TRUE) ||
-    grepl("(^| )kv\\.?( |$)", nm, ignore.case = TRUE)
+  has <- function(p) grepl(p, nm, ignore.case = TRUE)
+  female <- has("kvenna") || has("(^| )kv\\.?( |$)")
   sex <- if (female) "female" else "male"
 
-  division <- if (grepl("bikar", nm, ignore.case = TRUE)) {
+  division <- if (has("bikar")) {
     "CUP"
-  } else if (grepl("3\\. *deild", nm, ignore.case = TRUE)) {
+  } else if (identical(sport, "handball")) {
+    if (has("ol[i\u00ed]s")) {
+      "OD"
+    } else if (has("grill *66")) {
+      "G66"
+    } else {
+      NA_character_
+    }
+  } else if (identical(sport, "basketball")) {
+    if (has("b[o\u00f3]nus")) {
+      "BD"
+    } else if (has("1\\. *deild")) {
+      "1D"
+    } else {
+      NA_character_
+    }
+  } else if (has("3\\. *deild")) {
     "LD3"
-  } else if (grepl("4\\. *deild", nm, ignore.case = TRUE)) {
+  } else if (has("4\\. *deild")) {
     "LD4"
-  } else if (grepl("2\\. *deild", nm, ignore.case = TRUE)) {
+  } else if (has("2\\. *deild")) {
     "LD2"
-  } else if (grepl("lengjudeild", nm, ignore.case = TRUE)) {
+  } else if (has("lengjudeild")) {
     "LD1"
-  } else if (grepl("besta *deild|b\u00f3nusdeild", nm, ignore.case = TRUE)) {
+  } else if (has("besta *deild")) {
     "BD"
   } else {
     NA_character_
@@ -139,43 +123,37 @@ match_team_names <- function(renderings, known_teams) {
 }
 
 #' List every competition Lengjan currently offers for a (sport, country).
-#' @param sport,country Canonical names ("football", "iceland").
-#' @param session A live `chromote::ChromoteSession`.
+#'
+#' Read from the JSON program, not the site's country dropdown: Icelandic
+#' events carry no `countryCode`, so the dropdown omits Iceland for every sport
+#' (spec 2026-09-23 L4); [parse_lengjan_program()] falls back to `countryName`.
+#'
+#' @param sport,country Canonical names ("handball", "iceland").
+#' @param events Output of [parse_lengjan_program()].
 #' @return Tibble `{sport, country, comp_id, lengjan_name}` (possibly empty).
 #' @export
-lengjan_list_competitions <- function(sport, country, session) {
-  url <- sprintf(
-    "https://games.lotto.is/getraunaleikir/lengjan?sport=%d&country=%s",
-    .lengjan_sport_id(sport), .lengjan_country_code(country)
+lengjan_list_competitions <- function(sport, country, events) {
+  hit <- events[events$sport_id == .lengjan_sport_id(sport) &
+    events$country_code %in% .lengjan_country_code(country), , drop = FALSE]
+  hit <- hit[!duplicated(hit$competition_id), , drop = FALSE]
+  tibble::tibble(
+    sport = rep(sport, nrow(hit)),
+    country = rep(country, nrow(hit)),
+    comp_id = hit$competition_id,
+    lengjan_name = hit$competition_name
   )
-  html <- .lengjan_fetch(session, url)
-  comps <- parse_competition_dropdown(html)
-  if (nrow(comps) == 0L) {
-    return(tibble::tibble(
-      sport = character(0), country = character(0),
-      comp_id = character(0), lengjan_name = character(0)
-    ))
-  }
-  comps$sport <- sport
-  comps$country <- country
-  comps[, c("sport", "country", "comp_id", "lengjan_name"), drop = FALSE]
 }
 
-#' Draft team_names for a competition by scraping its page once.
-#' @param comp_id Lengjan competition ID.
-#' @param sport,country,sex Context.
-#' @param session A live `chromote::ChromoteSession`.
+#' Draft team_names for a competition from the program's participants.
+#'
+#' @param comp_id Lengjan competition id.
+#' @param events Output of [parse_lengjan_program()].
 #' @param known_teams Canonical team names to match against.
 #' @return Tibble `{lengjan, canonical_guess, confidence}`.
 #' @export
-propose_team_names <- function(comp_id, sport, country, sex, session, known_teams) {
-  url <- sprintf(
-    "https://games.lotto.is/getraunaleikir/lengjan?sport=%d&country=%s&competition=%s",
-    .lengjan_sport_id(sport), .lengjan_country_code(country), comp_id
-  )
-  html <- .lengjan_fetch(session, url)
-  rows <- parse_competition_page(html, sport = sport, country = country)
-  renderings <- unique(c(rows$home_team, rows$away_team))
+propose_team_names <- function(comp_id, events, known_teams) {
+  ev <- events[events$competition_id == comp_id, , drop = FALSE]
+  renderings <- unique(c(ev$home_team, ev$away_team))
   renderings <- renderings[!is.na(renderings) & nzchar(renderings)]
   match_team_names(renderings, known_teams)
 }
@@ -222,36 +200,41 @@ propose_team_names <- function(comp_id, sport, country, sex, session, known_team
 
 #' Discover competitions Lengjan now offers that we model but do not yet scrape.
 #'
-#' For each active modelled `(sport, country)`, lists the live competitions,
-#' diffs against configured comp IDs, classifies each new one, keeps those whose
-#' inferred division we model, and drafts `team_names`. Pure inputs are
-#' injectable (`list_fn`, `team_names_fn`) so the orchestration is unit-tested
-#' without network or Stan. Competitions for a modelled `(sport, country)` whose
-#' division we do NOT model are counted in `unmodelled_offered_count`.
+#' For each active modelled `(sport, country)`, lists the live competitions
+#' from Lengjan's JSON program, diffs against configured comp IDs, classifies
+#' each new one, keeps those whose inferred division we model, and drafts
+#' `team_names`. Pure inputs are injectable (`list_fn`, `team_names_fn`) so the
+#' orchestration is unit-tested without network or Stan. Competitions for a
+#' modelled `(sport, country)` whose division we do NOT model are counted in
+#' `unmodelled_offered_count`.
 #'
 #' @param leagues Full leagues list (`load_leagues()`).
-#' @param session A live `chromote::ChromoteSession` (required unless both
-#'   `list_fn` and `team_names_fn` are supplied).
+#' @param events Output of [parse_lengjan_program()]; \code{NULL} fetches the live program once.
 #' @param root Data root for `read_table("results")`.
 #' @param list_fn,team_names_fn Injectable closures for testing.
 #' @return `list(competitions = <list>, unmodelled_offered_count = int)`.
 #' @export
-discover_new_competitions <- function(leagues, session = NULL,
+discover_new_competitions <- function(leagues, events = NULL,
                                       root = here::here("data"),
                                       list_fn = NULL, team_names_fn = NULL) {
+  if ((is.null(list_fn) || is.null(team_names_fn)) && is.null(events)) {
+    events <- parse_lengjan_program(lengjan_fetch_program())
+  }
   if (is.null(list_fn)) {
-    stopifnot(!is.null(session))
-    list_fn <- function(sport, country) lengjan_list_competitions(sport, country, session)
+    list_fn <- function(sport, country) lengjan_list_competitions(sport, country, events)
   }
   if (is.null(team_names_fn)) {
-    stopifnot(!is.null(session))
     team_names_fn <- function(comp_id, sport, country, sex, division) {
       kt <- .known_teams_for(sport, country, sex, division, root)
-      propose_team_names(comp_id, sport, country, sex, session, kt)
+      propose_team_names(comp_id, events, kt)
     }
   }
 
-  active <- filter_leagues(leagues, active_only = TRUE, has_lengjan = TRUE)
+  # Every active league from betting.mode "scrape" up -- including one with no
+  # competitions yet, which is exactly the league discovery exists for (spec
+  # 2026-09-23 WS4; the old has_lengjan filter made HB/BB invisible).
+  active <- filter_leagues(leagues, active_only = TRUE)
+  active <- active[vapply(active, betting_mode_at_least, logical(1), stage = "scrape")]
   pairs <- list()
   for (key in names(active)) {
     lg <- active[[key]]

@@ -15,7 +15,7 @@ upsert_table(
 \arguments{
 \item{df}{A tibble or data frame matching the schema for `table`.}
 
-\item{table}{One of `"results"`, `"schedules"`.}
+\item{table}{One of `"results"`, `"schedules"`, `"odds"`.}
 
 \item{root}{Filesystem root (defaults to `here::here("data")`).}
 
@@ -48,6 +48,12 @@ frame does not touch are left on disk untouched.
 When the new frame collides with an existing row on the natural match key,
 the NEW row wins — this lets corrections (e.g. finalised scores) propagate.
 
-Currently supports `"results"` and `"schedules"`. Other tables fall through
-to `natural_key_for()` which raises a clear error.
+Currently supports `"results"`, `"schedules"` and `"odds"`. Other tables
+fall through to `natural_key_for()` which raises a clear error.
+
+A partition that exists but cannot be read is treated as empty (and so
+overwritten) for `"results"` and `"schedules"`, which can be re-ingested.
+For `"odds"` the read error propagates instead and nothing is written:
+snapshots cannot be re-scraped. An absent table directory is not an error
+([read_table()] returns an empty tibble), so a first write still works.
 }

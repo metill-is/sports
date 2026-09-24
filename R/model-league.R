@@ -450,15 +450,17 @@ fit_one <- function(static, sex) {
 #' recommendations that the autoplace agent stakes real money on. A stale
 #' publish-only fit is a stale page; a stale betting fit is money.
 #'
-#' [betting_enabled()] is the data-driven expression of that difference, so no
-#' sport name is hardcoded here and a league that is armed later moves up on
-#' its own. The sort is stable: within a tier, config order (and each league's
-#' declared sex order) is preserved, so a league's rows are never interleaved.
+#' The league's [betting_mode()] stage is the data-driven expression of that
+#' difference -- auto, then manual, then paper, then scrape/off -- so no sport
+#' name is hardcoded and a league that moves up the ladder moves up here on
+#' its own. The sort is stable: within a stage, config order (and each
+#' league's declared sex order) is preserved, so a league's rows are never
+#' interleaved.
 #'
 #' @param targets Tibble of `key`/`sex` rows from `resolve_targets()`.
 #' @param leagues Leagues list; each `leagues[[key]]` may carry a `betting`
-#'   slice. A missing league or slice counts as betting-enabled (the
-#'   [betting_enabled()] default), which keeps the conservative tier on top.
+#'   slice. A missing league or slice counts as mode "auto" (the
+#'   [betting_mode()] default), which keeps the conservative tier on top.
 #' @return `targets` reordered; identical to the input when every league is in
 #'   the same tier.
 #' @export
@@ -466,14 +468,18 @@ order_fit_targets <- function(targets, leagues) {
   if (nrow(targets) == 0L) {
     return(targets)
   }
-  armed <- vapply(
+  # Rank by ladder stage (spec 2026-09-23 WS1): auto > manual > paper >
+  # scrape/off, so the money fit always precedes a paper fit, which precedes
+  # a scrape-only one. A missing league or slice is "auto" (betting_mode()'s
+  # default), keeping the conservative tier on top. order() is stable, so
+  # config order (and each league's sex order) holds within a stage.
+  stage <- vapply(
     targets$key,
-    function(k) betting_enabled(leagues[[k]]),
-    logical(1),
+    function(k) match(betting_mode(leagues[[k]]), .BETTING_MODES),
+    integer(1),
     USE.NAMES = FALSE
   )
-  # order() leaves ties in their original order; !armed puts TRUE first.
-  targets[order(!armed), , drop = FALSE]
+  targets[order(-stage), , drop = FALSE]
 }
 
 #' Fit every target, isolating a per-target abort.

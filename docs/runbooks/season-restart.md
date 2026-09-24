@@ -69,6 +69,7 @@ last season cannot be written into this season's hive partition.
 - Do not hand-edit `config/active_competitions.json`. `scrape-results.yml`
   runs `00_active_competitions.R` immediately before the ingest and
   overwrites it, and since WS6 the federation ingest does not read it anyway.
-- Do not enable betting to "wake a league up". Odds and results are separate
-  paths: `betting.enabled: false` stops odds and placement, and has no effect
-  on results ingest, fitting or publishing.
+- Do not raise `betting.mode` to "wake a league up". Odds and results are
+  separate paths: `betting.mode` (off < scrape < paper < manual < auto) gates
+  odds, decide and placement, and has no effect on results ingest, fitting or
+  publishing.

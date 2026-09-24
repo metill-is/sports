@@ -24,13 +24,16 @@ load_recommendations(
 \item{target_date}{Specific match_date to keep. Mutually exclusive with
 `today_only` and overrides the future-only filter.}
 
-\item{run_date}{Specific run_date partition to read. NULL = most recent.}
+\item{run_date}{Specific run_date partition to read. NULL = each league's
+(sport, country's) most recent.}
 }
 \value{
 Tibble matching `schemas()$recommendations` (post-filter).
 }
 \description{
-Reads `data/decisions/recommendations/` for the most recent `run_date`
-partition (or `target_date` when supplied), filters to upcoming matches,
-and optionally restricts to the league keys requested.
+Reads `data/decisions/recommendations/` for each league's most recent
+`run_date` partition -- per (sport, country), so one league's newer run
+never hides another's current recommendations -- or for the `run_date`
+supplied, filters to upcoming matches (or `target_date`), and optionally
+restricts to the league keys requested.
 }

@@ -1,6 +1,5 @@
 # WS1 -- betting interlock (spec section 3, decision D2).
-# One predicate, four enforcement points: odds ingest, decide, the placer's
-# recommendation loader, and the placer's pre-flight validator.
+# Superseded by the betting ladder (spec 2026-09-23 WS1): off still means nothing at any layer.
 
 test_that("betting_enabled() defaults to TRUE when the key is absent", {
   expect_true(betting_enabled(list(betting = list(kelly_frac = 0.1))))
@@ -21,21 +20,34 @@ test_that("betting_enabled() treats a NULL betting slice as enabled", {
   expect_true(betting_enabled(list(betting = NULL)))
 })
 
-# --- the shipped config is disarmed (D2) --------------------------------------
+# --- the shipped config sits on the betting ladder (spec 2026-09-23 WS5) ------
 
-test_that("basketball and handball ship betting-disabled, football does not", {
+test_that("the shipped config pins each league's betting.mode", {
   lg <- load_leagues()
-  expect_false(betting_enabled(lg$basketball_iceland))
-  expect_false(betting_enabled(lg$handball_iceland))
-  expect_true(betting_enabled(lg$football_iceland))
+  expect_equal(betting_mode(lg$football_iceland), "auto")
+  expect_equal(betting_mode(lg$handball_iceland), "paper")
+  expect_equal(betting_mode(lg$basketball_iceland), "scrape")
 })
 
-test_that("the disarmed leagues have no Lengjan competitions to scrape", {
+test_that("handball scrapes Olisdeild karla via the API; basketball has no comps yet", {
   lg <- load_leagues()
+  hb <- lg$handball_iceland$lengjan
+  expect_equal(hb$source, "api")
+  expect_equal(vapply(hb$competitions, function(cp) cp$id, character(1)), "1269")
+  expect_equal(hb$competitions[[1]]$division, "OD")
+  expect_equal(lg$basketball_iceland$lengjan$source, "api")
   expect_length(lg$basketball_iceland$lengjan$competitions, 0L)
-  expect_length(lg$handball_iceland$lengjan$competitions, 0L)
-  # Football must still have its full slate.
+  # Football keeps its full slate on the DOM scraper until the Milestone B cutover.
   expect_gt(length(lg$football_iceland$lengjan$competitions), 0L)
+  expect_null(lg$football_iceland$lengjan$source)
+})
+
+test_that("handball team_names cover all 12 Olisdeild karla teams", {
+  lg <- load_leagues()
+  expect_true(all(c(
+    "Afturelding", "FH", "Fram", "Haukar", "HK", "ÍBV", "KA",
+    "Selfoss", "Stjarnan", "Valur", "Víkingur", "Þór"
+  ) %in% names(lg$handball_iceland$lengjan$team_names$male)))
 })
 
 test_that("disarming did not clobber the team_names maps", {
@@ -239,7 +251,7 @@ test_that("validate_betting_enabled passes when every rec is bettable", {
 test_that("load_recommendations drops disabled leagues under the SHIPPED config", {
   # End-to-end guard. The filter tests in test-placer-{load,preview}.R pin an
   # explicit config so they keep testing the filter; this one deliberately uses
-  # the real config, so it fails if basketball or handball is ever re-armed
+  # the real config, so it fails if basketball or handball reaches betting.mode manual
   # without that being a considered decision.
   root <- withr::local_tempdir()
   write_table(tibble::tibble(
