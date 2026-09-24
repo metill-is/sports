@@ -107,3 +107,61 @@ test_that("ingest_one_lengjan soft-fails an API fetch error to 0 rows", {
   ))
   expect_identical(res, 0L)
 })
+
+# ---- Unparseable kickoff (final review F3) -----------------------------------
+#
+# .lengjan_event_row() parses datePlayed with ymd_hms(quiet = TRUE), so an
+# unparseable value became an NA kickoff_at and the league's rows were written
+# with match_date NA: never joinable, never reported. It must fail loudly
+# instead; run_per_league() keeps that from taking the other leagues down.
+
+.bad_kickoff_program <- function(event_id = "4616742", value = "Fimmtudagur 17:00") {
+  prog <- .fx("current-program.json")
+  for (a in c("events", "liveSoon", "popular", "liveNow")) {
+    prog[[a]] <- lapply(prog[[a]], function(e) {
+      if (identical(as.character(e$id), event_id)) e$datePlayed <- value
+      e
+    })
+  }
+  prog
+}
+
+test_that("lengjan_api_odds_rows fails loudly on a selected event with no parseable kickoff", {
+  ev <- parse_lengjan_program(.bad_kickoff_program())
+  mk <- parse_lengjan_markets(.fx("markets.json"))
+  expect_error(
+    lengjan_api_odds_rows(ev, mk, .api_league("9281", "handball"), .t0),
+    "API may have changed"
+  )
+  expect_error(
+    lengjan_api_odds_rows(ev, mk, .api_league("9281", "handball"), .t0),
+    "4616742"
+  )
+  # Scoped to the league's own events: basketball's event is unaffected.
+  expect_equal(nrow(lengjan_api_odds_rows(ev, mk, .api_league("9445", "basketball"), .t0)), 5L)
+})
+
+test_that("a plain error, not lengjan_fetch_error, so it is never soft-failed", {
+  ev <- parse_lengjan_program(.bad_kickoff_program())
+  mk <- parse_lengjan_markets(.fx("markets.json"))
+  err <- tryCatch(
+    lengjan_api_odds_rows(ev, mk, .api_league("9281", "handball"), .t0),
+    error = function(e) e
+  )
+  expect_s3_class(err, "error")
+  expect_false(inherits(err, "lengjan_fetch_error"))
+})
+
+test_that("ingest_lengjan_api writes nothing when a selected event's kickoff is unparseable", {
+  root <- withr::local_tempdir()
+  expect_error(
+    suppressMessages(ingest_lengjan_api(
+      list(handball_iceland = .api_league("9281", "handball")),
+      scraped_at = .t0, root = root,
+      fetch_program = function() .bad_kickoff_program(),
+      fetch_markets = function(ids) .fx("markets.json")
+    )),
+    "API may have changed"
+  )
+  expect_equal(nrow(read_table("odds", root = root)), 0L)
+})

@@ -23,5 +23,7 @@ An event belongs to the league when its sport matches and its competition
 id is one of the league's `lengjan.competitions`; the row takes that
 competition's `sex`. Team names stay as Lengjan renders them -- decide maps
 them to canonical per sex ([normalise_lengjan_team_names()]).
-`match_date` is the kickoff's UTC date: Iceland keeps UTC all year.
+`match_date` is the kickoff's UTC date: Iceland keeps UTC all year. A
+selected event with no parseable kickoff is an error naming the event, not
+a row with an NA `match_date`.
 }

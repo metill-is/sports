@@ -243,7 +243,9 @@ lengjan_markets_to_odds <- function(markets) {
 #' id is one of the league's `lengjan.competitions`; the row takes that
 #' competition's `sex`. Team names stay as Lengjan renders them -- decide maps
 #' them to canonical per sex ([normalise_lengjan_team_names()]).
-#' `match_date` is the kickoff's UTC date: Iceland keeps UTC all year.
+#' `match_date` is the kickoff's UTC date: Iceland keeps UTC all year. A
+#' selected event with no parseable kickoff is an error naming the event, not
+#' a row with an NA `match_date`.
 #'
 #' @param events Output of [parse_lengjan_program()].
 #' @param markets Output of [parse_lengjan_markets()].
@@ -264,6 +266,19 @@ lengjan_api_odds_rows <- function(events, markets, league, scraped_at) {
   j <- j[!is.na(j$home_team) & !is.na(j$away_team), , drop = FALSE]
   if (nrow(j) == 0L) {
     return(empty_lengjan_api_odds())
+  }
+  # An unparseable datePlayed becomes an NA kickoff_at, and its rows would be
+  # written with match_date NA: never joinable, never reported (final review
+  # F3). A plain error, not lengjan_fetch_error, so it is never soft-failed;
+  # the scrape script's run_per_league() contains it to this league.
+  bad <- unique(j$event_id[is.na(j$kickoff_at)])
+  if (length(bad) > 0L) {
+    stop(
+      "lengjan_api_odds_rows: no parseable kickoff (datePlayed) for ",
+      league$sport, " event(s) ", paste(bad, collapse = ", "),
+      "; Lengjan's API may have changed.",
+      call. = FALSE
+    )
   }
   tibble::tibble(
     sport = league$sport, country = league$country,
