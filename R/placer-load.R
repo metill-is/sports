@@ -3,9 +3,11 @@ NULL
 
 #' Load recommendations for placement.
 #'
-#' Reads `data/decisions/recommendations/` for the most recent `run_date`
-#' partition (or `target_date` when supplied), filters to upcoming matches,
-#' and optionally restricts to the league keys requested.
+#' Reads `data/decisions/recommendations/` for each league's most recent
+#' `run_date` partition -- per (sport, country), so one league's newer run
+#' never hides another's current recommendations -- or for the `run_date`
+#' supplied, filters to upcoming matches (or `target_date`), and optionally
+#' restricts to the league keys requested.
 #'
 #' @param root Data root.
 #' @param leagues Optional character vector of league keys (e.g.
@@ -13,7 +15,8 @@ NULL
 #' @param today_only Keep only matches today.
 #' @param target_date Specific match_date to keep. Mutually exclusive with
 #'   `today_only` and overrides the future-only filter.
-#' @param run_date Specific run_date partition to read. NULL = most recent.
+#' @param run_date Specific run_date partition to read. NULL = each league's
+#'   (sport, country's) most recent.
 #' @return Tibble matching `schemas()$recommendations` (post-filter).
 #' @export
 load_recommendations <- function(root,
@@ -30,13 +33,19 @@ load_recommendations <- function(root,
     return(empty_recommendations_for_placement())
   }
 
-  # Restrict to the requested run_date partition (or the most recent when
-  # NULL). Without this filter the placer would consider stale Kelly sizes
-  # from prior runs alongside the current run's recommendations.
+  # Restrict to the requested run_date partition (or, when NULL, each
+  # league's most recent one). Without this filter the placer would consider
+  # stale Kelly sizes from prior runs alongside the current run's
+  # recommendations. The latest run is taken PER (sport, country), not
+  # globally: a global max let a paper league's newer partition hide the
+  # betting league's current recommendations (final review F2, 2026-09-23).
   if (!is.null(run_date)) {
     recs <- recs[as.character(recs$run_date) == as.character(run_date), , drop = FALSE]
   } else if ("run_date" %in% names(recs) && nrow(recs) > 0L) {
-    recs <- recs[recs$run_date == max(recs$run_date), , drop = FALSE]
+    recs <- recs |>
+      dplyr::group_by(.data$sport, .data$country) |>
+      dplyr::filter(.data$run_date == max(.data$run_date)) |>
+      dplyr::ungroup()
   }
 
   if (!is.null(target_date)) {

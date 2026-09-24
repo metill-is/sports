@@ -24,8 +24,9 @@ con <- DBI::dbConnect(duckdb::duckdb(), "sports.duckdb", read_only = TRUE)
 print(DBI::dbGetQuery(con, "
   SELECT sport, country, sex, match_date, home_team, away_team,
          market, outcome, line, p, odds, ev, kelly, bet_amount
-  FROM recommendations
-  WHERE run_date = (SELECT MAX(run_date) FROM recommendations)
+  FROM recommendations r
+  WHERE run_date = (SELECT MAX(r2.run_date) FROM recommendations r2
+                    WHERE r2.sport = r.sport AND r2.country = r.country)
   ORDER BY ev DESC
 "))
 '
