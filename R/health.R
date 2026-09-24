@@ -236,6 +236,27 @@ check_fit_freshness <- function(leagues, root, now, th) {
   unique(hit)
 }
 
+#' (sex, division) cells a league's configured Lengjan competitions cover, or
+#' `NULL` when any competition lacks a `division` (candidate history then
+#' decides, as before). Spec 2026-09-23 WS7.
+#' @noRd
+.configured_divisions <- function(lg) {
+  comps <- lg$lengjan$competitions %||% list()
+  if (length(comps) == 0L) {
+    return(NULL)
+  }
+  div <- vapply(comps, function(cp) {
+    as.character(cp$division %||% NA_character_)
+  }, character(1))
+  if (anyNA(div)) {
+    return(NULL)
+  }
+  unique(tibble::tibble(
+    sex = vapply(comps, function(cp) as.character(cp$sex), character(1)),
+    division = div
+  ))
+}
+
 #' Match-proximity-aware odds freshness.
 #'
 #' A between-match lull — when Lengjan posts no odds because no fixture is near —
@@ -257,14 +278,23 @@ check_odds_freshness <- function(leagues, root, now, th) {
   rows <- list()
   for (key in names(leagues)) {
     lg <- leagues[[key]]
-    # D2 (spec 2026-09-02 section 3): a betting-disabled league is not scraped,
-    # so absent odds are correct rather than a breach. Report PAUSED -- which
-    # overall_health_status() does not escalate -- rather than letting the
-    # fixture-proximity rule below WARN every matchday of the season.
-    if (!betting_enabled(lg)) {
+    # Betting ladder (spec 2026-09-23 WS1/WS7). "off" is never scraped, so
+    # absent odds are correct: PAUSED, which overall_health_status() does not
+    # escalate. Below "manual" a league with no competitions wired (basketball
+    # before its comps appear) cannot have odds either.
+    mode <- betting_mode(lg)
+    if (!betting_mode_at_least(lg, "scrape")) {
       rows[[key]] <- health_row(
         "odds_freshness", key, "PAUSED",
-        "betting disabled (betting.enabled: false)", thr_lbl
+        "betting disabled (betting.mode: off)", thr_lbl
+      )
+      next
+    }
+    if (!betting_mode_at_least(lg, "manual") &&
+      length(lg$lengjan$competitions %||% list()) == 0L) {
+      rows[[key]] <- health_row(
+        "odds_freshness", key, "PAUSED",
+        sprintf("no Lengjan competitions wired (betting.mode: %s)", mode), thr_lbl
       )
       next
     }
@@ -275,7 +305,8 @@ check_odds_freshness <- function(leagues, root, now, th) {
     upcoming <- sch[!is.na(md) & md >= today & md <= today + horizon_days, , drop = FALSE]
     if (nrow(upcoming) == 0L) next # off-season: no fixture, so no odds expected
 
-    covered <- .covered_divisions(static, sch, root)
+    configured <- .configured_divisions(lg)
+    covered <- if (is.null(configured)) .covered_divisions(static, sch, root) else configured
     expected <- if (is.null(covered) || !("division" %in% names(upcoming))) {
       upcoming
     } else {
@@ -286,7 +317,12 @@ check_odds_freshness <- function(leagues, root, now, th) {
     if (nrow(expected) == 0L) {
       rows[[key]] <- health_row(
         "odds_freshness", key, "OK",
-        "upcoming fixtures only in divisions Lengjan has never priced", thr_lbl
+        if (is.null(configured)) {
+          "upcoming fixtures only in divisions Lengjan has never priced"
+        } else {
+          "upcoming fixtures only in cells with no configured Lengjan competition"
+        },
+        thr_lbl
       )
       next
     }
@@ -315,6 +351,12 @@ check_odds_freshness <- function(leagues, root, now, th) {
     } else {
       status <- "FAIL"
       value <- "fixture today, no odds scraped"
+    }
+    # Below "manual" no money rides on these odds: a stall is worth a WARN,
+    # never the FAIL that fires the alert email (spec 2026-09-23 WS7).
+    if (status == "FAIL" && !betting_mode_at_least(lg, "manual")) {
+      status <- "WARN"
+      value <- sprintf("%s (betting.mode: %s, capped at WARN)", value, mode)
     }
     rows[[key]] <- health_row("odds_freshness", key, status, value, thr_lbl)
   }
@@ -377,8 +419,9 @@ check_orphaned_bets <- function(root, now, th) {
 #' already-placed bets per run, but earlier run_date partitions retain a bet
 #' from before it was placed, so the distinct union across run_dates is the set
 #' of bets ever recommended; the inner-join to the ledger is what was placed.
+#' @param leagues Named league config; when given, only recommendations from leagues at betting.mode "manual" or above count (paper recommendations are never placed, spec 2026-09-23 WS7). NULL or an empty list counts all.
 #' @noRd
-check_capture_rate <- function(root, now, th) {
+check_capture_rate <- function(root, now, th, leagues = NULL) {
   thr_lbl <- paste0(">= ", round(100 * th$capture_warn_rate), "% placed")
   key <- c(
     "sport", "country", "sex", "match_date",
@@ -389,6 +432,14 @@ check_capture_rate <- function(root, now, th) {
   )
   if (nrow(recs) == 0L || !all(key %in% names(recs))) {
     return(health_row("capture_rate", "recommendations", "OK", "no recommendations", thr_lbl))
+  }
+  if (!is.null(leagues) && length(leagues) > 0L) {
+    # pipeline_health() passes list() when load_leagues() failed: judge every
+    # rec then rather than none (the config-error row already FAILs).
+    placeable <- names(leagues)[
+      vapply(leagues, betting_mode_at_least, logical(1), stage = "manual")
+    ]
+    recs <- recs[paste0(recs$sport, "_", recs$country) %in% placeable, , drop = FALSE]
   }
   today <- as.Date(now, tz = "UTC")
   recs$match_date <- as.Date(recs$match_date)
@@ -647,7 +698,7 @@ pipeline_health <- function(root = here::here("data"),
     safe(check_odds_freshness(leagues, root, now, th)),
     safe(check_diagnostics_drift(root, th)),
     safe(check_orphaned_bets(root, now, th)),
-    safe(check_capture_rate(root, now, th)),
+    safe(check_capture_rate(root, now, th, leagues)),
     safe(check_placement_health(root, now, th)),
     safe(check_bankroll(root, th)),
     safe(check_discovery(root, th)),

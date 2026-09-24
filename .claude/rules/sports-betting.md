@@ -64,6 +64,10 @@ CSV dual-write was retired by Plan 6; Parquet is canonical.
 
 ```yaml
 betting:
+  # Ladder (spec 2026-09-23 WS1): off < scrape < paper < manual < auto. Ingest
+  # needs scrape, decide paper, place_bets.R manual, launchd autoplace auto.
+  # Absent: enabled decides (false -> off, else auto). Never set both.
+  mode: auto
   # §7.2 multiplicative shrinkage; per-(league, sex) Browne γ
   kelly_frac:
     male: 0.20

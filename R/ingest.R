@@ -379,24 +379,23 @@ ingest_one_league <- function(static, key, active_path,
 #' don't bust this target's cache.
 #'
 #' @param static Per-league static slice.
-#' @param lengjan Per-league `lengjan` slice (competitions + team_names).
+#' @param lengjan Per-league \code{lengjan} slice (source, competitions, team_names).
 #' @param key League key.
 #' @param active_path Path to `config/active_competitions.json`.
-#' @param betting Per-league `betting` slice, or `NULL`. When
-#'   `betting$enabled` is `FALSE` the scrape is refused outright (decision D2
-#'   -- publish without betting). Trailing and defaulted so existing four-arg
-#'   calls keep working.
+#' @param betting Per-league `betting` slice, or `NULL`. Odds are scraped from
+#'   `betting.mode` "scrape" up (spec 2026-09-23 WS1); at "off" the scrape is
+#'   refused outright. Trailing and defaulted so existing four-arg calls keep
+#'   working.
 #' @return Number of odds rows written (integer).
 #' @export
 ingest_one_lengjan <- function(static, lengjan, key, active_path,
                                betting = NULL) {
-  # D2 interlock. Checked before the activation gate: a league we will never
-  # bet should not launch a browser even when it does have fixtures today.
-  # Emptying `lengjan.competitions` already leaves nothing to fetch; this is
-  # the second lock, so restoring the ids without re-enabling betting cannot
-  # silently re-arm the scrape.
-  if (!betting_enabled(list(betting = betting))) {
-    cli::cli_alert_info("{key}: skipped (betting disabled)")
+  # Betting ladder (spec 2026-09-23 WS1): odds are scraped from mode "scrape"
+  # up. Checked before the activation gate, so a league at "off" never touches
+  # Lengjan even when it has fixtures today. An absent `betting` slice is
+  # "auto" (football carries neither mode nor enabled).
+  if (!betting_mode_at_least(list(betting = betting), "scrape")) {
+    cli::cli_alert_info("{key}: skipped (betting.mode: off)")
     return(0L)
   }
   if (!.is_league_active(active_path, key)) {
@@ -405,17 +404,28 @@ ingest_one_lengjan <- function(static, lengjan, key, active_path,
   }
   league <- static
   league$lengjan <- lengjan
+  # lengjan.source picks the scraper (spec 2026-09-23 WS2/WS3): "api" is the
+  # JSON API, anything else (absent = football until its Milestone B cutover)
+  # the Chromote DOM scraper. Both raise lengjan_fetch_error on transport
+  # failure, soft-failed below.
+  scrape_fn <- if (identical(lengjan$source, "api")) {
+    ingest_lengjan_api
+  } else {
+    ingest_lengjan_odds
+  }
   tryCatch(
-    as.integer(ingest_lengjan_odds(stats::setNames(list(league), key))),
+    as.integer(scrape_fn(stats::setNames(list(league), key))),
     lengjan_fetch_error = function(e) {
       # A navigate/fetch timeout that survived every retry is transient and
       # external (Lengjan-side latency or runner-network), not a scraper bug.
       # Treat this league as 0 rows so the run exits clean instead of red-Xing
       # the workflow on a blip; real staleness still escalates via the
       # healthcheck's match-proximity odds_freshness check. Parse failures raise
-      # plain errors (no lengjan_fetch_error class) and so still abort the run.
+      # plain errors (no lengjan_fetch_error class) and so still fail the run:
+      # scripts/02_scrape_odds.R contains them to this league (run_per_league())
+      # and exits non-zero after the other leagues have scraped.
       cli::cli_alert_warning(
-        "{key}: Lengjan fetch timed out after retries ({conditionMessage(e)}); skipping this run. odds_freshness escalates if a fixture is imminent."
+        "{key}: Lengjan fetch failed after retries ({conditionMessage(e)}); skipping this run. odds_freshness escalates if a fixture is imminent."
       )
       0L
     }

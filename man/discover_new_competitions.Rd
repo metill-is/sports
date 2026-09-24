@@ -6,7 +6,7 @@
 \usage{
 discover_new_competitions(
   leagues,
-  session = NULL,
+  events = NULL,
   root = here::here("data"),
   list_fn = NULL,
   team_names_fn = NULL
@@ -15,8 +15,7 @@ discover_new_competitions(
 \arguments{
 \item{leagues}{Full leagues list (`load_leagues()`).}
 
-\item{session}{A live `chromote::ChromoteSession` (required unless both
-`list_fn` and `team_names_fn` are supplied).}
+\item{events}{Output of [parse_lengjan_program()]; \code{NULL} fetches the live program once.}
 
 \item{root}{Data root for `read_table("results")`.}
 
@@ -26,10 +25,11 @@ discover_new_competitions(
 `list(competitions = <list>, unmodelled_offered_count = int)`.
 }
 \description{
-For each active modelled `(sport, country)`, lists the live competitions,
-diffs against configured comp IDs, classifies each new one, keeps those whose
-inferred division we model, and drafts `team_names`. Pure inputs are
-injectable (`list_fn`, `team_names_fn`) so the orchestration is unit-tested
-without network or Stan. Competitions for a modelled `(sport, country)` whose
-division we do NOT model are counted in `unmodelled_offered_count`.
+For each active modelled `(sport, country)`, lists the live competitions
+from Lengjan's JSON program, diffs against configured comp IDs, classifies
+each new one, keeps those whose inferred division we model, and drafts
+`team_names`. Pure inputs are injectable (`list_fn`, `team_names_fn`) so the
+orchestration is unit-tested without network or Stan. Competitions for a
+modelled `(sport, country)` whose division we do NOT model are counted in
+`unmodelled_offered_count`.
 }

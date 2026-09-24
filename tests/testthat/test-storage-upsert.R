@@ -277,3 +277,68 @@ test_that("snapshot retraction defaults are inert (plain upsert unchanged)", {
   back <- read_table("schedules", root = tmp)
   expect_equal(nrow(back), 2L) # legacy union semantics preserved
 })
+
+# ---- Odds read errors propagate (final review F4) ---------------------------
+#
+# upsert_table() turned ANY read error into "no existing rows" and then
+# overwrote the partition. Odds snapshots cannot be re-scraped, and every odds
+# upsert now reads through read_table()'s explicit-schema fallback, so one
+# fragment's cast error would silently drop the day's earlier snapshots. For
+# odds the error now propagates; run_per_league() contains it to one league.
+
+.f4_odds <- function(scraped_at) {
+  tibble::tibble(
+    sport = "handball", country = "iceland", sex = "male",
+    scraped_at = as.POSIXct(scraped_at, tz = "UTC"),
+    match_date = as.Date("2100-01-05"),
+    home_team = "Valur", away_team = "Haukar",
+    market = "moneyline", outcome = "home", line = NA_real_, odds = 2.0
+  )
+}
+
+test_that("an odds read error propagates and leaves the day's snapshots untouched", {
+  root <- withr::local_tempdir()
+  write_table(.f4_odds("2100-01-01 08:00:00"), "odds", root = root)
+  odds_dir <- fs::path(root, "facts", "odds")
+  files_before <- fs::dir_ls(odds_dir, recurse = TRUE, type = "file")
+  md5_before <- unname(tools::md5sum(files_before))
+  expect_gt(length(files_before), 0L)
+
+  local({
+    testthat::local_mocked_bindings(
+      read_table = function(...) stop("cast error in one odds fragment")
+    )
+    expect_error(
+      upsert_table(.f4_odds("2100-01-01 14:00:00"), "odds", root = root),
+      "cast error in one odds fragment"
+    )
+  })
+
+  files_after <- fs::dir_ls(odds_dir, recurse = TRUE, type = "file")
+  expect_equal(unname(files_after), unname(files_before))
+  expect_equal(unname(tools::md5sum(files_after)), md5_before)
+  back <- read_table("odds", root = root)
+  expect_equal(nrow(back), 1L)
+  expect_equal(back$scraped_at, as.POSIXct("2100-01-01 08:00:00", tz = "UTC"))
+})
+
+test_that("a non-odds table keeps the old read-error swallow", {
+  root <- withr::local_tempdir()
+  write_table(make_result_row(home_team = "Valur", away_team = "FH"), "results", root = root)
+
+  local({
+    testthat::local_mocked_bindings(
+      read_table = function(...) stop("unreadable results fragment")
+    )
+    expect_no_error(upsert_table(
+      make_result_row(home_team = "Haukar", away_team = "IR"),
+      "results",
+      root = root
+    ))
+  })
+
+  # Unchanged behaviour: the unreadable partition is treated as empty and
+  # rewritten with the new rows (results can be re-ingested).
+  back <- read_table("results", root = root)
+  expect_equal(back$home_team, "Haukar")
+})

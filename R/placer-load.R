@@ -3,9 +3,11 @@ NULL
 
 #' Load recommendations for placement.
 #'
-#' Reads `data/decisions/recommendations/` for the most recent `run_date`
-#' partition (or `target_date` when supplied), filters to upcoming matches,
-#' and optionally restricts to the league keys requested.
+#' Reads `data/decisions/recommendations/` for each league's most recent
+#' `run_date` partition -- per (sport, country), so one league's newer run
+#' never hides another's current recommendations -- or for the `run_date`
+#' supplied, filters to upcoming matches (or `target_date`), and optionally
+#' restricts to the league keys requested.
 #'
 #' @param root Data root.
 #' @param leagues Optional character vector of league keys (e.g.
@@ -13,7 +15,8 @@ NULL
 #' @param today_only Keep only matches today.
 #' @param target_date Specific match_date to keep. Mutually exclusive with
 #'   `today_only` and overrides the future-only filter.
-#' @param run_date Specific run_date partition to read. NULL = most recent.
+#' @param run_date Specific run_date partition to read. NULL = each league's
+#'   (sport, country's) most recent.
 #' @return Tibble matching `schemas()$recommendations` (post-filter).
 #' @export
 load_recommendations <- function(root,
@@ -30,13 +33,19 @@ load_recommendations <- function(root,
     return(empty_recommendations_for_placement())
   }
 
-  # Restrict to the requested run_date partition (or the most recent when
-  # NULL). Without this filter the placer would consider stale Kelly sizes
-  # from prior runs alongside the current run's recommendations.
+  # Restrict to the requested run_date partition (or, when NULL, each
+  # league's most recent one). Without this filter the placer would consider
+  # stale Kelly sizes from prior runs alongside the current run's
+  # recommendations. The latest run is taken PER (sport, country), not
+  # globally: a global max let a paper league's newer partition hide the
+  # betting league's current recommendations (final review F2, 2026-09-23).
   if (!is.null(run_date)) {
     recs <- recs[as.character(recs$run_date) == as.character(run_date), , drop = FALSE]
   } else if ("run_date" %in% names(recs) && nrow(recs) > 0L) {
-    recs <- recs[recs$run_date == max(recs$run_date), , drop = FALSE]
+    recs <- recs |>
+      dplyr::group_by(.data$sport, .data$country) |>
+      dplyr::filter(.data$run_date == max(.data$run_date)) |>
+      dplyr::ungroup()
   }
 
   if (!is.null(target_date)) {
@@ -55,19 +64,18 @@ load_recommendations <- function(root,
   drop_betting_disabled(recs, leagues_cfg = leagues_cfg)
 }
 
-#' Drop recommendations belonging to betting-disabled leagues.
+#' Drop recommendations from leagues below `betting.mode` "manual".
 #'
-#' Decision D2 (spec 2026-09-02 section 3): a league may be modelled and
-#' published without being bet. The decide layer refuses to write such
-#' recommendations, but rows written *before* a league was disarmed outlive
-#' the config change, and `run_auto_place()` places every pending
-#' recommendation by design -- so the placer filters on read as well.
+#' Spec 2026-09-23 WS1: a "paper" league's recommendations exist to be read,
+#' never placed, and rows written before a league was lowered outlive the
+#' config change -- `run_auto_place()` places every pending recommendation by
+#' design, so the placer filters on read as well.
 #'
 #' @param recs Recommendation rows.
 #' @param leagues_cfg Named league config, defaulting to [load_leagues()].
 #'   Named distinctly from `load_recommendations()`'s `leagues`, which is a
 #'   character vector of keys to keep, not a config.
-#' @return `recs` without rows for betting-disabled leagues.
+#' @return `recs` without rows for leagues below "manual".
 #' @keywords internal
 #' @noRd
 drop_betting_disabled <- function(recs, leagues_cfg = NULL) {
@@ -77,7 +85,7 @@ drop_betting_disabled <- function(recs, leagues_cfg = NULL) {
   if (is.null(leagues_cfg)) leagues_cfg <- load_leagues()
 
   disabled <- names(leagues_cfg)[
-    !vapply(leagues_cfg, betting_enabled, logical(1))
+    !vapply(leagues_cfg, betting_mode_at_least, logical(1), stage = "manual")
   ]
   if (length(disabled) == 0L) {
     return(recs)
@@ -86,8 +94,8 @@ drop_betting_disabled <- function(recs, leagues_cfg = NULL) {
   drop <- paste0(recs$sport, "_", recs$country) %in% disabled
   if (any(drop)) {
     cli::cli_alert_warning(
-      "Dropping {sum(drop)} recommendation{?s} for betting-disabled \\
-       league{?s} (betting.enabled: false): \\
+      "Dropping {sum(drop)} recommendation{?s} for league{?s} below \\
+       betting.mode manual: \\
        {.val {unique(paste0(recs$sport, '_', recs$country)[drop])}}"
     )
   }

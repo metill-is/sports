@@ -24,10 +24,10 @@ parse_handicap <- function(change_str) {
 #' for matches at or after `end_date`, no older than `max_age_hours`.
 #'
 #' @param league List with `sport` + `country`.
-#' @param sex "male" or "female". Lengjan odds are sex-agnostic per
-#'   competition; the parameter is here for symmetry but does not filter.
-#'   Sex-aware handling happens at the kelly_joint stage where beliefs are
-#'   sex-keyed.
+#' @param sex "male" or "female". Rows carrying a non-NA `sex` (stamped by the
+#'   JSON-API scraper from the Lengjan competition, spec 2026-09-23 WS2) are
+#'   kept only for that sex; NA rows (DOM scraper, history) are sex-agnostic
+#'   and kept for both, as before -- the per-sex team_names join then decides.
 #' @param end_date Drop matches before this date. Default today.
 #' @param max_age_hours Drop scrapes older than this (vs `now`).
 #' @param now Reference timestamp for age filtering. Default `Sys.time()`.
@@ -59,6 +59,13 @@ prepare_odds <- function(league, sex,
 
   if (nrow(raw) == 0L) {
     return(empty_odds())
+  }
+
+  if ("sex" %in% names(raw)) {
+    raw <- raw[is.na(raw$sex) | raw$sex == sex, , drop = FALSE]
+    if (nrow(raw) == 0L) {
+      return(empty_odds())
+    }
   }
 
   # Dedup to latest scrape per (match x market x outcome x line)

@@ -65,18 +65,13 @@ basketball_iceland:
         Stjarnan u: Stjarnan b
         Keflavík U: Keflavík b
   lengjan:
+    # 2026-09-23 (spec 2026-09-23 WS2/WS5): scraped from Lengjan's JSON API.
+    # The 2026-27 Bónus deild competitions are not listed yet (season opens
+    # 2026-09-29/30 and 10-08); discovery (0N_discover.R) proposes them and
+    # /wire-league adds them here with `division: BD` or `1D`. Last season's
+    # playoff umbrellas were 1519 (karla) and 1528 (kvenna).
+    source: api
     competitions: []
-    # D2 (2026-09-02): publish-only this season -- competitions emptied so the
-    # odds scrape has nothing to fetch, alongside betting.enabled: false below.
-    # The schema permits an empty array (competitions has no minItems). Restore
-    # these ids when betting resumes; they are last season's playoff umbrella
-    # and should be re-verified against Lengjan before use:
-    #  # 2026-04-28: Lengjan restructured kvenna efri/neðri (30774/30773) into a
-    #  # single playoff umbrella per sex. Old IDs now return empty placeholder
-    #  # pages (identical char count, no team hits). Men's Bónusdeild is now
-    #  # also on Lengjan (was missing at migration time).
-    #  - { id: "1519", name: "Bónusdeild karla úrslitakeppni", sex: male }
-    #  - { id: "1528", name: "Bónusdeild kvenna úrslitakeppni", sex: female }
     team_names:
       # Men's úrslitakeppni (id 1519). Lengjan uses bare team names for the
       # men's draw — verified against data/facts/odds 2026-04-29 scrape.
@@ -162,10 +157,11 @@ basketball_iceland:
           code_badge: B1D, regular_season_rounds: 18, preseason_hold: 2026 }
   stan_model: basketball_iceland/2d_student_t_scalarsigma.stan
   betting:
-    # D2 (2026-09-02): publish-only. Enforced at four layers via
-    # betting_enabled() -- odds ingest, decide, the placer loader and its
-    # pre-flight. Absent means enabled, so football is untouched.
-    enabled: false
+    # Betting ladder (spec 2026-09-23 WS1): off < scrape < paper < manual <
+    # auto. Scrape only: Lengjan settles basketball on regulation time
+    # ("Framlenging gildir ekki") while our model and results use final
+    # scores, so nothing is priced until Phase C adds regulation-time scores.
+    mode: scrape
     # kelly_frac is the §7.2 multiplicative shrinkage (Browne γ for finite-
     # horizon power utility). Iceland-tier ROI history (+9.18 % per
     # Sports/Knowledge/Betting Optimisation/Historical/roi-snapshot-2026-04-19)
@@ -200,21 +196,34 @@ handball_iceland:
     schedule: hsi_handball
     odds: lengjan_odds
   lengjan:
-    competitions: []
-    # D2 (2026-09-02): publish-only this season -- see basketball_iceland above.
-    # Restore when betting resumes:
-    #  - { id: "1269", name: "Olísdeild karla", sex: male }
+    # 2026-09-23 (spec 2026-09-23 WS2/WS5): scraped from Lengjan's JSON API.
+    # 1269 verified live 2026-09-23 (FH - Haukar, event 4602104). No Grill 66
+    # or women's competition was listed.
+    source: api
+    competitions:
+      - { id: "1269", name: "Olísdeild karla", sex: male, division: OD }
     team_names:
+      # All 12 Olísdeild karla 2026-27 teams. Lengjan renders them as our
+      # canonical names (every handball odds row 2026-03-04..05-07), except
+      # Þór, which was also "Þór Akureyri". Víkingur has never appeared on
+      # Lengjan; "Víkingur Rvk" is a guess from football's rendering, and an
+      # unmapped name fails safe (decide skips the match).
       male:
-        Þór: Þór
+        Afturelding: Afturelding
+        FH: FH
+        Fram: Fram
+        Haukar: Haukar
         HK: HK
         ÍBV: ÍBV
-        ÍR: ÍR
-        FH: FH
         KA: KA
+        Selfoss: Selfoss
+        Stjarnan: Stjarnan
+        Valur: Valur
+        Víkingur: [Víkingur, Víkingur Rvk]
+        Þór: [Þór, Þór Akureyri]
+        ÍR: ÍR
         ÍH: ÍH Keflavík
         HBH: HB Hafnarfjörður
-        Valur: Valur
       female: {}                       # No women's handball on Lengjan currently
   # Publish cells. Handball ingests a third division, PO, which is the shared
   # post-season bracket rather than a league -- it is NOT a publish division and
@@ -252,10 +261,11 @@ handball_iceland:
           code_badge: G66, expected_meetings: 3 }
   stan_model: handball_iceland/2d_student_t.stan
   betting:
-    # D2 (2026-09-02): publish-only. Enforced at four layers via
-    # betting_enabled() -- odds ingest, decide, the placer loader and its
-    # pre-flight. Absent means enabled, so football is untouched.
-    enabled: false
+    # Betting ladder (spec 2026-09-23 WS1): off < scrape < paper < manual <
+    # auto. Paper: decide writes candidates + recommendations, the placer
+    # never places them. Promotion to manual is the user's call after the
+    # paper report (spec WS8); kelly_frac is decided then too (spec U3).
+    mode: paper
     # 2026-05-02: scaled to 25 % of Browne default (user request — overall
     # 75 % stake reduction). Pre-cut: 0.20.
     kelly_frac: 0.05         # §7.2 multiplicative shrinkage; quarter-of-Browne
@@ -263,7 +273,7 @@ handball_iceland:
     ev_threshold: 0.0
     markets:
       moneyline: true
-      spread: true
+      spread: false            # Lengjan offers no handball handicap (spec L5)
       total: true
     scoring:
       has_ties: true

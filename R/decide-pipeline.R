@@ -72,18 +72,18 @@ decide_league <- function(league_key = NULL, league = NULL, sex,
     if (isTRUE(return_candidates)) empty_candidates() else empty_recommendations()
   }
 
-  # 2b. Betting interlock ---------------------------------------------------
-  # D2 (spec 2026-09-02 section 3): a league may be modelled and published
-  # without being bet. Refuse here rather than relying on an empty odds store,
-  # because "no odds today" and "never bet this league" must not look alike.
-  # decide_league() is the single funnel for decide_one(), scripts/04_decide.R,
-  # R/backtest-walkforward.R and the replay script, so one guard covers all of
-  # them. The placer keeps its own guards: recommendations written before a
-  # league was disarmed outlive the config change.
-  if (!betting_enabled(league)) {
+  # 2b. Betting ladder -------------------------------------------------------
+  # Spec 2026-09-23 WS1: decide runs from betting.mode "paper" up. A "scrape"
+  # league collects odds but is never priced (basketball: Lengjan settles on
+  # regulation time, our model does not). decide_league() is the single funnel
+  # for decide_one(), scripts/04_decide.R, the walk-forward harness and the
+  # replay script, so one guard covers all of them. The placer keeps its own
+  # guards: recommendations written before a league was lowered outlive the
+  # config change.
+  if (!betting_mode_at_least(league, "paper")) {
     cli::cli_alert_info(
-      "{league$sport}/{league$country}/{sex}: betting disabled \\
-       (betting.enabled: false) -- no candidates or recommendations"
+      "{league$sport}/{league$country}/{sex}: betting.mode \\
+       {betting_mode(league)} is below paper -- no candidates or recommendations"
     )
     # Mirrors the two sibling early-exits below. Note this is currently a
     # no-op: decide_write_empty() passes zero-row frames to write_table(),

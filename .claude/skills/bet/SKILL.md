@@ -24,8 +24,9 @@ con <- DBI::dbConnect(duckdb::duckdb(), "sports.duckdb", read_only = TRUE)
 print(DBI::dbGetQuery(con, "
   SELECT sport, country, sex, match_date, home_team, away_team,
          market, outcome, line, p, odds, ev, kelly, bet_amount
-  FROM recommendations
-  WHERE run_date = (SELECT MAX(run_date) FROM recommendations)
+  FROM recommendations r
+  WHERE run_date = (SELECT MAX(r2.run_date) FROM recommendations r2
+                    WHERE r2.sport = r.sport AND r2.country = r.country)
   ORDER BY ev DESC
 "))
 '
@@ -39,6 +40,21 @@ Rscript scripts/preview_bets.R
 ```
 
 Present the table to the user.
+
+**Paper recommendations.** Leagues below `betting.mode: manual` (see
+`config/leagues.yml`) write recommendations the placer never places --
+handball is `paper` since 2026-09-23. `preview_bets.R` omits them; the DuckDB
+query above shows them. Label them `paper` when presenting:
+
+```bash
+cd /Users/brynjolfurjonsson/sports && Rscript -e '
+suppressPackageStartupMessages(devtools::load_all(quiet = TRUE))
+print(vapply(load_leagues(), betting_mode, character(1)))
+'
+```
+
+A row whose `<sport>_<country>` maps to `scrape` or `paper` is a paper
+recommendation.
 
 If `recommendations/` is empty or stale, run the decide layer first
 (Mode 2 below).

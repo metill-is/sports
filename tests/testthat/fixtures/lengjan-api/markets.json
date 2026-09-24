@@ -1,0 +1,2643 @@
+[
+ {
+  "id": "single-13801700",
+  "name": "single-13801700",
+  "type": "single",
+  "tab": "Leikurinn",
+  "typePriority": 1,
+  "status": "open",
+  "showSpecialValue": false,
+  "markets": [
+   {
+    "id": "13801700",
+    "version": "1535877315",
+    "eventId": "4601670",
+    "type": "1",
+    "typeName": "3WAY",
+    "tab": "Leikurinn",
+    "name": "Úrslit",
+    "typePriority": 1,
+    "dateClosed": "2026-09-23T22:55:00.000Z",
+    "datePlayed": "2026-09-23T23:00:00.000Z",
+    "externalId": "1",
+    "live": false,
+    "primary": true,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": 1,
+      "name": "1",
+      "odds": 184,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": null,
+      "name": "X",
+      "odds": 345,
+      "teamId": ""
+     },
+     {
+      "nr": 3,
+      "bet": 2,
+      "name": "2",
+      "odds": 326,
+      "teamId": ""
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "single-12994179",
+  "name": "single-12994179",
+  "type": "single",
+  "typePriority": 1,
+  "status": "open",
+  "showSpecialValue": false,
+  "markets": [
+   {
+    "id": "12994179",
+    "version": "1535878656",
+    "eventId": "4412294",
+    "type": "1",
+    "typeName": "3WAY",
+    "name": "Úrslit leiksins",
+    "typePriority": 1,
+    "dateClosed": "2026-09-23T23:55:00.000Z",
+    "datePlayed": "2026-09-24T00:00:00.000Z",
+    "externalId": "1",
+    "live": false,
+    "primary": true,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": 1,
+      "name": "1",
+      "odds": 228,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": null,
+      "name": "X",
+      "odds": 1215,
+      "teamId": ""
+     },
+     {
+      "nr": 3,
+      "bet": 2,
+      "name": "2",
+      "odds": 162,
+      "teamId": ""
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "single-13904004",
+  "name": "single-13904004",
+  "type": "single",
+  "typePriority": 1,
+  "status": "open",
+  "showSpecialValue": false,
+  "markets": [
+   {
+    "id": "13904004",
+    "version": "1535685747",
+    "eventId": "4616742",
+    "type": "1",
+    "typeName": "3WAY",
+    "name": "Úrslit leiksins",
+    "typePriority": 1,
+    "dateClosed": "2026-09-24T16:55:00.000Z",
+    "datePlayed": "2026-09-24T17:00:00.000Z",
+    "externalId": "1",
+    "live": false,
+    "primary": true,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": 1,
+      "name": "1",
+      "odds": 139,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": null,
+      "name": "X",
+      "odds": 883,
+      "teamId": ""
+     },
+     {
+      "nr": 3,
+      "bet": 2,
+      "name": "2",
+      "odds": 323,
+      "teamId": ""
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "OU_FT",
+  "name": "OU_FT",
+  "type": "grouped",
+  "tab": "Mörk",
+  "typePriority": 2,
+  "status": "open",
+  "showSpecialValue": false,
+  "markets": [
+   {
+    "id": "14017612",
+    "version": "1535882528",
+    "eventId": "4601670",
+    "type": "2",
+    "typeName": "OU",
+    "tab": "Mörk",
+    "name": "Yfir/undir 2.5",
+    "params": "2.5",
+    "specialValue": "2.5",
+    "typePriority": 2,
+    "dateClosed": "2026-09-23T22:55:00.000Z",
+    "datePlayed": "2026-09-23T23:00:00.000Z",
+    "externalId": "18",
+    "live": false,
+    "primary": false,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": 1,
+      "name": "Yfir",
+      "odds": 155,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": 2,
+      "name": "Undir",
+      "odds": 202,
+      "teamId": ""
+     }
+    ]
+   },
+   {
+    "id": "14017613",
+    "version": "1535882530",
+    "eventId": "4601670",
+    "type": "2",
+    "typeName": "OU",
+    "tab": "Mörk",
+    "name": "Yfir/undir 3.5",
+    "params": "3.5",
+    "specialValue": "3.5",
+    "typePriority": 2,
+    "dateClosed": "2026-09-23T22:55:00.000Z",
+    "datePlayed": "2026-09-23T23:00:00.000Z",
+    "externalId": "18",
+    "live": false,
+    "primary": false,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": 1,
+      "name": "Yfir",
+      "odds": 233,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": 2,
+      "name": "Undir",
+      "odds": 141,
+      "teamId": ""
+     }
+    ]
+   },
+   {
+    "id": "14027143",
+    "version": "1535476427",
+    "eventId": "4616742",
+    "type": "2",
+    "typeName": "OU",
+    "name": "Yfir/undir 56.5",
+    "params": "56.5",
+    "specialValue": "56.5",
+    "typePriority": 2,
+    "dateClosed": "2026-09-24T16:55:00.000Z",
+    "datePlayed": "2026-09-24T17:00:00.000Z",
+    "externalId": "18",
+    "live": false,
+    "primary": false,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": 1,
+      "name": "Yfir",
+      "odds": 160,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": 2,
+      "name": "Undir",
+      "odds": 195,
+      "teamId": ""
+     }
+    ]
+   },
+   {
+    "id": "14027141",
+    "version": "1535476425",
+    "eventId": "4616742",
+    "type": "2",
+    "typeName": "OU",
+    "name": "Yfir/undir 57.5",
+    "params": "57.5",
+    "specialValue": "57.5",
+    "typePriority": 2,
+    "dateClosed": "2026-09-24T16:55:00.000Z",
+    "datePlayed": "2026-09-24T17:00:00.000Z",
+    "externalId": "18",
+    "live": false,
+    "primary": false,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": 1,
+      "name": "Yfir",
+      "odds": 175,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": 2,
+      "name": "Undir",
+      "odds": 175,
+      "teamId": ""
+     }
+    ]
+   },
+   {
+    "id": "14027147",
+    "version": "1535476431",
+    "eventId": "4616742",
+    "type": "2",
+    "typeName": "OU",
+    "name": "Yfir/undir 58.5",
+    "params": "58.5",
+    "specialValue": "58.5",
+    "typePriority": 2,
+    "dateClosed": "2026-09-24T16:55:00.000Z",
+    "datePlayed": "2026-09-24T17:00:00.000Z",
+    "externalId": "18",
+    "live": false,
+    "primary": false,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": 1,
+      "name": "Yfir",
+      "odds": 195,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": 2,
+      "name": "Undir",
+      "odds": 159,
+      "teamId": ""
+     }
+    ]
+   },
+   {
+    "id": "14016865",
+    "version": "1535847047",
+    "eventId": "4412294",
+    "type": "2",
+    "typeName": "OU",
+    "name": "Yfir/undir 175.5",
+    "params": "175.5",
+    "specialValue": "175.5",
+    "typePriority": 2,
+    "dateClosed": "2026-09-23T23:55:00.000Z",
+    "datePlayed": "2026-09-24T00:00:00.000Z",
+    "externalId": "18",
+    "live": false,
+    "primary": false,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": 1,
+      "name": "Yfir",
+      "odds": 192,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": 2,
+      "name": "Undir",
+      "odds": 162,
+      "teamId": ""
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "HC_FT",
+  "name": "HC_FT",
+  "type": "grouped",
+  "tab": "Leikurinn",
+  "typePriority": 3,
+  "status": "open",
+  "showSpecialValue": false,
+  "markets": [
+   {
+    "id": "14017594",
+    "version": "1535882541",
+    "eventId": "4601670",
+    "type": "2",
+    "typeName": "HC",
+    "tab": "Leikurinn",
+    "name": "Forgjöf  1-0",
+    "params": "1-0",
+    "specialValue": "1",
+    "typePriority": 3,
+    "dateClosed": "2026-09-23T22:55:00.000Z",
+    "datePlayed": "2026-09-23T23:00:00.000Z",
+    "externalId": "14",
+    "live": false,
+    "primary": false,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": 1,
+      "name": "1",
+      "odds": 124,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": null,
+      "name": "X",
+      "odds": 463,
+      "teamId": ""
+     },
+     {
+      "nr": 3,
+      "bet": 2,
+      "name": "2",
+      "odds": 645,
+      "teamId": ""
+     }
+    ]
+   },
+   {
+    "id": "14017618",
+    "version": "1535882536",
+    "eventId": "4601670",
+    "type": "2",
+    "typeName": "HC",
+    "tab": "Leikurinn",
+    "name": "Forgjöf  0-1",
+    "params": "0-1",
+    "specialValue": "-1",
+    "typePriority": 3,
+    "dateClosed": "2026-09-23T22:55:00.000Z",
+    "datePlayed": "2026-09-23T23:00:00.000Z",
+    "externalId": "14",
+    "live": false,
+    "primary": false,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": 1,
+      "name": "1",
+      "odds": 306,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": null,
+      "name": "X",
+      "odds": 368,
+      "teamId": ""
+     },
+     {
+      "nr": 3,
+      "bet": 2,
+      "name": "2",
+      "odds": 172,
+      "teamId": ""
+     }
+    ]
+   },
+   {
+    "id": "14017615",
+    "version": "1535882538",
+    "eventId": "4601670",
+    "type": "2",
+    "typeName": "HC",
+    "tab": "Leikurinn",
+    "name": "Forgjöf  0-2",
+    "params": "0-2",
+    "specialValue": "-2",
+    "typePriority": 3,
+    "dateClosed": "2026-09-23T22:55:00.000Z",
+    "datePlayed": "2026-09-23T23:00:00.000Z",
+    "externalId": "14",
+    "live": false,
+    "primary": false,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": 1,
+      "name": "1",
+      "odds": 592,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": null,
+      "name": "X",
+      "odds": 483,
+      "teamId": ""
+     },
+     {
+      "nr": 3,
+      "bet": 2,
+      "name": "2",
+      "odds": 124,
+      "teamId": ""
+     }
+    ]
+   },
+   {
+    "id": "14017616",
+    "version": "1535882543",
+    "eventId": "4601670",
+    "type": "2",
+    "typeName": "HC",
+    "tab": "Leikurinn",
+    "name": "Forgjöf  2-0",
+    "params": "2-0",
+    "specialValue": "2",
+    "typePriority": 3,
+    "dateClosed": "2026-09-23T22:55:00.000Z",
+    "datePlayed": "2026-09-23T23:00:00.000Z",
+    "externalId": "14",
+    "live": false,
+    "primary": false,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": 1,
+      "name": "1",
+      "odds": 105,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": null,
+      "name": "X",
+      "odds": 654,
+      "teamId": ""
+     },
+     {
+      "nr": 3,
+      "bet": 2,
+      "name": "2",
+      "odds": 1287,
+      "teamId": ""
+     }
+    ]
+   },
+   {
+    "id": "14017583",
+    "version": "1535882545",
+    "eventId": "4601670",
+    "type": "2",
+    "typeName": "HC",
+    "tab": "Leikurinn",
+    "name": "Forgjöf  3-0",
+    "params": "3-0",
+    "specialValue": "3",
+    "typePriority": 3,
+    "dateClosed": "2026-09-23T22:55:00.000Z",
+    "datePlayed": "2026-09-23T23:00:00.000Z",
+    "externalId": "14",
+    "live": false,
+    "primary": false,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": 1,
+      "name": "1",
+      "odds": 101,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": null,
+      "name": "X",
+      "odds": 747,
+      "teamId": ""
+     },
+     {
+      "nr": 3,
+      "bet": 2,
+      "name": "2",
+      "odds": 1911,
+      "teamId": ""
+     }
+    ]
+   },
+   {
+    "id": "14017603",
+    "version": "1535882539",
+    "eventId": "4601670",
+    "type": "2",
+    "typeName": "HC",
+    "tab": "Leikurinn",
+    "name": "Forgjöf  0-3",
+    "params": "0-3",
+    "specialValue": "-3",
+    "typePriority": 3,
+    "dateClosed": "2026-09-23T22:55:00.000Z",
+    "datePlayed": "2026-09-23T23:00:00.000Z",
+    "externalId": "14",
+    "live": false,
+    "primary": false,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": 1,
+      "name": "1",
+      "odds": 1108,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": null,
+      "name": "X",
+      "odds": 671,
+      "teamId": ""
+     },
+     {
+      "nr": 3,
+      "bet": 2,
+      "name": "2",
+      "odds": 106,
+      "teamId": ""
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "OU_1H",
+  "name": "OU_1H",
+  "type": "grouped",
+  "tab": "Mörk",
+  "typePriority": 4,
+  "status": "open",
+  "showSpecialValue": false,
+  "markets": [
+   {
+    "id": "14017588",
+    "version": "1535882510",
+    "eventId": "4601670",
+    "type": "2",
+    "typeName": "OU",
+    "tab": "Mörk",
+    "name": "Fjöldi marka í fyrri hálfleik 1.5",
+    "params": "1.5",
+    "specialValue": "1.5",
+    "typePriority": 4,
+    "dateClosed": "2026-09-23T22:55:00.000Z",
+    "datePlayed": "2026-09-23T23:00:00.000Z",
+    "externalId": "68",
+    "live": false,
+    "primary": false,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": 1,
+      "name": "Yfir",
+      "odds": 216,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": 2,
+      "name": "Undir",
+      "odds": 146,
+      "teamId": ""
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "single-14016866",
+  "name": "single-14016866",
+  "type": "single",
+  "typePriority": 4,
+  "status": "open",
+  "showSpecialValue": false,
+  "markets": [
+   {
+    "id": "14016866",
+    "version": "1535878653",
+    "eventId": "4412294",
+    "type": "2",
+    "typeName": "NWAY",
+    "name": "Fyrri hálfleikur/lokaúrslit",
+    "typePriority": 4,
+    "dateClosed": "2026-09-23T23:55:00.000Z",
+    "datePlayed": "2026-09-24T00:00:00.000Z",
+    "externalId": "47",
+    "live": false,
+    "primary": false,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": null,
+      "name": "1/1",
+      "odds": 293,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": null,
+      "name": "1/X",
+      "odds": 2256,
+      "teamId": ""
+     },
+     {
+      "nr": 3,
+      "bet": null,
+      "name": "1/2",
+      "odds": 541,
+      "teamId": ""
+     },
+     {
+      "nr": 4,
+      "bet": null,
+      "name": "X/1",
+      "odds": 3973,
+      "teamId": ""
+     },
+     {
+      "nr": 5,
+      "bet": null,
+      "name": "X/X",
+      "odds": 18500,
+      "teamId": ""
+     },
+     {
+      "nr": 6,
+      "bet": null,
+      "name": "X/2",
+      "odds": 2970,
+      "teamId": ""
+     },
+     {
+      "nr": 7,
+      "bet": null,
+      "name": "2/1",
+      "odds": 676,
+      "teamId": ""
+     },
+     {
+      "nr": 8,
+      "bet": null,
+      "name": "2/X",
+      "odds": 2183,
+      "teamId": ""
+     },
+     {
+      "nr": 9,
+      "bet": null,
+      "name": "2/2",
+      "odds": 199,
+      "teamId": ""
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "single-14027144",
+  "name": "single-14027144",
+  "type": "single",
+  "typePriority": 4,
+  "status": "open",
+  "showSpecialValue": false,
+  "markets": [
+   {
+    "id": "14027144",
+    "version": "1535476428",
+    "eventId": "4616742",
+    "type": "2",
+    "typeName": "3WAY",
+    "name": "Úrslit  - Fyrri hálfleikur",
+    "typePriority": 4,
+    "dateClosed": "2026-09-24T16:55:00.000Z",
+    "datePlayed": "2026-09-24T17:00:00.000Z",
+    "externalId": "60",
+    "live": false,
+    "primary": false,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": 1,
+      "name": "1",
+      "odds": 147,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": null,
+      "name": "X",
+      "odds": 725,
+      "teamId": ""
+     },
+     {
+      "nr": 3,
+      "bet": 2,
+      "name": "2",
+      "odds": 267,
+      "teamId": ""
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "single-14017600",
+  "name": "single-14017600",
+  "type": "single",
+  "tab": "Leikurinn",
+  "typePriority": 5,
+  "status": "open",
+  "showSpecialValue": false,
+  "markets": [
+   {
+    "id": "14017600",
+    "version": "1535882594",
+    "eventId": "4601670",
+    "type": "2",
+    "typeName": "3WAY",
+    "tab": "Leikurinn",
+    "name": "Úrslit - Fyrri hálfleikur",
+    "typePriority": 5,
+    "dateClosed": "2026-09-23T22:55:00.000Z",
+    "datePlayed": "2026-09-23T23:00:00.000Z",
+    "externalId": "60",
+    "live": false,
+    "primary": false,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": 1,
+      "name": "1",
+      "odds": 225,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": null,
+      "name": "X",
+      "odds": 216,
+      "teamId": ""
+     },
+     {
+      "nr": 3,
+      "bet": 2,
+      "name": "2",
+      "odds": 354,
+      "teamId": ""
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "single-14017963",
+  "name": "single-14017963",
+  "type": "single",
+  "typePriority": 5,
+  "status": "open",
+  "showSpecialValue": false,
+  "markets": [
+   {
+    "id": "14017963",
+    "version": "1535878658",
+    "eventId": "4412294",
+    "type": "2",
+    "typeName": "NWAY",
+    "name": "Flest stig í leikhluta",
+    "typePriority": 5,
+    "dateClosed": "2026-09-23T23:55:00.000Z",
+    "datePlayed": "2026-09-24T00:00:00.000Z",
+    "externalId": "234",
+    "live": false,
+    "primary": false,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": null,
+      "name": "1. Leikhluti",
+      "odds": 331,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": null,
+      "name": "2. Leikhluti",
+      "odds": 407,
+      "teamId": ""
+     },
+     {
+      "nr": 3,
+      "bet": null,
+      "name": "3. Leikhluti",
+      "odds": 286,
+      "teamId": ""
+     },
+     {
+      "nr": 4,
+      "bet": null,
+      "name": "4. Leikhluti",
+      "odds": 379,
+      "teamId": ""
+     },
+     {
+      "nr": 5,
+      "bet": null,
+      "name": "Jafnt",
+      "odds": 1123,
+      "teamId": ""
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "single-14027146",
+  "name": "single-14027146",
+  "type": "single",
+  "typePriority": 5,
+  "status": "open",
+  "showSpecialValue": false,
+  "markets": [
+   {
+    "id": "14027146",
+    "version": "1535476430",
+    "eventId": "4616742",
+    "type": "2",
+    "typeName": "3WAY",
+    "name": "Úrslit - Seinni hálfleikur",
+    "typePriority": 5,
+    "dateClosed": "2026-09-24T16:55:00.000Z",
+    "datePlayed": "2026-09-24T17:00:00.000Z",
+    "externalId": "83",
+    "live": false,
+    "primary": false,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": 1,
+      "name": "1",
+      "odds": 157,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": null,
+      "name": "X",
+      "odds": 736,
+      "teamId": ""
+     },
+     {
+      "nr": 3,
+      "bet": 2,
+      "name": "2",
+      "odds": 240,
+      "teamId": ""
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "YN_GOAL",
+  "name": "YN_GOAL",
+  "type": "grouped",
+  "tab": "Mörk",
+  "typePriority": 6,
+  "status": "open",
+  "showSpecialValue": false,
+  "markets": [
+   {
+    "id": "14017596",
+    "version": "1535882590",
+    "eventId": "4601670",
+    "type": "2",
+    "typeName": "YN",
+    "tab": "Mörk",
+    "name": "Bæði lið skora",
+    "typePriority": 6,
+    "dateClosed": "2026-09-23T22:55:00.000Z",
+    "datePlayed": "2026-09-23T23:00:00.000Z",
+    "externalId": "29",
+    "live": false,
+    "primary": false,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": 1,
+      "name": "Nei",
+      "odds": 200,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": 2,
+      "name": "Já",
+      "odds": 147,
+      "teamId": ""
+     }
+    ]
+   },
+   {
+    "id": "14017619",
+    "version": "1535882550",
+    "eventId": "4601670",
+    "type": "2",
+    "typeName": "YN",
+    "tab": "Mörk",
+    "name": "Bæði lið skora í fyrri hálfleik",
+    "typePriority": 28,
+    "dateClosed": "2026-09-23T22:55:00.000Z",
+    "datePlayed": "2026-09-23T23:00:00.000Z",
+    "externalId": "75",
+    "live": false,
+    "primary": false,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": 2,
+      "name": "Nei",
+      "odds": 118,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": 1,
+      "name": "Já",
+      "odds": 301,
+      "teamId": ""
+     }
+    ]
+   },
+   {
+    "id": "14017599",
+    "version": "1535882595",
+    "eventId": "4601670",
+    "type": "2",
+    "typeName": "YN",
+    "tab": "Mörk",
+    "name": "Heimalið skorar í báðum hálfleikjum",
+    "typePriority": 34,
+    "dateClosed": "2026-09-23T22:55:00.000Z",
+    "datePlayed": "2026-09-23T23:00:00.000Z",
+    "externalId": "56",
+    "live": false,
+    "primary": false,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": 2,
+      "name": "Nei",
+      "odds": 133,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": 1,
+      "name": "Já",
+      "odds": 233,
+      "teamId": ""
+     }
+    ]
+   },
+   {
+    "id": "14017598",
+    "version": "1535882513",
+    "eventId": "4601670",
+    "type": "2",
+    "typeName": "YN",
+    "tab": "Mörk",
+    "name": "Útilið skorar í báðum hálfleikjum",
+    "typePriority": 35,
+    "dateClosed": "2026-09-23T22:55:00.000Z",
+    "datePlayed": "2026-09-23T23:00:00.000Z",
+    "externalId": "57",
+    "live": false,
+    "primary": false,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": 2,
+      "name": "Nei",
+      "odds": 115,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": 1,
+      "name": "Já",
+      "odds": 322,
+      "teamId": ""
+     }
+    ]
+   },
+   {
+    "id": "14017605",
+    "version": "1535882514",
+    "eventId": "4601670",
+    "type": "2",
+    "typeName": "YN",
+    "tab": "Mörk",
+    "name": "Útilið heldur hreinu",
+    "typePriority": 42,
+    "dateClosed": "2026-09-23T22:55:00.000Z",
+    "datePlayed": "2026-09-23T23:00:00.000Z",
+    "externalId": "32",
+    "live": false,
+    "primary": false,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": 2,
+      "name": "Nei",
+      "odds": 111,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": 1,
+      "name": "Já",
+      "odds": 357,
+      "teamId": ""
+     }
+    ]
+   },
+   {
+    "id": "14017595",
+    "version": "1535882516",
+    "eventId": "4601670",
+    "type": "2",
+    "typeName": "YN",
+    "tab": "Mörk",
+    "name": "Heimalið heldur hreinu",
+    "typePriority": 43,
+    "dateClosed": "2026-09-23T22:55:00.000Z",
+    "datePlayed": "2026-09-23T23:00:00.000Z",
+    "externalId": "31",
+    "live": false,
+    "primary": false,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": 2,
+      "name": "Nei",
+      "odds": 126,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": 1,
+      "name": "Já",
+      "odds": 259,
+      "teamId": ""
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "single-14027145",
+  "name": "single-14027145",
+  "type": "single",
+  "typePriority": 6,
+  "status": "open",
+  "showSpecialValue": false,
+  "markets": [
+   {
+    "id": "14027145",
+    "version": "1535476429",
+    "eventId": "4616742",
+    "type": "2",
+    "typeName": "NWAY",
+    "name": "Fyrri hálfleikur/lokaúrslit",
+    "typePriority": 6,
+    "dateClosed": "2026-09-24T16:55:00.000Z",
+    "datePlayed": "2026-09-24T17:00:00.000Z",
+    "externalId": "47",
+    "live": false,
+    "primary": false,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": null,
+      "name": "1/1",
+      "odds": 170,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": null,
+      "name": "1/X",
+      "odds": 1733,
+      "teamId": ""
+     },
+     {
+      "nr": 3,
+      "bet": null,
+      "name": "1/2",
+      "odds": 1080,
+      "teamId": ""
+     },
+     {
+      "nr": 4,
+      "bet": null,
+      "name": "X/1",
+      "odds": 1175,
+      "teamId": ""
+     },
+     {
+      "nr": 5,
+      "bet": null,
+      "name": "X/X",
+      "odds": 5360,
+      "teamId": ""
+     },
+     {
+      "nr": 6,
+      "bet": null,
+      "name": "X/2",
+      "odds": 2330,
+      "teamId": ""
+     },
+     {
+      "nr": 7,
+      "bet": null,
+      "name": "2/1",
+      "odds": 692,
+      "teamId": ""
+     },
+     {
+      "nr": 8,
+      "bet": null,
+      "name": "2/X",
+      "odds": 1955,
+      "teamId": ""
+     },
+     {
+      "nr": 9,
+      "bet": null,
+      "name": "2/2",
+      "odds": 459,
+      "teamId": ""
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "single-14026573",
+  "name": "single-14026573",
+  "type": "single",
+  "typePriority": 8,
+  "status": "open",
+  "showSpecialValue": false,
+  "markets": [
+   {
+    "id": "14026573",
+    "version": "1535473281",
+    "eventId": "4616742",
+    "type": "2",
+    "typeName": "DC",
+    "name": "Tveir möguleikar",
+    "typePriority": 8,
+    "dateClosed": "2026-09-24T16:55:00.000Z",
+    "datePlayed": "2026-09-24T17:00:00.000Z",
+    "externalId": "10",
+    "live": false,
+    "primary": false,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": null,
+      "name": "1X",
+      "odds": 124,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": 1,
+      "name": "12",
+      "odds": 107,
+      "teamId": ""
+     },
+     {
+      "nr": 3,
+      "bet": 2,
+      "name": "X2",
+      "odds": 237,
+      "teamId": ""
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "single-14017606",
+  "name": "single-14017606",
+  "type": "single",
+  "tab": "Leikurinn",
+  "typePriority": 10,
+  "status": "open",
+  "showSpecialValue": false,
+  "markets": [
+   {
+    "id": "14017606",
+    "version": "1535882588",
+    "eventId": "4601670",
+    "type": "2",
+    "typeName": "NWAY",
+    "tab": "Leikurinn",
+    "name": "Hálfleikur / lokaúrslit",
+    "typePriority": 10,
+    "dateClosed": "2026-09-23T22:55:00.000Z",
+    "datePlayed": "2026-09-23T23:00:00.000Z",
+    "externalId": "47",
+    "live": false,
+    "primary": false,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": null,
+      "name": "1/1",
+      "odds": 265,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": null,
+      "name": "1/X",
+      "odds": 1250,
+      "teamId": ""
+     },
+     {
+      "nr": 3,
+      "bet": null,
+      "name": "1/2",
+      "odds": 3105,
+      "teamId": ""
+     },
+     {
+      "nr": 4,
+      "bet": null,
+      "name": "X/1",
+      "odds": 472,
+      "teamId": ""
+     },
+     {
+      "nr": 5,
+      "bet": null,
+      "name": "X/X",
+      "odds": 532,
+      "teamId": ""
+     },
+     {
+      "nr": 6,
+      "bet": null,
+      "name": "X/2",
+      "odds": 740,
+      "teamId": ""
+     },
+     {
+      "nr": 7,
+      "bet": null,
+      "name": "2/1",
+      "odds": 2096,
+      "teamId": ""
+     },
+     {
+      "nr": 8,
+      "bet": null,
+      "name": "2/X",
+      "odds": 1324,
+      "teamId": ""
+     },
+     {
+      "nr": 9,
+      "bet": null,
+      "name": "2/2",
+      "odds": 521,
+      "teamId": ""
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "single-14027142",
+  "name": "single-14027142",
+  "type": "single",
+  "typePriority": 11,
+  "status": "open",
+  "showSpecialValue": false,
+  "markets": [
+   {
+    "id": "14027142",
+    "version": "1535476426",
+    "eventId": "4616742",
+    "type": "2",
+    "typeName": "NWAY",
+    "name": "Flest mörk í hálfleik",
+    "typePriority": 11,
+    "dateClosed": "2026-09-24T16:55:00.000Z",
+    "datePlayed": "2026-09-24T17:00:00.000Z",
+    "externalId": "52",
+    "live": false,
+    "primary": false,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": null,
+      "name": "Fyrri hálfleikur",
+      "odds": 195,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": null,
+      "name": "Síðari hálfleikur",
+      "odds": 170,
+      "teamId": ""
+     },
+     {
+      "nr": 3,
+      "bet": null,
+      "name": "Jafn mörg mörk",
+      "odds": 1141,
+      "teamId": ""
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "single-14017614",
+  "name": "single-14017614",
+  "type": "single",
+  "tab": "Mörk",
+  "typePriority": 12,
+  "status": "open",
+  "showSpecialValue": false,
+  "markets": [
+   {
+    "id": "14017614",
+    "version": "1535882534",
+    "eventId": "4601670",
+    "type": "2",
+    "typeName": "NWAY",
+    "tab": "Mörk",
+    "name": "Hvort liðið skorar",
+    "typePriority": 12,
+    "dateClosed": "2026-09-23T22:55:00.000Z",
+    "datePlayed": "2026-09-23T23:00:00.000Z",
+    "externalId": "30",
+    "live": false,
+    "primary": false,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": null,
+      "name": "1",
+      "odds": 343,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": null,
+      "name": "2",
+      "odds": 655,
+      "teamId": ""
+     },
+     {
+      "nr": 3,
+      "bet": null,
+      "name": "Bæði lið",
+      "odds": 151,
+      "teamId": ""
+     },
+     {
+      "nr": 4,
+      "bet": null,
+      "name": "Hvorugt",
+      "odds": 1389,
+      "teamId": ""
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "single-14017604",
+  "name": "single-14017604",
+  "type": "single",
+  "tab": "Leikurinn",
+  "typePriority": 23,
+  "status": "open",
+  "showSpecialValue": false,
+  "markets": [
+   {
+    "id": "14017604",
+    "version": "1535882508",
+    "eventId": "4601670",
+    "type": "2",
+    "typeName": "NWAY",
+    "tab": "Leikurinn",
+    "name": "Rétt úrslit í fyrri hálfleik og rétt lokastaða",
+    "typePriority": 23,
+    "dateClosed": "2026-09-23T22:55:00.000Z",
+    "datePlayed": "2026-09-23T23:00:00.000Z",
+    "externalId": "46",
+    "live": false,
+    "primary": false,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": null,
+      "name": "0-0 0-0",
+      "odds": 1041,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": null,
+      "name": "0-0 0-1",
+      "odds": 1596,
+      "teamId": ""
+     },
+     {
+      "nr": 3,
+      "bet": null,
+      "name": "0-0 0-2",
+      "odds": 4274,
+      "teamId": ""
+     },
+     {
+      "nr": 4,
+      "bet": null,
+      "name": "0-0 0-3",
+      "odds": 17600,
+      "teamId": ""
+     },
+     {
+      "nr": 5,
+      "bet": null,
+      "name": "0-0 1-0",
+      "odds": 1179,
+      "teamId": ""
+     },
+     {
+      "nr": 6,
+      "bet": null,
+      "name": "0-0 1-1",
+      "odds": 1615,
+      "teamId": ""
+     },
+     {
+      "nr": 7,
+      "bet": null,
+      "name": "0-0 1-2",
+      "odds": 4953,
+      "teamId": ""
+     },
+     {
+      "nr": 8,
+      "bet": null,
+      "name": "0-0 2-0",
+      "odds": 2255,
+      "teamId": ""
+     },
+     {
+      "nr": 9,
+      "bet": null,
+      "name": "0-0 2-1",
+      "odds": 3585,
+      "teamId": ""
+     },
+     {
+      "nr": 10,
+      "bet": null,
+      "name": "0-0 3-0",
+      "odds": 6570,
+      "teamId": ""
+     },
+     {
+      "nr": 11,
+      "bet": null,
+      "name": "0-0 4plus",
+      "odds": 2518,
+      "teamId": ""
+     },
+     {
+      "nr": 12,
+      "bet": null,
+      "name": "0-1 0-1",
+      "odds": 2265,
+      "teamId": ""
+     },
+     {
+      "nr": 13,
+      "bet": null,
+      "name": "0-1 0-2",
+      "odds": 3142,
+      "teamId": ""
+     },
+     {
+      "nr": 14,
+      "bet": null,
+      "name": "0-1 0-3",
+      "odds": 8720,
+      "teamId": ""
+     },
+     {
+      "nr": 15,
+      "bet": null,
+      "name": "0-1 1-1",
+      "odds": 2001,
+      "teamId": ""
+     },
+     {
+      "nr": 16,
+      "bet": null,
+      "name": "0-1 1-2",
+      "odds": 3247,
+      "teamId": ""
+     },
+     {
+      "nr": 17,
+      "bet": null,
+      "name": "0-1 2-1",
+      "odds": 3887,
+      "teamId": ""
+     },
+     {
+      "nr": 18,
+      "bet": null,
+      "name": "0-1 4plus",
+      "odds": 1607,
+      "teamId": ""
+     },
+     {
+      "nr": 19,
+      "bet": null,
+      "name": "0-2 0-2",
+      "odds": 8170,
+      "teamId": ""
+     },
+     {
+      "nr": 20,
+      "bet": null,
+      "name": "0-2 0-3",
+      "odds": 11100,
+      "teamId": ""
+     },
+     {
+      "nr": 21,
+      "bet": null,
+      "name": "0-2 1-2",
+      "odds": 8000,
+      "teamId": ""
+     },
+     {
+      "nr": 22,
+      "bet": null,
+      "name": "0-2 4plus",
+      "odds": 2660,
+      "teamId": ""
+     },
+     {
+      "nr": 23,
+      "bet": null,
+      "name": "0-3 0-3",
+      "odds": 47800,
+      "teamId": ""
+     },
+     {
+      "nr": 24,
+      "bet": null,
+      "name": "0-3 4plus",
+      "odds": 8980,
+      "teamId": ""
+     },
+     {
+      "nr": 25,
+      "bet": null,
+      "name": "1-0 1-0",
+      "odds": 1515,
+      "teamId": ""
+     },
+     {
+      "nr": 26,
+      "bet": null,
+      "name": "1-0 1-1",
+      "odds": 1873,
+      "teamId": ""
+     },
+     {
+      "nr": 27,
+      "bet": null,
+      "name": "1-0 1-2",
+      "odds": 5110,
+      "teamId": ""
+     },
+     {
+      "nr": 28,
+      "bet": null,
+      "name": "1-0 2-0",
+      "odds": 1531,
+      "teamId": ""
+     },
+     {
+      "nr": 29,
+      "bet": null,
+      "name": "1-0 2-1",
+      "odds": 2208,
+      "teamId": ""
+     },
+     {
+      "nr": 30,
+      "bet": null,
+      "name": "1-0 3-0",
+      "odds": 3040,
+      "teamId": ""
+     },
+     {
+      "nr": 31,
+      "bet": null,
+      "name": "1-0 4plus",
+      "odds": 1184,
+      "teamId": ""
+     },
+     {
+      "nr": 32,
+      "bet": null,
+      "name": "1-1 1-1",
+      "odds": 2471,
+      "teamId": ""
+     },
+     {
+      "nr": 33,
+      "bet": null,
+      "name": "1-1 1-2",
+      "odds": 3752,
+      "teamId": ""
+     },
+     {
+      "nr": 34,
+      "bet": null,
+      "name": "1-1 2-1",
+      "odds": 2719,
+      "teamId": ""
+     },
+     {
+      "nr": 35,
+      "bet": null,
+      "name": "1-1 4plus",
+      "odds": 1019,
+      "teamId": ""
+     },
+     {
+      "nr": 36,
+      "bet": null,
+      "name": "1-2 1-2",
+      "odds": 9700,
+      "teamId": ""
+     },
+     {
+      "nr": 37,
+      "bet": null,
+      "name": "1-2 4plus",
+      "odds": 2165,
+      "teamId": ""
+     },
+     {
+      "nr": 38,
+      "bet": null,
+      "name": "2-0 2-0",
+      "odds": 3850,
+      "teamId": ""
+     },
+     {
+      "nr": 39,
+      "bet": null,
+      "name": "2-0 2-1",
+      "odds": 5230,
+      "teamId": ""
+     },
+     {
+      "nr": 40,
+      "bet": null,
+      "name": "2-0 3-0",
+      "odds": 3777,
+      "teamId": ""
+     },
+     {
+      "nr": 41,
+      "bet": null,
+      "name": "2-0 4plus",
+      "odds": 1326,
+      "teamId": ""
+     },
+     {
+      "nr": 42,
+      "bet": null,
+      "name": "2-1 2-1",
+      "odds": 6380,
+      "teamId": ""
+     },
+     {
+      "nr": 43,
+      "bet": null,
+      "name": "2-1 4plus",
+      "odds": 1531,
+      "teamId": ""
+     },
+     {
+      "nr": 44,
+      "bet": null,
+      "name": "3-0 3-0",
+      "odds": 14900,
+      "teamId": ""
+     },
+     {
+      "nr": 45,
+      "bet": null,
+      "name": "3-0 4plus",
+      "odds": 3051,
+      "teamId": ""
+     },
+     {
+      "nr": 46,
+      "bet": null,
+      "name": "4plus 4plus",
+      "odds": 1183,
+      "teamId": ""
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "single-14017608",
+  "name": "single-14017608",
+  "type": "single",
+  "tab": "Leikurinn",
+  "typePriority": 24,
+  "status": "open",
+  "showSpecialValue": false,
+  "markets": [
+   {
+    "id": "14017608",
+    "version": "1535882578",
+    "eventId": "4601670",
+    "type": "2",
+    "typeName": "3WAY",
+    "tab": "Leikurinn",
+    "name": "Úrslit - Seinni hálfleikur",
+    "typePriority": 24,
+    "dateClosed": "2026-09-23T22:55:00.000Z",
+    "datePlayed": "2026-09-23T23:00:00.000Z",
+    "externalId": "83",
+    "live": false,
+    "primary": false,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": 1,
+      "name": "1",
+      "odds": 211,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": null,
+      "name": "X",
+      "odds": 253,
+      "teamId": ""
+     },
+     {
+      "nr": 3,
+      "bet": 2,
+      "name": "2",
+      "odds": 322,
+      "teamId": ""
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "AH_FT",
+  "name": "AH_FT",
+  "type": "grouped",
+  "tab": "Mörk",
+  "typePriority": 25,
+  "status": "open",
+  "showSpecialValue": false,
+  "markets": [
+   {
+    "id": "14017585",
+    "version": "1535877328",
+    "eventId": "4601670",
+    "type": "2",
+    "typeName": "AH",
+    "tab": "Mörk",
+    "name": "Asíuforgjöf 0.5 - 0",
+    "params": "0.5 - 0",
+    "specialValue": "0.5",
+    "typePriority": 25,
+    "dateClosed": "2026-09-23T22:55:00.000Z",
+    "datePlayed": "2026-09-23T23:00:00.000Z",
+    "externalId": "16",
+    "live": false,
+    "primary": false,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": 1,
+      "name": "1",
+      "odds": 125,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": 2,
+      "name": "2",
+      "odds": 295,
+      "teamId": ""
+     }
+    ]
+   },
+   {
+    "id": "14017597",
+    "version": "1535877324",
+    "eventId": "4601670",
+    "type": "2",
+    "typeName": "AH",
+    "tab": "Mörk",
+    "name": "Asíuforgjöf 0 - 0.5",
+    "params": "0 - 0.5",
+    "specialValue": "-0.5",
+    "typePriority": 25,
+    "dateClosed": "2026-09-23T22:55:00.000Z",
+    "datePlayed": "2026-09-23T23:00:00.000Z",
+    "externalId": "16",
+    "live": false,
+    "primary": false,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": 1,
+      "name": "1",
+      "odds": 179,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": 2,
+      "name": "2",
+      "odds": 172,
+      "teamId": ""
+     }
+    ]
+   },
+   {
+    "id": "14017601",
+    "version": "1535882552",
+    "eventId": "4601670",
+    "type": "2",
+    "typeName": "AH",
+    "tab": "Mörk",
+    "name": "Asíuforgjöf 0 - 1.5",
+    "params": "0 - 1.5",
+    "specialValue": "-1.5",
+    "typePriority": 25,
+    "dateClosed": "2026-09-23T22:55:00.000Z",
+    "datePlayed": "2026-09-23T23:00:00.000Z",
+    "externalId": "16",
+    "live": false,
+    "primary": false,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": 1,
+      "name": "1",
+      "odds": 291,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": 2,
+      "name": "2",
+      "odds": 126,
+      "teamId": ""
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "AH_1H",
+  "name": "AH_1H",
+  "type": "grouped",
+  "tab": "Mörk",
+  "typePriority": 26,
+  "status": "open",
+  "showSpecialValue": false,
+  "markets": [
+   {
+    "id": "14017587",
+    "version": "1535882546",
+    "eventId": "4601670",
+    "type": "2",
+    "typeName": "AH",
+    "tab": "Mörk",
+    "name": "Fyrri hálfleikur - Asíuforgjöf 0 - 0.5",
+    "params": "0 - 0.5",
+    "specialValue": "-0.5",
+    "typePriority": 26,
+    "dateClosed": "2026-09-23T22:55:00.000Z",
+    "datePlayed": "2026-09-23T23:00:00.000Z",
+    "externalId": "66",
+    "live": false,
+    "primary": false,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": 1,
+      "name": "1",
+      "odds": 212,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": 2,
+      "name": "2",
+      "odds": 141,
+      "teamId": ""
+     }
+    ]
+   },
+   {
+    "id": "14017620",
+    "version": "1535882547",
+    "eventId": "4601670",
+    "type": "2",
+    "typeName": "AH",
+    "tab": "Mörk",
+    "name": "Fyrri hálfleikur - Asíuforgjöf 0.5 - 0",
+    "params": "0.5 - 0",
+    "specialValue": "0.5",
+    "typePriority": 26,
+    "dateClosed": "2026-09-23T22:55:00.000Z",
+    "datePlayed": "2026-09-23T23:00:00.000Z",
+    "externalId": "66",
+    "live": false,
+    "primary": false,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": 1,
+      "name": "1",
+      "odds": 118,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": 2,
+      "name": "2",
+      "odds": 302,
+      "teamId": ""
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "single-14017609",
+  "name": "single-14017609",
+  "type": "single",
+  "tab": "Leikurinn",
+  "typePriority": 31,
+  "status": "open",
+  "showSpecialValue": false,
+  "markets": [
+   {
+    "id": "14017609",
+    "version": "1535882526",
+    "eventId": "4601670",
+    "type": "2",
+    "typeName": "CSO",
+    "tab": "Leikurinn",
+    "name": "Rétt úrslit - Fyrri hálfleikur",
+    "typePriority": 31,
+    "dateClosed": "2026-09-23T22:55:00.000Z",
+    "datePlayed": "2026-09-23T23:00:00.000Z",
+    "externalId": "81",
+    "live": false,
+    "primary": false,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": null,
+      "name": "0:0",
+      "odds": 285,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": 2,
+      "name": "0:1",
+      "odds": 512,
+      "teamId": ""
+     },
+     {
+      "nr": 3,
+      "bet": 2,
+      "name": "0:2",
+      "odds": 1770,
+      "teamId": ""
+     },
+     {
+      "nr": 4,
+      "bet": 1,
+      "name": "1:0",
+      "odds": 364,
+      "teamId": ""
+     },
+     {
+      "nr": 5,
+      "bet": null,
+      "name": "1:1",
+      "odds": 634,
+      "teamId": ""
+     },
+     {
+      "nr": 6,
+      "bet": 2,
+      "name": "1:2",
+      "odds": 2212,
+      "teamId": ""
+     },
+     {
+      "nr": 7,
+      "bet": 1,
+      "name": "2:0",
+      "odds": 866,
+      "teamId": ""
+     },
+     {
+      "nr": 8,
+      "bet": 1,
+      "name": "2:1",
+      "odds": 1541,
+      "teamId": ""
+     },
+     {
+      "nr": 9,
+      "bet": null,
+      "name": "2:2",
+      "odds": 5500,
+      "teamId": ""
+     },
+     {
+      "nr": 10,
+      "bet": null,
+      "name": "Önnur úrslit",
+      "odds": 1092,
+      "teamId": ""
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "single-14017621",
+  "name": "single-14017621",
+  "type": "single",
+  "tab": "Mörk",
+  "typePriority": 32,
+  "status": "open",
+  "showSpecialValue": false,
+  "markets": [
+   {
+    "id": "14017621",
+    "version": "1535882603",
+    "eventId": "4601670",
+    "type": "2",
+    "typeName": "NWAY",
+    "tab": "Mörk",
+    "name": "Fjöldi marka - Seinni hálfleikur",
+    "params": "2",
+    "specialValue": "2",
+    "typePriority": 32,
+    "dateClosed": "2026-09-23T22:55:00.000Z",
+    "datePlayed": "2026-09-23T23:00:00.000Z",
+    "externalId": "93",
+    "live": false,
+    "primary": false,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": null,
+      "name": "0",
+      "odds": 396,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": null,
+      "name": "1",
+      "odds": 249,
+      "teamId": ""
+     },
+     {
+      "nr": 3,
+      "bet": null,
+      "name": "2+",
+      "odds": 168,
+      "teamId": ""
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "OU_2H",
+  "name": "OU_2H",
+  "type": "grouped",
+  "tab": "Mörk",
+  "typePriority": 33,
+  "status": "open",
+  "showSpecialValue": false,
+  "markets": [
+   {
+    "id": "14017611",
+    "version": "1535882512",
+    "eventId": "4601670",
+    "type": "2",
+    "typeName": "OU",
+    "tab": "Mörk",
+    "name": "Fjöldi marka í seinni hálfleik 1.5",
+    "params": "1.5",
+    "specialValue": "1.5",
+    "typePriority": 33,
+    "dateClosed": "2026-09-23T22:55:00.000Z",
+    "datePlayed": "2026-09-23T23:00:00.000Z",
+    "externalId": "90",
+    "live": false,
+    "primary": false,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": 1,
+      "name": "Yfir",
+      "odds": 174,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": 2,
+      "name": "Undir",
+      "odds": 174,
+      "teamId": ""
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "YN_EVENT",
+  "name": "YN_EVENT",
+  "type": "grouped",
+  "tab": "Leikurinn",
+  "typePriority": 36,
+  "status": "open",
+  "showSpecialValue": false,
+  "markets": [
+   {
+    "id": "14017586",
+    "version": "1535882591",
+    "eventId": "4601670",
+    "type": "2",
+    "typeName": "YN",
+    "tab": "Leikurinn",
+    "name": "Heimalið vinnur báða hálfleiki",
+    "typePriority": 36,
+    "dateClosed": "2026-09-23T22:55:00.000Z",
+    "datePlayed": "2026-09-23T23:00:00.000Z",
+    "externalId": "48",
+    "live": false,
+    "primary": false,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": 2,
+      "name": "Nei",
+      "odds": 109,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": 1,
+      "name": "Já",
+      "odds": 384,
+      "teamId": ""
+     }
+    ]
+   },
+   {
+    "id": "14017591",
+    "version": "1535877334",
+    "eventId": "4601670",
+    "type": "2",
+    "typeName": "YN",
+    "tab": "Leikurinn",
+    "name": "Útilið vinnur báða hálfleiki",
+    "typePriority": 37,
+    "dateClosed": "2026-09-23T22:55:00.000Z",
+    "datePlayed": "2026-09-23T23:00:00.000Z",
+    "externalId": "49",
+    "live": false,
+    "primary": false,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": 2,
+      "name": "Nei",
+      "odds": 101,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": 1,
+      "name": "Já",
+      "odds": 516,
+      "teamId": ""
+     }
+    ]
+   },
+   {
+    "id": "14017592",
+    "version": "1535882579",
+    "eventId": "4601670",
+    "type": "2",
+    "typeName": "YN",
+    "tab": "Leikurinn",
+    "name": "Heimalið vinnur annan hvorn hálfleikinn",
+    "typePriority": 38,
+    "dateClosed": "2026-09-23T22:55:00.000Z",
+    "datePlayed": "2026-09-23T23:00:00.000Z",
+    "externalId": "50",
+    "live": false,
+    "primary": false,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": 2,
+      "name": "Nei",
+      "odds": 218,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": 1,
+      "name": "Já",
+      "odds": 139,
+      "teamId": ""
+     }
+    ]
+   },
+   {
+    "id": "14017593",
+    "version": "1535882600",
+    "eventId": "4601670",
+    "type": "2",
+    "typeName": "YN",
+    "tab": "Leikurinn",
+    "name": "Útilið vinnur annan hvorn  hálfleikinn",
+    "typePriority": 39,
+    "dateClosed": "2026-09-23T22:55:00.000Z",
+    "datePlayed": "2026-09-23T23:00:00.000Z",
+    "externalId": "51",
+    "live": false,
+    "primary": false,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": 2,
+      "name": "Nei",
+      "odds": 152,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": 1,
+      "name": "Já",
+      "odds": 191,
+      "teamId": ""
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "single-14017617",
+  "name": "single-14017617",
+  "type": "single",
+  "tab": "Mörk",
+  "typePriority": 44,
+  "status": "open",
+  "showSpecialValue": false,
+  "markets": [
+   {
+    "id": "14017617",
+    "version": "1535882599",
+    "eventId": "4601670",
+    "type": "2",
+    "typeName": "NWAY",
+    "tab": "Mörk",
+    "name": "Mörk útiliðs",
+    "params": "3",
+    "specialValue": "3",
+    "typePriority": 44,
+    "dateClosed": "2026-09-23T22:55:00.000Z",
+    "datePlayed": "2026-09-23T23:00:00.000Z",
+    "externalId": "24",
+    "live": false,
+    "primary": false,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": null,
+      "name": "0",
+      "odds": 260,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": null,
+      "name": "1",
+      "odds": 216,
+      "teamId": ""
+     },
+     {
+      "nr": 3,
+      "bet": null,
+      "name": "2",
+      "odds": 326,
+      "teamId": ""
+     },
+     {
+      "nr": 4,
+      "bet": null,
+      "name": "3+",
+      "odds": 538,
+      "teamId": ""
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "single-14017607",
+  "name": "single-14017607",
+  "type": "single",
+  "tab": "Mörk",
+  "typePriority": 45,
+  "status": "open",
+  "showSpecialValue": false,
+  "markets": [
+   {
+    "id": "14017607",
+    "version": "1535882607",
+    "eventId": "4601670",
+    "type": "2",
+    "typeName": "NWAY",
+    "tab": "Mörk",
+    "name": "Mörk heimaliðs",
+    "params": "3",
+    "specialValue": "3",
+    "typePriority": 45,
+    "dateClosed": "2026-09-23T22:55:00.000Z",
+    "datePlayed": "2026-09-23T23:00:00.000Z",
+    "externalId": "23",
+    "live": false,
+    "primary": false,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": null,
+      "name": "0",
+      "odds": 416,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": null,
+      "name": "1",
+      "odds": 252,
+      "teamId": ""
+     },
+     {
+      "nr": 3,
+      "bet": null,
+      "name": "2",
+      "odds": 281,
+      "teamId": ""
+     },
+     {
+      "nr": 4,
+      "bet": null,
+      "name": "3+",
+      "odds": 288,
+      "teamId": ""
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "single-14017590",
+  "name": "single-14017590",
+  "type": "single",
+  "tab": "Leikurinn",
+  "typePriority": 47,
+  "status": "open",
+  "showSpecialValue": false,
+  "markets": [
+   {
+    "id": "14017590",
+    "version": "1535882548",
+    "eventId": "4601670",
+    "type": "2",
+    "typeName": "NWAY",
+    "tab": "Leikurinn",
+    "name": "Flest mörk skoruð í hálfleik",
+    "typePriority": 47,
+    "dateClosed": "2026-09-23T22:55:00.000Z",
+    "datePlayed": "2026-09-23T23:00:00.000Z",
+    "externalId": "52",
+    "live": false,
+    "primary": false,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": null,
+      "name": "Fyrri hálfleikur",
+      "odds": 266,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": null,
+      "name": "Síðari hálfleikur",
+      "odds": 186,
+      "teamId": ""
+     },
+     {
+      "nr": 3,
+      "bet": null,
+      "name": "Jafn mörg mörk",
+      "odds": 317,
+      "teamId": ""
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "single-14017610",
+  "name": "single-14017610",
+  "type": "single",
+  "tab": "Leikurinn",
+  "typePriority": 50,
+  "status": "open",
+  "showSpecialValue": false,
+  "markets": [
+   {
+    "id": "14017610",
+    "version": "1535877273",
+    "eventId": "4601670",
+    "type": "2",
+    "typeName": "DC",
+    "tab": "Leikurinn",
+    "name": "Tveir möguleikar",
+    "typePriority": 50,
+    "dateClosed": "2026-09-23T22:55:00.000Z",
+    "datePlayed": "2026-09-23T23:00:00.000Z",
+    "externalId": "10",
+    "live": false,
+    "primary": false,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": null,
+      "name": "1X",
+      "odds": 120,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": 1,
+      "name": "12",
+      "odds": 119,
+      "teamId": ""
+     },
+     {
+      "nr": 3,
+      "bet": 2,
+      "name": "X2",
+      "odds": 154,
+      "teamId": ""
+     }
+    ]
+   }
+  ]
+ }
+]

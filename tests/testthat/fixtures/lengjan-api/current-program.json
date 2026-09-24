@@ -1,0 +1,432 @@
+{
+ "events": [
+  {
+   "id": "4616742",
+   "name": "Stuttgart - Erlangen",
+   "compId": "9281",
+   "compName": "DHB Pokal",
+   "compPriority": 1990,
+   "isCompetitionPopular": false,
+   "sportId": "6",
+   "sportName": "Handknattleikur",
+   "sportPriority": 3,
+   "externalId": "74559632",
+   "datePlayed": "2026-09-24T17:00:00.000Z",
+   "marketCount": 9,
+   "countryName": "Þýskaland",
+   "countryCode": "DE",
+   "groupId": "134",
+   "groupPriority": 5,
+   "live": true,
+   "delay": 0,
+   "participants": [
+    {
+     "id": "13952",
+     "name": "Stuttgart",
+     "initials": "STU",
+     "homeOrAway": 1
+    },
+    {
+     "id": "13938",
+     "name": "Erlangen",
+     "initials": "ERL",
+     "homeOrAway": 2
+    }
+   ],
+   "market": {
+    "id": "13904004",
+    "version": "1535685747",
+    "eventId": "4616742",
+    "type": "1",
+    "typeName": "3WAY",
+    "name": "Úrslit leiksins",
+    "typePriority": 1,
+    "dateClosed": "2026-09-24T16:55:00.000Z",
+    "datePlayed": "2026-09-24T17:00:00.000Z",
+    "externalId": "1",
+    "live": false,
+    "primary": true,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": 1,
+      "name": "1",
+      "odds": 139,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": null,
+      "name": "X",
+      "odds": 883,
+      "teamId": ""
+     },
+     {
+      "nr": 3,
+      "bet": 2,
+      "name": "2",
+      "odds": 323,
+      "teamId": ""
+     }
+    ]
+   },
+   "status": "closed",
+   "upcomingStatus": "upcoming",
+   "isOutright": false
+  },
+  {
+   "id": "4412294",
+   "name": "New York Liberty - Atlanta Dream",
+   "compId": "9445",
+   "compName": "WNBA",
+   "compPriority": 1990,
+   "isCompetitionPopular": false,
+   "sportId": "2",
+   "sportName": "Karfa",
+   "sportPriority": 2,
+   "externalId": "68096422",
+   "datePlayed": "2026-09-24T00:00:00.000Z",
+   "marketCount": 4,
+   "countryName": "Bandaríkin",
+   "countryCode": "US",
+   "groupId": "161",
+   "groupPriority": 3,
+   "live": true,
+   "delay": 0,
+   "participants": [
+    {
+     "id": "69567",
+     "name": "New York Liberty",
+     "initials": "NYL",
+     "homeOrAway": 1
+    },
+    {
+     "id": "69568",
+     "name": "Atlanta Dream",
+     "initials": "AD",
+     "homeOrAway": 2
+    }
+   ],
+   "market": {
+    "id": "12994179",
+    "version": "1535878656",
+    "eventId": "4412294",
+    "type": "1",
+    "typeName": "3WAY",
+    "name": "Úrslit leiksins",
+    "typePriority": 1,
+    "dateClosed": "2026-09-23T23:55:00.000Z",
+    "datePlayed": "2026-09-24T00:00:00.000Z",
+    "externalId": "1",
+    "live": false,
+    "primary": true,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": 1,
+      "name": "1",
+      "odds": 228,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": null,
+      "name": "X",
+      "odds": 1215,
+      "teamId": ""
+     },
+     {
+      "nr": 3,
+      "bet": 2,
+      "name": "2",
+      "odds": 162,
+      "teamId": ""
+     }
+    ]
+   },
+   "status": "closed",
+   "upcomingStatus": "upcoming",
+   "isOutright": false
+  },
+  {
+   "id": "4601670",
+   "name": "Aruba - Antigua & Barbuda",
+   "compId": "10046",
+   "compName": "CONCACAF Þjóðardeild",
+   "compPriority": 1990,
+   "isCompetitionPopular": false,
+   "sportId": "1",
+   "sportName": "Knattspyrna",
+   "sportPriority": 1,
+   "externalId": "73220994",
+   "datePlayed": "2026-09-23T23:00:00.000Z",
+   "marketCount": 37,
+   "countryName": "Alþjóðaleikir",
+   "countryCode": "INT",
+   "groupId": "152",
+   "groupPriority": 4,
+   "live": false,
+   "delay": 0,
+   "participants": [
+    {
+     "id": "4019",
+     "name": "Aruba",
+     "initials": "ARU",
+     "homeOrAway": 1
+    },
+    {
+     "id": "4018",
+     "name": "Antigua & Barbuda",
+     "initials": "A&B",
+     "homeOrAway": 2
+    }
+   ],
+   "market": {
+    "id": "13801700",
+    "version": "1535877315",
+    "eventId": "4601670",
+    "type": "1",
+    "typeName": "3WAY",
+    "name": "Úrslit",
+    "typePriority": 1,
+    "dateClosed": "2026-09-23T22:55:00.000Z",
+    "datePlayed": "2026-09-23T23:00:00.000Z",
+    "externalId": "1",
+    "live": false,
+    "primary": true,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": 1,
+      "name": "1",
+      "odds": 184,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": null,
+      "name": "X",
+      "odds": 345,
+      "teamId": ""
+     },
+     {
+      "nr": 3,
+      "bet": 2,
+      "name": "2",
+      "odds": 326,
+      "teamId": ""
+     }
+    ]
+   },
+   "status": "closed",
+   "upcomingStatus": "upcoming",
+   "isOutright": false
+  }
+ ],
+ "liveSoon": [
+  {
+   "id": "4602104",
+   "name": "FH - Haukar",
+   "compId": "1269",
+   "compName": "Olísdeild karla",
+   "compPriority": 1,
+   "isCompetitionPopular": false,
+   "sportId": "6",
+   "sportName": "Handknattleikur",
+   "sportPriority": 3,
+   "externalId": "74319250",
+   "datePlayed": "2026-09-24T19:30:00.000Z",
+   "marketCount": 0,
+   "countryName": "IS",
+   "groupId": "1268",
+   "groupPriority": 1,
+   "live": true,
+   "delay": 8,
+   "participants": [
+    {
+     "id": "15811",
+     "name": "FH",
+     "initials": "FH",
+     "homeOrAway": 1
+    },
+    {
+     "id": "15582",
+     "name": "Haukar",
+     "initials": "HAU",
+     "homeOrAway": 2
+    }
+   ],
+   "market": null,
+   "status": "closed",
+   "upcomingStatus": "upcoming",
+   "liveScore": {
+    "minute": -1
+   },
+   "isOutright": false
+  },
+  {
+   "id": "4622914",
+   "name": "Valur kv - Víkingur Rvk kv",
+   "compId": "27524",
+   "compName": "Besta deild kv. neðri hluti ",
+   "compPriority": 1,
+   "isCompetitionPopular": false,
+   "sportId": "1",
+   "sportName": "Knattspyrna",
+   "sportPriority": 1,
+   "externalId": "74610574",
+   "datePlayed": "2026-09-25T18:00:00.000Z",
+   "marketCount": 0,
+   "countryName": "IS",
+   "groupId": "622",
+   "groupPriority": 5,
+   "live": true,
+   "delay": 8,
+   "participants": [
+    {
+     "id": "16191",
+     "name": "Valur kv",
+     "initials": "VK",
+     "homeOrAway": 1
+    },
+    {
+     "id": "23619",
+     "name": "Víkingur Rvk kv",
+     "initials": "VRK",
+     "homeOrAway": 2
+    }
+   ],
+   "market": null,
+   "status": "closed",
+   "upcomingStatus": "upcoming",
+   "liveScore": {
+    "minute": -1
+   },
+   "isOutright": false
+  },
+  {
+   "id": "4631057",
+   "name": "Stjarnan - KA",
+   "compId": "20442",
+   "compName": "Besta deild ka. neðri hluti ",
+   "compPriority": 1,
+   "isCompetitionPopular": false,
+   "sportId": "1",
+   "sportName": "Knattspyrna",
+   "sportPriority": 1,
+   "externalId": "74506534",
+   "datePlayed": "2026-10-10T14:00:00.000Z",
+   "marketCount": 0,
+   "countryName": "IS",
+   "groupId": "622",
+   "groupPriority": 5,
+   "live": true,
+   "delay": 8,
+   "participants": [
+    {
+     "id": "1488",
+     "name": "Stjarnan",
+     "initials": "STJ",
+     "homeOrAway": 1
+    },
+    {
+     "id": "1483",
+     "name": "KA",
+     "initials": "KA",
+     "homeOrAway": 2
+    }
+   ],
+   "market": null,
+   "status": "closed",
+   "upcomingStatus": "upcoming",
+   "liveScore": {
+    "minute": -1
+   },
+   "isOutright": false
+  }
+ ],
+ "popular": [
+  {
+   "id": "4601670",
+   "name": "Aruba - Antigua & Barbuda",
+   "compId": "10046",
+   "compName": "CONCACAF Þjóðardeild",
+   "compPriority": 1990,
+   "isCompetitionPopular": false,
+   "sportId": "1",
+   "sportName": "Knattspyrna",
+   "sportPriority": 1,
+   "externalId": "73220994",
+   "datePlayed": "2026-09-23T23:00:00.000Z",
+   "marketCount": 37,
+   "countryName": "Alþjóðaleikir",
+   "countryCode": "INT",
+   "groupId": "152",
+   "groupPriority": 4,
+   "live": false,
+   "delay": 0,
+   "participants": [
+    {
+     "id": "4019",
+     "name": "Aruba",
+     "initials": "ARU",
+     "homeOrAway": 1
+    },
+    {
+     "id": "4018",
+     "name": "Antigua & Barbuda",
+     "initials": "A&B",
+     "homeOrAway": 2
+    }
+   ],
+   "market": {
+    "id": "13801700",
+    "version": "1535877315",
+    "eventId": "4601670",
+    "type": "1",
+    "typeName": "3WAY",
+    "name": "Úrslit",
+    "typePriority": 1,
+    "dateClosed": "2026-09-23T22:55:00.000Z",
+    "datePlayed": "2026-09-23T23:00:00.000Z",
+    "externalId": "1",
+    "live": false,
+    "primary": true,
+    "status": "open",
+    "selections": [
+     {
+      "nr": 1,
+      "bet": 1,
+      "name": "1",
+      "odds": 184,
+      "teamId": ""
+     },
+     {
+      "nr": 2,
+      "bet": null,
+      "name": "X",
+      "odds": 345,
+      "teamId": ""
+     },
+     {
+      "nr": 3,
+      "bet": 2,
+      "name": "2",
+      "odds": 326,
+      "teamId": ""
+     }
+    ]
+   },
+   "status": "closed",
+   "upcomingStatus": "upcoming",
+   "isOutright": false
+  }
+ ],
+ "liveNow": [],
+ "filters": {},
+ "week": 39,
+ "year": 2026
+}

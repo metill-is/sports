@@ -11,7 +11,8 @@ run_auto_place(
   sync_fn = sync_recs,
   place_fn = place_bets,
   bankroll_fn = function() load_bankroll(ledger_root = root),
-  headless = TRUE
+  headless = TRUE,
+  leagues_cfg = NULL
 )
 }
 \arguments{
@@ -29,6 +30,8 @@ run_auto_place(
 choice for unattended/launchd runs (no dependency on an active GUI session).
 Set `FALSE` to watch a visible browser during a supervised run; the
 human-paced `sample_delay()` in the placer applies either way.}
+
+\item{leagues_cfg}{Named league config; \code{NULL} (default) reads [load_leagues()] after a successful sync, so a config change pulled this cycle applies this cycle; a refused sync reads no config and records \code{sync_failed}.}
 }
 \value{
 The recorded status list, invisibly.

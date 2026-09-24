@@ -360,3 +360,105 @@ test_that("sync_recs skips when the index has unmerged entries (conflicted pop s
   expect_true(sports:::.git_operation_in_progress(work))
   expect_false(sync_recs(work))
 })
+
+# --- betting ladder: autoplace acts on betting.mode "auto" only (spec 2026-09-23)
+
+.ap_bankroll <- function() {
+  list(daily_budget_frac = 0.05, current_pool = 1e5, daily_budget_min_isk = 1000)
+}
+
+test_that("auto_place_leagues keeps only betting.mode auto", {
+  cfg <- list(
+    football_iceland = list(sport = "football", betting = NULL),
+    handball_iceland = list(sport = "handball", betting = list(mode = "paper")),
+    basketball_iceland = list(sport = "basketball", betting = list(mode = "manual"))
+  )
+  expect_identical(auto_place_leagues(cfg), "football_iceland")
+  # Fail closed: NULL would mean "every league" to load_recommendations().
+  expect_identical(auto_place_leagues(list()), character(0))
+})
+
+test_that("run_auto_place records a config error pulled by the sync, then re-throws", {
+  # scripts/auto_place.R only logs a thrown error: it relies on run_auto_place
+  # having recorded failed:<reason> itself.
+  root <- withr::local_tempdir()
+  testthat::local_mocked_bindings(
+    load_leagues = function(...) stop("leagues.yml failed schema validation")
+  )
+  expect_error(
+    run_auto_place(
+      root = root, now = as.POSIXct("2026-06-01 12:00:00", tz = "UTC"),
+      sync_fn = function(...) TRUE,
+      place_fn = function(...) stop("must not be reached"),
+      bankroll_fn = .ap_bankroll
+    ),
+    "schema validation"
+  )
+  expect_match(read_placement_status(root)$status, "^failed:config")
+})
+
+test_that("run_auto_place never places a league below betting.mode auto", {
+  root <- withr::local_tempdir()
+  seed_pending_rec(root) # a football recommendation
+  called <- FALSE
+  run_auto_place(
+    root = root, now = as.POSIXct("2026-06-01 12:00:00", tz = "UTC"),
+    sync_fn = function(...) TRUE,
+    place_fn = function(...) {
+      called <<- TRUE
+      tibble::tibble(status = "placed")
+    },
+    bankroll_fn = .ap_bankroll,
+    leagues_cfg = list(football_iceland = list(
+      sport = "football", country = "iceland", betting = list(mode = "manual")
+    ))
+  )
+  expect_false(called)
+  expect_equal(read_placement_status(root)$status, "nothing_pending")
+})
+
+test_that("run_auto_place hands place_fn only the auto leagues", {
+  root <- withr::local_tempdir()
+  seed_pending_rec(root)
+  got <- "unset"
+  run_auto_place(
+    root = root, now = as.POSIXct("2026-06-01 12:00:00", tz = "UTC"),
+    sync_fn = function(...) TRUE,
+    place_fn = function(leagues = NULL, ...) {
+      got <<- leagues
+      tibble::tibble(status = "placed")
+    },
+    bankroll_fn = .ap_bankroll,
+    leagues_cfg = list(
+      football_iceland = list(sport = "football", country = "iceland", betting = list(mode = "auto")),
+      handball_iceland = list(sport = "handball", country = "iceland", betting = list(mode = "paper"))
+    )
+  )
+  expect_identical(got, "football_iceland")
+  expect_equal(read_placement_status(root)$status, "placed")
+})
+
+test_that("run_auto_place reads no config after a refused sync (Ruling R3)", {
+  # A refused sync may mean a feature branch is checked out: its leagues.yml
+  # must not turn the run into failed:*, under which scripts/auto_place.R
+  # would commit ledger rows off-main. sync_failed skips that commit.
+  root <- withr::local_tempdir()
+  seed_pending_rec(root)
+  load_called <- FALSE
+  testthat::local_mocked_bindings(
+    load_leagues = function(...) {
+      load_called <<- TRUE
+      stop("leagues.yml failed schema validation")
+    }
+  )
+  expect_no_error(
+    run_auto_place(
+      root = root, now = as.POSIXct("2026-06-01 12:00:00", tz = "UTC"),
+      sync_fn = function(...) FALSE,
+      place_fn = function(...) stop("must not be reached"),
+      bankroll_fn = .ap_bankroll
+    )
+  )
+  expect_equal(read_placement_status(root)$status, "sync_failed")
+  expect_false(load_called)
+})

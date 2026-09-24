@@ -89,3 +89,44 @@ test_that("prepare_odds returns empty tibble when no rows in (sport, country)", 
   ignore.order = TRUE
   )
 })
+
+test_that("prepare_odds keeps only the requested sex when odds carry one", {
+  # Spec 2026-09-23 Review Focus 4: the API stamps each row's sex from its
+  # competition; a men's and a women's fixture between the same clubs on the
+  # same day must never price each other. NA rows (DOM scraper, history) stay
+  # sex-agnostic.
+  root <- withr::local_tempdir()
+  now <- as.POSIXct("2100-01-01 12:00:00", tz = "UTC")
+  row <- function(sex, home, away, odds) {
+    tibble::tibble(
+      sport = "handball", country = "iceland", scraped_at = now - 3600,
+      match_date = as.Date("2100-01-02"), home_team = home, away_team = away,
+      market = "moneyline", outcome = "home", line = NA_real_, odds = odds,
+      sex = sex
+    )
+  }
+  write_table(dplyr::bind_rows(
+    row("male", "Valur", "Haukar", 1.80),
+    row("female", "Valur", "Haukar", 2.60),
+    row(NA_character_, "FH", "HK", 3.10)
+  ), "odds", root = root)
+  tn <- list(Valur = "Valur", Haukar = "Haukar", FH = "FH", HK = "HK")
+  league <- list(
+    sport = "handball", country = "iceland",
+    lengjan = list(team_names = list(male = tn, female = tn))
+  )
+  get <- function(sex) {
+    prepare_odds(league, sex,
+      end_date = as.Date("2100-01-01"), max_age_hours = 48,
+      now = now, root = root
+    )
+  }
+  m <- get("male")
+  f <- get("female")
+  expect_equal(m$odds[m$home_team == "Valur"], 1.80)
+  expect_equal(f$odds[f$home_team == "Valur"], 2.60)
+  expect_equal(m$odds[m$home_team == "FH"], 3.10) # NA sex passes through
+  expect_equal(f$odds[f$home_team == "FH"], 3.10)
+  expect_equal(nrow(m), 2L)
+  expect_equal(nrow(f), 2L)
+})
