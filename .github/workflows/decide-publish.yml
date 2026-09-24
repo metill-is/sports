@@ -61,6 +61,11 @@ jobs:
         run: Rscript scripts/04_decide.R
 
       - name: Publish JSONs
+        # Publish even when decide failed: scripts/04_decide.R isolates each
+        # (league, sex) cell (run_per_league()) and exits non-zero if ANY
+        # failed, so a paper league's decide error must not also block
+        # football's publish. Not always(): a cancelled run publishes nothing.
+        if: success() || failure()
         run: Rscript scripts/05_publish.R
 
       - name: Commit if outputs changed

@@ -117,6 +117,7 @@ Collate:
     'placer-pipeline.R'
     'publish-quantile-grid.R'
     'replay.R'
+    'run-per-league.R'
     'schedule-active.R'
     'season-structure-2dt.R'
     'simulate-2dt.R'

@@ -394,3 +394,162 @@ test_that("workflow_run-triggered jobs still run on a FAILED upstream", {
     )
   }
 })
+
+# ---- Odds-scrape + decide loop isolation (final review F1) ------------------
+#
+# scripts/02_scrape_odds.R and scripts/04_decide.R walked config/leagues.yml
+# order (basketball, handball, football) in bare loops, so one plain error on
+# the handball API path (an unexpected current-program shape, an HTML 200 body)
+# or in handball's paper decide aborted the loop BEFORE football -- the live
+# money path -- and scrape-odds.yml then committed nothing from the run.
+
+test_that("run_per_league continues past a failing key and reports it", {
+  seen <- character()
+  res <- suppressMessages(run_per_league(
+    c("basketball_iceland", "handball_iceland", "football_iceland"),
+    function(key) {
+      seen <<- c(seen, key)
+      if (identical(key, "handball_iceland")) {
+        stop("parse_lengjan_program: unexpected current-program shape")
+      }
+      nchar(key)
+    },
+    what = "odds scrape"
+  ))
+  expect_equal(seen, c("basketball_iceland", "handball_iceland", "football_iceland"))
+  expect_equal(nrow(res$failed), 1L)
+  expect_named(res$failed, c("key", "message"))
+  expect_equal(res$failed$key, "handball_iceland")
+  expect_match(res$failed$message, "unexpected current-program shape")
+  expect_named(res$results, c("basketball_iceland", "handball_iceland", "football_iceland"))
+  expect_equal(res$results$football_iceland, nchar("football_iceland"))
+  expect_null(res$results$handball_iceland)
+})
+
+test_that("a failing first key does not prevent the second key's fn from running", {
+  ran_second <- FALSE
+  res <- suppressMessages(run_per_league(
+    c("handball_iceland", "football_iceland"),
+    function(key) {
+      if (identical(key, "handball_iceland")) stop("boom")
+      ran_second <<- TRUE
+      7L
+    }
+  ))
+  expect_true(ran_second)
+  expect_equal(res$failed$key, "handball_iceland")
+  expect_equal(res$results$football_iceland, 7L)
+})
+
+test_that("run_per_league alerts loudly, naming the league and the error", {
+  msgs <- character()
+  withCallingHandlers(
+    run_per_league("handball_iceland", function(key) stop("HTML body, not JSON"),
+      what = "odds scrape"
+    ),
+    message = function(m) {
+      msgs <<- c(msgs, conditionMessage(m))
+      invokeRestart("muffleMessage")
+    }
+  )
+  hit <- grepl("handball_iceland", msgs) & grepl("HTML body, not JSON", msgs)
+  expect_true(any(hit))
+  expect_true(any(grepl("odds scrape", msgs[hit])))
+})
+
+test_that("run_per_league labels work items by names() and passes the value", {
+  # scripts/04_decide.R iterates (league, sex) rows: it passes row indices
+  # named "key (sex)" so the alert and the failed frame name the cell.
+  got <- integer()
+  res <- suppressMessages(run_per_league(
+    c("handball_iceland (male)" = 1L, "football_iceland (male)" = 2L),
+    function(i) {
+      got <<- c(got, i)
+      if (i == 1L) stop("decide boom")
+      invisible(NULL)
+    },
+    what = "decide"
+  ))
+  expect_equal(got, c(1L, 2L))
+  expect_equal(res$failed$key, "handball_iceland (male)")
+})
+
+test_that("an all-green run_per_league reports no failures and zero-row frames", {
+  res <- run_per_league(character(), function(key) stop("never called"))
+  expect_equal(nrow(res$failed), 0L)
+  expect_named(res$failed, c("key", "message"))
+  expect_length(res$results, 0L)
+})
+
+test_that("a Lengjan fetch error stays a 0-row soft-fail under run_per_league", {
+  # ingest_one_lengjan()'s lengjan_fetch_error contract is unchanged: a
+  # transport blip is 0 rows, not a failed league. A plain (parse) error is a
+  # failure, contained to its own league.
+  testthat::local_mocked_bindings(
+    .is_league_active = function(active_path, key) TRUE,
+    ingest_lengjan_api = function(leagues, ...) {
+      if (identical(names(leagues), "basketball_iceland")) {
+        stop(structure(
+          class = c("lengjan_fetch_error", "error", "condition"),
+          list(message = "Lengjan API /current-program: HTTP 503", call = NULL)
+        ))
+      }
+      if (identical(names(leagues), "handball_iceland")) {
+        stop("parse_lengjan_program: unexpected current-program shape")
+      }
+      5L
+    }
+  )
+  lj <- list(source = "api", competitions = list(list(id = "1", name = "x", sex = "male")))
+  res <- suppressMessages(run_per_league(
+    c("basketball_iceland", "handball_iceland", "football_iceland"),
+    function(key) {
+      ingest_one_lengjan(
+        list(sport = sub("_iceland$", "", key), country = "iceland"), lj,
+        key, "active.json"
+      )
+    },
+    what = "odds scrape"
+  ))
+  expect_equal(res$failed$key, "handball_iceland")
+  expect_identical(res$results$basketball_iceland, 0L)
+  expect_identical(res$results$football_iceland, 5L)
+})
+
+test_that("scripts/02_scrape_odds.R and 04_decide.R isolate leagues and exit non-zero on ANY failure", {
+  for (s in c("02_scrape_odds.R", "04_decide.R")) {
+    src <- readLines(testthat::test_path("..", "..", "scripts", s), warn = FALSE)
+    body <- src[!grepl("^\\s*#", src)]
+    expect_true(any(grepl("run_per_league(", body, fixed = TRUE)), info = s)
+    expect_true(any(grepl('quit(save = "no", status = 1L)', body, fixed = TRUE)), info = s)
+    # No bare per-league loop left calling the step directly.
+    expect_false(any(grepl("^for \\(", body)), info = s)
+  }
+})
+
+test_that("scrape-odds commits and decide-publish publishes after a failed step", {
+  # A red scrape (one league failed) must still commit the leagues that did
+  # scrape; a red decide must still publish. `success() || failure()` rather
+  # than always(): a cancelled run commits and publishes nothing. Located by
+  # step name and scanned up to the step's run:, as in the always() guard.
+  targets <- list(
+    c("scrape-odds.yml", "Commit if data changed"),
+    c("decide-publish.yml", "Publish JSONs")
+  )
+  for (t in targets) {
+    yml <- readLines(
+      testthat::test_path("..", "..", ".github", "workflows", t[1]),
+      warn = FALSE
+    )
+    idx <- grep(paste0("^\\s*- name: ", t[2], "\\s*$"), yml)
+    expect_length(idx, 1L)
+    run_idx <- grep("^\\s*run:", yml)
+    run_idx <- run_idx[run_idx > idx][1]
+    expect_true(!is.na(run_idx), info = t[1])
+    step <- yml[(idx + 1L):(run_idx - 1L)]
+    expect_true(
+      any(grepl("^\\s*if:\\s*success\\(\\)\\s*\\|\\|\\s*failure\\(\\)\\s*$", step)),
+      info = paste(t[1], "->", t[2])
+    )
+  }
+})

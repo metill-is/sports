@@ -421,7 +421,9 @@ ingest_one_lengjan <- function(static, lengjan, key, active_path,
       # Treat this league as 0 rows so the run exits clean instead of red-Xing
       # the workflow on a blip; real staleness still escalates via the
       # healthcheck's match-proximity odds_freshness check. Parse failures raise
-      # plain errors (no lengjan_fetch_error class) and so still abort the run.
+      # plain errors (no lengjan_fetch_error class) and so still fail the run:
+      # scripts/02_scrape_odds.R contains them to this league (run_per_league())
+      # and exits non-zero after the other leagues have scraped.
       cli::cli_alert_warning(
         "{key}: Lengjan fetch failed after retries ({conditionMessage(e)}); skipping this run. odds_freshness escalates if a fixture is imminent."
       )

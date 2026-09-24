@@ -24,7 +24,11 @@ bankroll <- load_bankroll(here::here("config", "bankroll.yml"))
 leagues <- load_leagues()
 
 cli::cli_h1("Decide ({nrow(targets)} (league, sex) pairs)")
-for (i in seq_len(nrow(targets))) {
+# One (league, sex) cell's error -- e.g. a paper league's decide -- must not
+# stop the cells after it: resolve_targets() walks config order, which puts
+# football, the live money path, last. run_per_league() contains each failure;
+# the run still ends red below, and decide-publish.yml publishes regardless.
+decide_row <- function(i) {
   row <- targets[i, ]
   league_def <- leagues[[row$key]]
   static <- league_def[c(
@@ -35,5 +39,19 @@ for (i in seq_len(nrow(targets))) {
 
   cli::cli_h2("{row$key} ({row$sex})")
   decide_one(static, lengjan, betting, row$sex, bankroll)
+  invisible(NULL)
+}
+res <- run_per_league(
+  stats::setNames(seq_len(nrow(targets)), paste0(targets$key, " (", targets$sex, ")")),
+  decide_row,
+  what = "decide"
+)
+
+# Exit non-zero when ANY cell failed, not only when all did (INT-2): the
+# surviving cells' recommendations are already written.
+if (nrow(res$failed) > 0L) {
+  cli::cli_alert_danger("{nrow(res$failed)} decide target{?s} failed:")
+  print(as.data.frame(res$failed))
+  quit(save = "no", status = 1L)
 }
 cli::cli_alert_success("Decide complete")

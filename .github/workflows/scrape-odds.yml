@@ -59,6 +59,11 @@ jobs:
         run: Rscript scripts/02_scrape_odds.R
 
       - name: Commit if data changed
+        # Commit even when the scrape step failed: scripts/02_scrape_odds.R
+        # isolates each league (run_per_league()) and exits non-zero if ANY
+        # failed, but the odds the other leagues wrote are real and cannot be
+        # re-scraped later. Not always(): a cancelled run commits nothing.
+        if: success() || failure()
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
