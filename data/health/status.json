@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-24T16:27:13Z",
+  "generated_at": "2026-09-24T21:57:19Z",
   "overall": "WARN",
   "n_fail": 0,
   "n_warn": 6,
@@ -64,7 +64,7 @@
       "check": "odds_freshness",
       "scope": "football_iceland",
       "status": "OK",
-      "value": "upcoming fixtures only in divisions Lengjan has never priced",
+      "value": "odds cover upcoming fixtures (next in 1d)",
       "threshold": "odds for fixtures within 3d"
     },
     {
