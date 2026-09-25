@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-24T21:57:19Z",
+  "generated_at": "2026-09-25T16:26:41Z",
   "overall": "WARN",
   "n_fail": 0,
   "n_warn": 6,
@@ -8,28 +8,28 @@
       "check": "fit_freshness",
       "scope": "basketball_iceland male",
       "status": "OK",
-      "value": "4d old, current with results",
+      "value": "5d old, current with results",
       "threshold": "<= 2d"
     },
     {
       "check": "fit_freshness",
       "scope": "basketball_iceland female",
       "status": "OK",
-      "value": "4d old, current with results",
+      "value": "5d old, current with results",
       "threshold": "<= 2d"
     },
     {
       "check": "fit_freshness",
       "scope": "handball_iceland male",
       "status": "OK",
-      "value": "7d old, current with results",
+      "value": "0d old, current with results",
       "threshold": "<= 2d"
     },
     {
       "check": "fit_freshness",
       "scope": "handball_iceland female",
       "status": "OK",
-      "value": "3d old, current with results",
+      "value": "4d old, current with results",
       "threshold": "<= 2d"
     },
     {
@@ -43,7 +43,7 @@
       "check": "fit_freshness",
       "scope": "football_iceland female",
       "status": "OK",
-      "value": "4d old, current with results",
+      "value": "5d old, current with results",
       "threshold": "<= 2d"
     },
     {
@@ -64,7 +64,7 @@
       "check": "odds_freshness",
       "scope": "football_iceland",
       "status": "OK",
-      "value": "odds cover upcoming fixtures (next in 1d)",
+      "value": "odds cover upcoming fixtures (next in 0d)",
       "threshold": "odds for fixtures within 3d"
     },
     {
@@ -141,14 +141,14 @@
       "check": "divergence_drift",
       "scope": "handball/iceland/male",
       "status": "OK",
-      "value": "0.125%",
+      "value": "0.375%",
       "threshold": "< 0.5%"
     },
     {
       "check": "rhat_drift",
       "scope": "handball/iceland/male",
       "status": "OK",
-      "value": "1.009",
+      "value": "1.011",
       "threshold": "< 1.020"
     },
     {
