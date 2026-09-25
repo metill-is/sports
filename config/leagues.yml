@@ -299,14 +299,16 @@ football_iceland:
       - { id: "813",   name: "Mjólkurbikar karla",       sex: male   }
       - { id: "1581",  name: "2. deild karla",           sex: male   }
       - { id: "1568",  name: "Besta deild kvenna",       sex: female }
-      # Women's BD neðri hluti (bottom-4 split, BD_LOWER_PO) -- comp 27524,
-      # added 2026-09-23. The post-split women's fixtures no longer list under
-      # 1568: none of the five split games played 17-19 Sep got odds. First
-      # listed event 4622914, Valur kv v Víkingur Rvk kv (25 Sep 18:00Z). All
-      # four lower-group sides (Valur, Víkingur R., Fram, Þór/KA) are already
-      # mapped in team_names.female and confirmed in data/facts/odds. The efri
-      # hluti counterpart (cf. men's 20443) was NOT listed on 2026-09-23 --
-      # wire it via /wire-league once discover-leagues proposes it.
+      # Women's BD split: efri hluti (top 6, BD_UPPER_PO) and neðri hluti
+      # (bottom 4, BD_LOWER_PO). Lengjan lists the post-split fixtures under
+      # their own comps, not 1568: none of the five split games played
+      # 17-19 Sep got odds. 27524 neðri added 2026-09-23 (PR #94; first event
+      # 4622914, Valur kv v Víkingur Rvk kv, 25 Sep). 27521 efri added
+      # 2026-09-25 once Lengjan listed it (events 4622911 ÍBV kv v Breiðablik
+      # kv, 26 Sep; 4622889 Þróttur Rvk kv v Stjarnan kv and 4622896
+      # Grindavik/Njarðvík kv v FH kv, 27 Sep). All ten split sides are mapped
+      # in team_names.female and confirmed in data/facts/odds.
+      - { id: "27521", name: "Besta deild kv. efri hluti",  sex: female }
       - { id: "27524", name: "Besta deild kv. neðri hluti", sex: female }
       # Women's cup — confirmed live 2026-06-16 (ÍBV kv v FH kv, 17 Jún) at
       # competition id 2410. Lengjan labels it "Mjólkurbikar kvenna"; the same
