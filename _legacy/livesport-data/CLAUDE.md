@@ -1,5 +1,7 @@
 # livesport-data — CLAUDE.md
 
+> **Archived snapshot.** This is the pre-consolidation `livesport-data` repo, kept for history only. The live pipeline is the `~/sports` monorepo (see `~/sports/CLAUDE.md`; source registry in `R/ingest.R::ingest_league()`). The commands under "Consuming from Sports pipeline" target `~/Metill/Sports`, which is not on disk (checked 2026-09-26).
+
 Daily scraper for match results and schedules from livesport.com. Runs on GitHub Actions CI, commits data to git. Consumed by the Sports betting pipeline via local clone.
 
 ## Architecture

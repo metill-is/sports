@@ -1,5 +1,7 @@
 # Sports — CLAUDE.md
 
+> **Archived snapshot.** This is the pre-consolidation `Sports/` repo (including the league folders below it), kept for history only. The live pipeline is the `~/sports` monorepo (`scripts/0N_*.R`; see `~/sports/CLAUDE.md`), where `R/placer-*.R` is the only ledger writer. Do not run the `run.R` or per-league commands in these files.
+
 Bayesian sports prediction models across basketball, handball, and football. Shared code in `R/`, per-league data and configs in `{sport}/{country}/`.
 
 ## Directory structure

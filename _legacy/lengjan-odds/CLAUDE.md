@@ -1,5 +1,7 @@
 # lengjan-odds — CLAUDE.md
 
+> **Archived snapshot.** This is the pre-consolidation `lengjan-odds` repo, kept for history only. Odds scraping runs from the `~/sports` monorepo (`scripts/02_scrape_odds.R`; see `~/sports/CLAUDE.md`). The commands below, including the `cd ../Sports` schedule workflow, predate it.
+
 Standalone scraper for betting odds from Lengjan (games.lotto.is). Uses {targets} for pipeline management and GitHub Actions for scheduled runs.
 
 ## Architecture
