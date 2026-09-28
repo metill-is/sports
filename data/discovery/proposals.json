@@ -1,5 +1,39 @@
 {
-  "generated_at": "2026-09-24T12:13:37Z",
-  "competitions": [],
+  "generated_at": "2026-09-28T14:29:24Z",
+  "competitions": [
+    {
+      "sport": "basketball",
+      "country": "iceland",
+      "comp_id": "1291",
+      "lengjan_name": "Bónusdeild kvenna",
+      "inferred_sex": "female",
+      "inferred_division": "BD",
+      "classify_confidence": "high",
+      "modelled": true,
+      "status": "new",
+      "proposed_team_names": [
+        {
+          "lengjan": "Ármann kv",
+          "canonical_guess": "Ármann",
+          "confidence": "high"
+        },
+        {
+          "lengjan": "KR kv",
+          "canonical_guess": "KR",
+          "confidence": "high"
+        },
+        {
+          "lengjan": "Grindavík kv",
+          "canonical_guess": "Grindavík",
+          "confidence": "high"
+        },
+        {
+          "lengjan": "Stjarnan kv",
+          "canonical_guess": "Stjarnan",
+          "confidence": "high"
+        }
+      ]
+    }
+  ],
   "unmodelled_offered_count": 0
 }
