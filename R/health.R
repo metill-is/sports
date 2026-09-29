@@ -363,8 +363,17 @@ check_odds_freshness <- function(leagues, root, now, th) {
   if (length(rows) == 0L) health_empty() else dplyr::bind_rows(rows)
 }
 
+#' Divergence and R-hat drift of each cell's latest persisted fit.
+#'
+#' `paused_cells` ("sport/country/sex") are the cells whose `fit_freshness` is
+#' PAUSED (no upcoming games): their rows are PAUSED, never WARN, because the
+#' pipeline will not refit them, so a drifted last fit has no action behind it
+#' (2026-09-25 review). The measured value is still reported.
+#' @param root Data root.
+#' @param th [health_thresholds()] list.
+#' @param paused_cells Character vector of "sport/country/sex" cells.
 #' @noRd
-check_diagnostics_drift <- function(root, th) {
+check_diagnostics_drift <- function(root, th, paused_cells = character(0)) {
   d <- tryCatch(read_table("fit_diagnostics", root = root), error = function(e) tibble::tibble())
   if (nrow(d) == 0L) {
     return(health_empty())
@@ -375,22 +384,58 @@ check_diagnostics_drift <- function(root, th) {
   for (cell in unique(d$cell)) {
     sub <- d[d$cell == cell, , drop = FALSE]
     r <- sub[which.max(sub$fit_date), , drop = FALSE]
+    paused <- cell %in% paused_cells
+    note <- if (paused) "; fit paused (no upcoming games)" else ""
     div <- r$div_frac
     rows[[paste0(cell, ":div")]] <- health_row(
       "divergence_drift", cell,
-      if (!is.na(div) && div > th$div_frac_warn) "WARN" else "OK",
-      if (is.na(div)) "NA" else sprintf("%.3f%%", 100 * div),
+      if (paused) {
+        "PAUSED"
+      } else if (!is.na(div) && div > th$div_frac_warn) {
+        "WARN"
+      } else {
+        "OK"
+      },
+      paste0(if (is.na(div)) "NA" else sprintf("%.3f%%", 100 * div), note),
       sprintf("< %.1f%%", 100 * th$div_frac_warn)
     )
     rh <- r$max_rhat
     rows[[paste0(cell, ":rhat")]] <- health_row(
       "rhat_drift", cell,
-      if (!is.na(rh) && rh > th$rhat_warn) "WARN" else "OK",
-      if (is.na(rh)) "NA" else sprintf("%.3f", rh),
+      if (paused) {
+        "PAUSED"
+      } else if (!is.na(rh) && rh > th$rhat_warn) {
+        "WARN"
+      } else {
+        "OK"
+      },
+      paste0(if (is.na(rh)) "NA" else sprintf("%.3f", rh), note),
       sprintf("< %.3f", th$rhat_warn)
     )
   }
   dplyr::bind_rows(rows)
+}
+
+#' "sport/country/sex" cells whose `fit_freshness` row is PAUSED.
+#'
+#' Maps [check_fit_freshness()]'s "<league_key> <sex>" scope back to the
+#' "sport/country/sex" cell key [check_diagnostics_drift()] uses.
+#' @param fit_rows Output of [check_fit_freshness()] (may hold check_error rows).
+#' @param leagues Named league config.
+#' @noRd
+.paused_fit_cells <- function(fit_rows, leagues) {
+  p <- fit_rows[fit_rows$check == "fit_freshness" & fit_rows$status == "PAUSED", ,
+    drop = FALSE
+  ]
+  out <- character(0)
+  for (sc in p$scope) {
+    key <- sub(" [^ ]+$", "", sc)
+    sx <- sub("^.* ", "", sc)
+    lg <- leagues[[key]]
+    if (is.null(lg)) next
+    out <- c(out, paste(lg$sport, lg$country, sx, sep = "/"))
+  }
+  out
 }
 
 #' @noRd
@@ -464,7 +509,8 @@ check_capture_rate <- function(root, now, th, leagues = NULL) {
   n_placed <- nrow(dplyr::inner_join(rec_d, led_d, by = key))
   rate <- n_placed / n_rec
   # Only escalate past OK once there are enough recs to be meaningful.
-  status <- if (n_rec < th$capture_min_n) {
+  thin <- n_rec < th$capture_min_n
+  status <- if (thin) {
     "OK"
   } else if (rate < th$capture_fail_rate) {
     "FAIL"
@@ -473,10 +519,17 @@ check_capture_rate <- function(root, now, th, leagues = NULL) {
   } else {
     "OK"
   }
-  health_row(
-    "capture_rate", "recommendations", status,
-    sprintf("%.0f%% (%d/%d placed)", 100 * rate, n_placed, n_rec), thr_lbl
-  )
+  # Name the min-n guard in the value: "20% (1/5 placed)" beside an OK
+  # status read as a contradiction of the ">= 70%" threshold.
+  value <- if (thin) {
+    sprintf(
+      "%.0f%% (%d/%d; n<%d, not escalated)",
+      100 * rate, n_placed, n_rec, th$capture_min_n
+    )
+  } else {
+    sprintf("%.0f%% (%d/%d placed)", 100 * rate, n_placed, n_rec)
+  }
+  health_row("capture_rate", "recommendations", status, value, thr_lbl)
 }
 
 #' @noRd
@@ -643,7 +696,9 @@ check_placement_health <- function(root, now, th) {
 #' reads mail and not at all if they do not. Because the channel is that
 #' low-bandwidth, a permanently-WARN check is worse than no check -- which is
 #' why `check_season_resolution()` scopes FAIL to the league divisions and
-#' leaves federation-deferred cups at WARN.
+#' reports federation-deferred cups as PAUSED. For the same reason drift rows
+#' for a cell whose `fit_freshness` is PAUSED are PAUSED too: a cell with no
+#' upcoming games will not be refit, so its last fit's drift is not actionable.
 #'
 #' @param root Data root. Default `here::here("data")`.
 #' @param now Reference time (POSIXct). Default `Sys.time()`.
@@ -685,6 +740,11 @@ pipeline_health <- function(root = here::here("data"),
       health_row("check_error", "pipeline_health", "FAIL", conditionMessage(e), "n/a")
     })
   }
+  # Fit freshness first: its PAUSED cells silence the drift rows below.
+  fit_rows <- safe(check_fit_freshness(leagues, root, now, th))
+  paused_cells <- tryCatch(.paused_fit_cells(fit_rows, leagues),
+    error = function(e) character(0)
+  )
   dplyr::bind_rows(
     if (is.null(config_error)) {
       NULL
@@ -694,9 +754,9 @@ pipeline_health <- function(root = here::here("data"),
         paste0("load_leagues() errored: ", config_error), "config parses"
       )
     },
-    safe(check_fit_freshness(leagues, root, now, th)),
+    fit_rows,
     safe(check_odds_freshness(leagues, root, now, th)),
-    safe(check_diagnostics_drift(root, th)),
+    safe(check_diagnostics_drift(root, th, paused_cells)),
     safe(check_orphaned_bets(root, now, th)),
     safe(check_capture_rate(root, now, th, leagues)),
     safe(check_placement_health(root, now, th)),

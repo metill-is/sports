@@ -78,7 +78,8 @@ to 2026-09 while every composed check stayed green (B4).
   extract partition the value says so, because that names the cause rather than
   the symptom.
 - **`check_season_resolution`** (`R/health-season.R`) — FAIL per unresolvable
-  league division, WARN per federation-deferred cup/playoffs gap, one OK row per
+  league division, PAUSED per federation-deferred cup/playoffs gap (WARN until
+  2026-09-29, which held the rollup at WARN with nothing to act on), one OK row per
   clean federation. It is what distinguishes "the season is genuinely over" from
   "the scraper went blind in October": identical in the results table, different
   only in whether the federation season id resolved. Consumes Plan A's
@@ -98,9 +99,11 @@ notification, no escalation and no on-call. A FAIL is noticed within roughly
 twelve hours if the maintainer reads mail, and not at all if they do not.
 Because the channel is that low-bandwidth, **a check that is permanently WARN
 is worse than no check** — which is why `check_season_resolution` scopes FAIL to
-the league divisions and leaves HSÍ's federation-deferred cup and playoffs at
-WARN, and why a false FAIL must be adjudicated (is the branch behind `main`?)
-rather than silenced with a threshold.
+the league divisions and reports HSÍ's federation-deferred cup and playoffs as
+PAUSED, why drift rows for a cell whose `fit_freshness` is PAUSED are PAUSED
+too, why `capture_rate` names its min-n guard in the value ("20% (1/5; n<20,
+not escalated)"), and why a false FAIL must be adjudicated (is the branch
+behind `main`?) rather than silenced with a threshold.
 
 `scripts/07_healthcheck.R` writes `data/health/status.json` + prints a summary;
 `healthcheck.yml` runs it twice daily and fails the run on `overall == FAIL` so
