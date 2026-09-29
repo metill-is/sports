@@ -72,21 +72,23 @@ if (!(rec$status %in% c("disabled", "locked", "sync_failed"))) {
   # auto-place lock (run_auto_place released it on exit) because
   # settle_ledger() is a read-then-write of whole ledger partitions: a
   # concurrent run placing a bet between our read and write would lose its
-  # row. A settle error is logged and never blocks the placement commit.
-  n_settled <- 0L
-  if (acquire_auto_place_lock(root)) {
-    n_settled <- tryCatch(
-      as.integer(settle_ledger(root = root)),
-      error = function(e) {
-        cli::cli_alert_danger("settle_ledger errored: {conditionMessage(e)}")
-        0L
-      }
-    )
-    release_auto_place_lock(root)
-    if (n_settled > 0L) cli::cli_alert_success("Settled {n_settled} bet(s).")
-  } else {
-    cli::cli_alert_info("Settle skipped: another auto-place run holds the lock.")
-  }
+  # row. Any error in this step (lock I/O included) is logged and yields 0:
+  # it must never block the placement commit below.
+  n_settled <- tryCatch(
+    if (acquire_auto_place_lock(root)) {
+      tryCatch(as.integer(settle_ledger(root = root)),
+        finally = release_auto_place_lock(root)
+      )
+    } else {
+      cli::cli_alert_info("Settle skipped: another auto-place run holds the lock.")
+      0L
+    },
+    error = function(e) {
+      cli::cli_alert_danger("Settle step errored: {conditionMessage(e)}")
+      0L
+    }
+  )
+  if (n_settled > 0L) cli::cli_alert_success("Settled {n_settled} bet(s).")
 
   parts <- c(
     if (n_placed > 0L) sprintf("%d bet(s) placed", n_placed),
