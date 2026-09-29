@@ -30,7 +30,10 @@ health_thresholds <- function() {
     # runs plus slack. Too tight and every quiet weekend goes red; too loose
     # and a two-day publish outage looks healthy. Revisit after the first
     # month of bb/hb publishing, citing observed inter-commit gaps.
-    publish_max_age_hours = 36
+    publish_max_age_hours = 36,
+    unmapped_window_days = 14 # look-back for unmapped Lengjan team names;
+    # matches check_odds_freshness's fixture horizon, so a name Lengjan is
+    # actively pricing stays flagged while a retired rendering ages out.
   )
 }
 
@@ -659,11 +662,201 @@ check_placement_health <- function(root, now, th) {
   )
 }
 
+#' Per-sex inverse maps: Lengjan rendering -> canonical (federation) name.
+#'
+#' The same inversion [normalise_lengjan_team_names()] builds at decide time,
+#' hoisted so the health check measures exactly what the decide layer will see.
+#' Injectivity is already a `load_leagues()` hard error, so no re-guard here.
+#' @noRd
+.lengjan_inverse_maps <- function(lg, sexes) {
+  tn_all <- lg$lengjan$team_names
+  out <- list()
+  for (sx in sexes) {
+    renders <- tn_renderings(if (is.null(tn_all)) NULL else tn_all[[sx]])
+    out[[sx]] <- if (length(renders) == 0L) {
+      stats::setNames(character(0), character(0))
+    } else {
+      stats::setNames(
+        tag_utf8(rep(names(renders), lengths(renders))),
+        tag_utf8(unlist(renders, use.names = FALSE))
+      )
+    }
+  }
+  out
+}
+
+#' Resolve an unmapped Lengjan name to the canonical name we model it under.
+#'
+#' `data/beliefs/latest` is keyed on `(match_date, home_team, away_team)` in
+#' canonical names for *upcoming* fixtures. So for a fixture carrying the
+#' unmapped name, we invert its already-mapped opponent to canonical and look
+#' for the same date + same opponent on the same side; the counterpart's name
+#' is the canonical the missing rendering belongs under. A hit means we hold a
+#' model for this team and are provably unable to bet it -- the rename case.
+#' No hit means no such fixture is modelled at all -- a genuinely new or
+#' unmodelled side, which `config/leagues.yml` explicitly expects.
+#'
+#' Reads beliefs only when an unmapped name exists, so the common (clean) path
+#' never touches the ~200k-row posterior-draw store.
+#' @return Character vector of `"canonical" (team_names.sex)` labels; empty
+#'   when nothing resolves.
+#' @noRd
+.identify_unmapped_canonical <- function(nm, fx, lg, inv, root, today) {
+  up <- fx[!is.na(fx$match_date) & as.Date(fx$match_date) >= today, , drop = FALSE]
+  if (nrow(up) == 0L) {
+    return(character(0))
+  }
+  hits <- character(0)
+  for (sx in names(inv)) {
+    bl <- tryCatch(
+      read_table("beliefs_latest",
+        root = root,
+        filter = list(sport = lg$sport, country = lg$country, sex = sx)
+      ),
+      error = function(e) tibble::tibble()
+    )
+    need <- c("match_date", "home_team", "away_team")
+    if (nrow(bl) == 0L || !all(need %in% names(bl))) next
+    bl <- unique(bl[, need, drop = FALSE])
+    bl$match_date <- as.Date(bl$match_date)
+    bl$home_team <- tag_utf8(bl$home_team)
+    bl$away_team <- tag_utf8(bl$away_team)
+    imap <- inv[[sx]]
+    for (i in seq_len(nrow(up))) {
+      at_home <- identical(up$home_team[i], nm)
+      opp <- if (at_home) up$away_team[i] else up$home_team[i]
+      opp_canon <- if (opp %in% names(imap)) unname(imap[[opp]]) else opp
+      cand <- if (at_home) {
+        bl[bl$match_date == as.Date(up$match_date[i]) & bl$away_team == opp_canon, , drop = FALSE]
+      } else {
+        bl[bl$match_date == as.Date(up$match_date[i]) & bl$home_team == opp_canon, , drop = FALSE]
+      }
+      if (nrow(cand) == 0L) next
+      side <- unique(if (at_home) cand$home_team else cand$away_team)
+      hits <- c(hits, sprintf("\"%s\" (team_names.%s)", side, sx))
+    }
+  }
+  unique(hits)
+}
+
+#' @noRd
+.fmt_unmapped <- function(f) {
+  span <- if (identical(f$first, f$last)) {
+    as.character(f$first)
+  } else {
+    sprintf("%s..%s", f$first, f$last)
+  }
+  fixtures <- sprintf("%d fixture%s", f$n_fixtures, if (f$n_fixtures == 1L) "" else "s")
+  if (length(f$canonical) > 0L) {
+    sprintf(
+      "%s (%s, %s) -> modelled as %s", f$name, span, fixtures,
+      paste(f$canonical, collapse = " / ")
+    )
+  } else {
+    sprintf("%s (%s, %s) -> no beliefs match; likely a new team", f$name, span, fixtures)
+  }
+}
+
+#' Lengjan odds names with no `team_names` rendering in config/leagues.yml.
+#'
+#' On 2026-07-17 Lengjan renamed "Vikingur Rvk" to "Vikingur Reykjavik"
+#' mid-season. `config/leagues.yml` mapped only the old rendering, so
+#' [normalise_lengjan_team_names()] left the name unmapped, `decide_league()`
+#' warn-and-skipped, and 8 Besta deildin fixtures could never be bet. The
+#' warning fired on every decide run for 6.5 weeks -- to the run log only.
+#' This check promotes that signal to the health snapshot.
+#'
+#' It cannot be a build-time assertion: `config/leagues.yml` explicitly expects
+#' unmapped names ("further LD3 sides will surface unmapped as their odds first
+#' appear -- fill them opportunistically"), so a hard failure would be flaky.
+#' Severity instead follows whether we *model* the team
+#' (see [.identify_unmapped_canonical()]):
+#'
+#' * resolves to a canonical -> `FAIL`. We hold a fitted model and are losing
+#'   every bet on it; same class as `check_odds_freshness`'s "fixture today,
+#'   no odds scraped".
+#' * resolves to nothing -> `WARN`. A new or unmodelled side, the expected case.
+#'
+#' Odds carry no `sex` or `division` column (partitions are
+#' `sport/country/scraped_date`), so the rendering universe is the union across
+#' the league's per-sex `team_names`; the beliefs join recovers the sex, and the
+#' reported label names the sub-map the rendering belongs in. Self-clearing off
+#' the live config, like [check_discovery()] -- the row goes `OK` the moment the
+#' rendering lands, with no state file to reconcile. Leagues with no odds inside
+#' the window emit no row, so the seasonal basketball/handball pause stays
+#' silent.
+#' @noRd
+check_unmapped_team_names <- function(leagues, root, now, th) {
+  today <- as.Date(now, tz = "UTC")
+  thr_lbl <- "0 unmapped Lengjan renderings"
+  cap <- 8L
+  rows <- list()
+  for (key in names(leagues)) {
+    lg <- leagues[[key]]
+    od <- tryCatch(
+      read_table("odds",
+        root = root,
+        filter = list(sport = lg$sport, country = lg$country)
+      ),
+      error = function(e) tibble::tibble()
+    )
+    if (nrow(od) == 0L || !all(c("home_team", "away_team") %in% names(od))) next
+    # scraped_date is a hive partition, so it reads back as character -- an
+    # uncoerced `>=` against a Date silently compares the wrong things.
+    sd <- if ("scraped_date" %in% names(od)) {
+      as.Date(od$scraped_date)
+    } else {
+      as.Date(od$scraped_at, tz = "UTC")
+    }
+    keep <- !is.na(sd) & sd >= (today - th$unmapped_window_days)
+    win <- od[keep, , drop = FALSE]
+    if (nrow(win) == 0L) next # nothing scraped in the window: off-season
+    win$scraped_date <- sd[keep]
+    win$home_team <- tag_utf8(win$home_team)
+    win$away_team <- tag_utf8(win$away_team)
+
+    inv <- .lengjan_inverse_maps(lg, .cell_sexes(lg))
+    renderings <- unique(unlist(lapply(inv, names), use.names = FALSE))
+    unmapped <- setdiff(unique(c(win$home_team, win$away_team)), renderings)
+    if (length(unmapped) == 0L) {
+      rows[[key]] <- health_row("unmapped_team_names", key, "OK", 0, thr_lbl)
+      next
+    }
+
+    findings <- lapply(unmapped, function(nm) {
+      hit <- win[win$home_team == nm | win$away_team == nm, , drop = FALSE]
+      fx <- unique(hit[, c("match_date", "home_team", "away_team"), drop = FALSE])
+      list(
+        name = nm,
+        first = min(hit$scraped_date), last = max(hit$scraped_date),
+        n_fixtures = nrow(fx),
+        canonical = .identify_unmapped_canonical(nm, fx, lg, inv, root, today)
+      )
+    })
+    modelled <- vapply(findings, function(f) length(f$canonical) > 0L, logical(1))
+    # Modelled names first: they are the actionable, bet-losing ones, and the
+    # label list is capped.
+    labels <- vapply(c(findings[modelled], findings[!modelled]), .fmt_unmapped, character(1))
+    shown <- utils::head(labels, cap)
+    rows[[key]] <- health_row(
+      "unmapped_team_names", key,
+      if (any(modelled)) "FAIL" else "WARN",
+      sprintf(
+        "%d unmapped: %s%s", length(labels), paste(shown, collapse = "; "),
+        if (length(labels) > cap) sprintf("; +%d more", length(labels) - cap) else ""
+      ),
+      thr_lbl
+    )
+  }
+  if (length(rows) == 0L) health_empty() else dplyr::bind_rows(rows)
+}
+
 #' Read-only pipeline health snapshot.
 #'
 #' Composes freshness, persisted Stan-diagnostics drift, orphaned-bet,
-#' placement-capture-rate, bankroll, publish-freshness, season-resolution and
-#' publish-format checks into one tibble of
+#' placement-capture-rate, bankroll, unmapped-Lengjan-team-name,
+#' publish-freshness, season-resolution and publish-format checks into one
+#' tibble of
 #' `{check, scope, status, value, threshold}`
 #' rows. `status` is one of `OK` < `WARN` < `FAIL`, plus `PAUSED` for a cell
 #' that is intentionally off-season (no upcoming games — reuses
@@ -762,6 +955,7 @@ pipeline_health <- function(root = here::here("data"),
     safe(check_placement_health(root, now, th)),
     safe(check_bankroll(root, th)),
     safe(check_discovery(root, th)),
+    safe(check_unmapped_team_names(leagues, root, now, th)),
     # The publish-side checks sort last so the new rows read as a block in the
     # printed table.
     safe(check_publish_freshness(leagues, root, now, th)),

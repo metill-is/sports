@@ -113,6 +113,22 @@ surface it interactively. All read-only on the ledger (CI-safe against the local
 placer); `tests/testthat/test-healthcheck-ci-isolation.R` enforces it. Triage
 playbooks: `docs/runbooks/`.
 
+**`unmapped_team_names` (2026-09-03)** flags Lengjan odds display names with no
+`team_names` rendering in `config/leagues.yml` over the last
+`unmapped_window_days` (14). It cannot be a test — `leagues.yml` explicitly
+expects new sides to surface unmapped and be filled opportunistically — so
+severity follows whether we already model the team:
+`.identify_unmapped_canonical()` inverts the fixture's already-mapped opponent
+and looks for the same `match_date` + opponent in `beliefs/latest`; the
+counterpart's name is the canonical the missing rendering belongs under. A hit
+is `FAIL` (fitted model, every bet on it lost — the 2026-07-17
+"Víkingur Rvk" → "Víkingur Reykjavík" rename cost 8 Besta deildin fixtures over
+6.5 weeks, warned only to the run log); no hit is `WARN` (new/unmodelled side).
+Odds carry no `sex`/`division` column, so the rendering universe is the union
+across the league's per-sex sub-maps and the beliefs join recovers the sex.
+Self-clearing off the live config, like `check_discovery`. Runbook:
+`docs/runbooks/unmapped-team-name.md`.
+
 **Two write-boundary guards complement the snapshot:** `validate_values()`
 (`R/storage-validate.R`, wired into `write_table`) rejects impossible scores /
 `odds <= 1` / out-of-range `p`; `validate_bet_inputs()` (`R/decide-kelly.R`)

@@ -10,6 +10,7 @@ same shape: **symptom -> diagnose -> fix -> verify**.
 | `odds_freshness` FAIL, stale football data on fly.metill.is | [stale-odds.md](stale-odds.md) |
 | `fit_freshness` FAIL/WARN, `divergence_drift` / `rhat_drift` WARN | [failed-fit.md](failed-fit.md) |
 | `orphaned_bets` WARN, `bankroll` FAIL | [orphaned-bet.md](orphaned-bet.md) |
+| `unmapped_team_names` FAIL/WARN, a team's fixtures never produce bets | [unmapped-team-name.md](unmapped-team-name.md) |
 | `decide-publish.yml` red on "Value validation" / "Schema validation" | [schema-abort.md](schema-abort.md) |
 | fly.metill.is stale despite fresh `data/publish/` JSONs | [metill-platform-desync.md](metill-platform-desync.md) |
 | `publish_freshness` FAIL, `publish_format` WARN | [stale-publish.md](stale-publish.md) |

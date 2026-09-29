@@ -8,7 +8,8 @@ argument-hint: "[--refresh]"
 
 Strictly **read-only on the money path** — never places bets, never writes the
 ledger. It composes `pipeline_health()` (fit/odds freshness, persisted Stan
-diagnostic drift, orphaned bets, bankroll/drawdown) into a single status table
+diagnostic drift, orphaned bets, bankroll/drawdown, unmapped Lengjan team
+names) into a single status table
 and helps triage anything that is `WARN` or `FAIL`.
 
 ## 1. Refresh the snapshot
@@ -46,6 +47,8 @@ For every `WARN`/`FAIL` row, map the `check` to its runbook in
 | `publish_freshness` FAIL | publish skipped or stale; extracts missing | `docs/runbooks/stale-publish.md` |
 | `season_resolution` FAIL | a federation season id will not resolve | `docs/runbooks/season-restart.md` |
 | `publish_format` WARN | the competition format changed | `docs/runbooks/stale-publish.md` |
+| `unmapped_team_names` FAIL | Lengjan renamed a team we model; its fixtures are unbettable | `docs/runbooks/unmapped-team-name.md` |
+| `unmapped_team_names` WARN | a new/unmodelled side entered a scraped division | `docs/runbooks/unmapped-team-name.md` |
 | `check_error` | a health sub-check itself errored | inspect the message; usually a missing/corrupt partition |
 
 Confirm-intent before "fixing": a `PAUSED` cell (basketball/handball off-season)

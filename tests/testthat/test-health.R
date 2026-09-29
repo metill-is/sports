@@ -651,3 +651,142 @@ test_that("check_capture_rate names the min-n guard when the window is thin", {
   expect_equal(res$status, "OK")
   expect_equal(res$value, "50% (4/8; n<20, not escalated)")
 })
+
+# --- unmapped Lengjan team names -------------------------------------------
+# Regression cover for the 2026-07-17 Vikingur Rvk -> Vikingur Reykjavik
+# rename, which left 8 Besta deildin fixtures unbettable for 6.5 weeks because
+# the only signal was a decide-time cli warning nobody read.
+#
+# Icelandic literals use \uXXXX escapes (the file-wide convention) so the
+# source stays ASCII and the strings are UTF-8-tagged regardless of locale --
+# which makes these a real guard on the Encoding() matching path.
+
+.mini_odds <- function(scraped_date, match_date, home, away) {
+  tibble::tibble(
+    sport = "football", country = "iceland",
+    scraped_at = as.POSIXct(paste(scraped_date, "12:00:00"), tz = "UTC"),
+    match_date = as.Date(match_date),
+    home_team = home, away_team = away,
+    market = "moneyline", outcome = "home", line = NA_real_, odds = 2.0
+  )
+}
+
+.mini_beliefs <- function(match_date, home, away, sex = "male") {
+  tibble::tibble(
+    sport = "football", country = "iceland", sex = sex,
+    fit_date = as.Date(match_date) - 1, match_date = as.Date(match_date),
+    home_team = home, away_team = away,
+    draw_id = 1L, home_goals = 1, away_goals = 0
+  )
+}
+
+.tn_leagues <- function(male = list(), female = list()) {
+  list(football_iceland = list(
+    sport = "football", country = "iceland", sexes = list("male", "female"),
+    lengjan = list(team_names = list(male = male, female = female))
+  ))
+}
+
+test_that("check_unmapped_team_names is OK when every Lengjan name maps", {
+  root <- withr::local_tempdir()
+  today <- Sys.Date()
+  write_table(.mini_odds(today, today + 2, "KR", "Valur"), "odds", root = root)
+  res <- check_unmapped_team_names(
+    .tn_leagues(male = list(KR = "KR", Valur = "Valur")),
+    root, as.POSIXct(paste(today, "12:00:00"), tz = "UTC"), health_thresholds()
+  )
+  expect_equal(res$status, "OK")
+})
+
+test_that("check_unmapped_team_names WARNs on an unmapped name with no beliefs entry", {
+  root <- withr::local_tempdir()
+  today <- Sys.Date()
+  write_table(.mini_odds(today, today + 2, "KR", "Hafnir"), "odds", root = root)
+  res <- check_unmapped_team_names(
+    .tn_leagues(male = list(KR = "KR")),
+    root, as.POSIXct(paste(today, "12:00:00"), tz = "UTC"), health_thresholds()
+  )
+  expect_equal(res$status, "WARN")
+  expect_match(res$value, "Hafnir", fixed = TRUE)
+})
+
+test_that("check_unmapped_team_names FAILs and names the canonical when beliefs identify a rename", {
+  root <- withr::local_tempdir()
+  today <- Sys.Date()
+  md <- today + 2
+  write_table(
+    .mini_odds(today, md, "KR", "V\u00edkingur Reykjav\u00edk"), "odds",
+    root = root
+  )
+  write_table(
+    .mini_beliefs(md, "KR", "V\u00edkingur R."), "beliefs_latest",
+    root = root
+  )
+  res <- check_unmapped_team_names(
+    .tn_leagues(male = list(KR = "KR", "V\u00edkingur R." = "V\u00edkingur Rvk")),
+    root, as.POSIXct(paste(today, "12:00:00"), tz = "UTC"), health_thresholds()
+  )
+  expect_equal(res$status, "FAIL")
+  expect_match(res$value, "V\u00edkingur Reykjav\u00edk", fixed = TRUE)
+  expect_match(res$value, "V\u00edkingur R.", fixed = TRUE)
+})
+
+test_that("check_unmapped_team_names emits no row when a league has no odds in the window", {
+  root <- withr::local_tempdir()
+  today <- Sys.Date()
+  write_table(.mini_odds(today - 60, today - 58, "KR", "Hafnir"), "odds", root = root)
+  res <- check_unmapped_team_names(
+    .tn_leagues(male = list(KR = "KR")),
+    root, as.POSIXct(paste(today, "12:00:00"), tz = "UTC"), health_thresholds()
+  )
+  expect_equal(nrow(res), 0L)
+})
+
+test_that("check_unmapped_team_names ignores names scraped before the window", {
+  root <- withr::local_tempdir()
+  today <- Sys.Date()
+  write_table(
+    dplyr::bind_rows(
+      .mini_odds(today - 40, today - 38, "KR", "Hafnir"),
+      .mini_odds(today, today + 2, "KR", "Valur")
+    ),
+    "odds",
+    root = root
+  )
+  res <- check_unmapped_team_names(
+    .tn_leagues(male = list(KR = "KR", Valur = "Valur")),
+    root, as.POSIXct(paste(today, "12:00:00"), tz = "UTC"), health_thresholds()
+  )
+  expect_equal(res$status, "OK")
+})
+
+test_that("check_unmapped_team_names matches Icelandic renderings across encoding tags", {
+  root <- withr::local_tempdir()
+  today <- Sys.Date()
+  write_table(
+    .mini_odds(today, today + 2, "Grindav\u00edk kv", "\u00der\u00f3ttur R."),
+    "odds",
+    root = root
+  )
+  res <- check_unmapped_team_names(
+    .tn_leagues(female = list(
+      "Grindav\u00edk" = "Grindav\u00edk kv",
+      "\u00der\u00f3ttur R." = "\u00der\u00f3ttur R."
+    )),
+    root, as.POSIXct(paste(today, "12:00:00"), tz = "UTC"), health_thresholds()
+  )
+  expect_equal(res$status, "OK")
+})
+
+test_that("pipeline_health surfaces the unmapped_team_names check", {
+  root <- withr::local_tempdir()
+  today <- Sys.Date()
+  write_table(.mini_odds(today, today + 2, "KR", "Hafnir"), "odds", root = root)
+  out <- pipeline_health(
+    root = root, now = as.POSIXct(paste(today, "12:00:00"), tz = "UTC"),
+    leagues = .tn_leagues(male = list(KR = "KR"))
+  )
+  row <- out[out$check == "unmapped_team_names", ]
+  expect_equal(nrow(row), 1L)
+  expect_equal(row$status, "WARN")
+})
