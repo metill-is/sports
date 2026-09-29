@@ -188,9 +188,9 @@ read_extracted_iceland <- function(league, sex, fit_date = NULL,
   }
 
   # Optional pre-built cup `bracket.json` payload (a single JSON-string cell;
-  # written by extract_football_iceland() only when a live cup frontier
-  # exists). Parsed back to the nested list the publisher serialises verbatim.
-  # Absent for non-cup fits and for cup fits with no live frontier.
+  # written by extract_football_iceland() once the cup's entry round is
+  # drawn, a decided cup included). Parsed back to the nested list the publisher serialises verbatim.
+  # Absent for non-cup fits and for cup fits whose entry round is undrawn.
   cup_bracket_path <- file.path(fit_dir, "cup_bracket.parquet")
   out$cup_bracket <- if (file.exists(cup_bracket_path)) {
     pj <- arrow::read_parquet(cup_bracket_path)$payload_json
