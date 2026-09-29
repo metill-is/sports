@@ -59,6 +59,25 @@ Runs **after** `setup-r-dependencies`:
   (which has installed the broken PPM binary) and overwrites V8 in
   `R_LIBS_USER`.
 
+## 3. `r-version: '4.5.3'` pinned in every workflow (2026-09-29)
+
+- **Why:** `'release'` made CI's R version float with each upstream release.
+  It had moved to 4.6.1 while local development stayed on 4.5.3, so CI and
+  local ran different R versions. The pin matches `R --version` locally; bump
+  it in all nine workflows together when local R is upgraded.
+- **HONEST LIMIT:** the pin does **not** remove the `api.r-hub.io`
+  dependency. `r-lib/actions/setup-r@v2` (`installer.ts::determineVersion`)
+  resolves *every* version string, exact ones included, through
+  `https://api.r-hub.io/rversions/resolve/<version>/<os>/<arch>`, retrying 4×
+  on 5xx/429/408 with a 15 s timeout. The 2026-09-23 Decide + Publish failure
+  (`Failed to resolve R version release at .../resolve/release/linux-ubuntu-24.04/x86_64`)
+  would recur for a pinned version if the whole host is down. Removing the
+  dependency means leaving `setup-r` (e.g. a `rocker/r-ver:4.5.3` container)
+  or adding a fallback step.
+- **Cost:** a changed R minor version changes the `setup-r-dependencies`
+  cache key, so the first run of each workflow after the pin reinstalls the
+  package library (one-off extra minutes).
+
 ## Detection if a future package adds an unmet sysreq
 
 With `PKG_SYSREQS=false`, pak still _prints_ system requirements but
