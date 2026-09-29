@@ -34,6 +34,14 @@ freezes `match_date` at the original kick-off (L3/L4 spirit) and the federation
 results scraper writes the played match at the new date. The ledger row's
 `match_date` is never mutated; only `settled` / `win` / `pnl` flip, preserving L4.
 
+**Scheduled via the unattended placer (2026-09-29).** `scripts/auto_place.R`
+calls `settle_ledger()` after `run_auto_place()` on every enabled cycle (same
+disabled/locked/sync_failed gate as its ledger commit, re-taking the
+auto-place lock, inside `tryCatch` so a settle error never blocks the
+placement commit) and names the settled count in that single ledger commit.
+Before this, only a manual `06_settle.R` settled anything, and 37 bets sat
+unsettled for 10+ days (2026-09-25 review). `06_settle.R` stays for ad-hoc runs.
+
 **Local-only by design** — both placer and settle write to
 `data/decisions/ledger/`, and `arrow::write_parquet` is read-then-write (not
 atomic), so adding a CI-host writer would race concurrent local placer runs and

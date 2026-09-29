@@ -4,9 +4,15 @@
 # Driven by the launchd agent is.metill.sports.autoplace.
 #
 # Flow: jitter -> daytime guard -> run_auto_place (kill/lock/sync/gate/cap/place)
-# -> ledger commit (L1: real-money rows never sit uncommitted)
-# -> status recorded for the health layer. Relies on the placer's existing
-# P1-P4 rules, sample_delay() pacing, and the daily/per-match caps.
+# -> settle_ledger (results the sync just pulled) -> one ledger commit
+# (L1: real-money rows never sit uncommitted) -> status recorded for the
+# health layer. Relies on the placer's existing P1-P4 rules, sample_delay()
+# pacing, and the daily/per-match caps.
+#
+# Settlement lives here, not on CI: this machine is the ledger's canonical
+# writer (placements sit on local main before they are pushed), so a CI
+# settle would flip rows on a stale origin copy and fork the binary parquet
+# ledger. scripts/06_settle.R remains for ad-hoc manual runs.
 
 # Pin a UTF-8 locale before load_all(): launchd fires this agent under the C
 # locale, where R cannot translate the Icelandic literals in the package source
@@ -58,10 +64,38 @@ cli::cli_alert_info("auto_place: {rec$status}")
 if (!(rec$status %in% c("disabled", "locked", "sync_failed"))) {
   n_placed <- rec$n_placed
   n_placed <- if (is.null(n_placed) || is.na(n_placed)) 0L else as.integer(n_placed)
+
+  # Settle against the results the sync just pulled, so realised PnL does not
+  # wait for a manual scripts/06_settle.R run (37 bets sat unsettled for 10+
+  # days before this, 2026-09-25 review). Same status gate as the commit:
+  # never on a kill-switched, lock-blocked or sync-refused run. Re-takes the
+  # auto-place lock (run_auto_place released it on exit) because
+  # settle_ledger() is a read-then-write of whole ledger partitions: a
+  # concurrent run placing a bet between our read and write would lose its
+  # row. A settle error is logged and never blocks the placement commit.
+  n_settled <- 0L
+  if (acquire_auto_place_lock(root)) {
+    n_settled <- tryCatch(
+      as.integer(settle_ledger(root = root)),
+      error = function(e) {
+        cli::cli_alert_danger("settle_ledger errored: {conditionMessage(e)}")
+        0L
+      }
+    )
+    release_auto_place_lock(root)
+    if (n_settled > 0L) cli::cli_alert_success("Settled {n_settled} bet(s).")
+  } else {
+    cli::cli_alert_info("Settle skipped: another auto-place run holds the lock.")
+  }
+
+  parts <- c(
+    if (n_placed > 0L) sprintf("%d bet(s) placed", n_placed),
+    if (n_settled > 0L) sprintf("%d bet(s) settled", n_settled)
+  )
   commit_msg <- sprintf(
     "data(ledger): auto-place run %s -- %s",
     format(Sys.time(), "%Y-%m-%d %H:%M UTC", tz = "UTC"),
-    if (n_placed > 0L) sprintf("%d bet(s) placed", n_placed) else "rescue sweep"
+    if (length(parts) > 0L) paste(parts, collapse = ", ") else "rescue sweep"
   )
   res <- commit_ledger_changes(here::here(), commit_msg)
   switch(res$status,

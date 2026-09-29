@@ -93,3 +93,28 @@ test_that("unattended wrapper skips the commit on disabled/locked/sync_failed ru
   # then would land ledger rows on whatever branch is checked out.
   expect_match(src, 'c\\("disabled", "locked", "sync_failed"\\)')
 })
+
+test_that("unattended wrapper settles inside the commit gate, before the commit", {
+  # 2026-09-25 review: only a manual scripts/06_settle.R ever settled, and
+  # 37 bets sat unsettled for 10+ days. Settlement belongs in the local cycle
+  # (never CI: this machine is the ledger's canonical writer), behind the
+  # same disabled/locked/sync_failed gate as the ledger commit, and a settle
+  # error must not stop the placement commit.
+  path <- testthat::test_path("..", "..", "scripts", "auto_place.R")
+  if (!file.exists(path)) skip("unattended wrapper missing")
+  src <- readLines(path, warn = FALSE)
+  code <- src[!grepl("^\\s*#", src)]
+  gate <- grep('c\\("disabled", "locked", "sync_failed"\\)', code)
+  settle <- grep("settle_ledger\\(", code)
+  commit <- grep("commit_ledger_changes\\(", code)
+  expect_length(gate, 1L)
+  expect_length(settle, 1L)
+  expect_length(commit, 1L)
+  expect_gt(settle, gate)
+  expect_lt(settle, commit)
+  # tryCatch wraps the call: it opens on the settle line or just above it.
+  window <- code[max(1L, settle - 2L):settle]
+  expect_true(any(grepl("tryCatch(", window, fixed = TRUE)))
+  # The settled count reaches the single commit message.
+  expect_true(any(grepl("bet(s) settled", code, fixed = TRUE)))
+})

@@ -29,6 +29,9 @@ implementation plans: [`docs/superpowers/plans/`](docs/superpowers/plans/).
   agent `is.metill.sports.autoplace` (installed by `tools/install-autoplace.sh`).
   Kill switch: `touch data/AUTO_PLACE_DISABLED`. Health: the `placement_health`
   check in `/pipeline-doctor`. Run log: `~/Library/Logs/sports-autoplace.log`.
+  Each enabled cycle also **settles** the ledger (`settle_ledger()` after the
+  sync) and commits placements + settlements together; settlement is never on
+  CI, because this machine is the ledger's canonical writer.
   **Background-git warning:** this job syncs `~/sports` (stash → pull --rebase → pop) on its own schedule and rescue-commits only the ledger, so commit other tracked generated data promptly (2026-06-11 backfill-clobber incident). The ledger's commit layers are in `.claude/rules/git-hygiene.md`.
 
 ## Quick reference
@@ -51,7 +54,7 @@ Rscript scripts/03_fit.R                              # skips when results haven
 Rscript scripts/03_fit.R --league football_iceland --sex male --force
 Rscript scripts/04_decide.R
 Rscript scripts/05_publish.R
-Rscript scripts/06_settle.R                           # resolve win/pnl for settled bets
+Rscript scripts/06_settle.R                           # resolve win/pnl ad hoc (auto_place.R also settles each cycle)
 Rscript scripts/07_healthcheck.R                      # read-only health snapshot -> data/health/status.json (or /pipeline-doctor)
 Rscript scripts/0N_discover.R                         # discover Lengjan leagues we model but don't yet scrape
 

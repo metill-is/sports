@@ -27,7 +27,10 @@ Three enforcement layers are active, covering different failure modes:
    loud warning rather than continuing.
    `tests/testthat/test-script-ledger-commit.R` enforces the call in all
    three wrappers (auto_place.R was missing it when it shipped — the
-   2026-06-10 orphaned-rows incident).
+   2026-06-10 orphaned-rows incident). Since 2026-09-29 `auto_place.R`
+   also runs `settle_ledger()` each enabled cycle (under the auto-place
+   lock, behind the same disabled/locked/sync_failed gate), so one
+   commit carries that cycle's placements and settlements.
 
 2. **Pre-sync rescue** (`R/auto-place.R::sync_recs`). Before the unattended
    placer's stash → pull → pop dance, any uncommitted ledger rows (a run
