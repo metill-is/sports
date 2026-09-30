@@ -34,6 +34,14 @@ freezes `match_date` at the original kick-off (L3/L4 spirit) and the federation
 results scraper writes the played match at the new date. The ledger row's
 `match_date` is never mutated; only `settled` / `win` / `pnl` flip, preserving L4.
 
+**Scheduled via the unattended placer (2026-09-29).** `scripts/auto_place.R`
+calls `settle_ledger()` after `run_auto_place()` on every enabled cycle (same
+disabled/locked/sync_failed gate as its ledger commit, re-taking the
+auto-place lock, inside `tryCatch` so a settle error never blocks the
+placement commit) and names the settled count in that single ledger commit.
+Before this, only a manual `06_settle.R` settled anything, and 37 bets sat
+unsettled for 10+ days (2026-09-25 review). `06_settle.R` stays for ad-hoc runs.
+
 **Local-only by design** — both placer and settle write to
 `data/decisions/ledger/`, and `arrow::write_parquet` is read-then-write (not
 atomic), so adding a CI-host writer would race concurrent local placer runs and
@@ -70,7 +78,8 @@ to 2026-09 while every composed check stayed green (B4).
   extract partition the value says so, because that names the cause rather than
   the symptom.
 - **`check_season_resolution`** (`R/health-season.R`) — FAIL per unresolvable
-  league division, WARN per federation-deferred cup/playoffs gap, one OK row per
+  league division, PAUSED per federation-deferred cup/playoffs gap (WARN until
+  2026-09-29, which held the rollup at WARN with nothing to act on), one OK row per
   clean federation. It is what distinguishes "the season is genuinely over" from
   "the scraper went blind in October": identical in the results table, different
   only in whether the federation season id resolved. Consumes Plan A's
@@ -90,9 +99,11 @@ notification, no escalation and no on-call. A FAIL is noticed within roughly
 twelve hours if the maintainer reads mail, and not at all if they do not.
 Because the channel is that low-bandwidth, **a check that is permanently WARN
 is worse than no check** — which is why `check_season_resolution` scopes FAIL to
-the league divisions and leaves HSÍ's federation-deferred cup and playoffs at
-WARN, and why a false FAIL must be adjudicated (is the branch behind `main`?)
-rather than silenced with a threshold.
+the league divisions and reports HSÍ's federation-deferred cup and playoffs as
+PAUSED, why drift rows for a cell whose `fit_freshness` is PAUSED are PAUSED
+too, why `capture_rate` names its min-n guard in the value ("20% (1/5; n<20,
+not escalated)"), and why a false FAIL must be adjudicated (is the branch
+behind `main`?) rather than silenced with a threshold.
 
 `scripts/07_healthcheck.R` writes `data/health/status.json` + prints a summary;
 `healthcheck.yml` runs it twice daily and fails the run on `overall == FAIL` so

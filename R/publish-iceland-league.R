@@ -1946,12 +1946,13 @@ publish_iceland_league <- function(extracted,
         )
       }
 
-      # ---- bracket.json (cup cells with a live frontier) --------------------
+      # ---- bracket.json (cup cells with a drawn bracket) --------------------
       # Pre-built in the extract layer (it needs the transient bracket_state)
       # and round-tripped through cup_bracket.parquet. Mirrors the World Cup
       # bracket.json contract so the platform's interactive what-if tree
-      # (cup-bracket.js) drives off the same shape. Additive: skipped when
-      # there's no live frontier (fully resolved / entry round undrawn).
+      # (cup-bracket.js) drives off the same shape. A decided cup ships its
+      # final state (Final in played[]), so the file never freezes pre-final.
+      # Additive: skipped only when the entry round is undrawn.
       cup_bracket <- extracted$cup_bracket
       if (!is.null(cup_bracket) && length(cup_bracket) > 0L) {
         jsonlite::write_json(
@@ -1965,8 +1966,8 @@ publish_iceland_league <- function(extracted,
     # Every artefact for this cell is now written. Only here does any of it
     # become visible to the consumer. The count is unchanged: the staging dir
     # was seeded from the live cell, so it holds the same file SET (including
-    # any artefact this run did not rewrite, such as a cup's bracket.json on a
-    # round with no live frontier).
+    # any artefact this run did not rewrite, such as a cup's bracket.json
+    # while its entry round is undrawn).
     n_files <- .commit_staged_cell_pfi(out_dir, cell_dir)
     message(sprintf(
       "publish_iceland_league: wrote %d JSONs to %s", n_files, cell_dir

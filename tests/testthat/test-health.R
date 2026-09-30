@@ -565,6 +565,93 @@ test_that("pipeline_health emits a publish_format row when there is one to emit"
   expect_false(any(out$check == "check_error"))
 })
 
+# ---- Rollup noise (2026-09-25 review) ----------------------------------------
+
+.mini_diag <- function(max_rhat = 1.022, div_frac = 0.0075, sex = "male") {
+  tibble::tibble(
+    sport = "football", country = "iceland", sex = sex,
+    fit_date = as.Date("2026-05-28"), n_obs = 100L,
+    n_divergent = as.integer(round(div_frac * 4000)), total_iter = 4000L,
+    div_frac = div_frac, n_max_treedepth = 0L, treedepth_frac = 0,
+    min_ebfmi = 0.9, max_rhat = max_rhat, min_ess_bulk = 800,
+    min_ess_tail = 700, adapt_delta = 0.95, iter_sampling = 1000L,
+    chains = 4L, passed = TRUE
+  )
+}
+
+test_that("check_diagnostics_drift WARNs on drift in an active cell", {
+  root <- withr::local_tempdir()
+  write_table(.mini_diag(), "fit_diagnostics", root = root)
+  res <- check_diagnostics_drift(root, health_thresholds())
+  expect_setequal(res$check, c("divergence_drift", "rhat_drift"))
+  expect_true(all(res$status == "WARN"))
+  expect_equal(res$value[res$check == "rhat_drift"], "1.022")
+})
+
+test_that("check_diagnostics_drift PAUSEs a cell whose fit is paused, keeping the value", {
+  root <- withr::local_tempdir()
+  write_table(.mini_diag(), "fit_diagnostics", root = root)
+  res <- check_diagnostics_drift(
+    root, health_thresholds(),
+    paused_cells = "football/iceland/male"
+  )
+  expect_true(all(res$status == "PAUSED"))
+  expect_match(res$value[res$check == "rhat_drift"], "^1\\.022; fit paused")
+  expect_match(res$value[res$check == "divergence_drift"], "^0\\.750%; fit paused")
+  expect_equal(overall_health_status(res), "OK")
+})
+
+test_that(".paused_fit_cells maps fit_freshness scopes to sport/country/sex cells", {
+  leagues <- list(
+    football_iceland = list(sport = "football", country = "iceland"),
+    handball_iceland = list(sport = "handball", country = "iceland")
+  )
+  fit_rows <- dplyr::bind_rows(
+    health_row("fit_freshness", "football_iceland male", "PAUSED", "no upcoming games", "n/a"),
+    health_row("fit_freshness", "football_iceland female", "OK", "1d old", "<= 2d"),
+    health_row("fit_freshness", "handball_iceland female", "PAUSED", "no upcoming games", "n/a"),
+    health_row("check_error", "handball_iceland male", "FAIL", "boom", "n/a")
+  )
+  expect_setequal(
+    .paused_fit_cells(fit_rows, leagues),
+    c("football/iceland/male", "handball/iceland/female")
+  )
+})
+
+test_that("pipeline_health PAUSEs drift rows of a cell with no upcoming games", {
+  root <- withr::local_tempdir()
+  write_table(.mini_diag(), "fit_diagnostics", root = root)
+  leagues <- list(
+    football_iceland = list(sport = "football", country = "iceland", sexes = list("male"))
+  )
+  out <- pipeline_health(
+    root = root, now = as.POSIXct("2026-05-30", tz = "UTC"), leagues = leagues
+  )
+  expect_equal(out$status[out$check == "fit_freshness"], "PAUSED")
+  drift <- out[out$check %in% c("divergence_drift", "rhat_drift"), ]
+  expect_equal(nrow(drift), 2L)
+  expect_true(all(drift$status == "PAUSED"))
+})
+
+test_that("check_capture_rate names the min-n guard when the window is thin", {
+  root <- withr::local_tempdir()
+  recs <- .mini_recs(8L)
+  write_table(recs, "recommendations", root = root)
+  placed <- recs[1:4, ]
+  led <- tibble::tibble(
+    placed_at = as.POSIXct("2026-05-21", tz = "UTC"),
+    match_date = placed$match_date, sport = "football", country = "iceland",
+    sex = "male", home_team = placed$home_team, away_team = placed$away_team,
+    market = "moneyline", outcome = "home", line = NA_real_,
+    odds_placed = 2.0, p = 0.55, kelly = 0.02, bet_amount = 250,
+    settled = TRUE, win = TRUE, pnl = 250
+  )
+  write_table(led, "ledger", root = root)
+  res <- check_capture_rate(root, as.POSIXct("2026-05-30", tz = "UTC"), health_thresholds())
+  expect_equal(res$status, "OK")
+  expect_equal(res$value, "50% (4/8; n<20, not escalated)")
+})
+
 # --- unmapped Lengjan team names -------------------------------------------
 # Regression cover for the 2026-07-17 Vikingur Rvk -> Vikingur Reykjavik
 # rename, which left 8 Besta deildin fixtures unbettable for 6.5 weeks because

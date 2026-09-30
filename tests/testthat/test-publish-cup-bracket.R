@@ -405,3 +405,119 @@ test_that("completed[] emits decided matches when the entry round is the frontie
   expect_length(comp, 2L)
   expect_setequal(vapply(comp, `[[`, "", "winner"), c("Alpha", "Charlie"))
 })
+
+# ---- Fully resolved cup (2026-09-25 review) ---------------------------------
+# A decided cup has no live frontier, and the builder used to return NULL for
+# it, so publish never rewrote bracket.json: the 2026 Mjólkurbikar karla page
+# kept its pre-final bracket ("Meistari Afturelding 52%") after Breiðablik won
+# the final. A fully resolved bracket must yield a final-state payload: the
+# Final as a decided frontier, in played[] and completed[], cells pinned 1/0.
+
+.cup_bracket_state_resolved <- function() {
+  bs <- .cup_bracket_state_sf()
+  bs$rounds$SF$matches$known_winner <- c("Alpha", "Bravo")
+  bs$rounds$Final <- list(pairings_known = TRUE, matches = tibble::tibble(
+    home_team = "Bravo", away_team = "Alpha",
+    venue = "home", known_winner = "Alpha"
+  ))
+  bs
+}
+
+.cup_resolved_results <- function(final_score = c(1L, 2L)) {
+  tibble::tibble(
+    division = "CUP", season = 2026L,
+    home_team = c("Alpha", "Bravo", "Bravo"),
+    away_team = c("Delta", "Charlie", "Alpha"),
+    home_score = c(3L, 1L, final_score[1]),
+    away_score = c(0L, 0L, final_score[2])
+  )
+}
+
+test_that("a fully resolved cup still yields a payload, rooted at the decided Final", {
+  bs <- .cup_bracket_state_resolved()
+  expect_null(.cup_frontier_round_pfi(bs))
+  expect_true(.cup_fully_resolved_pfi(bs))
+
+  bj <- .build_cup_bracket_payload_pfi(
+    bs, .cup_bracket_sim_inputs(),
+    generated_at = "2026-09-26T00:00:00Z", n_draws = 6L,
+    results = .cup_resolved_results(), season = 2026L
+  )
+  expect_false(is.null(bj))
+  expect_setequal(
+    names(bj),
+    c(
+      "generated_at", "n_draws", "teams", "teams_is", "matchup", "matches",
+      "r32", "completed", "played"
+    )
+  )
+  # The two finalists, one Final match that is both leaf and root.
+  expect_setequal(bj$teams, c("Alpha", "Bravo"))
+  expect_length(bj$matches, 1L)
+  expect_identical(bj$matches[[1]]$round, "Final")
+  expect_length(bj$r32, 1L)
+  expect_identical(bj$r32[[1]]$match_no, bj$matches[[1]]$match_no)
+})
+
+test_that("a fully resolved cup pins the Final to the champion and records it in played[]", {
+  bj <- .build_cup_bracket_payload_pfi(
+    .cup_bracket_state_resolved(), .cup_bracket_sim_inputs(),
+    generated_at = "2026-09-26T00:00:00Z", n_draws = 6L,
+    results = .cup_resolved_results(), season = 2026L
+  )
+  idx <- stats::setNames(seq_along(bj$teams), bj$teams)
+  expect_equal(bj$matchup[idx[["Alpha"]], idx[["Bravo"]]], 1)
+  expect_equal(bj$matchup[idx[["Bravo"]], idx[["Alpha"]]], 0)
+
+  expect_length(bj$played, 1L)
+  p <- bj$played[[1]]
+  expect_identical(p$match_no, bj$matches[[1]]$match_no)
+  expect_identical(bj$teams[p$winner + 1L], "Alpha")
+  expect_identical(bj$teams[p$loser + 1L], "Bravo")
+  # Scores oriented to winner/loser (Alpha won 2-1 away at Bravo).
+  expect_identical(p$winner_score, 2L)
+  expect_identical(p$loser_score, 1L)
+  expect_false(p$shootout)
+})
+
+test_that("a fully resolved cup lists every round, Final included, in completed[]", {
+  bj <- .build_cup_bracket_payload_pfi(
+    .cup_bracket_state_resolved(), .cup_bracket_sim_inputs(),
+    generated_at = "2026-09-26T00:00:00Z", n_draws = 6L,
+    results = .cup_resolved_results(), season = 2026L
+  )
+  rounds <- vapply(bj$completed, `[[`, "", "round")
+  expect_identical(
+    as.integer(table(factor(rounds, c("R16", "QF", "SF", "Final")))),
+    c(8L, 4L, 2L, 1L)
+  )
+  fin <- Filter(function(x) x$round == "Final", bj$completed)[[1]]
+  expect_identical(fin$winner, "Alpha")
+  expect_identical(fin$home_score, 1L)
+  expect_identical(fin$away_score, 2L)
+})
+
+test_that("a cup whose Final is drawn but unplayed keeps the live Final frontier", {
+  bs <- .cup_bracket_state_resolved()
+  bs$rounds$Final$matches$known_winner <- NA_character_
+  expect_identical(.cup_frontier_round_pfi(bs), "Final")
+  expect_false(.cup_fully_resolved_pfi(bs))
+  bj <- .build_cup_bracket_payload_pfi(
+    bs, .cup_bracket_sim_inputs(),
+    generated_at = "2026-09-26T00:00:00Z", n_draws = 6L
+  )
+  expect_length(bj$played, 0L)
+  idx <- stats::setNames(seq_along(bj$teams), bj$teams)
+  p <- bj$matchup[idx[["Alpha"]], idx[["Bravo"]]]
+  expect_true(p > 0 && p < 1)
+})
+
+test_that("an undrawn entry round still yields no payload", {
+  bs <- .cup_bracket_state_sf()
+  bs$rounds <- lapply(bs$rounds, function(r) list(pairings_known = FALSE, matches = NULL))
+  expect_false(.cup_fully_resolved_pfi(bs))
+  expect_null(.build_cup_bracket_payload_pfi(
+    bs, .cup_bracket_sim_inputs(),
+    generated_at = "2026-09-26T00:00:00Z", n_draws = 6L
+  ))
+})

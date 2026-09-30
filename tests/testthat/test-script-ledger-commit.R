@@ -93,3 +93,88 @@ test_that("unattended wrapper skips the commit on disabled/locked/sync_failed ru
   # then would land ledger rows on whatever branch is checked out.
   expect_match(src, 'c\\("disabled", "locked", "sync_failed"\\)')
 })
+
+test_that("unattended wrapper settles inside the commit gate, before the commit", {
+  # 2026-09-25 review: only a manual scripts/06_settle.R ever settled, and
+  # 37 bets sat unsettled for 10+ days. Settlement belongs in the local cycle
+  # (never CI: this machine is the ledger's canonical writer), behind the
+  # same disabled/locked/sync_failed gate as the ledger commit, and a settle
+  # error must not stop the placement commit.
+  path <- testthat::test_path("..", "..", "scripts", "auto_place.R")
+  if (!file.exists(path)) skip("unattended wrapper missing")
+  src <- readLines(path, warn = FALSE)
+  code <- src[!grepl("^\\s*#", src)]
+  gate <- grep('c\\("disabled", "locked", "sync_failed"\\)', code)
+  settle <- grep("settle_ledger\\(", code)
+  commit <- grep("commit_ledger_changes\\(", code)
+  expect_length(gate, 1L)
+  expect_length(settle, 1L)
+  expect_length(commit, 1L)
+  expect_gt(settle, gate)
+  expect_lt(settle, commit)
+  # tryCatch wraps the call: it opens on the settle line or just above it.
+  window <- code[max(1L, settle - 2L):settle]
+  expect_true(any(grepl("tryCatch(", window, fixed = TRUE)))
+  # The settled count reaches the single commit message.
+  expect_true(any(grepl("bet(s) settled", code, fixed = TRUE)))
+})
+
+test_that("unattended wrapper's settle step never throws and always releases the lock", {
+  # Behavioural, not a grep: evaluate the script's own `n_settled <- ...`
+  # expression against mocked lock/settle functions. Whatever fails in the
+  # settle step (settle_ledger, or the lock file I/O around it), the value is
+  # 0 and control reaches the placement commit.
+  path <- testthat::test_path("..", "..", "scripts", "auto_place.R")
+  if (!file.exists(path)) skip("unattended wrapper missing")
+  exprs <- parse(path, keep.source = FALSE)
+  find_assign <- function(e) {
+    if (is.call(e) && identical(e[[1]], as.name("<-")) &&
+      identical(e[[2]], as.name("n_settled")) && is.call(e[[3]])) {
+      return(e)
+    }
+    if (is.call(e)) {
+      args <- as.list(e)[-1]
+      for (i in seq_along(args)) {
+        # Only calls can hold the assignment; this also steps over R's empty
+        # argument symbol (e.g. x[, 1]), which cannot be bound to a variable.
+        if (!is.call(args[[i]])) next
+        hit <- find_assign(args[[i]])
+        if (!is.null(hit)) return(hit)
+      }
+    }
+    NULL
+  }
+  settle_expr <- NULL
+  for (e in exprs) {
+    settle_expr <- find_assign(e)
+    if (!is.null(settle_expr)) break
+  }
+  expect_false(is.null(settle_expr))
+
+  run <- function(acquire, settle) {
+    released <- 0L
+    env <- new.env(parent = globalenv())
+    env$root <- tempdir()
+    env$acquire_auto_place_lock <- function(root) acquire()
+    env$release_auto_place_lock <- function(root) released <<- released + 1L
+    env$settle_ledger <- function(root) settle()
+    env$cli <- NULL
+    suppressMessages(eval(settle_expr, env))
+    list(n = env$n_settled, released = released)
+  }
+
+  ok <- run(function() TRUE, function() invisible(3L))
+  expect_identical(ok$n, 3L)
+  expect_identical(ok$released, 1L)
+
+  settle_err <- run(function() TRUE, function() stop("parquet write failed"))
+  expect_identical(settle_err$n, 0L)
+  expect_identical(settle_err$released, 1L)
+
+  lock_err <- run(function() stop("lock file unreadable"), function() 5L)
+  expect_identical(lock_err$n, 0L)
+
+  held <- run(function() FALSE, function() stop("must not settle without the lock"))
+  expect_identical(held$n, 0L)
+  expect_identical(held$released, 0L)
+})

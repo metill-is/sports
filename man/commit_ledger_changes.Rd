@@ -25,7 +25,8 @@ A list with elements:
 \description{
 Stages and commits only paths under `data/decisions/ledger/` in the
 given working tree. Intended for the script-layer entrypoints
-(`scripts/place_bets.R`, `scripts/06_settle.R`) — `place_bets()` and
+(`scripts/place_bets.R`, `scripts/06_settle.R`, `scripts/auto_place.R`,
+which settles as well as places) — `place_bets()` and
 `settle_ledger()` themselves never touch git, so library callers and
 the test suite are unaffected.
 }

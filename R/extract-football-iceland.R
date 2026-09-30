@@ -1021,7 +1021,8 @@ NULL
 # decided. A round is "decided" when its pairings are known AND every match
 # has a non-NA known_winner. R16/R8 done, SF drawn-but-undecided -> frontier
 # = SF. Returns the round name, or NULL if the bracket is fully resolved /
-# the entry round itself is undrawn (no live frontier to model).
+# the entry round itself is undrawn (no live frontier to model); the payload
+# builder tells those two apart with .cup_fully_resolved_pfi().
 .cup_frontier_round_pfi <- function(bracket_state) {
   for (rn in .CUP_ROUND_SEQ_PFI) {
     round <- bracket_state$rounds[[rn]]
@@ -1038,6 +1039,18 @@ NULL
     }
   }
   NULL
+}
+
+# Is the cup fully resolved -- every round drawn (`pairings_known`, which
+# build_round() only sets on a complete round) and every match decided,
+# Final included? Distinguishes "decided cup" from "entry round undrawn",
+# the two cases in which .cup_frontier_round_pfi() returns NULL.
+.cup_fully_resolved_pfi <- function(bracket_state) {
+  all(vapply(.CUP_ROUND_SEQ_PFI, function(rn) {
+    rd <- bracket_state$rounds[[rn]]
+    isTRUE(rd$pairings_known) && !is.null(rd$matches) &&
+      nrow(rd$matches) > 0L && !anyNA(rd$matches$known_winner)
+  }, logical(1)))
 }
 
 # Neutral-venue head-to-head win matrix W[a, b] = P(a beats b), averaged over
@@ -1133,8 +1146,16 @@ NULL
 #     what-if propagation advances the real winner with certainty. Empty until
 #     a frontier match is played.
 #
-# Returns NULL when there's no live frontier (fully resolved or entry round
-# undrawn) — the publisher then skips bracket.json.
+# A FULLY RESOLVED cup (every round drawn and decided, Final included) has no
+# live frontier, but it still gets a payload: the Final is treated as a
+# decided frontier (its match in `played[]` and `completed[]`, its matchup
+# cells pinned 1/0), so publish rewrites bracket.json to the final state.
+# Returning NULL there left the pre-final bracket up for good (the 2026
+# Mjólkurbikar karla page showed "Meistari Afturelding 52%" for weeks after
+# Breiðablik won the final).
+#
+# Returns NULL only when the entry round itself is undrawn (nothing to seed
+# from) — the publisher then skips bracket.json.
 
 # Played CUP results usable for score joins: current season, both scores
 # present. A 0-row tibble when `results`/`season` are absent, so callers can
@@ -1223,6 +1244,13 @@ NULL
     return(NULL)
   }
   frontier <- .cup_frontier_round_pfi(bracket_state)
+  if (is.null(frontier) && .cup_fully_resolved_pfi(bracket_state)) {
+    # Decided cup: publish the final state, with the Final as a decided
+    # frontier. Every leaf below is then decided, so the existing
+    # decided-frontier handling (2026-07-04) pins the cells, fills played[]
+    # and completed[] -- the renderer shows the real champion and score.
+    frontier <- "Final"
+  }
   if (is.null(frontier)) {
     return(NULL)
   }
@@ -1673,7 +1701,7 @@ extract_football_iceland <- function(fit, league, sex,
     extracts_dir,
     paste(target_divs, collapse = ", "),
     if (is.null(bracket_state)) "absent (no R16 window detected)" else "built",
-    if (is.null(cup_bracket)) "absent (no live frontier)" else "built"
+    if (is.null(cup_bracket)) "absent (entry round undrawn)" else "built"
   ))
   invisible(NULL)
 }

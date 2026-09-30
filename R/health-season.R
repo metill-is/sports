@@ -19,7 +19,7 @@ NULL
 #' read-only health snapshot.
 #'
 #' `league_divisions` is the set the pipeline actually needs NOW. Everything
-#' outside it (HSI's `cup` and `playoffs`) is federation-deferred and WARNs.
+#' outside it (HSI's `cup` and `playoffs`) is federation-deferred and PAUSED.
 #' @noRd
 .federation_resolvers <- function() {
   list(
@@ -38,9 +38,14 @@ NULL
 
 #' Can every federation season the pipeline needs actually be resolved?
 #'
-#' One FAIL row per unresolvable LEAGUE division, one WARN row per
+#' One FAIL row per unresolvable LEAGUE division, one PAUSED row per
 #' federation-deferred cup/playoffs gap, and one OK row per federation with no
 #' gaps at all.
+#'
+#' Deferred gaps are PAUSED, not WARN (2026-09-25 review): a gap the
+#' federation creates later in the season is expected, and as WARN it held
+#' the rollup at WARN for months with nothing to act on, which trains the
+#' reader to ignore WARN. PAUSED keeps the row visible and never escalates.
 #'
 #' INT-4, and it is a measurement rather than a preference:
 #' `hsi_unresolved_seasons(2027L)` returns exactly three rows today -- male cup,
@@ -105,7 +110,7 @@ check_season_resolution <- function(leagues,
       rows[[length(rows) + 1L]] <- health_row(
         "season_resolution",
         paste(fed, g$sex, g$division),
-        if (is_league) "FAIL" else "WARN",
+        if (is_league) "FAIL" else "PAUSED",
         sprintf(
           "no resolvable id for season %d%s",
           g$season,

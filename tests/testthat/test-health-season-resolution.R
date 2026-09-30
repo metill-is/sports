@@ -49,14 +49,16 @@ test_that("an unresolvable league division FAILs and names sex, division, season
   expect_match(res$value, "2027")
 })
 
-test_that("a federation-deferred cup or playoffs WARNs, never FAILs", {
+test_that("a federation-deferred cup or playoffs is PAUSED, never WARN or FAIL", {
   # INT-4, and it is a measurement not a preference. hsi_unresolved_seasons(2027)
   # returns exactly these three rows today, because HSI does not create the
   # urslitakeppni or the 2026-27 bikar tournaments until later in the season
   # (R/ingest-hsi-handball.R documents that deferral as correct). FAILing on
   # them would leave the check permanently red from day one -- alarm fatigue,
   # which is the failure mode this workstream exists to prevent, on a channel
-  # that is a twice-daily email.
+  # that is a twice-daily email. WARN had the same effect more slowly: the
+  # rollup sat at WARN for months with nothing to act on (2026-09-25 review),
+  # so a deferred gap is PAUSED, which is reported but never escalates.
   gaps <- tibble::tibble(
     sex = c("male", "male", "female"),
     division = c("cup", "playoffs", "playoffs"),
@@ -66,9 +68,10 @@ test_that("a federation-deferred cup or playoffs WARNs, never FAILs", {
     .hb_league(), tempdir(), Sys.time(),
     resolvers = .res(gaps)
   )
-  expect_true(all(res$status %in% c("OK", "WARN")))
-  expect_false(any(res$status == "FAIL"))
-  expect_equal(sum(res$status == "WARN"), 3L)
+  expect_true(all(res$status == "PAUSED"))
+  expect_equal(nrow(res), 3L)
+  expect_equal(overall_health_status(res), "OK")
+  expect_match(res$value, "federation-deferred")
 })
 
 test_that("a league division gap and a deferred cup coexist at their own severities", {
@@ -80,9 +83,9 @@ test_that("a league division gap and a deferred cup coexist at their own severit
     .hb_league(), tempdir(), Sys.time(),
     resolvers = .res(gaps)
   )
-  expect_setequal(res$status, c("FAIL", "WARN"))
+  expect_setequal(res$status, c("FAIL", "PAUSED"))
   expect_equal(res$status[res$scope == "hsi male div1"], "FAIL")
-  expect_equal(res$status[res$scope == "hsi male cup"], "WARN")
+  expect_equal(res$status[res$scope == "hsi male cup"], "PAUSED")
 })
 
 test_that("an inactive league contributes no rows", {
@@ -140,7 +143,8 @@ test_that("the real registries are reachable and report the measured state", {
   expect_false(any(res$status == "FAIL"))
   expect_equal(res$status[res$scope == "kki"], "OK")
   expect_setequal(
-    res$scope[res$status == "WARN"],
+    res$scope[res$status == "PAUSED"],
     c("hsi male cup", "hsi male playoffs", "hsi female playoffs")
   )
+  expect_false(any(res$status == "WARN"))
 })
