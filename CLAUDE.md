@@ -155,20 +155,27 @@ The pipeline skills under `.claude/skills/` (`/bet`, `/sports-update`, `/add-lea
 
 ## Obsidian Output
 
-Vault: `Metill` (MCP) / `~/Obsidian/Metill/` (direct path). Prefer MCP `write_note`.
-Handoff: `Sports/Sports Handoff.md`.
+Vault: `Metill` (MCP) / `~/Obsidian/Metill/`. Start with `load_topic` (vault `Metill`, query `sports`): it opens the strand hub `Sports/_MOC.md` (Position, Context for Claude, Connections, "Which note answers what").
 
-### Relevant Knowledge topics
+- **Handoff:** `Sports/Sports Handoff.md` (current state, overwritten; `/done` routes here).
+- **Session notes:** vault-root `Sessions/` with `project: sports` (there is no `Sports/Sessions/` any more).
+- **Publishing to metill.is:** the contract is `Sports/Knowledge/Publish Pipeline/data-contract.md`; the metill.is sports pages are `Sports/Knowledge/Íþróttir/_MOC.md`.
+- **Data sources:** `Knowledge/Data Sources/` cards for KSÍ, HSÍ, KKÍ and Baskethotel, Lengjan.
+- **Betting operations (autoplace, ledger, how betting could be paused):** `Sports/Knowledge/Lengjan Pipeline/betting-operations.md`.
 
-| Topic folder                              | Content                                            |
-| ----------------------------------------- | -------------------------------------------------- |
-| `Sports/Knowledge/Betting Optimisation/`  | Kelly criterion, calibration, placement rules, PnL |
-| `Sports/Knowledge/Sports Models/`         | Bayesian model theory, Stan implementation, goals  |
-| `Sports/Knowledge/Lengjan Pipeline/`      | Odds scraping, schedule-aware filtering            |
-| `Sports/Knowledge/Livesport Data/`        | Match data scraping, CI pipeline                   |
-| `Sports/Knowledge/Publish Pipeline/`      | Extraction layer + JSON data contract with metill-platform |
+| Topic folder | Content |
+| --- | --- |
+| `Sports/Domain/` | Icelandic and English football, HSÍ handball, KKÍ basketball reference (clubs, leagues, cups) |
+| `Sports/Knowledge/Sports Models/` | Bayesian model theory, Stan implementation, scoring |
+| `Sports/Knowledge/Betting Optimisation/` | Kelly theory, calibration, placement rules |
+| `Sports/Knowledge/Lengjan Pipeline/` | Odds via the JSON API, betting operations |
+| `Sports/Knowledge/Publish Pipeline/` | Extraction layer + JSON data contract with metill-platform, WC/Mjólkurbikar notes |
+| `Sports/Knowledge/Data ingest/` | KSÍ, HSÍ and Baskethotel scraping notes |
+| `Sports/Knowledge/Íþróttir/` | metill.is sports pages (frontend side) |
+| `Sports/Knowledge/Livesport Data/` | Dormant (historical reference) |
+| `Sports/Audits/` | Dated audits (latest 2026-09-28) |
 
-Each topic has a `_MOC.md` entry point — read it first, then selectively load sub-documents.
+**Where knowledge goes:** what must be true at HEAD → `.claude/rules/` or `docs/` here; decisions, strategy, data-source facts, case histories and domain reference → the hub's folders in the vault; preferences and tooling gotchas → auto-memory, as one-line pointers. Never wikilink memory or rule files from the vault; cite them by absolute path.
 
 ## Things 3
 
