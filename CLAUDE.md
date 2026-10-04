@@ -25,6 +25,13 @@ implementation plans: [`docs/superpowers/plans/`](docs/superpowers/plans/).
 
 **P1–P4 placement rules** (only-writer, actual-odds, kelly-recompute, EV reject) are preserved verbatim from `_legacy/lengjan-bets/`. See `.claude/rules/sports-betting.md` for the full statement, the ledger storage note and the DOM odds parser.
 
+- **Real-money betting is PAUSED (owner, 2026-10-04):** football is
+  `betting.mode: paper` in `config/leagues.yml`, so no league is at `auto` or
+  `manual`; odds scraping, decide (paper recommendations), fits and publish
+  continue. The agent below stays loaded: it syncs and settles, and places
+  nothing. To resume, remove that `mode:` line (or set `auto`) and revert the
+  pause notes in `tests/testthat/test-betting-interlock.R`. Levers and
+  consequences: the vault note `Sports/Knowledge/Lengjan Pipeline/betting-operations.md`.
 - **Unattended placement (opt-in):** `scripts/auto_place.R` via the launchd
   agent `is.metill.sports.autoplace` (installed by `tools/install-autoplace.sh`).
   Kill switch: `touch data/AUTO_PLACE_DISABLED`. Health: the `placement_health`

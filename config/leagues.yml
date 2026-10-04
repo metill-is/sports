@@ -537,6 +537,11 @@ football_iceland:
       - { code: CUP, slug: bikar,  label_is: "Bikar kvenna",  is_cup: true,
           code_badge: MB }
   betting:
+    # Betting ladder (spec 2026-09-23 WS1): off < scrape < paper < manual <
+    # auto. Paper since 2026-10-04 (owner pause): odds are still scraped and
+    # decide still writes recommendations, but no placer places them. Remove
+    # this line (absent = auto) or set `auto` to resume real-money betting.
+    mode: paper
     # Divisions we model and (may) publish but must never price.
     #
     # LD1_PO is the Lengjudeild promotion umspil: two-legged semi-finals

@@ -1,3 +1,11 @@
+# Pin the betting policy these mechanism tests assume (football placeable,
+# basketball scrape-only) instead of reading config/leagues.yml, where
+# football has been `paper` since 2026-10-04 (owner pause).
+placer_cfg <- list(
+  football_iceland = list(sport = "football", country = "iceland", betting = list(mode = "auto")),
+  basketball_iceland = list(sport = "basketball", country = "iceland", betting = list(mode = "scrape"))
+)
+
 test_that("preview_pending returns 0-row tibble when no recs match", {
   tmp <- withr::local_tempdir()
   out <- preview_pending(target_date = as.Date("2050-01-01"), root = tmp)
@@ -16,7 +24,9 @@ test_that("preview_pending returns recs minus already-placed bets", {
   write_table(led, "ledger", root = tmp)
 
   # On 2026-04-26, the fixture has 2 recs; ledger has KR vs FH already placed.
-  out <- preview_pending(target_date = as.Date("2026-04-26"), root = tmp)
+  out <- preview_pending(
+    target_date = as.Date("2026-04-26"), root = tmp, leagues_cfg = placer_cfg
+  )
   expect_equal(nrow(out), 1L)
   expect_equal(out$home_team, "Fram")
 })
@@ -52,7 +62,9 @@ test_that("preview_pending prints a summary via cli", {
   write_table(recs, "recommendations", root = tmp)
 
   out <- testthat::capture_output(
-    preview_pending(target_date = as.Date("2026-04-26"), root = tmp)
+    preview_pending(
+    target_date = as.Date("2026-04-26"), root = tmp, leagues_cfg = placer_cfg
+  )
   )
   # Some output was produced (cli h1 + alert_info + per-bet lines).
   expect_true(nchar(out) > 0L || TRUE)

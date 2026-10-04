@@ -62,6 +62,14 @@ test_that("auto_place_decide resolves the action precedence", {
   expect_equal(d(), "place")
 })
 
+# Placement-mechanism tests pin an `auto` football league so they test the
+# agent, not the shipped betting policy: football has been `paper` since
+# 2026-10-04 (owner pause of real-money betting), and run_auto_place() would
+# otherwise read config/leagues.yml and find nothing to place.
+auto_football_cfg <- list(football_iceland = list(
+  sport = "football", country = "iceland", betting = list(mode = "auto")
+))
+
 seed_pending_rec <- function(root) {
   recs <- tibble::tibble(
     run_id = as.POSIXct("2026-06-01 10:00:00", tz = "UTC"),
@@ -81,6 +89,7 @@ test_that("run_auto_place records 'placed' when a pending bet is placed", {
   fake_place <- function(...) tibble::tibble(status = "placed")
   run_auto_place(
     root = root, now = as.POSIXct("2026-06-01 12:00:00", tz = "UTC"),
+    leagues_cfg = auto_football_cfg,
     sync_fn = function(...) TRUE, place_fn = fake_place,
     bankroll_fn = function() {
       list(
@@ -135,6 +144,7 @@ test_that("run_auto_place records 'failed:<reason>' and re-throws when placement
   expect_error(
     run_auto_place(
       root = root, now = as.POSIXct("2026-06-01 12:00:00", tz = "UTC"),
+      leagues_cfg = auto_football_cfg,
       sync_fn = function(...) TRUE,
       place_fn = function(...) stop("network timeout"),
       bankroll_fn = function() {
@@ -153,6 +163,7 @@ test_that("run_auto_place records 'ev_rejected' when placement returns no placed
   seed_pending_rec(root)
   run_auto_place(
     root = root, now = as.POSIXct("2026-06-01 12:00:00", tz = "UTC"),
+    leagues_cfg = auto_football_cfg,
     sync_fn = function(...) TRUE,
     place_fn = function(...) tibble::tibble(status = "rejected_p4"),
     bankroll_fn = function() {

@@ -43,7 +43,8 @@ Present the table to the user.
 
 **Paper recommendations.** Leagues below `betting.mode: manual` (see
 `config/leagues.yml`) write recommendations the placer never places --
-handball is `paper` since 2026-09-23. `preview_bets.R` omits them; the DuckDB
+handball is `paper` since 2026-09-23 and football since 2026-10-04 (owner
+pause of real-money betting). `preview_bets.R` omits them; the DuckDB
 query above shows them. Label them `paper` when presenting:
 
 ```bash

@@ -1,3 +1,18 @@
+# check_placement_health() reads config/leagues.yml through
+# load_recommendations(). Tests that seed a pending football bet pin football
+# at `auto`, since the shipped config has it at `paper` while real-money
+# betting is paused (2026-10-04) and the seeded bet would not count.
+local_auto_football <- function(env = parent.frame()) {
+  testthat::local_mocked_bindings(
+    load_leagues = function(...) {
+      list(football_iceland = list(
+        sport = "football", country = "iceland", betting = list(mode = "auto")
+      ))
+    },
+    .env = env
+  )
+}
+
 seed_health_pending_rec <- function(root) {
   recs <- tibble::tibble(
     run_id = as.POSIXct("2026-06-01 10:00:00", tz = "UTC"),
@@ -432,6 +447,7 @@ test_that("check_placement_health WARNs on a failed last run even with nothing p
 })
 
 test_that("check_placement_health FAILs on a failed last run with pending bets", {
+  local_auto_football()
   root <- withr::local_tempdir()
   th <- health_thresholds()
   seed_health_pending_rec(root)
@@ -452,6 +468,7 @@ test_that("check_placement_health is OK after a healthy run cleared the queue", 
 })
 
 test_that("check_placement_health WARNs when last healthy run is stale", {
+  local_auto_football()
   root <- withr::local_tempdir()
   th <- health_thresholds()
   seed_health_pending_rec(root)
@@ -462,6 +479,7 @@ test_that("check_placement_health WARNs when last healthy run is stale", {
 })
 
 test_that("check_placement_health FAILs when last healthy run is very stale", {
+  local_auto_football()
   root <- withr::local_tempdir()
   th <- health_thresholds()
   seed_health_pending_rec(root)

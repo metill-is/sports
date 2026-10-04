@@ -24,7 +24,7 @@ test_that("betting_enabled() treats a NULL betting slice as enabled", {
 
 test_that("the shipped config pins each league's betting.mode", {
   lg <- load_leagues()
-  expect_equal(betting_mode(lg$football_iceland), "auto")
+  expect_equal(betting_mode(lg$football_iceland), "paper")  # owner pause, 2026-10-04
   expect_equal(betting_mode(lg$handball_iceland), "paper")
   expect_equal(betting_mode(lg$basketball_iceland), "scrape")
 })
@@ -266,7 +266,9 @@ test_that("load_recommendations drops disabled leagues under the SHIPPED config"
   ), "recommendations", root = root)
 
   out <- suppressMessages(load_recommendations(root))
-  expect_setequal(out$sport, "football")
+  # While real-money betting is paused (football `paper` since 2026-10-04), no
+  # league is placeable. On resuming, this goes back to "football".
+  expect_setequal(out$sport, character(0))
 })
 
 # --- health reporting ---------------------------------------------------------

@@ -13,9 +13,19 @@ setup_placer_root <- function() {
   tmp
 }
 
+# Pin the betting policy these mechanism tests assume (football placeable,
+# basketball scrape-only) instead of reading config/leagues.yml, where
+# football has been `paper` since 2026-10-04 (owner pause).
+placer_cfg <- list(
+  football_iceland = list(sport = "football", country = "iceland", betting = list(mode = "auto")),
+  basketball_iceland = list(sport = "basketball", country = "iceland", betting = list(mode = "scrape"))
+)
+
 test_that("load_recommendations returns rows for matching target_date", {
   root <- setup_placer_root()
-  out <- load_recommendations(root, target_date = as.Date("2026-04-26"))
+  out <- load_recommendations(root,
+    target_date = as.Date("2026-04-26"), leagues_cfg = placer_cfg
+  )
   expect_equal(nrow(out), 2L)
   expect_true(all(out$match_date == as.Date("2026-04-26")))
 })
@@ -39,7 +49,9 @@ test_that("load_recommendations honours league filter", {
 
 test_that("dedup_against_ledger drops already-placed bets", {
   root <- setup_placer_root()
-  recs <- load_recommendations(root, target_date = as.Date("2026-04-26"))
+  recs <- load_recommendations(root,
+    target_date = as.Date("2026-04-26"), leagues_cfg = placer_cfg
+  )
   out <- dedup_against_ledger(recs, root)
   # KR vs FH moneyline/home is in the ledger; should be removed.
   expect_equal(nrow(out), 1L)
