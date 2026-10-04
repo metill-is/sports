@@ -17,12 +17,14 @@ test_that("results covers all 3 Icelandic sports and both sexes", {
   expect_setequal(unique(r$sex), c("male", "female"))
 })
 
-test_that("basketball covers 6 seasons × 2 sexes", {
+test_that("basketball backfill covers seasons 2021-2026 × 2 sexes", {
   skip_if_no_data()
   r <- read_table("results", filter = list(sport = "basketball", country = "iceland"))
 
-  counts <- dplyr::count(r, sex, season)
-  # 2021-2026 × male/female = 12 combos; each has > 100 rows
+  # The backfill is 2021-2026 × male/female = 12 complete combos (> 100 rows
+  # each). Later seasons are live and start small (2027 had 5 games per sex on
+  # 2026-10-04), so they are outside this completeness check.
+  counts <- dplyr::count(dplyr::filter(r, season %in% 2021:2026), sex, season)
   expect_equal(nrow(counts), 12L)
   expect_gt(min(counts$n), 100L)
 })
