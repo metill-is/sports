@@ -1,36 +1,36 @@
 {
-  "generated_at": "2026-10-01T13:55:56Z",
+  "generated_at": "2026-10-05T15:17:46Z",
   "competitions": [
     {
-      "sport": "handball",
+      "sport": "basketball",
       "country": "iceland",
-      "comp_id": "1270",
-      "lengjan_name": "Olísdeild kv.",
+      "comp_id": "1291",
+      "lengjan_name": "Bónusdeild kvenna",
       "inferred_sex": "female",
-      "inferred_division": "OD",
+      "inferred_division": "BD",
       "classify_confidence": "high",
       "modelled": true,
       "status": "new",
       "proposed_team_names": [
         {
-          "lengjan": "Fram kv",
-          "canonical_guess": "Fram",
+          "lengjan": "Njarðvík kv",
+          "canonical_guess": "Njarðvík",
           "confidence": "high"
         },
         {
-          "lengjan": "Stjarnan kv",
-          "canonical_guess": "Stjarnan",
+          "lengjan": "Fjölnir kv",
+          "canonical_guess": "Fjölnir",
           "confidence": "high"
         },
         {
-          "lengjan": "Selfoss kv",
-          "canonical_guess": "Selfoss",
+          "lengjan": "Keflavík kv",
+          "canonical_guess": "Keflavík",
           "confidence": "high"
         },
         {
-          "lengjan": "Haukar kv",
-          "canonical_guess": "Haukar",
-          "confidence": "high"
+          "lengjan": "UMF Tindastoll kv",
+          "canonical_guess": {},
+          "confidence": "low"
         }
       ]
     }

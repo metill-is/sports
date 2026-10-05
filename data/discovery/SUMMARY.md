@@ -1,14 +1,14 @@
 # Lengjan discovery — proposed competitions
 
-Generated: 2026-10-01T13:55:56Z
+Generated: 2026-10-05T15:17:46Z
 Unmodelled competitions offered (in our sports/countries): 0
 
-## handball / female — OD (id=1270)
-- Lengjan name: Olísdeild kv.
+## basketball / female — BD (id=1291)
+- Lengjan name: Bónusdeild kvenna
 - Classify confidence: high
 - Proposed team_names:
-  - Fram kv -> Fram (high)
-  - Stjarnan kv -> Stjarnan (high)
-  - Selfoss kv -> Selfoss (high)
-  - Haukar kv -> Haukar (high)
+  - Njarðvík kv -> Njarðvík (high)
+  - Fjölnir kv -> Fjölnir (high)
+  - Keflavík kv -> Keflavík (high)
+  - UMF Tindastoll kv -> ??? (verify) (low)
 
