@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-05T20:20:39Z",
+  "generated_at": "2026-10-06T17:52:25Z",
   "overall": "WARN",
   "n_fail": 0,
   "n_warn": 4,
@@ -8,42 +8,42 @@
       "check": "fit_freshness",
       "scope": "basketball_iceland male",
       "status": "OK",
-      "value": "0d old, current with results",
+      "value": "1d old, current with results",
       "threshold": "<= 2d"
     },
     {
       "check": "fit_freshness",
       "scope": "basketball_iceland female",
       "status": "OK",
-      "value": "1d old, current with results",
+      "value": "0d old, current with results",
       "threshold": "<= 2d"
     },
     {
       "check": "fit_freshness",
       "scope": "handball_iceland male",
       "status": "OK",
-      "value": "1d old, current with results",
+      "value": "0d old, current with results",
       "threshold": "<= 2d"
     },
     {
       "check": "fit_freshness",
       "scope": "handball_iceland female",
       "status": "OK",
-      "value": "1d old, current with results",
+      "value": "2d old, current with results",
       "threshold": "<= 2d"
     },
     {
       "check": "fit_freshness",
       "scope": "football_iceland male",
       "status": "OK",
-      "value": "9d old, current with results",
+      "value": "10d old, current with results",
       "threshold": "<= 2d"
     },
     {
       "check": "fit_freshness",
       "scope": "football_iceland female",
       "status": "OK",
-      "value": "1d old, current with results",
+      "value": "2d old, current with results",
       "threshold": "<= 2d"
     },
     {
@@ -57,14 +57,14 @@
       "check": "odds_freshness",
       "scope": "handball_iceland",
       "status": "OK",
-      "value": "next fixture in 10d; odds not posted yet",
+      "value": "next fixture in 9d; odds not posted yet",
       "threshold": "odds for fixtures within 3d"
     },
     {
       "check": "odds_freshness",
       "scope": "football_iceland",
       "status": "OK",
-      "value": "next fixture in 5d; odds not posted yet",
+      "value": "next fixture in 4d; odds not posted yet",
       "threshold": "odds for fixtures within 3d"
     },
     {
@@ -78,7 +78,7 @@
       "check": "rhat_drift",
       "scope": "basketball/iceland/female",
       "status": "OK",
-      "value": "1.009",
+      "value": "1.010",
       "threshold": "< 1.020"
     },
     {
@@ -141,7 +141,7 @@
       "check": "divergence_drift",
       "scope": "handball/iceland/male",
       "status": "OK",
-      "value": "0.100%",
+      "value": "0.425%",
       "threshold": "< 0.5%"
     },
     {
