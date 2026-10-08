@@ -1,39 +1,79 @@
 {
-  "generated_at": "2026-10-05T15:17:46Z",
+  "generated_at": "2026-10-08T14:03:12Z",
   "competitions": [
     {
       "sport": "basketball",
       "country": "iceland",
-      "comp_id": "1291",
-      "lengjan_name": "Bónusdeild kvenna",
-      "inferred_sex": "female",
+      "comp_id": "1292",
+      "lengjan_name": "Bónusdeild karla",
+      "inferred_sex": "male",
       "inferred_division": "BD",
       "classify_confidence": "high",
       "modelled": true,
       "status": "new",
       "proposed_team_names": [
         {
-          "lengjan": "Njarðvík kv",
+          "lengjan": "Valur",
+          "canonical_guess": "Valur",
+          "confidence": "high"
+        },
+        {
+          "lengjan": "Álftanes",
+          "canonical_guess": "Álftanes",
+          "confidence": "high"
+        },
+        {
+          "lengjan": "Ármann",
+          "canonical_guess": "Ármann",
+          "confidence": "high"
+        },
+        {
+          "lengjan": "UMF Sindri",
+          "canonical_guess": {},
+          "confidence": "low"
+        },
+        {
+          "lengjan": "Njarðvík",
           "canonical_guess": "Njarðvík",
           "confidence": "high"
         },
         {
-          "lengjan": "Fjölnir kv",
-          "canonical_guess": "Fjölnir",
+          "lengjan": "Grindavík",
+          "canonical_guess": "Grindavík",
           "confidence": "high"
         },
         {
-          "lengjan": "Keflavík kv",
+          "lengjan": "Stjarnan",
+          "canonical_guess": "Stjarnan",
+          "confidence": "high"
+        },
+        {
+          "lengjan": "Höttur",
+          "canonical_guess": "Höttur",
+          "confidence": "high"
+        },
+        {
+          "lengjan": "Keflavík",
           "canonical_guess": "Keflavík",
           "confidence": "high"
         },
         {
-          "lengjan": "UMF Tindastoll kv",
-          "canonical_guess": {},
-          "confidence": "low"
+          "lengjan": "ÍR",
+          "canonical_guess": "ÍR",
+          "confidence": "high"
+        },
+        {
+          "lengjan": "Tindastóll",
+          "canonical_guess": "Tindastóll",
+          "confidence": "high"
+        },
+        {
+          "lengjan": "KR",
+          "canonical_guess": "KR",
+          "confidence": "high"
         }
       ]
     }
   ],
-  "unmodelled_offered_count": 0
+  "unmodelled_offered_count": 1
 }
