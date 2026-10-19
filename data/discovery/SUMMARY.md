@@ -1,22 +1,16 @@
 # Lengjan discovery — proposed competitions
 
-Generated: 2026-10-15T12:08:39Z
+Generated: 2026-10-19T13:58:05Z
 Unmodelled competitions offered (in our sports/countries): 0
 
-## basketball / male — BD (id=1292)
-- Lengjan name: Bónusdeild karla
+## basketball / female — BD (id=1291)
+- Lengjan name: Bónusdeild kvenna
 - Classify confidence: high
 - Proposed team_names:
-  - ÍR -> ÍR (high)
-  - KR -> KR (high)
-  - Tindastóll -> Tindastóll (high)
-  - Keflavík -> Keflavík (high)
-  - Valur -> Valur (high)
-  - Stjarnan -> Stjarnan (high)
-  - Álftanes -> Álftanes (high)
-  - Njarðvík -> Njarðvík (high)
-  - Ármann -> Ármann (high)
-  - UMF Sindri -> ??? (verify) (low)
-  - Grindavík -> Grindavík (high)
-  - Höttur -> Höttur (high)
+  - Stjarnan kv -> Stjarnan (high)
+  - Njarðvík kv -> Njarðvík (high)
+  - Valur kv -> Valur (high)
+  - UMF Tindastoll kv -> ??? (verify) (low)
+  - Fjölnir kv -> Fjölnir (high)
+  - Haukar kv -> Haukar (high)
 
