@@ -1,49 +1,49 @@
 {
-  "generated_at": "2026-10-22T22:04:41Z",
+  "generated_at": "2026-10-23T16:24:28Z",
   "overall": "WARN",
   "n_fail": 0,
-  "n_warn": 4,
+  "n_warn": 3,
   "checks": [
     {
       "check": "fit_freshness",
       "scope": "basketball_iceland male",
       "status": "OK",
-      "value": "5d old, current with results",
+      "value": "0d old, current with results",
       "threshold": "<= 2d"
     },
     {
       "check": "fit_freshness",
       "scope": "basketball_iceland female",
       "status": "OK",
-      "value": "1d old, current with results",
+      "value": "2d old, current with results",
       "threshold": "<= 2d"
     },
     {
       "check": "fit_freshness",
       "scope": "handball_iceland male",
       "status": "OK",
-      "value": "1d old, current with results",
+      "value": "0d old, current with results",
       "threshold": "<= 2d"
     },
     {
       "check": "fit_freshness",
       "scope": "handball_iceland female",
       "status": "OK",
-      "value": "4d old, current with results",
+      "value": "5d old, current with results",
       "threshold": "<= 2d"
     },
     {
       "check": "fit_freshness",
       "scope": "football_iceland male",
       "status": "OK",
-      "value": "2d old, current with results",
+      "value": "3d old, current with results",
       "threshold": "<= 2d"
     },
     {
       "check": "fit_freshness",
       "scope": "football_iceland female",
       "status": "OK",
-      "value": "3d old, current with results",
+      "value": "4d old, current with results",
       "threshold": "<= 2d"
     },
     {
@@ -64,7 +64,7 @@
       "check": "odds_freshness",
       "scope": "football_iceland",
       "status": "OK",
-      "value": "odds cover upcoming fixtures (next in 1d)",
+      "value": "odds cover upcoming fixtures (next in 0d)",
       "threshold": "odds for fixtures within 3d"
     },
     {
@@ -92,7 +92,7 @@
       "check": "rhat_drift",
       "scope": "basketball/iceland/male",
       "status": "OK",
-      "value": "1.011",
+      "value": "1.010",
       "threshold": "< 1.020"
     },
     {
@@ -141,14 +141,14 @@
       "check": "divergence_drift",
       "scope": "handball/iceland/male",
       "status": "OK",
-      "value": "0.100%",
+      "value": "0.000%",
       "threshold": "< 0.5%"
     },
     {
       "check": "rhat_drift",
       "scope": "handball/iceland/male",
-      "status": "WARN",
-      "value": "1.025",
+      "status": "OK",
+      "value": "1.012",
       "threshold": "< 1.020"
     },
     {
@@ -407,7 +407,7 @@
       "check": "publish_format",
       "scope": "football_iceland female BD",
       "status": "OK",
-      "value": "n_rounds=23 (schedule), 10 teams",
+      "value": "n_rounds=22 (schedule), 10 teams",
       "threshold": "config agreement"
     }
   ]
