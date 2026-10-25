@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-25T15:30:50Z",
+  "generated_at": "2026-10-25T21:26:08Z",
   "overall": "WARN",
   "n_fail": 0,
   "n_warn": 4,
@@ -197,56 +197,56 @@
       "check": "publish_freshness",
       "scope": "basketball_iceland male BD",
       "status": "OK",
-      "value": "2h old; 10 artefact(s)",
+      "value": "4h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "basketball_iceland male 1D",
       "status": "OK",
-      "value": "2h old; 10 artefact(s)",
+      "value": "4h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "basketball_iceland female BD",
       "status": "OK",
-      "value": "2h old; 10 artefact(s)",
+      "value": "4h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "basketball_iceland female 1D",
       "status": "OK",
-      "value": "2h old; 10 artefact(s)",
+      "value": "4h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "handball_iceland male OD",
       "status": "OK",
-      "value": "2h old; 10 artefact(s)",
+      "value": "4h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "handball_iceland male G66",
       "status": "OK",
-      "value": "2h old; 10 artefact(s)",
+      "value": "4h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "handball_iceland female OD",
       "status": "OK",
-      "value": "2h old; 10 artefact(s)",
+      "value": "4h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "handball_iceland female G66",
       "status": "OK",
-      "value": "2h old; 10 artefact(s)",
+      "value": "4h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
