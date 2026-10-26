@@ -1,75 +1,35 @@
 {
-  "generated_at": "2026-10-22T12:29:49Z",
+  "generated_at": "2026-10-26T13:34:53Z",
   "competitions": [
     {
       "sport": "basketball",
       "country": "iceland",
-      "comp_id": "1292",
-      "lengjan_name": "Bónusdeild karla",
-      "inferred_sex": "male",
+      "comp_id": "1291",
+      "lengjan_name": "Bónusdeild kvenna",
+      "inferred_sex": "female",
       "inferred_division": "BD",
       "classify_confidence": "high",
       "modelled": true,
       "status": "new",
       "proposed_team_names": [
         {
-          "lengjan": "Njarðvík",
-          "canonical_guess": "Njarðvík",
+          "lengjan": "Keflavík kv",
+          "canonical_guess": "Keflavík",
           "confidence": "high"
         },
         {
-          "lengjan": "Grindavík",
-          "canonical_guess": "Grindavík",
-          "confidence": "high"
-        },
-        {
-          "lengjan": "Höttur",
-          "canonical_guess": "Höttur",
-          "confidence": "high"
-        },
-        {
-          "lengjan": "KR",
-          "canonical_guess": "KR",
-          "confidence": "high"
-        },
-        {
-          "lengjan": "UMF Sindri",
-          "canonical_guess": {},
-          "confidence": "low"
-        },
-        {
-          "lengjan": "Álftanes",
-          "canonical_guess": "Álftanes",
-          "confidence": "high"
-        },
-        {
-          "lengjan": "Valur",
-          "canonical_guess": "Valur",
-          "confidence": "high"
-        },
-        {
-          "lengjan": "Stjarnan",
-          "canonical_guess": "Stjarnan",
-          "confidence": "high"
-        },
-        {
-          "lengjan": "ÍR",
-          "canonical_guess": "ÍR",
-          "confidence": "high"
-        },
-        {
-          "lengjan": "Ármann",
+          "lengjan": "Ármann kv",
           "canonical_guess": "Ármann",
           "confidence": "high"
         },
         {
-          "lengjan": "Tindastóll",
-          "canonical_guess": "Tindastóll",
+          "lengjan": "Stjarnan kv",
+          "canonical_guess": "Stjarnan",
           "confidence": "high"
         },
         {
-          "lengjan": "Keflavík",
-          "canonical_guess": "Keflavík",
+          "lengjan": "Njarðvík kv",
+          "canonical_guess": "Njarðvík",
           "confidence": "high"
         }
       ]
