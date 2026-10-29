@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-28T22:58:05Z",
+  "generated_at": "2026-10-29T17:59:46Z",
   "overall": "FAIL",
   "n_fail": 1,
   "n_warn": 2,
@@ -8,28 +8,28 @@
       "check": "fit_freshness",
       "scope": "basketball_iceland male",
       "status": "OK",
-      "value": "5d old, current with results",
+      "value": "6d old, current with results",
       "threshold": "<= 2d"
     },
     {
       "check": "fit_freshness",
       "scope": "basketball_iceland female",
       "status": "OK",
-      "value": "0d old, current with results",
+      "value": "1d old, current with results",
       "threshold": "<= 2d"
     },
     {
       "check": "fit_freshness",
       "scope": "handball_iceland male",
       "status": "OK",
-      "value": "0d old, current with results",
+      "value": "1d old, current with results",
       "threshold": "<= 2d"
     },
     {
       "check": "fit_freshness",
       "scope": "handball_iceland female",
       "status": "OK",
-      "value": "10d old, current with results",
+      "value": "11d old, current with results",
       "threshold": "<= 2d"
     },
     {
@@ -176,14 +176,14 @@
       "check": "discovery",
       "scope": "lengjan",
       "status": "WARN",
-      "value": "1: basketball/female BD (id=1291)",
+      "value": "2: basketball/male BD (id=1292); handball/female OD (id=1270)",
       "threshold": "0 un-actioned modelled competitions"
     },
     {
       "check": "unmapped_team_names",
       "scope": "handball_iceland",
       "status": "FAIL",
-      "value": "1 unmapped: Víkingur  (2026-10-15..2026-10-28, 4 fixtures) -> modelled as \"Víkingur\" (team_names.male)",
+      "value": "1 unmapped: Víkingur  (2026-10-15..2026-10-29, 4 fixtures) -> modelled as \"Víkingur\" (team_names.male)",
       "threshold": "0 unmapped Lengjan renderings"
     },
     {
@@ -197,56 +197,56 @@
       "check": "publish_freshness",
       "scope": "basketball_iceland male BD",
       "status": "OK",
-      "value": "1h old; 10 artefact(s)",
+      "value": "3h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "basketball_iceland male 1D",
       "status": "OK",
-      "value": "1h old; 10 artefact(s)",
+      "value": "3h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "basketball_iceland female BD",
       "status": "OK",
-      "value": "1h old; 10 artefact(s)",
+      "value": "3h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "basketball_iceland female 1D",
       "status": "OK",
-      "value": "1h old; 10 artefact(s)",
+      "value": "3h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "handball_iceland male OD",
       "status": "OK",
-      "value": "1h old; 10 artefact(s)",
+      "value": "3h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "handball_iceland male G66",
       "status": "OK",
-      "value": "1h old; 10 artefact(s)",
+      "value": "3h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "handball_iceland female OD",
       "status": "OK",
-      "value": "1h old; 10 artefact(s)",
+      "value": "3h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "handball_iceland female G66",
       "status": "OK",
-      "value": "1h old; 10 artefact(s)",
+      "value": "3h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
