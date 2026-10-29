@@ -1,35 +1,108 @@
 {
-  "generated_at": "2026-10-26T13:34:53Z",
+  "generated_at": "2026-10-29T13:44:23Z",
   "competitions": [
     {
       "sport": "basketball",
       "country": "iceland",
-      "comp_id": "1291",
-      "lengjan_name": "Bónusdeild kvenna",
-      "inferred_sex": "female",
+      "comp_id": "1292",
+      "lengjan_name": "Bónusdeild karla",
+      "inferred_sex": "male",
       "inferred_division": "BD",
       "classify_confidence": "high",
       "modelled": true,
       "status": "new",
       "proposed_team_names": [
         {
-          "lengjan": "Keflavík kv",
-          "canonical_guess": "Keflavík",
+          "lengjan": "Tindastóll",
+          "canonical_guess": "Tindastóll",
           "confidence": "high"
         },
         {
-          "lengjan": "Ármann kv",
-          "canonical_guess": "Ármann",
-          "confidence": "high"
-        },
-        {
-          "lengjan": "Stjarnan kv",
+          "lengjan": "Stjarnan",
           "canonical_guess": "Stjarnan",
           "confidence": "high"
         },
         {
-          "lengjan": "Njarðvík kv",
+          "lengjan": "KR",
+          "canonical_guess": "KR",
+          "confidence": "high"
+        },
+        {
+          "lengjan": "Keflavík",
+          "canonical_guess": "Keflavík",
+          "confidence": "high"
+        },
+        {
+          "lengjan": "Valur",
+          "canonical_guess": "Valur",
+          "confidence": "high"
+        },
+        {
+          "lengjan": "Grindavík",
+          "canonical_guess": "Grindavík",
+          "confidence": "high"
+        },
+        {
+          "lengjan": "Álftanes",
+          "canonical_guess": "Álftanes",
+          "confidence": "high"
+        },
+        {
+          "lengjan": "ÍR",
+          "canonical_guess": "ÍR",
+          "confidence": "high"
+        },
+        {
+          "lengjan": "UMF Sindri",
+          "canonical_guess": {},
+          "confidence": "low"
+        },
+        {
+          "lengjan": "Höttur",
+          "canonical_guess": "Höttur",
+          "confidence": "high"
+        },
+        {
+          "lengjan": "Ármann",
+          "canonical_guess": "Ármann",
+          "confidence": "high"
+        },
+        {
+          "lengjan": "Njarðvík",
           "canonical_guess": "Njarðvík",
+          "confidence": "high"
+        }
+      ]
+    },
+    {
+      "sport": "handball",
+      "country": "iceland",
+      "comp_id": "1270",
+      "lengjan_name": "Olísdeild kv.",
+      "inferred_sex": "female",
+      "inferred_division": "OD",
+      "classify_confidence": "high",
+      "modelled": true,
+      "status": "new",
+      "proposed_team_names": [
+        {
+          "lengjan": "ÍR kv",
+          "canonical_guess": "ÍR",
+          "confidence": "high"
+        },
+        {
+          "lengjan": "Fram kv",
+          "canonical_guess": "Fram",
+          "confidence": "high"
+        },
+        {
+          "lengjan": "Selfoss kv",
+          "canonical_guess": "Selfoss",
+          "confidence": "high"
+        },
+        {
+          "lengjan": "Haukar kv",
+          "canonical_guess": "Haukar",
           "confidence": "high"
         }
       ]
