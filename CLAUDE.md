@@ -183,7 +183,3 @@ Vault: `Metill` (MCP) / `~/Obsidian/Metill/`. Start with `load_topic` (vault `Me
 | `Sports/Audits/` | Dated audits (latest 2026-09-28) |
 
 **Where knowledge goes:** what must be true at HEAD → `.claude/rules/` or `docs/` here; decisions, strategy, data-source facts, case histories and domain reference → the hub's folders in the vault; preferences and tooling gotchas → auto-memory, as one-line pointers. Never wikilink memory or rule files from the vault; cite them by absolute path.
-
-## Things 3
-
-Route actionable tasks to the **Metill.is** area (ID: `4WyyavEFjCPunRi9iD5tKe`), project **Sports**.
