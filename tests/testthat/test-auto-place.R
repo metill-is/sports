@@ -620,7 +620,12 @@ test_that("run_auto_place's held-back log names the line and survives an NA stak
   held <- grep("held: ", msgs, value = TRUE)
   expect_length(held, 3L)
   expect_length(unique(held), 3L)
-  expect_match(held[1:2], "spread home line -1\\.5|spread home line 1\\.5")
+  # match by content, not position: held rows keep pending's read order
+  spread <- grep("spread", held, value = TRUE)
+  expect_setequal(
+    regmatches(spread, regexpr("spread home line -?1\\.5", spread)),
+    c("spread home line -1.5", "spread home line 1.5")
+  )
   summary <- grep("Daily cap: holding back", msgs, value = TRUE)
   expect_match(summary, "holding back 3 of 4 pending bet\\(s\\) \\(1200 kr, 1 without a stake\\)")
 })
