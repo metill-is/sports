@@ -100,9 +100,12 @@ test_that("decide_league prices a fixture scraped under two Lengjan spellings", 
       odds = odds
     )
   }
+  # one scrape (one shared scraped_at): the latest-scrape filter alone cannot
+  # remove either, so only the canonical dedup keeps kelly_joint() off a sum of ~2
+  at <- Sys.time() - 3600
   write_table(dplyr::bind_rows(
-    scrape("Bravo old", Sys.time() - 7 * 3600, c(1.95, 2.00)),
-    scrape("Bravo new", Sys.time() - 3600, c(1.85, 2.10))
+    scrape("Bravo old", at, c(1.95, 2.00)),
+    scrape("Bravo new", at, c(1.85, 2.10))
   ), "odds", root = root)
   league <- mini_basketball_league()
   league$lengjan <- list(team_names = list(male = list(
