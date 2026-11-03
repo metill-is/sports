@@ -98,12 +98,17 @@ paths:
   `decide-pipeline.R:131` (`"decide: no beliefs for ..."`). Invertibility
   of the map (each Lengjan rendering ← one canonical) is enforced by
   both the normaliser and `validate_team_names_config()`.
-  An unmapped pass-through can land on a mapped fixture's canonical key:
-  sex-less DOM rows reach both cells, so in the female cell the men's
-  "FH" v "Valur" shares the key of "FH kv" v "Valur kv". `prepare_odds()`
-  drops the unmapped listing there with a warning naming the fixture, and
-  when one scrape lists a fixture under two spellings it prices each
-  (market, line) from one listing, primary rendering first.
+  An unmapped pass-through can land on another fixture's canonical key:
+  sex-less DOM rows (all of football's) reach both cells, so in the female
+  cell the men's "FH" v "Valur" lands on the key of "FH kv" v "Valur kv".
+  `prepare_odds()` drops, with a warning naming the fixture, any sex-less row
+  whose two names are both renderings in the other sex's `team_names` and
+  neither one in this cell's. A name neither map knows (a Lengjan rename)
+  still passes through, and a cell with no `team_names` of its own drops
+  nothing. The rule relies on disjoint male and female rendering sets, which
+  `test-decide-odds.R` asserts for football on the real config. When one
+  scrape lists a fixture under two spellings, each (market, line) is priced
+  from one listing, primary rendering first.
   A `team_names` value may be a **list** of acceptable renderings, not
   just a scalar — used when Lengjan shows one team under more than one
   byte-distinct string (e.g. football_iceland female `Grindavík/Njarðvík`
