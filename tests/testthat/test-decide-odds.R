@@ -307,6 +307,36 @@ test_that("prepare_odds drops a men's-only listing from the women's cell", {
   expect_equal(nrow(m), 3L)
 })
 
+test_that("prepare_odds drops a men's listing with one renamed team from the women's cell", {
+  # Whole-branch review 2026-11 issue 1: men's "FH" v a renamed "Valur R."
+  # has one male rendering and one name neither map knows; both pass through
+  # onto the women's canonical key of "FH kv" v "Valur kv".
+  root <- withr::local_tempdir()
+  now <- as.POSIXct("2100-01-01 13:00:00", tz = "UTC")
+  write_table(tibble::tibble(
+    sport = "football", country = "iceland", scraped_at = now - 3600,
+    match_date = as.Date("2100-01-02"), home_team = "FH", away_team = "Valur R.",
+    market = "moneyline", outcome = c("home", "draw", "away"),
+    line = NA_real_, odds = c(1.70, 3.80, 4.50)
+  ), "odds", root = root)
+  league <- list(
+    sport = "football", country = "iceland",
+    lengjan = list(team_names = list(
+      male = list(FH = "FH", Valur = "Valur"),
+      female = list(FH = "FH kv", Valur = "Valur kv")
+    ))
+  )
+  expect_warning(
+    f <- prepare_odds(league, "female",
+      end_date = as.Date("2100-01-01"), max_age_hours = 48,
+      now = now, root = root
+    ),
+    "male renderings, neither a female one): 2100-01-02 FH v Valur R.",
+    fixed = TRUE
+  )
+  expect_identical(f, empty_odds())
+})
+
 test_that("prepare_odds prices a match from a newer listing under a new rendering", {
   # Re-review 2026-11 issue 3: Lengjan switching a team's name to one no map
   # knows yet (here the canonical itself, "Throttur Rvk" -> "Throttur R.")

@@ -38,13 +38,15 @@ Tibble with (match_date, home_team, away_team, market, outcome,
 \description{
 Each match is priced from its latest scrape only (identified by its shared
 `scraped_at`): a line or selection absent from that scrape was withdrawn or
-suspended, so its older price is dropped. Team names are normalised to
+suspended, so its older price is dropped (on the DOM scraper a failed
+detail-page fetch looks the same, so that match's spread and total drop out
+until the next good scrape). Team names are normalised to
 canonical before matches are keyed, so two Lengjan spellings of one fixture
 are one match; if one scrape lists both, each market line is priced from a
 single listing, the primary rendering's (`team_names` order). A sex-less
-listing whose two names are both renderings in the other sex's
-`team_names` and neither one in this sex's is the other sex's game (e.g.
-the men's "FH" v "Valur" in the female cell): it is dropped with a warning
-naming the fixture. A name neither map knows (a Lengjan rename) passes
+listing with a name among the other sex's `team_names` renderings and
+neither among this sex's is the other sex's game (e.g. the men's "FH" v
+"Valur", or "FH" v a renamed "Valur R.", in the female cell): it is dropped
+with a warning naming the fixture. A listing neither map knows passes
 through, and nothing is dropped when this sex has no `team_names`.
 }
