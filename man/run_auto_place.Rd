@@ -22,7 +22,8 @@ run_auto_place(
 
 \item{sync_fn}{`function(repo_root) -> logical` (TRUE on clean sync).}
 
-\item{place_fn}{`place_bets`-compatible function returning a status tibble.}
+\item{place_fn}{`place_bets`-compatible function returning a status tibble.
+Receives the capped pending set as `recs`.}
 
 \item{bankroll_fn}{`function() -> load_bankroll()` list.}
 
@@ -37,6 +38,14 @@ human-paced `sample_delay()` in the placer applies either way.}
 The recorded status list, invisibly.
 }
 \description{
+The daily cap limits the run's stake, not just whether it runs: pending
+bets are ordered by `ev` (descending, ties broken by the bet key) and only
+the longest prefix whose cumulative `bet_amount` fits in
+[auto_place_daily_room()] is handed to `place_fn`; the rest are logged as
+held back. A stake is never split. If no bet fits, the run records
+`daily_cap_reached`.
+}
+\details{
 `sync_fn`/`place_fn`/`bankroll_fn` are injected for testability; the shell
 `scripts/auto_place.R` passes the real `sync_recs`, `place_bets`,
 `load_bankroll`.

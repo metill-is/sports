@@ -12,7 +12,8 @@ place_bets(
   target_date = NULL,
   headless = TRUE,
   root = here::here("data"),
-  dual_write_csv = FALSE
+  dual_write_csv = FALSE,
+  recs = NULL
 )
 }
 \arguments{
@@ -36,6 +37,13 @@ place_bets(
 Default \code{FALSE} (Plan 6 cutover; Parquet at
 \code{data/decisions/ledger/} is canonical). Set \code{TRUE} only for
 opt-in regression-testing while the legacy CSV files exist on disk.}
+
+\item{recs}{Optional pre-selected recommendations, e.g. the daily-capped
+set from \code{\link{run_auto_place}}. When supplied they replace
+\code{\link{load_recommendations}}, so \code{leagues}, \code{today_only} and
+\code{target_date} are not re-applied; the P1 ledger dedup and the
+pre-flight validation still run. \code{NULL} (default) loads from the
+store.}
 }
 \value{
 Tibble of per-bet results with at minimum columns: \code{sport},

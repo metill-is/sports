@@ -68,8 +68,8 @@ load_recommendations <- function(root,
 #'
 #' Spec 2026-09-23 WS1: a "paper" league's recommendations exist to be read,
 #' never placed, and rows written before a league was lowered outlive the
-#' config change -- `run_auto_place()` places every pending recommendation by
-#' design, so the placer filters on read as well.
+#' config change -- `run_auto_place()` places every pending recommendation
+#' that fits the day's room, so the placer filters on read as well.
 #'
 #' @param recs Recommendation rows.
 #' @param leagues_cfg Named league config, defaulting to [load_leagues()].

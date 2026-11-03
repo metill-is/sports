@@ -184,7 +184,12 @@ bet_amount = round(kelly × current_pool)
 runs `run_auto_place()` on a jittered daytime cadence. It gates on
 `preview_pending()` (zero Lengjan contact) and opens an authenticated session
 only when a new bet is pending, enforcing a cross-session daily cap, a kill
-switch (`data/AUTO_PLACE_DISABLED`), and a PID lock. It is **never** wired into
+switch (`data/AUTO_PLACE_DISABLED`), and a PID lock. The daily cap limits the
+run's stake, not only whether it runs: pending bets are ordered by `ev`
+(descending, ties broken by the bet key), and only the longest prefix whose
+cumulative `bet_amount` fits the day's room reaches `place_bets(recs = )`. A
+stake is never split, and a bet held back is logged. P3's live-odds rescale can
+still lift a placed stake above its recommended `bet_amount`. It is **never** wired into
 CI; `test-placer-ci-isolation.R` forbids `auto_place`/`autoplace`/`AUTO_PLACE`/
 `run_auto_place` tokens in workflows. Failures surface via the
 `placement_health` health check. Install/remove: `tools/install-autoplace.sh`.

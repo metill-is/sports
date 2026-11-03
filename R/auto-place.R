@@ -95,6 +95,29 @@ auto_place_daily_room <- function(root = here::here("data"),
 }
 
 #' @noRd
+.bet_key_cols <- c(
+  "match_date", "sport", "country", "sex",
+  "home_team", "away_team", "market", "outcome", "line"
+)
+
+#' Cap the pending set to the day's remaining room (design spec step 7).
+#'
+#' Orders by `ev` descending, ties broken by the bet key, and keeps the
+#' longest prefix whose cumulative `bet_amount` fits in `room`. A stake is
+#' never split, and the prefix stops at the first bet that does not fit: a
+#' smaller, lower-EV bet never jumps the queue.
+#' @noRd
+.cap_to_daily_room <- function(pending, room) {
+  ord <- do.call(order, c(
+    list(-pending$ev), unname(as.list(pending[.bet_key_cols])),
+    method = "radix"
+  ))
+  pending <- pending[ord, , drop = FALSE]
+  # WHY which(): an NA stake makes the cumsum NA from there on, ending the prefix.
+  pending[which(cumsum(pending$bet_amount) <= room), , drop = FALSE]
+}
+
+#' @noRd
 placement_status_path <- function(root = here::here("data")) {
   fs::path(root, "health", "placement_status.json")
 }
@@ -183,6 +206,13 @@ auto_place_leagues <- function(leagues_cfg) {
 #' Run one unattended placement cycle (kill -> lock -> sync -> gate ->
 #' daily-cap -> place), recording the outcome to the status store.
 #'
+#' The daily cap limits the run's stake, not just whether it runs: pending
+#' bets are ordered by `ev` (descending, ties broken by the bet key) and only
+#' the longest prefix whose cumulative `bet_amount` fits in
+#' [auto_place_daily_room()] is handed to `place_fn`; the rest are logged as
+#' held back. A stake is never split. If no bet fits, the run records
+#' `daily_cap_reached`.
+#'
 #' `sync_fn`/`place_fn`/`bankroll_fn` are injected for testability; the shell
 #' `scripts/auto_place.R` passes the real `sync_recs`, `place_bets`,
 #' `load_bankroll`.
@@ -190,6 +220,7 @@ auto_place_leagues <- function(leagues_cfg) {
 #' @param now Current time.
 #' @param sync_fn `function(repo_root) -> logical` (TRUE on clean sync).
 #' @param place_fn `place_bets`-compatible function returning a status tibble.
+#'   Receives the capped pending set as `recs`.
 #' @param bankroll_fn `function() -> load_bankroll()` list.
 #' @param headless Passed through to `place_fn`. `TRUE` (default) is the robust
 #'   choice for unattended/launchd runs (no dependency on an active GUI session).
@@ -255,10 +286,35 @@ run_auto_place <- function(root = here::here("data"),
     ))
   }
 
+  # WHY: the room must cap the run, not just gate it. Decide sizes each
+  # (league, sex) cell against its own daily budget, so the pending stake of
+  # one run can exceed the day's room several times over.
+  placeable <- .cap_to_daily_room(pending, room)
+  held <- dplyr::anti_join(pending, placeable, by = .bet_key_cols)
+  if (nrow(held) > 0L) {
+    cli::cli_alert_warning(paste0(
+      "Daily cap: holding back {nrow(held)} of {n_pending} pending bet(s) ",
+      "({sum(held$bet_amount)} kr); {round(room)} kr of today's budget left."
+    ))
+    for (i in seq_len(nrow(held))) {
+      h <- held[i, ]
+      cli::cli_alert_info(paste0(
+        "  held: {h$sport}_{h$country}/{h$sex}: {h$home_team} v {h$away_team} ",
+        "{h$market} {h$outcome} -> {h$bet_amount} kr (ev={signif(h$ev, 3)})"
+      ))
+    }
+  }
+  if (nrow(placeable) == 0L) {
+    return(record_placement_status("daily_cap_reached",
+      n_pending = n_pending,
+      run_at = now, root = root
+    ))
+  }
+
   res <- tryCatch(
     place_fn(
       leagues = auto_keys, dry_run = FALSE, interactive = FALSE,
-      headless = headless, root = root
+      headless = headless, root = root, recs = placeable
     ),
     error = function(e) {
       record_placement_status(paste0("failed:", conditionMessage(e)),
