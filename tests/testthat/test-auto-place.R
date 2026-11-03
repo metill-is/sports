@@ -34,6 +34,34 @@ test_that(".placed_today_stake sums only today's placed stakes", {
   expect_equal(.placed_today_stake(tibble::tibble(), now), 0)
 })
 
+# Audit 2026-11-03 finding A: a ledger read error used to read as "nothing
+# placed today", handing a cycle the full daily budget again.
+room_bankroll <- list(
+  daily_budget_frac = 0.05, current_pool = 1e5, daily_budget_min_isk = 1000
+)
+
+test_that("auto_place_daily_room treats an absent ledger as nothing placed today", {
+  root <- withr::local_tempdir()
+  expect_equal(auto_place_daily_room(root, room_bankroll), 5000)
+})
+
+test_that("auto_place_daily_room errors on an unreadable ledger instead of reporting full room", {
+  root <- withr::local_tempdir()
+  now <- as.POSIXct("2026-06-01 12:00:00", tz = "UTC")
+  write_table(tibble::tibble(
+    placed_at = now - 3600, match_date = as.Date("2026-06-02"),
+    sport = "football", country = "iceland", sex = "male",
+    home_team = "KR", away_team = "FH",
+    market = "moneyline", outcome = "home", line = NA_real_,
+    odds_placed = 2.0, p = 0.55, kelly = 0.03, bet_amount = 4000,
+    settled = FALSE, win = NA, pnl = NA_real_
+  ), "ledger", root = root)
+  expect_equal(auto_place_daily_room(root, room_bankroll, now), 1000)
+
+  corrupt_ledger_fragment(root)
+  expect_error(auto_place_daily_room(root, room_bankroll, now), "Parquet")
+})
+
 test_that("placement status round-trips and missing reads as NULL", {
   root <- withr::local_tempdir()
   expect_null(read_placement_status(root))
@@ -136,6 +164,27 @@ test_that("run_auto_place records 'nothing_pending' with no recs", {
     }
   )
   expect_equal(read_placement_status(root)$status, "nothing_pending")
+})
+
+test_that("run_auto_place places nothing when the ledger is unreadable", {
+  # Finding A end to end: dedup skipped + full daily room meant the cycle
+  # re-placed the slate, and each append then wiped the partition's history.
+  root <- withr::local_tempdir()
+  seed_pending_rec(root)
+  corrupt_ledger_fragment(root)
+  called <- FALSE
+  run_auto_place(
+    root = root, now = as.POSIXct("2026-06-01 12:00:00", tz = "UTC"),
+    leagues_cfg = auto_football_cfg,
+    sync_fn = function(...) TRUE,
+    place_fn = function(...) {
+      called <<- TRUE
+      tibble::tibble(status = "placed")
+    },
+    bankroll_fn = function() room_bankroll
+  )
+  expect_false(called)
+  expect_false(identical(read_placement_status(root)$status, "placed"))
 })
 
 test_that("run_auto_place records 'failed:<reason>' and re-throws when placement errors", {

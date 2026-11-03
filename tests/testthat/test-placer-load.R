@@ -70,6 +70,18 @@ test_that("dedup_against_ledger is a no-op when ledger is empty", {
   expect_equal(nrow(out), nrow(loaded))
 })
 
+# Audit 2026-11-03 finding A: an unreadable ledger used to warn and return
+# every recommendation, so autoplace re-placed bets already in the ledger (P1).
+# An absent ledger still reads as empty (the no-op test above).
+test_that("dedup_against_ledger errors on an unreadable ledger instead of skipping dedup", {
+  root <- setup_placer_root()
+  recs <- load_recommendations(root,
+    target_date = as.Date("2026-04-26"), leagues_cfg = placer_cfg
+  )
+  corrupt_ledger_fragment(root)
+  expect_error(dedup_against_ledger(recs, root), "Parquet")
+})
+
 test_that("load_recommendations returns 0 rows + correct cols when nothing matches", {
   root <- setup_placer_root()
   out <- load_recommendations(root, target_date = as.Date("2050-01-01"))

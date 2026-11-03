@@ -75,7 +75,8 @@ release_auto_place_lock <- function(root = here::here("data")) {
 #'
 #' `daily_budget = max(daily_budget_frac * current_pool, daily_budget_min_isk)`,
 #' minus stakes already placed today (by `placed_at`). The wrapper-level
-#' backstop for the cross-session daily cap (design Risk 3).
+#' backstop for the cross-session daily cap (design Risk 3). An absent ledger
+#' counts as nothing placed; any other ledger read error propagates.
 #' @param root Data root.
 #' @param bankroll A `load_bankroll()` list.
 #' @param now Current time.
@@ -88,9 +89,9 @@ auto_place_daily_room <- function(root = here::here("data"),
     bankroll$daily_budget_frac * bankroll$current_pool,
     bankroll$daily_budget_min_isk
   )
-  led <- tryCatch(read_table("ledger", root = root),
-    error = function(e) tibble::tibble()
-  )
+  # No tryCatch: an absent ledger already reads as 0 rows. Any other read error
+  # must not read as "nothing placed today" (audit 2026-11-03).
+  led <- read_table("ledger", root = root)
   .daily_room(daily_budget, .placed_today_stake(led, now))
 }
 

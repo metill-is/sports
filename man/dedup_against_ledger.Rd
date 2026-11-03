@@ -20,3 +20,8 @@ Removes any recommendation already represented in `data/decisions/ledger/`
 outcome, line). The placer is the only writer to the ledger, so this is
 the canonical "haven't placed it yet" filter.
 }
+\details{
+An absent ledger means nothing has been placed. Any other ledger read error
+propagates, so placement aborts before a browser session opens rather than
+re-placing bets the ledger already holds.
+}
