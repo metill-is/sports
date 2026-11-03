@@ -157,6 +157,58 @@ test_that("prepare_odds collapses two Lengjan spellings within one scrape", {
   expect_setequal(out$outcome, c("home", "draw", "away"))
 })
 
+test_that("prepare_odds keeps a women's fixture apart from the men's between the same clubs", {
+  # Football's DOM-scraped rows carry no `sex`, so the female cell also sees
+  # the men's listings. "FH" and "Valur" are no female rendering and pass
+  # through unchanged, onto the canonical key of "FH kv" v "Valur kv"; the
+  # canonical dedup then picked rows by file order. Before it, the duplicate
+  # rows aborted kelly_joint().
+  now <- as.POSIXct("2100-01-01 13:00:00", tz = "UTC")
+  listing <- function(home, away, at, odds) {
+    tibble::tibble(
+      sport = "football", country = "iceland", scraped_at = at,
+      match_date = as.Date("2100-01-02"), home_team = home, away_team = away,
+      market = "moneyline", outcome = c("home", "draw", "away"),
+      line = NA_real_, odds = odds
+    )
+  }
+  league <- list(
+    sport = "football", country = "iceland",
+    lengjan = list(team_names = list(
+      male = list(FH = "FH", Valur = "Valur"),
+      female = list(FH = "FH kv", Valur = "Valur kv")
+    ))
+  )
+  mens <- c(1.70, 3.80, 4.50)
+  womens <- c(2.40, 3.60, 2.70)
+  odds_of <- function(out, home) {
+    out <- out[out$home_team == home, ]
+    out$odds[match(c("home", "draw", "away"), out$outcome)]
+  }
+  # Both in one scrape; then the women's game delisted (earlier kickoff) so
+  # only the men's is in the newest scrape.
+  for (mens_lag in c(3600, 1800)) {
+    root <- withr::local_tempdir()
+    write_table(dplyr::bind_rows(
+      listing("FH", "Valur", now - mens_lag, mens),
+      listing("FH kv", "Valur kv", now - 3600, womens)
+    ), "odds", root = root)
+    get <- function(sex) {
+      prepare_odds(league, sex,
+        end_date = as.Date("2100-01-01"), max_age_hours = 48,
+        now = now, root = root
+      )
+    }
+
+    expect_warning(f <- get("female"), "2100-01-02 FH v Valur")
+    expect_equal(nrow(f), 3L)
+    expect_equal(odds_of(f, "FH"), womens)
+    expect_no_warning(m <- get("male"))
+    expect_equal(odds_of(m, "FH"), mens)
+    expect_equal(odds_of(m, "FH kv"), womens)
+  }
+})
+
 test_that("prepare_odds drops odds older than max_age_hours", {
   root <- setup_odds_root()
   league <- list(sport = "basketball", country = "iceland")

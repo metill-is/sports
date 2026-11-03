@@ -40,5 +40,7 @@ Each match is priced from its latest scrape only (identified by its shared
 `scraped_at`): a line or selection absent from that scrape was withdrawn or
 suspended, so its older price is dropped. Team names are normalised to
 canonical before matches are keyed, so two Lengjan spellings of one fixture
-are one match.
+are one match. A listing whose names this sex's `team_names` maps outranks
+an unmapped one keyed to the same canonical fixture (e.g. the men's "FH" v
+"Valur" in the female cell): the unmapped rows are dropped with a warning.
 }

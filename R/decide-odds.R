@@ -27,7 +27,9 @@ parse_handicap <- function(change_str) {
 #' `scraped_at`): a line or selection absent from that scrape was withdrawn or
 #' suspended, so its older price is dropped. Team names are normalised to
 #' canonical before matches are keyed, so two Lengjan spellings of one fixture
-#' are one match.
+#' are one match. A listing whose names this sex's `team_names` maps outranks
+#' an unmapped one keyed to the same canonical fixture (e.g. the men's "FH" v
+#' "Valur" in the female cell): the unmapped rows are dropped with a warning.
 #'
 #' @param league List with `sport` + `country`.
 #' @param sex "male" or "female". Rows carrying a non-NA `sex` (stamped by the
@@ -79,7 +81,36 @@ prepare_odds <- function(league, sex,
   # direction from what the placer uses. Done at decide time rather than
   # ingest time so facts/odds/ keeps the as-scraped strings (debugging
   # value for Lengjan UI deploys; cf. 2026-04-25 "vs"->"-" separator flip).
+  raw$.home_pos <- lengjan_rendering_pos(raw$home_team, league, sex)
+  raw$.away_pos <- lengjan_rendering_pos(raw$away_team, league, sex)
   raw <- normalise_lengjan_team_names(raw, league, sex)
+
+  # A row without `sex` (DOM scraper) reaches both cells, so the female cell
+  # also sees the men's listings. Their names ("FH", "Valur") are no female
+  # rendering and pass through unchanged -- onto the canonical key of "FH kv"
+  # v "Valur kv". Where a listing mapped through this cell's team_names shares
+  # a canonical fixture with an unmapped one, the mapped listing is this
+  # cell's: drop the other before the latest-scrape filter can prefer it.
+  raw <- raw |>
+    dplyr::group_by(.data$match_date, .data$home_team, .data$away_team) |>
+    dplyr::mutate(
+      .mapped = !is.na(.data$.home_pos) & !is.na(.data$.away_pos),
+      .twin = !.data$.mapped & any(.data$.mapped)
+    ) |>
+    dplyr::ungroup()
+  if (any(raw$.twin)) {
+    twins <- unique(raw[raw$.twin, c("match_date", "home_team", "away_team")])
+    warning(
+      "prepare_odds: ", league$sport, "/", league$country, "/", sex,
+      ": dropped unmapped odds sharing a fixture with a mapped listing ",
+      "(the other sex's game?): ",
+      paste(twins$match_date, twins$home_team, "v", twins$away_team,
+        collapse = "; "
+      ),
+      call. = FALSE
+    )
+    raw <- raw[!raw$.twin, , drop = FALSE]
+  }
 
   # Price each match from its latest scrape only. The scrapers drop withdrawn
   # lines and suspended selections rather than writing them, so a row missing
