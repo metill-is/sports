@@ -750,7 +750,8 @@ test_that("simulate_cup_bracket: a drawn Final gives the listed home side no hom
   out <- simulate_cup_bracket(si$team, si$scalar, bs, pairing_seed = 2026L)
   p_h5 <- out$probability[out$team == "H5" & out$round_name == "Champion"]
   # Equal strengths at a neutral ground -> a coin flip (sd ~0.025 at 400
-  # draws). With the host's +0.5 log-rate advantage each way H5 wins ~80 %.
+  # draws). With ha_off = ha_def = 0.5 (a 1.0 combined log-rate gap) the
+  # listed host wins far more often, so the two cases separate cleanly.
   expect_lt(abs(p_h5 - 0.5), 0.08)
 })
 
