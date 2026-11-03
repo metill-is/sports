@@ -176,10 +176,10 @@ compute_settlement <- function(bets, results, match_date_window_days = 0L,
 #' @export
 settle_ledger <- function(root = here::here("data"),
                           match_date_window_days = 3L) {
-  led <- tryCatch(
-    read_table("ledger", root = root),
-    error = function(e) tibble::tibble()
-  )
+  # No tryCatch: an absent ledger already reads as 0 rows. Any other read error
+  # must not read as "nothing to settle" (review 2026-11-03); the autoplace
+  # cycle's settle step catches and logs it without blocking its commit.
+  led <- read_table("ledger", root = root)
   if (nrow(led) == 0L) {
     return(invisible(0L))
   }
@@ -298,8 +298,10 @@ void_bet <- function(root = here::here("data"),
                      sport, country, sex, match_date,
                      home_team, away_team, market,
                      line = NULL, outcome = NULL, placed_at = NULL) {
-  led <- tryCatch(read_table("ledger", root = root), error = function(e) NULL)
-  if (is.null(led) || nrow(led) == 0L) {
+  # No tryCatch: an absent ledger reads as 0 rows; a read error propagates as
+  # itself rather than as the misleading "empty or missing" below.
+  led <- read_table("ledger", root = root)
+  if (nrow(led) == 0L) {
     stop("void_bet: ledger is empty or missing; nothing to void.", call. = FALSE)
   }
 
