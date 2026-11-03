@@ -240,7 +240,10 @@ auto_place_leagues <- function(leagues_cfg) {
 #'   Set `FALSE` to watch a visible browser during a supervised run; the
 #'   human-paced `sample_delay()` in the placer applies either way.
 #' @param leagues_cfg Named league config; \code{NULL} (default) reads [load_leagues()] after a successful sync, so a config change pulled this cycle applies this cycle; a refused sync reads no config and records \code{sync_failed}.
-#' @return The recorded status list, invisibly.
+#' @return The recorded status list, invisibly. An error in the gate reads
+#'   ([preview_pending()], [auto_place_daily_room()]) is recorded and returned
+#'   as `failed:preview: <message>` or `failed:daily_room: <message>`; a
+#'   placement or config error is recorded, then re-thrown.
 #' @export
 run_auto_place <- function(root = here::here("data"),
                            now = Sys.time(),
@@ -275,21 +278,42 @@ run_auto_place <- function(root = here::here("data"),
       stop(e)
     })
   }
+  # Before the gate reads: their errors are failed:*, which must not outrank a
+  # refused sync for the reason above.
+  if (!sync_ok) {
+    return(record_placement_status("sync_failed", run_at = now, root = root))
+  }
   auto_keys <- if (is.null(leagues_cfg)) {
     character(0)
   } else {
     auto_place_leagues(leagues_cfg)
   }
+  # A gate read error (a corrupt ledger, say) is recorded as failed:<step>, not
+  # mapped to "nothing pending" / room 0: that recorded a healthy
+  # nothing_pending every cycle (review 2026-11-03). Returned, not thrown, so
+  # scripts/auto_place.R still settles and commits, then exits 1.
+  gate_failed <- function(step, e, n_pending = NA_integer_) {
+    record_placement_status(
+      paste0("failed:", step, ": ", conditionMessage(e)),
+      n_pending = n_pending, run_at = now, root = root
+    )
+  }
   pending <- tryCatch(
     suppressMessages(preview_pending(
       leagues = auto_keys, root = root, leagues_cfg = leagues_cfg
     )),
-    error = function(e) tibble::tibble()
+    error = function(e) e
   )
+  if (inherits(pending, "error")) {
+    return(gate_failed("preview", pending))
+  }
   n_pending <- nrow(pending)
   room <- tryCatch(auto_place_daily_room(root, bankroll_fn(), now),
-    error = function(e) 0
+    error = function(e) e
   )
+  if (inherits(room, "error")) {
+    return(gate_failed("daily_room", room, n_pending))
+  }
 
   action <- auto_place_decide(FALSE, FALSE, sync_ok, n_pending, room)
   if (action != "place") {

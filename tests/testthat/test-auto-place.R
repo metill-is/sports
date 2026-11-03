@@ -166,6 +166,20 @@ test_that("run_auto_place records 'nothing_pending' with no recs", {
   expect_equal(read_placement_status(root)$status, "nothing_pending")
 })
 
+test_that("run_auto_place records 'nothing_pending' with an auto league but no ledger and no recs", {
+  # Absent stores read as 0 rows: only a real read error is failed:*.
+  root <- withr::local_tempdir()
+  rec <- run_auto_place(
+    root = root, now = as.POSIXct("2026-06-01 12:00:00", tz = "UTC"),
+    leagues_cfg = auto_football_cfg,
+    sync_fn = function(...) TRUE,
+    place_fn = function(...) stop("should not be called"),
+    bankroll_fn = function() room_bankroll
+  )
+  expect_equal(rec$status, "nothing_pending")
+  expect_equal(read_placement_status(root)$status, "nothing_pending")
+})
+
 test_that("run_auto_place places nothing when the ledger is unreadable", {
   # Finding A end to end: dedup skipped + full daily room meant the cycle
   # re-placed the slate, and each append then wiped the partition's history.
@@ -173,7 +187,7 @@ test_that("run_auto_place places nothing when the ledger is unreadable", {
   seed_pending_rec(root)
   corrupt_ledger_fragment(root)
   called <- FALSE
-  run_auto_place(
+  rec <- run_auto_place(
     root = root, now = as.POSIXct("2026-06-01 12:00:00", tz = "UTC"),
     leagues_cfg = auto_football_cfg,
     sync_fn = function(...) TRUE,
@@ -184,7 +198,40 @@ test_that("run_auto_place places nothing when the ledger is unreadable", {
     bankroll_fn = function() room_bankroll
   )
   expect_false(called)
-  expect_false(identical(read_placement_status(root)$status, "placed"))
+  expect_match(read_placement_status(root)$status, "^failed:")
+  expect_match(rec$status, "^failed:preview: .*Parquet")
+})
+
+test_that("run_auto_place records 'failed:daily_room' when the ledger is unreadable and nothing is pending", {
+  # With no recs the gate never reads the ledger, so the daily-room read is the
+  # first to hit it; mapping that error to room 0 recorded a healthy
+  # nothing_pending every cycle (review 2026-11-03).
+  root <- withr::local_tempdir()
+  corrupt_ledger_fragment(root)
+  rec <- run_auto_place(
+    root = root, now = as.POSIXct("2026-06-01 12:00:00", tz = "UTC"),
+    leagues_cfg = auto_football_cfg,
+    sync_fn = function(...) TRUE,
+    place_fn = function(...) stop("should not be called"),
+    bankroll_fn = function() room_bankroll
+  )
+  expect_match(rec$status, "^failed:daily_room: .*Parquet")
+  expect_equal(read_placement_status(root)$status, rec$status)
+})
+
+test_that("run_auto_place records 'sync_failed', not failed:*, after a refused sync with an unreadable ledger", {
+  # Ruling R3: failed:* makes scripts/auto_place.R commit the ledger, which a
+  # refused sync (maybe a feature branch checked out) must never do.
+  root <- withr::local_tempdir()
+  corrupt_ledger_fragment(root)
+  rec <- run_auto_place(
+    root = root, now = as.POSIXct("2026-06-01 12:00:00", tz = "UTC"),
+    leagues_cfg = auto_football_cfg,
+    sync_fn = function(...) FALSE,
+    place_fn = function(...) stop("should not be called"),
+    bankroll_fn = function() room_bankroll
+  )
+  expect_equal(rec$status, "sync_failed")
 })
 
 test_that("run_auto_place records 'failed:<reason>' and re-throws when placement errors", {
