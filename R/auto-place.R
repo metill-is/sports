@@ -94,15 +94,10 @@ auto_place_daily_room <- function(root = here::here("data"),
   .daily_room(daily_budget, .placed_today_stake(led, now))
 }
 
-#' @noRd
-.bet_key_cols <- c(
-  "match_date", "sport", "country", "sex",
-  "home_team", "away_team", "market", "outcome", "line"
-)
-
 #' Cap the pending set to the day's remaining room (design spec step 7).
 #'
-#' Orders by `ev` descending, ties broken by the bet key, and keeps the
+#' Orders by `ev` descending, ties broken by the bet key (`.bet_key_cols`,
+#' shared with P1's [dedup_against_ledger()]), and keeps the
 #' longest prefix whose cumulative `bet_amount` fits in `room`. A stake is
 #' never split, and the prefix stops at the first bet that does not fit: a
 #' smaller, lower-EV bet never jumps the queue.
