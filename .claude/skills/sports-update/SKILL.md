@@ -10,8 +10,11 @@ agent: general-purpose
 
 Wraps the `scripts/0N_*.R` entry points for the active Icelandic
 leagues. Each script has its own freshness guard: `02_scrape_odds.R`
-skips when there are no upcoming games; `03_fit.R` skips when no new
-games have been played since the last fit. Pass `--force` to bypass.
+skips when there are no upcoming games; `03_fit.R` skips when
+`needs_refit()` is FALSE: no completed game postdates the last fit, its
+training row count still matches that fit's `n_obs` (so an evening game
+dated on the fit date still triggers a refit), and the last fit predicted
+part of the next 14 days' fixtures. Pass `--force` to bypass.
 
 ## Step 1: Parse arguments
 

@@ -59,7 +59,7 @@ paths:
 - Daily driver: `Rscript scripts/03_fit.R`. The `needs_refit()`
   predicate in `R/pipeline-freshness.R` short-circuits (league × sex)
   pairs whose last `fit_date` is at least the latest completed
-  `match_date` and whose training set is unchanged: a recount of
+  `match_date` and whose training row count is unchanged: a recount of
   `model_training_results()` at that `fit_date` must equal the fit's
   `fit_diagnostics` `n_obs` (the daily fit runs before that day's evening
   games, which arrive dated on the fit date; a fit with no `n_obs` falls

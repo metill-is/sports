@@ -42,6 +42,7 @@ For every `WARN`/`FAIL` row, map the `check` to its runbook in
 | `odds_freshness` FAIL | Lengjan scrape failing or off-season | `docs/runbooks/stale-odds.md` |
 | `fit_freshness` FAIL/WARN | `fit.yml` failing, or results not moving | `docs/runbooks/failed-fit.md` |
 | `divergence_drift` / `rhat_drift` WARN | model degrading under the abort gate | `docs/runbooks/failed-fit.md` |
+| `diagnostics_store` WARN | `fit_diagnostics` store unreadable (refits fall back to the date rule) | `docs/runbooks/failed-fit.md` |
 | `orphaned_bets` WARN | a bet whose match never settled | `docs/runbooks/orphaned-bet.md` |
 | `bankroll` FAIL | realised PnL ran the pool to/under zero | `docs/runbooks/orphaned-bet.md` |
 | `publish_freshness` FAIL | publish skipped or stale; extracts missing | `docs/runbooks/stale-publish.md` |
