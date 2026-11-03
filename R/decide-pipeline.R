@@ -406,7 +406,10 @@ decide_write_empty <- function(league, sex, run_id, root) {
 #' [write_table()]. With `key`, the slice it names is replaced even by a
 #' zero-row frame, so a run that kept no bets clears that sex's earlier
 #' recommendations for the day, unless that would leave the partition with no
-#' rows: then it is left as it was (see the comment in the body).
+#' rows: then the earlier rows stay, and stay placeable (see the comment in the
+#' body). Candidates and recommendations are separate read-modify-writes, so a
+#' recommendations read error after a successful candidates write leaves this
+#' sex's new candidates beside its old recommendations.
 #' @param key `NULL`, or `list(sport, country, sex, run_id)` naming the slice
 #'   to replace; every row of `df` must match it.
 #' @keywords internal
