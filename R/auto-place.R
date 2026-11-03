@@ -63,6 +63,11 @@ release_auto_place_lock <- function(root = here::here("data")) {
 #' and skips its cycle, a manual caller stops with an error naming the holder,
 #' so the operator can retry once that run finishes. The lock is released
 #' however `code` exits; a lock this call did not take is never touched.
+#' The lock is held across [place_bets()]'s interactive prompt and browser
+#' session (autoplace cycles meanwhile record `locked`), and
+#' [acquire_auto_place_lock()] checks then writes the lock file in two steps,
+#' so two processes starting in the same instant can both acquire it (a
+#' pre-existing race, not fixed here).
 #'
 #' @param code Expression to evaluate while holding the lock.
 #' @param root Data root.
