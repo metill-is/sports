@@ -43,7 +43,9 @@ bets are ordered by `ev` (descending, ties broken by the bet key) and only
 the longest prefix whose cumulative `bet_amount` fits in
 [auto_place_daily_room()] is handed to `place_fn`; the rest are logged as
 held back. A stake is never split. If no bet fits, the run records
-`daily_cap_reached`.
+`daily_cap_reached`. The cap applies to the recommended `bet_amount`: P3's
+live-odds rescale in `place_fn` can still lift a run's placed stake above
+the room, and the next run then sees a room of 0.
 }
 \details{
 `sync_fn`/`place_fn`/`bankroll_fn` are injected for testability; the shell
