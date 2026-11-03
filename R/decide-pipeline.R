@@ -7,7 +7,9 @@ NULL
 #' then writes `candidates` (terminal-state audit log) and `recommendations`
 #' (post-filter survivors) Parquet. Both tables partition on
 #' (sport, country, run_date) with no `sex`, so each write replaces only this
-#' sex's rows in the day's partition and keeps the other sex's.
+#' sex's rows in the day's partition and keeps the other sex's. A run that
+#' writes candidates also replaces this sex's recommendations, so one that keeps
+#' no bets clears its earlier ones; a run with no candidates writes nothing.
 #'
 #' The `stage` column on candidates is the bet's terminal classification:
 #'   - `kept`: passed all filters; appears in recommendations
@@ -67,6 +69,11 @@ decide_league <- function(league_key = NULL, league = NULL, sex,
 
   betting <- league$betting
   run_id <- as.POSIXct(format(run_date), tz = "UTC")
+  # This run's slice of the shared partition. Recommendations writes pass it so
+  # a run that wrote candidates but kept no bets still clears its earlier ones.
+  run_key <- list(
+    sport = league$sport, country = league$country, sex = sex, run_id = run_id
+  )
 
   # An early exit returns the candidate-shaped empty tibble (with `stage`) when
   # the caller asked for candidates, so the harness's bind_rows stays schema-safe.
@@ -145,7 +152,7 @@ decide_league <- function(league_key = NULL, league = NULL, sex,
     if (write) {
       write_decide_table(cand_off, "candidates", root = root)
       write_decide_table(empty_recommendations(), "recommendations",
-        root = root
+        root = root, key = run_key
       )
     }
     return(invisible(if (isTRUE(return_candidates)) cand_off else empty_recommendations()))
@@ -328,7 +335,7 @@ decide_league <- function(league_key = NULL, league = NULL, sex,
     ),
     drop = FALSE
     ]
-    write_decide_table(rec_out, "recommendations", root = root)
+    write_decide_table(rec_out, "recommendations", root = root, key = run_key)
   }
 
   # 14. Return: full candidates (harness) or kept recommendations (live) -------
@@ -394,27 +401,57 @@ decide_write_empty <- function(league, sex, run_id, root) {
 #' Like [append_to_ledger()], this reads the run's partition, keeps the other
 #' sex's rows, binds the new rows and rewrites the partition. A read error
 #' propagates: treating an unreadable partition as empty would drop the other
-#' sex's rows. A zero-row frame is a no-op, as in [write_table()].
+#' sex's rows. Without `key`, a zero-row frame is a no-op, as in
+#' [write_table()]. With `key`, the slice it names is replaced even by a
+#' zero-row frame, so a run that kept no bets clears that sex's earlier
+#' recommendations for the day; a partition left with no rows is deleted, with
+#' any parent directory that leaves empty.
+#' @param key `NULL`, or `list(sport, country, sex, run_id)` naming the slice
+#'   to replace; every row of `df` must match it.
 #' @keywords internal
 #' @noRd
-write_decide_table <- function(df, table, root) {
-  if (nrow(df) == 0L) {
-    return(invisible(NULL))
+write_decide_table <- function(df, table, root, key = NULL) {
+  if (is.null(key)) {
+    if (nrow(df) == 0L) {
+      return(invisible(NULL))
+    }
+    key <- list(
+      sport = df$sport[[1]], country = df$country[[1]], sex = df$sex[[1]],
+      run_id = df$run_id[[1]]
+    )
   }
-  run_date <- unique(as.Date(df$run_id, tz = "UTC"))
+  run_date <- as.Date(key$run_id, tz = "UTC")
   stopifnot(
-    length(run_date) == 1L, length(unique(df$sex)) == 1L,
-    length(unique(df$sport)) == 1L, length(unique(df$country)) == 1L
+    all(as.Date(df$run_id, tz = "UTC") == run_date), all(df$sex == key$sex),
+    all(df$sport == key$sport), all(df$country == key$country)
   )
   existing <- read_table(table, root = root, filter = list(
-    sport = df$sport[[1]], country = df$country[[1]],
-    run_date = format(run_date)
+    sport = key$sport, country = key$country, run_date = format(run_date)
   ))
   # run_date comes back from the hive path as character; drop it so
   # write_table() re-derives it from run_id for the bound frame.
-  keep <- !(existing[["sex"]] %in% df$sex[[1]])
+  keep <- !(existing[["sex"]] %in% key$sex)
   existing <- existing[keep, setdiff(names(existing), "run_date"), drop = FALSE]
-  write_table(dplyr::bind_rows(existing, df), table, root = root)
+  combined <- dplyr::bind_rows(existing, df)
+  if (nrow(combined) == 0L) {
+    # write_table() skips a zero-row frame, so delete the emptied partition
+    # here, then each parent it leaves empty: arrow cannot open a hive tree
+    # that holds directories but no files, and read_table() only returns an
+    # empty tibble when the table directory is absent.
+    table_dir <- do.call(fs::path, as.list(c(root, table_subdir(table))))
+    country_dir <- fs::path(
+      table_dir, paste0("sport=", key$sport), paste0("country=", key$country)
+    )
+    part <- fs::path(country_dir, paste0("run_date=", format(run_date)))
+    if (fs::dir_exists(part)) fs::dir_delete(part)
+    for (dir in c(country_dir, fs::path_dir(country_dir), table_dir)) {
+      if (fs::dir_exists(dir) && length(fs::dir_ls(dir, all = TRUE)) == 0L) {
+        fs::dir_delete(dir)
+      }
+    }
+    return(invisible(NULL))
+  }
+  write_table(combined, table, root = root)
 }
 
 #' @keywords internal

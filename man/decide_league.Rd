@@ -52,7 +52,9 @@ Chains prepare_odds + kelly_joint + portfolio_optimise + compute_calibration,
 then writes `candidates` (terminal-state audit log) and `recommendations`
 (post-filter survivors) Parquet. Both tables partition on
 (sport, country, run_date) with no `sex`, so each write replaces only this
-sex's rows in the day's partition and keeps the other sex's.
+sex's rows in the day's partition and keeps the other sex's. A run that
+writes candidates also replaces this sex's recommendations, so one that keeps
+no bets clears its earlier ones; a run with no candidates writes nothing.
 }
 \details{
 The `stage` column on candidates is the bet's terminal classification:
