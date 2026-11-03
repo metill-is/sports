@@ -81,11 +81,87 @@ test_that("prepare_odds de-duplicates two Lengjan spellings of one fixture on ca
   expect_equal(out$odds, c(1.90, 3.50, 3.60))
 })
 
+test_that("prepare_odds prices each match from its latest scrape only", {
+  # Audit 2026-11 finding B: the scrapers drop withdrawn lines and suspended
+  # selections instead of writing them, so keeping the latest row per
+  # (market, outcome, line) across the whole max_age_hours window left them
+  # priceable at their last price. A match missing from the newest scrape run
+  # keeps its own latest scrape.
+  root <- withr::local_tempdir()
+  now <- as.POSIXct("2100-01-01 13:00:00", tz = "UTC")
+  rows <- function(home, away, at, market, outcome, line, odds) {
+    tibble::tibble(
+      sport = "football", country = "iceland", scraped_at = at,
+      match_date = as.Date("2100-01-02"), home_team = home, away_team = away,
+      market = market, outcome = outcome, line = line, odds = odds
+    )
+  }
+  old <- now - 7 * 3600
+  new <- now - 3600
+  write_table(dplyr::bind_rows(
+    rows("Thor", "Vikingur", old, "moneyline", c("home", "draw", "away"),
+      NA_real_, c(2.10, 3.40, 3.00)),
+    rows("Thor", "Vikingur", old, "spread", c("home", "draw", "away"),
+      -1, c(4.00, 3.80, 1.60)),
+    rows("Thor", "Vikingur", new, "moneyline", c("home", "away"),
+      NA_real_, c(2.20, 2.90)),
+    rows("Fram", "KR", old, "moneyline", c("home", "draw", "away"),
+      NA_real_, c(2.50, 3.30, 2.60))
+  ), "odds", root = root)
+  tn <- list(Thor = "Thor", Vikingur = "Vikingur", Fram = "Fram", KR = "KR")
+  league <- list(
+    sport = "football", country = "iceland",
+    lengjan = list(team_names = list(male = tn))
+  )
+
+  out <- prepare_odds(league, "male",
+    end_date = as.Date("2100-01-01"), max_age_hours = 48,
+    now = now, root = root
+  )
+
+  vik <- out[out$home_team == "Thor", ]
+  vik <- vik[order(vik$outcome), ]
+  expect_equal(vik$market, c("moneyline", "moneyline"))
+  expect_equal(vik$outcome, c("away", "home"))
+  expect_equal(vik$odds, c(2.90, 2.20))
+  expect_equal(nrow(out[out$home_team == "Fram", ]), 3L)
+})
+
+test_that("prepare_odds collapses two Lengjan spellings within one scrape", {
+  # The 2026-07-17 scrape carried one fixture under both Víkingur spellings
+  # with the same scraped_at, so the latest-scrape filter keeps both and only
+  # the canonical-key de-duplication collapses them.
+  root <- withr::local_tempdir()
+  now <- as.POSIXct("2100-01-01 13:00:00", tz = "UTC")
+  write_table(tibble::tibble(
+    sport = "football", country = "iceland", scraped_at = now - 3600,
+    match_date = as.Date("2100-01-02"), home_team = "Thor Ak.",
+    away_team = rep(c("Vikingur Rvk", "Vikingur Reykjavik"), each = 3),
+    market = "moneyline", outcome = rep(c("home", "draw", "away"), 2),
+    line = NA_real_, odds = c(3.50, 3.40, 2.00, 3.60, 3.50, 1.90)
+  ), "odds", root = root)
+  league <- list(
+    sport = "football", country = "iceland",
+    lengjan = list(team_names = list(male = list(
+      Thor = "Thor Ak.",
+      "Vikingur R." = list("Vikingur Reykjavik", "Vikingur Rvk")
+    )))
+  )
+
+  out <- prepare_odds(league, "male",
+    end_date = as.Date("2100-01-01"), max_age_hours = 48,
+    now = now, root = root
+  )
+
+  expect_equal(nrow(out), 3L)
+  expect_setequal(out$outcome, c("home", "draw", "away"))
+})
+
 test_that("prepare_odds drops odds older than max_age_hours", {
   root <- setup_odds_root()
   league <- list(sport = "basketball", country = "iceland")
 
-  # Fixture scrapes at 08:00 and 12:00 UTC.
+  # Fixture scrapes at 06:00 and 12:00 UTC.
   # now = 14:00, max_age_hours = 1 → cutoff = 13:00 → all scrapes are older.
   out <- prepare_odds(league,
     sex = "male",

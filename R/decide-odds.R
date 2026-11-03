@@ -23,6 +23,12 @@ parse_handicap <- function(change_str) {
 #' Read facts/odds for one (sport, country) and return latest-snapshot rows
 #' for matches at or after `end_date`, no older than `max_age_hours`.
 #'
+#' Each match is priced from its latest scrape only (identified by its shared
+#' `scraped_at`): a line or selection absent from that scrape was withdrawn or
+#' suspended, so its older price is dropped. Team names are normalised to
+#' canonical before matches are keyed, so two Lengjan spellings of one fixture
+#' are one match.
+#'
 #' @param league List with `sport` + `country`.
 #' @param sex "male" or "female". Rows carrying a non-NA `sex` (stamped by the
 #'   JSON-API scraper from the Lengjan competition, spec 2026-09-23 WS2) are
@@ -74,6 +80,16 @@ prepare_odds <- function(league, sex,
   # ingest time so facts/odds/ keeps the as-scraped strings (debugging
   # value for Lengjan UI deploys; cf. 2026-04-25 "vs"->"-" separator flip).
   raw <- normalise_lengjan_team_names(raw, league, sex)
+
+  # Price each match from its latest scrape only. The scrapers drop withdrawn
+  # lines and suspended selections rather than writing them, so a row missing
+  # from the newest scrape is no longer on offer at its old price. Each scrape
+  # run stamps one scraped_at on every row it writes (ingest_lengjan_api(),
+  # ingest_lengjan_odds()), so equality identifies the run.
+  raw <- raw |>
+    dplyr::group_by(.data$match_date, .data$home_team, .data$away_team) |>
+    dplyr::filter(.data$scraped_at == max(.data$scraped_at)) |>
+    dplyr::ungroup()
 
   # Dedup to latest scrape per (match x market x outcome x line), on the
   # canonical names: a team_names list value maps several Lengjan spellings

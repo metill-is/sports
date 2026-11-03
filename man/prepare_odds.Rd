@@ -36,6 +36,9 @@ Tibble with (match_date, home_team, away_team, market, outcome,
   line, odds, scraped_at). Empty (typed) when no rows match.
 }
 \description{
-Read facts/odds for one (sport, country) and return latest-snapshot rows
-for matches at or after `end_date`, no older than `max_age_hours`.
+Each match is priced from its latest scrape only (identified by its shared
+`scraped_at`): a line or selection absent from that scrape was withdrawn or
+suspended, so its older price is dropped. Team names are normalised to
+canonical before matches are keyed, so two Lengjan spellings of one fixture
+are one match.
 }
