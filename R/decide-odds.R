@@ -28,16 +28,18 @@ parse_handicap <- function(change_str) {
 #' suspended, so its older price is dropped. Team names are normalised to
 #' canonical before matches are keyed, so two Lengjan spellings of one fixture
 #' are one match; if one scrape lists both, each market line is priced from a
-#' single listing, the primary rendering's (`team_names` order). A listing
-#' whose names this sex's `team_names` maps outranks an unmapped one keyed to
-#' the same canonical fixture (e.g. the men's "FH" v "Valur" in the female
-#' cell): the unmapped rows are dropped with a warning.
+#' single listing, the primary rendering's (`team_names` order). A sex-less
+#' listing whose two names are both renderings in the other sex's
+#' `team_names` and neither one in this sex's is the other sex's game (e.g.
+#' the men's "FH" v "Valur" in the female cell): it is dropped with a warning
+#' naming the fixture. A name neither map knows (a Lengjan rename) passes
+#' through, and nothing is dropped when this sex has no `team_names`.
 #'
 #' @param league List with `sport` + `country`.
 #' @param sex "male" or "female". Rows carrying a non-NA `sex` (stamped by the
 #'   JSON-API scraper from the Lengjan competition, spec 2026-09-23 WS2) are
-#'   kept only for that sex; NA rows (DOM scraper, history) are sex-agnostic
-#'   and kept for both, as before -- the per-sex team_names join then decides.
+#'   kept only for that sex; NA rows (DOM scraper, history) reach both cells,
+#'   less any the per-sex team_names identify as the other sex's (above).
 #' @param end_date Drop matches before this date. Default today.
 #' @param max_age_hours Drop scrapes older than this (vs `now`).
 #' @param now Reference timestamp for age filtering. Default `Sys.time()`.
@@ -87,34 +89,38 @@ prepare_odds <- function(league, sex,
   raw$.raw_away <- raw$away_team
   raw$.home_pos <- lengjan_rendering_pos(raw$home_team, league, sex)
   raw$.away_pos <- lengjan_rendering_pos(raw$away_team, league, sex)
-  raw <- normalise_lengjan_team_names(raw, league, sex)
 
   # A row without `sex` (DOM scraper) reaches both cells, so the female cell
   # also sees the men's listings. Their names ("FH", "Valur") are no female
-  # rendering and pass through unchanged -- onto the canonical key of "FH kv"
-  # v "Valur kv". Where a listing mapped through this cell's team_names shares
-  # a canonical fixture with an unmapped one, the mapped listing is this
-  # cell's: drop the other before the latest-scrape filter can prefer it.
-  raw <- raw |>
-    dplyr::group_by(.data$match_date, .data$home_team, .data$away_team) |>
-    dplyr::mutate(
-      .mapped = !is.na(.data$.home_pos) & !is.na(.data$.away_pos),
-      .twin = !.data$.mapped & any(.data$.mapped)
-    ) |>
-    dplyr::ungroup()
-  if (any(raw$.twin)) {
-    twins <- unique(raw[raw$.twin, c("match_date", "home_team", "away_team")])
-    warning(
-      "prepare_odds: ", league$sport, "/", league$country, "/", sex,
-      ": dropped unmapped odds sharing a fixture with a mapped listing ",
-      "(the other sex's game?): ",
-      paste(twins$match_date, twins$home_team, "v", twins$away_team,
-        collapse = "; "
-      ),
-      call. = FALSE
-    )
-    raw <- raw[!raw$.twin, , drop = FALSE]
+  # rendering and would pass through unchanged -- onto the canonical key of
+  # "FH kv" v "Valur kv". A sex-less listing whose names are both renderings
+  # for the other sex and neither one for this sex is the other sex's game:
+  # drop it. A name neither map knows (a Lengjan rename) still passes through.
+  # Without this cell's own map the two cannot be told apart, so keep all.
+  other_sex <- setdiff(c("male", "female"), sex)
+  sexless <- if ("sex" %in% names(raw)) is.na(raw$sex) else TRUE
+  if (length(tn_renderings(league$lengjan$team_names[[sex]])) > 0L) {
+    foreign <- sexless & is.na(raw$.home_pos) & is.na(raw$.away_pos) &
+      !is.na(lengjan_rendering_pos(raw$home_team, league, other_sex)) &
+      !is.na(lengjan_rendering_pos(raw$away_team, league, other_sex))
+    if (any(foreign)) {
+      fx <- unique(raw[foreign, c("match_date", "home_team", "away_team")])
+      warning(
+        "prepare_odds: ", league$sport, "/", league$country, "/", sex,
+        ": dropped sex-less odds of the other sex's game (both team names ",
+        "are ", other_sex, " renderings, neither a ", sex, " one): ",
+        paste(fx$match_date, fx$home_team, "v", fx$away_team,
+          collapse = "; "
+        ),
+        call. = FALSE
+      )
+      raw <- raw[!foreign, , drop = FALSE]
+      if (nrow(raw) == 0L) {
+        return(empty_odds())
+      }
+    }
   }
+  raw <- normalise_lengjan_team_names(raw, league, sex)
 
   # Price each match from its latest scrape only. The scrapers drop withdrawn
   # lines and suspended selections rather than writing them, so a row missing

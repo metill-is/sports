@@ -218,7 +218,7 @@ test_that("prepare_odds keeps a women's fixture apart from the men's between the
   # the men's listings. "FH" and "Valur" are no female rendering and pass
   # through unchanged, onto the canonical key of "FH kv" v "Valur kv"; the
   # canonical dedup then picked rows by file order. Before it, the duplicate
-  # rows aborted kelly_joint().
+  # rows aborted kelly_joint(). Each cell now drops the other sex's listing.
   now <- as.POSIXct("2100-01-01 13:00:00", tz = "UTC")
   listing <- function(home, away, at, odds) {
     tibble::tibble(
@@ -256,13 +256,142 @@ test_that("prepare_odds keeps a women's fixture apart from the men's between the
       )
     }
 
-    expect_warning(f <- get("female"), "2100-01-02 FH v Valur")
+    expect_warning(f <- get("female"),
+      "male renderings, neither a female one): 2100-01-02 FH v Valur",
+      fixed = TRUE
+    )
     expect_equal(nrow(f), 3L)
     expect_equal(odds_of(f, "FH"), womens)
-    expect_no_warning(m <- get("male"))
+    expect_warning(m <- get("male"),
+      "female renderings, neither a male one): 2100-01-02 FH kv v Valur kv",
+      fixed = TRUE
+    )
+    expect_equal(nrow(m), 3L)
     expect_equal(odds_of(m, "FH"), mens)
-    expect_equal(odds_of(m, "FH kv"), womens)
   }
+})
+
+test_that("prepare_odds drops a men's-only listing from the women's cell", {
+  # Re-review 2026-11 issue 2: with the women's game not offered (or aged
+  # out), the men's sex-less "FH" v "Valur" was the only listing on the
+  # women's canonical key, so no mapped twin flagged it and it priced the
+  # women's model silently.
+  root <- withr::local_tempdir()
+  now <- as.POSIXct("2100-01-01 13:00:00", tz = "UTC")
+  write_table(tibble::tibble(
+    sport = "football", country = "iceland", scraped_at = now - 3600,
+    match_date = as.Date("2100-01-02"), home_team = "FH", away_team = "Valur",
+    market = "moneyline", outcome = c("home", "draw", "away"),
+    line = NA_real_, odds = c(1.70, 3.80, 4.50)
+  ), "odds", root = root)
+  league <- list(
+    sport = "football", country = "iceland",
+    lengjan = list(team_names = list(
+      male = list(FH = "FH", Valur = "Valur"),
+      female = list(FH = "FH kv", Valur = "Valur kv")
+    ))
+  )
+  get <- function(sex) {
+    prepare_odds(league, sex,
+      end_date = as.Date("2100-01-01"), max_age_hours = 48,
+      now = now, root = root
+    )
+  }
+
+  expect_warning(f <- get("female"),
+    "male renderings, neither a female one): 2100-01-02 FH v Valur",
+    fixed = TRUE
+  )
+  expect_identical(f, empty_odds())
+  expect_no_warning(m <- get("male"))
+  expect_equal(nrow(m), 3L)
+})
+
+test_that("prepare_odds prices a match from a newer listing under a new rendering", {
+  # Re-review 2026-11 issue 3: Lengjan switching a team's name to one no map
+  # knows yet (here the canonical itself, "Throttur Rvk" -> "Throttur R.")
+  # left the newer listing unmapped, and the twin rule dropped it in favour
+  # of the older mapped scrape, pricing the match from a stale listing.
+  # "Throttur R." is no female rendering, so the male cell keeps it.
+  root <- withr::local_tempdir()
+  now <- as.POSIXct("2100-01-01 13:00:00", tz = "UTC")
+  listing <- function(home, at, odds) {
+    tibble::tibble(
+      sport = "football", country = "iceland", scraped_at = at,
+      match_date = as.Date("2100-01-02"), home_team = home,
+      away_team = "Fram", market = "moneyline",
+      outcome = c("home", "draw", "away"), line = NA_real_, odds = odds
+    )
+  }
+  write_table(dplyr::bind_rows(
+    listing("Throttur Rvk", now - 7 * 3600, c(2.00, 3.40, 3.50)),
+    listing("Throttur R.", now - 3600, c(2.20, 3.30, 3.10))
+  ), "odds", root = root)
+  league <- list(
+    sport = "football", country = "iceland",
+    lengjan = list(team_names = list(
+      male = list("Throttur R." = "Throttur Rvk", Fram = "Fram"),
+      female = list("Throttur R." = "Throttur Rvk kv", Fram = "Fram kv")
+    ))
+  )
+
+  expect_no_warning(m <- prepare_odds(league, "male",
+    end_date = as.Date("2100-01-01"), max_age_hours = 48,
+    now = now, root = root
+  ))
+  expect_equal(unique(m$home_team), "Throttur R.")
+  expect_equal(
+    m$odds[match(c("home", "draw", "away"), m$outcome)],
+    c(2.20, 3.30, 3.10)
+  )
+})
+
+test_that("prepare_odds keeps sex-less odds where the cell has no team_names", {
+  # The other-sex rule needs this cell's map to tell its own listings from
+  # the other sex's. Without one (no team_names at all, or handball's empty
+  # female map) a women's listing can use the very strings the men's map
+  # holds, so nothing is dropped.
+  root <- withr::local_tempdir()
+  now <- as.POSIXct("2100-01-01 13:00:00", tz = "UTC")
+  write_table(tibble::tibble(
+    sport = "handball", country = "iceland", scraped_at = now - 3600,
+    match_date = as.Date("2100-01-02"), home_team = "Valur",
+    away_team = "Haukar", market = "moneyline",
+    outcome = c("home", "draw", "away"), line = NA_real_,
+    odds = c(1.70, 9.00, 3.10)
+  ), "odds", root = root)
+  get <- function(league, sex) {
+    prepare_odds(league, sex,
+      end_date = as.Date("2100-01-01"), max_age_hours = 48,
+      now = now, root = root
+    )
+  }
+  bare <- list(sport = "handball", country = "iceland")
+  male_only <- list(
+    sport = "handball", country = "iceland",
+    lengjan = list(team_names = list(
+      male = list(Valur = "Valur", Haukar = "Haukar"), female = list()
+    ))
+  )
+
+  for (sex in c("male", "female")) {
+    expect_no_warning(out <- get(bare, sex))
+    expect_equal(nrow(out), 3L)
+  }
+  expect_no_warning(out <- get(male_only, "female"))
+  expect_equal(nrow(out), 3L)
+})
+
+test_that("football's male and female Lengjan renderings never coincide", {
+  # prepare_odds() tells a sex-less listing's sex by which per-sex map holds
+  # its names; a rendering in both maps would make that ambiguous.
+  tn <- load_leagues()$football_iceland$lengjan$team_names
+  male <- unlist(tn_renderings(tn$male), use.names = FALSE)
+  female <- unlist(tn_renderings(tn$female), use.names = FALSE)
+
+  expect_gt(length(male), 0L)
+  expect_gt(length(female), 0L)
+  expect_length(intersect(male, female), 0L)
 })
 
 test_that("prepare_odds drops odds older than max_age_hours", {
