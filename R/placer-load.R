@@ -135,11 +135,12 @@ dedup_against_ledger <- function(recs, root) {
     "sport", "country", "sex", "match_date",
     "home_team", "away_team", "market", "outcome", "line"
   )
-  if (!all(key_cols %in% names(led))) {
-    cli::cli_warn(
-      "dedup_against_ledger: ledger missing key column(s); skipping dedup"
+  missing <- setdiff(key_cols, names(led))
+  if (length(missing) > 0L) {
+    # WHY: abort, as on a read error; skipping dedup breaks P1
+    cli::cli_abort(
+      "dedup_against_ledger: ledger missing key column(s) {.field {missing}}"
     )
-    return(recs)
   }
 
   # dplyr::anti_join handles NA-equality on the join (two NA `line` values

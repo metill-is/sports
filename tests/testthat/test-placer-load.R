@@ -82,6 +82,17 @@ test_that("dedup_against_ledger errors on an unreadable ledger instead of skippi
   expect_error(dedup_against_ledger(recs, root), "Parquet")
 })
 
+test_that("dedup_against_ledger errors on a ledger missing a key column instead of skipping dedup", {
+  root <- setup_placer_root()
+  recs <- load_recommendations(root,
+    target_date = as.Date("2026-04-26"), leagues_cfg = placer_cfg
+  )
+  local_mocked_bindings(read_table = function(...) {
+    tibble::tibble(sport = "football", country = "iceland", home_team = "KR")
+  })
+  expect_error(dedup_against_ledger(recs, root), "key column")
+})
+
 test_that("load_recommendations returns 0 rows + correct cols when nothing matches", {
   root <- setup_placer_root()
   out <- load_recommendations(root, target_date = as.Date("2050-01-01"))

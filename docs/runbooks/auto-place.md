@@ -12,7 +12,8 @@
    disagreement (Lengjan UI change -> see `.claude/rules/sports-betting.md`).
    `failed:preview: <msg>` / `failed:daily_room: <msg>` mean the pre-placement
    gate could not read the ledger or recommendations (e.g. a corrupt Parquet
-   fragment under `data/decisions/ledger/`); nothing is placed until it reads.
+   fragment under `data/decisions/ledger/`), or, for `failed:daily_room`, could
+   not load `config/bankroll.yml`; nothing is placed until it reads.
 3. `sync_failed` -> resolve the git state manually (`/sync-main`), then let the
    next cycle run.
 4. Stale (no recent healthy run) while pending -> check the Mac was awake in the
