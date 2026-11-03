@@ -503,16 +503,19 @@ test_that("a market-off run keeps the other sex and clears its own recs", {
   )
 })
 
-test_that("a market-off rerun clears the only sex's recommendations", {
+test_that("a clear that would empty the day's partition leaves it in place", {
+  # Deleting the partition would make load_recommendations() fall back to the
+  # previous day's recommendations, which this run has just rejected.
   set.seed(13)
   root <- withr::local_tempdir()
   .two_sex_setup(root, sexes = "male")
   .two_sex_decide(root, "male")
-  expect_gt(nrow(.read_decided("recommendations", root)), 0L)
+  recs_before <- .read_decided("recommendations", root)
+  expect_gt(nrow(recs_before), 0L)
 
   .two_sex_decide(root, "male", markets_on = FALSE)
 
-  expect_equal(nrow(.read_decided("recommendations", root)), 0L)
+  expect_equal(.read_decided("recommendations", root), recs_before)
   expect_equal(
     unique(.read_decided("candidates", root)$stage), "dropped_market_off"
   )

@@ -9,7 +9,8 @@ NULL
 #' (sport, country, run_date) with no `sex`, so each write replaces only this
 #' sex's rows in the day's partition and keeps the other sex's. A run that
 #' writes candidates also replaces this sex's recommendations, so one that keeps
-#' no bets clears its earlier ones; a run with no candidates writes nothing.
+#' no bets clears its earlier ones, unless that would empty the day's partition;
+#' a run with no candidates writes nothing.
 #'
 #' The `stage` column on candidates is the bet's terminal classification:
 #'   - `kept`: passed all filters; appears in recommendations
@@ -404,8 +405,8 @@ decide_write_empty <- function(league, sex, run_id, root) {
 #' sex's rows. Without `key`, a zero-row frame is a no-op, as in
 #' [write_table()]. With `key`, the slice it names is replaced even by a
 #' zero-row frame, so a run that kept no bets clears that sex's earlier
-#' recommendations for the day; a partition left with no rows is deleted, with
-#' any parent directory that leaves empty.
+#' recommendations for the day, unless that would leave the partition with no
+#' rows: then it is left as it was (see the comment in the body).
 #' @param key `NULL`, or `list(sport, country, sex, run_id)` naming the slice
 #'   to replace; every row of `df` must match it.
 #' @keywords internal
@@ -434,21 +435,11 @@ write_decide_table <- function(df, table, root, key = NULL) {
   existing <- existing[keep, setdiff(names(existing), "run_date"), drop = FALSE]
   combined <- dplyr::bind_rows(existing, df)
   if (nrow(combined) == 0L) {
-    # write_table() skips a zero-row frame, so delete the emptied partition
-    # here, then each parent it leaves empty: arrow cannot open a hive tree
-    # that holds directories but no files, and read_table() only returns an
-    # empty tibble when the table directory is absent.
-    table_dir <- do.call(fs::path, as.list(c(root, table_subdir(table))))
-    country_dir <- fs::path(
-      table_dir, paste0("sport=", key$sport), paste0("country=", key$country)
-    )
-    part <- fs::path(country_dir, paste0("run_date=", format(run_date)))
-    if (fs::dir_exists(part)) fs::dir_delete(part)
-    for (dir in c(country_dir, fs::path_dir(country_dir), table_dir)) {
-      if (fs::dir_exists(dir) && length(fs::dir_ls(dir, all = TRUE)) == 0L) {
-        fs::dir_delete(dir)
-      }
-    }
+    # WHY: leave a partition this clear would empty, rather than delete it.
+    # load_recommendations() takes each league's latest run_date that has rows,
+    # so deleting the day's only partition would hand the placer the previous
+    # day's recommendations, which this run has just rejected. Clearing that
+    # case needs the placer to take the latest decide run from candidates.
     return(invisible(NULL))
   }
   write_table(combined, table, root = root)
