@@ -343,6 +343,126 @@ test_that("decide_league clamps kelly_frac at kelly_ceiling (K5 invariant)", {
 })
 
 
+# --- per-sex runs share a partition -----------------------------------------
+# candidates/recommendations partition on (sport, country, run_date) with no
+# sex, and 04_decide.R runs decide_league() once per sex. Before the fix the
+# second sex's write replaced the partition and wiped the first (audit
+# 2026-11-03: football_iceland 2026-08-10..19 held a single sex per day).
+
+.two_sex_setup <- function(root, sexes = c("male", "female"),
+                           home_odds = c(male = 1.85, female = 1.85)) {
+  md <- Sys.Date() + 1L
+  beliefs <- dplyr::bind_rows(lapply(c("male", "female"), function(s) {
+    tibble::tibble(
+      sport = "basketball", country = "iceland", sex = s,
+      fit_date = Sys.Date(), match_date = md,
+      home_team = paste0("Home_", s), away_team = paste0("Away_", s),
+      draw_id = 1:1000,
+      home_goals = rpois(1000, lambda = 90),
+      away_goals = rpois(1000, lambda = 85)
+    )
+  }))
+  write_table(beliefs, "beliefs_latest", root = root)
+  odds <- dplyr::bind_rows(lapply(sexes, function(s) {
+    tibble::tibble(
+      sport = "basketball", country = "iceland", sex = s,
+      scraped_at = Sys.time(), match_date = md,
+      home_team = paste0("Home_", s), away_team = paste0("Away_", s),
+      market = "moneyline", outcome = c("home", "away"),
+      line = NA_real_, odds = c(home_odds[[s]], 2.10)
+    )
+  }))
+  write_table(odds, "odds", root = root)
+}
+
+.two_sex_decide <- function(root, sex) {
+  league <- mini_basketball_league()
+  league$betting$min_bet <- 0
+  decide_league(
+    league = league, sex = sex, run_date = Sys.Date(),
+    root = root, bankroll = mini_bankroll()
+  )
+}
+
+.read_decided <- function(table, root) {
+  out <- read_table(table,
+    filter = list(sport = "basketball", country = "iceland"), root = root
+  )
+  out[order(out$sex, out$home_team, out$market, out$outcome), , drop = FALSE]
+}
+
+test_that("decide_league keeps both sexes when they share a run_date", {
+  set.seed(13)
+  root <- withr::local_tempdir()
+  .two_sex_setup(root)
+
+  .two_sex_decide(root, "male")
+  .two_sex_decide(root, "female")
+
+  cands <- .read_decided("candidates", root)
+  recs <- .read_decided("recommendations", root)
+  expect_setequal(unique(cands$sex), c("male", "female"))
+  expect_setequal(unique(recs$sex), c("male", "female"))
+  expect_equal(length(unique(as.character(cands$run_date))), 1L)
+})
+
+test_that("rerunning one sex's decide replaces only that sex's rows", {
+  set.seed(13)
+  root <- withr::local_tempdir()
+  .two_sex_setup(root)
+  .two_sex_decide(root, "male")
+  .two_sex_decide(root, "female")
+  female_cands <- .read_decided("candidates", root)
+  female_cands <- female_cands[female_cands$sex == "female", , drop = FALSE]
+  female_recs <- .read_decided("recommendations", root)
+  female_recs <- female_recs[female_recs$sex == "female", , drop = FALSE]
+
+  .two_sex_setup(root, home_odds = c(male = 1.95, female = 1.85))
+  .two_sex_decide(root, "male")
+
+  cands <- .read_decided("candidates", root)
+  male <- cands[cands$sex == "male", , drop = FALSE]
+  expect_equal(nrow(male), 2L)
+  expect_equal(male$odds[male$outcome == "home"], 1.95)
+  expect_equal(cands[cands$sex == "female", , drop = FALSE], female_cands)
+  recs <- .read_decided("recommendations", root)
+  expect_equal(sum(recs$sex == "male"), 1L)
+  expect_equal(recs$odds[recs$sex == "male"], 1.95)
+  expect_equal(recs[recs$sex == "female", , drop = FALSE], female_recs)
+})
+
+test_that("a zero-row decide run for one sex leaves the other untouched", {
+  set.seed(13)
+  root <- withr::local_tempdir()
+  .two_sex_setup(root, sexes = "male")
+  .two_sex_decide(root, "male")
+  cands_before <- .read_decided("candidates", root)
+  recs_before <- .read_decided("recommendations", root)
+  expect_gt(nrow(recs_before), 0L)
+
+  out <- .two_sex_decide(root, "female")
+
+  expect_equal(nrow(out), 0L)
+  expect_equal(.read_decided("candidates", root), cands_before)
+  expect_equal(.read_decided("recommendations", root), recs_before)
+})
+
+test_that("decide_league aborts when the shared partition cannot be read", {
+  set.seed(13)
+  root <- withr::local_tempdir()
+  .two_sex_setup(root)
+  .two_sex_decide(root, "male")
+  part <- list.files(file.path(root, "decisions", "candidates"),
+    pattern = "[.]parquet$", recursive = TRUE, full.names = TRUE
+  )
+  expect_length(part, 1L)
+  writeLines("not parquet", part)
+
+  expect_error(.two_sex_decide(root, "female"))
+  expect_identical(readLines(part), "not parquet")
+})
+
+
 # --- division exclusions --------------------------------------------------
 # Some divisions are modelled but must never be priced. LD1_PO (the Lengjudeild
 # promotion umspil) is two-legged, so leg 2 is played conditional on the first

@@ -50,7 +50,9 @@ Recommendations (kept bets) invisibly, or the full candidates tibble
 \description{
 Chains prepare_odds + kelly_joint + portfolio_optimise + compute_calibration,
 then writes `candidates` (terminal-state audit log) and `recommendations`
-(post-filter survivors) Parquet via write_table().
+(post-filter survivors) Parquet. Both tables partition on
+(sport, country, run_date) with no `sex`, so each write replaces only this
+sex's rows in the day's partition and keeps the other sex's.
 }
 \details{
 The `stage` column on candidates is the bet's terminal classification:
