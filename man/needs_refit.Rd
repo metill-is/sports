@@ -61,9 +61,12 @@ nothing has been played since the last fit (spec 2026-09-16 §8). Only
 fixtures a fit could predict count: both teams must be in the training set
 below, because `prepare_data()` drops any other fixture.
 
-Both rules reason over the rows the fit trains on,
-`model_training_results(completed, static, end_date = today)`: a league's
-`training_filter` applies here exactly as in `prepare_data()`. A result the
-filter drops is not a played game, and a cell whose filter keeps no result
-is treated like one with no results at all.
+All three rules (a result after the fit date, a changed row count, an
+unpredicted horizon) reason over the rows the fit trains on,
+`model_training_results()`: a league's `training_filter` applies here exactly
+as in `prepare_data()`. A result the filter drops is not a played game, and
+a cell whose filter keeps no result is treated like one with no results at
+all. The date and horizon rules count at `end_date = today`, the cutoff of
+the fit about to run. The row-count rule recounts at the newest `fit_date`
+on purpose: that is the cutoff of the fit whose `n_obs` it compares with.
 }
