@@ -374,12 +374,28 @@ check_odds_freshness <- function(leagues, root, now, th) {
 #' PAUSED (no upcoming games): their rows are PAUSED, never WARN, because the
 #' pipeline will not refit them, so a drifted last fit has no action behind it
 #' (2026-09-25 review). The measured value is still reported.
+#'
+#' An unreadable store is one `diagnostics_store` WARN row, not silence. The
+#' same read feeds `needs_refit()`'s row-count rule, which falls back to the
+#' date rule without it, so `fit_freshness` can read "current with results"
+#' while a game dated on the fit date sits unfitted. WARN, not FAIL: the fit
+#' loop keeps running on the date rule.
 #' @param root Data root.
 #' @param th [health_thresholds()] list.
 #' @param paused_cells Character vector of "sport/country/sex" cells.
 #' @noRd
 check_diagnostics_drift <- function(root, th, paused_cells = character(0)) {
-  d <- tryCatch(read_table("fit_diagnostics", root = root), error = function(e) tibble::tibble())
+  d <- tryCatch(read_table("fit_diagnostics", root = root), error = function(e) e)
+  if (inherits(d, "error")) {
+    return(health_row(
+      "diagnostics_store", "fit_diagnostics", "WARN",
+      paste0(
+        "unreadable, so drift is unknown and fit_freshness uses the date ",
+        "rule alone: ", conditionMessage(d)
+      ),
+      "readable"
+    ))
+  }
   if (nrow(d) == 0L) {
     return(health_empty())
   }

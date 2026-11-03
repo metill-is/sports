@@ -656,6 +656,25 @@ test_that("check_diagnostics_drift PAUSEs a cell whose fit is paused, keeping th
   expect_equal(overall_health_status(res), "OK")
 })
 
+test_that("check_diagnostics_drift WARNs when the fit_diagnostics store cannot be read", {
+  # One corrupt shard makes the whole store unreadable. The read used to fall
+  # back to an empty table: no drift rows, no signal, while needs_refit() lost
+  # its row-count rule on the same read and fit_freshness with it.
+  root <- withr::local_tempdir()
+  write_table(.mini_diag(), "fit_diagnostics", root = root)
+  bad <- fs::path(
+    root, "beliefs", "diagnostics",
+    "sport=football", "country=iceland", "sex=female", "fit_date=2026-05-28"
+  )
+  fs::dir_create(bad)
+  fs::file_create(fs::path(bad, "part-0.parquet"))
+  res <- check_diagnostics_drift(root, health_thresholds())
+  expect_equal(nrow(res), 1L)
+  expect_equal(res$check, "diagnostics_store")
+  expect_equal(res$status, "WARN")
+  expect_match(res$value, "^unreadable")
+})
+
 test_that(".paused_fit_cells maps fit_freshness scopes to sport/country/sex cells", {
   leagues <- list(
     football_iceland = list(sport = "football", country = "iceland"),
