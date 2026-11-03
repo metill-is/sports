@@ -82,8 +82,8 @@ latest_fit_date <- function(static, sex, root) {
 #' football in particular runs ~5-day gaps between fixtures, during which
 #' `needs_refit()` correctly skips the refit (no new data to fit on) yet the fit
 #' aged past the FAIL threshold. So staleness is gated on `needs_refit()` -- the
-#' pipeline's own "the fit's training set has changed" predicate (a result
-#' after the fit date, or a recount at the fit date that differs from its
+#' pipeline's own "the fit is behind its data" predicate (a result after the
+#' fit date, or a training row count at the fit date that differs from its
 #' `n_obs`), reused here so the health signal stays self-consistent with what
 #' `03_fit.R` acts on --
 #' and fit age only sets the *severity* once the fit is genuinely behind the

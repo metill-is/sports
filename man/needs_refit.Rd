@@ -42,7 +42,9 @@ wiped canonical partition forces a refit even if archive still
 carries yesterday's fit — defensive complement to the atomic
 stage-then-rename in `write_table()`, audit 2026-05-15 §H + I2).
 Returns `FALSE` when no results exist (cannot fit on empty data) or
-when the newest fit's training set is unchanged.
+when no result postdates the newest fit and its training row count is
+unchanged. The rule compares counts, so a one-for-one row swap or a score
+correction goes undetected.
 }
 \details{
 Also returns `TRUE` when a fit at the newest `fit_date` would now train on a
