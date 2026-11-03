@@ -400,6 +400,43 @@ test_that("fit_freshness applies the league's training_filter, as the fit does",
   expect_match(res$value, "current with results")
 })
 
+test_that("fit_freshness reports results pending fit for an unseen game dated on the fit date", {
+  # The daily fit for day D runs before D's evening games; the next day's
+  # scrape stores them dated D, so no result postdates the fit. Only the fit's
+  # n_obs (1, the afternoon game) shows it never saw the evening one.
+  root <- withr::local_tempdir()
+  now <- as.POSIXct("2026-06-04 12:00", tz = "UTC")
+  write_table(.mini_sched(Sys.Date() + 5L), "schedules", root = root)
+  .seed_fit(root, fit_date = "2026-05-30", result_date = "2026-05-30")
+  arrow::write_parquet(
+    tibble::tibble(
+      home_team = "C", away_team = "D",
+      match_date = as.Date("2026-05-30"), home_score = 2L, away_score = 2L,
+      division = NA_character_, round = NA_integer_
+    ),
+    fs::path(
+      root, "facts", "results",
+      "sport=football", "country=iceland", "sex=male", "season=2026",
+      "part-1.parquet"
+    )
+  )
+  write_table(
+    tibble::tibble(
+      sport = "football", country = "iceland", sex = "male",
+      fit_date = as.Date("2026-05-30"), n_obs = 1L,
+      n_divergent = 0L, total_iter = 4000L, div_frac = 0,
+      n_max_treedepth = 0L, treedepth_frac = 0, min_ebfmi = 0.9,
+      max_rhat = 1.001, min_ess_bulk = 800, min_ess_tail = 700,
+      adapt_delta = 0.95, iter_sampling = 1000L, chains = 4L, passed = TRUE
+    ),
+    "fit_diagnostics",
+    root = root
+  )
+  res <- check_fit_freshness(.fb_league, root, now, health_thresholds())
+  expect_equal(res$value, "5d old, results pending fit")
+  expect_equal(res$status, "FAIL")
+})
+
 test_that("check_capture_rate is OK at high capture and OK on thin data", {
   root <- withr::local_tempdir()
   recs <- .mini_recs(25L)
