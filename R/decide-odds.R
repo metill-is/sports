@@ -122,11 +122,12 @@ prepare_odds <- function(league, sex,
     dplyr::filter(.data$scraped_at == max(.data$scraped_at)) |>
     dplyr::ungroup()
 
-  # Dedup to latest scrape per (match x market x outcome x line), on the
-  # canonical names: a team_names list value maps several Lengjan spellings
-  # to one team (the 2026-07-17 "Víkingur Rvk" rename), and deduping the raw
-  # strings would keep one row per spelling, which kelly_joint() then sees as
-  # outcome probabilities summing to ~2.
+  # Every surviving row of a match now shares one scraped_at, so this step
+  # only collapses canonical duplicates within that scrape: a team_names list
+  # value maps several Lengjan spellings to one team (the 2026-07-17 "Víkingur
+  # Rvk" rename), and one scrape can list a fixture under both, which
+  # kelly_joint() would see as outcome probabilities summing to ~2. Keep one
+  # row per (match x market x outcome x line) on the canonical names.
   raw <- raw |>
     dplyr::group_by(
       .data$match_date, .data$home_team, .data$away_team,

@@ -437,8 +437,8 @@ decide_one <- function(static, lengjan, betting, sex, bankroll) {
 #'
 #' `odds` carries no `division` column, so the division is joined from
 #' `schedules` on (`match_date`, `home_team`, `away_team`). By this point
-#' `prepare_odds()` has already run `normalise_lengjan_team_names()`
-#' (`R/decide-odds.R:78`), so both sides carry canonical federation names.
+#' `prepare_odds()` has already run `normalise_lengjan_team_names()`, so both
+#' sides carry canonical federation names.
 #'
 #' A fixture absent from `schedules` (rescheduled, renamed) keeps its odds: the
 #' guard's job is to exclude a known-bad division, not to require schedule
