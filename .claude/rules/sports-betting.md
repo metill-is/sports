@@ -160,7 +160,7 @@ bet_amount = round(kelly × current_pool)
 
 ### Recommendations + bankroll (R1–R4, B1–B3)
 
-- **R1** — `recommendations` Parquet is ephemeral, overwritten every `decide_league()` run.
+- **R1** — `recommendations` Parquet is ephemeral: each `decide_league()` run replaces its own sex's rows in the day's `(sport, country, run_date)` partition and keeps the other sex's (`write_decide_table()`; before 2026-11-03 the second sex's run wiped the first). `candidates` is written the same way. A zero-row run writes nothing, so that sex's earlier rows for the day stay.
 - **R2** — Recommendations exclude bets already in the ledger (anti-join on match + market + outcome + line).
 - **R3** — Recommendations exclude past matches (`match_date >= run_date`).
 - **R4** — Odds must be fresher than `betting.max_age_hours`.
