@@ -144,7 +144,7 @@ bet_amount = round(kelly × current_pool)
 
 ### Placement (P1–P4)
 
-- **P1** — Idempotent: `dedup_against_ledger()` runs before any browser session opens. Only an absent ledger reads as empty; any other ledger read error aborts the run (dedup, `append_to_ledger()` and the daily room alike).
+- **P1** — Idempotent: `dedup_against_ledger()` runs before any browser session opens. Only an absent ledger reads as empty; any other ledger read error aborts the run (dedup, `append_to_ledger()` and the daily room alike). Unattended, `run_auto_place()` records it as `failed:preview: <msg>` / `failed:daily_room: <msg>`, which `placement_health` treats as unhealthy.
 - **P2** — Ledger records *actual* Lengjan odds (`odds_placed`), not the recommendation's odds.
 - **P3** — If live odds drift > 1 % from the recommendation, recompute Kelly stake at the new odds.
 - **P4** — Reject if the bet is no longer +EV at live odds (status `not_positive_ev`).
