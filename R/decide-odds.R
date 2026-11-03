@@ -68,7 +68,18 @@ prepare_odds <- function(league, sex,
     }
   }
 
-  # Dedup to latest scrape per (match x market x outcome x line)
+  # Rewrite Lengjan-side names (e.g. "Grindavík kv") to canonical
+  # (e.g. "Grindavík") using the per-sex team_names map -- inverse
+  # direction from what the placer uses. Done at decide time rather than
+  # ingest time so facts/odds/ keeps the as-scraped strings (debugging
+  # value for Lengjan UI deploys; cf. 2026-04-25 "vs"->"-" separator flip).
+  raw <- normalise_lengjan_team_names(raw, league, sex)
+
+  # Dedup to latest scrape per (match x market x outcome x line), on the
+  # canonical names: a team_names list value maps several Lengjan spellings
+  # to one team (the 2026-07-17 "Víkingur Rvk" rename), and deduping the raw
+  # strings would keep one row per spelling, which kelly_joint() then sees as
+  # outcome probabilities summing to ~2.
   raw <- raw |>
     dplyr::group_by(
       .data$match_date, .data$home_team, .data$away_team,
@@ -76,13 +87,6 @@ prepare_odds <- function(league, sex,
     ) |>
     dplyr::slice_max(.data$scraped_at, n = 1L, with_ties = FALSE) |>
     dplyr::ungroup()
-
-  # Rewrite Lengjan-side names (e.g. "Grindavík kv") to canonical
-  # (e.g. "Grindavík") using the per-sex team_names map -- inverse
-  # direction from what the placer uses. Done at decide time rather than
-  # ingest time so facts/odds/ keeps the as-scraped strings (debugging
-  # value for Lengjan UI deploys; cf. 2026-04-25 "vs"->"-" separator flip).
-  raw <- normalise_lengjan_team_names(raw, league, sex)
 
   raw |>
     dplyr::select(

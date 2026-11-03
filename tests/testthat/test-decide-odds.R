@@ -41,6 +41,46 @@ test_that("prepare_odds returns the latest odds per (match, market, outcome, lin
   expect_equal(ml_home$odds, 1.85)
 })
 
+test_that("prepare_odds de-duplicates two Lengjan spellings of one fixture on canonical names", {
+  # Audit 2026-11 finding A: a team_names list value (cf. the 2026-07-17
+  # "Víkingur Rvk" -> "Víkingur Reykjavík" rename) maps two Lengjan spellings
+  # to one canonical. De-duplicating on the raw strings kept both scrapes of
+  # the fixture, which then collapsed into identical (market, outcome, line)
+  # rows whose probabilities summed to ~2 in kelly_joint().
+  root <- withr::local_tempdir()
+  now <- as.POSIXct("2100-01-01 13:00:00", tz = "UTC")
+  scrape <- function(away, at, odds) {
+    tibble::tibble(
+      sport = "football", country = "iceland", scraped_at = at,
+      match_date = as.Date("2100-01-02"), home_team = "Thor Ak.",
+      away_team = away, market = "moneyline",
+      outcome = c("home", "draw", "away"), line = NA_real_, odds = odds
+    )
+  }
+  write_table(dplyr::bind_rows(
+    scrape("Vikingur Rvk", now - 7 * 3600, c(3.50, 3.40, 2.00)),
+    scrape("Vikingur Reykjavik", now - 3600, c(3.60, 3.50, 1.90))
+  ), "odds", root = root)
+  league <- list(
+    sport = "football", country = "iceland",
+    lengjan = list(team_names = list(male = list(
+      Thor = "Thor Ak.",
+      "Vikingur R." = list("Vikingur Reykjavik", "Vikingur Rvk")
+    )))
+  )
+
+  out <- prepare_odds(league, "male",
+    end_date = as.Date("2100-01-01"), max_age_hours = 48,
+    now = now, root = root
+  )
+
+  expect_equal(nrow(out), 3L)
+  expect_equal(unique(out$away_team), "Vikingur R.")
+  out <- out[order(out$outcome), ]
+  expect_equal(out$outcome, c("away", "draw", "home"))
+  expect_equal(out$odds, c(1.90, 3.50, 3.60))
+})
+
 test_that("prepare_odds drops odds older than max_age_hours", {
   root <- setup_odds_root()
   league <- list(sport = "basketball", country = "iceland")
