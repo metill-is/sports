@@ -287,15 +287,25 @@ run_auto_place <- function(root = here::here("data"),
   placeable <- .cap_to_daily_room(pending, room)
   held <- dplyr::anti_join(pending, placeable, by = .bet_key_cols)
   if (nrow(held) > 0L) {
+    # WHY na.rm: an NA stake is held (it ends the prefix) and would turn the
+    # total into "NA kr"; count it separately instead.
+    n_no_stake <- sum(is.na(held$bet_amount))
+    held_stake <- paste0(
+      sum(held$bet_amount, na.rm = TRUE), " kr",
+      if (n_no_stake > 0L) paste0(", ", n_no_stake, " without a stake")
+    )
     cli::cli_alert_warning(paste0(
       "Daily cap: holding back {nrow(held)} of {n_pending} pending bet(s) ",
-      "({sum(held$bet_amount)} kr); {round(room)} kr of today's budget left."
+      "({held_stake}); {round(room)} kr of today's budget left."
     ))
     for (i in seq_len(nrow(held))) {
       h <- held[i, ]
+      # WHY line: two spread or total bets on one match differ only by it.
+      h_line <- if (is.na(h$line)) "" else paste0(" line ", h$line)
       cli::cli_alert_info(paste0(
         "  held: {h$sport}_{h$country}/{h$sex}: {h$home_team} v {h$away_team} ",
-        "{h$market} {h$outcome} -> {h$bet_amount} kr (ev={signif(h$ev, 3)})"
+        "{h$market} {h$outcome}{h_line} -> {h$bet_amount} kr ",
+        "(ev={signif(h$ev, 3)})"
       ))
     }
   }

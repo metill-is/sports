@@ -595,3 +595,32 @@ test_that(".cap_to_daily_room keeps the longest EV-ordered prefix that fits", {
   expect_equal(nrow(.cap_to_daily_room(pending, -10)), 0L)
   expect_equal(nrow(.cap_to_daily_room(pending[0, ], 1000)), 0L)
 })
+
+test_that("run_auto_place's held-back log names the line and survives an NA stake", {
+  # Two spread bets on one match differ only by `line`, so the held line must
+  # print it; an NA stake (ends the prefix) must not turn the total into NA.
+  root <- withr::local_tempdir()
+  write_table(tibble::tibble(
+    run_id = as.POSIXct("2026-06-01 10:00:00", tz = "UTC"),
+    sex = "male", match_date = Sys.Date() + 7L,
+    home_team = c("A", "Q", "Q", "B"), away_team = "Z",
+    market = c("moneyline", "spread", "spread", "moneyline"),
+    outcome = "home", line = c(NA, -1.5, 1.5, NA),
+    p = 0.6, odds = 2.1, ev = c(0.30, 0.20, 0.10, 0.05), kelly = 0.02,
+    bet_amount = c(600, 500, 700, NA),
+    sport = "football", country = "iceland"
+  ), "recommendations", root = root)
+  withr::local_options(cli.width = 500)
+  msgs <- testthat::capture_messages(run_auto_place(
+    root = root, now = as.POSIXct("2026-06-01 12:00:00", tz = "UTC"),
+    leagues_cfg = auto_football_cfg,
+    sync_fn = function(...) TRUE, place_fn = .recording_place(new.env()),
+    bankroll_fn = .room_bankroll(700)
+  ))
+  held <- grep("held: ", msgs, value = TRUE)
+  expect_length(held, 3L)
+  expect_length(unique(held), 3L)
+  expect_match(held[1:2], "spread home line -1\\.5|spread home line 1\\.5")
+  summary <- grep("Daily cap: holding back", msgs, value = TRUE)
+  expect_match(summary, "holding back 3 of 4 pending bet\\(s\\) \\(1200 kr, 1 without a stake\\)")
+})
