@@ -473,6 +473,36 @@ test_that("a rerun with candidates but no recommendations clears that sex's", {
   )
 })
 
+test_that("a market-off run keeps the other sex and clears its own recs", {
+  set.seed(13)
+  root <- withr::local_tempdir()
+  .two_sex_setup(root)
+  # Female first, so the market-off run is the only write that could wipe the
+  # male rows.
+  .two_sex_decide(root, "female")
+  expect_gt(nrow(.read_decided("recommendations", root)), 0L)
+  .two_sex_decide(root, "male")
+  cands_before <- .read_decided("candidates", root)
+  recs_before <- .read_decided("recommendations", root)
+  expect_gt(sum(recs_before$sex == "male"), 0L)
+
+  out <- .two_sex_decide(root, "female", markets_on = FALSE)
+
+  expect_equal(nrow(out), 0L)
+  cands <- .read_decided("candidates", root)
+  expect_equal(
+    cands[cands$sex == "male", , drop = FALSE],
+    cands_before[cands_before$sex == "male", , drop = FALSE]
+  )
+  female <- cands[cands$sex == "female", , drop = FALSE]
+  expect_equal(nrow(female), 2L)
+  expect_equal(unique(female$stage), "dropped_market_off")
+  expect_equal(
+    .read_decided("recommendations", root),
+    recs_before[recs_before$sex == "male", , drop = FALSE]
+  )
+})
+
 test_that("a market-off rerun clears the only sex's recommendations", {
   set.seed(13)
   root <- withr::local_tempdir()
