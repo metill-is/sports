@@ -42,9 +42,17 @@ wiped canonical partition forces a refit even if archive still
 carries yesterday's fit — defensive complement to the atomic
 stage-then-rename in `write_table()`, audit 2026-05-15 §H + I2).
 Returns `FALSE` when no results exist (cannot fit on empty data) or
-when no game has been played since the last fit.
+when the newest fit's training set is unchanged.
 }
 \details{
+Also returns `TRUE` when a fit at the newest `fit_date` would now train on a
+different number of rows than that fit's `fit_diagnostics` `n_obs`. The date
+rule misses a game dated ON the fit date: the daily fit for day D runs before
+D's evening games, which the next day's scrape stores dated D. The recount
+uses that fit's own cutoff, so a `training_filter` lookback window drifting
+since then is not new data, and a refit's own `n_obs` matches it. A fit with
+no readable `n_obs` falls back to the date rule.
+
 Also returns `TRUE` when fixtures fall inside the next `horizon_days` and
 the newest fit predicted none of them -- the season-rollover case, where
 nothing has been played since the last fit (spec 2026-09-16 §8). Only

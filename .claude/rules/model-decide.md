@@ -59,7 +59,11 @@ paths:
 - Daily driver: `Rscript scripts/03_fit.R`. The `needs_refit()`
   predicate in `R/pipeline-freshness.R` short-circuits (league × sex)
   pairs whose last `fit_date` is at least the latest completed
-  `match_date` — unless the next 14 days hold fixtures the newest fit
+  `match_date` and whose training set is unchanged: a recount of
+  `model_training_results()` at that `fit_date` must equal the fit's
+  `fit_diagnostics` `n_obs` (the daily fit runs before that day's evening
+  games, which arrive dated on the fit date; a fit with no `n_obs` falls
+  back to the date rule) — unless the next 14 days hold fixtures the newest fit
   predicted none of (the pre-season / long-break rule, spec 2026-09-16
   §8). That rule reads the newest fit's predictions from `extracts/` and
   `archive/` together (the extract keeps only publish divisions, so
