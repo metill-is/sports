@@ -27,9 +27,11 @@ parse_handicap <- function(change_str) {
 #' `scraped_at`): a line or selection absent from that scrape was withdrawn or
 #' suspended, so its older price is dropped. Team names are normalised to
 #' canonical before matches are keyed, so two Lengjan spellings of one fixture
-#' are one match. A listing whose names this sex's `team_names` maps outranks
-#' an unmapped one keyed to the same canonical fixture (e.g. the men's "FH" v
-#' "Valur" in the female cell): the unmapped rows are dropped with a warning.
+#' are one match; if one scrape lists both, each market line is priced from a
+#' single listing, the primary rendering's (`team_names` order). A listing
+#' whose names this sex's `team_names` maps outranks an unmapped one keyed to
+#' the same canonical fixture (e.g. the men's "FH" v "Valur" in the female
+#' cell): the unmapped rows are dropped with a warning.
 #'
 #' @param league List with `sport` + `country`.
 #' @param sex "male" or "female". Rows carrying a non-NA `sex` (stamped by the
@@ -81,6 +83,8 @@ prepare_odds <- function(league, sex,
   # direction from what the placer uses. Done at decide time rather than
   # ingest time so facts/odds/ keeps the as-scraped strings (debugging
   # value for Lengjan UI deploys; cf. 2026-04-25 "vs"->"-" separator flip).
+  raw$.raw_home <- raw$home_team
+  raw$.raw_away <- raw$away_team
   raw$.home_pos <- lengjan_rendering_pos(raw$home_team, league, sex)
   raw$.away_pos <- lengjan_rendering_pos(raw$away_team, league, sex)
   raw <- normalise_lengjan_team_names(raw, league, sex)
@@ -126,14 +130,24 @@ prepare_odds <- function(league, sex,
   # only collapses canonical duplicates within that scrape: a team_names list
   # value maps several Lengjan spellings to one team (the 2026-07-17 "Víkingur
   # Rvk" rename), and one scrape can list a fixture under both, which
-  # kelly_joint() would see as outcome probabilities summing to ~2. Keep one
-  # row per (match x market x outcome x line) on the canonical names.
+  # kelly_joint() would see as outcome probabilities summing to ~2. Each
+  # (match x market x line) is priced from one listing, so its outcomes never
+  # mix two: the one whose names come first in tn_renderings() order (the
+  # primary rendering), then by raw name as a stable key.
   raw <- raw |>
+    dplyr::arrange(
+      .data$.home_pos, .data$.away_pos, .data$.raw_home, .data$.raw_away
+    ) |>
     dplyr::group_by(
       .data$match_date, .data$home_team, .data$away_team,
-      .data$market, .data$outcome, .data$line
+      .data$market, .data$line
     ) |>
-    dplyr::slice_max(.data$scraped_at, n = 1L, with_ties = FALSE) |>
+    dplyr::filter(
+      .data$.raw_home == .data$.raw_home[1L],
+      .data$.raw_away == .data$.raw_away[1L]
+    ) |>
+    dplyr::group_by(.data$outcome, .add = TRUE) |>
+    dplyr::slice_head(n = 1L) |>
     dplyr::ungroup()
 
   raw |>

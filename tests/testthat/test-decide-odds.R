@@ -157,6 +157,55 @@ test_that("prepare_odds collapses two Lengjan spellings within one scrape", {
   expect_setequal(out$outcome, c("home", "draw", "away"))
 })
 
+test_that("prepare_odds prices each market from the primary rendering's listing", {
+  # Two spellings of one fixture in one scrape: the canonical dedup kept the
+  # first row per outcome in file order, so home and away could come from
+  # different listings. Each (market, line) now comes from one listing, the
+  # one earliest in tn_renderings() order; a selection missing from it (the
+  # spread draw) is not borrowed from the other listing.
+  root <- withr::local_tempdir()
+  now <- as.POSIXct("2100-01-01 13:00:00", tz = "UTC")
+  primary <- "Vikingur Reykjavik"
+  variant <- "Vikingur Rvk"
+  write_table(tibble::tibble(
+    sport = "football", country = "iceland", scraped_at = now - 3600,
+    match_date = as.Date("2100-01-02"), home_team = "Thor Ak.",
+    away_team = c(
+      variant, primary, primary, variant, primary, variant,
+      variant, variant, variant, primary, primary
+    ),
+    market = rep(c("moneyline", "spread"), c(6, 5)),
+    outcome = c(
+      "home", "home", "draw", "draw", "away", "away",
+      "home", "draw", "away", "away", "home"
+    ),
+    line = rep(c(NA_real_, -1), c(6, 5)),
+    odds = c(
+      3.50, 3.60, 3.30, 3.40, 1.90, 2.00,
+      5.00, 4.20, 1.50, 1.45, 5.50
+    )
+  ), "odds", root = root)
+  league <- list(
+    sport = "football", country = "iceland",
+    lengjan = list(team_names = list(male = list(
+      Thor = "Thor Ak.",
+      "Vikingur R." = list(primary, variant)
+    )))
+  )
+
+  out <- prepare_odds(league, "male",
+    end_date = as.Date("2100-01-01"), max_age_hours = 48,
+    now = now, root = root
+  )
+
+  ml <- out[out$market == "moneyline", ]
+  expect_equal(ml$odds[match(c("home", "draw", "away"), ml$outcome)],
+    c(3.60, 3.30, 1.90))
+  sp <- out[out$market == "spread", ]
+  expect_setequal(sp$outcome, c("home", "away"))
+  expect_equal(sp$odds[match(c("home", "away"), sp$outcome)], c(5.50, 1.45))
+})
+
 test_that("prepare_odds keeps a women's fixture apart from the men's between the same clubs", {
   # Football's DOM-scraped rows carry no `sex`, so the female cell also sees
   # the men's listings. "FH" and "Valur" are no female rendering and pass
