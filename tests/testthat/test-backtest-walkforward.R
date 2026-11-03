@@ -78,7 +78,7 @@ test_that("bt_wf_slice_odds cuts each match at its OWN match day, independent of
 test_that("bt_wf_decide selects the latest pre-match-day snapshot, never the match-day/post-result one (ASSERT-ODDS-1, the mandated regression test)", {
   # Three snapshots for one match: two pre-match-day (admissible) and one on the
   # match day after kickoff (embeds the result). The slice must drop the last;
-  # prepare_odds' slice_max then takes the latest survivor = closing-ish line.
+  # prepare_odds then keeps each match's latest survivor = closing-ish line.
   odds <- tibble::tibble(
     sport = "football", country = "iceland",
     match_date = as.Date("2026-05-22"),
