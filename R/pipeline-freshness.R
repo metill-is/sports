@@ -12,8 +12,8 @@
 #' carries yesterday's fit — defensive complement to the atomic
 #' stage-then-rename in `write_table()`, audit 2026-05-15 §H + I2).
 #' Returns `FALSE` when no results exist (cannot fit on empty data) or
-#' when no result postdates the newest fit and its training row count is
-#' unchanged. The rule compares counts, so a one-for-one row swap or a score
+#' when no result postdates the newest fit, its training row count is
+#' unchanged, and the horizon rule below does not fire. The rule compares counts, so a one-for-one row swap or a score
 #' correction goes undetected.
 #'
 #' Also returns `TRUE` when a fit at the newest `fit_date` would now train on a
@@ -142,6 +142,11 @@ needs_refit <- function(static, sex, root = here::here("data"),
 # No readable n_obs for that fit date (a non-sampling or round-mode fit, a
 # failed best-effort write, an unreadable store) is "unknown", and unknown does
 # not start a fit: the date rule alone applies, as before.
+#
+# Known gap: fit_league() persists diagnostics before the belief writes, so a
+# same-day --force rerun that samples on more rows and then fails in the
+# extract leaves n_obs ahead of the beliefs, and no refit starts until a
+# later-dated game arrives.
 .trained_rows_changed <- function(static, sex, root, last_fit, completed) {
   diag <- tryCatch(
     read_table(

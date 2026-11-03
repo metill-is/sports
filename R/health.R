@@ -83,8 +83,8 @@ latest_fit_date <- function(static, sex, root) {
 #' `needs_refit()` correctly skips the refit (no new data to fit on) yet the fit
 #' aged past the FAIL threshold. So staleness is gated on `needs_refit()` -- the
 #' pipeline's own "the fit is behind its data" predicate (a result after the
-#' fit date, or a training row count at the fit date that differs from its
-#' `n_obs`), reused here so the health signal stays self-consistent with what
+#' fit date, a training row count at the fit date that differs from its
+#' `n_obs`, or upcoming fixtures the newest fit predicted none of), reused here so the health signal stays self-consistent with what
 #' `03_fit.R` acts on --
 #' and fit age only sets the *severity* once the fit is genuinely behind the
 #' data. Off-season cells (no upcoming games) are PAUSED, as before. This
@@ -386,12 +386,14 @@ check_odds_freshness <- function(leagues, root, now, th) {
 #' @noRd
 check_diagnostics_drift <- function(root, th, paused_cells = character(0)) {
   d <- tryCatch(read_table("fit_diagnostics", root = root), error = function(e) e)
+  # WARN even when every cell is paused: unlike drift, this has a fix (restore
+  # the file), and the store must be intact before the season restarts.
   if (inherits(d, "error")) {
     return(health_row(
       "diagnostics_store", "fit_diagnostics", "WARN",
       paste0(
-        "unreadable, so drift is unknown and fit_freshness uses the date ",
-        "rule alone: ", conditionMessage(d)
+        "unreadable, so drift is unknown and the cell holding the bad file ",
+        "may lose needs_refit()'s row-count rule: ", conditionMessage(d)
       ),
       "readable"
     ))

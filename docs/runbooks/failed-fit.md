@@ -23,9 +23,10 @@ read). `fit.yml` may be red.
    the early signal the gate has not yet tripped on.
 3. If `fit_freshness` is FAIL but the fit is *green*, the upstream results
    scrape may not be moving — check `scrape-results.yml`.
-4. `diagnostics_store` WARN: drift is unknown, and `needs_refit()` has lost its
-   row-count rule, so a game dated on the fit date goes unfitted until a later
-   one arrives. The value carries Arrow's error naming the bad file. The store
+4. `diagnostics_store` WARN: drift is unknown, and the cell whose partition
+   holds the bad file loses `needs_refit()`'s row-count rule (its read is
+   filtered to that cell, so other cells keep it), so a game dated on that
+   cell's fit date goes unfitted until a later one arrives. The value carries Arrow's error naming the bad file. The store
    is tracked: restore that file from the last commit that wrote it intact
    (`git log -- <path>`). Do not delete it to clear the WARN, because its
    `n_obs` is what the row-count rule compares with.

@@ -13,8 +13,9 @@ leagues. Each script has its own freshness guard: `02_scrape_odds.R`
 skips when there are no upcoming games; `03_fit.R` skips when
 `needs_refit()` is FALSE: no completed game postdates the last fit, its
 training row count still matches that fit's `n_obs` (so an evening game
-dated on the fit date still triggers a refit), and the last fit predicted
-part of the next 14 days' fixtures. Pass `--force` to bypass.
+dated on the fit date still triggers a refit), and the horizon rule does not
+fire (the next 14 days hold no predictable fixture, or the last fit predicted
+at least one of them). Pass `--force` to bypass.
 
 ## Step 1: Parse arguments
 
