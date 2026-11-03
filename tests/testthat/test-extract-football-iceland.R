@@ -688,6 +688,83 @@ test_that(".build_bracket_state_pfi: post-R16 with R8 drawn — R8 pairings_know
   expect_false(bs$rounds$SF$pairings_known)
 })
 
+# ---- A drawn Final is played at a neutral ground -----------------------------
+
+# Helper: a cup played through the semi-finals with the Final drawn but not yet
+# played. Home sides win every tie, so H1 and H5 reach the Final, and KSÍ lists
+# H5 as the home side -- as it lists one for the real, neutral-ground Final.
+.cup_season_final_drawn <- function() {
+  results <- tibble::tibble(
+    home_team = c(paste0("H", 1:8), "H1", "H3", "H5", "H7", "H1", "H5"),
+    away_team = c(paste0("A", 1:8), "H2", "H4", "H6", "H8", "H3", "H7"),
+    match_date = as.Date(c(
+      rep("2026-05-13", 8L), rep("2026-06-07", 4L), rep("2026-07-01", 2L)
+    )),
+    home_score = 2L,
+    away_score = 1L,
+    division = "CUP",
+    season = 2026L
+  )
+  final <- tibble::tibble(
+    home_team  = "H5",
+    away_team  = "H1",
+    match_date = as.Date("2026-08-15"),
+    division   = "CUP"
+  )
+  .build_bracket_state_pfi(final, results = results, current_season = 2026L)
+}
+
+# Equal-strength sim inputs with a large home advantage, so any home-venue
+# treatment of the Final shows up as a clear departure from a coin flip.
+.cup_equal_sim_inputs <- function(teams, n_draws, ha = 0.5) {
+  list(
+    team = tidyr::expand_grid(team = teams, .draw = seq_len(n_draws)) |>
+      dplyr::mutate(
+        cur_offense        = 0,
+        cur_defense        = 0,
+        home_advantage_off = ha,
+        home_advantage_def = ha
+      ),
+    scalar = tibble::tibble(
+      .draw                  = seq_len(n_draws),
+      mean_log_goals         = log(1.5),
+      alpha_mu3              = -3,
+      beta_mu3_strength_diff = 0
+    )
+  )
+}
+
+test_that(".build_bracket_state_pfi: a drawn Final is neutral; earlier drawn rounds keep the host's venue", {
+  bs <- .cup_season_final_drawn()
+  expect_true(bs$rounds$Final$pairings_known)
+  expect_equal(bs$rounds$Final$matches$home_team, "H5")
+  expect_equal(bs$rounds$Final$matches$venue, "neutral")
+  for (rn in c("R16", "R8", "SF")) {
+    expect_true(all(bs$rounds[[rn]]$matches$venue == "home"), info = rn)
+  }
+})
+
+test_that("simulate_cup_bracket: a drawn Final gives the listed home side no home advantage", {
+  bs <- .cup_season_final_drawn()
+  si <- .cup_equal_sim_inputs(bs$cup_teams, n_draws = 400L)
+  out <- simulate_cup_bracket(si$team, si$scalar, bs, pairing_seed = 2026L)
+  p_h5 <- out$probability[out$team == "H5" & out$round_name == "Champion"]
+  # Equal strengths at a neutral ground -> a coin flip (sd ~0.025 at 400
+  # draws). With the host's +0.5 log-rate advantage each way H5 wins ~80 %.
+  expect_lt(abs(p_h5 - 0.5), 0.08)
+})
+
+test_that(".build_cup_bracket_payload_pfi: a drawn Final's matchup cell stays neutral", {
+  bs <- .cup_season_final_drawn()
+  bj <- .build_cup_bracket_payload_pfi(
+    bs, .cup_equal_sim_inputs(bs$cup_teams, n_draws = 6L),
+    generated_at = "2026-08-01T00:00:00Z", n_draws = 6L
+  )
+  expect_equal(bj$teams, c("H5", "H1"))
+  expect_equal(bj$matchup["H5", "H1"], 0.5)
+  expect_equal(bj$matchup["H1", "H5"], 0.5)
+})
+
 # ---- .extract_sim_inputs_pfi NA-safety (issue #14) --------------------------
 
 test_that(".extract_sim_inputs_pfi: drops orphan teams + warns when fit's team count exceeds nrow(teams)", {
