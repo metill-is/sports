@@ -523,14 +523,21 @@ test_that("decide_league aborts when the shared partition cannot be read", {
   root <- withr::local_tempdir()
   .two_sex_setup(root)
   .two_sex_decide(root, "male")
+  recs_before <- .read_decided("recommendations", root)
   part <- list.files(file.path(root, "decisions", "candidates"),
     pattern = "[.]parquet$", recursive = TRUE, full.names = TRUE
   )
   expect_length(part, 1L)
   writeLines("not parquet", part)
 
-  expect_error(.two_sex_decide(root, "female"))
+  expect_error(
+    .two_sex_decide(root, "female"),
+    "Parquet input source .*/candidates/.*Parquet magic bytes not found"
+  )
   expect_identical(readLines(part), "not parquet")
+  recs <- .read_decided("recommendations", root)
+  expect_false("female" %in% recs$sex)
+  expect_equal(recs, recs_before)
 })
 
 
