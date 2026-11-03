@@ -54,6 +54,44 @@ release_auto_place_lock <- function(root = here::here("data")) {
   invisible(TRUE)
 }
 
+#' Run a manual ledger write under the unattended-placement lock.
+#'
+#' `scripts/place_bets.R --live` and `scripts/06_settle.R` read, modify and
+#' rewrite whole ledger partitions, as the unattended placer's placement and
+#' settle steps do. Holding the same lock stops one writer's rows being lost
+#' between another's read and write. Where [run_auto_place()] records `locked`
+#' and skips its cycle, a manual caller stops with an error naming the holder,
+#' so the operator can retry once that run finishes. The lock is released
+#' however `code` exits; a lock this call did not take is never touched.
+#'
+#' @param code Expression to evaluate while holding the lock.
+#' @param root Data root.
+#' @param what Caller label for the error message.
+#' @return The value of `code`.
+#' @export
+with_ledger_lock <- function(code, root = here::here("data"),
+                             what = "ledger write") {
+  if (!acquire_auto_place_lock(root)) {
+    lock <- .auto_place_lock_path(root)
+    pid <- tryCatch(readLines(lock, n = 1L, warn = FALSE)[1L],
+      error = function(e) NA_character_
+    )
+    stop(
+      sprintf(
+        paste0(
+          "%s: another run (PID %s) holds the ledger lock %s. Retry when it ",
+          "finishes; if no placer, settle or autoplace run is active, the PID ",
+          "was reused and the lock file can be deleted."
+        ),
+        what, pid, lock
+      ),
+      call. = FALSE
+    )
+  }
+  on.exit(release_auto_place_lock(root), add = TRUE)
+  code
+}
+
 #' @noRd
 .daily_room <- function(daily_budget, placed_today) {
   max(0, daily_budget - placed_today)
