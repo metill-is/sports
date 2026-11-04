@@ -118,6 +118,10 @@ drop_betting_disabled <- function(recs, leagues_cfg = NULL) {
 #' outcome, line). The placer is the only writer to the ledger, so this is
 #' the canonical "haven't placed it yet" filter.
 #'
+#' An absent ledger means nothing has been placed. Any other ledger read error
+#' propagates, so placement aborts before a browser session opens rather than
+#' re-placing bets the ledger already holds.
+#'
 #' @param recs Tibble from `load_recommendations()`.
 #' @param root Data root.
 #' @return Tibble of recommendations not yet placed.
@@ -127,27 +131,21 @@ dedup_against_ledger <- function(recs, root) {
     return(recs)
   }
 
-  # An unreadable ledger is recoverable (worst case: re-attempt a duplicate
-  # bet), but it's still a real fault that operators should see.
-  led <- tryCatch(
-    read_table("ledger", root = root),
-    error = function(e) {
-      cli::cli_warn(c(
-        "dedup_against_ledger: ledger read failed; skipping dedup",
-        "i" = "{conditionMessage(e)}"
-      ))
-      tibble::tibble()
-    }
-  )
+  # No tryCatch: read_table() already returns 0 rows for an absent ledger. Any
+  # other read error must abort. Skipping dedup re-placed every bet already in
+  # the ledger (P1), and each append then rewrote its partition from nothing
+  # (audit 2026-11-03).
+  led <- read_table("ledger", root = root)
   if (nrow(led) == 0L) {
     return(recs)
   }
 
-  if (!all(.bet_key_cols %in% names(led))) {
-    cli::cli_warn(
-      "dedup_against_ledger: ledger missing key column(s); skipping dedup"
+  missing <- setdiff(.bet_key_cols, names(led))
+  if (length(missing) > 0L) {
+    # WHY: abort, as on a read error; skipping dedup breaks P1
+    cli::cli_abort(
+      "dedup_against_ledger: ledger missing key column(s) {.field {missing}}"
     )
-    return(recs)
   }
 
   # dplyr::anti_join handles NA-equality on the join (two NA `line` values

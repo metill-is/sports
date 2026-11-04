@@ -52,6 +52,29 @@ test_that("check_orphaned_bets is OK with a recent unsettled bet", {
   expect_equal(res$status, "OK")
 })
 
+test_that("check_orphaned_bets errors on an unreadable ledger instead of reporting 0", {
+  # A read error read as an empty ledger: OK with 0 orphans (review 2026-11-03).
+  root <- withr::local_tempdir()
+  write_table(.mini_ledger("2026-04-01", settled = FALSE), "ledger", root = root)
+  corrupt_ledger_fragment(root)
+  expect_error(
+    check_orphaned_bets(root, as.POSIXct("2026-05-30", tz = "UTC"), health_thresholds()),
+    "Parquet"
+  )
+})
+
+test_that("pipeline_health turns an unreadable ledger into check_error rows, not OK", {
+  local_auto_football()
+  root <- withr::local_tempdir()
+  seed_health_pending_rec(root)
+  corrupt_ledger_fragment(root)
+  record_placement_status("placed", run_at = Sys.time(), root = root)
+  out <- pipeline_health(root = root, now = Sys.time(), leagues = list())
+  expect_false(any(out$check %in% c("orphaned_bets", "placement_health")))
+  errs <- out[out$check == "check_error", , drop = FALSE]
+  expect_gte(sum(grepl("Parquet", errs$value)), 2L)
+})
+
 test_that("pipeline_health returns the canonical health tibble shape", {
   root <- withr::local_tempdir()
   out <- pipeline_health(root = root, now = as.POSIXct("2026-05-30", tz = "UTC"), leagues = list())
@@ -494,6 +517,20 @@ test_that("check_placement_health FAILs on a failed last run with pending bets",
   )
   row <- check_placement_health(root, Sys.time(), th)
   expect_equal(row$status, "FAIL")
+})
+
+test_that("check_placement_health errors on an unreadable ledger instead of reporting no pending bets", {
+  # The dedup read error was mapped to 0 pending -> OK "no pending bets",
+  # hiding the corrupt ledger the placer itself now refuses (review 2026-11-03).
+  local_auto_football()
+  root <- withr::local_tempdir()
+  seed_health_pending_rec(root)
+  corrupt_ledger_fragment(root)
+  record_placement_status("placed", run_at = Sys.time(), root = root)
+  expect_error(
+    check_placement_health(root, Sys.time(), health_thresholds()),
+    "Parquet"
+  )
 })
 
 test_that("check_placement_health is OK after a healthy run cleared the queue", {

@@ -8,6 +8,10 @@ NULL
 #' all existing rows. When `dual_write_csv = TRUE`, also appends to
 #' `<legacy_root>/<sport>/<country>/history/bets_log.csv` for cutover safety.
 #'
+#' An absent ledger or partition reads as empty, so a first bet still writes.
+#' Any other read error propagates and nothing is written: swallowing it would
+#' rewrite the partition holding only `bet_row`, deleting its history.
+#'
 #' This is the only writer to the ledger.
 #'
 #' @param bet_row Single-row tibble matching `schemas()$ledger`.
@@ -49,10 +53,11 @@ append_to_ledger <- function(bet_row, root,
     sport = bet_row$sport[[1]],
     country = bet_row$country[[1]]
   )
-  existing <- tryCatch(
-    read_table("ledger", root = root, filter = part_filter),
-    error = function(e) tibble::tibble()
-  )
+  # No tryCatch: read_table() already returns 0 rows for an absent ledger or
+  # partition. Any other read error (a truncated or non-Parquet fragment) must
+  # abort, because write_table() below replaces the whole partition and would
+  # delete its history (L2; audit 2026-11-03, cf. upsert_table's odds F4).
+  existing <- read_table("ledger", root = root, filter = part_filter)
 
   combined <- if (nrow(existing) > 0L) {
     dplyr::bind_rows(existing, bet_row)

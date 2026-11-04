@@ -58,7 +58,11 @@ semantics or a coordination mechanism.
 **placement-capture-rate** (recommendations for now-played matches that never
 reached the ledger — the forensic review found ~45% capture), placement health,
 bankroll/drawdown, discovery, and the three publish-side checks added
-2026-09-04. Thresholds are named constants in the function.
+2026-09-04. Thresholds are named constants in the function. A ledger read
+error in the orphaned-bet or placement-health check propagates and becomes a
+`check_error` row (FAIL), not OK; `settle_ledger()` and `void_bet()` likewise
+stop on it, so `06_settle.R` fails loudly (the autoplace settle step still
+catches it). Only an absent ledger reads as empty.
 
 ### The publish-side checks (2026-09-04)
 

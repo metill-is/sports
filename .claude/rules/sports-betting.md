@@ -144,7 +144,7 @@ bet_amount = round(kelly × current_pool)
 
 ### Placement (P1–P4)
 
-- **P1** — Idempotent: `dedup_against_ledger()` runs before any browser session opens.
+- **P1** — Idempotent: `dedup_against_ledger()` runs before any browser session opens. Only an absent ledger reads as empty; any other ledger read error aborts the run (dedup, `append_to_ledger()` and the daily room alike). Unattended, `run_auto_place()` records it as `failed:preview: <msg>` / `failed:daily_room: <msg>`, which `placement_health` treats as unhealthy.
 - **P2** — Ledger records *actual* Lengjan odds (`odds_placed`), not the recommendation's odds.
 - **P3** — If live odds drift > 1 % from the recommendation, recompute Kelly stake at the new odds.
 - **P4** — Reject if the bet is no longer +EV at live odds (status `not_positive_ev`).
@@ -189,7 +189,9 @@ run's stake, not only whether it runs: pending bets are ordered by `ev`
 (descending, ties broken by the bet key), and only the longest prefix whose
 cumulative `bet_amount` fits the day's room reaches `place_bets(recs = )`. A
 stake is never split, and a bet held back is logged. P3's live-odds rescale can
-still lift a placed stake above its recommended `bet_amount`. It is **never** wired into
+still lift a placed stake above its recommended `bet_amount`. Manual
+`scripts/place_bets.R --live` and `scripts/06_settle.R` take the same lock around
+their ledger write (`with_ledger_lock()`) and stop if another run holds it. It is **never** wired into
 CI; `test-placer-ci-isolation.R` forbids `auto_place`/`autoplace`/`AUTO_PLACE`/
 `run_auto_place` tokens in workflows. Failures surface via the
 `placement_health` health check. Install/remove: `tools/install-autoplace.sh`.

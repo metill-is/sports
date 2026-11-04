@@ -23,5 +23,6 @@ Non-negative ISK room.
 \description{
 `daily_budget = max(daily_budget_frac * current_pool, daily_budget_min_isk)`,
 minus stakes already placed today (by `placed_at`). The wrapper-level
-backstop for the cross-session daily cap (design Risk 3).
+backstop for the cross-session daily cap (design Risk 3). An absent ledger
+counts as nothing placed; any other ledger read error propagates.
 }

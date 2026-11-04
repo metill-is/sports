@@ -89,6 +89,45 @@ test_that("append_to_ledger CSV dual-write APPENDS to an existing file", {
   expect_setequal(back$home_team, c("Stjarnan", "KR"))
 })
 
+# ---- Ledger read errors propagate (audit 2026-11-03, finding A) -------------
+#
+# append_to_ledger() turned ANY read error into "no existing rows" and then
+# rewrote the (sport, country) partition holding only the new row, deleting
+# the partition's history (L2). Only an absent ledger or partition reads as
+# empty now; any other read error propagates and nothing is written.
+
+test_that("append_to_ledger refuses to write over an unreadable partition", {
+  tmp <- withr::local_tempdir()
+  append_to_ledger(mk_ledger_row(home = "KR"), root = tmp)
+  part_dir <- fs::path(tmp, "decisions", "ledger", "sport=football", "country=iceland")
+  good <- fs::path(part_dir, "part-0.parquet")
+  md5_before <- unname(tools::md5sum(good))
+  bad <- corrupt_ledger_fragment(tmp)
+
+  expect_error(
+    append_to_ledger(mk_ledger_row(home = "Fram"), root = tmp),
+    "Parquet"
+  )
+
+  # The partition was not replaced: the history file is byte-identical and
+  # the corrupt fragment is still there for the operator to inspect.
+  expect_true(fs::file_exists(bad))
+  expect_equal(unname(tools::md5sum(good)), md5_before)
+  expect_equal(arrow::read_parquet(good)$home_team, "KR")
+})
+
+test_that("append_to_ledger treats an absent partition as empty", {
+  tmp <- withr::local_tempdir()
+  hb <- mk_ledger_row(home = "Valur")
+  hb$sport <- "handball"
+  append_to_ledger(hb, root = tmp)
+
+  append_to_ledger(mk_ledger_row(home = "KR"), root = tmp)
+
+  back <- read_table("ledger", root = tmp)
+  expect_setequal(paste(back$sport, back$home_team), c("handball Valur", "football KR"))
+})
+
 test_that("append_to_ledger errors on missing required columns", {
   tmp <- withr::local_tempdir()
   bad <- tibble::tibble(sport = "football", country = "iceland")

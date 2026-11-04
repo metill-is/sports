@@ -54,6 +54,49 @@ release_auto_place_lock <- function(root = here::here("data")) {
   invisible(TRUE)
 }
 
+#' Run a manual ledger write under the unattended-placement lock.
+#'
+#' `scripts/place_bets.R --live` and `scripts/06_settle.R` read, modify and
+#' rewrite whole ledger partitions, as the unattended placer's placement and
+#' settle steps do. Holding the same lock stops one writer's rows being lost
+#' between another's read and write. Where [run_auto_place()] records `locked`
+#' and skips its cycle, a manual caller stops with an error naming the holder,
+#' so the operator can retry once that run finishes. The lock is released
+#' however `code` exits; a lock this call did not take is never touched.
+#' The lock is held across [place_bets()]'s interactive prompt and browser
+#' session (autoplace cycles meanwhile record `locked`), and
+#' [acquire_auto_place_lock()] checks then writes the lock file in two steps,
+#' so two processes starting in the same instant can both acquire it (a
+#' pre-existing race, not fixed here).
+#'
+#' @param code Expression to evaluate while holding the lock.
+#' @param root Data root.
+#' @param what Caller label for the error message.
+#' @return The value of `code`.
+#' @export
+with_ledger_lock <- function(code, root = here::here("data"),
+                             what = "ledger write") {
+  if (!acquire_auto_place_lock(root)) {
+    lock <- .auto_place_lock_path(root)
+    pid <- tryCatch(readLines(lock, n = 1L, warn = FALSE)[1L],
+      error = function(e) NA_character_
+    )
+    stop(
+      sprintf(
+        paste0(
+          "%s: another run (PID %s) holds the ledger lock %s. Retry when it ",
+          "finishes; if no placer, settle or autoplace run is active, the PID ",
+          "was reused and the lock file can be deleted."
+        ),
+        what, pid, lock
+      ),
+      call. = FALSE
+    )
+  }
+  on.exit(release_auto_place_lock(root), add = TRUE)
+  code
+}
+
 #' @noRd
 .daily_room <- function(daily_budget, placed_today) {
   max(0, daily_budget - placed_today)
@@ -75,7 +118,8 @@ release_auto_place_lock <- function(root = here::here("data")) {
 #'
 #' `daily_budget = max(daily_budget_frac * current_pool, daily_budget_min_isk)`,
 #' minus stakes already placed today (by `placed_at`). The wrapper-level
-#' backstop for the cross-session daily cap (design Risk 3).
+#' backstop for the cross-session daily cap (design Risk 3). An absent ledger
+#' counts as nothing placed; any other ledger read error propagates.
 #' @param root Data root.
 #' @param bankroll A `load_bankroll()` list.
 #' @param now Current time.
@@ -88,9 +132,9 @@ auto_place_daily_room <- function(root = here::here("data"),
     bankroll$daily_budget_frac * bankroll$current_pool,
     bankroll$daily_budget_min_isk
   )
-  led <- tryCatch(read_table("ledger", root = root),
-    error = function(e) tibble::tibble()
-  )
+  # No tryCatch: an absent ledger already reads as 0 rows. Any other read error
+  # must not read as "nothing placed today" (audit 2026-11-03).
+  led <- read_table("ledger", root = root)
   .daily_room(daily_budget, .placed_today_stake(led, now))
 }
 
@@ -224,7 +268,10 @@ auto_place_leagues <- function(leagues_cfg) {
 #'   Set `FALSE` to watch a visible browser during a supervised run; the
 #'   human-paced `sample_delay()` in the placer applies either way.
 #' @param leagues_cfg Named league config; \code{NULL} (default) reads [load_leagues()] after a successful sync, so a config change pulled this cycle applies this cycle; a refused sync reads no config and records \code{sync_failed}.
-#' @return The recorded status list, invisibly.
+#' @return The recorded status list, invisibly. An error in the gate reads
+#'   ([preview_pending()], [auto_place_daily_room()]) is recorded and returned
+#'   as `failed:preview: <message>` or `failed:daily_room: <message>`; a
+#'   placement or config error is recorded, then re-thrown.
 #' @export
 run_auto_place <- function(root = here::here("data"),
                            now = Sys.time(),
@@ -259,21 +306,42 @@ run_auto_place <- function(root = here::here("data"),
       stop(e)
     })
   }
+  # Before the gate reads: their errors are failed:*, which must not outrank a
+  # refused sync for the reason above.
+  if (!sync_ok) {
+    return(record_placement_status("sync_failed", run_at = now, root = root))
+  }
   auto_keys <- if (is.null(leagues_cfg)) {
     character(0)
   } else {
     auto_place_leagues(leagues_cfg)
   }
+  # A gate read error (a corrupt ledger, say) is recorded as failed:<step>, not
+  # mapped to "nothing pending" / room 0: that recorded a healthy
+  # nothing_pending every cycle (review 2026-11-03). Returned, not thrown, so
+  # scripts/auto_place.R still settles and commits, then exits 1.
+  gate_failed <- function(step, e, n_pending = NA_integer_) {
+    record_placement_status(
+      paste0("failed:", step, ": ", conditionMessage(e)),
+      n_pending = n_pending, run_at = now, root = root
+    )
+  }
   pending <- tryCatch(
     suppressMessages(preview_pending(
       leagues = auto_keys, root = root, leagues_cfg = leagues_cfg
     )),
-    error = function(e) tibble::tibble()
+    error = function(e) e
   )
+  if (inherits(pending, "error")) {
+    return(gate_failed("preview", pending))
+  }
   n_pending <- nrow(pending)
   room <- tryCatch(auto_place_daily_room(root, bankroll_fn(), now),
-    error = function(e) 0
+    error = function(e) e
   )
+  if (inherits(room, "error")) {
+    return(gate_failed("daily_room", room, n_pending))
+  }
 
   action <- auto_place_decide(FALSE, FALSE, sync_ok, n_pending, room)
   if (action != "place") {

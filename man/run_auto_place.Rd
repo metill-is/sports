@@ -35,7 +35,10 @@ human-paced `sample_delay()` in the placer applies either way.}
 \item{leagues_cfg}{Named league config; \code{NULL} (default) reads [load_leagues()] after a successful sync, so a config change pulled this cycle applies this cycle; a refused sync reads no config and records \code{sync_failed}.}
 }
 \value{
-The recorded status list, invisibly.
+The recorded status list, invisibly. An error in the gate reads
+  ([preview_pending()], [auto_place_daily_room()]) is recorded and returned
+  as `failed:preview: <message>` or `failed:daily_room: <message>`; a
+  placement or config error is recorded, then re-thrown.
 }
 \description{
 The daily cap limits the run's stake, not just whether it runs: pending

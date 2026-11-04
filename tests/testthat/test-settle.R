@@ -422,6 +422,15 @@ test_that("settle_ledger: empty ledger is a no-op", {
   expect_equal(settle_ledger(root = tmp), 0L)
 })
 
+test_that("settle_ledger: errors on an unreadable ledger instead of settling 0", {
+  # A read error read as an empty ledger: a silent "0 settled" every cycle
+  # (review 2026-11-03).
+  tmp <- withr::local_tempdir()
+  write_table(make_bet("moneyline", "home"), "ledger", root = tmp)
+  corrupt_ledger_fragment(tmp)
+  expect_error(settle_ledger(root = tmp), "Parquet")
+})
+
 test_that("settle_ledger: back-settles rescheduled-fixture orphans via window default", {
   tmp <- withr::local_tempdir()
   led <- dplyr::bind_rows(
@@ -715,5 +724,20 @@ test_that("void_bet: empty or missing ledger raises a clear error", {
       market = "moneyline"
     ),
     "empty or missing"
+  )
+})
+
+test_that("void_bet: an unreadable ledger raises the read error, not 'empty or missing'", {
+  tmp <- withr::local_tempdir()
+  write_table(make_bet("moneyline", "home"), "ledger", root = tmp)
+  corrupt_ledger_fragment(tmp)
+  expect_error(
+    void_bet(
+      root = tmp,
+      sport = "football", country = "iceland", sex = "male",
+      match_date = as.Date("2026-05-01"), home_team = "A", away_team = "B",
+      market = "moneyline"
+    ),
+    "Parquet"
   )
 })

@@ -463,7 +463,10 @@ check_diagnostics_drift <- function(root, th, paused_cells = character(0)) {
 
 #' @noRd
 check_orphaned_bets <- function(root, now, th) {
-  led <- tryCatch(read_table("ledger", root = root), error = function(e) tibble::tibble())
+  # No tryCatch: an absent ledger already reads as 0 rows. Any other read error
+  # reaches pipeline_health()'s safe() as a check_error FAIL, not an OK 0
+  # (review 2026-11-03).
+  led <- read_table("ledger", root = root)
   thr_lbl <- paste0("0 unsettled > ", th$orphan_age_days, "d")
   if (nrow(led) == 0L || !all(c("settled", "match_date") %in% names(led))) {
     return(health_row("orphaned_bets", "ledger", "OK", 0, thr_lbl))
@@ -623,18 +626,17 @@ check_placement_health <- function(root, now, th) {
   healthy <- c("placed", "nothing_pending", "ev_rejected", "daily_cap_reached")
   thr_lbl <- paste0("healthy run < ", th$placement_stale_fail_hours, "h when pending")
 
-  pending <- tryCatch(
-    {
-      recs <- load_recommendations(root = root)
-      if (nrow(recs) == 0L) {
-        recs
-      } else {
-        recs <- recs[as.Date(recs$match_date) >= as.Date(now, tz = "UTC"), , drop = FALSE]
-        dedup_against_ledger(recs, root = root)
-      }
-    },
-    error = function(e) tibble::tibble()
-  )
+  # No tryCatch: absent recommendations or ledger already read as 0 rows. A
+  # real read error (the corrupt ledger the placer now refuses) reaches
+  # pipeline_health()'s safe() as a check_error FAIL instead of an OK
+  # "no pending bets" (review 2026-11-03).
+  recs <- load_recommendations(root = root)
+  pending <- if (nrow(recs) == 0L) {
+    recs
+  } else {
+    recs <- recs[as.Date(recs$match_date) >= as.Date(now, tz = "UTC"), , drop = FALSE]
+    dedup_against_ledger(recs, root = root)
+  }
   n_pending <- nrow(pending)
 
   last <- read_placement_status(root)
