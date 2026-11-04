@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-03T23:56:55Z",
+  "generated_at": "2026-11-04T19:18:50Z",
   "overall": "WARN",
   "n_fail": 0,
   "n_warn": 3,
@@ -8,28 +8,28 @@
       "check": "fit_freshness",
       "scope": "basketball_iceland male",
       "status": "OK",
-      "value": "4d old, current with results",
+      "value": "0d old, current with results",
       "threshold": "<= 2d"
     },
     {
       "check": "fit_freshness",
       "scope": "basketball_iceland female",
       "status": "OK",
-      "value": "1d old, current with results",
+      "value": "0d old, current with results",
       "threshold": "<= 2d"
     },
     {
       "check": "fit_freshness",
       "scope": "handball_iceland male",
       "status": "OK",
-      "value": "2d old, current with results",
+      "value": "0d old, current with results",
       "threshold": "<= 2d"
     },
     {
       "check": "fit_freshness",
       "scope": "handball_iceland female",
       "status": "OK",
-      "value": "2d old, current with results",
+      "value": "0d old, current with results",
       "threshold": "<= 2d"
     },
     {
@@ -57,7 +57,7 @@
       "check": "odds_freshness",
       "scope": "handball_iceland",
       "status": "OK",
-      "value": "next fixture in 9d; odds not posted yet",
+      "value": "next fixture in 8d; odds not posted yet",
       "threshold": "odds for fixtures within 3d"
     },
     {
@@ -71,7 +71,7 @@
       "check": "rhat_drift",
       "scope": "basketball/iceland/female",
       "status": "OK",
-      "value": "1.011",
+      "value": "1.010",
       "threshold": "< 1.020"
     },
     {
@@ -85,7 +85,7 @@
       "check": "rhat_drift",
       "scope": "basketball/iceland/male",
       "status": "OK",
-      "value": "1.008",
+      "value": "1.011",
       "threshold": "< 1.020"
     },
     {
@@ -127,14 +127,14 @@
       "check": "rhat_drift",
       "scope": "handball/iceland/female",
       "status": "OK",
-      "value": "1.011",
+      "value": "1.009",
       "threshold": "< 1.020"
     },
     {
       "check": "divergence_drift",
       "scope": "handball/iceland/male",
       "status": "OK",
-      "value": "0.250%",
+      "value": "0.075%",
       "threshold": "< 0.5%"
     },
     {
@@ -183,7 +183,7 @@
       "check": "unmapped_team_names",
       "scope": "handball_iceland",
       "status": "WARN",
-      "value": "1 unmapped: Víkingur  (2026-10-20..2026-11-01, 4 fixtures) -> no beliefs match; likely a new team",
+      "value": "1 unmapped: Víkingur  (2026-10-21..2026-11-01, 4 fixtures) -> no beliefs match; likely a new team",
       "threshold": "0 unmapped Lengjan renderings"
     },
     {
@@ -197,56 +197,56 @@
       "check": "publish_freshness",
       "scope": "basketball_iceland male BD",
       "status": "OK",
-      "value": "2h old; 10 artefact(s)",
+      "value": "1h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "basketball_iceland male 1D",
       "status": "OK",
-      "value": "2h old; 10 artefact(s)",
+      "value": "1h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "basketball_iceland female BD",
       "status": "OK",
-      "value": "2h old; 10 artefact(s)",
+      "value": "1h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "basketball_iceland female 1D",
       "status": "OK",
-      "value": "2h old; 10 artefact(s)",
+      "value": "1h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "handball_iceland male OD",
       "status": "OK",
-      "value": "2h old; 10 artefact(s)",
+      "value": "1h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "handball_iceland male G66",
       "status": "OK",
-      "value": "2h old; 10 artefact(s)",
+      "value": "1h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "handball_iceland female OD",
       "status": "OK",
-      "value": "2h old; 10 artefact(s)",
+      "value": "1h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "handball_iceland female G66",
       "status": "OK",
-      "value": "2h old; 10 artefact(s)",
+      "value": "1h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
