@@ -78,6 +78,49 @@ test_that("decide_league writes candidates and recommendations", {
   expect_true(nrow(recs) >= 0L)
 })
 
+test_that("decide_league prices a fixture scraped under two Lengjan spellings", {
+  # Audit 2026-11 finding A: both spellings survived prepare_odds() and
+  # collapsed into duplicate rows, so assert_outcome_prob_coherent() aborted
+  # the whole (league, sex) with a moneyline sum of ~2.
+  set.seed(13)
+  root <- withr::local_tempdir()
+  match_date <- Sys.Date() + 1L
+  write_table(tibble::tibble(
+    sport = "basketball", country = "iceland", sex = "male",
+    fit_date = Sys.Date(), match_date = match_date,
+    home_team = "Alpha", away_team = "Bravo", draw_id = 1:1000,
+    home_goals = rpois(1000, lambda = 90),
+    away_goals = rpois(1000, lambda = 85)
+  ), "beliefs_latest", root = root)
+  scrape <- function(away, at, odds) {
+    tibble::tibble(
+      sport = "basketball", country = "iceland", scraped_at = at,
+      match_date = match_date, home_team = "Alpha", away_team = away,
+      market = "moneyline", outcome = c("home", "away"), line = NA_real_,
+      odds = odds
+    )
+  }
+  # one scrape (one shared scraped_at): the latest-scrape filter alone cannot
+  # remove either, so only the canonical dedup keeps kelly_joint() off a sum of ~2
+  at <- Sys.time() - 3600
+  write_table(dplyr::bind_rows(
+    scrape("Bravo old", at, c(1.95, 2.00)),
+    scrape("Bravo new", at, c(1.85, 2.10))
+  ), "odds", root = root)
+  league <- mini_basketball_league()
+  league$lengjan <- list(team_names = list(male = list(
+    Alpha = "Alpha", Bravo = list("Bravo new", "Bravo old")
+  )))
+
+  cands <- decide_league(
+    league = league, sex = "male", root = root, bankroll = mini_bankroll(),
+    write = FALSE, return_candidates = TRUE
+  )
+
+  expect_equal(sort(cands$outcome), c("away", "home"))
+  expect_equal(cands$odds[order(cands$outcome)], c(2.10, 1.85))
+})
+
 test_that("decide_league errors when both league_key and league supplied", {
   expect_error(
     decide_league(league_key = "x", league = list(sport = "y"), sex = "male"),

@@ -25,15 +25,15 @@ bt_oos_scores <- function(settled, eps = 1e-6) {
 
 #' Drop odds snapshots scraped on or after each match's OWN kickoff day (G3/G4).
 #'
-#' `prepare_odds` bounds `scraped_at` from below only and takes
-#' `slice_max(scraped_at)`, so without an upper bound the decider could select a
+#' `prepare_odds` bounds `scraped_at` from below only and keeps each match's
+#' latest scrape, so without an upper bound the decider could select a
 #' post-result snapshot. The leak-free boundary is each match's own match day,
 #' NOT the training cutoff `d`: Lengjan posts odds ~2 days before kickoff, so an
 #' OOS match 5-14 days after `d` has every one of its pre-match snapshots scraped
 #' well after `d`. The old `scraped_at <= d + 12h` rule therefore emptied the OOS
 #' odds set entirely (the 0-bets bug). A snapshot scraped any day BEFORE the
 #' match cannot embed the result; one on or after the match day can, so it is
-#' dropped. `slice_max(scraped_at)` downstream then takes the latest survivor =
+#' dropped. `prepare_odds` downstream then keeps the latest survivor =
 #' the closing-ish line. Writing the result into the isolated `wf_root` makes the
 #' decider structurally unable to see a match-day/post-result snapshot.
 #' @param odds Tibble from `read_table("odds")` (has `scraped_at`, `match_date`).

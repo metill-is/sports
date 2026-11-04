@@ -23,11 +23,25 @@ parse_handicap <- function(change_str) {
 #' Read facts/odds for one (sport, country) and return latest-snapshot rows
 #' for matches at or after `end_date`, no older than `max_age_hours`.
 #'
+#' Each match is priced from its latest scrape only (identified by its shared
+#' `scraped_at`): a line or selection absent from that scrape was withdrawn or
+#' suspended, so its older price is dropped (on the DOM scraper a failed
+#' detail-page fetch looks the same, so that match's spread and total drop out
+#' until the next good scrape). Team names are normalised to
+#' canonical before matches are keyed, so two Lengjan spellings of one fixture
+#' are one match; if one scrape lists both, each market line is priced from a
+#' single listing, the primary rendering's (`team_names` order). A sex-less
+#' listing with a name among the other sex's `team_names` renderings and
+#' neither among this sex's is the other sex's game (e.g. the men's "FH" v
+#' "Valur", or "FH" v a renamed "Valur R.", in the female cell): it is dropped
+#' with a warning naming the fixture. A listing neither map knows passes
+#' through, and nothing is dropped when this sex has no `team_names`.
+#'
 #' @param league List with `sport` + `country`.
 #' @param sex "male" or "female". Rows carrying a non-NA `sex` (stamped by the
 #'   JSON-API scraper from the Lengjan competition, spec 2026-09-23 WS2) are
-#'   kept only for that sex; NA rows (DOM scraper, history) are sex-agnostic
-#'   and kept for both, as before -- the per-sex team_names join then decides.
+#'   kept only for that sex; NA rows (DOM scraper, history) reach both cells,
+#'   less any the per-sex team_names identify as the other sex's (above).
 #' @param end_date Drop matches before this date. Default today.
 #' @param max_age_hours Drop scrapes older than this (vs `now`).
 #' @param now Reference timestamp for age filtering. Default `Sys.time()`.
@@ -68,21 +82,86 @@ prepare_odds <- function(league, sex,
     }
   }
 
-  # Dedup to latest scrape per (match x market x outcome x line)
-  raw <- raw |>
-    dplyr::group_by(
-      .data$match_date, .data$home_team, .data$away_team,
-      .data$market, .data$outcome, .data$line
-    ) |>
-    dplyr::slice_max(.data$scraped_at, n = 1L, with_ties = FALSE) |>
-    dplyr::ungroup()
+  raw$.raw_home <- raw$home_team
+  raw$.raw_away <- raw$away_team
+  raw$.home_pos <- lengjan_rendering_pos(raw$home_team, league, sex)
+  raw$.away_pos <- lengjan_rendering_pos(raw$away_team, league, sex)
 
+  # A row without `sex` (DOM scraper) reaches both cells, so the female cell
+  # also sees the men's listings. Their names ("FH", "Valur") are no female
+  # rendering and would pass through unchanged -- onto the canonical key of
+  # "FH kv" v "Valur kv". A sex-less listing with a name among the other
+  # sex's renderings and neither among this sex's is the other sex's game:
+  # drop it. "Either", not "both", so a men's listing with one renamed team
+  # ("FH" v "Valur R.") is caught too; the rendering sets are disjoint, so a
+  # women's listing never qualifies. A listing neither map knows passes
+  # through.
+  # Without this cell's own map the two cannot be told apart, so keep all.
+  other_sex <- setdiff(c("male", "female"), sex)
+  sexless <- if ("sex" %in% names(raw)) is.na(raw$sex) else TRUE
+  if (length(tn_renderings(league$lengjan$team_names[[sex]])) > 0L) {
+    foreign <- sexless & is.na(raw$.home_pos) & is.na(raw$.away_pos) &
+      (!is.na(lengjan_rendering_pos(raw$home_team, league, other_sex)) |
+        !is.na(lengjan_rendering_pos(raw$away_team, league, other_sex)))
+    if (any(foreign)) {
+      fx <- unique(raw[foreign, c("match_date", "home_team", "away_team")])
+      warning(
+        "prepare_odds: ", league$sport, "/", league$country, "/", sex,
+        ": dropped sex-less odds of the other sex's game (team names among the ",
+        other_sex, " renderings, neither a ", sex, " one): ",
+        paste(fx$match_date, fx$home_team, "v", fx$away_team,
+          collapse = "; "
+        ),
+        call. = FALSE
+      )
+      raw <- raw[!foreign, , drop = FALSE]
+      if (nrow(raw) == 0L) {
+        return(empty_odds())
+      }
+    }
+  }
   # Rewrite Lengjan-side names (e.g. "Grindavík kv") to canonical
   # (e.g. "Grindavík") using the per-sex team_names map -- inverse
   # direction from what the placer uses. Done at decide time rather than
   # ingest time so facts/odds/ keeps the as-scraped strings (debugging
   # value for Lengjan UI deploys; cf. 2026-04-25 "vs"->"-" separator flip).
   raw <- normalise_lengjan_team_names(raw, league, sex)
+
+  # Price each match from its latest scrape only. The scrapers drop withdrawn
+  # lines and suspended selections rather than writing them, so a row missing
+  # from the newest scrape is no longer on offer at its old price. Each scrape
+  # run stamps one scraped_at on every row it writes (ingest_lengjan_api(),
+  # ingest_lengjan_odds()), so equality identifies the run. Trade-off: the DOM
+  # scraper still writes a match's 1X2 rows when its detail-page fetch fails,
+  # so that match's spread and total drop out until the next good scrape.
+  raw <- raw |>
+    dplyr::group_by(.data$match_date, .data$home_team, .data$away_team) |>
+    dplyr::filter(.data$scraped_at == max(.data$scraped_at)) |>
+    dplyr::ungroup()
+
+  # Every surviving row of a match now shares one scraped_at, so this step
+  # only collapses canonical duplicates within that scrape: a team_names list
+  # value maps several Lengjan spellings to one team (the 2026-07-17 "Víkingur
+  # Rvk" rename), and one scrape can list a fixture under both, which
+  # kelly_joint() would see as outcome probabilities summing to ~2. Each
+  # (match x market x line) is priced from one listing, so its outcomes never
+  # mix two: the one whose names come first in tn_renderings() order (the
+  # primary rendering), then by raw name as a stable key.
+  raw <- raw |>
+    dplyr::arrange(
+      .data$.home_pos, .data$.away_pos, .data$.raw_home, .data$.raw_away
+    ) |>
+    dplyr::group_by(
+      .data$match_date, .data$home_team, .data$away_team,
+      .data$market, .data$line
+    ) |>
+    dplyr::filter(
+      .data$.raw_home == .data$.raw_home[1L],
+      .data$.raw_away == .data$.raw_away[1L]
+    ) |>
+    dplyr::group_by(.data$outcome, .add = TRUE) |>
+    dplyr::slice_head(n = 1L) |>
+    dplyr::ungroup()
 
   raw |>
     dplyr::select(
