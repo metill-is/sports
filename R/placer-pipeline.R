@@ -45,6 +45,12 @@ NULL
 #'   Default \code{FALSE} (Plan 6 cutover; Parquet at
 #'   \code{data/decisions/ledger/} is canonical). Set \code{TRUE} only for
 #'   opt-in regression-testing while the legacy CSV files exist on disk.
+#' @param recs Optional pre-selected recommendations, e.g. the daily-capped
+#'   set from \code{\link{run_auto_place}}. When supplied they replace
+#'   \code{\link{load_recommendations}}, so \code{leagues}, \code{today_only} and
+#'   \code{target_date} are not re-applied; the P1 ledger dedup and the
+#'   pre-flight validation still run. \code{NULL} (default) loads from the
+#'   store.
 #' @return Tibble of per-bet results with at minimum columns: \code{sport},
 #'   \code{country}, \code{sex}, \code{match_date}, \code{home_team},
 #'   \code{away_team}, \code{market}, \code{outcome}, \code{odds},
@@ -58,7 +64,8 @@ place_bets <- function(leagues = NULL,
                        target_date = NULL,
                        headless = TRUE,
                        root = here::here("data"),
-                       dual_write_csv = FALSE) {
+                       dual_write_csv = FALSE,
+                       recs = NULL) {
   cli::cli_h1("Lengjan Bet Placement Pipeline")
 
   if (dry_run) {
@@ -68,13 +75,15 @@ place_bets <- function(leagues = NULL,
   # 1. Load league config
   leagues_cfg <- load_leagues()
 
-  # 2. Load + date-filter recommendations
-  recs <- load_recommendations(
-    root        = root,
-    leagues     = leagues,
-    today_only  = today_only,
-    target_date = target_date
-  )
+  # 2. Load + date-filter recommendations, unless the caller pre-selected them
+  if (is.null(recs)) {
+    recs <- load_recommendations(
+      root        = root,
+      leagues     = leagues,
+      today_only  = today_only,
+      target_date = target_date
+    )
+  }
   if (nrow(recs) == 0L) {
     cli::cli_alert_info("No pending recommendations.")
     return(empty_placement_results())

@@ -68,8 +68,8 @@ load_recommendations <- function(root,
 #'
 #' Spec 2026-09-23 WS1: a "paper" league's recommendations exist to be read,
 #' never placed, and rows written before a league was lowered outlive the
-#' config change -- `run_auto_place()` places every pending recommendation by
-#' design, so the placer filters on read as well.
+#' config change -- `run_auto_place()` places every pending recommendation
+#' that fits the day's room, so the placer filters on read as well.
 #'
 #' @param recs Recommendation rows.
 #' @param leagues_cfg Named league config, defaulting to [load_leagues()].
@@ -101,6 +101,15 @@ drop_betting_disabled <- function(recs, leagues_cfg = NULL) {
   }
   recs[!drop, , drop = FALSE]
 }
+
+# The bet key: one row per placed bet. P1 (dedup_against_ledger) and the
+# daily cap's held-back anti-join in run_auto_place() share it, so the two
+# cannot disagree.
+#' @noRd
+.bet_key_cols <- c(
+  "match_date", "sport", "country", "sex",
+  "home_team", "away_team", "market", "outcome", "line"
+)
 
 #' Anti-join recommendations against the placed-bet ledger.
 #'
@@ -134,11 +143,7 @@ dedup_against_ledger <- function(recs, root) {
     return(recs)
   }
 
-  key_cols <- c(
-    "sport", "country", "sex", "match_date",
-    "home_team", "away_team", "market", "outcome", "line"
-  )
-  if (!all(key_cols %in% names(led))) {
+  if (!all(.bet_key_cols %in% names(led))) {
     cli::cli_warn(
       "dedup_against_ledger: ledger missing key column(s); skipping dedup"
     )
@@ -148,7 +153,10 @@ dedup_against_ledger <- function(recs, root) {
   # dplyr::anti_join handles NA-equality on the join (two NA `line` values
   # are treated as matching), and is type-safe against future Date format
   # changes that would break the previous string-concat key.
-  dplyr::anti_join(recs, led[, key_cols, drop = FALSE], by = key_cols)
+  dplyr::anti_join(
+    recs, led[, .bet_key_cols, drop = FALSE],
+    by = .bet_key_cols
+  )
 }
 
 #' @keywords internal
