@@ -781,8 +781,9 @@ NULL
 #       - pairings_known: logical. TRUE if the round's matches are listed
 #         in results or upcoming schedule; FALSE if KSÍ has not yet drawn it.
 #       - matches: tibble(home_team, away_team, venue, known_winner) when
-#         pairings_known; NULL otherwise. `known_winner` is the team name
-#         for played matches, NA for upcoming.
+#         pairings_known; NULL otherwise. `venue` is "home" for R16-SF (the
+#         listed home side hosts) and "neutral" for the Final. `known_winner`
+#         is the team name for played matches, NA for upcoming.
 #       - partial_pairs: character vector of the ties that WERE found, set
 #         only when the round is neither complete nor empty. Its presence
 #         is an error the simulator aborts on — never a re-draw.
@@ -974,7 +975,14 @@ NULL
   # discarded the real pairings AND every played-match pin, and the
   # simulator then re-paired the whole round at random without a word;
   # `partial_pairs` marks it so `.cup_round_matches_pfi()` can stop the run.
-  build_round <- function(ranks) {
+  #
+  # `venue`: KSÍ lists a home side for every tie, but only R16-SF are played
+  # at the listed host's ground. The Final is at a neutral ground (both the
+  # men's and the women's cup), so it gets no home advantage, the same as
+  # the simulator's undrawn rounds. Stamping it "home" moved
+  # tournament_placements.json and bracket.json by the home-advantage effect
+  # on the day the Final was listed.
+  build_round <- function(ranks, venue = "home") {
     m <- bracket_matches |> dplyr::filter(.data$rank %in% ranks)
     if (nrow(m) == length(ranks)) {
       list(
@@ -982,7 +990,7 @@ NULL
         matches = tibble::tibble(
           home_team    = m$home_team,
           away_team    = m$away_team,
-          venue        = "home",
+          venue        = venue,
           known_winner = m$known_winner
         )
       )
@@ -1007,7 +1015,7 @@ NULL
       R16   = build_round(1:8),
       R8    = build_round(9:12),
       SF    = build_round(13:14),
-      Final = build_round(15L)
+      Final = build_round(15L, venue = "neutral")
     )
   )
 }
@@ -1276,9 +1284,11 @@ NULL
   # Drawn frontier matches have real, known venues. The leaderboard simulator
   # plays the SF at the host's ground (home advantage); the cup final is at a
   # neutral ground and any what-if re-pairing is venue-agnostic. So overwrite
-  # only the leaf-pair cells with their home-venue win prob, leaving every
-  # cross-pairing (the Final and beyond) neutral — in a single-leg knockout a
-  # pairing meets at most once, so a leaf cell is never reused for a later round.
+  # only the "home"-venue leaf-pair cells with their home-venue win prob,
+  # leaving every cross-pairing (the Final and beyond) neutral — in a
+  # single-leg knockout a pairing meets at most once, so a leaf cell is never
+  # reused for a later round. A drawn Final as the leaf carries venue
+  # "neutral" from build_round(), so its cell stays neutral too.
   # A DECIDED leaf (frontier match already played, e.g. SF1 while SF2 waits)
   # is a fact, not a forecast: pin its cells to 1/0 so the renderer's what-if
   # propagation advances the real winner with certainty.

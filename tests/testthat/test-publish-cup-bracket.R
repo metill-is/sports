@@ -418,7 +418,7 @@ test_that("completed[] emits decided matches when the entry round is the frontie
   bs$rounds$SF$matches$known_winner <- c("Alpha", "Bravo")
   bs$rounds$Final <- list(pairings_known = TRUE, matches = tibble::tibble(
     home_team = "Bravo", away_team = "Alpha",
-    venue = "home", known_winner = "Alpha"
+    venue = "neutral", known_winner = "Alpha"
   ))
   bs
 }
