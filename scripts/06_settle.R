@@ -9,9 +9,15 @@
 
 invisible(Sys.setlocale("LC_ALL", "en_US.UTF-8"))
 suppressPackageStartupMessages(devtools::load_all(here::here(), quiet = TRUE))
+root <- here::here("data")
 
 cli::cli_h1("Settle ledger")
-n <- settle_ledger(root = here::here("data"))
+# settle_ledger() rewrites whole ledger partitions: hold the unattended
+# placer's lock so a concurrent placement keeps its row (audit 2026-11-03).
+# Errors out if that run holds it; retry once it finishes.
+n <- with_ledger_lock(settle_ledger(root = root),
+  root = root, what = "scripts/06_settle.R"
+)
 if (n == 0L) {
   cli::cli_alert_info("No newly resolvable bets.")
 } else {

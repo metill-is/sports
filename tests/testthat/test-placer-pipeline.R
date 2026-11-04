@@ -158,3 +158,65 @@ test_that("resolve_match_ids_new n_total is 0 when all competitions return empty
   expect_equal(out$n_total, 0L)
   expect_length(out$match_ids, 0L)
 })
+
+# ── recs = (the daily-capped set from run_auto_place) still meets P1 and D2 ──
+# A caller-supplied `recs` replaces load_recommendations(), which is where the
+# D2 filter normally drops betting-disabled rows; P1 and the pre-flight must
+# therefore run on it. Login is mocked to fail, so a broken gate errors here
+# instead of reaching a browser.
+
+.recs_arg_root <- function() {
+  tmp <- withr::local_tempdir(.local_envir = parent.frame())
+  write_table(
+    arrow::read_parquet(testthat::test_path("fixtures", "placer", "ledger_sample.parquet")),
+    "ledger",
+    root = tmp
+  )
+  tmp
+}
+
+.recs_arg_sample <- function(home_team) {
+  recs <- arrow::read_parquet(testthat::test_path("fixtures", "placer", "recs_sample.parquet"))
+  recs[recs$home_team %in% home_team, , drop = FALSE]
+}
+
+.recs_arg_cfg <- function(mode) {
+  list(football_iceland = list(
+    sport = "football", country = "iceland", betting = list(mode = mode),
+    lengjan = list(team_names = list(
+      male = list(KR = "KR", FH = "FH", Fram = "Fram", Stjarnan = "Stjarnan"),
+      female = list()
+    ))
+  ))
+}
+
+test_that("place_bets(recs =) refuses a paper league via validate_betting_enabled (D2)", {
+  root <- .recs_arg_root()
+  testthat::local_mocked_bindings(
+    load_leagues = function(...) .recs_arg_cfg("paper"),
+    chromote_login = function(...) stop("must not log in"),
+    .package = "sports"
+  )
+  recs <- .recs_arg_sample("Fram") # Fram v Stjarnan is not in the ledger
+  expect_error(
+    suppressMessages(place_bets(
+      dry_run = TRUE, interactive = FALSE, root = root, recs = recs
+    )),
+    "validate_betting_enabled: refusing to place bets on .*football_iceland"
+  )
+})
+
+test_that("place_bets(recs =) dedups against the ledger (P1) before logging in", {
+  root <- .recs_arg_root()
+  testthat::local_mocked_bindings(
+    load_leagues = function(...) .recs_arg_cfg("auto"),
+    chromote_login = function(...) stop("must not log in"),
+    .package = "sports"
+  )
+  recs <- .recs_arg_sample("KR") # KR v FH is in the ledger
+  expect_message(
+    out <- place_bets(dry_run = TRUE, interactive = FALSE, root = root, recs = recs),
+    "All recommendations already placed"
+  )
+  expect_identical(out, empty_placement_results())
+})

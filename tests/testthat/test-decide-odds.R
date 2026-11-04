@@ -41,11 +41,394 @@ test_that("prepare_odds returns the latest odds per (match, market, outcome, lin
   expect_equal(ml_home$odds, 1.85)
 })
 
+test_that("prepare_odds de-duplicates two Lengjan spellings of one fixture on canonical names", {
+  # Audit 2026-11 finding A: a team_names list value (cf. the 2026-07-17
+  # "Víkingur Rvk" -> "Víkingur Reykjavík" rename) maps two Lengjan spellings
+  # to one canonical. De-duplicating on the raw strings kept both scrapes of
+  # the fixture, which then collapsed into identical (market, outcome, line)
+  # rows whose probabilities summed to ~2 in kelly_joint().
+  root <- withr::local_tempdir()
+  now <- as.POSIXct("2100-01-01 13:00:00", tz = "UTC")
+  scrape <- function(away, at, odds) {
+    tibble::tibble(
+      sport = "football", country = "iceland", scraped_at = at,
+      match_date = as.Date("2100-01-02"), home_team = "Thor Ak.",
+      away_team = away, market = "moneyline",
+      outcome = c("home", "draw", "away"), line = NA_real_, odds = odds
+    )
+  }
+  write_table(dplyr::bind_rows(
+    scrape("Vikingur Rvk", now - 7 * 3600, c(3.50, 3.40, 2.00)),
+    scrape("Vikingur Reykjavik", now - 3600, c(3.60, 3.50, 1.90))
+  ), "odds", root = root)
+  league <- list(
+    sport = "football", country = "iceland",
+    lengjan = list(team_names = list(male = list(
+      Thor = "Thor Ak.",
+      "Vikingur R." = list("Vikingur Reykjavik", "Vikingur Rvk")
+    )))
+  )
+
+  out <- prepare_odds(league, "male",
+    end_date = as.Date("2100-01-01"), max_age_hours = 48,
+    now = now, root = root
+  )
+
+  expect_equal(nrow(out), 3L)
+  expect_equal(unique(out$away_team), "Vikingur R.")
+  out <- out[order(out$outcome), ]
+  expect_equal(out$outcome, c("away", "draw", "home"))
+  expect_equal(out$odds, c(1.90, 3.50, 3.60))
+})
+
+test_that("prepare_odds prices each match from its latest scrape only", {
+  # Audit 2026-11 finding B: the scrapers drop withdrawn lines and suspended
+  # selections instead of writing them, so keeping the latest row per
+  # (market, outcome, line) across the whole max_age_hours window left them
+  # priceable at their last price. A match missing from the newest scrape run
+  # keeps its own latest scrape.
+  root <- withr::local_tempdir()
+  now <- as.POSIXct("2100-01-01 13:00:00", tz = "UTC")
+  rows <- function(home, away, at, market, outcome, line, odds) {
+    tibble::tibble(
+      sport = "football", country = "iceland", scraped_at = at,
+      match_date = as.Date("2100-01-02"), home_team = home, away_team = away,
+      market = market, outcome = outcome, line = line, odds = odds
+    )
+  }
+  old <- now - 7 * 3600
+  new <- now - 3600
+  write_table(dplyr::bind_rows(
+    rows("Thor", "Vikingur", old, "moneyline", c("home", "draw", "away"),
+      NA_real_, c(2.10, 3.40, 3.00)),
+    rows("Thor", "Vikingur", old, "spread", c("home", "draw", "away"),
+      -1, c(4.00, 3.80, 1.60)),
+    rows("Thor", "Vikingur", new, "moneyline", c("home", "away"),
+      NA_real_, c(2.20, 2.90)),
+    rows("Fram", "KR", old, "moneyline", c("home", "draw", "away"),
+      NA_real_, c(2.50, 3.30, 2.60))
+  ), "odds", root = root)
+  tn <- list(Thor = "Thor", Vikingur = "Vikingur", Fram = "Fram", KR = "KR")
+  league <- list(
+    sport = "football", country = "iceland",
+    lengjan = list(team_names = list(male = tn))
+  )
+
+  out <- prepare_odds(league, "male",
+    end_date = as.Date("2100-01-01"), max_age_hours = 48,
+    now = now, root = root
+  )
+
+  vik <- out[out$home_team == "Thor", ]
+  vik <- vik[order(vik$outcome), ]
+  expect_equal(vik$market, c("moneyline", "moneyline"))
+  expect_equal(vik$outcome, c("away", "home"))
+  expect_equal(vik$odds, c(2.90, 2.20))
+  expect_equal(nrow(out[out$home_team == "Fram", ]), 3L)
+})
+
+test_that("prepare_odds collapses two Lengjan spellings within one scrape", {
+  # The 2026-07-17 scrape carried one fixture under both Víkingur spellings
+  # with the same scraped_at, so the latest-scrape filter keeps both and only
+  # the canonical-key de-duplication collapses them.
+  root <- withr::local_tempdir()
+  now <- as.POSIXct("2100-01-01 13:00:00", tz = "UTC")
+  write_table(tibble::tibble(
+    sport = "football", country = "iceland", scraped_at = now - 3600,
+    match_date = as.Date("2100-01-02"), home_team = "Thor Ak.",
+    away_team = rep(c("Vikingur Rvk", "Vikingur Reykjavik"), each = 3),
+    market = "moneyline", outcome = rep(c("home", "draw", "away"), 2),
+    line = NA_real_, odds = c(3.50, 3.40, 2.00, 3.60, 3.50, 1.90)
+  ), "odds", root = root)
+  league <- list(
+    sport = "football", country = "iceland",
+    lengjan = list(team_names = list(male = list(
+      Thor = "Thor Ak.",
+      "Vikingur R." = list("Vikingur Reykjavik", "Vikingur Rvk")
+    )))
+  )
+
+  out <- prepare_odds(league, "male",
+    end_date = as.Date("2100-01-01"), max_age_hours = 48,
+    now = now, root = root
+  )
+
+  expect_equal(nrow(out), 3L)
+  expect_setequal(out$outcome, c("home", "draw", "away"))
+})
+
+test_that("prepare_odds prices each market from the primary rendering's listing", {
+  # Two spellings of one fixture in one scrape: the canonical dedup kept the
+  # first row per outcome in file order, so home and away could come from
+  # different listings. Each (market, line) now comes from one listing, the
+  # one earliest in tn_renderings() order; a selection missing from it (the
+  # spread draw) is not borrowed from the other listing. The second order
+  # makes the primary sort after the variant byte-wise, so the raw-name
+  # tiebreak alone would pick the wrong listing.
+  now <- as.POSIXct("2100-01-01 13:00:00", tz = "UTC")
+  for (pair in list(
+    c("Vikingur Reykjavik", "Vikingur Rvk"),
+    c("Vikingur Rvk", "Vikingur Reykjavik")
+  )) {
+    root <- withr::local_tempdir()
+    primary <- pair[1]
+    variant <- pair[2]
+    write_table(tibble::tibble(
+      sport = "football", country = "iceland", scraped_at = now - 3600,
+      match_date = as.Date("2100-01-02"), home_team = "Thor Ak.",
+      away_team = c(
+        variant, primary, primary, variant, primary, variant,
+        variant, variant, variant, primary, primary
+      ),
+      market = rep(c("moneyline", "spread"), c(6, 5)),
+      outcome = c(
+        "home", "home", "draw", "draw", "away", "away",
+        "home", "draw", "away", "away", "home"
+      ),
+      line = rep(c(NA_real_, -1), c(6, 5)),
+      odds = c(
+        3.50, 3.60, 3.30, 3.40, 1.90, 2.00,
+        5.00, 4.20, 1.50, 1.45, 5.50
+      )
+    ), "odds", root = root)
+    league <- list(
+      sport = "football", country = "iceland",
+      lengjan = list(team_names = list(male = list(
+        Thor = "Thor Ak.",
+        "Vikingur R." = list(primary, variant)
+      )))
+    )
+
+    out <- prepare_odds(league, "male",
+      end_date = as.Date("2100-01-01"), max_age_hours = 48,
+      now = now, root = root
+    )
+
+    ml <- out[out$market == "moneyline", ]
+    expect_equal(ml$odds[match(c("home", "draw", "away"), ml$outcome)],
+      c(3.60, 3.30, 1.90))
+    sp <- out[out$market == "spread", ]
+    expect_setequal(sp$outcome, c("home", "away"))
+    expect_equal(sp$odds[match(c("home", "away"), sp$outcome)], c(5.50, 1.45))
+  }
+})
+
+test_that("prepare_odds keeps a women's fixture apart from the men's between the same clubs", {
+  # Football's DOM-scraped rows carry no `sex`, so the female cell also sees
+  # the men's listings. "FH" and "Valur" are no female rendering and pass
+  # through unchanged, onto the canonical key of "FH kv" v "Valur kv"; the
+  # canonical dedup then picked rows by file order. Before it, the duplicate
+  # rows aborted kelly_joint(). Each cell now drops the other sex's listing.
+  now <- as.POSIXct("2100-01-01 13:00:00", tz = "UTC")
+  listing <- function(home, away, at, odds) {
+    tibble::tibble(
+      sport = "football", country = "iceland", scraped_at = at,
+      match_date = as.Date("2100-01-02"), home_team = home, away_team = away,
+      market = "moneyline", outcome = c("home", "draw", "away"),
+      line = NA_real_, odds = odds
+    )
+  }
+  league <- list(
+    sport = "football", country = "iceland",
+    lengjan = list(team_names = list(
+      male = list(FH = "FH", Valur = "Valur"),
+      female = list(FH = "FH kv", Valur = "Valur kv")
+    ))
+  )
+  mens <- c(1.70, 3.80, 4.50)
+  womens <- c(2.40, 3.60, 2.70)
+  odds_of <- function(out, home) {
+    out <- out[out$home_team == home, ]
+    out$odds[match(c("home", "draw", "away"), out$outcome)]
+  }
+  # Both in one scrape; then the women's game delisted (earlier kickoff) so
+  # only the men's is in the newest scrape.
+  for (mens_lag in c(3600, 1800)) {
+    root <- withr::local_tempdir()
+    write_table(dplyr::bind_rows(
+      listing("FH", "Valur", now - mens_lag, mens),
+      listing("FH kv", "Valur kv", now - 3600, womens)
+    ), "odds", root = root)
+    get <- function(sex) {
+      prepare_odds(league, sex,
+        end_date = as.Date("2100-01-01"), max_age_hours = 48,
+        now = now, root = root
+      )
+    }
+
+    expect_warning(f <- get("female"),
+      "male renderings, neither a female one): 2100-01-02 FH v Valur",
+      fixed = TRUE
+    )
+    expect_equal(nrow(f), 3L)
+    expect_equal(odds_of(f, "FH"), womens)
+    expect_warning(m <- get("male"),
+      "female renderings, neither a male one): 2100-01-02 FH kv v Valur kv",
+      fixed = TRUE
+    )
+    expect_equal(nrow(m), 3L)
+    expect_equal(odds_of(m, "FH"), mens)
+  }
+})
+
+test_that("prepare_odds drops a men's-only listing from the women's cell", {
+  # Re-review 2026-11 issue 2: with the women's game not offered (or aged
+  # out), the men's sex-less "FH" v "Valur" was the only listing on the
+  # women's canonical key, so no mapped twin flagged it and it priced the
+  # women's model silently.
+  root <- withr::local_tempdir()
+  now <- as.POSIXct("2100-01-01 13:00:00", tz = "UTC")
+  write_table(tibble::tibble(
+    sport = "football", country = "iceland", scraped_at = now - 3600,
+    match_date = as.Date("2100-01-02"), home_team = "FH", away_team = "Valur",
+    market = "moneyline", outcome = c("home", "draw", "away"),
+    line = NA_real_, odds = c(1.70, 3.80, 4.50)
+  ), "odds", root = root)
+  league <- list(
+    sport = "football", country = "iceland",
+    lengjan = list(team_names = list(
+      male = list(FH = "FH", Valur = "Valur"),
+      female = list(FH = "FH kv", Valur = "Valur kv")
+    ))
+  )
+  get <- function(sex) {
+    prepare_odds(league, sex,
+      end_date = as.Date("2100-01-01"), max_age_hours = 48,
+      now = now, root = root
+    )
+  }
+
+  expect_warning(f <- get("female"),
+    "male renderings, neither a female one): 2100-01-02 FH v Valur",
+    fixed = TRUE
+  )
+  expect_identical(f, empty_odds())
+  expect_no_warning(m <- get("male"))
+  expect_equal(nrow(m), 3L)
+})
+
+test_that("prepare_odds drops a men's listing with one renamed team from the women's cell", {
+  # Whole-branch review 2026-11 issue 1: men's "FH" v a renamed "Valur R."
+  # has one male rendering and one name neither map knows; both pass through
+  # onto the women's canonical key of "FH kv" v "Valur kv".
+  root <- withr::local_tempdir()
+  now <- as.POSIXct("2100-01-01 13:00:00", tz = "UTC")
+  write_table(tibble::tibble(
+    sport = "football", country = "iceland", scraped_at = now - 3600,
+    match_date = as.Date("2100-01-02"), home_team = "FH", away_team = "Valur R.",
+    market = "moneyline", outcome = c("home", "draw", "away"),
+    line = NA_real_, odds = c(1.70, 3.80, 4.50)
+  ), "odds", root = root)
+  league <- list(
+    sport = "football", country = "iceland",
+    lengjan = list(team_names = list(
+      male = list(FH = "FH", Valur = "Valur"),
+      female = list(FH = "FH kv", Valur = "Valur kv")
+    ))
+  )
+  expect_warning(
+    f <- prepare_odds(league, "female",
+      end_date = as.Date("2100-01-01"), max_age_hours = 48,
+      now = now, root = root
+    ),
+    "male renderings, neither a female one): 2100-01-02 FH v Valur R.",
+    fixed = TRUE
+  )
+  expect_identical(f, empty_odds())
+})
+
+test_that("prepare_odds prices a match from a newer listing under a new rendering", {
+  # Re-review 2026-11 issue 3: Lengjan switching a team's name to one no map
+  # knows yet (here the canonical itself, "Throttur Rvk" -> "Throttur R.")
+  # left the newer listing unmapped, and the twin rule dropped it in favour
+  # of the older mapped scrape, pricing the match from a stale listing.
+  # "Throttur R." is no female rendering, so the male cell keeps it.
+  root <- withr::local_tempdir()
+  now <- as.POSIXct("2100-01-01 13:00:00", tz = "UTC")
+  listing <- function(home, at, odds) {
+    tibble::tibble(
+      sport = "football", country = "iceland", scraped_at = at,
+      match_date = as.Date("2100-01-02"), home_team = home,
+      away_team = "Fram", market = "moneyline",
+      outcome = c("home", "draw", "away"), line = NA_real_, odds = odds
+    )
+  }
+  write_table(dplyr::bind_rows(
+    listing("Throttur Rvk", now - 7 * 3600, c(2.00, 3.40, 3.50)),
+    listing("Throttur R.", now - 3600, c(2.20, 3.30, 3.10))
+  ), "odds", root = root)
+  league <- list(
+    sport = "football", country = "iceland",
+    lengjan = list(team_names = list(
+      male = list("Throttur R." = "Throttur Rvk", Fram = "Fram"),
+      female = list("Throttur R." = "Throttur Rvk kv", Fram = "Fram kv")
+    ))
+  )
+
+  expect_no_warning(m <- prepare_odds(league, "male",
+    end_date = as.Date("2100-01-01"), max_age_hours = 48,
+    now = now, root = root
+  ))
+  expect_equal(unique(m$home_team), "Throttur R.")
+  expect_equal(
+    m$odds[match(c("home", "draw", "away"), m$outcome)],
+    c(2.20, 3.30, 3.10)
+  )
+})
+
+test_that("prepare_odds keeps sex-less odds where the cell has no team_names", {
+  # The other-sex rule needs this cell's map to tell its own listings from
+  # the other sex's. Without one (no team_names at all, or handball's empty
+  # female map) a women's listing can use the very strings the men's map
+  # holds, so nothing is dropped.
+  root <- withr::local_tempdir()
+  now <- as.POSIXct("2100-01-01 13:00:00", tz = "UTC")
+  write_table(tibble::tibble(
+    sport = "handball", country = "iceland", scraped_at = now - 3600,
+    match_date = as.Date("2100-01-02"), home_team = "Valur",
+    away_team = "Haukar", market = "moneyline",
+    outcome = c("home", "draw", "away"), line = NA_real_,
+    odds = c(1.70, 9.00, 3.10)
+  ), "odds", root = root)
+  get <- function(league, sex) {
+    prepare_odds(league, sex,
+      end_date = as.Date("2100-01-01"), max_age_hours = 48,
+      now = now, root = root
+    )
+  }
+  bare <- list(sport = "handball", country = "iceland")
+  male_only <- list(
+    sport = "handball", country = "iceland",
+    lengjan = list(team_names = list(
+      male = list(Valur = "Valur", Haukar = "Haukar"), female = list()
+    ))
+  )
+
+  for (sex in c("male", "female")) {
+    expect_no_warning(out <- get(bare, sex))
+    expect_equal(nrow(out), 3L)
+  }
+  expect_no_warning(out <- get(male_only, "female"))
+  expect_equal(nrow(out), 3L)
+})
+
+test_that("football's male and female Lengjan renderings never coincide", {
+  # prepare_odds() tells a sex-less listing's sex by which per-sex map holds
+  # its names; a rendering in both maps would make that ambiguous.
+  tn <- load_leagues()$football_iceland$lengjan$team_names
+  male <- unlist(tn_renderings(tn$male), use.names = FALSE)
+  female <- unlist(tn_renderings(tn$female), use.names = FALSE)
+
+  expect_gt(length(male), 0L)
+  expect_gt(length(female), 0L)
+  expect_length(intersect(male, female), 0L)
+})
+
 test_that("prepare_odds drops odds older than max_age_hours", {
   root <- setup_odds_root()
   league <- list(sport = "basketball", country = "iceland")
 
-  # Fixture scrapes at 08:00 and 12:00 UTC.
+  # Fixture scrapes at 06:00 and 12:00 UTC.
   # now = 14:00, max_age_hours = 1 → cutoff = 13:00 → all scrapes are older.
   out <- prepare_odds(league,
     sex = "male",

@@ -68,8 +68,8 @@ load_recommendations <- function(root,
 #'
 #' Spec 2026-09-23 WS1: a "paper" league's recommendations exist to be read,
 #' never placed, and rows written before a league was lowered outlive the
-#' config change -- `run_auto_place()` places every pending recommendation by
-#' design, so the placer filters on read as well.
+#' config change -- `run_auto_place()` places every pending recommendation
+#' that fits the day's room, so the placer filters on read as well.
 #'
 #' @param recs Recommendation rows.
 #' @param leagues_cfg Named league config, defaulting to [load_leagues()].
@@ -102,12 +102,25 @@ drop_betting_disabled <- function(recs, leagues_cfg = NULL) {
   recs[!drop, , drop = FALSE]
 }
 
+# The bet key: one row per placed bet. P1 (dedup_against_ledger) and the
+# daily cap's held-back anti-join in run_auto_place() share it, so the two
+# cannot disagree.
+#' @noRd
+.bet_key_cols <- c(
+  "match_date", "sport", "country", "sex",
+  "home_team", "away_team", "market", "outcome", "line"
+)
+
 #' Anti-join recommendations against the placed-bet ledger.
 #'
 #' Removes any recommendation already represented in `data/decisions/ledger/`
 #' (matched on sport, country, sex, match_date, home_team, away_team, market,
 #' outcome, line). The placer is the only writer to the ledger, so this is
 #' the canonical "haven't placed it yet" filter.
+#'
+#' An absent ledger means nothing has been placed. Any other ledger read error
+#' propagates, so placement aborts before a browser session opens rather than
+#' re-placing bets the ledger already holds.
 #'
 #' @param recs Tibble from `load_recommendations()`.
 #' @param root Data root.
@@ -118,37 +131,30 @@ dedup_against_ledger <- function(recs, root) {
     return(recs)
   }
 
-  # An unreadable ledger is recoverable (worst case: re-attempt a duplicate
-  # bet), but it's still a real fault that operators should see.
-  led <- tryCatch(
-    read_table("ledger", root = root),
-    error = function(e) {
-      cli::cli_warn(c(
-        "dedup_against_ledger: ledger read failed; skipping dedup",
-        "i" = "{conditionMessage(e)}"
-      ))
-      tibble::tibble()
-    }
-  )
+  # No tryCatch: read_table() already returns 0 rows for an absent ledger. Any
+  # other read error must abort. Skipping dedup re-placed every bet already in
+  # the ledger (P1), and each append then rewrote its partition from nothing
+  # (audit 2026-11-03).
+  led <- read_table("ledger", root = root)
   if (nrow(led) == 0L) {
     return(recs)
   }
 
-  key_cols <- c(
-    "sport", "country", "sex", "match_date",
-    "home_team", "away_team", "market", "outcome", "line"
-  )
-  if (!all(key_cols %in% names(led))) {
-    cli::cli_warn(
-      "dedup_against_ledger: ledger missing key column(s); skipping dedup"
+  missing <- setdiff(.bet_key_cols, names(led))
+  if (length(missing) > 0L) {
+    # WHY: abort, as on a read error; skipping dedup breaks P1
+    cli::cli_abort(
+      "dedup_against_ledger: ledger missing key column(s) {.field {missing}}"
     )
-    return(recs)
   }
 
   # dplyr::anti_join handles NA-equality on the join (two NA `line` values
   # are treated as matching), and is type-safe against future Date format
   # changes that would break the previous string-concat key.
-  dplyr::anti_join(recs, led[, key_cols, drop = FALSE], by = key_cols)
+  dplyr::anti_join(
+    recs, led[, .bet_key_cols, drop = FALSE],
+    by = .bet_key_cols
+  )
 }
 
 #' @keywords internal

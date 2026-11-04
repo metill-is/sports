@@ -144,7 +144,7 @@ bet_amount = round(kelly × current_pool)
 
 ### Placement (P1–P4)
 
-- **P1** — Idempotent: `dedup_against_ledger()` runs before any browser session opens.
+- **P1** — Idempotent: `dedup_against_ledger()` runs before any browser session opens. Only an absent ledger reads as empty; any other ledger read error aborts the run (dedup, `append_to_ledger()` and the daily room alike). Unattended, `run_auto_place()` records it as `failed:preview: <msg>` / `failed:daily_room: <msg>`, which `placement_health` treats as unhealthy.
 - **P2** — Ledger records *actual* Lengjan odds (`odds_placed`), not the recommendation's odds.
 - **P3** — If live odds drift > 1 % from the recommendation, recompute Kelly stake at the new odds.
 - **P4** — Reject if the bet is no longer +EV at live odds (status `not_positive_ev`).
@@ -160,7 +160,7 @@ bet_amount = round(kelly × current_pool)
 
 ### Recommendations + bankroll (R1–R4, B1–B3)
 
-- **R1** — `recommendations` Parquet is ephemeral, overwritten every `decide_league()` run.
+- **R1** — `recommendations` Parquet is ephemeral: each `decide_league()` run replaces its own sex's rows in the day's `(sport, country, run_date)` partition and keeps the other sex's (`write_decide_table()`; before 2026-11-03 the second sex's run wiped the first). `candidates` is written the same way. A run that writes candidates also replaces that sex's recommendations, so a run that keeps no bets clears its earlier ones for the day, except when that would leave the partition with no rows: the earlier rows are then left in place and **stay placeable** (P4 still rejects one no longer +EV, but not one whose market was switched off or whose stake fell under `min_bet`), because deleting the partition would make `load_recommendations()`, which takes each league's latest `run_date` that has rows, fall back to the previous day's. The lasting fix is for `load_recommendations()` to take each league's latest decide run from `candidates`. A run with no candidates at all writes nothing.
 - **R2** — Recommendations exclude bets already in the ledger (anti-join on match + market + outcome + line).
 - **R3** — Recommendations exclude past matches (`match_date >= run_date`).
 - **R4** — Odds must be fresher than `betting.max_age_hours`.
@@ -184,7 +184,14 @@ bet_amount = round(kelly × current_pool)
 runs `run_auto_place()` on a jittered daytime cadence. It gates on
 `preview_pending()` (zero Lengjan contact) and opens an authenticated session
 only when a new bet is pending, enforcing a cross-session daily cap, a kill
-switch (`data/AUTO_PLACE_DISABLED`), and a PID lock. It is **never** wired into
+switch (`data/AUTO_PLACE_DISABLED`), and a PID lock. The daily cap limits the
+run's stake, not only whether it runs: pending bets are ordered by `ev`
+(descending, ties broken by the bet key), and only the longest prefix whose
+cumulative `bet_amount` fits the day's room reaches `place_bets(recs = )`. A
+stake is never split, and a bet held back is logged. P3's live-odds rescale can
+still lift a placed stake above its recommended `bet_amount`. Manual
+`scripts/place_bets.R --live` and `scripts/06_settle.R` take the same lock around
+their ledger write (`with_ledger_lock()`) and stop if another run holds it. It is **never** wired into
 CI; `test-placer-ci-isolation.R` forbids `auto_place`/`autoplace`/`AUTO_PLACE`/
 `run_auto_place` tokens in workflows. Failures surface via the
 `placement_health` health check. Install/remove: `tools/install-autoplace.sh`.

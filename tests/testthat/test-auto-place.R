@@ -34,6 +34,34 @@ test_that(".placed_today_stake sums only today's placed stakes", {
   expect_equal(.placed_today_stake(tibble::tibble(), now), 0)
 })
 
+# Audit 2026-11-03 finding A: a ledger read error used to read as "nothing
+# placed today", handing a cycle the full daily budget again.
+room_bankroll <- list(
+  daily_budget_frac = 0.05, current_pool = 1e5, daily_budget_min_isk = 1000
+)
+
+test_that("auto_place_daily_room treats an absent ledger as nothing placed today", {
+  root <- withr::local_tempdir()
+  expect_equal(auto_place_daily_room(root, room_bankroll), 5000)
+})
+
+test_that("auto_place_daily_room errors on an unreadable ledger instead of reporting full room", {
+  root <- withr::local_tempdir()
+  now <- as.POSIXct("2026-06-01 12:00:00", tz = "UTC")
+  write_table(tibble::tibble(
+    placed_at = now - 3600, match_date = as.Date("2026-06-02"),
+    sport = "football", country = "iceland", sex = "male",
+    home_team = "KR", away_team = "FH",
+    market = "moneyline", outcome = "home", line = NA_real_,
+    odds_placed = 2.0, p = 0.55, kelly = 0.03, bet_amount = 4000,
+    settled = FALSE, win = NA, pnl = NA_real_
+  ), "ledger", root = root)
+  expect_equal(auto_place_daily_room(root, room_bankroll, now), 1000)
+
+  corrupt_ledger_fragment(root)
+  expect_error(auto_place_daily_room(root, room_bankroll, now), "Parquet")
+})
+
 test_that("placement status round-trips and missing reads as NULL", {
   root <- withr::local_tempdir()
   expect_null(read_placement_status(root))
@@ -136,6 +164,74 @@ test_that("run_auto_place records 'nothing_pending' with no recs", {
     }
   )
   expect_equal(read_placement_status(root)$status, "nothing_pending")
+})
+
+test_that("run_auto_place records 'nothing_pending' with an auto league but no ledger and no recs", {
+  # Absent stores read as 0 rows: only a real read error is failed:*.
+  root <- withr::local_tempdir()
+  rec <- run_auto_place(
+    root = root, now = as.POSIXct("2026-06-01 12:00:00", tz = "UTC"),
+    leagues_cfg = auto_football_cfg,
+    sync_fn = function(...) TRUE,
+    place_fn = function(...) stop("should not be called"),
+    bankroll_fn = function() room_bankroll
+  )
+  expect_equal(rec$status, "nothing_pending")
+  expect_equal(read_placement_status(root)$status, "nothing_pending")
+})
+
+test_that("run_auto_place places nothing when the ledger is unreadable", {
+  # Finding A end to end: dedup skipped + full daily room meant the cycle
+  # re-placed the slate, and each append then wiped the partition's history.
+  root <- withr::local_tempdir()
+  seed_pending_rec(root)
+  corrupt_ledger_fragment(root)
+  called <- FALSE
+  rec <- run_auto_place(
+    root = root, now = as.POSIXct("2026-06-01 12:00:00", tz = "UTC"),
+    leagues_cfg = auto_football_cfg,
+    sync_fn = function(...) TRUE,
+    place_fn = function(...) {
+      called <<- TRUE
+      tibble::tibble(status = "placed")
+    },
+    bankroll_fn = function() room_bankroll
+  )
+  expect_false(called)
+  expect_match(read_placement_status(root)$status, "^failed:")
+  expect_match(rec$status, "^failed:preview: .*Parquet")
+})
+
+test_that("run_auto_place records 'failed:daily_room' when the ledger is unreadable and nothing is pending", {
+  # With no recs the gate never reads the ledger, so the daily-room read is the
+  # first to hit it; mapping that error to room 0 recorded a healthy
+  # nothing_pending every cycle (review 2026-11-03).
+  root <- withr::local_tempdir()
+  corrupt_ledger_fragment(root)
+  rec <- run_auto_place(
+    root = root, now = as.POSIXct("2026-06-01 12:00:00", tz = "UTC"),
+    leagues_cfg = auto_football_cfg,
+    sync_fn = function(...) TRUE,
+    place_fn = function(...) stop("should not be called"),
+    bankroll_fn = function() room_bankroll
+  )
+  expect_match(rec$status, "^failed:daily_room: .*Parquet")
+  expect_equal(read_placement_status(root)$status, rec$status)
+})
+
+test_that("run_auto_place records 'sync_failed', not failed:*, after a refused sync with an unreadable ledger", {
+  # Ruling R3: failed:* makes scripts/auto_place.R commit the ledger, which a
+  # refused sync (maybe a feature branch checked out) must never do.
+  root <- withr::local_tempdir()
+  corrupt_ledger_fragment(root)
+  rec <- run_auto_place(
+    root = root, now = as.POSIXct("2026-06-01 12:00:00", tz = "UTC"),
+    leagues_cfg = auto_football_cfg,
+    sync_fn = function(...) FALSE,
+    place_fn = function(...) stop("should not be called"),
+    bankroll_fn = function() room_bankroll
+  )
+  expect_equal(rec$status, "sync_failed")
 })
 
 test_that("run_auto_place records 'failed:<reason>' and re-throws when placement errors", {
@@ -472,4 +568,160 @@ test_that("run_auto_place reads no config after a refused sync (Ruling R3)", {
   )
   expect_equal(read_placement_status(root)$status, "sync_failed")
   expect_false(load_called)
+})
+
+# --- daily cap limits the run's stake (design spec step 7) --------------------
+#
+# The room used to gate the run only (> 0), and place_fn then placed every
+# pending bet: 900 kr placed today left 100 kr room, and the next cycle staked
+# all 2,500 kr pending. The pending set is now capped to the room before
+# place_fn sees it.
+
+seed_pending_recs <- function(root, home_team, ev, bet_amount) {
+  recs <- tibble::tibble(
+    run_id = as.POSIXct("2026-06-01 10:00:00", tz = "UTC"),
+    sex = "male",
+    match_date = Sys.Date() + 7L,
+    home_team = home_team, away_team = "Z",
+    market = "moneyline", outcome = "home", line = NA_real_,
+    p = 0.6, odds = 2.1, ev = ev, kelly = 0.02, bet_amount = bet_amount,
+    sport = "football", country = "iceland"
+  )
+  write_table(recs, "recommendations", root = root)
+}
+
+# daily_budget = max(0 * 0, room): the injected bankroll fixes the room.
+.room_bankroll <- function(room) {
+  function() list(daily_budget_frac = 0, current_pool = 0, daily_budget_min_isk = room)
+}
+
+# Places whatever it is handed; handed nothing, it loads every pending bet, as
+# place_bets() does when called without a capped set.
+.recording_place <- function(log) {
+  function(leagues = NULL, root, recs = NULL, ...) {
+    if (is.null(recs)) {
+      recs <- suppressMessages(preview_pending(
+        leagues = leagues, root = root, leagues_cfg = auto_football_cfg
+      ))
+    }
+    log$placed <- recs
+    tibble::tibble(status = rep("placed", nrow(recs)))
+  }
+}
+
+.cap_pending <- function(home_team, ev, bet_amount) {
+  tibble::tibble(
+    sport = "football", country = "iceland", sex = "male",
+    match_date = as.Date("2050-01-01"),
+    home_team = home_team, away_team = "Z",
+    market = "moneyline", outcome = "home", line = NA_real_,
+    ev = ev, bet_amount = bet_amount
+  )
+}
+
+test_that("run_auto_place stakes nothing past a 100 kr room with 2,500 kr pending", {
+  root <- withr::local_tempdir()
+  seed_pending_recs(root, c("A", "B", "C"), c(0.30, 0.20, 0.10), c(1000, 800, 700))
+  log <- new.env()
+  log$placed <- tibble::tibble(bet_amount = numeric())
+  suppressMessages(run_auto_place(
+    root = root, now = as.POSIXct("2026-06-01 12:00:00", tz = "UTC"),
+    leagues_cfg = auto_football_cfg,
+    sync_fn = function(...) TRUE, place_fn = .recording_place(log),
+    bankroll_fn = .room_bankroll(100)
+  ))
+  expect_lte(sum(log$placed$bet_amount), 100)
+  expect_equal(read_placement_status(root)$status, "daily_cap_reached")
+})
+
+test_that("run_auto_place places two of three 600 kr bets in a 1,500 kr room", {
+  root <- withr::local_tempdir()
+  seed_pending_recs(root, c("A", "B", "C"), c(0.30, 0.10, 0.20), c(600, 600, 600))
+  log <- new.env()
+  suppressMessages(expect_message(
+    run_auto_place(
+      root = root, now = as.POSIXct("2026-06-01 12:00:00", tz = "UTC"),
+      leagues_cfg = auto_football_cfg,
+      sync_fn = function(...) TRUE, place_fn = .recording_place(log),
+      bankroll_fn = .room_bankroll(1500)
+    ),
+    "holding back 1"
+  ))
+  expect_equal(nrow(log$placed), 2L)
+  expect_setequal(log$placed$home_team, c("A", "C")) # the two highest-EV bets
+  expect_lte(sum(log$placed$bet_amount), 1500)
+  expect_equal(read_placement_status(root)$status, "placed")
+})
+
+test_that("run_auto_place places nothing when the room is zero", {
+  root <- withr::local_tempdir()
+  seed_pending_recs(root, "A", 0.30, 600)
+  called <- FALSE
+  run_auto_place(
+    root = root, now = as.POSIXct("2026-06-01 12:00:00", tz = "UTC"),
+    leagues_cfg = auto_football_cfg,
+    sync_fn = function(...) TRUE,
+    place_fn = function(...) {
+      called <<- TRUE
+      tibble::tibble(status = "placed")
+    },
+    bankroll_fn = .room_bankroll(0)
+  )
+  expect_false(called)
+  expect_equal(read_placement_status(root)$status, "daily_cap_reached")
+})
+
+test_that(".cap_to_daily_room keeps the longest EV-ordered prefix that fits", {
+  # EV descending; the B/D tie is broken by the bet key (home_team B < D).
+  # The prefix stops at D (1,300 > 1,050): C's 50 kr would fit, but a smaller,
+  # lower-EV bet never jumps the queue, and no stake is split.
+  pending <- .cap_pending(
+    home_team = c("C", "D", "A", "B"),
+    ev = c(0.10, 0.20, 0.30, 0.20),
+    bet_amount = c(50, 300, 700, 300)
+  )
+  expect_identical(.cap_to_daily_room(pending, 1050)$home_team, c("A", "B"))
+  expect_identical(
+    .cap_to_daily_room(pending[4:1, ], 1050)$home_team, c("A", "B")
+  )
+  expect_identical(
+    .cap_to_daily_room(pending, 1e6)$home_team, c("A", "B", "D", "C")
+  )
+  expect_equal(nrow(.cap_to_daily_room(pending, 0)), 0L)
+  expect_equal(nrow(.cap_to_daily_room(pending, -10)), 0L)
+  expect_equal(nrow(.cap_to_daily_room(pending[0, ], 1000)), 0L)
+})
+
+test_that("run_auto_place's held-back log names the line and survives an NA stake", {
+  # Two spread bets on one match differ only by `line`, so the held line must
+  # print it; an NA stake (ends the prefix) must not turn the total into NA.
+  root <- withr::local_tempdir()
+  write_table(tibble::tibble(
+    run_id = as.POSIXct("2026-06-01 10:00:00", tz = "UTC"),
+    sex = "male", match_date = Sys.Date() + 7L,
+    home_team = c("A", "Q", "Q", "B"), away_team = "Z",
+    market = c("moneyline", "spread", "spread", "moneyline"),
+    outcome = "home", line = c(NA, -1.5, 1.5, NA),
+    p = 0.6, odds = 2.1, ev = c(0.30, 0.20, 0.10, 0.05), kelly = 0.02,
+    bet_amount = c(600, 500, 700, NA),
+    sport = "football", country = "iceland"
+  ), "recommendations", root = root)
+  withr::local_options(cli.width = 500)
+  msgs <- testthat::capture_messages(run_auto_place(
+    root = root, now = as.POSIXct("2026-06-01 12:00:00", tz = "UTC"),
+    leagues_cfg = auto_football_cfg,
+    sync_fn = function(...) TRUE, place_fn = .recording_place(new.env()),
+    bankroll_fn = .room_bankroll(700)
+  ))
+  held <- grep("held: ", msgs, value = TRUE)
+  expect_length(held, 3L)
+  expect_length(unique(held), 3L)
+  # match by content, not position: held rows keep pending's read order
+  spread <- grep("spread", held, value = TRUE)
+  expect_setequal(
+    regmatches(spread, regexpr("spread home line -?1\\.5", spread)),
+    c("spread home line -1.5", "spread home line 1.5")
+  )
+  summary <- grep("Daily cap: holding back", msgs, value = TRUE)
+  expect_match(summary, "holding back 3 of 4 pending bet\\(s\\) \\(1200 kr, 1 without a stake\\)")
 })

@@ -2,7 +2,8 @@
 
 **Symptom.** `fit_freshness` FAIL/WARN (latest fit too old), or
 `divergence_drift` / `rhat_drift` WARN (a fit is degrading while still under the
-abort gate). `fit.yml` may be red.
+abort gate), or `diagnostics_store` WARN (the `fit_diagnostics` store cannot be
+read). `fit.yml` may be red.
 
 ## Diagnose
 
@@ -22,6 +23,13 @@ abort gate). `fit.yml` may be red.
    the early signal the gate has not yet tripped on.
 3. If `fit_freshness` is FAIL but the fit is *green*, the upstream results
    scrape may not be moving — check `scrape-results.yml`.
+4. `diagnostics_store` WARN: drift is unknown, and the cell whose partition
+   holds the bad file loses `needs_refit()`'s row-count rule (its read is
+   filtered to that cell, so other cells keep it), so a game dated on that
+   cell's fit date goes unfitted until a later one arrives. The value carries Arrow's error naming the bad file. The store
+   is tracked: restore that file from the last commit that wrote it intact
+   (`git log -- <path>`). Do not delete it to clear the WARN, because its
+   `n_obs` is what the row-count rule compares with.
 
 ## Fix
 

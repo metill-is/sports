@@ -34,5 +34,9 @@ all existing rows. When `dual_write_csv = TRUE`, also appends to
 `<legacy_root>/<sport>/<country>/history/bets_log.csv` for cutover safety.
 }
 \details{
+An absent ledger or partition reads as empty, so a first bet still writes.
+Any other read error propagates and nothing is written: swallowing it would
+rewrite the partition holding only `bet_row`, deleting its history.
+
 This is the only writer to the ledger.
 }

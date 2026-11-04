@@ -78,6 +78,49 @@ test_that("decide_league writes candidates and recommendations", {
   expect_true(nrow(recs) >= 0L)
 })
 
+test_that("decide_league prices a fixture scraped under two Lengjan spellings", {
+  # Audit 2026-11 finding A: both spellings survived prepare_odds() and
+  # collapsed into duplicate rows, so assert_outcome_prob_coherent() aborted
+  # the whole (league, sex) with a moneyline sum of ~2.
+  set.seed(13)
+  root <- withr::local_tempdir()
+  match_date <- Sys.Date() + 1L
+  write_table(tibble::tibble(
+    sport = "basketball", country = "iceland", sex = "male",
+    fit_date = Sys.Date(), match_date = match_date,
+    home_team = "Alpha", away_team = "Bravo", draw_id = 1:1000,
+    home_goals = rpois(1000, lambda = 90),
+    away_goals = rpois(1000, lambda = 85)
+  ), "beliefs_latest", root = root)
+  scrape <- function(away, at, odds) {
+    tibble::tibble(
+      sport = "basketball", country = "iceland", scraped_at = at,
+      match_date = match_date, home_team = "Alpha", away_team = away,
+      market = "moneyline", outcome = c("home", "away"), line = NA_real_,
+      odds = odds
+    )
+  }
+  # one scrape (one shared scraped_at): the latest-scrape filter alone cannot
+  # remove either, so only the canonical dedup keeps kelly_joint() off a sum of ~2
+  at <- Sys.time() - 3600
+  write_table(dplyr::bind_rows(
+    scrape("Bravo old", at, c(1.95, 2.00)),
+    scrape("Bravo new", at, c(1.85, 2.10))
+  ), "odds", root = root)
+  league <- mini_basketball_league()
+  league$lengjan <- list(team_names = list(male = list(
+    Alpha = "Alpha", Bravo = list("Bravo new", "Bravo old")
+  )))
+
+  cands <- decide_league(
+    league = league, sex = "male", root = root, bankroll = mini_bankroll(),
+    write = FALSE, return_candidates = TRUE
+  )
+
+  expect_equal(sort(cands$outcome), c("away", "home"))
+  expect_equal(cands$odds[order(cands$outcome)], c(2.10, 1.85))
+})
+
 test_that("decide_league errors when both league_key and league supplied", {
   expect_error(
     decide_league(league_key = "x", league = list(sport = "y"), sex = "male"),
@@ -343,6 +386,207 @@ test_that("decide_league clamps kelly_frac at kelly_ceiling (K5 invariant)", {
 })
 
 
+# --- per-sex runs share a partition -----------------------------------------
+# candidates/recommendations partition on (sport, country, run_date) with no
+# sex, and 04_decide.R runs decide_league() once per sex. Before the fix the
+# second sex's write replaced the partition and wiped the first (audit
+# 2026-11-03: football_iceland 2026-08-10..19 held a single sex per day).
+
+.two_sex_setup <- function(root, sexes = c("male", "female"),
+                           home_odds = c(male = 1.85, female = 1.85)) {
+  md <- Sys.Date() + 1L
+  beliefs <- dplyr::bind_rows(lapply(c("male", "female"), function(s) {
+    tibble::tibble(
+      sport = "basketball", country = "iceland", sex = s,
+      fit_date = Sys.Date(), match_date = md,
+      home_team = paste0("Home_", s), away_team = paste0("Away_", s),
+      draw_id = 1:1000,
+      home_goals = rpois(1000, lambda = 90),
+      away_goals = rpois(1000, lambda = 85)
+    )
+  }))
+  write_table(beliefs, "beliefs_latest", root = root)
+  odds <- dplyr::bind_rows(lapply(sexes, function(s) {
+    tibble::tibble(
+      sport = "basketball", country = "iceland", sex = s,
+      scraped_at = Sys.time(), match_date = md,
+      home_team = paste0("Home_", s), away_team = paste0("Away_", s),
+      market = "moneyline", outcome = c("home", "away"),
+      line = NA_real_, odds = c(home_odds[[s]], 2.10)
+    )
+  }))
+  write_table(odds, "odds", root = root)
+}
+
+.two_sex_decide <- function(root, sex, markets_on = TRUE) {
+  league <- mini_basketball_league()
+  league$betting$min_bet <- 0
+  if (!markets_on) league$betting$markets[] <- list(FALSE)
+  decide_league(
+    league = league, sex = sex, run_date = Sys.Date(),
+    root = root, bankroll = mini_bankroll()
+  )
+}
+
+.read_decided <- function(table, root) {
+  out <- read_table(table,
+    filter = list(sport = "basketball", country = "iceland"), root = root
+  )
+  if (nrow(out) == 0L) {
+    return(out)
+  }
+  out[order(out$sex, out$home_team, out$market, out$outcome), , drop = FALSE]
+}
+
+test_that("decide_league keeps both sexes when they share a run_date", {
+  set.seed(13)
+  root <- withr::local_tempdir()
+  .two_sex_setup(root)
+
+  .two_sex_decide(root, "male")
+  .two_sex_decide(root, "female")
+
+  cands <- .read_decided("candidates", root)
+  recs <- .read_decided("recommendations", root)
+  expect_setequal(unique(cands$sex), c("male", "female"))
+  expect_setequal(unique(recs$sex), c("male", "female"))
+  expect_equal(length(unique(as.character(cands$run_date))), 1L)
+})
+
+test_that("rerunning one sex's decide replaces only that sex's rows", {
+  set.seed(13)
+  root <- withr::local_tempdir()
+  .two_sex_setup(root)
+  .two_sex_decide(root, "male")
+  .two_sex_decide(root, "female")
+  female_cands <- .read_decided("candidates", root)
+  female_cands <- female_cands[female_cands$sex == "female", , drop = FALSE]
+  female_recs <- .read_decided("recommendations", root)
+  female_recs <- female_recs[female_recs$sex == "female", , drop = FALSE]
+
+  .two_sex_setup(root, home_odds = c(male = 1.95, female = 1.85))
+  .two_sex_decide(root, "male")
+
+  cands <- .read_decided("candidates", root)
+  male <- cands[cands$sex == "male", , drop = FALSE]
+  expect_equal(nrow(male), 2L)
+  expect_equal(male$odds[male$outcome == "home"], 1.95)
+  expect_equal(cands[cands$sex == "female", , drop = FALSE], female_cands)
+  recs <- .read_decided("recommendations", root)
+  expect_equal(sum(recs$sex == "male"), 1L)
+  expect_equal(recs$odds[recs$sex == "male"], 1.95)
+  expect_equal(recs[recs$sex == "female", , drop = FALSE], female_recs)
+})
+
+test_that("a zero-row decide run for one sex leaves the other untouched", {
+  set.seed(13)
+  root <- withr::local_tempdir()
+  .two_sex_setup(root, sexes = "male")
+  .two_sex_decide(root, "male")
+  cands_before <- .read_decided("candidates", root)
+  recs_before <- .read_decided("recommendations", root)
+  expect_gt(nrow(recs_before), 0L)
+
+  out <- .two_sex_decide(root, "female")
+
+  expect_equal(nrow(out), 0L)
+  expect_equal(.read_decided("candidates", root), cands_before)
+  expect_equal(.read_decided("recommendations", root), recs_before)
+})
+
+test_that("a rerun with candidates but no recommendations clears that sex's", {
+  set.seed(13)
+  root <- withr::local_tempdir()
+  .two_sex_setup(root)
+  .two_sex_decide(root, "male")
+  .two_sex_decide(root, "female")
+  recs_before <- .read_decided("recommendations", root)
+  expect_setequal(unique(recs_before$sex), c("male", "female"))
+
+  # Female home odds of 1.30 leave both female bets below EV.
+  .two_sex_setup(root, home_odds = c(male = 1.85, female = 1.30))
+  out <- .two_sex_decide(root, "female")
+
+  expect_equal(nrow(out), 0L)
+  cands <- .read_decided("candidates", root)
+  expect_equal(unique(cands$stage[cands$sex == "female"]), "dropped_low_ev")
+  expect_equal(
+    .read_decided("recommendations", root),
+    recs_before[recs_before$sex == "male", , drop = FALSE]
+  )
+})
+
+test_that("a market-off run keeps the other sex and clears its own recs", {
+  set.seed(13)
+  root <- withr::local_tempdir()
+  .two_sex_setup(root)
+  # Female first, so the market-off run is the only write that could wipe the
+  # male rows.
+  .two_sex_decide(root, "female")
+  expect_gt(nrow(.read_decided("recommendations", root)), 0L)
+  .two_sex_decide(root, "male")
+  cands_before <- .read_decided("candidates", root)
+  recs_before <- .read_decided("recommendations", root)
+  expect_gt(sum(recs_before$sex == "male"), 0L)
+
+  out <- .two_sex_decide(root, "female", markets_on = FALSE)
+
+  expect_equal(nrow(out), 0L)
+  cands <- .read_decided("candidates", root)
+  expect_equal(
+    cands[cands$sex == "male", , drop = FALSE],
+    cands_before[cands_before$sex == "male", , drop = FALSE]
+  )
+  female <- cands[cands$sex == "female", , drop = FALSE]
+  expect_equal(nrow(female), 2L)
+  expect_equal(unique(female$stage), "dropped_market_off")
+  expect_equal(
+    .read_decided("recommendations", root),
+    recs_before[recs_before$sex == "male", , drop = FALSE]
+  )
+})
+
+test_that("a clear that would empty the day's partition leaves it in place", {
+  # Deleting the partition would make load_recommendations() fall back to the
+  # previous day's recommendations, which this run has just rejected.
+  set.seed(13)
+  root <- withr::local_tempdir()
+  .two_sex_setup(root, sexes = "male")
+  .two_sex_decide(root, "male")
+  recs_before <- .read_decided("recommendations", root)
+  expect_gt(nrow(recs_before), 0L)
+
+  .two_sex_decide(root, "male", markets_on = FALSE)
+
+  expect_equal(.read_decided("recommendations", root), recs_before)
+  expect_equal(
+    unique(.read_decided("candidates", root)$stage), "dropped_market_off"
+  )
+})
+
+test_that("decide_league aborts when the shared partition cannot be read", {
+  set.seed(13)
+  root <- withr::local_tempdir()
+  .two_sex_setup(root)
+  .two_sex_decide(root, "male")
+  recs_before <- .read_decided("recommendations", root)
+  part <- list.files(file.path(root, "decisions", "candidates"),
+    pattern = "[.]parquet$", recursive = TRUE, full.names = TRUE
+  )
+  expect_length(part, 1L)
+  writeLines("not parquet", part)
+
+  expect_error(
+    .two_sex_decide(root, "female"),
+    "Parquet input source .*/candidates/.*Parquet magic bytes not found"
+  )
+  expect_identical(readLines(part), "not parquet")
+  recs <- .read_decided("recommendations", root)
+  expect_false("female" %in% recs$sex)
+  expect_equal(recs, recs_before)
+})
+
+
 # --- division exclusions --------------------------------------------------
 # Some divisions are modelled but must never be priced. LD1_PO (the Lengjudeild
 # promotion umspil) is two-legged, so leg 2 is played conditional on the first
@@ -368,13 +612,14 @@ test_that("decide_league clamps kelly_frac at kelly_ceiling (K5 invariant)", {
     tibble::tibble(
       sport = "football", country = "iceland", sex = "male", season = 2026L,
       match_date = as.Date(c("2026-09-09", "2026-09-09", "2026-09-12")),
-      home_team  = c("Njarðvík", "HK", "Selfoss"),
-      away_team  = c("Þróttur R.", "Fylkir", "KFG"),
-      division   = c("LD1_PO", "LD1_PO", "LD2"),
-      round      = NA_integer_,
+      home_team = c("Njarðvík", "HK", "Selfoss"),
+      away_team = c("Þróttur R.", "Fylkir", "KFG"),
+      division = c("LD1_PO", "LD1_PO", "LD2"),
+      round = NA_integer_,
       kickoff_time = NA_character_
     ),
-    "schedules", root = root
+    "schedules",
+    root = root
   )
   root
 }
@@ -385,7 +630,8 @@ test_that("drop_excluded_divisions removes only the excluded division's rows", {
     betting = list(exclude_divisions = "LD1_PO")
   )
   out <- drop_excluded_divisions(
-    .excl_odds(), league, "male", root = .excl_root()
+    .excl_odds(), league, "male",
+    root = .excl_root()
   )
   expect_equal(nrow(out), 1L)
   expect_equal(out$home_team, "Selfoss")

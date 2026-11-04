@@ -83,3 +83,15 @@ normalise_lengjan_team_names <- function(odds, league, sex) {
   odds$away_team <- remap(odds$away_team)
   odds
 }
+
+#' Position of each Lengjan name among its canonical's renderings in the
+#' per-sex team_names map (1 = primary, in [tn_renderings()] order); NA when
+#' the name is no rendering for this sex, i.e. [normalise_lengjan_team_names()]
+#' passes it through unmapped.
+#' @noRd
+lengjan_rendering_pos <- function(x, league, sex) {
+  renders <- tn_renderings(league$lengjan$team_names[[sex]])
+  pos <- as.integer(unlist(lapply(renders, seq_along), use.names = FALSE))
+  lengjan <- tag_utf8(as.character(unlist(renders, use.names = FALSE)))
+  pos[match(tag_utf8(x), lengjan)]
+}

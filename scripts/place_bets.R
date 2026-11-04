@@ -13,6 +13,7 @@
 # the package source are never mangled under a C locale. Mirrors scripts/0N_*.R.
 invisible(Sys.setlocale("LC_ALL", "en_US.UTF-8"))
 suppressPackageStartupMessages(devtools::load_all(here::here()))
+root <- here::here("data")
 
 args <- commandArgs(trailingOnly = TRUE)
 get_flag <- function(name) any(args == paste0("--", name))
@@ -28,14 +29,26 @@ headless <- !get_flag("show-browser")
 leagues <- get_arg("league")
 target_date <- if (!is.null(get_arg("date"))) as.Date(get_arg("date")) else NULL
 
-results <- place_bets(
-  leagues     = leagues,
-  dry_run     = dry_run,
-  interactive = interactive,
-  today_only  = today_only,
-  target_date = target_date,
-  headless    = headless
-)
+place <- function() {
+  place_bets(
+    leagues     = leagues,
+    dry_run     = dry_run,
+    interactive = interactive,
+    today_only  = today_only,
+    target_date = target_date,
+    headless    = headless,
+    root        = root
+  )
+}
+# --live appends to ledger partitions by read-modify-write, as the unattended
+# placer's placement and settle do: share its lock so neither run loses the
+# other's rows (audit 2026-11-03). Errors out if that run holds it. A dry run
+# writes nothing and takes no lock.
+results <- if (dry_run) {
+  place()
+} else {
+  with_ledger_lock(place(), root = root, what = "scripts/place_bets.R --live")
+}
 
 if (nrow(results) > 0L && "status" %in% names(results)) {
   cat("\n=== Results ===\n")

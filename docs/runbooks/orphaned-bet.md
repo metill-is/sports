@@ -60,12 +60,12 @@ Why it did not settle:
 
   ```r
   Rscript -e 'suppressMessages(devtools::load_all())
-    void_bet(
+    with_ledger_lock(void_bet(
       sport = "football", country = "iceland", sex = "male",
       match_date = as.Date("2026-06-06"),
       home_team = "Grótta", away_team = "Grindavík",
       market = "moneyline"
-    )
+    ), what = "void_bet")
     commit_ledger_changes(here::here(), "data(ledger): void <fixture> -- <reason>")'
   ```
   If the Diagnose step shows more than one unsettled bet on that fixture+market

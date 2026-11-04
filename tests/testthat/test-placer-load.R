@@ -58,6 +58,22 @@ test_that("dedup_against_ledger drops already-placed bets", {
   expect_equal(out$home_team, "Fram")
 })
 
+test_that("dedup_against_ledger keys on the shared .bet_key_cols", {
+  # run_auto_place()'s held-back anti-join and P1 must key on the same
+  # columns, so narrowing the shared key must narrow P1 with it.
+  root <- setup_placer_root()
+  recs <- arrow::read_parquet(testthat::test_path(
+    "fixtures", "placer", "recs_sample.parquet"
+  ))
+  recs <- recs[recs$home_team == "KR", , drop = FALSE]
+  recs$line <- 1.5 # the ledger's KR v FH row differs only by its NA line
+  expect_equal(nrow(dedup_against_ledger(recs, root)), 1L)
+  testthat::local_mocked_bindings(
+    .bet_key_cols = setdiff(.bet_key_cols, "line")
+  )
+  expect_equal(nrow(dedup_against_ledger(recs, root)), 0L)
+})
+
 test_that("dedup_against_ledger is a no-op when ledger is empty", {
   tmp <- withr::local_tempdir()
   recs <- arrow::read_parquet(testthat::test_path(
@@ -68,6 +84,29 @@ test_that("dedup_against_ledger is a no-op when ledger is empty", {
   loaded <- load_recommendations(tmp, target_date = as.Date("2026-04-26"))
   out <- dedup_against_ledger(loaded, tmp)
   expect_equal(nrow(out), nrow(loaded))
+})
+
+# Audit 2026-11-03 finding A: an unreadable ledger used to warn and return
+# every recommendation, so autoplace re-placed bets already in the ledger (P1).
+# An absent ledger still reads as empty (the no-op test above).
+test_that("dedup_against_ledger errors on an unreadable ledger instead of skipping dedup", {
+  root <- setup_placer_root()
+  recs <- load_recommendations(root,
+    target_date = as.Date("2026-04-26"), leagues_cfg = placer_cfg
+  )
+  corrupt_ledger_fragment(root)
+  expect_error(dedup_against_ledger(recs, root), "Parquet")
+})
+
+test_that("dedup_against_ledger errors on a ledger missing a key column instead of skipping dedup", {
+  root <- setup_placer_root()
+  recs <- load_recommendations(root,
+    target_date = as.Date("2026-04-26"), leagues_cfg = placer_cfg
+  )
+  local_mocked_bindings(read_table = function(...) {
+    tibble::tibble(sport = "football", country = "iceland", home_team = "KR")
+  })
+  expect_error(dedup_against_ledger(recs, root), "key column")
 })
 
 test_that("load_recommendations returns 0 rows + correct cols when nothing matches", {

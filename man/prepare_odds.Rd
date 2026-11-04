@@ -19,8 +19,8 @@ prepare_odds(
 
 \item{sex}{"male" or "female". Rows carrying a non-NA `sex` (stamped by the
 JSON-API scraper from the Lengjan competition, spec 2026-09-23 WS2) are
-kept only for that sex; NA rows (DOM scraper, history) are sex-agnostic
-and kept for both, as before -- the per-sex team_names join then decides.}
+kept only for that sex; NA rows (DOM scraper, history) reach both cells,
+less any the per-sex team_names identify as the other sex's (above).}
 
 \item{end_date}{Drop matches before this date. Default today.}
 
@@ -36,6 +36,17 @@ Tibble with (match_date, home_team, away_team, market, outcome,
   line, odds, scraped_at). Empty (typed) when no rows match.
 }
 \description{
-Read facts/odds for one (sport, country) and return latest-snapshot rows
-for matches at or after `end_date`, no older than `max_age_hours`.
+Each match is priced from its latest scrape only (identified by its shared
+`scraped_at`): a line or selection absent from that scrape was withdrawn or
+suspended, so its older price is dropped (on the DOM scraper a failed
+detail-page fetch looks the same, so that match's spread and total drop out
+until the next good scrape). Team names are normalised to
+canonical before matches are keyed, so two Lengjan spellings of one fixture
+are one match; if one scrape lists both, each market line is priced from a
+single listing, the primary rendering's (`team_names` order). A sex-less
+listing with a name among the other sex's `team_names` renderings and
+neither among this sex's is the other sex's game (e.g. the men's "FH" v
+"Valur", or "FH" v a renamed "Valur R.", in the female cell): it is dropped
+with a warning naming the fixture. A listing neither map knows passes
+through, and nothing is dropped when this sex has no `team_names`.
 }
