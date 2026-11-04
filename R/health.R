@@ -82,8 +82,10 @@ latest_fit_date <- function(static, sex, root) {
 #' football in particular runs ~5-day gaps between fixtures, during which
 #' `needs_refit()` correctly skips the refit (no new data to fit on) yet the fit
 #' aged past the FAIL threshold. So staleness is gated on `needs_refit()` -- the
-#' pipeline's own "completed results moved past the fit" predicate, reused here
-#' so the health signal stays self-consistent with what `03_fit.R` acts on --
+#' pipeline's own "the fit is behind its data" predicate (a result after the
+#' fit date, a training row count at the fit date that differs from its
+#' `n_obs`, or upcoming fixtures the newest fit predicted none of), reused here so the health signal stays self-consistent with what
+#' `03_fit.R` acts on --
 #' and fit age only sets the *severity* once the fit is genuinely behind the
 #' data. Off-season cells (no upcoming games) are PAUSED, as before. This
 #' mirrors the match-proximity fix applied to `check_odds_freshness`.
@@ -372,12 +374,30 @@ check_odds_freshness <- function(leagues, root, now, th) {
 #' PAUSED (no upcoming games): their rows are PAUSED, never WARN, because the
 #' pipeline will not refit them, so a drifted last fit has no action behind it
 #' (2026-09-25 review). The measured value is still reported.
+#'
+#' An unreadable store is one `diagnostics_store` WARN row, not silence. The
+#' same read feeds `needs_refit()`'s row-count rule, which falls back to the
+#' date rule without it, so `fit_freshness` can read "current with results"
+#' while a game dated on the fit date sits unfitted. WARN, not FAIL: the fit
+#' loop keeps running on the date rule.
 #' @param root Data root.
 #' @param th [health_thresholds()] list.
 #' @param paused_cells Character vector of "sport/country/sex" cells.
 #' @noRd
 check_diagnostics_drift <- function(root, th, paused_cells = character(0)) {
-  d <- tryCatch(read_table("fit_diagnostics", root = root), error = function(e) tibble::tibble())
+  d <- tryCatch(read_table("fit_diagnostics", root = root), error = function(e) e)
+  # WARN even when every cell is paused: unlike drift, this has a fix (restore
+  # the file), and the store must be intact before the season restarts.
+  if (inherits(d, "error")) {
+    return(health_row(
+      "diagnostics_store", "fit_diagnostics", "WARN",
+      paste0(
+        "unreadable, so drift is unknown and the cell holding the bad file ",
+        "may lose needs_refit()'s row-count rule: ", conditionMessage(d)
+      ),
+      "readable"
+    ))
+  }
   if (nrow(d) == 0L) {
     return(health_empty())
   }

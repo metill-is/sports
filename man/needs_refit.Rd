@@ -42,18 +42,31 @@ wiped canonical partition forces a refit even if archive still
 carries yesterday's fit — defensive complement to the atomic
 stage-then-rename in `write_table()`, audit 2026-05-15 §H + I2).
 Returns `FALSE` when no results exist (cannot fit on empty data) or
-when no game has been played since the last fit.
+when no result postdates the newest fit, its training row count is
+unchanged, and the horizon rule below does not fire. The rule compares counts, so a one-for-one row swap or a score
+correction goes undetected.
 }
 \details{
+Also returns `TRUE` when a fit at the newest `fit_date` would now train on a
+different number of rows than that fit's `fit_diagnostics` `n_obs`. The date
+rule misses a game dated ON the fit date: the daily fit for day D runs before
+D's evening games, which the next day's scrape stores dated D. The recount
+uses that fit's own cutoff, so a `training_filter` lookback window drifting
+since then is not new data, and a refit's own `n_obs` matches it. A fit with
+no readable `n_obs` falls back to the date rule.
+
 Also returns `TRUE` when fixtures fall inside the next `horizon_days` and
 the newest fit predicted none of them -- the season-rollover case, where
 nothing has been played since the last fit (spec 2026-09-16 §8). Only
 fixtures a fit could predict count: both teams must be in the training set
 below, because `prepare_data()` drops any other fixture.
 
-Both rules reason over the rows the fit trains on,
-`model_training_results(completed, static, end_date = today)`: a league's
-`training_filter` applies here exactly as in `prepare_data()`. A result the
-filter drops is not a played game, and a cell whose filter keeps no result
-is treated like one with no results at all.
+All three rules (a result after the fit date, a changed row count, an
+unpredicted horizon) reason over the rows the fit trains on,
+`model_training_results()`: a league's `training_filter` applies here exactly
+as in `prepare_data()`. A result the filter drops is not a played game, and
+a cell whose filter keeps no result is treated like one with no results at
+all. The date and horizon rules count at `end_date = today`, the cutoff of
+the fit about to run. The row-count rule recounts at the newest `fit_date`
+on purpose: that is the cutoff of the fit whose `n_obs` it compares with.
 }

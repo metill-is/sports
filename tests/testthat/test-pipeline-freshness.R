@@ -684,3 +684,156 @@ test_that("needs_refit() does not count a forfeit as a played game", {
     )
   }
 })
+
+# --- needs_refit(): a game dated on the fit date -----------------------------
+# The daily fit for day D runs before D's evening games, and the next day's
+# scrape stores them dated D, so `latest_match > last_fit` never fires for
+# them. Men's basketball sat on its 2026-10-30 fit with six such games unfitted.
+
+.seed_fit_n_obs <- function(root, fit_date, n_obs, sport = "basketball") {
+  write_table(
+    tibble::tibble(
+      sport = sport, country = "iceland", sex = "male",
+      fit_date = as.Date(fit_date), n_obs = as.integer(n_obs),
+      n_divergent = 0L, total_iter = 4000L, div_frac = 0,
+      n_max_treedepth = 0L, treedepth_frac = 0, min_ebfmi = 0.9,
+      max_rhat = 1.001, min_ess_bulk = 800, min_ess_tail = 700,
+      adapt_delta = 0.95, iter_sampling = 1000L, chains = 4L, passed = TRUE
+    ),
+    "fit_diagnostics",
+    root = root
+  )
+}
+
+# B v A, played the evening of 2100-04-01 and scraped the next day.
+.seed_evening_game <- function(root) {
+  arrow::write_parquet(
+    tibble::tibble(
+      home_team = "B", away_team = "A", match_date = as.Date("2100-04-01"),
+      home_score = 75L, away_score = 72L, division = "BD", round = 23L
+    ),
+    fs::path(
+      root, "facts", "results", "sport=basketball", "country=iceland",
+      "sex=male", "season=2100", "part-1.parquet"
+    )
+  )
+}
+
+test_that("needs_refit() is TRUE when a game dated on the fit date arrived after the fit", {
+  root <- withr::local_tempdir()
+  .seed_refit_cell(root, "2100-04-01")
+  .seed_fit_n_obs(root, "2100-04-01", n_obs = 1L)
+  .seed_evening_game(root)
+  expect_true(needs_refit(.bb_static, "male", root = root, today = as.Date("2100-04-02")))
+})
+
+test_that("needs_refit() is TRUE when a row the fit trained on is gone", {
+  # A merged duplicate or a reclassified forfeit changes the training set too.
+  root <- withr::local_tempdir()
+  .seed_refit_cell(root, "2100-04-02")
+  .seed_fit_n_obs(root, "2100-04-02", n_obs = 2L)
+  expect_true(needs_refit(.bb_static, "male", root = root, today = as.Date("2100-04-03")))
+})
+
+test_that("needs_refit() is FALSE once a fit has trained on every row", {
+  # Games on the fit date that the fit counted are not new.
+  same_day <- withr::local_tempdir()
+  .seed_refit_cell(same_day, "2100-04-01")
+  .seed_fit_n_obs(same_day, "2100-04-01", n_obs = 2L)
+  .seed_evening_game(same_day)
+  expect_false(needs_refit(.bb_static, "male", root = same_day, today = as.Date("2100-04-02")))
+
+  # The refit the evening game triggers must not trigger another one.
+  refit <- withr::local_tempdir()
+  .seed_refit_cell(refit, "2100-04-02")
+  .seed_fit_n_obs(refit, "2100-04-02", n_obs = 2L)
+  .seed_evening_game(refit)
+  expect_false(needs_refit(.bb_static, "male", root = refit, today = as.Date("2100-04-03")))
+})
+
+test_that("needs_refit() recounts over the newest fit's own training window", {
+  # At the 09-01 fit, R1 v R2 (BD, 2099-09-05) sits inside the 365-day
+  # lookback, so the fit trained on it and on Q1 v Q2: n_obs 2. By 09-20 R1
+  # and R2 have aged out of the window. That is not new data.
+  today <- as.Date("2100-09-20")
+  aged_out <- .fb_rows("R1", "R2", "2099-09-05", "BD")
+  seed <- function(extra = NULL) {
+    root <- withr::local_tempdir(.local_envir = parent.frame())
+    .seed_filtered_football(root, extra_results = dplyr::bind_rows(aged_out, extra))
+    .seed_fit_n_obs(root, "2100-09-01", n_obs = 2L, sport = "football")
+    root
+  }
+  expect_false(needs_refit(.fb_static, "male", root = seed(), today = today))
+
+  # A same-day result the filter drops is not one the fit missed.
+  dropped <- seed(.fb_rows("U2", "U1", "2100-09-01", "LD4"))
+  expect_false(needs_refit(.fb_static, "male", root = dropped, today = today))
+
+  # A same-day result the filter keeps is.
+  kept <- seed(.fb_rows("Q2", "Q1", "2100-09-01", "BD"))
+  expect_true(needs_refit(.fb_static, "male", root = kept, today = today))
+})
+
+test_that("needs_refit() keeps the date rule alone when the newest fit has no n_obs", {
+  # Only an older fit has a diagnostics row; its n_obs says nothing about the
+  # newest fit's training set, and unknown does not start a fit.
+  root <- withr::local_tempdir()
+  .seed_refit_cell(root, "2100-04-01")
+  .seed_fit_n_obs(root, "2100-03-25", n_obs = 1L)
+  .seed_evening_game(root)
+  expect_false(needs_refit(.bb_static, "male", root = root, today = as.Date("2100-04-02")))
+})
+
+# --- needs_refit(): a refit's own n_obs ---------------------------------------
+# fit_league() stores prepare_data()'s stan_data$N as the fit's n_obs, and
+# needs_refit() recounts model_training_results() at the same cutoff. If
+# prepare_data() ever dropped a row the recount keeps, every in-season cell
+# would refit daily. The tests above seed n_obs by hand and cannot see that, so
+# these take it from prepare_data() itself (no Stan is run).
+
+test_that("a fit's own prepare_data() row count does not start a refit", {
+  # A game dated on the fit date, a forfeit (not trained on) and an unplayed
+  # fixture, beside the cell's ordinary result.
+  root <- withr::local_tempdir()
+  fit_date <- as.Date("2100-04-01")
+  upcoming <- .fixture_rows("2100-04-05", home = "B", away = "A")
+  .seed_refit_cell(root, format(fit_date), predicted = upcoming, schedule = upcoming)
+  .seed_evening_game(root)
+  arrow::write_parquet(
+    tibble::tibble(
+      home_team = c("A", "B"), away_team = c("B", "A"),
+      match_date = as.Date(c("2100-04-01", "2100-04-05")),
+      home_score = c(20L, NA), away_score = c(0L, NA),
+      division = "BD", round = c(24L, 25L)
+    ),
+    fs::path(
+      root, "facts", "results", "sport=basketball", "country=iceland",
+      "sex=male", "season=2100", "part-2.parquet"
+    )
+  )
+  prep <- suppressMessages(
+    prepare_data(.bb_static, "male", end_date = fit_date, root = root)
+  )
+  .seed_fit_n_obs(root, fit_date, n_obs = prep$stan_data$N)
+  expect_false(needs_refit(.bb_static, "male", root = root, today = fit_date + 1L))
+})
+
+test_that("a fit's own prepare_data() row count does not start a refit under a training_filter", {
+  # A same-day result the filter keeps, one it drops, and R1 v R2, which ages
+  # out of the 365-day lookback between the 09-01 fit and today.
+  root <- withr::local_tempdir()
+  fit_date <- as.Date("2100-09-01")
+  .seed_filtered_football(root,
+    extra_results = dplyr::bind_rows(
+      .fb_rows("R1", "R2", "2099-09-05", "BD"),
+      .fb_rows("Q2", "Q1", "2100-09-01", "BD"),
+      .fb_rows("U2", "U1", "2100-09-01", "LD4")
+    ),
+    schedule = .fb_rows("Q1", "Q2", "2100-09-05", "BD", scored = FALSE)
+  )
+  prep <- suppressMessages(
+    prepare_data(.fb_static, "male", end_date = fit_date, root = root)
+  )
+  .seed_fit_n_obs(root, fit_date, n_obs = prep$stan_data$N, sport = "football")
+  expect_false(needs_refit(.fb_static, "male", root = root, today = as.Date("2100-09-20")))
+})

@@ -12,7 +12,17 @@
 #' carries yesterday's fit — defensive complement to the atomic
 #' stage-then-rename in `write_table()`, audit 2026-05-15 §H + I2).
 #' Returns `FALSE` when no results exist (cannot fit on empty data) or
-#' when no game has been played since the last fit.
+#' when no result postdates the newest fit, its training row count is
+#' unchanged, and the horizon rule below does not fire. The rule compares counts, so a one-for-one row swap or a score
+#' correction goes undetected.
+#'
+#' Also returns `TRUE` when a fit at the newest `fit_date` would now train on a
+#' different number of rows than that fit's `fit_diagnostics` `n_obs`. The date
+#' rule misses a game dated ON the fit date: the daily fit for day D runs before
+#' D's evening games, which the next day's scrape stores dated D. The recount
+#' uses that fit's own cutoff, so a `training_filter` lookback window drifting
+#' since then is not new data, and a refit's own `n_obs` matches it. A fit with
+#' no readable `n_obs` falls back to the date rule.
 #'
 #' Also returns `TRUE` when fixtures fall inside the next `horizon_days` and
 #' the newest fit predicted none of them -- the season-rollover case, where
@@ -20,11 +30,14 @@
 #' fixtures a fit could predict count: both teams must be in the training set
 #' below, because `prepare_data()` drops any other fixture.
 #'
-#' Both rules reason over the rows the fit trains on,
-#' `model_training_results(completed, static, end_date = today)`: a league's
-#' `training_filter` applies here exactly as in `prepare_data()`. A result the
-#' filter drops is not a played game, and a cell whose filter keeps no result
-#' is treated like one with no results at all.
+#' All three rules (a result after the fit date, a changed row count, an
+#' unpredicted horizon) reason over the rows the fit trains on,
+#' `model_training_results()`: a league's `training_filter` applies here exactly
+#' as in `prepare_data()`. A result the filter drops is not a played game, and
+#' a cell whose filter keeps no result is treated like one with no results at
+#' all. The date and horizon rules count at `end_date = today`, the cutoff of
+#' the fit about to run. The row-count rule recounts at the newest `fit_date`
+#' on purpose: that is the cutoff of the fit whose `n_obs` it compares with.
 #'
 #' @param static Per-league static slice with `$sport` and `$country`, plus
 #'   `$training_filter` when the league has one.
@@ -104,11 +117,54 @@ needs_refit <- function(static, sex, root = here::here("data"),
   last_fit <- max(fit_dates)
 
   latest_match > last_fit ||
+    .trained_rows_changed(static, sex, root, last_fit, completed) ||
     .horizon_unpredicted(
       static, sex, root,
       today = today, horizon_days = horizon_days,
       trained = trained
     )
+}
+
+# TRUE when a fit at `last_fit` would now train on a different number of rows
+# than the newest fit did (its `fit_diagnostics` n_obs).
+#
+# The date rule misses a game dated ON the fit date. The daily fit for day D
+# runs before D's evening games; the next day's scrape stores them dated D, and
+# `D > D` is FALSE. Men's basketball sat on its 2026-10-30 fit with six such
+# games unfitted until a later game was scraped, and every other in-season cell
+# was short by its own fit date's games.
+#
+# The recount uses the newest fit's own cutoff, not today, so a
+# training_filter's lookback window stays where the fit had it: a team ageing
+# out of the window since then is not new data. A refit stores this recount as
+# its n_obs, so it cannot start another.
+#
+# No readable n_obs for that fit date (a non-sampling or round-mode fit, a
+# failed best-effort write, an unreadable store) is "unknown", and unknown does
+# not start a fit: the date rule alone applies, as before.
+#
+# Known gap: fit_league() persists diagnostics before the belief writes, so a
+# same-day --force rerun that samples on more rows and then fails in the
+# extract leaves n_obs ahead of the beliefs, and no refit starts until a
+# later-dated game arrives.
+.trained_rows_changed <- function(static, sex, root, last_fit, completed) {
+  diag <- tryCatch(
+    read_table(
+      "fit_diagnostics",
+      root = root,
+      filter = list(sport = static$sport, country = static$country, sex = sex)
+    ),
+    error = function(e) tibble::tibble()
+  )
+  if (nrow(diag) == 0L || !"n_obs" %in% names(diag)) {
+    return(FALSE)
+  }
+  n_obs <- diag$n_obs[as.Date(diag$fit_date) == last_fit & !is.na(diag$n_obs)]
+  if (length(n_obs) == 0L) {
+    return(FALSE)
+  }
+  n_now <- nrow(model_training_results(completed, static, end_date = last_fit))
+  !n_now %in% n_obs
 }
 
 # TRUE when the refit horizon holds fixtures and the newest fit predicted none
