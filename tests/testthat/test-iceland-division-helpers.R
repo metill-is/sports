@@ -280,19 +280,55 @@ test_that("every configured badge satisfies the next_games division_code pattern
   expect_gt(n_checked, 0L)
 })
 
-# The newest season of a (sport, sex) that is MATURE: at least half the median
-# match count across that cell's seasons. The two data-backed tests below used
-# max(results$season) across ALL sports, which on handball's first matchday
-# (2026-09-05: 4 and 1 rows in season 2027) asserted a completed round-robin
-# on a season one round old -- and read basketball, with no 2027 rows at all,
-# as "nothing ingested". A format assertion belongs on the last completed
-# season; the running one is watched by check_publish_format_agreement().
+# The newest season of a (sport, sex) that is MATURE: completed, which here
+# means a later season has started, and at least half the median match count
+# across that cell's seasons, so a sparse, partly ingested season is skipped.
+# The two data-backed tests below used max(results$season) across ALL sports,
+# which on handball's first matchday (2026-09-05: 4 and 1 rows in season 2027)
+# asserted a completed round-robin on a season one round old -- and read
+# basketball, with no 2027 rows at all, as "nothing ingested". The half-median
+# bar alone then let the running season back in once it passed half the median
+# (2026-11-04: handball male 2027 at 99 rows against 183), so the newest season
+# is never mature. A format assertion belongs on the last completed season; the
+# running one is watched by check_publish_format_agreement(). Between seasons
+# this measures the one before the season just finished, until the next season's
+# first matchday is ingested.
 .mature_season <- function(results, sport, sex) {
-  cell <- results[results$sport == sport & results$sex == sex & !is.na(results$season), ]
+  cell <- results[
+    results$sport == sport & results$sex == sex & !is.na(results$season),
+  ]
   counts <- table(cell$season)
-  ok <- counts >= stats::median(counts) / 2
-  max(as.integer(names(counts)[ok]))
+  seasons <- as.integer(names(counts))
+  ok <- counts >= stats::median(counts) / 2 & seasons < max(seasons)
+  if (!any(ok)) {
+    stop(sprintf("%s %s: no completed season in results", sport, sex))
+  }
+  max(seasons[ok])
 }
+
+test_that(".mature_season never picks the running season", {
+  # Handball male, 2026-11-04: 2027 had 99 rows against a median of 183, so it
+  # passed the half-median bar a third of the way through its round-robin and
+  # the expected_meetings test asserted a full double round-robin on it.
+  cell <- function(n) {
+    data.frame(
+      sport = "handball", sex = "male",
+      season = rep(as.integer(names(n)), n)
+    )
+  }
+  running_past_half <- cell(
+    c("2021" = 5L, "2025" = 180L, "2026" = 180L, "2027" = 99L)
+  )
+  expect_identical(.mature_season(running_past_half, "handball", "male"), 2026L)
+  # The half-median bar still rules out a sparse, partly ingested season.
+  sparse <- cell(c("2024" = 180L, "2025" = 180L, "2026" = 20L, "2027" = 99L))
+  expect_identical(.mature_season(sparse, "handball", "male"), 2025L)
+  only_running <- cell(c("2027" = 99L))
+  expect_error(
+    .mature_season(only_running, "handball", "male"),
+    "no completed season"
+  )
+})
 
 test_that("expected_meetings is re-derived from data/facts/results, not restated", {
   # This asserts against live git-tracked results. When a federation changes a
