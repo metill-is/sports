@@ -5,7 +5,12 @@ NULL
 #'
 #' Chains prepare_odds + kelly_joint + portfolio_optimise + compute_calibration,
 #' then writes `candidates` (terminal-state audit log) and `recommendations`
-#' (post-filter survivors) Parquet via write_table().
+#' (post-filter survivors) Parquet. Both tables partition on
+#' (sport, country, run_date) with no `sex`, so each write replaces only this
+#' sex's rows in the day's partition and keeps the other sex's. A run that
+#' writes candidates also replaces this sex's recommendations, so one that keeps
+#' no bets clears its earlier ones, unless that would empty the day's partition;
+#' a run with no candidates writes nothing.
 #'
 #' The `stage` column on candidates is the bet's terminal classification:
 #'   - `kept`: passed all filters; appears in recommendations
@@ -65,6 +70,11 @@ decide_league <- function(league_key = NULL, league = NULL, sex,
 
   betting <- league$betting
   run_id <- as.POSIXct(format(run_date), tz = "UTC")
+  # This run's slice of the shared partition. Recommendations writes pass it so
+  # a run that wrote candidates but kept no bets still clears its earlier ones.
+  run_key <- list(
+    sport = league$sport, country = league$country, sex = sex, run_id = run_id
+  )
 
   # An early exit returns the candidate-shaped empty tibble (with `stage`) when
   # the caller asked for candidates, so the harness's bind_rows stays schema-safe.
@@ -86,9 +96,10 @@ decide_league <- function(league_key = NULL, league = NULL, sex,
        {betting_mode(league)} is below paper -- no candidates or recommendations"
     )
     # Mirrors the two sibling early-exits below. Note this is currently a
-    # no-op: decide_write_empty() passes zero-row frames to write_table(),
-    # which returns early without creating a partition. Called anyway so this
-    # path stays consistent with them if that ever changes.
+    # no-op: decide_write_empty() passes zero-row frames to
+    # write_decide_table(), which returns early without touching the
+    # partition. Called anyway so this path stays consistent with them if
+    # that ever changes.
     if (write) decide_write_empty(league, sex, run_id, root)
     return(empty_return())
   }
@@ -140,8 +151,10 @@ decide_league <- function(league_key = NULL, league = NULL, sex,
   if (nrow(odds_on) == 0L) {
     cand_off <- annotate_market_off(odds_off, league, sex, run_id)
     if (write) {
-      write_table(cand_off, "candidates", root = root)
-      write_table(empty_recommendations(), "recommendations", root = root)
+      write_decide_table(cand_off, "candidates", root = root)
+      write_decide_table(empty_recommendations(), "recommendations",
+        root = root, key = run_key
+      )
     }
     return(invisible(if (isTRUE(return_candidates)) cand_off else empty_recommendations()))
   }
@@ -314,7 +327,7 @@ decide_league <- function(league_key = NULL, league = NULL, sex,
   recs <- cands[cands$stage == "kept", , drop = FALSE]
 
   if (write) {
-    write_table(all_cands, "candidates", root = root)
+    write_decide_table(all_cands, "candidates", root = root)
     rec_out <- recs[, c(
       "run_id", "sport", "country", "sex",
       "match_date", "home_team", "away_team",
@@ -323,7 +336,7 @@ decide_league <- function(league_key = NULL, league = NULL, sex,
     ),
     drop = FALSE
     ]
-    write_table(rec_out, "recommendations", root = root)
+    write_decide_table(rec_out, "recommendations", root = root, key = run_key)
   }
 
   # 14. Return: full candidates (harness) or kept recommendations (live) -------
@@ -377,8 +390,62 @@ empty_candidates <- function() {
 #' @keywords internal
 #' @noRd
 decide_write_empty <- function(league, sex, run_id, root) {
-  write_table(empty_candidates(), "candidates", root = root)
-  write_table(empty_recommendations(), "recommendations", root = root)
+  write_decide_table(empty_candidates(), "candidates", root = root)
+  write_decide_table(empty_recommendations(), "recommendations", root = root)
+}
+
+#' Write one (league, sex) decide run without clobbering the other sex.
+#'
+#' `candidates` and `recommendations` partition on (sport, country, run_date)
+#' with no `sex`, and [write_table()] replaces every partition it touches, so
+#' the second per-sex run of a day used to wipe the first (audit 2026-11-03).
+#' Like [append_to_ledger()], this reads the run's partition, keeps the other
+#' sex's rows, binds the new rows and rewrites the partition. A read error
+#' propagates: treating an unreadable partition as empty would drop the other
+#' sex's rows. Without `key`, a zero-row frame is a no-op, as in
+#' [write_table()]. With `key`, the slice it names is replaced even by a
+#' zero-row frame, so a run that kept no bets clears that sex's earlier
+#' recommendations for the day, unless that would leave the partition with no
+#' rows: then the earlier rows stay, and stay placeable (see the comment in the
+#' body). Candidates and recommendations are separate read-modify-writes, so a
+#' recommendations read error after a successful candidates write leaves this
+#' sex's new candidates beside its old recommendations.
+#' @param key `NULL`, or `list(sport, country, sex, run_id)` naming the slice
+#'   to replace; every row of `df` must match it.
+#' @keywords internal
+#' @noRd
+write_decide_table <- function(df, table, root, key = NULL) {
+  if (is.null(key)) {
+    if (nrow(df) == 0L) {
+      return(invisible(NULL))
+    }
+    key <- list(
+      sport = df$sport[[1]], country = df$country[[1]], sex = df$sex[[1]],
+      run_id = df$run_id[[1]]
+    )
+  }
+  run_date <- as.Date(key$run_id, tz = "UTC")
+  stopifnot(
+    all(as.Date(df$run_id, tz = "UTC") == run_date), all(df$sex == key$sex),
+    all(df$sport == key$sport), all(df$country == key$country)
+  )
+  existing <- read_table(table, root = root, filter = list(
+    sport = key$sport, country = key$country, run_date = format(run_date)
+  ))
+  # run_date comes back from the hive path as character; drop it so
+  # write_table() re-derives it from run_id for the bound frame.
+  keep <- !(existing[["sex"]] %in% key$sex)
+  existing <- existing[keep, setdiff(names(existing), "run_date"), drop = FALSE]
+  combined <- dplyr::bind_rows(existing, df)
+  if (nrow(combined) == 0L) {
+    # WHY: leave a partition this clear would empty, rather than delete it.
+    # load_recommendations() takes each league's latest run_date that has rows,
+    # so deleting the day's only partition would hand the placer the previous
+    # day's recommendations, which this run has just rejected. Clearing that
+    # case needs the placer to take the latest decide run from candidates.
+    return(invisible(NULL))
+  }
+  write_table(combined, table, root = root)
 }
 
 #' @keywords internal

@@ -169,7 +169,9 @@ validate_against_schema <- function(df, table) {
 #' files for matching partitions — it does NOT append. Callers that need to grow
 #' a partition (notably the `ledger` table which has genuine append semantics)
 #' must read the existing partition, row-bind the new rows, and pass the full
-#' combined frame to `write_table()`.
+#' combined frame to `write_table()`. The decide layer does the same per sex
+#' (`write_decide_table()`): `candidates` and `recommendations` partitions
+#' carry no `sex`, so one sex's run would otherwise wipe the other's.
 #'
 #' Some tables define virtual partition columns that are derived from a source
 #' column (e.g. `odds` partitions on `scraped_date` derived from `scraped_at`;
