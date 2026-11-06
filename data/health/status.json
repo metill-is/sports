@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-05T19:28:31Z",
+  "generated_at": "2026-11-06T19:13:26Z",
   "overall": "WARN",
   "n_fail": 0,
   "n_warn": 3,
@@ -8,28 +8,28 @@
       "check": "fit_freshness",
       "scope": "basketball_iceland male",
       "status": "OK",
-      "value": "1d old, current with results",
+      "value": "0d old, current with results",
       "threshold": "<= 2d"
     },
     {
       "check": "fit_freshness",
       "scope": "basketball_iceland female",
       "status": "OK",
-      "value": "1d old, current with results",
+      "value": "2d old, current with results",
       "threshold": "<= 2d"
     },
     {
       "check": "fit_freshness",
       "scope": "handball_iceland male",
       "status": "OK",
-      "value": "1d old, current with results",
+      "value": "2d old, current with results",
       "threshold": "<= 2d"
     },
     {
       "check": "fit_freshness",
       "scope": "handball_iceland female",
       "status": "OK",
-      "value": "1d old, current with results",
+      "value": "2d old, current with results",
       "threshold": "<= 2d"
     },
     {
@@ -57,7 +57,7 @@
       "check": "odds_freshness",
       "scope": "handball_iceland",
       "status": "OK",
-      "value": "next fixture in 7d; odds not posted yet",
+      "value": "next fixture in 6d; odds not posted yet",
       "threshold": "odds for fixtures within 3d"
     },
     {
@@ -85,7 +85,7 @@
       "check": "rhat_drift",
       "scope": "basketball/iceland/male",
       "status": "OK",
-      "value": "1.011",
+      "value": "1.008",
       "threshold": "< 1.020"
     },
     {
