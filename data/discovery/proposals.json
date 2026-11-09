@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-05T14:59:21Z",
+  "generated_at": "2026-11-09T16:53:28Z",
   "competitions": [
     {
       "sport": "basketball",
@@ -13,76 +13,13 @@
       "status": "new",
       "proposed_team_names": [
         {
-          "lengjan": "Álftanes",
-          "canonical_guess": "Álftanes",
-          "confidence": "high"
-        },
-        {
-          "lengjan": "Höttur",
-          "canonical_guess": "Höttur",
-          "confidence": "high"
-        },
-        {
-          "lengjan": "ÍR",
-          "canonical_guess": "ÍR",
-          "confidence": "high"
-        },
-        {
-          "lengjan": "Ármann",
-          "canonical_guess": "Ármann",
-          "confidence": "high"
-        },
-        {
-          "lengjan": "UMF Sindri",
-          "canonical_guess": {},
-          "confidence": "low"
-        },
-        {
-          "lengjan": "KR",
-          "canonical_guess": "KR",
-          "confidence": "high"
-        },
-        {
           "lengjan": "Tindastóll",
           "canonical_guess": "Tindastóll",
           "confidence": "high"
         },
         {
-          "lengjan": "Keflavík",
-          "canonical_guess": "Keflavík",
-          "confidence": "high"
-        },
-        {
-          "lengjan": "Grindavík",
-          "canonical_guess": "Grindavík",
-          "confidence": "high"
-        },
-        {
-          "lengjan": "Valur",
-          "canonical_guess": "Valur",
-          "confidence": "high"
-        }
-      ]
-    },
-    {
-      "sport": "handball",
-      "country": "iceland",
-      "comp_id": "1270",
-      "lengjan_name": "Olísdeild kv.",
-      "inferred_sex": "female",
-      "inferred_division": "OD",
-      "classify_confidence": "high",
-      "modelled": true,
-      "status": "new",
-      "proposed_team_names": [
-        {
-          "lengjan": "ÍR kv",
+          "lengjan": "ÍR",
           "canonical_guess": "ÍR",
-          "confidence": "high"
-        },
-        {
-          "lengjan": "Fram kv",
-          "canonical_guess": "Fram",
           "confidence": "high"
         }
       ]
