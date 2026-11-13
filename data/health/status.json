@@ -1,35 +1,35 @@
 {
-  "generated_at": "2026-11-12T19:31:03Z",
+  "generated_at": "2026-11-13T19:10:08Z",
   "overall": "WARN",
   "n_fail": 0,
-  "n_warn": 5,
+  "n_warn": 7,
   "checks": [
     {
       "check": "fit_freshness",
       "scope": "basketball_iceland male",
-      "status": "OK",
-      "value": "2d old, current with results",
+      "status": "WARN",
+      "value": "3d old, results pending fit",
       "threshold": "<= 2d"
     },
     {
       "check": "fit_freshness",
       "scope": "basketball_iceland female",
       "status": "OK",
-      "value": "1d old, current with results",
+      "value": "2d old, current with results",
       "threshold": "<= 2d"
     },
     {
       "check": "fit_freshness",
       "scope": "handball_iceland male",
-      "status": "OK",
-      "value": "2d old, current with results",
+      "status": "WARN",
+      "value": "3d old, results pending fit",
       "threshold": "<= 2d"
     },
     {
       "check": "fit_freshness",
       "scope": "handball_iceland female",
       "status": "WARN",
-      "value": "3d old, results pending fit",
+      "value": "4d old, results pending fit",
       "threshold": "<= 2d"
     },
     {
@@ -183,7 +183,7 @@
       "check": "unmapped_team_names",
       "scope": "handball_iceland",
       "status": "WARN",
-      "value": "1 unmapped: Víkingur  (2026-10-29..2026-11-01, 2 fixtures) -> no beliefs match; likely a new team",
+      "value": "1 unmapped: Víkingur  (2026-10-30..2026-11-01, 1 fixture) -> no beliefs match; likely a new team",
       "threshold": "0 unmapped Lengjan renderings"
     },
     {
