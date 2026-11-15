@@ -245,9 +245,13 @@ fv2_design <- function(spec, which = c("obs", "pred")) {
   out
 }
 
-#' The same steps as fv2_structure(), in the form the Stan program reads.
+#' The same steps as fv2_structure(), in the form the Stan programs read
+#' (stan/fv2.stan for attack and defence, stan/fv2_sq.stan for strength with
+#' an optional fixed style).
 fv2_stan_data <- function(spec) {
-  stopifnot(spec$opts$rho == 1, spec$opts$param == "ad", !spec$opts$movers)
+  o <- spec$opts
+  stopifnot(o$rho == 1, !o$movers)
+  if (o$param == "sq") stopifnot(o$style != "rw", !o$div_offsets)
   st <- spec$steps
   step_in <- step_brk <- numeric(spec$S)
   step_in[st$slot[st$class == "in"]] <- sqrt(st$delta[st$class == "in"])
@@ -261,7 +265,8 @@ fv2_stan_data <- function(spec) {
     home_slot = spec$obs$home_slot, away_slot = spec$obs$away_slot,
     home_team = spec$obs$home_team,
     goals_home = spec$obs$goals_home, goals_away = spec$obs$goals_away,
-    use_break = as.integer(spec$opts$clock == "break"),
+    use_break = as.integer(o$clock == "break"),
+    use_style = as.integer(o$param == "sq" && o$style == "static"),
     n_cell = n_cell,
     cell = if (n_cell) spec$obs$cell_nr else integer(0),
     c_prior_mean = p$c_mean, c_prior_sd = p$c_sd,

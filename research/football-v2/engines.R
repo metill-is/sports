@@ -200,8 +200,13 @@ fv2_fit_inla <- function(spec, int_strategy = "auto", n_samp = 1000L,
   out
 }
 
-#' Fit the spec with Stan (NUTS). Covers the attack/defence parameterisation
-#' with a plain break jump and optional division offsets.
+#' The Stan program that implements a spec.
+fv2_stan_file <- function(spec, dir) {
+  file.path(dir, if (spec$opts$param == "sq") "fv2_sq.stan" else "fv2.stan")
+}
+
+#' Fit the spec with Stan (NUTS). Covers attack/defence walks (with a plain
+#' break jump and optional offsets) and strength with an optional fixed style.
 fv2_fit_stan <- function(spec, stan_file, exe_dir, output_dir,
                          chains = 4L, iter_warmup = 1000L, iter_sampling = 1000L,
                          adapt_delta = 0.9, seed = 20261115L, refresh = 200L) {
@@ -216,11 +221,19 @@ fv2_fit_stan <- function(spec, stan_file, exe_dir, output_dir,
     show_messages = FALSE, show_exceptions = FALSE
   )
   wall <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
-  hyper_vars <- c(
-    "tau_att", "sigma_att", if (spec$opts$clock == "break") "kappa_att",
-    "tau_def", "sigma_def", if (spec$opts$clock == "break") "kappa_def",
-    "omega_att", "omega_def", if (spec$opts$div_offsets) c("delta_goal", "delta_ha")
-  )
+  brk <- spec$opts$clock == "break"
+  hyper_vars <- if (spec$opts$param == "sq") {
+    c(
+      "tau_str", "sigma_str", if (brk) "kappa_str",
+      if (spec$opts$style == "static") "tau_sty", "omega_att", "omega_def"
+    )
+  } else {
+    c(
+      "tau_att", "sigma_att", if (brk) "kappa_att",
+      "tau_def", "sigma_def", if (brk) "kappa_def",
+      "omega_att", "omega_def", if (spec$opts$div_offsets) c("delta_goal", "delta_ha")
+    )
+  }
   mat <- function(v) unclass(posterior::as_draws_matrix(fit$draws(v)))
   hyp <- mat(hyper_vars)
   colnames(hyp) <- sub("\\[1\\]$", "", colnames(hyp))

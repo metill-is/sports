@@ -190,7 +190,11 @@ test_that("the Stan data refuses variants the Stan program does not cover", {
     toy_matches(),
     clock = "break", rho = 0.8, divisions = toy_divisions()
   )))
+  sq <- fv2$fv2_stan_data(fv2$fv2_build(toy_matches(), param = "sq", style = "static"))
+  expect_identical(sq$use_style, 1L)
+  expect_identical(fv2$fv2_stan_data(fv2$fv2_build(toy_matches(), param = "sq", style = "none"))$use_style, 0L)
   sd <- fv2$fv2_stan_data(fv2$fv2_build(toy_matches(), toy_fixture(), clock = "break"))
+  expect_identical(sd$use_style, 0L)
   expect_identical(sd$use_break, 1L)
   expect_identical(sd$step_in[sd$first_slot], rep(0, 3))
   expect_identical(sum(sd$step_brk > 0), 3L)
@@ -355,20 +359,35 @@ test_that("the INLA engine returns draws in the shared layout", {
   expect_equal(held$draws$hyper[1, ], f$draws$hyper[1, ], tolerance = 1e-6)
 })
 
-test_that("the Stan program compiles and reads the spec", {
+test_that("the Stan programs compile and read the spec", {
   skip_on_ci()
   skip_if(Sys.getenv("FV2_TEST_STAN") != "1", "set FV2_TEST_STAN=1 to compile and sample")
   skip_if_not_installed("cmdstanr")
   sim <- simulate_league()
-  spec <- fv2$fv2_build(sim, clock = "break")
   tmp <- withr::local_tempdir()
-  f <- fv2$fv2_fit_stan(
-    spec, file.path(fv2_dir, "stan", "fv2.stan"), tmp, tmp,
-    chains = 2L, iter_warmup = 150L, iter_sampling = 100L, refresh = 0L
-  )
-  expect_identical(dim(f$draws$att), c(200L, spec$S))
+  stan_dir <- file.path(fv2_dir, "stan")
+  run <- function(spec) {
+    fv2$fv2_fit_stan(
+      spec, fv2$fv2_stan_file(spec, stan_dir), tmp, tmp,
+      chains = 2L, iter_warmup = 150L, iter_sampling = 100L, refresh = 0L
+    )
+  }
+  ad <- fv2$fv2_build(sim, clock = "break")
+  f <- run(ad)
+  expect_identical(dim(f$draws$att), c(200L, ad$S))
   expect_identical(colnames(f$draws$hyper)[1:3], c("tau_att", "sigma_att", "kappa_att"))
-  expect_lt(max(abs(rowSums(f$draws$att[, spec$first_slot]))), 1e-8)
+  # CmdStan writes six significant figures, so "zero" is about 1e-7.
+  expect_lt(max(abs(rowSums(f$draws$att[, ad$first_slot]))), 1e-6)
+
+  sq <- fv2$fv2_build(sim, param = "sq", style = "static")
+  expect_identical(basename(fv2$fv2_stan_file(sq, stan_dir)), "fv2_sq.stan")
+  g <- run(sq)
+  expect_identical(colnames(g$draws$hyper), c("tau_str", "sigma_str", "tau_sty", "omega_att", "omega_def"))
+  # Attack minus defence is twice the style: fixed over a team's slots.
+  style <- (g$draws$att - g$draws$def) / 2
+  a <- sq$slots$slot[sq$slots$team == 1L]
+  expect_lt(max(abs(style[, a] - style[, a[1]])), 1e-6)
+  expect_lt(max(abs(rowSums(style[, sq$first_slot]))), 1e-6)
 })
 
 toy_draws <- function(spec, n_draw = 3L, seed = 5L) {

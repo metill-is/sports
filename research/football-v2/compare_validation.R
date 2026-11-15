@@ -58,11 +58,20 @@ for (sex in c("female", "male")) {
   print(format(hyper, digits = 3), row.names = FALSE)
   print(format(fixed, digits = 3), row.names = FALSE)
 
+  # WHY: INLA's own marginal summaries exist per latent field. For attack and
+  # defence walks those are the states; for strength plus style the states
+  # are sums of fields, so they are summarised from INLA's posterior samples.
+  inla_state <- function(f, nm, inla_nm) {
+    if (spec$opts$param == "ad") {
+      return(f$state_summary[[inla_nm]])
+    }
+    data.frame(mean = colMeans(f$draws[[nm]]), sd = apply(f$draws[[nm]], 2L, stats::sd))
+  }
   state_tab <- function(nm, inla_nm) {
     s_mean <- colMeans(st$draws[[nm]])
     s_sd <- apply(st$draws[[nm]], 2L, stats::sd)
     one <- function(f, label) {
-      m <- f$state_summary[[inla_nm]]
+      m <- inla_state(f, nm, inla_nm)
       data.frame(
         sex = sex, component = nm, engine = label, slot = seq_along(s_mean),
         stan_mean = s_mean, stan_sd = s_sd, mean = m$mean, sd = m$sd
@@ -136,8 +145,8 @@ for (sex in c("female", "male")) {
     do.call(rbind, lapply(c("att", "def"), function(nm) {
       inla_nm <- if (nm == "att") "f1" else "f2"
       s <- st$draws[[nm]][, idx, drop = FALSE]
-      m <- full$state_summary[[inla_nm]][idx, ]
-      e <- eb$state_summary[[inla_nm]][idx, ]
+      m <- inla_state(full, nm, inla_nm)[idx, ]
+      e <- inla_state(eb, nm, inla_nm)[idx, ]
       data.frame(
         sex = sex, team = spec$teams[k], component = nm, week = spec$slots$week[idx],
         has_obs = spec$slots$has_obs[idx],
