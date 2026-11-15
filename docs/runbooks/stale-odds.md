@@ -35,8 +35,9 @@ odds late morning, so the pre-scrape slot false-FAILed on match days.
    2026-09-29/30 for three of four cells and 2026-10-08 for Bonusdeild karla).
    Since 2026-09-23 both are scraped from Lengjan's JSON API
    (`lengjan.source: api`): handball at `betting.mode: paper` (Olísdeild
-   karla, comp 1269), basketball at `betting.mode: scrape` with no
-   competitions wired until the 2026-27 Bónus deild appears. Below `manual`,
+   karla, comp 1269, and since 2026-11-15 Olísdeild kvenna, comp 1270),
+   basketball at `betting.mode: scrape` (Bónusdeild karla, comp 1292, since
+   2026-11-15; no women's or 1. deild competition wired). Below `manual`,
    `odds_freshness` caps a stall at WARN, and a league with no competitions
    reports PAUSED. Icelandic handball odds may post only on matchday. Only
    `football_iceland` is bet.

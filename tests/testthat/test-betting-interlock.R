@@ -24,19 +24,24 @@ test_that("betting_enabled() treats a NULL betting slice as enabled", {
 
 test_that("the shipped config pins each league's betting.mode", {
   lg <- load_leagues()
-  expect_equal(betting_mode(lg$football_iceland), "paper")  # owner pause, 2026-10-04
+  expect_equal(betting_mode(lg$football_iceland), "paper") # owner pause, 2026-10-04
   expect_equal(betting_mode(lg$handball_iceland), "paper")
   expect_equal(betting_mode(lg$basketball_iceland), "scrape")
 })
 
-test_that("handball scrapes Olisdeild karla via the API; basketball has no comps yet", {
+test_that("handball and basketball scrape their wired competitions via the API", {
   lg <- load_leagues()
+  # id + sex + division: check_odds_freshness() reads the (sex, division) cells.
+  comp_cells <- function(lj) {
+    vapply(lj$competitions, function(cp) paste(cp$id, cp$sex, cp$division), character(1))
+  }
   hb <- lg$handball_iceland$lengjan
   expect_equal(hb$source, "api")
-  expect_equal(vapply(hb$competitions, function(cp) cp$id, character(1)), "1269")
-  expect_equal(hb$competitions[[1]]$division, "OD")
-  expect_equal(lg$basketball_iceland$lengjan$source, "api")
-  expect_length(lg$basketball_iceland$lengjan$competitions, 0L)
+  expect_equal(comp_cells(hb), c("1269 male OD", "1270 female OD"))
+  bb <- lg$basketball_iceland$lengjan
+  expect_equal(bb$source, "api")
+  # Bonusdeild karla only (wired 2026-11-15): no women's or 1. deild comp yet.
+  expect_equal(comp_cells(bb), "1292 male BD")
   # Football keeps its full slate on the DOM scraper until the Milestone B cutover.
   expect_gt(length(lg$football_iceland$lengjan$competitions), 0L)
   expect_null(lg$football_iceland$lengjan$source)
@@ -58,6 +63,7 @@ test_that("disarming did not clobber the team_names maps", {
   expect_gt(length(lg$basketball_iceland$lengjan$team_names$male), 0L)
   expect_gt(length(lg$basketball_iceland$lengjan$team_names$female), 0L)
   expect_gt(length(lg$handball_iceland$lengjan$team_names$male), 0L)
+  expect_gt(length(lg$handball_iceland$lengjan$team_names$female), 0L)
 })
 
 # --- the decide-layer guard ---------------------------------------------------
@@ -184,7 +190,8 @@ test_that("the odds guard fires before the activation gate", {
   expect_identical(
     suppressMessages(ingest_one_lengjan(
       list(sport = "handball", country = "iceland"), list(),
-      "handball_iceland", "active.json", betting = list(enabled = FALSE)
+      "handball_iceland", "active.json",
+      betting = list(enabled = FALSE)
     )),
     0L
   )

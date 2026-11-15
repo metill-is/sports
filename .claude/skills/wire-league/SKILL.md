@@ -28,6 +28,11 @@ Under the matching league's `lengjan:` block:
 
 1. Append a `competitions` entry:
    `- { id: "<comp_id>", name: "<lengjan_name>", sex: <inferred_sex> }`
+   For a `source: api` league (basketball, handball) also add
+   `division: <inferred_division>`: `check_odds_freshness()` expects odds only
+   for the (sex, division) cells the entries name, and
+   `tests/testthat/test-betting-interlock.R` pins id, sex and division, so
+   update that pin in the same change.
 2. Add the `team_names[[inferred_sex]]` entries from `proposed_team_names`:
    - `confidence: high` → add as-is.
    - `confidence: medium`/`low` or `canonical_guess: null` → add only if you can
@@ -45,8 +50,8 @@ template.
 # Config still parses:
 Rscript -e 'devtools::load_all(); stopifnot("<comp_id>" %in% vapply(load_leagues()[["<league_key>"]]$lengjan$competitions, function(c) c$id, character(1)))'
 
-# Team-name map is still invertible:
-Rscript -e 'devtools::load_all(); validate_team_names_config(load_leagues()[["<league_key>"]])'
+# Team-name map is still invertible (every rendering decodes to its canonical):
+Rscript -e 'devtools::load_all(quiet = TRUE); a <- commandArgs(TRUE); lg <- load_leagues()[[a[1]]]; r <- tn_renderings(lg$lengjan$team_names[[a[2]]]); x <- unlist(r, use.names = FALSE); back <- normalise_lengjan_team_names(tibble::tibble(home_team = x, away_team = x), lg, a[2]); stopifnot(all(back$home_team == tag_utf8(rep(names(r), lengths(r))))); cat("team_names decode OK:", length(x), "renderings ->", length(r), "teams\n")' <league_key> <inferred_sex>
 
 # Dry decide produces candidates once odds exist (no ledger writes):
 Rscript scripts/02_scrape_odds.R --league <league_key>
