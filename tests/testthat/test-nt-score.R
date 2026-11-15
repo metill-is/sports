@@ -56,3 +56,30 @@ test_that("nt_evaluate_grid combines probabilities and the three scores", {
   expect_equal(ev$log_1x2, -log(ev$p_draw))
   expect_equal(ev$log_score, -log(grid[1, 2, 2]))
 })
+
+test_that("draw inflation moves mass onto the draw and keeps the home/away ratio", {
+  p <- nt_inflate_draws(0.5, 0.25, 0.25, phi = 0.4)
+  expect_equal(p$p_home + p$p_draw + p$p_away, 1)
+  expect_equal(p$p_home / p$p_away, 2)
+  expect_equal(p$p_draw / (1 - p$p_draw), 1.4 * (0.25 / 0.75))
+  expect_equal(nt_inflate_draws(0.5, 0.25, 0.25, 0), tibble::tibble(p_home = 0.5, p_draw = 0.25, p_away = 0.25))
+  expect_lt(nt_inflate_draws(0.5, 0.25, 0.25, -0.3)$p_draw, 0.25)
+})
+
+test_that("the fitted draw inflation recovers a known miscalibration", {
+  withr::local_seed(9)
+  n <- 40000L
+  p_draw <- stats::runif(n, 0.15, 0.3)
+  p_home <- (1 - p_draw) * stats::runif(n, 0.3, 0.7)
+  p_away <- 1 - p_draw - p_home
+  truth <- nt_inflate_draws(p_home, p_draw, p_away, phi = 0.35)
+  u <- stats::runif(n)
+  home_score <- as.integer(u < truth$p_home)
+  away_score <- as.integer(u >= truth$p_home + truth$p_draw)
+  phi <- nt_fit_draw_inflation(p_home, p_draw, p_away, home_score, away_score)
+  expect_equal(phi, 0.35, tolerance = 0.1)
+  calibrated <- nt_fit_draw_inflation(
+    truth$p_home, truth$p_draw, truth$p_away, home_score, away_score
+  )
+  expect_lt(abs(calibrated), 0.05)
+})

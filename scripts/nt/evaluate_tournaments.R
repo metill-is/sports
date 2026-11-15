@@ -47,6 +47,15 @@ spec <- nt_tournaments()
 spec <- spec[spec$key == key, ]
 tm <- nt_tournament_matches(results, key)
 venue <- as.integer(!tm$neutral)
+# WHY: an extra-time row that matches no match (a renamed team, a shifted date)
+# is skipped silently and that tie would be scored on its extra-time result.
+et <- nt_extra_time_matches()
+n_et <- sum(et$match_date >= spec$knockout_start & et$match_date <= spec$end)
+if (sum(tm$extra_time) != n_et) {
+  cli::cli_abort(
+    "{key}: {sum(tm$extra_time)} of {n_et} extra-time ties matched the results file."
+  )
+}
 cat(sprintf(
   "%s: %d matches (%d group), cutoff %s, %d at a home venue\n",
   key, nrow(tm), sum(tm$stage == "group"), spec$start, sum(venue)

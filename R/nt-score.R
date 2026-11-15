@@ -104,3 +104,44 @@ nt_evaluate_grid <- function(grid, home_score, away_score) {
     log_score = nt_score_scorelines(grid, home_score, away_score)
   )
 }
+
+#' Inflate the draw probability of 1X2 forecasts.
+#'
+#' Multiplies the odds of a draw against a decided match by `1 + phi` and
+#' leaves the home-to-away ratio unchanged. `phi = 0` returns the input.
+#'
+#' @param p_home,p_draw,p_away Outcome probabilities.
+#' @param phi Inflation; positive values move mass onto the draw.
+#' @return Tibble `p_home, p_draw, p_away`.
+#' @export
+nt_inflate_draws <- function(p_home, p_draw, p_away, phi) {
+  s <- p_home + p_draw + p_away
+  p_home <- p_home / s
+  p_draw <- p_draw / s
+  p_away <- p_away / s
+  w <- 1 + phi * p_draw
+  tibble::tibble(
+    p_home = p_home / w, p_draw = (1 + phi) * p_draw / w, p_away = p_away / w
+  )
+}
+
+#' Estimate a draw inflation by maximum likelihood.
+#'
+#' One-parameter calibration for a model that predicts too few (or too many)
+#' draws; see [nt_inflate_draws()]. Fit it on forecasts that were made out of
+#' sample, never on the matches it will be applied to.
+#'
+#' @inheritParams nt_inflate_draws
+#' @param home_score,away_score Observed scores.
+#' @return The estimated `phi`.
+#' @export
+nt_fit_draw_inflation <- function(p_home, p_draw, p_away,
+                                  home_score, away_score) {
+  s <- p_home + p_draw + p_away
+  p_draw <- p_draw / s
+  drawn <- home_score == away_score
+  nll <- function(phi) {
+    -(sum(drawn) * log1p(phi) - sum(log1p(phi * p_draw)))
+  }
+  stats::optimize(nll, interval = c(-0.9, 5))$minimum
+}

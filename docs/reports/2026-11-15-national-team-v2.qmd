@@ -1,0 +1,1013 @@
+---
+title: "National-team football model, second generation"
+subtitle: "Three-tournament evaluation, tournament simulation, and a proposal for Euro 2028 qualifying"
+date: 2026-11-15
+date-format: "YYYY-MM-DD"
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    toc-location: left
+    theme: cosmo
+    fig-width: 8.5
+    fig-height: 4.6
+    fig-dpi: 144
+    embed-resources: true
+    smooth-scroll: true
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r}
+#| label: setup
+#| include: false
+options(width = 110)
+suppressPackageStartupMessages({
+  devtools::load_all(here::here(), quiet = TRUE)
+  library(dplyr)
+  library(tidyr)
+  library(ggplot2)
+})
+res <- readRDS(here::here("docs", "reports", "2026-11-15-national-team-v2", "results.rds"))
+theme_set(metill::theme_metill())
+
+model_labels <- c(
+  production = "Production 2026 approach",
+  elo = "Elo ordered logit",
+  base = "v2",
+  hl3 = "v2, 3-year half-life",
+  ar1 = "v2, AR(1) dynamics",
+  damp09 = "v2, friendlies damped 0.9",
+  damp08 = "v2, friendlies damped 0.8",
+  damp07 = "v2, friendlies damped 0.7",
+  disp = "v2, friendly dispersion",
+  novenue = "v2, neutral flag ignored",
+  w8 = "v2, 8-year window",
+  w4 = "v2, 4.4-year window",
+  monthly = "v2, monthly grid",
+  ccd = "v2, hyperparameters integrated"
+)
+label_model <- function(x) unname(ifelse(x %in% names(model_labels), model_labels[x], x))
+
+sc <- res$scores |>
+  left_join(res$matches, by = c("key", "match_id"))
+keys <- c(wc2022 = "World Cup 2022", euro2024 = "Euro 2024", wc2026 = "World Cup 2026")
+n_all <- nrow(res$matches)
+n_group <- sum(res$matches$stage == "group")
+
+wide <- function(metric, data = sc) {
+  data[, c("key", "match_id", "model", metric)] |>
+    pivot_wider(names_from = "model", values_from = all_of(metric))
+}
+paired <- function(a, b, metric, data = sc) {
+  w <- wide(metric, data)
+  ok <- !is.na(w[[a]]) & !is.na(w[[b]])
+  nt_paired_diff(w[[a]][ok], w[[b]][ok])
+}
+metric_labels <- c(
+  log_1x2 = "1X2 log score", rps = "Ranked probability score",
+  log_score = "Exact-scoreline log score"
+)
+fmt_ci <- function(d, digits = 3) {
+  sprintf(
+    paste0("%+.", digits, "f [%+.", digits, "f, %+.", digits, "f]"),
+    d$diff, d$lower, d$upper
+  )
+}
+fmt_int <- function(d, digits = 3) {
+  sprintf(paste0("%+.", digits, "f to %+.", digits, "f"), d$lower, d$upper)
+}
+has <- function(m) m %in% sc$model
+have_wf <- !is.null(res$walk_forward)
+have_women <- !is.null(res$women)
+have_stan <- !is.null(res$stan$base)
+have_stan_damped <- !is.null(res$stan$damped)
+have_prod_forecast <- !is.null(res$production_forecast)
+have_current <- !is.null(res$current$men)
+have_current_women <- !is.null(res$current$women)
+
+hyper_of <- function(key, model = "base") {
+  res$fits$hyper[res$fits$key == key & res$fits$model == model][[1]]
+}
+fixed_of <- function(key, model = "base") {
+  res$fits$fixed[res$fits$key == key & res$fits$model == model][[1]]
+}
+rw_month <- vapply(names(keys), function(k) {
+  h <- hyper_of(k)
+  h$mode[h$parameter == "sd u per sqrt(month)"]
+}, numeric(1))
+
+d_v2_prod <- lapply(names(metric_labels), function(m) paired("base", "production", m))
+d_v2_elo <- lapply(names(metric_labels), function(m) paired("base", "elo", m))
+d_prod_elo <- lapply(names(metric_labels), function(m) paired("production", "elo", m))
+names(d_v2_prod) <- names(d_v2_elo) <- names(d_prod_elo) <- names(metric_labels)
+sim <- res$simulation
+et <- res$extra_time
+
+by_key <- sc |>
+  filter(model %in% c("base", "production", "elo")) |>
+  group_by(key, model) |>
+  summarise(m_log = mean(log_1x2), .groups = "drop") |>
+  pivot_wider(names_from = "model", values_from = "m_log")
+v2_beats_prod <- keys[by_key$key[by_key$base < by_key$production]]
+v2_loses_prod <- keys[by_key$key[by_key$base >= by_key$production]]
+v2_beats_elo <- keys[by_key$key[by_key$base < by_key$elo]]
+join_and <- function(x) {
+  if (length(x) <= 1L) {
+    return(paste(x))
+  }
+  paste(paste(x[-length(x)], collapse = ", "), "and", x[length(x)])
+}
+panel_v2_elo <- NULL
+if (!is.null(res$walk_forward)) {
+  pw <- res$walk_forward |>
+    filter(!in_target, !friendly, model %in% c("base", "elo"), !is.na(log_1x2)) |>
+    mutate(id = row_number(), .by = model) |>
+    select(id, model, log_1x2) |>
+    pivot_wider(names_from = "model", values_from = "log_1x2")
+  panel_v2_elo <- nt_paired_diff(pw$base, pw$elo)
+}
+```
+
+::: {.callout-note}
+
+## Summary
+
+- **What was built.** v2 is a calendar-time Poisson model for national teams with a venue flag, pooled home advantage and twelve years of history, fitted with R-INLA in about a minute, plus a tournament simulator that plays knockout ties out with extra time and penalties.
+- **How it scored.** Fitted before each of World Cup 2022, Euro 2024 and World Cup 2026 and scored on all `r n_all` matches, v2's 1X2 log score is `r sprintf("%.3f", abs(d_v2_prod$log_1x2$diff))` per match `r ifelse(d_v2_prod$log_1x2$diff < 0, "better", "worse")` than the production approach's (95% interval for the difference `r fmt_int(d_v2_prod$log_1x2)`; negative favours v2) and `r sprintf("%.3f", abs(d_v2_elo$log_1x2$diff))` `r ifelse(d_v2_elo$log_1x2$diff < 0, "better", "worse")` than the Elo baseline's (`r fmt_int(d_v2_elo$log_1x2)`). On exact scorelines it beats Elo by `r sprintf("%.3f", -d_v2_elo$log_score$diff)` (`r fmt_int(d_v2_elo$log_score)`).
+- **What that means.** `r n_all` matches cannot separate v2 from production: the evidence is "not worse, probably slightly better". `r if (!is.null(panel_v2_elo)) sprintf("On the larger walk-forward panel (%s competitive matches) v2 beats Elo by %.3f per match (%s).", format(panel_v2_elo$n, big.mark = ","), -panel_v2_elo$diff, fmt_int(panel_v2_elo)) else ""` The case for v2 is that it removes known misspecifications at no cost in accuracy and a fraction of the compute.
+- **Simulator.** Replacing the head-to-head matrix with played-out ties moves title probabilities by up to `r sprintf("%.1f", 100 * max(abs(sim$table$champion_extra_time - sim$table$champion_matrix)))` percentage points, all of it from the tie rule: favourites lose, outsiders gain.
+- **Known weakness.** v2 expects too few draws (`r sprintf("%.0f", sum(sc$p_draw[sc$model == "base"]))` against `r sum(res$matches$home_90 == res$matches$away_90)` at the tournaments). A one-parameter correction estimated out of sample recovers part of it (@sec-draws).
+- **Women.** The same code runs on the women's file unchanged.
+- **Recommendation.** Adopt v2 on R-INLA for internationals with the played-out knockout simulator, and build the Euro 2028 qualifying product on it (@sec-proposal).
+
+:::
+
+## What was asked and what was built {#sec-what}
+
+The 2026 World Cup forecast reused the club model unchanged on men's internationals since 2022. The 2026-11-15 review listed its misspecifications: every match treated as home against away although about a quarter of internationals are on neutral ground; a history shorter than one half-life of national-team strength; per-team home advantages forced non-negative; no extra time or penalties in the simulator.
+
+v2 addresses each of them. For the side scoring ($s$) against the side conceding ($c$) in quarter $t$, goals are independent Poisson with
+
+$$
+\log \lambda = \mu + \gamma_{\text{venue}} + \bigl(\theta_{s,t} - \theta_{c,t}\bigr) + \delta_s + \delta_c,
+\qquad \theta_{i,t} = \alpha_i + u_{i,t}.
+$$
+
+- **One strength per team.** $\theta$ is a static level $\alpha_i$ plus a calendar random walk $u_{i,t}$ on a quarterly grid. It enters the two rates with opposite signs, so it moves the goal difference.
+- **A small pooled attack/defence split.** $\delta_i$ is static and shrunk towards zero (attack $=\theta+\delta$, defence $=\theta-\delta$); $\delta_s+\delta_c$ enters both rates with the same sign, so it moves total goals.
+- **Venue.** Two pooled, sign-free effects (one on the home side's rate, one on the away side's) apply only when the file's `neutral` flag is false, which is when the listed home side plays in its own country.
+- **History.** Twelve years before each cutoff (from mid-2014 for the 2026 World Cup), restricted to teams that have played a sanctioned qualifier in the window; this drops CONIFA and Island Games sides and keeps `r res$fits$n_teams[res$fits$key == "wc2026" & res$fits$model == "base"]` teams and `r format(res$fits$n_matches[res$fits$key == "wc2026" & res$fits$model == "base"], big.mark = ",")` matches at the 2026 cutoff.
+- **No importance weights.** A friendly parameter was tested instead (@sec-variants).
+
+The model is fitted with R-INLA (`R/nt-model.R`); the same model is written in Stan (`Stan/football_national/nt_v2.stan`) as a reference and the two are compared in @sec-stan. The engine choice follows the owner's decision of 2026-11-15 to move towards INLA in production.
+
+## Three-tournament evaluation {#sec-eval}
+
+Every model is fitted once per tournament on matches played before the opening match, then scores all matches of that tournament. Nothing from the tournament enters any fit, including the Elo ratings, which are frozen at the cutoff. Knockout matches are scored on their 90-minute result: the source file stores the score after extra time, so the `r et$n_extra_time` ties that went to extra time were set to their regulation score from the match records (`nt_extra_time_matches()`).
+
+The baselines:
+
+- **Production 2026 approach.** The club bivariate-Poisson model, refitted with production's settings and training filter on a window as long as the one used in June 2026 (4.4 years). Home advantage is applied to hosts only, as production did.
+- **Elo ordered logit.** World Football Elo ratings with an ordered-logit link for the outcome and two Poisson regressions on the rating difference for scorelines.
+
+```{r}
+#| label: tbl-headline
+#| tbl-cap: "Mean scores per match; lower is better. v2 is the specification fixed before any tournament was scored."
+headline <- sc |>
+  filter(model %in% c("production", "elo", "base")) |>
+  mutate(set = keys[key]) |>
+  bind_rows(
+    sc |> filter(model %in% c("production", "elo", "base")) |> mutate(set = "All three"),
+    sc |> filter(model %in% c("production", "elo", "base"), stage == "group") |>
+      mutate(set = "All three, group stage only")
+  ) |>
+  group_by(set, model) |>
+  summarise(
+    n = n(), m_log = mean(log_1x2), m_rps = mean(rps), m_score = mean(log_score),
+    .groups = "drop"
+  ) |>
+  mutate(
+    set = factor(set, c(unname(keys), "All three", "All three, group stage only")),
+    model = factor(model, c("production", "elo", "base"))
+  ) |>
+  arrange(set, model) |>
+  transmute(
+    Matches = as.character(set), n, Model = label_model(as.character(model)),
+    `1X2 log score` = m_log, RPS = m_rps, `Scoreline log score` = m_score
+  )
+knitr::kable(headline, digits = c(0, 0, 0, 3, 4, 3))
+```
+
+```{r}
+#| label: fig-paired
+#| fig-cap: "Paired score differences per match over the three tournaments, with 95% intervals. Negative favours the first-named model."
+pairs <- list(
+  c("base", "production", "v2 minus production"),
+  c("base", "elo", "v2 minus Elo"),
+  c("production", "elo", "Production minus Elo")
+)
+pd <- do.call(rbind, lapply(pairs, function(p) {
+  do.call(rbind, lapply(names(metric_labels), function(m) {
+    d <- paired(p[1], p[2], m)
+    data.frame(pair = p[3], metric = metric_labels[[m]], d)
+  }))
+}))
+pd$pair <- factor(pd$pair, rev(vapply(pairs, `[`, "", 3)))
+pd$metric <- factor(pd$metric, unname(metric_labels))
+ggplot(pd, aes(diff, pair)) +
+  geom_vline(xintercept = 0, linetype = "dashed", colour = "grey50") +
+  geom_errorbar(aes(xmin = lower, xmax = upper), width = 0.2, orientation = "y") +
+  geom_point(size = 2.5) +
+  facet_wrap(~metric, scales = "free_x") +
+  labs(x = "Mean difference per match", y = NULL)
+```
+
+```{r}
+#| label: tbl-paired
+#| tbl-cap: "Paired differences behind the figure: mean per match, standard error and 95% interval."
+pd |>
+  transmute(
+    Comparison = as.character(pair), Score = as.character(metric), n,
+    Difference = diff, `Std. error` = se, Lower = lower, Upper = upper
+  ) |>
+  arrange(desc(Comparison), Score) |>
+  knitr::kable(digits = c(0, 0, 0, 4, 4, 4, 4))
+```
+
+How to read it:
+
+- **v2 against production.** v2 has the better 1X2 log score at `r join_and(v2_beats_prod)``r if (length(v2_loses_prod) > 0) paste0(" and the worse at ", join_and(v2_loses_prod)) else ""`. Pooled, the difference is `r fmt_ci(d_v2_prod$log_1x2)` in log score and `r fmt_ci(d_v2_prod$rps, 4)` in RPS; neither interval excludes zero.
+- **v2 against Elo.** v2 is ahead on all three scores, and the exact-scoreline interval (`r fmt_ci(d_v2_elo$log_score)`) excludes zero.
+- **Exact scorelines.** v2 and production are level (`r fmt_ci(d_v2_prod$log_score)`). Production's bivariate Poisson has a shared-goals term that v2's independent Poisson lacks, which may be why production is closer on scorelines than on outcomes.
+- **Production against Elo.** The club model applied to internationals is not separable from an Elo rating on outcomes (`r fmt_ci(d_prod_elo$log_1x2)`).
+- **The intervals are optimistic.** They treat the `r n_all` matches as independent. Matches within one tournament share a fit, so the true uncertainty is somewhat wider; with three tournaments it cannot be estimated.
+
+## Variants and ablations {#sec-variants}
+
+Each row changes one thing in v2 and is scored on the same matches. The last column is the paired difference from v2 in 1X2 log score.
+
+```{r}
+#| label: tbl-variants
+#| tbl-cap: "Variants of v2 over the three tournaments. Differences are variant minus v2; negative means the variant is better."
+variant_order <- c(
+  "base", "hl3", "ar1", "damp09", "damp08", "damp07", "novenue", "w8", "w4"
+)
+complete <- sc |>
+  group_by(model) |>
+  summarise(n = n(), .groups = "drop") |>
+  filter(n == n_all, model %in% variant_order)
+vt <- sc |>
+  filter(model %in% complete$model) |>
+  group_by(model) |>
+  summarise(
+    m_log = mean(log_1x2), m_rps = mean(rps), m_score = mean(log_score),
+    .groups = "drop"
+  ) |>
+  mutate(model = factor(model, variant_order)) |>
+  arrange(model)
+vt$diff <- vapply(as.character(vt$model), function(m) {
+  if (m == "base") "" else fmt_ci(paired(m, "base", "log_1x2"))
+}, "")
+vt |>
+  transmute(
+    Variant = label_model(as.character(model)),
+    `1X2 log score` = m_log, RPS = m_rps, `Scoreline log score` = m_score,
+    `Difference from v2 (1X2 log score)` = diff
+  ) |>
+  knitr::kable(digits = c(0, 3, 4, 3, 0))
+```
+
+```{r}
+#| label: tbl-sensitivity
+#| eval: !expr any(c("monthly", "ccd", "disp") %in% sc$model)
+#| tbl-cap: "Checks run on the 2026 World Cup only (104 matches): a monthly instead of quarterly time grid, integrating over the hyperparameters instead of conditioning on their mode, and an extra dispersion term for friendlies. Differences are variant minus v2."
+d26 <- sc |> filter(key == "wc2026")
+sens <- intersect(c("base", "monthly", "ccd", "disp"), unique(d26$model))
+s26 <- d26 |>
+  filter(model %in% sens) |>
+  group_by(model) |>
+  summarise(m_log = mean(log_1x2), m_rps = mean(rps), m_score = mean(log_score), .groups = "drop") |>
+  mutate(model = factor(model, sens)) |>
+  arrange(model)
+s26$diff <- vapply(as.character(s26$model), function(m) {
+  if (m == "base") "" else fmt_ci(paired(m, "base", "log_1x2", d26), 4)
+}, "")
+s26 |>
+  transmute(
+    Variant = label_model(as.character(model)),
+    `1X2 log score` = m_log, RPS = m_rps, `Scoreline log score` = m_score,
+    `Difference from v2 (1X2 log score)` = diff
+  ) |>
+  knitr::kable(digits = c(0, 4, 4, 3, 0))
+```
+
+```{r}
+#| label: kappa-profile
+kp <- res$fits |>
+  filter(model %in% c("base", "damp09", "damp08", "damp07")) |>
+  mutate(kappa = ifelse(model == "base", 1, kappa)) |>
+  group_by(key) |>
+  mutate(delta_mlik = mlik - mlik[model == "base"]) |>
+  ungroup()
+kp_tab <- kp |>
+  arrange(desc(kappa)) |>
+  transmute(Tournament = factor(keys[key], unname(keys)), kappa, delta_mlik) |>
+  pivot_wider(names_from = "kappa", values_from = "delta_mlik", names_prefix = "kappa = ") |>
+  arrange(Tournament)
+```
+
+```{r}
+#| label: variant-numbers
+vd <- function(m, metric = "log_1x2", digits = 3) fmt_ci(paired(m, "base", metric), digits)
+mean_of <- function(m) mean(sc$log_1x2[sc$model == m])
+rw_range <- range(c(rw_month, if (!is.null(res$walk_forward_hyper)) {
+  res$walk_forward_hyper$mode[res$walk_forward_hyper$parameter == "sd u per sqrt(month)"]
+}))
+```
+
+**Dynamics.** Left free, the random-walk innovation sd is between `r sprintf("%.4f", rw_range[1])` and `r sprintf("%.4f", rw_range[2])` per square-root month at every cutoff fitted in this report. `nt_implied_half_life()` maps that to the time-decay half-life the literature reports: about `r sprintf("%.1f", nt_implied_half_life(mean(rw_month)))` years for a team playing eleven matches a year. Fixing the sd at the value for a three-year half-life (`r sprintf("%.4f", nt_rw_sd_for_half_life(3))`) changes the tournament score by `r vd("hl3")`; letting strength revert to each team's own level (AR(1)) by `r vd("ar1")`. Both are inside the noise, and the panel in @sec-panel shows no difference at all. The estimated walk is kept: it needs no hand-set constant.
+
+**Friendlies.** The damped-gap variants multiply the strength gap by a fixed $\kappa$ in friendlies. INLA cannot estimate a multiplier on the latent field directly, so $\kappa$ is profiled on the log marginal likelihood, shown below relative to $\kappa = 1$ (no damping). A multiplier of 0.9 is level with no damping; 0.8 and 0.7 are clearly worse. No damped variant improves the tournament scores, the dispersion variant does not either, and on the panel damping makes the friendly forecasts themselves worse. The Stan reference estimates $\kappa$ as a parameter (@sec-stan). No friendly term is proposed.
+
+```{r}
+#| label: tbl-kappa
+#| tbl-cap: "Log marginal likelihood relative to no damping, by friendly multiplier. Negative values mean the data prefer no damping."
+knitr::kable(kp_tab, digits = 1)
+```
+
+**Venue.** The "neutral flag ignored" row treats every match as home against away in training and forecast, which is what the club model does. It changes the tournament score by `r vd("novenue")`, where most matches are on neutral ground, and by a smaller but better-determined amount on the panel.
+
+**Window.** Eight years of history score the same as twelve (`r vd("w8")`). Production's 4.4 years change the score by `r vd("w4")`: v2 on that window averages `r sprintf("%.3f", mean_of("w4"))`, against `r sprintf("%.3f", mean_of("production"))` for the production approach and `r sprintf("%.3f", mean_of("base"))` for v2. Most of v2's advantage over production at these tournaments comes from the longer history and the venue flag.
+
+**Numerics.** A monthly grid and integrating over the hyperparameters instead of conditioning on their mode change nothing measurable (@tbl-sensitivity), so the quarterly grid and the faster empirical-Bayes fit are kept.
+
+## A larger panel for the model choices {#sec-panel}
+
+```{r}
+#| label: wf-prep
+#| eval: !expr have_wf
+wf <- res$walk_forward |> filter(!in_target, !is.na(log_1x2))
+wf_models <- intersect(c("elo", "base", "hl3", "damp08", "novenue"), unique(wf$model))
+wf_wide <- function(metric, data) {
+  data |>
+    mutate(id = paste(cutoff, match_date, row_number(), sep = "_"), .by = model) |>
+    select(id, model, all_of(metric)) |>
+    pivot_wider(names_from = "model", values_from = all_of(metric))
+}
+wf_comp <- wf |> filter(!friendly)
+wf_fr <- wf |> filter(friendly)
+wf_pair <- function(a, b, metric, data) {
+  w <- wf_wide(metric, data)
+  ok <- !is.na(w[[a]]) & !is.na(w[[b]])
+  nt_paired_diff(w[[a]][ok], w[[b]][ok])
+}
+wf_n_comp <- nrow(wf_comp |> filter(model == "base"))
+wf_n_fr <- nrow(wf_fr |> filter(model == "base"))
+wf_cutoffs <- sort(unique(wf$cutoff))
+```
+
+```{r}
+#| label: wf-missing
+#| eval: !expr (!have_wf)
+#| results: asis
+cat("*The walk-forward panel had not finished when this version was rendered.*\n")
+```
+
+```{r}
+#| label: wf-text
+#| eval: !expr have_wf
+#| results: asis
+cat(sprintf(
+  "Three tournaments are too few matches to choose between variants, and choosing on them would flatter the winner. The panel refits each model at %d half-yearly cutoffs from %s to %s and scores every match between fitted teams in the following six months, excluding the three target tournaments: %s competitive matches and %s friendlies. Scores are 1X2 only, because outside the target tournaments the file's knockout scores include extra time (a small share of matches, the same for every model).\n",
+  length(wf_cutoffs), format(min(wf_cutoffs)), format(max(wf_cutoffs)),
+  format(wf_n_comp, big.mark = ","), format(wf_n_fr, big.mark = ",")
+))
+```
+
+```{r}
+#| label: tbl-panel
+#| eval: !expr have_wf
+#| tbl-cap: "Walk-forward panel outside the three target tournaments. Qualifiers are shown separately because they are 90-minute matches with almost no extra time. Differences are paired, model minus v2, with 95% intervals."
+panel_rows <- function(data, set) {
+  pt <- data |>
+    filter(model %in% wf_models) |>
+    group_by(model) |>
+    summarise(n = n(), m_log = mean(log_1x2), m_rps = mean(rps), .groups = "drop") |>
+    mutate(model = factor(model, wf_models)) |>
+    arrange(model)
+  pt$d_log <- vapply(as.character(pt$model), function(m) {
+    if (m == "base") "" else fmt_ci(wf_pair(m, "base", "log_1x2", data), 4)
+  }, "")
+  pt$d_rps <- vapply(as.character(pt$model), function(m) {
+    if (m == "base") "" else fmt_ci(wf_pair(m, "base", "rps", data), 4)
+  }, "")
+  pt |>
+    transmute(
+      Matches = set, Model = label_model(as.character(model)), n,
+      `1X2 log score` = m_log, RPS = m_rps,
+      `Difference from v2, log score` = d_log, `Difference from v2, RPS` = d_rps
+    )
+}
+wf_qual <- wf_comp |> filter(grepl("qualification", tournament))
+bind_rows(
+  panel_rows(wf_comp, "All competitive"),
+  panel_rows(wf_qual, "Qualifiers only")
+) |>
+  knitr::kable(digits = c(0, 0, 0, 4, 4, 0, 0))
+```
+
+```{r}
+#| label: fig-panel
+#| eval: !expr have_wf
+#| fig-cap: "Walk-forward panel by cutoff: 1X2 log score of each model minus Elo on competitive matches (negative is better than Elo)."
+by_cut <- wf_comp |>
+  filter(model %in% wf_models) |>
+  group_by(cutoff, model) |>
+  summarise(m_log = mean(log_1x2), n = n(), .groups = "drop") |>
+  group_by(cutoff) |>
+  mutate(vs_elo = m_log - m_log[model == "elo"]) |>
+  ungroup() |>
+  filter(model != "elo")
+ggplot(by_cut, aes(cutoff, vs_elo, colour = label_model(model))) +
+  geom_hline(yintercept = 0, linetype = "dashed", colour = "grey50") +
+  geom_line() +
+  geom_point() +
+  labs(x = "Cutoff (matches in the following six months)", y = "Log score minus Elo", colour = NULL) +
+  theme(legend.position = "bottom")
+```
+
+```{r}
+#| label: tbl-panel-friendly
+#| eval: !expr have_wf
+#| tbl-cap: "The same panel on friendlies, where the damped variant forecasts with its multiplier."
+ft <- wf_fr |>
+  filter(model %in% wf_models) |>
+  group_by(model) |>
+  summarise(n = n(), m_log = mean(log_1x2), m_rps = mean(rps), .groups = "drop") |>
+  mutate(model = factor(model, wf_models)) |>
+  arrange(model)
+ft$d_log <- vapply(as.character(ft$model), function(m) {
+  if (m == "base") "" else fmt_ci(wf_pair(m, "base", "log_1x2", wf_fr), 4)
+}, "")
+ft |>
+  transmute(
+    Model = label_model(as.character(model)), n,
+    `1X2 log score` = m_log, RPS = m_rps, `Difference from v2, log score` = d_log
+  ) |>
+  knitr::kable(digits = c(0, 0, 4, 4, 0))
+```
+
+```{r}
+#| label: panel-text
+#| eval: !expr have_wf
+#| results: asis
+pe <- wf_pair("base", "elo", "log_1x2", wf_comp)
+ph <- wf_pair("hl3", "base", "log_1x2", wf_comp)
+pv <- wf_pair("novenue", "base", "log_1x2", wf_comp)
+pdc <- wf_pair("damp08", "base", "log_1x2", wf_comp)
+pdf <- wf_pair("damp08", "base", "log_1x2", wf_fr)
+cat("What the panel settles:\n\n")
+cat(sprintf("- **v2 beats Elo.** %s per match on competitive matches, with an interval that excludes zero, and the gap has the same sign at %d of %d cutoffs.\n", fmt_ci(pe, 4), sum(by_cut$vs_elo[by_cut$model == "base"] < 0), length(wf_cutoffs)))
+cat(sprintf("- **A three-year half-life buys nothing.** %s against the estimated walk.\n", fmt_ci(ph, 4)))
+cat(sprintf("- **The venue flag helps.** Ignoring it changes the score by %s on competitive matches.\n", fmt_ci(pv, 4)))
+cat(sprintf("- **Damping friendlies does not help.** %s on competitive matches and %s on the friendlies themselves.\n", fmt_ci(pdc, 4), fmt_ci(pdf, 4)))
+```
+
+## What the model learned {#sec-learned}
+
+```{r}
+#| label: tbl-hyper
+#| tbl-cap: "v2 at the three cutoffs: posterior modes of the standard deviations and means of the fixed effects (log scale)."
+ht <- do.call(rbind, lapply(names(keys), function(k) {
+  h <- hyper_of(k)
+  f <- fixed_of(k)
+  data.frame(
+    Cutoff = keys[[k]],
+    `sd of team level` = h$mode[h$parameter == "sd alpha"],
+    `Walk sd per sqrt(month)` = h$mode[h$parameter == "sd u per sqrt(month)"],
+    `Implied half-life (years)` = nt_implied_half_life(h$mode[h$parameter == "sd u per sqrt(month)"]),
+    `sd of attack/defence split` = h$mode[h$parameter == "sd delta"],
+    `Home side's rate` = f["home_for", "mean"],
+    `Away side's rate` = f["home_against", "mean"],
+    check.names = FALSE
+  )
+}))
+knitr::kable(ht, digits = c(0, 2, 4, 1, 3, 3, 3), row.names = FALSE)
+```
+
+- **Home advantage is real, pooled, and two-sided.** Playing at home raises the home side's scoring rate by about `r sprintf("%.0f%%", 100 * (exp(mean(ht[["Home side's rate"]])) - 1))` and lowers the visitor's by about `r sprintf("%.0f%%", 100 * (1 - exp(mean(ht[["Away side's rate"]]))))`. The total on the log goal-ratio scale is `r sprintf("%.2f", mean(ht[["Home side's rate"]] - ht[["Away side's rate"]]))`, larger than the 0.22 measured for Icelandic men's club football. Both effects are free to take either sign; the data put them clearly on the expected side.
+- **The attack/defence split is small.** Its sd is about `r sprintf("%.2f", mean(ht[["sd of attack/defence split"]]))` against `r sprintf("%.2f", mean(ht[["sd of team level"]]))` for overall strength, in line with the finding that one strength per team predicts internationals as well as two.
+- **Strength moves slowly.** The implied half-life is around `r sprintf("%.1f", mean(ht[["Implied half-life (years)"]]))` years. The same mapping applied to the pilot's club-football estimate gives roughly seven months. The literature's three to four years for internationals refers to exponential down-weighting of old matches, which is not the same object; forcing three years did not improve forecasts here.
+
+## Mismatch calibration {#sec-mismatch}
+
+The published evaluation of the 2026 group stage found that for large predicted edges the favourite's win share plateaued and big margins were over-predicted. The check below bins matches by the favourite's expected goal margin and compares predicted and observed favourite-win share, draw share and margin.
+
+```{r}
+#| label: tbl-mismatch
+#| tbl-cap: "Mismatch calibration on the three tournaments, by the favourite's expected goal margin."
+cal_one <- function(m) {
+  d <- sc |> filter(model == m)
+  out <- nt_edge_calibration(d, d$home_90, d$away_90)
+  data.frame(Model = label_model(m), out, check.names = FALSE)
+}
+cal <- do.call(rbind, lapply(intersect(c("base", "production"), unique(sc$model)), cal_one))
+cal |>
+  transmute(
+    Model,
+    `Expected margin` = edge_bin, n,
+    `Favourite wins: predicted` = pred_fav_win, observed = obs_fav_win,
+    `Draw: predicted` = pred_draw, `observed ` = obs_draw,
+    `Margin: predicted` = pred_margin, ` observed` = obs_margin
+  ) |>
+  knitr::kable(digits = c(0, 0, 0, 2, 2, 2, 2, 2, 2))
+```
+
+```{r}
+#| label: mismatch-text
+#| results: asis
+top <- cal[cal$Model == label_model("base") & cal$edge_bin == "[1.75,Inf]", ]
+topp <- cal[cal$Model == label_model("production") & cal$edge_bin == "[1.75,Inf]", ]
+cat(sprintf(
+  "At the tournaments the pattern of the published evaluation shows up in both models. In the %d matches where v2 expected a margin of at least 1.75 goals, the favourite won %.0f%% of the time against %.0f%% predicted and by %.2f goals against %.2f; for production the figures are %.0f%% against %.0f%% on %d matches.",
+  top$n, 100 * top$obs_fav_win, 100 * top$pred_fav_win, top$obs_margin, top$pred_margin,
+  100 * topp$obs_fav_win, 100 * topp$pred_fav_win, topp$n
+))
+if (have_wf) {
+  d <- wf_comp |> filter(model == "base")
+  edge <- abs(d$eg_home - d$eg_away)
+  hf <- d$eg_home >= d$eg_away
+  mg <- ifelse(hf, d$home_score - d$away_score, d$away_score - d$home_score)
+  pf <- ifelse(hf, d$p_home, d$p_away)
+  big <- edge >= 1.75
+  cat(sprintf(
+    " The panel does not show it: in its %s competitive matches with the same expected margin the favourite won %.0f%% against %.0f%% predicted and by %.2f goals against %.2f (@fig-mismatch). The log-linear link is therefore not over-extrapolating in general. The shortfall is specific to final tournaments, or to these %d matches; it is worth watching, and not enough to change the link.",
+    format(sum(big), big.mark = ","), 100 * mean(mg[big] > 0), 100 * mean(pf[big]),
+    mean(mg[big]), mean(edge[big]), top$n
+  ))
+}
+cat("\n")
+```
+
+```{r}
+#| label: tbl-draws
+#| tbl-cap: "Draws after 90 minutes on the three tournaments: expected under each model against observed."
+sc |>
+  filter(model %in% c("production", "elo", "base")) |>
+  mutate(model = factor(model, c("production", "elo", "base"))) |>
+  group_by(model, stage) |>
+  summarise(
+    n = n(), expected = sum(p_draw), observed = sum(home_90 == away_90),
+    .groups = "drop"
+  ) |>
+  transmute(
+    Model = label_model(as.character(model)), Stage = stage, Matches = n,
+    `Expected draws` = expected, `Observed draws` = observed
+  ) |>
+  knitr::kable(digits = c(0, 0, 0, 1, 0))
+```
+
+```{r}
+#| label: fig-mismatch
+#| eval: !expr have_wf
+#| fig-cap: "Mismatch calibration of v2 on the walk-forward panel (competitive matches, target tournaments excluded): observed against predicted, by expected-margin bin. Bars are 95% intervals for the observed mean."
+d <- wf_comp |> filter(model == "base")
+breaks <- c(0, 0.35, 0.7, 1.05, 1.4, 1.75, 2.5, Inf)
+home_fav <- d$eg_home >= d$eg_away
+edge <- abs(d$eg_home - d$eg_away)
+margin <- ifelse(home_fav, d$home_score - d$away_score, d$away_score - d$home_score)
+p_fav <- ifelse(home_fav, d$p_home, d$p_away)
+bin <- cut(edge, breaks, right = FALSE)
+long <- bind_rows(
+  data.frame(bin, what = "Favourite's goal margin", pred = edge, obs = margin),
+  data.frame(bin, what = "Favourite wins", pred = p_fav, obs = as.numeric(margin > 0)),
+  data.frame(bin, what = "Draw", pred = d$p_draw, obs = as.numeric(margin == 0))
+) |>
+  group_by(what, bin) |>
+  summarise(
+    n = n(), se = sd(obs) / sqrt(n()), pred = mean(pred), obs = mean(obs),
+    .groups = "drop"
+  )
+ggplot(long, aes(pred, obs)) +
+  geom_abline(linetype = "dashed", colour = "grey50") +
+  geom_errorbar(aes(ymin = obs - 1.96 * se, ymax = obs + 1.96 * se), width = 0) +
+  geom_point(aes(size = n)) +
+  facet_wrap(~what, scales = "free") +
+  scale_size_area(max_size = 4) +
+  labs(x = "Predicted", y = "Observed", size = "Matches")
+```
+
+## A draw correction, tested out of sample {#sec-draws}
+
+```{r}
+#| label: draws-prep
+#| eval: !expr have_wf
+panel_base <- res$walk_forward |>
+  filter(model == "base", !friendly, !in_target, !is.na(log_1x2))
+tour <- sc |> filter(model == "base")
+spec <- nt_tournaments()
+draw_rows <- lapply(seq_len(nrow(spec)), function(i) {
+  hist <- panel_base |> filter(match_date < spec$start[i])
+  phi <- nt_fit_draw_inflation(hist$p_home, hist$p_draw, hist$p_away, hist$home_score, hist$away_score)
+  d <- tour |> filter(key == spec$key[i])
+  adj <- nt_inflate_draws(d$p_home, d$p_draw, d$p_away, phi)
+  s_adj <- nt_score_outcomes(adj$p_home, adj$p_draw, adj$p_away, d$home_90, d$away_90)
+  list(
+    row = data.frame(
+      Tournament = spec$label[i], `Panel matches used` = nrow(hist), phi = phi,
+      `Draws expected, v2` = sum(d$p_draw), `after correction` = sum(adj$p_draw),
+      observed = sum(d$home_90 == d$away_90),
+      `Log score, v2` = mean(d$log_1x2), `corrected` = mean(s_adj$log_1x2),
+      check.names = FALSE
+    ),
+    diff_log = s_adj$log_1x2 - d$log_1x2, diff_rps = s_adj$rps - d$rps
+  )
+})
+draw_tab <- do.call(rbind, lapply(draw_rows, `[[`, "row"))
+draw_d_log <- unlist(lapply(draw_rows, `[[`, "diff_log"))
+draw_d_rps <- unlist(lapply(draw_rows, `[[`, "diff_rps"))
+draw_ci <- function(d) {
+  n <- length(d)
+  h <- stats::qt(0.975, n - 1) * stats::sd(d) / sqrt(n)
+  sprintf("%+.4f [%+.4f, %+.4f]", mean(d), mean(d) - h, mean(d) + h)
+}
+panel_draws <- panel_base |>
+  summarise(n = n(), expected = sum(p_draw), observed = sum(home_score == away_score))
+```
+
+```{r}
+#| label: draws-text
+#| eval: !expr have_wf
+#| results: asis
+tour_exp <- sum(tour$p_draw)
+tour_obs <- sum(tour$home_90 == tour$away_90)
+cat(sprintf(
+  "v2 expects too few draws. Over the three tournaments it expected %.0f and %d occurred (%.0f%% against %.0f%% of matches); on the %s competitive panel matches it expected %.0f and %.0f occurred (%.1f%% against %.1f%%). Independent Poisson goals leave no room for the extra draws of tight, cautious matches; the production model's shared-goals term closes about half of the gap at the tournaments.\n\n",
+  tour_exp, tour_obs, 100 * tour_exp / nrow(tour), 100 * tour_obs / nrow(tour),
+  format(panel_draws$n, big.mark = ","), panel_draws$expected, panel_draws$observed,
+  100 * panel_draws$expected / panel_draws$n, 100 * panel_draws$observed / panel_draws$n
+))
+cat("The table tests the smallest possible repair: one number that multiplies the odds of a draw (`nt_inflate_draws()`), estimated for each tournament only from panel forecasts of matches played before it started.\n")
+```
+
+```{r}
+#| label: tbl-draws-correction
+#| eval: !expr have_wf
+#| tbl-cap: "A one-parameter draw inflation estimated from earlier out-of-sample forecasts and applied to v2's tournament forecasts."
+knitr::kable(draw_tab, digits = c(0, 0, 2, 1, 1, 0, 3, 3), row.names = FALSE)
+```
+
+```{r}
+#| label: draws-result
+#| eval: !expr have_wf
+#| results: asis
+cat(sprintf(
+  "Pooled over the %d tournament matches the correction changes the 1X2 log score by %s and the RPS by %s (corrected minus v2; negative is better). ",
+  length(draw_d_log), draw_ci(draw_d_log), draw_ci(draw_d_rps)
+))
+prod_log <- do.call(c, lapply(spec$key, function(k) {
+  x <- sc[sc$model == "production" & sc$key == k, ]
+  x$log_1x2[order(x$match_id)]
+}))
+base_log <- do.call(c, lapply(spec$key, function(k) {
+  x <- tour[tour$key == k, ]
+  x$log_1x2
+}))
+cat(sprintf(
+  "Against production the corrected forecasts stand at %s. The correction is small and uses one number estimated from forecasts made before each tournament. It is proposed as an option, to be confirmed on the first qualifying windows; a shared-goals term in the model itself would be the fuller repair and needs an engine that can fit it.\n",
+  draw_ci(base_log + draw_d_log - prod_log)
+))
+```
+
+## Tournament simulation: extra time and penalties {#sec-sim}
+
+The production simulator builds a 48 x 48 head-to-head matrix in which a 90-minute draw is split in proportion to the two sides' 90-minute win probabilities, then propagates the bracket round by round. v2's simulator (`nt_simulate_world_cup()`) plays each tie per posterior draw: 90 minutes, then 30 minutes at one third of the 90-minute rates, then a 50/50 shootout. One draw of the strengths is used for a team's whole tournament.
+
+To isolate what changes the numbers, all three treatments below use the same v2 fit from before the 2026 World Cup and `r format(sim$n_sims, big.mark = ",")` simulated tournaments:
+
+- **Matrix**: the production method (posterior-mean matrix with proportional draw split, rounds treated as independent).
+- **Replay**: the same per-match rule, simulated jointly.
+- **Extra time**: the new rule, simulated jointly.
+
+```{r}
+#| label: tbl-sim
+#| tbl-cap: "Title probability (percent) before the 2026 World Cup under the three knockout treatments, v2 fit, top twelve."
+st <- sim$table[1:12, ]
+data.frame(
+  Team = st$team,
+  Matrix = 100 * st$champion_matrix,
+  Replay = 100 * st$champion_replay,
+  `Extra time` = 100 * st$champion_extra_time,
+  `Extra time at 0.25` = 100 * st$champion_et_quarter,
+  `Change, extra time minus matrix` = 100 * (st$champion_extra_time - st$champion_matrix),
+  check.names = FALSE
+) |>
+  knitr::kable(digits = 1)
+```
+
+```{r}
+#| label: sim-numbers
+ch <- 100 * (sim$table$champion_extra_time - sim$table$champion_matrix)
+ch_ind <- 100 * (sim$table$champion_replay - sim$table$champion_matrix)
+adv <- function(col) 100 * max(abs(sim$table[[paste0(col, "_extra_time")]] - sim$table[[paste0(col, "_replay")]]))
+```
+
+- **The tie rule matters; bracket independence does not.** Moving from the matrix to joint simulation with the same rule changes no title probability by more than `r sprintf("%.2f", max(abs(ch_ind)))` points, which is the size of the Monte Carlo noise (two seeds differ by up to `r sprintf("%.2f", 100 * sim$noise_check)` points). Moving to extra time and penalties changes them by up to `r sprintf("%.1f", max(abs(ch)))` points: the top five lose `r sprintf("%.1f", -mean(ch[1:5]))` points each on average, and the sum of absolute changes across the 48 teams is `r sprintf("%.0f", sum(abs(ch)))` points.
+- **Advancement probabilities move more than title probabilities.** The largest change in the probability of reaching the round of 16 is `r sprintf("%.1f", adv("r16"))` points, the quarter-finals `r sprintf("%.1f", adv("qf"))`, the semi-finals `r sprintf("%.1f", adv("sf"))`.
+- **The extra-time rate barely matters.** At 0.25 instead of one third, no title probability moves by more than `r sprintf("%.2f", 100 * max(abs(sim$table$champion_et_quarter - sim$table$champion_extra_time)))` points.
+
+```{r}
+#| label: fig-knockout
+#| fig-cap: "Probability that the stronger side advances from one knockout tie, by its 90-minute win probability. The replay rule (production) hands the favourite more of the drawn ties than extra time and a coin-toss shootout."
+cv <- sim$curve |>
+  select(p_win_90, replay, extra_time) |>
+  pivot_longer(c(replay, extra_time), names_to = "rule", values_to = "p") |>
+  mutate(rule = ifelse(rule == "replay", "Replay (production matrix)", "Extra time, then 50/50 shootout"))
+ggplot(cv, aes(p_win_90, p, colour = rule)) +
+  geom_line(linewidth = 0.9) +
+  scale_x_continuous(labels = scales::label_percent()) +
+  scale_y_continuous(labels = scales::label_percent()) +
+  labs(x = "Stronger side's 90-minute win probability", y = "Probability of advancing", colour = NULL) +
+  theme(legend.position = "bottom")
+```
+
+**Is one third the right extra-time rate?** The three tournaments give a small direct check. Of `r et$n_knockout` knockout matches, `r et$n_extra_time` were level after 90 minutes (v2 expected `r sprintf("%.1f", et$expected_level_at_90)`), `r et$n_shootout` went to penalties (v2 at one third expects `r sprintf("%.1f", et$expected_shootouts_given_et)` of the `r et$n_extra_time`), and the `r et$n_extra_time` extra-time periods produced `r et$et_goals` goals against `r sprintf("%.1f", et$expected_et_goals_third)` expected at one third. Extra time is slightly lower-scoring than the same minutes of regulation (`r sprintf("%.2f", et$et_goals / (3 * et$expected_et_goals_third))` of the 90-minute rate here instead of 0.33), but on `r et$n_extra_time` matches that is not distinguishable from one third, and the simulator's output is insensitive to it. In the simulation `r sprintf("%.0f%%", 100 * (1 - sim$decided$extra_time[["regulation"]]))` of ties go to extra time; in the three tournaments `r sprintf("%.0f%%", 100 * et$n_extra_time / et$n_knockout)` did.
+
+```{r}
+#| label: tbl-forecast
+#| eval: !expr have_prod_forecast
+#| tbl-cap: "Title probability (percent) before the 2026 World Cup: v2 with its simulator against the production approach refitted on the same cutoff with its own simulator. Spain won, Argentina were runners-up, England third and France fourth."
+pf <- res$production_forecast$placement
+pf <- pf[pf$round_name == "Champion", ]
+ft2 <- data.frame(
+  Team = sim$table$team,
+  v2 = 100 * sim$table$champion_extra_time,
+  Production = 100 * pf$probability[match(sim$table$team, pf$team)]
+)
+knitr::kable(ft2[1:12, ], digits = 1, row.names = FALSE)
+```
+
+## The women's file {#sec-women}
+
+```{r}
+#| label: women-text
+#| eval: !expr have_women
+#| results: asis
+w <- res$women
+ev <- setdiff(names(w), c("n_rows", "range"))
+cat(sprintf(
+  "The women's file (%s matches, %s to %s) has the same schema, and `nt_read_results()`, `nt_prepare()` and `nt_fit_inla()` run on it without any change. As a first check the model was fitted before the %s and scored on their group stages, which have no extra time.\n",
+  format(w$n_rows, big.mark = ","), format(w$range[1]), format(w$range[2]),
+  paste(ev, collapse = " and the ")
+))
+```
+
+```{r}
+#| label: tbl-women
+#| eval: !expr have_women
+#| tbl-cap: "v2 against the Elo baseline on the women's file, group stages. Differences are v2 minus Elo with 95% intervals."
+wt <- do.call(rbind, lapply(ev, function(e) {
+  x <- w[[e]]
+  data.frame(
+    Tournament = e, `Training matches` = x$n_train, Teams = x$n_teams, `Scored matches` = x$n_test,
+    `v2 log score` = mean(x$v2$log_1x2), `Elo log score` = mean(x$elo$log_1x2),
+    `Difference` = fmt_ci(x$diff_log_1x2),
+    `v2 RPS` = mean(x$v2$rps), `Elo RPS` = mean(x$elo$rps),
+    check.names = FALSE
+  )
+}))
+knitr::kable(wt, digits = c(0, 0, 0, 0, 3, 3, 0, 4, 4), row.names = FALSE)
+```
+
+```{r}
+#| label: women-hyper
+#| eval: !expr have_women
+#| results: asis
+h <- w[[ev[length(ev)]]]$hyper
+f <- w[[ev[length(ev)]]]$fixed
+cat(sprintf(
+  "At the later cutoff the women's fit has a team-level sd of %.2f (men: %.2f), a walk sd of %.4f per square-root month (men: %.4f) and venue effects of %+.2f and %+.2f. The spread of strengths is wider than in the men's game, so lopsided matches are more common and the mismatch check matters more.\n",
+  h$mode[h$parameter == "sd alpha"], mean(ht[["sd of team level"]]),
+  h$mode[h$parameter == "sd u per sqrt(month)"], mean(rw_month),
+  f["home_for", "mean"], f["home_against", "mean"]
+))
+```
+
+```{r}
+#| label: current-women
+#| eval: !expr have_current_women
+#| results: asis
+cw <- res$current$women
+icew <- cw$strength[cw$strength$team == cw$team, ]
+cat(sprintf(
+  "Fitted on every women's match up to %s, the model ranks %s %d of %d UEFA teams; the top five are %s.\n",
+  format(cw$cutoff - 1), cw$team, icew$rank, nrow(cw$strength),
+  paste(head(cw$strength$team, 5), collapse = ", ")
+))
+```
+
+**What a Women's World Cup 2027 forecast would need.** The tournament is in Brazil from 24 June to 25 July 2027 with 32 teams.
+
+1. *Nothing new in the model.* A separate fit on the women's file with its own hyperparameters; the score grid needs a higher goal cap (20 was used here).
+2. *A tournament structure.* Eight groups of four and a 16-team bracket, which is simpler than the 2026 men's format: no third-place allocation table. `nt_simulate_world_cup()` is written against the 2026 structure object and needs generalising to take a structure (group lists, bracket, number of best thirds).
+3. *Fixtures and names.* The draw and schedule once published, and Icelandic team names for the women's sides.
+4. *Before that, the play-offs.* Iceland won their UEFA play-off round 1 tie against Croatia 9-0 on aggregate in October 2026 and play round 2 from 26 November to 5 December. A two-legged tie is two calls to the match model plus the extra-time rule on the aggregate, which the current code can already produce.
+5. *An evaluation like this one.* World Cup 2023, Euro 2025 and the Olympic tournaments, with the extra-time table extended to the women's knockout matches.
+
+## Stan reference against INLA {#sec-stan}
+
+```{r}
+#| label: stan-text
+#| eval: !expr have_stan
+#| results: asis
+sb <- res$stan$base
+cat(sprintf(
+  "The Stan model was fitted on the same data as the INLA fit before the 2026 World Cup (4 chains, 750 warm-up and 750 sampling iterations): %d divergences, largest R-hat %.3f, smallest bulk ESS %.0f over the scalars and the %d end-of-window strengths, %.0f leapfrog steps per iteration.\n\n",
+  sum(sb$diagnostics$num_divergent),
+  max(sb$summary$rhat, na.rm = TRUE), min(sb$summary$ess_bulk, na.rm = TRUE),
+  length(sb$theta_mean), sb$mean_leapfrog
+))
+cat(sprintf(
+  "The two engines agree: the posterior means of the team strengths correlate at %.4f, the largest difference after centring is %.3f on the log scale, INLA's posterior sds are %.0f%% of Stan's at the median (INLA conditions on the hyperparameter mode), and the 1X2 probabilities for the %d World Cup matches differ by %.3f on average and %.3f at most.\n",
+  sb$inla$cor_theta, sb$inla$max_abs_theta, 100 * sb$inla$sd_ratio,
+  nrow(sb$scores), sb$inla$mean_abs_prob, sb$inla$max_abs_prob
+))
+```
+
+```{r}
+#| label: tbl-stan
+#| eval: !expr have_stan
+#| tbl-cap: "Hyperparameters and fixed effects: Stan posterior mean and 90% interval against the INLA estimate, fit before the 2026 World Cup. The walk sd is per quarter."
+sb <- res$stan$base
+ih <- sb$inla$hyper
+ifx <- sb$inla$fixed
+stan_row <- function(v) sb$summary[sb$summary$variable == v, ]
+rows <- list(
+  c("mu", "Intercept", ifx["mu", "mean"]),
+  c("home_for", "Home side's rate", ifx["home_for", "mean"]),
+  c("home_against", "Away side's rate", ifx["home_against", "mean"]),
+  c("sigma_alpha", "sd of team level", ih$mode[ih$parameter == "sd alpha"]),
+  c("sigma_u", "Walk sd per quarter", ih$mode[ih$parameter == "sd u"]),
+  c("sigma_delta", "sd of attack/defence split", ih$mode[ih$parameter == "sd delta"])
+)
+do.call(rbind, lapply(rows, function(r) {
+  s <- stan_row(r[1])
+  data.frame(
+    Parameter = r[2], `Stan mean` = s$mean, `Stan 5%` = s$q5, `Stan 95%` = s$q95,
+    INLA = as.numeric(r[3]), check.names = FALSE
+  )
+})) |>
+  knitr::kable(digits = 3, row.names = FALSE)
+```
+
+```{r}
+#| label: stan-damped
+#| eval: !expr have_stan_damped
+#| results: asis
+sd_ <- res$stan$damped
+k <- sd_$summary[sd_$summary$variable == "kappa_friendly[1]", ]
+cat(sprintf(
+  "With the friendly multiplier as a parameter, Stan estimates $\\kappa = %.2f$ (90%% interval %.2f to %.2f; %d divergences, R-hat %.3f).\n",
+  k$mean, k$q5, k$q95, sum(sd_$diagnostics$num_divergent), k$rhat
+))
+```
+
+```{r}
+#| label: stan-missing
+#| eval: !expr (!have_stan)
+#| results: asis
+cat("*The Stan reference fit had not finished when this version was rendered.*\n")
+```
+
+## Scope of a squad-market-value prior {#sec-squad}
+
+Not built. This section records where the data would come from and on what terms.
+
+**Why it is worth scoping.** Squad value is the one squad covariate with consistent support for internationals: Peeters (2018, *International Journal of Forecasting*) found Transfermarkt valuations beat Elo and the FIFA ranking, the Euro 2024 ensemble paper has market value among its two dominant covariates, and the Zeileis group's 2026 World Cup forecast uses average squad value. A results-only model cannot see a generation change before it shows up in results.
+
+**How it would enter v2.** As a prior mean on the team level: $\alpha_i \sim \mathrm{N}(\beta z_i, \sigma_\alpha^2)$ with $z_i$ the standardised log squad value, which in the INLA formulation is one extra fixed effect whose design column is the difference in $z$ between the two sides. One coefficient, estimated from the data; teams without a value get the grand mean plus an indicator.
+
+**Sources and terms.**
+
+| Source | What it has | Terms, as far as verified | Fit |
+| --- | --- | --- | --- |
+| Transfermarkt site | Player values, national-team squad pages, value history | No public API. Its terms could not be fetched in this session; a 2018 statement by the company quoted on the R-pkg-devel list says the data is protected under German law, no licence is granted and redistribution needs written consent. Treat scraping and republishing as not permitted without a licence. | Ask for a licence, or collect by hand |
+| `dcaribou/transfermarkt-datasets` (GitHub, Kaggle `davidcariboo/player-scores`) | `players` (citizenship, current national team, value), `player_valuations` (650,000 dated values), `national_teams` (124), `countries` | Repository metadata says CC0-1.0, but that covers the compilation, not Transfermarkt's rights in the values. Updates paused: current to 6 July 2026, valuations to 12 June 2026. Covers about 65 competitions, so minnows and domestic-league squads are thin. | Research use for a pilot; not a basis for a published product |
+| Hand collection per tournament | One squad total per team from the public squad pages, 24 to 55 numbers | A handful of facts read by a person and cited; this is what academic forecasts do. No history unless collected each window. | Feasible now for a tournament-time prior |
+| Alternatives | CIES Football Observatory valuations, EA Sports FC ratings (sofifa), Capology salaries | Not checked in this session | Unknown |
+| Women | soccerdonna.de (Transfermarkt's sister site) has women's values | Not checked; coverage is far thinner | Low priority |
+
+**The hard part is history, not the current number.** Estimating $\beta$ needs squad values back through the training window. Without call-up lists, the workable proxy is the summed value of each country's 23 to 26 most valuable players by citizenship at each date, which the community dataset supports for well-covered countries.
+
+**Proposed order.** (1) A pilot on the community dataset, research use only: does the proxy improve the three-tournament and panel scores? (2) Only if it does, write to Transfermarkt for permission to use team-level aggregates in a published forecast. (3) Failing that, hand-collect squad totals at each tournament and each qualifying window.
+
+## Plan for a Euro 2028 qualifying-odds product {#sec-euro}
+
+**Calendar.** The qualifying draw is in Belfast on 6 December 2026. Twelve groups of four or five play home and away from March to November 2027. The twelve group winners and the eight best runners-up qualify; the remaining four places are decided in play-offs in March 2028 among the other runners-up and the best-ranked 2026-27 Nations League group winners that have not qualified. The four hosts (England, Republic of Ireland, Scotland, Wales) play qualifying in separate groups, and two places are reserved for hosts that fail to qualify, which changes the number of play-off places. The reserved-place rule should be read from UEFA's regulations before it is coded; press reports differ on the details.
+
+**What the product shows.** For each team, and for Iceland in the foreground: probability of winning the group, finishing second, qualifying directly, reaching the play-offs and qualifying at all; a forecast for every upcoming match (1X2, expected goals, score distribution); and how the probabilities moved after each window.
+
+```{r}
+#| label: current-text
+#| eval: !expr have_current
+#| results: asis
+cm <- res$current$men
+ice <- cm$strength[cm$strength$team == cm$team, ]
+cat(sprintf(
+  "**Where %s stands today.** Fitted on every match up to %s, v2 ranks %s %d of %d UEFA teams. The figure shows what the product would start from: its home and away forecasts against every possible opponent, ordered by the opponent's strength.\n",
+  cm$team, format(cm$cutoff - 1), cm$team, ice$rank, nrow(cm$strength)
+))
+```
+
+```{r}
+#| label: fig-current
+#| eval: !expr have_current
+#| fig-height: 6.2
+#| fig-cap: "Iceland's forecast against each UEFA opponent, at home and away, from v2 fitted on all matches to date. Opponents are ordered from strongest (left) to weakest."
+mu <- cm$matchups |>
+  arrange(opponent_rank) |>
+  mutate(opponent = factor(opponent, opponent))
+long <- bind_rows(
+  mu |> transmute(opponent, where = "Iceland at home", Win = home_win, Draw = home_draw, Loss = home_loss),
+  mu |> transmute(opponent, where = "Iceland away", Win = away_win, Draw = away_draw, Loss = away_loss)
+) |>
+  pivot_longer(c(Win, Draw, Loss), names_to = "result", values_to = "p") |>
+  mutate(result = factor(result, c("Loss", "Draw", "Win")))
+ggplot(long, aes(opponent, p, fill = result)) +
+  geom_col(width = 0.9) +
+  facet_wrap(~where, ncol = 1) +
+  scale_y_continuous(labels = scales::label_percent(), expand = c(0, 0)) +
+  scale_fill_manual(values = c(Loss = "#b2182b", Draw = "#bdbdbd", Win = "#2166ac")) +
+  labs(x = NULL, y = NULL, fill = "Iceland's result") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, size = 7), legend.position = "bottom")
+```
+
+**What exists after this work.**
+
+- The match model and its fit (`nt_prepare()`, `nt_fit_inla()`), which already covers all 55 UEFA teams and uses the venue flag that qualifying, with true home and away matches, depends on.
+- Match forecasts for any fixture list (`nt_match_rates()`, `nt_scoreline_probs()`).
+- The knockout primitive with extra time and penalties (`nt_simulate_knockout()`), which the play-off ties need.
+- The scoring and calibration functions for an accountability log.
+
+**What has to be built.**
+
+1. *Fixture ingest after the draw.* The source file lists scheduled fixtures with empty scores, as it did for the World Cup; otherwise a small CSV of the 2027 fixtures.
+2. *A group simulator with UEFA tie-breakers.* Head-to-head points come first in UEFA qualifying, unlike the goal-difference-first rule in the World Cup code. Vectorised over simulations like `nt_simulate_world_cup()`.
+3. *Best runners-up across groups of unequal size* (results against the bottom side are discarded in five-team groups) and the play-off paths, including the Nations League ranking and the host rule.
+4. *A publish contract and a page.* A new `data/publish/euro_2028/` tree modelled on the World Cup JSON, and a page on metill.is. Both need the owner's approval and are outside this work.
+5. *A workflow.* A new dispatch-only workflow, separate from the dormant `world-cup.yml`, run after each international window (five a year). One INLA fit takes about a minute; the runner needs R-INLA installed from its own repository.
+6. *An accountability log from day one.* Every published forecast stored before kick-off and scored after, against the Elo baseline and, where Lengjan lists the match, the de-vigged line.
+
+**Order of work.**
+
+| When | Step |
+| --- | --- |
+| Before 6 December 2026 | Owner decisions in @sec-proposal; group simulator with UEFA tie-breakers, tested on the Euro 2024 qualifying groups against the real tables |
+| December 2026 | Ingest the draw; first qualification odds for all 12 groups; internal review of the page |
+| January to February 2027 | Play-off and host-rule logic; publish contract; workflow; accountability log |
+| March 2027 | First live window: forecasts before the matches, update after |
+| After each window | Refit, republish, score the previous window |
+
+## Proposal and decisions for the owner {#sec-proposal}
+
+1. **Adopt v2 as the national-team model.** It removes the listed misspecifications, is not worse than the production approach on the three tournaments and probably slightly better, beats Elo clearly on the panel, fits in about a minute, and runs on the women's file. The production club model stays as it is for club football.
+2. **Specification: the one tested here as "v2".** Twelve-year window, quarterly grid, estimated random walk, pooled sign-free venue effects, pooled attack/defence split. No fixed half-life, no AR(1), no friendly term, no importance weights: none of them improved forecasts.
+3. **Adopt the played-out knockout simulator** (extra time at one third of the 90-minute rate, 50/50 shootout) for any future tournament forecast.
+4. **Draw correction: optional.** v2 expects too few draws. The one-parameter correction in @sec-draws helps a little out of sample; decide now or after the first qualifying windows.
+5. **Declare R-INLA.** Add it under `Suggests` with its repository under `Additional_repositories`, and add an install step to any workflow that fits the model. This branch adds no dependency to `DESCRIPTION` (only the generated `Collate` list changed); the INLA calls sit behind `rlang::check_installed()`.
+6. **Squad value:** approve the research-only pilot in @sec-squad, or leave it.
+7. **Euro 2028 qualifying:** approve the plan in @sec-euro, including a new publish tree and workflow.
+
+Nothing in this work touches `world-cup.yml`, any other workflow, or the published World Cup JSON.
+
+## Limits of this evaluation {#sec-limits}
+
+- **Three tournaments, `r n_all` matches.** Enough to show v2 is not worse; not enough to rank close variants. The panel adds matches but mixes qualifiers with tournaments.
+- **Independence.** Intervals treat matches as independent although each tournament shares one fit.
+- **Hyperparameters at their mode.** The INLA fits condition on the hyperparameter mode (empirical Bayes); the Stan comparison shows what that costs in posterior width.
+- **Independent Poisson.** v2 has no shared-goals term. On exact scorelines it only matches production, and it expected `r sprintf("%.1f", et$expected_level_at_90)` of the `r et$n_knockout` knockout matches to be level after 90 minutes when `r et$n_extra_time` were.
+- **No market comparison.** Bookmaker odds for the three tournaments were not collected; the literature says the market beats results-only models at tournaments.
+- **Extra-time contamination in training.** Knockout scores in the training data include extra time; only the `r et$n_extra_time` ties of the target tournaments were corrected.
+- **Confederation structure.** Teams mostly play within their confederation, and the model has no confederation term; inter-confederation calibration rests on World Cups and friendlies.
+- **Knockout venues.** Host nations get home advantage in group matches in the simulation, not in knockout matches.
+
+## Reproducing this report {#sec-repro}
+
+All experiment output is under `/Users/brynjolfurjonsson/.claude-reviews/sports-national-team-v2/` (data snapshots in `data/`, results in `out/`, logs in `logs/`). The source files were downloaded from `martj42/international_results` and `martj42/womens-international-results` on 2026-11-15.
+
+```bash
+D=/Users/brynjolfurjonsson/.claude-reviews/sports-national-team-v2
+Rscript scripts/nt/prod_refit.R wc2026 $D/data/men/results.csv $D/out/prod
+Rscript scripts/nt/evaluate_tournaments.R $D/data/men/results.csv $D/out/eval wc2026
+Rscript scripts/nt/walk_forward.R $D/data/men/results.csv $D/out/wf
+Rscript scripts/nt/simulate_compare.R $D/out/eval/fit_wc2026_base.rds $D/out/sim_compare_wc2026.rds
+Rscript scripts/nt/women_check.R $D/data/women/results.csv $D/out/women_check.rds
+Rscript scripts/nt/stan_reference.R $D/data/men/results.csv $D/out/stan wc2026
+Rscript scripts/nt/build_report_data.R $D/out docs/reports/2026-11-15-national-team-v2/results.rds
+quarto render docs/reports/2026-11-15-national-team-v2.qmd
+```
+
+Code: `R/nt-data.R`, `R/nt-model.R`, `R/nt-score.R`, `R/nt-baselines.R`, `R/nt-simulate.R`, `R/nt-stan.R`; tests in `tests/testthat/test-nt-*.R`. Timings in this document are orders of magnitude only: every fit ran on a machine shared with other model runs.

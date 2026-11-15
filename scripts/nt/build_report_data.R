@@ -74,7 +74,29 @@ extra_time <- list(
   expected_et_goals_third = sum(et$eg_home + et$eg_away) / 3
 )
 
-wf_raw <- read_if(file.path(out_dir, "wf", "walk_forward.rds"))
+# The panel may have been run as several workers, one output file each.
+wf_files <- list.files(
+  file.path(out_dir, "wf"), pattern = "^walk_forward\\.rds$",
+  recursive = TRUE, full.names = TRUE
+)
+wf_raw <- NULL
+for (f in wf_files) {
+  part <- readRDS(f)
+  for (ck in names(part)) {
+    if (is.null(part[[ck]]$matches)) next
+    if (is.null(wf_raw[[ck]])) {
+      wf_raw[[ck]] <- part[[ck]]
+    } else {
+      stopifnot(identical(
+        wf_raw[[ck]]$matches[, c("match_date", "home_team", "away_team")],
+        part[[ck]]$matches[, c("match_date", "home_team", "away_team")]
+      ))
+      new_models <- setdiff(names(part[[ck]]$scores), names(wf_raw[[ck]]$scores))
+      wf_raw[[ck]]$scores[new_models] <- part[[ck]]$scores[new_models]
+      wf_raw[[ck]]$hyper[new_models] <- part[[ck]]$hyper[new_models]
+    }
+  }
+}
 wf <- NULL
 wf_hyper <- NULL
 if (!is.null(wf_raw)) {
