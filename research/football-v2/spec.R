@@ -239,8 +239,11 @@ fv2_design <- function(spec, which = c("obs", "pred")) {
     out$g_ha <- sp(rows, c(m$cell_nr, m$cell_nr), rep(c(0.5, -0.5), each = n), n_cell)
   }
   if (spec$opts$movers) {
-    out$promoted <- as.numeric(att %*% spec$promoted - def %*% spec$promoted)
-    out$relegated <- as.numeric(att %*% spec$relegated - def %*% spec$relegated)
+    # WHY: a shock shifts a team's attack and defence together, so it enters a
+    # row as the attacker's count minus the defender's. `def` already carries
+    # the minus sign, hence the sum.
+    out$promoted <- as.numeric(att %*% spec$promoted + def %*% spec$promoted)
+    out$relegated <- as.numeric(att %*% spec$relegated + def %*% spec$relegated)
   }
   out
 }

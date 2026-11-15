@@ -59,13 +59,54 @@ if (!is.null(wf)) {
   wf$rounds_detail <- wf$rounds_detail[c("sex", "match_date", "division", "phase", "ls_model", "ls_prodround", "p_home", "phome_prodround", "home_score", "away_score")]
 }
 
-extra_file <- file.path(out, "report_extra.rds")
+read_if <- function(name) {
+  f <- file.path(out, name)
+  if (file.exists(f)) readRDS(f) else NULL
+}
+q3 <- function(x) stats::quantile(x, c(0.05, 0.5, 0.95), names = FALSE)
+
+# Stan fits that estimate the reversion coefficient: tag "rhoest" for attack
+# and defence walks, "rhoestsq" for strength with a fixed style.
+rho <- do.call(rbind, lapply(c("rhoest", "rhoestsq"), function(tag) {
+  do.call(rbind, lapply(c("female", "male"), function(sex) {
+    f <- read_if(sprintf("val_%s_%s_2026-07-31_stan.rds", tag, sex))
+    if (is.null(f)) {
+      return(NULL)
+    }
+    h <- f$draws$hyper
+    d <- f$diagnostics
+    data.frame(
+      form = if (tag == "rhoest") "ad" else "sq", sex = sex, parameter = colnames(h),
+      mean = colMeans(h), q5 = apply(h, 2L, function(x) q3(x)[1]),
+      q50 = apply(h, 2L, function(x) q3(x)[2]), q95 = apply(h, 2L, function(x) q3(x)[3]),
+      divergences = d$n_divergent, leapfrog = d$mean_leapfrog, max_rhat = d$state_max_rhat,
+      row.names = NULL
+    )
+  }))
+}))
+
+dry <- lapply(list.files(out, pattern = "^dryrun_.*\\.rds$"), read_if)
+
+# Weekly against four-weekly hyperparameter re-estimation, same matches.
+h1 <- read_if("wf_base_female_2026_h1.rds")
+h4 <- read_if("wf_base_female_2026.rds")
+hyper_check <- NULL
+if (!is.null(h1) && !is.null(h4)) {
+  a <- h1$pred
+  b <- h4$pred[match(paste(a$match_date, a$home_team, a$away_team), paste(h4$pred$match_date, h4$pred$home_team, h4$pred$away_team)), ]
+  hyper_check <- data.frame(
+    n = nrow(a), mean_abs_dp = mean(abs(a$p_home - b$p_home)), max_abs_dp = max(abs(a$p_home - b$p_home)),
+    d_1x2 = mean(a$ls_1x2 - b$ls_1x2), se_1x2 = stats::sd(a$ls_1x2 - b$ls_1x2) / sqrt(nrow(a)),
+    d_scoreline = mean(a$ls_score - b$ls_score), se_scoreline = stats::sd(a$ls_score - b$ls_score) / sqrt(nrow(a))
+  )
+}
+
 res <- list(
   generated = format(Sys.time(), "%Y-%m-%d %H:%M"),
   validation = read_validation("calendar"),
   validation_final = read_validation("final"),
   ha = ha, wf = wf,
-  extra = if (file.exists(extra_file)) readRDS(extra_file) else NULL
+  rho = rho, timing = read_if("engine_timing.rds"), dryrun = dry, hyper_check = hyper_check
 )
 saveRDS(res, file.path(dest, "results.rds"), compress = "xz")
 cat(sprintf("wrote %s (%.0f KB)\n", file.path(dest, "results.rds"), file.info(file.path(dest, "results.rds"))$size / 1024))

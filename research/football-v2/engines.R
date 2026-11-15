@@ -211,7 +211,7 @@ fv2_stan_file <- function(spec, dir, est_rho = FALSE) {
 #' @param est_rho Estimate the reversion coefficient (break clock only).
 fv2_fit_stan <- function(spec, stan_file, exe_dir, output_dir,
                          chains = 4L, iter_warmup = 1000L, iter_sampling = 1000L,
-                         adapt_delta = 0.9, seed = 20261115L, refresh = 200L,
+                         adapt_delta = 0.95, seed = 20261115L, refresh = 200L,
                          est_rho = FALSE) {
   stopifnot(requireNamespace("cmdstanr", quietly = TRUE))
   stopifnot(basename(stan_file) == fv2_stan_program(spec, est_rho))

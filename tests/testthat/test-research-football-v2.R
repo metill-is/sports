@@ -224,6 +224,36 @@ test_that("movers get their own step class and a cumulative shock covariate", {
   expect_error(fv2$fv2_build(toy_matches(), clock = "calendar", movers = TRUE, divisions = toy_divisions()))
 })
 
+test_that("the shock covariate in the design is what prediction applies", {
+  spec <- fv2$fv2_build(
+    toy_matches(), toy_fixture(),
+    clock = "break", movers = TRUE, divisions = toy_divisions()
+  )
+  # A shock of beta shifts a team's attack and defence together.
+  beta <- 0.3
+  shift <- beta * spec$promoted - 0.2 * spec$relegated
+  draws <- list(
+    c_home = 0, c_away = 0,
+    att = matrix(shift, 1), def = matrix(shift, 1),
+    ha_att = matrix(0, 1, spec$K), ha_def = matrix(0, 1, spec$K)
+  )
+  p <- fv2$fv2_predict(draws, spec)
+  des <- fv2$fv2_design(spec, "pred")
+  via_design <- beta * des$promoted - 0.2 * des$relegated
+  expect_equal(log(c(p$lam_home, p$lam_away)), via_design)
+  # C was promoted and hosts A, which was not: C's rows gain, A's lose.
+  expect_equal(via_design, c(beta, -beta))
+  train <- fv2$fv2_design(spec, "obs")
+  m <- spec$obs
+  expect_equal(
+    train$promoted,
+    c(
+      spec$promoted[m$home_slot] - spec$promoted[m$away_slot],
+      spec$promoted[m$away_slot] - spec$promoted[m$home_slot]
+    )
+  )
+})
+
 test_that("each training row reads one attack state and one defence state", {
   spec <- fv2$fv2_build(toy_matches(), toy_fixture(), div_offsets = TRUE)
   des <- fv2$fv2_design(spec)

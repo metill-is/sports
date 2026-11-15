@@ -2,15 +2,18 @@
 # a reference by sex, season and season phase, and the 2026 benchmarks
 # (production's stored forecasts, the Lengjan line).
 #
-#   Rscript research/football-v2/wf_summarise.R [ref] [variant ...]
+#   Rscript research/football-v2/wf_summarise.R [ref[,ref2...]] [variant ...]
+# The first reference is the one the season, phase and benchmark tables
+# describe; paired differences are computed against every reference given.
 # Run from the repo root.
 options(width = 200)
 suppressMessages(devtools::load_all(".", quiet = TRUE))
 source("research/football-v2/data.R")
 fv2_source()
 args <- commandArgs(trailingOnly = TRUE)
-ref <- if (length(args) >= 1L) args[[1]] else "base"
-only <- if (length(args) >= 2L) c(ref, args[-1]) else NULL
+refs <- if (length(args) >= 1L) strsplit(args[[1]], ",")[[1]] else "base"
+ref <- refs[[1]]
+only <- if (length(args) >= 2L) c(refs, args[-1]) else NULL
 out <- fv2_out_dir()
 
 wf <- fv2_read_wf(out, only)
@@ -29,19 +32,19 @@ cat("\n== scores by variant and sex\n")
 scores_sex <- fv2_score_table(pred, c("variant", "sex"))
 show(scores_sex)
 
-cmp <- function(metric) {
+cmp <- function(r, metric) {
   rbind(
-    cbind(split = "all", fv2_compare(pred, ref, NULL, metric)),
-    cbind(split = "sex", fv2_compare(pred, ref, "sex", metric)),
-    cbind(split = "season", fv2_compare(pred, ref, "season", metric)),
-    cbind(split = "phase", fv2_compare(pred, ref, "phase", metric)),
-    cbind(split = "sex x phase", fv2_compare(pred, ref, c("sex", "phase"), metric))
+    cbind(split = "all", fv2_compare(pred, r, NULL, metric)),
+    cbind(split = "sex", fv2_compare(pred, r, "sex", metric)),
+    cbind(split = "season", fv2_compare(pred, r, "season", metric)),
+    cbind(split = "phase", fv2_compare(pred, r, "phase", metric)),
+    cbind(split = "sex x phase", fv2_compare(pred, r, c("sex", "phase"), metric))
   )
 }
 paired <- NULL
-if (length(setdiff(complete, ref))) {
-  paired <- rbind(cmp("ls_1x2"), cmp("ls_score"))
-  cat(sprintf("\n== paired differences against '%s' (positive = better than %s)\n", ref, ref))
+if (length(complete) > 1L) {
+  paired <- do.call(rbind, lapply(intersect(refs, complete), function(r) rbind(cmp(r, "ls_1x2"), cmp(r, "ls_score"))))
+  cat("\n== paired differences (positive = better than the reference)\n")
   show(paired[paired$split %in% c("all", "sex", "phase"), ])
 }
 
