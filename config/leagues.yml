@@ -67,15 +67,24 @@ basketball_iceland:
         Keflavík U: Keflavík b
   lengjan:
     # 2026-09-23 (spec 2026-09-23 WS2/WS5): scraped from Lengjan's JSON API.
-    # The 2026-27 Bónus deild competitions are not listed yet (season opens
-    # 2026-09-29/30 and 10-08); discovery (0N_discover.R) proposes them and
-    # /wire-league adds them here with `division: BD` or `1D`. Last season's
-    # playoff umbrellas were 1519 (karla) and 1528 (kvenna).
+    # 1292 (Bónusdeild karla) wired 2026-11-15 via /wire-league from the
+    # 2026-11-12 discovery proposal. Lengjan listed no Icelandic event at
+    # wiring time (between rounds), so the round of 2026-11-19/20 is the first
+    # check. The men's season opened 2026-10-08 with nothing wired: its odds
+    # up to this point were never captured. Keep `division` on every entry:
+    # check_odds_freshness() expects odds only for the (sex, division) cells
+    # the competitions name. Bónusdeild kvenna and both 1. deild competitions
+    # are not wired; discovery (0N_discover.R) proposes them when Lengjan
+    # lists them and /wire-league adds them here with `division: BD` or `1D`.
+    # Last season's playoff umbrellas were 1519 (karla) and 1528 (kvenna).
     source: api
-    competitions: []
+    competitions:
+      - { id: "1292", name: "Bónusdeild karla", sex: male, division: BD }
     team_names:
-      # Men's úrslitakeppni (id 1519). Lengjan uses bare team names for the
-      # men's draw — verified against data/facts/odds 2026-04-29 scrape.
+      # Lengjan uses bare team names for the men's draw: verified against the
+      # data/facts/odds 2026-04-29 scrape (úrslitakeppni, id 1519) and the
+      # 2026-11-12 proposal for 1292, where 9 of 10 renderings equal the
+      # canonical name.
       male:
         Grindavík: Grindavík
         Valur: Valur
@@ -85,6 +94,16 @@ basketball_iceland:
         Njarðvík: Njarðvík
         Keflavík: Keflavík
         Ármann: Ármann
+        KR: KR                  # 1292 proposal, 2026-11-12
+        Höttur: Höttur          # 1292 proposal, 2026-11-12
+        Álftanes: Álftanes      # 1292 proposal, 2026-11-12
+        # The one non-identity rendering. Discovery could not match it;
+        # confirmed as the only Sindri in men's BD 2027 results.
+        Sindri: UMF Sindri
+        # Not seen under 1292 yet: identity pattern-guess, verify on first
+        # odds (ÍR v KR, 2026-11-19). A wrong guess fails safe and surfaces in
+        # the unmapped_team_names health check.
+        ÍR: ÍR
       female:
         Grindavík: Grindavík kv
         Valur: Valur kv
@@ -198,11 +217,15 @@ handball_iceland:
     odds: lengjan_odds
   lengjan:
     # 2026-09-23 (spec 2026-09-23 WS2/WS5): scraped from Lengjan's JSON API.
-    # 1269 verified live 2026-09-23 (FH - Haukar, event 4602104). No Grill 66
-    # or women's competition was listed.
+    # 1269 verified live 2026-09-23 (FH - Haukar, event 4602104). 1270
+    # (Olísdeild kvenna) wired 2026-11-15 via /wire-league from the 2026-11-12
+    # discovery proposal; Lengjan listed no Icelandic event at wiring time, so
+    # the round of 2026-11-21/22 is the first check. The women's season opened
+    # 2026-09-05 unwired. No Grill 66 competition has been listed.
     source: api
     competitions:
       - { id: "1269", name: "Olísdeild karla", sex: male, division: OD }
+      - { id: "1270", name: "Olísdeild kv.", sex: female, division: OD }
     team_names:
       # All 12 Olísdeild karla 2026-27 teams. Lengjan renders them as our
       # canonical names (every handball odds row 2026-03-04..05-07), except
@@ -227,7 +250,22 @@ handball_iceland:
         ÍR: ÍR
         ÍH: ÍH Keflavík
         HBH: HB Hafnarfjörður
-      female: {}                       # No women's handball on Lengjan currently
+      # All 10 Olísdeild kvenna 2026-27 teams (comp 1270). Lengjan renders the
+      # women's draw as "<canonical> kv". Four renderings are from the
+      # 2026-11-12 proposal; the other six are pattern-guesses to verify on
+      # first odds (round of 2026-11-21/22). A wrong guess fails safe: decide
+      # warn-skips the match and unmapped_team_names flags the real rendering.
+      female:
+        KA/Þór: KA/Þór kv              # 1270 proposal, 2026-11-12
+        Selfoss: Selfoss kv            # 1270 proposal, 2026-11-12
+        Fram: Fram kv                  # 1270 proposal, 2026-11-12
+        Stjarnan: Stjarnan kv          # 1270 proposal, 2026-11-12
+        Grótta: Grótta kv              # pattern-guess
+        HK: HK kv                      # pattern-guess
+        Haukar: Haukar kv              # pattern-guess
+        Valur: Valur kv                # pattern-guess
+        ÍBV: ÍBV kv                    # pattern-guess
+        ÍR: ÍR kv                      # pattern-guess
   # Publish cells. Handball ingests a third division, PO, which is the shared
   # post-season bracket rather than a league -- it is NOT a publish division and
   # is deliberately absent here. No cup division is ingested, so both entries
