@@ -98,8 +98,12 @@ if (recover) {
   files <- list.files(csv_dir, pattern = "[.]csv$", full.names = TRUE)
   stopifnot(length(files) == 4)
   fit <- as_cmdstan_fit(files)
-  wall <- NA_real_
+  # A fifth argument says the fit ran inside the machine limiter: then the slowest
+  # chain's elapsed time stands in for the wall time. Without it no time is reported.
+  in_slot <- length(args) >= 5
+  wall <- if (in_slot) max(fit$time()$chains$total) else NA_real_
   machine$started <- "recovered from chain CSVs; start conditions not recorded"
+  machine$slots <- if (in_slot) args[[5]] else NA_character_
 } else {
   stale <- file.remove(list.files(csv_dir, full.names = TRUE))
   t0 <- Sys.time()
@@ -117,6 +121,9 @@ sp <- fit$sampler_diagnostics(format = "df")
 sizes <- fit$metadata()$stan_variable_sizes
 n_of <- function(v) prod(sizes[[v]])
 sampled <- names(mod$variables()$parameters)
+# WHY: a rung can switch a block off (the static v2 form has no within-season terms),
+# which leaves zero-length parameters; they are absent from the output's variable list.
+sampled <- intersect(sampled, names(sizes))
 summ <- summarise_draws(fit$draws(variables = sampled), "mean", "sd", "rhat", "ess_bulk", "ess_tail")
 summ <- as.data.frame(summ)
 

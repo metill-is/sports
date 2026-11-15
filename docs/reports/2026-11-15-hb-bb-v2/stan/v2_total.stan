@@ -14,7 +14,7 @@ transformed data {
 }
 parameters {
   vector[ND] alpha;
-  array[ND] sum_to_zero_vector[NS] s_season;
+  matrix[ND, NS - 1] s_z;                    // standardised season-to-season steps of the scoring level
   real<lower=0> sigma;                       // sd of a match total around its mean
   real<lower=0> sigma_b;
   real<lower=0> sigma_u;
@@ -29,7 +29,11 @@ transformed parameters {
 #include _states_v2.stan
   matrix[ND, NS] level;                      // division scoring level by season
   vector[N] eta;
-  for (d in 1:ND) level[d] = alpha[d] + s_season[d]';
+  for (d in 1:ND) {
+    // Random walk over seasons, centred on zero: alpha[d] is the division's mean level.
+    row_vector[NS] path = append_col(0, cumulative_sum(sigma_season * s_z[d]));
+    level[d] = alpha[d] + path - mean(path);
+  }
   {
     vector[K * NS] uv = to_vector(u);
     vector[TS * W] wv = to_vector(w);
@@ -41,7 +45,7 @@ transformed parameters {
 }
 model {
   alpha ~ normal(level_mean, level_sd);
-  for (d in 1:ND) (s_season[d][2:NS] - s_season[d][1:(NS - 1)]) ~ normal(0, sigma_season);
+  to_vector(s_z) ~ std_normal();
   sigma ~ exponential(rate_sigma);
   sigma_b ~ exponential(rate_b);
   sigma_u ~ exponential(rate_u);
