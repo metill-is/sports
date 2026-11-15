@@ -206,9 +206,11 @@ handball_iceland:
     team_names:
       # All 12 Olísdeild karla 2026-27 teams. Lengjan renders them as our
       # canonical names (every handball odds row 2026-03-04..05-07), except
-      # Þór, which was also "Þór Akureyri". Víkingur has never appeared on
-      # Lengjan; "Víkingur Rvk" is a guess from football's rendering, and an
-      # unmapped name fails safe (decide skips the match).
+      # Þór, which was also "Þór Akureyri", and Víkingur, which the API renders
+      # with a trailing space ("Víkingur ", odds rows 2026-11-01 and
+      # 2026-11-15; unmapped_team_names went FAIL on it). "Víkingur Rvk" is
+      # still a guess from football's rendering, and an unmapped name fails
+      # safe (decide skips the match).
       male:
         Afturelding: Afturelding
         FH: FH
@@ -220,7 +222,7 @@ handball_iceland:
         Selfoss: Selfoss
         Stjarnan: Stjarnan
         Valur: Valur
-        Víkingur: [Víkingur, Víkingur Rvk]
+        Víkingur: [Víkingur, "Víkingur ", Víkingur Rvk]
         Þór: [Þór, Þór Akureyri]
         ÍR: ÍR
         ÍH: ÍH Keflavík
