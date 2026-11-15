@@ -6,7 +6,9 @@ fv2_dir <- testthat::test_path("..", "..", "research", "football-v2")
 skip_if_not(dir.exists(fv2_dir), "research/football-v2 not present")
 skip_if_not_installed("Matrix")
 fv2 <- new.env()
-for (f in c("spec.R", "engines.R", "score.R")) sys.source(file.path(fv2_dir, f), envir = fv2)
+for (f in c("spec.R", "engines.R", "score.R", "evaluate.R", "adapter.R", "data.R")) {
+  sys.source(file.path(fv2_dir, f), envir = fv2)
+}
 
 toy_matches <- function() {
   data.frame(
@@ -367,4 +369,186 @@ test_that("the Stan program compiles and reads the spec", {
   expect_identical(dim(f$draws$att), c(200L, spec$S))
   expect_identical(colnames(f$draws$hyper)[1:3], c("tau_att", "sigma_att", "kappa_att"))
   expect_lt(max(abs(rowSums(f$draws$att[, spec$first_slot]))), 1e-8)
+})
+
+toy_draws <- function(spec, n_draw = 3L, seed = 5L) {
+  set.seed(seed)
+  list(
+    c_home = stats::rnorm(n_draw, 0.5, 0.05), c_away = stats::rnorm(n_draw, 0.3, 0.05),
+    att = matrix(stats::rnorm(n_draw * spec$S, 0, 0.3), n_draw),
+    def = matrix(stats::rnorm(n_draw * spec$S, 0, 0.3), n_draw),
+    ha_att = matrix(stats::rnorm(n_draw * spec$K, 0, 0.05), n_draw),
+    ha_def = matrix(stats::rnorm(n_draw * spec$K, 0, 0.05), n_draw)
+  )
+}
+
+# What prepare_data() hands over for the toy league, with teams numbered in a
+# different order from the spec's so the adapter has to map them.
+toy_prep <- function() {
+  m <- toy_matches()
+  teams <- data.frame(team = c("C", "A", "B"), team_nr = 1:3)
+  nr <- function(x) match(x, teams$team)
+  appearance <- function(team, i) sum(c(m$home_team[seq_len(i)], m$away_team[seq_len(i)]) == team)
+  list(
+    teams = teams,
+    stan_data = list(
+      N = nrow(m), N_rounds = 5L,
+      team1 = nr(m$home_team), team2 = nr(m$away_team),
+      round1 = vapply(seq_len(nrow(m)), function(i) appearance(m$home_team[i], i), integer(1)),
+      round2 = vapply(seq_len(nrow(m)), function(i) appearance(m$away_team[i], i), integer(1)),
+      goals1 = m$home_score, goals2 = m$away_score
+    ),
+    pred_d = data.frame(
+      game_nr = 1L, match_date = as.Date("2022-05-18"), home_team = "C", away_team = "A",
+      division = "L"
+    )
+  )
+}
+
+test_that("the adapter speaks the production fit's variable names", {
+  prep <- toy_prep()
+  pred <- fv2$fv2_pred_from_prep(prep$pred_d)
+  expect_identical(pred$season, 2022L)
+  expect_identical(pred$cell, "L@2022")
+  spec <- fv2$fv2_build(toy_matches(), pred)
+  draws <- toy_draws(spec)
+  fit <- fv2$fv2_as_fit(draws, spec, prep)
+  get <- function(v) unclass(posterior::as_draws_matrix(fit$draws(v)))
+  expect_setequal(fit$variables, c(
+    "mean_log_goals", "alpha_mu3", "beta_mu3_strength_diff",
+    "home_advantage_off", "home_advantage_def", "home_advantage_tot",
+    "cur_offense_away", "cur_defense_away", "cur_strength_away",
+    "cur_offense_home", "cur_defense_home", "cur_strength_home",
+    "offense", "defense", "lp__", "goals1_pred", "goals2_pred"
+  ))
+  # Production's simulators rebuild the rates as intercept + home advantage.
+  expect_equal(
+    as.numeric(get("mean_log_goals")) + get("home_advantage_off")[, 2] - draws$ha_att[, 1],
+    draws$c_home,
+    ignore_attr = TRUE
+  )
+  expect_equal(
+    as.numeric(get("mean_log_goals")) - get("home_advantage_def")[, 2] + draws$ha_def[, 1],
+    draws$c_away,
+    ignore_attr = TRUE
+  )
+  expect_equal(
+    get("home_advantage_tot")[, 1], draws$c_home - draws$c_away + draws$ha_att[, 3] + draws$ha_def[, 3],
+    ignore_attr = TRUE
+  )
+  # Team "A" is production's team 2 and the spec's team 1.
+  a_slots <- spec$slots$slot[spec$slots$team == 1L & spec$slots$has_obs]
+  expect_equal(get("cur_offense_away")[, 2], draws$att[, max(a_slots)], ignore_attr = TRUE)
+  off <- posterior::draws_of(posterior::as_draws_rvars(fit$draws("offense"))$offense)
+  expect_identical(dim(off), c(3L, 5L, 3L))
+  # A's two matches in its first week are rounds 1 and 2: the same weekly state.
+  expect_equal(off[, 1, 2], draws$att[, a_slots[1]], ignore_attr = TRUE)
+  expect_equal(off[, 2, 2], draws$att[, a_slots[1]], ignore_attr = TRUE)
+  expect_equal(off[, 4, 2], draws$att[, a_slots[3]], ignore_attr = TRUE)
+  # C has played three matches; later rounds carry its latest state forward.
+  c_slots <- spec$slots$slot[spec$slots$team == 3L & spec$slots$has_obs]
+  expect_equal(off[, 4, 1], draws$att[, max(c_slots)], ignore_attr = TRUE)
+  expect_equal(off[, 5, 1], draws$att[, max(c_slots)], ignore_attr = TRUE)
+  expect_true(all(get("alpha_mu3") < -30))
+  expect_identical(dim(get("goals1_pred")), c(3L, 1L))
+  expect_true(all(get("goals1_pred") == round(get("goals1_pred"))))
+  expect_error(fit$draws("sigma"), "no draws")
+})
+
+test_that("production's extract_posteriors reads the adapted fit", {
+  prep <- toy_prep()
+  spec <- fv2$fv2_build(toy_matches(), fv2$fv2_pred_from_prep(prep$pred_d))
+  fit <- fv2$fv2_as_fit(toy_draws(spec, n_draw = 4L), spec, prep)
+  b <- extract_posteriors(
+    fit, prep$pred_d, list(sport = "football", country = "iceland"), "male",
+    fit_date = as.Date("2022-05-15")
+  )
+  expect_identical(nrow(b), 4L)
+  expect_identical(b$home_team, rep("C", 4))
+  expect_identical(sort(b$draw_id), 1:4)
+  expect_true(all(b$home_goals >= 0))
+})
+
+test_that("the adapter refuses training rows in a different order", {
+  prep <- toy_prep()
+  spec <- fv2$fv2_build(toy_matches()[c(2, 1, 3:6), ], fv2$fv2_pred_from_prep(prep$pred_d))
+  expect_error(fv2$fv2_as_fit(toy_draws(spec), spec, prep))
+})
+
+test_that("division codes fold into leagues and rank from the top", {
+  expect_identical(
+    fv2$fv2_league_division(c("BD", "BD_UPPER_PO", "BD_LOWER_PO", "LD1_PO", "CUP", "LD3")),
+    c("BD", "BD", "BD", "LD1", NA, "LD3")
+  )
+  expect_identical(fv2$fv2_cell(c("BD_UPPER_PO", "CUP"), 2026L), c("BD@2026", "CUP@2026"))
+  league <- list(training_filter = list(divisions = c("BD", "BD_UPPER_PO", "BD_LOWER_PO", "LD1", "LD2")))
+  expect_identical(as.character(fv2$fv2_rank_order(league)), c("BD", "LD1", "LD2"))
+  m <- data.frame(
+    home_team = c("A", "A", "B", "A"), away_team = c("B", "C", "C", "B"),
+    season = c(2025L, 2025L, 2025L, 2026L),
+    league_division = c("LD1", NA, "LD1", "BD")
+  )
+  tab <- fv2$fv2_division_table(m, c("BD", "LD1"))
+  expect_identical(tab$division[tab$team == "A"], c("LD1", "BD"))
+  expect_identical(tab$rank[tab$team == "A"], c(2L, 1L))
+  expect_identical(tab$division[tab$team == "C"], "LD1")
+  expect_identical(fv2$fv2_division_table(m, "BD")$rank[1], 2L)
+})
+
+toy_wf <- function() {
+  one <- function(variant, shift) {
+    data.frame(
+      sex = rep(c("male", "female"), each = 3), variant = variant,
+      match_date = as.Date("2025-05-01") + c(0, 1, 7, 0, 1, 7),
+      home_team = c("A", "C", "A", "E", "G", "E"), away_team = c("B", "D", "C", "F", "H", "G"),
+      home_score = c(2, 0, 1, 3, 1, 0), away_score = c(1, 0, 2, 0, 1, 2),
+      cutoff = as.Date("2025-04-27") + c(0, 0, 7, 0, 0, 7),
+      phase = factor(c("early", "early", "late", "early", "early", "late"), c("early", "middle", "late")),
+      ls_1x2 = c(-0.9, -1.2, -1.0, -0.6, -1.3, -1.1) + shift,
+      ls_score = c(-3.1, -2.8, -3.3, -3.6, -2.9, -3.2) + shift,
+      rps = 0.2, p_home = c(0.5, 0.4, 0.45, 0.6, 0.35, 0.5)
+    )
+  }
+  d <- rbind(one("base", 0), one("alt", c(0.02, 0.01, 0.03, -0.01, 0.02, 0.01)))
+  d$key <- fv2$fv2_match_key(d)
+  d
+}
+
+test_that("score tables report losses and the home-win rate per group", {
+  d <- toy_wf()
+  tab <- fv2$fv2_score_table(d, c("variant", "sex"))
+  expect_identical(nrow(tab), 4L)
+  row <- tab[tab$variant == "base" & tab$sex == "male", ]
+  expect_identical(row$n, 3L)
+  expect_equal(row$logloss_1x2, mean(c(0.9, 1.2, 1.0)))
+  expect_equal(row$scoreline, mean(c(3.1, 2.8, 3.3)))
+  expect_equal(row$obs_home, 1 / 3)
+  expect_equal(row$p_home, mean(c(0.5, 0.4, 0.45)))
+})
+
+test_that("paired comparisons use only the matches both variants predicted", {
+  d <- toy_wf()
+  cmp <- fv2$fv2_compare(d, "base")
+  shift <- c(0.02, 0.01, 0.03, -0.01, 0.02, 0.01)
+  expect_identical(cmp$n, 6L)
+  expect_equal(cmp$diff, mean(shift))
+  expect_equal(cmp$se, stats::sd(shift) / sqrt(6))
+  by_sex <- fv2$fv2_compare(d, "base", "sex")
+  expect_equal(by_sex$diff[by_sex$group == "female"], mean(shift[4:6]))
+  dropped <- d[!(d$variant == "alt" & d$home_team == "A"), ]
+  expect_identical(fv2$fv2_compare(dropped, "base")$n, 4L)
+  expect_equal(fv2$fv2_compare(d, "base", metric = "ls_score")$diff, mean(shift))
+})
+
+test_that("an outside forecast is scored on the matches it shares", {
+  d <- toy_wf()
+  ext <- data.frame(
+    key = d$key[d$variant == "base"][1:2],
+    line_home = c(0.5, 0.2), line_draw = c(0.3, 0.5), line_away = c(0.2, 0.3)
+  )
+  b <- fv2$fv2_benchmark(d, ext, "line", "base")
+  expect_identical(nrow(b), 2L)
+  expect_equal(b$ls_line, log(c(0.5, 0.5)))
+  expect_equal(b$ls_model, c(-0.9, -1.2))
+  expect_identical(b$phome_line, c(0.5, 0.2))
 })

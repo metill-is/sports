@@ -3,7 +3,7 @@
 # every engine and variant trains on what a production fit at that cutoff saw.
 
 fv2_source <- function(dir = here::here("research", "football-v2")) {
-  for (f in c("spec.R", "engines.R", "score.R")) source(file.path(dir, f))
+  for (f in c("spec.R", "engines.R", "score.R", "evaluate.R", "adapter.R")) source(file.path(dir, f))
 }
 
 fv2_out_dir <- function() {
@@ -50,12 +50,22 @@ fv2_rank_order <- function(league) {
 
 #' Played Icelandic football results with the two columns the spec reads:
 #' `league_division` (NA for the cup) and the offset group `cell`.
-fv2_results <- function(sex, root = here::here("data")) {
+#'
+#' @param sort Order by date and home team. `FALSE` keeps the store's own
+#'   order, which is the order `prepare_data()` trains in.
+fv2_results <- function(sex, root = here::here("data"), sort = TRUE) {
   r <- read_table("results", root = root, filter = list(sport = "football", country = "iceland", sex = sex))
   r <- as.data.frame(r[!is.na(r$home_score) & !is.na(r$away_score), ])
   r$league_division <- fv2_league_division(r$division)
-  r$cell <- paste(ifelse(is.na(r$league_division), r$division, r$league_division), r$season, sep = "@")
-  r[order(r$match_date, r$home_team), ]
+  r$cell <- fv2_cell(r$division, r$season)
+  if (sort) r <- r[order(r$match_date, r$home_team), ]
+  r
+}
+
+#' Offset group of a match: its league (play-offs folded in) or cup, by season.
+fv2_cell <- function(division, season) {
+  league_division <- fv2_league_division(division)
+  paste(ifelse(is.na(league_division), division, league_division), season, sep = "@")
 }
 
 #' Training matches at a cutoff and the fixtures to predict after it.

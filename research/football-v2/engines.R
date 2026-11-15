@@ -83,7 +83,7 @@ fv2_fit_inla <- function(spec, int_strategy = "auto", n_samp = 1000L,
     "-1", names(fixed),
     "f(f1, model = 'generic3', Cmatrix = cmat, hyper = hyp, extraconstr = con)",
     if ("f2" %in% names(eff)) "f(f2, model = 'generic3', Cmatrix = cmat, hyper = hyp, extraconstr = con)",
-    if ("sty_k" %in% names(eff)) "f(sty_k, model = 'iid', hyper = list(prec = pc(p$tau, 0.2)))",
+    if ("sty_k" %in% names(eff)) "f(sty_k, model = 'iid', constr = TRUE, hyper = list(prec = pc(p$tau, 0.2)))",
     "f(ha_att, model = 'iid', hyper = hyp_iid)",
     "f(ha_def, model = 'iid', hyper = hyp_iid)",
     if (o$div_offsets) c("f(g_goal, model = 'iid', hyper = hyp_cell)", "f(g_ha, model = 'iid', hyper = hyp_cell)")
