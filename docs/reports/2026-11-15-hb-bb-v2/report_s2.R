@@ -246,6 +246,22 @@ if (have(val) && length(val) > 0) {
     ),
     note = "\"sd ratio\" is R-INLA's posterior sd over Stan's, median over states or matches. \"Plug-in\" fixes the hyperparameters at their mode, which is what the walk-forward uses. R-INLA times are single-core wall times on a shared machine."
   ))
+  worst_h <- val[[which.max(vapply(val, function(o) max(abs(o$hyper$diff_in_sd)), 1))]]
+  wh <- worst_h$hyper[which.max(abs(worst_h$hyper$diff_in_sd)), ]
+  add(sprintf(
+    paste0(
+      "<p><strong>Predictions agree.</strong> Across the %s comparisons the largest difference in a held-out match's expected margin or total is %s %s, the held-out log scores differ by at most %s per match, and the two leave-one-out estimates by at most %s in total. ",
+      "<strong>What differs is how weakly identified variance is split.</strong> The largest hyperparameter difference is %s posterior sds (<code>%s</code> in the %s %s model: Stan %s, R-INLA %s). ",
+      "In the total models the data cannot say sharply how much of a team's scoring level is club, season or within-season, the posterior of those sds is wide and skewed, and R-INLA's integration grid (%s points) describes it more narrowly than NUTS does. The sum of the three, which is what a forecast uses, is the same. ",
+      "The Stan reference itself is the weaker side on precision here: its smallest effective sample size is %s, against R-hat up to %s.</p>"
+    ),
+    length(val), num(max(vapply(val, function(o) o$pred[["max_abs_mean_diff"]], 1)), 2), "goals or points",
+    num(max(vapply(val, function(o) abs(o$log_score[["stan"]] - o$log_score[["inla_full_samples"]]), 1)), 4),
+    num(max(vapply(val, function(o) abs(o$loo[[1]] - o$loo[[2]]), 1)), 1),
+    num(abs(wh$diff_in_sd), 2), esc(wh$parameter), tolower(LAB[[worst_h$cell]]), worst_h$response, num(wh$stan_mean, 2), num(wh$inla_mean, 2),
+    paste(range(vapply(val, function(o) o$inla[["hyper_points"]], 1)), collapse = " to "),
+    int(min(vapply(val, function(o) o$stan[["min_ess"]], 1))), num(max(vapply(val, function(o) o$stan[["max_rhat"]], 1)), 3)
+  ))
   for (o in val) {
     h <- o$hyper
     ht <- data.frame(

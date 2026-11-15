@@ -9,7 +9,9 @@ esc <- function(x) {
 # Fixed decimals with a real minus sign; NA becomes a dash.
 num <- function(x, d = 2, plus = FALSE) {
   out <- formatC(abs(x), format = "f", digits = d, big.mark = ",")
-  sign <- ifelse(x < 0, "−", if (plus) "+" else "")
+  # WHY: a value that rounds to zero carries no sign ("-0.00" reads as a result).
+  zero <- !is.na(x) & round(abs(x), d) == 0
+  sign <- ifelse(zero, "", ifelse(x < 0, "−", if (plus) "+" else ""))
   out <- paste0(sign, out)
   out[is.na(x)] <- "–"
   out

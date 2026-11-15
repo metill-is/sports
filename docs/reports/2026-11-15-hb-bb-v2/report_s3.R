@@ -43,7 +43,7 @@ if (have(hbm) && have(hbf)) {
   sdm <- last_par("hb_m", "none", "shift_div")
   add(sprintf(
     paste0(
-      "<p><strong>Men.</strong> Level scores are more common than the band predicts: %s observed against %s out of sample, and on all data the shift is %s (se %s) on the logit scale, about %s%% more draws. ",
+      "<p><strong>Men.</strong> Level scores are more common than the band predicts: %s observed against %s out of sample, and on all data the shift is %s (se %s) on the logit scale, about %s %% more draws. ",
       "Broken down by division, the surplus is in Ol&iacute;sdeild (shift %s on the seasons before 2027) and absent in Grill 66 (%s). ",
       "It is not stable enough to pay yet: the share of level scores in Ol&iacute;sdeild swings from season to season, the shift estimated on earlier seasons overshoots the later ones, and the out-of-sample W/D/L log likelihood changes by %s with one shift and %s with a shift per division. ",
       "<strong>Women.</strong> The band is calibrated as it stands: %s observed against %s, shift %s (se %s).</p>"
@@ -72,6 +72,27 @@ if (have(hbm) && have(hbf)) {
     head = c("Expected margin, in predictive sds", "Men: matches", "observed", "band", "with shift", "Women: matches", "observed", "band", "with shift"),
     note = "Draw calibration by closeness of the match, out of sample."
   ))
+  # Production's own draw probability, where it can be read off.
+  pdraw <- do.call(rbind, lapply(hb, function(cl) {
+    rows <- list()
+    r0 <- if (have(ladder)) ladder$scores[[paste(cl, "r0_prod")]] else NULL
+    if (have(r0)) {
+      rows[[1]] <- data.frame(cell = LAB[[cl]], what = "Production fit at the fixed cutoff, held-out matches", n = int(nrow(r0)),
+                              pred = pct(mean(r0$p_draw), 1), obs = pct(mean(r0$margin == 0), 1))
+    }
+    j <- if (have(cmp)) cmp[[cl]]$cmp else NULL
+    if (have(j)) {
+      rows[[2]] <- data.frame(cell = LAB[[cl]], what = "Production's stored forecasts", n = int(nrow(j)),
+                              pred = pct(mean(j$p_draw.prod), 1), obs = pct(mean(j$margin == 0), 1))
+      rows[[3]] <- data.frame(cell = LAB[[cl]], what = "v2 walk-forward, same matches (no shift)", n = int(nrow(j)),
+                              pred = pct(mean(j$p_draw.v2), 1), obs = pct(mean(j$margin == 0), 1))
+    }
+    do.call(rbind, rows)
+  }))
+  if (have(pdraw)) {
+    add(tbl(pdraw, right = c("n", "pred", "obs"), head = c("Cell", "Forecast", "Matches", "Mean predicted draw probability", "Level scores observed"),
+            note = "Production's draw probability is the share of its posterior draws with |margin| at most 0.5. These samples are small; the September audit's 5.5 % predicted against 4.6 % observed was on a different sample."))
+  }
   add("<h3>Possession-informed variance against a free variance</h3>")
   add("<p>The literature describes handball goals as binomial counts: about 50 to 60 attacks per side at about 50 % efficiency, with both sides having the same number of attacks. That gives a variance for the margin and the total that follows from the expected scores, with two parameters (attacks per side and the variance of that number) in place of two free sds. The test: fit each variance form on the walk-forward predictions of earlier seasons, score the next season, compare with the free constant variance.</p>")
   vr <- function(sc, cols) vapply(cols, function(cn) if (cn %in% names(sc)) pd(sc, cn, sub("_.*$", "_raw", cn)) else "–", "")
@@ -93,15 +114,24 @@ if (have(hbm) && have(hbf)) {
       int(nrow(hbm)), int(nrow(hbf))
     )
   ))
+  # Variance of a side's score around its fitted mean, relative to a binomial with 55 attacks.
+  binom55 <- function(cl, div) {
+    d <- desc[[cl]]$d
+    d <- d[d$division == div, ]
+    mu <- c((d$mu_t + d$mu_m) / 2, (d$mu_t - d$mu_m) / 2)
+    y <- c(d$home_score, d$away_score)
+    num(mean((y - mu)^2 / (mu * (1 - mu / 55))), 2)
+  }
   nu_m <- last_par("hb_m", "none", "student")
   nu_f <- last_par("hb_f", "none", "student")
   add(sprintf(
     paste0(
       "<p>Nothing beats the free variance. The possession-informed form is no better for men and clearly worse for the women's margin (%s), the cells the literature disagrees about. ",
-      "The scores do look binomial in one respect: each side's variance is close to that of a binomial with about 55 attacks in the top divisions (ratio 1.07 men, 1.02 women; 1.2 in Grill 66). But the same count also drives a positive correlation between the two sides' scores, and once that is honoured the implied margin variance has the wrong shape: it predicts no growth with the mismatch, and the data show a little. ",
+      "The scores do look binomial in one respect: each side's variance is close to that of a binomial with 55 attacks in Ol&iacute;sdeild (ratio %s men, %s women; %s and %s in Grill 66). But the possession form ties the margin variance and the total variance together through its two parameters, and two free sds fit both better. ",
       "A Student-t with fitted degrees of freedom (%s for the men's margin, %s for the women's) changes the score by less than its standard error. <strong>Handball keeps a Gaussian with one free sd for the margin and one for the total.</strong></p>"
     ),
-    pd(hbf, "lsm_possession", "lsm_raw"), num(nu_m[1], 0), num(nu_f[1], 0)
+    pd(hbf, "lsm_possession", "lsm_raw"), binom55("hb_m", "OD"), binom55("hb_f", "OD"), binom55("hb_m", "G66"), binom55("hb_f", "G66"),
+    num(nu_m[1], 0), num(nu_f[1], 0)
   ))
 } else {
   add(missing_note("the handball walk-forward"))
@@ -280,7 +310,15 @@ if (have(hbm) && have(bbm)) {
             head = c("Cell", "Within-season sd (margin model)", "Season-level sd", "Match sd", "Leave-one-out gain from the within-season term",
                      "Held-out matches", "Held-out margin log score: AR(1) &minus; static", "Held-out result log likelihood"),
             note = "Fixed cutoff 31 January 2026, R-INLA with full hyperparameter integration. The within-season term is a weekly AR(1) around the season level with weekly correlation 0.98; its sd is the size of a team's typical departure from its season level. Median [5 %, 95 %]."))
-    add("<p>In handball the within-season sd is about half a goal against a match sd near five, and the term buys nothing. In basketball it is about five points, the same order as the season-level sd: teams do move within a season, as the import changes would suggest. Whether tracking that movement improves forecasts is what the walk-forward tests.</p>")
+    add("<p>In handball the within-season sd is half a goal (men) to one goal (women) against a match sd near five, and the term buys nothing. In basketball it is five to seven points, about half the match sd: teams do move within a season, as the import changes would suggest. Whether tracking that movement improves forecasts is what the walk-forward tests.</p>")
+  }
+  wr <- rd("within_rho.rds")
+  if (have(wr)) {
+    rng <- function(cl, col) paste(num(range(wr[wr$cell == cl, col]), if (col == "loo") 1 else 3), collapse = " to ")
+    add(sprintf(
+      "<p class=\"note\">The weekly correlation of the within-season term is fixed, not estimated, and the data cannot tell 0.90 from 0.98: for the basketball margin model the leave-one-out density stays within %s (men) and %s (women) across 0.90, 0.95 and 0.98, and the held-out margin log score within %s and %s.</p>",
+      rng("bb_m", "loo"), rng("bb_f", "loo"), rng("bb_m", "ls_margin"), rng("bb_f", "ls_margin")
+    ))
   }
   wc <- wf$within_cmp
   if (have(wc) && length(wc) > 0) {

@@ -43,10 +43,10 @@ bb_form <- if (!have(bb_within)) {
   "The same model, <strong>static</strong> form, trained on <strong>regulation-time</strong> scores."
 }
 within_txt <- if (!have(bb_within)) {
-  "Within-season movement: handball does not need it (within-season sd about half a goal, no gain in leave-one-out or held-out scores). In basketball the fitted within-season sd is about five points and leave-one-out improves, so the term may earn its place there; the walk-forward that settles it had not finished when this report was built."
+  "Within-season movement: handball does not need it (within-season sd half a goal to one goal, no gain in leave-one-out or held-out scores). In basketball the fitted within-season sd is five to seven points and leave-one-out improves, so the term may earn its place there; the walk-forward that settles it had not finished when this report was built."
 } else {
   sprintf(
-    "Within-season movement: handball does not need it (within-season sd about half a goal, no gain). In basketball the fitted within-season sd is about five points; over %s walk-forward matches (seasons 2025 to 2027, both sexes) the AR(1) form changes the margin log score by %s, the total by %s and the result log likelihood by %s per match against the static form, so the term %s.",
+    "Within-season movement: handball does not need it (within-season sd half a goal to one goal, no gain). In basketball the fitted within-season sd is five to seven points; over %s walk-forward matches (seasons 2025 to 2027, both sexes) the AR(1) form changes the margin log score by %s, the total by %s and the result log likelihood by %s per match against the static form, so the term %s.",
     int(bb_within$n), pm(bb_within$m, bb_within$m_se, 4), pm(bb_within$t, bb_within$t_se, 4), pm(bb_within$w, bb_within$w_se, 4),
     if (bb_keep_ar1) "is kept for basketball" else "is left out: the gain is not established, and the static form is the simpler one to run"
   )
@@ -101,6 +101,14 @@ add(tbl(layers,
   note = "File and line references behind this table came from a read-only map of the fit, extract, publish and decide code on this branch; the entry point, the extract's draw pulls and the simulator's match function were re-read directly. The two-phase split keeps the engine swap separable from any change to what the site shows."
 ))
 
+add("<h3>Engine risks found on the way</h3>")
+add("<ul>",
+    "<li><strong>Starting values.</strong> From R-INLA's default starting precision (an sd of 0.14) the optimiser settled, for men's basketball totals, in a mode with the team effects switched off: a fit that converges and is wrong. <code>fit_v2_inla()</code> starts every sd at a fifth of its prior bound, and the proposed diagnostics gate checks that no sd sits at a bound.</li>",
+    "<li><strong>Constraints are what cost time.</strong> A within-season random walk that sums to zero needs one linear constraint per team-season (over a hundred), and R-INLA then takes 40 to 60 s per fit against 5 s for the static form. The AR(1) form needs none and takes about 15 s.</li>",
+    "<li><strong>Weakly identified variances.</strong> R-INLA's hyperparameter posterior is narrower than NUTS's where the data cannot separate club, season and within-season variance. Forecasts are unaffected; published interval widths for individual team strengths are within a few per cent at the median but differ more for some teams.</li>",
+    "<li><strong>NUTS has its own trouble with this model.</strong> The season walk of the total model has six steps; in its centred form NUTS produced up to 75 divergences, and it was re-parameterised. R-INLA integrates that variance numerically and has no such failure.</li>",
+    "<li><strong>Installation.</strong> R-INLA is not on CRAN and ships its own binary; the version should be pinned in CI as CmdStan is.</li>",
+    "</ul>")
 add("<h3>Shadow period</h3>")
 add(
   "<ol>",
