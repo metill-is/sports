@@ -131,6 +131,10 @@ res <- list(
   simulation = read_if(file.path(out_dir, "sim_compare_wc2026.rds")),
   production_forecast = read_if(file.path(out_dir, "prod_forecast_wc2026.rds")),
   women = read_if(file.path(out_dir, "women_check.rds")),
+  current = list(
+    men = read_if(file.path(out_dir, "current_men.rds")),
+    women = read_if(file.path(out_dir, "current_women.rds"))
+  ),
   stan = stan
 )
 saveRDS(res, target, compress = "xz")

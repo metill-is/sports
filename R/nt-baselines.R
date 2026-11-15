@@ -107,6 +107,10 @@ nt_elo_baseline <- function(results, cutoff, home, away, venue,
   fit_h <- stats::glm(hs ~ x, family = stats::poisson())
   fit_a <- stats::glm(as_ ~ x, family = stats::poisson())
 
+  unknown <- setdiff(c(home, away), names(elo$ratings))
+  if (length(unknown) > 0L) {
+    cli::cli_abort("Team{?s} with no match before the cutoff: {.val {unknown}}.")
+  }
   x_new <- (elo$ratings[home] - elo$ratings[away] + 100 * venue) / 100
   x_new <- unname(x_new)
   p_le_a <- stats::plogis(ol$cut_away - ol$slope * x_new)

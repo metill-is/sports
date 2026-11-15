@@ -8,8 +8,7 @@ nt_head_to_head(
   fit,
   teams,
   method = c("extra_time", "replay"),
-  et_factor = 1/3,
-  shootout_p = 0.5
+  et_factor = 1/3
 )
 }
 \arguments{
@@ -17,18 +16,13 @@ nt_head_to_head(
 
 \item{teams}{Team names.}
 
-\item{method}{`"extra_time"` (extra time, then shootout) or `"replay"` (a
-draw is split in proportion to the 90-minute win probabilities).}
-
-\item{et_factor}{Extra-time scoring rate as a fraction of the 90-minute
-rate (1/3 is the same per-minute rate over 30 minutes).}
-
-\item{shootout_p}{Probability that side A wins a shootout.}
+\item{method, et_factor}{See [nt_knockout_win_prob()].}
 }
 \value{
 Matrix teams x teams; `[a, b]` is P(a advances against b), averaged
-  over posterior draws.
+  over posterior draws, with `[a, b] + [b, a] = 1`.
 }
 \description{
-Head-to-head advancement probabilities at a neutral venue.
+Shootouts are a coin toss here: a tilted shootout needs a rule for which
+side of each pair it favours, which a symmetric matrix cannot carry.
 }

@@ -52,6 +52,31 @@ test_that("extra-time ties are level after 90 minutes", {
   expect_equal(sum(et$shootout), 12L)
 })
 
+test_that("every extra-time tie falls in the knockout stage of its tournament", {
+  et <- nt_extra_time_matches()
+  spec <- nt_tournaments()
+  per_key <- vapply(seq_len(nrow(spec)), function(i) {
+    sum(et$match_date >= spec$knockout_start[i] & et$match_date <= spec$end[i])
+  }, integer(1))
+  expect_equal(stats::setNames(per_key, spec$key), c(wc2022 = 5L, euro2024 = 5L, wc2026 = 9L))
+  expect_equal(sum(per_key), nrow(et))
+})
+
+test_that("an extra-time winner is scored as level after 90 minutes", {
+  r <- nt_test_results(
+    "2026-07-19", "Spain", "Argentina", 1, 0, "FIFA World Cup", "United States", TRUE,
+    "2026-07-01", "Senegal", "Belgium", 2, 3, "FIFA World Cup", "United States", TRUE
+  )
+  m <- nt_tournament_matches(r, "wc2026")
+  final <- m[m$home_team == "Spain", ]
+  r32 <- m[m$home_team == "Senegal", ]
+  expect_equal(c(final$home_90, final$away_90), c(0L, 0L))
+  expect_equal(c(final$home_score, final$away_score), c(1L, 0L))
+  expect_equal(c(r32$home_90, r32$away_90), c(2L, 2L))
+  expect_equal(c(r32$home_score, r32$away_score), c(2L, 3L))
+  expect_true(all(m$extra_time))
+})
+
 test_that("core teams need a sanctioned qualifier", {
   r <- nt_test_results(
     "2024-01-01", "A", "B", 1, 0, "FIFA World Cup qualification", "A", FALSE,

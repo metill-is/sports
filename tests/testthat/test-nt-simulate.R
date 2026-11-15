@@ -99,3 +99,26 @@ test_that("the replay rule never produces extra time or shootouts", {
   sim <- nt_simulate_world_cup(fit, s, n_sims = 200L, knockout = "replay", seed = 1L)
   expect_equal(unname(sim$decided), c(1, 0, 0))
 })
+
+test_that("a single simulated tournament runs", {
+  s <- wc_structure()
+  teams <- unlist(s$groups, use.names = FALSE)
+  fit <- nt_test_fit(stats::setNames(rep(0, 48), teams))
+  sim <- nt_simulate_world_cup(fit, s, n_sims = 1L, seed = 1L)
+  expect_equal(sum(sim$teams$p_champion), 1)
+  expect_equal(sum(sim$teams$p_advance), 32)
+})
+
+test_that("simulation uses each draw's own strengths", {
+  s <- wc_structure()
+  teams <- unlist(s$groups, use.names = FALSE)
+  fit <- nt_test_fit(stats::setNames(rep(0, 48), teams), n_draws = 2L)
+  fit$draws$theta[1, "Iran"] <- 4
+  fit$draws$theta[2, "Iran"] <- -4
+  sim <- nt_simulate_world_cup(fit, s, n_sims = 400L, seed = 2L)
+  iran <- sim$teams[sim$teams$team == "Iran", ]
+  expect_equal(iran$p_first, 0.5, tolerance = 0.02)
+  expect_equal(iran$p_fourth, 0.5, tolerance = 0.05)
+  expect_gt(iran$p_champion, 0.45)
+  expect_lt(iran$p_champion, 0.52)
+})

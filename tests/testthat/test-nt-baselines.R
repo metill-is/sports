@@ -47,12 +47,19 @@ test_that("the Elo baseline ignores everything on or after the cutoff", {
     tournament = "Friendly", country = home, neutral = FALSE
   )
   cutoff <- as.Date("2020-01-01")
+  r$match_date[200L] <- cutoff
+  r <- r[order(r$match_date), ]
   tampered <- r
   late <- tampered$match_date >= cutoff
+  expect_true(any(tampered$match_date == cutoff))
   tampered$home_score[late] <- 9L
   a <- nt_elo_baseline(r, cutoff, c("A", "B"), c("C", "D"), venue = c(1, 0))
   b <- nt_elo_baseline(tampered, cutoff, c("A", "B"), c("C", "D"), venue = c(1, 0))
   expect_identical(a$probs, b$probs)
+  before <- r
+  before$home_score[before$match_date == max(before$match_date[before$match_date < cutoff])] <- 9L
+  c_ <- nt_elo_baseline(before, cutoff, c("A", "B"), c("C", "D"), venue = c(1, 0))
+  expect_false(identical(a$probs, c_$probs))
   expect_equal(a$probs$p_home + a$probs$p_draw + a$probs$p_away, c(1, 1))
   expect_equal(apply(a$grid, 1L, sum), c(1, 1), tolerance = 1e-6)
 })
@@ -105,4 +112,26 @@ test_that("the shared component adds to both sides' goals", {
     dpois(1, 1.2) * dpois(1, 0.9) * dpois(0, 0.2) + dpois(0, 1.2) * dpois(0, 0.9) * dpois(1, 0.2)
   ))
   expect_equal(grid[2, 2], want_11)
+})
+
+test_that("the Elo baseline orders the outcome by rating and venue", {
+  r <- tibble::tibble(
+    match_date = as.Date("2015-01-01") + seq_len(300L) * 5L,
+    home_team = rep(c("Strong", "Weak", "Strong", "Mid"), 75L),
+    away_team = rep(c("Weak", "Mid", "Mid", "Weak"), 75L),
+    home_score = rep(c(3L, 0L, 2L, 1L), 75L), away_score = rep(c(0L, 1L, 1L, 1L), 75L),
+    tournament = "Friendly", country = "X", neutral = TRUE
+  )
+  f <- nt_elo_baseline(r, as.Date("2020-01-01"), c("Strong", "Weak", "Mid"), c("Weak", "Strong", "Mid2"),
+    venue = c(0, 0, 0)
+  ) |>
+    expect_error("Mid2")
+  f <- nt_elo_baseline(
+    r, as.Date("2020-01-01"), c("Strong", "Weak", "Strong"), c("Weak", "Strong", "Weak"),
+    venue = c(0, 0, 1)
+  )
+  expect_gt(f$probs$p_home[1], f$probs$p_away[1])
+  expect_lt(f$probs$p_home[2], f$probs$p_away[2])
+  expect_gte(f$probs$p_home[3], f$probs$p_home[1])
+  expect_gt(f$probs$eg_home[1], f$probs$eg_away[1])
 })

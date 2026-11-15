@@ -85,14 +85,17 @@ nt_simulate_knockout <- function(rate_a, rate_b,
 
 #' Head-to-head advancement probabilities at a neutral venue.
 #'
+#' Shootouts are a coin toss here: a tilted shootout needs a rule for which
+#' side of each pair it favours, which a symmetric matrix cannot carry.
+#'
 #' @param fit A fit from [nt_fit_inla()].
 #' @param teams Team names.
-#' @inheritParams nt_knockout_win_prob
+#' @param method,et_factor See [nt_knockout_win_prob()].
 #' @return Matrix teams x teams; `[a, b]` is P(a advances against b), averaged
-#'   over posterior draws.
+#'   over posterior draws, with `[a, b] + [b, a] = 1`.
 #' @export
 nt_head_to_head <- function(fit, teams, method = c("extra_time", "replay"),
-                            et_factor = 1 / 3, shootout_p = 0.5) {
+                            et_factor = 1 / 3) {
   method <- match.arg(method)
   d <- fit$draws
   acc <- matrix(0, length(teams), length(teams), dimnames = list(teams, teams))
@@ -100,7 +103,7 @@ nt_head_to_head <- function(fit, teams, method = c("extra_time", "replay"),
     th <- d$theta[i, teams]
     dl <- d$delta[i, teams]
     rate <- exp(d$mu[i] + outer(th, th, "-") + outer(dl, dl, "+"))
-    acc <- acc + nt_knockout_win_prob(rate, t(rate), method, et_factor, shootout_p)
+    acc <- acc + nt_knockout_win_prob(rate, t(rate), method, et_factor, 0.5)
   }
   acc <- acc / length(d$mu)
   diag(acc) <- NA_real_
@@ -192,7 +195,11 @@ nt_simulate_world_cup <- function(fit, structure, n_sims = 20000L,
   third_key <- matrix(0, n_sims, n_groups)
   for (g in seq_len(n_groups)) {
     idx <- match(structure$groups[[g]], teams)
-    rk <- .nt_group_rank(pts[, idx], gf[, idx] - ga[, idx], gf[, idx])
+    rk <- .nt_group_rank(
+      pts[, idx, drop = FALSE],
+      gf[, idx, drop = FALSE] - ga[, idx, drop = FALSE],
+      gf[, idx, drop = FALSE]
+    )
     finish[, idx] <- rk$rank
     first[, g] <- idx[max.col(rk$rank == 1, ties.method = "first")]
     second[, g] <- idx[max.col(rk$rank == 2, ties.method = "first")]
