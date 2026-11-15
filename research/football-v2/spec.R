@@ -245,35 +245,137 @@ fv2_design <- function(spec, which = c("obs", "pred")) {
   out
 }
 
-#' The same steps as fv2_structure(), in the form the Stan programs read
-#' (stan/fv2.stan for attack and defence, stan/fv2_sq.stan for strength with
-#' an optional fixed style).
-fv2_stan_data <- function(spec) {
+#' Which Stan program implements a spec: stan/fv2.stan (attack and defence
+#' walks), stan/fv2_sq.stan (strength with an optional fixed style) or
+#' stan/fv2_rev.stan (either, with reversion at the season break).
+fv2_stan_program <- function(spec, est_rho = FALSE) {
   o <- spec$opts
-  stopifnot(o$rho == 1, !o$movers)
+  if (o$clock == "break" && (o$rho < 1 || est_rho)) {
+    return("fv2_rev.stan")
+  }
+  if (o$param == "sq") "fv2_sq.stan" else "fv2.stan"
+}
+
+#' The same prior as fv2_structure(), in the form the Stan programs read.
+#'
+#' @param est_rho Estimate the reversion coefficient instead of fixing it at
+#'   the spec's value (Stan only; INLA keeps it inside the precision matrix).
+fv2_stan_data <- function(spec, est_rho = FALSE) {
+  o <- spec$opts
+  program <- fv2_stan_program(spec, est_rho)
+  stopifnot(!o$movers, o$rho == 1 || program == "fv2_rev.stan")
   if (o$param == "sq") stopifnot(o$style != "rw", !o$div_offsets)
+  p <- spec$priors
+  out <- list(
+    K = spec$K, S = spec$S, N = spec$N,
+    home_slot = spec$obs$home_slot, away_slot = spec$obs$away_slot,
+    home_team = spec$obs$home_team,
+    goals_home = spec$obs$goals_home, goals_away = spec$obs$goals_away,
+    use_style = as.integer(o$param == "sq" && o$style == "static"),
+    c_prior_mean = p$c_mean, c_prior_sd = p$c_sd,
+    rate_tau = fv2_pc_rate(p$tau), rate_sigma = fv2_pc_rate(p$sigma),
+    rate_kappa = fv2_pc_rate(p$kappa), rate_omega = fv2_pc_rate(p$omega)
+  )
+  if (program == "fv2_rev.stan") {
+    stopifnot(!o$div_offsets)
+    return(c(
+      out, fv2_segments(spec),
+      list(n_field = if (o$param == "sq") 1L else 2L, est_rho = as.integer(est_rho), rho_fixed = o$rho)
+    ))
+  }
   st <- spec$steps
   step_in <- step_brk <- numeric(spec$S)
   step_in[st$slot[st$class == "in"]] <- sqrt(st$delta[st$class == "in"])
   step_brk[st$slot[st$class == "brk"]] <- sqrt(st$delta[st$class == "brk"])
-  p <- spec$priors
-  n_cell <- if (spec$opts$div_offsets) length(spec$cells) else 0L
-  list(
-    K = spec$K, S = spec$S, N = spec$N,
+  n_cell <- if (o$div_offsets) length(spec$cells) else 0L
+  c(out, list(
     slot_team = spec$slots$team, first_slot = spec$first_slot,
     step_in = step_in, step_brk = step_brk,
-    home_slot = spec$obs$home_slot, away_slot = spec$obs$away_slot,
-    home_team = spec$obs$home_team,
-    goals_home = spec$obs$goals_home, goals_away = spec$obs$goals_away,
     use_break = as.integer(o$clock == "break"),
-    use_style = as.integer(o$param == "sq" && o$style == "static"),
     n_cell = n_cell,
     cell = if (n_cell) spec$obs$cell_nr else integer(0),
-    c_prior_mean = p$c_mean, c_prior_sd = p$c_sd,
-    rate_tau = fv2_pc_rate(p$tau), rate_sigma = fv2_pc_rate(p$sigma),
-    rate_kappa = fv2_pc_rate(p$kappa), rate_omega = fv2_pc_rate(p$omega),
     rate_delta = fv2_pc_rate(p$delta)
+  ))
+}
+
+#' Season segments of the state chains, for the Stan program with reversion.
+#'
+#' A segment is one team's run of slots within one season. Inside a segment
+#' the state walks week by week; a segment starts from the entry level or from
+#' the previous segment's last state through the season-break step.
+#'
+#' @return Index arrays in Stan's layout. `seg_order` lists segments season by
+#'   season (`wave_start`/`wave_end` index into it), so every segment's
+#'   predecessor and every division mean it reverts toward are already
+#'   computed when it is reached.
+fv2_segments <- function(spec) {
+  stopifnot(spec$opts$clock == "break", !spec$opts$movers)
+  sl <- spec$slots
+  st <- spec$steps
+  brk <- st[st$class == "brk", , drop = FALSE]
+  starts <- sort(c(spec$first_slot, brk$slot))
+  seg_of_slot <- findInterval(sl$slot, starts)
+  n_seg <- length(starts)
+  seg_last <- as.integer(tapply(sl$slot, seg_of_slot, max))
+  seg_prev <- integer(n_seg)
+  seg_stay <- numeric(n_seg)
+  seg_group <- integer(n_seg)
+  seg_brk_sd <- numeric(n_seg)
+  if (nrow(brk)) {
+    at <- match(brk$slot, starts)
+    seg_prev[at] <- seg_of_slot[brk$prev]
+    seg_stay[at] <- as.numeric(brk$rho < 1 | (brk$move == 0 & !is.na(brk$from_div)))
+    grp <- ifelse(seg_stay[at] > 0, paste(brk$from_div, brk$from_season), NA)
+    seg_group[at] <- ifelse(is.na(grp), 0L, match(grp, unique(stats::na.omit(grp))))
+    seg_brk_sd[at] <- sqrt(brk$delta)
+  }
+  season <- sl$season[starts]
+  seg_order <- order(season, seq_len(n_seg))
+  waves <- sort(unique(season))
+  pos <- match(waves, season[seg_order])
+  step_in <- numeric(spec$S)
+  step_in[st$slot[st$class == "in"]] <- sqrt(st$delta[st$class == "in"])
+  list(
+    n_seg = n_seg, seg_of_slot = seg_of_slot, seg_first = starts, seg_last = seg_last,
+    seg_team = sl$team[starts], seg_prev = seg_prev, seg_stay = seg_stay,
+    seg_group = seg_group, n_group = max(seg_group, 0L), seg_brk_sd = seg_brk_sd,
+    seg_order = seg_order, n_wave = length(waves),
+    wave_start = pos, wave_end = c(pos[-1] - 1L, n_seg), step_in = step_in
   )
+}
+
+#' One state field from its innovations: the R twin of `walk()` in
+#' stan/fv2_rev.stan, used to test that the recursion and the precision in
+#' `fv2_structure()` describe the same prior.
+fv2_walk <- function(seg, lvl, z, z_brk, sigma, kappa, rho) {
+  ca <- cumsum(sigma * seg$step_in * z)
+  drift <- ca[seg$seg_last] - ca[seg$seg_first]
+  start <- finish <- numeric(seg$n_seg)
+  for (w in seq_len(seg$n_wave)) {
+    segs <- seg$seg_order[seg$wave_start[w]:seg$wave_end[w]]
+    gsum <- gcnt <- numeric(max(seg$n_group, 1L))
+    for (s in segs[seg$seg_group[segs] > 0]) {
+      g <- seg$seg_group[s]
+      gsum[g] <- gsum[g] + finish[seg$seg_prev[s]]
+      gcnt[g] <- gcnt[g] + 1
+    }
+    for (s in segs) {
+      if (seg$seg_prev[s] == 0L) {
+        start[s] <- lvl[seg$seg_team[s]]
+      } else {
+        prev <- finish[seg$seg_prev[s]]
+        jump <- kappa * seg$seg_brk_sd[s] * z_brk[s]
+        if (seg$seg_stay[s] > 0) {
+          centre <- gsum[seg$seg_group[s]] / gcnt[seg$seg_group[s]]
+          start[s] <- centre + rho * (prev - centre) + jump
+        } else {
+          start[s] <- prev + jump
+        }
+      }
+      finish[s] <- start[s] + drift[s]
+    }
+  }
+  start[seg$seg_of_slot] + ca - ca[seg$seg_first[seg$seg_of_slot]]
 }
 
 #' Predictive Poisson rates for the fixtures in `spec$pred`, from posterior

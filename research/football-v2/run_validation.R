@@ -1,9 +1,11 @@
 # Like-for-like engine validation: fit ONE spec with Stan (NUTS) and with
 # INLA (full integration, empirical Bayes) at one cutoff.
 #
-#   Rscript research/football-v2/run_validation.R <sex> <cutoff> <horizon_end> <engine> [variant] [tag]
+#   Rscript research/football-v2/run_validation.R <sex> <cutoff> <horizon_end> <engine> [variant] [tag] [est_rho]
 #   engine: stan | inla; variant: a name from variants.R (default "base");
-#   tag names the output files (default "calendar", the reference run).
+#   tag names the output files (default "calendar", the reference run);
+#   "est_rho" as a seventh argument lets Stan estimate the reversion
+#   coefficient (break clock only).
 # Run from the repo root (load_leagues() resolves config through here::here()).
 options(width = 160)
 suppressMessages(devtools::load_all(".", quiet = TRUE))
@@ -18,6 +20,7 @@ horizon_end <- as.Date(args[[3]])
 engine <- args[[4]]
 variant <- if (length(args) >= 5L) args[[5]] else "base"
 tag <- if (length(args) >= 6L) args[[6]] else "calendar"
+est_rho <- length(args) >= 7L && args[[7]] == "est_rho"
 
 out <- fv2_out_dir()
 league <- load_leagues()[["football_iceland"]]
@@ -58,7 +61,10 @@ if (engine == "inla") {
   csv_dir <- paste0(stem, "_csv")
   dir.create(csv_dir, showWarnings = FALSE)
   exe_dir <- file.path(dirname(out), "exe")
-  f <- fv2_fit_stan(spec, fv2_stan_file(spec, "research/football-v2/stan"), exe_dir, csv_dir)
+  f <- fv2_fit_stan(
+    spec, fv2_stan_file(spec, "research/football-v2/stan", est_rho), exe_dir, csv_dir,
+    est_rho = est_rho
+  )
   d <- f$diagnostics
   cat(sprintf(
     "Stan: wall %.0fs, divergences %d, max treedepth hits %d, leapfrogs/iter %.0f, state max Rhat %.3f, state min ESS %.0f\n",

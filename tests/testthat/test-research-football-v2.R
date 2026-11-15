@@ -142,6 +142,73 @@ test_that("reversion pulls a staying team toward its division mean", {
   expect_equal(q[d$slot, d$slot], 1)
 })
 
+# Covariance of one field implied by the season-segment recursion Stan uses
+# for a reverting break: the states are linear in (entry levels, innovations).
+recursion_cov <- function(spec, tau, sigma, kappa, rho) {
+  seg <- fv2$fv2_segments(spec)
+  n <- spec$K + spec$S + seg$n_seg
+  a <- vapply(seq_len(n), function(i) {
+    e <- numeric(n)
+    e[i] <- 1
+    fv2$fv2_walk(
+      seg, tau * e[seq_len(spec$K)], e[spec$K + seq_len(spec$S)],
+      e[spec$K + spec$S + seq_len(seg$n_seg)], sigma, kappa, rho
+    )
+  }, numeric(spec$S))
+  tcrossprod(a)
+}
+
+test_that("the reverting break is the same prior in INLA's and Stan's form", {
+  tau <- 0.6
+  sigma <- 0.05
+  kappa <- 0.25
+  for (rho in c(1, 0.8, 0.5)) {
+    spec <- fv2$fv2_build(
+      toy_matches(), toy_fixture(),
+      clock = "break", rho = rho, divisions = toy_divisions()
+    )
+    r <- fv2$fv2_structure(spec)
+    q <- r$init / tau^2 + r$`in` / sigma^2 + r$brk / kappa^2
+    expect_equal(as.matrix(solve(q)), recursion_cov(spec, tau, sigma, kappa, rho), ignore_attr = TRUE)
+  }
+})
+
+test_that("segments are one team's run of slots within a season", {
+  spec <- fv2$fv2_build(
+    toy_matches(), toy_fixture(),
+    clock = "break", rho = 0.8, divisions = toy_divisions()
+  )
+  seg <- fv2$fv2_segments(spec)
+  expect_identical(seg$n_seg, 6L)
+  expect_identical(seg$seg_team, c(1L, 1L, 2L, 2L, 3L, 3L))
+  expect_identical(seg$seg_prev, c(0L, 1L, 0L, 3L, 0L, 5L))
+  # Only A stays in its division, so only A's second segment reverts.
+  expect_identical(seg$seg_stay, c(0, 1, 0, 0, 0, 0))
+  expect_identical(seg$seg_group, c(0L, 1L, 0L, 0L, 0L, 0L))
+  expect_identical(seg$n_wave, 2L)
+  expect_identical(sort(seg$seg_order[seg$wave_start[1]:seg$wave_end[1]]), c(1L, 3L, 5L))
+  expect_true(all(seg$step_in[seg$seg_first] == 0))
+  expect_identical(tabulate(seg$seg_of_slot), as.integer(seg$seg_last - seg$seg_first + 1L))
+})
+
+test_that("each spec maps to the Stan program that covers it", {
+  cal <- fv2$fv2_build(toy_matches())
+  brk <- fv2$fv2_build(toy_matches(), clock = "break")
+  rev <- fv2$fv2_build(toy_matches(), clock = "break", rho = 0.8, divisions = toy_divisions())
+  sq <- fv2$fv2_build(toy_matches(), param = "sq", style = "none")
+  expect_identical(fv2$fv2_stan_program(cal), "fv2.stan")
+  expect_identical(fv2$fv2_stan_program(brk), "fv2.stan")
+  expect_identical(fv2$fv2_stan_program(brk, est_rho = TRUE), "fv2_rev.stan")
+  expect_identical(fv2$fv2_stan_program(rev), "fv2_rev.stan")
+  expect_identical(fv2$fv2_stan_program(sq), "fv2_sq.stan")
+  expect_identical(fv2$fv2_stan_program(cal, est_rho = TRUE), "fv2.stan")
+  d <- fv2$fv2_stan_data(rev)
+  expect_identical(d$n_field, 2L)
+  expect_identical(d$rho_fixed, 0.8)
+  expect_identical(d$est_rho, 0L)
+  expect_identical(fv2$fv2_stan_data(brk, est_rho = TRUE)$est_rho, 1L)
+})
+
 test_that("movers get their own step class and a cumulative shock covariate", {
   spec <- fv2$fv2_build(
     toy_matches(), toy_fixture(),
@@ -188,7 +255,7 @@ test_that("the Stan data refuses variants the Stan program does not cover", {
   expect_error(fv2$fv2_stan_data(fv2$fv2_build(toy_matches(), param = "sq")))
   expect_error(fv2$fv2_stan_data(fv2$fv2_build(
     toy_matches(),
-    clock = "break", rho = 0.8, divisions = toy_divisions()
+    clock = "break", movers = TRUE, divisions = toy_divisions()
   )))
   sq <- fv2$fv2_stan_data(fv2$fv2_build(toy_matches(), param = "sq", style = "static"))
   expect_identical(sq$use_style, 1L)
@@ -388,6 +455,22 @@ test_that("the Stan programs compile and read the spec", {
   a <- sq$slots$slot[sq$slots$team == 1L]
   expect_lt(max(abs(style[, a] - style[, a[1]])), 1e-6)
   expect_lt(max(abs(rowSums(style[, sq$first_slot]))), 1e-6)
+
+  div <- unique(data.frame(
+    team = c(sim$home_team, sim$away_team), season = rep(sim$season, 2),
+    division = "L", rank = 1L
+  ))
+  rev <- fv2$fv2_build(sim, clock = "break", rho = 0.8, divisions = div)
+  h <- fv2$fv2_fit_stan(
+    rev, fv2$fv2_stan_file(rev, stan_dir, est_rho = TRUE), tmp, tmp,
+    chains = 2L, iter_warmup = 150L, iter_sampling = 100L, refresh = 0L, est_rho = TRUE
+  )
+  expect_identical(
+    colnames(h$draws$hyper),
+    c("tau_att", "sigma_att", "kappa_att", "tau_def", "sigma_def", "kappa_def", "omega_att", "omega_def", "rho")
+  )
+  expect_true(all(h$draws$hyper[, "rho"] > 0 & h$draws$hyper[, "rho"] < 1))
+  expect_identical(dim(h$draws$att), c(200L, rev$S))
 })
 
 toy_draws <- function(spec, n_draw = 3L, seed = 5L) {

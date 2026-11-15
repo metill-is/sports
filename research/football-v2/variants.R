@@ -16,6 +16,15 @@ fv2_variants <- function() {
     sq_none = list(clock = "break", param = "sq", style = "none"),
     base_sq_rw = list(clock = "calendar", param = "sq", style = "rw"),
     base_sq_static = list(clock = "calendar", param = "sq", style = "static"),
-    base_sq_none = list(clock = "calendar", param = "sq", style = "none")
+    base_sq_none = list(clock = "calendar", param = "sq", style = "none"),
+    brk_rev70 = list(clock = "break", rho = 0.7),
+    brk_rev60 = list(clock = "break", rho = 0.6),
+    rev80_mov = list(clock = "break", rho = 0.8, movers = TRUE),
+    rev80_div = list(clock = "break", rho = 0.8, div_offsets = TRUE),
+    rev80_sq_rw = list(clock = "break", rho = 0.8, param = "sq", style = "rw"),
+    rev80_sq_static = list(clock = "break", rho = 0.8, param = "sq", style = "static"),
+    rev80_sq_none = list(clock = "break", rho = 0.8, param = "sq", style = "none"),
+    rev70_sq_static = list(clock = "break", rho = 0.7, param = "sq", style = "static"),
+    rev70_sq_none = list(clock = "break", rho = 0.7, param = "sq", style = "none")
   )
 }

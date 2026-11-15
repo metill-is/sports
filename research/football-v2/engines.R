@@ -200,21 +200,25 @@ fv2_fit_inla <- function(spec, int_strategy = "auto", n_samp = 1000L,
   out
 }
 
-#' The Stan program that implements a spec.
-fv2_stan_file <- function(spec, dir) {
-  file.path(dir, if (spec$opts$param == "sq") "fv2_sq.stan" else "fv2.stan")
+#' Path of the Stan program that implements a spec.
+fv2_stan_file <- function(spec, dir, est_rho = FALSE) {
+  file.path(dir, fv2_stan_program(spec, est_rho))
 }
 
-#' Fit the spec with Stan (NUTS). Covers attack/defence walks (with a plain
-#' break jump and optional offsets) and strength with an optional fixed style.
+#' Fit the spec with Stan (NUTS). Covers attack/defence walks and strength
+#' with an optional fixed style, with a plain or a reverting season break.
+#'
+#' @param est_rho Estimate the reversion coefficient (break clock only).
 fv2_fit_stan <- function(spec, stan_file, exe_dir, output_dir,
                          chains = 4L, iter_warmup = 1000L, iter_sampling = 1000L,
-                         adapt_delta = 0.9, seed = 20261115L, refresh = 200L) {
+                         adapt_delta = 0.9, seed = 20261115L, refresh = 200L,
+                         est_rho = FALSE) {
   stopifnot(requireNamespace("cmdstanr", quietly = TRUE))
+  stopifnot(basename(stan_file) == fv2_stan_program(spec, est_rho))
   mod <- cmdstanr::cmdstan_model(stan_file, dir = exe_dir, quiet = TRUE)
   t0 <- Sys.time()
   fit <- mod$sample(
-    data = fv2_stan_data(spec), chains = chains, parallel_chains = chains,
+    data = fv2_stan_data(spec, est_rho), chains = chains, parallel_chains = chains,
     iter_warmup = iter_warmup, iter_sampling = iter_sampling,
     adapt_delta = adapt_delta, max_treedepth = 10L, init = 0.1, seed = seed,
     refresh = refresh, output_dir = output_dir,
@@ -222,21 +226,23 @@ fv2_fit_stan <- function(spec, stan_file, exe_dir, output_dir,
   )
   wall <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
   brk <- spec$opts$clock == "break"
-  hyper_vars <- if (spec$opts$param == "sq") {
-    c(
-      "tau_str", "sigma_str", if (brk) "kappa_str",
-      if (spec$opts$style == "static") "tau_sty", "omega_att", "omega_def"
-    )
-  } else {
-    c(
-      "tau_att", "sigma_att", if (brk) "kappa_att",
-      "tau_def", "sigma_def", if (brk) "kappa_def",
-      "omega_att", "omega_def", if (spec$opts$div_offsets) c("delta_goal", "delta_ha")
-    )
-  }
+  fields <- if (spec$opts$param == "sq") "str" else c("att", "def")
+  style <- spec$opts$param == "sq" && spec$opts$style == "static"
+  indexed <- basename(stan_file) == "fv2_rev.stan"
+  # Stan variable behind each hyperparameter name the engines share.
+  walk_vars <- unlist(lapply(seq_along(fields), function(i) {
+    names <- paste0(c("tau", "sigma", if (brk) "kappa"), "_", fields[i])
+    stats::setNames(if (indexed) paste0(c("tau", "sigma", "kappa"), "[", i, "]") else names, names)
+  }))
+  hyper_vars <- c(
+    walk_vars, if (style) c(tau_sty = "tau_sty"),
+    c(omega_att = "omega_att", omega_def = "omega_def"),
+    if (spec$opts$div_offsets) c(delta_goal = "delta_goal", delta_ha = "delta_ha"),
+    if (est_rho) c(rho = "rho")
+  )
   mat <- function(v) unclass(posterior::as_draws_matrix(fit$draws(v)))
-  hyp <- mat(hyper_vars)
-  colnames(hyp) <- sub("\\[1\\]$", "", colnames(hyp))
+  hyp <- mat(unname(hyper_vars))
+  colnames(hyp) <- names(hyper_vars)
   draws <- list(
     c_home = as.numeric(mat("c_home")), c_away = as.numeric(mat("c_away")),
     att = mat("att"), def = mat("def"), ha_att = mat("ha_att"), ha_def = mat("ha_def"),
@@ -252,7 +258,7 @@ fv2_fit_stan <- function(spec, stan_file, exe_dir, output_dir,
   dg <- fit$diagnostic_summary(quiet = TRUE)
   sp <- fit$sampler_diagnostics(format = "df")
   summ <- posterior::summarise_draws(
-    fit$draws(c("c_home", "c_away", hyper_vars, "lp__")),
+    fit$draws(c("c_home", "c_away", unname(hyper_vars), "lp__")),
     "mean", "sd", ~ stats::quantile(.x, c(0.05, 0.5, 0.95)), "rhat", "ess_bulk", "ess_tail"
   )
   state_summ <- posterior::summarise_draws(fit$draws(c("att", "def")), "rhat", "ess_bulk")
