@@ -5,6 +5,14 @@ source(file.path(EXP_DIR, "score.R"))
 cutoff <- "2026-01-31"
 stan_rungs <- c("r0_prod", "r1_ragged", "r2_common", "r3_pooled", "r4_ident", "r5_gauss")
 out_path <- function(...) file.path(OUT, "out", sprintf(...))
+# Who held each machine slot when a fit started: holder names only.
+slot_text <- function(x) {
+  x <- x[grepl("^slot[0-9]", x)]
+  if (length(x) == 0) {
+    return(NA_character_)
+  }
+  paste(sub(" pid=.*", "", x), collapse = " | ")
+}
 rows <- list()
 scores <- list()
 for (cell in names(CELLS)) {
@@ -28,7 +36,7 @@ for (cell in names(CELLS)) {
       grad_evals = if (is.null(res$total_leapfrog)) res$mean_leapfrog * 4000 else res$total_leapfrog,
       max_rhat = res$max_rhat, min_ess = res$min_ess_bulk, worst = res$worst_ess$variable[1],
       wall_secs = res$wall_secs, elpd = res$loo["elpd_loo", "Estimate"], bad_k = res$pareto_k_bad,
-      slots = paste(sub(" pid=.*", "", res$machine$slots), collapse = " | ")
+      slots = slot_text(res$machine$slots)
     )
   }
   for (m in stan_rungs) {
@@ -92,7 +100,7 @@ for (cell in names(CELLS)) {
           n_sampled = NA_integer_, divergent = NA_integer_, leapfrog = NA_real_, grad_evals = NA_real_,
           max_rhat = NA_real_, min_ess = NA_real_, worst = sprintf("%d + %d hyper points", im$n_hyper_points, it$n_hyper_points),
           wall_secs = im$secs + it$secs, elpd = sum(log(im$cpo)) + sum(log(it$cpo)) + n_train * log(2), bad_k = NA_integer_,
-          slots = paste(sub(" pid=.*", "", iv$machine$slots), collapse = " | ")
+          slots = slot_text(iv$machine$slots)
         )
         add(sprintf("v2 %s, INLA %s", if (within == "none") "static" else "+ within-season AR(1)",
                     if (strategy == "auto") "full" else "plug-in"), "INLA", sc, ha, ex)

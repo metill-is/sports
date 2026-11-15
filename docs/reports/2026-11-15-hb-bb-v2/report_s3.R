@@ -259,13 +259,35 @@ if (have(hbm) && have(bbm)) {
     note = "Phases are weeks of the regular season; a basketball play-off match is one of a pair that meets at least three times within three weeks, handball's are its PO division. The mean standardised margin residual is from the home side's view. The predictive sd is widest in the first six weeks because the new season's level is still uncertain: that is the season-boundary term at work."
   ))
   add("<p>The spread of the standardised residuals stays close to 1 in every phase, including the last six weeks and the play-offs. If team strength drifted inside a season in a way the static model misses, the late-season residuals would be over-dispersed; they are not, in either sport. This is the check asked for before dropping the within-season term for basketball, where mid-season import changes are the obvious worry.</p>")
+  # Fixed cutoff: how large is the within-season term, and what does it buy?
+  add("<h3>Does a within-season term earn its place?</h3>")
+  if (all(vapply(iv, have, TRUE)) && have(ladder)) {
+    fx <- do.call(rbind, lapply(names(CELLS), function(cl) {
+      h <- iv[[cl]][["margin ar1 auto"]]$hyper_sd
+      g <- function(nm) {
+        r <- h[h$parameter == nm, ]
+        sprintf("%s [%s, %s]", num(r$q50, 2), num(r$q05, 2), num(r$q95, 2))
+      }
+      cpo <- function(w) sum(log(iv[[cl]][[paste("margin", w, "auto")]]$cpo)) + sum(log(iv[[cl]][[paste("total", w, "auto")]]$cpo))
+      st <- ladder$scores[[paste(cl, "v2 static, INLA full")]]
+      ar <- ladder$scores[[paste(cl, "v2 + within-season AR(1), INLA full")]]
+      data.frame(cell = LAB[[cl]], sw = g("sd: w_t"), su = g("sd: u_s"), sm = g("sd: the Gaussian observations"),
+                 loo = num(cpo("ar1") - cpo("none"), 1, plus = TRUE), n = int(nrow(st)),
+                 m = pm(paired(ar$ls_margin, st$ls_margin)[["diff"]], paired(ar$ls_margin, st$ls_margin)[["se"]], 3),
+                 w = pm(paired(ar$ll_wdl, st$ll_wdl)[["diff"]], paired(ar$ll_wdl, st$ll_wdl)[["se"]], 3))
+    }))
+    add(tbl(fx, right = names(fx)[-1],
+            head = c("Cell", "Within-season sd (margin model)", "Season-level sd", "Match sd", "Leave-one-out gain from the within-season term",
+                     "Held-out matches", "Held-out margin log score: AR(1) &minus; static", "Held-out result log likelihood"),
+            note = "Fixed cutoff 31 January 2026, R-INLA with full hyperparameter integration. The within-season term is a weekly AR(1) around the season level with weekly correlation 0.98; its sd is the size of a team's typical departure from its season level. Median [5 %, 95 %]."))
+    add("<p>In handball the within-season sd is about half a goal against a match sd near five, and the term buys nothing. In basketball it is about five points, the same order as the season-level sd: teams do move within a season, as the import changes would suggest. Whether tracking that movement improves forecasts is what the walk-forward tests.</p>")
+  }
   wc <- wf$within_cmp
   if (have(wc) && length(wc) > 0) {
     wtab <- do.call(rbind, lapply(names(wc), function(nm) {
       x <- wc[[nm]]
       data.frame(cell = LAB[[sub("_reg$", "", nm)]], phase = x$phase, n = int(x$n), m = pm(x$margin, x$margin_se, 4), t = pm(x$total, x$total_se, 4), w = pm(x$wdl, x$wdl_se, 4))
     }))
-    add("<h3>Does a within-season term earn its place?</h3>")
     add(tbl(wtab,
       right = c("n", "m", "t", "w"),
       head = c("Cell", "Phase", "Matches", "Margin log score", "Total log score", "Result log likelihood"),

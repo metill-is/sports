@@ -9,31 +9,55 @@ lad <- function(cl, rung, col) {
   if (length(x) == 0) NA else x[1]
 }
 wc <- if (have(wf)) wf$within_cmp else NULL
-within_known <- have(wc) && length(wc) > 0
-within_helps <- within_known && any(vapply(wc, function(x) {
-  a <- x[x$phase == "all", ]
-  nrow(a) > 0 && (a$margin / a$margin_se > 2 || a$wdl / a$wdl_se > 2)
-}, TRUE))
+wj <- if (have(wf)) wf$within_j else NULL
+within_known <- have(wj) && length(wj) > 0
+# Pooled walk-forward verdict per sport: AR(1) minus static, both cells together.
+within_pool <- function(cells) {
+  x <- do.call(rbind, lapply(cells, function(cl) {
+    j <- wj[[cl]]
+    if (is.null(j)) {
+      return(NULL)
+    }
+    data.frame(m = j$lsm_raw.ar1 - j$lsm_raw.static, w = j$ll_wdl_raw.ar1 - j$ll_wdl_raw.static, t = j$lst_raw.ar1 - j$lst_raw.static)
+  }))
+  if (is.null(x)) {
+    return(NULL)
+  }
+  se <- function(v) stats::sd(v) / sqrt(length(v))
+  list(n = nrow(x), m = mean(x$m), m_se = se(x$m), w = mean(x$w), w_se = se(x$w), t = mean(x$t), t_se = se(x$t))
+}
+bb_within <- if (within_known) within_pool(c("bb_m_reg", "bb_f_reg")) else NULL
+bb_keep_ar1 <- have(bb_within) && (bb_within$m / bb_within$m_se > 2 || bb_within$w / bb_within$w_se > 2)
 
 # ---------------------------------------------------------------- proposal
 cur <- "proposal"
 add("<h2 id=\"proposal\">Cutover proposal</h2>")
 add("<p>This is a proposal. Nothing below has been done to the production path; each step that would alter live fits or published output is listed under <a href=\"#decisions\">Your decisions</a>.</p>")
 add("<h3>Recommended model</h3>")
-within_txt <- if (!within_known) {
-  "The within-season term is left out. The late-season and play-off residuals of the static model are not over-dispersed in either sport; the direct walk-forward test of the AR(1) form had not finished when this report was built."
-} else if (within_helps) {
-  "The within-season AR(1) improved the walk-forward scores by more than two standard errors in at least one cell (table in the walk-forward section), so it is kept for that sport."
+hb_txt <- "v2 <strong>static</strong> form (strength constant within a season), margin and total, fitted with R-INLA on final scores."
+bb_form <- if (!have(bb_within)) {
+  "The same model, trained on <strong>regulation-time</strong> scores. Static or with the within-season AR(1): open until the walk-forward of the AR(1) form is in (see the note below)."
+} else if (bb_keep_ar1) {
+  "The same model <strong>with the within-season AR(1)</strong>, trained on <strong>regulation-time</strong> scores."
 } else {
-  "The within-season term is left out: in the walk-forward it changed no score by more than its standard error, the late-season and play-off residuals of the static model are not over-dispersed, and it triples the fit time."
+  "The same model, <strong>static</strong> form, trained on <strong>regulation-time</strong> scores."
+}
+within_txt <- if (!have(bb_within)) {
+  "Within-season movement: handball does not need it (within-season sd about half a goal, no gain in leave-one-out or held-out scores). In basketball the fitted within-season sd is about five points and leave-one-out improves, so the term may earn its place there; the walk-forward that settles it had not finished when this report was built."
+} else {
+  sprintf(
+    "Within-season movement: handball does not need it (within-season sd about half a goal, no gain). In basketball the fitted within-season sd is about five points; over %s walk-forward matches (seasons 2025 to 2027, both sexes) the AR(1) form changes the margin log score by %s, the total by %s and the result log likelihood by %s per match against the static form, so the term %s.",
+    int(bb_within$n), pm(bb_within$m, bb_within$m_se, 4), pm(bb_within$t, bb_within$t_se, 4), pm(bb_within$w, bb_within$w_se, 4),
+    if (bb_keep_ar1) "is kept for basketball" else "is left out: the gain is not established, and the static form is the simpler one to run"
+  )
 }
 add(
   "<div class=\"cols\"><div class=\"pick\"><h3>Handball, men and women</h3><ul>",
-  "<li>v2 static form, margin and total, fitted with R-INLA on final scores.</li>",
+  sprintf("<li>%s</li>", hb_txt),
   "<li>Gaussian, one free sd for the margin and one for the total. No possession-informed variance, no Student-t.</li>",
   "<li>Prediction layer: whole-number scores with margin and total on the same parity; draw = level score; a draw shift per sex, set to zero for women and, for men, either zero or a shrunk value (a decision below).</li>",
   "</ul></div><div class=\"pick\"><h3>Basketball, men and women</h3><ul>",
-  "<li>The same model, trained on <strong>regulation-time</strong> scores.</li>",
+  sprintf("<li>%s</li>", bb_form),
   "<li>Tie shift per division for men, one small shift (or none) for women.</li>",
   "<li>Final result = regulation result, or overtime when level; overtime as a five-minute continuation (which the data so far cannot tell from a coin flip).</li>",
   "<li>Both regulation-time and final-result probabilities come out of one fit.</li>",
@@ -160,7 +184,9 @@ not_measured <- c(
   if (length(setdiff(names(CELLS), r0_done))) sprintf("Production fits for %s had not finished when this report was built.", paste(LAB[setdiff(names(CELLS), r0_done)], collapse = ", ")),
   if (!have(ladder)) "The ladder rungs had not finished.",
   if (!(have(val) && length(val))) "The like-for-like R-INLA against Stan comparison had not finished.",
-  if (!within_known) "The walk-forward with the within-season AR(1) had not finished; the case for leaving it out rests on the static model's late-season residuals.",
+  if (!have(bb_within)) "The walk-forward with the within-season AR(1) for basketball had not finished.",
+  "A walk-forward of the within-season AR(1) for handball (dropped from the queue: the fixed-cutoff fit shows nothing for it to find).",
+  "Weekly correlations for the within-season term other than 0.98.",
   "Production in a walk-forward: one production fit takes tens of minutes, so production is represented by its fixed-cutoff fit and by the forecasts it actually stored (April to May and September to November 2026 only).",
   "Clean wall-clock benchmarks: every time was taken on a shared machine.",
   "The full ladder for the women's cells (production and the final model only, by agreement with the scheduling session).",
@@ -237,5 +263,5 @@ items <- c(items, sprintf(
   pct(mean(per$ok), 1), pct(ot_rate("male", "BD"), 1), int(sum(with(rbind(bbm[bbm$margin_fit == 0, c("mean_m", "margin")], bbf[bbf$margin_fit == 0, c("mean_m", "margin")]), ifelse(mean_m > 0, margin > 0, margin < 0)))),
   int(sum(bbm$margin_fit == 0) + sum(bbf$margin_fit == 0))
 ))
-items <- c(items, "<strong>Proposal.</strong> Static v2 on R-INLA for both sports, basketball on regulation time; swap the engine behind an adapter that keeps the published JSON contract; a four to five week shadow period per sport with a stated gate; store regulation-time scores. Six decisions are yours.")
+items <- c(items, "<strong>Proposal.</strong> v2 on R-INLA for both sports (static for handball), basketball on regulation time; swap the engine behind an adapter that keeps the published JSON contract; a four to five week shadow period per sport with a stated gate; store regulation-time scores. Six decisions are yours.")
 add("<ol>", paste0("<li>", items, "</li>", collapse = "\n"), "</ol>")

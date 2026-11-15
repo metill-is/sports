@@ -379,6 +379,7 @@ for (cell in c("bb_m", "bb_f")) {
 
 # Within-season term: static against AR(1), on the matches both walk-forwards predicted.
 within_cmp <- list()
+within_j <- list()
 for (cell in names(CELLS)) {
   for (suffix in c("", "_reg")) {
     st <- all_scores[[paste0(cell, " none", suffix)]]$scores
@@ -402,7 +403,9 @@ for (cell in names(CELLS)) {
     }))
     print(tab, digits = 3, row.names = FALSE)
     within_cmp[[paste0(cell, suffix)]] <- tab
+    within_j[[paste0(cell, suffix)]] <- j
   }
 }
 all_scores[["within_cmp"]] <- within_cmp
+all_scores[["within_j"]] <- within_j
 saveRDS(all_scores, file.path(OUT, "out", "wf_scores.rds"))
