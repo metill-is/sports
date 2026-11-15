@@ -1,0 +1,152 @@
+test_that("the rounded pmf is a proper distribution and matches the normal CDF", {
+  k <- -60:60
+  p <- v2_integer_pmf(k, loc = rep(1.3, length(k)), scale = rep(6, length(k)))
+
+  expect_equal(sum(p), 1, tolerance = 1e-10)
+  expect_equal(p[k == 2], pnorm(2.5, 1.3, 6) - pnorm(1.5, 1.3, 6))
+})
+
+test_that("a Student-t predictive puts more mass in the tails than the Gaussian", {
+  gauss <- v2_integer_pmf(25, loc = 0, scale = 6)
+  heavy <- v2_integer_pmf(25, loc = 0, scale = 6, df = 4)
+
+  expect_gt(heavy, gauss)
+  expect_equal(heavy, pt(25.5 / 6, 4) - pt(24.5 / 6, 4))
+})
+
+test_that("posterior draws are averaged per match, with one scale per draw", {
+  loc <- rbind(c(0, 5), c(2, 5))
+  p <- v2_integer_pmf(c(0, 5), loc = loc, scale = c(4, 8))
+
+  by_hand <- c(
+    mean(c(pnorm(0.5, 0, 4) - pnorm(-0.5, 0, 4), pnorm(0.5, 2, 8) - pnorm(-0.5, 2, 8))),
+    mean(c(pnorm(5.5, 5, 4) - pnorm(4.5, 5, 4), pnorm(5.5, 5, 8) - pnorm(4.5, 5, 8)))
+  )
+  expect_equal(p, by_hand)
+})
+
+test_that("zero_shift moves the level-score probability on the logit scale and keeps total mass one", {
+  k <- -60:60
+  loc <- rep(0.8, length(k))
+  scale <- rep(5, length(k))
+  base <- v2_integer_pmf(k, loc, scale)
+  shifted <- v2_integer_pmf(k, loc, scale, zero_shift = 0.4)
+
+  expect_equal(sum(shifted), 1, tolerance = 1e-10)
+  expect_equal(qlogis(shifted[k == 0]) - qlogis(base[k == 0]), 0.4)
+  # Every non-zero margin shrinks by the same factor: the shape away from zero is kept.
+  # WHY base > 1e-12: at the far ends of the support both masses underflow to 0 / 0.
+  ratio <- (shifted / base)[k != 0 & base > 1e-12]
+  expect_equal(max(ratio) - min(ratio), 0, tolerance = 1e-12)
+  expect_lt(ratio[1], 1)
+})
+
+test_that("outcome probabilities agree with the pmf at zero and sum to one", {
+  loc <- c(-3, 0, 4.5)
+  scale <- c(5, 5, 6)
+  o <- v2_outcome_probs(loc, scale, ties = TRUE)
+
+  expect_equal(o$p_draw, v2_integer_pmf(c(0, 0, 0), loc, scale))
+  expect_equal(o$p_home + o$p_draw + o$p_away, rep(1, 3))
+  expect_equal(o$p_home[2], o$p_away[2])
+  expect_gt(o$p_home[3], o$p_away[3])
+
+  shifted <- v2_outcome_probs(loc, scale, ties = TRUE, zero_shift = 0.5)
+  expect_equal(shifted$p_home + shifted$p_draw + shifted$p_away, rep(1, 3))
+  expect_true(all(shifted$p_draw > o$p_draw))
+  expect_equal(shifted$p_home / shifted$p_away, o$p_home / o$p_away)
+})
+
+test_that("without ties the home side wins on a positive continuous margin", {
+  o <- v2_outcome_probs(c(0, 6), c(12, 12), ties = FALSE)
+
+  expect_equal(o$p_draw, c(0, 0))
+  expect_equal(o$p_home, c(0.5, pnorm(6 / 12)))
+})
+
+test_that("the zero-shift estimate recovers a simulated inflation", {
+  set.seed(11)
+  p0 <- runif(40000, 0.03, 0.09)
+  is_tie <- runif(40000) < plogis(qlogis(p0) + 0.5)
+  est <- v2_fit_zero_shift(p0, is_tie)
+
+  expect_lt(abs(est[["shift"]] - 0.5), 3 * est[["se"]])
+  expect_equal(est[["ties"]], sum(is_tie))
+  expect_lt(est[["se"]], 0.05)
+})
+
+test_that("basketball final-result probabilities resolve regulation ties through overtime", {
+  r <- v2_basketball_result_probs(loc = c(0, 8), scale = c(12, 12), zero_shift = 0.3)
+
+  expect_equal(r$p_home + r$p_away, c(1, 1))
+  expect_equal(r$p_home_reg + r$p_draw_reg + r$p_away_reg, c(1, 1))
+  expect_equal(r$p_home[1], 0.5)
+  expect_equal(r$p_home_ot[1], 0.5)
+  # Overtime is a short game: the favourite is favoured, but by less than over 40 minutes.
+  reg_two_way <- r$p_home_reg[2] / (r$p_home_reg[2] + r$p_away_reg[2])
+  expect_gt(r$p_home_ot[2], 0.5)
+  expect_lt(r$p_home_ot[2], reg_two_way)
+  expect_equal(r$p_home[2], r$p_home_reg[2] + r$p_draw_reg[2] * r$p_home_ot[2])
+})
+
+test_that("proportional de-vigging returns probabilities and the overround", {
+  q <- v2_devig(rbind(c(1.8, 9, 2.4), c(1.5, 2.5, 100)))
+
+  expect_equal(rowSums(q), c(1, 1))
+  expect_equal(attr(q, "overround")[1], 1 / 1.8 + 1 / 9 + 1 / 2.4)
+  expect_equal(q[1, 1], (1 / 1.8) / (1 / 1.8 + 1 / 9 + 1 / 2.4))
+})
+
+test_that("sampled scores are whole, non-negative and reproduce the margin and total", {
+  set.seed(5)
+  n_draw <- 20000
+  loc_m <- matrix(rep(c(-2.4, 0.3, 7.5), each = n_draw), n_draw, 3)
+  loc_t <- matrix(rep(c(52, 58.6, 61), each = n_draw), n_draw, 3)
+  s <- v2_sample_scores(loc_m, 5, loc_t, 6.5)
+
+  expect_type(s$home, "integer")
+  expect_true(all(s$home >= 0L & s$away >= 0L))
+  # Margin and total come back out of the two scores, so they shared parity by construction.
+  expect_equal(colMeans(s$home - s$away), c(-2.4, 0.3, 7.5), tolerance = 0.05)
+  expect_equal(colMeans(s$home + s$away), c(52, 58.6, 61), tolerance = 0.005)
+  expect_equal(apply(s$home - s$away, 2, sd), rep(5, 3), tolerance = 0.03)
+  expect_equal(apply(s$home + s$away, 2, sd), rep(6.5, 3), tolerance = 0.03)
+})
+
+test_that("sampled level scores match the analytic draw probability, with and without a shift", {
+  set.seed(6)
+  n_draw <- 60000
+  loc_m <- matrix(rep(c(0.5, 4), each = n_draw), n_draw, 2)
+  loc_t <- matrix(56, n_draw, 2)
+
+  plain <- v2_sample_scores(loc_m, 5, loc_t, 6.5)
+  expect_equal(colMeans(plain$home == plain$away), v2_outcome_probs(c(0.5, 4), c(5, 5))$p_draw, tolerance = 0.05)
+
+  for (shift in c(0.4, -0.4)) {
+    moved <- v2_sample_scores(loc_m, 5, loc_t, 6.5, zero_shift = shift)
+    want <- v2_outcome_probs(c(0.5, 4), c(5, 5), zero_shift = shift)
+    expect_equal(colMeans(moved$home == moved$away), want$p_draw, tolerance = 0.05)
+    expect_equal(colMeans(moved$home > moved$away), want$p_home, tolerance = 0.03)
+  }
+})
+
+test_that("rho_mt carries through to the correlation of sampled margin and total", {
+  set.seed(7)
+  loc_m <- matrix(1, 20000, 1)
+  loc_t <- matrix(170, 20000, 1)
+
+  none <- v2_sample_scores(loc_m, 13, loc_t, 17)
+  some <- v2_sample_scores(loc_m, 13, loc_t, 17, rho_mt = 0.3)
+
+  expect_lt(abs(cor(none$home - none$away, none$home + none$away)), 0.03)
+  expect_equal(as.numeric(cor(some$home - some$away, some$home + some$away)), 0.3, tolerance = 0.1)
+})
+
+test_that("a per-match zero_shift vector moves each match by its own amount", {
+  p <- v2_outcome_probs(c(0, 0), c(5, 5), zero_shift = c(0, 0.6))
+  base <- v2_outcome_probs(0, 5)$p_draw
+
+  expect_equal(p$p_draw[1], base)
+  expect_equal(qlogis(p$p_draw[2]) - qlogis(base), 0.6)
+  expect_equal(v2_integer_pmf(c(0, 0), c(0, 0), c(5, 5), zero_shift = c(0, 0.6)), p$p_draw)
+})
