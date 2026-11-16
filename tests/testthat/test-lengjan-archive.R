@@ -52,3 +52,27 @@ test_that("an archive directory that does not exist is an error, not an empty in
   gone <- file.path(withr::local_tempdir(), "not-mounted")
   expect_error(lengjan_archive_index(gone), "does not exist")
 })
+
+test_that("parse_lengjan_program_markets maps the embedded 3WAY to moneyline", {
+  prog <- list(events = list(
+    list(id = "1", market = list(typeName = "3WAY", primary = TRUE, status = "open",
+      selections = list(list(name = "1", odds = 194L), list(name = "X", odds = 264L), list(name = "2", odds = 406L)))),
+    list(id = "2", market = list(typeName = "2WAY", primary = TRUE, status = "open",
+      selections = list(list(name = "1", odds = 150L), list(name = "2", odds = 250L)))),
+    list(id = "3", market = NULL),
+    list(id = "4", market = list(typeName = "3WAY", primary = TRUE, status = "suspended",
+      selections = list(list(name = "1", odds = 194L))))
+  ), liveSoon = list(list(id = "1", market = NULL)))
+  out <- parse_lengjan_program_markets(prog)
+  expect_equal(out$event_id, c("1", "1", "1"))
+  expect_equal(out$outcome, c("home", "draw", "away"))
+  expect_equal(out$odds, c(1.94, 2.64, 4.06))
+  expect_equal(unique(out$market), "moneyline")
+  expect_true(all(is.na(out$line)))
+})
+
+test_that("parse_lengjan_program_markets returns the empty shape when nothing qualifies", {
+  out <- parse_lengjan_program_markets(list(events = list(), liveSoon = list()))
+  expect_equal(nrow(out), 0L)
+  expect_named(out, c("event_id", "market", "outcome", "line", "odds"))
+})

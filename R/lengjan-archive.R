@@ -147,3 +147,47 @@ empty_lengjan_archive_index <- function() {
     error = character()
   )
 }
+
+#' Odds rows from the main market embedded in Lengjan's current program.
+#'
+#' Every event in the program carries its main market inline, so a program
+#' body alone gives a full-time 1X2 price for each listed event without a
+#' market-detail request. The embedded market goes through
+#' [parse_lengjan_markets()] and [lengjan_markets_to_odds()], so the rule is
+#' the live scrape's: a primary, open `3WAY` market maps to moneyline
+#' home/draw/away for selections `1`/`X`/`2` priced above 1. Embedded `2WAY`
+#' and `NWAY` markets are dropped. Events come from all four program arrays,
+#' first copy of each id.
+#'
+#' @param prog Parsed JSON of a current-program body.
+#' @return Tibble: event_id, market, outcome, line (always `NA`), odds.
+#' @examples
+#' \dontrun{
+#' parse_lengjan_program_markets(lengjan_fetch_program())
+#' }
+#' @export
+parse_lengjan_program_markets <- function(prog) {
+  evs <- .lengjan_program_events(prog)
+  evs <- evs[vapply(evs, function(e) is.list(e$market), logical(1))]
+  groups <- lapply(evs, function(e) {
+    market <- e$market
+    market$eventId <- e$id
+    list(name = "program", markets = list(market))
+  })
+  lengjan_markets_to_odds(parse_lengjan_markets(groups))
+}
+
+#' The program's events across its four arrays, first copy of each id.
+#' @noRd
+.lengjan_program_events <- function(prog) {
+  if (!is.list(prog) || !all(c("events", "liveSoon") %in% names(prog))) {
+    stop(
+      "Unexpected current-program shape (no events/liveSoon arrays); ",
+      "Lengjan's API may have changed.",
+      call. = FALSE
+    )
+  }
+  evs <- c(prog$events, prog$liveSoon, prog$popular, prog$liveNow)
+  ids <- vapply(evs, function(e) as.character(e$id), character(1))
+  evs[!duplicated(ids)]
+}
