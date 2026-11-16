@@ -196,3 +196,15 @@ test_that("a game too lopsided to reach overtime still has a final result", {
   expect_equal(draws$p_home, 1)
   expect_equal(draws$p_home + draws$p_away, 1)
 })
+
+test_that("the share of draws on an observed margin can leave out the draws on a level score", {
+  draws <- c(-0.2, 0.3, 1.2, 0.9, 2.6, -3.1)
+
+  # Two of six draws round to 1; the half count keeps a margin no draw hit off zero.
+  expect_equal(v2_draws_pmf(draws, 1), (2 + 0.5) / (6 + 1))
+  expect_equal(v2_draws_pmf(draws, 7), 0.5 / (6 + 1))
+  # A final score that cannot be level: the two level draws are set aside.
+  expect_equal(v2_draws_pmf(draws, 1, ties = FALSE), (2 + 0.5) / (4 + 1))
+  expect_equal(v2_draws_pmf(draws, 0, ties = FALSE), 0)
+  expect_gt(v2_draws_pmf(draws, 1, ties = FALSE), v2_draws_pmf(draws, 1))
+})

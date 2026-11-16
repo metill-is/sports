@@ -163,6 +163,33 @@ v2_basketball_result_probs <- function(loc, scale, df = Inf, zero_shift = 0, ot_
   )
 }
 
+#' Probability of an observed margin from posterior score draws.
+#'
+#' The archived production forecasts are draws of continuous scores, not a
+#' predictive in closed form. The probability that the margin rounds to `k` is
+#' the share of draws within half a point of `k`, with half a count added so
+#' that a margin no draw happened to hit does not score minus infinity.
+#'
+#' @param draws Continuous margin draws for one match.
+#' @param k The observed whole-number margin.
+#' @param ties Can the margin be zero? With `FALSE` (a final basketball
+#'   score) the draws within half a point of a level score are set aside and
+#'   the share is taken among the rest, the same conditioning
+#'   [v2_integer_pmf()] applies with `ties = FALSE`.
+#' @return One probability.
+#' @noRd
+v2_draws_pmf <- function(draws, k, ties = TRUE) {
+  hit <- abs(draws - k) < 0.5
+  if (ties) {
+    return((sum(hit) + 0.5) / (length(draws) + 1))
+  }
+  if (k == 0) {
+    return(0)
+  }
+  not_level <- abs(draws) >= 0.5
+  (sum(hit & not_level) + 0.5) / (sum(not_level) + 1)
+}
+
 #' De-vig decimal odds proportionally.
 #'
 #' @param odds Matrix or data frame of decimal odds, one row per market, one

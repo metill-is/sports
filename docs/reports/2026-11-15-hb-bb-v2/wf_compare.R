@@ -46,9 +46,9 @@ prod_archive <- function(cell) {
         p_draw_band = mean(abs(diff) <= 0.5), p_home_band = mean(diff > 0.5),
         # WHY +0.5: 4,000 draws cannot resolve a probability below 1/4000; without the
         # half count a margin no draw happened to hit would score minus infinity.
-        pm_obs = (sum(abs(diff - m_obs) < 0.5) + 0.5) / (dplyr::n() + 1),
+        pm_obs = v2_draws_pmf(diff, m_obs[1]),
         # The same, among the draws that are not within half a point of a level margin.
-        pm_obs_nolevel = (sum(abs(diff - m_obs) < 0.5 & abs(diff) >= 0.5) + 0.5) / (sum(abs(diff) >= 0.5) + 1),
+        pm_obs_nolevel = v2_draws_pmf(diff, m_obs[1], ties = FALSE),
         pt_obs = (sum(abs(tot - t_obs) < 0.5) + 0.5) / (dplyr::n() + 1),
         .groups = "drop"
       )
