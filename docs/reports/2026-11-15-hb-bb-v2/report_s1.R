@@ -79,15 +79,26 @@ if (n_r0 > 0) {
 
   first <- cells_d[1]
   o <- diag[[first]]
+  # Finding 14: say what the posterior of the volatility scales does, not that it "matches the prior".
+  vol_txt <- if ("hb_m" %in% cells_d) {
+    so <- diag[["hb_m"]]$scale_sigma_off
+    sd_ <- diag[["hb_m"]]$scale_sigma_def
+    sprintf(
+      "in handball men the scale parameters' posterior medians (%s and %s) sit on the exponential(2) prior's median (%s), and all the data do is shorten the upper tail (95 %% points %s and %s against the prior's %s)",
+      num(so[2], 2), num(sd_[2], 2), num(stats::qexp(0.5, 2), 2), num(so[3], 2), num(sd_[3], 2), num(stats::qexp(0.95, 2), 2)
+    )
+  } else {
+    "the scale parameters stay close to their exponential(2) prior"
+  }
   add(sprintf(
     paste0(
       "<p><strong>Reading the table.</strong> Home advantage is overstated because each team has its own attack and defence home effect, each forced to be non-negative with a half-normal(0, 10) prior and no pooling. ",
       "In %s the typical team's attack home effect has posterior sd %s around a mean of %s: the estimates are noise-dominated, the zero bound pushes every one of them upward, and the error cannot average out. ",
       "The intercept ridge that the football review found (scoring level traded against the two home means) is truncated by the same bounds instead of being removed, which is why the correlations in the table are weak here; the ladder below shows it reappear the moment the bounds are lifted. ",
-      "The volatility hierarchies are weakly identified at best: in handball men the scale parameters' posteriors match the exponential(2) prior, and in every cell one team's interval for its own random-walk sd is about as wide as the whole spread between teams. ",
+      "The volatility hierarchies are weakly identified at best: %s, and in every cell one team's interval for its own random-walk sd is about as wide as the whole spread between teams. ",
       "The Student-t degrees of freedom sit above their prior in handball, so those data are not asking for heavy tails; in basketball they sit a little below it.</p>"
     ),
-    tolower(LAB[[first]]), num(o$ha_off_team_means[["within_sd"]], 2), num(o$ha_off_team_means[["mean"]], 2)
+    tolower(LAB[[first]]), num(o$ha_off_team_means[["within_sd"]], 2), num(o$ha_off_team_means[["mean"]], 2), vol_txt
   ))
 } else {
   add(missing_note("the production fits"))
