@@ -53,6 +53,8 @@ ha <- do.call(rbind, lapply(ha_files, function(f) {
 wf_file <- file.path(out, "wf_summary.rds")
 wf <- if (file.exists(wf_file)) readRDS(wf_file) else NULL
 if (!is.null(wf)) {
+  wf$pred <- wf$pred[wf$pred$variant %in% c(wf$ref, "base"), ]
+  wf$hyper <- wf$hyper[wf$hyper$variant %in% c(wf$ref, "base"), ]
   keep <- c("sex", "name", "variant", "season", "cutoff", "value", "reestimated")
   wf$hyper <- wf$hyper[wf$hyper$name %in% grep("^(tau|sigma|kappa|omega|delta|c_)", unique(wf$hyper$name), value = TRUE), keep]
   wf$priced_detail <- wf$priced_detail[c("sex", "match_date", "division", "phase", "ls_model", "ls_line", "ls_prod", "p_home", "phome_line", "phome_prod", "home_score", "away_score")]

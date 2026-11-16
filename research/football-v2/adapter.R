@@ -5,9 +5,10 @@
 # production Stan program's variable names. Mapping the new parameters onto
 # those names lets the INLA engine feed them unchanged:
 #
-#   mean_log_goals        = (c_home + c_away) / 2
+#   mean_log_goals        = (c_home + c_away) / 2  (+ the current scoring level)
 #   home_advantage_off[k] = (c_home - c_away) / 2 + ha_att[k]
 #   home_advantage_def[k] = (c_home - c_away) / 2 + ha_def[k]
+#                           (each + half the current league home-advantage level)
 #   cur_offense_away[k]   = attack state at team k's latest match week
 #   offense[r, k]         = attack state in the week of team k's r-th match
 #   alpha_mu3             = a large negative number (no shared-rate term)
@@ -57,6 +58,14 @@ fv2_as_fit <- function(draws, spec, prep, seed = 1L) {
   scalar <- function(x, name) matrix(x, ncol = 1L, dimnames = list(NULL, name))
 
   league_ha <- draws$c_home - draws$c_away
+  level_goal <- 0
+  if (!is.null(draws$lvl_goal)) {
+    # WHY: the simulators hold strengths at their current value, so they get
+    # the league-wide levels of the latest week with a played match too.
+    latest <- max(spec$obs$week_nr)
+    level_goal <- draws$lvl_goal[, latest]
+    league_ha <- league_ha + draws$lvl_ha[, latest]
+  }
   ha_off <- league_ha / 2 + draws$ha_att[, team_ix, drop = FALSE]
   ha_def <- league_ha / 2 + draws$ha_def[, team_ix, drop = FALSE]
   now <- spec$last_obs_slot[team_ix]
@@ -80,7 +89,7 @@ fv2_as_fit <- function(draws, spec, prep, seed = 1L) {
   }
 
   vars <- list(
-    mean_log_goals = scalar((draws$c_home + draws$c_away) / 2, "mean_log_goals"),
+    mean_log_goals = scalar((draws$c_home + draws$c_away) / 2 + level_goal, "mean_log_goals"),
     alpha_mu3 = scalar(rep(FV2_NO_SHARED_RATE, n_draw), "alpha_mu3"),
     beta_mu3_strength_diff = scalar(rep(0, n_draw), "beta_mu3_strength_diff"),
     home_advantage_off = indexed(ha_off, "home_advantage_off"),

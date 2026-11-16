@@ -27,6 +27,13 @@ fv2_variants <- function() {
     rev80_sq_none = list(clock = "break", rho = 0.8, param = "sq", style = "none"),
     rev70_sq_static = list(clock = "break", rho = 0.7, param = "sq", style = "static"),
     rev60_sq_static = list(clock = "break", rho = 0.6, param = "sq", style = "static"),
+    rev80_sq_static_lvl = list(
+      clock = "break", rho = 0.8, param = "sq", style = "static", level_walk = TRUE
+    ),
+    rev80_sq_none_lvl = list(
+      clock = "break", rho = 0.8, param = "sq", style = "none", level_walk = TRUE
+    ),
+    rev80_lvl = list(clock = "break", rho = 0.8, level_walk = TRUE),
     rev80_sq_static_div = list(
       clock = "break", rho = 0.8, param = "sq", style = "static", div_offsets = TRUE
     ),

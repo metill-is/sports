@@ -12,6 +12,8 @@
 #                      that change division always take a plain jump)
 #   home goals         Poisson(exp(c_home + att[h] + ha_att[h] - def[a] + offsets))
 #   away goals         Poisson(exp(c_away + att[a] - def[h] - ha_def[h] + offsets))
+#   optional           a league-wide scoring level and a league-wide home
+#                      advantage that each walk over the weeks (level_walk)
 #
 # Nothing here touches INLA or Stan: fv2_structure() gives the prior precision
 # pieces for INLA's generic3, fv2_stan_data() the same steps for Stan.
@@ -32,6 +34,7 @@ fv2_priors <- function() {
     kappa = c(1, 0.01),
     omega = c(0.3, 0.01),
     delta = c(0.3, 0.01),
+    level = c(0.05, 0.01),
     beta_sd = 0.25
   )
 }
@@ -62,12 +65,15 @@ fv2_pc_rate <- function(ua) -log(ua[[2]]) / ua[[1]]
 #'   style (attack = s + q, defence = s - q).
 #' @param style For param = "sq": "rw" (style walks), "static" (one value per
 #'   team), "none".
+#' @param level_walk Let the league-wide scoring level and home advantage
+#'   walk over the weeks (two weekly random walks shared by all teams).
 #' @param divisions Data frame team, season, division, rank (1 = top); needed
 #'   for `movers` and `rho < 1`. Schedule knowledge, known before a season.
 fv2_build <- function(train, pred = NULL,
                       clock = c("calendar", "break"), rho = 1,
                       movers = FALSE, div_offsets = FALSE,
                       param = c("ad", "sq"), style = c("rw", "static", "none"),
+                      level_walk = FALSE,
                       divisions = NULL, priors = fv2_priors()) {
   clock <- match.arg(clock)
   param <- match.arg(param)
@@ -164,15 +170,18 @@ fv2_build <- function(train, pred = NULL,
   cells <- sort(unique(c(obs$cell, prd$cell)))
   obs$cell_nr <- match(obs$cell, cells)
   prd$cell_nr <- match(prd$cell, cells)
+  weeks <- sort(unique(fv2_week(c(train$match_date, pred$match_date))))
+  obs$week_nr <- match(fv2_week(train$match_date), weeks)
+  prd$week_nr <- match(fv2_week(pred$match_date), weeks)
 
   list(
     teams = teams, K = K, slots = slots, S = S,
     first_slot = first_slot, last_obs_slot = last_obs_slot, steps = steps,
     promoted = promoted, relegated = relegated,
-    obs = obs, pred = prd, N = nrow(train), cells = cells,
+    obs = obs, pred = prd, N = nrow(train), cells = cells, weeks = weeks,
     opts = list(
       clock = clock, rho = rho, movers = movers, div_offsets = div_offsets,
-      param = param, style = style
+      param = param, style = style, level_walk = level_walk
     ),
     priors = priors
   )
@@ -238,6 +247,11 @@ fv2_design <- function(spec, which = c("obs", "pred")) {
     out$g_goal <- sp(rows, c(m$cell_nr, m$cell_nr), 1, n_cell)
     out$g_ha <- sp(rows, c(m$cell_nr, m$cell_nr), rep(c(0.5, -0.5), each = n), n_cell)
   }
+  if (isTRUE(spec$opts$level_walk)) {
+    n_week <- length(spec$weeks)
+    out$lvl_goal <- sp(rows, c(m$week_nr, m$week_nr), 1, n_week)
+    out$lvl_ha <- sp(rows, c(m$week_nr, m$week_nr), rep(c(0.5, -0.5), each = n), n_week)
+  }
   if (spec$opts$movers) {
     # WHY: a shock shifts a team's attack and defence together, so it enters a
     # row as the attacker's count minus the defender's. `def` already carries
@@ -283,9 +297,15 @@ fv2_stan_data <- function(spec, est_rho = FALSE) {
     stopifnot(!o$div_offsets)
     return(c(
       out, fv2_segments(spec),
-      list(n_field = if (o$param == "sq") 1L else 2L, est_rho = as.integer(est_rho), rho_fixed = o$rho)
+      list(
+        n_field = if (o$param == "sq") 1L else 2L, est_rho = as.integer(est_rho), rho_fixed = o$rho,
+        use_level = as.integer(isTRUE(o$level_walk)), n_week = length(spec$weeks),
+        match_week = spec$obs$week_nr, week_step = c(0, sqrt(diff(spec$weeks))),
+        rate_level = fv2_pc_rate(p$level)
+      )
     ))
   }
+  stopifnot(!isTRUE(o$level_walk))
   st <- spec$steps
   step_in <- step_brk <- numeric(spec$S)
   step_in[st$slot[st$class == "in"]] <- sqrt(st$delta[st$class == "in"])
@@ -395,5 +415,21 @@ fv2_predict <- function(draws, spec) {
     eta_home <- eta_home + g + 0.5 * h
     eta_away <- eta_away + g - 0.5 * h
   }
+  if (!is.null(draws$lvl_goal)) {
+    g <- draws$lvl_goal[, m$week_nr, drop = FALSE]
+    h <- draws$lvl_ha[, m$week_nr, drop = FALSE]
+    eta_home <- eta_home + g + 0.5 * h
+    eta_away <- eta_away + g - 0.5 * h
+  }
   list(lam_home = t(exp(eta_home)), lam_away = t(exp(eta_away)))
+}
+
+#' A league-wide level walk from its innovations, centred on zero over the
+#' weeks: the R twin of the level walks in stan/fv2_rev.stan, and the same
+#' prior as INLA's `rw1` on the week values with a sum-to-zero constraint.
+#'
+#' @param week_step sqrt(weeks since the previous week in the grid), 0 first.
+fv2_level_walk <- function(week_step, z, sigma) {
+  raw <- cumsum(sigma * week_step * z)
+  raw - mean(raw)
 }

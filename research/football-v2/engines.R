@@ -12,6 +12,13 @@ fv2_hyper_names <- function(spec) {
   out
 }
 
+#' Number of hyperparameters INLA estimates for a spec.
+fv2_n_theta <- function(spec) {
+  o <- spec$opts
+  length(unlist(fv2_hyper_names(spec))) + 2L + 2L * isTRUE(o$div_offsets) +
+    2L * isTRUE(o$level_walk) + (o$param == "sq" && o$style == "static")
+}
+
 #' Fit the spec with R-INLA.
 #'
 #' @param int_strategy "auto" (CCD or grid over the hyperparameters), "eb"
@@ -47,6 +54,8 @@ fv2_fit_inla <- function(spec, int_strategy = "auto", n_samp = 1000L,
   hyp <- field_hyper()
   hyp_iid <- list(prec = pc(p$omega, 0.05))
   hyp_cell <- list(prec = pc(p$delta, 0.05))
+  hyp_level <- list(prec = pc(p$level, 0.01))
+  week_values <- spec$weeks
 
   y <- c(spec$obs$goals_home, spec$obs$goals_away)
   fixed <- data.frame(c_home = des$c_home, c_away = des$c_away)
@@ -75,6 +84,11 @@ fv2_fit_inla <- function(spec, int_strategy = "auto", n_samp = 1000L,
     A <- c(A, list(des$g_goal, des$g_ha))
     eff <- c(eff, list(g_goal = seq_along(spec$cells), g_ha = seq_along(spec$cells)))
   }
+  level <- isTRUE(o$level_walk)
+  if (level) {
+    A <- c(A, list(des$lvl_goal, des$lvl_ha))
+    eff <- c(eff, list(lvl_goal = spec$weeks, lvl_ha = spec$weeks))
+  }
   A <- c(A, list(1))
   eff <- c(eff, list(fixed))
   stk <- INLA::inla.stack(data = list(y = y), A = A, effects = eff, remove.unused = FALSE)
@@ -86,7 +100,16 @@ fv2_fit_inla <- function(spec, int_strategy = "auto", n_samp = 1000L,
     if ("sty_k" %in% names(eff)) "f(sty_k, model = 'iid', constr = TRUE, hyper = list(prec = pc(p$tau, 0.2)))",
     "f(ha_att, model = 'iid', hyper = hyp_iid)",
     "f(ha_def, model = 'iid', hyper = hyp_iid)",
-    if (o$div_offsets) c("f(g_goal, model = 'iid', hyper = hyp_cell)", "f(g_ha, model = 'iid', hyper = hyp_cell)")
+    if (o$div_offsets) c("f(g_goal, model = 'iid', hyper = hyp_cell)", "f(g_ha, model = 'iid', hyper = hyp_cell)"),
+    # WHY: rw1 on the week values themselves, so a gap of d weeks carries d
+    # weeks of variance; the sum-to-zero constraint leaves the level to the
+    # intercepts.
+    if (level) {
+      paste0(
+        "f(", c("lvl_goal", "lvl_ha"),
+        ", model = 'rw1', values = week_values, constr = TRUE, scale.model = FALSE, hyper = hyp_level)"
+      )
+    }
   )
   form <- stats::as.formula(paste("y ~", paste(terms, collapse = " + ")))
   environment(form) <- environment()
@@ -111,7 +134,7 @@ fv2_fit_inla <- function(spec, int_strategy = "auto", n_samp = 1000L,
   t_fit <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
 
   t1 <- Sys.time()
-  sel <- lapply(eff[names(eff) != ""], function(i) i)
+  sel <- lapply(eff[names(eff) != ""], function(i) if (is.data.frame(i)) i else seq_along(i))
   sel <- sel[!vapply(sel, is.data.frame, logical(1))]
   for (nm in names(fixed)) sel[[nm]] <- 1L
   smp <- INLA::inla.posterior.sample(n_samp, r, selection = sel, seed = seed, num.threads = 1L)
@@ -131,7 +154,8 @@ fv2_fit_inla <- function(spec, int_strategy = "auto", n_samp = 1000L,
   hn <- fv2_hyper_names(spec)
   hyper_names <- c(
     hn[[1L]], if ("f2" %in% names(eff)) hn[[2L]], if ("sty_k" %in% names(eff)) "tau_sty",
-    "omega_att", "omega_def", if (o$div_offsets) c("delta_goal", "delta_ha")
+    "omega_att", "omega_def", if (o$div_offsets) c("delta_goal", "delta_ha"),
+    if (level) c("sigma_lvl_goal", "sigma_lvl_ha")
   )
   stopifnot(length(hyper_names) == ncol(hyp_draws))
   colnames(hyp_draws) <- hyper_names
@@ -163,6 +187,10 @@ fv2_fit_inla <- function(spec, int_strategy = "auto", n_samp = 1000L,
   if (o$div_offsets) {
     draws$g_goal <- block("g_goal")
     draws$g_ha <- block("g_ha")
+  }
+  if (level) {
+    draws$lvl_goal <- block("lvl_goal")
+    draws$lvl_ha <- block("lvl_ha")
   }
 
   # WHY: the sd summary is taken from the log-precision marginal; the
@@ -238,6 +266,7 @@ fv2_fit_stan <- function(spec, stan_file, exe_dir, output_dir,
     walk_vars, if (style) c(tau_sty = "tau_sty"),
     c(omega_att = "omega_att", omega_def = "omega_def"),
     if (spec$opts$div_offsets) c(delta_goal = "delta_goal", delta_ha = "delta_ha"),
+    if (isTRUE(spec$opts$level_walk)) c(sigma_lvl_goal = "sigma_lvl_goal", sigma_lvl_ha = "sigma_lvl_ha"),
     if (est_rho) c(rho = "rho")
   )
   mat <- function(v) unclass(posterior::as_draws_matrix(fit$draws(v)))
@@ -252,7 +281,11 @@ fv2_fit_stan <- function(spec, stan_file, exe_dir, output_dir,
     draws$g_goal <- mat("g_goal")
     draws$g_ha <- mat("g_ha")
   }
-  for (nm in c("att", "def", "ha_att", "ha_def", "g_goal", "g_ha")) {
+  if (isTRUE(spec$opts$level_walk)) {
+    draws$lvl_goal <- mat("lvl_goal")
+    draws$lvl_ha <- mat("lvl_ha")
+  }
+  for (nm in c("att", "def", "ha_att", "ha_def", "g_goal", "g_ha", "lvl_goal", "lvl_ha")) {
     if (!is.null(draws[[nm]])) dimnames(draws[[nm]]) <- NULL
   }
   dg <- fit$diagnostic_summary(quiet = TRUE)

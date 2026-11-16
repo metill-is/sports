@@ -8,6 +8,8 @@
 // rho is fixed (as in INLA, where it sits inside the precision matrix) or estimated here.
 // n_field = 2: attack and defence walks. n_field = 1: one strength walk, with an optional
 // fixed style value per team (attack = strength + style, defence = strength - style).
+// use_level = 1 adds two league-wide weekly walks, centred on zero over the weeks: a scoring
+// level added to both sides, and a home advantage added as +1/2 at home and -1/2 away.
 functions {
   // One state field from its innovations. The R twin is fv2_walk() in spec.R.
   vector walk(vector lvl, vector z, vector z_brk, real sigma, real kappa, real rho,
@@ -80,12 +82,20 @@ data {
   array[N] int<lower=1, upper=K> home_team;
   array[N] int<lower=0> goals_home;
   array[N] int<lower=0> goals_away;
+  int<lower=0, upper=1> use_level;
+  int<lower=1> n_week;                           // weeks with a match or a fixture
+  array[N] int<lower=1, upper=n_week> match_week;
+  vector<lower=0>[n_week] week_step;             // sqrt(weeks since the previous one), 0 first
   real c_prior_mean;
   real<lower=0> c_prior_sd;
   real<lower=0> rate_tau;
   real<lower=0> rate_sigma;
   real<lower=0> rate_kappa;
   real<lower=0> rate_omega;
+  real<lower=0> rate_level;
+}
+transformed data {
+  int n_lvl = use_level ? n_week : 0;
 }
 parameters {
   real c_home;
@@ -103,13 +113,25 @@ parameters {
   real<lower=0> omega_def;
   vector[K] ha_att_z;
   vector[K] ha_def_z;
+  array[use_level] real<lower=0> sigma_lvl_goal; // per sqrt(week)
+  array[use_level] real<lower=0> sigma_lvl_ha;
+  vector[n_lvl] z_lvl_goal;
+  vector[n_lvl] z_lvl_ha;
 }
 transformed parameters {
   real rho = est_rho ? rho_par[1] : rho_fixed;
   vector[K] ha_att = omega_att * ha_att_z;
   vector[K] ha_def = omega_def * ha_def_z;
+  vector[n_lvl] lvl_goal;
+  vector[n_lvl] lvl_ha;
   vector[S] att;
   vector[S] def;
+  if (use_level) {
+    vector[n_week] raw_goal = cumulative_sum(sigma_lvl_goal[1] * week_step .* z_lvl_goal);
+    vector[n_week] raw_ha = cumulative_sum(sigma_lvl_ha[1] * week_step .* z_lvl_ha);
+    lvl_goal = raw_goal - mean(raw_goal);
+    lvl_ha = raw_ha - mean(raw_ha);
+  }
   {
     array[n_field] vector[S] x;
     for (f in 1:n_field) {
@@ -148,14 +170,30 @@ model {
   omega_def ~ exponential(rate_omega);
   ha_att_z ~ std_normal();
   ha_def_z ~ std_normal();
-  goals_home ~ poisson_log(c_home + att[home_slot] + ha_att[home_team] - def[away_slot]);
-  goals_away ~ poisson_log(c_away + att[away_slot] - def[home_slot] - ha_def[home_team]);
+  sigma_lvl_goal ~ exponential(rate_level);
+  sigma_lvl_ha ~ exponential(rate_level);
+  z_lvl_goal ~ std_normal();
+  z_lvl_ha ~ std_normal();
+  {
+    vector[N] eta_home = c_home + att[home_slot] + ha_att[home_team] - def[away_slot];
+    vector[N] eta_away = c_away + att[away_slot] - def[home_slot] - ha_def[home_team];
+    if (use_level) {
+      eta_home += lvl_goal[match_week] + 0.5 * lvl_ha[match_week];
+      eta_away += lvl_goal[match_week] - 0.5 * lvl_ha[match_week];
+    }
+    goals_home ~ poisson_log(eta_home);
+    goals_away ~ poisson_log(eta_away);
+  }
 }
 generated quantities {
   vector[N] log_lik;
   {
     vector[N] eta_home = c_home + att[home_slot] + ha_att[home_team] - def[away_slot];
     vector[N] eta_away = c_away + att[away_slot] - def[home_slot] - ha_def[home_team];
+    if (use_level) {
+      eta_home += lvl_goal[match_week] + 0.5 * lvl_ha[match_week];
+      eta_away += lvl_goal[match_week] - 0.5 * lvl_ha[match_week];
+    }
     for (n in 1:N) {
       log_lik[n] = poisson_log_lpmf(goals_home[n] | eta_home[n])
                    + poisson_log_lpmf(goals_away[n] | eta_away[n]);

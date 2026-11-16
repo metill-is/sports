@@ -224,6 +224,59 @@ test_that("movers get their own step class and a cumulative shock covariate", {
   expect_error(fv2$fv2_build(toy_matches(), clock = "calendar", movers = TRUE, divisions = toy_divisions()))
 })
 
+test_that("league-level walks enter both sides and split the home advantage", {
+  spec <- fv2$fv2_build(toy_matches(), toy_fixture(), level_walk = TRUE)
+  expect_identical(spec$weeks, sort(unique(fv2$fv2_week(c(toy_matches()$match_date, toy_fixture()$match_date)))))
+  des <- fv2$fv2_design(spec)
+  n <- spec$N
+  expect_equal(Matrix::rowSums(des$lvl_goal), rep(1, 2 * n))
+  expect_equal(Matrix::rowSums(des$lvl_ha), rep(c(0.5, -0.5), each = n))
+  expect_identical(max.col(as.matrix(des$lvl_goal)), rep(spec$obs$week_nr, 2))
+  # Prediction applies what the design encodes.
+  n_week <- length(spec$weeks)
+  draws <- list(
+    c_home = 0, c_away = 0, att = matrix(0, 1, spec$S), def = matrix(0, 1, spec$S),
+    ha_att = matrix(0, 1, spec$K), ha_def = matrix(0, 1, spec$K),
+    lvl_goal = matrix(seq_len(n_week) / 100, 1), lvl_ha = matrix(seq_len(n_week) / 50, 1)
+  )
+  p <- fv2$fv2_predict(draws, spec)
+  pd <- fv2$fv2_design(spec, "pred")
+  via_design <- as.numeric(pd$lvl_goal %*% draws$lvl_goal[1, ] + pd$lvl_ha %*% draws$lvl_ha[1, ])
+  expect_equal(log(c(p$lam_home, p$lam_away)), via_design)
+  w <- spec$pred$week_nr
+  expect_equal(via_design, c(w / 100 + w / 100, w / 100 - w / 100))
+  expect_null(fv2$fv2_design(fv2$fv2_build(toy_matches()))$lvl_goal)
+})
+
+test_that("the level walk is a random walk over the weeks, centred on zero", {
+  weeks <- c(3L, 4L, 6L, 30L, 31L)
+  step <- c(0, sqrt(diff(weeks)))
+  sigma <- 0.02
+  a <- vapply(seq_along(weeks), function(i) {
+    e <- numeric(length(weeks))
+    e[i] <- 1
+    fv2$fv2_level_walk(step, e, sigma)
+  }, numeric(length(weeks)))
+  expect_equal(colSums(a), rep(0, 5))
+  expect_equal(a[, 1], rep(0, 5))
+  # The same prior as an intrinsic RW1 on the week values under a zero sum:
+  # its covariance is the pseudo-inverse of the RW1 precision.
+  d <- diff(diag(5))
+  q <- t(d) %*% diag(1 / (sigma^2 * diff(weeks))) %*% d
+  e <- eigen(q, symmetric = TRUE)
+  keep <- e$values > 1e-8
+  pinv <- e$vectors[, keep] %*% diag(1 / e$values[keep]) %*% t(e$vectors[, keep])
+  expect_equal(tcrossprod(a), pinv)
+  sd <- fv2$fv2_stan_data(fv2$fv2_build(
+    toy_matches(), toy_fixture(),
+    clock = "break", rho = 0.8, level_walk = TRUE, divisions = toy_divisions()
+  ))
+  expect_identical(sd$use_level, 1L)
+  expect_identical(sd$week_step[1], 0)
+  expect_identical(length(sd$week_step), sd$n_week)
+  expect_error(fv2$fv2_stan_data(fv2$fv2_build(toy_matches(), level_walk = TRUE)))
+})
+
 test_that("the shock covariate in the design is what prediction applies", {
   spec <- fv2$fv2_build(
     toy_matches(), toy_fixture(),
@@ -501,6 +554,20 @@ test_that("the Stan programs compile and read the spec", {
   )
   expect_true(all(h$draws$hyper[, "rho"] > 0 & h$draws$hyper[, "rho"] < 1))
   expect_identical(dim(h$draws$att), c(200L, rev$S))
+
+  lvl <- fv2$fv2_build(
+    sim,
+    clock = "break", rho = 0.8, param = "sq", style = "static",
+    level_walk = TRUE, divisions = div
+  )
+  k <- run(lvl)
+  expect_identical(
+    colnames(k$draws$hyper),
+    c("tau_str", "sigma_str", "kappa_str", "tau_sty", "omega_att", "omega_def", "sigma_lvl_goal", "sigma_lvl_ha")
+  )
+  expect_identical(dim(k$draws$lvl_goal), c(200L, length(lvl$weeks)))
+  expect_lt(max(abs(rowSums(k$draws$lvl_goal))), 1e-5)
+  expect_lt(max(abs(rowSums(k$draws$lvl_ha))), 1e-5)
 })
 
 toy_draws <- function(spec, n_draw = 3L, seed = 5L) {
@@ -585,6 +652,27 @@ test_that("the adapter speaks the production fit's variable names", {
   expect_identical(dim(get("goals1_pred")), c(3L, 1L))
   expect_true(all(get("goals1_pred") == round(get("goals1_pred"))))
   expect_error(fit$draws("sigma"), "no draws")
+})
+
+test_that("the adapter hands the simulators the current league levels", {
+  prep <- toy_prep()
+  spec <- fv2$fv2_build(toy_matches(), fv2$fv2_pred_from_prep(prep$pred_d), level_walk = TRUE)
+  draws <- toy_draws(spec)
+  n_week <- length(spec$weeks)
+  draws$lvl_goal <- matrix(rep(seq_len(n_week) / 10, each = 3), 3)
+  draws$lvl_ha <- matrix(rep(seq_len(n_week) / 20, each = 3), 3)
+  fit <- fv2$fv2_as_fit(draws, spec, prep)
+  get <- function(v) unclass(posterior::as_draws_matrix(fit$draws(v)))
+  latest <- max(spec$obs$week_nr)
+  expect_lt(latest, n_week)
+  expect_equal(
+    as.numeric(get("mean_log_goals")), (draws$c_home + draws$c_away) / 2 + latest / 10
+  )
+  expect_equal(
+    get("home_advantage_tot")[, 1],
+    draws$c_home - draws$c_away + latest / 20 + draws$ha_att[, 3] + draws$ha_def[, 3],
+    ignore_attr = TRUE
+  )
 })
 
 test_that("production's extract_posteriors reads the adapted fit", {
