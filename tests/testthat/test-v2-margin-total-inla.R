@@ -148,3 +148,49 @@ test_that("a fit returns the status of its mode search and warns when the search
   )
   expect_identical(bad$mode_status, 2L)
 })
+
+# Two divisions of four teams over three seasons. Each division has its own scoring level
+# and the two move in opposite directions from season to season, so the six
+# division-season levels are all different: a fit that mixed up divisions, or seasons
+# within a division, could not return them.
+simulate_two_divisions <- function(seed = 5, sigma_total = 6) {
+  set.seed(seed)
+  level <- rbind(G66 = c(46, 40, 34), OD = c(56, 62, 68))
+  rows <- list()
+  for (dv in rownames(level)) {
+    teams <- paste0(dv, 1:4)
+    pace <- rnorm(4, 0, 1)
+    pace <- pace - mean(pace)
+    for (s in 1:3) {
+      pairs <- expand.grid(h = 1:4, a = 1:4)
+      pairs <- pairs[pairs$h != pairs$a, ]
+      pairs <- pairs[rep(seq_len(nrow(pairs)), 2), ]
+      dates <- as.Date(sprintf("%d-09-01", 2023 + s)) + sort(sample(0:180, nrow(pairs), replace = TRUE))
+      total <- level[dv, s] + pace[pairs$h] + pace[pairs$a] + rnorm(nrow(pairs), 0, sigma_total)
+      margin <- rnorm(nrow(pairs), 0, 5)
+      rows[[paste(dv, s)]] <- data.frame(
+        match_date = dates, season = 2024L + s, division = dv,
+        home_team = teams[pairs$h], away_team = teams[pairs$a],
+        home_score = (total + margin) / 2, away_score = (total - margin) / 2
+      )
+    }
+  }
+  matches <- do.call(rbind, rows)
+  list(matches = matches, level = level, teams = sort(unique(matches$home_team)))
+}
+
+test_that("the total fit keeps each division's level on that division's own season path", {
+  skip_if_not_installed("INLA")
+  sim <- simulate_two_divisions()
+  v <- build_v2_data(sim$matches, sim$matches[0, ], sim$teams)
+
+  fit <- fit_v2_inla(v, "total", v2_priors("handball"), int_strategy = "eb", within = "none")
+
+  expect_equal(v$divisions, rownames(sim$level))
+  expect_equal(rownames(fit$fixed), c("alpha1", "alpha2"))
+  # Level of division d in season s = the division's intercept + its season path, which
+  # R-INLA returns division by division.
+  path <- matrix(fit$random$s_s$mean, nrow = v$ND, ncol = v$NS, byrow = TRUE)
+  fitted_level <- fit$fixed$mean + path
+  expect_lt(max(abs(fitted_level - sim$level)), 3.5)
+})
