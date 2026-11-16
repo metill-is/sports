@@ -68,7 +68,8 @@ paths:
   sampler metrics, because `needs_refit()` reads `n_obs` off the newest row.
   `run_fit_targets()` must keep `engine` in its whitelisted slice
   (`test-pipeline-run-isolation.R`). INLA is not in `DESCRIPTION`: the code
-  guards with `requireNamespace()` and the tests skip without it. Switching
+  guards with `requireNamespace()` (for INLA and for `sn`, which INLA only
+  suggests but its posterior sampler needs) and the tests skip without them. Switching
   a league is the owner's decision; `test-model-v2.R` pins "no league is on
   the INLA engine" so the switch has to edit that expectation. Evidence and
   cutover plan: `docs/reports/2026-11-15-football-v2-proposal.qmd`.

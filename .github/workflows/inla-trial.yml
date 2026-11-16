@@ -68,6 +68,7 @@ jobs:
             any::testthat
             any::fmesher
             any::MatrixModels
+            any::sn
 
       - name: Reinstall V8 from source with bundled static libv8
         env:
@@ -77,6 +78,8 @@ jobs:
 
       # INLA is not on CRAN. Its repository serves one tarball per release, so
       # the pin is the file name; the R dependencies came from the step above.
+      # That list includes sn, which INLA only suggests but its posterior
+      # sampler stops without.
       - name: Install R-INLA at the pinned version
         run: |
           Rscript -e 'install.packages(sprintf("%s/src/contrib/INLA_%s.tar.gz", Sys.getenv("INLA_REPO"), Sys.getenv("INLA_VERSION")), repos = NULL, type = "source")'

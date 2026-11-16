@@ -147,10 +147,13 @@ fit_model_v2_inla <- function(prep, league, sex, end_date,
     ))
   }
 
-  if (!requireNamespace("INLA", quietly = TRUE)) {
+  # WHY: INLA lists sn under Suggests, but its posterior sampler stops without
+  # it. Found on a GitHub runner, where sn was not already there by accident.
+  absent <- c("INLA", "sn")[!vapply(c("INLA", "sn"), requireNamespace, logical(1), quietly = TRUE)]
+  if (length(absent)) {
     cli::cli_abort(c(
-      "League asks for {.code engine: inla} but the {.pkg INLA} package is not installed.",
-      i = "Install it from {.url https://inla.r-inla-download.org/R/stable} or set {.code engine: stan}."
+      "League asks for {.code engine: inla} but {.pkg {absent}} {?is/are} not installed.",
+      i = "INLA installs from {.url https://inla.r-inla-download.org/R/stable}, sn from CRAN; or set {.code engine: stan}."
     ))
   }
 

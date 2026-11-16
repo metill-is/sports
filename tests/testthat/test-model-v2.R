@@ -343,6 +343,7 @@ test_that("the prior guard counts PC priors against the spec", {
 
 test_that("the INLA engine returns draws in the shared layout", {
   skip_if_not_installed("INLA")
+  skip_if_not_installed("sn")
   sim <- simulate_league()
   train <- sim[sim$match_date < max(sim$match_date), ]
   pred <- sim[sim$match_date == max(sim$match_date), ]
@@ -624,6 +625,7 @@ test_that("fit_league fits with Stan unless the league says engine: inla", {
 
 test_that("an INLA fit of a football store reads like a production fit", {
   skip_if_not_installed("INLA")
+  skip_if_not_installed("sn")
   root <- withr::local_tempdir()
   s <- v2_store(root)
   prep <- prepare_data(s$league, "male", end_date = s$end_date, root = root)
