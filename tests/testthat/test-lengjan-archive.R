@@ -271,3 +271,30 @@ test_that("an event whose kickoff does not parse keeps its rows, with NA dates",
   expect_equal(sum(is.na(hb$kickoff_at)), 9L)
   expect_equal(is.na(hb$match_date), is.na(hb$kickoff_at))
 })
+
+# A scalar lubridate::ymd_hms() call costs about 2.5 ms, so parsing per line
+# made a year-long manifest (35,040 lines) take about 100 s to index.
+test_that("the index parses the manifest's timestamps in one vectorised call", {
+  calls <- 0L
+  real <- .lengjan_parse_utc
+  local_mocked_bindings(.lengjan_parse_utc = function(x) {
+    calls <<- calls + 1L
+    real(x)
+  })
+  ix <- lengjan_archive_index(.two_captures())
+  expect_equal(calls, 1L)
+  expect_equal(format(ix$ts, "%H:%M", tz = "UTC"), c("12:00", "12:30"))
+  expect_equal(attr(ix$ts, "tzone"), "UTC")
+})
+
+test_that("skipped manifest lines are reported in one warning naming each line", {
+  dir <- .local_archive(list(list(ts = "2026-09-23T12:00:00Z", program = "current-program.json", markets = character())))
+  cat('{"v": 1, "ts": "nonsense", "status": "ok"}\n{"v": 1, "ts": "2026-09-2',
+    file = file.path(dir, "manifest", "2026-09.jsonl"), append = TRUE
+  )
+  w <- capture_warnings(ix <- lengjan_archive_index(dir))
+  expect_length(w, 1L)
+  expect_match(w, "2026-09.jsonl line 2: no parseable `ts`", fixed = TRUE)
+  expect_match(w, "2026-09.jsonl line 3: not a JSON object", fixed = TRUE)
+  expect_equal(nrow(ix), 1L)
+})
