@@ -45,6 +45,11 @@ played_only <- function(res, sport) {
   res[!.is_forfeit(res, sport), , drop = FALSE]
 }
 
+# The tie treatment proposed for regulation-time basketball, per cell: one level-score
+# shift per division for men, a single shift for women. Every table that shows "v2" for
+# basketball uses this variant.
+REG_SHIFT <- c(bb_m = "shift_div", bb_f = "shift")
+
 # WHY: handball's PO rows are the top division's play-off bracket, one short block
 # per season, so they share OD's scoring level instead of getting their own.
 DIVISION_MAP <- list(handball = c(PO = "OD"), basketball = NULL)

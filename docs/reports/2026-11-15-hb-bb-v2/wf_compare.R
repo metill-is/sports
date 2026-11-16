@@ -1,6 +1,7 @@
 # The same matches, three forecasters: production's stored pre-match forecast (the newest
-# archived fit dated strictly before the match), the v2 walk-forward (weekly cutoff, so up
-# to seven days older than production's forecast), and the de-vigged Lengjan line.
+# archived fit dated strictly before the match, however old that is: `lead_days`), the v2
+# walk-forward (weekly cutoff, one to seven days before the match), and the de-vigged
+# Lengjan line. Neither forecaster always has the newer information.
 #
 # Normalisation of the margin scores. Handball: the rounded predictive over every whole
 # number, for both forecasters. Basketball final margin: a final score cannot be level, so
@@ -111,12 +112,13 @@ for (cell in names(CELLS)) {
     # Basketball: the recommended model is trained on regulation time and carried to the
     # final result through its tie and overtime model; that is what is compared.
     v2 <- v2r
-    v2$lsm_raw <- v2r$lsm_final_shift_div
-    v2$lst_raw <- v2r$lst_final_shift_div
-    v2$ll_wdl_raw <- v2r$ll_final_shift_div
-    v2$p_home <- v2r$p_home_final_shift_div
+    variant <- REG_SHIFT[[cell]]
+    v2$lsm_raw <- v2r[[paste0("lsm_final_", variant)]]
+    v2$lst_raw <- v2r[[paste0("lst_final_", variant)]]
+    v2$ll_wdl_raw <- v2r[[paste0("ll_final_", variant)]]
+    v2$p_home <- v2r[[paste0("p_home_final_", variant)]]
     v2$ll_wdl_shift <- NULL
-    v2_label <- "v2 regulation-time model + ties + overtime, scored on the final result"
+    v2_label <- sprintf("v2 regulation-time model + ties (%s) + overtime, scored on the final result", variant)
   }
   pa <- prod_archive(cell)
   cat(sprintf("\n================ %s: %d matches with a stored production forecast (fit dates %s to %s; median lead %.0f days)\n",
@@ -153,7 +155,10 @@ for (cell in names(CELLS)) {
       m <- jm$margin_fit
       pick <- function(h, dr, aw) log(ifelse(m > 0, h, ifelse(m < 0, aw, dr)))
       jm$ll_market <- pick(jm$q_home, jm$q_draw, jm$q_away)
-      jm$ll_v2 <- jm$ll_wdl_raw
+      # Handball: the plain rounded margin, as proposed. Basketball (regulation 1X2): the
+      # proposed tie treatment for the cell, the one every other "v2" table uses.
+      jm$ll_v2_plain <- jm$ll_wdl_raw
+      jm$ll_v2 <- if (ci$sport == "basketball") jm[[paste0("ll_wdl_", REG_SHIFT[[cell]])]] else jm$ll_wdl_raw
       jm$ll_v2_shift <- if ("ll_wdl_shift" %in% names(jm)) jm$ll_wdl_shift else jm$ll_wdl_raw
       jm$ll_prod <- pick(jm$p_home_band, jm$p_draw_band, 1 - jm$p_home_band - jm$p_draw_band)
       cat(sprintf("  Lengjan 1X2 (%s): %d priced matches matched, mean overround %.3f, %s to %s\n",
