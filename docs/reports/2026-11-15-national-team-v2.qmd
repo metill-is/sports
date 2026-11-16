@@ -1031,6 +1031,22 @@ Rscript scripts/nt/build_report_data.R $D/out docs/reports/2026-11-15-national-t
 quarto render docs/reports/2026-11-15-national-team-v2.qmd
 ```
 
+**The file behind each headline number.** Paths under "Experiment output" are relative to `/Users/brynjolfurjonsson/.claude-reviews/sports-national-team-v2/out/`; the last column is the element of the committed `docs/reports/2026-11-15-national-team-v2/results.rds` that this report reads.
+
+| Headline number | Experiment output | In `results.rds` |
+| --- | --- | --- |
+| Tournament scores of v2, its variants and Elo (Tables 1 to 5, 8, 9, 10) | `eval/eval_wc2022.rds`, `eval/eval_euro2024.rds`, `eval/eval_wc2026.rds` (`$scores[[model]]`, `$fits[[model]]`) | `$scores`, `$matches`, `$fits` |
+| Production approach's scores and fit diagnostics | `prod/prod_wc2022.rds`, `prod/prod_euro2024.rds`, `prod/prod_wc2026.rds`, scored into the `eval_*.rds` files as model `production` | `$scores` (model `production`), `$production` |
+| Walk-forward panel (Tables 6, 7, Figures 2, 3, the draw counts) | `wf/base/walk_forward.rds`, `wf/hl3/…`, `wf/damp08/…`, `wf/novenue/…` | `$walk_forward`, `$walk_forward_hyper` |
+| Draw correction (Table 11) | computed in this report from the panel and tournament forecasts | `$walk_forward`, `$scores` |
+| Knockout treatments and title probabilities (Table 12, Figure 4) | `sim_compare_wc2026.rds`, from the fit `eval/fit_wc2026_base.rds` | `$simulation` |
+| Production's pre-tournament title probabilities (Table 13) | `prod_forecast_wc2026.rds` | `$production_forecast` |
+| Extra-time counts and goals | derived from the `eval_*.rds` files by `scripts/nt/build_report_data.R` | `$extra_time` |
+| Women's file check (Table 14) | `women_check.rds` | `$women` |
+| Stan against INLA and the friendly multiplier (Table 15) | `stan/stan_reference_wc2026_base.rds`, `stan/stan_reference_wc2026_damped.rds` | `$stan` |
+| Team-filter check | `eval_wide/eval_wc2022.rds`, `eval_wide/eval_euro2024.rds` | `$filter_check` |
+| Iceland's current standing (Figure 5) | `current_men.rds`, `current_women.rds` | `$current` |
+
 Code: `R/nt-data.R`, `R/nt-model.R`, `R/nt-score.R`, `R/nt-baselines.R`, `R/nt-simulate.R`, `R/nt-stan.R`; tests in `tests/testthat/test-nt-*.R`.
 
 **On timings.** Every fit ran on a machine shared with other sessions' model runs, so no wall-clock figure here is a benchmark. As orders of magnitude: an INLA fit of v2 on four threads took between half a minute and a minute and a half while two other four-core jobs were running; the production model's four NUTS chains took tens of minutes per tournament under the same conditions. The Stan reference of v2 needed about `r if (have_stan) sprintf("%.0f", res$stan$base$mean_leapfrog) else "55"` leapfrog steps per iteration.
