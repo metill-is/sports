@@ -4,7 +4,11 @@
 \alias{nt_core_teams}
 \title{Teams that belong to the sanctioned international game.}
 \usage{
-nt_core_teams(results, pattern = "qualif", exclude = "^CONIFA|Island Games")
+nt_core_teams(
+  results,
+  pattern = .nt_core_pattern,
+  exclude = "^CONIFA|Island Games"
+)
 }
 \arguments{
 \item{results}{Results already restricted to the training window.}
@@ -18,7 +22,9 @@ Character vector of team names.
 }
 \description{
 The source files also carry non-FIFA football (CONIFA, Island Games, regional
-selections). A team is kept when it has played at least one qualifying match
-of a sanctioned competition in the window; that admits every FIFA member and
-the confederation-only members that enter continental qualifying.
+selections). A team is kept when it has played, in the window, at least one
+qualifier of a sanctioned competition or one match at the finals of the
+World Cup, a continental championship or the Olympic tournament. That admits
+every FIFA member and the confederation-only members that enter continental
+competitions.
 }

@@ -77,14 +77,36 @@ test_that("an extra-time winner is scored as level after 90 minutes", {
   expect_true(all(m$extra_time))
 })
 
-test_that("core teams need a sanctioned qualifier", {
+test_that("core teams need a sanctioned qualifier or finals match", {
   r <- nt_test_results(
     "2024-01-01", "A", "B", 1, 0, "FIFA World Cup qualification", "A", FALSE,
     "2024-01-02", "C", "D", 1, 0, "CONIFA World Football Cup qualification", "C", FALSE,
     "2024-01-03", "E", "A", 1, 0, "Friendly", "E", FALSE,
-    "2024-01-04", "F", "B", 0, 0, "AFC Olympic Qualifying Tournament", "F", FALSE
+    "2024-01-04", "F", "B", 0, 0, "AFC Olympic Qualifying Tournament", "F", FALSE,
+    "2024-01-05", "G", "H", 0, 0, "Island Games", "G", FALSE
   )
   expect_equal(nt_core_teams(r), c("A", "B", "F"))
+})
+
+test_that("teams that qualify through a finals tournament are core", {
+  r <- nt_test_results(
+    "2022-07-10", "Brazil", "Colombia", 1, 0, "Copa América", "Colombia", TRUE,
+    "2022-07-20", "Vanuatu", "Fiji", 1, 0, "Oceania Nations Cup", "Qatar", TRUE,
+    "2024-08-01", "Great Britain", "Chile", 2, 0, "Olympic Games", "France", TRUE,
+    "2024-02-01", "Ghana", "Mali", 2, 0, "African Cup of Nations", "Ivory Coast", TRUE,
+    "2024-02-02", "Zambia", "Kenya", 2, 0, "Africa Cup of Nations", "Morocco", TRUE,
+    "2024-03-01", "X", "Y", 2, 0, "Friendly", "X", FALSE,
+    "2024-03-02", "P", "Q", 2, 0, "Algarve Cup", "Portugal", TRUE,
+    "2024-03-03", "R", "S", 2, 0, "UEFA Nations League", "R", FALSE
+  )
+  expect_equal(
+    nt_core_teams(r),
+    sort(c(
+      "Brazil", "Colombia", "Vanuatu", "Fiji", "Great Britain", "Chile",
+      "Ghana", "Mali", "Zambia", "Kenya"
+    ))
+  )
+  expect_equal(nt_core_teams(r, pattern = "qualif"), character())
 })
 
 test_that("nt_prepare keeps only matches strictly before the cutoff, in the window", {

@@ -10,7 +10,7 @@ nt_prepare(
   window_years = 12,
   min_matches = 5L,
   step_months = 3L,
-  core_pattern = "qualif",
+  core_pattern = .nt_core_pattern,
   core_exclude = "^CONIFA|Island Games"
 )
 }

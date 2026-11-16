@@ -129,6 +129,26 @@ if (!is.null(wf_raw)) {
   }))
 }
 
+# The men's tournament fits used the qualifier-only team filter; the filter was
+# later broadened for the women's file. Where the two differ (Vanuatu, before
+# 2025) the base fit was repeated to confirm the scores do not move.
+filter_check <- do.call(rbind, lapply(c("wc2022", "euro2024"), function(key) {
+  wide <- read_if(file.path(out_dir, "eval_wide", paste0("eval_", key, ".rds")))
+  narrow <- read_if(file.path(out_dir, "eval", paste0("eval_", key, ".rds")))
+  if (is.null(wide) || is.null(wide$scores$base)) {
+    return(NULL)
+  }
+  a <- narrow$scores$base
+  b <- wide$scores$base
+  data.frame(
+    key = key,
+    log_1x2_qualifier_rule = mean(a$log_1x2), log_1x2_broad_rule = mean(b$log_1x2),
+    max_abs_prob_diff = max(abs(as.matrix(a[, 1:3]) - as.matrix(b[, 1:3]))),
+    n_teams_qualifier_rule = narrow$fits$base$settings$n_teams,
+    n_teams_broad_rule = wide$fits$base$settings$n_teams
+  )
+}))
+
 stan <- list(
   base = read_if(file.path(out_dir, "stan", "stan_reference_wc2026_base.rds")),
   damped = read_if(file.path(out_dir, "stan", "stan_reference_wc2026_damped.rds"))
@@ -153,6 +173,7 @@ res <- list(
   simulation = read_if(file.path(out_dir, "sim_compare_wc2026.rds")),
   production_forecast = read_if(file.path(out_dir, "prod_forecast_wc2026.rds")),
   women = read_if(file.path(out_dir, "women_check.rds")),
+  filter_check = filter_check,
   current = list(
     men = read_if(file.path(out_dir, "current_men.rds")),
     women = read_if(file.path(out_dir, "current_women.rds"))

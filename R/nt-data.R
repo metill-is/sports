@@ -132,19 +132,33 @@ nt_tournament_matches <- function(results, key) {
   m
 }
 
+# Qualifiers of any sanctioned competition, plus the finals of the World Cup,
+# the continental championships and the Olympic tournament. The finals matter:
+# some confederations qualify through a finals tournament (CONMEBOL women reach
+# the World Cup through the Copa America, Oceania's men through the Nations Cup
+# in some cycles), so their teams never play a match named "qualification".
+.nt_core_pattern <- paste(
+  "qualif", "^FIFA World Cup$", "^Copa Am", "^UEFA Euro$", "Cup of Nations$",
+  "^AFC Asian Cup$", "^Gold Cup$", "^CONCACAF Championship$", "Nations Cup$",
+  "^Olympic Games$",
+  sep = "|"
+)
+
 #' Teams that belong to the sanctioned international game.
 #'
 #' The source files also carry non-FIFA football (CONIFA, Island Games, regional
-#' selections). A team is kept when it has played at least one qualifying match
-#' of a sanctioned competition in the window; that admits every FIFA member and
-#' the confederation-only members that enter continental qualifying.
+#' selections). A team is kept when it has played, in the window, at least one
+#' qualifier of a sanctioned competition or one match at the finals of the
+#' World Cup, a continental championship or the Olympic tournament. That admits
+#' every FIFA member and the confederation-only members that enter continental
+#' competitions.
 #'
 #' @param results Results already restricted to the training window.
 #' @param pattern Regex a tournament name must match to count.
 #' @param exclude Regex of tournament names that never count.
 #' @return Character vector of team names.
 #' @export
-nt_core_teams <- function(results, pattern = "qualif",
+nt_core_teams <- function(results, pattern = .nt_core_pattern,
                           exclude = "^CONIFA|Island Games") {
   ok <- grepl(pattern, results$tournament, ignore.case = TRUE) &
     !grepl(exclude, results$tournament)
@@ -180,7 +194,7 @@ nt_core_teams <- function(results, pattern = "qualif",
 #' @export
 nt_prepare <- function(results, cutoff, window_years = 12, min_matches = 5L,
                        step_months = 3L,
-                       core_pattern = "qualif",
+                       core_pattern = .nt_core_pattern,
                        core_exclude = "^CONIFA|Island Games") {
   cutoff <- as.Date(cutoff)
   window_start <- cutoff - round(365.25 * window_years)

@@ -140,7 +140,7 @@ if (!is.null(res$walk_forward)) {
 - **What that means.** `r n_all` matches cannot separate v2 from production: the evidence is "not worse, probably slightly better". `r if (!is.null(panel_v2_elo)) sprintf("On the larger walk-forward panel (%s competitive matches) v2 beats Elo by %.3f per match (%s).", format(panel_v2_elo$n, big.mark = ","), -panel_v2_elo$diff, fmt_int(panel_v2_elo)) else ""` The case for v2 is that it removes known misspecifications at no cost in accuracy and a fraction of the compute.
 - **Simulator.** Replacing the head-to-head matrix with played-out ties moves title probabilities by up to `r sprintf("%.1f", 100 * max(abs(sim$table$champion_extra_time - sim$table$champion_matrix)))` percentage points, all of it from the tie rule: favourites lose, outsiders gain.
 - **Known weakness.** v2 expects too few draws (`r sprintf("%.0f", sum(sc$p_draw[sc$model == "base"]))` against `r sum(res$matches$home_90 == res$matches$away_90)` at the tournaments). A one-parameter correction estimated out of sample recovers part of it (@sec-draws).
-- **Women.** The same code runs on the women's file unchanged.
+- **Women.** The same code runs on the women's file. Trying it exposed one defect, now fixed: the team filter dropped sides that qualify through a finals tournament, Brazil's women among them (@sec-women).
 - **Recommendation.** Adopt v2 on R-INLA for internationals with the played-out knockout simulator, and build the Euro 2028 qualifying product on it (@sec-proposal).
 
 :::
@@ -158,8 +158,8 @@ $$
 
 - **One strength per team.** $\theta$ is a static level $\alpha_i$ plus a calendar random walk $u_{i,t}$ on a quarterly grid. It enters the two rates with opposite signs, so it moves the goal difference.
 - **A small pooled attack/defence split.** $\delta_i$ is static and shrunk towards zero (attack $=\theta+\delta$, defence $=\theta-\delta$); $\delta_s+\delta_c$ enters both rates with the same sign, so it moves total goals.
-- **Venue.** Two pooled, sign-free effects (one on the home side's rate, one on the away side's) apply only when the file's `neutral` flag is false, which is when the listed home side plays in its own country.
-- **History.** Twelve years before each cutoff (from mid-2014 for the 2026 World Cup), restricted to teams that have played a sanctioned qualifier in the window; this drops CONIFA and Island Games sides and keeps `r res$fits$n_teams[res$fits$key == "wc2026" & res$fits$model == "base"]` teams and `r format(res$fits$n_matches[res$fits$key == "wc2026" & res$fits$model == "base"], big.mark = ",")` matches at the 2026 cutoff.
+- **Venue.** Two pooled, sign-free effects (one on the home side's rate, one on the away side's) apply only when the file's `neutral` flag is false, which is when the listed home side plays in its own country. Since 2014 the file never lists a side playing in its own country as the away team, so the flag is enough.
+- **History.** Twelve years before each cutoff (from mid-2014 for the 2026 World Cup), restricted to teams that have played a sanctioned qualifier or a major finals tournament in the window; this drops CONIFA and Island Games sides and keeps `r res$fits$n_teams[res$fits$key == "wc2026" & res$fits$model == "base"]` teams and `r format(res$fits$n_matches[res$fits$key == "wc2026" & res$fits$model == "base"], big.mark = ",")` matches at the 2026 cutoff.
 - **No importance weights.** A friendly parameter was tested instead (@sec-variants).
 
 The model is fitted with R-INLA (`R/nt-model.R`); the same model is written in Stan (`Stan/football_national/nt_v2.stan`) as a reference and the two are compared in @sec-stan. The engine choice follows the owner's decision of 2026-11-15 to move towards INLA in production.
@@ -330,7 +330,7 @@ rw_range <- range(c(rw_month, if (!is.null(res$walk_forward_hyper)) {
 
 **Dynamics.** Left free, the random-walk innovation sd is between `r sprintf("%.4f", rw_range[1])` and `r sprintf("%.4f", rw_range[2])` per square-root month at every cutoff fitted in this report. `nt_implied_half_life()` maps that to the time-decay half-life the literature reports: about `r sprintf("%.1f", nt_implied_half_life(mean(rw_month)))` years for a team playing eleven matches a year. Fixing the sd at the value for a three-year half-life (`r sprintf("%.4f", nt_rw_sd_for_half_life(3))`) changes the tournament score by `r vd("hl3")`; letting strength revert to each team's own level (AR(1)) by `r vd("ar1")`. Both are inside the noise, and the panel in @sec-panel shows no difference at all. The estimated walk is kept: it needs no hand-set constant.
 
-**Friendlies.** The damped-gap variants multiply the strength gap by a fixed $\kappa$ in friendlies. INLA cannot estimate a multiplier on the latent field directly, so $\kappa$ is profiled on the log marginal likelihood, shown below relative to $\kappa = 1$ (no damping). A multiplier of 0.9 is level with no damping; 0.8 and 0.7 are clearly worse. No damped variant improves the tournament scores, the dispersion variant does not either, and on the panel damping makes the friendly forecasts themselves worse. The Stan reference estimates $\kappa$ as a parameter (@sec-stan). No friendly term is proposed.
+**Friendlies.** The damped-gap variants multiply the strength gap by a fixed $\kappa$ in friendlies. INLA cannot estimate a multiplier on the latent field directly, so $\kappa$ is profiled on the log marginal likelihood, shown below relative to $\kappa = 1$ (no damping). A multiplier of 0.9 is level with no damping; 0.8 and 0.7 are clearly worse. No damped variant improves the tournament scores, the dispersion variant does not either, and on the panel damping makes the friendly forecasts themselves worse. The Stan reference estimates $\kappa$ as a parameter and finds a small real effect (@sec-stan). No friendly term is proposed: it would cost a profile of several fits in INLA and buys no forecast accuracy.
 
 ```{r}
 #| label: tbl-kappa
@@ -759,8 +759,20 @@ knitr::kable(ft2[1:12, ], digits = 1, row.names = FALSE)
 w <- res$women
 ev <- setdiff(names(w), c("n_rows", "range"))
 cat(sprintf(
-  "The women's file (%s matches, %s to %s) has the same schema, and `nt_read_results()`, `nt_prepare()` and `nt_fit_inla()` run on it without any change. As a first check the model was fitted before the %s and scored on their group stages, which have no extra time.\n",
-  format(w$n_rows, big.mark = ","), format(w$range[1]), format(w$range[2]),
+  "The women's file (%s matches, %s to %s) has the same schema, and `nt_read_results()`, `nt_prepare()` and `nt_fit_inla()` run on it as they are.\n\n",
+  format(w$n_rows, big.mark = ","), format(w$range[1]), format(w$range[2])
+))
+cat("**One defect surfaced, and is fixed.** The first run stopped because Brazil and Colombia were missing from the fit. The team filter kept only sides that had played a match in a tournament named \"qualification\", and South America's women qualify for the World Cup through the Copa América. The filter now also accepts a match at the finals of the World Cup, a continental championship or the Olympic tournament (`nt_core_teams()`), which adds Brazil, Colombia, five more South American sides and a few Oceanian ones to the women's data.")
+fc <- res$filter_check
+if (!is.null(fc)) {
+  cat(sprintf(
+    " For the men the two forms of the rule differ only by Vanuatu, and only at cutoffs before 2025. The men's results in this report were produced with the qualifier-only form. Refitting v2 for World Cup 2022 and Euro 2024 with the broad form moves no 1X2 probability by more than %.3f and changes the log scores from %.4f and %.4f to %.4f and %.4f, well inside every interval in this report.",
+    max(fc$max_abs_prob_diff), fc$log_1x2_qualifier_rule[1], fc$log_1x2_qualifier_rule[2],
+    fc$log_1x2_broad_rule[1], fc$log_1x2_broad_rule[2]
+  ))
+}
+cat(sprintf(
+  "\n\nAs a first check the model was fitted before the %s and scored on their group stages, which have no extra time.\n",
   paste(ev, collapse = " and the ")
 ))
 ```
@@ -788,11 +800,16 @@ knitr::kable(wt, digits = c(0, 0, 0, 0, 3, 3, 0, 4, 4), row.names = FALSE)
 #| results: asis
 h <- w[[ev[length(ev)]]]$hyper
 f <- w[[ev[length(ev)]]]$fixed
+wc_cal <- w[[ev[1]]]$calibration
+top_w <- wc_cal[nrow(wc_cal), ]
 cat(sprintf(
-  "At the later cutoff the women's fit has a team-level sd of %.2f (men: %.2f), a walk sd of %.4f per square-root month (men: %.4f) and venue effects of %+.2f and %+.2f. The spread of strengths is wider than in the men's game, so lopsided matches are more common and the mismatch check matters more.\n",
+  "With %d and %d matches neither comparison separates the models. What the fit shows is a different game: at the later cutoff the team-level sd is %.2f (men: %.2f), the walk sd %.4f per square-root month (men: %.4f), and the venue effects %+.2f and %+.2f. Strengths are spread much wider and move faster, so lopsided matches are common. At the %s the %d matches with an expected margin of at least 1.75 goals were won by the favourite %.0f%% of the time against %.0f%% predicted, by %.1f goals against %.1f: the same tournament shortfall as in the men's game, and larger.\n\n",
+  w[[ev[1]]]$n_test, w[[ev[2]]]$n_test,
   h$mode[h$parameter == "sd alpha"], mean(ht[["sd of team level"]]),
   h$mode[h$parameter == "sd u per sqrt(month)"], mean(rw_month),
-  f["home_for", "mean"], f["home_against", "mean"]
+  f["home_for", "mean"], f["home_against", "mean"],
+  ev[1], top_w$n, 100 * top_w$obs_fav_win, 100 * top_w$pred_fav_win,
+  top_w$obs_margin, top_w$pred_margin
 ))
 ```
 
@@ -831,9 +848,10 @@ cat(sprintf(
   length(sb$theta_mean), sb$mean_leapfrog
 ))
 cat(sprintf(
-  "The two engines agree: the posterior means of the team strengths correlate at %.4f, the largest difference after centring is %.3f on the log scale, INLA's posterior sds are %.0f%% of Stan's at the median (INLA conditions on the hyperparameter mode), and the 1X2 probabilities for the %d World Cup matches differ by %.3f on average and %.3f at most.\n",
-  sb$inla$cor_theta, sb$inla$max_abs_theta, 100 * sb$inla$sd_ratio,
-  nrow(sb$scores), sb$inla$mean_abs_prob, sb$inla$max_abs_prob
+  "The two engines agree: the posterior means of the team strengths correlate at %.4f, the largest difference after centring is %.3f on the log scale, the ratio of INLA's posterior sds to Stan's is %.2f at the median although INLA conditions on the hyperparameter mode, and the 1X2 probabilities for the %d World Cup matches differ by %.3f on average and %.3f at most. Stan's tournament scores are the same to three decimals (1X2 log score %.4f against %.4f).\n",
+  sb$inla$cor_theta, sb$inla$max_abs_theta, sb$inla$sd_ratio,
+  nrow(sb$scores), sb$inla$mean_abs_prob, sb$inla$max_abs_prob,
+  mean(sb$scores$log_1x2), mean(sc$log_1x2[sc$model == "base" & sc$key == "wc2026"])
 ))
 ```
 
@@ -870,8 +888,10 @@ do.call(rbind, lapply(rows, function(r) {
 sd_ <- res$stan$damped
 k <- sd_$summary[sd_$summary$variable == "kappa_friendly[1]", ]
 cat(sprintf(
-  "With the friendly multiplier as a parameter, Stan estimates $\\kappa = %.2f$ (90%% interval %.2f to %.2f; %d divergences, R-hat %.3f).\n",
-  k$mean, k$q5, k$q95, sum(sd_$diagnostics$num_divergent), k$rhat
+  "**The friendly multiplier as a parameter.** With $\\kappa$ estimated, Stan gives %.2f (90%% interval %.2f to %.2f; %d divergences, largest R-hat %.3f). Friendlies do compress the strength gap, by about %.0f%%, which agrees with the INLA profile peaking between 0.9 and 1. The effect is too small to matter for forecasts: the damped Stan fit scores %.4f on the 2026 World Cup against %.4f without damping.\n",
+  k$mean, k$q5, k$q95, sum(sd_$diagnostics$num_divergent),
+  max(sd_$summary$rhat, na.rm = TRUE), 100 * (1 - k$mean),
+  mean(sd_$scores$log_1x2), mean(res$stan$base$scores$log_1x2)
 ))
 ```
 
@@ -987,12 +1007,13 @@ Nothing in this work touches `world-cup.yml`, any other workflow, or the publish
 
 - **Three tournaments, `r n_all` matches.** Enough to show v2 is not worse; not enough to rank close variants. The panel adds matches but mixes qualifiers with tournaments.
 - **Independence.** Intervals treat matches as independent although each tournament shares one fit.
-- **Hyperparameters at their mode.** The INLA fits condition on the hyperparameter mode (empirical Bayes); the Stan comparison shows what that costs in posterior width.
+- **Hyperparameters at their mode.** The INLA fits condition on the hyperparameter mode (empirical Bayes). Integrating over them and the full Stan posterior both give the same forecasts here, but that was checked at one cutoff only.
 - **Independent Poisson.** v2 has no shared-goals term. On exact scorelines it only matches production, and it expected `r sprintf("%.1f", et$expected_level_at_90)` of the `r et$n_knockout` knockout matches to be level after 90 minutes when `r et$n_extra_time` were.
 - **No market comparison.** Bookmaker odds for the three tournaments were not collected; the literature says the market beats results-only models at tournaments.
 - **Extra-time contamination in training.** Knockout scores in the training data include extra time; only the `r et$n_extra_time` ties of the target tournaments were corrected.
 - **Confederation structure.** Teams mostly play within their confederation, and the model has no confederation term; inter-confederation calibration rests on World Cups and friendlies.
 - **Knockout venues.** Host nations get home advantage in group matches in the simulation, not in knockout matches.
+- **Team filter.** The filter was broadened after the men's evaluation had run (@sec-women). The men's numbers here use the earlier form; the check on the two affected tournaments shows differences far smaller than any interval reported.
 
 ## Reproducing this report {#sec-repro}
 
@@ -1010,4 +1031,6 @@ Rscript scripts/nt/build_report_data.R $D/out docs/reports/2026-11-15-national-t
 quarto render docs/reports/2026-11-15-national-team-v2.qmd
 ```
 
-Code: `R/nt-data.R`, `R/nt-model.R`, `R/nt-score.R`, `R/nt-baselines.R`, `R/nt-simulate.R`, `R/nt-stan.R`; tests in `tests/testthat/test-nt-*.R`. Timings in this document are orders of magnitude only: every fit ran on a machine shared with other model runs.
+Code: `R/nt-data.R`, `R/nt-model.R`, `R/nt-score.R`, `R/nt-baselines.R`, `R/nt-simulate.R`, `R/nt-stan.R`; tests in `tests/testthat/test-nt-*.R`.
+
+**On timings.** Every fit ran on a machine shared with other sessions' model runs, so no wall-clock figure here is a benchmark. As orders of magnitude: an INLA fit of v2 on four threads took between half a minute and a minute and a half while two other four-core jobs were running; the production model's four NUTS chains took tens of minutes per tournament under the same conditions. The Stan reference of v2 needed about `r if (have_stan) sprintf("%.0f", res$stan$base$mean_leapfrog) else "55"` leapfrog steps per iteration.
