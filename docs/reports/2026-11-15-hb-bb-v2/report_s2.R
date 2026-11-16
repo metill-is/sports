@@ -162,9 +162,11 @@ if (have(ladder)) {
     }
     prev <- if (!is.na(g(cl, "r1_ragged", "leapfrog"))) "r1_ragged" else "r0_prod"
     notes <- c(notes, sprintf(
-      "<strong>R2</strong> replaces the per-team volatility hierarchies%s by single values: %s parameters, leave-one-out %s against %s. The home advantage is still %s: it is not the hierarchies that inflate it.",
+      "<strong>R2</strong> %sreplaces the per-team volatility hierarchies%s by single values: %s parameters and %s leapfrog steps per iteration, leave-one-out %s against %s. The home advantage is still %s: it is not the hierarchies that inflate it.",
+      if (prev == "r0_prod") "(here also the first rung without the states no match touches; R1 was not run for this cell) " else "",
       if (CELLS[[cl]]$sport == "handball") " and the per-team score sds" else " and the four-parameter correlation",
-      int(g(cl, "r2_common", "n_sampled")), num(g(cl, "r2_common", "elpd"), 1), num(g(cl, prev, "elpd"), 1), num(g(cl, "r2_common", "ha_mean"), 2)
+      int(g(cl, "r2_common", "n_sampled")), int(g(cl, "r2_common", "leapfrog")), num(g(cl, "r2_common", "elpd"), 1), num(g(cl, prev, "elpd"), 1),
+      num(g(cl, "r2_common", "ha_mean"), 2)
     ))
     notes <- c(notes, sprintf(
       "<strong>R3</strong> pools the home effects and lets them take either sign: the home advantage falls from %s to %s (raw margin %s), leave-one-out rises to %s and the held-out margin log score by %s. The ridge that the bounds were hiding appears: the scoring level's posterior sd goes from %s to %s, its correlation with the mean attack home effect is %s, and NUTS needs %s leapfrog steps per iteration.",

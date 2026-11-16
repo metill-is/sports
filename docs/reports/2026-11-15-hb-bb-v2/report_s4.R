@@ -172,7 +172,7 @@ add(
 cur <- "appendix"
 add("<h2 id=\"appendix\">Appendix</h2>")
 add("<h3>Compute conditions</h3>")
-add("<p>All fits ran on one M1 Pro (8 performance cores, 16 GB) shared with three other sessions fitting models. From 21:30 a two-slot limiter allowed at most two 4-core jobs at once; before that the machine was two to three times oversubscribed and swapping, and no wall time from that period is reported as a timing. Leapfrog counts, gradient counts and effective sample sizes do not depend on load. CmdStan 2.38.0 for every NUTS fit, R-INLA 25.6.7.</p>")
+add("<p>All fits ran on one M1 Pro (8 performance cores, 16 GB) shared with three other sessions fitting models. From 21:30 a shared limiter allowed at most two (later three) 4-core jobs at once; before that the machine was two to three times oversubscribed and swapping, and no wall time from that period is reported as a timing. Leapfrog counts, gradient counts and effective sample sizes do not depend on load. CmdStan 2.38.0 for every NUTS fit, R-INLA 25.6.7.</p>")
 add("<h3>Reproducing</h3>")
 add("<p>From the repository root on branch <code>feat/hb-bb-v2</code>, with output going to the folder named in <code>HBBB_OUT</code> (default <code>/Users/brynjolfurjonsson/.claude-reviews/sports-hb-bb-v2</code>):</p>")
 add("<div class=\"eq\">Rscript docs/reports/2026-11-15-hb-bb-v2/prep.R hb_m 2026-01-31 2026-05-31      # data at the fixed cutoff (also hb_f, bb_m, bb_f)
@@ -227,7 +227,6 @@ not_measured <- c(
   "The full ladder for the women's cells (production and the final model only, by agreement with the scheduling session).",
   "The published JSON built end to end from a v2 fit: the adapter's algebra is tested, the wiring into <code>fit_league()</code> is proposed, not built.",
   "A league-table (season simulation) comparison between the engines.",
-  "The W/D/L effect of a Student-t predictive; only its margin and total log scores were measured.",
   "Genius Sports LiveStats as a second source of period scores: not needed, not tried.",
   "Whether the market beats the model: too few priced matches (65 handball, 20 basketball)."
 )
@@ -299,11 +298,17 @@ if (have(val) && length(val)) {
     num(max(vapply(val, function(o) abs(o$log_score[["stan"]] - o$log_score[["inla_eb"]]), 1)), 4)
   ))
 }
+phase_sd <- unlist(lapply(list(hbm, hbf, bbm, bbf), function(sc) {
+  z <- (sc$margin_fit - sc$mean_m) / sc$s_m
+  keep <- sc$phase != "play-off"
+  tapply(z[keep], droplevels(sc$phase[keep]), stats::sd)
+}))
 items <- c(items, sprintf(
-  "<strong>Walk-forward.</strong> %s matches scored over seasons 2023 to 2027 with weekly refits. The predictive spread is calibrated in every phase of the season (standardised residual sd between %s and %s for the margin). On the %s matches with a stored production forecast: handball margin %s, total %s, result %s; basketball margin %s, total %s, result %s (log score per match, v2 minus production, pooled over the sexes). Better in handball, level within noise in basketball.",
+  "<strong>Walk-forward.</strong> %s matches scored over seasons 2023 to 2027 with weekly refits. The predictive spread is calibrated: the standardised margin residual has sd between %s and %s per cell, and between %s and %s in every regular-season phase of every cell. On the %s matches with a stored production forecast: handball margin %s, total %s, result %s; basketball margin %s, total %s, result %s (log score per match, v2 minus production, pooled over the sexes). Better in handball, level within noise in basketball.",
   int(sum(vapply(list(hbm, hbf, bbm, bbf), nrow, 1L))),
   num(min(vapply(list(hbm, hbf, bbm, bbf), function(s) stats::sd((s$margin_fit - s$mean_m) / s$s_m), 1)), 2),
   num(max(vapply(list(hbm, hbf, bbm, bbf), function(s) stats::sd((s$margin_fit - s$mean_m) / s$s_m), 1)), 2),
+  num(min(phase_sd), 2), num(max(phase_sd), 2),
   int(sum(vapply(names(CELLS), function(cl) if (is.null(cmp[[cl]]$cmp)) 0L else nrow(cmp[[cl]]$cmp), 1L))),
   pm(pool(hb, "lsm_raw", "ls_margin")[["diff"]], pool(hb, "lsm_raw", "ls_margin")[["se"]], 3),
   pm(pool(hb, "lst_raw", "ls_total")[["diff"]], pool(hb, "lst_raw", "ls_total")[["se"]], 3),

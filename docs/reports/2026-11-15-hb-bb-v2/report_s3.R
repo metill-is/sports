@@ -226,9 +226,24 @@ if (have(bbm) && have(bbf)) {
   }
   nu_m <- last_par("bb_m", "none_reg", "student")
   nu_f <- last_par("bb_f", "none_reg", "student")
+  r4r5 <- if (have(ladder)) {
+    x <- ladder$tab[ladder$tab$cell == "bb_m" & ladder$tab$rung %in% c("r4_ident", "r5_gauss"), ]
+    if (nrow(x) == 2) x$elpd[x$rung == "r4_ident"] - x$elpd[x$rung == "r5_gauss"] else NA
+  } else {
+    NA
+  }
   add(sprintf(
-    "<p><strong>Tails.</strong> Basketball margins are a little heavier-tailed than Gaussian, most in women's 1. deild. A Student-t predictive with the same sd and fitted degrees of freedom (%s men, %s women) changes the regulation-margin log score by %s for men and %s for women; variance by division or by mismatch does nothing (largest change %s). The gain is small and sits partly on the tie spike, which the tie parameter already handles, so the proposal keeps the Gaussian in the engine and lists the heavier tail as an optional prediction-layer setting to revisit in the shadow period.</p>",
-    num(nu_m[1], 0), num(nu_f[1], 0), pd(bbm, "lsm_student", "lsm_raw"), pd(bbf, "lsm_student", "lsm_raw"), pd(bbf, "lsm_by_mismatch", "lsm_raw")
+    paste0(
+      "<p><strong>Tails: is a Student-t worth its cost?</strong> Basketball margins are a little heavier-tailed than Gaussian, most in women's 1. deild. %s",
+      "In the walk-forward, a Student-t predictive with the same sd and fitted degrees of freedom (%s men, %s women) improves the regulation-margin log score by %s for men and %s for women, ",
+      "and leaves the result probabilities where they were (men: regulation 1X2 %s, final result %s; women: %s and %s). Variance by division or by mismatch does nothing (largest change %s). ",
+      "So the heavier tail sharpens the margin distribution a little and changes no win probability. It is not worth giving up the exact Gaussian fit for; the proposal keeps the Gaussian in the engine and offers the Student-t as a prediction-layer setting for the basketball margin distribution.</p>"
+    ),
+    if (is.na(r4r5)) "" else sprintf("In the ladder, replacing the Student-t by a Gaussian costs the men's fit %s of leave-one-out density (handball: about 1) and changes no held-out score. ", num(r4r5, 0)),
+    num(nu_m[1], 0), num(nu_f[1], 0), pd(bbm, "lsm_student", "lsm_raw"), pd(bbf, "lsm_student", "lsm_raw"),
+    pd(bbm, "ll_wdl_student", "ll_wdl_shift_div"), pd(bbm, "ll_final_student", "ll_final_shift_div"),
+    pd(bbf, "ll_wdl_student", "ll_wdl_shift_div"), pd(bbf, "ll_final_student", "ll_final_shift_div"),
+    pd(bbf, "lsm_by_mismatch", "lsm_raw")
   ))
 } else {
   add(missing_note("the basketball walk-forward"))

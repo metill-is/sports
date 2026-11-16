@@ -226,6 +226,17 @@ score_cell <- function(d, sport, reg = FALSE, first_scored = 2023L) {
     out$lsm_student <- log(v2_integer_pmf(te$margin_fit, te$mean_m, te$s_m * sqrt((nu[1] - 2) / nu[1]), df = nu[1]))
     out$lst_student <- log(v2_integer_pmf(te$total_fit, te$mean_t, te$s_t * sqrt((nu[2] - 2) / nu[2]), df = nu[2]))
     pars[[paste(s, "student")]] <- nu
+    # The same heavier tail carried to the result probabilities (with the per-division
+    # level-score shift where the result can be level).
+    sc_t <- te$s_m * sqrt((nu[1] - 2) / nu[1])
+    sh_t <- if (ties) out$shift_div_used else rep(0, nrow(te))
+    o_t <- v2_outcome_probs(te$mean_m, sc_t, df = nu[1], ties = ties, zero_shift = sh_t)
+    out$ll_wdl_student <- log(ifelse(te$margin_fit > 0, o_t$p_home, ifelse(te$margin_fit < 0, o_t$p_away, o_t$p_draw)))
+    out$lsm_student_shift <- log(v2_integer_pmf(te$margin_fit, te$mean_m, sc_t, df = nu[1], zero_shift = sh_t))
+    if (reg) {
+      r_t <- v2_basketball_result_probs(te$mean_m, sc_t, df = nu[1], zero_shift = sh_t)
+      out$ll_final_student <- log(ifelse(te$margin > 0, r_t$p_home, r_t$p_away))
+    }
     rows[[as.character(s)]] <- out
   }
   list(scores = do.call(rbind, rows), pars = pars)
@@ -259,6 +270,7 @@ for (cell in names(CELLS)) {
     d <- load_wf(cell, tag)
     if (is.null(d)) next
     reg <- grepl("_reg$", tag)
+    ties <- sport == "handball" || reg
     r <- score_cell(d, sport, reg = reg)
     sc <- r$scores
     all_scores[[paste(cell, tag)]] <- list(scores = sc, pars = r$pars, wf = d)
@@ -275,7 +287,10 @@ for (cell in names(CELLS)) {
         "lsm_shift", "lsm_shift_slope", "lsm_shift_div"
       )),
       paired_table(sc, "lst_raw", c("lst_constant", "lst_by_mismatch", "lst_by_division", "lst_possession", "lst_student")),
-      paired_table(sc, "ll_wdl_raw", c("ll_wdl_shift", "ll_wdl_shift_slope", "ll_wdl_shift_div"))
+      paired_table(sc, "ll_wdl_raw", c("ll_wdl_shift", "ll_wdl_shift_slope", "ll_wdl_shift_div")),
+      if (ties) paired_table(sc, "ll_wdl_shift_div", "ll_wdl_student") else paired_table(sc, "ll_wdl_raw", "ll_wdl_student"),
+      if (ties) paired_table(sc, "lsm_shift_div", "lsm_student_shift"),
+      if (reg) paired_table(sc, "ll_final_shift_div", "ll_final_student")
     )
     pt$z <- pt$diff / pt$se
     print(pt, digits = 3, row.names = FALSE)

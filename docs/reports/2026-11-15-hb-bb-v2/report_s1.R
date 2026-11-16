@@ -29,8 +29,7 @@ add(tbl(cell_tab,
   ),
   note = paste0(
     "\"Innovation slots no match touches\" is a property of the data layout: the model has one state per team per appearance index up to the league maximum, so a team with a short history carries slots that only the prior sees. ",
-    "Wall time is given only for fits that ran inside the shared two-slot limiter (at most two 4-core jobs on the machine at once); the handball men fit ran earlier at two to three times oversubscription, so its time is not a timing. ",
-    "A cell marked \"queued\" had not finished when this report was built."
+    "Wall times were taken inside the shared machine limiter (two, later three, 4-core jobs at once on 8 performance cores), usually with one or two sibling fits running: good for ratios, not benchmarks. The handball men fit was first run before the limiter existed, at two to three times oversubscription; it was run again inside a slot with the same seed, gave identical results, and that second run is the time shown."
   )
 ))
 
