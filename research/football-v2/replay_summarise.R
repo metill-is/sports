@@ -53,22 +53,53 @@ cause_published <- function(d) {
   )
 }
 
-# Why a field differs between the baseline and the INLA replay.
+# Why a field differs between the baseline and the INLA replay. `absent` marks
+# what the baseline does not contain at all (a division or a file the stored
+# fit never wrote): there is nothing there to compare with.
 cause_inla <- function(d) {
   value <- d$field %in% c("lower", "median", "upper")
   ifelse(
     d$field == "generated_at", "Run timestamp",
     ifelse(
-      d$surface == "home_advantage.json" & value, "Home advantage",
+      d$absent, "Not in the stored baseline",
       ifelse(
-        d$surface %in% c("team_strengths.json", "team_strengths_history.json") & value, "Team strengths",
+        d$surface == "home_advantage.json" & value, "Home advantage",
         ifelse(
-          d$surface == "next_games.json", "Match forecasts",
-          ifelse(d$surface %in% simulated, "Season and cup simulation", "UNEXPLAINED")
+          d$surface %in% c("team_strengths.json", "team_strengths_history.json") & value, "Team strengths",
+          ifelse(
+            d$surface == "next_games.json", "Match forecasts",
+            ifelse(d$surface %in% simulated, "Season and cup simulation", "UNEXPLAINED")
+          )
         )
       )
     )
   )
+}
+
+# Differing values of the baseline-against-INLA comparison, counted by file
+# and field, with what the baseline lacks told apart. A division is absent
+# when the baseline published it with no draws; a file is absent for a
+# division when the replay has records there and the baseline has none.
+tally_inla <- function(r, cell, stored_dir) {
+  ch <- r$changed
+  if (!nrow(ch)) {
+    return(NULL)
+  }
+  metas <- list.files(file.path(stored_dir, "publish"), pattern = "^meta[.]json$", recursive = TRUE, full.names = TRUE)
+  no_draws <- vapply(metas, function(f) isTRUE(jsonlite::fromJSON(f)$n_draws == 0), logical(1))
+  empty_division <- basename(dirname(metas))[no_draws]
+  in_array <- grepl("[", ch$record, fixed = TRUE)
+  where <- paste(ch$division, ch$surface)
+  has_baseline <- unique(where[in_array & ch$status != "only_b"])
+  only_replay <- unique(where[in_array & ch$status == "only_b"])
+  ch$absent <- ch$division %in% empty_division | where %in% setdiff(only_replay, has_baseline)
+  count <- function(status) as.integer(ch$status == status)
+  b <- stats::aggregate(
+    cbind(number = count("number"), text = count("text"), only_a = count("only_a"), only_b = count("only_b")) ~ surface + field + absent,
+    ch, sum
+  )
+  b$cause <- cause_inla(b)
+  cbind(sex = cell$sex, as_of = cell$as_of, b)
 }
 
 tally <- function(r, cause_fn, cell) {
@@ -126,7 +157,7 @@ per_cell <- lapply(seq_len(nrow(cells)), function(i) {
     cell = data.frame(
       sex = cell$sex, as_of = cell$as_of, sha = cell$sha,
       horizon_days = s_inla$horizon_days, n_obs = s_inla$fit$n_obs, n_teams = s_inla$fit$n_teams,
-      production_n_obs = s_inla$production_n_obs %||% NA_integer_,
+      production_n_obs = s_inla$production_n_obs %||% s_stored$production_n_obs %||% NA_integer_,
       returned_to_schedule = length(s_inla$returned_to_schedule),
       fit_seconds = s_inla$fit$seconds$fit, draw_seconds = s_inla$fit$seconds$draws,
       fit_league_seconds = s_inla$timing$fit_league$elapsed, gate_passed = isTRUE(s_inla$fit$gate$passed),
@@ -146,7 +177,11 @@ per_cell <- lapply(seq_len(nrow(cells)), function(i) {
     files_only_in_stored = d2$only_in_a, files_only_in_inla = d2$only_in_b,
     layer1 = if (!is.null(d1)) tally(d1, cause_published, cell),
     layer1_files = if (!is.null(d1)) c(only_published = length(d1$only_in_a), only_stored = length(d1$only_in_b), values = d1$n_leaves),
-    layer2 = tally(d2, cause_inla, cell),
+    layer2 = tally_inla(d2, cell, cell$stored),
+    absent_divisions = {
+      metas <- list.files(file.path(cell$stored, "publish"), pattern = "^meta[.]json$", recursive = TRUE, full.names = TRUE)
+      basename(dirname(metas))[vapply(metas, function(f) isTRUE(jsonlite::fromJSON(f)$n_draws == 0), logical(1))]
+    },
     home_advantage = cbind(sex = cell$sex, as_of = cell$as_of, by_group(medians("home_advantage.json"), "component")),
     strengths = cbind(sex = cell$sex, as_of = cell$as_of, by_group(medians("team_strengths.json"), c("component", "location")))
   )
@@ -174,6 +209,7 @@ result <- list(
   layer2 = layer2, layer2_classes = classes(layer2),
   home_advantage = bind("home_advantage"), strengths = bind("strengths"),
   schema_errors_stored = stats::setNames(lapply(per_cell, `[[`, "schema_errors_stored"), paste(cells$sex, cells$as_of)),
+  absent_divisions = stats::setNames(lapply(per_cell, `[[`, "absent_divisions"), paste(cells$sex, cells$as_of)),
   files_only_in_stored = stats::setNames(lapply(per_cell, `[[`, "files_only_in_stored"), paste(cells$sex, cells$as_of)),
   files_only_in_inla = stats::setNames(lapply(per_cell, `[[`, "files_only_in_inla"), paste(cells$sex, cells$as_of))
 )
