@@ -243,6 +243,22 @@ score_cell <- function(d, sport, reg = FALSE, first_scored = 2023L) {
             (1 - r$p_draw_reg) * v2_integer_pmf(te$total, te$mean_t, te$s_t) +
               r$p_draw_reg * v2_integer_pmf(te$total, te$mean_t + ot_mean, sqrt(te$s_t^2 + ot_sd^2))
           )
+          # Standardised residuals of the final score against the final-score predictive
+          # itself: the regulation margin with its level mass moved through overtime, and
+          # the two-part total. Their mean and sd come from those distributions.
+          # WHY 250: the most lopsided women's game has an expected margin near 84 points.
+          grid <- -250:250
+          pm_grid <- vapply(grid, function(k) {
+            kk <- rep(k, nrow(te))
+            (k != 0) * v2_integer_pmf(kk, te$mean_m, te$s_m, zero_shift = sh) + r$p_draw_reg * ot_pmf(kk, te$mean_m, te$s_m)
+          }, numeric(nrow(te)))
+          stopifnot(max(abs(rowSums(pm_grid) - 1)) < 1e-6)
+          em <- as.numeric(pm_grid %*% grid)
+          sdm <- sqrt(as.numeric(pm_grid %*% grid^2) - em^2)
+          out[[paste0("zm_final_", v)]] <- (te$margin - em) / sdm
+          et <- te$mean_t + r$p_draw_reg * ot_mean
+          sdt <- sqrt(te$s_t^2 + r$p_draw_reg * ot_sd^2 + r$p_draw_reg * (1 - r$p_draw_reg) * ot_mean^2)
+          out[[paste0("zt_final_", v)]] <- (te$total - et) / sdt
         }
       }
     }
