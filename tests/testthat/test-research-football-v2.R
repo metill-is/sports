@@ -151,6 +151,41 @@ test_that("the Stan programs compile and read the spec", {
   expect_lt(max(abs(rowSums(k$draws$lvl_ha))), 1e-5)
 })
 
+test_that("the Stan program's recursion is the R twin, so the same prior as INLA's precision", {
+  skip_on_ci()
+  skip_if(Sys.getenv("FV2_TEST_STAN") != "1", "set FV2_TEST_STAN=1 to compile and sample")
+  skip_if_not_installed("cmdstanr")
+  # A league where a team sits out a season and another has no new-season slot:
+  # the cases where the two engines used to pick different reversion groups.
+  matches <- rbind(
+    stayers_matches(2021),
+    data.frame(
+      match_date = stayers_matches(2022)$match_date[1], home_team = "B", away_team = "C",
+      home_score = 0L, away_score = 1L, season = 2022L, cell = "L1@2022"
+    ),
+    stayers_matches(2023)
+  )
+  spec <- fv2_build(matches, clock = "break", rho = 0.6, divisions = stayers_divisions(seasons = 2021:2023))
+  seg <- fv2_segments(spec)
+  expect_gt(seg$n_group, 0L)
+  tmp <- withr::local_tempdir()
+  file.copy(file.path(fv2_dir, "stan", "fv2_rev.stan"), tmp)
+  mod <- cmdstanr::cmdstan_model(file.path(tmp, "fv2_rev.stan"), compile_standalone = TRUE)
+  set.seed(4)
+  for (i in 1:3) {
+    lvl <- stats::rnorm(spec$K)
+    z <- stats::rnorm(spec$S)
+    z_brk <- stats::rnorm(seg$n_seg)
+    stan <- mod$functions$walk(
+      lvl, z, z_brk, 0.05, 0.25, 0.6, seg$step_in, seg$seg_of_slot, seg$seg_first, seg$seg_last,
+      seg$seg_team, seg$seg_prev, seg$seg_stay, seg$seg_group, seg$seg_brk_sd, seg$seg_order,
+      as.array(seg$wave_start), as.array(seg$wave_end), seg$member_seg,
+      as.array(seg$group_first), as.array(seg$group_last)
+    )
+    expect_equal(as.numeric(stan), fv2_walk(seg, lvl, z, z_brk, 0.05, 0.25, 0.6), tolerance = 1e-10)
+  }
+})
+
 toy_wf <- function() {
   one <- function(variant, shift) {
     data.frame(
