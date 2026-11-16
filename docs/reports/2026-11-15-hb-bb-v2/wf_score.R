@@ -57,22 +57,26 @@ load_wf <- function(cell, tag) {
 
 norm_ll <- function(y, mu, s) stats::dnorm(y, mu, s, log = TRUE)
 
-# Variance-shape candidates. Each returns function(par, d) -> list(s_m, s_t) and a start.
+# Variance-shape candidates. Each returns function(par, d, ctx) -> list(s_m, s_t) and a
+# start. WHY ctx: whatever a shape centres on is fixed from the training seasons and
+# carried to the scored season with the fitted parameters. Recomputing it on the scored
+# season would apply the rule around a different centre than it was fitted around, and
+# would use that season's own predictions, later matches included.
 shapes <- list(
-  constant = list(start = c(0, 0), f = function(par, d) list(s_m = d$s_m * exp(par[1]), s_t = d$s_t * exp(par[2]))),
-  by_mismatch = list(start = c(0, 0, 0, 0), f = function(par, d) {
+  constant = list(start = c(0, 0), f = function(par, d, ctx) list(s_m = d$s_m * exp(par[1]), s_t = d$s_t * exp(par[2]))),
+  by_mismatch = list(start = c(0, 0, 0, 0), f = function(par, d, ctx) {
     list(
       s_m = d$s_m * exp(par[1] + par[2] * abs(d$mean_m) / d$s_m),
-      s_t = d$s_t * exp(par[3] + par[4] * (d$mean_t - mean(d$mean_t)) / d$s_t)
+      s_t = d$s_t * exp(par[3] + par[4] * (d$mean_t - ctx$mean_t) / d$s_t)
     )
   }),
-  by_division = list(start = NULL, f = function(par, d) {
+  by_division = list(start = NULL, f = function(par, d, ctx) {
     k <- nlevels(d$div_f)
     list(s_m = d$s_m * exp(par[seq_len(k)][d$div_f]), s_t = d$s_t * exp(par[k + seq_len(k)][d$div_f]))
   }),
   # Possessions: both sides have N attacks, each scoring with its own efficiency. Then
   # var(side) = mu (1 - mu / n) given N, plus the share of var(N) that both sides carry.
-  possession = list(start = c(log(45), log(16)), f = function(par, d) {
+  possession = list(start = c(log(45), log(16)), f = function(par, d, ctx) {
     n <- exp(par[1])
     v_n <- exp(par[2])
     mu_h <- (d$mean_t + d$mean_m) / 2
@@ -89,11 +93,12 @@ shapes <- list(
 fit_shape <- function(shape, train) {
   start <- shape$start
   if (is.null(start)) start <- rep(0, 2 * nlevels(train$div_f))
+  ctx <- list(mean_t = mean(train$mean_t))
   nll <- function(par) {
-    s <- shape$f(par, train)
+    s <- shape$f(par, train, ctx)
     -sum(norm_ll(train$margin_fit, train$mean_m, s$s_m)) - sum(norm_ll(train$total_fit, train$mean_t, s$s_t))
   }
-  stats::optim(start, nll, method = "BFGS", control = list(maxit = 500))$par
+  list(par = stats::optim(start, nll, method = "BFGS", control = list(maxit = 500))$par, ctx = ctx)
 }
 
 # Level-score shift: constant, or constant + slope in the expected margin measured in sds.
@@ -166,9 +171,10 @@ score_cell <- function(d, sport, reg = FALSE, first_scored = 2023L) {
     )]
     for (nm in names(shapes)) {
       if (nm == "possession" && sport != "handball") next
-      par <- tryCatch(fit_shape(shapes[[nm]], tr), error = function(e) NULL)
-      if (is.null(par)) next
-      sc <- shapes[[nm]]$f(par, te)
+      fs <- tryCatch(fit_shape(shapes[[nm]], tr), error = function(e) NULL)
+      if (is.null(fs)) next
+      par <- fs$par
+      sc <- shapes[[nm]]$f(par, te, fs$ctx)
       out[[paste0("lsm_", nm)]] <- log(v2_integer_pmf(te$margin_fit, te$mean_m, sc$s_m, ties = ties))
       out[[paste0("lst_", nm)]] <- log(v2_integer_pmf(te$total_fit, te$mean_t, sc$s_t))
       out[[paste0("sm_", nm)]] <- sc$s_m
