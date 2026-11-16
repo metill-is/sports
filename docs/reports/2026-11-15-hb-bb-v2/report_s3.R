@@ -40,15 +40,18 @@ if (have(hbm) && have(hbf)) {
   }
   zm <- in_shift("hb_m")
   zf <- in_shift("hb_f")
+  # A logit shift is an odds ratio. The ratio of rates it implies depends on the rates.
+  rate_ratio <- function(p0, shift) mean(stats::plogis(stats::qlogis(p0) + shift)) / mean(p0)
+  rr_hbm <- with(desc[["hb_m"]]$d, rate_ratio(v2_integer_pmf(rep(0, length(mu_m)), mu_m, sd_m), zm[["shift"]]))
   sdm <- last_par("hb_m", "none", "shift_div")
   add(sprintf(
     paste0(
-      "<p><strong>Men.</strong> Level scores are more common than the band predicts: %s observed against %s out of sample, and on all data the shift is %s (se %s) on the logit scale, about %s %% more draws. ",
+      "<p><strong>Men.</strong> Level scores are more common than the band predicts: %s observed against %s out of sample, and on all data the shift is %s (se %s) on the logit scale: an odds ratio of %s, which at these rates is about %s %% more draws. ",
       "Broken down by division, the surplus is in Ol&iacute;sdeild (shift %s on the seasons before 2027) and absent in Grill 66 (%s). ",
       "It is not stable enough to pay yet: the share of level scores in Ol&iacute;sdeild swings from season to season, the shift estimated on earlier seasons overshoots the later ones, and the out-of-sample W/D/L log likelihood changes by %s with one shift and %s with a shift per division. ",
       "<strong>Women.</strong> The band is calibrated as it stands: %s observed against %s, shift %s (se %s).</p>"
     ),
-    pct(mean(hbm$margin_fit == 0), 1), pct(mean(hbm$p_draw), 1), num(zm[["shift"]], 2), num(zm[["se"]], 2), num(100 * (exp(zm[["shift"]]) - 1), 0),
+    pct(mean(hbm$margin_fit == 0), 1), pct(mean(hbm$p_draw), 1), num(zm[["shift"]], 2), num(zm[["se"]], 2), num(exp(zm[["shift"]]), 2), num(100 * (rr_hbm - 1), 0),
     num(sdm[["OD"]], 2), num(sdm[["G66"]], 2), pd(hbm, "ll_wdl_shift", "ll_wdl_raw"), pd(hbm, "ll_wdl_shift_div", "ll_wdl_raw"),
     pct(mean(hbf$margin_fit == 0), 1), pct(mean(hbf$p_draw), 1), num(zf[["shift"]], 2), num(zf[["se"]], 2)
   ))
@@ -191,12 +194,14 @@ if (have(bbm) && have(bbf)) {
   ll_ot <- mean(log(ifelse(ot$margin > 0, ot$p_home_ot_shift_div, 1 - ot$p_home_ot_shift_div)))
   add(sprintf(
     paste0(
-      "<p><strong>Men.</strong> The tie parameter is needed and it differs by division: shift %s in B&oacute;nusdeild (about %s times the smooth rate) and %s in 1. deild. It improves the out-of-sample regulation 1X2 log likelihood by %s per game and the regulation-margin log score by the same amount. ",
+      "<p><strong>Men.</strong> The tie parameter is needed and it differs by division: shift %s in B&oacute;nusdeild (an odds ratio of %s; at these rates about %s times as many level games as the smooth curve gives, and %s times as many were observed out of sample) and %s in 1. deild. It improves the out-of-sample regulation 1X2 log likelihood by %s per game and the regulation-margin log score by the same amount. ",
       "<strong>Women.</strong> A small surplus (%s against %s), shift %s, no measurable gain yet (%s). ",
       "<strong>Overtime</strong> is modelled as a short continuation of the same game: a five-minute period is one eighth of regulation, so its margin has one eighth of the mean and of the variance, and a level overtime is replayed. On the %s overtime games in the scored seasons the home side won %s and the pre-match favourite %s (%s); the continuation model expected the favourite to win %s, and its log likelihood is %s against %s for a coin flip. ",
       "So in these leagues overtime has so far been a coin flip, unlike the NBA; the continuation model is kept because it costs nothing and tends to the coin flip for evenly matched teams, but the evidence does not yet support it over 50 : 50.</p>"
     ),
-    num(sm[["BD"]], 2), num(exp(sm[["BD"]]), 1), num(sm[["1D"]], 2), pd(bbm, "ll_wdl_shift_div", "ll_wdl_raw"),
+    num(sm[["BD"]], 2), num(exp(sm[["BD"]]), 1), num(rate_ratio(bbm$p_draw[bbm$division == "BD"], sm[["BD"]]), 1),
+    num(mean(bbm$margin_fit[bbm$division == "BD"] == 0) / mean(bbm$p_draw[bbm$division == "BD"]), 1),
+    num(sm[["1D"]], 2), pd(bbm, "ll_wdl_shift_div", "ll_wdl_raw"),
     pct(mean(bbf$margin_fit == 0), 1), pct(mean(bbf$p_draw), 1), num(sf[1], 2), pd(bbf, "ll_wdl_shift", "ll_wdl_raw"),
     int(nrow(ot)), int(sum(ot$margin > 0)), int(sum(fav)), pct(mean(fav), 0), pct(mean(pmax(ot$p_home_ot_shift_div, 1 - ot$p_home_ot_shift_div)), 0),
     num(ll_ot, 3), num(log(0.5), 3)
@@ -205,12 +210,19 @@ if (have(bbm) && have(bbf)) {
   if (all(vapply(rvf, have, TRUE))) {
     rt <- do.call(rbind, lapply(seq_along(bb), function(i) {
       j <- rvf[[i]]
+      wl_col <- paste0("ll_final_", REG_SHIFT[[bb[i]]])
+      mg_col <- paste0("lsm_final_", REG_SHIFT[[bb[i]]])
       data.frame(
         cell = LAB[[bb[i]]], n = int(nrow(j)),
-        wl = sprintf("%s / %s", num(mean(j$ll_wdl_raw.final), 4), num(mean(j$ll_final_shift_div), 4)), wl_d = pd(j, "ll_final_shift_div", "ll_wdl_raw.final"),
-        mg = sprintf("%s / %s", num(mean(j$lsm_raw.final), 4), num(mean(j$lsm_final_shift_div), 4)), mg_d = pd(j, "lsm_final_shift_div", "lsm_raw.final")
+        wl = sprintf("%s / %s", num(mean(j$ll_wdl_raw.final), 4), num(mean(j[[wl_col]]), 4)), wl_d = pd(j, wl_col, "ll_wdl_raw.final"),
+        mg = sprintf("%s / %s", num(mean(j$lsm_raw.final), 4), num(mean(j[[mg_col]]), 4)), mg_d = pd(j, mg_col, "lsm_raw.final")
       )
     }))
+    rvf_z <- vapply(seq_along(bb), function(i) {
+      j <- rvf[[i]]
+      zz <- function(a, b) paired(j[[a]], j[[b]])[["diff"]] / paired(j[[a]], j[[b]])[["se"]]
+      c(wl = zz(paste0("ll_final_", REG_SHIFT[[bb[i]]]), "ll_wdl_raw.final"), mg = zz(paste0("lsm_final_", REG_SHIFT[[bb[i]]]), "lsm_raw.final"))
+    }, numeric(2))
     add("<h3>Does training on regulation time cost anything for the final result?</h3>")
     add(tbl(rt,
       right = names(rt)[-1],
@@ -218,9 +230,17 @@ if (have(bbm) && have(bbf)) {
         "Cell", "Games", "Final-result log likelihood: final-score model / regulation + overtime", "Difference",
         "Final-margin log score: final-score model / regulation + overtime", "Difference"
       ),
-      note = "Same matches, both walk-forwards. The final-score model is the same v2 model trained on final scores, with the home side winning when the continuous margin is positive."
+      note = "Same matches, both walk-forwards. The final-score model is the same v2 model trained on final scores, with the home side winning when the continuous margin is positive. A final score cannot be level, so the final-score model's margin score uses its rounded margin with the mass on zero removed and the rest renormalised; the regulation-plus-overtime model has no mass there to begin with. Tie treatment of the regulation model: a shift per division for men, one shift for women."
     ))
-    add("<p>One model trained on regulation-time scores serves both products: the regulation 1X2 the bookmaker settles on, and the final result the league table needs, through the tie probability and overtime.</p>")
+    add(sprintf(
+      "<p>In standard errors, the final-result difference is %s for men and %s for women, and the final-margin difference %s and %s. %s One model trained on regulation-time scores serves both products: the regulation 1X2 the bookmaker settles on, and the final result the league table needs, through the tie probability and overtime.</p>",
+      num(rvf_z["wl", 1], 1, plus = TRUE), num(rvf_z["wl", 2], 1, plus = TRUE), num(rvf_z["mg", 1], 1, plus = TRUE), num(rvf_z["mg", 2], 1, plus = TRUE),
+      if (all(rvf_z > -2)) {
+        "So training on regulation time costs nothing measurable for the final result; what it gains on the final margin is small."
+      } else {
+        "So on this evidence training on regulation time costs something for the final result."
+      }
+    ))
   } else {
     add(missing_note("the walk-forward of the same model trained on final scores, for the regulation-versus-final comparison"))
   }
@@ -253,9 +273,11 @@ if (have(bbm) && have(bbf)) {
 cur <- "wf"
 add("<h2 id=\"wf\">Leak-free walk-forward</h2>")
 add("<p>For each cell, the model was refitted at every weekly cutoff from the start of season 2022 to 14 November 2026 on the results dated up to the cutoff (production's training filter, forfeits dropped) and asked for the matches of the following seven days. Hyperparameters are re-estimated at every cutoff. Season 2022 is used only to fit the second-stage quantities; scores are for seasons 2023 to 2027. The model is the static form of v2 fitted with R-INLA (hyperparameters at their mode); basketball is trained on regulation-time scores. Margin and total are scored as two separate whole-number distributions. The joint (home, away) score distribution was not scored: the parity-respecting sampler for it exists and is unit-tested (<code>v2_sample_scores()</code> in <code>R/v2-margin-total-predict.R</code>), but no walk-forward score in this report uses it.</p>")
-wf_row <- function(cl, sc, label, m, t, w, mfit = "margin_fit") {
-  z_m <- (sc$margin_fit - sc$mean_m) / sc$s_m
-  z_t <- (sc$total_fit - sc$mean_t) / sc$s_t
+# `zm`, `zt`: columns holding standardised residuals against another predictive than the
+# one the model is trained on (the final-score predictive of a regulation-time model).
+wf_row <- function(cl, sc, label, m, t, w, zm = NULL, zt = NULL) {
+  z_m <- if (is.null(zm)) (sc$margin_fit - sc$mean_m) / sc$s_m else sc[[zm]]
+  z_t <- if (is.null(zt)) (sc$total_fit - sc$mean_t) / sc$s_t else sc[[zt]]
   data.frame(
     cell = LAB[[cl]], what = label, n = int(nrow(sc)), lsm = num(mean(sc[[m]]), 4), lst = num(mean(sc[[t]]), 4), wdl = num(mean(sc[[w]]), 4),
     sdz = sprintf("%s / %s", num(stats::sd(z_m), 2), num(stats::sd(z_t), 2)),
@@ -267,9 +289,11 @@ if (have(hbm) && have(bbm)) {
     wf_row("hb_m", hbm, "full time", "lsm_raw", "lst_raw", "ll_wdl_raw"),
     wf_row("hb_f", hbf, "full time", "lsm_raw", "lst_raw", "ll_wdl_raw"),
     wf_row("bb_m", bbm, "regulation time, tie shift by division", "lsm_shift_div", "lst_raw", "ll_wdl_shift_div"),
-    wf_row("bb_m", bbm, "final result, through overtime", "lsm_final_shift_div", "lst_final_shift_div", "ll_final_shift_div"),
+    wf_row("bb_m", bbm, "final result, through overtime", "lsm_final_shift_div", "lst_final_shift_div", "ll_final_shift_div",
+           zm = "zm_final_shift_div", zt = "zt_final_shift_div"),
     wf_row("bb_f", bbf, "regulation time, one tie shift", "lsm_shift", "lst_raw", "ll_wdl_shift"),
-    wf_row("bb_f", bbf, "final result, through overtime", "lsm_final_shift", "lst_final_shift", "ll_final_shift")
+    wf_row("bb_f", bbf, "final result, through overtime", "lsm_final_shift", "lst_final_shift", "ll_final_shift",
+           zm = "zm_final_shift", zt = "zt_final_shift")
   )
   add(tbl(wt,
     right = names(wt)[-(1:2)],
@@ -277,7 +301,7 @@ if (have(hbm) && have(bbm)) {
       "Cell", "Scored as", "Matches", "Margin log score", "Total log score", "W/D/L log likelihood", "Sd of standardised residual: margin / total",
       "80 % interval covers: margin / total"
     ),
-    note = "Per match, integer scale. A standardised residual sd of 1 and a coverage of 80 % mean the predictive spread is right. Handball W/D/L uses the plain rounded margin (no shift). The basketball \"final result\" rows have two outcomes, not three."
+    note = "Per match, integer scale. A standardised residual sd of 1 and a coverage of 80 % mean the predictive spread is right; the 80 % band is the central one of a Gaussian with the predictive's mean and sd. Handball W/D/L uses the plain rounded margin (no shift). The basketball \"final result\" rows have two outcomes, not three, and their residuals are standardised with the mean and sd of the final-score predictive itself: the regulation margin with its level mass moved through overtime, and the two-part total. A basketball final margin is scored on a distribution with no mass on a level score."
   ))
   ph <- do.call(rbind, lapply(list(list("hb_m", hbm, "ll_wdl_raw"), list("hb_f", hbf, "ll_wdl_raw"), list("bb_m", bbm, "ll_final_shift_div"), list("bb_f", bbf, "ll_final_shift")), function(a) {
     sc <- a[[2]]
@@ -301,9 +325,38 @@ if (have(hbm) && have(bbm)) {
       "Cell", "Phase", "Matches", "Margin log score", "Total log score", "Result log likelihood", "Mean standardised margin residual",
       "Sd of standardised residual: margin / total", "Predictive sd of the margin"
     ),
-    note = "Phases are weeks of the regular season; a basketball play-off match is one of a pair that meets at least three times within three weeks, handball's are its PO division. The mean standardised margin residual is from the home side's view. The predictive sd is widest in the first six weeks because the new season's level is still uncertain: that is the season-boundary term at work."
+    note = "Phases are weeks of the regular season; a basketball play-off match is one of a pair that meets at least three times within three weeks, handball's are its PO division. The last six weeks are counted back from a season's last regular-season week; the season still being played has not reached them, so its matches after week six are in the middle row. For basketball the residual columns are of the regulation-time scores the model is trained on. The mean standardised margin residual is from the home side's view. The predictive sd is widest in the first six weeks because the new season's level is still uncertain: that is the season-boundary term at work."
   ))
-  add("<p>The spread of the standardised residuals stays close to 1 in every phase, including the last six weeks and the play-offs. If team strength drifted inside a season in a way the static model misses, the late-season residuals would be over-dispersed; they are not, in either sport. This is the check asked for before dropping the within-season term for basketball, where mid-season import changes are the obvious worry.</p>")
+  # Sd of the standardised margin residual in one phase, with the standard error of an sd.
+  phase_sd_of <- function(sc, p) {
+    x <- sc[sc$phase == p, ]
+    v <- stats::sd((x$margin_fit - x$mean_m) / x$s_m)
+    c(sd = v, se = v / sqrt(2 * (nrow(x) - 1)))
+  }
+  cells4 <- list(hbm, hbf, bbm, bbf)
+  late <- vapply(cells4, phase_sd_of, numeric(2), p = "last 6 weeks")
+  mid <- vapply(cells4, phase_sd_of, numeric(2), p = "middle")
+  rise <- late["sd", ] - mid["sd", ]
+  rise_se <- sqrt(late["se", ]^2 + mid["se", ]^2)
+  add(sprintf(
+    paste0(
+      "<p>If team strength drifted inside a season in a way the static model misses, the residuals would be more spread late in the season than in the middle of it. ",
+      "The sd of the standardised margin residual in the last six weeks is %s (the four cells in the table's order), and its rise over the middle of the season is %s. %s ",
+      "This is the check asked for before dropping the within-season term for basketball, where mid-season import changes are the obvious worry.</p>"
+    ),
+    paste(num(late["sd", ], 2), collapse = ", "),
+    paste(sprintf("%s (se %s)", num(rise, 2, plus = TRUE), num(rise_se, 2)), collapse = ", "),
+    if (max(rise / rise_se) < 2) {
+      sprintf(
+        "None of the rises is two standard errors. Where the level is off, it is off all season: %s's predictive spread is too narrow by %s to %s %% in every regular-season phase.",
+        tolower(LAB[[which.max(late["sd", ])]]),
+        num(100 * (min(vapply(c("first 6 weeks", "middle", "last 6 weeks"), function(p) phase_sd_of(cells4[[which.max(late["sd", ])]], p)[["sd"]], 1)) - 1), 0),
+        num(100 * (max(vapply(c("first 6 weeks", "middle", "last 6 weeks"), function(p) phase_sd_of(cells4[[which.max(late["sd", ])]], p)[["sd"]], 1)) - 1), 0)
+      )
+    } else {
+      sprintf("The rise for %s is more than two standard errors: its late-season margins are more spread than predicted.", tolower(LAB[[which.max(rise / rise_se)]]))
+    }
+  ))
   # Fixed cutoff: how large is the within-season term, and what does it buy?
   add("<h3>Does a within-season term earn its place?</h3>")
   if (all(vapply(iv, have, TRUE)) && have(ladder)) {
@@ -367,6 +420,63 @@ if (have(hbm) && have(bbm)) {
     ), "</details>"
   )
 
+  if (have(wfst)) {
+    run_lab <- c(
+      hb_m_none = "Handball men", hb_f_none = "Handball women", bb_m_none_reg = "Basketball men", bb_f_none_reg = "Basketball women",
+      bb_m_ar1_reg = "Basketball men, within-season AR(1)", bb_f_ar1_reg = "Basketball women, within-season AR(1)",
+      bb_m_none = "Basketball men, trained on final scores", bb_f_none = "Basketball women, trained on final scores"
+    )
+    w <- wfst$wf
+    add("<h3>The walk-forward, run twice</h3>")
+    add(sprintf(
+      "<p>R-INLA returns a fit whether or not its search for the hyperparameter mode succeeded, and the first run of the walk-forward did not record that status. So every walk-forward was run a second time with the status kept: %s fits, %s with a status other than 0. The numbers in this report are from the second run. The first run is kept, and scored by the same scripts, which makes the two a measure of how much a walk-forward depends on the run.</p>",
+      int(sum(w$fits)), int(sum(w$status_not_zero))
+    ))
+    wtab <- data.frame(
+      run = run_lab[w$run], cutoffs = int(w$cutoffs), matches = int(w$matches),
+      dm = sprintf("%s / %s", num(w$median_abs_diff_margin, 3), num(w$max_abs_diff_margin, 2)), big = pct(w$share_margin_over_half, 1),
+      dt = sprintf("%s / %s", num(w$median_abs_diff_total, 3), num(w$max_abs_diff_total, 2)),
+      hy = sprintf("%s of %s", int(w$cutoffs_hyper_differs_25pct), int(w$cutoffs))
+    )
+    add(tbl(wtab,
+      right = names(wtab)[-1],
+      head = c(
+        "Walk-forward", "Cutoffs", "Matches", "Expected margin, first run against second: median / largest difference",
+        "Matches whose expected margin differs by more than half a goal or point", "Expected total: median / largest difference",
+        "Cutoffs where some hyperparameter's median differs by more than 25 %"
+      ),
+      note = "Same fitting code, same data, same weekly cutoffs, each fit started from the previous cutoff's mode. The first run was made on 15 and 16 November on a heavily loaded machine, the second on 16 November from a frozen checkout."
+    ))
+    sc2 <- wfst$scores
+    stab <- data.frame(
+      cell = LAB[sc2$cell], score = sc2$score, n = int(sc2$n), a = num(sc2$first_run, 4), b = num(sc2$second_run, 4),
+      d = pm(sc2$diff, sc2$diff_se, 4), mx = num(sc2$max_abs_match_diff, 2)
+    )
+    add(tbl(stab,
+      right = names(stab)[-(1:2)],
+      head = c("Cell", "Score", "Matches", "First run", "Second run", "Second minus first", "Largest change for one match"),
+      note = "Mean out-of-sample log scores of the plain model, margin and total on the integer scale. Basketball is regulation time."
+    ))
+    add(sprintf(
+      paste0(
+        "<p><strong>What this shows.</strong> The mean scores of a cell move by at most %s between the runs, far less than any difference this report draws a conclusion from. Single predictions do move: a match's expected margin by up to %s, and in %s of the %s cutoffs of the four main walk-forwards some hyperparameter's median differs by more than a quarter. ",
+        "What differs is how a team's strength is divided between its long-run club level and its season level with the memory between seasons. With six seasons those are close to interchangeable, so several divisions describe the data about equally well; each weekly fit starts from the previous week's answer and stays with the division it began with. %s",
+        "A status of 0 therefore says the search ended at a mode, not that the mode is the only one.</p>"
+      ),
+      num(max(abs(sc2$diff)), 4), num(max(w$max_abs_diff_margin[w$run %in% names(run_lab)[1:4]]), 2),
+      int(sum(w$cutoffs_hyper_differs_25pct[w$run %in% names(run_lab)[1:4]])), int(sum(w$cutoffs[w$run %in% names(run_lab)[1:4]])),
+      if (have(wfst$cold)) {
+        sprintf(
+          "Started cold, one fit is reproducible: the margin model of two handball men cutoffs was fitted in %s separate R processes and all %s results per cutoff were identical to the last bit; they differ from the second run's warm-started fit of the same cutoff by at most %s and from the first run's by up to %s. ",
+          int(wfst$cold$processes[1]), int(min(wfst$cold$bit_identical)), num(max(wfst$cold$max_abs_diff_from_second_run), 3),
+          num(max(wfst$cold$max_abs_diff_from_first_run), 2)
+        )
+      } else {
+        ""
+      }
+    ))
+  }
+
   add("<h3>Against production's stored forecasts</h3>")
   if (have(cmp)) {
     ct <- do.call(rbind, lapply(names(CELLS), function(cl) {
@@ -391,13 +501,18 @@ if (have(hbm) && have(bbm)) {
       )
     }
     ct <- rbind(ct, pl(hb, "Handball, both sexes"), pl(bb, "Basketball, both sexes"))
+    age <- do.call(rbind, lapply(names(CELLS), function(cl) cmp[[cl]]$cmp[, c("lead_days", "lead_days_v2")]))
     add(tbl(ct,
       right = names(ct)[-1], hl = grepl("strong", ct$cell),
       head = c(
         "Cell", "Matches", "Margin log score: v2 &minus; production", "Total log score", "Result log likelihood",
         "Mean expected margin: production / v2 / observed", "Margin RMSE: production / v2", "Total RMSE: production / v2"
       ),
-      note = "Production's forecast is the newest archived fit dated strictly before the match (median lead two to three days); v2's cutoff is up to seven days before the match, so v2 is the one working with older information. The stored forecasts cover late April to May 2026 and September to November 2026. Basketball is scored on the final result; v2 reaches it from its regulation-time model through the tie probability and overtime. Positive differences favour v2."
+      note = sprintf(
+        "Production's forecast is the newest archived fit dated strictly before the match; v2's cutoff is one to seven days before it. Neither always has the newer information: of the %s matches, production's forecast was the older one in %s, v2's in %s, and they were the same age in %s (production's fit was more than seven days old in %s). The stored forecasts cover late April to May 2026 and September to November 2026. Basketball is scored on the final result; v2 reaches it from its regulation-time model through the tie probability (a shift per division for men, one shift for women) and overtime. A final basketball margin cannot be level, so production's draws within half a point of level are set aside and the rest renormalised; handball margins are scored on the rounded predictive for both forecasters. Positive differences favour v2.",
+        int(nrow(age)), int(sum(age$lead_days > age$lead_days_v2)), int(sum(age$lead_days < age$lead_days_v2)), int(sum(age$lead_days == age$lead_days_v2)),
+        int(sum(age$lead_days > 7))
+      )
     ))
     hj <- rbind(cmp$hb_m$cmp[, c("mean_m.prod", "mean_m.v2", "margin")], cmp$hb_f$cmp[, c("mean_m.prod", "mean_m.v2", "margin")])
     pairs3 <- list(c("lsm_raw", "ls_margin"), c("lst_raw", "ls_total"), c("ll_wdl_raw", "ll_wdl"))
@@ -436,7 +551,7 @@ if (have(hbm) && have(bbm)) {
     add(tbl(mk,
       right = c("n", "market", "v2", "d"),
       head = c("Cell", "Priced matches", "Period", "Market 1X2 log likelihood", "v2", "v2 &minus; market", "Where production's forecast exists: market / production / v2"),
-      note = "Proportionally de-vigged 1X2, last scrape on or before match day. Handball is full time; basketball is regulation time, where production has no draw probability of its own, so its column uses the &plusmn;0.5 band. Odds exist for few matches: the handball men's sample is small and the basketball samples are too small to read."
+      note = "Proportionally de-vigged 1X2, last scrape on or before match day. Handball is full time; basketball is regulation time, where production has no draw probability of its own, so its column uses the &plusmn;0.5 band. v2 is the proposed variant for the cell, the same as in every other table: the plain rounded margin for handball; for basketball the regulation 1X2 with the level-score shift, per division for men and one shift for women. Odds exist for few matches: the handball men's sample is small and the basketball samples are too small to read."
     ))
   } else {
     add(missing_note("the comparison with production's stored forecasts"))
