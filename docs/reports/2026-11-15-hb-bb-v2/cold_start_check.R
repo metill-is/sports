@@ -2,9 +2,15 @@
 # cutoffs without a warm start and keeps the internal mode and the predictions. Run it
 # several times in separate R processes; wf_status.R compares the runs with each other and
 # with the walk-forward, which reached the same cutoffs through a chain of warm starts.
-# Usage: Rscript -e 'source("docs/reports/2026-11-15-hb-bb-v2/cold_start_check.R")' <run number>
+# With "noopt" as second argument R-INLA's online internal optimisation is switched off
+# (inla.setOption(internal.opt = FALSE)), to see whether that is what makes separate
+# processes disagree.
+# Usage: Rscript -e 'source("docs/reports/2026-11-15-hb-bb-v2/cold_start_check.R")' <run number> [noopt]
 source("docs/reports/2026-11-15-hb-bb-v2/common.R")
-run <- commandArgs(trailingOnly = TRUE)[[1]]
+args <- commandArgs(trailingOnly = TRUE)
+run <- args[[1]]
+noopt <- length(args) >= 2 && args[[2]] == "noopt"
+if (noopt) INLA::inla.setOption(internal.opt = FALSE)
 cell <- "hb_m"
 ci <- CELLS[[cell]]
 league <- load_leagues()[[ci$league]]
@@ -27,4 +33,4 @@ for (cu in c("2021-09-15", "2022-10-19")) {
   )
   cat(sprintf("cutoff %s: mode status %d, theta %s\n", cu, f$mode_status, paste(sprintf("%.6f", f$theta), collapse = " ")))
 }
-saveRDS(out, file.path(OUT, "out", sprintf("cold_start_%s.rds", run)))
+saveRDS(out, file.path(OUT, "out", sprintf("cold_start_%s%s.rds", if (noopt) "noopt_" else "", run)))

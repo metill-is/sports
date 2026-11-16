@@ -457,6 +457,32 @@ if (have(hbm) && have(bbm)) {
       head = c("Cell", "Score", "Matches", "First run", "Second run", "Second minus first", "Largest change for one match"),
       note = "Mean out-of-sample log scores of the plain model, margin and total on the integer scale. Basketball is regulation time."
     ))
+    # Cold starts in separate processes, with R-INLA's defaults and with its online optimisation off.
+    cold_txt <- ""
+    if (have(wfst$cold)) {
+      cd <- wfst$cold
+      d0 <- cd[cd$setting == "R-INLA defaults", ]
+      d1 <- cd[cd$setting == "internal.opt = FALSE", ]
+      cold_txt <- sprintf(
+        "A warm start is not the whole story: a single fit started cold is not always the same either. The margin model of two handball men cutoffs was fitted from a cold start in separate R processes. With R-INLA's defaults, %s gave the most frequent result (the others differed by up to %s in an expected margin). ",
+        paste(sprintf("%s of %s processes", int(d0$most_frequent), int(d0$processes)), collapse = " and "), num(max(d0$max_abs_diff_between_processes), 3)
+      )
+      if (nrow(d1) > 0) {
+        cold_txt <- paste0(cold_txt, sprintf(
+          "With R-INLA's online internal optimisation switched off (<code>inla.setOption(internal.opt = FALSE)</code>), %s did%s. ",
+          paste(sprintf("%s of %s", int(d1$most_frequent), int(d1$processes)), collapse = " and "),
+          if (all(d1$most_frequent == d1$processes)) ": no difference at all, which points at that option, which chooses between numerical routines while a fit runs, as the source" else ""
+        ))
+      }
+      if (have(wfst$noopt)) {
+        nn <- wfst$noopt
+        cold_txt <- paste0(cold_txt, sprintf(
+          "Two whole walk-forwards of handball men with the option off %s (%s of %s predictions identical in every stored number; largest difference in an expected margin %s). ",
+          if (nn$identical_rows == nn$matches) "came out identical to the last bit" else "did not come out identical",
+          int(nn$identical_rows), int(nn$matches), num(nn$max_abs_diff_margin, 3)
+        ))
+      }
+    }
     add(sprintf(
       paste0(
         "<p><strong>What this shows.</strong> The mean scores of a cell move by at most %s between the runs, far less than any difference this report draws a conclusion from. Single predictions do move: a match's expected margin by up to %s, and in %s of the %s cutoffs of the four main walk-forwards some hyperparameter's median differs by more than a quarter. ",
@@ -465,15 +491,7 @@ if (have(hbm) && have(bbm)) {
       ),
       num(max(abs(sc2$diff)), 4), num(max(w$max_abs_diff_margin[w$run %in% names(run_lab)[1:4]]), 2),
       int(sum(w$cutoffs_hyper_differs_25pct[w$run %in% names(run_lab)[1:4]])), int(sum(w$cutoffs[w$run %in% names(run_lab)[1:4]])),
-      if (have(wfst$cold)) {
-        sprintf(
-          "Started cold, one fit is reproducible: the margin model of two handball men cutoffs was fitted in %s separate R processes and all %s results per cutoff were identical to the last bit; they differ from the second run's warm-started fit of the same cutoff by at most %s and from the first run's by up to %s. ",
-          int(wfst$cold$processes[1]), int(min(wfst$cold$bit_identical)), num(max(wfst$cold$max_abs_diff_from_second_run), 3),
-          num(max(wfst$cold$max_abs_diff_from_first_run), 2)
-        )
-      } else {
-        ""
-      }
+      cold_txt
     ))
   }
 

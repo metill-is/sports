@@ -3,6 +3,10 @@
 options(width = 180)
 suppressMessages(devtools::load_all(".", quiet = TRUE))
 
+# WHY a switch: with R-INLA's online internal optimisation on (its default), separate
+# processes do not always return the same fit. HBBB_INLA_NOOPT=1 turns it off for a run.
+if (identical(Sys.getenv("HBBB_INLA_NOOPT"), "1")) INLA::inla.setOption(internal.opt = FALSE)
+
 EXP_DIR <- "docs/reports/2026-11-15-hb-bb-v2"
 OUT <- Sys.getenv("HBBB_OUT", "/Users/brynjolfurjonsson/.claude-reviews/sports-hb-bb-v2")
 # WHY an override: the stored results were computed against the data of the branch

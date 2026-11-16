@@ -71,24 +71,55 @@ other <- do.call(rbind, c(
 rownames(other) <- NULL
 cat(sprintf("\nFits outside the walk-forward: %d, of which mode status not 0: %d\n", nrow(other), sum(!(other$status %in% 0L))))
 cat(sprintf("Walk-forward fits: %d, of which mode status not 0: %d\n", sum(wf$fits), sum(wf$status_not_zero)))
-# Cold starts: the same fit in separate R processes (cold_start_check.R), against each other
-# and against the walk-forward's warm-started fit of the same cutoff.
-cold_files <- sort(Sys.glob(file.path(OUT, "out", "cold_start_*.rds")))
-cold <- NULL
-if (length(cold_files) > 1L) {
-  runs_c <- lapply(cold_files, readRDS)
-  wfp <- rd("wf_hb_m_none.rds")$pred
-  wfp1 <- rd("first-run", "wf_hb_m_none.rds")$pred
-  cold <- do.call(rbind, lapply(names(runs_c[[1]]), function(cu) {
-    p1 <- runs_c[[1]][[cu]]$pred
-    same <- vapply(runs_c, function(r) identical(r[[cu]]$pred$mean_m, p1$mean_m), TRUE)
+# Cold starts: the same fit in separate R processes (cold_start_check.R), with R-INLA's
+# defaults and with its online internal optimisation switched off; against each other and
+# against the walk-forward's warm-started fit of the same cutoff.
+wfp <- rd("wf_hb_m_none.rds")$pred
+wfp1 <- rd("first-run", "wf_hb_m_none.rds")$pred
+cold_set <- function(pattern, label) {
+  files <- sort(Sys.glob(file.path(OUT, "out", pattern)))
+  if (length(files) < 2L) {
+    return(NULL)
+  }
+  rr <- lapply(files, readRDS)
+  do.call(rbind, lapply(names(rr[[1]]), function(cu) {
+    p1 <- rr[[1]][[cu]]$pred
+    m <- vapply(rr, function(r) r[[cu]]$pred$mean_m, numeric(nrow(p1)))
+    grp <- match(apply(m, 2, function(v) paste(format(v, digits = 17), collapse = " ")), unique(apply(m, 2, function(v) paste(format(v, digits = 17), collapse = " "))))
+    modal <- as.integer(names(which.max(table(grp))))
+    ref <- m[, which(grp == modal)[1]]
     data.frame(
-      cutoff = cu, processes = length(runs_c), bit_identical = sum(same),
-      max_abs_diff_from_second_run = max(abs(p1$mean_m - wfp$mean_m[match(key(p1), key(wfp))])),
-      max_abs_diff_from_first_run = max(abs(p1$mean_m - wfp1$mean_m[match(key(p1), key(wfp1))]))
+      setting = label, cutoff = cu, processes = ncol(m), distinct_results = max(grp), most_frequent = sum(grp == modal),
+      max_abs_diff_between_processes = max(abs(m - ref)),
+      max_abs_diff_from_second_run = max(abs(ref - wfp$mean_m[match(key(p1), key(wfp))])),
+      max_abs_diff_from_first_run = max(abs(ref - wfp1$mean_m[match(key(p1), key(wfp1))])),
+      status_not_zero = sum(vapply(rr, function(r) !(r[[cu]]$mode_status %in% 0L), TRUE))
     )
   }))
+}
+cold <- rbind(cold_set("cold_start_[0-9]*.rds", "R-INLA defaults"), cold_set("cold_start_noopt_*.rds", "internal.opt = FALSE"))
+if (!is.null(cold)) {
   cat("\nCold-start fits of two handball men cutoffs in separate processes\n")
   print(format(cold, digits = 3), row.names = FALSE)
 }
-saveRDS(list(wf = wf, scores = scores, other = other, cold = cold), file.path(OUT, "out", "wf_status.rds"))
+# Two whole walk-forwards with the online optimisation off, if they were run (noopt-a, noopt-b).
+noopt <- NULL
+fa <- file.path(OUT, "noopt-a", "out", "wf_hb_m_none.rds")
+fb <- file.path(OUT, "noopt-b", "out", "wf_hb_m_none.rds")
+if (file.exists(fa) && file.exists(fb)) {
+  a <- readRDS(fa)$pred
+  b <- readRDS(fb)$pred
+  i <- match(key(a), key(b))
+  j <- match(key(a), key(wfp))
+  cols <- c("mean_m", "sd_m", "sig2_m", "mean_t", "sd_t", "sig2_t")
+  same <- Reduce(`&`, lapply(cols, function(cn) a[[cn]] == b[[cn]][i]))
+  noopt <- data.frame(
+    run = "hb_m_none", matches = nrow(a), identical_rows = sum(same),
+    max_abs_diff_margin = max(abs(a$mean_m - b$mean_m[i])), max_abs_diff_total = max(abs(a$mean_t - b$mean_t[i])),
+    max_abs_diff_margin_from_default_run = max(abs(a$mean_m - wfp$mean_m[j]), na.rm = TRUE),
+    median_abs_diff_margin_from_default_run = stats::median(abs(a$mean_m - wfp$mean_m[j]), na.rm = TRUE)
+  )
+  cat("\nTwo walk-forwards of handball men with internal.opt = FALSE, against each other and against the second run\n")
+  print(format(noopt, digits = 3), row.names = FALSE)
+}
+saveRDS(list(wf = wf, scores = scores, other = other, cold = cold, noopt = noopt), file.path(OUT, "out", "wf_status.rds"))
