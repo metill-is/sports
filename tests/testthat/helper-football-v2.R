@@ -32,6 +32,28 @@ toy_divisions <- function() {
   )
 }
 
+# Three teams that all stay in one division across a season break, one state
+# slot each per season. With more than one stayer the reversion coefficient
+# changes the prior, which it cannot do in toy_divisions() (one stayer).
+stayers_matches <- function(seasons = 2021:2022) {
+  one <- function(season) {
+    monday <- as.Date(sprintf("%d-01-04", season)) + 7 * 17
+    monday <- monday - (as.integer(format(monday, "%u")) - 1L)
+    data.frame(
+      match_date = monday + c(0, 2), home_team = c("A", "C"), away_team = c("B", "A"),
+      home_score = c(1L, 0L), away_score = c(0L, 2L), season = season, cell = paste0("L1@", season)
+    )
+  }
+  do.call(rbind, lapply(seasons, one))
+}
+
+stayers_divisions <- function(teams = c("A", "B", "C"), seasons = 2021:2022, division = "L1", rank = 1L) {
+  d <- expand.grid(team = teams, season = seasons, stringsAsFactors = FALSE)
+  d$division <- division
+  d$rank <- rank
+  d
+}
+
 # Covariance of one field implied by the steps Stan reads: every team starts
 # at N(0, tau^2) and adds independent steps.
 stan_form_cov <- function(spec, tau, sigma, kappa = 0) {

@@ -78,7 +78,7 @@ test_that("a step across d weeks has d times the one-week variance", {
   expect_equal(diag(v)[a], 0.5^2 + 0.1^2 * weeks)
 })
 
-test_that("reversion pulls a staying team toward its division mean", {
+test_that("only teams that stay in their division revert", {
   rho <- 0.8
   spec <- fv2_build(
     toy_matches(),
@@ -88,25 +88,53 @@ test_that("reversion pulls a staying team toward its division mean", {
   # A stays in L1 and reverts; B (relegated) and C (promoted) take plain jumps.
   expect_identical(st$rho[st$class == "brk"], c(rho, 1, 1))
   expect_identical(st$move[st$class == "brk"], c(0, -1, 1))
-  d <- st[st$class == "brk" & st$team == 1L, ]
-  q <- fv2_structure(spec)$brk
-  # L1 in 2021 held A and B; only A's break reverts, toward A's own end state.
-  expect_equal(q[d$slot, d$prev], -(rho + (1 - rho) / 1))
-  expect_equal(q[d$slot, d$slot], 1)
+})
+
+test_that("reversion pulls every stayer toward the mean of its division's stayers", {
+  # Written out from the model, not from the package: with one slot per team
+  # and season, x_new = m + rho (x_old - m) + kappa z, m the mean of x_old.
+  tau <- 0.6
+  kappa <- 0.25
+  rho <- 0.5
+  spec <- fv2_build(stayers_matches(), clock = "break", rho = rho, divisions = stayers_divisions())
+  expect_identical(spec$S, 6L)
+  old <- spec$first_slot
+  new <- old + 1L
+  r <- fv2_structure(spec)
+  expect_equal(r$brk[new[1], old[1]], -(rho + (1 - rho) / 3))
+  expect_equal(r$brk[new[1], old[2]], -(1 - rho) / 3)
+
+  pull <- rho * diag(3) + (1 - rho) / 3
+  expected <- matrix(0, 6, 6)
+  expected[old, old] <- tau^2 * diag(3)
+  expected[new, old] <- tau^2 * pull
+  expected[old, new] <- t(expected[new, old])
+  expected[new, new] <- tau^2 * pull %*% t(pull) + kappa^2 * diag(3)
+  expect_equal(as.matrix(solve(r$init / tau^2 + r$brk / kappa^2)), expected, ignore_attr = TRUE)
+  # The toy can tell reversion from a plain jump: without it the old and new
+  # states of different teams would be uncorrelated.
+  expect_gt(expected[new[1], old[2]], 0.05)
 })
 
 test_that("the reverting break is the same prior in INLA's and Stan's form", {
   tau <- 0.6
   sigma <- 0.05
   kappa <- 0.25
-  for (rho in c(1, 0.8, 0.5)) {
-    spec <- fv2_build(
-      toy_matches(), toy_fixture(),
-      clock = "break", rho = rho, divisions = toy_divisions()
-    )
+  sim <- simulate_league(n_team = 4L, n_week = 8L)
+  div <- stayers_divisions(teams = paste0("T", 1:4), division = "L")
+  cov_of <- function(rho) {
+    spec <- fv2_build(sim, clock = "break", rho = rho, divisions = div)
     r <- fv2_structure(spec)
     q <- r$init / tau^2 + r$`in` / sigma^2 + r$brk / kappa^2
-    expect_equal(as.matrix(solve(q)), recursion_cov(spec, tau, sigma, kappa, rho), ignore_attr = TRUE)
+    list(inla = as.matrix(solve(q)), stan = recursion_cov(spec, tau, sigma, kappa, rho))
+  }
+  plain <- cov_of(1)
+  for (rho in c(1, 0.8, 0.5)) {
+    both <- cov_of(rho)
+    expect_equal(both$inla, both$stan, ignore_attr = TRUE)
+    # Four stayers in one division: the coefficient has to change the prior,
+    # or this test compares a plain jump with a plain jump.
+    if (rho < 1) expect_gt(max(abs(both$inla - plain$inla)), 0.01)
   }
 })
 
