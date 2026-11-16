@@ -66,6 +66,49 @@ arc_rel <- file.path("beliefs", "archive", cell, paste0("sex=", sex))
 arc_parts <- list.files(file.path(src, arc_rel), pattern = "^fit_date=")
 arc_parts <- arc_parts[before(as.Date(sub("^fit_date=", "", arc_parts)))]
 for (p in arc_parts) copy_tree(file.path(arc_rel, p))
+
+# WHY: the daily fit runs before that day's evening games, which are ingested
+# later, dated on the fit day. On today's store a replay would train on them
+# and forecast nothing for them. Production recorded how many matches its fit
+# saw, so when that count is the store's without the fit day's matches, the
+# isolated copy is put back as it was: those matches leave the results and
+# return to the schedule.
+key <- list(sport = "football", country = "iceland", sex = sex)
+league <- load_leagues()[["football_iceland"]]
+stopifnot(is.null(league$engine))
+facts <- as.data.frame(read_table("results", root = iso, filter = key))
+recorded <- tryCatch(
+  as.data.frame(read_table("fit_diagnostics", root = src, filter = key)),
+  error = function(e) NULL
+)
+production_n_obs <- if (is.null(recorded)) integer() else recorded$n_obs[recorded$fit_date == as_of]
+production_n_obs <- production_n_obs[!is.na(production_n_obs)]
+trained_on <- function(end) nrow(model_training_results(facts, league, end_date = end))
+returned <- facts[0, ]
+if (length(production_n_obs) == 1L && production_n_obs != trained_on(as_of)) {
+  if (production_n_obs != trained_on(as_of - 1L)) {
+    stop(
+      "production's fit saw ", production_n_obs, " matches; today's store gives ", trained_on(as_of),
+      " to the fit day and ", trained_on(as_of - 1L), " before it. Cannot rebuild the store as it was.",
+      call. = FALSE
+    )
+  }
+  on_day <- facts$match_date == as_of & !is.na(facts$home_score)
+  returned <- facts[on_day, ]
+  season <- facts$season %in% unique(returned$season)
+  write_table(tibble::as_tibble(facts[season & !on_day, ]), "results", root = iso)
+  fixture_cols <- c("sport", "country", "sex", "season", "match_date", "home_team", "away_team", "division", "round")
+  schedule <- as.data.frame(read_table("schedules", root = iso, filter = key))
+  schedule <- schedule[schedule$season %in% unique(returned$season), , drop = FALSE]
+  back <- returned[fixture_cols]
+  back$kickoff_time <- NA_character_
+  write_table(tibble::as_tibble(rbind(schedule[names(back)], back)), "schedules", root = iso)
+  stopifnot(trained_on_iso <- nrow(model_training_results(
+    as.data.frame(read_table("results", root = iso, filter = key)), league,
+    end_date = as_of
+  )) == production_n_obs)
+}
+
 hist_root <- file.path(out_dir, "round_predictions_history")
 dir.create(hist_root)
 file.copy(file.path(src, "beliefs", "round_predictions_history", "football"), hist_root, recursive = TRUE)
@@ -80,12 +123,14 @@ timed <- function(label, expr) {
   cat(sprintf("  %-10s %6.1f s elapsed, %6.1f s CPU\n", label, timing[[label]][["elapsed"]], timing[[label]][["cpu"]]))
 }
 
-league <- load_leagues()[["football_iceland"]]
-stopifnot(is.null(league$engine))
 extracts_root <- file.path(iso, "beliefs", "extracts")
 cat(sprintf(
   "replay %s %s, mode %s, horizon %d days, %d earlier extract and %d archive partition(s)\n",
   sex, as_of, mode, horizon, length(earlier), length(arc_parts)
+))
+cat(sprintf(
+  "  production's fit saw %s matches; %d played later on the fit day returned to the schedule\n",
+  if (length(production_n_obs) == 1L) format(production_n_obs) else "an unrecorded number of", nrow(returned)
 ))
 
 fit_meta <- NULL
@@ -119,6 +164,8 @@ summary <- list(
   sex = sex, as_of = format(as_of), mode = mode, horizon_days = horizon,
   earlier_partitions = sub("^fit_date=", "", earlier),
   archive_partitions = length(arc_parts),
+  production_n_obs = if (length(production_n_obs) == 1L) production_n_obs else NA_integer_,
+  returned_to_schedule = sprintf("%s v %s", returned$home_team, returned$away_team),
   timing = lapply(timing, as.list),
   fit = if (!is.null(fit_meta)) {
     list(
@@ -143,6 +190,9 @@ cat(sprintf(
 ))
 if (mode == "inla") {
   stopifnot(isTRUE(fit_meta$gate$passed), identical(fit_meta$engine, "inla"), nrow(diagnostics) == 1L)
+  # The replay is only a like-for-like comparison if it trained on what
+  # production trained on.
+  if (length(production_n_obs) == 1L) stopifnot(fit_meta$n_obs == production_n_obs)
 }
 if (mode == "inla" && isTRUE(check$n_failed > 0L)) stop("published JSON failed schema validation", call. = FALSE)
 if (length(summary$data_changed)) stop("the replay changed files under data/", call. = FALSE)
