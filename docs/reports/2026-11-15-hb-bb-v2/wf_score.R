@@ -119,13 +119,16 @@ fit_student <- function(train) {
 }
 
 ot_pmf <- function(k, mean_m, s_m, share = 5 / 40) {
-  p <- v2_integer_pmf(k, mean_m * share, s_m * sqrt(share))
-  p0 <- v2_integer_pmf(rep(0, length(k)), mean_m * share, s_m * sqrt(share))
-  ifelse(k == 0, 0, p / (1 - p0))
+  v2_integer_pmf(k, mean_m * share, s_m * sqrt(share), ties = FALSE)
 }
 
 # Out-of-sample scores for one cell. `reg` = the predictions are of regulation-time scores
 # (basketball), where a level score exists and the final result goes through overtime.
+# Normalisation of the margin scores: where the scored margin can be level (handball,
+# basketball regulation time) the pmf is the rounded predictive over every whole number;
+# where it cannot (a basketball final score from a model trained on final scores) the
+# rounded mass on zero is removed and the rest renormalised (`ties = FALSE`), so no
+# model is charged for an outcome that cannot happen.
 score_cell <- function(d, sport, reg = FALSE, first_scored = 2023L) {
   d$div_f <- factor(d$division)
   d$margin_fit <- if (reg) d$home_reg - d$away_reg else d$margin
@@ -149,13 +152,13 @@ score_cell <- function(d, sport, reg = FALSE, first_scored = 2023L) {
       par <- tryCatch(fit_shape(shapes[[nm]], tr), error = function(e) NULL)
       if (is.null(par)) next
       sc <- shapes[[nm]]$f(par, te)
-      out[[paste0("lsm_", nm)]] <- log(v2_integer_pmf(te$margin_fit, te$mean_m, sc$s_m))
+      out[[paste0("lsm_", nm)]] <- log(v2_integer_pmf(te$margin_fit, te$mean_m, sc$s_m, ties = ties))
       out[[paste0("lst_", nm)]] <- log(v2_integer_pmf(te$total_fit, te$mean_t, sc$s_t))
       out[[paste0("sm_", nm)]] <- sc$s_m
       out[[paste0("st_", nm)]] <- sc$s_t
       pars[[paste(s, nm)]] <- par
     }
-    out$lsm_raw <- log(v2_integer_pmf(te$margin_fit, te$mean_m, te$s_m))
+    out$lsm_raw <- log(v2_integer_pmf(te$margin_fit, te$mean_m, te$s_m, ties = ties))
     out$lst_raw <- log(v2_integer_pmf(te$total_fit, te$mean_t, te$s_t))
     wdl <- function(shift) {
       o <- v2_outcome_probs(te$mean_m, te$s_m, ties = ties, zero_shift = shift)
@@ -223,7 +226,7 @@ score_cell <- function(d, sport, reg = FALSE, first_scored = 2023L) {
     # Heavy tails: a Student-t predictive with the same sd, degrees of freedom fitted on
     # the earlier seasons. Is the Gaussian leaving anything on the table?
     nu <- fit_student(tr)
-    out$lsm_student <- log(v2_integer_pmf(te$margin_fit, te$mean_m, te$s_m * sqrt((nu[1] - 2) / nu[1]), df = nu[1]))
+    out$lsm_student <- log(v2_integer_pmf(te$margin_fit, te$mean_m, te$s_m * sqrt((nu[1] - 2) / nu[1]), df = nu[1], ties = ties))
     out$lst_student <- log(v2_integer_pmf(te$total_fit, te$mean_t, te$s_t * sqrt((nu[2] - 2) / nu[2]), df = nu[2]))
     pars[[paste(s, "student")]] <- nu
     # The same heavier tail carried to the result probabilities (with the per-division
@@ -232,7 +235,7 @@ score_cell <- function(d, sport, reg = FALSE, first_scored = 2023L) {
     sh_t <- if (ties) out$shift_div_used else rep(0, nrow(te))
     o_t <- v2_outcome_probs(te$mean_m, sc_t, df = nu[1], ties = ties, zero_shift = sh_t)
     out$ll_wdl_student <- log(ifelse(te$margin_fit > 0, o_t$p_home, ifelse(te$margin_fit < 0, o_t$p_away, o_t$p_draw)))
-    out$lsm_student_shift <- log(v2_integer_pmf(te$margin_fit, te$mean_m, sc_t, df = nu[1], zero_shift = sh_t))
+    out$lsm_student_shift <- log(v2_integer_pmf(te$margin_fit, te$mean_m, sc_t, df = nu[1], zero_shift = sh_t, ties = ties))
     if (reg) {
       r_t <- v2_basketball_result_probs(te$mean_m, sc_t, df = nu[1], zero_shift = sh_t)
       out$ll_final_student <- log(ifelse(te$margin > 0, r_t$p_home, r_t$p_away))
@@ -405,7 +408,8 @@ raw_scores <- function(d, sport, reg) {
   data.frame(
     match_date = d$match_date, home_team = d$home_team, away_team = d$away_team, phase = d$phase, division = d$division,
     season = d$season, s_m = d$s_m, s_t = d$s_t,
-    lsm_raw = log(v2_integer_pmf(m, d$mean_m, d$s_m)), lst_raw = log(v2_integer_pmf(tt, d$mean_t, d$s_t)),
+    lsm_raw = log(v2_integer_pmf(m, d$mean_m, d$s_m, ties = sport == "handball" || reg)),
+    lst_raw = log(v2_integer_pmf(tt, d$mean_t, d$s_t)),
     ll_wdl_raw = log(ifelse(m > 0, o$p_home, ifelse(m < 0, o$p_away, o$p_draw)))
   )
 }

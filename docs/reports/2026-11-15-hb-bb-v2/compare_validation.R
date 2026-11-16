@@ -59,10 +59,12 @@ for (cell in names(CELLS)) {
     n <- nrow(d$hold)
     mu_stan <- pick_cols(dr, "mu_pred", n)
     y <- if (resp == "margin") d$hold$home_score - d$hold$away_score else d$hold$home_score + d$hold$away_score
-    ls_stan <- log(v2_integer_pmf(y, mu_stan, pick_scalar(dr, "sigma")))
-    ls_full <- log(v2_integer_pmf(y, full$samples$loc, full$samples$sigma))
-    ls_eb <- log(v2_integer_pmf(y, eb$pred$mean, sqrt(eb$pred$sd^2 + eb$sigma2)))
-    ls_plug <- log(v2_integer_pmf(y, full$pred$mean, sqrt(full$pred$sd^2 + full$sigma2)))
+    # A basketball final margin cannot be level: the same normalisation as everywhere else.
+    can_level <- !(resp == "margin" && CELLS[[cell]]$sport == "basketball")
+    ls_stan <- log(v2_integer_pmf(y, mu_stan, pick_scalar(dr, "sigma"), ties = can_level))
+    ls_full <- log(v2_integer_pmf(y, full$samples$loc, full$samples$sigma, ties = can_level))
+    ls_eb <- log(v2_integer_pmf(y, eb$pred$mean, sqrt(eb$pred$sd^2 + eb$sigma2), ties = can_level))
+    ls_plug <- log(v2_integer_pmf(y, full$pred$mean, sqrt(full$pred$sd^2 + full$sigma2), ties = can_level))
     o <- list(
       cell = cell, response = resp, hyper = hyper,
       state = c(n = length(state_stan_mean), cor_mean = stats::cor(state_stan_mean, state_inla_mean),

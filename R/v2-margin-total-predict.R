@@ -47,15 +47,26 @@ v2_cdf_draws <- function(x, loc, scale, df = Inf) {
 #' @param loc,scale,df Predictive, see [v2_cdf()].
 #' @param zero_shift Logit shift applied to `P(X = 0)`, a scalar or one value
 #'   per match; `0` leaves the rounded distribution as it is.
+#' @param ties Can the value be zero? `FALSE` is a margin that cannot be level
+#'   (a final basketball score): the rounded mass on zero is removed and every
+#'   other margin is divided by what remains, so the distribution still sums
+#'   to one. Without this, a log score of such a margin is charged for mass
+#'   placed on an outcome that cannot happen.
 #' @return One probability per match.
 #' @noRd
-v2_integer_pmf <- function(k, loc, scale, df = Inf, zero_shift = 0) {
+v2_integer_pmf <- function(k, loc, scale, df = Inf, zero_shift = 0, ties = TRUE) {
   p <- v2_cdf(k + 0.5, loc, scale, df) - v2_cdf(k - 0.5, loc, scale, df)
-  if (all(zero_shift == 0)) {
+  if (ties && all(zero_shift == 0)) {
     return(p)
   }
   zero <- rep(0, length(k))
   p0 <- v2_cdf(zero + 0.5, loc, scale, df) - v2_cdf(zero - 0.5, loc, scale, df)
+  if (!ties) {
+    if (any(zero_shift != 0)) {
+      cli::cli_abort("{.arg zero_shift} moves the level-score probability, which {.code ties = FALSE} sets to zero.")
+    }
+    return(ifelse(k == 0, 0, p / (1 - p0)))
+  }
   p0_new <- stats::plogis(stats::qlogis(p0) + zero_shift)
   ifelse(k == 0, p0_new, p * (1 - p0_new) / (1 - p0))
 }

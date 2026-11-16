@@ -1,6 +1,12 @@
 # The same matches, three forecasters: production's stored pre-match forecast (the newest
 # archived fit dated strictly before the match), the v2 walk-forward (weekly cutoff, so up
 # to seven days older than production's forecast), and the de-vigged Lengjan line.
+#
+# Normalisation of the margin scores. Handball: the rounded predictive over every whole
+# number, for both forecasters. Basketball final margin: a final score cannot be level, so
+# production's draws within half a point of level are set aside and the rest renormalised
+# (`ls_margin`; the plain rounded score is kept as `ls_margin_rounded`); v2 reaches the
+# final margin through overtime and has no level mass to begin with.
 # Usage: Rscript -e 'source("docs/reports/2026-11-15-hb-bb-v2/wf_compare.R")'
 source("docs/reports/2026-11-15-hb-bb-v2/common.R")
 source(file.path(EXP_DIR, "score.R"))
@@ -40,6 +46,8 @@ prod_archive <- function(cell) {
         # WHY +0.5: 4,000 draws cannot resolve a probability below 1/4000; without the
         # half count a margin no draw happened to hit would score minus infinity.
         pm_obs = (sum(abs(diff - m_obs) < 0.5) + 0.5) / (dplyr::n() + 1),
+        # The same, among the draws that are not within half a point of a level margin.
+        pm_obs_nolevel = (sum(abs(diff - m_obs) < 0.5 & abs(diff) >= 0.5) + 0.5) / (sum(abs(diff) >= 0.5) + 1),
         pt_obs = (sum(abs(tot - t_obs) < 0.5) + 0.5) / (dplyr::n() + 1),
         .groups = "drop"
       )
@@ -51,7 +59,8 @@ prod_archive <- function(cell) {
   res <- res[!duplicated(key3(res), fromLast = TRUE), ]
   m <- res$home_score - res$away_score
   res$ll_wdl <- log(ifelse(m > 0, res$p_home, ifelse(m < 0, res$p_away, res$p_draw)))
-  res$ls_margin <- log(res$pm_obs)
+  res$ls_margin_rounded <- log(res$pm_obs)
+  res$ls_margin <- if (ci$sport == "basketball") log(res$pm_obs_nolevel) else res$ls_margin_rounded
   res$ls_total <- log(res$pt_obs)
   res$lead_days <- as.numeric(res$match_date - res$fit_date)
   res

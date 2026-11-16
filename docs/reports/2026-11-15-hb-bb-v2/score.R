@@ -62,7 +62,9 @@ pred_params_v2 <- function(dr_m, dr_t, d) {
 
 # Per-match scores. Margin and total log scores are on the integer scale (rounded
 # predictive). W/D/L: handball draws are level scores (the rounded mass on zero, which is
-# production's +/-0.5 band); basketball final scores cannot be level.
+# production's +/-0.5 band); basketball final scores cannot be level, so for basketball
+# the margin pmf is the rounded predictive with its mass on zero removed and the rest
+# renormalised, for every rung alike.
 score_holdout <- function(pp, hold, sport, zero_shift = 0) {
   m <- hold$home_score - hold$away_score
   tt <- hold$home_score + hold$away_score
@@ -73,7 +75,7 @@ score_holdout <- function(pp, hold, sport, zero_shift = 0) {
   data.frame(
     match_date = hold$match_date, division = hold$division, home_team = hold$home_team,
     away_team = hold$away_team, margin = m, total = tt,
-    ls_margin = log(v2_integer_pmf(m, pp$loc_m, pp$sc_m, pp$nu, zero_shift = if (ties) zero_shift else 0)),
+    ls_margin = log(v2_integer_pmf(m, pp$loc_m, pp$sc_m, pp$nu, zero_shift = if (ties) zero_shift else 0, ties = ties)),
     ls_total = log(v2_integer_pmf(tt, pp$loc_t, pp$sc_t, pp$nu)),
     ll_wdl = log(p_obs), p_home = o$p_home, p_draw = o$p_draw, p_away = o$p_away,
     exp_margin = mean_of(pp$loc_m), exp_total = mean_of(pp$loc_t)

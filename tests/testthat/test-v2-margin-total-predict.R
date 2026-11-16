@@ -167,3 +167,17 @@ test_that("with posterior draws the overtime share is weighted draw by draw", {
   expect_equal(r$p_home, r$p_home_reg + r$p_draw_reg * r$p_home_ot)
   expect_equal(r$p_home + r$p_away, 1)
 })
+
+test_that("a margin that cannot be level puts nothing on zero and still sums to one", {
+  k <- -90:90
+  loc <- rep(3, length(k))
+  scale <- rep(12, length(k))
+
+  no_tie <- v2_integer_pmf(k, loc, scale, ties = FALSE)
+  rounded <- v2_integer_pmf(k, loc, scale)
+
+  expect_equal(no_tie[k == 0], 0)
+  expect_equal(sum(no_tie), 1, tolerance = 1e-9)
+  expect_equal(no_tie[k != 0], rounded[k != 0] / (1 - rounded[k == 0]))
+  expect_error(v2_integer_pmf(1, 3, 12, ties = FALSE, zero_shift = 0.3), "zero_shift")
+})
