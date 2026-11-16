@@ -166,7 +166,7 @@ score_cell <- function(d, sport, reg = FALSE, first_scored = 2023L) {
     te <- d[d$season == s, , drop = FALSE]
     if (nrow(tr) < 100L || nrow(te) == 0L) next
     out <- te[, c(
-      "cell", "match_date", "season", "division", "home_team", "away_team", "phase", "playoff", "week",
+      "cell", "match_date", "cutoff", "season", "division", "home_team", "away_team", "phase", "playoff", "week",
       "home_score", "away_score", "margin", "total", "margin_fit", "total_fit", "mean_m", "mean_t", "s_m", "s_t"
     )]
     for (nm in names(shapes)) {

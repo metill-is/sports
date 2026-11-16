@@ -127,6 +127,11 @@ for (cell in names(CELLS)) {
   if (!is.null(v2)) {
     j <- merge(pa, v2, by = c("match_date", "home_team", "away_team"), suffixes = c(".prod", ".v2"))
     j$period <- ifelse(j$match_date < as.Date("2026-07-01"), "Apr-May 2026 (season end)", "Sep-Nov 2026 (new season)")
+    # Days from each forecaster's information to the match: production's fit date, v2's cutoff.
+    j$lead_days_v2 <- as.numeric(j$match_date - j$cutoff)
+    cat(sprintf("  information age in days: production median %.0f (max %.0f), v2 median %.0f (max %.0f); production older in %d, v2 older in %d, equal in %d\n",
+                stats::median(j$lead_days), max(j$lead_days), stats::median(j$lead_days_v2), max(j$lead_days_v2),
+                sum(j$lead_days > j$lead_days_v2), sum(j$lead_days < j$lead_days_v2), sum(j$lead_days == j$lead_days_v2)))
     cat(sprintf("  matched with the %s: n = %d\n", v2_label, nrow(j)))
     for (g in c("all", unique(j$period))) {
       x <- if (g == "all") j else j[j$period == g, ]
