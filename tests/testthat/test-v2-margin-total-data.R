@@ -83,3 +83,21 @@ test_that("a team outside the registry aborts instead of indexing as NA", {
   train <- v2_rows("2024-09-01", 2025, "OD", "A", "Z", 1, 0)
   expect_error(build_v2_data(train, train[0, ], teams = c("A", "B")), "Teams missing")
 })
+
+test_that("a season nobody played keeps its place between the seasons around it", {
+  # WHY: the season level is an AR(1) over the season index, so two seasons that are two
+  # years apart must be two steps apart, not one.
+  train <- v2_rows(
+    c("2020-09-01", "2022-09-10", "2022-09-18"), c(2021, 2023, 2023), "OD",
+    c("A", "B", "A"), c("B", "A", "B"), c(30, 28, 31), c(27, 29, 30)
+  )
+  v <- build_v2_data(train, train[0, ], teams = c("A", "B"))
+
+  expect_equal(v$seasons, 2021:2023)
+  expect_equal(v$NS, 3L)
+  expect_equal(v$season, c(1L, 3L, 3L))
+  expect_equal(v$ts_season[v$ts_home], c(1L, 3L, 3L))
+  # The season after the gap counts its weeks from its own first match.
+  expect_equal(v$wk, c(1L, 1L, 2L))
+  expect_true(is.na(v$season_start[["2022"]]))
+})
