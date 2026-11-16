@@ -138,6 +138,96 @@ test_that("the reverting break is the same prior in INLA's and Stan's form", {
   }
 })
 
+test_that("a stayer reverts toward all of its division's stayers, slot in the new season or not", {
+  # Early in a season only some teams have a match or a fixture. A plays a cup
+  # tie against X; B and C (same division as A) and Y (same as X) have no
+  # 2022 slot yet. The division mean A reverts toward is still A, B and C.
+  rho <- 0.5
+  train <- rbind(
+    stayers_matches(2021),
+    data.frame(
+      match_date = stayers_matches(2021)$match_date[1], home_team = "X", away_team = "Y",
+      home_score = 1L, away_score = 1L, season = 2021L, cell = "L2@2021"
+    )
+  )
+  cup_tie <- data.frame(
+    match_date = as.Date("2022-03-10"), home_team = "A", away_team = "X",
+    home_score = NA_integer_, away_score = NA_integer_, season = 2022L, cell = "CUP@2022"
+  )
+  div <- rbind(stayers_divisions(), stayers_divisions(c("X", "Y"), division = "L2", rank = 2L))
+  spec <- fv2_build(train, cup_tie, clock = "break", rho = rho, divisions = div)
+  old <- stats::setNames(spec$first_slot, spec$teams)
+  expect_identical(spec$slots$season[old[["A"]] + 1L], 2022L)
+  expect_identical(sum(spec$slots$season == 2022L), 2L)
+
+  brk <- fv2_structure(spec)$brk
+  a_new <- old[["A"]] + 1L
+  expect_equal(brk[a_new, old[["A"]]], -(rho + (1 - rho) / 3))
+  expect_equal(brk[a_new, old[["B"]]], -(1 - rho) / 3)
+  expect_equal(brk[a_new, old[["C"]]], -(1 - rho) / 3)
+  expect_equal(brk[old[["X"]] + 1L, old[["Y"]]], -(1 - rho) / 2)
+  # One definition of the group, read by both engines.
+  members <- lapply(spec$groups$members, function(m) sort(spec$teams[spec$slots$team[m]]))
+  expect_identical(unname(members[order(lengths(members))]), list(c("X", "Y"), c("A", "B", "C")))
+  r <- fv2_structure(spec)
+  expect_equal(
+    as.matrix(solve(r$init / 0.6^2 + r$brk / 0.25^2)), recursion_cov(spec, 0.6, 0.05, 0.25, rho),
+    ignore_attr = TRUE
+  )
+})
+
+test_that("INLA's and Stan's forms agree when a team sits out a season", {
+  # A is in the division all three seasons but has no 2022 match in training.
+  # Its 2021 to 2023 break reverts toward the 2021 mean of A, B and C, the
+  # same centre B's and C's 2021 to 2022 breaks use, in both forms.
+  sit_out <- rbind(
+    stayers_matches(2021),
+    data.frame(
+      match_date = stayers_matches(2022)$match_date[1], home_team = "B", away_team = "C",
+      home_score = 0L, away_score = 1L, season = 2022L, cell = "L1@2022"
+    ),
+    stayers_matches(2023)
+  )
+  div <- stayers_divisions(seasons = 2021:2023)
+  for (rho in c(0.8, 0.5)) {
+    spec <- fv2_build(sit_out, clock = "break", rho = rho, divisions = div)
+    a <- spec$steps[spec$steps$team == 1L, ]
+    expect_identical(c(a$class, a$delta), c("brk", "2"))
+    expect_identical(a$rho, rho)
+    r <- fv2_structure(spec)
+    expect_equal(
+      as.matrix(solve(r$init / 0.6^2 + r$brk / 0.25^2)), recursion_cov(spec, 0.6, 0.05, 0.25, rho),
+      ignore_attr = TRUE
+    )
+  }
+})
+
+test_that("a team that left the division's next season takes a plain jump", {
+  # Same matches, but the schedule shows the 2022 division without A. A is
+  # then not one of the 2021 stayers: it does not revert when it comes back,
+  # and it is not part of the mean B and C revert toward.
+  sit_out <- rbind(
+    stayers_matches(2021),
+    data.frame(
+      match_date = stayers_matches(2022)$match_date[1], home_team = "B", away_team = "C",
+      home_score = 0L, away_score = 1L, season = 2022L, cell = "L1@2022"
+    ),
+    stayers_matches(2023)
+  )
+  div <- stayers_divisions(seasons = 2021:2023)
+  div <- div[!(div$team == "A" & div$season == 2022L), ]
+  spec <- fv2_build(sit_out, clock = "break", rho = 0.5, divisions = div)
+  st <- spec$steps
+  expect_identical(st$rho[st$team == 1L], 1)
+  first <- which(spec$groups$season == 2021L)
+  expect_identical(sort(spec$teams[spec$slots$team[spec$groups$members[[first]]]]), c("B", "C"))
+  r <- fv2_structure(spec)
+  expect_equal(
+    as.matrix(solve(r$init / 0.6^2 + r$brk / 0.25^2)), recursion_cov(spec, 0.6, 0.05, 0.25, 0.5),
+    ignore_attr = TRUE
+  )
+})
+
 test_that("segments are one team's run of slots within a season", {
   spec <- fv2_build(
     toy_matches(), toy_fixture(),

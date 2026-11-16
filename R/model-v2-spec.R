@@ -8,8 +8,11 @@
 #   in-season step     x[k, j] - x[k, j-1] ~ N(0, sigma^2 * weeks)
 #   season-break step  x[k, j] - rho * x[k, j-1] - (1 - rho) * m ~ N(0, kappa^2 * breaks)
 #                      (clock = "break" only; m = mean end-of-season state of
-#                      the team's division; rho = 1 is a plain jump, and teams
-#                      that change division always take a plain jump)
+#                      the teams that stay in the team's division, whether or
+#                      not they have a slot in the new season yet; rho = 1 is
+#                      a plain jump, and teams that change division always
+#                      take a plain jump). Who stays, and so who is in m, is
+#                      defined once, in fv2_reversion_groups().
 #   home goals         Poisson(exp(c_home + att[h] + ha_att[h] - def[a] + offsets))
 #   away goals         Poisson(exp(c_away + att[a] - def[h] - ha_def[h] + offsets))
 #   optional           a league-wide scoring level and a league-wide home
@@ -143,9 +146,22 @@ fv2_build <- function(train, pred = NULL,
     as.numeric(lookup(steps$team, slots$season[steps$slot], "rank"))
   steps$move <- ifelse(is_break & !is.na(rank_change), sign(rank_change), 0)
   if (movers) steps$class[steps$move != 0] <- "mov"
-  reverts <- steps$class == "brk" & steps$move == 0 & !is.na(steps$from_div)
-  steps$rho <- ifelse(reverts, rho, 1)
   stopifnot(all(steps$delta > 0))
+
+  # Which breaks revert, and toward the mean of which states: one definition,
+  # read by fv2_structure() (INLA) and fv2_segments() (Stan).
+  stayers <- fv2_reversion_groups(slots, teams, if (clock == "break") divisions)
+  left_from <- match(paste(steps$team, steps$from_season), paste(stayers$team, stayers$season))
+  steps$group <- ifelse(steps$class == "brk" & !is.na(left_from), stayers$group[left_from], 0L)
+  steps$group[is.na(steps$group)] <- 0L
+  used <- sort(unique(steps$group[steps$group > 0L]))
+  steps$group <- match(steps$group, used, nomatch = 0L)
+  groups <- list(
+    division = stayers$division[match(used, stayers$group)],
+    season = stayers$season[match(used, stayers$group)],
+    members = lapply(used, function(g) stayers$last_slot[which(stayers$group == g)])
+  )
+  steps$rho <- ifelse(steps$group > 0L, rho, 1)
 
   promoted <- relegated <- numeric(S)
   if (movers) {
@@ -178,7 +194,7 @@ fv2_build <- function(train, pred = NULL,
 
   list(
     teams = teams, K = K, slots = slots, S = S,
-    first_slot = first_slot, last_obs_slot = last_obs_slot, steps = steps,
+    first_slot = first_slot, last_obs_slot = last_obs_slot, steps = steps, groups = groups,
     promoted = promoted, relegated = relegated,
     obs = obs, pred = prd, N = nrow(train), cells = cells, weeks = weeks,
     opts = list(
@@ -187,6 +203,45 @@ fv2_build <- function(train, pred = NULL,
     ),
     priors = priors
   )
+}
+
+#' Who stays in their division across a season break, and the group whose
+#' mean end-of-season state a staying team reverts toward.
+#'
+#' The one definition both engines read. A team stays in division d after
+#' season t when the schedule lists it in d for season t + 1. While nothing is
+#' known yet about d in t + 1 (no team is listed there), every team of d
+#' counts as staying; once the division's next season is listed, a team absent
+#' from it has left. A group is the teams that stay in one division after one
+#' season, and its members are their last state slots of that season: a team
+#' belongs whether or not it has a match or a fixture in the new season yet.
+#'
+#' @param slots State slots: team (number), season, slot.
+#' @param teams Team names by number.
+#' @param divisions Data frame team, season, division; `NULL` for no groups.
+#' @return Data frame of the (team, season) pairs that stay: team, season,
+#'   division, last_slot, group (a number per division and season).
+#' @noRd
+fv2_reversion_groups <- function(slots, teams, divisions) {
+  if (is.null(divisions)) {
+    return(data.frame(
+      team = integer(), season = integer(), division = character(),
+      last_slot = integer(), group = integer()
+    ))
+  }
+  ts <- unique(slots[c("team", "season")])
+  ts$last_slot <- as.integer(tapply(slots$slot, paste(slots$team, slots$season), max)[paste(ts$team, ts$season)])
+  listed <- paste(divisions$team, divisions$season)
+  division_in <- function(season) as.character(divisions$division[match(paste(teams[ts$team], season), listed)])
+  ts$division <- division_in(ts$season)
+  next_division <- division_in(ts$season + 1L)
+  next_season_listed <- paste(ts$division, ts$season + 1L) %in% paste(divisions$division, divisions$season)
+  stays <- !is.na(ts$division) & ifelse(is.na(next_division), !next_season_listed, next_division == ts$division)
+  ts <- ts[stays, , drop = FALSE]
+  key <- paste(ts$division, ts$season)
+  ts$group <- match(key, unique(key))
+  rownames(ts) <- NULL
+  ts
 }
 
 #' Prior precision pieces of one state field: Q = init / tau^2 + in / sigma^2
@@ -205,12 +260,11 @@ fv2_structure <- function(spec) {
       i = rep(seq_len(n), 2L), j = c(s$slot, s$prev), x = c(rep(1, n), -s$rho),
       dims = c(n, S)
     )
-    pull <- s$rho < 1
+    pull <- s$rho < 1 & s$group > 0L
     if (any(pull)) {
-      grp <- paste(s$from_div, s$from_season)
-      for (g in unique(grp[pull])) {
-        rows <- which(pull & grp == g)
-        members <- s$prev[rows]
+      for (g in unique(s$group[pull])) {
+        rows <- which(pull & s$group == g)
+        members <- spec$groups$members[[g]]
         w <- (1 - s$rho[rows[1L]]) / length(members)
         D <- D - Matrix::sparseMatrix(
           i = rep(rows, each = length(members)), j = rep(members, times = length(rows)),
@@ -336,7 +390,8 @@ fv2_stan_data <- function(spec, est_rho = FALSE) {
 #' @return Index arrays in Stan's layout. `seg_order` lists segments season by
 #'   season (`wave_start`/`wave_end` index into it), so every segment's
 #'   predecessor and every division mean it reverts toward are already
-#'   computed when it is reached.
+#'   computed when it is reached: a group's members (`member_seg`, indexed by
+#'   `group_first`/`group_last`) are segments of the season being left.
 #' @noRd
 fv2_segments <- function(spec) {
   stopifnot(spec$opts$clock == "break", !spec$opts$movers)
@@ -354,11 +409,13 @@ fv2_segments <- function(spec) {
   if (nrow(brk)) {
     at <- match(brk$slot, starts)
     seg_prev[at] <- seg_of_slot[brk$prev]
-    seg_stay[at] <- as.numeric(brk$rho < 1 | (brk$move == 0 & !is.na(brk$from_div)))
-    grp <- ifelse(seg_stay[at] > 0, paste(brk$from_div, brk$from_season), NA)
-    seg_group[at] <- ifelse(is.na(grp), 0L, match(grp, unique(stats::na.omit(grp))))
+    seg_stay[at] <- as.numeric(brk$group > 0L)
+    seg_group[at] <- brk$group
     seg_brk_sd[at] <- sqrt(brk$delta)
   }
+  # The members of each group, as the segments whose last state is averaged.
+  size <- lengths(spec$groups$members)
+  member_seg <- seg_of_slot[as.integer(unlist(spec$groups$members))]
   season <- sl$season[starts]
   seg_order <- order(season, seq_len(n_seg))
   waves <- sort(unique(season))
@@ -368,7 +425,9 @@ fv2_segments <- function(spec) {
   list(
     n_seg = n_seg, seg_of_slot = seg_of_slot, seg_first = starts, seg_last = seg_last,
     seg_team = sl$team[starts], seg_prev = seg_prev, seg_stay = seg_stay,
-    seg_group = seg_group, n_group = max(seg_group, 0L), seg_brk_sd = seg_brk_sd,
+    seg_group = seg_group, n_group = length(size), seg_brk_sd = seg_brk_sd,
+    n_member = length(member_seg), member_seg = member_seg,
+    group_first = cumsum(size) - size + 1L, group_last = cumsum(size),
     seg_order = seg_order, n_wave = length(waves),
     wave_start = pos, wave_end = c(pos[-1] - 1L, n_seg), step_in = step_in
   )
@@ -382,14 +441,9 @@ fv2_walk <- function(seg, lvl, z, z_brk, sigma, kappa, rho) {
   ca <- cumsum(sigma * seg$step_in * z)
   drift <- ca[seg$seg_last] - ca[seg$seg_first]
   start <- finish <- numeric(seg$n_seg)
+  centre_of <- function(g) mean(finish[seg$member_seg[seg$group_first[g]:seg$group_last[g]]])
   for (w in seq_len(seg$n_wave)) {
     segs <- seg$seg_order[seg$wave_start[w]:seg$wave_end[w]]
-    gsum <- gcnt <- numeric(max(seg$n_group, 1L))
-    for (s in segs[seg$seg_group[segs] > 0]) {
-      g <- seg$seg_group[s]
-      gsum[g] <- gsum[g] + finish[seg$seg_prev[s]]
-      gcnt[g] <- gcnt[g] + 1
-    }
     for (s in segs) {
       if (seg$seg_prev[s] == 0L) {
         start[s] <- lvl[seg$seg_team[s]]
@@ -397,7 +451,7 @@ fv2_walk <- function(seg, lvl, z, z_brk, sigma, kappa, rho) {
         prev <- finish[seg$seg_prev[s]]
         jump <- kappa * seg$seg_brk_sd[s] * z_brk[s]
         if (seg$seg_stay[s] > 0) {
-          centre <- gsum[seg$seg_group[s]] / gcnt[seg$seg_group[s]]
+          centre <- centre_of(seg$seg_group[s])
           start[s] <- centre + rho * (prev - centre) + jump
         } else {
           start[s] <- prev + jump

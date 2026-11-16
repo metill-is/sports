@@ -5,6 +5,8 @@
 //                     end-of-season state of that division's staying teams,
 //                     x = m + rho * (x_end - m) + kappa * z; teams that change
 //                     division take a plain jump, x = x_end + kappa * z.
+//                     Who stays, and so whose end state is in m, is data
+//                     (member_seg), defined once in fv2_reversion_groups().
 // rho is fixed (as in INLA, where it sits inside the precision matrix) or estimated here.
 // n_field = 2: attack and defence walks. n_field = 1: one strength walk, with an optional
 // fixed style value per team (attack = strength + style, defence = strength - style).
@@ -17,7 +19,7 @@ functions {
               array[] int seg_last, array[] int seg_team, array[] int seg_prev,
               vector seg_stay, array[] int seg_group, vector seg_brk_sd,
               array[] int seg_order, array[] int wave_start, array[] int wave_end,
-              int n_group) {
+              array[] int member_seg, array[] int group_first, array[] int group_last) {
     int S = num_elements(z);
     int n_seg = num_elements(z_brk);
     vector[S] ca = cumulative_sum(sigma * step_in .* z);
@@ -25,15 +27,6 @@ functions {
     vector[n_seg] start;
     vector[n_seg] finish;
     for (w in 1:num_elements(wave_start)) {
-      vector[n_group] gsum = rep_vector(0, n_group);
-      vector[n_group] gcnt = rep_vector(0, n_group);
-      for (i in wave_start[w]:wave_end[w]) {
-        int s = seg_order[i];
-        if (seg_group[s] > 0) {
-          gsum[seg_group[s]] += finish[seg_prev[s]];
-          gcnt[seg_group[s]] += 1;
-        }
-      }
       for (i in wave_start[w]:wave_end[w]) {
         int s = seg_order[i];
         if (seg_prev[s] == 0) {
@@ -42,7 +35,10 @@ functions {
           real prev = finish[seg_prev[s]];
           real jump = kappa * seg_brk_sd[s] * z_brk[s];
           if (seg_stay[s] > 0) {
-            real centre = gsum[seg_group[s]] / gcnt[seg_group[s]];
+            // The members are segments of the season being left, so their
+            // finish is known: waves run season by season.
+            int g = seg_group[s];
+            real centre = mean(finish[member_seg[group_first[g]:group_last[g]]]);
             start[s] = centre + rho * (prev - centre) + jump;
           } else {
             start[s] = prev + jump;
@@ -70,8 +66,12 @@ data {
   array[n_seg] int<lower=1, upper=K> seg_team;
   array[n_seg] int<lower=0, upper=n_seg> seg_prev;   // 0: the team's entry segment
   vector<lower=0, upper=1>[n_seg] seg_stay;      // 1: stayed in its division (reverts)
-  int<lower=0> n_group;
+  int<lower=0> n_group;                          // reversion groups (division by season left)
   array[n_seg] int<lower=0, upper=n_group> seg_group;
+  int<lower=0> n_member;
+  array[n_member] int<lower=1, upper=n_seg> member_seg;   // each group's members, group after group
+  array[n_group] int<lower=1, upper=n_member> group_first;
+  array[n_group] int<lower=1, upper=n_member> group_last;
   vector<lower=0>[n_seg] seg_brk_sd;             // sqrt(seasons crossed), 0 for an entry segment
   int<lower=1> n_wave;
   array[n_seg] int<lower=1, upper=n_seg> seg_order;  // segments season by season
@@ -137,7 +137,7 @@ transformed parameters {
     for (f in 1:n_field) {
       x[f] = walk(lvl[f], z[f], z_brk[f], sigma[f], kappa[f], rho, step_in, seg_of_slot,
                   seg_first, seg_last, seg_team, seg_prev, seg_stay, seg_group, seg_brk_sd,
-                  seg_order, wave_start, wave_end, n_group);
+                  seg_order, wave_start, wave_end, member_seg, group_first, group_last);
     }
     att = x[1];
     def = x[n_field];
