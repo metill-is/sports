@@ -327,11 +327,14 @@ if (have(hbm) && have(bbm)) {
     ),
     note = "Phases are weeks of the regular season; a basketball play-off match is one of a pair that meets at least three times within three weeks, handball's are its PO division. The last six weeks are counted back from a season's last regular-season week; the season still being played has not reached them, so its matches after week six are in the middle row. For basketball the residual columns are of the regulation-time scores the model is trained on. The mean standardised margin residual is from the home side's view. The predictive sd is widest in the first six weeks because the new season's level is still uncertain: that is the season-boundary term at work."
   ))
-  # Sd of the standardised margin residual in one phase, with the standard error of an sd.
+  # Sd of the standardised margin residual in one phase, with a bootstrap standard error.
+  # WHY bootstrap: the normal-theory se of an sd assumes Gaussian residuals. The second
+  # check of this report found resampled standard errors 10 to 28 % larger here.
   phase_sd_of <- function(sc, p) {
     x <- sc[sc$phase == p, ]
-    v <- stats::sd((x$margin_fit - x$mean_m) / x$s_m)
-    c(sd = v, se = v / sqrt(2 * (nrow(x) - 1)))
+    z <- (x$margin_fit - x$mean_m) / x$s_m
+    se <- withr::with_seed(20261116, stats::sd(replicate(2000, stats::sd(sample(z, replace = TRUE)))))
+    c(sd = stats::sd(z), se = se)
   }
   cells4 <- list(hbm, hbf, bbm, bbf)
   late <- vapply(cells4, phase_sd_of, numeric(2), p = "last 6 weeks")
@@ -341,7 +344,7 @@ if (have(hbm) && have(bbm)) {
   add(sprintf(
     paste0(
       "<p>If team strength drifted inside a season in a way the static model misses, the residuals would be more spread late in the season than in the middle of it. ",
-      "The sd of the standardised margin residual in the last six weeks is %s (the four cells in the table's order), and its rise over the middle of the season is %s. %s ",
+      "The sd of the standardised margin residual in the last six weeks is %s (the four cells in the table's order), and its rise over the middle of the season is %s, with standard errors from resampling matches. %s ",
       "This is the check asked for before dropping the within-season term for basketball, where mid-season import changes are the obvious worry.</p>"
     ),
     paste(num(late["sd", ], 2), collapse = ", "),
