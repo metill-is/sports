@@ -7,6 +7,8 @@ rd <- function(f) readRDS(file.path(OUT, "out", f))
 se <- function(v) stats::sd(v) / sqrt(length(v))
 say <- function(label, ...) cat(sprintf("%-58s %s\n", label, sprintf(...)))
 cells <- c("hb_m", "hb_f", "bb_m", "bb_f")
+# The tie treatment proposed for regulation-time basketball (common.R: REG_SHIFT).
+reg_shift <- c(bb_m = "shift_div", bb_f = "shift")
 
 cat("== diag_prod.rds: [[cell]]$ha_weighted, $raw_margin, $nu, $n_sampled\n")
 dg <- rd("diag_prod.rds")
@@ -95,7 +97,9 @@ for (cl in c("bb_m", "bb_f")) {
   say(paste(cl, "tie shift by division - none, regulation 1X2"), "%s", dif(x, "ll_wdl_shift_div", "ll_wdl_raw"))
   say(paste(cl, "Student-t - Gaussian, regulation margin"), "%s", dif(x, "lsm_student", "lsm_raw"))
   say(paste(cl, "Student-t - Gaussian, regulation 1X2 / final"), "%s / %s", dif(x, "ll_wdl_student", "ll_wdl_shift_div"), dif(x, "ll_final_student", "ll_final_shift_div"))
-  say(paste(cl, "final-result log likelihood (regulation + OT)"), "%.4f", mean(x$ll_final_shift_div))
+  say(paste(cl, "final-result log likelihood (regulation + OT)"), "%.4f", mean(x[[paste0("ll_final_", reg_shift[[cl]])]]))
+  zf <- x[[paste0("zm_final_", reg_shift[[cl]])]]
+  say(paste(cl, "final-margin predictive: sd of standardised residual / 80 % coverage"), "%.3f / %.3f", stats::sd(zf), mean(abs(zf) < stats::qnorm(0.9)))
 }
 ot <- rbind(sc$bb_m[sc$bb_m$margin_fit == 0, c("mean_m", "margin")], sc$bb_f[sc$bb_f$margin_fit == 0, c("mean_m", "margin")])
 say("overtime games; favourite won", "%d; %d", nrow(ot), sum(ifelse(ot$mean_m > 0, ot$margin > 0, ot$margin < 0)))
@@ -108,8 +112,28 @@ w1 <- wj[wj$division == "1D", ]
 say("... 1. deild only", "%d; %s / %s / %s", nrow(w1), w(w1, "lsm_raw"), w(w1, "lst_raw"), w(w1, "ll_wdl_raw"))
 for (cl in c("bb_m", "bb_f")) {
   j <- wf[[paste(cl, "reg_vs_final")]]
-  say(paste(cl, "regulation + OT - final-score model: result / margin"), "%s / %s", dif(j, "ll_final_shift_div", "ll_wdl_raw.final"), dif(j, "lsm_final_shift_div", "lsm_raw.final"))
+  say(
+    paste(cl, "regulation + OT - final-score model: result / margin"), "%s / %s", dif(j, paste0("ll_final_", reg_shift[[cl]]), "ll_wdl_raw.final"),
+    dif(j, paste0("lsm_final_", reg_shift[[cl]]), "lsm_raw.final")
+  )
 }
+
+for (cl in cells) {
+  d <- sc[[cl]]
+  late <- d$phase == "last 6 weeks"
+  say(paste(cl, "last 6 weeks: matches (from the unfinished season); sd of standardised margin residual"), "%d (%d); %.3f", sum(late),
+      sum(late & d$season == max(d$season)), stats::sd(((d$margin_fit - d$mean_m) / d$s_m)[late]))
+}
+
+cat("\n== wf_status.rds: $wf (fits, status_not_zero, differences between the two runs), $scores, $other, $cold\n")
+ws <- rd("wf_status.rds")
+say("walk-forward fits; with mode status not 0", "%d; %d", sum(ws$wf$fits), sum(ws$wf$status_not_zero))
+say("other fits; with mode status not 0", "%d; %d", nrow(ws$other), sum(!(ws$other$status %in% 0L)))
+main <- ws$wf[ws$wf$run %in% c("hb_m_none", "hb_f_none", "bb_m_none_reg", "bb_f_none_reg"), ]
+say("two runs, expected margin: median diff range; largest", "%.4f to %.4f; %.2f", min(main$median_abs_diff_margin), max(main$median_abs_diff_margin), max(main$max_abs_diff_margin))
+say("two runs: cutoffs with a hyperparameter median differing > 25 %", "%d of %d", sum(main$cutoffs_hyper_differs_25pct), sum(main$cutoffs))
+say("two runs: largest change in a cell's mean score", "%.4f", max(abs(ws$scores$diff)))
+if (!is.null(ws$cold)) say("cold starts: processes; bit-identical per cutoff", "%d; %s", ws$cold$processes[1], paste(ws$cold$bit_identical, collapse = ", "))
 
 cat("\n== wf_compare.rds: [[cell]]$cmp (production: ls_margin, ls_total, ll_wdl; v2: lsm_raw, lst_raw, ll_wdl_raw), $market\n")
 wc <- rd("wf_compare.rds")
@@ -125,6 +149,9 @@ for (sp in list(c("hb_m", "hb_f"), c("bb_m", "bb_f"))) {
 say("bb_f v2 - production, result, stored forecasts", "%s (n %d)", dif(wc$bb_f$cmp, "ll_wdl_raw", "ll_wdl"), nrow(wc$bb_f$cmp))
 m <- wc$hb_m$market
 say("hb_m Lengjan: n; market / v2 1X2 log likelihood", "%d; %.4f / %.4f", nrow(m), mean(m$ll_market), mean(m$ll_v2))
+age <- do.call(rbind, lapply(cells, function(k) wc[[k]]$cmp[, c("lead_days", "lead_days_v2")]))
+say("forecast age: v2 older / production older / same, of n", "%d / %d / %d of %d", sum(age$lead_days < age$lead_days_v2), sum(age$lead_days > age$lead_days_v2),
+    sum(age$lead_days == age$lead_days_v2), nrow(age))
 
 cat("\n== ../kki/periods_matched.rds: one row per stored basketball game (ok, overtime, sex, division)\n")
 per <- readRDS(file.path(OUT, "kki", "periods_matched.rds"))

@@ -17,6 +17,8 @@ wf <- rd("wf_scores.rds")
 cmp <- rd("wf_compare.rds")
 desc <- rd("descriptives.rds")
 repro <- rd("repro_descriptives.rds")
+wfst <- rd("wf_status.rds")
+corr <- rd("review_corrections.rds")
 per <- readRDS(file.path(OUT, "kki", "periods_matched.rds"))
 iv <- lapply(stats::setNames(names(CELLS), names(CELLS)), function(cl) rd(sprintf("inla_validate_%s.rds", cl)))
 dat <- lapply(stats::setNames(names(CELLS), names(CELLS)), function(cl) rd(sprintf("data_%s_%s.rds", cl, cutoff)))
@@ -57,7 +59,7 @@ pool <- function(cells, a, b) {
 # ---------------------------------------------------------------- header
 n_r0 <- if (have(diag)) length(diag) else 0L
 add("<h1>Handball and basketball v2</h1>")
-add("<p class=\"meta\">Measured production fits, a lean (margin, total) model on R-INLA with Stan as reference, and a cutover proposal · four cells: handball and basketball, men and women · prepared 15 November 2026, revised 16 November after an independent check, on branch <code>feat/hb-bb-v2</code> · no production path, config or ingest was changed</p>")
+add("<p class=\"meta\">Measured production fits, a lean (margin, total) model on R-INLA with Stan as reference, and a cutover proposal · four cells: handball and basketball, men and women · prepared 15 November 2026, revised 16 November after two independent reviews, on branch <code>feat/hb-bb-v2</code> · no production path, config or ingest was changed</p>")
 
 wf_secs <- unlist(lapply(c("hb_m_none", "hb_f_none", "bb_m_none_reg", "bb_f_none_reg"), function(k) {
   f <- file.path(OUT, "out", sprintf("wf_%s.rds", k))
