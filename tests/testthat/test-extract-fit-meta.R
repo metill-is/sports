@@ -163,3 +163,53 @@ test_that(".fit_meta_tibble derives model_units from the sport, not config", {
     "curling"
   )
 })
+
+# --- engine provenance (football v2 on INLA) ---------------------------------
+
+test_that("an INLA fit's fit_meta names the engine and the model, not a Stan file", {
+  stan_file <- "football_iceland/bivariate_poisson_no_inflation.stan"
+  draws <- list(lp__ = matrix(0, nrow = 50L, ncol = 1L))
+  inla_fit <- stub_fit(draws)
+  inla_fit$engine <- "inla"
+  inla_fit$version <- "2.0"
+  fm <- .fit_meta_tibble(inla_fit, as.Date("2027-04-10"), stan_file, "football")
+  expect_identical(fm$engine, "inla")
+  expect_identical(fm$model_version, "2.0")
+  # The league's Stan program did not produce these numbers.
+  expect_identical(fm$stan_model, NA_character_)
+  expect_identical(fm$n_draws, 50L)
+  expect_identical(fm$model_units, "log_rate")
+
+  # A Stan fit writes exactly what it wrote before the column existed.
+  stan <- .fit_meta_tibble(stub_fit(draws), as.Date("2027-04-10"), stan_file, "football")
+  expect_named(stan, c("n_draws", "fit_date", "stan_model", "model_units"))
+  expect_identical(stan$stan_model, stan_file)
+})
+
+test_that("a fit_meta written before the engine column reads as a Stan fit", {
+  dir <- withr::local_tempdir()
+  old <- tibble::tibble(
+    n_draws = 4000L, fit_date = as.Date("2026-10-20"),
+    stan_model = "football_iceland/bivariate_poisson_no_inflation.stan", model_units = "log_rate"
+  )
+  arrow::write_parquet(old, file.path(dir, "fit_meta.parquet"))
+  fm <- .read_fit_meta(dir)
+  expect_identical(fm$engine, "stan")
+  expect_identical(fm$model_version, NA_character_)
+  expect_identical(fm$stan_model, old$stan_model)
+  expect_identical(fm$n_draws, 4000L)
+
+  new <- tibble::tibble(
+    n_draws = 4000L, fit_date = as.Date("2027-04-10"), stan_model = NA_character_,
+    model_units = "log_rate", engine = "inla", model_version = "2.0"
+  )
+  dir2 <- withr::local_tempdir()
+  arrow::write_parquet(new, file.path(dir2, "fit_meta.parquet"))
+  expect_identical(.read_fit_meta(dir2)$engine, "inla")
+  expect_identical(.read_fit_meta(dir2)$model_version, "2.0")
+
+  # A partition with no fit_meta at all: no rows, the same columns.
+  none <- .read_fit_meta(withr::local_tempdir())
+  expect_identical(nrow(none), 0L)
+  expect_named(none, names(fm))
+})

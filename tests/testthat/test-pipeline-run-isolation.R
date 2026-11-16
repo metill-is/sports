@@ -203,6 +203,27 @@ test_that("run_fit_targets hands fit_fn the league's training_filter", {
   expect_null(seen$basketball$training_filter)
 })
 
+test_that("run_fit_targets hands fit_fn the league's engine", {
+  # fit_league() picks its engine off the league it is handed. A slice that
+  # dropped the key would fit a league switched to INLA with Stan, silently:
+  # the same whitelist trap as `training_filter` above.
+  leagues <- .iso_leagues()
+  leagues$football_iceland$engine <- "inla"
+
+  seen <- list()
+  suppressMessages(run_fit_targets(
+    .iso_targets(), leagues,
+    force = FALSE, league_named = FALSE, root = tempdir(),
+    fit_fn = function(static, sex) {
+      seen[[static$sport]] <<- static
+      1L
+    },
+    skip_fn = function(...) NULL
+  ))
+  expect_identical(seen$football$engine, "inla")
+  expect_null(seen$basketball$engine)
+})
+
 test_that("run_fit_targets keeps the production config's training_filter", {
   cfg <- load_leagues()
   seen <- NULL

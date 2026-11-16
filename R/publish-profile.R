@@ -265,12 +265,20 @@ NULL
 # wearing a metadata label.
 #
 # No `division` column, deliberately -- see the write sites.
+#
+# ENGINE. A fit made by another engine says so: `fit$engine` (set by the INLA
+# path, `fit_model_v2_inla()`) adds `engine` and `model_version`, and
+# `stan_model` is NA because the league's Stan program did not produce the
+# numbers. A Stan fit writes the four columns it always wrote, so its
+# partitions are unchanged; the reader (`.read_fit_meta()`) fills
+# `engine = "stan"` for any partition without the column.
 # @noRd
 .fit_meta_tibble <- function(fit, fit_date, stan_model, sport) {
-  tibble::tibble(
+  other_engine <- is.character(fit$engine) && !identical(fit$engine, "stan")
+  out <- tibble::tibble(
     n_draws = as.integer(posterior::ndraws(fit$draws("lp__"))),
     fit_date = as.Date(fit_date),
-    stan_model = as.character(stan_model),
+    stan_model = if (other_engine) NA_character_ else as.character(stan_model),
     model_units = switch(
       sport,
       basketball = "points",
@@ -279,6 +287,11 @@ NULL
       cli::cli_abort("No model_units for sport {.val {sport}}.", call = NULL)
     )
   )
+  if (other_engine) {
+    out$engine <- fit$engine
+    out$model_version <- as.character(fit$version %||% NA_character_)
+  }
+  out
 }
 
 #' Per-sport publish profile
