@@ -18,7 +18,7 @@ key3 <- function(x) paste(x$match_date, x$home_team, x$away_team)
 # Production's archived draws -> per-match summaries, scored against the played result.
 prod_archive <- function(cell) {
   ci <- CELLS[[cell]]
-  dir <- file.path("data/beliefs/archive", paste0("sport=", ci$sport), "country=iceland", paste0("sex=", ci$sex))
+  dir <- file.path(DATA_ROOT, "beliefs/archive", paste0("sport=", ci$sport), "country=iceland", paste0("sex=", ci$sex))
   played <- played_only(cell_results(cell), ci$sport)
   played <- played[, c("match_date", "home_team", "away_team", "home_score", "away_score", "division", "season")]
   band <- if (ci$sport == "handball") 0.5 else 0
