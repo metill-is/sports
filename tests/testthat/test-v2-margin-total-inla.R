@@ -194,3 +194,61 @@ test_that("the total fit keeps each division's level on that division's own seas
   fitted_level <- fit$fixed$mean + path
   expect_lt(max(abs(fitted_level - sim$level)), 3.5)
 })
+
+# The hyperparameter block R-INLA actually used for one model term.
+used_hyper <- function(fit, id) {
+  Filter(function(r) identical(as.character(r$hyperid), id), fit$all.hyper$random)[[1]]$hyper
+}
+v2_start <- function(u) -2 * log(u / 5)
+
+test_that("the total model and the random-walk form run on the priors and starting values stated", {
+  # WHY a second prior test: the first fits the margin model with the AR(1) form only.
+  # The total model's season path, the random-walk form, the starting values of the
+  # random effects and the normal priors on the intercepts are separate specifications,
+  # and each can be dropped without a warning on its own.
+  skip_if_not_installed("INLA")
+  sim <- simulate_two_divisions()
+  v <- build_v2_data(sim$matches, sim$matches[0, ], sim$teams)
+  pr <- v2_priors("handball")
+
+  fit <- fit_v2_inla(v, "total", pr, within = "rw1", int_strategy = "eb")$fit
+
+  family <- fit$all.hyper$family[[1]]$hyper$theta1
+  expect_equal(as.numeric(family$param), c(pr$u_sigma_t, 0.01))
+  expect_equal(as.numeric(family$initial), v2_start(pr$u_sigma_t))
+
+  season_path <- used_hyper(fit, "s_s")$theta
+  expect_equal(as.character(season_path$prior), "pc.prec")
+  expect_equal(as.numeric(season_path$param), c(pr$u_season, 0.01))
+  expect_equal(as.numeric(season_path$initial), v2_start(pr$u_season))
+
+  walk <- used_hyper(fit, "w_t")$theta
+  expect_equal(as.character(walk$prior), "pc.prec")
+  expect_equal(as.numeric(walk$param), c(pr$u_w, 0.01))
+  expect_equal(as.numeric(walk$initial), v2_start(pr$u_w))
+
+  expect_equal(as.numeric(used_hyper(fit, "b")$theta$initial), v2_start(pr$u_b))
+  expect_equal(as.numeric(used_hyper(fit, "u_s")$theta1$initial), v2_start(pr$u_u))
+
+  fixed <- fit$all.hyper$fixed
+  expect_equal(vapply(fixed, function(f) f$label, character(1)), c("alpha1", "alpha2"))
+  expect_equal(vapply(fixed, function(f) f$prior.mean, numeric(1)), rep(pr$total_mean, 2))
+  expect_equal(vapply(fixed, function(f) f$prior.prec, numeric(1)), rep(1 / pr$total_mean_sd^2, 2))
+})
+
+test_that("the margin model's home-advantage prior and starting values are the ones stated", {
+  skip_if_not_installed("INLA")
+  sim <- simulate_v2_league()
+  v <- build_v2_data(sim$matches, sim$matches[0, ], sim$teams)
+  pr <- v2_priors("handball")
+
+  fit <- fit_v2_inla(v, "margin", pr, within = "none", int_strategy = "eb")$fit
+
+  fixed <- fit$all.hyper$fixed
+  expect_equal(vapply(fixed, function(f) f$label, character(1)), "hfa")
+  expect_equal(fixed[[1]]$prior.mean, 0)
+  expect_equal(fixed[[1]]$prior.prec, 1 / pr$hfa_sd^2)
+  expect_equal(as.numeric(used_hyper(fit, "ha")$theta$initial), v2_start(pr$u_ha))
+  expect_equal(as.numeric(used_hyper(fit, "b")$theta$initial), v2_start(pr$u_b))
+  expect_equal(as.numeric(used_hyper(fit, "u_s")$theta1$initial), v2_start(pr$u_u))
+})
