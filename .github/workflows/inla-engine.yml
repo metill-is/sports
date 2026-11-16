@@ -1,32 +1,51 @@
-name: INLA Engine Trial
+name: INLA Engine Tests
 
-# Proves two things for the football v2 cutover, on a GitHub runner: that
-# R-INLA installs at a pinned version, and that both football cells fit
-# through the production path (fit_league with the engine set in memory, then
-# the unchanged extract and publish layers).
+# The football v2 model can be fitted with R-INLA (`engine: inla` on a league).
+# INLA is not in DESCRIPTION, so CI Tests does not install it and the tests
+# that fit with it skip there. This workflow is where they run:
+#   - on every pull request to main that touches the package, its tests or
+#     its config (the fit path reaches most of R/, so the filter is not a
+#     hand-kept list of files);
+#   - once a week, because a moved runner image or a changed INLA repository
+#     breaks an engine nobody has touched (the CmdStan cache did exactly that
+#     on 2026-11-12);
+#   - by hand, optionally fitting both football cells on real data.
 #
-# Scope, on purpose:
-#   - It runs only for the cutover branch (the trigger names it) or by hand.
-#   - It reads the checkout and writes under RUNNER_TEMP. It creates no
-#     commit and has read-only permissions; its output is an artifact.
-#   - No league is switched: config/leagues.yml is not edited, and the
-#     scheduled workflows do not install or call INLA.
-# It is scaffolding for the switch and goes away with it.
+# It reads the checkout and writes under RUNNER_TEMP. Its permissions are
+# read-only, it creates nothing in the repository, and it checks that for
+# itself. No league is switched by it: config/leagues.yml is never edited.
+#
+# SPORTS_REQUIRE_INLA=1 turns a missing INLA from a skipped test into a
+# failed one (tests/testthat/helper-football-v2.R, skip_if_no_inla()).
 
 on:
-  push:
-    branches: ['claude/objective-poitras-964871']
-  workflow_dispatch: {}
+  pull_request:
+    branches: [main]
+    paths:
+      - 'R/**'
+      - 'tests/testthat/**'
+      - 'config/**'
+      - 'DESCRIPTION'
+      - 'research/football-v2/**'
+      - '.github/workflows/inla-engine.yml'
+  schedule:
+    - cron: '41 6 * * 1'
+  workflow_dispatch:
+    inputs:
+      replay:
+        description: 'Also fit both football cells on real data (several minutes each)'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
 
 concurrency:
-  group: inla-trial-${{ github.ref }}
+  group: inla-engine-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  trial:
+  engine:
     runs-on: ubuntu-latest
     timeout-minutes: 60
 
@@ -36,6 +55,7 @@ jobs:
       # The version every number in the proposal was measured with.
       INLA_VERSION: '25.06.07'
       INLA_REPO: 'https://inla.r-inla-download.org/R/stable'
+      SPORTS_REQUIRE_INLA: '1'
 
     steps:
       - uses: actions/checkout@v5
@@ -43,7 +63,7 @@ jobs:
       # The runner context does not exist where job-level env is evaluated,
       # so the output directory is set from a step.
       - name: Choose an output directory outside the checkout
-        run: echo "TRIAL_OUT=$RUNNER_TEMP/inla-trial" >> "$GITHUB_ENV"
+        run: echo "TRIAL_OUT=$RUNNER_TEMP/inla-engine" >> "$GITHUB_ENV"
 
       - uses: r-lib/actions/setup-r@v2
         with:
@@ -89,24 +109,38 @@ jobs:
         run: |
           Rscript -e 'set.seed(1); r <- INLA::inla(y ~ 1, data = data.frame(y = rnorm(50, 2)), num.threads = "1:1"); print(r$summary.fixed); stopifnot(abs(r$summary.fixed$mean - 2) < 1)'
 
-      # ci-tests.yml runs the same file without INLA, where the engine tests
-      # skip. Here a skip is a failure: the point is that they ran.
-      - name: Run the engine tests with INLA present
+      # Every test file that reaches INLA does so through skip_if_no_inla(),
+      # which fails here (SPORTS_REQUIRE_INLA=1) where it would skip elsewhere.
+      # The files are found, not listed, so a new one cannot be forgotten.
+      - name: Run every test file that fits with INLA
         run: |
-          Rscript -e 'devtools::load_all(quiet = TRUE); r <- as.data.frame(testthat::test_file("tests/testthat/test-model-v2.R", reporter = "summary", stop_on_failure = TRUE)); stopifnot(sum(r$skipped) == 0L, sum(r$failed) == 0L, !any(r$error))'
+          Rscript -e '
+            devtools::load_all(quiet = TRUE)
+            files <- list.files("tests/testthat", pattern = "^test-.*[.]R$", full.names = TRUE)
+            uses <- vapply(files, function(f) any(grepl("skip_if_no_inla(", readLines(f, warn = FALSE), fixed = TRUE)), logical(1))
+            files <- files[uses]
+            stopifnot(length(files) > 0L)
+            for (f in files) {
+              cat("==", f, "\n")
+              r <- as.data.frame(testthat::test_file(f, reporter = "summary", stop_on_failure = TRUE))
+              stopifnot(sum(r$failed) == 0L, !any(r$error))
+            }
+          '
 
-      - name: Fit the men's cell through fit_league, then extract and publish
+      - name: Fit the men's cell on real data through fit_league, then extract and publish
+        if: github.event_name == 'workflow_dispatch' && inputs.replay
         run: Rscript research/football-v2/run_replay.R male 2026-10-20 "$TRIAL_OUT/male" inla
 
-      - name: Fit the women's cell through fit_league, then extract and publish
+      - name: Fit the women's cell on real data through fit_league, then extract and publish
+        if: github.event_name == 'workflow_dispatch' && inputs.replay
         run: Rscript research/football-v2/run_replay.R female 2026-10-19 "$TRIAL_OUT/female" inla
 
-      - name: Summarise
-        if: always()
+      - name: Summarise the real-data fits
+        if: always() && github.event_name == 'workflow_dispatch' && inputs.replay
         run: |
           Rscript -e '
             files <- Sys.glob(file.path(Sys.getenv("TRIAL_OUT"), "*", "summary.json"))
-            out <- c("## INLA engine trial", "", "| Cell | As of | INLA | Matches | Fit (s) | Draws (s) | fit_league (s) | Publish (s) | JSON | Schema ok | Schema failed | Gate |", "|---|---|---|---|---|---|---|---|---|---|---|---|")
+            out <- c("## INLA engine: real-data fits", "", "| Cell | As of | INLA | Matches | Fit (s) | Draws (s) | fit_league (s) | Publish (s) | JSON | Schema ok | Schema failed | Gate |", "|---|---|---|---|---|---|---|---|---|---|---|---|")
             for (f in files) {
               s <- jsonlite::fromJSON(f)
               out <- c(out, sprintf(
@@ -125,13 +159,13 @@ jobs:
         if: always()
         run: test -z "$(git status --porcelain -- data)"
 
-      - name: Upload the trial output
-        if: always()
+      - name: Upload the real-data output
+        if: always() && github.event_name == 'workflow_dispatch' && inputs.replay
         uses: actions/upload-artifact@v7
         with:
-          name: inla-trial
+          name: inla-engine
           path: |
-            ${{ runner.temp }}/inla-trial/*/summary.json
-            ${{ runner.temp }}/inla-trial/*/publish
+            ${{ runner.temp }}/inla-engine/*/summary.json
+            ${{ runner.temp }}/inla-engine/*/publish
           if-no-files-found: warn
           retention-days: 14

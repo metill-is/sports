@@ -1,6 +1,7 @@
 # Football model v2: the shared specification, the INLA engine and the
 # adapter onto the production fit's variable names (R/model-v2-*.R). Only the
-# engine tests need INLA, and they skip without it.
+# engine tests need INLA. Without it they skip, except in the workflow that
+# exists to run them, where a missing INLA fails (skip_if_no_inla()).
 
 skip_if_not_installed("Matrix")
 
@@ -460,8 +461,7 @@ test_that("the prior guard counts PC priors against the spec", {
 })
 
 test_that("the INLA engine returns draws in the shared layout", {
-  skip_if_not_installed("INLA")
-  skip_if_not_installed("sn")
+  skip_if_no_inla()
   sim <- simulate_league()
   train <- sim[sim$match_date < max(sim$match_date), ]
   pred <- sim[sim$match_date == max(sim$match_date), ]
@@ -484,8 +484,7 @@ test_that("the INLA engine returns draws in the shared layout", {
 })
 
 test_that("the seed fixes an INLA fit's draws, whatever R's own generator is doing", {
-  skip_if_not_installed("INLA")
-  skip_if_not_installed("sn")
+  skip_if_no_inla()
   sim <- simulate_league()
   train <- sim[sim$match_date < max(sim$match_date), ]
   pred <- sim[sim$match_date == max(sim$match_date), ]
@@ -937,8 +936,7 @@ test_that("fit_league fits with Stan unless the league says engine: inla", {
 })
 
 test_that("an INLA fit of a football store reads like a production fit", {
-  skip_if_not_installed("INLA")
-  skip_if_not_installed("sn")
+  skip_if_no_inla()
   root <- withr::local_tempdir()
   s <- v2_store(root)
   prep <- prepare_data(s$league, "male", end_date = s$end_date, root = root)
@@ -995,8 +993,7 @@ test_that("an INLA fit of a football store reads like a production fit", {
 })
 
 test_that("before a season an INLA fit carries every scheduled team across the break", {
-  skip_if_not_installed("INLA")
-  skip_if_not_installed("sn")
+  skip_if_no_inla()
   root <- withr::local_tempdir()
   s <- v2_store(root, preseason = TRUE)
   prep <- prepare_data(s$league, "male", end_date = s$end_date, root = root)
@@ -1094,8 +1091,7 @@ test_that("fit_league hands an INLA fit the previous fit's hyperparameters, and 
 })
 
 test_that("a real INLA fit through fit_league is checked against the fit before it", {
-  skip_if_not_installed("INLA")
-  skip_if_not_installed("sn")
+  skip_if_no_inla()
   root <- withr::local_tempdir()
   s <- v2_store(root)
   inla <- utils::modifyList(s$league, list(engine = "inla"))

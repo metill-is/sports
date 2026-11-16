@@ -1,6 +1,6 @@
 # Replay one football cell at a past date through the production fit path into
 # an isolated tree. Used for the cutover's replay (step 2 of the shadow plan)
-# and by the INLA-on-a-runner trial workflow.
+# and by the INLA engine workflow when it is dispatched with `replay: true`.
 #
 #   Rscript research/football-v2/run_replay.R <sex> <as_of> <out_dir> [mode] [horizon_days]
 #

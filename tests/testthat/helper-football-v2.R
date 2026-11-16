@@ -1,6 +1,26 @@
 # Toy leagues shared by the football v2 tests (test-model-v2.R for the
 # package code, test-research-football-v2.R for the research prototype).
 
+# For tests that fit with INLA. Where INLA (or sn, which its posterior sampler
+# needs) is not installed they skip: right for CI Tests and for a laptop
+# without it. In the job that exists to run them
+# (.github/workflows/inla-engine.yml sets SPORTS_REQUIRE_INLA=1) a missing
+# package is a failure, because a skip there is a green check for tests that
+# never ran.
+skip_if_no_inla <- function(have = vapply(
+                              c(INLA = "INLA", sn = "sn"), requireNamespace, logical(1),
+                              quietly = TRUE
+                            )) {
+  absent <- names(have)[!have]
+  if (!length(absent)) {
+    return(invisible(TRUE))
+  }
+  if (identical(Sys.getenv("SPORTS_REQUIRE_INLA"), "1")) {
+    stop("SPORTS_REQUIRE_INLA=1 but not installed: ", paste(absent, collapse = ", "), call. = FALSE)
+  }
+  testthat::skip(paste(paste(absent, collapse = ", "), "not installed"))
+}
+
 toy_matches <- function() {
   data.frame(
     match_date = as.Date(c(
