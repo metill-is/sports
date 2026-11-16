@@ -49,12 +49,23 @@ jobs:
       # Stan model was compiled by any CI run: a broken .stan file passed green.
       # The cmdstanr R package already arrives via DESCRIPTION's
       # `Remotes: stan-dev/cmdstanr`; only the toolchain was missing.
+      # ~/.cmdstan holds compiled objects (main.o, libtbb, the precompiled
+      # header) that every model is linked against, so a cached copy is only
+      # valid on the image and compiler that built it. The key carries both, so
+      # a moved `ubuntu-latest` is a cache miss and CmdStan is rebuilt in place
+      # (ci-conventions.md section 4, test-workflow-cmdstan-cache.R).
+      - name: Identify the runner image for the CmdStan cache key
+        id: image
+        run: |
+          . /etc/os-release
+          echo "id=${ID}-${VERSION_ID}-$(uname -m)-gcc$(g++ -dumpfullversion)" >> "$GITHUB_OUTPUT"
+
       - name: Cache CmdStan installation
         id: cache-cmdstan
         uses: actions/cache@v5
         with:
           path: ~/.cmdstan
-          key: cmdstan-${{ env.CMDSTAN_VERSION }}-ubuntu-latest
+          key: cmdstan-${{ env.CMDSTAN_VERSION }}-${{ steps.image.outputs.id }}
 
       - name: Install CmdStan if not cached
         if: steps.cache-cmdstan.outputs.cache-hit != 'true'
