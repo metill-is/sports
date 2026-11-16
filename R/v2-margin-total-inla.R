@@ -228,7 +228,7 @@ fit_v2_inla <- function(v, response = c("margin", "total"),
   # WHY: R-INLA returns a fit whether or not its search for the hyperparameter mode
   # succeeded, and the summaries of a failed search look like any others.
   mode_status <- v2_inla_mode_status(fit)
-  if (is.na(mode_status) || mode_status != 0L) {
+  if (!v2_mode_ok(mode_status)) {
     cli::cli_warn(
       c(
         "R-INLA did not report a successful mode search for the {response} model (mode.status = {mode_status}).",
@@ -286,6 +286,82 @@ v2_inla_mode_status <- function(fit) {
     return(NA_integer_)
   }
   as.integer(status)
+}
+
+#' Did the search for the hyperparameter mode succeed?
+#'
+#' Only a status of exactly 0 counts. A missing status (`NA`) says nothing
+#' about success, so it counts as a failure.
+#'
+#' @param status Integer status, as returned in `fit_v2_inla()$mode_status`.
+#' @return Logical, same length as `status`.
+#' @noRd
+v2_mode_ok <- function(status) {
+  !is.na(status) & status == 0L
+}
+
+#' Fit, and repeat a failed warm-started fit once from a cold start.
+#'
+#' The rule the walk-forward follows. A fit started from the previous cutoff's
+#' mode can fail where a cold start succeeds, so a warm fit that throws, or
+#' whose mode search fails, is repeated once with no starting value. A cold
+#' fit is never repeated: it would be the same fit again. When the repeat
+#' fails as well the fit comes back as it is, with its status, for the caller
+#' to flag; it is not replaced by anything that looks successful.
+#'
+#' @param fit_fun Function of one argument, the starting value (`NULL` for a
+#'   cold start), returning a fit as `fit_v2_inla()` does.
+#' @param theta_start Starting value for the first attempt, or `NULL`.
+#' @return List: `fit` (`NULL` when every attempt threw), `retried`,
+#'   `attempts`.
+#' @noRd
+v2_fit_with_retry <- function(fit_fun, theta_start = NULL) {
+  attempt <- function(theta) tryCatch(fit_fun(theta), error = function(e) NULL)
+  fit <- attempt(theta_start)
+  attempts <- 1L
+  failed <- is.null(fit) || !v2_mode_ok(fit$mode_status)
+  if (failed && !is.null(theta_start)) {
+    cold <- attempt(NULL)
+    attempts <- 2L
+    if (!is.null(cold)) fit <- cold
+  }
+  list(fit = fit, retried = attempts > 1L, attempts = attempts)
+}
+
+#' Starting value a fit may hand to the next one.
+#'
+#' Only a fit whose mode search succeeded passes its mode on. Starting the
+#' next cutoff from the end point of a failed search would carry the failure
+#' forward.
+#'
+#' @param fit A fit as `fit_v2_inla()` returns it, or `NULL`.
+#' @return The internal mode, or `NULL` for a cold start.
+#' @noRd
+v2_warm_start <- function(fit) {
+  if (is.null(fit) || !isTRUE(v2_mode_ok(fit$mode_status))) {
+    return(NULL)
+  }
+  fit$theta
+}
+
+#' Keep the walk-forward predictions that come from successful fits.
+#'
+#' A cutoff's predictions are scored only when both of its fits (margin and
+#' total) ended their mode search with status 0.
+#'
+#' @param pred Predictions, one row per match, with a `cutoff` column.
+#' @param cut One row per cutoff, with `cutoff`, `status_m` and `status_t`.
+#' @return The rows of `pred` to score, with the number of rows left out as
+#'   attribute `"dropped"`. A walk-forward stored without the status columns
+#'   comes back whole with `dropped = NA`: nothing can be known about it.
+#' @noRd
+v2_successful_predictions <- function(pred, cut) {
+  if (is.null(cut$status_m) || is.null(cut$status_t)) {
+    return(structure(pred, dropped = NA_integer_))
+  }
+  at <- match(format(pred$cutoff), format(cut$cutoff))
+  ok <- v2_mode_ok(cut$status_m[at]) & v2_mode_ok(cut$status_t[at])
+  structure(pred[ok, , drop = FALSE], dropped = sum(!ok))
 }
 
 #' Posterior summaries of R-INLA hyperparameters on the sd / correlation scale.

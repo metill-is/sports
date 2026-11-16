@@ -5,8 +5,10 @@
 # (wf_score.R), so tie treatment and overtime can be changed without refitting.
 # Usage: Rscript -e 'source("docs/reports/2026-11-15-hb-bb-v2/wf_inla.R")' <cell> <within> <first_season> [reg]
 #   within: none | ar1 | rw1.  reg: train on regulation-time scores (basketball only).
-# A fit whose mode search fails (status other than 0) after a warm start is repeated once
-# from a cold start, and the cold fit is kept if its search succeeds; `retried_*` records it.
+# A fit that throws, or whose mode search fails (status other than 0), after a warm start is
+# repeated once from a cold start (v2_fit_with_retry()); `retried_*` records it. A fit that
+# is still failed after that keeps its status, is not used as the next cutoff's starting
+# value (v2_warm_start()), and its predictions are left out by wf_score.R.
 # WF_REFIT_FAILED=1 applies that rule to a stored walk-forward instead of running one: the
 # cutoffs whose stored status is not 0 are refitted cold and their rows replaced.
 source("docs/reports/2026-11-15-hb-bb-v2/common.R")
@@ -77,19 +79,14 @@ for (i in seq_along(cutoffs)) {
   retried <- c(margin = FALSE, total = FALSE)
   for (resp in c("margin", "total")) {
     th <- if (refit_failed) NULL else theta[[resp]]
-    cold <- function() tryCatch(fit_v2_inla(v, resp, pr, within = within, int_strategy = "eb"), error = function(e) NULL)
-    f <- tryCatch(
-      fit_v2_inla(v, resp, pr, within = within, int_strategy = "eb", theta_start = th),
-      error = function(e) NULL
+    r <- v2_fit_with_retry(
+      function(start) fit_v2_inla(v, resp, pr, within = within, int_strategy = "eb", theta_start = start),
+      theta_start = th
     )
-    if (is.null(f) && !is.null(th)) f <- cold()
+    f <- r$fit
     if (is.null(f)) break
-    if (!(f$mode_status %in% 0L) && !is.null(th)) {
-      f2 <- cold()
-      retried[[resp]] <- TRUE
-      if (!is.null(f2) && f2$mode_status %in% 0L) f <- f2
-    }
-    theta[[resp]] <- f$theta
+    retried[[resp]] <- r$retried
+    theta[[resp]] <- v2_warm_start(f)
     fits[[resp]] <- f
   }
   if (length(fits) < 2L) {

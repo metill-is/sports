@@ -252,3 +252,16 @@ test_that("the margin model's home-advantage prior and starting values are the o
   expect_equal(as.numeric(used_hyper(fit, "b")$theta$initial), v2_start(pr$u_b))
   expect_equal(as.numeric(used_hyper(fit, "u_s")$theta1$initial), v2_start(pr$u_u))
 })
+
+test_that("a fit that reports no mode status at all is treated as a failed search", {
+  skip_if_no_inla()
+  sim <- simulate_v2_league()
+  v <- build_v2_data(sim$matches, sim$matches[0, ], sim$teams)
+
+  local_mocked_bindings(v2_inla_mode_status = function(fit) NA_integer_)
+  expect_warning(
+    bad <- fit_v2_inla(v, "margin", v2_priors("handball"), within = "none", int_strategy = "eb"),
+    class = "v2_inla_mode_not_found"
+  )
+  expect_identical(bad$mode_status, NA_integer_)
+})

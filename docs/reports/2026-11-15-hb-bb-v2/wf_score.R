@@ -40,7 +40,14 @@ load_wf <- function(cell, tag) {
   if (!file.exists(f)) {
     return(NULL)
   }
-  d <- readRDS(f)$pred
+  stored <- readRDS(f)
+  # WHY: a prediction from a fit whose mode search failed is not a forecast of the model.
+  # Such rows are left out and counted; a walk-forward stored before the status was kept
+  # (the first run) cannot be filtered and is passed whole.
+  d <- v2_successful_predictions(stored$pred, stored$cut)
+  dropped <- attr(d, "dropped")
+  if (isTRUE(dropped > 0L)) cat(sprintf("%s [%s]: %d predictions left out, from cutoffs with a failed mode search\n", cell, tag, dropped))
+  attr(d, "dropped") <- NULL
   sport <- CELLS[[cell]]$sport
   d$cell <- cell
   d$s_m <- sqrt(d$sd_m^2 + d$sig2_m)
@@ -54,6 +61,7 @@ load_wf <- function(cell, tag) {
     ifelse(d$week > last_week - 6, "last 6 weeks", "middle")
   ))
   d$phase <- factor(d$phase, levels = c("first 6 weeks", "middle", "last 6 weeks", "play-off"))
+  attr(d, "dropped") <- dropped
   d
 }
 
@@ -317,7 +325,7 @@ for (cell in names(CELLS)) {
     ties <- sport == "handball" || reg
     r <- score_cell(d, sport, reg = reg)
     sc <- r$scores
-    all_scores[[paste(cell, tag)]] <- list(scores = sc, pars = r$pars, wf = d)
+    all_scores[[paste(cell, tag)]] <- list(scores = sc, pars = r$pars, wf = d, failed_fit_rows_left_out = attr(d, "dropped"))
     cat(sprintf(
       "\n================ %s [%s]: %d walk-forward predictions, %d scored (seasons %s)\n", cell, tag, nrow(d), nrow(sc),
       paste(range(sc$season), collapse = "-")
