@@ -97,7 +97,9 @@ v2_priors <- function(sport = c("handball", "basketball")) {
 #'   summaries on the sd / correlation scale), `fixed`, `random` (state
 #'   summaries), `fitted` (latent mean and sd per training row), `samples`
 #'   (when asked for), `cpo`, `theta` (internal mode, for warm starts),
-#'   `mlik`, `secs` and the `fit` itself.
+#'   `mode_status` (see [v2_inla_mode_status()]; a warning of class
+#'   `v2_inla_mode_not_found` is raised unless it is 0), `mlik`, `secs` and the
+#'   `fit` itself.
 #' @noRd
 fit_v2_inla <- function(v, response = c("margin", "total"),
                         priors, within = c("rw1", "ar1", "none"),
@@ -223,6 +225,18 @@ fit_v2_inla <- function(v, response = c("margin", "total"),
     num.threads = num_threads, verbose = FALSE
   )
   secs <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
+  # WHY: R-INLA returns a fit whether or not its search for the hyperparameter mode
+  # succeeded, and the summaries of a failed search look like any others.
+  mode_status <- v2_inla_mode_status(fit)
+  if (is.na(mode_status) || mode_status != 0L) {
+    cli::cli_warn(
+      c(
+        "R-INLA did not report a successful mode search for the {response} model (mode.status = {mode_status}).",
+        i = "Its predictions and hyperparameter summaries should not be used unchecked."
+      ),
+      class = "v2_inla_mode_not_found"
+    )
+  }
 
   idx <- INLA::inla.stack.index(stk, "obs")$data
   lp <- fit$summary.linear.predictor[idx, c("mean", "sd")]
@@ -239,7 +253,7 @@ fit_v2_inla <- function(v, response = c("margin", "total"),
     sigma2 = sigma2, hyper_sd = v2_inla_hyper_sd(fit), fixed = fit$summary.fixed[fixed_names, , drop = FALSE],
     random = lapply(fit$summary.random, function(s) s[, c("ID", "mean", "sd")]),
     cpo = if (cpo) fit$cpo$cpo[idx[seq_len(n_train)]] else NULL,
-    theta = fit$mode$theta, mlik = fit$mlik[1, 1], secs = secs, fit = fit
+    theta = fit$mode$theta, mode_status = mode_status, mlik = fit$mlik[1, 1], secs = secs, fit = fit
   )
   if (n_samples > 0L && v$N_pred > 0L) {
     pred_rows <- idx[-seq_len(n_train)]
@@ -253,6 +267,25 @@ fit_v2_inla <- function(v, response = c("margin", "total"),
     )
   }
   out
+}
+
+#' Status of R-INLA's search for the hyperparameter mode.
+#'
+#' R-INLA writes the status of its optimiser to `fit$mode$mode.status`: 0 when
+#' the search ended at a mode it accepts, another value when it did not. A
+#' status that is absent or `NA` says nothing about success, so it is
+#' returned as `NA` and callers must treat it as a failure.
+#'
+#' @param fit An `inla` fit.
+#' @return One integer: 0 for a successful search, `NA` when R-INLA reported
+#'   none.
+#' @noRd
+v2_inla_mode_status <- function(fit) {
+  status <- fit$mode$mode.status
+  if (length(status) != 1L || is.na(status)) {
+    return(NA_integer_)
+  }
+  as.integer(status)
 }
 
 #' Posterior summaries of R-INLA hyperparameters on the sd / correlation scale.

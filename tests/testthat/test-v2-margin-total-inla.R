@@ -122,3 +122,29 @@ test_that("the priors and starting values the fitter states are the ones R-INLA 
   expect_false(any(grepl("Rho for w_t", rownames(fit$summary.hyperpar))))
   expect_true(any(grepl("Rho for u_s", rownames(fit$summary.hyperpar))))
 })
+
+test_that("the mode status is read from the fit and a missing status is not taken for success", {
+  expect_identical(v2_inla_mode_status(list(mode = list(mode.status = 0))), 0L)
+  expect_identical(v2_inla_mode_status(list(mode = list(mode.status = 3))), 3L)
+  expect_identical(v2_inla_mode_status(list(mode = list())), NA_integer_)
+  expect_identical(v2_inla_mode_status(list(mode = list(mode.status = NA))), NA_integer_)
+})
+
+test_that("a fit returns the status of its mode search and warns when the search failed", {
+  skip_if_not_installed("INLA")
+  sim <- simulate_v2_league()
+  v <- build_v2_data(sim$matches, sim$matches[0, ], sim$teams)
+  pr <- v2_priors("handball")
+
+  expect_no_warning(ok <- fit_v2_inla(v, "margin", pr, within = "none", int_strategy = "eb"))
+  expect_identical(ok$mode_status, 0L)
+
+  # WHY a replaced status: a failed search cannot be produced on demand. Only the status
+  # the fitter reads is replaced; the fit itself is real.
+  local_mocked_bindings(v2_inla_mode_status = function(fit) 2L)
+  expect_warning(
+    bad <- fit_v2_inla(v, "margin", pr, within = "none", int_strategy = "eb"),
+    class = "v2_inla_mode_not_found"
+  )
+  expect_identical(bad$mode_status, 2L)
+})

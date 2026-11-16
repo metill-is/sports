@@ -13,7 +13,8 @@ for (cell in c("bb_m", "bb_f")) {
     rows[[length(rows) + 1L]] <- data.frame(
       cell = cell, rho_week = rho, loo = sum(log(f$cpo)),
       ls_margin = mean(log(v2_integer_pmf(y, f$pred$mean, sqrt(f$pred$sd^2 + f$sigma2)))),
-      sd_w = h$q50[h$parameter == "sd: w_t"], sd_u = h$q50[h$parameter == "sd: u_s"], secs = f$secs
+      sd_w = h$q50[h$parameter == "sd: w_t"], sd_u = h$q50[h$parameter == "sd: u_s"], secs = f$secs,
+      mode_status = f$mode_status
     )
   }
 }

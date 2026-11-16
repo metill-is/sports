@@ -91,6 +91,7 @@ for (i in seq_along(cutoffs)) {
   cut_rows[[length(cut_rows) + 1L]] <- data.frame(
     cutoff = cu, n_train = nrow(train), n_pred = nrow(pred),
     secs_m = fits$margin$secs, secs_t = fits$total$secs,
+    status_m = fits$margin$mode_status, status_t = fits$total$mode_status,
     hfa = fits$margin$fixed$mean[1], hfa_sd = fits$margin$fixed$sd[1],
     t(c(hy(fits$margin), hy(fits$total))), check.names = FALSE
   )
@@ -102,5 +103,7 @@ for (i in seq_along(cutoffs)) {
   }
 }
 saveRDS(list(pred = do.call(rbind, pred_rows), cut = do.call(rbind, cut_rows)), out_file)
-cat(sprintf("WF DONE %s %s: %d cutoffs fitted, %d matches predicted, %.0f min\n", cell, tag,
-            length(cut_rows), nrow(do.call(rbind, pred_rows)), as.numeric(difftime(Sys.time(), t_start, units = "mins"))))
+cut_all <- do.call(rbind, cut_rows)
+cat(sprintf("WF DONE %s %s: %d cutoffs fitted, %d matches predicted; fits whose mode search did not end with status 0: %d of %d\n", cell, tag,
+            length(cut_rows), nrow(do.call(rbind, pred_rows)),
+            sum(!(cut_all$status_m %in% 0L)) + sum(!(cut_all$status_t %in% 0L)), 2L * nrow(cut_all)))

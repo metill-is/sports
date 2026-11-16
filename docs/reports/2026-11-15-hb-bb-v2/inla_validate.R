@@ -24,8 +24,8 @@ for (cell in cells) {
         f$cpu <- f$fit$cpu.used
         f$fit <- NULL
         res[[paste(resp, within, strategy)]] <- f
-        cat(sprintf("%s %s within=%s %s: %.1f s, sum log cpo %.1f, sigma %.3f\n", cell, resp, within, strategy, f$secs,
-                    sum(log(f$cpo)), sqrt(f$sigma2)))
+        cat(sprintf("%s %s within=%s %s: mode status %s, sum log cpo %.1f, sigma %.3f\n", cell, resp, within, strategy,
+                    f$mode_status, sum(log(f$cpo)), sqrt(f$sigma2)))
       }
     }
   }

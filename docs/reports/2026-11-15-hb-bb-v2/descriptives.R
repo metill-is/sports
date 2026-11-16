@@ -30,7 +30,8 @@ for (cell in names(CELLS)) {
   d$cell <- cell
   out[[cell]] <- list(
     d = d, hyper_m = fm$hyper_sd, hyper_t = ft$hyper_sd, hfa = fm$fixed, alpha = ft$fixed,
-    sigma_m = sqrt(fm$sigma2), sigma_t = sqrt(ft$sigma2), divisions = v$divisions
+    sigma_m = sqrt(fm$sigma2), sigma_t = sqrt(ft$sigma2), divisions = v$divisions,
+    status_m = fm$mode_status, status_t = ft$mode_status
   )
   cat(sprintf(
     "\n================ %s: N=%d, hfa %.2f (sd %.2f), raw mean margin %.2f, sigma_m %.2f, sigma_t %.2f, cor(r_m, r_t) %.3f\n",
