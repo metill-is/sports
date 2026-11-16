@@ -127,13 +127,22 @@ for (cl in cells) {
 
 cat("\n== wf_status.rds: $wf (fits, status_not_zero, differences between the two runs), $scores, $other, $cold\n")
 ws <- rd("wf_status.rds")
-say("walk-forward fits; with mode status not 0", "%d; %d", sum(ws$wf$fits), sum(ws$wf$status_not_zero))
+say("walk-forward fits; mode status not 0 as run / after cold refit", "%d; %d / %d", sum(ws$wf$fits), sum(ws$wf$status_not_zero), sum(ws$wf$status_not_zero_after_refit))
+say("matches whose prediction came from a refit; largest change", "%d; %.3f", sum(ws$wf$refit_matches), max(ws$wf$refit_max_change))
 say("other fits; with mode status not 0", "%d; %d", nrow(ws$other), sum(!(ws$other$status %in% 0L)))
 main <- ws$wf[ws$wf$run %in% c("hb_m_none", "hb_f_none", "bb_m_none_reg", "bb_f_none_reg"), ]
 say("two runs, expected margin: median diff range; largest", "%.4f to %.4f; %.2f", min(main$median_abs_diff_margin), max(main$median_abs_diff_margin), max(main$max_abs_diff_margin))
 say("two runs: cutoffs with a hyperparameter median differing > 25 %", "%d of %d", sum(main$cutoffs_hyper_differs_25pct), sum(main$cutoffs))
 say("two runs: largest change in a cell's mean score", "%.4f", max(abs(ws$scores$diff)))
-if (!is.null(ws$cold)) say("cold starts: processes; bit-identical per cutoff", "%d; %s", ws$cold$processes[1], paste(ws$cold$bit_identical, collapse = ", "))
+if (!is.null(ws$cold)) {
+  for (i in seq_len(nrow(ws$cold))) {
+    say(paste("cold start,", ws$cold$setting[i], ws$cold$cutoff[i]), "%d of %d processes give the most frequent result", ws$cold$most_frequent[i], ws$cold$processes[i])
+  }
+}
+if (!is.null(ws$noopt)) {
+  say("two walk-forwards with internal.opt = FALSE: identical predictions", "%d of %d; fit seconds ratio to the default run %.2f", ws$noopt$identical_rows,
+      ws$noopt$matches, ws$noopt$fit_seconds_ratio_to_default)
+}
 
 cat("\n== wf_compare.rds: [[cell]]$cmp (production: ls_margin, ls_total, ll_wdl; v2: lsm_raw, lst_raw, ll_wdl_raw), $market\n")
 wc <- rd("wf_compare.rds")

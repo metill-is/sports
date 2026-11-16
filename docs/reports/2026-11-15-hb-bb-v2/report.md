@@ -3,7 +3,7 @@
 
 # Handball and basketball v2
 
-Measured production fits, a lean (margin, total) model on R-INLA with Stan as reference, and a cutover proposal · four cells: handball and basketball, men and women · prepared 15 November 2026, revised 16 November after an independent check, on branch `feat/hb-bb-v2` · no production path, config or ingest was changed
+Measured production fits, a lean (margin, total) model on R-INLA with Stan as reference, and a cutover proposal · four cells: handball and basketball, men and women · prepared 15 November 2026, revised 16 November after two independent reviews, on branch `feat/hb-bb-v2` · no production path, config or ingest was changed
 
 The handball and basketball models share the football model's structure and, measured, its defects. The home advantage the production fits imply, set against the raw home-minus-away margin, is 1.49 against 0.75 in handball men (×1.98), 1.52 against 0.67 in handball women (×2.26), 4.20 against 3.47 in basketball men (×1.21), 3.86 against 2.37 in basketball women (×1.63). In handball that is the same twofold inflation as in football. A much smaller model does the same job: one net strength per team for the margin, one scoring level per team for the total, a pooled home advantage, all Gaussian, fitted by R-INLA in about 6 seconds per cell on one core (margin and total together; the median over 600 weekly fits, timed on the same shared machine as the production fits, so good for the ratio and not a benchmark), where the production fits took 11 to 56 minutes each under a part-loaded machine. Refitted every week and scored over five seasons (3,930 matches), it is calibrated. On the 338 matches where production's own stored forecasts exist it is better on handball totals; the handball margin and result differences, and every basketball difference, are within noise. Two sport-specific findings matter for the product: regulation-time scores for basketball can be had from the source already in use (99.7 % of stored games), and level scores after regulation are 3.0 times as common in the men's top division as a smooth curve implies.
 
@@ -14,13 +14,13 @@ The handball and basketball models share the football model's structure and, mea
 1.  **The football defects are present.** Home advantage implied by the production fit against the raw home-minus-away margin: handball men 1.49 against 0.75 (×1.98); handball women 1.52 against 0.67 (×2.26); basketball men 4.20 against 3.47 (×1.21); basketball women 3.86 against 2.37 (×1.63). The per-team volatility hierarchies are weakly identified at best (one team's interval for its volatility is about as wide as the whole spread between teams), handball's per-team score sds are indistinguishable, and 31 to 53 % of the sampled innovation slots touch no match. Student-t degrees of freedom: handball men 24, handball women 31, basketball men 13, basketball women 12 (prior median 18), so handball does not ask for heavy tails and basketball asks for a little.
 2.  **The home advantage itself is small.** Identified, it is 0.66 and 0.65 goals in handball (men, women) and 3.33 and 2.21 points in basketball, in each case equal to the raw margin within its standard error. The handball figure is about a third of the Bundesliga's 1.87.
 3.  **Margin and total can be modelled separately**: their residuals are uncorrelated in every cell. Given the strengths, a handball side's score has 0.49 to 0.60 of the variance a Poisson count would in the league divisions; a Gaussian with a free sd fits, for the women as for the men.
-4.  **The ladder attributes the gains.** handball men: removing the states no match touches takes the sampled parameters from 7,972 to 4,656 and the leapfrog steps per iteration from 190 to 127 without moving a score; collapsing the volatility hierarchies changes nothing (home advantage still 1.49); pooling the home effects and freeing their sign takes the home advantage to 0.73 and adds 27 to the leave-one-out density; dropping the Student-t costs 1.2; the identified Gaussian rung has 4,547 parameters at 127 leapfrog steps, against 7,972 at 190 in production; basketball men: collapsing the volatility hierarchies changes nothing (home advantage still 4.20); pooling the home effects and freeing their sign takes the home advantage to 3.26 and adds 5 to the leave-one-out density; dropping the Student-t costs 23.5; the identified Gaussian rung has 6,887 parameters at 127 leapfrog steps, against 9,930 at 446 in production.
-5.  **Where v2 is not ahead: women's basketball at the fixed cutoff.** On its 94 held-out matches production has the better win/loss log likelihood (v2 static −0.038 ± 0.019, with the within-season term −0.028 ± 0.014) and the better leave-one-out density (−9,350 against −9,384 and −9,356). On the 67 women's matches with stored forecasts the sign is the other way (+0.054 ± 0.043). Basketball's production fits also beat static v2 on leave-one-out density for the men (−12,946 against −12,974) while losing on the held-out matches. The within-season term and a heavier tail are what production has and static v2 lacks; both are tested above.
-6.  **R-INLA reproduces NUTS.** On one identical model, the largest difference in a state's posterior mean is 0.43 posterior sds, the largest difference in a held-out match's expected margin or total is 0.45, and the held-out log scores agree to 0.0026. R-INLA with hyperparameters at their mode, which the walk-forward uses, differs by at most 0.0009. R-INLA is not bit-reproducible between runs: of 48 fits (eight models, 6 runs on the same data), 2 landed on a slightly different optimum (handball men's home advantage 0.653 against 0.659).
-7.  **Walk-forward.** 3,930 matches scored over seasons 2023 to 2027 with weekly refits. The predictive spread is calibrated: the standardised margin residual has sd between 0.97 and 1.08 per cell, and between 0.87 and 1.15 in every regular-season phase of every cell. On the 338 matches with a stored production forecast: handball margin +0.043 ± 0.029, total +0.072 ± 0.025, result +0.011 ± 0.021; basketball margin +0.048 ± 0.040, total +0.005 ± 0.021, result +0.005 ± 0.021 (log score per match, v2 minus production, pooled over the sexes). Better on handball totals; handball margin and result within noise; basketball within noise. Margin and total were scored separately; joint (home, away) scores were not evaluated.
+4.  **The ladder attributes the gains.** handball men: moving the states to real appearances (which also drops production's sum-to-zero constraint on each round's innovations and shifts the level prior) takes the sampled parameters from 7,972 to 4,656 and the leapfrog steps per iteration from 190 to 127 without moving a score; collapsing the volatility hierarchies changes nothing (home advantage still 1.49); pooling the home effects and freeing their sign takes the home advantage to 0.73 and adds 27 to the leave-one-out density; dropping the Student-t costs 1.2; the identified Gaussian rung has 4,547 parameters at 127 leapfrog steps, against 7,972 at 190 in production; basketball men: collapsing the volatility hierarchies changes nothing (home advantage still 4.20); pooling the home effects and freeing their sign takes the home advantage to 3.26 and adds 5 to the leave-one-out density; dropping the Student-t costs 23.5; the identified Gaussian rung has 6,887 parameters at 127 leapfrog steps, against 9,930 at 446 in production.
+5.  **Where v2 is not ahead: women's basketball at the fixed cutoff.** On its 94 held-out matches production has the better win/loss log likelihood (v2 static −0.038 ± 0.019, with the within-season term −0.028 ± 0.014) and the better leave-one-out density (−9,350 against −9,384 and −9,356). On the 67 women's matches with stored forecasts the sign is the other way (+0.055 ± 0.043). Basketball's production fits also beat static v2 on leave-one-out density for the men (−12,946 against −12,974) while losing on the held-out matches. The within-season term and a heavier tail are what production has and static v2 lacks; both are tested above.
+6.  **R-INLA reproduces NUTS.** On one identical model, the largest difference in a state's posterior mean is 0.22 posterior sds, the largest difference in a held-out match's expected margin or total is 0.43 (0.66 for the plug-in fit the walk-forward uses), and the held-out log scores agree to 0.0017 (plug-in: 0.0009). Of the 2,184 R-INLA fits behind this report, 4 ended the mode search with a status other than 0; refitted from a cold start they succeeded. A successful search is still not a unique answer: a second run of the walk-forward moved a match's expected margin by up to 2.3 while moving no cell's mean score by more than 0.0015. R-INLA is not bit-reproducible between runs: of 48 fits (eight models, 6 runs on the same data), 2 landed on a slightly different optimum (handball men's home advantage 0.653 against 0.659).
+7.  **Walk-forward.** 3,930 matches scored over seasons 2023 to 2027 with weekly refits. The predictive spread is calibrated: the standardised margin residual has sd between 0.97 and 1.08 per cell, and between 0.87 and 1.13 in every regular-season phase of every cell. On the 338 matches with a stored production forecast: handball margin +0.043 ± 0.029, total +0.071 ± 0.025, result +0.011 ± 0.021; basketball margin +0.027 ± 0.040, total +0.005 ± 0.021, result +0.005 ± 0.021 (log score per match, v2 minus production, pooled over the sexes). Better on handball totals; handball margin and result within noise; basketball within noise. Margin and total were scored separately; joint (home, away) scores were not evaluated.
 8.  **Handball.** The ±0.5 band is the rounded margin, so it stays; what is added is one draw-shift parameter. Men's level scores run above the band (7.3 % against 6.1 % out of sample) but the surplus moves from season to season and the shift has not yet improved the out-of-sample score; women's are calibrated. The possession-informed variance does not beat a free variance and is clearly worse for the women's margin.
 9.  **Basketball.** Regulation-time scores exist for 99.7 % of stored games from the source already in use. 7.1 % of men's Bónusdeild games are level after regulation, three times the smooth rate; a tie parameter per division improves the regulation 1X2 score out of sample. Overtime has so far been a coin flip (the favourite won 49 of 97).
-10. **Proposal.** v2 on R-INLA for both sports (static for handball, with the within-season term for basketball), basketball on regulation time; swap the engine behind an adapter that keeps the published JSON contract; a four to five week shadow period per sport with a stated gate; store regulation-time scores. Seven decisions are yours.
+10. **Proposal.** v2 on R-INLA for both sports (static for handball, with the within-season term for basketball), basketball on regulation time; swap the engine behind an adapter layer that keeps the published JSON contract (the rotation is written and tested; the pieces that feed the extract, the simulator and the beliefs are not, and basketball needs an overtime step before its score draws can be published); a four to five week shadow period per sport with a stated gate; store regulation-time scores. Seven decisions are yours.
 
 ## Measured and not measured
 
@@ -35,6 +35,7 @@ The handball and basketball models share the football model's structure and, mea
 - Regulation-time scores for 3,272 of 3,283 stored basketball games.
 - Residual diagnostics by division, season and sex.
 - Run-to-run reproducibility of the R-INLA plug-in fits: 6 runs of the eight fits on the same data.
+- The status of the mode search of every R-INLA fit behind the report (2,184 fits), and two complete runs of the walk-forward against each other.
 
 ### Not measured
 
@@ -48,6 +49,11 @@ The handball and basketball models share the football model's structure and, mea
 - A league-table (season simulation) comparison between the engines.
 - Genius Sports LiveStats as a second source of period scores: not needed, not tried.
 - Whether the market beats the model: too few priced matches (65 handball, 20 basketball).
+- Why the two runs of the walk-forward differ from their first cutoff on, where neither has a warm start. The first run was made on a heavily loaded machine; that is the only known difference.
+- A walk-forward that starts every fit cold, or one that integrates over the hyperparameters instead of fixing them at their mode.
+- The inputs that would make the season simulator reproduce v2: stated from the algebra, not tested.
+- An overtime step for basketball score draws: not written, so nothing publishable for basketball was built from v2.
+- Whether the first run's fits ended their mode search with status 0: that run did not keep the status.
 
 ## Production fits, measured
 
@@ -100,7 +106,7 @@ Per the owner's standing rule, the aggregate is broken down before anything is r
 
 *Figure (drawn in the HTML build only).* Home advantage in score units (goals for handball, points for basketball). A missing production bar means that cell's production fit had not finished. The v2 bar is the league home advantage of the identified model fitted to all data.
 
-**Reading the table.** Home advantage is overstated because each team has its own attack and defence home effect, each forced to be non-negative with a half-normal(0, 10) prior and no pooling. In handball men the typical team's attack home effect has posterior sd 0.57 around a mean of 0.85: the estimates are noise-dominated, the zero bound pushes every one of them upward, and the error cannot average out. The intercept ridge that the football review found (scoring level traded against the two home means) is truncated by the same bounds instead of being removed, which is why the correlations in the table are weak here; the ladder below shows it reappear the moment the bounds are lifted. The volatility hierarchies are weakly identified at best: in handball men the scale parameters' posteriors match the exponential(2) prior, and in every cell one team's interval for its own random-walk sd is about as wide as the whole spread between teams. The Student-t degrees of freedom sit above their prior in handball, so those data are not asking for heavy tails; in basketball they sit a little below it.
+**Reading the table.** Home advantage is overstated because each team has its own attack and defence home effect, each forced to be non-negative with a half-normal(0, 10) prior and no pooling. In handball men the typical team's attack home effect has posterior sd 0.57 around a mean of 0.85: the estimates are noise-dominated, the zero bound pushes every one of them upward, and the error cannot average out. The intercept ridge that the football review found (scoring level traded against the two home means) is truncated by the same bounds instead of being removed, which is why the correlations in the table are weak here; the ladder below shows it reappear the moment the bounds are lifted. The volatility hierarchies are weakly identified at best: in handball men the scale parameters' posterior medians (0.29 and 0.35) sit on the exponential(2) prior's median (0.35), and all the data do is shorten the upper tail (95 % points 0.79 and 0.98 against the prior's 1.50), and in every cell one team's interval for its own random-walk sd is about as wide as the whole spread between teams. The Student-t degrees of freedom sit above their prior in handball, so those data are not asking for heavy tails; in basketball they sit a little below it.
 
 ## What the data ask of the likelihood
 
@@ -205,24 +211,24 @@ The margin is slightly more variable, and the favourite wins by slightly more th
 
 ## The ladder
 
-Each rung changes one thing, so each gain is attributable. All rungs are fitted with NUTS at the same cutoff and settings as production. At the request of the session that scheduled the machine, the full ladder was run for the two men's cells; the women's cells have the production fit and the final model.
+From R2 on, each rung changes one thing, so each of those gains is attributable. R1 changes three things at once (spelled out below), so what it gains cannot be put on one of them. All rungs are fitted with NUTS at the same cutoff and settings as production. At the request of the session that scheduled the machine, the full ladder was run for the two men's cells; the women's cells have the production fit and the final model.
 
 ### Handball men · 103 held-out matches
 
 | Rung | Sampled parameters | Divergences | Leapfrog steps / iteration | Smallest bulk ESS (parameter) | ESS per 1,000 gradients | Leave-one-out log density | Home advantage (sd) | Held-out margin log score | Held-out total log score | Held-out W/D/L log likelihood |
 |----|----|----|----|----|----|----|----|----|----|----|
 | Production | 7,972 | 33 | 190 | 300 (`scale_sigma_def`) | 0.39 | −6,262.3 | 1.49 (0.12) | −3.076 | −3.484 | −0.675 |
-| R1 · states only at real appearances | 4,656 | 2 | 127 | 413 (`scale_sigma_off`) | 0.81 | −6,261.1 | 1.48 (0.11) | −3.076 (0.000 ± 0.001) | −3.482 (+0.002 ± 0.001) | −0.675 (+0.001 ± 0.001) |
+| R1 · states at real appearances, innovations unconstrained | 4,656 | 2 | 127 | 413 (`scale_sigma_off`) | 0.81 | −6,261.1 | 1.48 (0.11) | −3.076 (0.000 ± 0.001) | −3.482 (+0.002 ± 0.001) | −0.675 (+0.001 ± 0.001) |
 | R2 · one volatility, one score sd, one correlation | 4,545 | 3 | 127 | 1,323 (`mean_sigma_def`) | 2.61 | −6,262.6 | 1.49 (0.11) | −3.075 (+0.001 ± 0.002) | −3.484 (0.000 ± 0.003) | −0.676 (0.000 ± 0.002) |
 | R3 · pooled, sign-free home advantage | 4,549 | 0 | 255 | 919 (`mean_sigma_off`) | 0.90 | −6,235.8 | 0.73 (0.14) | −3.036 (+0.040 ± 0.019) | −3.474 (+0.010 ± 0.005) | −0.661 (+0.014 ± 0.013) |
 | R4 · identified: one home advantage | 4,548 | 0 | 127 | 1,104 (`mean_sigma_off`) | 2.17 | −6,236.8 | 0.73 (0.14) | −3.035 (+0.041 ± 0.018) | −3.474 (+0.009 ± 0.004) | −0.661 (+0.014 ± 0.013) |
 | R5 · Gaussian instead of Student-t | 4,547 | 0 | 127 | 873 (`mean_sigma_off`) | 1.72 | −6,238.1 | 0.73 (0.15) | −3.038 (+0.038 ± 0.019) | −3.472 (+0.011 ± 0.007) | −0.662 (+0.013 ± 0.014) |
 | v2 static (margin + total), NUTS | 563 | 8 | 142 | 320 (`margin:sigma_u`) | 0.56 | −6,228.0 | 0.72 (0.14) | −3.039 (+0.036 ± 0.021) | −3.460 (+0.023 ± 0.017) | −0.668 (+0.007 ± 0.015) |
 | v2 + within-season AR(1), NUTS | 10,213 | 0 | 157 | 142 (`total:sigma_w[1]`) | 0.23 | −6,226.5 | 0.72 (0.14) | −3.039 (+0.036 ± 0.021) | −3.452 (+0.032 ± 0.019) | −0.668 (+0.008 ± 0.015) |
-| v2 static, INLA full | – | – | – | 27 + 27 hyper points | – | −6,227.0 | 0.72 (0.18) | −3.040 (+0.036 ± 0.021) | −3.462 (+0.021 ± 0.017) | −0.670 (+0.006 ± 0.015) |
+| v2 static, INLA full | – | – | – | 27 + 27 hyper points | – | −6,227.0 | 0.72 (0.17) | −3.040 (+0.036 ± 0.021) | −3.463 (+0.021 ± 0.017) | −0.669 (+0.006 ± 0.015) |
 | v2 static, INLA plug-in | – | – | – | 1 + 1 hyper points | – | −6,221.9 | 0.72 (0.17) | −3.040 (+0.036 ± 0.021) | −3.463 (+0.021 ± 0.018) | −0.669 (+0.006 ± 0.015) |
-| v2 + within-season AR(1), INLA full | – | – | – | 39 + 26 hyper points | – | −6,225.3 | 0.72 (0.17) | −3.041 (+0.035 ± 0.021) | −3.449 (+0.034 ± 0.019) | −0.669 (+0.007 ± 0.015) |
-| v2 + within-season AR(1), INLA plug-in | – | – | – | 1 + 1 hyper points | – | −6,220.1 | 0.72 (0.17) | −3.040 (+0.036 ± 0.021) | −3.451 (+0.032 ± 0.019) | −0.669 (+0.007 ± 0.015) |
+| v2 + within-season AR(1), INLA full | – | – | – | 39 + 26 hyper points | – | −6,225.3 | 0.72 (0.17) | −3.041 (+0.035 ± 0.021) | −3.451 (+0.032 ± 0.019) | −0.669 (+0.006 ± 0.015) |
+| v2 + within-season AR(1), INLA plug-in | – | – | – | 1 + 1 hyper points | – | −6,220.1 | 0.72 (0.16) | −3.040 (+0.036 ± 0.021) | −3.451 (+0.032 ± 0.019) | −0.669 (+0.007 ± 0.015) |
 
 ### Handball women · 64 held-out matches
 
@@ -230,43 +236,43 @@ Each rung changes one thing, so each gain is attributable. All rungs are fitted 
 |----|----|----|----|----|----|----|----|----|----|----|
 | Production | 5,291 | 0 | 159 | 601 (`scale_sigma_def`) | 0.95 | −4,912.2 | 1.52 (0.14) | −3.120 | −3.363 | −0.647 |
 | v2 static (margin + total), NUTS | 398 | 19 | 283 | 181 (`margin:theta_rho`) | 0.16 | −4,892.1 | 0.65 (0.18) | −3.090 (+0.029 ± 0.030) | −3.354 (+0.009 ± 0.026) | −0.632 (+0.016 ± 0.021) |
-| v2 static, INLA full | – | – | – | 27 + 27 hyper points | – | −4,891.3 | 0.65 (0.23) | −3.090 (+0.030 ± 0.030) | −3.355 (+0.008 ± 0.025) | −0.632 (+0.016 ± 0.021) |
+| v2 static, INLA full | – | – | – | 27 + 27 hyper points | – | −4,891.3 | 0.65 (0.23) | −3.090 (+0.030 ± 0.030) | −3.354 (+0.008 ± 0.025) | −0.632 (+0.016 ± 0.021) |
 | v2 static, INLA plug-in | – | – | – | 1 + 1 hyper points | – | −4,886.5 | 0.65 (0.22) | −3.092 (+0.028 ± 0.031) | −3.354 (+0.008 ± 0.025) | −0.632 (+0.015 ± 0.021) |
-| v2 + within-season AR(1), INLA full | – | – | – | 42 + 8 hyper points | – | −4,889.2 | 0.66 (0.24) | −3.100 (+0.020 ± 0.028) | −3.351 (+0.011 ± 0.022) | −0.635 (+0.012 ± 0.019) |
+| v2 + within-season AR(1), INLA full | – | – | – | 42 + 8 hyper points | – | −4,889.2 | 0.65 (0.24) | −3.100 (+0.020 ± 0.028) | −3.351 (+0.012 ± 0.021) | −0.635 (+0.012 ± 0.019) |
 | v2 + within-season AR(1), INLA plug-in | – | – | – | 1 + 1 hyper points | – | −4,883.4 | 0.65 (0.22) | −3.102 (+0.018 ± 0.028) | −3.351 (+0.012 ± 0.022) | −0.634 (+0.013 ± 0.019) |
 
 ### Basketball men · 130 held-out matches
 
 | Rung | Sampled parameters | Divergences | Leapfrog steps / iteration | Smallest bulk ESS (parameter) | ESS per 1,000 gradients | Leave-one-out log density | Home advantage (sd) | Held-out margin log score | Held-out total log score | Held-out W/D/L log likelihood |
 |----|----|----|----|----|----|----|----|----|----|----|
-| Production | 9,930 | 0 | 446 | 529 (`scale_sigma_off`) | 0.30 | −12,946.0 | 4.20 (0.27) | −4.077 | −4.255 | −0.650 |
-| R2 · one volatility, one score sd, one correlation | 6,885 | 0 | 127 | 1,299 (`mean_sigma_off`) | 2.56 | −12,947.3 | 4.20 (0.27) | −4.078 (−0.001 ± 0.008) | −4.257 (−0.003 ± 0.007) | −0.646 (+0.004 ± 0.006) |
-| R3 · pooled, sign-free home advantage | 6,889 | 0 | 255 | 1,107 (`ha_off_sd`) | 1.09 | −12,941.9 | 3.26 (0.31) | −4.082 (−0.005 ± 0.010) | −4.257 (−0.003 ± 0.008) | −0.646 (+0.004 ± 0.008) |
-| R4 · identified: one home advantage | 6,888 | 0 | 127 | 939 (`mean_sigma_off`) | 1.85 | −12,940.6 | 3.25 (0.32) | −4.079 (−0.002 ± 0.010) | −4.257 (−0.002 ± 0.008) | −0.645 (+0.005 ± 0.008) |
-| R5 · Gaussian instead of Student-t | 6,887 | 1 | 127 | 1,065 (`ha_off_sd`) | 2.10 | −12,964.1 | 3.36 (0.31) | −4.080 (−0.003 ± 0.011) | −4.257 (−0.003 ± 0.010) | −0.638 (+0.011 ± 0.009) |
-| v2 static (margin + total), NUTS | 443 | 0 | 128 | 262 (`margin:theta_rho`) | 0.51 | −12,975.0 | 3.35 (0.33) | −4.048 (+0.029 ± 0.021) | −4.256 (−0.001 ± 0.015) | −0.623 (+0.027 ± 0.012) |
-| v2 + within-season AR(1), NUTS | 11,405 | 0 | 286 | 147 (`total:sigma_w[1]`) | 0.13 | −12,966.0 | 3.37 (0.32) | −4.052 (+0.025 ± 0.019) | −4.255 (−0.001 ± 0.014) | −0.620 (+0.029 ± 0.010) |
-| v2 static, INLA full | – | – | – | 27 + 27 hyper points | – | −12,974.3 | 3.36 (0.42) | −4.048 (+0.029 ± 0.021) | −4.258 (−0.003 ± 0.015) | −0.623 (+0.026 ± 0.012) |
-| v2 static, INLA plug-in | – | – | – | 1 + 1 hyper points | – | −12,970.0 | 3.36 (0.42) | −4.048 (+0.029 ± 0.021) | −4.257 (−0.002 ± 0.015) | −0.623 (+0.026 ± 0.012) |
-| v2 + within-season AR(1), INLA full | – | – | – | 43 + 45 hyper points | – | −12,963.2 | 3.38 (0.42) | −4.053 (+0.024 ± 0.018) | −4.256 (−0.001 ± 0.014) | −0.621 (+0.028 ± 0.010) |
-| v2 + within-season AR(1), INLA plug-in | – | – | – | 1 + 1 hyper points | – | −12,958.2 | 3.38 (0.41) | −4.053 (+0.024 ± 0.018) | −4.255 (−0.001 ± 0.014) | −0.621 (+0.028 ± 0.010) |
+| Production | 9,930 | 0 | 446 | 529 (`scale_sigma_off`) | 0.30 | −12,946.0 | 4.20 (0.27) | −4.053 | −4.255 | −0.650 |
+| R2 · one volatility, one score sd, one correlation | 6,885 | 0 | 127 | 1,299 (`mean_sigma_off`) | 2.56 | −12,947.3 | 4.20 (0.27) | −4.055 (−0.001 ± 0.008) | −4.257 (−0.003 ± 0.007) | −0.646 (+0.004 ± 0.006) |
+| R3 · pooled, sign-free home advantage | 6,889 | 0 | 255 | 1,107 (`ha_off_sd`) | 1.09 | −12,941.9 | 3.26 (0.31) | −4.059 (−0.006 ± 0.010) | −4.257 (−0.003 ± 0.008) | −0.646 (+0.004 ± 0.008) |
+| R4 · identified: one home advantage | 6,888 | 0 | 127 | 939 (`mean_sigma_off`) | 1.85 | −12,940.6 | 3.25 (0.32) | −4.056 (−0.002 ± 0.010) | −4.257 (−0.002 ± 0.008) | −0.645 (+0.005 ± 0.008) |
+| R5 · Gaussian instead of Student-t | 6,887 | 1 | 127 | 1,065 (`ha_off_sd`) | 2.10 | −12,964.1 | 3.36 (0.31) | −4.058 (−0.005 ± 0.012) | −4.257 (−0.003 ± 0.010) | −0.638 (+0.011 ± 0.009) |
+| v2 static (margin + total), NUTS | 443 | 0 | 128 | 262 (`margin:theta_rho`) | 0.51 | −12,975.0 | 3.35 (0.33) | −4.025 (+0.028 ± 0.021) | −4.256 (−0.001 ± 0.015) | −0.623 (+0.027 ± 0.012) |
+| v2 + within-season AR(1), NUTS | 11,405 | 0 | 286 | 147 (`total:sigma_w[1]`) | 0.13 | −12,966.0 | 3.37 (0.32) | −4.029 (+0.025 ± 0.019) | −4.255 (−0.001 ± 0.014) | −0.620 (+0.029 ± 0.010) |
+| v2 static, INLA full | – | – | – | 27 + 27 hyper points | – | −12,974.3 | 3.35 (0.43) | −4.025 (+0.028 ± 0.021) | −4.258 (−0.003 ± 0.015) | −0.623 (+0.026 ± 0.012) |
+| v2 static, INLA plug-in | – | – | – | 1 + 1 hyper points | – | −12,970.0 | 3.35 (0.41) | −4.025 (+0.028 ± 0.021) | −4.257 (−0.002 ± 0.015) | −0.623 (+0.026 ± 0.012) |
+| v2 + within-season AR(1), INLA full | – | – | – | 43 + 45 hyper points | – | −12,963.1 | 3.38 (0.42) | −4.030 (+0.023 ± 0.018) | −4.255 (0.000 ± 0.014) | −0.621 (+0.029 ± 0.010) |
+| v2 + within-season AR(1), INLA plug-in | – | – | – | 1 + 1 hyper points | – | −12,958.2 | 3.36 (0.42) | −4.029 (+0.024 ± 0.018) | −4.255 (−0.001 ± 0.014) | −0.621 (+0.028 ± 0.010) |
 
 ### Basketball women · 94 held-out matches
 
 | Rung | Sampled parameters | Divergences | Leapfrog steps / iteration | Smallest bulk ESS (parameter) | ESS per 1,000 gradients | Leave-one-out log density | Home advantage (sd) | Held-out margin log score | Held-out total log score | Held-out W/D/L log likelihood |
 |----|----|----|----|----|----|----|----|----|----|----|
-| Production | 10,638 | 0 | 319 | 425 (`scale_sigma_off`) | 0.33 | −9,350.0 | 3.86 (0.30) | −4.158 | −4.386 | −0.479 |
-| v2 static (margin + total), NUTS | 473 | 11 | 276 | 211 (`margin:sigma_b`) | 0.19 | −9,385.8 | 2.21 (0.39) | −4.170 (−0.012 ± 0.029) | −4.373 (+0.012 ± 0.033) | −0.518 (−0.039 ± 0.019) |
-| v2 static, INLA full | – | – | – | 14 + 27 hyper points | – | −9,383.6 | 2.22 (0.54) | −4.168 (−0.010 ± 0.029) | −4.367 (+0.019 ± 0.033) | −0.517 (−0.038 ± 0.019) |
-| v2 static, INLA plug-in | – | – | – | 1 + 1 hyper points | – | −9,379.2 | 2.21 (0.50) | −4.169 (−0.011 ± 0.029) | −4.369 (+0.016 ± 0.034) | −0.518 (−0.039 ± 0.019) |
-| v2 + within-season AR(1), INLA full | – | – | – | 44 + 45 hyper points | – | −9,355.5 | 2.24 (0.58) | −4.146 (+0.012 ± 0.024) | −4.381 (+0.005 ± 0.038) | −0.507 (−0.028 ± 0.014) |
-| v2 + within-season AR(1), INLA plug-in | – | – | – | 1 + 1 hyper points | – | −9,349.6 | 2.22 (0.56) | −4.146 (+0.012 ± 0.024) | −4.382 (+0.003 ± 0.038) | −0.506 (−0.027 ± 0.014) |
+| Production | 10,638 | 0 | 319 | 425 (`scale_sigma_off`) | 0.33 | −9,350.0 | 3.86 (0.30) | −4.137 | −4.386 | −0.479 |
+| v2 static (margin + total), NUTS | 473 | 11 | 276 | 211 (`margin:sigma_b`) | 0.19 | −9,385.8 | 2.21 (0.39) | −4.151 (−0.014 ± 0.029) | −4.373 (+0.012 ± 0.033) | −0.518 (−0.039 ± 0.019) |
+| v2 static, INLA full | – | – | – | 14 + 27 hyper points | – | −9,383.6 | 2.23 (0.55) | −4.148 (−0.011 ± 0.029) | −4.369 (+0.017 ± 0.034) | −0.517 (−0.038 ± 0.019) |
+| v2 static, INLA plug-in | – | – | – | 1 + 1 hyper points | – | −9,379.1 | 2.21 (0.51) | −4.150 (−0.013 ± 0.029) | −4.378 (+0.008 ± 0.033) | −0.518 (−0.039 ± 0.019) |
+| v2 + within-season AR(1), INLA full | – | – | – | 44 + 45 hyper points | – | −9,355.5 | 2.23 (0.58) | −4.126 (+0.011 ± 0.024) | −4.381 (+0.005 ± 0.038) | −0.507 (−0.028 ± 0.014) |
+| v2 + within-season AR(1), INLA plug-in | – | – | – | 1 + 1 hyper points | – | −9,349.6 | 2.22 (0.56) | −4.126 (+0.011 ± 0.024) | −4.382 (+0.003 ± 0.038) | −0.506 (−0.027 ± 0.014) |
 
 Log scores are per match, on the integer scale, higher is better; in brackets the paired difference from production with its match-clustered standard error. For the v2 rows "leapfrog steps" is the sum over the margin and the total fit. Highlighted rows are R-INLA fits of the same v2 models ("full" integrates over the hyperparameters, "plug-in" fixes them at their mode). The leave-one-out density is on the scale of the two scores for every row, so rows are comparable.
 
 ### Reading the handball men ladder
 
-- **R1** keeps production's model and removes only the states no match touches: 4,656 sampled parameters instead of 7,972, 127 leapfrog steps per iteration instead of 190, held-out scores unchanged (margin 0.000 ± 0.001).
+- **R1** keeps production's likelihood and moves the states to real appearances, which removes the states no match touches. Two more things change with it. Production constrains each round's innovations to sum to zero across teams; the ragged layout has no round to sum over, so R1's innovations are unconstrained. And R1's prior on the scoring level is normal(28, 10) where production's is normal(30, 10). The result: 4,656 sampled parameters instead of 7,972, 127 leapfrog steps per iteration instead of 190, held-out scores unchanged (margin 0.000 ± 0.001). The parameter count is arithmetic. The drop in leapfrog steps belongs to the three changes together; this ladder cannot put it on the unused states alone.
 - **R2** replaces the per-team volatility hierarchies and the per-team score sds by single values: 4,545 parameters and 127 leapfrog steps per iteration, leave-one-out −6,262.6 against −6,261.1. The home advantage is still 1.49: it is not the hierarchies that inflate it.
 - **R3** pools the home effects and lets them take either sign: the home advantage falls from 1.49 to 0.73 (raw margin 0.75), leave-one-out rises to −6,235.8 and the held-out margin log score by +0.039 ± 0.018. The ridge that the bounds were hiding appears: the scoring level's posterior sd goes from 0.65 to 3.46, its correlation with the mean attack home effect is −0.98, and NUTS needs 255 leapfrog steps per iteration.
 - **R4** removes the ridge (one league home advantage, team deviations around zero): the level's sd returns to 0.66, leapfrog steps to 127, the smallest effective sample size is 1,104, the home advantage is 0.73.
@@ -276,9 +282,9 @@ Log scores are per match, on the integer scale, higher is better; in brackets th
 ### Reading the basketball men ladder
 
 - **R2** (here also the first rung without the states no match touches; R1 was not run for this cell) replaces the per-team volatility hierarchies and the four-parameter correlation by single values: 6,885 parameters and 127 leapfrog steps per iteration, leave-one-out −12,947.3 against −12,946.0. The home advantage is still 4.20: it is not the hierarchies that inflate it.
-- **R3** pools the home effects and lets them take either sign: the home advantage falls from 4.20 to 3.26 (raw margin 3.47), leave-one-out rises to −12,941.9 and the held-out margin log score by −0.005 ± 0.007. The ridge that the bounds were hiding appears: the scoring level's posterior sd goes from 2.57 to 7.21, its correlation with the mean attack home effect is −0.94, and NUTS needs 255 leapfrog steps per iteration.
+- **R3** pools the home effects and lets them take either sign: the home advantage falls from 4.20 to 3.26 (raw margin 3.47), leave-one-out rises to −12,941.9 and the held-out margin log score by −0.004 ± 0.008. The ridge that the bounds were hiding appears: the scoring level's posterior sd goes from 2.57 to 7.21, its correlation with the mean attack home effect is −0.94, and NUTS needs 255 leapfrog steps per iteration.
 - **R4** removes the ridge (one league home advantage, team deviations around zero): the level's sd returns to 2.59, leapfrog steps to 127, the smallest effective sample size is 939, the home advantage is 3.25.
-- **R5** drops the Student-t (fitted degrees of freedom in R4: 12): leave-one-out −12,964.1 against −12,940.6, held-out margin −0.001 ± 0.007 and total 0.000 ± 0.006. That is the measure of what the heavy tail is worth.
+- **R5** drops the Student-t (fitted degrees of freedom in R4: 12): leave-one-out −12,964.1 against −12,940.6, held-out margin −0.002 ± 0.007 and total 0.000 ± 0.006. That is the measure of what the heavy tail is worth.
 - **v2** rotates attack and defence into net strength and scoring level, adds the club level and the season-boundary AR(1) and drops the appearance-indexed random walk: 443 sampled parameters, leave-one-out −12,975.0, held-out margin +0.033 ± 0.016 and total +0.002 ± 0.014 against R5.
 
 Wall-clock times, with what else was running
@@ -286,23 +292,23 @@ Wall-clock times, with what else was running
 | Cell | Rung | Wall time | Machine slots when the fit started |
 |----|----|----|----|
 | Handball men | Production | 13.1 min | slot1: hb-bb \| slot2: football-v2 \| slot3: free |
-| Handball men | R1 · states only at real appearances | 6.7 min | slot1: hb-bb \| slot2: free \| slot3: football-v2 |
+| Handball men | R1 · states at real appearances, innovations unconstrained | 6.7 min | slot1: hb-bb \| slot2: free \| slot3: football-v2 |
 | Handball men | R2 · one volatility, one score sd, one correlation | 2.8 min | slot1: hb-bb \| slot2: pan-european \| slot3: football-v2 |
 | Handball men | R3 · pooled, sign-free home advantage | 6.3 min | slot1: hb-bb \| slot2: pan-european \| slot3: football-v2 |
 | Handball men | R4 · identified: one home advantage | 3.5 min | slot1: hb-bb \| slot2: pan-european \| slot3: football-v2 |
 | Handball men | R5 · Gaussian instead of Student-t | 3.6 min | slot1: hb-bb \| slot2: pan-european \| slot3: football-v2 |
 | Handball men | v2 static (margin + total), NUTS | 51 s | slot1: hb-bb (this fit) \| slot2: pan-european |
 | Handball men | v2 + within-season AR(1), NUTS | 2.7 min | slot1: hb-bb \| slot2: pan-european |
-| Handball men | v2 static, INLA full | 5 s | slot1: hb-bb \| slot2: pan-european |
-| Handball men | v2 static, INLA plug-in | 5 s | slot1: hb-bb \| slot2: pan-european |
-| Handball men | v2 + within-season AR(1), INLA full | 13 s | slot1: hb-bb \| slot2: pan-european |
-| Handball men | v2 + within-season AR(1), INLA plug-in | 11 s | slot1: hb-bb \| slot2: pan-european |
+| Handball men | v2 static, INLA full | 5 s | slot1: hb-bb \| slot2: free \| slot3: load-hold |
+| Handball men | v2 static, INLA plug-in | 5 s | slot1: hb-bb \| slot2: free \| slot3: load-hold |
+| Handball men | v2 + within-season AR(1), INLA full | 14 s | slot1: hb-bb \| slot2: free \| slot3: load-hold |
+| Handball men | v2 + within-season AR(1), INLA plug-in | 12 s | slot1: hb-bb \| slot2: free \| slot3: load-hold |
 | Handball women | Production | 10.5 min | slot1: hb-bb \| slot2: football-v2 \| slot3: pan-european |
 | Handball women | v2 static (margin + total), NUTS | 61 s | slot1: hb-bb (this fit) \| slot2: pan-european |
-| Handball women | v2 static, INLA full | 5 s | slot1: hb-bb \| slot2: pan-european |
-| Handball women | v2 static, INLA plug-in | 5 s | slot1: hb-bb \| slot2: pan-european |
-| Handball women | v2 + within-season AR(1), INLA full | 12 s | slot1: hb-bb \| slot2: pan-european |
-| Handball women | v2 + within-season AR(1), INLA plug-in | 10 s | slot1: hb-bb \| slot2: pan-european |
+| Handball women | v2 static, INLA full | 5 s | slot1: hb-bb \| slot2: free \| slot3: load-hold |
+| Handball women | v2 static, INLA plug-in | 5 s | slot1: hb-bb \| slot2: free \| slot3: load-hold |
+| Handball women | v2 + within-season AR(1), INLA full | 12 s | slot1: hb-bb \| slot2: free \| slot3: load-hold |
+| Handball women | v2 + within-season AR(1), INLA plug-in | 11 s | slot1: hb-bb \| slot2: free \| slot3: load-hold |
 | Basketball men | Production | 56.3 min | slot1: hb-bb \| slot2: pan-european \| slot3: football-v2 |
 | Basketball men | R2 · one volatility, one score sd, one correlation | 4.6 min | slot1: hb-bb \| slot2: football-v2 \| slot3: free |
 | Basketball men | R3 · pooled, sign-free home advantage | 7.7 min | slot1: hb-bb \| slot2: football-v2 \| slot3: free |
@@ -310,16 +316,16 @@ Wall-clock times, with what else was running
 | Basketball men | R5 · Gaussian instead of Student-t | 4.2 min | slot1: hb-bb \| slot2: football-v2 \| slot3: free |
 | Basketball men | v2 static (margin + total), NUTS | 87 s | slot1: hb-bb (this fit) \| slot2: pan-european |
 | Basketball men | v2 + within-season AR(1), NUTS | 5.4 min | slot1: hb-bb \| slot2: pan-european |
-| Basketball men | v2 static, INLA full | 6 s | slot1: hb-bb \| slot2: pan-european |
-| Basketball men | v2 static, INLA plug-in | 5 s | slot1: hb-bb \| slot2: pan-european |
-| Basketball men | v2 + within-season AR(1), INLA full | 24 s | slot1: hb-bb \| slot2: pan-european |
-| Basketball men | v2 + within-season AR(1), INLA plug-in | 14 s | slot1: hb-bb \| slot2: pan-european |
+| Basketball men | v2 static, INLA full | 6 s | slot1: hb-bb \| slot2: free \| slot3: load-hold |
+| Basketball men | v2 static, INLA plug-in | 5 s | slot1: hb-bb \| slot2: free \| slot3: load-hold |
+| Basketball men | v2 + within-season AR(1), INLA full | 17 s | slot1: hb-bb \| slot2: free \| slot3: load-hold |
+| Basketball men | v2 + within-season AR(1), INLA plug-in | 14 s | slot1: hb-bb \| slot2: free \| slot3: load-hold |
 | Basketball women | Production | 44.1 min | slot1: hb-bb \| slot2: free \| slot3: football-v2 |
 | Basketball women | v2 static (margin + total), NUTS | 85 s | slot1: hb-bb (this fit) \| slot2: pan-european |
-| Basketball women | v2 static, INLA full | 6 s | slot1: hb-bb \| slot2: pan-european |
-| Basketball women | v2 static, INLA plug-in | 6 s | slot1: hb-bb \| slot2: pan-european |
-| Basketball women | v2 + within-season AR(1), INLA full | 17 s | slot1: hb-bb \| slot2: pan-european |
-| Basketball women | v2 + within-season AR(1), INLA plug-in | 14 s | slot1: hb-bb \| slot2: pan-european |
+| Basketball women | v2 static, INLA full | 6 s | slot1: hb-bb \| slot2: free \| slot3: load-hold |
+| Basketball women | v2 static, INLA plug-in | 5 s | slot1: hb-bb \| slot2: free \| slot3: load-hold |
+| Basketball women | v2 + within-season AR(1), INLA full | 15 s | slot1: hb-bb \| slot2: free \| slot3: load-hold |
+| Basketball women | v2 + within-season AR(1), INLA plug-in | 13 s | slot1: hb-bb \| slot2: free \| slot3: load-hold |
 
 Every time here was taken inside the shared limiter, which allows two 4-core jobs at once on 8 performance cores; the second slot was usually busy with a sibling session's fit. Treat these as times under a half-loaded machine, good for ratios within a cell, not as benchmarks. Leapfrog counts do not depend on load.
 
@@ -349,7 +355,7 @@ Nothing in it is forced to have a sign, the league home advantage is one number,
 | `sigma_m`, `sigma_t` | What is left of a match once strengths are known: shooting luck, the day's form, refereeing. One sd for the margin and one for the total, because the data show no difference between teams and margin and total do not co-vary. | sd above 15 / 20 goals or 30 / 40 points with probability 1 % |
 | `b`, `sigma_b` | Some clubs are big and some are small for reasons that outlast any roster: budget, youth system, town. This is the level a club returns to. | sd above 10 goals / 25 points with probability 1 % |
 | `u`, `sigma_u`, `rho` | Each summer the roster changes (imports in basketball, players leaving for clubs abroad in handball), so a club's strength in a season departs from its long-run level, and part of that departure carries into the next season. `rho` is the share that carries over. | sd above 8 goals / 20 points with probability 1 %; `rho` centred on 0.7, 95 % within 0.13 to 0.92 |
-| `w`, `sigma_w` | Injuries, a mid-season signing, a coach finding a system: strength can drift inside a season. Tested as a weekly random walk and as a slow AR(1) around the season level. | random walk: sd above 1 goal / 2.5 points per week with probability 1 % |
+| `w`, `sigma_w` | Injuries, a mid-season signing, a coach finding a system: strength can drift inside a season. Tested as a weekly random walk and as a slow AR(1) around the season level. | random walk: step sd above 1 goal / 2.5 points per week with probability 1 %. AR(1) form (the one compared with Stan and proposed for basketball): sd of a team's departure from its season level above 4 goals / 10 points with probability 1 %, weekly correlation fixed at 0.98 |
 | `ha`, `sigma_ha` | Some halls are harder to visit than others. Team deviations from the league home advantage, shrunk hard because a team has about eleven home matches a season. | sd above 3 goals / 6 points with probability 1 % |
 | `level`, `sigma_season` | Scoring levels move with rules and style (men's Olísdeild has gone from 53 to 66 goals a match between seasons 2021 and 2027). A random walk over seasons, one path per division. | step sd above 5 goals / 10 points with probability 1 % |
 
@@ -372,16 +378,16 @@ Team deviations from the league home advantage are small in handball (sd 0.2 and
 
 One identical model per comparison: v2 with the within-season AR(1) (the richer of the two candidate forms), the same data, the same priors, fitted with NUTS and with R-INLA.
 
-| Model | Largest hyperparameter difference, in posterior sds | States: largest mean difference (sds) / sd ratio | Held-out predictor: largest mean difference / sd ratio | Held-out log score: Stan / INLA full / INLA plug-in | Leave-one-out: Stan PSIS / INLA CPO | Stan | R-INLA time: full / plug-in |
+| Model | Largest hyperparameter difference, in posterior sds | States: largest mean difference (sds) / sd ratio | Held-out predictor, largest difference from Stan in a match's expected value: INLA full / INLA plug-in | Held-out log score: Stan / INLA full / INLA plug-in | Leave-one-out: Stan PSIS / INLA CPO | Stan | R-INLA time: full / plug-in |
 |----|----|----|----|----|----|----|----|
-| Handball men, margin | 0.25 | 0.133 / 0.931 | 0.116 / 1.029 | −3.0395 / −3.0410 / −3.0402 | −3,320.7 / −3,320.1 | 5,119 params, 0 div., 63 leapfrog | 6 s / 4 s |
-| Handball men, total | 0.65 | 0.221 / 0.996 | 0.136 / 1.019 | −3.4521 / −3.4494 / −3.4513 | −3,666.2 / −3,665.6 | 5,094 params, 0 div., 94 leapfrog | 7 s / 6 s |
-| Basketball men, margin | 0.32 | 0.190 / 0.984 | 0.386 / 0.981 | −4.0520 / −4.0534 / −4.0529 | −6,832.3 / −6,831.1 | 5,711 params, 0 div., 191 leapfrog | 9 s / 7 s |
-| Basketball men, total | 0.68 | 0.433 / 0.990 | 0.448 / 1.013 | −4.2555 / −4.2558 / −4.2554 | −7,305.2 / −7,303.5 | 5,694 params, 0 div., 95 leapfrog | 15 s / 7 s |
+| Handball men, margin | 0.25 | 0.133 / 0.931 | 0.116 / 0.131 | −3.0395 / −3.0412 / −3.0402 | −3,320.7 / −3,320.1 | 5,119 params, 0 div., 63 leapfrog | 6 s / 5 s |
+| Handball men, total | 0.65 | 0.221 / 0.996 | 0.136 / 0.131 | −3.4521 / −3.4514 / −3.4513 | −3,666.2 / −3,665.6 | 5,094 params, 0 div., 94 leapfrog | 8 s / 7 s |
+| Basketball men, margin | 0.32 | 0.190 / 0.984 | 0.386 / 0.448 | −4.0286 / −4.0297 / −4.0295 | −6,832.3 / −6,831.1 | 5,711 params, 0 div., 191 leapfrog | 9 s / 7 s |
+| Basketball men, total | 0.56 | 0.208 / 1.000 | 0.430 / 0.664 | −4.2555 / −4.2549 / −4.2554 | −7,305.2 / −7,303.4 | 5,694 params, 0 div., 95 leapfrog | 8 s / 6 s |
 
 "sd ratio" is R-INLA's posterior sd over Stan's, median over states or matches. "Plug-in" fixes the hyperparameters at their mode, which is what the walk-forward uses. R-INLA times are single-core wall times on a shared machine.
 
-**Predictions agree.** Across the 4 comparisons the largest difference in a held-out match's expected margin or total is 0.45 goals or points, the held-out log scores differ by at most 0.0026 per match, and the two leave-one-out estimates by at most 1.7 in total. **What differs is how weakly identified variance is split.** The largest hyperparameter difference is 0.68 posterior sds (`sd: b` in the basketball men total model: Stan 1.88, R-INLA 2.77). In the total models the data cannot say sharply how much of a team's scoring level is club, season or within-season, the posterior of those sds is wide and skewed, and R-INLA's integration grid (26 to 45 points) describes it more narrowly than NUTS does. The sum of the three, which is what a forecast uses, is the same. The Stan reference itself is the weaker side on precision here: its smallest effective sample size is 142, against R-hat up to 1.024.
+**Predictions agree.** Across the 4 comparisons the largest difference from Stan in a held-out match's expected margin or total is 0.43 goals or points with full integration and 0.66 with the plug-in fit, which is the one the walk-forward uses; the held-out log scores differ by at most 0.0017 per match (full) and 0.0009 (plug-in), and the two leave-one-out estimates by at most 1.8 in total. **What differs is how weakly identified variance is split.** The largest hyperparameter difference is 0.65 posterior sds (`sd: b` in the handball men total model: Stan 1.09, R-INLA 1.52). The data cannot say sharply how much of a team's strength or scoring level is club, season or within-season, so the posterior of those sds is wide and skewed, and the two engines do not differ in one direction. R-INLA's posterior sd of a hyperparameter as a ratio to Stan's, with the number of the model's hyperparameters for which R-INLA is the narrower: handball men margin 0.85 to 1.04 (6 of 7); handball men total 0.98 to 1.63 (2 of 8); basketball men margin 0.75 to 1.08 (5 of 7); basketball men total 0.12 to 1.01 (7 of 8). R-INLA is the wider engine for most hyperparameters in the handball men total model and the narrower for most in the handball men margin model, the basketball men margin model and the basketball men total model. The sum of the components, which is what a forecast uses, agrees (first sentence). Neither engine is a precise reference for these sds: R-INLA integrates over 26 to 45 points around the one mode it found, and Stan's smallest effective sample size here is 142 with R-hat up to 1.024.
 
 Hyperparameters, Handball men, margin
 
@@ -424,14 +430,14 @@ Hyperparameters, Basketball men, total
 
 | Parameter | Stan mean (sd) | R-INLA mean (sd) | Stan 90 % | R-INLA 90 % |
 |----|----|----|----|----|
-| sd: the Gaussian observations | 17.493 (0.347) | 17.481 (0.318) | 16.924 to 18.055 | 16.959 to 18.007 |
-| sd: u_s | 5.156 (1.458) | 4.744 (0.413) | 2.232 to 7.159 | 4.074 to 5.432 |
-| rho: u_s | 0.655 (0.132) | 0.662 (0.059) | 0.429 to 0.848 | 0.558 to 0.752 |
-| sd: b | 1.877 (1.308) | 2.772 (0.394) | 0.154 to 4.235 | 2.230 to 3.502 |
-| sd: w_t | 4.247 (1.450) | 4.857 (0.600) | 1.308 to 6.301 | 4.045 to 5.974 |
-| sd: s_s | 1.983 (1.450) | 2.079 (0.205) | 0.155 to 4.709 | 1.758 to 2.430 |
-| alpha1 | 179.712 (2.484) | 179.641 (2.447) | 175.544 to 183.803 | 175.617 to 183.666 |
-| alpha2 | 180.905 (2.449) | 181.109 (2.471) | 176.827 to 184.904 | 177.045 to 185.174 |
+| sd: the Gaussian observations | 17.493 (0.347) | 17.475 (0.320) | 16.924 to 18.055 | 16.973 to 18.022 |
+| sd: u_s | 5.156 (1.458) | 5.415 (0.447) | 2.232 to 7.159 | 4.699 to 6.169 |
+| rho: u_s | 0.655 (0.132) | 0.667 (0.059) | 0.429 to 0.848 | 0.564 to 0.756 |
+| sd: b | 1.877 (1.308) | 1.888 (0.273) | 0.154 to 4.235 | 1.528 to 2.401 |
+| sd: w_t | 4.247 (1.450) | 4.681 (0.405) | 1.308 to 6.301 | 4.012 to 5.343 |
+| sd: s_s | 1.983 (1.450) | 1.169 (0.167) | 0.155 to 4.709 | 0.880 to 1.424 |
+| alpha1 | 179.712 (2.484) | 179.804 (2.452) | 175.544 to 183.803 | 175.772 to 183.837 |
+| alpha2 | 180.905 (2.449) | 181.088 (2.469) | 176.827 to 184.904 | 177.027 to 185.148 |
 
 ## Handball: draws and the variance question
 
@@ -442,24 +448,24 @@ Scores are whole numbers and the model's margin is continuous. Rounding the cont
 | Cell | Division | Matches | Level scores | Observed | Rounded Gaussian (the band) | With one shift per sex | With a shift per division |
 |----|----|----|----|----|----|----|----|
 | Handball men | all | 926 | 68 | 7.34 % | 6.14 % | 8.58 % | 8.80 % |
-| Handball men | G66 | 382 | 24 | 6.28 % | 5.88 % | 8.23 % | 6.06 % |
-| Handball men | OD | 524 | 44 | 8.40 % | 6.27 % | 8.76 % | 10.74 % |
+| Handball men | G66 | 382 | 24 | 6.28 % | 5.88 % | 8.22 % | 6.06 % |
+| Handball men | OD | 524 | 44 | 8.40 % | 6.28 % | 8.76 % | 10.74 % |
 | Handball men | PO | 20 | 0 | 0.00 % | 7.35 % | 10.57 % | 10.57 % |
-| Handball women | all | 707 | 34 | 4.81 % | 4.46 % | 4.35 % | 4.40 % |
+| Handball women | all | 707 | 34 | 4.81 % | 4.46 % | 4.34 % | 4.40 % |
 | Handball women | G66 | 335 | 15 | 4.48 % | 4.07 % | 3.96 % | 4.22 % |
-| Handball women | OD | 356 | 19 | 5.34 % | 4.74 % | 4.59 % | 4.45 % |
+| Handball women | OD | 356 | 19 | 5.34 % | 4.74 % | 4.58 % | 4.45 % |
 | Handball women | PO | 16 | 0 | 0.00 % | 6.26 % | 7.03 % | 7.03 % |
 
 Out of sample: seasons 2023 to 2027 of the weekly walk-forward; each season's shift was estimated on the earlier seasons only.
 
-**Men.** Level scores are more common than the band predicts: 7.3 % observed against 6.1 % out of sample, and on all data the shift is 0.30 (se 0.10) on the logit scale, about 35 % more draws. Broken down by division, the surplus is in Olísdeild (shift 0.46 on the seasons before 2027) and absent in Grill 66 (−0.03). It is not stable enough to pay yet: the share of level scores in Olísdeild swings from season to season, the shift estimated on earlier seasons overshoots the later ones, and the out-of-sample W/D/L log likelihood changes by −0.0007 ± 0.0031 with one shift and −0.0026 ± 0.0040 with a shift per division. **Women.** The band is calibrated as it stands: 4.8 % observed against 4.5 %, shift 0.09 (se 0.14).
+**Men.** Level scores are more common than the band predicts: 7.3 % observed against 6.1 % out of sample, and on all data the shift is 0.30 (se 0.10) on the logit scale: an odds ratio of 1.35, which at these rates is about 32 % more draws. Broken down by division, the surplus is in Olísdeild (shift 0.45 on the seasons before 2027) and absent in Grill 66 (−0.03). It is not stable enough to pay yet: the share of level scores in Olísdeild swings from season to season, the shift estimated on earlier seasons overshoots the later ones, and the out-of-sample W/D/L log likelihood changes by −0.0007 ± 0.0031 with one shift and −0.0026 ± 0.0040 with a shift per division. **Women.** The band is calibrated as it stands: 4.8 % observed against 4.5 %, shift 0.09 (se 0.14).
 
 | Expected margin, in predictive sds | Men: matches | observed | band | with shift | Women: matches | observed | band | with shift |
 |----|----|----|----|----|----|----|----|----|
-| under 0.2 sd | 189 | 9.0 % | 7.9 % | 10.9 % | 103 | 2.9 % | 6.5 % | 6.3 % |
-| 0.2 to 0.4 | 164 | 11.0 % | 7.6 % | 10.6 % | 99 | 11.1 % | 6.3 % | 6.3 % |
-| 0.4 to 0.8 | 254 | 7.9 % | 6.6 % | 9.3 % | 167 | 7.2 % | 5.6 % | 5.5 % |
-| 0.8 to 1.5 | 261 | 4.6 % | 4.4 % | 6.3 % | 217 | 3.2 % | 3.7 % | 3.5 % |
+| under 0.2 sd | 188 | 9.0 % | 7.9 % | 10.9 % | 104 | 2.9 % | 6.5 % | 6.3 % |
+| 0.2 to 0.4 | 164 | 10.4 % | 7.6 % | 10.6 % | 98 | 11.2 % | 6.3 % | 6.3 % |
+| 0.4 to 0.8 | 255 | 8.2 % | 6.7 % | 9.3 % | 166 | 7.2 % | 5.6 % | 5.5 % |
+| 0.8 to 1.5 | 261 | 4.6 % | 4.4 % | 6.3 % | 218 | 3.2 % | 3.7 % | 3.5 % |
 | over 1.5 sd | 58 | 1.7 % | 1.7 % | 2.5 % | 121 | 0.8 % | 1.1 % | 1.0 % |
 
 Draw calibration by closeness of the match, out of sample.
@@ -481,15 +487,15 @@ The literature describes handball goals as binomial counts: about 50 to 60 attac
 
 | Variance form | Men: margin | Men: total | Women: margin | Women: total |
 |----|----|----|----|----|
-| Free variance, rescaled on past errors | +0.0029 ± 0.0047 | −0.0018 ± 0.0015 | −0.0081 ± 0.0051 | −0.0031 ± 0.0019 |
-| Variance grows with the mismatch (margin) / the expected total | +0.0024 ± 0.0046 | −0.0022 ± 0.0022 | −0.0098 ± 0.0051 | −0.0046 ± 0.0021 |
-| One variance per division | +0.0048 ± 0.0059 | −0.0003 ± 0.0027 | +0.0016 ± 0.0067 | −0.0056 ± 0.0024 |
-| Possession-informed (binomial with shared attacks) | +0.0004 ± 0.0027 | −0.0017 ± 0.0020 | −0.0301 ± 0.0076 | −0.0059 ± 0.0038 |
-| Student-t with fitted degrees of freedom | +0.0016 ± 0.0014 | +0.0019 ± 0.0025 | +0.0039 ± 0.0028 | 0.0000 ± 0.0005 |
+| Free variance, rescaled on past errors | +0.0028 ± 0.0047 | −0.0017 ± 0.0015 | −0.0079 ± 0.0051 | −0.0031 ± 0.0020 |
+| Variance grows with the mismatch (margin) / the expected total | +0.0023 ± 0.0046 | −0.0068 ± 0.0035 | −0.0096 ± 0.0051 | −0.0054 ± 0.0019 |
+| One variance per division | +0.0048 ± 0.0059 | −0.0002 ± 0.0027 | +0.0017 ± 0.0066 | −0.0056 ± 0.0025 |
+| Possession-informed (binomial with shared attacks) | +0.0001 ± 0.0026 | −0.0017 ± 0.0020 | −0.0103 ± 0.0064 | −0.0037 ± 0.0028 |
+| Student-t with fitted degrees of freedom | +0.0015 ± 0.0013 | +0.0019 ± 0.0025 | +0.0040 ± 0.0028 | 0.0000 ± 0.0005 |
 
 Change in the out-of-sample integer log score per match against the plain model (one free sd for the margin, one for the total), with its match-clustered standard error. Positive is better. Men n = 926, women n = 707.
 
-Nothing beats the free variance. The possession-informed form is no better for men and clearly worse for the women's margin (−0.0301 ± 0.0076), the cells the literature disagrees about. The scores do look binomial in one respect: each side's variance is close to that of a binomial with 55 attacks in Olísdeild (ratio 1.07 men, 1.02 women; 1.24 and 1.17 in Grill 66). But the possession form ties the margin variance and the total variance together through its two parameters, and two free sds fit both better. A Student-t with fitted degrees of freedom (28 for the men's margin, 15 for the women's) changes the score by less than its standard error. **Handball keeps a Gaussian with one free sd for the margin and one for the total.**
+Nothing beats the free variance. The possession-informed form is no better for men and clearly worse for the women's margin (−0.0103 ± 0.0064), the cells the literature disagrees about. The scores do look binomial in one respect: each side's variance is close to that of a binomial with 55 attacks in Olísdeild (ratio 1.07 men, 1.02 women; 1.24 and 1.17 in Grill 66). But the possession form ties the margin variance and the total variance together through its two parameters, and two free sds fit both better. A Student-t with fitted degrees of freedom (28 for the men's margin, 15 for the women's) changes the score by less than its standard error. **Handball keeps a Gaussian with one free sd for the margin and one for the total.**
 
 ## Basketball: regulation time
 
@@ -512,29 +518,29 @@ Seasons 2021 to 2027. All 3,283 stored games matched a card. The 11 without a us
 
 | Cell | Division | Games | Level after regulation | Observed | Rounded Gaussian | With one shift per sex | With a shift per division |
 |----|----|----|----|----|----|----|----|
-| Basketball men | all | 1,335 | 73 | 5.47 % | 2.29 % | 6.59 % | 6.45 % |
+| Basketball men | all | 1,335 | 73 | 5.47 % | 2.29 % | 6.58 % | 6.45 % |
 | Basketball men | 1D | 651 | 24 | 3.69 % | 2.20 % | 6.31 % | 4.19 % |
 | Basketball men | BD | 684 | 49 | 7.16 % | 2.38 % | 6.84 % | 8.60 % |
-| Basketball women | all | 962 | 24 | 2.49 % | 1.80 % | 2.01 % | 1.92 % |
-| Basketball women | 1D | 404 | 11 | 2.72 % | 1.44 % | 1.56 % | 1.83 % |
+| Basketball women | all | 962 | 24 | 2.49 % | 1.80 % | 2.00 % | 1.92 % |
+| Basketball women | 1D | 404 | 11 | 2.72 % | 1.43 % | 1.56 % | 1.83 % |
 | Basketball women | BD | 558 | 13 | 2.33 % | 2.06 % | 2.32 % | 1.98 % |
 
 Out of sample, seasons 2023 to 2027; each season's shift estimated on earlier seasons.
 
-**Men.** The tie parameter is needed and it differs by division: shift 1.23 in Bónusdeild (about 3.4 times the smooth rate) and 0.65 in 1. deild. It improves the out-of-sample regulation 1X2 log likelihood by +0.0166 ± 0.0072 per game and the regulation-margin log score by the same amount. **Women.** A small surplus (2.5 % against 1.8 %), shift 0.26, no measurable gain yet (+0.0003 ± 0.0007). **Overtime** is modelled as a short continuation of the same game: a five-minute period is one eighth of regulation, so its margin has one eighth of the mean and of the variance, and a level overtime is replayed. On the 97 overtime games in the scored seasons the home side won 53 and the pre-match favourite 49 (51 %); the continuation model expected the favourite to win 57 %, and its log likelihood is −0.697 against −0.693 for a coin flip. So in these leagues overtime has so far been a coin flip, unlike the NBA; the continuation model is kept because it costs nothing and tends to the coin flip for evenly matched teams, but the evidence does not yet support it over 50 : 50.
+**Men.** The tie parameter is needed and it differs by division: shift 1.23 in Bónusdeild (an odds ratio of 3.4; at these rates about 3.2 times as many level games as the smooth curve gives, and 3.0 times as many were observed out of sample) and 0.65 in 1. deild. It improves the out-of-sample regulation 1X2 log likelihood by +0.0166 ± 0.0072 per game and the regulation-margin log score by the same amount. **Women.** A small surplus (2.5 % against 1.8 %), shift 0.26, no measurable gain yet (+0.0003 ± 0.0007). **Overtime** is modelled as a short continuation of the same game: a five-minute period is one eighth of regulation, so its margin has one eighth of the mean and of the variance, and a level overtime is replayed. On the 97 overtime games in the scored seasons the home side won 53 and the pre-match favourite 49 (51 %); the continuation model expected the favourite to win 57 %, and its log likelihood is −0.697 against −0.693 for a coin flip. So in these leagues overtime has so far been a coin flip, unlike the NBA; the continuation model is kept because it costs nothing and tends to the coin flip for evenly matched teams, but the evidence does not yet support it over 50 : 50.
 
 ### Does training on regulation time cost anything for the final result?
 
 | Cell | Games | Final-result log likelihood: final-score model / regulation + overtime | Difference | Final-margin log score: final-score model / regulation + overtime | Difference |
 |----|----|----|----|----|----|
-| Basketball men | 1,335 | −0.5799 / −0.5795 | +0.0004 ± 0.0006 | −4.0854 / −4.0546 | +0.0308 ± 0.0023 |
-| Basketball women | 962 | −0.4931 / −0.4937 | −0.0006 ± 0.0006 | −4.2112 / −4.1910 | +0.0202 ± 0.0013 |
+| Basketball men | 1,335 | −0.5801 / −0.5794 | +0.0006 ± 0.0006 | −4.0624 / −4.0544 | +0.0079 ± 0.0023 |
+| Basketball women | 962 | −0.4932 / −0.4935 | −0.0002 ± 0.0006 | −4.1932 / −4.1901 | +0.0032 ± 0.0013 |
 
-Same matches, both walk-forwards. The final-score model is the same v2 model trained on final scores, with the home side winning when the continuous margin is positive.
+Same matches, both walk-forwards. The final-score model is the same v2 model trained on final scores, with the home side winning when the continuous margin is positive. A final score cannot be level, so the final-score model's margin score uses its rounded margin with the mass on zero removed and the rest renormalised; the regulation-plus-overtime model has no mass there to begin with. Tie treatment of the regulation model: a shift per division for men, one shift for women.
 
-One model trained on regulation-time scores serves both products: the regulation 1X2 the bookmaker settles on, and the final result the league table needs, through the tie probability and overtime.
+In standard errors, the final-result difference is +1.0 for men and −0.4 for women, and the final-margin difference +3.5 and +2.4. So training on regulation time costs nothing measurable for the final result; what it gains on the final margin is small. One model trained on regulation-time scores serves both products: the regulation 1X2 the bookmaker settles on, and the final result the league table needs, through the tie probability and overtime.
 
-**Tails: is a Student-t worth its cost?** Basketball margins are a little heavier-tailed than Gaussian, most in women's 1. deild. In the ladder, replacing the Student-t by a Gaussian costs the men's fit 24 of leave-one-out density (handball: about 1) and changes no held-out score. In the walk-forward, a Student-t predictive with the same sd and fitted degrees of freedom (8 men, 13 women) improves the regulation-margin log score by +0.0108 ± 0.0040 for men and +0.0064 ± 0.0045 for women, and leaves the result probabilities where they were (men: regulation 1X2 −0.0009 ± 0.0011, final result −0.0003 ± 0.0009; women: −0.0006 ± 0.0005 and −0.0006 ± 0.0005). Variance by division or by mismatch does nothing (largest change +0.0093 ± 0.0090). So the heavier tail sharpens the margin distribution a little and changes no win probability. It is not worth giving up the exact Gaussian fit for; the proposal keeps the Gaussian in the engine and offers the Student-t as a prediction-layer setting for the basketball margin distribution.
+**Tails: is a Student-t worth its cost?** Basketball margins are a little heavier-tailed than Gaussian, most in women's 1. deild. In the ladder, replacing the Student-t by a Gaussian costs the men's fit 24 of leave-one-out density (handball: about 1) and changes no held-out score. In the walk-forward, a Student-t predictive with the same sd and fitted degrees of freedom (8 men, 13 women) improves the regulation-margin log score by +0.0108 ± 0.0040 for men and +0.0063 ± 0.0045 for women, and leaves the result probabilities where they were (men: regulation 1X2 −0.0009 ± 0.0011, final result −0.0003 ± 0.0009; women: −0.0006 ± 0.0005 and −0.0005 ± 0.0005). Variance by division or by mismatch does nothing (largest change +0.0092 ± 0.0089). So the heavier tail sharpens the margin distribution a little and changes no win probability. It is not worth giving up the exact Gaussian fit for; the proposal keeps the Gaussian in the engine and offers the Student-t as a prediction-layer setting for the basketball margin distribution.
 
 ## Leak-free walk-forward
 
@@ -542,67 +548,67 @@ For each cell, the model was refitted at every weekly cutoff from the start of s
 
 | Cell | Scored as | Matches | Margin log score | Total log score | W/D/L log likelihood | Sd of standardised residual: margin / total | 80 % interval covers: margin / total |
 |----|----|----|----|----|----|----|----|
-| Handball men | full time | 926 | −3.1162 | −3.3794 | −0.7385 | 1.08 / 1.00 | 79 % / 80 % |
-| Handball women | full time | 707 | −3.1740 | −3.3470 | −0.6025 | 0.97 / 1.01 | 83 % / 80 % |
-| Basketball men | regulation time, tie shift by division | 1,335 | −4.0653 | −4.2853 | −0.7500 | 0.99 / 1.00 | 83 % / 81 % |
-| Basketball men | final result, through overtime | 1,335 | −4.0546 | −4.3336 | −0.5795 | 0.99 / 1.00 | 83 % / 81 % |
-| Basketball women | regulation time, one tie shift | 962 | −4.2096 | −4.2908 | −0.5850 | 1.05 / 1.02 | 80 % / 80 % |
-| Basketball women | final result, through overtime | 962 | −4.1908 | −4.3098 | −0.4937 | 1.05 / 1.02 | 80 % / 80 % |
+| Handball men | full time | 926 | −3.1148 | −3.3798 | −0.7376 | 1.08 / 1.01 | 79 % / 80 % |
+| Handball women | full time | 707 | −3.1740 | −3.3469 | −0.6025 | 0.97 / 1.01 | 83 % / 80 % |
+| Basketball men | regulation time, tie shift by division | 1,335 | −4.0651 | −4.2853 | −0.7499 | 0.99 / 1.00 | 83 % / 81 % |
+| Basketball men | final result, through overtime | 1,335 | −4.0544 | −4.3338 | −0.5794 | 1.01 / 0.99 | 82 % / 81 % |
+| Basketball women | regulation time, one tie shift | 962 | −4.2089 | −4.2904 | −0.5848 | 1.05 / 1.02 | 80 % / 80 % |
+| Basketball women | final result, through overtime | 962 | −4.1901 | −4.3095 | −0.4935 | 1.05 / 1.02 | 80 % / 80 % |
 
-Per match, integer scale. A standardised residual sd of 1 and a coverage of 80 % mean the predictive spread is right. Handball W/D/L uses the plain rounded margin (no shift). The basketball "final result" rows have two outcomes, not three.
+Per match, integer scale. A standardised residual sd of 1 and a coverage of 80 % mean the predictive spread is right; the 80 % band is the central one of a Gaussian with the predictive's mean and sd. Handball W/D/L uses the plain rounded margin (no shift). The basketball "final result" rows have two outcomes, not three, and their residuals are standardised with the mean and sd of the final-score predictive itself: the regulation margin with its level mass moved through overtime, and the two-part total. A basketball final margin is scored on a distribution with no mass on a level score.
 
 ### By season phase
 
 | Cell | Phase | Matches | Margin log score | Total log score | Result log likelihood | Mean standardised margin residual | Sd of standardised residual: margin / total | Predictive sd of the margin |
 |----|----|----|----|----|----|----|----|----|
-| Handball men | first 6 weeks | 274 | −3.163 | −3.392 | −0.830 | +0.11 | 1.07 / 0.98 | 5.30 |
-| Handball men | middle | 357 | −3.055 | −3.406 | −0.728 | −0.05 | 1.04 / 1.04 | 4.91 |
-| Handball men | last 6 weeks | 275 | −3.159 | −3.313 | −0.671 | −0.02 | 1.15 / 0.96 | 4.87 |
-| Handball men | play-off | 20 | −2.985 | −3.642 | −0.603 | +0.45 | 0.88 / 1.30 | 4.93 |
-| Handball women | first 6 weeks | 195 | −3.209 | −3.376 | −0.675 | +0.06 | 0.87 / 1.01 | 6.79 |
-| Handball women | middle | 328 | −3.198 | −3.360 | −0.562 | −0.09 | 1.03 / 1.03 | 5.74 |
-| Handball women | last 6 weeks | 168 | −3.111 | −3.253 | −0.601 | +0.04 | 0.98 / 0.93 | 5.57 |
-| Handball women | play-off | 16 | −2.904 | −3.727 | −0.577 | −0.31 | 0.75 / 1.40 | 5.34 |
+| Handball men | first 6 weeks | 274 | −3.163 | −3.393 | −0.830 | +0.11 | 1.07 / 0.98 | 5.30 |
+| Handball men | middle | 406 | −3.081 | −3.393 | −0.700 | −0.06 | 1.07 / 1.03 | 4.93 |
+| Handball men | last 6 weeks | 226 | −3.128 | −3.316 | −0.704 | 0.00 | 1.13 / 0.97 | 4.81 |
+| Handball men | play-off | 20 | −2.985 | −3.641 | −0.603 | +0.45 | 0.88 / 1.30 | 4.93 |
+| Handball women | first 6 weeks | 195 | −3.209 | −3.376 | −0.675 | +0.06 | 0.87 / 1.01 | 6.80 |
+| Handball women | middle | 359 | −3.177 | −3.352 | −0.575 | −0.08 | 1.01 / 1.02 | 5.74 |
+| Handball women | last 6 weeks | 137 | −3.148 | −3.250 | −0.574 | +0.05 | 1.02 / 0.94 | 5.55 |
+| Handball women | play-off | 16 | −2.905 | −3.728 | −0.577 | −0.31 | 0.75 / 1.40 | 5.34 |
 | Basketball men | first 6 weeks | 331 | −4.121 | −4.282 | −0.582 | −0.10 | 0.94 / 0.96 | 15.73 |
-| Basketball men | middle | 540 | −4.080 | −4.310 | −0.564 | −0.06 | 1.00 / 1.03 | 14.30 |
-| Basketball men | last 6 weeks | 256 | −4.099 | −4.313 | −0.594 | +0.04 | 1.05 / 1.02 | 13.93 |
-| Basketball men | play-off | 208 | −4.004 | −4.193 | −0.598 | +0.10 | 0.96 / 0.94 | 13.77 |
-| Basketball women | first 6 weeks | 243 | −4.382 | −4.350 | −0.550 | −0.04 | 1.10 / 1.06 | 17.56 |
-| Basketball women | middle | 384 | −4.200 | −4.301 | −0.465 | −0.02 | 1.07 / 1.03 | 15.05 |
-| Basketball women | last 6 weeks | 198 | −4.132 | −4.229 | −0.440 | +0.07 | 1.03 / 0.98 | 14.56 |
-| Basketball women | play-off | 137 | −4.047 | −4.246 | −0.551 | +0.08 | 0.95 / 1.01 | 14.57 |
+| Basketball men | middle | 551 | −4.075 | −4.310 | −0.561 | −0.06 | 1.00 / 1.03 | 14.30 |
+| Basketball men | last 6 weeks | 245 | −4.110 | −4.315 | −0.603 | +0.03 | 1.06 / 1.02 | 13.89 |
+| Basketball men | play-off | 208 | −4.004 | −4.192 | −0.598 | +0.10 | 0.96 / 0.94 | 13.77 |
+| Basketball women | first 6 weeks | 243 | −4.379 | −4.348 | −0.548 | −0.04 | 1.10 / 1.06 | 17.56 |
+| Basketball women | middle | 385 | −4.198 | −4.300 | −0.466 | −0.02 | 1.07 / 1.03 | 15.06 |
+| Basketball women | last 6 weeks | 197 | −4.133 | −4.231 | −0.438 | +0.07 | 1.04 / 0.98 | 14.55 |
+| Basketball women | play-off | 137 | −4.047 | −4.246 | −0.552 | +0.08 | 0.95 / 1.01 | 14.56 |
 
-Phases are weeks of the regular season; a basketball play-off match is one of a pair that meets at least three times within three weeks, handball's are its PO division. The mean standardised margin residual is from the home side's view. The predictive sd is widest in the first six weeks because the new season's level is still uncertain: that is the season-boundary term at work.
+Phases are weeks of the regular season; a basketball play-off match is one of a pair that meets at least three times within three weeks, handball's are its PO division. The last six weeks are counted back from a season's last regular-season week; the season still being played has not reached them, so its matches after week six are in the middle row. For basketball the residual columns are of the regulation-time scores the model is trained on. The mean standardised margin residual is from the home side's view. The predictive sd is widest in the first six weeks because the new season's level is still uncertain: that is the season-boundary term at work.
 
-The spread of the standardised residuals stays close to 1 in every phase, including the last six weeks and the play-offs. If team strength drifted inside a season in a way the static model misses, the late-season residuals would be over-dispersed; they are not, in either sport. This is the check asked for before dropping the within-season term for basketball, where mid-season import changes are the obvious worry.
+If team strength drifted inside a season in a way the static model misses, the residuals would be more spread late in the season than in the middle of it. The sd of the standardised margin residual in the last six weeks is 1.13, 1.02, 1.06, 1.04 (the four cells in the table's order), and its rise over the middle of the season is +0.07 (se 0.07), +0.01 (se 0.07), +0.06 (se 0.06), −0.03 (se 0.06). None of the rises is two standard errors. Where the level is off, it is off all season: handball men's predictive spread is too narrow by 7 to 13 % in every regular-season phase. This is the check asked for before dropping the within-season term for basketball, where mid-season import changes are the obvious worry.
 
 ### Does a within-season term earn its place?
 
 | Cell | Within-season sd (margin model) | Season-level sd | Match sd | Leave-one-out gain from the within-season term | Held-out matches | Held-out margin log score: AR(1) − static | Held-out result log likelihood |
 |----|----|----|----|----|----|----|----|
-| Handball men | 0.42 \[0.09, 1.21\] | 1.70 \[1.07, 2.90\] | 4.77 \[4.60, 4.96\] | +1.8 | 103 | −0.001 ± 0.002 | +0.001 ± 0.002 |
-| Handball women | 1.15 \[0.38, 2.63\] | 4.00 \[2.62, 6.53\] | 5.09 \[4.85, 5.35\] | +2.1 | 64 | −0.010 ± 0.005 | −0.004 ± 0.003 |
-| Basketball men | 5.01 \[3.73, 6.86\] | 4.30 \[2.27, 8.17\] | 13.02 \[12.60, 13.45\] | +11.1 | 130 | −0.005 ± 0.008 | +0.002 ± 0.007 |
+| Handball men | 0.42 \[0.09, 1.21\] | 1.70 \[1.07, 2.90\] | 4.77 \[4.60, 4.96\] | +1.8 | 103 | −0.001 ± 0.003 | 0.000 ± 0.002 |
+| Handball women | 1.15 \[0.38, 2.63\] | 4.00 \[2.62, 6.53\] | 5.09 \[4.85, 5.35\] | +2.1 | 64 | −0.010 ± 0.004 | −0.004 ± 0.003 |
+| Basketball men | 5.01 \[3.73, 6.86\] | 4.30 \[2.27, 8.17\] | 13.02 \[12.60, 13.45\] | +11.2 | 130 | −0.005 ± 0.008 | +0.002 ± 0.007 |
 | Basketball women | 6.60 \[4.96, 8.47\] | 12.11 \[7.97, 18.96\] | 13.27 \[12.76, 13.84\] | +28.0 | 94 | +0.022 ± 0.014 | +0.010 ± 0.010 |
 
 Fixed cutoff 31 January 2026, R-INLA with full hyperparameter integration. The within-season term is a weekly AR(1) around the season level with weekly correlation 0.98; its sd is the size of a team's typical departure from its season level. Median \[5 %, 95 %\].
 
 In handball the within-season sd is half a goal (men) to one goal (women) against a match sd near five, and the term buys nothing. In basketball it is five to seven points, about half the match sd: teams do move within a season, as the import changes would suggest. Whether tracking that movement improves forecasts is what the walk-forward tests.
 
-The weekly correlation of the within-season term is fixed, not estimated, and the data cannot tell 0.90 from 0.98: for the basketball margin model the leave-one-out density stays within −6,827.7 to −6,827.4 (men) and −4,992.0 to −4,991.3 (women) across 0.90, 0.95 and 0.98, and the held-out margin log score within −4.053 to −4.048 and −4.146 to −4.133.
+The weekly correlation of the within-season term is fixed, not estimated, and the data cannot tell 0.90 from 0.98: for the basketball margin model the leave-one-out density stays within −6,827.7 to −6,827.4 (men) and −4,992.0 to −4,991.3 (women) across 0.90, 0.95 and 0.98, and the held-out margin log score within −4.029 to −4.025 and −4.126 to −4.113.
 
 | Cell | Phase | Matches | Margin log score | Total log score | Result log likelihood |
 |----|----|----|----|----|----|
-| Basketball men | all | 715 | +0.0005 ± 0.0020 | +0.0016 ± 0.0024 | +0.0010 ± 0.0016 |
-| Basketball men | first 6 weeks | 203 | +0.0036 ± 0.0030 | −0.0009 ± 0.0055 | +0.0033 ± 0.0018 |
-| Basketball men | middle | 258 | +0.0011 ± 0.0027 | −0.0009 ± 0.0027 | −0.0009 ± 0.0020 |
-| Basketball men | last 6 weeks | 138 | −0.0020 ± 0.0050 | +0.0065 ± 0.0055 | +0.0031 ± 0.0045 |
-| Basketball men | play-off | 116 | −0.0030 ± 0.0072 | +0.0055 ± 0.0068 | −0.0012 ± 0.0064 |
-| Basketball women | all | 496 | +0.0054 ± 0.0052 | +0.0081 ± 0.0033 | +0.0033 ± 0.0035 |
-| Basketball women | first 6 weeks | 150 | +0.0055 ± 0.0114 | +0.0040 ± 0.0051 | +0.0008 ± 0.0071 |
-| Basketball women | middle | 185 | +0.0048 ± 0.0059 | +0.0106 ± 0.0045 | +0.0046 ± 0.0042 |
-| Basketball women | last 6 weeks | 90 | +0.0219 ± 0.0135 | +0.0077 ± 0.0098 | +0.0046 ± 0.0078 |
-| Basketball women | play-off | 71 | −0.0140 ± 0.0154 | +0.0106 ± 0.0109 | +0.0036 ± 0.0127 |
+| Basketball men | all | 715 | +0.0003 ± 0.0020 | +0.0014 ± 0.0024 | +0.0009 ± 0.0016 |
+| Basketball men | first 6 weeks | 203 | +0.0031 ± 0.0030 | −0.0017 ± 0.0054 | +0.0029 ± 0.0018 |
+| Basketball men | middle | 269 | +0.0010 ± 0.0026 | −0.0016 ± 0.0026 | −0.0006 ± 0.0019 |
+| Basketball men | last 6 weeks | 127 | −0.0026 ± 0.0053 | +0.0086 ± 0.0058 | +0.0029 ± 0.0049 |
+| Basketball men | play-off | 116 | −0.0029 ± 0.0074 | +0.0059 ± 0.0069 | −0.0012 ± 0.0066 |
+| Basketball women | all | 496 | +0.0046 ± 0.0053 | +0.0078 ± 0.0033 | +0.0027 ± 0.0035 |
+| Basketball women | first 6 weeks | 150 | +0.0033 ± 0.0115 | +0.0028 ± 0.0055 | −0.0010 ± 0.0071 |
+| Basketball women | middle | 186 | +0.0049 ± 0.0058 | +0.0105 ± 0.0046 | +0.0054 ± 0.0043 |
+| Basketball women | last 6 weeks | 89 | +0.0210 ± 0.0135 | +0.0080 ± 0.0093 | +0.0027 ± 0.0077 |
+| Basketball women | play-off | 71 | −0.0139 ± 0.0154 | +0.0109 ± 0.0112 | +0.0036 ± 0.0128 |
 
 Walk-forward with the within-season AR(1) minus the static model, same matches, seasons 2025 to 2027. Positive favours the within-season term.
 
@@ -610,79 +616,115 @@ By division and season
 
 | Cell | Division | Season | Matches | Margin log score | Total log score | Result log likelihood | Home wins: observed / predicted |
 |----|----|----|----|----|----|----|----|
-| Handball men | G66 | 2023 | 75 | −2.971 | −3.346 | −0.767 | 49 % / 48 % |
+| Handball men | G66 | 2023 | 75 | −2.967 | −3.348 | −0.766 | 49 % / 48 % |
 | Handball men | G66 | 2024 | 76 | −3.430 | −3.498 | −0.868 | 51 % / 50 % |
 | Handball men | G66 | 2025 | 55 | −3.218 | −3.510 | −0.530 | 60 % / 50 % |
-| Handball men | G66 | 2026 | 128 | −3.167 | −3.404 | −0.633 | 49 % / 52 % |
-| Handball men | G66 | 2027 | 48 | −3.288 | −3.411 | −0.583 | 54 % / 50 % |
-| Handball men | OD | 2023 | 107 | −3.001 | −3.320 | −0.891 | 47 % / 48 % |
-| Handball men | OD | 2024 | 115 | −3.091 | −3.329 | −0.669 | 55 % / 51 % |
-| Handball men | OD | 2025 | 112 | −3.004 | −3.319 | −0.882 | 57 % / 52 % |
+| Handball men | G66 | 2026 | 128 | −3.166 | −3.404 | −0.633 | 49 % / 52 % |
+| Handball men | G66 | 2027 | 48 | −3.289 | −3.413 | −0.583 | 54 % / 50 % |
+| Handball men | OD | 2023 | 107 | −2.991 | −3.320 | −0.884 | 47 % / 48 % |
+| Handball men | OD | 2024 | 115 | −3.091 | −3.330 | −0.669 | 55 % / 51 % |
+| Handball men | OD | 2025 | 112 | −3.004 | −3.320 | −0.882 | 57 % / 52 % |
 | Handball men | OD | 2026 | 132 | −3.079 | −3.375 | −0.767 | 48 % / 52 % |
-| Handball men | OD | 2027 | 58 | −3.153 | −3.309 | −0.653 | 52 % / 52 % |
-| Handball men | PO | 2026 | 20 | −2.985 | −3.642 | −0.603 | 75 % / 53 % |
+| Handball men | OD | 2027 | 58 | −3.153 | −3.311 | −0.653 | 52 % / 52 % |
+| Handball men | PO | 2026 | 20 | −2.985 | −3.641 | −0.603 | 75 % / 53 % |
 | Handball women | G66 | 2023 | 62 | −3.522 | −3.494 | −0.577 | 50 % / 48 % |
 | Handball women | G66 | 2024 | 72 | −3.431 | −3.334 | −0.533 | 54 % / 52 % |
 | Handball women | G66 | 2025 | 87 | −3.144 | −3.330 | −0.528 | 47 % / 50 % |
-| Handball women | G66 | 2026 | 83 | −3.195 | −3.269 | −0.718 | 48 % / 50 % |
-| Handball women | G66 | 2027 | 31 | −3.035 | −3.172 | −0.654 | 55 % / 52 % |
+| Handball women | G66 | 2026 | 83 | −3.195 | −3.268 | −0.718 | 48 % / 50 % |
+| Handball women | G66 | 2027 | 31 | −3.035 | −3.173 | −0.654 | 55 % / 52 % |
 | Handball women | OD | 2023 | 72 | −3.199 | −3.485 | −0.540 | 60 % / 53 % |
-| Handball women | OD | 2024 | 72 | −3.182 | −3.104 | −0.626 | 56 % / 53 % |
-| Handball women | OD | 2025 | 84 | −3.003 | −3.339 | −0.630 | 48 % / 51 % |
-| Handball women | OD | 2026 | 84 | −3.081 | −3.392 | −0.627 | 52 % / 51 % |
-| Handball women | OD | 2027 | 44 | −2.926 | −3.427 | −0.619 | 55 % / 56 % |
-| Handball women | PO | 2026 | 16 | −2.904 | −3.727 | −0.577 | 50 % / 54 % |
-| Basketball men | 1D | 2023 | 146 | −4.136 | −4.310 | −0.594 | 55 % / 57 % |
-| Basketball men | 1D | 2024 | 149 | −3.983 | −4.195 | −0.467 | 58 % / 57 % |
-| Basketball men | 1D | 2025 | 156 | −4.048 | −4.346 | −0.614 | 59 % / 57 % |
-| Basketball men | 1D | 2026 | 158 | −4.108 | −4.243 | −0.552 | 55 % / 57 % |
-| Basketball men | 1D | 2027 | 42 | −4.347 | −4.263 | −0.498 | 55 % / 55 % |
-| Basketball men | BD | 2023 | 162 | −4.151 | −4.313 | −0.638 | 54 % / 59 % |
-| Basketball men | BD | 2024 | 163 | −4.038 | −4.271 | −0.571 | 59 % / 57 % |
-| Basketball men | BD | 2025 | 161 | −3.959 | −4.239 | −0.632 | 61 % / 57 % |
-| Basketball men | BD | 2026 | 162 | −4.183 | −4.351 | −0.602 | 62 % / 57 % |
+| Handball women | OD | 2024 | 72 | −3.182 | −3.103 | −0.626 | 56 % / 53 % |
+| Handball women | OD | 2025 | 84 | −3.004 | −3.339 | −0.630 | 48 % / 51 % |
+| Handball women | OD | 2026 | 84 | −3.081 | −3.394 | −0.627 | 52 % / 51 % |
+| Handball women | OD | 2027 | 44 | −2.926 | −3.428 | −0.619 | 55 % / 56 % |
+| Handball women | PO | 2026 | 16 | −2.905 | −3.728 | −0.577 | 50 % / 54 % |
+| Basketball men | 1D | 2023 | 146 | −4.137 | −4.310 | −0.594 | 55 % / 57 % |
+| Basketball men | 1D | 2024 | 149 | −3.983 | −4.194 | −0.467 | 58 % / 57 % |
+| Basketball men | 1D | 2025 | 156 | −4.048 | −4.347 | −0.614 | 59 % / 57 % |
+| Basketball men | 1D | 2026 | 158 | −4.107 | −4.243 | −0.552 | 55 % / 57 % |
+| Basketball men | 1D | 2027 | 42 | −4.346 | −4.261 | −0.497 | 55 % / 55 % |
+| Basketball men | BD | 2023 | 162 | −4.152 | −4.313 | −0.638 | 54 % / 59 % |
+| Basketball men | BD | 2024 | 163 | −4.037 | −4.272 | −0.570 | 59 % / 57 % |
+| Basketball men | BD | 2025 | 161 | −3.959 | −4.239 | −0.631 | 61 % / 57 % |
+| Basketball men | BD | 2026 | 162 | −4.183 | −4.351 | −0.601 | 62 % / 57 % |
 | Basketball men | BD | 2027 | 36 | −3.976 | −4.358 | −0.494 | 56 % / 60 % |
-| Basketball women | 1D | 2023 | 118 | −4.154 | −4.371 | −0.460 | 58 % / 53 % |
-| Basketball women | 1D | 2024 | 93 | −4.809 | −4.433 | −0.529 | 61 % / 53 % |
-| Basketball women | 1D | 2025 | 70 | −4.133 | −4.238 | −0.315 | 61 % / 54 % |
-| Basketball women | 1D | 2026 | 95 | −4.324 | −4.324 | −0.318 | 56 % / 54 % |
-| Basketball women | 1D | 2027 | 28 | −4.750 | −4.191 | −0.684 | 50 % / 40 % |
-| Basketball women | BD | 2023 | 125 | −4.107 | −4.277 | −0.419 | 52 % / 52 % |
-| Basketball women | BD | 2024 | 130 | −4.071 | −4.131 | −0.507 | 61 % / 54 % |
-| Basketball women | BD | 2025 | 136 | −4.057 | −4.347 | −0.625 | 58 % / 56 % |
-| Basketball women | BD | 2026 | 137 | −4.076 | −4.254 | −0.601 | 56 % / 55 % |
-| Basketball women | BD | 2027 | 30 | −4.216 | −4.308 | −0.480 | 53 % / 53 % |
+| Basketball women | 1D | 2023 | 118 | −4.152 | −4.371 | −0.459 | 58 % / 53 % |
+| Basketball women | 1D | 2024 | 93 | −4.807 | −4.429 | −0.530 | 61 % / 53 % |
+| Basketball women | 1D | 2025 | 70 | −4.133 | −4.237 | −0.314 | 61 % / 54 % |
+| Basketball women | 1D | 2026 | 95 | −4.323 | −4.324 | −0.318 | 56 % / 54 % |
+| Basketball women | 1D | 2027 | 28 | −4.747 | −4.191 | −0.681 | 50 % / 40 % |
+| Basketball women | BD | 2023 | 125 | −4.106 | −4.276 | −0.418 | 52 % / 52 % |
+| Basketball women | BD | 2024 | 130 | −4.072 | −4.131 | −0.507 | 61 % / 54 % |
+| Basketball women | BD | 2025 | 136 | −4.057 | −4.348 | −0.625 | 58 % / 56 % |
+| Basketball women | BD | 2026 | 137 | −4.076 | −4.255 | −0.601 | 56 % / 55 % |
+| Basketball women | BD | 2027 | 30 | −4.217 | −4.310 | −0.480 | 53 % / 53 % |
 
 Basketball "predicted" home wins are regulation-time probabilities before the tie shift, so they sit a little above the observed share.
+
+### The walk-forward, run twice
+
+R-INLA returns a fit whether or not its search for the hyperparameter mode succeeded, and the first run of the walk-forward did not record that status. So every walk-forward was run a second time with the status kept. Of 2,138 fits, 4 ended with a status other than 0, by walk-forward: Basketball men (1); Basketball men, within-season AR(1) (1); Basketball men, trained on final scores (1); Basketball women, trained on final scores (1). Each of those was fitted again from a cold start, where the search succeeded, and the refit's predictions replaced the failed fit's: 28 matches, whose expected total moved by up to 0.83 points. The other response of the same cutoffs, whose search had succeeded, was left as it was. The numbers in this report are from the second run with those refits. The first run is kept, and scored by the same scripts, which makes the two a measure of how much a walk-forward depends on the run.
+
+| Walk-forward | Cutoffs | Matches | Expected margin, first run against second: median / largest difference | Matches whose expected margin differs by more than half a goal or point | Expected total: median / largest difference | Cutoffs where some hyperparameter's median differs by more than 25 % |
+|----|----|----|----|----|----|----|
+| Handball men | 133 | 1,125 | 0.003 / 2.26 | 1.4 % | 0.017 / 0.23 | 33 of 133 |
+| Handball women | 136 | 875 | 0.003 / 0.53 | 0.1 % | 0.017 / 0.33 | 51 of 136 |
+| Basketball men | 169 | 1,638 | 0.015 / 0.41 | 0.0 % | 0.059 / 0.88 | 24 of 169 |
+| Basketball women | 162 | 1,177 | 0.022 / 0.89 | 0.5 % | 0.096 / 1.12 | 66 of 162 |
+| Basketball men, within-season AR(1) | 69 | 715 | 0.018 / 0.63 | 0.4 % | 0.057 / 0.78 | 11 of 69 |
+| Basketball women, within-season AR(1) | 69 | 497 | 0.027 / 0.63 | 0.4 % | 0.083 / 0.52 | 19 of 69 |
+| Basketball men, trained on final scores | 169 | 1,638 | 0.017 / 0.68 | 0.1 % | 0.074 / 1.68 | 35 of 169 |
+| Basketball women, trained on final scores | 162 | 1,179 | 0.026 / 1.22 | 0.3 % | 0.067 / 1.09 | 63 of 162 |
+
+Same fitting code, same data, same weekly cutoffs, each fit started from the previous cutoff's mode. The first run was made on 15 and 16 November on a heavily loaded machine, the second on 16 November from a frozen checkout.
+
+| Cell | Score | Matches | First run | Second run | Second minus first | Largest change for one match |
+|----|----|----|----|----|----|----|
+| Handball men | margin | 926 | −3.1162 | −3.1148 | +0.0015 ± 0.0007 | 0.35 |
+| Handball men | total | 926 | −3.3794 | −3.3798 | −0.0004 ± 0.0002 | 0.06 |
+| Handball men | result | 926 | −0.7385 | −0.7376 | +0.0009 ± 0.0009 | 0.46 |
+| Handball women | margin | 707 | −3.1740 | −3.1740 | 0.0000 ± 0.0001 | 0.03 |
+| Handball women | total | 707 | −3.3470 | −3.3469 | +0.0001 ± 0.0003 | 0.08 |
+| Handball women | result | 707 | −0.6025 | −0.6025 | 0.0000 ± 0.0001 | 0.01 |
+| Basketball men | margin | 1,335 | −4.0819 | −4.0817 | +0.0001 ± 0.0001 | 0.03 |
+| Basketball men | total | 1,335 | −4.2853 | −4.2853 | −0.0001 ± 0.0002 | 0.08 |
+| Basketball men | result | 1,335 | −0.7666 | −0.7665 | +0.0001 ± 0.0001 | 0.02 |
+| Basketball women | margin | 962 | −4.2098 | −4.2091 | +0.0007 ± 0.0002 | 0.07 |
+| Basketball women | total | 962 | −4.2908 | −4.2904 | +0.0004 ± 0.0004 | 0.09 |
+| Basketball women | result | 962 | −0.5853 | −0.5850 | +0.0003 ± 0.0001 | 0.07 |
+
+Mean out-of-sample log scores of the plain model, margin and total on the integer scale. Basketball is regulation time.
+
+**What this shows.** The mean scores of a cell move by at most 0.0015 between the runs, far less than any difference this report draws a conclusion from. Single predictions do move: a match's expected margin by up to 2.26, and in 174 of the 600 cutoffs of the four main walk-forwards some hyperparameter's median differs by more than a quarter. What differs is how a team's strength is divided between its long-run club level and its season level with the memory between seasons. With six seasons those are close to interchangeable, so several divisions describe the data about equally well; each weekly fit starts from the previous week's answer and stays with the division it began with. A warm start is not the whole story: a single fit started cold is not always the same either. The margin model of two handball men cutoffs was fitted from a cold start in separate R processes. With R-INLA's defaults, 37 of 44 and 37 of 44 processes gave the most frequent result at the two cutoffs (the others differed by up to 0.003 in an expected margin). With R-INLA's online internal optimisation switched off (`inla.setOption(internal.opt = FALSE)`), 75 of 75 and 75 of 75 did: no difference at all, which points at that option as the source (R-INLA's help says no more about it than "internal online optimisations"). Two whole walk-forwards of handball men with the option off came out identical to the last bit (1,125 of 1,125 predictions identical in every stored number; largest difference in an expected margin 0.000). A status of 0 therefore says the search ended at a mode, not that the mode is the only one. And the four failed searches were all total models of basketball, whose hyperparameters looked like their neighbours': without the status nothing would have singled them out.
 
 ### Against production's stored forecasts
 
 | Cell | Matches | Margin log score: v2 − production | Total log score | Result log likelihood | Mean expected margin: production / v2 / observed | Margin RMSE: production / v2 | Total RMSE: production / v2 |
 |----|----|----|----|----|----|----|----|
-| Handball men | 100 | +0.0424 ± 0.0394 | +0.0742 ± 0.0363 | +0.0132 ± 0.0250 | 1.93 / 0.68 / 0.48 | 6.58 / 5.91 | 7.28 / 6.82 |
-| Handball women | 75 | +0.0435 ± 0.0429 | +0.0701 ± 0.0326 | +0.0087 ± 0.0358 | 2.41 / 0.97 / 1.11 | 5.12 / 4.15 | 7.32 / 6.95 |
-| Basketball men | 96 | +0.0222 ± 0.0364 | +0.0032 ± 0.0226 | −0.0292 ± 0.0196 | 4.50 / 3.74 / 2.22 | 14.93 / 15.17 | 18.54 / 18.05 |
-| Basketball women | 67 | +0.0843 ± 0.0821 | +0.0074 ± 0.0412 | +0.0541 ± 0.0425 | 2.62 / −1.23 / 2.07 | 21.16 / 20.85 | 18.18 / 17.54 |
-| **Handball, both sexes** | 175 | +0.0429 ± 0.0290 | +0.0725 ± 0.0249 | +0.0113 ± 0.0209 |  |  |  |
-| **Basketball, both sexes** | 163 | +0.0477 ± 0.0399 | +0.0049 ± 0.0215 | +0.0050 ± 0.0211 |  |  |  |
+| Handball men | 100 | +0.0421 ± 0.0394 | +0.0730 ± 0.0365 | +0.0130 ± 0.0251 | 1.93 / 0.68 / 0.48 | 6.58 / 5.91 | 7.28 / 6.83 |
+| Handball women | 75 | +0.0435 ± 0.0429 | +0.0691 ± 0.0326 | +0.0087 ± 0.0358 | 2.41 / 0.97 / 1.11 | 5.12 / 4.15 | 7.32 / 6.96 |
+| Basketball men | 96 | +0.0002 ± 0.0364 | +0.0042 ± 0.0226 | −0.0291 ± 0.0195 | 4.50 / 3.74 / 2.22 | 14.93 / 15.17 | 18.54 / 18.03 |
+| Basketball women | 67 | +0.0655 ± 0.0823 | +0.0057 ± 0.0409 | +0.0549 ± 0.0426 | 2.62 / −1.22 / 2.07 | 21.16 / 20.84 | 18.18 / 17.57 |
+| **Handball, both sexes** | 175 | +0.0427 ± 0.0290 | +0.0713 ± 0.0250 | +0.0112 ± 0.0209 |  |  |  |
+| **Basketball, both sexes** | 163 | +0.0270 ± 0.0400 | +0.0048 ± 0.0214 | +0.0054 ± 0.0211 |  |  |  |
 
-Production's forecast is the newest archived fit dated strictly before the match (median lead two to three days); v2's cutoff is up to seven days before the match, so v2 is the one working with older information. The stored forecasts cover late April to May 2026 and September to November 2026. Basketball is scored on the final result; v2 reaches it from its regulation-time model through the tie probability and overtime. Positive differences favour v2.
+Production's forecast is the newest archived fit dated strictly before the match; v2's cutoff is one to seven days before it. Neither always has the newer information: of the 338 matches, production's forecast was the older one in 136, v2's in 164, and they were the same age in 38 (production's fit was more than seven days old in 23). The stored forecasts cover late April to May 2026 and September to November 2026. Basketball is scored on the final result; v2 reaches it from its regulation-time model through the tie probability (a shift per division for men, one shift for women) and overtime. A final basketball margin cannot be level, so production's draws within half a point of level are set aside and the rest renormalised; handball margins are scored on the rounded predictive for both forecasters. Positive differences favour v2.
 
-**What this supports.** One difference is clear: the handball total (2.9 standard errors). The handball margin (1.5 standard errors) and result (0.5) point the same way and are within noise. No basketball difference, per cell or pooled, is larger than 1.5 standard errors: basketball is level within noise. So against production's stored forecasts v2 is better on handball totals, and not shown to be better or worse on anything else.
+**What this supports.** One difference is clear: the handball total (2.8 standard errors). The handball margin (1.5 standard errors) and result (0.5) point the same way and are within noise. No basketball difference, per cell or pooled, is larger than 1.5 standard errors: basketball is level within noise. So against production's stored forecasts v2 is better on handball totals, and not shown to be better or worse on anything else.
 
-In handball production expects the home side to win by 2.14 goals on average over these matches; v2 expects 0.80 and the result was 0.75. That is the home-advantage inflation showing up in the published numbers.
+In handball production expects the home side to win by 2.14 goals on average over these matches; v2 expects 0.81 and the result was 0.75. That is the home-advantage inflation showing up in the published numbers.
 
 ### Against the Lengjan line
 
 | Cell | Priced matches | Period | Market 1X2 log likelihood | v2 | v2 − market | Where production's forecast exists: market / production / v2 |
 |----|----|----|----|----|----|----|
-| Handball men | 65 | 04 Mar 2026 to 13 Nov 2026 | −0.712 | −0.698 | +0.0145 ± 0.0244 | n = 41: −0.650 / −0.602 / −0.601 |
-| Basketball men | 10 | 29 Apr 2026 to 18 May 2026 | −0.768 | −0.783 | −0.0146 ± 0.0607 | n = 10: −0.768 / −0.798 / −0.783 |
-| Basketball women | 10 | 04 Mar 2026 to 17 May 2026 | −0.909 | −0.979 | −0.0699 ± 0.1087 | n = 6: −0.818 / −0.836 / −0.749 |
+| Handball men | 65 | 04 Mar 2026 to 13 Nov 2026 | −0.712 | −0.698 | +0.0145 ± 0.0245 | n = 41: −0.650 / −0.602 / −0.601 |
+| Basketball men | 10 | 29 Apr 2026 to 18 May 2026 | −0.768 | −0.848 | −0.0797 ± 0.0594 | n = 10: −0.768 / −0.798 / −0.848 |
+| Basketball women | 10 | 04 Mar 2026 to 17 May 2026 | −0.909 | −0.965 | −0.0562 ± 0.0920 | n = 6: −0.818 / −0.836 / −0.754 |
 
-Proportionally de-vigged 1X2, last scrape on or before match day. Handball is full time; basketball is regulation time, where production has no draw probability of its own, so its column uses the ±0.5 band. Odds exist for few matches: the handball men's sample is small and the basketball samples are too small to read.
+Proportionally de-vigged 1X2, last scrape on or before match day. Handball is full time; basketball is regulation time, where production has no draw probability of its own, so its column uses the ±0.5 band. v2 is the proposed variant for the cell, the same as in every other table: the plain rounded margin for handball; for basketball the regulation 1X2 with the level-score shift, per division for men and one shift for women. Odds exist for few matches: the handball men's sample is small and the basketball samples are too small to read.
 
-Compute: 600 weekly cutoffs, two R-INLA fits each (margin and total), median 6.5 s per cutoff for both fits together, single core per cell, four cells side by side inside one slot of the shared limiter while a sibling session's job held the other slot. Like every time in this report it was taken on a shared machine: good for the ratio to the production fits, not a benchmark.
+Compute: 600 weekly cutoffs, two R-INLA fits each (margin and total), median 5.6 s per cutoff for both fits together, single core per cell, four cells side by side inside one slot of the shared limiter while a sibling session's job held the other slot. Like every time in this report it was taken on a shared machine: good for the ratio to the production fits, not a benchmark.
 
 ## Cutover proposal
 
@@ -703,33 +745,38 @@ This is a proposal. Nothing below has been done to the production path; each ste
 - Final result = regulation result, or overtime when level; overtime as a five-minute continuation (which the data so far cannot tell from a coin flip).
 - Both regulation-time and final-result probabilities come out of one fit.
 
-Within-season movement: handball does not need it (within-season sd half a goal to one goal, no gain). In basketball the fitted within-season sd is five to seven points and leave-one-out improves by 11 (men) and 28 (women). Over 1,211 walk-forward matches (seasons 2025 to 2027, both sexes) the AR(1) form changes the margin log score by +0.0025 ± 0.0025, the total by +0.0042 ± 0.0020 and the regulation 1X2 log likelihood by +0.0019 ± 0.0017 per match against the static form. The gain sits in 1. deild (549 matches: margin +0.0103 ± 0.0040, total +0.0057 ± 0.0028, 1X2 +0.0055 ± 0.0027) and is nil in Bónusdeild. It is small, never negative when pooled, and costs about ten more seconds of fitting (timed on the shared machine), so the term is kept for basketball; the static form is the fallback. Stan stays in the repository as the reference: the same v2 model in `docs/reports/2026-11-15-hb-bb-v2/stan/v2_margin.stan` and `v2_total.stan`, to be run weekly during the shadow period.
+Within-season movement: handball does not need it (within-season sd half a goal to one goal, no gain). In basketball the fitted within-season sd is five to seven points and leave-one-out improves by 11 (men) and 28 (women). Over 1,211 walk-forward matches (seasons 2025 to 2027, both sexes) the AR(1) form changes the margin log score by +0.0021 ± 0.0025, the total by +0.0040 ± 0.0020 and the regulation 1X2 log likelihood by +0.0016 ± 0.0017 per match against the static form. The gain sits in 1. deild (549 matches: margin +0.0097 ± 0.0040, total +0.0051 ± 0.0028, 1X2 +0.0052 ± 0.0027) and is nil in Bónusdeild. It is small, never negative when pooled, and costs about ten more seconds of fitting (timed on the shared machine), so the term is kept for basketball; the static form is the fallback. Stan stays in the repository as the reference: the same v2 model in `docs/reports/2026-11-15-hb-bb-v2/stan/v2_margin.stan` and `v2_total.stan`, to be run weekly during the shadow period.
 
 ### What changes, layer by layer
 
 | Layer | Where | Change | Stored or published contract |
 |----|----|----|----|
-| Config | `config/leagues.yml`, `config/leagues.schema.json` | A per-league `engine` key (`stan` by default, `inla_v2` for the cutover). The schema requires `stan_model` today; it becomes required only for the Stan engine. | none |
-| Fit entry | `R/model-league.R` (`fit_league()`) | After `prepare_data()`, branch on the engine: `build_v2_data()` from the same training rows and prediction fixtures, two `fit_v2_inla()` calls with joint posterior samples, then the two outputs below. `fit_league()` currently stops if `stan_model` is missing. | none |
-| Diagnostics | `R/model-fit.R` (`persist_fit_diagnostics()`), `R/health.R` | An R-INLA fit has no divergences or R-hat. Write a row with `n_obs` (which `needs_refit()` depends on) and engine-specific gates: optimiser converged, no hyperparameter at a bound, home advantage and sds inside sanity ranges, change from yesterday's fit below a threshold. The health check reads `div_frac` and `max_rhat` and must accept their absence for this engine. | new diagnostics shape |
-| Beliefs | `R/model-posteriors.R` (`extract_posteriors()`) | Same columns (`draw_id`, `home_goals`, `away_goals`), filled by `v2_sample_scores()`: whole numbers, margin and total on the same parity, 4,000 draws. | none (values become whole numbers) |
-| Extract | `R/extract-iceland-2dt-shared.R`, `R/extract-strength-trajectory.R` | **No code change in phase 1.** `v2_as_attack_defence()` expresses the v2 draws under the Stan variable names the extract reads (`cur_offense_*`, `cur_defense_*`, `home_advantage_off/def/tot`, `offense[r,k]`, `defense[r,k]`, `mean_goals`, `sigma`, `rho`, `nu`), exactly: attack = (net + level) / 2, defence = (net − level) / 2. The strength trajectory is then flat within a season and steps at the season boundary. | none |
-| Season simulation | `R/simulate-2dt.R` | Phase 1: unchanged; the existing bivariate draw with a very large `nu` is the v2 Gaussian (tested). Phase 2: draw whole-number scores with the tie shift, and for basketball regulation time then overtime, so the simulated league tables use the same result model as the match forecasts. New-team draws come from the club-level and season-level priors. | none in phase 1 |
-| Publish | `R/publish-iceland-league.R`, `R/publish-next-games.R` | **JSON contract unchanged.** Two meanings shift and should be stated on the site: a team's home advantage for attack and for defence become equal halves of one number, and attack / defence strength become the sum and difference of net strength and scoring level. The handball `p_draw` stays the band in phase 1. | none |
-| Decide | `R/decide-kelly.R` | Unchanged: it reads the same three columns, and its ±0.5 band on whole-number scores is exactly "level score". Regulation-time basketball betting, if it resumes, needs regulation-time draws as two further columns. | none |
+| Config | `config/leagues.yml`, `config/leagues.schema.json` | Main already has an optional per-league `engine` key (`stan` by default, `inla` for football v2, merged with PR \#104). Handball and basketball would use the same key. `stan_model` stays required for every league: `fit_league()` checks that the Stan file exists before it reads the key. | none |
+| Fit entry | `R/model-league.R` (`fit_league()`) | `fit_league()` branches on `engine` for football. A handball / basketball branch is not written: after `prepare_data()` it would call `build_v2_data()` on the same training rows and prediction fixtures, make two `fit_v2_inla()` calls with joint posterior samples, and hand over the outputs below. | none |
+| Diagnostics | `R/model-fit.R` (`persist_fit_diagnostics()`), `R/health.R` | An R-INLA fit has no divergences or R-hat. Write a row with `n_obs` (which `needs_refit()` depends on) and engine-specific gates: mode status 0 (`fit_v2_inla()` now returns it), no hyperparameter at a bound, home advantage and sds inside sanity ranges, change from yesterday's fit below a threshold. Main's football engine has such a gate (`fv2_inla_gate()`). The health check reads `div_frac` and `max_rhat` and must accept their absence for this engine. | new diagnostics shape |
+| Beliefs | `R/model-posteriors.R` (`extract_posteriors()`) | **Handball:** the same columns (`draw_id`, `home_goals`, `away_goals`) can be filled by `v2_sample_scores()`: whole numbers, margin and total on the same parity. The sampler is unit-tested; its joint scores were not evaluated in the walk-forward. **Basketball: not possible yet.** The model is trained on regulation time, so `v2_sample_scores()` draws regulation-time scores and about 7 % of men's top-division draws are level. It has no overtime step. Final-score draws need one that is not written: send each level draw through the overtime model and add the overtime points. | none for handball (values become whole numbers); basketball blocked on the overtime step |
+| Extract | `R/extract-iceland-2dt-shared.R`, `R/extract-strength-trajectory.R` | **Needs code.** The extract reads a cmdstanr fit by variable name: `cur_offense_home/away`, `cur_defense_home/away`, `cur_strength_home/away`, `home_advantage_off/def/tot`, and for the trajectory the per-round `offense[r, k]` and `defense[r, k]`. `v2_as_attack_defence()` returns seven arrays: `offense`, `defense`, `home_advantage_off`, `home_advantage_def`, `mean_goals`, `sigma`, `rho`. It does not supply the `cur_*` variables, `home_advantage_tot` or anything indexed by round, and it returns arrays, not a fit object. So the extract needs an engine branch that takes those arrays, or a wrapper that builds the missing names from them (a per-round array has no v2 counterpart: the state is per season, or per week in the AR(1) form). What is written and tested is the rotation itself: attack = (net + level) / 2, defence = (net − level) / 2. | none, after new code |
+| Season simulation | `R/simulate-2dt.R` | **Needs an input adapter that is not written.** `.extract_sim_inputs_2dt()` pulls from the fit `nu`, `mean_goals`, `delta_mean_goals` and `sigma_mean_goals`; for handball the per-team `sigma_team` with `mean_sigma_team`, `scale_sigma_team` and `rho`; for basketball `sigma` and `alpha_rho`, `beta_rho`, `beta2_rho`, `beta3_rho`. The sport match functions use those, not the adapter's `sigma` (handball) or `rho` (basketball). By the algebra there are values that reproduce the v2 Gaussian (every `sigma_team` equal to the adapter's sigma and no spread; `alpha_rho` the logit of (rho + 1) / 2 with the three slopes at zero; a very large `nu`), and a test shows that the simulator's bivariate draw has the v2 predictive when given sigma and rho directly; nothing writes those inputs yet and the mapping is untested. For basketball the simulator would then draw continuous final scores from a regulation-time model, ignoring the level-score surplus and overtime; what that does to a simulated table was not measured. | none, after new code |
+| Publish | `R/publish-iceland-league.R`, `R/publish-next-games.R` | **JSON contract unchanged, once the beliefs and extract above exist.** Two meanings shift and should be stated on the site: a team's home advantage for attack and for defence become equal halves of one number, and attack / defence strength become the sum and difference of net strength and scoring level. The handball `p_draw` stays the band in phase 1. **Basketball cannot publish from regulation-time draws:** its publish profile has `has_ties = FALSE`, so the extract takes the home win probability as the share of draws with a positive margin and the away one as the share with a negative margin, and the standings rule gives a level draw to the away side. Level draws would vanish from the two probabilities and count as away wins in the simulated tables. Basketball has to publish from final-score draws (the overtime step) or from `v2_basketball_result_probs()` directly. | none |
+| Decide | `R/decide-kelly.R` | Handball: unchanged; it reads the same three columns, and its ±0.5 band on whole-number scores is exactly "level score". Regulation-time basketball betting, if it resumes, needs regulation-time draws as two further columns. | none |
 | Basketball ingest | `R/ingest-kki-basketball.R`, `R/storage-schemas.R` | Keep the game id the export already carries; fetch the game card once per newly finished game; store regulation-time scores as two nullable columns in `results`. Backfill from the 3,283 cards already parsed. | two new nullable columns |
-| CI | `.github/workflows/fit.yml`, `ci-tests.yml` | Install R-INLA from its own repository (it is not on CRAN). CmdStan is still needed for football and for the weekly Stan reference. On the times taken here (shared machine, not a benchmark) the four handball and basketball fits would drop from the bulk of a two-hour job to about a minute. | none |
-| Tests | `tests/testthat/` | The tests that pin Stan variable names keep passing in phase 1, because the adapter emits those names. New: a stub fit for the R-INLA engine, the adapter and prediction-layer tests already on this branch, and an engine-agnostic contract test on the extract outputs. | none |
+| CI | `.github/workflows/fit.yml`, `ci-tests.yml` | Main's INLA Engine workflow already installs R-INLA and runs every test file that reaches it through `skip_if_no_inla()`, this branch's included. The fit workflow would need the same install step. CmdStan is still needed for football and for the weekly Stan reference. On the times taken here (shared machine, not a benchmark) the four handball and basketball fits would drop from the bulk of a two-hour job to about a minute. | none |
+| Tests | `tests/testthat/` | The tests that pin Stan variable names keep passing only if the wrapper above emits those names. New: a stub fit for the R-INLA engine, the adapter and prediction-layer tests already on this branch, and an engine-agnostic contract test on the extract outputs. | none |
 
-File and line references behind this table came from a read-only map of the fit, extract, publish and decide code on this branch; the entry point, the extract's draw pulls and the simulator's match function were re-read directly. The two-phase split keeps the engine swap separable from any change to what the site shows.
+The first version of this table said the extract and the simulator needed no code in phase 1 and that the adapter supplied the names they read. That was wrong: the rows above were rewritten after reading what `R/extract-iceland-2dt-shared.R`, `R/extract-strength-trajectory.R`, `R/simulate-2dt.R` and `R/publish-iceland-2dt-helpers.R` pull from a fit. Nothing in this table is built; the cutover is not approved.
+
+So the engine swap is more work than first stated. Written and tested on this branch: the fitter, the prediction layer, the attack / defence rotation. Not written: the fit branch, the wrapper or branch that feeds the extract, the simulator's input adapter, and for basketball the overtime step that turns regulation-time draws into final scores. The shadow period below does not need any of these, because it scores forecasts and publishes nothing.
 
 ### Engine risks found on the way
 
+- **A fit is returned whether or not the mode search succeeded.** R-INLA reports the status of its search for the hyperparameter mode and returns a fit either way. `fit_v2_inla()` did not read it. It now returns it, warns unless it is 0, and every script stores it. Every R-INLA fit behind this report was run again with the status recorded: 2,138 walk-forward fits and 46 others. 4 of the walk-forward fits and 0 of the others ended with a status other than 0. The failed ones were total models of basketball walk-forwards; fitted again from a cold start their search succeeded, and those refits replaced them (28 matches, expected total moved by up to 0.83 points). `wf_inla.R` now does that by itself. The walk-forward numbers in this report are those of that second run. Whether the first run had failed searches cannot be known: it did not keep the status.
+- **A successful search is not a unique answer.** The second run of the walk-forward used the same code path for the fits and the same data as the first, and the two do not give the same predictions. Over the four main walk-forwards a match's expected margin differs between the runs by 0.003 to 0.022 goals or points at the median and by up to 2.26; in 174 of 600 cutoffs some hyperparameter's median differs by more than a quarter. The scores hardly move: the mean margin, total and result scores of a cell change by at most 0.0015 between the runs ([table in the walk-forward section](#leak-free-walk-forward)). What moves is how a team's strength is split between the club level and the season level with its memory. With six seasons the two are close to interchangeable, each weekly fit starts from last week's answer, and a run stays with the split it began with. For a daily production fit this means a team's published strength components can differ between two equally good descriptions of the same data. The gate on the change from yesterday's fit would trip on it. Whether to start every fit cold, to integrate over the hyperparameters, or to fix the split has to be settled before a cutover, and the shadow period should record the day-to-day movement of the published numbers.
+- **Reproducibility: a cause and a proposal, not applied.** With R-INLA's defaults a fit started cold does not always come out the same in two R processes: 37 of 44 processes and 37 of 44 processes gave the most frequent result at the two cutoffs tested. With R-INLA's online internal optimisation switched off (`inla.setOption(internal.opt = FALSE)`), 75 of 75 and 75 of 75 did, and two whole walk-forwards of handball men came out identical (1,125 of 1,125 predictions identical in every stored number). Proposed: switch that option off for the duration of a fit inside `fit_v2_inla()` and restore the caller's setting afterwards, so that a refit on unchanged data returns the same numbers and a gate on the change from yesterday's fit measures the data and not the run. What it costs: the fits with the option off took 0.83 times as long at the median (both sets were timed on the shared machine, so this is a ratio and not a benchmark), and their expected margins differ from the default run's by 0.003 at the median and by up to 0.35. It does not make the mode unique; it makes the choice between equally good descriptions repeatable. No reported number comes from a fit with the option off. The football engine on main calls R-INLA with its defaults and four threads; the same check is recommended there before its switch.
 - **Starting values.** From R-INLA's default starting precision (an sd of 0.14) the optimiser settled, for men's basketball totals, in a mode with the team effects switched off: a fit that converges and is wrong. `fit_v2_inla()` starts every sd at a fifth of its prior bound, and the proposed diagnostics gate checks that no sd sits at a bound.
 - **Constraints are what cost time.** A within-season random walk that sums to zero needs one linear constraint per team-season (over a hundred), and R-INLA then takes 40 to 60 s per fit against 5 s for the static form. The AR(1) form needs none and takes about 15 s. All three were timed on the shared machine: ratios, not benchmarks.
 - **Weakly identified variances.** R-INLA's hyperparameter posterior is narrower than NUTS's where the data cannot separate club, season and within-season variance. Forecasts are unaffected; published interval widths for individual team strengths are within a few per cent at the median but differ more for some teams.
 - **NUTS has its own trouble with this model.** The season walk of the total model has six steps; in its centred form NUTS produced up to 75 divergences, and it was re-parameterised. R-INLA integrates that variance numerically and has no such failure.
-- **Priors can be dropped silently.** R-INLA ignores a hyperparameter specification it cannot read from the model term and fits with its defaults, without a warning (found the same night by the national-team session). `fit_v2_inla()` was checked against the fitted object: every prior, starting value and fixed value is the one stated, and a test now asserts it.
+- **Priors can be dropped silently.** R-INLA ignores a hyperparameter specification it cannot read from the model term and fits with its defaults, without a warning (found the same night by the national-team session). `fit_v2_inla()` was checked against the fitted object, and three tests now read the specifications back from it: the PC prior and starting value of every sd in the margin and the total model (observation, club, season, team home advantage, the division level's season walk, both within-season forms), the prior on the season-to-season correlation, the fixed weekly correlation of the AR(1) form, and the normal priors on the home advantage and on the division intercepts. Each fails when the corresponding specification is changed or dropped.
 - **Not bit-reproducible between runs.** The eight plug-in fits behind [What the data ask of the likelihood](#what-the-data-ask-of-the-likelihood) were run 6 times in separate R processes on the same data (the original run, the rerun that stored the dispersion table, and four repeats). 46 of the 48 results were bit-identical with the most frequent one; 2 were not, each in a different run: the margin model for handball men (fitted values up to 0.06 goals from the usual result; home advantage 0.653 against 0.659, with a posterior sd of 0.15; the median of the club-level sd 5.06 against 5.09) and the total model for basketball women (fitted values up to 0.11 points from the usual result; the median of the sd of the division level's walk over seasons 3.18 against 3.53). The cause was not investigated. The shifts are a small fraction of a posterior sd, but they mean that a refit on unchanged data can move a published number in the second decimal, which the proposed gate on the change from yesterday's fit has to allow for, and that a rerun of the walk-forward need not reproduce its scores to the last digit. The stored `descriptives.rds` is a run in which every fit is the most frequent result.
 - **Installation.** R-INLA is not on CRAN and ships its own binary; the version should be pinned in CI as CmdStan is.
 
@@ -755,7 +802,7 @@ Recommended: store regulation-time scores. They are available for 99.7 % of stor
 4.  **Men's handball draws.** Publish with the plain rounded margin (today's band), or switch the draw shift on at a shrunk value? The surplus of level scores is there, but it has not yet paid out of sample.
 5.  **Home advantage on the site.** v2 has one home advantage per team for the margin. The published attack and defence components would be equal halves of it. Acceptable, or should the site show one number?
 6.  **Regulation-time forecasts for basketball.** Publish them alongside the final-result forecast (a contract addition, needs a matching change in metill-platform), or keep them internal for now?
-7.  **Package metadata.** The branch edits `DESCRIPTION`: five `Collate` entries for the new R files, added by `devtools::document()`. R-INLA is *not* yet declared in `Suggests` (its tests skip where it is missing), and it is not on CRAN, so declaring it also means an `Additional_repositories` entry and a pinned install in CI. Keep the Collate entries when the branch merges, and declare R-INLA now or only at cutover?
+7.  **Package metadata.** The branch edits `DESCRIPTION`: five `Collate` entries for the new R files, added by `devtools::document()`. `Matrix` is declared on main and came in with the merge. R-INLA is declared nowhere: the football cutover approved "INLA under Suggests, version pinned" and that is not done on main yet. Proposed: declare it once, with that cutover, together with the `Additional_repositories` entry; this branch then needs nothing of its own, and its R-INLA tests already run in main's INLA Engine workflow. Keep the Collate entries when the branch merges?
 
 ## Appendix
 
@@ -777,8 +824,13 @@ Rscript -e 'source("docs/reports/2026-11-15-hb-bb-v2/wf_compare.R")'     
 Rscript -e 'source("docs/reports/2026-11-15-hb-bb-v2/inla_validate.R")'         # R-INLA at the fixed cutoff\
 Rscript -e 'source("docs/reports/2026-11-15-hb-bb-v2/compare_validation.R")'    # against the Stan reference\
 docs/reports/2026-11-15-hb-bb-v2/repro_descriptives.sh && Rscript -e 'source("docs/reports/2026-11-15-hb-bb-v2/repro_descriptives.R")'   # repeat runs, compared\
+Rscript -e 'source("docs/reports/2026-11-15-hb-bb-v2/cold_start_check.R")' 1   # one fit from a cold start; repeat with 2, 3\
+Rscript -e 'source("docs/reports/2026-11-15-hb-bb-v2/wf_status.R")'            # mode status; the two runs compared\
+Rscript -e 'source("docs/reports/2026-11-15-hb-bb-v2/review_corrections.R")'   # old value beside new\
 Rscript -e 'source("docs/reports/2026-11-15-hb-bb-v2/ladder_summary.R")'\
 Rscript -e 'source("docs/reports/2026-11-15-hb-bb-v2/build_report.R")'
+
+The stored results were computed against the data and the config of the branch point (commit 67fcb6baa). Main has since been merged into the branch, and its `data/` holds newer results and a pruned forecast archive, so the scripts that read data (`prep.R`, `wf_inla.R`, `descriptives.R`, `wf_compare.R`, `kki_periods.R`, `cold_start_check.R`) reproduce the stored results only from a checkout of the last commit before the merge, or with `HBBB_DATA` pointing at that checkout's `data/`.
 
 ### What is on the branch
 
@@ -810,6 +862,68 @@ Every number in this report is read from a result file under `/Users/brynjolfurj
 | v2 and production against the Lengjan line | `out/wf_compare.rds` | `[[cell]]$market`: `ll_market`, `ll_v2`, `ll_prod` |
 | Regulation-time coverage (99.7 %), overtime shares (7.1 % in men's Bónusdeild) | `kki/periods_matched.rds` (parsed cards: `kki/periods.tsv`, raw cards: `kki/raw/`) | one row per stored game: `ok`, `overtime`, `home_reg`, `away_reg`, `sex`, `division` |
 | Run-to-run reproducibility of the R-INLA plug-in fits | `out/repro_descriptives.rds` (from the runs kept in `repro/run_*/out/descriptives.rds`) | `$fits` (per cell and response: `n_runs`, `n_modal`, `max_abs_fitted_diff`, `hyper_q50_modal`, `hyper_q50_other`), `$hfa` |
+| Mode status of every fit; the two runs of the walk-forward against each other; cold-start fits in separate processes | `out/wf_status.rds` (first run: `out/first-run/`; cold starts: `out/cold_start_*.rds`) | `$wf` (per walk-forward: `fits`, `status_not_zero`, differences between the runs), `$scores`, `$other` (status of the fits outside the walk-forward), `$cold` |
+| Old value beside new for every number the review changed | `out/review_corrections.rds` (published results: `out/at-84b9e6e5b/`) | one row per quantity: `published`, `corrected` (same predictions, corrected scripts), `final` (second run) |
 | Package tests | `logs/full_tests.log` | summary reporter output of `devtools::test()` |
 
 Cells are `hb_m`, `hb_f`, `bb_m`, `bb_f`. The printed tables behind every section are also kept as text in `logs/`: `diag_prod.log`, `ladder_summary.log`, `compare_validation.log`, `wf_score.log`, `wf_compare.log`, `descriptives.log`, `kki_periods.log`.
+
+### Corrected after review
+
+An independent review of this report on 16 November confirmed 24 defects. Where a number changed, the old value is beside the new one. "Published" is the report as first reviewed; "corrected" is the same walk-forward predictions scored by the corrected scripts, so published against corrected is the effect of a fix; "final" is the second run of the walk-forward, so corrected against final is the effect of running the fits again.
+
+| Finding | Quantity | Published | Corrected | Final |
+|----|----|----|----|----|
+| 1 | v2 minus production's stored forecast, final-margin log score, basketball men | +0.0222 (se 0.0364) | -0.0004 (se 0.0364) | +0.0002 (se 0.0364) |
+| 1 | v2 minus production's stored forecast, final-margin log score, basketball women | +0.0843 (se 0.0821) | +0.0641 (se 0.0823) | +0.0655 (se 0.0823) |
+| 1 | the same, basketball pooled | +0.0477 (se 0.0399) | +0.0261 (se 0.0400) | +0.0270 (se 0.0400) |
+| 1 | for reference, handball pooled (not affected by the fix) | +0.0429 (se 0.0290) | +0.0429 (se 0.0290) | +0.0427 (se 0.0290) |
+| 10 | regulation + overtime minus the final-score model, final-margin log score, basketball men | +0.0308 (se 0.0023) | +0.0077 (se 0.0023) | +0.0079 (se 0.0023) |
+| 10 | regulation + overtime minus the final-score model, final-margin log score, basketball women | +0.0202 (se 0.0013) | +0.0022 (se 0.0013) | +0.0032 (se 0.0013) |
+| 1, 10 (ladder) | ladder, held-out margin log score of production, basketball men | -4.0771 | -4.0531 | -4.0531 |
+| 1, 10 (ladder) | ladder, v2 static (R-INLA, full) minus production, held-out margin, basketball men | +0.0289 (se 0.0207) | +0.0282 (se 0.0207) | +0.0282 (se 0.0207) |
+| 1, 10 (ladder) | ladder, held-out margin log score of production, basketball women | -4.1579 | -4.1370 | -4.1370 |
+| 1, 10 (ladder) | ladder, v2 static (R-INLA, full) minus production, held-out margin, basketball women | -0.0100 (se 0.0286) | -0.0112 (se 0.0286) | -0.0109 (se 0.0286) |
+| 11 | matches labelled last 6 weeks (of which from the unfinished season), handball men | 275 (49) | 226 (0) | 226 (0) |
+| 11 | sd of the standardised margin residual in the last 6 weeks, handball men | 1.149 | 1.133 | 1.133 |
+| 11 | matches labelled last 6 weeks (of which from the unfinished season), handball women | 168 (31) | 137 (0) | 137 (0) |
+| 11 | sd of the standardised margin residual in the last 6 weeks, handball women | 0.977 | 1.019 | 1.018 |
+| 11 | matches labelled last 6 weeks (of which from the unfinished season), basketball men | 256 (11) | 245 (0) | 245 (0) |
+| 11 | sd of the standardised margin residual in the last 6 weeks, basketball men | 1.047 | 1.060 | 1.060 |
+| 11 | matches labelled last 6 weeks (of which from the unfinished season), basketball women | 198 (1) | 197 (0) | 197 (0) |
+| 11 | sd of the standardised margin residual in the last 6 weeks, basketball women | 1.034 | 1.037 | 1.036 |
+| 12 | matches where v2's forecast is the older one / production's / same age | stated as: v2 always the older | 164 / 136 / 38 of 338 | 164 / 136 / 38 of 338 |
+| 13 | v2 regulation 1X2 log likelihood on the Lengjan-priced matches, basketball men | -0.7827 (n 10) | -0.8478 (n 10) | -0.8477 (n 10) |
+| 13 | v2 regulation 1X2 log likelihood on the Lengjan-priced matches, basketball women | -0.9789 (n 10) | -0.9663 (n 10) | -0.9652 (n 10) |
+| 19 | largest difference from Stan in a held-out match's expected value: full / plug-in | 0.45 (plug-in 0.66 not shown) | 0.45 / 0.66 | 0.43 / 0.66 |
+| 21 | level games in men's Bonusdeild against the smooth curve: odds ratio / rate ratio the shift implies / observed | 3.4 printed as the rate ratio | 3.4 / 3.2 / 3.0 | 3.4 / 3.2 / 3.0 |
+| 21 | handball men, more draws than the band: odds ratio / per cent more draws | 35 % (from the odds ratio 1.35) | 1.35 / 32 % | 1.35 / 32 % |
+| 23 | variance by expected total minus plain, total log score, handball men | -0.0022 (se 0.0022) | -0.0068 (se 0.0035) | -0.0068 (se 0.0035) |
+| 23 | variance by expected total minus plain, total log score, handball women | -0.0046 (se 0.0021) | -0.0055 (se 0.0019) | -0.0054 (se 0.0019) |
+| 23 | variance by expected total minus plain, total log score, basketball men | +0.0011 (se 0.0016) | +0.0015 (se 0.0018) | +0.0015 (se 0.0017) |
+| 23 | variance by expected total minus plain, total log score, basketball women | -0.0057 (se 0.0029) | -0.0046 (se 0.0027) | -0.0046 (se 0.0026) |
+| 24 | final-result row, sd of standardised residual margin / total; 80 % coverage margin / total, basketball men | 0.99 / 1.00; 83 % / 81 % (the regulation-time values) | 1.01 / 0.99; 82 % / 81 % | 1.01 / 0.99; 82 % / 81 % |
+| 24 | final-result row, sd of standardised residual margin / total; 80 % coverage margin / total, basketball women | 1.05 / 1.02; 80 % / 80 % (the regulation-time values) | 1.05 / 1.02; 80 % / 80 % | 1.05 / 1.02; 80 % / 80 % |
+| 7 (second run) | walk-forward margin / total / result score, handball men | -3.1162 / -3.3794 / -0.7385 (n 926) | -3.1162 / -3.3794 / -0.7385 (n 926) | -3.1148 / -3.3798 / -0.7376 (n 926) |
+| 7 (second run) | walk-forward margin / total / result score, handball women | -3.1740 / -3.3470 / -0.6025 (n 707) | -3.1740 / -3.3470 / -0.6025 (n 707) | -3.1740 / -3.3469 / -0.6025 (n 707) |
+| 7 (second run) | walk-forward margin / total / result score, basketball men | -4.0819 / -4.2853 / -0.7500 (n 1335) | -4.0819 / -4.2853 / -0.7500 (n 1335) | -4.0817 / -4.2853 / -0.7499 (n 1335) |
+| 7 (second run) | walk-forward margin / total / result score, basketball women | -4.2098 / -4.2908 / -0.5850 (n 962) | -4.2098 / -4.2908 / -0.5850 (n 962) | -4.2091 / -4.2904 / -0.5848 (n 962) |
+| 7 (second run) | v2 minus production's stored forecast, handball pooled: margin / total / result | +0.0429 (se 0.0290) / +0.0725 (se 0.0249) / +0.0113 (se 0.0209) | +0.0429 (se 0.0290) / +0.0725 (se 0.0249) / +0.0113 (se 0.0209) | +0.0427 (se 0.0290) / +0.0713 (se 0.0250) / +0.0112 (se 0.0209) |
+| 7 (second run) | v2 minus production's stored forecast, basketball pooled: margin / total / result | +0.0477 (se 0.0399) / +0.0049 (se 0.0215) / +0.0050 (se 0.0211) | +0.0261 (se 0.0400) / +0.0047 (se 0.0213) / +0.0049 (se 0.0211) | +0.0270 (se 0.0400) / +0.0048 (se 0.0214) / +0.0054 (se 0.0211) |
+
+- **Findings 1 and 10.** A final basketball margin cannot be level. Production's stored forecasts and the v2 model trained on final scores were scored with a rounded margin that keeps about 2 % of its mass on a level score; the regulation-plus-overtime model they were compared with has none there. Every basketball final-margin score now uses a distribution with no mass on zero, in the walk-forward, the production comparison, the ladder and the comparison with Stan.
+- **Finding 2.** Rung R1 was described as removing only the unused states. It also drops production's sum-to-zero constraint on each round's innovations and uses a different prior centre for the scoring level, so its drop in leapfrog steps cannot be put on the unused states alone. The text and the rung's name say so.
+- **Finding 4.** The sentence that R-INLA describes the total models' variance split more narrowly than NUTS was fixed text and false for the handball men total model. It is now generated from the comparison.
+- **Findings 3, 5, 6, 15, 18 and 22** are in the code and its tests: the R-INLA tests run in main's INLA Engine workflow; the priors of the total model, the random-walk form and the intercepts are asserted; a season nobody played and a two-division league are tested; with posterior draws the overtime share is weighted draw by draw. None changes a reported number.
+- **Finding 7.** The fitter reads and returns the status of R-INLA's mode search, and every fit was run again with it kept. See [The walk-forward, run twice](#leak-free-walk-forward).
+- **Findings 8 and 9.** The cutover table said the extract and the simulator needed no code and that the adapter supplied what they read. It supplies seven arrays, not the names or the fit object they read, and regulation-time basketball draws cannot be published without an overtime step. The table is rewritten.
+- **Finding 11.** This autumn's weeks 7 to 11 were labelled "last 6 weeks". They are now in the middle row.
+- **Finding 12.** The report said v2 always works with the older information. Production's forecast was the older one in about four matches in ten.
+- **Finding 13.** The Lengjan table scored basketball without the tie shift and the production comparison used the per-division shift for women. Every table now uses the proposed variant: per division for men, one shift for women.
+- **Finding 14.** "The posteriors match the prior" overstated it: the medians do, the upper tails are shorter.
+- **Findings 16 and 17.** The fetch script now follows `HBBB_OUT`; the period log no longer prints a count of double overtimes that could only be zero.
+- **Finding 19.** The agreement with Stan was quoted for full integration only; the plug-in fit, which the walk-forward uses, is now beside it.
+- **Finding 20.** The data-story table now states the prior of the AR(1) within-season form.
+- **Finding 21.** A logit shift is an odds ratio; it was printed as a ratio of rates. Both are now given.
+- **Finding 23.** The variance form that grows with the expected total was centred on the scored season's own mean; the centre now comes from the training seasons.
+- **Finding 24.** The "final result" rows of the walk-forward table repeated the regulation-time calibration; they now show the calibration of the final-score predictive.

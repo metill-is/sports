@@ -429,8 +429,14 @@ if (have(hbm) && have(bbm)) {
     w <- wfst$wf
     add("<h3>The walk-forward, run twice</h3>")
     add(sprintf(
-      "<p>R-INLA returns a fit whether or not its search for the hyperparameter mode succeeded, and the first run of the walk-forward did not record that status. So every walk-forward was run a second time with the status kept: %s fits, %s with a status other than 0. The numbers in this report are from the second run. The first run is kept, and scored by the same scripts, which makes the two a measure of how much a walk-forward depends on the run.</p>",
-      int(sum(w$fits)), int(sum(w$status_not_zero))
+      paste0(
+        "<p>R-INLA returns a fit whether or not its search for the hyperparameter mode succeeded, and the first run of the walk-forward did not record that status. So every walk-forward was run a second time with the status kept. Of %s fits, %s ended with a status other than 0, by walk-forward: %s. ",
+        "Each of those was fitted again from a cold start, where the search succeeded, and the refit's predictions replaced the failed fit's: %s matches, whose expected total moved by up to %s points. The other response of the same cutoffs, whose search had succeeded, was left as it was. ",
+        "The numbers in this report are from the second run with those refits. The first run is kept, and scored by the same scripts, which makes the two a measure of how much a walk-forward depends on the run.</p>"
+      ),
+      int(sum(w$fits)), int(sum(w$status_not_zero)),
+      paste(sprintf("%s (%s)", run_lab[w$run[w$status_not_zero > 0]], int(w$status_not_zero[w$status_not_zero > 0])), collapse = "; "),
+      int(sum(w$refit_matches)), num(max(w$refit_max_change), 2)
     ))
     wtab <- data.frame(
       run = run_lab[w$run], cutoffs = int(w$cutoffs), matches = int(w$matches),
@@ -464,14 +470,14 @@ if (have(hbm) && have(bbm)) {
       d0 <- cd[cd$setting == "R-INLA defaults", ]
       d1 <- cd[cd$setting == "internal.opt = FALSE", ]
       cold_txt <- sprintf(
-        "A warm start is not the whole story: a single fit started cold is not always the same either. The margin model of two handball men cutoffs was fitted from a cold start in separate R processes. With R-INLA's defaults, %s gave the most frequent result (the others differed by up to %s in an expected margin). ",
-        paste(sprintf("%s of %s processes", int(d0$most_frequent), int(d0$processes)), collapse = " and "), num(max(d0$max_abs_diff_between_processes), 3)
+        "A warm start is not the whole story: a single fit started cold is not always the same either. The margin model of two handball men cutoffs was fitted from a cold start in separate R processes. With R-INLA's defaults, %s processes gave the most frequent result at the two cutoffs (the others differed by up to %s in an expected margin). ",
+        paste(sprintf("%s of %s", int(d0$most_frequent), int(d0$processes)), collapse = " and "), num(max(d0$max_abs_diff_between_processes), 3)
       )
       if (nrow(d1) > 0) {
         cold_txt <- paste0(cold_txt, sprintf(
           "With R-INLA's online internal optimisation switched off (<code>inla.setOption(internal.opt = FALSE)</code>), %s did%s. ",
           paste(sprintf("%s of %s", int(d1$most_frequent), int(d1$processes)), collapse = " and "),
-          if (all(d1$most_frequent == d1$processes)) ": no difference at all, which points at that option, which chooses between numerical routines while a fit runs, as the source" else ""
+          if (all(d1$most_frequent == d1$processes)) ": no difference at all, which points at that option as the source (R-INLA's help says no more about it than \"internal online optimisations\")" else ""
         ))
       }
       if (have(wfst$noopt)) {
@@ -487,7 +493,7 @@ if (have(hbm) && have(bbm)) {
       paste0(
         "<p><strong>What this shows.</strong> The mean scores of a cell move by at most %s between the runs, far less than any difference this report draws a conclusion from. Single predictions do move: a match's expected margin by up to %s, and in %s of the %s cutoffs of the four main walk-forwards some hyperparameter's median differs by more than a quarter. ",
         "What differs is how a team's strength is divided between its long-run club level and its season level with the memory between seasons. With six seasons those are close to interchangeable, so several divisions describe the data about equally well; each weekly fit starts from the previous week's answer and stays with the division it began with. %s",
-        "A status of 0 therefore says the search ended at a mode, not that the mode is the only one.</p>"
+        "A status of 0 therefore says the search ended at a mode, not that the mode is the only one. And the four failed searches were all total models of basketball, whose hyperparameters looked like their neighbours': without the status nothing would have singled them out.</p>"
       ),
       num(max(abs(sc2$diff)), 4), num(max(w$max_abs_diff_margin[w$run %in% names(run_lab)[1:4]]), 2),
       int(sum(w$cutoffs_hyper_differs_25pct[w$run %in% names(run_lab)[1:4]])), int(sum(w$cutoffs[w$run %in% names(run_lab)[1:4]])),

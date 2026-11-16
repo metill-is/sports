@@ -11,6 +11,25 @@ rd <- function(...) readRDS(file.path(OUT, "out", ...))
 key <- function(x) paste(x$match_date, x$home_team, x$away_team)
 se <- function(v) stats::sd(v) / sqrt(length(v))
 runs <- c("hb_m_none", "hb_f_none", "bb_m_none_reg", "bb_f_none_reg", "bb_m_ar1_reg", "bb_f_ar1_reg", "bb_m_none", "bb_f_none")
+# A walk-forward whose failed fits were refitted keeps the original status beside the new one,
+# and the failed fit's predictions beside the refit's.
+first_status <- function(cut, r) {
+  x <- cut[[paste0("status_", r, "_first")]]
+  if (is.null(x)) cut[[paste0("status_", r)]] else x
+}
+refit_rows <- function(pred) {
+  hit <- rep(FALSE, nrow(pred))
+  for (cn in c("mean_m_failed_fit", "mean_t_failed_fit")) if (!is.null(pred[[cn]])) hit <- hit | !is.na(pred[[cn]])
+  hit
+}
+refit_change <- function(pred) {
+  d <- rep(0, nrow(pred))
+  for (r in c("m", "t")) {
+    old <- pred[[paste0("mean_", r, "_failed_fit")]]
+    if (!is.null(old)) d <- pmax(d, abs(pred[[paste0("mean_", r)]] - old), na.rm = TRUE)
+  }
+  d[refit_rows(pred)]
+}
 
 wf <- do.call(rbind, lapply(runs, function(k) {
   b <- rd(sprintf("wf_%s.rds", k))
@@ -23,7 +42,10 @@ wf <- do.call(rbind, lapply(runs, function(k) {
   rel <- abs(as.matrix(a$cut[, hy]) - as.matrix(b$cut[j, hy])) / pmax(abs(as.matrix(b$cut[j, hy])), 0.05)
   data.frame(
     run = k, cutoffs = nrow(b$cut), fits = 2L * nrow(b$cut),
-    status_not_zero = sum(!(b$cut$status_m %in% 0L)) + sum(!(b$cut$status_t %in% 0L)),
+    # As the run was made, and after the failed fits were repeated from a cold start.
+    status_not_zero = sum(!(first_status(b$cut, "m") %in% 0L)) + sum(!(first_status(b$cut, "t") %in% 0L)),
+    status_not_zero_after_refit = sum(!(b$cut$status_m %in% 0L)) + sum(!(b$cut$status_t %in% 0L)),
+    refit_matches = sum(refit_rows(b$pred)), refit_max_change = if (any(refit_rows(b$pred))) max(refit_change(b$pred)) else 0,
     matches = nrow(b$pred), in_both = sum(!is.na(i)),
     median_abs_diff_margin = stats::median(dm, na.rm = TRUE), max_abs_diff_margin = max(dm, na.rm = TRUE),
     share_margin_over_half = mean(dm > 0.5, na.rm = TRUE),
@@ -70,7 +92,8 @@ other <- do.call(rbind, c(
 ))
 rownames(other) <- NULL
 cat(sprintf("\nFits outside the walk-forward: %d, of which mode status not 0: %d\n", nrow(other), sum(!(other$status %in% 0L))))
-cat(sprintf("Walk-forward fits: %d, of which mode status not 0: %d\n", sum(wf$fits), sum(wf$status_not_zero)))
+cat(sprintf("Walk-forward fits: %d, of which mode status not 0: %d as run, %d after the cold refit of those\n", sum(wf$fits), sum(wf$status_not_zero),
+            sum(wf$status_not_zero_after_refit)))
 # Cold starts: the same fit in separate R processes (cold_start_check.R), with R-INLA's
 # defaults and with its online internal optimisation switched off; against each other and
 # against the walk-forward's warm-started fit of the same cutoff.
@@ -117,7 +140,15 @@ if (file.exists(fa) && file.exists(fb)) {
     run = "hb_m_none", matches = nrow(a), identical_rows = sum(same),
     max_abs_diff_margin = max(abs(a$mean_m - b$mean_m[i])), max_abs_diff_total = max(abs(a$mean_t - b$mean_t[i])),
     max_abs_diff_margin_from_default_run = max(abs(a$mean_m - wfp$mean_m[j]), na.rm = TRUE),
-    median_abs_diff_margin_from_default_run = stats::median(abs(a$mean_m - wfp$mean_m[j]), na.rm = TRUE)
+    median_abs_diff_margin_from_default_run = stats::median(abs(a$mean_m - wfp$mean_m[j]), na.rm = TRUE),
+    # WHY a ratio: both sets of fits were timed on the shared machine, so neither time means
+    # much alone. The ratio of the medians over the same cutoffs is what the option costs.
+    fit_seconds_ratio_to_default = local({
+      ca <- readRDS(fa)$cut
+      cb <- rd("wf_hb_m_none.rds")$cut
+      k <- match(format(ca$cutoff), format(cb$cutoff))
+      stats::median(ca$secs_m + ca$secs_t) / stats::median((cb$secs_m + cb$secs_t)[k], na.rm = TRUE)
+    })
   )
   cat("\nTwo walk-forwards of handball men with internal.opt = FALSE, against each other and against the second run\n")
   print(format(noopt, digits = 3), row.names = FALSE)
