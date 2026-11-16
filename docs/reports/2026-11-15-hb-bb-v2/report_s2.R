@@ -136,6 +136,57 @@ if (have(ladder)) {
     ))
   }
   add("<p class=\"note\">Log scores are per match, on the integer scale, higher is better; in brackets the paired difference from production with its match-clustered standard error. For the v2 rows \"leapfrog steps\" is the sum over the margin and the total fit. Highlighted rows are R-INLA fits of the same v2 models (\"full\" integrates over the hyperparameters, \"plug-in\" fixes them at their mode). The leave-one-out density is on the scale of the two scores for every row, so rows are comparable.</p>")
+  # Reading notes per cell with the full ladder: one sentence per rung, built from the table.
+  g <- function(cl, rung, col) {
+    x <- tab[tab$cell == cl & tab$rung == rung, col]
+    if (length(x) == 0) NA else x[1]
+  }
+  dlt <- function(cl, a, b, col) {
+    sa <- ladder$scores[[paste(cl, a)]]
+    sb <- ladder$scores[[paste(cl, b)]]
+    if (is.null(sa) || is.null(sb)) {
+      return("–")
+    }
+    p <- paired(sb[[col]], sa[[col]])
+    pm(p[["diff"]], p[["se"]], 3)
+  }
+  for (cl in unique(tab$cell)) {
+    if (is.na(g(cl, "r5_gauss", "leapfrog")) || is.na(g(cl, "r0_prod", "leapfrog"))) next
+    notes <- character()
+    if (!is.na(g(cl, "r1_ragged", "leapfrog"))) {
+      notes <- c(notes, sprintf(
+        "<strong>R1</strong> keeps production's model and removes only the states no match touches: %s sampled parameters instead of %s, %s leapfrog steps per iteration instead of %s, held-out scores unchanged (margin %s).",
+        int(g(cl, "r1_ragged", "n_sampled")), int(g(cl, "r0_prod", "n_sampled")), int(g(cl, "r1_ragged", "leapfrog")), int(g(cl, "r0_prod", "leapfrog")),
+        dlt(cl, "r0_prod", "r1_ragged", "ls_margin")
+      ))
+    }
+    prev <- if (!is.na(g(cl, "r1_ragged", "leapfrog"))) "r1_ragged" else "r0_prod"
+    notes <- c(notes, sprintf(
+      "<strong>R2</strong> replaces the per-team volatility hierarchies%s by single values: %s parameters, leave-one-out %s against %s. The home advantage is still %s: it is not the hierarchies that inflate it.",
+      if (CELLS[[cl]]$sport == "handball") ", the per-team score sds and" else " and the four-parameter correlation",
+      int(g(cl, "r2_common", "n_sampled")), num(g(cl, "r2_common", "elpd"), 1), num(g(cl, prev, "elpd"), 1), num(g(cl, "r2_common", "ha_mean"), 2)
+    ))
+    notes <- c(notes, sprintf(
+      "<strong>R3</strong> pools the home effects and lets them take either sign: the home advantage falls from %s to %s (raw margin %s). The ridge that the bounds were hiding appears: the scoring level's posterior sd goes from %s to %s, its correlation with the mean attack home effect is %s, and NUTS needs %s leapfrog steps per iteration.",
+      num(g(cl, "r2_common", "ha_mean"), 2), num(g(cl, "r3_pooled", "ha_mean"), 2), num(ha$raw[ha$cell == cl], 2),
+      num(g(cl, "r2_common", "level_sd"), 2), num(g(cl, "r3_pooled", "level_sd"), 2), num(g(cl, "r3_pooled", "ridge_cor"), 2), int(g(cl, "r3_pooled", "leapfrog"))
+    ))
+    notes <- c(notes, sprintf(
+      "<strong>R4</strong> removes the ridge (one league home advantage, team deviations around zero): the level's sd returns to %s, leapfrog steps to %s, the smallest effective sample size is %s, the home advantage is %s.",
+      num(g(cl, "r4_ident", "level_sd"), 2), int(g(cl, "r4_ident", "leapfrog")), int(g(cl, "r4_ident", "min_ess")), num(g(cl, "r4_ident", "ha_mean"), 2)
+    ))
+    notes <- c(notes, sprintf(
+      "<strong>R5</strong> drops the Student-t (fitted degrees of freedom in R4: %s): leave-one-out %s against %s, held-out margin %s and total %s. That is the measure of what the heavy tail is worth.",
+      num(g(cl, "r4_ident", "nu"), 0), num(g(cl, "r5_gauss", "elpd"), 1), num(g(cl, "r4_ident", "elpd"), 1),
+      dlt(cl, "r4_ident", "r5_gauss", "ls_margin"), dlt(cl, "r4_ident", "r5_gauss", "ls_total")
+    ))
+    notes <- c(notes, sprintf(
+      "<strong>v2</strong> rotates attack and defence into net strength and scoring level, adds the club level and the season-boundary AR(1) and drops the appearance-indexed random walk: %s sampled parameters, leave-one-out %s, held-out margin %s and total %s against R5.",
+      int(g(cl, "v2s (margin + total)", "n_sampled")), num(g(cl, "v2s (margin + total)", "elpd"), 1),
+      dlt(cl, "r5_gauss", "v2s (margin + total)", "ls_margin"), dlt(cl, "r5_gauss", "v2s (margin + total)", "ls_total")
+    ))
+    add(sprintf("<h3>Reading the %s ladder</h3>", tolower(LAB[[cl]])), "<ul>", paste0("<li>", notes, "</li>", collapse = "\n"), "</ul>")
+  }
   wt <- tab[!is.na(tab$wall_secs), c("cell", "rung", "wall_secs", "slots")]
   if (nrow(wt)) {
     wt_tab <- data.frame(

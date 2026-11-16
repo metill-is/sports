@@ -48,7 +48,7 @@ within_txt <- if (!have(bb_within)) {
   sprintf(
     "Within-season movement: handball does not need it (within-season sd half a goal to one goal, no gain). In basketball the fitted within-season sd is five to seven points; over %s walk-forward matches (seasons 2025 to 2027, both sexes) the AR(1) form changes the margin log score by %s, the total by %s and the result log likelihood by %s per match against the static form, so the term %s.",
     int(bb_within$n), pm(bb_within$m, bb_within$m_se, 4), pm(bb_within$t, bb_within$t_se, 4), pm(bb_within$w, bb_within$w_se, 4),
-    if (bb_keep_ar1) "is kept for basketball" else "is left out: the gain is not established, and the static form is the simpler one to run"
+    if (bb_keep_ar1) "is kept for basketball" else "is left out for now: margin and result forecasts do not improve, a small gain on totals (mostly the women's) is the only sign of it, and the static form is the simpler one to run. It stays available as a tested option"
   )
 }
 add(
@@ -63,7 +63,7 @@ add(
   "<li>Both regulation-time and final-result probabilities come out of one fit.</li>",
   "</ul></div></div>"
 )
-add(sprintf("<p>%s Stan stays in the repository as the reference: the same v2 model in <code>v2_margin.stan</code> / <code>v2_total.stan</code>, to be run weekly during the shadow period.</p>", within_txt))
+add(sprintf("<p>%s Stan stays in the repository as the reference: the same v2 model in <code>docs/reports/2026-11-15-hb-bb-v2/stan/v2_margin.stan</code> and <code>v2_total.stan</code>, to be run weekly during the shadow period.</p>", within_txt))
 
 add("<h3>What changes, layer by layer</h3>")
 layers <- data.frame(

@@ -377,16 +377,34 @@ for (cell in c("bb_m", "bb_f")) {
   all_scores[[paste(cell, "reg_vs_final")]] <- j
 }
 
-# Within-season term: static against AR(1), on the matches both walk-forwards predicted.
+# Within-season term: static against AR(1), on every match both walk-forwards predicted.
+# These are the plain model scores (no second stage), so no season has to be set aside.
+raw_scores <- function(d, sport, reg) {
+  m <- if (reg) d$home_reg - d$away_reg else d$margin
+  tt <- if (reg) d$home_reg + d$away_reg else d$total
+  keep <- !is.na(m)
+  d <- d[keep, , drop = FALSE]
+  m <- m[keep]
+  tt <- tt[keep]
+  o <- v2_outcome_probs(d$mean_m, d$s_m, ties = sport == "handball" || reg)
+  data.frame(
+    match_date = d$match_date, home_team = d$home_team, away_team = d$away_team, phase = d$phase, division = d$division,
+    season = d$season, s_m = d$s_m, s_t = d$s_t,
+    lsm_raw = log(v2_integer_pmf(m, d$mean_m, d$s_m)), lst_raw = log(v2_integer_pmf(tt, d$mean_t, d$s_t)),
+    ll_wdl_raw = log(ifelse(m > 0, o$p_home, ifelse(m < 0, o$p_away, o$p_draw)))
+  )
+}
 within_cmp <- list()
 within_j <- list()
 for (cell in names(CELLS)) {
   for (suffix in c("", "_reg")) {
-    st <- all_scores[[paste0(cell, " none", suffix)]]$scores
-    ar <- all_scores[[paste0(cell, " ar1", suffix)]]$scores
+    st <- all_scores[[paste0(cell, " none", suffix)]]$wf
+    ar <- all_scores[[paste0(cell, " ar1", suffix)]]$wf
     if (is.null(st) || is.null(ar)) next
-    j <- merge(st[, c("match_date", "home_team", "away_team", "phase", "division", "season", "lsm_raw", "lst_raw", "ll_wdl_raw", "s_m", "s_t")],
-               ar[, c("match_date", "home_team", "away_team", "lsm_raw", "lst_raw", "ll_wdl_raw", "s_m", "s_t")],
+    sport <- CELLS[[cell]]$sport
+    st <- raw_scores(st, sport, suffix == "_reg")
+    ar <- raw_scores(ar, sport, suffix == "_reg")
+    j <- merge(st, ar[, c("match_date", "home_team", "away_team", "lsm_raw", "lst_raw", "ll_wdl_raw", "s_m", "s_t")],
                by = c("match_date", "home_team", "away_team"), suffixes = c(".static", ".ar1"))
     cat(sprintf("\n================ %s%s: within-season AR(1) minus static, n = %d (seasons %s)\n", cell, suffix, nrow(j),
                 paste(range(j$season), collapse = "-")))

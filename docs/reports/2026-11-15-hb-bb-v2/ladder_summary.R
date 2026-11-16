@@ -48,7 +48,14 @@ for (cell in names(CELLS)) {
     sc <- score_holdout(pp, d$hold, ci$sport)
     ha <- w_ha(pick_cols(dr, "home_advantage_off", k) + pick_cols(dr, "home_advantage_def", k))
     if (m %in% c("r4_ident", "r5_gauss")) ha <- ha + pick_scalar(dr, "hfa")
-    add(m, "Stan", sc, ha, stan_extra(res))
+    ex <- stan_extra(res)
+    # The intercept ridge: how uncertain is the scoring level, and how strongly does it
+    # trade against the mean attack home effect?
+    level <- pick_scalar(dr, sprintf("mean_goals[%d]", d$slots$NS))
+    ex$level_sd <- stats::sd(level)
+    ex$ridge_cor <- if (m %in% c("r4_ident", "r5_gauss")) NA_real_ else stats::cor(level, rowMeans(pick_cols(dr, "home_advantage_off", k)))
+    ex$nu <- if ("nu" %in% colnames(dr)) stats::median(pick_scalar(dr, "nu")) else if ("nu[1]" %in% colnames(dr)) stats::median(pick_scalar(dr, "nu[1]")) else NA_real_
+    add(m, "Stan", sc, ha, ex)
   }
   for (v in c("v2s", "v2a", "v2")) {
     fm <- out_path("res_%s_%s_margin.rds", cell, v)
@@ -77,6 +84,9 @@ for (cell in names(CELLS)) {
     # the joint density of the two scores is the product of the two densities times 2.
     ex$elpd <- rm_$loo["elpd_loo", "Estimate"] + rt_$loo["elpd_loo", "Estimate"] + n_train * log(2)
     ex$bad_k <- rm_$pareto_k_bad + rt_$pareto_k_bad
+    ex$level_sd <- NA_real_
+    ex$ridge_cor <- NA_real_
+    ex$nu <- NA_real_
     add(paste0(v, " (margin + total)"), "Stan", sc, ha, ex)
   }
   fi <- out_path("inla_validate_%s.rds", cell)
@@ -100,7 +110,7 @@ for (cell in names(CELLS)) {
           n_sampled = NA_integer_, divergent = NA_integer_, leapfrog = NA_real_, grad_evals = NA_real_,
           max_rhat = NA_real_, min_ess = NA_real_, worst = sprintf("%d + %d hyper points", im$n_hyper_points, it$n_hyper_points),
           wall_secs = im$secs + it$secs, elpd = sum(log(im$cpo)) + sum(log(it$cpo)) + n_train * log(2), bad_k = NA_integer_,
-          slots = slot_text(iv$machine$slots)
+          slots = slot_text(iv$machine$slots), level_sd = NA_real_, ridge_cor = NA_real_, nu = NA_real_
         )
         add(sprintf("v2 %s, INLA %s", if (within == "none") "static" else "+ within-season AR(1)",
                     if (strategy == "auto") "full" else "plug-in"), "INLA", sc, ha, ex)
