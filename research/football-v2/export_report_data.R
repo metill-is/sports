@@ -9,8 +9,8 @@ out <- Sys.getenv("FV2_OUT", "/Users/brynjolfurjonsson/.claude-reviews/sports-fo
 dest <- file.path("docs", "reports", "2026-11-15-football-v2")
 dir.create(dest, recursive = TRUE, showWarnings = FALSE)
 
-read_validation <- function(tag) {
-  f <- file.path(out, sprintf("validation_summary_%s_2026-07-31.rds", tag))
+read_validation <- function(tag, cutoff = "2026-07-31") {
+  f <- file.path(out, sprintf("validation_summary_%s_%s.rds", tag, cutoff))
   if (!file.exists(f)) {
     return(NULL)
   }
@@ -29,7 +29,7 @@ read_validation <- function(tag) {
     pred_summ = bind("pred_summ"), scores = bind("scores"), matches = bind("matches"),
     matches_sex = rep(names(v), vapply(v, function(x) nrow(x$matches), integer(1))),
     sampler = timing[c("sex", "engine", "n_draws", "divergences", "leapfrog", "max_rhat", "min_ess")],
-    traj = bind("traj"), dims = bind("dims"),
+    traj = bind("traj"), dims = bind("dims"), subset_summ = bind("subset_summ"),
     states_sample = states[keep, c("sex", "component", "engine", "has_obs", "stan_mean", "mean", "z", "sd_ratio")]
   )
 }
@@ -139,8 +139,19 @@ res <- list(
   validation = read_validation("calendar"),
   validation_sq = read_validation("final"),
   validation_lvl = read_validation("finallvl"),
+  validation_early26 = read_validation("early26", "2026-05-03"),
+  validation_early22 = read_validation("early22", "2022-05-08"),
+  simcheck = Filter(Negate(is.null), list(
+    female = read_if("simcheck_rev80_sq_static_lvl_female_2026-07-31.rds"),
+    male = read_if("simcheck_rev80_sq_static_lvl_male_2026-07-31.rds")
+  )),
   ha = ha, wf = wf,
-  rho = rho, timing = read_if("engine_timing.rds"), dryrun = dry, hyper_check = hyper_check
+  rho = rho, timing = read_if("engine_timing.rds"), dryrun = dry, hyper_check = hyper_check,
+  # What the machine was doing around the timing run (load average, slot
+  # holders, busiest processes), as recorded by the launcher.
+  timing_context = if (file.exists(file.path(dirname(out), "logs", "timing_clean.meta"))) {
+    readLines(file.path(dirname(out), "logs", "timing_clean.meta"))
+  }
 )
 saveRDS(res, file.path(dest, "results.rds"), compress = "xz")
 cat(sprintf("wrote %s (%.0f KB)\n", file.path(dest, "results.rds"), file.info(file.path(dest, "results.rds"))$size / 1024))

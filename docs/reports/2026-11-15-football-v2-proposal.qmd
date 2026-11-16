@@ -98,6 +98,8 @@ ps <- val$pred_summ[val$pred_summ$engine == "inla-full", ]
 
 ## Summary {#sec-summary}
 
+**The four acceptance criteria for moving football to INLA** (@sec-accept): (a) one identical model agrees in both engines to about 0.01: met; (b) the same in the hard regimes: met for the Icelandic cells as they stand, not to the same standard with only one season of history; (c) season-simulation outputs agree with NUTS: met, under full integration and under empirical Bayes; (d) walk-forward log score no worse than production: met.
+
 **Recommendation.** Replace the football model with an independent-Poisson model that has two intercepts, one weekly strength walk per team with reversion at the season break, a fixed style value per team, a league-wide scoring level and home advantage that walk over time, and pooled sign-free team home-advantage deviations; fit it with R-INLA and keep a Stan program of the same specification as the reference check. The evidence follows, then the plan. No production path was changed by this work.
 
 - **The engine gate is passed.** One specification was fitted by NUTS and by INLA from the same object (results to 31 July 2026). Entry-level and innovation sds agree to three figures; state posterior means differ by about 0.06 of a posterior sd; held-out match probabilities differ by `r num(mean(ps$mean_abs_dp), 3)` on average and `r num(max(ps$max_abs_dp), 3)` at most; no score difference exceeds one standard error. The one visible departure is the near-zero sd of the team home-advantage deviations, which INLA puts 5 % to 30 % higher. NUTS on this specification needs 63 leapfrog steps per iteration with no divergences (@sec-validation).
@@ -113,7 +115,121 @@ ps <- val$pred_summ[val$pred_summ$engine == "inla-full", ]
 2. Shadow order: Stan published with INLA in shadow until a gate is met, or INLA published from the first 2027 fixture with Stan in shadow. I recommend the second.
 3. Whether INLA goes into `DESCRIPTION` (four workflows then need its repository) or is installed only in `fit.yml`.
 4. Whether the published attack and defence home-advantage numbers stay (as an even split of an identified total) or give way to the total.
+5. What becomes of Stan for football after the cutover. Daily NUTS fits are not needed. I recommend keeping one reference fit of the same specification, weekly in season or at least before each season: it takes a few minutes, it is the only way to refresh the reversion coefficient, and it is what would show the approximation drifting.
 
+
+## Acceptance criteria {#sec-accept}
+
+This report is the gate for moving football to INLA. The four criteria set for it, and where each stands. All engine comparisons below are on the recommended model unless stated.
+
+```{r}
+#| label: accept-setup
+vl <- res$validation_lvl
+e26 <- res$validation_early26
+e22 <- res$validation_early22
+sim <- res$simcheck
+rng <- function(x, d = 3) {
+  if (!length(x)) {
+    return("(not run)")
+  }
+  lo <- num(min(x), d)
+  hi <- num(max(x), d)
+  if (lo == hi) lo else paste(lo, "to", hi)
+}
+full_only <- function(d) d[d$engine == "inla-full", ]
+eb_only <- function(d) d[d$engine == "inla-eb", ]
+state_rms <- function(v) { z <- v$state_summ; rng(z$rms_z[z$engine == "inla-full"], 2) }
+hyp_rel <- function(v, pattern) {
+  h <- v$hyper[grepl(pattern, v$hyper$parameter), ]
+  100 * max(abs(h$inla_mean / h$stan_mean - 1))
+}
+sim_row <- function(outcome, comparison, col = "max_abs") {
+  x <- unlist(lapply(sim, function(z) z$summary[z$summary$outcome == outcome & z$summary$comparison == comparison, col]))
+  if (length(x)) num(max(x), 3) else "(not run)"
+}
+```
+
+**(a) One identical model in both engines agrees on hyperparameters, states and match probabilities, to about 0.01.** `r if (max(full_only(vl$pred_summ)$mean_abs_dp) < 0.01) "Met." else "Not met."` Results to 31 July 2026, both sexes. Entry-level, innovation, break, style and league-level sds: INLA's posterior means are within `r num(hyp_rel(vl, "^(tau|sigma_str|kappa|sigma_lvl_goal)"), 0)` % of NUTS's. State posterior means differ by `r state_rms(vl)` of a posterior sd (root mean square). Held-out match probabilities differ by `r rng(full_only(vl$pred_summ)$mean_abs_dp)` on average and `r num(max(full_only(vl$pred_summ)$max_abs_dp), 3)` at most with full integration (`r num(max(eb_only(vl$pred_summ)$max_abs_dp), 3)` at most with empirical Bayes). The reference specification gives the same picture (@sec-validation). The exception is any sd that sits near zero, where INLA's mean is up to `r num(hyp_rel(vl, "^(omega|sigma_lvl_ha)"), 0)` % higher; it does not reach the probabilities.
+
+**(b) The same in the hard regimes: early season, promoted teams, the women's cell.** Met for the cells as they stand; not to the same standard when there is only one season of history.
+
+```{r}
+#| label: tbl-hard
+#| tbl-cap: "INLA (full integration) against NUTS in the hard regimes, recommended model. Early 2026: results to 3 May 2026, matches to 31 May. Early 2022: results to 8 May 2022, one earlier season of data, matches to 5 June. 'Promoted or relegated' are fixtures with a team that changed division at the latest break."
+hard <- function(v, label) {
+  if (is.null(v)) {
+    return(NULL)
+  }
+  ps <- full_only(v$pred_summ)
+  sb <- full_only(v$subset_summ)
+  sb <- sb[sb$subset == "with a promoted or relegated team", ]
+  if (is.null(sb)) sb <- data.frame(sex = ps$sex, n = NA, mean_abs_dp = NA, max_abs_dp = NA)
+  st <- v$sampler[v$sampler$engine == "stan-nuts", ]
+  ss <- v$state_summ[v$state_summ$engine == "inla-full", ]
+  data.frame(
+    Regime = label, ` ` = sex_label[ps$sex], Matches = ps$n,
+    `Prob. diff., mean` = num(ps$mean_abs_dp, 4), `largest` = num(ps$max_abs_dp, 4),
+    `Promoted or relegated: matches` = sb$n[match(ps$sex, sb$sex)],
+    `mean diff.` = num(sb$mean_abs_dp[match(ps$sex, sb$sex)], 4),
+    `largest diff.` = num(sb$max_abs_dp[match(ps$sex, sb$sex)], 4),
+    `State mean RMS diff. (sd)` = num(tapply(ss$rms_z, ss$sex, max)[ps$sex], 3),
+    `NUTS divergences` = st$divergences[match(ps$sex, st$sex)],
+    check.names = FALSE
+  )
+}
+h <- rbind(hard(vl, "Late July 2026 (main check)"), hard(e26, "Early 2026"), hard(e22, "Early 2022, one season of data"))
+if (!is.null(h)) tab(h)
+```
+
+```{r}
+#| label: hard-inline
+sc_diff <- function(v, eng, sex, col) {
+  x <- v$pred_summ[v$pred_summ$engine == eng & v$pred_summ$sex == sex, ]
+  paste0(sgn(x[[paste0("d_", col)]]), " (se ", num(x[[paste0("se_", col)]], 4), ")")
+}
+```
+
+- **Early season, with history.** Three weeks into the 2026 season the agreement is what it was in late July: match probabilities within `r rng(full_only(e26$pred_summ)$mean_abs_dp)` on average and `r num(max(full_only(e26$pred_summ)$max_abs_dp), 3)` at most, and no score difference from NUTS beyond one standard error.
+- **Promoted and relegated teams.** Fixtures with a team that has just changed division are no worse than the rest: `r rng(full_only(e26$subset_summ)$mean_abs_dp[full_only(e26$subset_summ)$subset == "with a promoted or relegated team"])` on average in early 2026.
+- **The women's cell** is in every row above and behaves like the men's wherever there is history.
+- **One season of history is the real hard regime.** At the May 2022 cutoff (`r e22$dims$N[e22$dims$sex == "female"]` women's and `r e22$dims$N[e22$dims$sex == "male"]` men's training matches) probabilities still agree within `r rng(full_only(e22$pred_summ)$mean_abs_dp)` on average, but single matches are out by up to `r num(max(full_only(e22$pred_summ)$max_abs_dp), 3)`, and INLA's exact-scoreline log score is detectably worse than NUTS's: `r sc_diff(e22, "inla-full", "female", "scoreline")` for women and `r sc_diff(e22, "inla-full", "male", "scoreline")` for men with full integration, `r sc_diff(e22, "inla-eb", "female", "scoreline")` and `r sc_diff(e22, "inla-eb", "male", "scoreline")` with empirical Bayes. With so little data the hyperparameters are poorly determined, and fixing them at a point (empirical Bayes) or integrating over them on a coarse design both cost accuracy.
+
+What follows from that: for the Icelandic cells today, with five and a half seasons, INLA is safe in either mode. For a competition with a single season of history, use full integration and check against NUTS before trusting it, and do not use empirical Bayes. It also means the 2022 season of the walk-forward (fitted with empirical Bayes on one to two seasons) understates what the model can do there.
+
+
+**(c) Season-simulation outputs agree with NUTS when INLA uses full hyperparameter integration; how far empirical Bayes departs.** `r if (length(sim) == 2) "Met, for both modes: the differences are the size of the simulation's own Monte Carlo noise." else "Run for one cell only so far."`
+
+```{r}
+#| label: tbl-sim
+#| tbl-cap: "Final-position probabilities from production's own season simulation, run on 2,000 draws from each engine at 31 July 2026 (recommended model). Differences are absolute differences in probability, over every team and place in every published division, and for first place and the bottom two places alone. The first row of each block is the Monte Carlo noise: two halves of the NUTS draws against each other."
+if (length(sim)) {
+  d <- do.call(rbind, lapply(sim, `[[`, "summary"))
+  tab(data.frame(
+    ` ` = sex_label[d$sex], Outcome = d$outcome, Comparison = d$comparison, Cells = d$cells,
+    `Mean abs. diff.` = num(d$mean_abs, 4), `Largest abs. diff.` = num(d$max_abs, 4),
+    check.names = FALSE
+  ))
+}
+```
+
+```{r}
+#| label: tbl-sim-top
+#| tbl-cap: "Top-division probabilities behind the comparison: first place (the title) and the bottom two places, for teams with more than 1 % under either engine."
+if (length(sim)) {
+  d <- do.call(rbind, lapply(names(sim), function(sx) cbind(sex = sx, sim[[sx]]$top_division)))
+  d <- d[d$nuts > 0.01 | d$inla_full > 0.01, ]
+  tab(data.frame(
+    ` ` = sex_label[d$sex], Outcome = ifelse(d$kind == "first place", "First place", "Bottom two"), Team = d$team,
+    NUTS = num(d$nuts, 3), `INLA, full integration` = num(d$inla_full, 3), `INLA, empirical Bayes` = num(d$inla_eb, 3),
+    check.names = FALSE
+  ))
+}
+```
+
+Each engine's 2,000 posterior draws went through the adapter into production's own `extract_football_iceland()`, which simulates the rest of the season once per draw. Over every team and final place, INLA differs from NUTS by `r sim_row("all places", "INLA full against NUTS", "mean_abs")` on average with full integration and `r sim_row("all places", "INLA empirical Bayes against NUTS", "mean_abs")` with empirical Bayes; two halves of the NUTS draws differ from each other by `r sim_row("all places", "NUTS half against NUTS half", "mean_abs")`. The largest single difference is `r sim_row("all places", "INLA full against NUTS")` (full), `r sim_row("all places", "INLA empirical Bayes against NUTS")` (empirical Bayes) and `r sim_row("all places", "NUTS half against NUTS half")` (NUTS against itself). For the title and the bottom two places the largest differences are `r sim_row("first place", "INLA full against NUTS")` and `r sim_row("bottom two", "INLA full against NUTS")` with full integration, `r sim_row("first place", "INLA empirical Bayes against NUTS")` and `r sim_row("bottom two", "INLA empirical Bayes against NUTS")` with empirical Bayes. With 2,000 simulated seasons a probability near one half carries a Monte Carlo standard deviation of about 0.011, so none of these can be told from noise. Empirical Bayes does not depart visibly from full integration at this amount of data.
+
+
+**(d) Walk-forward log score no worse than production on the same matches.** Met. On the `r pr_all$n[1]` priced 2026 matches the recommended model is `r vs(pr_all, "prod")` ahead of production's last pre-match forecast, and on the `r rd_all$n[1]` pre-round forecasts `r vs(rd_all, "prodround")` ahead (@sec-wf). Ahead by 1.3 to 1.6 standard errors: not worse, and not yet established as better.
 
 ## The one specification {#sec-spec}
 
@@ -752,7 +868,7 @@ Three things change in meaning and should be known before the first published fi
 
 ```{r}
 #| label: tbl-timing
-#| tbl-cap: "Fitting the recommended model to results up to 31 July 2026 on this Mac (M1 Pro), each engine alone inside one four-core compute slot while the other slots ran other sessions' fits. CPU seconds do not depend on that load; wall-clock seconds do. INLA's totals include drawing 1,000 posterior samples; NUTS's include reading 4,000 draws back."
+#| tbl-cap: "Fitting the recommended model to results up to 31 July 2026 on this Mac (M1 Pro, 8 performance cores), four cores per engine, one engine at a time, with no other model fit running (all three compute slots free at the start and at the end). The machine was not idle: two macOS sync daemons were using about 2.5 cores, which is the load average shown. INLA's totals include drawing 1,000 posterior samples; NUTS's include reading 4,000 draws back."
 tm <- res$timing
 if (!is.null(tm)) {
   t <- tm$timing
@@ -774,7 +890,7 @@ cpu_ratio <- function(sex) {
 }
 ```
 
-In CPU time, INLA with empirical Bayes costs `r cpu_ratio("female")` times less than NUTS for the women's cell and `r cpu_ratio("male")` times less for the men's. For scale, the pilot measured production's NUTS fits at 19.6 and 28.2 minutes of wall-clock on this machine (also under load). GitHub's runners were not timed.
+In CPU time, INLA with empirical Bayes costs `r cpu_ratio("female")` times less than NUTS for the women's cell and `r cpu_ratio("male")` times less for the men's. For scale, the pilot measured production's NUTS fits at 19.6 and 28.2 minutes of wall-clock on this machine (under load). GitHub's runners were not timed.
 
 ### Shadow period
 
@@ -800,10 +916,10 @@ I recommend the second. Rollback in either case is one line (`engine: stan`): th
 
 - **Five seasons, five breaks.** The results store starts in 2021. The 2022 forecasts rest on one earlier season, and everything this report says about the season break (its variance, reversion) rests on five transitions.
 - **Outside benchmarks exist for 2026 only.** `r wf$priced$n[wf$priced$variant == wf$ref & wf$priced$group == "all" & wf$priced$against == "line"]` priced matches and `r wf$rounds$n[wf$rounds$variant == wf$ref & wf$rounds$group == "all"]` pre-round forecasts. Those samples resolve differences of about 0.01 in log loss, which is the size of the differences observed. Production's 2026 forecasts also include 21 May to 16 September, when a configuration bug had it training on unfiltered data.
-- **One validation cutoff per model.** INLA was checked against NUTS at 31 July 2026, with five and a half seasons of data. The approximation was not checked at an early-season cutoff or with one season of data, where the posterior is furthest from Gaussian.
+- **Three validation cutoffs.** INLA was checked against NUTS at 31 July 2026, with five and a half seasons of data. Two early-season cutoffs were added for the hard regimes (@sec-accept); every other cutoff of the walk-forward was fitted by INLA alone.
 - **Empirical Bayes in the walk-forward.** The walk-forward fixes hyperparameters at their mode and re-estimates them every fourth week. At the validation cutoff, empirical Bayes and full integration gave the same predictions to within Monte Carlo error. `r if (!is.null(res$hyper_check)) paste0("Re-estimating every week instead, on the women's 2026 season (", res$hyper_check$n, " matches), moved match probabilities by ", num(res$hyper_check$mean_abs_dp, 4), " on average, the 1X2 score by ", sgn(res$hyper_check$d_1x2), " (se ", num(res$hyper_check$se_1x2, 4), ") and the scoreline score by ", sgn(res$hyper_check$d_scoreline), " (se ", num(res$hyper_check$se_scoreline, 4), "). Production would re-estimate at every fit, so if anything the walk-forward understates the model.") else "The four-weekly cadence itself was not compared with weekly re-estimation."`
 - **The reversion coefficient is fixed in INLA.** It sits inside the precision matrix, where INLA cannot estimate it without a custom latent model. The value used was chosen before looking at the data, from published between-season memory of 0.74 to 0.80.
-- **Timings.** Four model-fitting sessions shared this machine all evening. Sampler effort is reported as leapfrog steps and divergences, which do not depend on load. The run times in @tbl-timing were taken inside a four-core slot with the other slots busy, so the CPU seconds are the figure to rely on.
+- **Timings.** Four model-fitting sessions shared this machine all evening, so sampler effort is reported as leapfrog steps and divergences, which do not depend on load. The run times in @tbl-timing were taken last, with no other model fit running, but with macOS background sync still using about 2.5 cores; an earlier run under heavier load gave 7 and 14 seconds for INLA where this one gave 6 and 11.
 - **INLA on a GitHub runner is untested.** The install pattern is taken from another package's CI, not run by me.
 - **Fixtures with a new team are skipped**, as in production: a team with no match in the training set gets no forecast. In the men's data that is the fourth division.
 - **Structural choices at this sample size.** Where two structures could not be separated on Icelandic data, the report says so. A higher-powered test on about 22 European divisions is being set up by a sibling session; its results are to be written to `/Users/brynjolfurjonsson/.claude-reviews/sports-pan-european/structural-tests.md` (not present when this report was generated).
@@ -828,5 +944,26 @@ I recommend the second. Rollback in either case is one line (`engine: stan`): th
 | A rendered copy of this report (the HTML is git-ignored in the repository) | `/Users/brynjolfurjonsson/.claude-reviews/sports-football-v2/report/2026-11-15-football-v2-proposal.html` |
 
 All code is on branch `claude/objective-poitras-964871` (worktree `/Users/brynjolfurjonsson/sports/.claude/worktrees/objective-poitras-964871`), not merged. The scripts run from the repository root. Results generated `r res$generated`.
+
+### Where each headline number comes from
+
+Every number in this report is computed in the report source from `docs/reports/2026-11-15-football-v2/results.rds`, which `research/football-v2/export_report_data.R` builds from the files below. They are under `/Users/brynjolfurjonsson/.claude-reviews/sports-football-v2/out/`.
+
+| Numbers | Result file | Field in `results.rds` |
+|---|---|---|
+| Engine gate on the reference specification (hyperparameters, states, match probabilities, held-out scores) | `validation_summary_calendar_2026-07-31.rds`, built from `val_calendar_{female,male}_2026-07-31_{stan,inla-auto,inla-eb}.rds` | `validation` |
+| The same on the recommended model | `validation_summary_finallvl_2026-07-31.rds`, from `val_finallvl_*` | `validation_lvl` |
+| Early-season and promoted-team checks | `validation_summary_early26_2026-05-03.rds`, `validation_summary_early22_2022-05-08.rds` | `validation_early26`, `validation_early22` |
+| Season-simulation agreement | `simcheck_rev80_sq_static_lvl_{female,male}_2026-07-31.rds` | `simcheck` |
+| Walk-forward scores, paired differences, season and phase tables | `wf_summary.rds`, built from `wf_<variant>_<sex>_<season>.rds` (one per variant, sex and season) | `wf$scores`, `wf$paired`, `wf$by_season`, `wf$by_phase` |
+| Against production and the Lengjan line | `wf_summary.rds` | `wf$priced`, `wf$rounds`, `wf$prod_vs_line` |
+| Goals per match by model | the same `wf_<variant>_...rds` files | `goals` |
+| Home-advantage ladder | `ha_ha_{a,b,c,d}_*_{female,male}.rds` | `ha` |
+| Reversion coefficient by NUTS | `val_rhoestlvl_{female,male}_2026-07-31_stan.rds`, `val_rhoest_*` | `rho` |
+| Run times | `engine_timing.rds` (clean run; the earlier loaded run is `engine_timing_loaded_0130.rds`), machine state in `../logs/timing_clean.meta` | `timing`, `timing_context` |
+| Dry run of the cutover path | `dryrun_check.rds`; output trees under `../dryrun/` | `dryrun` |
+| Weekly against four-weekly hyperparameter re-estimation | `wf_rev80_sq_static_lvl_female_2026_h1.rds` against `wf_rev80_sq_static_lvl_female_2026.rds` | `hyper_check` |
+
+The plain-text walk-forward summary that the tables were checked against is `../logs/summary_final.txt`.
 
 

@@ -112,6 +112,24 @@ for (sex in c("female", "male")) {
       d_1x2 = mean(d1), se_1x2 = stats::sd(d1) / sqrt(length(d1))
     )
   }))
+  # Fixtures with a team that changed division at the latest season break:
+  # the hardest forecasts, because that team's state has just taken a jump.
+  steps <- spec$steps
+  latest <- max(spec$slots$season)
+  moved <- unique(steps$team[steps$move != 0 & spec$slots$season[steps$slot] == latest])
+  with_mover <- spec$pred$home_team %in% moved | spec$pred$away_team %in% moved
+  subset_summ <- do.call(rbind, lapply(list(c("inla-full", "p_full"), c("inla-eb", "p_eb")), function(x) {
+    d <- abs(pm(get(x[2]), p_st))
+    one <- function(rows, label) {
+      data.frame(
+        sex = sex, engine = x[1], subset = label, n = sum(rows),
+        mean_abs_dp = if (any(rows)) mean(d[rows, ]) else NA_real_,
+        max_abs_dp = if (any(rows)) max(d[rows, ]) else NA_real_
+      )
+    }
+    rbind(one(with_mover, "with a promoted or relegated team"), one(!with_mover, "other fixtures"))
+  }))
+  print(format(subset_summ, digits = 3), row.names = FALSE)
   scores <- data.frame(
     sex = sex, engine = c("stan-nuts", "inla-full", "inla-eb"),
     scoreline = c(mean(p_st$sc$ls_score), mean(p_full$sc$ls_score), mean(p_eb$sc$ls_score)),
@@ -157,6 +175,7 @@ for (sex in c("female", "male")) {
   }))
   res[[sex]] <- list(
     hyper = hyper, fixed = fixed, state_summ = state_summ, pred_summ = pred_summ, scores = scores,
+    subset_summ = subset_summ,
     matches = matches, timing = timing, traj = traj,
     states = states[c("sex", "component", "engine", "slot", "has_obs", "stan_mean", "stan_sd", "mean", "sd")],
     dims = data.frame(sex = sex, K = spec$K, N = spec$N, S = spec$S, holdout = nrow(sp$pred))
