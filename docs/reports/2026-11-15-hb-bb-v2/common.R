@@ -49,8 +49,9 @@ played_only <- function(res, sport) {
 # per season, so they share OD's scoring level instead of getting their own.
 DIVISION_MAP <- list(handball = c(PO = "OD"), basketball = NULL)
 
-# Fixture dates are public before the matches are played, so the season calendar
-# (first match date, number of weeks) is taken from every stored row, scored or not.
+# The season calendar (first match date, number of weeks) is taken from every stored row.
+# The results table holds played matches only, so a season in progress is as long as it
+# has been played so far, plus the two spare weeks below.
 season_starts <- function(res) {
   s <- tapply(as.numeric(res$match_date), res$season, min)
   stats::setNames(as.Date(as.numeric(s), origin = "1970-01-01"), names(s))

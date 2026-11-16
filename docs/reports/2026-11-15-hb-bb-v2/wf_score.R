@@ -17,6 +17,22 @@ is_playoff <- function(d, sport) {
   vapply(seq_len(nrow(d)), function(i) sum(pair == pair[i] & abs(day - day[i]) <= 21) >= 3, logical(1))
 }
 
+# The last regular-season week of each row's (season, division). A finished season shows
+# it. The season still being played does not, and the results table holds played matches
+# only, so there is no schedule to read it from: when the newest season stops more than
+# six weeks short of the earlier seasons of its division, it is given their median.
+last_regular_week <- function(d) {
+  seen <- tapply(d$week, list(d$season, d$division), max)
+  newest <- as.character(max(d$season))
+  for (dv in colnames(seen)) {
+    earlier <- seen[rownames(seen) != newest, dv]
+    earlier <- earlier[!is.na(earlier)]
+    if (is.na(seen[newest, dv]) || length(earlier) == 0L) next
+    if (seen[newest, dv] < stats::median(earlier) - 6) seen[newest, dv] <- stats::median(earlier)
+  }
+  unname(seen[cbind(as.character(d$season), as.character(d$division))])
+}
+
 load_wf <- function(cell, tag) {
   f <- file.path(OUT, "out", sprintf("wf_%s_%s.rds", cell, tag))
   if (!file.exists(f)) {
@@ -30,7 +46,8 @@ load_wf <- function(cell, tag) {
   d$margin <- d$home_score - d$away_score
   d$total <- d$home_score + d$away_score
   d$playoff <- is_playoff(d, sport)
-  last_week <- ave(ifelse(d$playoff, NA, d$week), d$season, d$division, FUN = function(x) max(x, na.rm = TRUE))
+  last_week <- rep(NA_real_, nrow(d))
+  last_week[!d$playoff] <- last_regular_week(d[!d$playoff, , drop = FALSE])
   d$phase <- ifelse(d$playoff, "play-off", ifelse(d$week <= 6, "first 6 weeks",
     ifelse(d$week > last_week - 6, "last 6 weeks", "middle")
   ))
