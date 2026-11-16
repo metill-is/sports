@@ -6,6 +6,8 @@
     "^[a-z]+_[a-z]+(_[a-z]+)*$": {
       "type": "object",
       "required": ["sport", "country", "sexes", "active", "data_source", "stan_model"],
+      "if": { "properties": { "engine": { "const": "inla" } }, "required": ["engine"] },
+      "then": { "properties": { "sport": { "const": "football" } } },
       "properties": {
         "sport":    { "type": "string", "enum": ["football", "basketball", "handball"] },
         "country":  { "type": "string", "minLength": 2 },
@@ -68,7 +70,7 @@
         "stan_model": { "type": "string" },
         "engine": {
           "enum": ["stan", "inla"],
-          "description": "Which engine fit_league() uses. Absent means stan. inla fits football model v2 with R-INLA and is accepted for football only; stan_model stays required because Stan is the reference the INLA fit is checked against."
+          "description": "Which engine fit_league() uses. Absent means stan. inla fits football model v2 with R-INLA and is accepted for football only (the if/then on this object refuses it for any other sport); stan_model stays required because Stan is the reference the INLA fit is checked against."
         },
         "training_filter": {
           "type": "object",
