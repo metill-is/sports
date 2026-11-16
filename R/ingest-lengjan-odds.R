@@ -363,25 +363,27 @@ ingest_lengjan_odds <- function(leagues, scraped_at = Sys.time(),
   c(football = 1L, basketball = 2L, handball = 6L)[[sport]]
 }
 
+# Canonical (lowercase) -> Lengjan country query parameter.
+# Currently only `iceland` is wired through `config/leagues.yml::active=true`;
+# the other codes are kept as a forward-compatible lookup for when
+# non-Icelandic leagues are reactivated in later plans. Removing them would
+# force re-derivation from `_legacy/lengjan-odds/config/competitions.yml`,
+# so keeping them here is intentional and not dead code. The archive reader
+# (R/lengjan-archive.R) reads the same table in reverse, code -> name.
+.LENGJAN_COUNTRY_CODES <- c(
+  iceland = "IS", england = "ENG", italy = "IT", spain = "ES",
+  denmark = "DK", germany = "DE", sweden = "SE", norway = "NO",
+  france = "FR", international = "INT"
+)
+
 .lengjan_country_code <- function(country) {
-  # Canonical (lowercase) -> Lengjan country query parameter.
-  # Currently only `iceland` is wired through `config/leagues.yml::active=true`;
-  # the other codes are kept as a forward-compatible lookup for when
-  # non-Icelandic leagues are reactivated in later plans. Removing them would
-  # force re-derivation from `_legacy/lengjan-odds/config/competitions.yml`,
-  # so keeping them here is intentional and not dead code.
-  codes <- c(
-    iceland = "IS", england = "ENG", italy = "IT", spain = "ES",
-    denmark = "DK", germany = "DE", sweden = "SE", norway = "NO",
-    france = "FR", international = "INT"
-  )
-  if (!country %in% names(codes)) {
+  if (!country %in% names(.LENGJAN_COUNTRY_CODES)) {
     stop(
       "Unknown Lengjan country code for '", country,
-      "'. Add it to .lengjan_country_code() in R/ingest-lengjan-odds.R."
+      "'. Add it to .LENGJAN_COUNTRY_CODES in R/ingest-lengjan-odds.R."
     )
   }
-  codes[[country]]
+  .LENGJAN_COUNTRY_CODES[[country]]
 }
 
 .lengjan_fetch <- function(session, url, settle_s = 3,
