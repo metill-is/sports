@@ -1,0 +1,832 @@
+---
+title: "Football model v2: validation, walk-forward and cutover proposal"
+subtitle: "One specification fitted by Stan and R-INLA, tested on Icelandic football 2022 to 2026"
+author: "Claude (Fable 5.2), for Brynjólfur Gauti Jónsson"
+date: 2026-11-16
+date-format: "D MMMM YYYY"
+lang: en-GB
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    toc-location: left
+    theme: cosmo
+    fig-width: 8.5
+    fig-height: 4.6
+    fig-dpi: 144
+    embed-resources: true
+    smooth-scroll: true
+    html-math-method: katex
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r}
+#| label: setup
+#| include: false
+options(width = 110)
+library(ggplot2)
+res <- readRDS("2026-11-15-football-v2/results.rds")
+val <- res$validation
+wf <- res$wf
+ha <- res$ha
+dr <- res$dryrun
+dm <- dr$male
+dw <- dr$female
+theme_set(metill::theme_metill())
+sex_label <- c(female = "Women", male = "Men")
+engine_label <- c(`stan-nuts` = "Stan (NUTS)", `inla-full` = "INLA, full integration", `inla-eb` = "INLA, empirical Bayes")
+col_engine <- c(`Stan (NUTS)` = "#1b3a57", `INLA, full integration` = "#c8553d", `INLA, empirical Bayes` = "#e3a857")
+num <- function(x, d = 3) formatC(x, format = "f", digits = d)
+sgn <- function(x, d = 4) formatC(x, format = "f", digits = d, flag = "+")
+tab <- function(d, ...) knitr::kable(d, row.names = FALSE, align = c("l", rep("r", ncol(d) - 1)), ...)
+variant_label <- c(
+  base = "Reference (calendar clock)",
+  brk = "Free season-break variance",
+  brk_rev80 = "Break + reversion 0.8",
+  brk_rev90 = "Break + reversion 0.9",
+  brk_rev70 = "Break + reversion 0.7",
+  rev80_div = "Reversion 0.8 + division-by-season offsets",
+  rev80_mov = "Reversion 0.8 + promotion/relegation shock",
+  rev80_sq_static = "Reversion 0.8; strength + fixed style",
+  rev80_sq_none = "Strength only (no style)",
+  rev80_sq_rw = "Reversion 0.8; strength + style walk",
+  rev70_sq_static = "Reversion 0.7 instead of 0.8",
+  rev60_sq_static = "Reversion 0.6 instead of 0.8",
+  rev80_div_mov = "Reversion 0.8 + offsets + promotion/relegation shock",
+  rev80_sq_static_div_mov = "Reversion 0.8; strength + fixed style + offsets + shock",
+  rev80_sq_static_div = "+ division-by-season offsets",
+  rev80_sq_static_lvl = "+ league-level walks (scoring, home advantage)",
+  rev80_sq_none_lvl = "Recommended model without the style term",
+  rev80_sq_static_mov = "+ promotion/relegation shock",
+  base_div = "Division-by-season offsets",
+  brk_div = "Break + division-by-season offsets",
+  brk_mov = "Break + promotion/relegation shock",
+  brk_div_mov = "Break + offsets + promotion/relegation shock",
+  base_sq_rw = "Strength + style walk",
+  base_sq_static = "Strength + fixed style",
+  base_sq_none = "Strength only",
+  sq_rw = "Break; strength + style walk",
+  sq_static = "Break; strength + fixed style",
+  sq_none = "Break; strength only"
+)
+lab <- function(v) ifelse(v %in% names(variant_label), variant_label[v], v)
+# Paired difference of one variant from another on the same matches, as text.
+pdv <- function(variant, ref, metric = "ls_score", group = "all") {
+  d <- wf$paired
+  k <- d[d$variant == variant & d$ref == ref & d$metric == metric & d$group == group, ]
+  if (group == "all") k <- k[k$split == "all", ]
+  if (!nrow(k)) {
+    return("(not run)")
+  }
+  paste0(sgn(k$diff[1]), " (se ", num(k$se[1], 4), ")")
+}
+has <- function(variant) variant %in% wf$scores$variant
+```
+
+```{r}
+#| label: summary-numbers
+sv <- wf$scores
+ll <- function(v) num(sv$logloss_1x2[sv$variant == v], 4)
+pr_all <- wf$priced[wf$priced$variant == wf$ref & wf$priced$group == "all", ]
+rd_all <- wf$rounds[wf$rounds$variant == wf$ref & wf$rounds$group == "all", ]
+vs <- function(d, a) paste0(sgn(d$diff[d$against == a]), " (se ", num(d$se[d$against == a], 4), ")")
+ps <- val$pred_summ[val$pred_summ$engine == "inla-full", ]
+```
+
+## Summary {#sec-summary}
+
+**Recommendation.** Replace the football model with an independent-Poisson model that has two intercepts, one weekly strength walk per team with reversion at the season break, a fixed style value per team, a league-wide scoring level and home advantage that walk over time, and pooled sign-free team home-advantage deviations; fit it with R-INLA and keep a Stan program of the same specification as the reference check. The evidence follows, then the plan. No production path was changed by this work.
+
+- **The engine gate is passed.** One specification was fitted by NUTS and by INLA from the same object (results to 31 July 2026). Entry-level and innovation sds agree to three figures; state posterior means differ by about 0.06 of a posterior sd; held-out match probabilities differ by `r num(mean(ps$mean_abs_dp), 3)` on average and `r num(max(ps$max_abs_dp), 3)` at most; no score difference exceeds one standard error. The one visible departure is the near-zero sd of the team home-advantage deviations, which INLA puts 5 % to 30 % higher. NUTS on this specification needs 63 leapfrog steps per iteration with no divergences (@sec-validation).
+- **Walk-forward, 2022 to 2026.** Weekly leak-free refits, `r format(sum(wf$scores_sex$n[wf$scores_sex$variant == wf$ref]), big.mark = ",")` predicted matches. The validated reference specification scores a 1X2 log loss of `r ll("base")`; the recommended model `r ll(wf$ref)`. Its mean home-win probability is `r num(sv$p_home[sv$variant == wf$ref], 3)` where `r num(sv$obs_home[sv$variant == wf$ref], 3)` occurred (@sec-wf).
+- **Against production and the bookmaker, 2026.** On `r pr_all$n[1]` priced matches the recommended model's log loss is `r num(pr_all$logloss_model[1], 3)`, production's `r num(pr_all$logloss_other[pr_all$against == "prod"], 3)` and the de-vigged Lengjan line's `r num(pr_all$logloss_other[pr_all$against == "line"], 3)`: `r vs(pr_all, "prod")` against production, `r vs(pr_all, "line")` against the line. On `r rd_all$n[1]` pre-round forecasts, where horizons are comparable, it is `r vs(rd_all, "prodround")` against production. Production's mean home-win probability on the priced matches was `r num(pr_all$phome_other[pr_all$against == "prod"], 3)`, the new model's `r num(pr_all$phome_model[1], 3)`, the line's `r num(pr_all$phome_other[pr_all$against == "line"], 3)`; `r num(pr_all$obs_home[1], 3)` occurred. Ahead of production by 1.3 to 1.6 standard errors, behind the line by about one: suggestive against production, not established.
+- **What the structural tests kept.** Reversion at the season break (scoreline `r pdv("brk_rev80", "base")`); by far the largest effect, one strength walk plus a fixed style in place of separate attack and defence walks (1X2 `r pdv("rev80_sq_static", "brk_rev80", "ls_1x2")`, scoreline `r pdv("rev80_sq_static", "brk_rev80")`); and league-wide scoring and home-advantage walks (scoreline `r pdv("rev80_sq_static_lvl", "rev80_sq_static")`), without which that model under-predicts goals by 4 %. Rejected: a free season-break variance, a promotion and relegation shock, and division-by-season offsets (useful, but the league walks do the same job better). The style term earns its place on the scoreline, not on the 1X2 (@sec-tests).
+- **Home-advantage inflation.** Production's team home effects add up to about twice the home advantage in the goals. Either pooling them or dropping the non-negativity constraint removes the inflation on its own; a common volatility does not affect it. The cause is a floor at zero under unpooled, noisy estimates (@sec-ha).
+- **Cutover.** The extract, publish and simulation layers read a fit through one method and a fixed set of variable names. An adapter presents INLA's draws under those names, so those layers need no change: a dry run of the whole chain on two dates produced every extract file and `r dm$schema$n_passed + dw$schema$n_passed` schema-valid JSON files with production's own extract and publish code. The remaining work is a config switch, a diagnostics gate for INLA fits, INLA on the CI runner, and a shadow period (@sec-cutover).
+
+**Decisions that are yours.**
+
+1. Approve the recommended model for the cutover, or the validated reference specification if you prefer the smaller step.
+2. Shadow order: Stan published with INLA in shadow until a gate is met, or INLA published from the first 2027 fixture with Stan in shadow. I recommend the second.
+3. Whether INLA goes into `DESCRIPTION` (four workflows then need its repository) or is installed only in `fit.yml`.
+4. Whether the published attack and defence home-advantage numbers stay (as an even split of an identified total) or give way to the total.
+
+
+## The one specification {#sec-spec}
+
+The pilot's INLA and Stan models were close relatives, not the same model, so their comparison mixed approximation error with modelling differences. Everything below starts from a single specification that both engines read from the same object.
+
+Each team $k$ has an attack state $a_{k,t}$ and a defence state $d_{k,t}$ on a weekly calendar grid (weeks run Monday to Sunday). For a match in week $t$ between home team $h$ and away team $w$:
+
+$$
+\begin{aligned}
+\text{home goals} &\sim \text{Poisson}\!\left(\exp\!\left(c_{\text{home}} + a_{h,t} + \eta^{a}_{h} - d_{w,t}\right)\right),\\
+\text{away goals} &\sim \text{Poisson}\!\left(\exp\!\left(c_{\text{away}} + a_{w,t} - d_{h,t} - \eta^{d}_{h}\right)\right).
+\end{aligned}
+$$
+
+- **Two intercepts.** $c_{\text{home}}$ and $c_{\text{away}}$ are the log scoring rates of the home and the away side between average teams. Their difference is the league home advantage, and it is identified.
+- **Pooled, sign-free team home advantage.** $\eta^{a}_{k} \sim N(0, \omega_a^2)$ and $\eta^{d}_{k} \sim N(0, \omega_d^2)$ are team deviations from the league value, free to be negative and shrunk toward zero.
+- **Weekly states, common volatility.** A team enters at $a_{k,\text{entry}} \sim N(0, \tau_a^2)$ (entry levels sum to zero over teams) and then follows a random walk with one innovation sd for all teams: $a_{k,t} - a_{k,t-1} \sim N(0, \sigma_a^2)$ per week. The same holds for defence with $\tau_d, \sigma_d$.
+- **Forward propagation.** A fixture to predict is a state like any other, with no likelihood attached. Its posterior is the last informed state carried forward with the random-walk variance, so forecasts widen with the horizon.
+
+Weeks in which a team does not play are integrated out exactly: a step across $m$ weeks has variance $m\sigma^2$. The model therefore needs one state per team and week with a match or a fixture, not one per calendar week, and it is still the weekly model.
+
+Priors are the same in both engines. A penalised-complexity prior on a precision in INLA is an Exponential prior on the standard deviation in Stan: $P(\tau > 1) = P(\sigma > 0.2) = P(\omega > 0.3) = 0.01$, and $c_{\text{home}}, c_{\text{away}} \sim N(\log 1.4, 1)$.
+
+In INLA the prior precision of a state field is assembled by hand as $Q = \tau^{-2} R_{\text{entry}} + \sigma^{-2} R_{\text{walk}}$ (model `generic3`), which avoids INLA's built-in intrinsic random walk and its different meaning of "level". In Stan the same steps are written as non-centred innovations. A unit test checks that the two encodings imply the same covariance matrix.
+
+The specification is league-agnostic: divisions, their ranking and the offset groups arrive as data, and the only Iceland-specific code is a thin adapter. It lives in `research/football-v2/` on branch `claude/objective-poitras-964871` (@sec-where).
+
+## Engine validation {#sec-validation}
+
+```{r}
+#| label: val-dims
+dims <- val$dims
+smp <- val$sampler[val$sampler$engine == "stan-nuts", ]
+```
+
+Both engines were fitted to results up to 31 July 2026 and asked to predict every match from 1 August to 31 October 2026: `r format(dims$N[dims$sex == "female"], big.mark = ",")` training matches and `r dims$holdout[dims$sex == "female"]` held-out matches for women (`r format(dims$S[dims$sex == "female"], big.mark = ",")` states per component), `r format(dims$N[dims$sex == "male"], big.mark = ",")` and `r dims$holdout[dims$sex == "male"]` for men (`r format(dims$S[dims$sex == "male"], big.mark = ",")` states). NUTS ran 4 chains of 1,000 warm-up and 1,000 sampling iterations with `adapt_delta` 0.9 on CmdStan 2.40.0: `r sum(smp$divergences)` divergences, `r round(smp$leapfrog[1])` leapfrog steps per iteration for both sexes, largest state $\hat{R}$ `r num(max(smp$max_rhat))`, smallest state bulk ESS `r format(round(min(smp$min_ess)), big.mark = ",")`. INLA (25.6.7) was run twice: integrating over the hyperparameters (its default, 45 design points for six hyperparameters) and with `int.strategy = "eb"`, which fixes them at their posterior mode.
+
+### Hyperparameters
+
+```{r}
+#| label: fig-hyper
+#| fig-cap: "Posterior medians and 5 % to 95 % intervals of the six standard deviations. NUTS and INLA lie on top of each other for the entry-level and innovation sds. For the team home-advantage deviations INLA's interval starts higher: it misses the posterior mass that NUTS finds next to zero."
+#| fig-height: 4.2
+h <- val$hyper
+long <- rbind(
+  data.frame(sex = h$sex, parameter = h$parameter, engine = "Stan (NUTS)", lo = h$stan_q5, mid = h$stan_q50, hi = h$stan_q95),
+  data.frame(sex = h$sex, parameter = h$parameter, engine = "INLA, full integration", lo = h$inla_q5, mid = h$inla_q50, hi = h$inla_q95)
+)
+par_label <- c(
+  tau_att = "Entry level sd, attack", tau_def = "Entry level sd, defence",
+  sigma_att = "Weekly innovation sd, attack", sigma_def = "Weekly innovation sd, defence",
+  omega_att = "Team home-advantage sd, attack", omega_def = "Team home-advantage sd, defence"
+)
+long$parameter <- factor(par_label[long$parameter], levels = rev(par_label))
+long$group <- ifelse(grepl("Entry", long$parameter), "Entry level", ifelse(grepl("Weekly", long$parameter), "Weekly innovation", "Team home advantage"))
+long$group <- factor(long$group, c("Entry level", "Weekly innovation", "Team home advantage"))
+ggplot(long, aes(mid, parameter, colour = engine)) +
+  geom_pointrange(aes(xmin = lo, xmax = hi), position = position_dodge(width = 0.55), size = 0.35) +
+  facet_grid(group ~ sex, scales = "free", labeller = labeller(sex = sex_label)) +
+  scale_colour_manual(values = col_engine, name = NULL) +
+  labs(x = "Standard deviation (log-rate scale)", y = NULL) +
+  theme(legend.position = "top", strip.text.y = element_blank())
+```
+
+```{r}
+#| label: tbl-hyper
+#| tbl-cap: "Hyperparameter posteriors, same model and data. The empirical-Bayes column is the single value INLA conditions on in that mode."
+h <- val$hyper
+tab(data.frame(
+  ` ` = sex_label[h$sex], Parameter = par_label[h$parameter],
+  `NUTS mean` = num(h$stan_mean, 4), `NUTS 5 % to 95 %` = paste(num(h$stan_q5, 4), "to", num(h$stan_q95, 4)),
+  `INLA mean` = num(h$inla_mean, 4), `INLA 5 % to 95 %` = paste(num(h$inla_q5, 4), "to", num(h$inla_q95, 4)),
+  `INLA EB mode` = num(h$eb_mode, 4), check.names = FALSE
+))
+```
+
+```{r}
+#| label: val-fixed
+fx <- val$fixed
+ha_f <- fx[fx$parameter == "home_adv" & fx$sex == "female", ]
+ha_m <- fx[fx$parameter == "home_adv" & fx$sex == "male", ]
+om <- val$hyper[grepl("omega", val$hyper$parameter), ]
+```
+
+The intercepts agree to the third decimal. The league home advantage $c_{\text{home}} - c_{\text{away}}$ is `r num(ha_f$stan_mean)` (sd `r num(ha_f$stan_sd)`) under NUTS and `r num(ha_f$inla_mean)` (sd `r num(ha_f$inla_sd)`) under INLA for women, `r num(ha_m$stan_mean)` (sd `r num(ha_m$stan_sd)`) and `r num(ha_m$inla_mean)` (sd `r num(ha_m$inla_sd)`) for men.
+
+**Where INLA departs.** The team home-advantage sds $\omega$ sit close to zero, with NUTS 5 % quantiles of `r num(min(om$stan_q5), 3)` to `r num(max(om$stan_q5), 3)`. INLA explores the hyperparameters on the log-precision scale, where "sd near zero" is an unbounded tail, and its posterior means for $\omega$ come out `r round(100 * (min(om$inla_mean / om$stan_mean) - 1))` % to `r round(100 * (max(om$inla_mean / om$stan_mean) - 1))` % above NUTS. This is the only hyperparameter where the engines differ visibly, and it is the one the data say least about.
+
+### States
+
+```{r}
+#| label: fig-traj
+#| fig-cap: "Attack states of three women's teams and three men's teams (the strongest, a mid-table and a weak side at the cutoff). Ribbon: NUTS posterior mean ± 1.64 sd. Line: INLA posterior mean. Dashed lines: INLA mean ± 1.64 sd. The last points, right of the vertical line, are fixtures after the cutoff, where the state is propagated forward without data."
+#| fig-height: 6.2
+tr <- val$traj[val$traj$component == "att", ]
+keep <- unlist(lapply(split(tr, tr$sex), function(d) unique(d$team)[1:3]))
+tr <- tr[tr$team %in% keep, ]
+tr$date <- as.Date("2021-01-04") + 7 * tr$week
+tr$panel <- paste0(sex_label[tr$sex], ": ", tr$team)
+tr$panel <- factor(tr$panel, unique(tr$panel))
+ggplot(tr, aes(date)) +
+  geom_ribbon(aes(ymin = stan_mean - 1.64 * stan_sd, ymax = stan_mean + 1.64 * stan_sd), fill = "#1b3a57", alpha = 0.25) +
+  geom_line(aes(y = inla_mean), colour = "#c8553d", linewidth = 0.5) +
+  geom_line(aes(y = inla_mean - 1.64 * inla_sd), colour = "#c8553d", linewidth = 0.3, linetype = "dashed") +
+  geom_line(aes(y = inla_mean + 1.64 * inla_sd), colour = "#c8553d", linewidth = 0.3, linetype = "dashed") +
+  geom_vline(xintercept = as.Date("2026-07-31"), colour = "grey40", linewidth = 0.3) +
+  facet_wrap(~panel, ncol = 3, scales = "free_y") +
+  labs(x = NULL, y = "Attack state (log rate)")
+```
+
+```{r}
+#| label: tbl-states
+#| tbl-cap: "Every state, INLA against NUTS. The mean difference is in units of the NUTS posterior sd; the Monte Carlo error of a NUTS state mean is about 0.02 to 0.03 of an sd, so a root-mean-square of 0.06 is a small real difference, not noise."
+ss <- val$state_summ
+ss <- ss[order(ss$sex, ss$engine, ss$component, -ss$has_obs), ]
+tab(data.frame(
+  ` ` = sex_label[ss$sex],
+  Engine = engine_label[ss$engine],
+  Component = ifelse(ss$component == "att", "Attack", "Defence"),
+  States = ifelse(ss$has_obs, "with matches", "fixtures only"),
+  n = format(ss$n, big.mark = ","),
+  `RMS mean diff. (sd)` = num(ss$rms_z, 3), `Largest (sd)` = num(ss$max_abs_z, 2),
+  `Largest (log rate)` = num(ss$max_abs_dmean, 3),
+  `sd ratio, median` = num(ss$sd_ratio_med, 3),
+  `sd ratio, 5 % to 95 %` = paste(num(ss$sd_ratio_q05, 2), "to", num(ss$sd_ratio_q95, 2)),
+  check.names = FALSE
+))
+```
+
+Posterior means differ by about 0.06 of a posterior sd on average and by at most 0.04 on the log-rate scale. Posterior sds agree to within a few per cent; under empirical Bayes they are about 1 % smaller, which is the price of ignoring hyperparameter uncertainty. States for fixtures after the cutoff behave like the rest, so the forward propagation is the same in both engines.
+
+### Match-by-match predictions
+
+```{r}
+#| label: fig-pmatch
+#| fig-cap: "Held-out matches, 1 August to 31 October 2026: INLA's home-win probability minus NUTS's, against the NUTS value. Grey band: ± 2 Monte Carlo standard errors of the NUTS probability (median over matches)."
+#| fig-height: 3.8
+m <- val$matches
+m$sex <- val$matches_sex
+long <- rbind(
+  data.frame(sex = m$sex, p = m$stan.p_home, d = m$full.p_home - m$stan.p_home, engine = "INLA, full integration"),
+  data.frame(sex = m$sex, p = m$stan.p_home, d = m$eb.p_home - m$stan.p_home, engine = "INLA, empirical Bayes")
+)
+band <- 2 * stats::median(m$stan_mcse.home)
+ggplot(long, aes(p, d, colour = engine)) +
+  annotate("rect", xmin = -Inf, xmax = Inf, ymin = -band, ymax = band, fill = "grey60", alpha = 0.25) +
+  geom_hline(yintercept = 0, colour = "grey30", linewidth = 0.3) +
+  geom_point(size = 0.9, alpha = 0.7) +
+  facet_wrap(~sex, labeller = labeller(sex = sex_label)) +
+  scale_colour_manual(values = col_engine, name = NULL) +
+  scale_y_continuous(limits = c(-0.02, 0.02)) +
+  labs(x = "NUTS probability of a home win", y = "INLA minus NUTS") +
+  theme(legend.position = "top")
+```
+
+```{r}
+#| label: tbl-pred
+#| tbl-cap: "Predictive agreement on the held-out matches. Probability differences are over all three outcomes; score differences are INLA minus NUTS with paired standard errors (positive means INLA scored better)."
+ps <- val$pred_summ
+tab(data.frame(
+  ` ` = sex_label[ps$sex], Engine = engine_label[ps$engine], Matches = ps$n,
+  `Mean abs. diff.` = num(ps$mean_abs_dp, 4), `Largest diff.` = num(ps$max_abs_dp, 4),
+  `NUTS MC error, mean` = num(ps$stan_mcse_mean, 4),
+  `1X2 log score diff.` = paste0(sgn(ps$d_1x2), " (se ", num(ps$se_1x2, 4), ")"),
+  `Scoreline log score diff.` = paste0(sgn(ps$d_scoreline), " (se ", num(ps$se_scoreline, 4), ")"),
+  check.names = FALSE
+))
+```
+
+```{r}
+#| label: tbl-valscores
+#| tbl-cap: "Held-out scores by engine. Lower is better for both losses."
+sc <- val$scores
+tab(data.frame(
+  ` ` = sex_label[sc$sex], Engine = engine_label[sc$engine],
+  `1X2 log loss` = num(sc$logloss_1x2, 4), `Scoreline log loss` = num(-sc$scoreline, 4),
+  `Mean P(home win)` = num(sc$p_home, 3), check.names = FALSE
+))
+```
+
+```{r}
+#| label: val-bias
+m <- val$matches
+d_home <- mean(m$full.p_home - m$stan.p_home)
+d_draw <- mean(m$full.p_draw - m$stan.p_draw)
+```
+
+Match probabilities differ by `r num(mean(val$pred_summ$mean_abs_dp[val$pred_summ$engine == "inla-full"]), 3)` on average and by at most `r num(max(val$pred_summ$max_abs_dp), 3)`, two to three times the Monte Carlo error of the NUTS estimate. The difference has a direction: INLA gives the home win `r num(d_home, 4)` more and the draw `r num(abs(d_draw), 4)` less on average, the footprint of its slightly larger $\omega$. No score difference between engines exceeds one standard error.
+
+**Verdict.** On this model INLA reproduces NUTS to the third decimal in hyperparameters, to a few per cent of a posterior sd in the states and to about 0.003 in match probabilities. Empirical Bayes loses about 1 % of posterior sd and nothing measurable in predictions. The approximation is fit for the daily fit and for the walk-forward below.
+
+## Which change removes the home-advantage inflation {#sec-ha}
+
+The pilot showed that production's team home effects add up to about twice the home advantage in the raw goal ratio, and that a lean model with pooled, sign-free effects and common volatility does not. That step changed three things at once. The ladder below changes one at a time, starting from production's structure (variant A: each team has its own attack and defence home effect, forced to be at least zero with a wide prior, and its own random-walk volatility). All four are independent-Poisson models on the same data (results to 31 July 2026), fitted with NUTS at production's sampler settings.
+
+```{r}
+#| label: tbl-ha
+#| tbl-cap: "Home-advantage isolation ladder. Total home effect: the home-match-weighted sum of the attack and defence home effects on the log scale, posterior mean (sd). It should match the raw log ratio of home to away goals in the training data. The right-hand columns are the held-out matches after the cutoff."
+ha_label <- c(
+  ha_a_unpooled_positive = "A. Unpooled, forced ≥ 0, per-team volatility",
+  ha_b_unpooled_signfree = "B. A with the sign constraint removed",
+  ha_c_pooled_positive = "C. A with pooling (still ≥ 0)",
+  ha_d_common_volatility = "D. A with common volatility"
+)
+if (!is.null(ha)) {
+  h <- ha[order(ha$sex, ha$variant), ]
+  tab(data.frame(
+    ` ` = sex_label[h$sex], Variant = ha_label[h$variant],
+    `Total home effect` = paste0(num(h$total_ha), " (", num(h$total_ha_sd), ")"),
+    `Raw log goal ratio` = num(h$raw_log_ratio),
+    `Mean P(home), held out` = num(h$holdout_p_home), `Home wins, held out` = num(h$holdout_obs_home),
+    `1X2 log loss` = num(h$holdout_logloss, 4),
+    `Leapfrogs / iter` = round(h$leapfrog), Divergences = h$divergences,
+    check.names = FALSE
+  ))
+}
+```
+
+```{r}
+#| label: ha-inline
+hv <- function(sex, v, col = "total_ha") {
+  x <- ha[ha$sex == sex & ha$variant == v, col]
+  if (is.null(ha) || !length(x)) "(not run)" else num(x, 3)
+}
+ref_ha <- function(sex) num(val$fixed$stan_mean[val$fixed$parameter == "home_adv" & val$fixed$sex == sex], 3)
+```
+
+**Either pooling or sign freedom is enough; common volatility has nothing to do with it.** For women, production's structure gives a total home effect of `r hv("female", "ha_a_unpooled_positive")` where the raw goal ratio says `r hv("female", "ha_a_unpooled_positive", "raw_log_ratio")`. Removing the sign constraint alone brings it to `r hv("female", "ha_b_unpooled_signfree")`; pooling alone, with the effects still forced non-negative, to `r hv("female", "ha_c_pooled_positive")`; a common volatility alone leaves it at `r hv("female", "ha_d_common_volatility")`. For men the same four rungs give `r hv("male", "ha_a_unpooled_positive")`, `r hv("male", "ha_b_unpooled_signfree")`, `r hv("male", "ha_c_pooled_positive")` and `r hv("male", "ha_d_common_volatility")` against a raw ratio of `r hv("male", "ha_a_unpooled_positive", "raw_log_ratio")`. The reference specification, which has both pooling and sign freedom, gives `r ref_ha("female")` and `r ref_ha("male")`.
+
+The mechanism is the combination. Each team's home effect is estimated with a posterior sd of about 0.1 around a value of about 0.08, so the estimate is mostly noise. A floor at zero cuts off the negative half of that noise, and with no pooling nothing pulls the estimates back, so every team errs upward and the error does not average out. Take away the floor, or add the pull, and the bias goes. The held-out home-win probabilities follow: with the inflated effects the model says `r hv("female", "ha_a_unpooled_positive", "holdout_p_home")` for women where `r hv("female", "ha_a_unpooled_positive", "holdout_obs_home")` occurred, and `r hv("female", "ha_b_unpooled_signfree", "holdout_p_home")` once either fix is in. The men's held-out window is the exception that shows why one window is not enough: home sides won `r hv("male", "ha_a_unpooled_positive", "holdout_obs_home")` of those 195 matches, well above the long-run rate, so there the inflated model (`r hv("male", "ha_a_unpooled_positive", "holdout_p_home")`) happens to sit closer than the corrected ones (`r hv("male", "ha_b_unpooled_signfree", "holdout_p_home")`). Over the 3,007 men's matches of the walk-forward the reference specification predicts `r num(wf$scores_sex$p_home[wf$scores_sex$variant == "base" & wf$scores_sex$sex == "male"], 3)` and `r num(wf$scores_sex$obs_home[wf$scores_sex$variant == "base" & wf$scores_sex$sex == "male"], 3)` occurred.
+
+Production's structure also samples worst: the men's variant A fit had `r if (!is.null(ha)) ha$divergences[ha$sex == "male" & ha$variant == "ha_a_unpooled_positive"] else NA` divergent transitions.
+
+
+
+## Walk-forward, 2022 to 2026 {#sec-wf}
+
+```{r}
+#| label: wf-setup
+sc <- wf$scores_sex
+base_sc <- sc[sc$variant == wf$ref, ]
+cov <- wf$coverage
+n_all <- sum(base_sc$n)
+```
+
+**Design.** For every calendar week from 2022 to 2026 that has a match, the model is fitted on results up to the Sunday before and predicts that week's matches, so every forecast is one to seven days ahead and uses nothing later than its cutoff. The training set at each cutoff is production's own (`model_training_results()`, including the training filter). States are refitted at every cutoff; hyperparameters are re-estimated at every fourth cutoff and held at their last estimate in between, so they also only see the past. A fixture is skipped when one of its teams has no match in the training set, which is the rule production applies.
+
+That gives `r format(n_all, big.mark = ",")` predicted matches: `r format(base_sc$n[base_sc$sex == "male"], big.mark = ",")` men's and `r format(base_sc$n[base_sc$sex == "female"], big.mark = ",")` women's. `r sum(cov$skipped[cov$sex == "male"])` men's fixtures and `r sum(cov$skipped[cov$sex == "female"])` women's were skipped; the men's are almost all fourth-division (LD4) matches, a division outside the training filter. The data start in 2021, so the 2022 forecasts rest on one earlier season.
+
+Scores: the **1X2 log loss** (lower is better) is the primary measure; the **exact-scoreline log loss** is the measure for model development, because it uses the whole predictive distribution.
+
+### Scores by model
+
+```{r}
+#| label: tbl-wf-models
+#| tbl-cap: "Every model run through the walk-forward, same 4,511 matches. The reference is the specification validated against NUTS above; the others are the changes tested in the next section."
+sv <- wf$scores
+ord <- c("base", "brk", "brk_rev80", "brk_rev70", "brk_rev90", "rev80_div", "rev80_mov", "rev80_div_mov", "rev80_sq_rw", "rev80_sq_static", "rev70_sq_static", "rev60_sq_static", "rev80_sq_none", "rev80_sq_static_div_mov")
+sv <- sv[order(match(sv$variant, ord)), ]
+tab(data.frame(
+  Model = lab(sv$variant), `1X2 log loss` = num(sv$logloss_1x2, 4), `Scoreline log loss` = num(sv$scoreline, 4),
+  RPS = num(sv$rps, 4), `Mean P(home)` = num(sv$p_home, 3), `Home wins` = num(sv$obs_home, 3),
+  check.names = FALSE
+))
+```
+
+### The recommended model by season and phase
+
+The tables below describe `r lab(wf$ref)`, the model recommended in @sec-model.
+
+```{r}
+#| label: tbl-wf-season
+#| tbl-cap: "The recommended model by season. The last two columns compare the mean predicted probability of a home win with the share that occurred."
+bs <- wf$by_season
+tab(data.frame(
+  ` ` = sex_label[bs$sex], Season = bs$season, Matches = bs$n,
+  `1X2 log loss` = num(bs$logloss_1x2, 4), `Scoreline log loss` = num(bs$scoreline, 3),
+  RPS = num(bs$rps, 4), `Mean P(home)` = num(bs$p_home, 3), `Home wins` = num(bs$obs_home, 3),
+  check.names = FALSE
+))
+```
+
+```{r}
+#| label: tbl-wf-phase
+#| tbl-cap: "The recommended model by season phase: the first five rounds of each division, the middle, and the last third (split rounds and play-offs count as late; cup ties take the phase of the league matches around them)."
+bp <- wf$by_phase
+phase_label <- c(early = "First five rounds", middle = "Middle", late = "Last third")
+tab(data.frame(
+  ` ` = sex_label[bp$sex], Phase = phase_label[as.character(bp$phase)], Matches = bp$n,
+  `1X2 log loss` = num(bp$logloss_1x2, 4), `Scoreline log loss` = num(bp$scoreline, 3),
+  `Mean P(home)` = num(bp$p_home, 3), `Home wins` = num(bp$obs_home, 3),
+  check.names = FALSE
+))
+```
+
+### Against production and the Lengjan line, 2026
+
+Stored production forecasts and odds exist for 2026 only. There are two sets:
+
+- **Priced matches**: the decide layer's candidates table holds, for every match Lengjan priced, production's last pre-match probabilities and the odds. Production refitted daily, so its horizon here is shorter than the walk-forward's.
+- **Pre-round forecasts**: the publisher's round history holds production's forecast for every league match in the published divisions, made before the round (one to sixteen days ahead, median three to four). This is the like-for-like comparison of horizon.
+
+```{r}
+#| label: tbl-bench
+#| tbl-cap: "2026, the recommended model against the outside forecasts on the same matches. Differences are in log score (positive: the new model is better), with paired standard errors treating matches as independent; the week-clustered standard error is in square brackets."
+pr <- wf$priced[wf$priced$variant == wf$ref & wf$priced$against %in% c("line", "prod"), ]
+rd <- wf$rounds[wf$rounds$variant == wf$ref, ]
+b <- rbind(pr, rd)
+against <- c(line = "Lengjan line (de-vigged)", prod = "Production, last pre-match", prodround = "Production, pre-round")
+grp <- c(all = "Both", male = "Men", female = "Women")
+tab(data.frame(
+  Set = ifelse(b$against == "prodround", "Published divisions", "Priced matches"),
+  ` ` = grp[b$group], Against = against[b$against], Matches = b$n,
+  `New model` = num(b$logloss_model, 4), Other = num(b$logloss_other, 4),
+  Difference = paste0(sgn(b$diff), " (se ", num(b$se, 4), ") [", num(b$se_week, 4), "]"),
+  `P(home): new / other / occurred` = paste(num(b$phome_model, 3), num(b$phome_other, 3), num(b$obs_home, 3), sep = " / "),
+  check.names = FALSE
+))
+```
+
+```{r}
+#| label: bench-inline
+pa <- wf$priced[wf$priced$variant == wf$ref & wf$priced$group == "all", ]
+ra <- wf$rounds[wf$rounds$variant == wf$ref & wf$rounds$group == "all", ]
+pl <- wf$prod_vs_line
+```
+
+Three readings.
+
+- **Against production** the new model is ahead on both sets, by `r sgn(pa$diff[pa$against == "prod"])` and `r sgn(ra$diff)`, each about 1.3 to 1.6 standard errors. The men's cells carry it; the women's are too small to say anything (119 and 203 matches). This is suggestive, not established, and production's 2026 forecasts include four months of a training-filter bug.
+- **Against the line** it is behind by `r num(abs(pa$diff[pa$against == "line"]), 4)` (se `r num(pa$se[pa$against == "line"], 4)`), where production was behind by `r num(abs(pl$mean), 4)` (se `r num(pl$se, 4)`) on the same matches. A results-only model trailing the bookmaker by about 0.01 is what the literature reports everywhere.
+- **Home wins.** On the priced matches production said `r num(pa$phome_other[pa$against == "prod"], 3)` on average, the line `r num(pa$phome_other[pa$against == "line"], 3)`, the new model `r num(pa$phome_model[1], 3)`; `r num(pa$obs_home[1], 3)` occurred. The inflation is gone.
+
+## Model tests on the harness {#sec-tests}
+
+Each candidate change was run through the same walk-forward and compared on the same matches with the model it would replace. Because the candidates are small changes to one model, these paired differences are measured far more precisely than any comparison with an outside forecast: standard errors are around a thousandth of a log-score unit. Each test builds on what the previous one kept. The brief's order was season break, division structure, then strength and style. The division-structure test is reported last here because its first run was void: a sign error in my promotion covariate, found from the implausible size of the result, then fixed and covered by a test. By the time it was repeated the strength-and-style test had been run, so it was repeated on that model.
+
+```{r}
+#| label: fig-tests
+#| fig-cap: "Paired log-score differences on all 4,511 walk-forward matches, with 95 % intervals (matches treated as independent). Each row is compared with the model named in its panel. Right of zero is better."
+#| fig-height: 5.4
+pd <- wf$paired
+steps <- rbind(
+  data.frame(variant = c("brk", "brk_rev80"), ref = "base", step = "Season break, against the reference"),
+  data.frame(variant = c("rev80_sq_static", "rev80_sq_rw"), ref = "brk_rev80", step = "Strength and style, against reversion 0.8"),
+  data.frame(
+    variant = c("rev80_sq_static_mov", "rev80_sq_static_div", "rev80_sq_static_lvl", "rev70_sq_static", "rev60_sq_static", "rev80_sq_none"),
+    ref = "rev80_sq_static", step = "Division structure, league level and sensitivity, against strength + fixed style"
+  ),
+  data.frame(variant = "rev80_sq_none_lvl", ref = "rev80_sq_static_lvl", step = "Against the recommended model")
+)
+d <- merge(pd[pd$split == "all", ], steps, by = c("variant", "ref"))
+d$metric <- factor(ifelse(d$metric == "ls_1x2", "1X2 log score", "Exact-scoreline log score"), c("1X2 log score", "Exact-scoreline log score"))
+d$label <- factor(lab(d$variant), rev(unique(lab(steps$variant))))
+d$step <- factor(d$step, unique(steps$step))
+ggplot(d, aes(diff, label)) +
+  geom_vline(xintercept = 0, colour = "grey30", linewidth = 0.3) +
+  geom_pointrange(aes(xmin = lo, xmax = hi), colour = "#1b3a57", size = 0.35) +
+  facet_grid(step ~ metric, scales = "free", space = "free_y", labeller = label_wrap_gen(24)) +
+  labs(x = "Paired difference (log-score units)", y = NULL) +
+  theme(strip.text.y = element_text(angle = 0, hjust = 0))
+```
+
+```{r}
+#| label: tbl-tests
+#| tbl-cap: "Paired differences by sex and by season phase. Standard error in brackets. Positive: better than the model in the 'Against' column."
+d <- merge(pd[pd$split %in% c("all", "sex", "phase"), ], steps, by = c("variant", "ref"))
+cell <- function(m, g) {
+  k <- d[d$metric == m & d$group == g, ]
+  setNames(paste0(sgn(k$diff), " (", num(k$se, 4), ")"), k$variant)
+}
+v <- steps$variant[steps$variant %in% d$variant]
+tab(data.frame(
+  Change = lab(v), Against = lab(steps$ref[match(v, steps$variant)]),
+  `1X2, all` = cell("ls_1x2", "all")[v], `Scoreline, all` = cell("ls_score", "all")[v],
+  `Scoreline, men` = cell("ls_score", "male")[v], `Scoreline, women` = cell("ls_score", "female")[v],
+  `Scoreline, first five rounds` = cell("ls_score", "early")[v], `middle` = cell("ls_score", "middle")[v],
+  `last third` = cell("ls_score", "late")[v],
+  check.names = FALSE
+))
+```
+
+### The season break
+
+Two candidates. In both, steps inside a season count weeks as before and the step across seasons becomes its own jump with its own sd $\kappa$.
+
+- **A free break variance** does nothing for the 1X2 score (`r pdv("brk", "base", "ls_1x2")`) and is slightly worse on the scoreline (`r pdv("brk", "base")`). The reference already gives the off-season about 26 weeks of ordinary drift, and the fitted break sd is close to what that implies. Rejected.
+- **Reversion.** Teams that stay in their division start the new season part of the way back toward the mean of that division's staying teams: $x_{\text{new}} = m + \rho\,(x_{\text{old}} - m) + \text{jump}$. Teams that are promoted or relegated take a plain jump. With $\rho = 0.8$, fixed in advance from published between-season memory of 0.74 to 0.80, the scoreline score improves by `r pdv("brk_rev80", "base")` and the 1X2 score by `r pdv("brk_rev80", "base", "ls_1x2")`, clearest for men (`r pdv("brk_rev80", "base", "ls_score", "male")`). Kept.
+
+```{r}
+#| label: tbl-rho
+#| tbl-cap: "The reversion coefficient estimated by NUTS on results to 31 July 2026 (uniform prior on 0 to 1). INLA cannot estimate it: it sits inside the precision matrix."
+rh <- res$rho
+if (!is.null(rh)) {
+  r <- rh[rh$parameter == "rho", ]
+  form <- c(ad = "Attack and defence walks", final = "Recommended model")
+  tab(data.frame(
+    Form = form[r$form], ` ` = sex_label[r$sex], `Posterior mean` = num(r$mean, 2),
+    `5 % to 95 %` = paste(num(r$q5, 2), "to", num(r$q95, 2)),
+    Divergences = r$divergences, `Leapfrogs / iter` = round(r$leapfrog), check.names = FALSE
+  ))
+}
+```
+
+```{r}
+#| label: rho-inline
+rh <- res$rho
+rho_txt <- function(form, sex) {
+  r <- rh[rh$parameter == "rho" & rh$form == form & rh$sex == sex, ]
+  if (is.null(rh) || !nrow(r)) "(not run)" else paste0(num(r$mean, 2), " (", num(r$q5, 2), " to ", num(r$q95, 2), ")")
+}
+```
+
+How strong should the reversion be? INLA has to be told; NUTS can estimate it (@tbl-rho). On the recommended model the posterior mean is `r rho_txt("final", "female")` for women and `r rho_txt("final", "male")` for men; with attack and defence walks it is `r rho_txt("ad", "female")` and `r rho_txt("ad", "male")`. So 0.8 is right for women and on the weak side for men, whose teams give back more of their distance from the division mean over a winter. On the walk-forward the question barely matters: 0.7 instead of 0.8 changes the scoreline score by `r pdv("rev70_sq_static", "rev80_sq_static")` and the 1X2 score by `r pdv("rev70_sq_static", "rev80_sq_static", "ls_1x2")`. The value fixed in advance, 0.8, is kept for the cutover; what matters is that reversion is there, and the Stan reference can refresh the value before each season.
+
+### One strength and a style, or separate attack and defence
+
+Attack and defence can be re-expressed as an overall strength $s$ and a style $q$: attack $= s + q$, defence $= s - q$. Two independent walks of similar volatility for attack and defence amount to assuming that style moves as freely as strength. The alternative puts the dynamics on strength alone and gives each team one fixed style value, shrunk toward zero.
+
+That change is the largest effect found: `r pdv("rev80_sq_static", "brk_rev80", "ls_1x2")` on the 1X2 score and `r pdv("rev80_sq_static", "brk_rev80")` on the scoreline, in both sexes (scoreline: men `r pdv("rev80_sq_static", "brk_rev80", "ls_score", "male")`, women `r pdv("rev80_sq_static", "brk_rev80", "ls_score", "female")`). It is largest early in the season (`r pdv("rev80_sq_static", "brk_rev80", "ls_score", "early")` in the first five rounds), when a team's attack and defence states have each seen few matches and one shared strength uses both its goals scored and its goals conceded. It also halves the number of dynamic states. Kept on both counts.
+
+Is the style term needed at all? Dropping it from the recommended model changes the scoreline score by `r pdv("rev80_sq_none_lvl", "rev80_sq_static_lvl")` and the 1X2 score by `r pdv("rev80_sq_none_lvl", "rev80_sq_static_lvl", "ls_1x2")`. Style does not help say who wins; it helps say how many goals, which is what a side that plays open or closed football should affect. Kept.
+
+### Division structure, and the league's level over time
+
+Tested on the strength-plus-style model, one piece at a time.
+
+- **A promotion and relegation shock** (a mean shift for teams that go up, another for teams that go down, and their own break variance) does nothing: `r pdv("rev80_sq_static_mov", "rev80_sq_static", "ls_1x2")` on the 1X2 score, `r pdv("rev80_sq_static_mov", "rev80_sq_static")` on the scoreline. Teams that change division already take a plain jump instead of reverting, and nothing systematic is left over. Rejected.
+- **Division-by-season offsets** for the scoring rate and the home advantage help a little: `r pdv("rev80_sq_static_div", "rev80_sq_static", "ls_1x2")` and `r pdv("rev80_sq_static_div", "rev80_sq_static")`. The reason turned out to matter more than the size.
+
+```{r}
+#| label: tbl-goals
+#| tbl-cap: "Goals per match on the walk-forward: scored, and predicted by four models. With one strength walk and a fixed style, nothing in the model can follow the league's scoring level; the league-level walks restore that."
+gl <- res$goals
+if (!is.null(gl)) {
+  g <- merge(merge(gl$base[c("sex", "season", "obs", "pred")], gl$sq[c("sex", "season", "pred")], by = c("sex", "season"), suffixes = c("", "_sq")),
+    gl$sq_div[c("sex", "season", "pred")], by = c("sex", "season"), suffixes = c("", "_div"))
+  if (!is.null(gl$sq_lvl)) g <- merge(g, setNames(gl$sq_lvl[c("sex", "season", "pred")], c("sex", "season", "pred_lvl")), by = c("sex", "season"))
+  g <- g[order(g$sex, g$season), ]
+  out <- data.frame(
+    ` ` = sex_label[g$sex], Season = g$season, Scored = num(g$obs, 2),
+    `Reference (attack and defence walks)` = num(g$pred, 2),
+    `Strength + fixed style` = num(g$pred_sq, 2),
+    `+ division-by-season offsets` = num(g$pred_div, 2), check.names = FALSE
+  )
+  if (!is.null(g$pred_lvl)) out$`+ league-level walks` <- num(g$pred_lvl, 2)
+  tab(out)
+}
+```
+
+Two attack and defence walks can absorb a league-wide rise in scoring: every attack drifts up and every defence down. One strength walk with a fixed style cannot, and goals per match rose over these seasons (men: 3.3 in 2021 to 3.9 in 2026). The strength-plus-style model therefore under-predicts goals in the later seasons (@tbl-goals), even while it scores better. Independent division-by-season offsets close part of that gap; they cannot close all of it, because each season's offset starts again from zero.
+
+The repair is to let the league's scoring level, and by the same logic its home advantage, walk over time: two weekly random walks shared by all teams. That is the time-varying form of what this test asked for.
+
+```{r}
+#| label: goals-inline
+gl <- res$goals
+gm <- function(d) if (is.null(d)) NA else mean(d$pred)
+```
+
+With the two league-level walks added, predicted goals per match come to `r num(gm(gl$sq_lvl), 2)` (it was `r num(gm(gl$sq), 2)` without them; `r num(mean(gl$base$obs), 2)` were scored, averaging the sex-season cells), and the scores improve by `r pdv("rev80_sq_static_lvl", "rev80_sq_static", "ls_1x2")` on the 1X2 and `r pdv("rev80_sq_static_lvl", "rev80_sq_static")` on the scoreline: the same gain as the division offsets, from a term that carries its knowledge across the winter, needs no division labels, and reaches the season simulators through one number. Kept, in place of the offsets.
+
+
+
+
+
+## Recommended model {#sec-model}
+
+The model that came out of the tests, written out for a match in week $t$:
+
+$$
+\begin{aligned}
+\text{home goals} &\sim \text{Poisson}\!\left(\exp\!\left(c_{\text{home}} + g_t + \tfrac12 h_t + (s_{h,t} - s_{w,t}) + (q_h + q_w) + \eta^{a}_{h}\right)\right),\\
+\text{away goals} &\sim \text{Poisson}\!\left(\exp\!\left(c_{\text{away}} + g_t - \tfrac12 h_t + (s_{w,t} - s_{h,t}) + (q_h + q_w) - \eta^{d}_{h}\right)\right).
+\end{aligned}
+$$
+
+- $s_{k,t}$ is team $k$'s **strength** in week $t$: a random walk inside a season (sd $\sigma$ per week), and at the season break a jump (sd $\kappa$) after reverting 20 % of the way to the mean of the division's staying teams. Promoted and relegated teams jump without reverting.
+- $q_k$ is a fixed **style** value per team, shrunk toward zero: positive means more goals at both ends than the strengths alone imply.
+- $g_t$ and $h_t$ are the **league-wide scoring level and home advantage**, two weekly random walks shared by all teams and centred on zero.
+- $c_{\text{home}}, c_{\text{away}}$ and the pooled, sign-free team home-advantage deviations $\eta^a, \eta^d$ are as in the reference specification.
+- Eight hyperparameters ($\tau_s, \sigma, \kappa, \tau_q, \omega_a, \omega_d$ and the two league-walk sds) and one fixed constant ($\rho = 0.8$).
+
+Against the reference specification it has half the team-level dynamic states and scores better; against production it removes the home-advantage inflation, the unidentified split, the per-team volatilities, the shared-rate term and the prior-only states.
+
+```{r}
+#| label: tbl-model-gain
+#| tbl-cap: "The recommended model against the reference specification on the walk-forward (paired, positive is better; standard error in brackets)."
+g <- wf$paired[wf$paired$variant == wf$ref & wf$paired$ref == "base" & wf$paired$split %in% c("all", "sex", "phase"), ]
+grp <- c(all = "All matches", male = "Men", female = "Women", early = "First five rounds", middle = "Middle", late = "Last third")
+w <- reshape(g[c("group", "metric", "diff", "se")], idvar = "group", timevar = "metric", direction = "wide")
+tab(data.frame(
+  ` ` = grp[w$group], Matches = g$n[match(w$group, g$group)],
+  `1X2 log score` = paste0(sgn(w$diff.ls_1x2), " (", num(w$se.ls_1x2, 4), ")"),
+  `Scoreline log score` = paste0(sgn(w$diff.ls_score), " (", num(w$se.ls_score, 4), ")"),
+  check.names = FALSE
+))
+```
+
+### Checked against NUTS
+
+The engine gate in @sec-validation was passed on the reference specification. The same check was repeated on the model recommended here, with the reversion coefficient fixed at 0.8 in both engines (NUTS with `adapt_delta` 0.95; INLA's full integration now uses 80 design points for eight hyperparameters).
+
+```{r}
+#| label: tbl-final-val
+#| tbl-cap: "INLA against NUTS on the recommended model, results to 31 July 2026, held-out matches to 31 October. State and probability differences are for INLA with full integration."
+vf <- if (!is.null(res$validation_lvl)) res$validation_lvl else res$validation_sq
+if (!is.null(vf)) {
+  par_names <- c(
+    tau_str = "Entry level sd", sigma_str = "Weekly innovation sd", kappa_str = "Season-break sd",
+    tau_sty = "Style sd", omega_att = "Team home-advantage sd, attack", omega_def = "Team home-advantage sd, defence",
+    sigma_lvl_goal = "League scoring level, weekly sd", sigma_lvl_ha = "League home advantage, weekly sd"
+  )
+  h <- vf$hyper
+  tab(data.frame(
+    ` ` = sex_label[h$sex], Parameter = par_names[h$parameter],
+    `NUTS mean` = num(h$stan_mean, 4), `NUTS 5 % to 95 %` = paste(num(h$stan_q5, 4), "to", num(h$stan_q95, 4)),
+    `INLA mean` = num(h$inla_mean, 4), `INLA 5 % to 95 %` = paste(num(h$inla_q5, 4), "to", num(h$inla_q95, 4)),
+    check.names = FALSE
+  ))
+}
+```
+
+```{r}
+#| label: tbl-final-val2
+#| tbl-cap: "Predictive agreement and sampler effort on the recommended model."
+if (!is.null(vf)) {
+  ps <- vf$pred_summ
+  st <- vf$sampler[vf$sampler$engine == "stan-nuts", ]
+  ss <- vf$state_summ[vf$state_summ$engine == "inla-full" & vf$state_summ$has_obs, ]
+  rms <- tapply(ss$rms_z, ss$sex, max)
+  sc <- vf$scores
+  one <- function(sex, eng) sc$logloss_1x2[sc$sex == sex & sc$engine == eng]
+  tab(data.frame(
+    ` ` = sex_label[ps$sex], Engine = engine_label[ps$engine], Matches = ps$n,
+    `Prob. diff., mean` = num(ps$mean_abs_dp, 4), `largest` = num(ps$max_abs_dp, 4),
+    `1X2 log score diff.` = paste0(sgn(ps$d_1x2), " (se ", num(ps$se_1x2, 4), ")"),
+    `Scoreline diff.` = paste0(sgn(ps$d_scoreline), " (se ", num(ps$se_scoreline, 4), ")"),
+    `State mean RMS diff. (sd)` = num(rms[ps$sex], 3),
+    `NUTS leapfrogs / iter` = round(st$leapfrog[match(ps$sex, st$sex)]),
+    `NUTS divergences` = st$divergences[match(ps$sex, st$sex)],
+    check.names = FALSE
+  ))
+}
+```
+
+The recommended model agrees with NUTS as closely as the reference did. The same single departure shows up: where a standard deviation sits near zero (the team home-advantage deviations, the league home-advantage walk, the men's season-break sd) INLA's interval starts higher than NUTS's. Nothing else moves, and no prediction or score difference exceeds its Monte Carlo and sampling error.
+
+**What the fitted values say.** Entry levels are spread about twice as widely for women (sd 0.70) as for men (0.36): the women's divisions are further apart. A team's strength moves about 0.05 a week for women and 0.03 for men inside a season, and jumps by 0.24 and 0.10 across a winter on top of the reversion. Style differences between teams are small (sd 0.07). The league scoring level drifts by just under 0.01 a week, enough to follow the rise in goals; the league home advantage barely moves for men and a little for women.
+
+**Left for later**, none of it needed for the cutover:
+
+- Pass propagated strengths, not current ones, to the season simulators, so season forecasts widen with the horizon as match forecasts already do.
+- Let the Stan reference re-estimate the reversion coefficient before each season, and feed INLA the result.
+- A low-score dependence term for the women's cell (the literature review's one remaining suggestion for the likelihood).
+
+
+## Cutover proposal {#sec-cutover}
+
+The owner has chosen INLA as the production engine (15 November 2026). This section is the plan for getting there. Nothing in it has been applied: no file under `R/`, `Stan/`, `config/` or `.github/` is changed by this work.
+
+### What the existing layers need from a fit
+
+The extract, publish and simulation layers touch a fit through one method, `fit$draws(name)`, and expect the production Stan program's variable names. That makes the cutover an adapter problem, not a rewrite. The adapter (`research/football-v2/adapter.R`, `fv2_as_fit()`) presents the new engine's draws under those names:
+
+| Production name | From the new model |
+|---|---|
+| `mean_log_goals` | $(c_{\text{home}} + c_{\text{away}})/2$ |
+| `home_advantage_off[k]`, `home_advantage_def[k]` | $(c_{\text{home}} - c_{\text{away}})/2 + \eta^a_k$ and $\ldots + \eta^d_k$ |
+| `home_advantage_tot[k]` | their sum |
+| `cur_offense_away[k]`, `cur_defense_away[k]` and the `_home` and `cur_strength_*` variants | the state in the week of team $k$'s latest match, plus home advantage |
+| `offense[r, k]`, `defense[r, k]` | the weekly state in the week of team $k$'s $r$-th match |
+| `alpha_mu3`, `beta_mu3_strength_diff` | a large negative constant and zero: the shared-rate term is switched off |
+| `goals1_pred[n]`, `goals2_pred[n]` | Poisson counts drawn from the predictive rates of fixture $n$, which already carry the forward propagation |
+| `lp__` | a placeholder; only the number of draws is read from it |
+
+A unit test runs production's own `extract_posteriors()` on an adapted fit.
+
+**Dry run.** The whole chain was run on real data for two dates, writing only to an isolated tree outside the repository: production's `prepare_data()`, an INLA fit of the recommended model, the adapter, then production's unchanged `extract_football_iceland()` and `publish_iceland_league()`.
+
+```{r}
+#| label: tbl-dry
+#| tbl-cap: "End-to-end dry runs of the cutover path. Schema validation is production's own `validate_publish_dir()`; one file per run (the cup `bracket.json`) has no schema to check against. The last columns compare the new model's home-win probabilities with production's stored extract for the same fit date."
+if (!is.null(dr)) {
+  d <- list(dm, dw)
+  f <- function(k) vapply(d, function(x) as.character(x[[k]]), character(1))
+  tab(data.frame(
+    ` ` = sex_label[f("sex")], `As of` = f("as_of"),
+    `Extract files` = f("extract_files"), `JSON files` = f("n_json"),
+    `Validated against a schema` = vapply(d, function(x) paste0(x$schema$n_passed, " of ", x$schema$n_files), character(1)),
+    `Fixtures compared` = f("fixtures"),
+    `Mean P(home): new / production` = vapply(d, function(x) paste(num(x$p_home_v2, 3), num(x$p_home_prod, 3), sep = " / "), character(1)),
+    `Mean abs. difference` = vapply(d, function(x) num(x$mean_abs_dp, 3), character(1)),
+    check.names = FALSE
+  ))
+}
+```
+
+Every extract file production writes was written, every published JSON that has a schema passed it, and nothing under `data/` changed (`git status` clean afterwards). The INLA fit with 2,000 posterior draws took about 20 seconds in each run; the step that dominates is the existing per-draw season simulation inside the extract (77 and 130 seconds), which the cutover does not touch.
+
+Three things change in meaning and should be known before the first published fit:
+
+- **Home advantage split.** The league home advantage is divided evenly between "attack" and "defence", because only its total is identified. The published attack and defence home-advantage numbers become a presentation convention; the total is the estimate.
+- **Strengths in the season simulation.** The simulators hold each team's strength at its current value for all remaining matches, as they do today. Forecasts of single matches widen with the horizon; the season simulation does not yet. Passing per-fixture propagated states to the simulators is a follow-up.
+- **Trajectory.** The published strength trajectory stays indexed by a team's match count. Two matches in one week now share a state.
+
+### Changes in `R/`
+
+| File | Change |
+|---|---|
+| `config/leagues.yml`, `config/leagues.schema.json` | New optional key `engine: stan | inla` per league, default `stan`. `stan_model` stays required and points at the reference program, so `test-stan-compile.R` keeps compiling it. |
+| `R/model-spec.R` (new) | `spec.R` promoted: build, precision pieces, design, Stan data, prediction. |
+| `R/model-inla.R` (new) | `fv2_fit_inla()` promoted, plus the INLA diagnostics gate below. |
+| `R/model-fit-adapter.R` (new) | `fv2_as_fit()` promoted. |
+| `R/model-league.R` | `fit_league()` dispatches on `league$engine`. The INLA branch calls `prepare_data()` as today (for `pred_d`, `teams` and `n_obs`), takes its training rows from `model_training_results()` (already the one definition of "what the fit saw"), fits, adapts, and hands the adapted fit to the unchanged `extract_posteriors()` and `extract_football_iceland()`. |
+| `R/model-fit.R` | `fit_model()` stays the cmdstanr wrapper. `persist_fit_diagnostics()` learns to write a row for an INLA fit: `n_obs` (the only field `needs_refit()` reads), the engine name, and `NA` for the sampler metrics (the health check reads `NA` as fine). Without a new row an old Stan row would stay "latest" for the cell. |
+| `R/model-prepare.R`, extract, publish, simulators, decide | No change. |
+| `Stan/football_iceland/` | Add the reference program (`fv2_rev.stan`, which covers the recommended model). The current production program stays until the shadow period ends. |
+
+**A gate for INLA fits.** `check_stan_diagnostics()` aborts when it is handed anything that is not a cmdstanr fit, and its six checks (divergences, $\hat{R}$, ESS, tree depth, E-BFMI) have no INLA counterpart. The INLA branch needs its own, cheap to compute and each one a real failure seen or plausible here:
+
+1. the hyperparameter mode was found (`mode.status` is 0);
+2. every sd is inside a plausible range, so a run-away precision is caught (the home-advantage sds are the ones at risk);
+3. no state summary is `NA` or infinite, and the entry levels sum to zero;
+4. predicted rates are finite and the mean predicted goals per match sit in a sane band;
+5. hyperparameters have not jumped from the previous fit by more than a set factor.
+
+### CI
+
+- **Installing INLA.** INLA is not on CRAN. The pattern used by the inlabru package's own CI is to add INLA's repository to `r-lib/actions/setup-r`'s `extra-repositories` and let `setup-r-dependencies` resolve it; an explicit `install.packages("INLA", repos = c(getOption("repos"), INLA = "https://inla.r-inla-download.org/R/stable"))` step also works. `fit.yml` needs it; the workflows that never fit do not. I could not run this on a GitHub runner from here, so it is the first thing the shadow workflow has to prove. `fit.yml` disables automatic system requirements (`PKG_SYSREQS: "false"`), so any system library INLA or its `fmesher` dependency needs would have to be installed by hand.
+- **Where to declare it.** No test reads `DESCRIPTION` and no workflow runs `R CMD check`, so an undeclared `INLA::` call fails only where the package is absent. Declaring INLA under `Suggests` is the honest form, but four workflows install all suggested packages (`fit`, `decide-publish`, `republish`, `world-cup`) and each would then need the extra repository. The smaller change is to keep INLA out of `DESCRIPTION`, guard with `requireNamespace()`, and install it explicitly in `fit.yml`. Recommended: `Suggests` plus the repository line in those four workflows, in the same PR.
+- **Pin the version.** Fix the INLA version in the workflow (25.6.7 was used here) and cache the R library, as the CmdStan install is cached today.
+- **CmdStan.** The reference program compiles under 2.38.0, the version `fit.yml` and `ci-tests.yml` pin, and under 2.40.0, the local default (both checked). The pin stays necessary for handball, basketball and the reference check. Moving CI to 2.40.0 is a separate, small PR; it should not ride with the engine change.
+- **Tests.** The engine tests skip on CI today. Once INLA is installed in `ci-tests.yml` they can run there; the INLA smoke test takes a few seconds.
+- **Run time.** `fit.yml`'s 360-minute timeout is pinned by a test. It can come down once football no longer needs NUTS, but not in the cutover PR.
+
+```{r}
+#| label: tbl-timing
+#| tbl-cap: "Fitting the recommended model to results up to 31 July 2026 on this Mac (M1 Pro), each engine alone inside one four-core compute slot while the other slots ran other sessions' fits. CPU seconds do not depend on that load; wall-clock seconds do. INLA's totals include drawing 1,000 posterior samples; NUTS's include reading 4,000 draws back."
+tm <- res$timing
+if (!is.null(tm)) {
+  t <- tm$timing
+  tab(data.frame(
+    ` ` = sex_label[t$sex], Engine = engine_label[ifelse(t$engine == "inla-auto", "inla-full", t$engine)],
+    `Fit, wall s` = num(t$fit_secs, 0), `Fit + draws, wall s` = num(t$total_wall, 0),
+    `CPU s` = num(t$cpu_secs, 0), `Load average before` = num(t$load_before, 0),
+    check.names = FALSE
+  ))
+}
+```
+
+```{r}
+#| label: timing-inline
+tt <- res$timing$timing
+cpu_ratio <- function(sex) {
+  if (is.null(tt)) return("(not timed)")
+  num(tt$cpu_secs[tt$sex == sex & tt$engine == "stan-nuts"] / tt$cpu_secs[tt$sex == sex & tt$engine == "inla-eb"], 0)
+}
+```
+
+In CPU time, INLA with empirical Bayes costs `r cpu_ratio("female")` times less than NUTS for the women's cell and `r cpu_ratio("male")` times less for the men's. For scale, the pilot measured production's NUTS fits at 19.6 and 28.2 minutes of wall-clock on this machine (also under load). GitHub's runners were not timed.
+
+### Shadow period
+
+The football season ended on 24 October 2026; the next competitive matches are the cup's early rounds in March 2027. There is no live football to shadow until then, which shapes the plan.
+
+| Step | When | What | Exit condition |
+|---|---|---|---|
+| 0 | done | Retrospective shadow: the walk-forward in this report | – |
+| 1 | off-season | Land the engine in `R/` behind `engine: stan` (no behaviour change). Add a dispatch-only workflow that installs INLA, fits both football cells and writes extracts to a separate root. Nothing is published. | INLA installs and fits on a GitHub runner; the engine tests pass there |
+| 2 | off-season | Replay: for a set of 2026 dates, run the dry-run chain (INLA, adapter, production extract and publish) into an isolated tree and diff the JSON against what production published. | Schema validation passes; every difference is explained by the model change |
+| 3 | from the first 2027 fixtures | Both engines fit daily. One is published, the other archived per match (this is also the immutable forecast archive the roadmap asks for). | See below |
+| 4 | after cutover | Weekly reference check: the Stan program fits the same specification and its match probabilities are compared with INLA's. | Mean absolute difference below 0.01; a breach raises a health warning |
+
+For step 3 there are two defensible orders, and the choice is the owner's:
+
+- **Stan published, INLA in shadow** until a gate is met: at least 150 matches, INLA's 1X2 log loss no worse than production's by more than one standard error, schema validation green on every day, no gate failure.
+- **INLA published from the first 2027 fixture, Stan in shadow** for six weeks. The evidence for the new specification is already 4,511 held-out matches, more than a spring of live shadowing would add; the pre-season baseline would come from the model that runs the season; and the off-season is when a mistake costs least.
+
+I recommend the second. Rollback in either case is one line (`engine: stan`): the Stan program, its gate and the layers downstream are untouched by the cutover.
+
+
+## Limits {#sec-limits}
+
+- **Five seasons, five breaks.** The results store starts in 2021. The 2022 forecasts rest on one earlier season, and everything this report says about the season break (its variance, reversion) rests on five transitions.
+- **Outside benchmarks exist for 2026 only.** `r wf$priced$n[wf$priced$variant == wf$ref & wf$priced$group == "all" & wf$priced$against == "line"]` priced matches and `r wf$rounds$n[wf$rounds$variant == wf$ref & wf$rounds$group == "all"]` pre-round forecasts. Those samples resolve differences of about 0.01 in log loss, which is the size of the differences observed. Production's 2026 forecasts also include 21 May to 16 September, when a configuration bug had it training on unfiltered data.
+- **One validation cutoff per model.** INLA was checked against NUTS at 31 July 2026, with five and a half seasons of data. The approximation was not checked at an early-season cutoff or with one season of data, where the posterior is furthest from Gaussian.
+- **Empirical Bayes in the walk-forward.** The walk-forward fixes hyperparameters at their mode and re-estimates them every fourth week. At the validation cutoff, empirical Bayes and full integration gave the same predictions to within Monte Carlo error. `r if (!is.null(res$hyper_check)) paste0("Re-estimating every week instead, on the women's 2026 season (", res$hyper_check$n, " matches), moved match probabilities by ", num(res$hyper_check$mean_abs_dp, 4), " on average, the 1X2 score by ", sgn(res$hyper_check$d_1x2), " (se ", num(res$hyper_check$se_1x2, 4), ") and the scoreline score by ", sgn(res$hyper_check$d_scoreline), " (se ", num(res$hyper_check$se_scoreline, 4), "). Production would re-estimate at every fit, so if anything the walk-forward understates the model.") else "The four-weekly cadence itself was not compared with weekly re-estimation."`
+- **The reversion coefficient is fixed in INLA.** It sits inside the precision matrix, where INLA cannot estimate it without a custom latent model. The value used was chosen before looking at the data, from published between-season memory of 0.74 to 0.80.
+- **Timings.** Four model-fitting sessions shared this machine all evening. Sampler effort is reported as leapfrog steps and divergences, which do not depend on load. The run times in @tbl-timing were taken inside a four-core slot with the other slots busy, so the CPU seconds are the figure to rely on.
+- **INLA on a GitHub runner is untested.** The install pattern is taken from another package's CI, not run by me.
+- **Fixtures with a new team are skipped**, as in production: a team with no match in the training set gets no forecast. In the men's data that is the fourth division.
+- **Structural choices at this sample size.** Where two structures could not be separated on Icelandic data, the report says so. A higher-powered test on about 22 European divisions is being set up by a sibling session; its results are to be written to `/Users/brynjolfurjonsson/.claude-reviews/sports-pan-european/structural-tests.md` (not present when this report was generated).
+
+
+## Where everything is {#sec-where}
+
+| What | Where |
+|---|---|
+| The specification (league-agnostic) | `research/football-v2/spec.R` |
+| Engines (INLA, Stan) | `research/football-v2/engines.R` |
+| Stan reference programs | `stan/fv2.stan` (attack and defence walks), `stan/fv2_sq.stan` (strength and fixed style), `stan/fv2_rev.stan` (either, with reversion and league-level walks: the recommended model) |
+| Model variants tested | `research/football-v2/variants.R` (the recommended one is `rev80_sq_static_lvl`) |
+| Adapter to the extract and publish layers | `research/football-v2/adapter.R` |
+| Iceland adapter (facts store, training filter, divisions) | `research/football-v2/data.R` |
+| Scoring, de-vig, phases, paired intervals | `research/football-v2/score.R`, `evaluate.R` |
+| Scripts | `run_validation.R`, `compare_validation.R`, `run_wf.R`, `wf_summarise.R`, `run_ha_variant.R`, `run_dryrun.R`, `time_engines.R`, `export_report_data.R` |
+| Home-advantage ladder | `research/football-v2/stan/ha_*.stan` |
+| Tests | `tests/testthat/test-research-football-v2.R` |
+| This report's numbers | `docs/reports/2026-11-15-football-v2/results.rds` |
+| Experiment outputs (large, outside the repository) | `/Users/brynjolfurjonsson/.claude-reviews/sports-football-v2/` |
+| A rendered copy of this report (the HTML is git-ignored in the repository) | `/Users/brynjolfurjonsson/.claude-reviews/sports-football-v2/report/2026-11-15-football-v2-proposal.html` |
+
+All code is on branch `claude/objective-poitras-964871` (worktree `/Users/brynjolfurjonsson/sports/.claude/worktrees/objective-poitras-964871`), not merged. The scripts run from the repository root. Results generated `r res$generated`.
+
+
