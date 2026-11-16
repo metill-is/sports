@@ -63,15 +63,18 @@ fv2_as_fit <- function(draws, spec, prep, seed = 1L) {
   league_ha <- draws$c_home - draws$c_away
   level_goal <- 0
   if (!is.null(draws$lvl_goal)) {
-    # WHY: the simulators hold strengths at their current value, so they get
-    # the league-wide levels of the latest week with a played match too.
-    latest <- max(spec$obs$week_nr)
-    level_goal <- draws$lvl_goal[, latest]
-    league_ha <- league_ha + draws$lvl_ha[, latest]
+    # WHY: the simulators hold everything at its current value, and "current"
+    # is the next match: the league levels of the first fixture week, the
+    # ones the forecast of that fixture uses.
+    level_goal <- draws$lvl_goal[, spec$cur_week_nr]
+    league_ha <- league_ha + draws$lvl_ha[, spec$cur_week_nr]
   }
   ha_off <- league_ha / 2 + draws$ha_att[, team_ix, drop = FALSE]
   ha_def <- league_ha / 2 + draws$ha_def[, team_ix, drop = FALSE]
-  now <- spec$last_obs_slot[team_ix]
+  # Each team's state at its next match (or at its last, if none is known):
+  # see `cur_slot` in fv2_build(). Across a season break that state has
+  # reverted and carries the break variance, as the forecast's does.
+  now <- spec$cur_slot[team_ix]
   off <- draws$att[, now, drop = FALSE]
   def <- draws$def[, now, drop = FALSE]
 

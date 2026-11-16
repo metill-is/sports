@@ -134,9 +134,45 @@ toy_prep <- function() {
   )
 }
 
+# What prepare_data() hands over for any small league: the team registry in a
+# chosen order, the Stan data the adapter reads, and the fixtures.
+prep_like <- function(m, pred_d, team_order = sort(unique(c(m$home_team, m$away_team)))) {
+  teams <- data.frame(team = team_order, team_nr = seq_along(team_order))
+  nr <- function(x) match(x, teams$team)
+  appearance <- function(team, i) sum(c(m$home_team[seq_len(i)], m$away_team[seq_len(i)]) == team)
+  round1 <- vapply(seq_len(nrow(m)), function(i) appearance(m$home_team[i], i), integer(1))
+  round2 <- vapply(seq_len(nrow(m)), function(i) appearance(m$away_team[i], i), integer(1))
+  list(
+    teams = teams,
+    stan_data = list(
+      N = nrow(m), N_rounds = max(round1, round2),
+      team1 = nr(m$home_team), team2 = nr(m$away_team), round1 = round1, round2 = round2,
+      goals1 = m$home_score, goals2 = m$away_score
+    ),
+    pred_d = pred_d
+  )
+}
+
+# The goal rates production's simulators rebuild for one match from a fit's
+# current strengths (R/extract-football-iceland.R), one value per draw.
+simulator_rates <- function(fit, teams, home, away) {
+  get <- function(v) unclass(posterior::as_draws_matrix(fit$draws(v)))
+  h <- match(home, teams$team)
+  a <- match(away, teams$team)
+  mlg <- as.numeric(get("mean_log_goals"))
+  off <- get("cur_offense_away")
+  def <- get("cur_defense_away")
+  list(
+    home = as.numeric(exp(mlg + off[, h] + get("home_advantage_off")[, h] - def[, a])),
+    away = as.numeric(exp(mlg + off[, a] - def[, h] - get("home_advantage_def")[, h]))
+  )
+}
+
 # A football store under `root` (results for `n_season` seasons and one round
 # of fixtures the week after the last result) with the league that reads it.
-v2_store <- function(root, n_team = 6L, n_season = 3L, weeks = 10L, seed = 3L) {
+# `preseason = TRUE` puts the fixtures in the next season instead: one inside
+# the 14-day horizon, the other teams' first matches four weeks later.
+v2_store <- function(root, n_team = 6L, n_season = 3L, weeks = 10L, seed = 3L, preseason = FALSE) {
   set.seed(seed)
   teams <- paste0("T", seq_len(n_team))
   strength <- stats::rnorm(n_team, 0, 0.4)
@@ -164,6 +200,16 @@ v2_store <- function(root, n_team = 6L, n_season = 3L, weeks = 10L, seed = 3L) {
     home_team = teams[c(1L, 3L, 5L)], away_team = teams[c(2L, 4L, 6L)],
     division = "BD", round = weeks + 1L, kickoff_time = NA_character_
   )
+  end_date <- last + 1L
+  n_pred <- nrow(schedules)
+  if (preseason) {
+    opening <- as.Date(sprintf("%d-05-03", max(results$season) + 1L))
+    schedules$season <- max(results$season) + 1L
+    schedules$match_date <- opening + c(0L, 28L, 28L)
+    schedules$round <- 1L
+    end_date <- opening - 7L
+    n_pred <- 1L
+  }
   write_table(results, "results", root = root)
   write_table(schedules, "schedules", root = root)
   list(
@@ -171,7 +217,7 @@ v2_store <- function(root, n_team = 6L, n_season = 3L, weeks = 10L, seed = 3L) {
       sport = "football", country = "iceland", sexes = "male",
       stan_model = "football_iceland/bivariate_poisson_no_inflation.stan"
     ),
-    end_date = last + 1L, n_obs = nrow(results), n_pred = nrow(schedules)
+    end_date = end_date, n_obs = nrow(results), n_pred = n_pred, teams = teams
   )
 }
 

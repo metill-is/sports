@@ -514,9 +514,15 @@ test_that("the adapter speaks the production fit's variable names", {
     get("home_advantage_tot")[, 1], draws$c_home - draws$c_away + draws$ha_att[, 3] + draws$ha_def[, 3],
     ignore_attr = TRUE
   )
-  # Team "A" is production's team 2 and the spec's team 1.
+  # Team "A" is production's team 2 and the spec's team 1. Its current state
+  # is the one at its next match (the fixture), not at its last result.
   a_slots <- spec$slots$slot[spec$slots$team == 1L & spec$slots$has_obs]
-  expect_equal(get("cur_offense_away")[, 2], draws$att[, max(a_slots)], ignore_attr = TRUE)
+  a_next <- spec$slots$slot[spec$slots$team == 1L & !spec$slots$has_obs]
+  expect_identical(a_next, max(a_slots) + 1L)
+  expect_equal(get("cur_offense_away")[, 2], draws$att[, a_next], ignore_attr = TRUE)
+  # B has no fixture, so its current state is still its last result's.
+  b_slots <- spec$slots$slot[spec$slots$team == 2L]
+  expect_equal(get("cur_offense_away")[, 3], draws$att[, max(b_slots)], ignore_attr = TRUE)
   off <- posterior::draws_of(posterior::as_draws_rvars(fit$draws("offense"))$offense)
   expect_identical(dim(off), c(3L, 5L, 3L))
   # A's two matches in its first week are rounds 1 and 2: the same weekly state.
@@ -533,7 +539,7 @@ test_that("the adapter speaks the production fit's variable names", {
   expect_error(fit$draws("sigma"), "no draws")
 })
 
-test_that("the adapter hands the simulators the current league levels", {
+test_that("the adapter hands the simulators the league levels of the next match week", {
   prep <- toy_prep()
   spec <- fv2_build(toy_matches(), fv2_pred_from_prep(prep$pred_d), level_walk = TRUE)
   draws <- toy_draws(spec)
@@ -542,16 +548,123 @@ test_that("the adapter hands the simulators the current league levels", {
   draws$lvl_ha <- matrix(rep(seq_len(n_week) / 20, each = 3), 3)
   fit <- fv2_as_fit(draws, spec, prep)
   get <- function(v) unclass(posterior::as_draws_matrix(fit$draws(v)))
-  latest <- max(spec$obs$week_nr)
-  expect_lt(latest, n_week)
+  # The fixture is a week after the last result; the simulators get the
+  # levels the forecast of that fixture uses.
+  upcoming <- min(spec$pred$week_nr)
+  expect_gt(upcoming, max(spec$obs$week_nr))
   expect_equal(
-    as.numeric(get("mean_log_goals")), (draws$c_home + draws$c_away) / 2 + latest / 10
+    as.numeric(get("mean_log_goals")), (draws$c_home + draws$c_away) / 2 + upcoming / 10
   )
   expect_equal(
     get("home_advantage_tot")[, 1],
-    draws$c_home - draws$c_away + latest / 20 + draws$ha_att[, 3] + draws$ha_def[, 3],
+    draws$c_home - draws$c_away + upcoming / 20 + draws$ha_att[, 3] + draws$ha_def[, 3],
     ignore_attr = TRUE
   )
+  # With nothing to predict they get the levels of the last played week.
+  bare <- prep
+  bare$pred_d <- prep$pred_d[0, ]
+  spec0 <- fv2_build(toy_matches(), level_walk = TRUE)
+  draws0 <- toy_draws(spec0)
+  draws0$lvl_goal <- matrix(rep(seq_along(spec0$weeks) / 10, each = 3), 3)
+  draws0$lvl_ha <- matrix(rep(seq_along(spec0$weeks) / 20, each = 3), 3)
+  mlg0 <- unclass(posterior::as_draws_matrix(fv2_as_fit(draws0, spec0, bare)$draws("mean_log_goals")))
+  expect_equal(as.numeric(mlg0), (draws0$c_home + draws0$c_away) / 2 + max(spec0$obs$week_nr) / 10)
+})
+
+test_that("the simulators and the forecast give a team's next match the same rates", {
+  # In season: C v A is a week after the last results.
+  prep <- toy_prep()
+  spec <- fv2_build(toy_matches(), fv2_pred_from_prep(prep$pred_d), level_walk = TRUE)
+  draws <- toy_draws(spec)
+  n_week <- length(spec$weeks)
+  set.seed(2)
+  draws$lvl_goal <- matrix(stats::rnorm(3 * n_week, 0, 0.1), 3)
+  draws$lvl_ha <- matrix(stats::rnorm(3 * n_week, 0, 0.1), 3)
+  sim <- simulator_rates(fv2_as_fit(draws, spec, prep), prep$teams, "C", "A")
+  forecast <- fv2_predict(draws, spec)
+  expect_equal(sim$home, forecast$lam_home[1, ])
+  expect_equal(sim$away, forecast$lam_away[1, ])
+})
+
+test_that("across a season break the simulators see what the forecast sees", {
+  # Before the season: results from 2021, A v B opens 2022, and C's first
+  # match is beyond the horizon. The forecast of A v B uses states that have
+  # crossed the break. The simulators must use the same ones, and C must be
+  # on the same side of the break as the teams it will be simulated against.
+  train <- stayers_matches(2021)
+  pred_d <- data.frame(
+    game_nr = 1L, match_date = as.Date("2022-05-02"), home_team = "A", away_team = "B", division = "L1"
+  )
+  prep <- prep_like(train, pred_d, c("C", "A", "B"))
+  carry <- data.frame(team = "C", match_date = as.Date("2022-05-30"), season = 2022L)
+  spec <- fv2_build(
+    train, fv2_pred_from_prep(prep$pred_d),
+    carry = carry, clock = "break", rho = 0.5, param = "sq", style = "static",
+    level_walk = TRUE, divisions = stayers_divisions()
+  )
+  draws <- toy_draws(spec)
+  n_week <- length(spec$weeks)
+  set.seed(3)
+  draws$lvl_goal <- matrix(stats::rnorm(3 * n_week, 0, 0.1), 3)
+  draws$lvl_ha <- matrix(stats::rnorm(3 * n_week, 0, 0.1), 3)
+  fit <- fv2_as_fit(draws, spec, prep)
+  sim <- simulator_rates(fit, prep$teams, "A", "B")
+  forecast <- fv2_predict(draws, spec)
+  expect_equal(sim$home, forecast$lam_home[1, ])
+  expect_equal(sim$away, forecast$lam_away[1, ])
+
+  now <- stats::setNames(spec$cur_slot, spec$teams)
+  expect_identical(spec$slots$season[now], rep(2022L, 3))
+  c_now <- unclass(posterior::as_draws_matrix(fit$draws("cur_offense_away")))[, 1]
+  expect_equal(as.numeric(c_now), draws$att[, now[["C"]]])
+})
+
+test_that("a carried team gets a state in the new season and no forecast", {
+  train <- stayers_matches(2021)
+  fixture <- data.frame(
+    match_date = as.Date("2022-05-02"), home_team = "A", away_team = "B",
+    home_score = NA_integer_, away_score = NA_integer_, season = 2022L, cell = "L1@2022"
+  )
+  carry <- data.frame(team = "C", match_date = as.Date("2022-05-30"), season = 2022L)
+  spec <- fv2_build(train, fixture, carry = carry, clock = "break", rho = 0.5, divisions = stayers_divisions())
+  c_slots <- spec$slots[spec$slots$team == 3L, ]
+  expect_identical(c_slots$season, c(2021L, 2022L))
+  expect_identical(c_slots$has_obs, c(TRUE, FALSE))
+  expect_identical(length(spec$pred$home_slot), 1L)
+  # It crosses the break like the others: a reverting step toward A, B and C.
+  step <- spec$steps[spec$steps$team == 3L, ]
+  expect_identical(c(step$class, as.character(step$rho)), c("brk", "0.5"))
+  expect_identical(length(spec$groups$members[[step$group]]), 3L)
+  # Without it C would still be in last season.
+  without <- fv2_build(train, fixture, clock = "break", rho = 0.5, divisions = stayers_divisions())
+  expect_identical(without$slots$season[without$cur_slot], c(2022L, 2022L, 2021L))
+  expect_error(
+    fv2_build(train, fixture, carry = transform(carry, team = "Z"), clock = "break"),
+    "carry"
+  )
+})
+
+test_that("teams the schedule puts in the new season are carried into it", {
+  train <- stayers_matches(2021)
+  fixture <- data.frame(
+    match_date = as.Date("2022-05-02"), home_team = "A", away_team = "B",
+    home_score = NA_integer_, away_score = NA_integer_, season = 2022L
+  )
+  known <- data.frame(
+    home_team = c("A", "C", "C", "Z"), away_team = c("B", "Z", "A", "Y"),
+    match_date = as.Date(c("2022-05-02", "2022-06-20", "2022-05-30", "2022-05-30")),
+    season = 2022L
+  )
+  carry <- fv2_carry_slots(train, fixture, known)
+  # C is in the model, plays in 2022 and has no slot there; Z and Y are not
+  # in the model at all.
+  expect_identical(carry$team, "C")
+  expect_identical(carry$match_date, as.Date("2022-05-30"))
+  expect_identical(carry$season, 2022L)
+  # In season every team already has a slot in the season being forecast.
+  in_season <- fv2_carry_slots(stayers_matches(2021:2022), transform(fixture, match_date = as.Date("2022-06-06")), known)
+  expect_identical(nrow(in_season), 0L)
+  expect_identical(nrow(fv2_carry_slots(train, fixture[0, ], known)), 0L)
 })
 
 test_that("production's extract_posteriors reads the adapted fit", {
@@ -815,6 +928,8 @@ test_that("an INLA fit of a football store reads like a production fit", {
   expect_true(fit$gate$passed)
   expect_identical(fit$n_obs, s$n_obs)
   expect_identical(fit$n_obs, as.integer(prep$stan_data$N))
+  # In season every team already has a state in the season being forecast.
+  expect_identical(fit$carried, character())
 
   beliefs <- extract_posteriors(fit, prep$pred_d, league = s$league, sex = "male", fit_date = s$end_date)
   expect_identical(nrow(beliefs), s$n_pred * 200L)
@@ -850,4 +965,24 @@ test_that("an INLA fit of a football store reads like a production fit", {
   mean_of <- function(f, v) colMeans(posterior::as_draws_matrix(f$draws(v)))
   expect_equal(mean_of(again, "home_advantage_tot"), mean_of(fit, "home_advantage_tot"), tolerance = 0.01)
   expect_equal(mean_of(again, "cur_strength_home"), mean_of(fit, "cur_strength_home"), tolerance = 0.01)
+})
+
+test_that("before a season an INLA fit carries every scheduled team across the break", {
+  skip_if_not_installed("INLA")
+  skip_if_not_installed("sn")
+  root <- withr::local_tempdir()
+  s <- v2_store(root, preseason = TRUE)
+  prep <- prepare_data(s$league, "male", end_date = s$end_date, root = root)
+  # One fixture inside the horizon; the other four teams open four weeks later.
+  expect_identical(nrow(prep$pred_d), 1L)
+  fit <- suppressWarnings(suppressMessages(fit_model_v2_inla(
+    prep, s$league, "male",
+    end_date = s$end_date, root = root,
+    n_draws = 100L, seed = 7L, int_strategy = "eb", threads = "1:1"
+  )))
+  expect_true(fit$gate$passed)
+  expect_identical(fit$forecast_season, 2024L)
+  expect_setequal(fit$carried, s$teams[3:6])
+  beliefs <- extract_posteriors(fit, prep$pred_d, league = s$league, sex = "male", fit_date = s$end_date)
+  expect_identical(nrow(beliefs), 100L)
 })

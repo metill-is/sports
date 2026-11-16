@@ -66,6 +66,18 @@ paths:
   measurably worse than NUTS on one earlier season), has its own gate (`fv2_inla_gate()`; the Stan sampler gate has no
   INLA counterpart) and writes a `fit_diagnostics` row with `n_obs` and `NA`
   sampler metrics, because `needs_refit()` reads `n_obs` off the newest row.
+  **What "current strength" means on this engine:** each team's state at its
+  next match, and the league levels of the first fixture week. The simulators
+  hold a team at one state for all its remaining matches and the forecast of
+  the next match reads the state at that match, so both read the same state
+  (`cur_slot`, `cur_week_nr` in `fv2_build()`). Before a season that state
+  has crossed the break: it has reverted toward the division mean and carries
+  the break variance. Teams whose first match is beyond the fit horizon are
+  carried into the new season as likelihood-free states
+  (`fv2_carry_slots()`), so a simulated table never mixes teams on both
+  sides of a season break. Who reverts, and toward which mean, is defined
+  once (`fv2_reversion_groups()`) and read by both the INLA precision and
+  the Stan reference program.
   `run_fit_targets()` must keep `engine` in its whitelisted slice
   (`test-pipeline-run-isolation.R`). INLA is not in `DESCRIPTION`: the code
   guards with `requireNamespace()` (for INLA and for `sn`, which INLA only

@@ -212,7 +212,17 @@ fit_model_v2_inla <- function(prep, league, sex, end_date,
   )
   # A round-mode replay at the end of a season has nothing left to predict.
   pred <- if (has_fixtures) fv2_pred_from_prep(prep$pred_d, cell_of = fv2_cell)
-  spec <- do.call(fv2_build, c(list(train, pred, divisions = divisions), football_v2_options()))
+  # Before a season, teams whose first match is beyond the horizon are carried
+  # across the break with the rest: the simulators play the whole season.
+  matches <- c("home_team", "away_team", "match_date", "season")
+  carry <- fv2_carry_slots(
+    train, pred,
+    rbind(results[matches], if (!is.null(schedules) && nrow(schedules)) schedules[matches])
+  )
+  spec <- do.call(fv2_build, c(
+    list(train, pred, carry = carry, divisions = divisions),
+    football_v2_options()
+  ))
 
   f <- fv2_fit_inla(spec, int_strategy = int_strategy, n_samp = n_draws, threads = threads, seed = seed)
   gate <- fv2_inla_gate(f, spec)
@@ -228,6 +238,7 @@ fit_model_v2_inla <- function(prep, league, sex, end_date,
     engine = "inla", version = FOOTBALL_V2_VERSION, options = football_v2_options(),
     int_strategy = int_strategy, gate = gate, hyper = f$hyper_summary,
     n_obs = spec$N, n_teams = spec$K, n_states = spec$S,
+    forecast_season = forecast_season, carried = as.character(carry$team),
     seconds = c(fit = f$t_fit, draws = f$t_samp),
     inla_version = as.character(utils::packageVersion("INLA"))
   )

@@ -57,6 +57,11 @@ fv2_pc_rate <- function(ua) -log(ua[[2]]) / ua[[1]]
 #'   away_score, season, and optionally cell.
 #' @param pred Fixtures to predict (same columns, scores unused); both teams
 #'   must appear in `train`.
+#' @param carry Teams to carry into the season being forecast without a
+#'   fixture: data frame team, match_date, season. Each gets a state slot at
+#'   that date with no likelihood and no forecast, so that a team whose first
+#'   match is beyond the horizon still crosses the season break with the
+#'   others. See `fv2_carry_slots()`.
 #' @param clock "calendar": every step is weeks elapsed, off-season included.
 #'   "break": steps inside a season count weeks, a step across seasons is one
 #'   break jump with its own variance.
@@ -74,7 +79,7 @@ fv2_pc_rate <- function(ua) -log(ua[[2]]) / ua[[1]]
 #' @param divisions Data frame team, season, division, rank (1 = top); needed
 #'   for `movers` and `rho < 1`. Schedule knowledge, known before a season.
 #' @noRd
-fv2_build <- function(train, pred = NULL,
+fv2_build <- function(train, pred = NULL, carry = NULL,
                       clock = c("calendar", "break"), rho = 1,
                       movers = FALSE, div_offsets = FALSE,
                       param = c("ad", "sq"), style = c("rw", "static", "none"),
@@ -111,7 +116,17 @@ fv2_build <- function(train, pred = NULL,
       is_pred = rep(is_pred, 2L * nrow(d))
     )
   }
-  app <- rbind(appearances(train, FALSE), appearances(pred, TRUE))
+  carried <- data.frame(team = integer(), week = integer(), season = integer(), is_pred = logical())
+  if (!is.null(carry) && nrow(carry)) {
+    if (!all(carry$team %in% teams)) {
+      stop("carry: every carried team must appear in `train`", call. = FALSE)
+    }
+    carried <- data.frame(
+      team = match(carry$team, teams), week = fv2_week(carry$match_date),
+      season = as.integer(carry$season), is_pred = TRUE
+    )
+  }
+  app <- rbind(appearances(train, FALSE), appearances(pred, TRUE), carried)
   app <- app[order(app$team, app$week, app$is_pred), , drop = FALSE]
   key <- paste(app$team, app$week)
   slots <- app[!duplicated(key), c("team", "week", "season"), drop = FALSE]
@@ -124,6 +139,13 @@ fv2_build <- function(train, pred = NULL,
   }
   first_slot <- as.integer(tapply(slots$slot, slots$team, min))
   last_obs_slot <- as.integer(tapply(slots$slot[slots$has_obs], slots$team[slots$has_obs], max))
+  # WHY: "current" means "at the team's next match". The simulators hold each
+  # team at one state for all its remaining matches, and the forecast of the
+  # next match reads the state at that match. Both must be the same state, or
+  # they disagree about everything between the last result and the next
+  # match: a week's drift in season, the whole season break before one.
+  after <- pmin(last_obs_slot + 1L, S)
+  cur_slot <- ifelse(last_obs_slot < S & slots$team[after] == seq_len(K), after, last_obs_slot)
 
   lookup <- function(team_nr, season, column) {
     if (is.null(divisions)) {
@@ -194,7 +216,11 @@ fv2_build <- function(train, pred = NULL,
 
   list(
     teams = teams, K = K, slots = slots, S = S,
-    first_slot = first_slot, last_obs_slot = last_obs_slot, steps = steps, groups = groups,
+    first_slot = first_slot, last_obs_slot = last_obs_slot, cur_slot = cur_slot,
+    # The league levels the simulators get: those of the first fixture week,
+    # or of the last played week when there is nothing to predict.
+    cur_week_nr = if (length(prd$week_nr)) min(prd$week_nr) else max(obs$week_nr),
+    steps = steps, groups = groups,
     promoted = promoted, relegated = relegated,
     obs = obs, pred = prd, N = nrow(train), cells = cells, weeks = weeks,
     opts = list(
@@ -242,6 +268,40 @@ fv2_reversion_groups <- function(slots, teams, divisions) {
   ts$group <- match(key, unique(key))
   rownames(ts) <- NULL
   ts
+}
+
+#' Teams to carry into the season being forecast.
+#'
+#' Before a season only the teams with a fixture inside the horizon have a
+#' state in the new season. The simulators play out the whole season for every
+#' team, so the rest have to cross the break too, or a table would mix teams
+#' that have reverted toward their division mean with teams that have not.
+#'
+#' @param train,pred As for `fv2_build()`.
+#' @param known Every known match, played or scheduled: home_team, away_team,
+#'   match_date, season. Schedule knowledge only; no score is read.
+#' @return Data frame team, match_date, season: each team that is in the
+#'   model and has a known match in the season of the fixtures but no slot
+#'   there, at the date of its first known match of that season.
+#' @noRd
+fv2_carry_slots <- function(train, pred, known) {
+  none <- data.frame(team = character(), match_date = as.Date(character()), season = integer())
+  if (is.null(pred) || !nrow(pred) || is.null(known) || !nrow(known)) {
+    return(none)
+  }
+  forecast_season <- max(as.integer(pred$season))
+  in_model <- unique(c(train$home_team, train$away_team))
+  now <- function(d) unique(c(d$home_team, d$away_team)[rep(as.integer(d$season) == forecast_season, 2L)])
+  ahead <- known[as.integer(known$season) == forecast_season & !is.na(known$match_date), , drop = FALSE]
+  long <- data.frame(
+    team = c(ahead$home_team, ahead$away_team), match_date = c(ahead$match_date, ahead$match_date)
+  )
+  long <- long[long$team %in% setdiff(in_model, c(now(train), now(pred))), , drop = FALSE]
+  if (!nrow(long)) {
+    return(none)
+  }
+  first <- stats::aggregate(match_date ~ team, long, min)
+  data.frame(team = as.character(first$team), match_date = first$match_date, season = forecast_season)
 }
 
 #' Prior precision pieces of one state field: Q = init / tau^2 + in / sigma^2
