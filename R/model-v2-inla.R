@@ -166,7 +166,16 @@ fv2_fit_inla <- function(spec, int_strategy = "auto", n_samp = 1000L,
   sel <- lapply(eff[names(eff) != ""], function(i) if (is.data.frame(i)) i else seq_along(i))
   sel <- sel[!vapply(sel, is.data.frame, logical(1))]
   for (nm in names(fixed)) sel[[nm]] <- 1L
-  smp <- INLA::inla.posterior.sample(n_samp, r, selection = sel, seed = seed, num.threads = 1L)
+  # WHY: INLA's own `seed` reaches its sampler of the latent field only. Which
+  # hyperparameter configuration each draw comes from is decided with R's
+  # generator (`sample()` inside inla.posterior.sample), so under full
+  # integration a rerun with the same seed gave different draws. Seeding R's
+  # generator for the call fixes both; with_seed() puts the caller's stream
+  # back afterwards.
+  smp <- withr::with_seed(
+    as.integer(seed),
+    INLA::inla.posterior.sample(n_samp, r, selection = sel, seed = seed, num.threads = 1L)
+  )
   lat <- vapply(smp, function(s) s$latent[, 1L], numeric(nrow(smp[[1L]]$latent)))
   rn <- rownames(smp[[1L]]$latent)
   block <- function(nm) t(lat[startsWith(rn, paste0(nm, ":")), , drop = FALSE])

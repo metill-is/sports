@@ -483,6 +483,29 @@ test_that("the INLA engine returns draws in the shared layout", {
   expect_equal(held$draws$hyper[1, ], f$draws$hyper[1, ], tolerance = 1e-6)
 })
 
+test_that("the seed fixes an INLA fit's draws, whatever R's own generator is doing", {
+  skip_if_not_installed("INLA")
+  skip_if_not_installed("sn")
+  sim <- simulate_league()
+  train <- sim[sim$match_date < max(sim$match_date), ]
+  pred <- sim[sim$match_date == max(sim$match_date), ]
+  spec <- fv2_build(train, pred, clock = "break")
+  # Full integration, as production fits: INLA spreads the draws over its
+  # hyperparameter configurations with R's generator, which the INLA seed
+  # does not touch. A daily fit and its rerun start from different R states.
+  fit_after <- function(r_state) {
+    set.seed(r_state)
+    suppressWarnings(fv2_fit_inla(spec, int_strategy = "auto", n_samp = 60L, threads = "1:1", seed = 11L))
+  }
+  a <- fit_after(1)
+  b <- fit_after(2)
+  expect_gt(nrow(unique(round(a$draws$hyper, 8))), 1L)
+  expect_equal(b$draws$hyper, a$draws$hyper, tolerance = 1e-6)
+  expect_equal(b$draws$att, a$draws$att, tolerance = 1e-6)
+  other <- suppressWarnings(fv2_fit_inla(spec, int_strategy = "auto", n_samp = 60L, threads = "1:1", seed = 12L))
+  expect_gt(max(abs(other$draws$att - a$draws$att)), 1e-3)
+})
+
 test_that("the adapter speaks the production fit's variable names", {
   prep <- toy_prep()
   pred <- fv2_pred_from_prep(prep$pred_d)
