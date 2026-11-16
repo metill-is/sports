@@ -27,7 +27,7 @@ simulate_v2_league <- function(seed = 3, hfa = 2.5, sigma = 5, level = 56, sigma
 }
 
 test_that("the INLA margin fit recovers the home advantage and each team-season's strength", {
-  skip_if_not_installed("INLA")
+  skip_if_no_inla()
   sim <- simulate_v2_league()
   m <- sim$matches
   train <- m[m$match_date < as.Date("2026-12-01"), ]
@@ -55,7 +55,7 @@ test_that("the INLA margin fit recovers the home advantage and each team-season'
 })
 
 test_that("the within-season walk sums to zero inside every team-season", {
-  skip_if_not_installed("INLA")
+  skip_if_no_inla()
   sim <- simulate_v2_league()
   v <- build_v2_data(sim$matches, sim$matches[0, ], sim$teams)
 
@@ -67,7 +67,7 @@ test_that("the within-season walk sums to zero inside every team-season", {
 })
 
 test_that("the INLA total fit recovers the scoring level and returns one intercept per division", {
-  skip_if_not_installed("INLA")
+  skip_if_no_inla()
   sim <- simulate_v2_league()
   v <- build_v2_data(sim$matches, sim$matches[0, ], sim$teams)
 
@@ -80,7 +80,7 @@ test_that("the INLA total fit recovers the scoring level and returns one interce
 })
 
 test_that("a supplied response replaces the stored scores", {
-  skip_if_not_installed("INLA")
+  skip_if_no_inla()
   sim <- simulate_v2_league()
   v <- build_v2_data(sim$matches, sim$matches[0, ], sim$teams)
   shifted <- (v$y_home - v$y_away) + 10
@@ -96,7 +96,7 @@ test_that("a supplied response replaces the stored scores", {
 test_that("the priors and starting values the fitter states are the ones R-INLA uses", {
   # WHY: R-INLA drops a hyperparameter spec without a warning when it cannot read it from
   # the model term, and the fit still looks plausible under its default priors.
-  skip_if_not_installed("INLA")
+  skip_if_no_inla()
   sim <- simulate_v2_league()
   v <- build_v2_data(sim$matches, sim$matches[0, ], sim$teams)
   pr <- v2_priors("handball")
@@ -131,7 +131,7 @@ test_that("the mode status is read from the fit and a missing status is not take
 })
 
 test_that("a fit returns the status of its mode search and warns when the search failed", {
-  skip_if_not_installed("INLA")
+  skip_if_no_inla()
   sim <- simulate_v2_league()
   v <- build_v2_data(sim$matches, sim$matches[0, ], sim$teams)
   pr <- v2_priors("handball")
@@ -180,7 +180,7 @@ simulate_two_divisions <- function(seed = 5, sigma_total = 6) {
 }
 
 test_that("the total fit keeps each division's level on that division's own season path", {
-  skip_if_not_installed("INLA")
+  skip_if_no_inla()
   sim <- simulate_two_divisions()
   v <- build_v2_data(sim$matches, sim$matches[0, ], sim$teams)
 
@@ -206,7 +206,7 @@ test_that("the total model and the random-walk form run on the priors and starti
   # The total model's season path, the random-walk form, the starting values of the
   # random effects and the normal priors on the intercepts are separate specifications,
   # and each can be dropped without a warning on its own.
-  skip_if_not_installed("INLA")
+  skip_if_no_inla()
   sim <- simulate_two_divisions()
   v <- build_v2_data(sim$matches, sim$matches[0, ], sim$teams)
   pr <- v2_priors("handball")
@@ -237,7 +237,7 @@ test_that("the total model and the random-walk form run on the priors and starti
 })
 
 test_that("the margin model's home-advantage prior and starting values are the ones stated", {
-  skip_if_not_installed("INLA")
+  skip_if_no_inla()
   sim <- simulate_v2_league()
   v <- build_v2_data(sim$matches, sim$matches[0, ], sim$teams)
   pr <- v2_priors("handball")
