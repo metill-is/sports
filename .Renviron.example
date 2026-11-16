@@ -3,3 +3,6 @@
 
 LENGJAN_USER=
 LENGJAN_PASS=
+
+# Local copy of the raw Lengjan odds archive (see docs/runbooks/odds-archive.md).
+LENGJAN_ARCHIVE_DIR=

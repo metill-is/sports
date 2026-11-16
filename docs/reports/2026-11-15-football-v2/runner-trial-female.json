@@ -1,0 +1,85 @@
+{
+  "sex": "female",
+  "as_of": "2026-10-19",
+  "mode": "inla",
+  "horizon_days": 14,
+  "earlier_partitions": ["2026-04-23", "2026-10-04", "2026-10-17"],
+  "archive_partitions": 12,
+  "production_n_obs": 1496,
+  "returned_to_schedule": "Stjarnan v Breiðablik",
+  "timing": {
+    "fit_league": {
+      "elapsed": 268.77,
+      "cpu": 325.979
+    },
+    "publish": {
+      "elapsed": 5.86,
+      "cpu": 6.83
+    }
+  },
+  "fit": {
+    "engine": "inla",
+    "version": "2.0",
+    "int_strategy": "auto",
+    "inla_version": "25.6.7",
+    "n_obs": 1496,
+    "n_teams": 32,
+    "n_states": 2617,
+    "seconds": {
+      "fit": 23.223838,
+      "draws": 26.86808
+    },
+    "gate": {
+      "passed": true,
+      "breaches": [],
+      "evaluated": 4,
+      "skipped": 1
+    },
+    "hyper": [
+      [0.699284, 0.550507, 0.691374, 0.874144],
+      [0.052191, 0.041039, 0.051703, 0.064967],
+      [0.238104, 0.190918, 0.235967, 0.292344],
+      [0.063223, 0.040398, 0.061312, 0.092496],
+      [0.070278, 0.026786, 0.066139, 0.127879],
+      [0.046914, 0.009069, 0.039718, 0.108584],
+      [0.00864, 0.003825, 0.007905, 0.015945],
+      [0.00776, 0.001927, 0.006568, 0.017633]
+    ]
+  },
+  "diagnostics": [
+    {
+      "n_obs": 1496,
+      "n_divergent": null,
+      "total_iter": 4000,
+      "div_frac": null,
+      "n_max_treedepth": null,
+      "treedepth_frac": null,
+      "min_ebfmi": null,
+      "max_rhat": null,
+      "min_ess_bulk": null,
+      "min_ess_tail": null,
+      "adapt_delta": null,
+      "iter_sampling": 4000,
+      "chains": null,
+      "gates_evaluated": 4,
+      "gates_skipped": 1,
+      "passed": true,
+      "sport": "football",
+      "country": "iceland",
+      "sex": "female",
+      "fit_date": "2026-10-19"
+    }
+  ],
+  "extract_files": ["cup_bracket.parquet", "final_positions.parquet", "fit_meta.parquet", "home_advantage_quantiles.parquet", "points_distribution.parquet", "predicted_matches.parquet", "round_strengths_quantiles.parquet", "sim_inputs_scalar.parquet", "sim_inputs_team.parquet", "team_strengths_quantiles.parquet", "tournament_placements.parquet"],
+  "json_files": 42,
+  "schema": {
+    "n_passed": 41,
+    "n_failed": 0,
+    "errors": [],
+    "unmatched": "football/iceland/kvenna-bikar/bracket.json"
+  },
+  "r_version": "R version 4.5.3 (2026-03-11)",
+  "platform": "x86_64-pc-linux-gnu",
+  "cores": 4,
+  "data_changed": []
+}

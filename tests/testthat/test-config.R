@@ -350,3 +350,44 @@ test_that("a stored name may be an alias key for the other sex only", {
   ))))
   expect_invisible(check_team_aliases(leagues))
 })
+
+test_that("load_leagues() accepts engine: stan or inla and nothing else", {
+  with_engine <- function(value) {
+    tmp <- withr::local_tempfile(fileext = ".yml", .local_envir = parent.frame())
+    yaml::write_yaml(list(
+      football_england = minimal_league(list(
+        sport = "football",
+        country = "england",
+        sexes = list("male"),
+        stan_model = "football_england/model.stan",
+        engine = value
+      ))
+    ), tmp)
+    tmp
+  }
+  expect_identical(load_leagues(with_engine("inla"), schema_path = schema_path())$football_england$engine, "inla")
+  expect_no_error(load_leagues(with_engine("stan"), schema_path = schema_path()))
+  expect_error(load_leagues(with_engine("laplace"), schema_path = schema_path()), "engine|enum|allowed")
+})
+
+test_that("load_leagues() refuses engine: inla for a league that is not football", {
+  # The INLA engine fits the football model only. A handball or basketball
+  # league that asked for it used to load, and then abort at every nightly
+  # fit; the config has to be refused when it is read.
+  league_yml <- function(sport, engine) {
+    tmp <- withr::local_tempfile(fileext = ".yml", .local_envir = parent.frame())
+    league <- list(minimal_league(list(
+      sport = sport, country = "iceland", sexes = list("male"),
+      stan_model = paste0(sport, "_iceland/model.stan"), engine = engine
+    )))
+    names(league) <- paste0(sport, "_iceland")
+    yaml::write_yaml(league, tmp)
+    tmp
+  }
+  for (sport in c("handball", "basketball")) {
+    expect_error(load_leagues(league_yml(sport, "inla"), schema_path = schema_path()), "sport", info = sport)
+    expect_no_error(load_leagues(league_yml(sport, "stan"), schema_path = schema_path()))
+  }
+  expect_no_error(load_leagues(league_yml("football", "inla"), schema_path = schema_path()))
+  expect_no_error(load_leagues(league_yml("football", "stan"), schema_path = schema_path()))
+})
