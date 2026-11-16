@@ -96,9 +96,9 @@ add(
 # ---------------------------------------------------------------- ladder
 cur <- "ladder"
 add("<h2 id=\"ladder\">The ladder</h2>")
-add("<p>Each rung changes one thing, so each gain is attributable. All rungs are fitted with NUTS at the same cutoff and settings as production. At the request of the session that scheduled the machine, the full ladder was run for the two men's cells; the women's cells have the production fit and the final model.</p>")
+add("<p>From R2 on, each rung changes one thing, so each of those gains is attributable. R1 changes three things at once (spelled out below), so what it gains cannot be put on one of them. All rungs are fitted with NUTS at the same cutoff and settings as production. At the request of the session that scheduled the machine, the full ladder was run for the two men's cells; the women's cells have the production fit and the final model.</p>")
 rung_name <- c(
-  r0_prod = "Production", r1_ragged = "R1 &middot; states only at real appearances",
+  r0_prod = "Production", r1_ragged = "R1 &middot; states at real appearances, innovations unconstrained",
   r2_common = "R2 &middot; one volatility, one score sd, one correlation", r3_pooled = "R3 &middot; pooled, sign-free home advantage",
   r4_ident = "R4 &middot; identified: one home advantage", r5_gauss = "R5 &middot; Gaussian instead of Student-t",
   `v2s (margin + total)` = "v2 static (margin + total), NUTS", `v2a (margin + total)` = "v2 + within-season AR(1), NUTS",
@@ -152,12 +152,29 @@ if (have(ladder)) {
     p <- paired(sb[[col]], sa[[col]])
     pm(p[["diff"]], p[["se"]], 3)
   }
+  # The scoring-level prior of production (read from its Stan file) and of rung R1.
+  prod_level_prior <- function(cl) {
+    f <- file.path("Stan", load_leagues()[[CELLS[[cl]]$league]]$stan_model)
+    line <- grep("mean_goals0 ~ normal(", readLines(f, warn = FALSE), fixed = TRUE, value = TRUE)[1]
+    sub(".*normal\\(([^)]*)\\).*", "\\1", line)
+  }
+  r1_level_prior <- function(cl) {
+    sc <- SPORT_SCALE[[CELLS[[cl]]$sport]]
+    sprintf("%s, %s", sc$score_mean, sc$score_mean_sd)
+  }
   for (cl in unique(tab$cell)) {
     if (is.na(g(cl, "r5_gauss", "leapfrog")) || is.na(g(cl, "r0_prod", "leapfrog"))) next
     notes <- character()
     if (!is.na(g(cl, "r1_ragged", "leapfrog"))) {
       notes <- c(notes, sprintf(
-        "<strong>R1</strong> keeps production's model and removes only the states no match touches: %s sampled parameters instead of %s, %s leapfrog steps per iteration instead of %s, held-out scores unchanged (margin %s).",
+        paste0(
+          "<strong>R1</strong> keeps production's likelihood and moves the states to real appearances, which removes the states no match touches. Two more things change with it. ",
+          "Production constrains each round's innovations to sum to zero across teams; the ragged layout has no round to sum over, so R1's innovations are unconstrained. ",
+          "And R1's prior on the scoring level is normal(%s) where production's is normal(%s). ",
+          "The result: %s sampled parameters instead of %s, %s leapfrog steps per iteration instead of %s, held-out scores unchanged (margin %s). ",
+          "The parameter count is arithmetic. The drop in leapfrog steps belongs to the three changes together; this ladder cannot put it on the unused states alone."
+        ),
+        r1_level_prior(cl), prod_level_prior(cl),
         int(g(cl, "r1_ragged", "n_sampled")), int(g(cl, "r0_prod", "n_sampled")), int(g(cl, "r1_ragged", "leapfrog")), int(g(cl, "r0_prod", "leapfrog")),
         dlt(cl, "r0_prod", "r1_ragged", "ls_margin")
       ))
@@ -244,7 +261,11 @@ story <- data.frame(
   ),
   prior = c(
     "normal(0, 5) goals / normal(0, 10) points", "sd above 15 / 20 goals or 30 / 40 points with probability 1 %", "sd above 10 goals / 25 points with probability 1 %",
-    "sd above 8 goals / 20 points with probability 1 %; <code>rho</code> centred on 0.7, 95 % within 0.13 to 0.92", "random walk: sd above 1 goal / 2.5 points per week with probability 1 %",
+    "sd above 8 goals / 20 points with probability 1 %; <code>rho</code> centred on 0.7, 95 % within 0.13 to 0.92",
+    sprintf(
+      "random walk: step sd above %s goal / %s points per week with probability 1 %%. AR(1) form (the one compared with Stan and proposed for basketball): sd of a team's departure from its season level above %s goals / %s points with probability 1 %%, weekly correlation fixed at 0.98",
+      v2_priors("handball")$u_w, v2_priors("basketball")$u_w, v2_priors("handball")$u_w_ar1, v2_priors("basketball")$u_w_ar1
+    ),
     "sd above 3 goals / 6 points with probability 1 %", "step sd above 5 goals / 10 points with probability 1 %"
   )
 )
@@ -294,7 +315,7 @@ if (have(val) && length(val) > 0) {
       what = sprintf("%s, %s", LAB[[o$cell]], o$response),
       hyper = num(max(abs(o$hyper$diff_in_sd)), 2),
       state = sprintf("%s / %s", num(o$state[["max_abs_mean_diff_in_sd"]], 3), num(o$state[["median_sd_ratio"]], 3)),
-      pred = sprintf("%s / %s", num(o$pred[["max_abs_mean_diff"]], 3), num(o$pred[["median_sd_ratio"]], 3)),
+      pred = sprintf("%s / %s", num(o$pred[["max_abs_mean_diff"]], 3), num(o$pred[["max_abs_mean_diff_eb"]], 3)),
       ls = sprintf("%s / %s / %s", num(o$log_score[["stan"]], 4), num(o$log_score[["inla_full_samples"]], 4), num(o$log_score[["inla_eb"]], 4)),
       loo = sprintf("%s / %s", num(o$loo[[1]], 1), num(o$loo[[2]], 1)),
       stan = sprintf("%s params, %s div., %s leapfrog", int(o$stan[["n_sampled"]]), int(o$stan[["divergent"]]), int(o$stan[["leapfrog"]])),
@@ -305,24 +326,45 @@ if (have(val) && length(val) > 0) {
     right = names(vt)[-1],
     head = c(
       "Model", "Largest hyperparameter difference, in posterior sds", "States: largest mean difference (sds) / sd ratio",
-      "Held-out predictor: largest mean difference / sd ratio", "Held-out log score: Stan / INLA full / INLA plug-in",
+      "Held-out predictor, largest difference from Stan in a match's expected value: INLA full / INLA plug-in", "Held-out log score: Stan / INLA full / INLA plug-in",
       "Leave-one-out: Stan PSIS / INLA CPO", "Stan", "R-INLA time: full / plug-in"
     ),
     note = "\"sd ratio\" is R-INLA's posterior sd over Stan's, median over states or matches. \"Plug-in\" fixes the hyperparameters at their mode, which is what the walk-forward uses. R-INLA times are single-core wall times on a shared machine."
   ))
+  # In which models R-INLA is the wider engine for most hyperparameters, and in which the narrower.
+  wider <- vapply(val, function(o) mean(o$hyper$inla_sd / o$hyper$stan_sd > 1) > 0.5, TRUE)
+  model_names <- function(hit) {
+    x <- vapply(val[hit], function(o) sprintf("the %s %s model", tolower(LAB[[o$cell]]), o$response), "")
+    if (length(x) > 2) paste0(paste(x[-length(x)], collapse = ", "), " and ", x[length(x)]) else paste(x, collapse = " and ")
+  }
+  width_txt <- if (any(wider) && any(!wider)) {
+    sprintf("R-INLA is the wider engine for most hyperparameters in %s and the narrower for most in %s.", model_names(wider), model_names(!wider))
+  } else if (all(wider)) {
+    "R-INLA is the wider engine for most hyperparameters in every model."
+  } else {
+    "R-INLA is the narrower engine for most hyperparameters in every model, though not for all of them."
+  }
   worst_h <- val[[which.max(vapply(val, function(o) max(abs(o$hyper$diff_in_sd)), 1))]]
   wh <- worst_h$hyper[which.max(abs(worst_h$hyper$diff_in_sd)), ]
   add(sprintf(
     paste0(
-      "<p><strong>Predictions agree.</strong> Across the %s comparisons the largest difference in a held-out match's expected margin or total is %s %s, the held-out log scores differ by at most %s per match, and the two leave-one-out estimates by at most %s in total. ",
+      "<p><strong>Predictions agree.</strong> Across the %s comparisons the largest difference from Stan in a held-out match's expected margin or total is %s %s with full integration and %s with the plug-in fit, which is the one the walk-forward uses; the held-out log scores differ by at most %s per match (full) and %s (plug-in), and the two leave-one-out estimates by at most %s in total. ",
       "<strong>What differs is how weakly identified variance is split.</strong> The largest hyperparameter difference is %s posterior sds (<code>%s</code> in the %s %s model: Stan %s, R-INLA %s). ",
-      "In the total models the data cannot say sharply how much of a team's scoring level is club, season or within-season, the posterior of those sds is wide and skewed, and R-INLA's integration grid (%s points) describes it more narrowly than NUTS does. The sum of the three, which is what a forecast uses, is the same. ",
-      "The Stan reference itself is the weaker side on precision here: its smallest effective sample size is %s, against R-hat up to %s.</p>"
+      "The data cannot say sharply how much of a team's strength or scoring level is club, season or within-season, so the posterior of those sds is wide and skewed, and the two engines do not differ in one direction. R-INLA's posterior sd of a hyperparameter as a ratio to Stan's, with the number of the model's hyperparameters for which R-INLA is the narrower: %s. ",
+      "%s The sum of the components, which is what a forecast uses, agrees (first sentence). ",
+      "Neither engine is a precise reference for these sds: R-INLA integrates over %s points around the one mode it found, and Stan's smallest effective sample size here is %s with R-hat up to %s.</p>"
     ),
     length(val), num(max(vapply(val, function(o) o$pred[["max_abs_mean_diff"]], 1)), 2), "goals or points",
+    num(max(vapply(val, function(o) o$pred[["max_abs_mean_diff_eb"]], 1)), 2),
     num(max(vapply(val, function(o) abs(o$log_score[["stan"]] - o$log_score[["inla_full_samples"]]), 1)), 4),
+    num(max(vapply(val, function(o) abs(o$log_score[["stan"]] - o$log_score[["inla_eb"]]), 1)), 4),
     num(max(vapply(val, function(o) abs(o$loo[[1]] - o$loo[[2]]), 1)), 1),
     num(abs(wh$diff_in_sd), 2), esc(wh$parameter), tolower(LAB[[worst_h$cell]]), worst_h$response, num(wh$stan_mean, 2), num(wh$inla_mean, 2),
+    paste(vapply(val, function(o) {
+      r <- o$hyper$inla_sd / o$hyper$stan_sd
+      sprintf("%s %s %s to %s (%d of %d)", tolower(LAB[[o$cell]]), o$response, num(min(r), 2), num(max(r), 2), sum(r < 1), length(r))
+    }, ""), collapse = "; "),
+    width_txt,
     paste(range(vapply(val, function(o) o$inla[["hyper_points"]], 1)), collapse = " to "),
     int(min(vapply(val, function(o) o$stan[["min_ess"]], 1))), num(max(vapply(val, function(o) o$stan[["max_rhat"]], 1)), 3)
   ))
