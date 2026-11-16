@@ -48,8 +48,7 @@ for (w in weeks) {
       theta_init = init, theta_fixed = fixed
     )
   }
-  n_theta <- length(unlist(fv2_hyper_names(spec))) + 2L + 2L * isTRUE(opts$div_offsets) +
-    (identical(opts$param, "sq") && identical(opts$style, "static"))
+  n_theta <- fv2_n_theta(spec)
   if (length(theta) != n_theta) theta <- NULL
   reestimate <- is.null(theta) || since_estimate >= hyper_every
   f <- tryCatch(fit(theta, fixed = !reestimate), error = function(e) NULL)

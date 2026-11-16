@@ -1,16 +1,18 @@
 # Time the two engines on the one specification, in sequence, and record what
 # else the machine was doing. Meant to be run alone inside a compute slot.
 #
-#   Rscript research/football-v2/time_engines.R <cutoff> <horizon_end> [note]
+#   Rscript research/football-v2/time_engines.R <cutoff> <horizon_end> [note] [variant]
 # Run from the repo root.
 options(width = 160)
 suppressMessages(devtools::load_all(".", quiet = TRUE))
 source("research/football-v2/data.R")
+source("research/football-v2/variants.R")
 fv2_source()
 args <- commandArgs(trailingOnly = TRUE)
 cutoff <- as.Date(args[[1]])
 horizon_end <- as.Date(args[[2]])
 note <- if (length(args) >= 3L) args[[3]] else ""
+variant <- if (length(args) >= 4L) args[[4]] else "base"
 out <- fv2_out_dir()
 league <- load_leagues()[["football_iceland"]]
 load_avg <- function() as.numeric(strsplit(trimws(sub(".*load averages?:", "", system("uptime", intern = TRUE))), "[ ,]+")[[1]][1])
@@ -24,11 +26,18 @@ clock <- function(expr) {
 
 rows <- list()
 for (sex in c("female", "male")) {
-  sp <- fv2_split(fv2_results(sex), league, cutoff, horizon_end = horizon_end)
-  spec <- fv2_build(sp$train, sp$pred)
+  res <- fv2_results(sex)
+  sp <- fv2_split(res, league, cutoff, horizon_end = horizon_end)
+  spec <- do.call(fv2_build, c(
+    list(sp$train, sp$pred, divisions = fv2_division_table(res, fv2_rank_order(league))),
+    fv2_variants()[[variant]]
+  ))
   csv_dir <- file.path(out, sprintf("timing_csv_%s", sex))
   dir.create(csv_dir, showWarnings = FALSE)
-  st <- clock(fv2_fit_stan(spec, "research/football-v2/stan/fv2.stan", file.path(dirname(out), "exe"), csv_dir, refresh = 0L))
+  st <- clock(fv2_fit_stan(
+    spec, fv2_stan_file(spec, "research/football-v2/stan"), file.path(dirname(out), "exe"), csv_dir,
+    refresh = 0L
+  ))
   unlink(csv_dir, recursive = TRUE)
   d <- st$value$diagnostics
   rows[[length(rows) + 1L]] <- data.frame(
@@ -54,7 +63,10 @@ for (sex in c("female", "male")) {
 }
 slots <- tryCatch(system("/Users/brynjolfurjonsson/.claude-reviews/machine-slots/slot.sh status", intern = TRUE), error = function(e) NA_character_)
 saveRDS(
-  list(timing = do.call(rbind, rows), note = note, slots = slots, when = format(Sys.time()), cmdstan = cmdstanr::cmdstan_version()),
+  list(
+    timing = do.call(rbind, rows), variant = variant, note = note, slots = slots,
+    when = format(Sys.time()), cmdstan = cmdstanr::cmdstan_version()
+  ),
   file.path(out, "engine_timing.rds")
 )
 cat("TIMING DONE\n")

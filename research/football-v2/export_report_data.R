@@ -68,8 +68,8 @@ read_if <- function(name) {
 q3 <- function(x) stats::quantile(x, c(0.05, 0.5, 0.95), names = FALSE)
 
 # Stan fits that estimate the reversion coefficient: tag "rhoest" for attack
-# and defence walks, "rhoestsq" for strength with a fixed style.
-rho <- do.call(rbind, lapply(c("rhoest", "rhoestsq"), function(tag) {
+# and defence walks, "rhoestlvl" for the recommended model.
+rho <- do.call(rbind, lapply(c("rhoest", "rhoestlvl"), function(tag) {
   do.call(rbind, lapply(c("female", "male"), function(sex) {
     f <- read_if(sprintf("val_%s_%s_2026-07-31_stan.rds", tag, sex))
     if (is.null(f)) {
@@ -78,7 +78,7 @@ rho <- do.call(rbind, lapply(c("rhoest", "rhoestsq"), function(tag) {
     h <- f$draws$hyper
     d <- f$diagnostics
     data.frame(
-      form = if (tag == "rhoest") "ad" else "sq", sex = sex, parameter = colnames(h),
+      form = if (tag == "rhoest") "ad" else "final", sex = sex, parameter = colnames(h),
       mean = colMeans(h), q5 = apply(h, 2L, function(x) q3(x)[1]),
       q50 = apply(h, 2L, function(x) q3(x)[2]), q95 = apply(h, 2L, function(x) q3(x)[3]),
       divergences = d$n_divergent, leapfrog = d$mean_leapfrog, max_rhat = d$state_max_rhat,
@@ -90,8 +90,8 @@ rho <- do.call(rbind, lapply(c("rhoest", "rhoestsq"), function(tag) {
 dry <- lapply(list.files(out, pattern = "^dryrun_.*\\.rds$"), read_if)
 
 # Weekly against four-weekly hyperparameter re-estimation, same matches.
-h1 <- read_if("wf_base_female_2026_h1.rds")
-h4 <- read_if("wf_base_female_2026.rds")
+h1 <- read_if("wf_rev80_sq_static_lvl_female_2026_h1.rds")
+h4 <- read_if("wf_rev80_sq_static_lvl_female_2026.rds")
 hyper_check <- NULL
 if (!is.null(h1) && !is.null(h4)) {
   a <- h1$pred
@@ -103,10 +103,26 @@ if (!is.null(h1) && !is.null(h4)) {
   )
 }
 
+# Goals per match, scored and predicted, by sex and season for a few models.
+goals_of <- function(variant) {
+  files <- list.files(out, pattern = sprintf("^wf_%s_(male|female)_[0-9]{4}[.]rds$", variant), full.names = TRUE)
+  if (length(files) < 10L) {
+    return(NULL)
+  }
+  d <- do.call(rbind, lapply(files, function(f) readRDS(f)$pred))
+  stats::aggregate(cbind(obs = home_score + away_score, pred = xg_home + xg_away) ~ sex + season, d, mean)
+}
+goals <- list(
+  base = goals_of("base"), sq = goals_of("rev80_sq_static"),
+  sq_div = goals_of("rev80_sq_static_div"), sq_lvl = goals_of("rev80_sq_static_lvl")
+)
+
 res <- list(
   generated = format(Sys.time(), "%Y-%m-%d %H:%M"),
+  goals = goals,
   validation = read_validation("calendar"),
-  validation_final = read_validation("final"),
+  validation_sq = read_validation("final"),
+  validation_lvl = read_validation("finallvl"),
   ha = ha, wf = wf,
   rho = rho, timing = read_if("engine_timing.rds"), dryrun = dry, hyper_check = hyper_check
 )
