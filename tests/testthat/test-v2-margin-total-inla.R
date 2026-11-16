@@ -117,6 +117,7 @@ test_that("the priors and starting values the fitter states are the ones R-INLA 
 
   # The within-season correlation is fixed, not estimated.
   expect_equal(as.numeric(term("w_t")$theta1$param), c(pr$u_w_ar1, 0.01))
+  expect_equal(as.numeric(term("w_t")$theta1$initial), -2 * log(pr$u_w_ar1 / 5))
   expect_true(term("w_t")$theta2$fixed)
   expect_equal(as.numeric(term("w_t")$theta2$initial), log(1.95 / 0.05))
   expect_false(any(grepl("Rho for w_t", rownames(fit$summary.hyperpar))))
@@ -227,8 +228,12 @@ test_that("the total model and the random-walk form run on the priors and starti
   expect_equal(as.numeric(walk$param), c(pr$u_w, 0.01))
   expect_equal(as.numeric(walk$initial), v2_start(pr$u_w))
 
+  # The club and season levels of the total model carry the same priors as the margin's.
+  expect_equal(as.numeric(used_hyper(fit, "b")$theta$param), c(pr$u_b, 0.01))
   expect_equal(as.numeric(used_hyper(fit, "b")$theta$initial), v2_start(pr$u_b))
+  expect_equal(as.numeric(used_hyper(fit, "u_s")$theta1$param), c(pr$u_u, 0.01))
   expect_equal(as.numeric(used_hyper(fit, "u_s")$theta1$initial), v2_start(pr$u_u))
+  expect_equal(as.numeric(used_hyper(fit, "u_s")$theta2$param), c(pr$rho_mu, 1 / pr$rho_sd^2))
 
   fixed <- fit$all.hyper$fixed
   expect_equal(vapply(fixed, function(f) f$label, character(1)), c("alpha1", "alpha2"))
