@@ -180,14 +180,17 @@ empty_lengjan_archive_index <- function() {
 
 #' Odds rows from the main market embedded in Lengjan's current program.
 #'
-#' Every event in the program carries its main market inline, so a program
-#' body alone gives a full-time 1X2 price for each listed event without a
-#' market-detail request. The embedded market goes through
+#' An event in the program carries its main market inline once it has one, so
+#' a program body alone gives a full-time 1X2 price for those events without
+#' a market-detail request. The embedded market goes through
 #' [parse_lengjan_markets()] and [lengjan_markets_to_odds()], so the rule is
 #' the live scrape's: a primary, open `3WAY` market maps to moneyline
 #' home/draw/away for selections `1`/`X`/`2` priced above 1. Embedded `2WAY`
-#' and `NWAY` markets are dropped. Events come from all four program arrays,
-#' first copy of each id.
+#' and `NWAY` markets are dropped, so two-way sports and outrights give no
+#' row, and so is a market flagged `live` (in play): the live scrape asks
+#' for `live=false` markets only, and an in-play price would otherwise pass
+#' for a pre-match one. Events come from all four program arrays, first copy
+#' of each id.
 #'
 #' @param prog Parsed JSON of a current-program body.
 #' @return Tibble: event_id, market, outcome, line (always `NA`), odds.
@@ -198,7 +201,9 @@ empty_lengjan_archive_index <- function() {
 #' @export
 parse_lengjan_program_markets <- function(prog) {
   evs <- .lengjan_program_events(prog)
-  evs <- evs[vapply(evs, function(e) is.list(e$market), logical(1))]
+  evs <- evs[vapply(evs, function(e) {
+    is.list(e$market) && !isTRUE(e$market$live)
+  }, logical(1))]
   groups <- lapply(evs, function(e) {
     market <- e$market
     market$eventId <- e$id
@@ -207,7 +212,8 @@ parse_lengjan_program_markets <- function(prog) {
   lengjan_markets_to_odds(parse_lengjan_markets(groups))
 }
 
-#' The program's events across its four arrays, first copy of each id.
+#' The program's events across its four arrays, first copy of each id. An
+#' event with no id is dropped, as parse_lengjan_program() in effect does.
 #' @noRd
 .lengjan_program_events <- function(prog) {
   if (!is.list(prog) || !all(c("events", "liveSoon") %in% names(prog))) {
@@ -218,8 +224,8 @@ parse_lengjan_program_markets <- function(prog) {
     )
   }
   evs <- c(prog$events, prog$liveSoon, prog$popular, prog$liveNow)
-  ids <- vapply(evs, function(e) as.character(e$id), character(1))
-  evs[!duplicated(ids)]
+  ids <- vapply(evs, function(e) .scalar_chr(e$id), character(1))
+  evs[!is.na(ids) & !duplicated(ids)]
 }
 
 #' Read a local Lengjan odds archive into odds-shaped rows.
@@ -227,10 +233,11 @@ parse_lengjan_program_markets <- function(prog) {
 #' Parses the raw bodies each capture points at with the functions the live
 #' scrape uses ([parse_lengjan_program()], [parse_lengjan_markets()],
 #' [lengjan_markets_to_odds()]) and returns one row per capture, event,
-#' market, outcome and line. Every captured event comes back, whether or not
-#' `leagues` knows its competition; nothing is de-duplicated across captures,
-#' so an event listed in two captures has two sets of rows, told apart by
-#' `scraped_at`. Team names stay as Lengjan renders them.
+#' market, outcome and line. A captured event comes back whether or not
+#' `leagues` knows its competition, as long as it has a market the live
+#' mapping knows (an event with none has no row). Nothing is de-duplicated
+#' across captures, so an event listed in two captures has two sets of rows,
+#' told apart by `scraped_at`. Team names stay as Lengjan renders them.
 #'
 #' Read-only: the rows are not validated against `schemas()$odds`, nothing is
 #' written to the facts store and no network request is made.
@@ -251,8 +258,8 @@ parse_lengjan_program_markets <- function(prog) {
 #'   leaves the side unbounded.
 #' @param what `"detail"` reads the market-detail bodies: moneyline, total
 #'   and spread rows for the events a capture fetched detail for. `"program"`
-#'   reads only the program body: a moneyline row per selection of every
-#'   listed event's embedded main market
+#'   reads only the program body: moneyline rows from each listed event's
+#'   embedded main market, where that is an open, pre-match primary `3WAY`
 #'   ([parse_lengjan_program_markets()]).
 #' @param leagues League definitions, used only to fill `sex`.
 #' @return Tibble with the columns of the odds table (`sport`, `country`,
@@ -332,7 +339,7 @@ read_lengjan_archive <- function(dir = NULL, from = NULL, to = NULL,
   listed <- .lengjan_program_events(prog)
   sport_names <- stats::setNames(
     vapply(listed, function(e) .scalar_chr(e$sportName), character(1)),
-    vapply(listed, function(e) as.character(e$id), character(1))
+    vapply(listed, function(e) .scalar_chr(e$id), character(1))
   )
 
   j <- dplyr::inner_join(odds, events, by = "event_id")
@@ -360,9 +367,10 @@ read_lengjan_archive <- function(dir = NULL, from = NULL, to = NULL,
 .lengjan_program_subset <- function(prog, event_ids) {
   arrays <- c("events", "liveSoon", "popular", "liveNow")
   for (k in intersect(arrays, names(prog))) {
-    prog[[k]] <- Filter(
-      function(e) as.character(e$id) %in% event_ids, prog[[k]]
-    )
+    keep <- vapply(prog[[k]], function(e) {
+      .scalar_chr(e$id) %in% event_ids
+    }, logical(1))
+    prog[[k]] <- prog[[k]][keep]
   }
   prog
 }

@@ -324,3 +324,35 @@ test_that("a capture whose manifest entry names no file is skipped, saying so", 
   )
   expect_equal(nrow(got), 0L)
 })
+
+# The live scrape requests markets with live=false. In the fixtures the
+# market-level flag is FALSE on every pre-match market (3 embedded, 50 detail)
+# while the EVENT-level `live` is TRUE on upcoming events: the two differ.
+test_that("an in-play embedded market is dropped; a live-enabled event's pre-match one is kept", {
+  in_play <- list(
+    id = "9", live = TRUE,
+    market = list(
+      typeName = "3WAY", primary = TRUE, status = "open", live = TRUE,
+      selections = list(list(name = "1", odds = 150L), list(name = "X", odds = 400L), list(name = "2", odds = 600L))
+    )
+  )
+  prog <- list(events = list(), liveSoon = list(), liveNow = list(in_play))
+  expect_equal(nrow(parse_lengjan_program_markets(prog)), 0L)
+  prog$liveNow[[1]]$market$live <- FALSE
+  expect_equal(parse_lengjan_program_markets(prog)$odds, c(1.5, 4, 6))
+})
+
+test_that("an event with no id cannot shift which events are kept", {
+  dir <- .two_captures()
+  prog <- .fx("current-program.json")
+  no_odds <- prog$liveSoon[[1]]
+  no_id <- no_odds
+  no_id$id <- NULL
+  prog$events <- c(list(no_id), prog$events[1], list(no_odds), prog$events[2:3])
+  first <- list.files(file.path(dir, "raw"), pattern = "120000Z-program", recursive = TRUE, full.names = TRUE)
+  jsonlite::write_json(prog, gzfile(first), auto_unbox = TRUE, null = "null", digits = NA)
+  at_noon <- function(x) sort(unique(x$event_id[format(x$scraped_at, "%H:%M", tz = "UTC") == "12:00"]))
+  with_odds <- c("4412294", "4601670", "4616742")
+  expect_equal(at_noon(read_lengjan_archive(dir, what = "detail", leagues = .hb())), with_odds)
+  expect_equal(at_noon(read_lengjan_archive(dir, what = "program", leagues = .hb())), with_odds)
+})

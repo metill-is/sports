@@ -20,8 +20,9 @@ Tibble sorted by `ts`, one row per capture: `ts` (POSIXct, UTC),
 }
 \description{
 Reads every `manifest/YYYY-MM.jsonl` file: one line per capture. A line
-that cannot be read (a truncated last line, say) or that carries another
-format version is skipped with a warning. An archive with no manifest yet
+that cannot be read (a truncated last line, say), that carries another
+format version or that has no parseable `ts` is skipped; the skipped lines
+are reported together in one warning. An archive with no manifest yet
 gives a zero-row index; a directory that does not exist is an error.
 }
 \examples{

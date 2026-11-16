@@ -24,8 +24,8 @@ leaves the side unbounded.}
 
 \item{what}{`"detail"` reads the market-detail bodies: moneyline, total
 and spread rows for the events a capture fetched detail for. `"program"`
-reads only the program body: a moneyline row per selection of every
-listed event's embedded main market
+reads only the program body: moneyline rows from each listed event's
+embedded main market, where that is an open, pre-match primary `3WAY`
 ([parse_lengjan_program_markets()]).}
 
 \item{leagues}{League definitions, used only to fill `sex`.}
@@ -47,20 +47,22 @@ Tibble with the columns of the odds table (`sport`, `country`,
 Parses the raw bodies each capture points at with the functions the live
 scrape uses ([parse_lengjan_program()], [parse_lengjan_markets()],
 [lengjan_markets_to_odds()]) and returns one row per capture, event,
-market, outcome and line. Every captured event comes back, whether or not
-`leagues` knows its competition; nothing is de-duplicated across captures,
-so an event listed in two captures has two sets of rows, told apart by
-`scraped_at`. Team names stay as Lengjan renders them.
+market, outcome and line. A captured event comes back whether or not
+`leagues` knows its competition, as long as it has a market the live
+mapping knows (an event with none has no row). Nothing is de-duplicated
+across captures, so an event listed in two captures has two sets of rows,
+told apart by `scraped_at`. Team names stay as Lengjan renders them.
 }
 \details{
 Read-only: the rows are not validated against `schemas()$odds`, nothing is
 written to the facts store and no network request is made.
 
 A capture whose status is `error` is skipped with a note naming it, a
-`skipped` one silently. A capture naming a file that is missing from the
-local copy or cannot be read (an interrupted pull) is skipped with a
-warning naming the file. A body that reads but has an unexpected shape
-stops the read with an error naming the capture.
+`skipped` one silently. A capture is also skipped when it names a file
+that is missing from the local copy or cannot be read (an interrupted
+pull), or when a body has an unexpected shape (Lengjan's API changed).
+Those captures are reported together in one warning naming each capture
+and what was wrong with it; the rest are returned.
 }
 \examples{
 \dontrun{
