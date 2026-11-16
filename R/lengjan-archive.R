@@ -30,8 +30,9 @@ NULL
 #' Index the captures of a local Lengjan odds archive.
 #'
 #' Reads every `manifest/YYYY-MM.jsonl` file: one line per capture. A line
-#' that cannot be read (a truncated last line, say) or that carries another
-#' format version is skipped with a warning. An archive with no manifest yet
+#' that cannot be read (a truncated last line, say), that carries another
+#' format version or that has no parseable `ts` is skipped; the skipped lines
+#' are reported together in one warning. An archive with no manifest yet
 #' gives a zero-row index; a directory that does not exist is an error.
 #'
 #' @param dir Archive directory. Defaults to option
@@ -57,20 +58,37 @@ lengjan_archive_index <- function(dir = NULL) {
     file.path(dir, "manifest"),
     pattern = "^[0-9]{4}-[0-9]{2}[.]jsonl$", full.names = TRUE
   ))
-  recs <- list()
-  for (f in files) {
-    lines <- readLines(f, warn = FALSE, encoding = "UTF-8")
-    for (i in which(nzchar(trimws(lines)))) {
-      rec <- .lengjan_manifest_record(lines[[i]])
-      if (is.character(rec)) {
-        cli::cli_warn(
-          "Skipping line {i} of manifest {.file {basename(f)}}: {rec}."
-        )
-        next
-      }
-      recs[[length(recs) + 1L]] <- rec
-    }
+  lines <- lapply(files, function(f) {
+    text <- readLines(f, warn = FALSE, encoding = "UTF-8")
+    keep <- which(nzchar(trimws(text)))
+    list(text = text[keep], where = paste0(basename(f), " line ", keep))
+  })
+  where <- unlist(lapply(lines, `[[`, "where"))
+  recs <- lapply(unlist(lapply(lines, `[[`, "text")), .lengjan_manifest_record)
+  if (length(recs) == 0L) {
+    return(empty_lengjan_archive_index())
   }
+
+  problem <- vapply(recs, function(r) {
+    if (is.character(r)) r else NA_character_
+  }, character(1))
+  # WHY: one vectorised parse; a ymd_hms() call per line costs about 2.5 ms,
+  # which is 100 s for a year of captures at 15 minutes.
+  ts <- .lengjan_parse_utc(vapply(recs, function(r) {
+    if (is.character(r)) NA_character_ else .scalar_chr(r$ts)
+  }, character(1)))
+  problem[is.na(problem) & is.na(ts)] <- "no parseable `ts`"
+  skipped <- !is.na(problem)
+  if (any(skipped)) {
+    warning(
+      .lengjan_skip_report(
+        "manifest line", paste0(where, ": ", problem)[skipped]
+      ),
+      call. = FALSE
+    )
+  }
+  recs <- recs[!skipped]
+  ts <- ts[!skipped]
   if (length(recs) == 0L) {
     return(empty_lengjan_archive_index())
   }
@@ -82,7 +100,7 @@ lengjan_archive_index <- function(dir = NULL) {
     vapply(recs, function(r) as.integer(.scalar_chr(get(r))), integer(1))
   }
   out <- tibble::tibble(
-    ts = .POSIXct(vapply(recs, function(r) r$ts, numeric(1)), tz = "UTC"),
+    ts = ts,
     reason = chr(function(r) r$reason),
     status = chr(function(r) r$status),
     program_file = chr(function(r) r$program$file),
@@ -120,12 +138,24 @@ lengjan_archive_index <- function(dir = NULL) {
       .LENGJAN_ARCHIVE_VERSION
     ))
   }
-  ts <- lubridate::ymd_hms(.scalar_chr(rec$ts), tz = "UTC", quiet = TRUE)
-  if (is.na(ts)) {
-    return("no parseable `ts`")
-  }
-  rec$ts <- as.numeric(ts)
   rec
+}
+
+#' One warning text for everything a read skipped: a count, then the first
+#' `max` items, so an interrupted pull does not emit a warning per file.
+#' @noRd
+.lengjan_skip_report <- function(what, items, max = 10L) {
+  n <- length(items)
+  paste0(
+    "Lengjan archive: skipped ", n, " ", what, if (n != 1L) "s", ":\n",
+    paste0("  - ", items[seq_len(min(n, max))], collapse = "\n"),
+    if (n > max) paste0("\n  ... and ", n - max, " more")
+  )
+}
+
+#' @noRd
+.lengjan_parse_utc <- function(x) {
+  lubridate::ymd_hms(x, tz = "UTC", quiet = TRUE)
 }
 
 #' @noRd
