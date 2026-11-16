@@ -485,6 +485,25 @@ simulate_league <- function(n_team = 6L, n_week = 30L, seed = 11L) {
   )
 }
 
+test_that("the prior guard counts PC priors against the spec", {
+  spec <- fv2$fv2_build(toy_matches(), clock = "break")
+  expect_identical(fv2$fv2_n_theta(spec), 8L)
+  pc <- function(fixed = FALSE) list(prior = "pc.prec", fixed = fixed)
+  default <- list(prior = "loggamma", fixed = FALSE)
+  field <- list(hyper = list(theta1 = pc(), theta2 = pc(), theta3 = pc(), theta4 = default))
+  iid <- list(hyper = list(theta = pc()))
+  good <- list(all.hyper = list(random = list(field, field, iid, iid)))
+  expect_true(fv2$fv2_check_inla_priors(good, spec))
+  # One effect whose specification was not read falls back to the default.
+  bad <- good
+  bad$all.hyper$random[[4]]$hyper$theta <- default
+  expect_error(fv2$fv2_check_inla_priors(bad, spec), "was not read")
+  expect_identical(fv2$fv2_n_theta(fv2$fv2_build(toy_matches())), 6L)
+  expect_identical(
+    fv2$fv2_n_theta(fv2$fv2_build(toy_matches(), param = "sq", style = "static", level_walk = TRUE)), 7L
+  )
+})
+
 test_that("the INLA engine returns draws in the shared layout", {
   skip_on_ci()
   skip_if_not_installed("INLA")

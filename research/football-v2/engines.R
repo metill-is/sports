@@ -19,6 +19,27 @@ fv2_n_theta <- function(spec) {
     2L * isTRUE(o$level_walk) + (o$param == "sq" && o$style == "static")
 }
 
+#' Abort unless INLA used a PC prior for every hyperparameter of the spec.
+#'
+#' INLA falls back to its default priors without a word when it cannot read a
+#' `hyper` specification from a formula built in code. Every hyperparameter
+#' here carries a PC prior, so the number INLA reports must equal the number
+#' the spec defines.
+fv2_check_inla_priors <- function(result, spec) {
+  priors <- unlist(lapply(result$all.hyper$random, function(x) {
+    vapply(x$hyper, function(h) if (isTRUE(h$fixed)) NA_character_ else h$prior, character(1))
+  }))
+  n_pc <- sum(priors == "pc.prec", na.rm = TRUE)
+  if (n_pc != fv2_n_theta(spec)) {
+    stop(
+      "INLA used a PC prior for ", n_pc, " hyperparameters where the spec defines ",
+      fv2_n_theta(spec), ": a `hyper` specification was not read.",
+      call. = FALSE
+    )
+  }
+  invisible(TRUE)
+}
+
 #' Fit the spec with R-INLA.
 #'
 #' @param int_strategy "auto" (CCD or grid over the hyperparameters), "eb"
@@ -132,6 +153,7 @@ fv2_fit_inla <- function(spec, int_strategy = "auto", n_samp = 1000L,
     num.threads = threads, verbose = verbose
   )
   t_fit <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
+  fv2_check_inla_priors(r, spec)
 
   t1 <- Sys.time()
   sel <- lapply(eff[names(eff) != ""], function(i) if (is.data.frame(i)) i else seq_along(i))

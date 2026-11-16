@@ -87,7 +87,23 @@ rho <- do.call(rbind, lapply(c("rhoest", "rhoestlvl"), function(tag) {
   }))
 }))
 
-dry <- lapply(list.files(out, pattern = "^dryrun_.*\\.rds$"), read_if)
+# End-to-end dry runs of the cutover path: schema validation of the published
+# JSON and the comparison with production's stored extract (dryrun_check.rds
+# is written by the check that follows run_dryrun.R).
+dry <- read_if("dryrun_check.rds")
+if (!is.null(dry)) {
+  dry <- lapply(dry, function(d) {
+    cmp <- d$compare
+    list(
+      sex = d$sex, as_of = d$as_of, extract_files = length(d$files), n_json = d$n_json,
+      schema = d$schema, unmatched = d$unmatched,
+      fixtures = if (is.null(cmp)) 0L else nrow(cmp),
+      p_home_v2 = if (is.null(cmp)) NA else mean(cmp$p_home_v2),
+      p_home_prod = if (is.null(cmp)) NA else mean(cmp$p_home_prod),
+      mean_abs_dp = if (is.null(cmp)) NA else mean(abs(cmp$p_home_v2 - cmp$p_home_prod))
+    )
+  })
+}
 
 # Weekly against four-weekly hyperparameter re-estimation, same matches.
 h1 <- read_if("wf_rev80_sq_static_lvl_female_2026_h1.rds")
