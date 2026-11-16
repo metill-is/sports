@@ -18,9 +18,11 @@ is_playoff <- function(d, sport) {
 }
 
 # The last regular-season week of each row's (season, division). A finished season shows
-# it. The season still being played does not, and the results table holds played matches
-# only, so there is no schedule to read it from: when the newest season stops more than
-# six weeks short of the earlier seasons of its division, it is given their median.
+# it; the season still being played does not. When the newest season stops more than six
+# weeks short of the earlier seasons of its division, it is given their median.
+# WHY not the schedules table: it lists the fixtures announced so far, and a split or
+# play-off phase is announced later (women's Bonusdeild 2027 ends on 3 March there, the
+# earlier seasons ran into April), so it would understate the season's length.
 last_regular_week <- function(d) {
   seen <- tapply(d$week, list(d$season, d$division), max)
   newest <- as.character(max(d$season))
