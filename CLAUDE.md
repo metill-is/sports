@@ -87,6 +87,8 @@ print(DBI::dbGetQuery(con, "SELECT sport, country, COUNT(*) AS n, SUM(pnl) AS pn
 '
 ```
 
+- **Raw Lengjan odds archive (local, read-only):** `read_lengjan_archive()` reads a local copy into odds-shaped rows and never writes to `data/facts/odds/`: [`docs/runbooks/odds-archive.md`](docs/runbooks/odds-archive.md).
+
 ### World Cup
 
 Tournament-time manual overlay refresh (martj42 score lag), knockout
