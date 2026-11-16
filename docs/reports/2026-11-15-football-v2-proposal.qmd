@@ -1222,7 +1222,7 @@ Decision 5 asks for two checks on the approximation once Stan no longer fits foo
 
 **What is stored.** One small file under `tests/testthat/fixtures/`, written once on a machine that has CmdStan, by a script kept next to the reference program:
 
-- a frozen training set: the matches of one cell up to a fixed cutoff (date, teams, scores, season, division) and the fixtures after it. The women's cell to 31 July 2026 is about 1,500 matches and fits with INLA in seconds;
+- a frozen training set: the matches of one cell up to a fixed cutoff (date, teams, scores, season, division) and the fixtures after it. The women's cell to 31 July 2026 is `r format(val$dims$N[val$dims$sex == "female"], big.mark = ",")` matches and fits with INLA in seconds;
 - the v2.0 options and prior values the reference was fitted with;
 - what NUTS found on that training set: the hyperparameter means and quantiles, each team's state mean and sd in the last week, the league home advantage, and the outcome probabilities and expected goals of every fixture;
 - how it was made: the Stan program's hash, CmdStan version, seed, number of draws, largest $\hat{R}$ and number of divergences.
