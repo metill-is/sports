@@ -1,7 +1,10 @@
-// R1 "ragged", basketball: the production model (2d_student_t_scalarsigma.stan) with one
-// change. Team states exist only at real appearances, and the sum-to-zero constraint
-// applies to the initial levels only. Likelihood (match-dependent rho), priors, per-team
-// volatility hierarchies and unpooled home advantage are production's.
+// R1 "ragged", basketball: the production model (2d_student_t_scalarsigma.stan) with the team states moved to
+// real appearances (one innovation per match a team played). Two more things change with
+// that. Production constrains each round's innovations to sum to zero across teams; here
+// only the initial levels sum to zero, because a ragged layout has no round to sum over.
+// And the prior on the scoring level is passed in as data, normal(85, 20) from the
+// experiment's scale constants, where production has normal(80, 15). Likelihood (match-dependent rho), the
+// other priors, per-team volatility hierarchies and unpooled home advantage are production's.
 data {
 #include _data_slots.stan
 }

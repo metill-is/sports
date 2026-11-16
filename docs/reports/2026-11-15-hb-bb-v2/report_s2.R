@@ -182,7 +182,14 @@ if (have(ladder)) {
     prev <- if (!is.na(g(cl, "r1_ragged", "leapfrog"))) "r1_ragged" else "r0_prod"
     notes <- c(notes, sprintf(
       "<strong>R2</strong> %sreplaces the per-team volatility hierarchies%s by single values: %s parameters and %s leapfrog steps per iteration, leave-one-out %s against %s. The home advantage is still %s: it is not the hierarchies that inflate it.",
-      if (prev == "r0_prod") "(here also the first rung without the states no match touches; R1 was not run for this cell) " else "",
+      if (prev == "r0_prod") {
+        sprintf(
+          "(R1 was not run for this cell, so R2 is also its first rung with the states at real appearances and with what comes with that: no sum-to-zero constraint on each round's innovations, and normal(%s) on the scoring level where production has normal(%s)) ",
+          r1_level_prior(cl), prod_level_prior(cl)
+        )
+      } else {
+        ""
+      },
       if (CELLS[[cl]]$sport == "handball") " and the per-team score sds" else " and the four-parameter correlation",
       int(g(cl, "r2_common", "n_sampled")), int(g(cl, "r2_common", "leapfrog")), num(g(cl, "r2_common", "elpd"), 1), num(g(cl, prev, "elpd"), 1),
       num(g(cl, "r2_common", "ha_mean"), 2)
@@ -344,6 +351,22 @@ if (have(val) && length(val) > 0) {
   } else {
     "R-INLA is the narrower engine for most hyperparameters in every model, though not for all of them."
   }
+  # The Stan side is one stored fit; the R-INLA side was fitted twice. How much of the
+  # agreement belongs to the run?
+  val1 <- rd("first-run/compare_validation.rds")
+  run_txt <- if (have(val1)) {
+    st <- function(v) max(vapply(v, function(o) o$state[["max_abs_mean_diff_in_sd"]], 1))
+    hy <- function(v) max(vapply(v, function(o) max(abs(o$hyper$diff_in_sd)), 1))
+    ls <- function(v) max(vapply(v, function(o) abs(o$log_score[["stan"]] - o$log_score[["inla_full_samples"]]), 1))
+    moved <- vapply(names(val), function(k) max(abs(val[[k]]$hyper$inla_mean - val1[[k]]$hyper$inla_mean) / val[[k]]$hyper$stan_sd), 1)
+    sprintf(
+      "<strong>These figures depend on the run.</strong> The R-INLA fits were made twice. In the first run the %s fit landed elsewhere (a hyperparameter mean %s Stan posterior sds away from the second run's), and the comparison read: largest state difference %s posterior sds against %s here, largest hyperparameter difference %s against %s, log scores agreeing to %s against %s.",
+      paste(tolower(LAB[[val[[which.max(moved)]]$cell]]), val[[which.max(moved)]]$response),
+      num(max(moved), 2), num(st(val1), 2), num(st(val), 2), num(hy(val1), 2), num(hy(val), 2), num(ls(val1), 4), num(ls(val), 4)
+    )
+  } else {
+    ""
+  }
   worst_h <- val[[which.max(vapply(val, function(o) max(abs(o$hyper$diff_in_sd)), 1))]]
   wh <- worst_h$hyper[which.max(abs(worst_h$hyper$diff_in_sd)), ]
   add(sprintf(
@@ -352,7 +375,7 @@ if (have(val) && length(val) > 0) {
       "<strong>What differs is how weakly identified variance is split.</strong> The largest hyperparameter difference is %s posterior sds (<code>%s</code> in the %s %s model: Stan %s, R-INLA %s). ",
       "The data cannot say sharply how much of a team's strength or scoring level is club, season or within-season, so the posterior of those sds is wide and skewed, and the two engines do not differ in one direction. R-INLA's posterior sd of a hyperparameter as a ratio to Stan's, with the number of the model's hyperparameters for which R-INLA is the narrower: %s. ",
       "%s The sum of the components, which is what a forecast uses, agrees (first sentence). ",
-      "Neither engine is a precise reference for these sds: R-INLA integrates over %s points around the one mode it found, and Stan's smallest effective sample size here is %s with R-hat up to %s.</p>"
+      "Neither engine is a precise reference for these sds: R-INLA integrates over %s points around the one mode it found, and Stan's smallest effective sample size here is %s with R-hat up to %s. %s</p>"
     ),
     length(val), num(max(vapply(val, function(o) o$pred[["max_abs_mean_diff"]], 1)), 2), "goals or points",
     num(max(vapply(val, function(o) o$pred[["max_abs_mean_diff_eb"]], 1)), 2),
@@ -366,7 +389,8 @@ if (have(val) && length(val) > 0) {
     }, ""), collapse = "; "),
     width_txt,
     paste(range(vapply(val, function(o) o$inla[["hyper_points"]], 1)), collapse = " to "),
-    int(min(vapply(val, function(o) o$stan[["min_ess"]], 1))), num(max(vapply(val, function(o) o$stan[["max_rhat"]], 1)), 3)
+    int(min(vapply(val, function(o) o$stan[["min_ess"]], 1))), num(max(vapply(val, function(o) o$stan[["max_rhat"]], 1)), 3),
+    run_txt
   ))
   for (o in val) {
     h <- o$hyper

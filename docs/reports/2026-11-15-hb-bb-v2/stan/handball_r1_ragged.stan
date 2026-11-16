@@ -1,6 +1,9 @@
-// R1 "ragged", handball: the production model (2d_student_t.stan) with one change. Team
-// states exist only at real appearances (one innovation per match a team played), and the
-// sum-to-zero constraint applies to the initial levels only. Likelihood, priors,
+// R1 "ragged", handball: the production model (2d_student_t.stan) with the team states moved to
+// real appearances (one innovation per match a team played). Two more things change with
+// that. Production constrains each round's innovations to sum to zero across teams; here
+// only the initial levels sum to zero, because a ragged layout has no round to sum over.
+// And the prior on the scoring level is passed in as data, normal(28, 10) from the
+// experiment's scale constants, where production has normal(30, 10). Likelihood, the other priors,
 // per-team volatility hierarchies and unpooled home advantage are production's.
 data {
 #include _data_slots.stan
