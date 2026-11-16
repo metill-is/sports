@@ -350,3 +350,22 @@ test_that("a stored name may be an alias key for the other sex only", {
   ))))
   expect_invisible(check_team_aliases(leagues))
 })
+
+test_that("load_leagues() accepts engine: stan or inla and nothing else", {
+  with_engine <- function(value) {
+    tmp <- withr::local_tempfile(fileext = ".yml", .local_envir = parent.frame())
+    yaml::write_yaml(list(
+      football_england = minimal_league(list(
+        sport = "football",
+        country = "england",
+        sexes = list("male"),
+        stan_model = "football_england/model.stan",
+        engine = value
+      ))
+    ), tmp)
+    tmp
+  }
+  expect_identical(load_leagues(with_engine("inla"), schema_path = schema_path())$football_england$engine, "inla")
+  expect_no_error(load_leagues(with_engine("stan"), schema_path = schema_path()))
+  expect_error(load_leagues(with_engine("laplace"), schema_path = schema_path()), "engine|enum|allowed")
+})

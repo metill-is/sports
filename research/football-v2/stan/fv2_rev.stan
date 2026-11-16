@@ -1,5 +1,5 @@
 // Football v2 reference model with reversion at the season break. Same specification as
-// research/football-v2/spec.R hands to INLA for clock = "break":
+// R/model-v2-spec.R hands to INLA for clock = "break":
 //   inside a season   x[j] = x[j-1] + sigma * sqrt(weeks) * z
 //   across seasons    teams that stay in their division revert toward the mean
 //                     end-of-season state of that division's staying teams,
@@ -11,7 +11,7 @@
 // use_level = 1 adds two league-wide weekly walks, centred on zero over the weeks: a scoring
 // level added to both sides, and a home advantage added as +1/2 at home and -1/2 away.
 functions {
-  // One state field from its innovations. The R twin is fv2_walk() in spec.R.
+  // One state field from its innovations. The R twin is fv2_walk() in R/model-v2-spec.R.
   vector walk(vector lvl, vector z, vector z_brk, real sigma, real kappa, real rho,
               vector step_in, array[] int seg_of_slot, array[] int seg_first,
               array[] int seg_last, array[] int seg_team, array[] int seg_prev,

@@ -1,4 +1,4 @@
-# Football v2 prototype: ONE model specification, consumed by both engines.
+# Football model v2: ONE model specification, read by both engines.
 #
 # States live on a weekly calendar grid, one per (team, week) in which the team
 # plays or has a fixture to predict. Weeks without a match are integrated out
@@ -16,9 +16,10 @@
 #                      advantage that each walk over the weeks (level_walk)
 #
 # Nothing here touches INLA or Stan: fv2_structure() gives the prior precision
-# pieces for INLA's generic3, fv2_stan_data() the same steps for Stan.
-# Nothing here knows about a particular country either: division structure and
-# offset groups arrive as data (see data.R for the Iceland adapter).
+# pieces for INLA's generic3, fv2_stan_data() the same prior for the Stan
+# reference programs. Nothing here knows a particular country either:
+# division structure and offset groups arrive as data. The helpers at the end
+# of the file turn this repository's division codes into that data.
 
 FV2_EPOCH <- as.Date("2021-01-04")
 
@@ -69,6 +70,7 @@ fv2_pc_rate <- function(ua) -log(ua[[2]]) / ua[[1]]
 #'   walk over the weeks (two weekly random walks shared by all teams).
 #' @param divisions Data frame team, season, division, rank (1 = top); needed
 #'   for `movers` and `rho < 1`. Schedule knowledge, known before a season.
+#' @noRd
 fv2_build <- function(train, pred = NULL,
                       clock = c("calendar", "break"), rho = 1,
                       movers = FALSE, div_offsets = FALSE,
@@ -189,6 +191,7 @@ fv2_build <- function(train, pred = NULL,
 
 #' Prior precision pieces of one state field: Q = init / tau^2 + in / sigma^2
 #' (+ brk / kappa^2 + mov / kappa_m^2).
+#' @noRd
 fv2_structure <- function(spec) {
   S <- spec$S
   st <- spec$steps
@@ -226,6 +229,7 @@ fv2_structure <- function(spec) {
 
 #' Design of the 2N training rows (home goals, then away goals) or of the
 #' fixtures to predict, as sparse maps from each latent block to the predictor.
+#' @noRd
 fv2_design <- function(spec, which = c("obs", "pred")) {
   which <- match.arg(which)
   m <- spec[[which]]
@@ -265,6 +269,7 @@ fv2_design <- function(spec, which = c("obs", "pred")) {
 #' Which Stan program implements a spec: stan/fv2.stan (attack and defence
 #' walks), stan/fv2_sq.stan (strength with an optional fixed style) or
 #' stan/fv2_rev.stan (either, with reversion at the season break).
+#' @noRd
 fv2_stan_program <- function(spec, est_rho = FALSE) {
   o <- spec$opts
   if (o$clock == "break" && (o$rho < 1 || est_rho)) {
@@ -277,6 +282,7 @@ fv2_stan_program <- function(spec, est_rho = FALSE) {
 #'
 #' @param est_rho Estimate the reversion coefficient instead of fixing it at
 #'   the spec's value (Stan only; INLA keeps it inside the precision matrix).
+#' @noRd
 fv2_stan_data <- function(spec, est_rho = FALSE) {
   o <- spec$opts
   program <- fv2_stan_program(spec, est_rho)
@@ -331,6 +337,7 @@ fv2_stan_data <- function(spec, est_rho = FALSE) {
 #'   season (`wave_start`/`wave_end` index into it), so every segment's
 #'   predecessor and every division mean it reverts toward are already
 #'   computed when it is reached.
+#' @noRd
 fv2_segments <- function(spec) {
   stopifnot(spec$opts$clock == "break", !spec$opts$movers)
   sl <- spec$slots
@@ -370,6 +377,7 @@ fv2_segments <- function(spec) {
 #' One state field from its innovations: the R twin of `walk()` in
 #' stan/fv2_rev.stan, used to test that the recursion and the precision in
 #' `fv2_structure()` describe the same prior.
+#' @noRd
 fv2_walk <- function(seg, lvl, z, z_brk, sigma, kappa, rho) {
   ca <- cumsum(sigma * seg$step_in * z)
   drift <- ca[seg$seg_last] - ca[seg$seg_first]
@@ -403,6 +411,7 @@ fv2_walk <- function(seg, lvl, z, z_brk, sigma, kappa, rho) {
 
 #' Predictive Poisson rates for the fixtures in `spec$pred`, from posterior
 #' draws in the engine-neutral layout (draws in rows).
+#' @noRd
 fv2_predict <- function(draws, spec) {
   m <- spec$pred
   eta_home <- draws$c_home + draws$att[, m$home_slot, drop = FALSE] +
@@ -429,7 +438,56 @@ fv2_predict <- function(draws, spec) {
 #' prior as INLA's `rw1` on the week values with a sum-to-zero constraint.
 #'
 #' @param week_step sqrt(weeks since the previous week in the grid), 0 first.
+#' @noRd
 fv2_level_walk <- function(week_step, z, sigma) {
   raw <- cumsum(sigma * week_step * z)
   raw - mean(raw)
+}
+
+#' League division behind a facts-store division code: split-phase and
+#' play-off codes fold into their league, cups have none.
+#' @noRd
+fv2_league_division <- function(division, playoff_pattern = "_((UPPER|LOWER)_)?PO$",
+                                cup_codes = "CUP") {
+  out <- sub(playoff_pattern, "", division)
+  out[division %in% cup_codes] <- NA_character_
+  out
+}
+
+#' Team-by-season league division with its rank (1 = top).
+#'
+#' @param matches Matches with home_team, away_team, season and
+#'   league_division.
+#' @param rank_order League divisions from the top down; a division not
+#'   listed ranks below all of them.
+#' @noRd
+fv2_division_table <- function(matches, rank_order) {
+  d <- data.frame(
+    team = c(matches$home_team, matches$away_team),
+    season = as.integer(c(matches$season, matches$season)),
+    division = c(matches$league_division, matches$league_division)
+  )
+  d <- d[!is.na(d$division), , drop = FALSE]
+  if (!nrow(d)) {
+    return(data.frame(team = character(), season = integer(), division = character(), rank = integer()))
+  }
+  tab <- stats::aggregate(list(n = rep(1L, nrow(d))), d[c("team", "season", "division")], sum)
+  tab <- tab[order(tab$team, tab$season, -tab$n, tab$division), , drop = FALSE]
+  tab <- tab[!duplicated(tab[c("team", "season")]), c("team", "season", "division"), drop = FALSE]
+  tab$rank <- match(tab$division, rank_order, nomatch = length(rank_order) + 1L)
+  rownames(tab) <- NULL
+  tab
+}
+
+#' League divisions from the top down, read off the league's training filter.
+#' @noRd
+fv2_rank_order <- function(league) {
+  unique(stats::na.omit(fv2_league_division(unlist(league$training_filter$divisions))))
+}
+
+#' Offset group of a match: its league (play-offs folded in) or cup, by season.
+#' @noRd
+fv2_cell <- function(division, season) {
+  league_division <- fv2_league_division(division)
+  paste(ifelse(is.na(league_division), division, league_division), season, sep = "@")
 }

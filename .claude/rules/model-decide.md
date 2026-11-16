@@ -52,6 +52,26 @@ paths:
   question before it is a sampler question.
 - `fit_model()` is a pure cmdstanr wrapper — takes stan_data + stan_path,
   returns the fit. Callers save to disk.
+- **Engine switch (2026-11-16).** `fit_league()` reads an optional league key
+  `engine` (`stan` | `inla`, absent = `stan`; schema enum in
+  `config/leagues.schema.json`). No league sets it, so every fit is Stan.
+  `engine: inla` routes to `fit_model_v2_inla()` (`R/model-v2-fit.R`), which
+  fits football model **v2.0** (`football_v2_options()`: one strength walk
+  per team, reversion 0.8 at the season break, fixed style, league-wide
+  scoring-level and home-advantage walks) with R-INLA and returns a fit
+  under the production Stan variable names (`fv2_as_fit()`,
+  `R/model-v2-adapter.R`), so `extract_posteriors()`, the extractors and the
+  publisher run unchanged. It is football-only, refuses a cell with fewer
+  than three seasons of results (INLA was measurably worse than NUTS on one
+  season), has its own gate (`fv2_inla_gate()`; the Stan sampler gate has no
+  INLA counterpart) and writes a `fit_diagnostics` row with `n_obs` and `NA`
+  sampler metrics, because `needs_refit()` reads `n_obs` off the newest row.
+  `run_fit_targets()` must keep `engine` in its whitelisted slice
+  (`test-pipeline-run-isolation.R`). INLA is not in `DESCRIPTION`: the code
+  guards with `requireNamespace()` and the tests skip without it. Switching
+  a league is the owner's decision; `test-model-v2.R` pins "no league is on
+  the INLA engine" so the switch has to edit that expectation. Evidence and
+  cutover plan: `docs/reports/2026-11-15-football-v2-proposal.qmd`.
 - `extract_posteriors()` materialises posterior draws as the canonical
   `beliefs_latest` tibble (per-draw-per-match).
 - Stan models live in `Stan/{league_key}/{file}.stan`. `leagues.yml`'s

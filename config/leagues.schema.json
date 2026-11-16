@@ -66,6 +66,10 @@
           }
         },
         "stan_model": { "type": "string" },
+        "engine": {
+          "enum": ["stan", "inla"],
+          "description": "Which engine fit_league() uses. Absent means stan. inla fits football model v2 with R-INLA and is accepted for football only; stan_model stays required because Stan is the reference the INLA fit is checked against."
+        },
         "training_filter": {
           "type": "object",
           "additionalProperties": false,

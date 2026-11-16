@@ -263,21 +263,52 @@ fit_league <- function(league_key = NULL,
     "fit_league({league$sport}/{league$country}/{sex}): sampler seed = {seed}"
   )
 
-  fit <- fit_model(
-    stan_data       = prep$stan_data,
-    stan_model_path = stan_path,
-    method          = method,
-    chains          = chains,
-    iter_warmup     = iter_warmup,
-    iter_sampling   = iter_sampling,
-    adapt_delta     = adapt_delta,
-    seed            = seed
-  )
+  # Engine switch. `engine` is an optional league key; absent or "stan" is
+  # the path every league takes today, unchanged. "inla" fits football model
+  # v2 and returns a fit under the same variable names, so everything below
+  # this point is shared.
+  engine <- league$engine %||% "stan"
+  if (!engine %in% c("stan", "inla")) {
+    stop("Unknown engine: ", engine, " (expected \"stan\" or \"inla\")", call. = FALSE)
+  }
+  use_inla <- identical(engine, "inla")
+  n_draws <- as.integer(chains) * as.integer(iter_sampling)
+
+  if (use_inla) {
+    fit <- fit_model_v2_inla(
+      prep, league, sex,
+      end_date    = end_date,
+      root        = root,
+      from_season = from_season,
+      n_draws     = n_draws,
+      seed        = seed
+    )
+  } else {
+    fit <- fit_model(
+      stan_data       = prep$stan_data,
+      stan_model_path = stan_path,
+      method          = method,
+      chains          = chains,
+      iter_warmup     = iter_warmup,
+      iter_sampling   = iter_sampling,
+      adapt_delta     = adapt_delta,
+      seed            = seed
+    )
+  }
 
   # Persist sampler diagnostics (drift tracking, audit 2026-05-30). Daily
   # MCMC fits only: by_round backfills share a fit_date across rounds and
   # would collide in the (sport,country,sex,fit_date) partition. Best-effort.
-  if (identical(method, "sample") && !by_round_mode) {
+  if (use_inla && !by_round_mode) {
+    persist_fit_diagnostics_inla(
+      fit, league,
+      sex = sex,
+      fit_date = fit_date,
+      n_obs = prep$stan_data$N %||% NA_integer_,
+      n_draws = n_draws,
+      root = root
+    )
+  } else if (identical(method, "sample") && !by_round_mode) {
     persist_fit_diagnostics(
       fit, league,
       sex = sex,
@@ -535,6 +566,10 @@ run_fit_targets <- function(targets, leagues, force, league_named,
     # backtests and backfills -- which pass the full config entry -- did not.
     # `$<-` with NULL is a no-op, so leagues without a filter stay unchanged.
     static$training_filter <- league_def$training_filter
+    # Same reason, same shape: fit_league() reads `engine` off this slice. A
+    # league switched to INLA in config must not be silently fitted with
+    # Stan because the key was dropped here.
+    static$engine <- league_def$engine
 
     skip <- skip_fn(static, row$sex, force, league_named, root = root)
     if (!is.null(skip)) {

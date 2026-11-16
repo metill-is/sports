@@ -3,7 +3,7 @@
 #
 #   Rscript research/football-v2/compare_validation.R <tag> <cutoff>
 options(width = 170)
-source("research/football-v2/spec.R")
+suppressMessages(devtools::load_all(".", quiet = TRUE))
 source("research/football-v2/score.R")
 args <- commandArgs(trailingOnly = TRUE)
 tag <- if (length(args) >= 1L) args[[1]] else "calendar"

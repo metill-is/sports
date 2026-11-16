@@ -1,7 +1,7 @@
 // Football v2 reference model, strength-plus-style form. Same likelihood as fv2.stan
 // (attack = strength + style, defence = strength - style) with a different prior: one
 // weekly random walk per team for overall strength, and an optional fixed style value
-// per team. Mirrors what research/football-v2/spec.R hands to INLA for
+// per team. Mirrors what R/model-v2-spec.R hands to INLA for
 // param = "sq", style = "static" or "none".
 data {
   int<lower=1> K;

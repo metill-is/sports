@@ -1,4 +1,4 @@
-# Football v2 prototype: present the new engine's draws as the fit object
+# Football model v2: present the new engine's draws as the fit object
 # the existing extract, publish and simulation layers already read.
 #
 # Those layers touch a fit through one method, fit$draws(name), and expect the
@@ -20,6 +20,7 @@
 FV2_NO_SHARED_RATE <- -40
 
 #' Fixtures from `prepare_data()$pred_d` in the layout `fv2_build()` reads.
+#' @noRd
 fv2_pred_from_prep <- function(pred_d, cell_of = function(division, season) paste(division, season, sep = "@")) {
   season <- as.integer(format(pred_d$match_date, "%Y"))
   data.frame(
@@ -38,6 +39,7 @@ fv2_pred_from_prep <- function(pred_d, cell_of = function(division, season) past
 #' @param prep `prepare_data()` output: `stan_data`, `pred_d`, `teams`.
 #' @return `list(draws = function(variables))`, returning a
 #'   `posterior::draws_array`.
+#' @noRd
 fv2_as_fit <- function(draws, spec, prep, seed = 1L) {
   sd <- prep$stan_data
   K <- nrow(prep$teams)
@@ -122,6 +124,9 @@ fv2_as_fit <- function(draws, spec, prep, seed = 1L) {
       }
       posterior::as_draws_array(posterior::as_draws_matrix(do.call(cbind, vars[want])))
     },
-    variables = names(vars)
+    variables = names(vars),
+    # WHY: fit_league() saves every fit with fit$save_object(); for this
+    # engine the draws under their production names are the whole fit.
+    save_object = function(file) saveRDS(vars, file)
   )
 }

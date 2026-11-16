@@ -1,4 +1,4 @@
-// Football v2 reference model. The same specification as research/football-v2/spec.R
+// Football v2 reference model. The same specification as R/model-v2-spec.R
 // hands to INLA: weekly calendar states per team (one slot per team-week with a match
 // or a fixture), two intercepts, pooled sign-free team home-advantage deviations,
 // one innovation sd per component, optional season-break jump and division offsets.
