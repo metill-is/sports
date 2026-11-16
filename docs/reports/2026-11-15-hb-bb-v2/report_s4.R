@@ -190,9 +190,56 @@ add("<h3>What is on the branch</h3>")
 add(
   "<ul><li>Prototype functions, none called by production code: <code>R/v2-margin-total-data.R</code>, <code>R/v2-margin-total-inla.R</code>, <code>R/v2-margin-total-predict.R</code>, <code>R/v2-margin-total-adapter.R</code>, <code>R/ingest-kki-periods.R</code>.</li>",
   "<li>Tests for each: <code>tests/testthat/test-v2-margin-total-{data,inla,predict,adapter}.R</code>, <code>test-ingest-kki-periods.R</code> (the R-INLA tests skip where R-INLA is not installed).</li>",
-  "<li>The experiment: <code>docs/reports/2026-11-15-hb-bb-v2/</code>, scripts and the Stan ladder in <code>stan/</code>.</li>",
+  "<li>The experiment: <code>docs/reports/2026-11-15-hb-bb-v2/</code>, scripts and the Stan ladder in <code>stan/</code>; <code>check_headlines.R</code> recomputes the headline numbers from the result files.</li>",
   "<li>Not changed: <code>config/leagues.yml</code>, <code>Stan/</code>, the ingest, the fit, extract, decide and publish code.</li></ul>"
 )
+
+add("<h3>Where each number comes from</h3>")
+add(sprintf("<p>Every number in this report is read from a result file under <code>%s/</code>. The table names the file and the fields behind each headline number; <code>docs/reports/2026-11-15-hb-bb-v2/check_headlines.R</code> recomputes them from exactly these fields without going through the report builder (its output: <code>logs/check_headlines.log</code>).</p>", OUT))
+src <- data.frame(
+  what = c(
+    "Production's implied home advantage, raw margin, ratio, by division; volatility scales; Student-t degrees of freedom",
+    "Production sampler: sampled parameters, divergences, leapfrog steps, R-hat, ESS, wall time, machine slots",
+    "Identified home advantage (0.66, 0.65, 3.33, 2.21) and the hyperparameter table of the v2 model; residual, dispersion and mismatch tables",
+    "Ladder tables: parameters, leapfrog, leave-one-out density, home advantage, held-out scores per rung; paired differences from production",
+    "R-INLA against Stan: hyperparameters, states, held-out predictor, log scores, leave-one-out",
+    "Within-season term at the fixed cutoff (sd, leave-one-out gain)",
+    "Weekly-correlation sensitivity (0.90, 0.95, 0.98)",
+    "Walk-forward predictions; seconds per cutoff (about 6 s)",
+    "Walk-forward scores (3,930 matches); level-score shift, variance forms, Student-t, overtime; calibration by phase",
+    "Within-season AR(1) minus static in the walk-forward (1,211 matches; 1. deild 549)",
+    "Regulation-trained plus overtime against the final-score model",
+    "v2 against production's stored forecasts (338 matches); mean expected margins; RMSE",
+    "v2 and production against the Lengjan line",
+    "Regulation-time coverage (99.7 %), overtime shares (7.1 % in men's B&oacute;nusdeild)",
+    "Package tests"
+  ),
+  file = c(
+    "<code>out/diag_prod.rds</code>", "<code>out/res_&lt;cell&gt;_r0_prod.rds</code>", "<code>out/descriptives.rds</code>",
+    "<code>out/ladder.rds</code> (built from <code>out/res_&lt;cell&gt;_&lt;rung&gt;.rds</code>, <code>out/draws_&lt;cell&gt;_&lt;rung&gt;.rds</code>, <code>out/inla_validate_&lt;cell&gt;.rds</code>)",
+    "<code>out/compare_validation.rds</code>", "<code>out/inla_validate_&lt;cell&gt;.rds</code>, <code>out/ladder.rds</code>", "<code>out/within_rho.rds</code>",
+    "<code>out/wf_&lt;cell&gt;_none.rds</code> (handball; basketball trained on final scores), <code>out/wf_&lt;cell&gt;_none_reg.rds</code>, <code>out/wf_&lt;cell&gt;_ar1_reg.rds</code>",
+    "<code>out/wf_scores.rds</code>", "<code>out/wf_scores.rds</code>", "<code>out/wf_scores.rds</code>", "<code>out/wf_compare.rds</code>", "<code>out/wf_compare.rds</code>",
+    "<code>kki/periods_matched.rds</code> (parsed cards: <code>kki/periods.tsv</code>, raw cards: <code>kki/raw/</code>)", "<code>logs/full_tests.log</code>"
+  ),
+  field = c(
+    "<code>[[cell]]$ha_weighted</code>, <code>$raw_margin</code>, <code>$by_div</code>, <code>$scale_sigma_off</code>, <code>$scale_sigma_def</code>, <code>$nu</code>",
+    "<code>$n_sampled</code>, <code>$n_divergent</code>, <code>$mean_leapfrog</code>, <code>$max_rhat</code>, <code>$worst_ess</code>, <code>$wall_secs</code>, <code>$machine</code>",
+    "<code>[[cell]]$hfa</code>, <code>$hyper_m</code>, <code>$hyper_t</code>, <code>$d</code> (one row per match with fitted means and residuals)",
+    "<code>$tab</code> (one row per cell and rung: <code>n_sampled</code>, <code>leapfrog</code>, <code>elpd</code>, <code>ha_mean</code>, <code>level_sd</code>, <code>ridge_cor</code>, <code>wall_secs</code>); <code>$scores[[\"&lt;cell&gt; &lt;rung&gt;\"]]</code> (per held-out match: <code>ls_margin</code>, <code>ls_total</code>, <code>ll_wdl</code>)",
+    "<code>[[\"&lt;cell&gt; &lt;response&gt;\"]]$hyper</code>, <code>$state</code>, <code>$pred</code>, <code>$log_score</code>, <code>$loo</code>",
+    "<code>[[\"margin ar1 auto\"]]$hyper_sd</code>, <code>$cpo</code>", "one row per cell and correlation: <code>loo</code>, <code>ls_margin</code>",
+    "<code>$pred</code> (one row per predicted match: <code>mean_m</code>, <code>sd_m</code>, <code>sig2_m</code>, <code>mean_t</code>, <code>sd_t</code>, <code>sig2_t</code>); <code>$cut$secs_m + $cut$secs_t</code>",
+    "<code>[[\"&lt;cell&gt; none\"]]$scores</code> (handball), <code>[[\"&lt;cell&gt; none_reg\"]]$scores</code> (basketball): <code>lsm_*</code> margin, <code>lst_*</code> total, <code>ll_wdl_*</code> result, <code>ll_final_*</code> final result, <code>p_draw*</code>, <code>margin_fit</code>, <code>phase</code>",
+    "<code>$within_j[[\"bb_m_reg\"]]</code>, <code>[[\"bb_f_reg\"]]</code>: <code>lsm_raw.ar1 - lsm_raw.static</code> and the same for <code>lst_raw</code>, <code>ll_wdl_raw</code>",
+    "<code>[[\"bb_m reg_vs_final\"]]</code>, <code>[[\"bb_f reg_vs_final\"]]</code>: <code>ll_final_shift_div - ll_wdl_raw.final</code>, <code>lsm_final_shift_div - lsm_raw.final</code>",
+    "<code>[[cell]]$cmp</code>: production <code>ls_margin</code>, <code>ls_total</code>, <code>ll_wdl</code>, <code>mean_m.prod</code>; v2 <code>lsm_raw</code>, <code>lst_raw</code>, <code>ll_wdl_raw</code>, <code>mean_m.v2</code>",
+    "<code>[[cell]]$market</code>: <code>ll_market</code>, <code>ll_v2</code>, <code>ll_prod</code>",
+    "one row per stored game: <code>ok</code>, <code>overtime</code>, <code>home_reg</code>, <code>away_reg</code>, <code>sex</code>, <code>division</code>", "summary reporter output of <code>devtools::test()</code>"
+  )
+)
+add(tbl(src, head = c("Numbers", "Result file", "Fields"),
+        note = "Cells are <code>hb_m</code>, <code>hb_f</code>, <code>bb_m</code>, <code>bb_f</code>. The printed tables behind every section are also kept as text in <code>logs/</code>: <code>diag_prod.log</code>, <code>ladder_summary.log</code>, <code>compare_validation.log</code>, <code>wf_score.log</code>, <code>wf_compare.log</code>, <code>descriptives.log</code>, <code>kki_periods.log</code>."))
 
 # ---------------------------------------------------------------- scope
 cur <- "scope"
