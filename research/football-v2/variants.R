@@ -30,6 +30,11 @@ fv2_variants <- function() {
     rev80_sq_static_lvl = list(
       clock = "break", rho = 0.8, param = "sq", style = "static", level_walk = TRUE
     ),
+    # The recommended model with the reversion taken out: a plain jump at the
+    # season break for every team. Without reversion there are no reversion
+    # groups, so this variant is the same model before and after the fix to
+    # their definition.
+    sq_static_lvl = list(clock = "break", param = "sq", style = "static", level_walk = TRUE),
     rev80_sq_none_lvl = list(
       clock = "break", rho = 0.8, param = "sq", style = "none", level_walk = TRUE
     ),

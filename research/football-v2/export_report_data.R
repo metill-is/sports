@@ -6,11 +6,16 @@
 # Run from the repo root after compare_validation.R and wf_summarise.R.
 options(width = 160)
 out <- Sys.getenv("FV2_OUT", "/Users/brynjolfurjonsson/.claude-reviews/sports-football-v2/out")
+# Re-runs on the code as fixed after the review of pull request 104: the
+# recommended model's walk-forward and its checks against NUTS. The selection
+# ladder (every other variant with a reversion) was not re-run and is read
+# from `out`, as it was fitted before the fix.
+fixed <- Sys.getenv("FV2_OUT_FIXED", "/Users/brynjolfurjonsson/.claude-reviews/sports-football-v2/out-fixed")
 dest <- file.path("docs", "reports", "2026-11-15-football-v2")
 dir.create(dest, recursive = TRUE, showWarnings = FALSE)
 
-read_validation <- function(tag, cutoff = "2026-07-31") {
-  f <- file.path(out, sprintf("validation_summary_%s_%s.rds", tag, cutoff))
+read_validation <- function(tag, cutoff = "2026-07-31", dir = out) {
+  f <- file.path(dir, sprintf("validation_summary_%s_%s.rds", tag, cutoff))
   if (!file.exists(f)) {
     return(NULL)
   }
@@ -34,6 +39,20 @@ read_validation <- function(tag, cutoff = "2026-07-31") {
   )
 }
 
+# The re-run of an engine comparison where there is one, else the comparison
+# from before the fix.
+latest_validation <- function(tag, cutoff = "2026-07-31") {
+  v <- read_validation(tag, cutoff, fixed)
+  if (is.null(v)) read_validation(tag, cutoff) else v
+}
+rerun_settings <- list(finallvl = "2026-07-31", early26 = "2026-05-03", early22 = "2022-05-08")
+validation_before <- Filter(Negate(is.null), lapply(stats::setNames(names(rerun_settings), names(rerun_settings)), function(tag) {
+  if (is.null(read_validation(tag, rerun_settings[[tag]], fixed))) {
+    return(NULL)
+  }
+  read_validation(tag, rerun_settings[[tag]])[c("pred_summ", "hyper", "scores", "sampler")]
+}))
+
 ha_files <- list.files(out, pattern = "^ha_ha_.*\\.rds$", full.names = TRUE)
 ha <- do.call(rbind, lapply(ha_files, function(f) {
   x <- readRDS(f)
@@ -50,42 +69,62 @@ ha <- do.call(rbind, lapply(ha_files, function(f) {
   )
 }))
 
-wf_file <- file.path(out, "wf_summary.rds")
-wf <- if (file.exists(wf_file)) readRDS(wf_file) else NULL
-if (!is.null(wf)) {
+read_wf_summary <- function(dir) {
+  wf_file <- file.path(dir, "wf_summary.rds")
+  if (!file.exists(wf_file)) {
+    return(NULL)
+  }
+  wf <- readRDS(wf_file)
   wf$pred <- wf$pred[wf$pred$variant %in% c(wf$ref, "base"), ]
   wf$hyper <- wf$hyper[wf$hyper$variant %in% c(wf$ref, "base"), ]
   keep <- c("sex", "name", "variant", "season", "cutoff", "value", "reestimated")
   wf$hyper <- wf$hyper[wf$hyper$name %in% grep("^(tau|sigma|kappa|omega|delta|c_)", unique(wf$hyper$name), value = TRUE), keep]
   wf$priced_detail <- wf$priced_detail[c("sex", "match_date", "division", "phase", "ls_model", "ls_line", "ls_prod", "p_home", "phome_line", "phome_prod", "home_score", "away_score")]
   wf$rounds_detail <- wf$rounds_detail[c("sex", "match_date", "division", "phase", "ls_model", "ls_prodround", "p_home", "phome_prodround", "home_score", "away_score")]
+  wf
 }
+# `wf` is the whole selection ladder as fitted before the fix; `wf_fixed` is
+# the re-run of the recommended model, the reference and the two models that
+# bracket the reversion.
+wf <- read_wf_summary(out)
+wf_fixed <- read_wf_summary(fixed)
 
-read_if <- function(name) {
-  f <- file.path(out, name)
+read_if <- function(name, dir = out) {
+  f <- file.path(dir, name)
   if (file.exists(f)) readRDS(f) else NULL
+}
+# The re-run where there is one, else the result from before the fix.
+read_latest <- function(name) {
+  x <- read_if(name, fixed)
+  if (is.null(x)) read_if(name) else x
 }
 q3 <- function(x) stats::quantile(x, c(0.05, 0.5, 0.95), names = FALSE)
 
 # Stan fits that estimate the reversion coefficient: tag "rhoest" for attack
-# and defence walks, "rhoestlvl" for the recommended model.
-rho <- do.call(rbind, lapply(c("rhoest", "rhoestlvl"), function(tag) {
-  do.call(rbind, lapply(c("female", "male"), function(sex) {
-    f <- read_if(sprintf("val_%s_%s_2026-07-31_stan.rds", tag, sex))
-    if (is.null(f)) {
-      return(NULL)
-    }
-    h <- f$draws$hyper
-    d <- f$diagnostics
-    data.frame(
-      form = if (tag == "rhoest") "ad" else "final", sex = sex, parameter = colnames(h),
-      mean = colMeans(h), q5 = apply(h, 2L, function(x) q3(x)[1]),
-      q50 = apply(h, 2L, function(x) q3(x)[2]), q95 = apply(h, 2L, function(x) q3(x)[3]),
-      divergences = d$n_divergent, leapfrog = d$mean_leapfrog, max_rhat = d$state_max_rhat,
-      row.names = NULL
-    )
+# and defence walks, "rhoestlvl" for the recommended model. `rerun` says
+# whether the fit is from the fixed code.
+rho_fits <- function(read, rerun) {
+  do.call(rbind, lapply(c("rhoest", "rhoestlvl"), function(tag) {
+    do.call(rbind, lapply(c("female", "male"), function(sex) {
+      f <- read(sprintf("val_%s_%s_2026-07-31_stan.rds", tag, sex))
+      if (is.null(f)) {
+        return(NULL)
+      }
+      h <- f$draws$hyper
+      d <- f$diagnostics
+      data.frame(
+        form = if (tag == "rhoest") "ad" else "final", sex = sex, parameter = colnames(h),
+        mean = colMeans(h), q5 = apply(h, 2L, function(x) q3(x)[1]),
+        q50 = apply(h, 2L, function(x) q3(x)[2]), q95 = apply(h, 2L, function(x) q3(x)[3]),
+        divergences = d$n_divergent, leapfrog = d$mean_leapfrog, max_rhat = d$state_max_rhat,
+        rerun = rerun, row.names = NULL
+      )
+    }))
   }))
-}))
+}
+rho_before <- rho_fits(read_if, FALSE)
+rho_after <- rho_fits(function(name) read_if(name, fixed), TRUE)
+rho <- rbind(rho_after, rho_before[!paste(rho_before$form, rho_before$sex) %in% paste(rho_after$form, rho_after$sex), ])
 
 # End-to-end dry runs of the cutover path: schema validation of the published
 # JSON and the comparison with production's stored extract (dryrun_check.rds
@@ -105,9 +144,11 @@ if (!is.null(dry)) {
   })
 }
 
-# Weekly against four-weekly hyperparameter re-estimation, same matches.
-h1 <- read_if("wf_rev80_sq_static_lvl_female_2026_h1.rds")
-h4 <- read_if("wf_rev80_sq_static_lvl_female_2026.rds")
+# Weekly against four-weekly hyperparameter re-estimation, same matches. Both
+# runs come from the same folder, so the pair is always of one code state.
+hyper_dir <- if (file.exists(file.path(fixed, "wf_rev80_sq_static_lvl_female_2026_h1.rds"))) fixed else out
+h1 <- read_if("wf_rev80_sq_static_lvl_female_2026_h1.rds", hyper_dir)
+h4 <- read_if("wf_rev80_sq_static_lvl_female_2026.rds", hyper_dir)
 hyper_check <- NULL
 if (!is.null(h1) && !is.null(h4)) {
   a <- h1$pred
@@ -121,7 +162,9 @@ if (!is.null(h1) && !is.null(h4)) {
 
 # Goals per match, scored and predicted, by sex and season for a few models.
 goals_of <- function(variant) {
-  files <- list.files(out, pattern = sprintf("^wf_%s_(male|female)_[0-9]{4}[.]rds$", variant), full.names = TRUE)
+  wf_files <- function(dir) list.files(dir, pattern = sprintf("^wf_%s_(male|female)_[0-9]{4}[.]rds$", variant), full.names = TRUE)
+  files <- wf_files(fixed)
+  if (length(files) < 10L) files <- wf_files(out)
   if (length(files) < 10L) {
     return(NULL)
   }
@@ -182,18 +225,32 @@ if (!is.null(sq_pred) && !is.null(ad_pred)) {
 res <- list(
   generated = format(Sys.time(), "%Y-%m-%d %H:%M"),
   goals = goals, style_split = style_split,
-  replay = read_if("replay_summary.rds"),
+  replay = read_latest("replay_summary.rds"),
+  group_scan = read_if("group_change_scan.rds"),
+  rerun = read_if("rerun_comparison.rds", fixed),
   validation = read_validation("calendar"),
   validation_sq = read_validation("final"),
-  validation_lvl = read_validation("finallvl"),
-  validation_early26 = read_validation("early26", "2026-05-03"),
-  validation_early22 = read_validation("early22", "2022-05-08"),
+  validation_lvl = latest_validation("finallvl"),
+  validation_early26 = latest_validation("early26", "2026-05-03"),
+  validation_early22 = latest_validation("early22", "2022-05-08"),
+  # The engine comparison as it stood before the fix, for the three settings
+  # that were re-run: predictive agreement and hyperparameters only.
+  validation_before = validation_before,
+  # Two runs of one engine on the same held-out matches (engine_noise.R).
+  engine_noise = read_if("engine_noise.rds", fixed),
   simcheck = Filter(Negate(is.null), list(
-    female = read_if("simcheck_rev80_sq_static_lvl_female_2026-07-31.rds"),
-    male = read_if("simcheck_rev80_sq_static_lvl_male_2026-07-31.rds")
+    female = read_latest("simcheck_rev80_sq_static_lvl_female_2026-07-31.rds"),
+    male = read_latest("simcheck_rev80_sq_static_lvl_male_2026-07-31.rds")
   )),
-  ha = ha, wf = wf,
-  rho = rho, timing = read_if("engine_timing.rds"), dryrun = dry, hyper_check = hyper_check,
+  # The season-simulation comparison as it stood before the fix (summary only).
+  simcheck_before = if (file.exists(file.path(fixed, "simcheck_rev80_sq_static_lvl_female_2026-07-31.rds"))) {
+    Filter(Negate(is.null), list(
+      female = read_if("simcheck_rev80_sq_static_lvl_female_2026-07-31.rds")$summary,
+      male = read_if("simcheck_rev80_sq_static_lvl_male_2026-07-31.rds")$summary
+    ))
+  },
+  ha = ha, wf = wf, wf_fixed = wf_fixed,
+  rho = rho, rho_before = rho_before, timing = read_if("engine_timing.rds"), dryrun = dry, hyper_check = hyper_check,
   # What the machine was doing around the timing run (load average, slot
   # holders, busiest processes), as recorded by the launcher.
   timing_context = if (file.exists(file.path(dirname(out), "logs", "timing_clean.meta"))) {
