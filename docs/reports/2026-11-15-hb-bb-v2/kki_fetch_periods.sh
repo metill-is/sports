@@ -2,8 +2,14 @@
 # Prototype, step 2 of the period-score ingest: fetch Baskethotel's game-view widget
 # (widget id 400) once per game id in <OUT>/kki/games.tsv and keep the raw response.
 # One request per game, 0.35 s apart, resumable (existing files are skipped).
-# Usage: kki_fetch_periods.sh <OUT>
-OUT=${1:-/Users/brynjolfurjonsson/.claude-reviews/sports-hb-bb-v2}
+# The output folder is the first argument, else $HBBB_OUT (as for the R scripts), else the
+# default the R scripts use.
+# Usage: kki_fetch_periods.sh [<OUT>]
+OUT=${1:-${HBBB_OUT:-/Users/brynjolfurjonsson/.claude-reviews/sports-hb-bb-v2}}
+if [ ! -f "$OUT/kki/games.tsv" ]; then
+  echo "no $OUT/kki/games.tsv: run kki_games.R with the same HBBB_OUT first" >&2
+  exit 1
+fi
 API=a0d07178160bf749eb6e5e761fc623fe42e2bb57
 mkdir -p "$OUT/kki/raw"
 n=0

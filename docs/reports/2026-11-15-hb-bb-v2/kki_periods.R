@@ -62,10 +62,13 @@ cat(sprintf("stored played rows: %d; matched to a game card: %d; with usable reg
 cat("usable share by sex, division, season:\n")
 print(round(tapply(m$ok, list(paste(m$sex, m$division), m$season), mean), 3))
 u <- m[m$ok, ]
-cat("\nregulation ties (= overtime games) by sex and division: n, share\n")
+# WHY no count of double overtimes: a game card lists the four quarters only, so the
+# number of overtime periods is not recorded. Overtime points are: one five-minute period
+# is about 20 to 25 points, so 45 or more points most likely means two or more periods.
+cat("\nregulation ties (= overtime games) by sex and division: n, share, and overtime games with 45 or more overtime points\n")
 print(do.call(rbind, lapply(split(u, paste(u$sex, u$division)), function(x) data.frame(
   n = nrow(x), overtime = sum(x$overtime), share = mean(x$overtime), reg_tie = sum(x$reg_tie),
-  two_ot = sum(x$n_periods > 5), home_wins_ot = sum(x$overtime & x$home_score > x$away_score)
+  ot_points_45_up = sum(x$overtime & x$home_ot + x$away_ot >= 45), home_wins_ot = sum(x$overtime & x$home_score > x$away_score)
 ))), digits = 3)
 cat("regulation margin -3..3 counts (all usable games):\n")
 print(table(factor(pmax(pmin(u$home_reg - u$away_reg, 4), -4), levels = -4:4), u$sex))
