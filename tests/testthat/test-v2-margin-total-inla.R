@@ -92,3 +92,33 @@ test_that("a supplied response replaces the stored scores", {
   # back by a hair rather than reproduced to the last digit.
   expect_equal(moved$fixed$mean - base$fixed$mean, 10, tolerance = 0.1)
 })
+
+test_that("the priors and starting values the fitter states are the ones R-INLA uses", {
+  # WHY: R-INLA drops a hyperparameter spec without a warning when it cannot read it from
+  # the model term, and the fit still looks plausible under its default priors.
+  skip_if_not_installed("INLA")
+  sim <- simulate_v2_league()
+  v <- build_v2_data(sim$matches, sim$matches[0, ], sim$teams)
+  pr <- v2_priors("handball")
+
+  fit <- fit_v2_inla(v, "margin", pr, within = "ar1", rho_week = 0.95, int_strategy = "eb")$fit
+
+  used <- fit$all.hyper
+  term <- function(id) Filter(function(r) identical(as.character(r$hyperid), id), used$random)[[1]]$hyper
+  expect_equal(as.character(used$family[[1]]$hyper$theta1$prior), "pc.prec")
+  expect_equal(as.numeric(used$family[[1]]$hyper$theta1$param), c(pr$u_sigma_m, 0.01))
+  expect_equal(as.numeric(used$family[[1]]$hyper$theta1$initial), -2 * log(pr$u_sigma_m / 5))
+
+  expect_equal(as.numeric(term("b")$theta$param), c(pr$u_b, 0.01))
+  expect_equal(as.numeric(term("ha")$theta$param), c(pr$u_ha, 0.01))
+  expect_equal(as.numeric(term("u_s")$theta1$param), c(pr$u_u, 0.01))
+  expect_equal(as.character(term("u_s")$theta2$prior), "normal")
+  expect_equal(as.numeric(term("u_s")$theta2$param), c(pr$rho_mu, 1 / pr$rho_sd^2))
+
+  # The within-season correlation is fixed, not estimated.
+  expect_equal(as.numeric(term("w_t")$theta1$param), c(pr$u_w_ar1, 0.01))
+  expect_true(term("w_t")$theta2$fixed)
+  expect_equal(as.numeric(term("w_t")$theta2$initial), log(1.95 / 0.05))
+  expect_false(any(grepl("Rho for w_t", rownames(fit$summary.hyperpar))))
+  expect_true(any(grepl("Rho for u_s", rownames(fit$summary.hyperpar))))
+})

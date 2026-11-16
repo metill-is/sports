@@ -107,6 +107,7 @@ add("<ul>",
     "<li><strong>Constraints are what cost time.</strong> A within-season random walk that sums to zero needs one linear constraint per team-season (over a hundred), and R-INLA then takes 40 to 60 s per fit against 5 s for the static form. The AR(1) form needs none and takes about 15 s.</li>",
     "<li><strong>Weakly identified variances.</strong> R-INLA's hyperparameter posterior is narrower than NUTS's where the data cannot separate club, season and within-season variance. Forecasts are unaffected; published interval widths for individual team strengths are within a few per cent at the median but differ more for some teams.</li>",
     "<li><strong>NUTS has its own trouble with this model.</strong> The season walk of the total model has six steps; in its centred form NUTS produced up to 75 divergences, and it was re-parameterised. R-INLA integrates that variance numerically and has no such failure.</li>",
+    "<li><strong>Priors can be dropped silently.</strong> R-INLA ignores a hyperparameter specification it cannot read from the model term and fits with its defaults, without a warning (found the same night by the national-team session). <code>fit_v2_inla()</code> was checked against the fitted object: every prior, starting value and fixed value is the one stated, and a test now asserts it.</li>",
     "<li><strong>Installation.</strong> R-INLA is not on CRAN and ships its own binary; the version should be pinned in CI as CmdStan is.</li>",
     "</ul>")
 add("<h3>Shadow period</h3>")
