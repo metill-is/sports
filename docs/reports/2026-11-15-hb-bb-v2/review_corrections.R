@@ -142,12 +142,21 @@ for (cl in c("bb_m", "bb_f")) {
   })
 }
 
-# Finding 7: the second run. Headline walk-forward scores from each state.
+# Finding 7: the second run. The rows of the report's walk-forward table, from each state:
+# handball on the plain rounded margin; basketball regulation time with the cell's tie
+# shift for the margin and for the 1X2 alike.
 for (cl in names(tags)) {
-  add_row("7 (second run)", sprintf("walk-forward margin / total / result score, %s", lab[[cl]]), function(get, s) {
+  handball <- cl %in% c("hb_m", "hb_f")
+  what <- if (handball) {
+    sprintf("walk-forward margin / total / W-D-L score, %s", lab[[cl]])
+  } else {
+    sprintf("walk-forward regulation-time margin / total / 1X2 score with the tie shift (%s), %s", if (REG_SHIFT[[cl]] == "shift_div") "per division" else "one shift", lab[[cl]])
+  }
+  add_row("7 (second run)", what, function(get, s) {
     d <- get("wf_scores.rds")[[tags[[cl]]]]$scores
-    w <- if (cl %in% c("hb_m", "hb_f")) "ll_wdl_raw" else paste0("ll_wdl_", REG_SHIFT[[cl]])
-    sprintf("%.4f / %.4f / %.4f (n %d)", mean(d$lsm_raw), mean(d$lst_raw), mean(d[[w]]), nrow(d))
+    m <- if (handball) "lsm_raw" else paste0("lsm_", REG_SHIFT[[cl]])
+    w <- if (handball) "ll_wdl_raw" else paste0("ll_wdl_", REG_SHIFT[[cl]])
+    sprintf("%.4f / %.4f / %.4f (n %d)", mean(d[[m]]), mean(d$lst_raw), mean(d[[w]]), nrow(d))
   })
 }
 for (g in list(c("hb_m", "hb_f"), c("bb_m", "bb_f"))) {
@@ -157,6 +166,31 @@ for (g in list(c("hb_m", "hb_f"), c("bb_m", "bb_f"))) {
     paste(pool("lsm_raw", "ls_margin"), pool("lst_raw", "ls_total"), pool("ll_wdl_raw", "ll_wdl"), sep = " / ")
   })
 }
+
+# Finding 7: what moved when the fixed-cutoff R-INLA fits were run again. The Stan side
+# of these comparisons is one stored fit; "corrected" still has the first run's R-INLA fits.
+add_row("7 (fixed-cutoff fits)", "R-INLA against Stan: largest difference in a state's posterior mean, in posterior sds", function(get, s) {
+  sprintf("%.3f", max(vapply(get("compare_validation.rds"), function(o) o$state[["max_abs_mean_diff_in_sd"]], 1)))
+})
+add_row("7 (fixed-cutoff fits)", "R-INLA against Stan: largest hyperparameter difference, in posterior sds", function(get, s) {
+  sprintf("%.2f", max(vapply(get("compare_validation.rds"), function(o) max(abs(o$hyper$diff_in_sd)), 1)))
+})
+add_row("7 (fixed-cutoff fits)", "R-INLA against Stan: held-out log scores agree to (full integration)", function(get, s) {
+  sprintf("%.4f", max(vapply(get("compare_validation.rds"), function(o) abs(o$log_score[["stan"]] - o$log_score[["inla_full_samples"]]), 1)))
+})
+add_row("7 (fixed-cutoff fits)", "R-INLA, basketball men total model with the AR(1): medians of sd b / sd s_s / sd u_s", function(get, s) {
+  h <- get("compare_validation.rds")[["bb_m total"]]$hyper
+  g <- function(p) h$inla_q50[h$parameter == p]
+  if (is.null(h$inla_q50)) {
+    g <- function(p) h$inla_mean[h$parameter == p]
+  }
+  sprintf("%.2f / %.2f / %.2f", g("sd: b"), g("sd: s_s"), g("sd: u_s"))
+})
+add_row("7 (fixed-cutoff fits)", "ladder, basketball men, v2 + AR(1) R-INLA full: leave-one-out density / held-out total log score", function(get, s) {
+  t <- get("ladder.rds")$tab
+  r <- t[t$cell == "bb_m" & t$rung == "v2 + within-season AR(1), INLA full", ]
+  sprintf("%.1f / %.4f", r$elpd, r$ls_total)
+})
 
 tab <- do.call(rbind, rows)
 print(tab, right = FALSE, row.names = FALSE)
