@@ -13,14 +13,17 @@ parse_lengjan_program_markets(prog)
 Tibble: event_id, market, outcome, line (always `NA`), odds.
 }
 \description{
-Every event in the program carries its main market inline, so a program
-body alone gives a full-time 1X2 price for each listed event without a
-market-detail request. The embedded market goes through
+An event in the program carries its main market inline once it has one, so
+a program body alone gives a full-time 1X2 price for those events without
+a market-detail request. The embedded market goes through
 [parse_lengjan_markets()] and [lengjan_markets_to_odds()], so the rule is
 the live scrape's: a primary, open `3WAY` market maps to moneyline
 home/draw/away for selections `1`/`X`/`2` priced above 1. Embedded `2WAY`
-and `NWAY` markets are dropped. Events come from all four program arrays,
-first copy of each id.
+and `NWAY` markets are dropped, so two-way sports and outrights give no
+row, and so is a market flagged `live` (in play): the live scrape asks
+for `live=false` markets only, and an in-play price would otherwise pass
+for a pre-match one. Events come from all four program arrays, first copy
+of each id.
 }
 \examples{
 \dontrun{
