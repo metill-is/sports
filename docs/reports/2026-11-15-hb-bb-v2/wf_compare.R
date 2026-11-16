@@ -98,9 +98,9 @@ for (cell in names(CELLS)) {
   v2r <- wf[[paste(cell, "none_reg")]]$scores
   if (is.null(v2) && is.null(v2r)) next
   v2_label <- "v2 walk-forward (final scores)"
-  if (is.null(v2) && !is.null(v2r)) {
-    # Basketball before the final-score walk-forward exists: the regulation-time model
-    # carried to the final result through its tie and overtime model.
+  if (!is.null(v2r)) {
+    # Basketball: the recommended model is trained on regulation time and carried to the
+    # final result through its tie and overtime model; that is what is compared.
     v2 <- v2r
     v2$lsm_raw <- v2r$lsm_final_shift_div
     v2$lst_raw <- v2r$lst_final_shift_div

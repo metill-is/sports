@@ -40,7 +40,7 @@ add(tbl(by_div,
 add(paste0(
   "<p><strong>Margin and total are uncorrelated</strong> once strengths are in: every cell is within a few hundredths of zero. That is the condition under which the two can be modelled separately, and it holds. ",
   "<strong>Handball scores are under-dispersed</strong>: the variance of a side's score is about half its mean in every division, for women as for men, so a Poisson model would be badly over-dispersed and a free Gaussian variance is the honest choice. ",
-  "<strong>Tails are close to Gaussian</strong> in handball and in men's basketball; women's 1. deild basketball is the exception, with a few very large margins.</p>"
+  "<strong>Tails are close to Gaussian</strong> in handball. Basketball margins are somewhat heavier-tailed, and women's 1. deild markedly so, with a few very large margins; the walk-forward tests whether a heavier-tailed predictive pays.</p>"
 ))
 
 season_tab <- do.call(rbind, lapply(names(CELLS), function(cl) {
@@ -163,12 +163,13 @@ if (have(ladder)) {
     prev <- if (!is.na(g(cl, "r1_ragged", "leapfrog"))) "r1_ragged" else "r0_prod"
     notes <- c(notes, sprintf(
       "<strong>R2</strong> replaces the per-team volatility hierarchies%s by single values: %s parameters, leave-one-out %s against %s. The home advantage is still %s: it is not the hierarchies that inflate it.",
-      if (CELLS[[cl]]$sport == "handball") ", the per-team score sds and" else " and the four-parameter correlation",
+      if (CELLS[[cl]]$sport == "handball") " and the per-team score sds" else " and the four-parameter correlation",
       int(g(cl, "r2_common", "n_sampled")), num(g(cl, "r2_common", "elpd"), 1), num(g(cl, prev, "elpd"), 1), num(g(cl, "r2_common", "ha_mean"), 2)
     ))
     notes <- c(notes, sprintf(
-      "<strong>R3</strong> pools the home effects and lets them take either sign: the home advantage falls from %s to %s (raw margin %s). The ridge that the bounds were hiding appears: the scoring level's posterior sd goes from %s to %s, its correlation with the mean attack home effect is %s, and NUTS needs %s leapfrog steps per iteration.",
+      "<strong>R3</strong> pools the home effects and lets them take either sign: the home advantage falls from %s to %s (raw margin %s), leave-one-out rises to %s and the held-out margin log score by %s. The ridge that the bounds were hiding appears: the scoring level's posterior sd goes from %s to %s, its correlation with the mean attack home effect is %s, and NUTS needs %s leapfrog steps per iteration.",
       num(g(cl, "r2_common", "ha_mean"), 2), num(g(cl, "r3_pooled", "ha_mean"), 2), num(ha$raw[ha$cell == cl], 2),
+      num(g(cl, "r3_pooled", "elpd"), 1), dlt(cl, "r2_common", "r3_pooled", "ls_margin"),
       num(g(cl, "r2_common", "level_sd"), 2), num(g(cl, "r3_pooled", "level_sd"), 2), num(g(cl, "r3_pooled", "ridge_cor"), 2), int(g(cl, "r3_pooled", "leapfrog"))
     ))
     notes <- c(notes, sprintf(
@@ -248,6 +249,10 @@ add(tbl(story,
   head = c("Parameter", "What in the game it stands for", "Prior"),
   note = "Every sd has an exponential prior stated as an upper bound it exceeds with probability 1 % (R-INLA's PC prior; the same density in Stan). The bounds are several times the size each quantity is expected to take, so the data decide."
 ))
+sha_med <- function(cl) {
+  h <- desc[[cl]]$hyper_m
+  num(h$q50[h$parameter == "sd: ha"], 1)
+}
 post <- do.call(rbind, lapply(names(CELLS), function(cl) {
   hm_ <- desc[[cl]]$hyper_m
   ht_ <- desc[[cl]]$hyper_t
@@ -269,6 +274,10 @@ add(tbl(post,
     "<code>sigma_t</code>", "<code>rho</code>, total"
   ),
   note = "Median [5 %, 95 %], R-INLA with hyperparameters at their mode for the latent field. Home advantage is the posterior mean. The handball home advantage, about two thirds of a goal for both sexes, is far below the 1.87 goals reported for the German Bundesliga; it equals the raw home-minus-away margin in these leagues."
+))
+add(sprintf(
+  "<p>Team deviations from the league home advantage are small in handball (sd %s and %s goals) and largest in women's basketball (%s points, against %s for the men): there the hall matters by team, as the NBA literature found. In women's basketball the data cannot say sharply how much of the spread between teams is club level and how much is season level (wide intervals for both).</p>",
+  sha_med("hb_m"), sha_med("hb_f"), sha_med("bb_f"), sha_med("bb_m")
 ))
 
 # ---------------------------------------------------------------- INLA vs Stan

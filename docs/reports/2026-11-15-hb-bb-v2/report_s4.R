@@ -250,7 +250,7 @@ if (have(val) && length(val)) {
   ))
 }
 items <- c(items, sprintf(
-  "<strong>Walk-forward.</strong> %s matches scored over seasons 2023 to 2027 with weekly refits. The predictive spread is calibrated in every phase of the season (standardised residual sd between %s and %s for the margin). On the %s matches with a stored production forecast v2 is at least level: handball margin %s, total %s, result %s; basketball margin %s, total %s, result %s (log score per match, v2 minus production).",
+  "<strong>Walk-forward.</strong> %s matches scored over seasons 2023 to 2027 with weekly refits. The predictive spread is calibrated in every phase of the season (standardised residual sd between %s and %s for the margin). On the %s matches with a stored production forecast: handball margin %s, total %s, result %s; basketball margin %s, total %s, result %s (log score per match, v2 minus production, pooled over the sexes). Better in handball, level within noise in basketball.",
   int(sum(vapply(list(hbm, hbf, bbm, bbf), nrow, 1L))),
   num(min(vapply(list(hbm, hbf, bbm, bbf), function(s) stats::sd((s$margin_fit - s$mean_m) / s$s_m), 1)), 2),
   num(max(vapply(list(hbm, hbf, bbm, bbf), function(s) stats::sd((s$margin_fit - s$mean_m) / s$s_m), 1)), 2),

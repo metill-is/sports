@@ -71,16 +71,27 @@ ot_rate <- function(sex, div) {
   x <- per[per$ok & per$sex == sex & per$division == div, ]
   mean(x$overtime %in% TRUE)
 }
+prod_walls <- vapply(names(CELLS), function(cl) {
+  r <- rd(sprintf("res_%s_r0_prod.rds", cl))
+  if (is.null(r) || is.na(r$wall_secs)) NA_real_ else r$wall_secs / 60
+}, 1)
+prod_wall_txt <- if (all(is.na(prod_walls))) {
+  "tens of minutes"
+} else {
+  sprintf("%s to %s minutes each under a part-loaded machine", num(min(prod_walls, na.rm = TRUE), 0), num(max(prod_walls, na.rm = TRUE), 0))
+}
 lede <- sprintf(
   paste0(
     "<p class=\"lede\">The handball and basketball models share the football model's structure and, measured, its defects. ",
-    "In the one production fit examined so far in full (%s), the home advantage the model implies is %s goals against a raw home-minus-away margin of %s: a factor of %s, the same as football. ",
-    "A much smaller model does the same job: one net strength per team for the margin, one scoring level per team for the total, a pooled home advantage, all Gaussian, fitted by R-INLA in about %s seconds per cell on one core (margin and total together). ",
-    "Refitted every week and scored over five seasons (%s matches), it is calibrated, and on the %s matches where production's own stored forecasts exist it scores at least as well on every measure, clearly better on handball totals. ",
+    "The home advantage the production fits imply, set against the raw home-minus-away margin, is %s. In handball that is the same twofold inflation as in football. ",
+    "A much smaller model does the same job: one net strength per team for the margin, one scoring level per team for the total, a pooled home advantage, all Gaussian, fitted by R-INLA in about %s seconds per cell on one core (margin and total together), where the production fits took %s. ",
+    "Refitted every week and scored over five seasons (%s matches), it is calibrated, and on the %s matches where production's own stored forecasts exist it is better in handball (clearly so on totals) and level within noise in basketball. ",
     "Two sport-specific findings matter for the product: regulation-time scores for basketball can be had from the source already in use (%s of stored games), and level scores after regulation are %s times as common in the men's top division as a smooth curve implies.</p>"
   ),
-  LAB[["hb_m"]], num(ha$prod[ha$cell == "hb_m"], 2), num(ha$raw[ha$cell == "hb_m"], 2), num(ha$ratio[ha$cell == "hb_m"], 2),
-  num(stats::median(wf_secs), 0), int(sum(vapply(list(hbm, hbf, bbm, bbf), function(x) if (is.null(x)) 0L else nrow(x), 1L))),
+  paste(vapply(ha$cell[!is.na(ha$prod)], function(cl) {
+    sprintf("%s against %s in %s (&times;%s)", num(ha$prod[ha$cell == cl], 2), num(ha$raw[ha$cell == cl], 2), tolower(LAB[[cl]]), num(ha$ratio[ha$cell == cl], 2))
+  }, ""), collapse = ", "),
+  num(stats::median(wf_secs), 0), prod_wall_txt, int(sum(vapply(list(hbm, hbf, bbm, bbf), function(x) if (is.null(x)) 0L else nrow(x), 1L))),
   int(sum(vapply(names(CELLS), function(cl) if (is.null(cmp[[cl]]$cmp)) 0L else nrow(cmp[[cl]]$cmp), 1L))),
   pct(mean(per$ok), 1), num(mean(bbm$margin_fit[bbm$division == "BD"] == 0) / mean(bbm$p_draw[bbm$division == "BD"]), 1)
 )
