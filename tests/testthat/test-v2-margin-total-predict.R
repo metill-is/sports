@@ -150,3 +150,20 @@ test_that("a per-match zero_shift vector moves each match by its own amount", {
   expect_equal(qlogis(p$p_draw[2]) - qlogis(base), 0.6)
   expect_equal(v2_integer_pmf(c(0, 0), c(0, 0), c(5, 5), zero_shift = c(0, 0.6)), p$p_draw)
 })
+
+test_that("with posterior draws the overtime share is weighted draw by draw", {
+  # Two equally weighted draws of the expected regulation margin: a level game and a
+  # clear home favourite. Overtime mostly follows the level-game draw, so the final
+  # result is the average over draws of regulation win + level * overtime win, not the
+  # product of the two averages.
+  loc <- matrix(c(0, 20), nrow = 2)
+  scale <- matrix(12, nrow = 2, ncol = 1)
+
+  r <- v2_basketball_result_probs(loc, scale)
+  per_draw <- rbind(v2_basketball_result_probs(0, 12), v2_basketball_result_probs(20, 12))
+
+  expect_equal(r$p_home, mean(per_draw$p_home))
+  expect_equal(r$p_away, mean(per_draw$p_away))
+  expect_equal(r$p_home, r$p_home_reg + r$p_draw_reg * r$p_home_ot)
+  expect_equal(r$p_home + r$p_away, 1)
+})

@@ -11,13 +11,23 @@
 #' @return One probability per match.
 #' @noRd
 v2_cdf <- function(x, loc, scale, df = Inf) {
+  colMeans(v2_cdf_draws(x, loc, scale, df))
+}
+
+#' Predictive CDF per posterior draw, before averaging.
+#'
+#' @inheritParams v2_cdf
+#' @return A draws-by-matches matrix of probabilities (one row when `loc` is a
+#'   vector).
+#' @noRd
+v2_cdf_draws <- function(x, loc, scale, df = Inf) {
   if (!is.matrix(loc)) loc <- matrix(loc, nrow = 1L)
   if (!is.matrix(scale)) scale <- matrix(scale, nrow = nrow(loc), ncol = ncol(loc), byrow = nrow(loc) == 1L)
   stopifnot(length(x) == ncol(loc), identical(dim(loc), dim(scale)))
   z <- (matrix(x, nrow(loc), ncol(loc), byrow = TRUE) - loc) / scale
   df <- rep_len(df, nrow(loc))
   p <- if (all(is.infinite(df))) stats::pnorm(z) else stats::pt(z, df = df)
-  colMeans(matrix(p, nrow(loc), ncol(loc)))
+  matrix(p, nrow(loc), ncol(loc))
 }
 
 #' Probability that an integer margin or total equals `k`.
@@ -109,6 +119,13 @@ v2_fit_zero_shift <- function(p0, is_tie) {
 #' and variance `ot_share * scale^2`. A level overtime is replayed, so the
 #' winner of overtime is the sign of the first non-level period.
 #'
+#' With posterior draws, a game goes to overtime mostly in the draws where it
+#' is close, and those are the draws where overtime is closest to a coin flip.
+#' So the overtime share is averaged over draws with each draw weighted by its
+#' own probability of a level regulation score; multiplying the averaged
+#' level probability by an averaged overtime share would overstate the
+#' favourite.
+#'
 #' @inheritParams v2_outcome_probs
 #' @param ot_share Length of an overtime period as a share of regulation.
 #' @return Data frame: regulation-time `p_home_reg`, `p_draw_reg`,
@@ -117,8 +134,11 @@ v2_fit_zero_shift <- function(p0, is_tie) {
 #' @noRd
 v2_basketball_result_probs <- function(loc, scale, df = Inf, zero_shift = 0, ot_share = 5 / 40) {
   reg <- v2_outcome_probs(loc, scale, df, ties = TRUE, zero_shift = zero_shift)
-  ot <- v2_outcome_probs(loc * ot_share, scale * sqrt(ot_share), df, ties = TRUE)
-  p_home_ot <- ot$p_home / (ot$p_home + ot$p_away)
+  zero <- rep(0, nrow(reg))
+  level <- v2_cdf_draws(zero + 0.5, loc, scale, df) - v2_cdf_draws(zero - 0.5, loc, scale, df)
+  ot_away <- v2_cdf_draws(zero - 0.5, loc * ot_share, scale * sqrt(ot_share), df)
+  ot_home <- 1 - v2_cdf_draws(zero + 0.5, loc * ot_share, scale * sqrt(ot_share), df)
+  p_home_ot <- colSums(level * ot_home / (ot_home + ot_away)) / colSums(level)
   data.frame(
     p_home_reg = reg$p_home, p_draw_reg = reg$p_draw, p_away_reg = reg$p_away,
     p_home_ot = p_home_ot,
