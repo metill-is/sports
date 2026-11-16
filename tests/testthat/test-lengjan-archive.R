@@ -191,16 +191,31 @@ test_that("a capture whose body cannot be read is skipped with a warning", {
   expect_equal(format(unique(got$scraped_at), "%H:%M", tz = "UTC"), "12:00")
 })
 
-test_that("a body of an unexpected shape stops the read, naming the capture", {
+test_that("a body of an unexpected shape skips its capture, named in the warning", {
   dir <- .two_captures()
   odd <- list.files(file.path(dir, "raw"), pattern = "123000Z-program", recursive = TRUE, full.names = TRUE)
   con <- gzfile(odd, "wb")
   writeLines('{"data": []}', con)
   close(con)
-  expect_error(
-    read_lengjan_archive(dir, what = "program", leagues = .hb()),
-    "2026-09-23T12:30:00Z.*current-program shape"
-  )
+  for (what in c("program", "detail")) {
+    expect_warning(
+      got <- read_lengjan_archive(dir, what = what, leagues = .hb()),
+      "2026-09-23T12:30:00Z.*current-program shape"
+    )
+    expect_equal(format(unique(got$scraped_at), "%H:%M", tz = "UTC"), "12:00")
+  }
+})
+
+test_that("captures that cannot be read are reported in one warning", {
+  dir <- .two_captures()
+  unlink(list.files(file.path(dir, "raw"), pattern = "-markets", recursive = TRUE, full.names = TRUE))
+  w <- capture_warnings(got <- read_lengjan_archive(dir, what = "detail", leagues = .hb()))
+  expect_length(w, 1L)
+  expect_match(w, "skipped 2 captures", fixed = TRUE)
+  expect_match(w, "2026-09-23T12:00:00Z: raw/2026/09/23/20260923T120000Z-markets-001.json.gz is not on disk", fixed = TRUE)
+  expect_match(w, "2026-09-23T12:30:00Z: raw/2026/09/23/20260923T123000Z-markets-001.json.gz is not on disk", fixed = TRUE)
+  expect_equal(nrow(got), 0L)
+  expect_equal(ncol(got), 18L)
 })
 
 test_that("sex needs the league's sport to match, not only the competition id", {
@@ -297,4 +312,15 @@ test_that("skipped manifest lines are reported in one warning naming each line",
   expect_match(w, "2026-09.jsonl line 2: no parseable `ts`", fixed = TRUE)
   expect_match(w, "2026-09.jsonl line 3: not a JSON object", fixed = TRUE)
   expect_equal(nrow(ix), 1L)
+})
+
+test_that("a capture whose manifest entry names no file is skipped, saying so", {
+  dir <- .local_archive(list(
+    list(ts = "2026-09-23T12:00:00Z", program = NULL, markets = character(), status = "ok")
+  ))
+  expect_warning(
+    got <- read_lengjan_archive(dir, leagues = .hb()),
+    "2026-09-23T12:00:00Z: the manifest names no file", fixed = TRUE
+  )
+  expect_equal(nrow(got), 0L)
 })

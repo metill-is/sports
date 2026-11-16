@@ -236,10 +236,11 @@ parse_lengjan_program_markets <- function(prog) {
 #' written to the facts store and no network request is made.
 #'
 #' A capture whose status is `error` is skipped with a note naming it, a
-#' `skipped` one silently. A capture naming a file that is missing from the
-#' local copy or cannot be read (an interrupted pull) is skipped with a
-#' warning naming the file. A body that reads but has an unexpected shape
-#' stops the read with an error naming the capture.
+#' `skipped` one silently. A capture is also skipped when it names a file
+#' that is missing from the local copy or cannot be read (an interrupted
+#' pull), or when a body has an unexpected shape (Lengjan's API changed).
+#' Those captures are reported together in one warning naming each capture
+#' and what was wrong with it; the rest are returned.
 #'
 #' @param dir Archive directory. Defaults to option
 #'   `sports.lengjan_archive_dir`, then environment variable
@@ -281,6 +282,7 @@ read_lengjan_archive <- function(dir = NULL, from = NULL, to = NULL,
   comp_sex <- .lengjan_competition_sex(leagues)
 
   rows <- list(empty_lengjan_archive())
+  skipped <- character()
   for (i in seq_len(nrow(ix))) {
     status <- ix$status[[i]]
     if (status %in% "skipped") next
@@ -293,17 +295,21 @@ read_lengjan_archive <- function(dir = NULL, from = NULL, to = NULL,
     }
     files <- ix$program_file[[i]]
     if (what == "detail") files <- c(files, ix$markets_files[[i]])
-    bodies <- .lengjan_read_bodies(dir, files, stamp)
-    if (is.null(bodies)) next
-    rows[[length(rows) + 1L]] <- tryCatch(
-      .lengjan_capture_rows(bodies, what, ix$ts[[i]], comp_sex),
-      error = function(e) {
-        stop(
-          "Lengjan archive capture ", stamp, ": ", conditionMessage(e),
-          call. = FALSE
-        )
-      }
-    )
+    got <- .lengjan_read_bodies(dir, files)
+    if (!is.character(got)) {
+      got <- tryCatch(
+        .lengjan_capture_rows(got, what, ix$ts[[i]], comp_sex),
+        error = function(e) conditionMessage(e)
+      )
+    }
+    if (is.character(got)) {
+      skipped <- c(skipped, paste0(stamp, ": ", got))
+      next
+    }
+    rows[[length(rows) + 1L]] <- got
+  }
+  if (length(skipped) > 0L) {
+    warning(.lengjan_skip_report("capture", skipped), call. = FALSE)
   }
   dplyr::bind_rows(rows)
 }
@@ -361,34 +367,29 @@ read_lengjan_archive <- function(dir = NULL, from = NULL, to = NULL,
   prog
 }
 
-#' Read a capture's gzipped JSON bodies, in order; NULL (after a warning
-#' naming the file) when one is missing from the local copy or unreadable.
+#' Read a capture's gzipped JSON bodies, in order: a list of parsed bodies,
+#' or a string naming the first file that is missing from the local copy or
+#' unreadable.
 #' @noRd
-.lengjan_read_bodies <- function(dir, files, stamp) {
+.lengjan_read_bodies <- function(dir, files) {
   bodies <- vector("list", length(files))
   for (k in seq_along(files)) {
     file <- files[[k]]
     path <- file.path(dir, file)
-    problem <- NULL
-    if (is.na(file) || !file.exists(path)) {
-      problem <- "is not on disk"
-    } else {
-      body <- tryCatch(
-        jsonlite::fromJSON(gzfile(path), simplifyVector = FALSE),
-        error = function(e) e
-      )
-      if (inherits(body, "error")) {
-        problem <- paste0("could not be read (", conditionMessage(body), ")")
-      } else {
-        bodies[k] <- list(body)
-      }
+    if (is.na(file)) {
+      return("the manifest names no file")
     }
-    if (!is.null(problem)) {
-      cli::cli_warn(
-        "Lengjan archive: skipping capture {stamp}: {.file {file}} {problem}."
-      )
-      return(NULL)
+    if (!file.exists(path)) {
+      return(paste(file, "is not on disk"))
     }
+    body <- tryCatch(
+      jsonlite::fromJSON(gzfile(path), simplifyVector = FALSE),
+      error = function(e) e
+    )
+    if (inherits(body, "error")) {
+      return(paste0(file, " could not be read (", conditionMessage(body), ")"))
+    }
+    bodies[k] <- list(body)
   }
   bodies
 }
