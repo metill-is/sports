@@ -68,7 +68,14 @@ cause_inla <- function(d) {
           d$surface %in% c("team_strengths.json", "team_strengths_history.json") & value, "Team strengths",
           ifelse(
             d$surface == "next_games.json", "Match forecasts",
-            ifelse(d$surface %in% simulated, "Season and cup simulation", "UNEXPLAINED")
+            ifelse(
+              d$surface %in% simulated,
+              # WHY: the stored pre-season fits were simulated in April, before
+              # the split-season simulator existed, so there the simulation
+              # differs by more than the model.
+              ifelse(d$preseason, "Season simulation before the season: model and simulator", "Season and cup simulation"),
+              "UNEXPLAINED"
+            )
           )
         )
       )
@@ -98,8 +105,26 @@ tally_inla <- function(r, cell, stored_dir) {
     cbind(number = count("number"), text = count("text"), only_a = count("only_a"), only_b = count("only_b")) ~ surface + field + absent,
     ch, sum
   )
+  b$preseason <- is.na(cell$sha)
   b$cause <- cause_inla(b)
   cbind(sex = cell$sex, as_of = cell$as_of, b)
+}
+
+# Pre-season projections against how the season ended: each tree's expected
+# final points per team in the top two divisions, and the final table.
+preseason_points <- function(cell) {
+  prefix <- c(male = "karla", female = "kvenna")[[cell$sex]]
+  do.call(rbind, lapply(c("bd", "ld"), function(div) {
+    dir <- sprintf("%s-%s", prefix, div)
+    expected <- function(tree) {
+      f <- file.path(tree, "publish", "football", "iceland", dir, "points_distribution.json")
+      jsonlite::fromJSON(f)$summary[c("team", "mean_points", "lower_80", "upper_80")]
+    }
+    final <- jsonlite::fromJSON(file.path("data", "publish", "football", "iceland", dir, "standings.json"))$rows
+    m <- merge(expected(cell$stored), expected(cell$inla), by = "team", suffixes = c("_stored", "_inla"))
+    m <- merge(m, final[c("team", "played", "points")], by = "team")
+    cbind(sex = cell$sex, as_of = cell$as_of, division = c(bd = "Top division", ld = "Second division")[[div]], m)
+  }))
 }
 
 tally <- function(r, cause_fn, cell) {
@@ -182,6 +207,7 @@ per_cell <- lapply(seq_len(nrow(cells)), function(i) {
       metas <- list.files(file.path(cell$stored, "publish"), pattern = "^meta[.]json$", recursive = TRUE, full.names = TRUE)
       basename(dirname(metas))[vapply(metas, function(f) isTRUE(jsonlite::fromJSON(f)$n_draws == 0), logical(1))]
     },
+    preseason_points = if (is.na(cell$sha)) preseason_points(cell),
     home_advantage = cbind(sex = cell$sex, as_of = cell$as_of, by_group(medians("home_advantage.json"), "component")),
     strengths = cbind(sex = cell$sex, as_of = cell$as_of, by_group(medians("team_strengths.json"), c("component", "location")))
   )
@@ -208,6 +234,7 @@ result <- list(
   layer1_files = do.call(rbind, lapply(per_cell, `[[`, "layer1_files")),
   layer2 = layer2, layer2_classes = classes(layer2),
   home_advantage = bind("home_advantage"), strengths = bind("strengths"),
+  preseason_points = bind("preseason_points"),
   schema_errors_stored = stats::setNames(lapply(per_cell, `[[`, "schema_errors_stored"), paste(cells$sex, cells$as_of)),
   absent_divisions = stats::setNames(lapply(per_cell, `[[`, "absent_divisions"), paste(cells$sex, cells$as_of)),
   files_only_in_stored = stats::setNames(lapply(per_cell, `[[`, "files_only_in_stored"), paste(cells$sex, cells$as_of)),

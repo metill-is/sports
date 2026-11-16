@@ -35,6 +35,7 @@ ha <- res$ha
 dr <- res$dryrun
 dm <- dr$male
 dw <- dr$female
+rp <- res$replay
 theme_set(metill::theme_metill())
 sex_label <- c(female = "Women", male = "Men")
 engine_label <- c(`stan-nuts` = "Stan (NUTS)", `inla-full` = "INLA, full integration", `inla-eb` = "INLA, empirical Bayes")
@@ -98,9 +99,21 @@ ps <- val$pred_summ[val$pred_summ$engine == "inla-full", ]
 
 ## Summary {#sec-summary}
 
+::: {.callout-note}
+## Status, 16 November 2026
+
+The owner approved all five recommendations listed at the end of this summary. Since then, on branch `claude/objective-poitras-964871` (draft pull request [metill-is/sports#104](https://github.com/metill-is/sports/pull/104), not merged):
+
+- The model is recorded as **v2.0** and the engine is in `R/` behind an optional league key `engine` whose default is `stan`. No league sets it, so every production fit is still Stan (@sec-landed).
+- R-INLA installs on a GitHub runner and fits both football cells there through `fit_league()` (@sec-runner).
+- `r nrow(rp$cells)` dates from 2026 were replayed through `fit_league()` with the INLA engine and the unchanged extract and publish code. Production's own stored fit, put through the same code, reproduces what production published exactly. Against that baseline every difference in the INLA output is assigned to a named cause: the team strengths, the home advantage, the match forecasts and the season simulation, plus two that come from the pre-season baseline being older than today's code (@sec-replay).
+
+What is left is the switch itself, which is the owner's: `engine: inla` for football, INLA under `Suggests` with its repository in four workflows, and the six-week Stan shadow from the first 2027 fixture. v2.0 is provisional and is due a re-examination on 2027 matches by 15 July 2027 (@sec-model).
+:::
+
 **The four acceptance criteria for moving football to INLA** (@sec-accept): (a) one identical model agrees in both engines to about 0.01: met on the average difference, with single matches at the threshold; (b) the same in the hard regimes: met for the Icelandic cells as they stand, not to the same standard with only one season of history; (c) season-simulation outputs agree with NUTS: met, under full integration and under empirical Bayes; (d) walk-forward log score no worse than production: met on the point estimate, with intervals that include a small loss.
 
-**Recommendation.** Replace the football model with an independent-Poisson model that has two intercepts, one weekly strength walk per team with reversion at the season break, a fixed style value per team, a league-wide scoring level and home advantage that walk over time, and pooled sign-free team home-advantage deviations; fit it with R-INLA and keep a Stan program of the same specification as the reference check. The evidence follows, then the plan. No production path was changed by this work.
+**Recommendation.** Replace the football model with an independent-Poisson model that has two intercepts, one weekly strength walk per team with reversion at the season break, a fixed style value per team, a league-wide scoring level and home advantage that walk over time, and pooled sign-free team home-advantage deviations; fit it with R-INLA and keep a Stan program of the same specification as the reference check. The evidence follows, then the plan. No production behaviour was changed by this work: the engine is in the package, and no league uses it.
 
 - **The engine gate is passed.** One specification was fitted by NUTS and by INLA from the same object (results to 31 July 2026). Entry-level and innovation sds agree within 1 % (for example 0.0435 against 0.0432); state posterior means differ by about 0.06 of a posterior sd; held-out match probabilities differ by `r num(mean(ps$mean_abs_dp), 3)` on average and `r num(max(ps$max_abs_dp), 3)` at most; no score difference exceeds one standard error. The one visible departure is the near-zero sd of the team home-advantage deviations, which INLA puts 5 % to 30 % higher. NUTS on this specification needs 63 leapfrog steps per iteration with no divergences (@sec-validation).
 - **Walk-forward, 2022 to 2026.** Weekly leak-free refits, `r format(sum(wf$scores_sex$n[wf$scores_sex$variant == wf$ref]), big.mark = ",")` predicted matches. The validated reference specification scores a 1X2 log loss of `r ll("base")`; the recommended model `r ll(wf$ref)`. Its mean home-win probability is `r num(sv$p_home[sv$variant == wf$ref], 3)` where `r num(sv$obs_home[sv$variant == wf$ref], 3)` occurred (@sec-wf).
@@ -109,13 +122,13 @@ ps <- val$pred_summ[val$pred_summ$engine == "inla-full", ]
 - **Home-advantage inflation.** Production's structure makes the team home effects add up to `r num(ha$total_ha[ha$sex == "female" & ha$variant == "ha_a_unpooled_positive"] / ha$raw_log_ratio[ha$sex == "female" & ha$variant == "ha_a_unpooled_positive"], 2)` times the home advantage in the goals for women and `r num(ha$total_ha[ha$sex == "male" & ha$variant == "ha_a_unpooled_positive"] / ha$raw_log_ratio[ha$sex == "male" & ha$variant == "ha_a_unpooled_positive"], 2)` times for men. Either pooling them or dropping the non-negativity constraint removes the inflation on its own; a common volatility does not affect it. The cause is a floor at zero under unpooled, noisy estimates (@sec-ha).
 - **Cutover.** The extract, publish and simulation layers read a fit through one method and a fixed set of variable names. An adapter presents INLA's draws under those names, so those layers need no change: a dry run of the whole chain on two dates produced every extract file and `r dm$schema$n_passed + dw$schema$n_passed` schema-valid JSON files with production's own extract and publish code. The remaining work is a config switch, a diagnostics gate for INLA fits, INLA on the CI runner, and a shadow period (@sec-cutover).
 
-**Decisions that are yours.**
+**The five decisions, as the owner made them on 16 November 2026.**
 
-1. Approve the recommended model for the cutover, or the validated reference specification if you prefer the smaller step.
-2. Shadow order: Stan published with INLA in shadow until a gate is met, or INLA published from the first 2027 fixture with Stan in shadow. I recommend the second.
-3. Whether INLA goes into `DESCRIPTION` (four workflows then need its repository) or is installed only in `fit.yml`.
-4. Whether the published attack and defence home-advantage numbers stay (as an even split of an identified total) or give way to the total.
-5. What becomes of Stan for football after the cutover. Daily NUTS fits are not needed. I recommend keeping one reference fit of the same specification, weekly in season or at least before each season: it takes a few minutes, it is the only way to refresh the reversion coefficient, and it is what would show the approximation drifting.
+1. **Model.** The recommended model, as provisional version 2.0, to be re-examined mid-season on 2027 matches it has never seen. The reservation: it was chosen on the matches it was scored on.
+2. **Shadow order.** INLA publishes from the first 2027 fixture and Stan runs in shadow for six weeks.
+3. **INLA in `DESCRIPTION`.** Under `Suggests`, version pinned, with its repository added to the workflows that install suggested packages. Not applied yet: it changes what four scheduled workflows install, so it goes with the switch (@sec-landed).
+4. **Published schema.** Unchanged for now. The attack and defence home-advantage numbers become an even split by documented convention; only the total is an estimate.
+5. **Stan afterwards.** A weekly reference fit of the same model, with a health warning when the mean absolute difference in match probabilities exceeds 0.01, plus a CI test against a stored NUTS reference that needs no Stan run (@sec-reftest). A league with only one season of history stays on Stan.
 
 
 ## Acceptance criteria {#sec-accept}
@@ -683,6 +696,33 @@ That change is the largest effect found: `r pdv("rev80_sq_static", "brk_rev80", 
 
 Is the style term needed at all? Dropping it from the recommended model changes the scoreline score by `r pdv("rev80_sq_none_lvl", "rev80_sq_static_lvl")` and the 1X2 score by `r pdv("rev80_sq_none_lvl", "rev80_sq_static_lvl", "ls_1x2")`. Style does not help say who wins; it helps say how many goals, which is what a side that plays open or closed football should affect. Kept.
 
+**Where the gain comes from, and a result elsewhere that disagrees in size.** A sibling test bed fitted comparable variants to eight large European leagues. Its data may be used for research only, so its figures are not reproduced in this repository; they are in `/Users/brynjolfurjonsson/.claude-reviews/sports-pan-european/structural-tests.md`. In words: strength plus style has the same sign there and a much smaller effect on the 1X2 score, one that cannot be told from zero. Splitting the Icelandic gain shows the two results are closer than they look (@tbl-style-split).
+
+```{r}
+#| label: tbl-style-split
+#| tbl-cap: "The gain from one strength walk and a fixed style over separate attack and defence walks (both with reversion 0.8), split three ways. Paired differences in log score on the same matches, positive is better, standard errors clustered by fit week in brackets."
+ss <- res$style_split
+if (!is.null(ss)) {
+  tab(data.frame(
+    Split = ss$kind, ` ` = ss$group, Matches = format(ss$n, big.mark = ","),
+    `1X2 log score` = paste0(sgn(ss$d_1x2), " (", num(ss$se_1x2, 4), ")"),
+    `Scoreline log score` = paste0(sgn(ss$d_score), " (", num(ss$se_score, 4), ")"),
+    check.names = FALSE
+  ))
+}
+sp <- function(kind, group, what = "1x2") {
+  r <- ss[ss$kind == kind & ss$group == group, ]
+  paste0(sgn(r[[paste0("d_", what)]]), " (se ", num(r[[paste0("se_", what)]], 4), ")")
+}
+sn <- function(kind, group) format(ss$n[ss$kind == kind & ss$group == group], big.mark = ",")
+```
+
+- In the **top division** the 1X2 gain is `r sp("Competition", "Top division")` on `r sn("Competition", "Top division")` matches: not distinguishable from zero. That is the closest thing in the Icelandic data to a single top-flight league, and there the two test beds agree.
+- The gain sits in the **cup** (`r sp("Competition", "Cup")` on `r sn("Competition", "Cup")` matches) and the **lower divisions** (`r sp("Competition", "Lower divisions")`). Cup ties pair teams from different divisions, and the lower divisions have the thinnest histories. One strength per team is easier to place across divisions than an attack and a defence each.
+- It is **largest where the history is shortest**: `r sp("Season", "2022")` in 2022, forecast from one earlier season, and `r sp("Season", "2023")` in 2023, against `r sgn(min(ss$d_1x2[ss$kind == "Season" & ss$group %in% c("2024", "2025", "2026")]))` to `r sgn(max(ss$d_1x2[ss$kind == "Season" & ss$group %in% c("2024", "2025", "2026")]))` in the three seasons since. The decline is not steady from year to year, and each season's standard error is about 0.003.
+
+So the two results agree where they can be compared, and the Icelandic gain comes from what the European test bed does not contain: several divisions joined by a cup, and short histories. That is a breakdown of one experiment, not a new experiment, and three differences between the two set-ups stay untested. The European style term walks, where this one is fixed. Its forecasts run up to six months ahead, where these are a week. And its states follow an autoregression on a four-week grid, where these are a weekly walk with reversion at the break. **Open:** a walk-forward of v2.0 with a walking style term on the Icelandic data, and the fixed-style variant on the European test bed, would settle it. Neither has been run.
+
 ### Division structure, and the league's level over time
 
 Tested on the strength-plus-style model, one piece at a time.
@@ -746,6 +786,14 @@ $$
 - Eight hyperparameters ($\tau_s, \sigma, \kappa, \tau_q, \omega_a, \omega_d$ and the two league-walk sds) and one fixed constant ($\rho = 0.8$).
 
 Against the reference specification it has half the team-level dynamic states and scores better; against production it removes the home-advantage inflation, the unidentified split, the per-team volatilities, the shared-rate term and the prior-only states.
+
+**This is version 2.0, and it is provisional.** The code names it (`FOOTBALL_V2_VERSION` and `football_v2_options()` in `R/model-v2-fit.R`), and a test checks that those options are the variant this report evaluated. It was chosen on the same `r format(sum(wf$scores_sex$n[wf$scores_sex$variant == wf$ref]), big.mark = ",")` matches it was scored on: each structural test kept what scored better on the walk-forward, and the final score is reported on those same matches. For the two main choices the paired differences are large against their standard errors, but a model picked this way looks better than it is, by an amount this report cannot measure.
+
+::: {.callout-important}
+## Follow-up, due 15 July 2027: re-examine v2.0 on matches it has never seen
+
+Using every 2027 match played to 30 June 2027 (about the first half of the league season, and the early cup rounds), repeat the walk-forward for v2.0 and for the alternatives it beat: attack and defence walks with reversion, division offsets in place of the league walks, and the reference specification. Compare with the Stan shadow forecasts and the Lengjan line on the same matches. v2.0 stays if it is not worse than the best alternative by more than one standard error. Otherwise the better model becomes v2.1, and the stored reference of @sec-reftest is regenerated for it.
+:::
 
 ```{r}
 #| label: tbl-model-gain
@@ -821,11 +869,11 @@ The recommended model agrees with NUTS as closely as the reference did. The same
 
 ## Cutover proposal {#sec-cutover}
 
-The owner has chosen INLA as the production engine (15 November 2026). This section is the plan for getting there. Nothing in it has been applied: no file under `R/`, `Stan/`, `config/` or `.github/` is changed by this work.
+The owner chose INLA as the production engine on 15 November 2026 and approved this plan on 16 November. Its first two steps are now done on the branch: the engine is in the package (@sec-landed), it runs on a GitHub runner (@sec-runner), and a set of 2026 dates has been replayed against what production published (@sec-replay). The switch is not done. `config/leagues.yml`, `Stan/` and every workflow that runs on `main` are unchanged.
 
 ### What the existing layers need from a fit
 
-The extract, publish and simulation layers touch a fit through one method, `fit$draws(name)`, and expect the production Stan program's variable names. That makes the cutover an adapter problem, not a rewrite. The adapter (`research/football-v2/adapter.R`, `fv2_as_fit()`) presents the new engine's draws under those names:
+The extract, publish and simulation layers touch a fit through one method, `fit$draws(name)`, and expect the production Stan program's variable names. That makes the cutover an adapter problem, not a rewrite. The adapter (`R/model-v2-adapter.R`, `fv2_as_fit()`) presents the new engine's draws under those names:
 
 | Production name | From the new model |
 |---|---|
@@ -868,34 +916,46 @@ Three things change in meaning and should be known before the first published fi
 - **Strengths in the season simulation.** The simulators hold each team's strength at its current value for all remaining matches, as they do today. Forecasts of single matches widen with the horizon; the season simulation does not yet. Passing per-fixture propagated states to the simulators is a follow-up.
 - **Trajectory.** The published strength trajectory stays indexed by a team's match count. Two matches in one week now share a state.
 
-### Changes in `R/`
+### What has landed {#sec-landed}
 
-| File | Change |
+| File | What it does now |
 |---|---|
-| `config/leagues.yml`, `config/leagues.schema.json` | New optional key `engine: stan | inla` per league, default `stan`. `stan_model` stays required and points at the reference program, so `test-stan-compile.R` keeps compiling it. |
-| `R/model-spec.R` (new) | `spec.R` promoted: build, precision pieces, design, Stan data, prediction. |
-| `R/model-inla.R` (new) | `fv2_fit_inla()` promoted, plus the INLA diagnostics gate below. |
-| `R/model-fit-adapter.R` (new) | `fv2_as_fit()` promoted. |
-| `R/model-league.R` | `fit_league()` dispatches on `league$engine`. The INLA branch calls `prepare_data()` as today (for `pred_d`, `teams` and `n_obs`), takes its training rows from `model_training_results()` (already the one definition of "what the fit saw"), fits, adapts, and hands the adapted fit to the unchanged `extract_posteriors()` and `extract_football_iceland()`. |
-| `R/model-fit.R` | `fit_model()` stays the cmdstanr wrapper. `persist_fit_diagnostics()` learns to write a row for an INLA fit: `n_obs` (the only field `needs_refit()` reads), the engine name, and `NA` for the sampler metrics (the health check reads `NA` as fine). Without a new row an old Stan row would stay "latest" for the cell. |
-| `R/model-prepare.R`, extract, publish, simulators, decide | No change. |
-| `Stan/football_iceland/` | Add the reference program (`fv2_rev.stan`, which covers the recommended model). The current production program stays until the shadow period ends. |
+| `config/leagues.schema.json` | Optional league key `engine`, `stan` or `inla`; absent means `stan`. `config/leagues.yml` is unchanged, so no league sets it. `stan_model` stays required. |
+| `R/model-v2-spec.R` | The specification: build, precision pieces, design, Stan data, prediction. |
+| `R/model-v2-inla.R` | The INLA engine, and the check that INLA used the priors it was given. |
+| `R/model-v2-adapter.R` | `fv2_as_fit()`: the draws under production's variable names. |
+| `R/model-v2-fit.R` | The version and options of v2.0; `fit_model_v2_inla()`, which takes its training rows from `model_training_results()` and its fixtures from `prepare_data()` and returns the adapted fit; the gate; the diagnostics row. |
+| `R/model-league.R` | `fit_league()` picks the engine from `league$engine`. The Stan branch is the call it made before, with the same arguments. `run_fit_targets()` keeps `engine` in the slice of the league it hands on (the trap that once dropped `training_filter`). |
+| `R/model-prepare.R`, `R/model-fit.R`, extract, publish, simulators, decide | No change. |
+| `Stan/` | No change. The reference program stays at `research/football-v2/stan/fv2_rev.stan` until the switch, when it moves to `Stan/football_iceland/` for the weekly reference fit. |
+| `DESCRIPTION` | `Matrix` under `Imports`, the new files in `Collate`. INLA is not declared; see below. |
 
-**A gate for INLA fits.** `check_stan_diagnostics()` aborts when it is handed anything that is not a cmdstanr fit, and its six checks (divergences, $\hat{R}$, ESS, tree depth, E-BFMI) have no INLA counterpart. The INLA branch needs its own, cheap to compute and each one a real failure seen or plausible here:
+**The gate for INLA fits.** `check_stan_diagnostics()` aborts when it is handed anything that is not a cmdstanr fit, and its checks (divergences, $\hat{R}$, ESS, tree depth, E-BFMI) have no INLA counterpart. `fv2_inla_gate()` checks what can go wrong with an INLA fit instead, and a breach stops the fit before anything is extracted:
 
 1. the hyperparameter mode was found (`mode.status` is 0);
 2. every sd is inside a plausible range, so a run-away precision is caught (the home-advantage sds are the ones at risk);
-3. no state summary is `NA` or infinite, and the entry levels sum to zero;
-4. predicted rates are finite and the mean predicted goals per match sit in a sane band;
-5. hyperparameters have not jumped from the previous fit by more than a set factor.
+3. no posterior draw is `NA` or infinite, and the entry levels sum to zero, which is the model's identification;
+4. the mean predicted goals per match sit in a sane band;
+5. hyperparameters have not moved from the previous fit by more than a set factor.
+
+An INLA fit also writes a row to the `fit_diagnostics` store, with the number of training matches and `NA` for the sampler metrics (the health check reads `NA` as nothing to report). `needs_refit()` reads the match count off the newest row, so without it an old Stan row would stay "latest" for the cell.
+
+**Where this departs from the plan as first written.**
+
+- **INLA is not in `DESCRIPTION` yet.** The decision is `Suggests`. But `fit`, `decide-publish`, `republish` and `world-cup` install every suggested package, so declaring INLA now would make four workflows on `main` install it, with its repository and the system libraries of @sec-runner, before any league uses it. This step was told to leave the scheduled workflows alone, so the declaration goes with the switch. Until then the code guards with `requireNamespace()` and stops with an instruction if a league asks for INLA where it is absent.
+- **The rule for short histories is a count of seasons.** The owner's rule is that a league with only one season of history stays on Stan. In code, the INLA engine refuses a cell whose training matches span fewer than three seasons. The regime that failed (@sec-accept) spans two: one complete season and the first weeks of the next. Nothing between that and five and a half seasons was tested, so the line is drawn where the evidence stops being bad, not where it starts being good. It can come down if a two-season cell is ever checked against NUTS.
+- **The gate's fifth check waits for the switch.** The first four checks run on every INLA fit. The fifth is implemented and tested, but `fit_league()` does not yet hand it a previous fit. Each stored fit carries the hyperparameter summary the next one would be compared with.
+- **Divisions come from the schedule, not only from results.** The season-break step needs to know which division a team plays in next season. A team with no division for the new season is treated as having stayed, and reverts toward the wrong division's mean. So the division table is built from every known match of a season, played or scheduled. Which division a club is in is public before the first match, and no score enters it.
+
+**Tests.** `tests/testthat/test-model-v2.R` covers the specification, the adapter, the gate, the engine choice in `fit_league()` (Stan unless the league says otherwise; an unknown engine is an error), the diagnostics row, and an end-to-end INLA fit of a small store read by production's `extract_posteriors()`. R-INLA reruns are not guaranteed to be bit-identical, so that test fixes the seed and the threads and compares a rerun at a tolerance. One test pins that no league is on the INLA engine, so the switch has to edit an expectation; another checks that the options the package fits are the variant this report evaluated. The engine tests skip where INLA is not installed, which today includes `ci-tests.yml`; the trial workflow runs them with INLA present and treats a skip as a failure.
 
 ### CI
 
-- **Installing INLA.** INLA is not on CRAN. The pattern used by the inlabru package's own CI is to add INLA's repository to `r-lib/actions/setup-r`'s `extra-repositories` and let `setup-r-dependencies` resolve it; an explicit `install.packages("INLA", repos = c(getOption("repos"), INLA = "https://inla.r-inla-download.org/R/stable"))` step also works. `fit.yml` needs it; the workflows that never fit do not. I could not run this on a GitHub runner from here, so it is the first thing the shadow workflow has to prove. `fit.yml` disables automatic system requirements (`PKG_SYSREQS: "false"`), so any system library INLA or its `fmesher` dependency needs would have to be installed by hand.
-- **Where to declare it.** No test reads `DESCRIPTION` and no workflow runs `R CMD check`, so an undeclared `INLA::` call fails only where the package is absent. Declaring INLA under `Suggests` is the honest form, but four workflows install all suggested packages (`fit`, `decide-publish`, `republish`, `world-cup`) and each would then need the extra repository. The smaller change is to keep INLA out of `DESCRIPTION`, guard with `requireNamespace()`, and install it explicitly in `fit.yml`. Recommended: `Suggests` plus the repository line in those four workflows, in the same PR.
-- **Pin the version.** Fix the INLA version in the workflow (25.6.7 was used here) and cache the R library, as the CmdStan install is cached today.
+- **Installing INLA.** INLA is not on CRAN. What the trial workflow does, and what works (@sec-runner): install the system libraries by hand, let `setup-r-dependencies` install INLA's R dependencies and the `sn` package, then install INLA's tarball by name from its own repository, which is also the version pin. INLA lists `sn` only as a suggestion, but its posterior sampler stops without it; the first run on the runner failed on exactly that, and the engine now names both packages when either is missing. The system libraries are needed because INLA imports `fmesher`, which imports `sf`, whose binary loads GDAL, GEOS, PROJ and udunits, and the workflows here turn off automatic system requirements (`PKG_SYSREQS: "false"`). `fit.yml` needs these steps at the switch; the workflows that never fit need them only because they install suggested packages.
+- **Where to declare it.** Decided: under `Suggests`, with the install steps added to the four workflows that install all suggested packages (`fit`, `decide-publish`, `republish`, `world-cup`), in the same PR as the switch. No test reads `DESCRIPTION` and no workflow runs `R CMD check`, so until then the undeclared, guarded `INLA::` calls fail only where a league asks for INLA and the package is absent.
+- **Pin the version.** The trial installs 25.06.07, the version every number in this report was measured with. INLA's repository keeps one tarball per release, so the pin is a file name. Cache the R library at the switch, as the CmdStan install is cached today.
 - **CmdStan.** The reference program compiles under 2.38.0, the version `fit.yml` and `ci-tests.yml` pin, and under 2.40.0, the local default (both checked). The pin stays necessary for handball, basketball and the reference check. Moving CI to 2.40.0 is a separate, small PR; it should not ride with the engine change.
-- **Tests.** The engine tests skip on CI today. Once INLA is installed in `ci-tests.yml` they can run there; the INLA smoke test takes a few seconds.
+- **Tests.** The engine tests skip in `ci-tests.yml`, where INLA is absent, and run in the trial workflow. Once INLA is under `Suggests` they can run in `ci-tests.yml` too, which installs hard dependencies only and would need the install steps; they take a few seconds.
 - **Run time.** `fit.yml`'s 360-minute timeout is pinned by a test. It can come down once football no longer needs NUTS, but not in the cutover PR.
 
 ```{r}
@@ -924,6 +984,267 @@ cpu_ratio <- function(sex) {
 
 In CPU time, INLA with empirical Bayes costs `r cpu_ratio("female")` times less than NUTS for the women's cell and `r cpu_ratio("male")` times less for the men's. For scale, the pilot measured production's NUTS fits at 19.6 and 28.2 minutes of wall-clock on this machine (under load). GitHub's runners were not timed.
 
+### INLA on a GitHub runner {#sec-runner}
+
+Whether INLA would install and fit on a GitHub runner was the one thing the first version of this report could not show. A workflow that runs for this branch only (`.github/workflows/inla-trial.yml`, "INLA Engine Trial") now shows it. It has read-only permissions, writes outside the checkout, uploads its output as an artifact and creates no commit; no scheduled workflow was touched.
+
+```{r}
+#| label: runner-data
+trial_files <- file.path("2026-11-15-football-v2", sprintf("runner-trial-%s.json", c("male", "female")))
+trial <- if (all(file.exists(trial_files))) lapply(trial_files, jsonlite::fromJSON)
+```
+
+```{r}
+#| label: tbl-runner
+#| tbl-cap: "The trial on a GitHub-hosted runner: workflow run 43853199174 on commit `ce86f25c9`, `ubuntu-latest` (Ubuntu 26.04, four cores), R 4.5.3, INLA 25.06.07, full integration, 4,000 draws. `fit_league()` includes production's per-draw season simulation, which is the same code whichever engine made the draws. Wall-clock seconds on a shared runner, for scale only."
+if (!is.null(trial)) {
+  f <- function(g) vapply(trial, g, character(1))
+  tab(data.frame(
+    ` ` = sex_label[f(function(x) x$sex)], `As of` = f(function(x) x$as_of),
+    `Matches the fit saw` = f(function(x) format(x$fit$n_obs, big.mark = ",")),
+    `Production's fit saw` = f(function(x) format(x$production_n_obs, big.mark = ",")),
+    `INLA fit, s` = f(function(x) num(x$fit$seconds$fit, 0)),
+    `4,000 draws, s` = f(function(x) num(x$fit$seconds$draws, 0)),
+    `fit_league(), s` = f(function(x) num(x$timing$fit_league$elapsed, 0)),
+    `Publish, s` = f(function(x) num(x$timing$publish$elapsed, 0)),
+    `JSON files` = f(function(x) as.character(x$json_files)),
+    `Schema-valid` = f(function(x) paste0(x$schema$n_passed, " of ", x$schema$n_passed + x$schema$n_failed)),
+    Gate = f(function(x) if (isTRUE(x$fit$gate$passed)) "passed" else "failed"),
+    check.names = FALSE
+  ))
+}
+```
+
+What the workflow does, in order, and what each step established:
+
+1. **Installs the system libraries `sf` loads** (GDAL, GEOS, PROJ, udunits) with `apt-get`. INLA imports `fmesher`, which imports `sf`, and the workflows here switch off automatic system requirements.
+2. **Installs INLA's R dependencies and `sn`**, then **INLA 25.06.07** from its tarball in INLA's own repository. The binaries bundled in that tarball run on the runner image as they are; no separate binary install was needed.
+3. **Fits a trivial model** with INLA, to separate "INLA does not run here" from anything about this package.
+4. **Runs the engine tests with INLA present**, where a skipped test counts as a failure.
+5. **Fits each football cell through `fit_league()`** with `engine: inla` set on the league in memory, then runs production's extract and publish code and validates every published file against its schema (@tbl-runner).
+6. **Checks that nothing under `data/` changed.**
+
+The runner image matters here, and it changed during this work's lifetime: `ubuntu-latest` became Ubuntu 26.04 on 12 November 2026. The trial ran on the new image, so the table above is for the image production will use. (The same change broke the cached CmdStan that the production Stan fits use, which is a separate problem and is not addressed by this branch; see the pull request.)
+
+Two things went wrong on the way, and both are worth knowing before the switch. The first push was rejected before any job started, because the workflow used the `runner` context where job-level `env` is evaluated; `actionlint` reports it. The second failed in the engine tests: **INLA's posterior sampler stops without the `sn` package**, which INLA lists only as a suggestion. A machine that has `sn` for other reasons hides this. `fit_model_v2_inla()` now checks for INLA and `sn` together and names whichever is missing.
+
+### Replay of 2026 dates {#sec-replay}
+
+If football had been fitted by INLA on a given day in 2026, what would have been published, and how does it differ from what was?
+
+**How.** For each date, `research/football-v2/run_replay.R` copies the football facts, the earlier stored fits and the publisher's accumulators into an isolated tree and puts that copy back as it was when production fitted (below). It then sets `engine: inla` on the league in memory and calls `fit_league()`: the production function, taking its INLA branch, with full integration and 4,000 draws as a production fit would use. Production's `extract_football_iceland()` and `publish_iceland_league()` run unchanged. Nothing under `data/` is written, and the script checks `git status` before and after to prove it.
+
+**The store as it was.** The daily fit runs before that day's evening matches, which are ingested later and dated on the fit day. On today's store a replay would train on them and forecast nothing for them. Production records how many matches each fit saw, so the replay compares that count with the store and, where they differ by exactly the fit day's matches, moves those matches from the results back to the schedule in its copy. Each INLA fit is then checked to have trained on the same number of matches as production's fit did (@tbl-replay-cells).
+
+**Which dates.** Production's retention keeps few stored fits. For 2026 they are the pre-season baseline fit of each sex and the last weeks of October, so those are the dates. Two more October dates (12 October for men, 4 October for women) could not be used: fixtures were rescheduled after those fits, and the publisher refuses to republish a stored fit that no longer matches the schedule. That refusal is production's own guard, working as intended.
+
+```{r}
+#| label: tbl-replay-cells
+#| tbl-cap: "The replayed dates. Pre-season fits forecast the whole season (a 200-day horizon), October fits the next 14 days, as production's did. 'Returned to the schedule' are matches played on the fit day after production's fit ran. Production recorded no match count for the backfilled pre-season fits. 'Schema-valid' counts the published files that have a schema; one file per cell (the cup bracket) has none."
+rc <- rp$cells
+if (!is.null(rc)) {
+  tab(data.frame(
+    ` ` = sex_label[rc$sex], `As of` = rc$as_of,
+    `Forecast horizon, days` = rc$horizon_days,
+    `Matches the INLA fit saw` = format(rc$n_obs, big.mark = ","),
+    `Production's fit saw` = ifelse(is.na(rc$production_n_obs), "not recorded", format(rc$production_n_obs, big.mark = ",")),
+    `Returned to the schedule` = rc$returned_to_schedule,
+    `INLA fit, s` = num(rc$fit_seconds, 0), `4,000 draws, s` = num(rc$draw_seconds, 0),
+    `JSON files` = rc$json_inla,
+    `Schema-valid` = paste0(rc$schema_passed_inla, " of ", rc$schema_passed_inla + rc$schema_failed_inla),
+    `Values compared` = format(rc$values_compared, big.mark = ","),
+    check.names = FALSE
+  ))
+}
+```
+
+**Two comparisons, so that a difference can be given a cause.**
+
+1. What production published that day, taken from git history, against production's own stored fit put through today's publish code. If those agree, the replay machinery is faithful, and whatever differs in the second comparison comes from the fit.
+2. That baseline against the INLA replay.
+
+#### Comparison 1: the baseline reproduces what production published
+
+```{r}
+#| label: replay-layer1
+l1 <- rp$layer1_classes
+l1n <- function(k) format(sum(l1$differing[l1$cause == k]), big.mark = ",")
+l1_dates <- unique(rp$layer1[c("sex", "as_of")])
+l1_values <- format(sum(rp$layer1_files[, "values"]), big.mark = ",")
+```
+
+For the `r nrow(l1_dates)` October dates there is a publish commit from that day. Over `r l1_values` compared values, the republished stored fit matches what production published in every number a model produces: the match forecasts, the final-position and points distributions, the team strengths, the home advantage, the cup bracket, and the league tables with their expected goals and points. `r if (!any(l1$cause == "UNEXPLAINED")) "Only two kinds of value differ, and neither depends on the fit:" else "**Unexplained differences remain; see the summary output.**"`
+
+- **The run timestamp** (`generated_at`): `r l1n("Run timestamp")` values.
+- **Rows for earlier rounds in two history files** (`final_positions_history.json`, `standings_history.json`): `r l1n("Accumulated history: earlier rounds' rows")` values. Production's publisher accumulates these files in place, round after round. A replay into an empty tree writes only the current round's rows, and those are identical.
+
+Getting to an exact match took two corrections, and each is a fact about the pipeline worth keeping. First, the league table's expected goals and points are summed over the rounds for which a fit from before the round can still be found, and the publisher looks for that fit in two stores, the extracts and the older archive. A replay that copied only the extracts produced different sums. Second, the evening matches of the fit day, described above: on two of the four dates the published league table was one to three matches behind today's store. With the archive copied and those matches returned to the schedule, the baseline matches what was published to the last digit.
+
+The two pre-season dates have no publish commit to compare with: those fits were backfilled, not published that day. For them the baseline is the stored fit alone.
+
+#### Comparison 2: what the model changes
+
+```{r}
+#| label: tbl-replay-classes
+#| tbl-cap: "Every value that differs between the baseline (production's stored fit) and the INLA replay, by cause, summed over the replayed dates. 'In one tree only' are entries of a distribution that one model gave no simulated draw (such an entry is left out of the file) and, in the last row, everything the pre-season baseline does not contain."
+l2 <- rp$layer2_classes
+why <- c(
+  `Run timestamp` = "When the files were written.",
+  `Team strengths` = "A different model estimates the teams. v2.0 gives each team one strength walk and a fixed style; production gives it separate attack and defence walks with its own volatility. Every published strength is a continuous estimate, so every one moves.",
+  `Home advantage` = "The intended change: the home advantage is pooled and no longer forced to be positive, which removes the inflation, and its attack and defence parts are an even split by convention.",
+  `Match forecasts` = "Outcome probabilities, expected goals and goal-difference distributions of the next fixtures, from the new model's rates.",
+  `Season and cup simulation` = "Final-position and points distributions, simulated from the new model's strengths by production's simulator.",
+  `Season simulation before the season: model and simulator` = "Pre-season dates only. The stored pre-season fits were simulated in April, before the split-season simulator existed, so their tables differ from the replay's by more than the model (below).",
+  `Not in the stored baseline` = "Pre-season dates only. The stored pre-season fits were written by an earlier version of the extract and cover the top two divisions. The baseline publishes the other divisions and the cup empty, so the replay's values there have nothing to be compared with (below)."
+)
+if (!is.null(l2)) {
+  o <- match(names(why), l2$cause)
+  o <- o[!is.na(o)]
+  knitr::kable(data.frame(
+    Cause = l2$cause[o], `Values that differ` = format(l2$differing[o], big.mark = ","),
+    `In one tree only` = format(l2$only_a[o] + l2$only_b[o], big.mark = ","),
+    Files = ifelse(l2$cause[o] == "Run timestamp", "every file", gsub(".json", "", l2$surfaces[o], fixed = TRUE)),
+    Why = unname(why[l2$cause[o]]),
+    check.names = FALSE
+  ), row.names = FALSE, align = c("l", "r", "r", "l", "l"))
+}
+replay_unexplained <- sum(rp$layer2$cause == "UNEXPLAINED") + sum(rp$layer1$cause == "UNEXPLAINED")
+```
+
+`r if (replay_unexplained == 0) "No value is left over. The summary script assigns every differing field to one of these causes and stops with an error if any is unassigned." else paste0("**", replay_unexplained, " fields are unassigned.**")` The timestamp row lists every file because each carries one; the model-driven rows are confined to the files named. What does *not* differ is as informative. On the October dates the league tables, including their expected goals and points, the file metadata and the number of draws are identical in the two trees, and the same files exist in both. The pre-season dates are the exception and have their own section below.
+
+How large the model-driven differences are:
+
+```{r}
+#| label: tbl-replay-size
+#| tbl-cap: "Size of the differences between production's stored fit and the INLA replay of v2.0. Outcome probabilities are home win, draw and away win of each upcoming fixture; final-position probabilities are those that changed at all (late in the season most places are already decided). On the pre-season dates the last four columns also contain the change of simulator described below, and cover the top two divisions only."
+if (!is.null(rc)) {
+  dash <- function(x, d = 3) ifelse(is.na(x), "–", num(x, d))
+  tab(data.frame(
+    ` ` = sex_label[rc$sex], `As of` = rc$as_of,
+    Fixtures = round(rc$n_fixtures),
+    `Outcome probability: mean abs.` = dash(rc$forecast_mean_abs), `largest` = dash(rc$forecast_max_abs),
+    `Expected goals: mean abs.` = dash(rc$goals_mean_abs, 2),
+    `Final-position probability: mean abs.` = dash(rc$place_mean_abs), `largest ` = dash(rc$place_max_abs),
+    `Expected points: mean abs.` = dash(rc$points_mean_abs, 2), `largest  ` = dash(rc$points_max_abs, 2),
+    check.names = FALSE
+  ))
+}
+```
+
+```{r}
+#| label: tbl-replay-ha
+#| tbl-cap: "Published home advantage, averaged over teams, and its spread between teams: production's stored fit and the INLA replay. The published number is a goal ratio (1 means no home advantage)."
+hd <- rp$home_advantage
+if (!is.null(hd)) {
+  hd <- hd[order(hd$sex, hd$as_of, match(hd$component, c("total", "offence", "defence"))), ]
+  tab(data.frame(
+    ` ` = sex_label[hd$sex], `As of` = hd$as_of,
+    Component = c(total = "Total", offence = "Attack", defence = "Defence")[hd$component],
+    `Production: mean` = num(hd$mean_stored, 3), `sd between teams` = num(hd$sd_stored, 3),
+    `v2.0: mean` = num(hd$mean_inla, 3), `sd between teams ` = num(hd$sd_inla, 3),
+    check.names = FALSE
+  ))
+}
+st <- rp$strengths
+st_cor <- function(component) {
+  r <- st$correlation[st$component == component & st$location == "avg"]
+  paste(num(min(r), 3), "to", num(max(r), 3))
+}
+```
+
+Reading these:
+
+- **Teams are ranked almost identically.** Across the replayed dates the correlation between production's and v2.0's published total strength is `r st_cor("total")`; for attack alone it is `r st_cor("offence")` and for defence `r st_cor("defence")`. The total agrees more closely than its parts, which is what a fixed style in place of two free walks should produce.
+- **Home advantage falls and flattens** (@tbl-replay-ha). Production publishes a larger home advantage that varies a good deal between teams; v2.0 publishes a smaller one that is nearly the same for every team, with equal attack and defence parts. This is the inflation of @sec-ha being removed, and it is the largest visible change on the site.
+- **Forecasts move by two to five points of probability on average** (@tbl-replay-size), and by as much as `r num(max(rc$forecast_max_abs, na.rm = TRUE), 2)` for one fixture. The largest moves are before the season and all go the same way, toward less extreme probabilities for last season's strongest sides: the women's 2025 champions go from 0.74 to 0.54 to win away to a side that finished mid-table, and from 0.96 to 0.83 at home to one from the lower half. That is reversion at the season break doing what it was put in to do. It is the model change, not the engine: with one model in both engines the difference was 0.002 to 0.003 (@sec-accept). The walk-forward is the evidence that the move is an improvement, and it found the gain largest in the first five rounds (@sec-model).
+
+#### The two pre-season dates
+
+The pre-season comparison needs more care, because its baseline is older in two ways.
+
+```{r}
+#| label: replay-preseason
+pp <- rp$preseason_points
+absent <- rp$absent_divisions[lengths(rp$absent_divisions) > 0]
+pp_div <- if (!is.null(pp)) do.call(rbind, lapply(split(pp, list(pp$sex, pp$division), drop = TRUE), function(g) {
+  per_match <- sum(g$points) / (sum(g$played) / 2)
+  data.frame(
+    sex = g$sex[1], division = g$division[1], teams = nrow(g), played = sum(g$played) / 2,
+    implied_stored = sum(g$mean_points_stored) / per_match, implied_inla = sum(g$mean_points_inla) / per_match,
+    mae_stored = mean(abs(g$mean_points_stored - g$points)), mae_inla = mean(abs(g$mean_points_inla - g$points)),
+    rank_stored = stats::cor(g$mean_points_stored, g$points, method = "spearman"),
+    rank_inla = stats::cor(g$mean_points_inla, g$points, method = "spearman"),
+    cover_stored = mean(g$points >= g$lower_80_stored & g$points <= g$upper_80_stored),
+    cover_inla = mean(g$points >= g$lower_80_inla & g$points <= g$upper_80_inla)
+  )
+}))
+pd <- function(sex, division, column, d = 0) num(pp_div[[column]][pp_div$sex == sex & pp_div$division == division], d)
+second <- pp[pp$division == "Second division", ]
+second_diff <- abs(second$mean_points_inla - second$points) - abs(second$mean_points_stored - second$points)
+```
+
+- **It is partial.** The stored pre-season fits were written by an earlier version of the extract: six files where today's writes eleven, covering the top two divisions. Put through today's publish code, the baseline comes out empty for `r length(absent[[grep("^male", names(absent))[1]]])` division folders for men and `r length(absent[[grep("^female", names(absent))[1]]])` for women (the lower divisions and the cup), and those empty files fail schema validation on their own, for having no draws. The replay publishes every division and passes. Everything the replay has there, and the cup bracket file the baseline does not write at all, is the last row of @tbl-replay-classes: nothing to compare with, so nothing concluded.
+- **Its season simulation is April's.** The split-season simulator arrived in July 2026. Before it, the top division was projected over the regular season alone. The arithmetic shows it: in the men's top division production's expected points add up to what `r pd("male", "Top division", "implied_stored")` matches yield, the replay's to `r pd("male", "Top division", "implied_inla")`, and `r pd("male", "Top division", "played")` were played; for women `r pd("female", "Top division", "implied_stored")`, `r pd("female", "Top division", "implied_inla")` and `r pd("female", "Top division", "played")`. In the second divisions, which do not split, both agree with the number played. So in the top division the pre-season difference in expected points (@tbl-replay-size) is mostly a change of simulator, and cannot be put down to the model.
+
+What compares cleanly on those dates is what the simulator does not touch: the forecasts of the opening fixtures, the strengths and the home advantage, all in the tables above.
+
+**Which pre-season projection was closer to how the season ended?** The 2026 season is over, so both can be scored against the final table (@tbl-replay-preseason).
+
+```{r}
+#| label: tbl-replay-preseason
+#| tbl-cap: "Pre-season expected points against the final 2026 table, by division: production's stored fit and the INLA replay of v2.0. Mean absolute error is in points and is comparable only in the second divisions, where both trees project the same matches; rank correlation and coverage of the 80 % interval are shown for all."
+if (!is.null(pp_div)) {
+  o <- order(pp_div$sex != "male", pp_div$division != "Top division")
+  d <- pp_div[o, ]
+  top <- d$division == "Top division"
+  tab(data.frame(
+    ` ` = sex_label[d$sex], Division = d$division, Teams = d$teams,
+    `Mean abs. error: production` = ifelse(top, "not comparable", num(d$mae_stored, 1)),
+    `v2.0` = ifelse(top, "not comparable", num(d$mae_inla, 1)),
+    `Rank correlation: production` = num(d$rank_stored, 2), `v2.0 ` = num(d$rank_inla, 2),
+    `80 % interval covers: production` = ifelse(top, "not comparable", paste0(round(100 * d$cover_stored), " %")),
+    `v2.0  ` = paste0(round(100 * d$cover_inla), " %"),
+    check.names = FALSE
+  ))
+}
+```
+
+Over the `r nrow(second)` teams of the two second divisions, v2.0's absolute error differs from production's by `r sgn(mean(second_diff), 2)` points (standard error `r num(stats::sd(second_diff) / sqrt(nrow(second)), 2)`; negative would favour v2.0): closer for men, further for women, and no detectable difference overall. The rank correlations also go one way for men and the other for women. One season and a few dozen teams cannot tell the two season-long projections apart. The evidence for v2.0 remains the walk-forward, which scores forecasts a week ahead, not a season ahead; a season-long comparison of the two models has not been made and would need production's model run through today's simulator.
+
+#### What the replay establishes
+
+The replay finds what the change of model should produce and nothing else. On every date the replay's published files pass their schemas and no field changes type. On the October dates the same files are written, and the numbers that do not depend on the fit did not move at all. On the pre-season dates the comparison is limited by an older baseline, and where it is limited this section says so.
+
+### A reference test that needs no Stan run {#sec-reftest}
+
+Decision 5 asks for two checks on the approximation once Stan no longer fits football every day. The weekly reference fit watches the live data. This is the other one: a test in CI that compares INLA with NUTS without running Stan. It is designed here and not yet built; it belongs with the switch, when INLA is installed where the tests run.
+
+**What is stored.** One small file under `tests/testthat/fixtures/`, written once on a machine that has CmdStan, by a script kept next to the reference program:
+
+- a frozen training set: the matches of one cell up to a fixed cutoff (date, teams, scores, season, division) and the fixtures after it. The women's cell to 31 July 2026 is about 1,500 matches and fits with INLA in seconds;
+- the v2.0 options and prior values the reference was fitted with;
+- what NUTS found on that training set: the hyperparameter means and quantiles, each team's state mean and sd in the last week, the league home advantage, and the outcome probabilities and expected goals of every fixture;
+- how it was made: the Stan program's hash, CmdStan version, seed, number of draws, largest $\hat{R}$ and number of divergences.
+
+**What the test does.** It rebuilds the specification from the stored training set, never from the live store, so the reference cannot go stale as matches accumulate. It fits with INLA under full integration, with a fixed seed and one thread, and compares:
+
+| Quantity | Passes when | Seen in this report |
+|---|---|---|
+| Match probabilities, mean absolute difference | below 0.005 | 0.002 to 0.003 |
+| Match probabilities, largest difference | below 0.025 | 0.012 to 0.014 |
+| Entry-level and innovation sds | within 10 % | within 6 % |
+| Near-zero sds (team home-advantage deviations) | within a factor 1.5 | 5 % to 31 % high |
+| State means, mean difference in posterior sds | below 0.15 | about 0.06 |
+
+The limits sit at about twice what was observed, so the test catches a break and not noise. They are thresholds and not snapshots because R-INLA reruns are not bit-identical.
+
+**What it catches.** A new INLA version that changes the approximation; a change to the specification builder that silently changes the model (a prior, a structure matrix, the constraint); an adapter that maps a quantity to the wrong name, if the comparison is made on adapted quantities. The Stan program and the INLA specification are two independent implementations of one model, so their agreement is a check on both.
+
+**What it cannot catch.** The approximation getting worse on data it has not seen, which is what the weekly reference fit and its 0.01 health warning are for; and anything wrong with the model itself, which both engines would reproduce faithfully.
+
+**Keeping it honest.** The test first compares the stored options and priors with `football_v2_options()` and `fv2_priors()`. If the specification has changed on purpose and the reference has not been regenerated, it fails with "stale reference" and does not go on to compare numbers that no longer belong together.
+
 ### Shadow period
 
 The football season ended on 24 October 2026; the next competitive matches are the cup's early rounds in March 2027. There is no live football to shadow until then, which shapes the plan.
@@ -931,17 +1252,17 @@ The football season ended on 24 October 2026; the next competitive matches are t
 | Step | When | What | Exit condition |
 |---|---|---|---|
 | 0 | done | Retrospective shadow: the walk-forward in this report | – |
-| 1 | off-season | Land the engine in `R/` behind `engine: stan` (no behaviour change). Add a dispatch-only workflow that installs INLA, fits both football cells and writes extracts to a separate root. Nothing is published. | INLA installs and fits on a GitHub runner; the engine tests pass there |
-| 2 | off-season | Replay: for a set of 2026 dates, run the dry-run chain (INLA, adapter, production extract and publish) into an isolated tree and diff the JSON against what production published. | Schema validation passes; every difference is explained by the model change |
+| 1 | done, 16 November 2026 | The engine is in `R/` behind `engine: stan` (no behaviour change). A workflow for this branch only installs INLA, fits both football cells and uploads the output as an artifact. Nothing is published. | Met: INLA installs and fits on a GitHub runner, and the engine tests pass there (@sec-runner) |
+| 2 | done, 16 November 2026 | Replay: for a set of 2026 dates, `fit_league()` with the INLA engine, then production's extract and publish, into an isolated tree, compared with what production published. | Met: schema validation passes and every difference is in a named class (@sec-replay) |
 | 3 | from the first 2027 fixtures | Both engines fit daily. One is published, the other archived per match (this is also the immutable forecast archive the roadmap asks for). | See below |
 | 4 | after cutover | Weekly reference check: the Stan program fits the same specification and its match probabilities are compared with INLA's. | Mean absolute difference below 0.01; a breach raises a health warning |
 
-For step 3 there are two defensible orders, and the choice is the owner's:
+For step 3 there were two defensible orders. The owner chose the second:
 
 - **Stan published, INLA in shadow** until a gate is met: at least 150 matches, INLA's 1X2 log loss no worse than production's by more than one standard error, schema validation green on every day, no gate failure.
 - **INLA published from the first 2027 fixture, Stan in shadow** for six weeks. The evidence for the new specification is already 4,511 held-out matches, more than a spring of live shadowing would add; the pre-season baseline would come from the model that runs the season; and the off-season is when a mistake costs least.
 
-I recommend the second. Rollback in either case is one line (`engine: stan`): the Stan program, its gate and the layers downstream are untouched by the cutover.
+Rollback in either case is one line (`engine: stan`): the Stan program, its gate and the layers downstream are untouched by the cutover.
 
 
 ## Limits {#sec-limits}
@@ -952,31 +1273,37 @@ I recommend the second. Rollback in either case is one line (`engine: stan`): th
 - **Empirical Bayes in the walk-forward.** The walk-forward fixes hyperparameters at their mode and re-estimates them every fourth week. At the validation cutoff, empirical Bayes and full integration gave the same predictions to within Monte Carlo error. `r if (!is.null(res$hyper_check)) paste0("Re-estimating every week instead, on the women's 2026 season (", res$hyper_check$n, " matches), moved match probabilities by ", num(res$hyper_check$mean_abs_dp, 4), " on average, the 1X2 score by ", sgn(res$hyper_check$d_1x2), " (se ", num(res$hyper_check$se_1x2, 4), ") and the scoreline score by ", sgn(res$hyper_check$d_scoreline), " (se ", num(res$hyper_check$se_scoreline, 4), "). Production would re-estimate at every fit, so if anything the walk-forward understates the model.") else "The four-weekly cadence itself was not compared with weekly re-estimation."`
 - **The reversion coefficient is fixed in INLA.** It sits inside the precision matrix, where INLA cannot estimate it without a custom latent model. The value used was chosen before looking at the data, from published between-season memory of 0.74 to 0.80.
 - **Timings.** Four model-fitting sessions shared this machine all evening, so sampler effort is reported as leapfrog steps and divergences, which do not depend on load. The run times in @tbl-timing were taken last, with no other model fit running, but with macOS background sync still using about 2.5 cores; an earlier run under heavier load gave 7 and 14 seconds for INLA where this one gave 6 and 11.
-- **INLA on a GitHub runner is untested.** The install pattern is taken from another package's CI, not run by me.
+- **INLA on a GitHub runner is tested for one version on one image.** INLA 25.06.07 on `ubuntu-latest` with R 4.5.3 (@sec-runner). A newer INLA, or a new runner image, is a new test.
+- **The replay covers the ends of the season, not the middle.** Production's retention keeps few stored fits: for 2026 they are the pre-season baseline and the last weeks of October. Two more October dates could not be used because fixtures were rescheduled after those fits and the publisher refuses, correctly, to republish a stored fit that no longer matches the schedule. No mid-season date was replayed. The two pre-season baselines come from an earlier version of the extract, cover the top two divisions and predate the split-season simulator, so on those dates the season-long projections of the two models cannot be compared like for like; that comparison needs production's model run through today's simulator, which means a Stan fit that was not made.
 - **Fixtures with a new team are skipped**, as in production: a team with no match in the training set gets no forecast. In the men's data that is the fourth division.
 - **Not run.** A style term that walks instead of the fixed one; division offsets combined with the promotion shock on the recommended model (the only combined run was the void one); offsets and league walks together; reversion values other than 0.7 and 0.8 on the walk-forward; the walk-forward under full integration (it used empirical Bayes throughout); a second cutoff with one season of history.
-- **Structural choices at this sample size.** Where two structures could not be separated on Icelandic data, the report says so. A higher-powered test on about 22 European divisions is being set up by a sibling session; its results are to be written to `/Users/brynjolfurjonsson/.claude-reviews/sports-pan-european/structural-tests.md` (not present when this report was generated).
+- **Structural choices at this sample size, and one unreconciled comparison.** Where two structures could not be separated on Icelandic data, the report says so. A test bed of eight large European leagues finds a much smaller gain from strength plus style than this report does. @sec-tests shows the two agree where they are comparable and lists what would settle the rest; that test has not been run. The European figures are research-only and stay in `/Users/brynjolfurjonsson/.claude-reviews/sports-pan-european/structural-tests.md`.
+- **v2.0 was chosen on the matches it was scored on.** Hence the re-examination on 2027 matches due 15 July 2027 (@sec-model).
 
 
 ## Where everything is {#sec-where}
 
 | What | Where |
 |---|---|
-| The specification (league-agnostic) | `research/football-v2/spec.R` |
-| Engines (INLA, Stan) | `research/football-v2/engines.R` |
+| The specification (league-agnostic) | `R/model-v2-spec.R` |
+| The INLA engine | `R/model-v2-inla.R` |
+| v2.0 on the production fit path: version, options, gate, diagnostics row | `R/model-v2-fit.R`; the engine choice is in `fit_league()`, `R/model-league.R` |
+| The Stan reference engine | `research/football-v2/engines.R` |
 | Stan reference programs | `stan/fv2.stan` (attack and defence walks), `stan/fv2_sq.stan` (strength and fixed style), `stan/fv2_rev.stan` (either, with reversion and league-level walks: the recommended model) |
 | Model variants tested | `research/football-v2/variants.R` (the recommended one is `rev80_sq_static_lvl`) |
-| Adapter to the extract and publish layers | `research/football-v2/adapter.R` |
-| Iceland adapter (facts store, training filter, divisions) | `research/football-v2/data.R` |
+| Adapter to the extract and publish layers | `R/model-v2-adapter.R` |
+| Reading the facts store for the research scripts | `research/football-v2/data.R` |
 | Scoring, de-vig, phases, paired intervals | `research/football-v2/score.R`, `evaluate.R` |
 | Scripts | `run_validation.R`, `compare_validation.R`, `run_wf.R`, `wf_summarise.R`, `run_ha_variant.R`, `run_dryrun.R`, `time_engines.R`, `export_report_data.R` |
+| Replay: one date through `fit_league()`, the field-by-field comparison of two published trees, and the summary | `research/football-v2/run_replay.R`, `replay_diff.R`, `replay_summarise.R` |
+| The trial on a GitHub runner | `.github/workflows/inla-trial.yml`; what each run reported is in `docs/reports/2026-11-15-football-v2/runner-trial-{male,female}.json` |
 | Home-advantage ladder | `research/football-v2/stan/ha_*.stan` |
-| Tests | `tests/testthat/test-research-football-v2.R` |
+| Tests | `tests/testthat/test-model-v2.R` (package code), `test-research-football-v2.R` (research code), shared toy leagues in `helper-football-v2.R` |
 | This report's numbers | `docs/reports/2026-11-15-football-v2/results.rds` |
 | Experiment outputs (large, outside the repository) | `/Users/brynjolfurjonsson/.claude-reviews/sports-football-v2/` |
 | A rendered copy of this report (the HTML is git-ignored in the repository) | `/Users/brynjolfurjonsson/.claude-reviews/sports-football-v2/report/2026-11-15-football-v2-proposal.html` |
 
-All code is on branch `claude/objective-poitras-964871` (worktree `/Users/brynjolfurjonsson/sports/.claude/worktrees/objective-poitras-964871`), not merged. The scripts run from the repository root. Results generated `r res$generated`.
+All code is on branch `claude/objective-poitras-964871` (worktree `/Users/brynjolfurjonsson/sports/.claude/worktrees/objective-poitras-964871`), draft pull request [metill-is/sports#104](https://github.com/metill-is/sports/pull/104), not merged. The scripts run from the repository root. Results generated `r res$generated`.
 
 ### Where each headline number comes from
 
@@ -996,6 +1323,9 @@ Every number in this report is computed in the report source from `docs/reports/
 | Run times | `engine_timing.rds` (clean run; the earlier loaded run is `engine_timing_loaded_0130.rds`), machine state in `../logs/timing_clean.meta` | `timing`, `timing_context` |
 | Dry run of the cutover path | `dryrun_check.rds`; output trees under `../dryrun/` | `dryrun` |
 | Weekly against four-weekly hyperparameter re-estimation | `wf_rev80_sq_static_lvl_female_2026_h1.rds` against `wf_rev80_sq_static_lvl_female_2026.rds` | `hyper_check` |
+| The strength-plus-style gain by season, competition and sex | `wf_rev80_sq_static_<sex>_<season>.rds` against `wf_brk_rev80_<sex>_<season>.rds` | `style_split` |
+| Replay of 2026 dates | `replay_summary.rds`, built by `replay_summarise.R` from the trees under `../replay/` (`stored_<sex>_<date>`, `inla_<sex>_<date>`, `published/<commit>_<sex>`) and the comparisons under `../replay/diff/` | `replay` |
+| The trial on a GitHub runner | the `inla-trial` artifact of the workflow run, copied to `docs/reports/2026-11-15-football-v2/runner-trial-{male,female}.json` | read directly by the report |
 
 The plain-text walk-forward summary that the tables were checked against is `../logs/summary_final.txt`.
 

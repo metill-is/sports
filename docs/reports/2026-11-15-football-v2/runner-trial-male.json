@@ -1,0 +1,85 @@
+{
+  "sex": "male",
+  "as_of": "2026-10-20",
+  "mode": "inla",
+  "horizon_days": 14,
+  "earlier_partitions": ["2026-04-09", "2026-10-12", "2026-10-17"],
+  "archive_partitions": 12,
+  "production_n_obs": 2993,
+  "returned_to_schedule": [],
+  "timing": {
+    "fit_league": {
+      "elapsed": 523.311,
+      "cpu": 636.2
+    },
+    "publish": {
+      "elapsed": 10.186,
+      "cpu": 11.638
+    }
+  },
+  "fit": {
+    "engine": "inla",
+    "version": "2.0",
+    "int_strategy": "auto",
+    "inla_version": "25.6.7",
+    "n_obs": 2993,
+    "n_teams": 48,
+    "n_states": 5071,
+    "seconds": {
+      "fit": 44.7871,
+      "draws": 42.924692
+    },
+    "gate": {
+      "passed": true,
+      "breaches": [],
+      "evaluated": 4,
+      "skipped": 1
+    },
+    "hyper": [
+      [0.372535, 0.297931, 0.369387, 0.457572],
+      [0.016905, 0.008985, 0.016446, 0.026425],
+      [0.112578, 0.086065, 0.110511, 0.145872],
+      [0.055405, 0.038388, 0.054383, 0.075884],
+      [0.020606, 0.003286, 0.016393, 0.051956],
+      [0.094539, 0.055798, 0.092348, 0.140914],
+      [0.007427, 0.003228, 0.006753, 0.013906],
+      [0.00421, 0.000539, 0.002986, 0.011958]
+    ]
+  },
+  "diagnostics": [
+    {
+      "n_obs": 2993,
+      "n_divergent": null,
+      "total_iter": 4000,
+      "div_frac": null,
+      "n_max_treedepth": null,
+      "treedepth_frac": null,
+      "min_ebfmi": null,
+      "max_rhat": null,
+      "min_ess_bulk": null,
+      "min_ess_tail": null,
+      "adapt_delta": null,
+      "iter_sampling": 4000,
+      "chains": null,
+      "gates_evaluated": 4,
+      "gates_skipped": 1,
+      "passed": true,
+      "sport": "football",
+      "country": "iceland",
+      "sex": "male",
+      "fit_date": "2026-10-20"
+    }
+  ],
+  "extract_files": ["cup_bracket.parquet", "final_positions.parquet", "fit_meta.parquet", "home_advantage_quantiles.parquet", "points_distribution.parquet", "predicted_matches.parquet", "round_strengths_quantiles.parquet", "sim_inputs_scalar.parquet", "sim_inputs_team.parquet", "team_strengths_quantiles.parquet", "tournament_placements.parquet"],
+  "json_files": 52,
+  "schema": {
+    "n_passed": 51,
+    "n_failed": 0,
+    "errors": [],
+    "unmatched": "football/iceland/karla-bikar/bracket.json"
+  },
+  "r_version": "R version 4.5.3 (2026-03-11)",
+  "platform": "x86_64-pc-linux-gnu",
+  "cores": 4,
+  "data_changed": []
+}

@@ -133,9 +133,56 @@ goals <- list(
   sq_div = goals_of("rev80_sq_static_div"), sq_lvl = goals_of("rev80_sq_static_lvl")
 )
 
+# Where the strength-plus-style gain comes from: the paired difference from
+# attack and defence walks (both with reversion 0.8), split by season, by
+# kind of competition and by sex. Positive means strength plus style scored
+# better.
+wf_pred <- function(variant) {
+  files <- list.files(out, pattern = sprintf("^wf_%s_(male|female)_[0-9]{4}[.]rds$", variant), full.names = TRUE)
+  if (length(files) < 10L) {
+    return(NULL)
+  }
+  do.call(rbind, lapply(files, function(f) readRDS(f)$pred))
+}
+style_split <- NULL
+sq_pred <- wf_pred("rev80_sq_static")
+ad_pred <- wf_pred("brk_rev80")
+if (!is.null(sq_pred) && !is.null(ad_pred)) {
+  key <- function(d) paste(d$sex, d$match_date, d$home_team, d$away_team)
+  ad_pred <- ad_pred[match(key(sq_pred), key(ad_pred)), ]
+  stopifnot(!anyNA(ad_pred$ls_1x2))
+  sq_pred$tier <- ifelse(
+    sq_pred$division == "CUP", "Cup",
+    ifelse(grepl("^BD", sq_pred$division), "Top division", "Lower divisions")
+  )
+  sq_pred$all <- "All matches"
+  sq_pred$sex_label <- ifelse(sq_pred$sex == "female", "Women", "Men")
+  week <- paste(sq_pred$sex, sq_pred$cutoff)
+  split_by <- function(column, kind) {
+    do.call(rbind, lapply(split(seq_len(nrow(sq_pred)), sq_pred[[column]]), function(i) {
+      one <- function(metric) {
+        d <- sq_pred[[metric]][i] - ad_pred[[metric]][i]
+        by_week <- tapply(d, week[i], sum)
+        c(mean(d), sqrt(length(by_week) / (length(by_week) - 1) * sum((by_week - mean(d) * tapply(d, week[i], length))^2)) / length(d))
+      }
+      a <- one("ls_1x2")
+      b <- one("ls_score")
+      data.frame(
+        kind = kind, group = as.character(sq_pred[[column]][i[1]]), n = length(i),
+        d_1x2 = a[1], se_1x2 = a[2], d_score = b[1], se_score = b[2]
+      )
+    }))
+  }
+  style_split <- rbind(
+    split_by("all", "All"), split_by("season", "Season"), split_by("tier", "Competition"), split_by("sex_label", "Sex")
+  )
+  rownames(style_split) <- NULL
+}
+
 res <- list(
   generated = format(Sys.time(), "%Y-%m-%d %H:%M"),
-  goals = goals,
+  goals = goals, style_split = style_split,
+  replay = read_if("replay_summary.rds"),
   validation = read_validation("calendar"),
   validation_sq = read_validation("final"),
   validation_lvl = read_validation("finallvl"),
