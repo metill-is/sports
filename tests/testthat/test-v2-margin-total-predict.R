@@ -181,3 +181,18 @@ test_that("a margin that cannot be level puts nothing on zero and still sums to 
   expect_equal(no_tie[k != 0], rounded[k != 0] / (1 - rounded[k == 0]))
   expect_error(v2_integer_pmf(1, 3, 12, ties = FALSE, zero_shift = 0.3), "zero_shift")
 })
+
+test_that("a game too lopsided to reach overtime still has a final result", {
+  # WHY: with an expected margin this large the probability of a level score underflows
+  # to zero in every draw, and the overtime share is a ratio with that sum below it.
+  r <- v2_basketball_result_probs(c(500, -500), c(12, 12))
+
+  expect_false(anyNA(unlist(r)))
+  expect_equal(r$p_draw_reg, c(0, 0))
+  expect_equal(r$p_home, c(1, 0))
+  expect_equal(r$p_away, c(0, 1))
+
+  draws <- v2_basketball_result_probs(matrix(c(500, 520), nrow = 2), matrix(12, nrow = 2, ncol = 1))
+  expect_equal(draws$p_home, 1)
+  expect_equal(draws$p_home + draws$p_away, 1)
+})

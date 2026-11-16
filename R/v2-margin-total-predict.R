@@ -149,7 +149,12 @@ v2_basketball_result_probs <- function(loc, scale, df = Inf, zero_shift = 0, ot_
   level <- v2_cdf_draws(zero + 0.5, loc, scale, df) - v2_cdf_draws(zero - 0.5, loc, scale, df)
   ot_away <- v2_cdf_draws(zero - 0.5, loc * ot_share, scale * sqrt(ot_share), df)
   ot_home <- 1 - v2_cdf_draws(zero + 0.5, loc * ot_share, scale * sqrt(ot_share), df)
-  p_home_ot <- colSums(level * ot_home / (ot_home + ot_away)) / colSums(level)
+  ot_share_home <- ot_home / (ot_home + ot_away)
+  weight <- colSums(level)
+  # WHY the fallback: in a game so lopsided that a level score has probability zero in
+  # every draw there is no weight to share out. Overtime then never happens, and the
+  # plain average keeps the result defined instead of 0 / 0.
+  p_home_ot <- ifelse(weight > 0, colSums(level * ot_share_home) / weight, colMeans(ot_share_home))
   data.frame(
     p_home_reg = reg$p_home, p_draw_reg = reg$p_draw, p_away_reg = reg$p_away,
     p_home_ot = p_home_ot,
