@@ -85,8 +85,8 @@ if (n_r0 > 0) {
       "<p><strong>Reading the table.</strong> Home advantage is overstated because each team has its own attack and defence home effect, each forced to be non-negative with a half-normal(0, 10) prior and no pooling. ",
       "In %s the typical team's attack home effect has posterior sd %s around a mean of %s: the estimates are noise-dominated, the zero bound pushes every one of them upward, and the error cannot average out. ",
       "The intercept ridge that the football review found (scoring level traded against the two home means) is truncated by the same bounds instead of being removed, which is why the correlations in the table are weak here; the ladder below shows it reappear the moment the bounds are lifted. ",
-      "The volatility hierarchies return their priors: the scale parameters' posteriors match the exponential(2) prior, and one team's interval for its own random-walk sd is wider than the whole spread between teams. ",
-      "The Student-t degrees of freedom sit at or above their prior, so the data are not asking for heavy tails.</p>"
+      "The volatility hierarchies are weakly identified at best: in handball men the scale parameters' posteriors match the exponential(2) prior, and in every cell one team's interval for its own random-walk sd is about as wide as the whole spread between teams. ",
+      "The Student-t degrees of freedom sit above their prior in handball, so those data are not asking for heavy tails; in basketball they sit a little below it.</p>"
     ),
     tolower(LAB[[first]]), num(o$ha_off_team_means[["within_sd"]], 2), num(o$ha_off_team_means[["mean"]], 2)
   ))

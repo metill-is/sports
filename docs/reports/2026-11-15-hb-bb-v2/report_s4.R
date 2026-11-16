@@ -27,7 +27,22 @@ within_pool <- function(cells) {
   list(n = nrow(x), m = mean(x$m), m_se = se(x$m), w = mean(x$w), w_se = se(x$w), t = mean(x$t), t_se = se(x$t))
 }
 bb_within <- if (within_known) within_pool(c("bb_m_reg", "bb_f_reg")) else NULL
-bb_keep_ar1 <- have(bb_within) && (bb_within$m / bb_within$m_se > 2 || bb_within$w / bb_within$w_se > 2)
+# Keep the within-season term for basketball when the walk-forward never counts against
+# it and at least one of the three scores improves by more than two standard errors.
+bb_keep_ar1 <- have(bb_within) && min(bb_within$m, bb_within$t, bb_within$w) >= 0 &&
+  max(bb_within$m / bb_within$m_se, bb_within$t / bb_within$t_se, bb_within$w / bb_within$w_se) > 2
+# The same comparison for the lower division alone, where the gain sits.
+bb_within_1d <- if (within_known) {
+  x <- do.call(rbind, lapply(c("bb_m_reg", "bb_f_reg"), function(cl) {
+    j <- wj[[cl]]
+    j <- j[j$division == "1D", ]
+    data.frame(m = j$lsm_raw.ar1 - j$lsm_raw.static, w = j$ll_wdl_raw.ar1 - j$ll_wdl_raw.static, t = j$lst_raw.ar1 - j$lst_raw.static)
+  }))
+  se <- function(v) stats::sd(v) / sqrt(length(v))
+  list(n = nrow(x), m = mean(x$m), m_se = se(x$m), w = mean(x$w), w_se = se(x$w), t = mean(x$t), t_se = se(x$t))
+} else {
+  NULL
+}
 
 # ---------------------------------------------------------------- proposal
 cur <- "proposal"
@@ -46,9 +61,20 @@ within_txt <- if (!have(bb_within)) {
   "Within-season movement: handball does not need it (within-season sd half a goal to one goal, no gain in leave-one-out or held-out scores). In basketball the fitted within-season sd is five to seven points and leave-one-out improves, so the term may earn its place there; the walk-forward that settles it had not finished when this report was built."
 } else {
   sprintf(
-    "Within-season movement: handball does not need it (within-season sd half a goal to one goal, no gain). In basketball the fitted within-season sd is five to seven points; over %s walk-forward matches (seasons 2025 to 2027, both sexes) the AR(1) form changes the margin log score by %s, the total by %s and the result log likelihood by %s per match against the static form, so the term %s.",
+    paste0(
+      "Within-season movement: handball does not need it (within-season sd half a goal to one goal, no gain). In basketball the fitted within-season sd is five to seven points and leave-one-out improves by %s (men) and %s (women). ",
+      "Over %s walk-forward matches (seasons 2025 to 2027, both sexes) the AR(1) form changes the margin log score by %s, the total by %s and the regulation 1X2 log likelihood by %s per match against the static form. ",
+      "The gain sits in 1. deild (%s matches: margin %s, total %s, 1X2 %s) and is nil in B&oacute;nusdeild. %s"
+    ),
+    num(lad("bb_m", "v2 + within-season AR(1), INLA full", "elpd") - lad("bb_m", "v2 static, INLA full", "elpd"), 0),
+    num(lad("bb_f", "v2 + within-season AR(1), INLA full", "elpd") - lad("bb_f", "v2 static, INLA full", "elpd"), 0),
     int(bb_within$n), pm(bb_within$m, bb_within$m_se, 4), pm(bb_within$t, bb_within$t_se, 4), pm(bb_within$w, bb_within$w_se, 4),
-    if (bb_keep_ar1) "is kept for basketball" else "is left out for now: margin and result forecasts do not improve, a small gain on totals (mostly the women's) is the only sign of it, and the static form is the simpler one to run. It stays available as a tested option"
+    int(bb_within_1d$n), pm(bb_within_1d$m, bb_within_1d$m_se, 4), pm(bb_within_1d$t, bb_within_1d$t_se, 4), pm(bb_within_1d$w, bb_within_1d$w_se, 4),
+    if (bb_keep_ar1) {
+      "It is small, never negative when pooled, and costs ten seconds of fitting, so the term is kept for basketball; the static form is the fallback."
+    } else {
+      "That is not enough to carry the term: it is left out for now and stays available as a tested option."
+    }
   )
 }
 add(
@@ -195,7 +221,7 @@ not_measured <- c(
   if (!(have(val) && length(val))) "The like-for-like R-INLA against Stan comparison had not finished.",
   if (!have(bb_within)) "The walk-forward with the within-season AR(1) for basketball had not finished.",
   "A walk-forward of the within-season AR(1) for handball (dropped from the queue: the fixed-cutoff fit shows nothing for it to find).",
-  "Weekly correlations for the within-season term other than 0.98.",
+  "Weekly correlations other than 0.98 for the within-season term in the walk-forward (0.90 and 0.95 were only checked at the fixed cutoff).",
   "Production in a walk-forward: one production fit takes tens of minutes, so production is represented by its fixed-cutoff fit and by the forecasts it actually stored (April to May and September to November 2026 only).",
   "Clean wall-clock benchmarks: every time was taken on a shared machine.",
   "The full ladder for the women's cells (production and the final model only, by agreement with the scheduling session).",
@@ -216,14 +242,15 @@ add("<h2 id=\"summary\">Summary</h2>")
 items <- character()
 if (length(r0_done)) {
   items <- c(items, sprintf(
-    "<strong>The football defects are present.</strong> Home advantage implied by the production fit against the raw home-minus-away margin: %s. The per-team volatility hierarchies and (in handball) the per-team score sds return their priors, the Student-t degrees of freedom sit at or above their prior, and %s of the sampled innovation slots touch no match.",
+    "<strong>The football defects are present.</strong> Home advantage implied by the production fit against the raw home-minus-away margin: %s. The per-team volatility hierarchies are weakly identified at best (one team's interval for its volatility is about as wide as the whole spread between teams), handball's per-team score sds are indistinguishable, and %s of the sampled innovation slots touch no match. Student-t degrees of freedom: %s (prior median 18), so handball does not ask for heavy tails and basketball asks for a little.",
     paste(vapply(r0_done, function(cl) {
       sprintf(
         "%s %s against %s (&times;%s)", tolower(LAB[[cl]]), num(diag[[cl]]$ha_weighted[1], 2), num(diag[[cl]]$raw_margin[1], 2),
         num(diag[[cl]]$ha_weighted[1] / diag[[cl]]$raw_margin[1], 2)
       )
     }, ""), collapse = "; "),
-    paste(range(vapply(names(CELLS), function(cl) round(100 * (1 - 2 * dat[[cl]]$prod$N / (dat[[cl]]$prod$K * dat[[cl]]$prod$N_rounds))), 1)), collapse = " to ") |> paste("%")
+    paste(range(vapply(names(CELLS), function(cl) round(100 * (1 - 2 * dat[[cl]]$prod$N / (dat[[cl]]$prod$K * dat[[cl]]$prod$N_rounds))), 1)), collapse = " to ") |> paste("%"),
+    paste(vapply(r0_done, function(cl) sprintf("%s %s", tolower(LAB[[cl]]), num(diag[[cl]]$nu[2], 0)), ""), collapse = ", ")
   ))
 }
 items <- c(items, sprintf(
@@ -233,14 +260,36 @@ items <- c(items, sprintf(
 items <- c(items, "<strong>Margin and total can be modelled separately</strong>: their residuals are uncorrelated in every cell. Handball scores have about half the variance a Poisson count would; a Gaussian with a free sd fits, for the women as for the men.")
 if (have(ladder)) {
   l1 <- function(cl) {
+    has_r1 <- !is.na(lad(cl, "r1_ragged", "leapfrog"))
+    first <- if (has_r1) {
+      sprintf("removing the states no match touches takes the sampled parameters from %s to %s and the leapfrog steps per iteration from %s to %s without moving a score; ",
+              int(lad(cl, "r0_prod", "n_sampled")), int(lad(cl, "r1_ragged", "n_sampled")), int(lad(cl, "r0_prod", "leapfrog")), int(lad(cl, "r1_ragged", "leapfrog")))
+    } else {
+      ""
+    }
     sprintf(
-      "%s: %s sampled parameters and %s leapfrog steps per iteration in production, %s and %s in the identified Gaussian rung, with the home advantage going from %s to %s when it is pooled and freed of its sign",
-      tolower(LAB[[cl]]), int(lad(cl, "r0_prod", "n_sampled")), int(lad(cl, "r0_prod", "leapfrog")), int(lad(cl, "r5_gauss", "n_sampled")),
-      int(lad(cl, "r5_gauss", "leapfrog")), num(lad(cl, "r2_common", "ha_mean"), 2), num(lad(cl, "r4_ident", "ha_mean"), 2)
+      "%s: %scollapsing the volatility hierarchies changes nothing (home advantage still %s); pooling the home effects and freeing their sign takes the home advantage to %s and adds %s to the leave-one-out density; dropping the Student-t costs %s; the identified Gaussian rung has %s parameters at %s leapfrog steps, against %s at %s in production",
+      tolower(LAB[[cl]]), first, num(lad(cl, "r2_common", "ha_mean"), 2), num(lad(cl, "r3_pooled", "ha_mean"), 2),
+      num(lad(cl, "r3_pooled", "elpd") - lad(cl, "r2_common", "elpd"), 0), num(lad(cl, "r4_ident", "elpd") - lad(cl, "r5_gauss", "elpd"), 1),
+      int(lad(cl, "r5_gauss", "n_sampled")), int(lad(cl, "r5_gauss", "leapfrog")), int(lad(cl, "r0_prod", "n_sampled")), int(lad(cl, "r0_prod", "leapfrog"))
     )
   }
   ok <- vapply(c("hb_m", "bb_m"), function(cl) !is.na(lad(cl, "r5_gauss", "leapfrog")) && !is.na(lad(cl, "r0_prod", "leapfrog")), TRUE)
   if (any(ok)) items <- c(items, sprintf("<strong>The ladder attributes the gains.</strong> %s.", paste(vapply(c("hb_m", "bb_m")[ok], l1, ""), collapse = "; ")))
+}
+if (have(ladder) && !is.na(lad("bb_f", "r0_prod", "elpd"))) {
+  bf0 <- ladder$scores[["bb_f r0_prod"]]
+  bfs <- ladder$scores[["bb_f v2 static, INLA full"]]
+  bfa <- ladder$scores[["bb_f v2 + within-season AR(1), INLA full"]]
+  pw <- paired(bfs$ll_wdl, bf0$ll_wdl)
+  pa <- paired(bfa$ll_wdl, bf0$ll_wdl)
+  items <- c(items, sprintf(
+    "<strong>Where v2 is not ahead: women's basketball at the fixed cutoff.</strong> On its %s held-out matches production has the better win/loss log likelihood (v2 static %s, with the within-season term %s) and the better leave-one-out density (%s against %s and %s). On the %s women's matches with stored forecasts the sign is the other way (%s). Basketball's production fits also beat static v2 on leave-one-out density for the men (%s against %s) while losing on the held-out matches. The within-season term and a heavier tail are what production has and static v2 lacks; both are tested above.",
+    int(nrow(bf0)), pm(pw[["diff"]], pw[["se"]], 3), pm(pa[["diff"]], pa[["se"]], 3),
+    num(lad("bb_f", "r0_prod", "elpd"), 0), num(lad("bb_f", "v2 static, INLA full", "elpd"), 0), num(lad("bb_f", "v2 + within-season AR(1), INLA full", "elpd"), 0),
+    int(nrow(cmp$bb_f$cmp)), pm(paired(cmp$bb_f$cmp$ll_wdl_raw, cmp$bb_f$cmp$ll_wdl)[["diff"]], paired(cmp$bb_f$cmp$ll_wdl_raw, cmp$bb_f$cmp$ll_wdl)[["se"]], 3),
+    num(lad("bb_m", "r0_prod", "elpd"), 0), num(lad("bb_m", "v2 static, INLA full", "elpd"), 0)
+  ))
 }
 if (have(val) && length(val)) {
   items <- c(items, sprintf(
@@ -272,5 +321,5 @@ items <- c(items, sprintf(
   pct(mean(per$ok), 1), pct(ot_rate("male", "BD"), 1), int(sum(with(rbind(bbm[bbm$margin_fit == 0, c("mean_m", "margin")], bbf[bbf$margin_fit == 0, c("mean_m", "margin")]), ifelse(mean_m > 0, margin > 0, margin < 0)))),
   int(sum(bbm$margin_fit == 0) + sum(bbf$margin_fit == 0))
 ))
-items <- c(items, "<strong>Proposal.</strong> v2 on R-INLA for both sports (static for handball), basketball on regulation time; swap the engine behind an adapter that keeps the published JSON contract; a four to five week shadow period per sport with a stated gate; store regulation-time scores. Six decisions are yours.")
+items <- c(items, sprintf("<strong>Proposal.</strong> v2 on R-INLA for both sports (static for handball, %s for basketball), basketball on regulation time; swap the engine behind an adapter that keeps the published JSON contract; a four to five week shadow period per sport with a stated gate; store regulation-time scores. Six decisions are yours.", if (bb_keep_ar1) "with the within-season term" else "static"))
 add("<ol>", paste0("<li>", items, "</li>", collapse = "\n"), "</ol>")
