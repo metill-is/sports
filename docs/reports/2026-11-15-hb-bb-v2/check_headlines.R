@@ -27,6 +27,22 @@ for (cl in cells) {
 cat("\n== descriptives.rds: [[cell]]$hfa (identified home advantage, all data)\n")
 ds <- rd("descriptives.rds")
 for (cl in cells) say(paste(cl, "v2 home advantage (sd)"), "%.2f (%.2f)", ds[[cl]]$hfa$mean[1], ds[[cl]]$hfa$sd[1])
+cat("\n== descriptives.rds: [[cell]]$disp$pearson_poisson (score variance / mean given strengths, by division)\n")
+for (cl in cells) {
+  say(paste(cl, "variance / mean by division"), "%s", paste(sprintf("%s %.2f", ds[[cl]]$disp$division, ds[[cl]]$disp$pearson_poisson), collapse = ", "))
+}
+
+cat("\n== repro_descriptives.rds: $fits (n_runs, n_modal, max_abs_fitted_diff), $hfa, $stored_is_modal\n")
+rp <- rd("repro_descriptives.rds")
+say("runs; fits; bit-identical with the most frequent result", "%d; %d; %d", length(rp$runs), sum(rp$fits$n_runs), sum(rp$fits$n_modal))
+for (i in which(rp$fits$n_distinct > 1)) {
+  say(
+    paste(rp$fits$cell[i], rp$fits$response[i], "odd run; largest fitted diff; hyper median"), "%s; %.3f; %s %.3f vs %.3f", rp$fits$odd_runs[i],
+    rp$fits$max_abs_fitted_diff[i], rp$fits$hyper_param[i], rp$fits$hyper_q50_other[i], rp$fits$hyper_q50_modal[i]
+  )
+}
+say("hb_m home advantage min / max / most frequent", "%.4f / %.4f / %.4f", rp$hfa$hfa_min[1], rp$hfa$hfa_max[1], rp$hfa$hfa_modal[1])
+say("stored descriptives.rds is the most frequent result for every fit", "%s", rp$stored_is_modal)
 
 cat("\n== ladder.rds: $tab (cell, rung, n_sampled, leapfrog, elpd, ha_mean), $scores[[\"<cell> <rung>\"]]\n")
 ld <- rd("ladder.rds")

@@ -71,7 +71,7 @@ within_txt <- if (!have(bb_within)) {
     int(bb_within$n), pm(bb_within$m, bb_within$m_se, 4), pm(bb_within$t, bb_within$t_se, 4), pm(bb_within$w, bb_within$w_se, 4),
     int(bb_within_1d$n), pm(bb_within_1d$m, bb_within_1d$m_se, 4), pm(bb_within_1d$t, bb_within_1d$t_se, 4), pm(bb_within_1d$w, bb_within_1d$w_se, 4),
     if (bb_keep_ar1) {
-      "It is small, never negative when pooled, and costs ten seconds of fitting, so the term is kept for basketball; the static form is the fallback."
+      "It is small, never negative when pooled, and costs about ten more seconds of fitting (timed on the shared machine), so the term is kept for basketball; the static form is the fallback."
     } else {
       "That is not enough to carry the term: it is left out for now and stays available as a tested option."
     }
@@ -81,7 +81,7 @@ add(
   "<div class=\"cols\"><div class=\"pick\"><h3>Handball, men and women</h3><ul>",
   sprintf("<li>%s</li>", hb_txt),
   "<li>Gaussian, one free sd for the margin and one for the total. No possession-informed variance, no Student-t.</li>",
-  "<li>Prediction layer: whole-number scores with margin and total on the same parity; draw = level score; a draw shift per sex, set to zero for women and, for men, either zero or a shrunk value (a decision below).</li>",
+  "<li>Prediction layer: whole-number scores with margin and total on the same parity; draw = level score; a draw shift per sex, set to zero for women and, for men, either zero or a shrunk value (a decision below). The joint sampler is built and unit-tested; the walk-forward scored margin and total separately, so joint scores are not yet evaluated.</li>",
   "</ul></div><div class=\"pick\"><h3>Basketball, men and women</h3><ul>",
   sprintf("<li>%s</li>", bb_form),
   "<li>Tie shift per division for men, one small shift (or none) for women.</li>",
@@ -117,7 +117,7 @@ layers <- data.frame(
     "<strong>JSON contract unchanged.</strong> Two meanings shift and should be stated on the site: a team's home advantage for attack and for defence become equal halves of one number, and attack / defence strength become the sum and difference of net strength and scoring level. The handball <code>p_draw</code> stays the band in phase 1.",
     "Unchanged: it reads the same three columns, and its &plusmn;0.5 band on whole-number scores is exactly \"level score\". Regulation-time basketball betting, if it resumes, needs regulation-time draws as two further columns.",
     "Keep the game id the export already carries; fetch the game card once per newly finished game; store regulation-time scores as two nullable columns in <code>results</code>. Backfill from the 3,283 cards already parsed.",
-    "Install R-INLA from its own repository (it is not on CRAN). CmdStan is still needed for football and for the weekly Stan reference. The four handball and basketball fits drop from the bulk of a two-hour job to about a minute.",
+    "Install R-INLA from its own repository (it is not on CRAN). CmdStan is still needed for football and for the weekly Stan reference. On the times taken here (shared machine, not a benchmark) the four handball and basketball fits would drop from the bulk of a two-hour job to about a minute.",
     "The tests that pin Stan variable names keep passing in phase 1, because the adapter emits those names. New: a stub fit for the R-INLA engine, the adapter and prediction-layer tests already on this branch, and an engine-agnostic contract test on the extract outputs."
   ),
   contract = c("none", "none", "new diagnostics shape", "none (values become whole numbers)", "none", "none in phase 1", "none", "none", "two new nullable columns", "none", "none")
@@ -127,13 +127,47 @@ add(tbl(layers,
   note = "File and line references behind this table came from a read-only map of the fit, extract, publish and decide code on this branch; the entry point, the extract's draw pulls and the simulator's match function were re-read directly. The two-phase split keeps the engine swap separable from any change to what the site shows."
 ))
 
+HYPER_LAB <- c(
+  "sd: the Gaussian observations" = "match sd", "sd: b" = "club-level sd", "sd: u_s" = "season-level sd", "rho: u_s" = "season-to-season correlation",
+  "sd: ha" = "sd of the team home-advantage deviations", "sd: s_s" = "sd of the division level's walk over seasons"
+)
+repro_li <- if (have(repro)) {
+  odd <- repro$fits[repro$fits$n_distinct > 1, ]
+  odd_txt <- vapply(seq_len(nrow(odd)), function(i) {
+    o <- odd[i, ]
+    h <- repro$hfa[repro$hfa$cell == o$cell, ]
+    ha_txt <- if (o$response == "margin") {
+      sprintf("home advantage %s against %s, with a posterior sd of %s; ", num(h$hfa_other, 3), num(h$hfa_modal, 3), num(h$hfa_sd, 2))
+    } else {
+      ""
+    }
+    sprintf(
+      "the %s model for %s (fitted values up to %s %s from the usual result; %sthe median of the %s %s against %s)",
+      o$response, tolower(LAB[[o$cell]]), num(o$max_abs_fitted_diff, 2), UNIT[[o$cell]], ha_txt, HYPER_LAB[[o$hyper_param]],
+      num(o$hyper_q50_other, 2), num(o$hyper_q50_modal, 2)
+    )
+  }, "")
+  sprintf(
+    paste0(
+      "<li><strong>Not bit-reproducible between runs.</strong> The eight plug-in fits behind <a href=\"#data\">What the data ask of the likelihood</a> were run %s times in separate R processes on the same data (the original run, the rerun that stored the dispersion table, and four repeats). ",
+      "%s of the %s results were bit-identical with the most frequent one; %s were not, each in a different run: %s. The cause was not investigated. ",
+      "The shifts are a small fraction of a posterior sd, but they mean that a refit on unchanged data can move a published number in the second decimal, which the proposed gate on the change from yesterday's fit has to allow for, ",
+      "and that a rerun of the walk-forward need not reproduce its scores to the last digit. The stored <code>descriptives.rds</code> is a run in which every fit is the most frequent result.</li>"
+    ),
+    int(length(repro$runs)), int(sum(repro$fits$n_modal)), int(sum(repro$fits$n_runs)), int(sum(repro$fits$n_runs) - sum(repro$fits$n_modal)),
+    paste(odd_txt, collapse = " and ")
+  )
+} else {
+  ""
+}
 add("<h3>Engine risks found on the way</h3>")
 add("<ul>",
     "<li><strong>Starting values.</strong> From R-INLA's default starting precision (an sd of 0.14) the optimiser settled, for men's basketball totals, in a mode with the team effects switched off: a fit that converges and is wrong. <code>fit_v2_inla()</code> starts every sd at a fifth of its prior bound, and the proposed diagnostics gate checks that no sd sits at a bound.</li>",
-    "<li><strong>Constraints are what cost time.</strong> A within-season random walk that sums to zero needs one linear constraint per team-season (over a hundred), and R-INLA then takes 40 to 60 s per fit against 5 s for the static form. The AR(1) form needs none and takes about 15 s.</li>",
+    "<li><strong>Constraints are what cost time.</strong> A within-season random walk that sums to zero needs one linear constraint per team-season (over a hundred), and R-INLA then takes 40 to 60 s per fit against 5 s for the static form. The AR(1) form needs none and takes about 15 s. All three were timed on the shared machine: ratios, not benchmarks.</li>",
     "<li><strong>Weakly identified variances.</strong> R-INLA's hyperparameter posterior is narrower than NUTS's where the data cannot separate club, season and within-season variance. Forecasts are unaffected; published interval widths for individual team strengths are within a few per cent at the median but differ more for some teams.</li>",
     "<li><strong>NUTS has its own trouble with this model.</strong> The season walk of the total model has six steps; in its centred form NUTS produced up to 75 divergences, and it was re-parameterised. R-INLA integrates that variance numerically and has no such failure.</li>",
     "<li><strong>Priors can be dropped silently.</strong> R-INLA ignores a hyperparameter specification it cannot read from the model term and fits with its defaults, without a warning (found the same night by the national-team session). <code>fit_v2_inla()</code> was checked against the fitted object: every prior, starting value and fixed value is the one stated, and a test now asserts it.</li>",
+    repro_li,
     "<li><strong>Installation.</strong> R-INLA is not on CRAN and ships its own binary; the version should be pinned in CI as CmdStan is.</li>",
     "</ul>")
 add("<h3>Shadow period</h3>")
@@ -165,6 +199,7 @@ add(
   "<li><strong>Men's handball draws.</strong> Publish with the plain rounded margin (today's band), or switch the draw shift on at a shrunk value? The surplus of level scores is there, but it has not yet paid out of sample.</li>",
   "<li><strong>Home advantage on the site.</strong> v2 has one home advantage per team for the margin. The published attack and defence components would be equal halves of it. Acceptable, or should the site show one number?</li>",
   "<li><strong>Regulation-time forecasts for basketball.</strong> Publish them alongside the final-result forecast (a contract addition, needs a matching change in metill-platform), or keep them internal for now?</li>",
+  "<li><strong>Package metadata.</strong> The branch edits <code>DESCRIPTION</code>: five <code>Collate</code> entries for the new R files, added by <code>devtools::document()</code>. R-INLA is <em>not</em> yet declared in <code>Suggests</code> (its tests skip where it is missing), and it is not on CRAN, so declaring it also means an <code>Additional_repositories</code> entry and a pinned install in CI. Keep the Collate entries when the branch merges, and declare R-INLA now or only at cutover?</li>",
   "</ol>"
 )
 
@@ -184,6 +219,7 @@ Rscript -e 'source(\"docs/reports/2026-11-15-hb-bb-v2/wf_score.R\")'            
 Rscript -e 'source(\"docs/reports/2026-11-15-hb-bb-v2/wf_compare.R\")'            # production's stored forecasts, Lengjan
 Rscript -e 'source(\"docs/reports/2026-11-15-hb-bb-v2/inla_validate.R\")'         # R-INLA at the fixed cutoff
 Rscript -e 'source(\"docs/reports/2026-11-15-hb-bb-v2/compare_validation.R\")'    # against the Stan reference
+docs/reports/2026-11-15-hb-bb-v2/repro_descriptives.sh &amp;&amp; Rscript -e 'source(\"docs/reports/2026-11-15-hb-bb-v2/repro_descriptives.R\")'   # repeat runs, compared
 Rscript -e 'source(\"docs/reports/2026-11-15-hb-bb-v2/ladder_summary.R\")'
 Rscript -e 'source(\"docs/reports/2026-11-15-hb-bb-v2/build_report.R\")'</div>")
 add("<h3>What is on the branch</h3>")
@@ -191,6 +227,8 @@ add(
   "<ul><li>Prototype functions, none called by production code: <code>R/v2-margin-total-data.R</code>, <code>R/v2-margin-total-inla.R</code>, <code>R/v2-margin-total-predict.R</code>, <code>R/v2-margin-total-adapter.R</code>, <code>R/ingest-kki-periods.R</code>.</li>",
   "<li>Tests for each: <code>tests/testthat/test-v2-margin-total-{data,inla,predict,adapter}.R</code>, <code>test-ingest-kki-periods.R</code> (the R-INLA tests skip where R-INLA is not installed).</li>",
   "<li>The experiment: <code>docs/reports/2026-11-15-hb-bb-v2/</code>, scripts and the Stan ladder in <code>stan/</code>; <code>check_headlines.R</code> recomputes the headline numbers from the result files.</li>",
+  "<li>The report's source: <code>build_report.R</code> with <code>report_s1.R</code> to <code>report_s4.R</code> and <code>report_helpers.R</code>; <code>report.md</code>, a Markdown rendering written by the same run; <code>README.md</code>, which says how to rebuild. The HTML itself is git-ignored.</li>",
+  "<li><code>DESCRIPTION</code>: five <code>Collate</code> entries for the new R files. R-INLA is not declared in <code>Suggests</code>.</li>",
   "<li>Not changed: <code>config/leagues.yml</code>, <code>Stan/</code>, the ingest, the fit, extract, decide and publish code.</li></ul>"
 )
 
@@ -200,18 +238,19 @@ src <- data.frame(
   what = c(
     "Production's implied home advantage, raw margin, ratio, by division; volatility scales; Student-t degrees of freedom",
     "Production sampler: sampled parameters, divergences, leapfrog steps, R-hat, ESS, wall time, machine slots",
-    "Identified home advantage (0.66, 0.65, 3.33, 2.21) and the hyperparameter table of the v2 model; residual, dispersion and mismatch tables",
+    "Identified home advantage and the hyperparameter table of the v2 model; residual and mismatch tables; score variance / mean given strengths (the Poisson comparison)",
     "Ladder tables: parameters, leapfrog, leave-one-out density, home advantage, held-out scores per rung; paired differences from production",
     "R-INLA against Stan: hyperparameters, states, held-out predictor, log scores, leave-one-out",
     "Within-season term at the fixed cutoff (sd, leave-one-out gain)",
     "Weekly-correlation sensitivity (0.90, 0.95, 0.98)",
-    "Walk-forward predictions; seconds per cutoff (about 6 s)",
+    "Walk-forward predictions; seconds per cutoff (about 6 s, on the shared machine)",
     "Walk-forward scores (3,930 matches); level-score shift, variance forms, Student-t, overtime; calibration by phase",
     "Within-season AR(1) minus static in the walk-forward (1,211 matches; 1. deild 549)",
     "Regulation-trained plus overtime against the final-score model",
     "v2 against production's stored forecasts (338 matches); mean expected margins; RMSE",
     "v2 and production against the Lengjan line",
     "Regulation-time coverage (99.7 %), overtime shares (7.1 % in men's B&oacute;nusdeild)",
+    "Run-to-run reproducibility of the R-INLA plug-in fits",
     "Package tests"
   ),
   file = c(
@@ -220,12 +259,13 @@ src <- data.frame(
     "<code>out/compare_validation.rds</code>", "<code>out/inla_validate_&lt;cell&gt;.rds</code>, <code>out/ladder.rds</code>", "<code>out/within_rho.rds</code>",
     "<code>out/wf_&lt;cell&gt;_none.rds</code> (handball; basketball trained on final scores), <code>out/wf_&lt;cell&gt;_none_reg.rds</code>, <code>out/wf_&lt;cell&gt;_ar1_reg.rds</code>",
     "<code>out/wf_scores.rds</code>", "<code>out/wf_scores.rds</code>", "<code>out/wf_scores.rds</code>", "<code>out/wf_compare.rds</code>", "<code>out/wf_compare.rds</code>",
-    "<code>kki/periods_matched.rds</code> (parsed cards: <code>kki/periods.tsv</code>, raw cards: <code>kki/raw/</code>)", "<code>logs/full_tests.log</code>"
+    "<code>kki/periods_matched.rds</code> (parsed cards: <code>kki/periods.tsv</code>, raw cards: <code>kki/raw/</code>)",
+    "<code>out/repro_descriptives.rds</code> (from the runs kept in <code>repro/run_*/out/descriptives.rds</code>)", "<code>logs/full_tests.log</code>"
   ),
   field = c(
     "<code>[[cell]]$ha_weighted</code>, <code>$raw_margin</code>, <code>$by_div</code>, <code>$scale_sigma_off</code>, <code>$scale_sigma_def</code>, <code>$nu</code>",
     "<code>$n_sampled</code>, <code>$n_divergent</code>, <code>$mean_leapfrog</code>, <code>$max_rhat</code>, <code>$worst_ess</code>, <code>$wall_secs</code>, <code>$machine</code>",
-    "<code>[[cell]]$hfa</code>, <code>$hyper_m</code>, <code>$hyper_t</code>, <code>$d</code> (one row per match with fitted means and residuals)",
+    "<code>[[cell]]$hfa</code>, <code>$hyper_m</code>, <code>$hyper_t</code>, <code>$d</code> (one row per match with fitted means and residuals), <code>$by_div</code>, <code>$disp</code> (per division: <code>pearson_poisson</code> is score variance / mean, <code>binom_n55</code> the same against a binomial with 55 attacks)",
     "<code>$tab</code> (one row per cell and rung: <code>n_sampled</code>, <code>leapfrog</code>, <code>elpd</code>, <code>ha_mean</code>, <code>level_sd</code>, <code>ridge_cor</code>, <code>wall_secs</code>); <code>$scores[[\"&lt;cell&gt; &lt;rung&gt;\"]]</code> (per held-out match: <code>ls_margin</code>, <code>ls_total</code>, <code>ll_wdl</code>)",
     "<code>[[\"&lt;cell&gt; &lt;response&gt;\"]]$hyper</code>, <code>$state</code>, <code>$pred</code>, <code>$log_score</code>, <code>$loo</code>",
     "<code>[[\"margin ar1 auto\"]]$hyper_sd</code>, <code>$cpo</code>", "one row per cell and correlation: <code>loo</code>, <code>ls_margin</code>",
@@ -235,7 +275,9 @@ src <- data.frame(
     "<code>[[\"bb_m reg_vs_final\"]]</code>, <code>[[\"bb_f reg_vs_final\"]]</code>: <code>ll_final_shift_div - ll_wdl_raw.final</code>, <code>lsm_final_shift_div - lsm_raw.final</code>",
     "<code>[[cell]]$cmp</code>: production <code>ls_margin</code>, <code>ls_total</code>, <code>ll_wdl</code>, <code>mean_m.prod</code>; v2 <code>lsm_raw</code>, <code>lst_raw</code>, <code>ll_wdl_raw</code>, <code>mean_m.v2</code>",
     "<code>[[cell]]$market</code>: <code>ll_market</code>, <code>ll_v2</code>, <code>ll_prod</code>",
-    "one row per stored game: <code>ok</code>, <code>overtime</code>, <code>home_reg</code>, <code>away_reg</code>, <code>sex</code>, <code>division</code>", "summary reporter output of <code>devtools::test()</code>"
+    "one row per stored game: <code>ok</code>, <code>overtime</code>, <code>home_reg</code>, <code>away_reg</code>, <code>sex</code>, <code>division</code>",
+    "<code>$fits</code> (per cell and response: <code>n_runs</code>, <code>n_modal</code>, <code>max_abs_fitted_diff</code>, <code>hyper_q50_modal</code>, <code>hyper_q50_other</code>), <code>$hfa</code>",
+    "summary reporter output of <code>devtools::test()</code>"
   )
 )
 add(tbl(src, head = c("Numbers", "Result file", "Fields"),
@@ -260,7 +302,8 @@ measured <- c(
     int(sum(vapply(names(CELLS), function(cl) if (is.null(cmp[[cl]]$cmp)) 0L else nrow(cmp[[cl]]$cmp), 1L)))
   ),
   sprintf("Regulation-time scores for %s of %s stored basketball games.", int(sum(per$ok)), int(nrow(per))),
-  "Residual diagnostics by division, season and sex."
+  "Residual diagnostics by division, season and sex.",
+  if (have(repro)) sprintf("Run-to-run reproducibility of the R-INLA plug-in fits: %s runs of the eight fits on the same data.", int(length(repro$runs)))
 )
 not_measured <- c(
   if (length(setdiff(names(CELLS), r0_done))) sprintf("Production fits for %s had not finished when this report was built.", paste(LAB[setdiff(names(CELLS), r0_done)], collapse = ", ")),
@@ -270,7 +313,8 @@ not_measured <- c(
   "A walk-forward of the within-season AR(1) for handball (dropped from the queue: the fixed-cutoff fit shows nothing for it to find).",
   "Weekly correlations other than 0.98 for the within-season term in the walk-forward (0.90 and 0.95 were only checked at the fixed cutoff).",
   "Production in a walk-forward: one production fit takes tens of minutes, so production is represented by its fixed-cutoff fit and by the forecasts it actually stored (April to May and September to November 2026 only).",
-  "Clean wall-clock benchmarks: every time was taken on a shared machine.",
+  "Joint (home, away) score distributions. The parity-respecting sampler <code>v2_sample_scores()</code> exists and is unit-tested (<code>R/v2-margin-total-predict.R</code>), but the walk-forward scored margin and total as two separate whole-number distributions, so joint scores were not evaluated.",
+  "Clean wall-clock benchmarks: every time was taken on a shared machine, the R-INLA fit times included.",
   "The full ladder for the women's cells (production and the final model only, by agreement with the scheduling session).",
   "The published JSON built end to end from a v2 fit: the adapter's algebra is tested, the wiring into <code>fit_league()</code> is proposed, not built.",
   "A league-table (season simulation) comparison between the engines.",
@@ -303,7 +347,10 @@ items <- c(items, sprintf(
   "<strong>The home advantage itself is small.</strong> Identified, it is %s goals in handball (men, women) and %s points in basketball, in each case equal to the raw margin within its standard error. The handball figure is about a third of the Bundesliga's 1.87.",
   paste(num(ha$v2[ha$cell %in% hb], 2), collapse = " and "), paste(num(ha$v2[ha$cell %in% bb], 2), collapse = " and ")
 ))
-items <- c(items, "<strong>Margin and total can be modelled separately</strong>: their residuals are uncorrelated in every cell. Handball scores have about half the variance a Poisson count would; a Gaussian with a free sd fits, for the women as for the men.")
+items <- c(items, sprintf(
+  "<strong>Margin and total can be modelled separately</strong>: their residuals are uncorrelated in every cell. Given the strengths, a handball side's score has %s to %s of the variance a Poisson count would in the league divisions; a Gaussian with a free sd fits, for the women as for the men.",
+  num(hb_disp_league[1], 2), num(hb_disp_league[2], 2)
+))
 if (have(ladder)) {
   l1 <- function(cl) {
     has_r1 <- !is.na(lad(cl, "r1_ragged", "leapfrog"))
@@ -339,10 +386,20 @@ if (have(ladder) && !is.na(lad("bb_f", "r0_prod", "elpd"))) {
 }
 if (have(val) && length(val)) {
   items <- c(items, sprintf(
-    "<strong>R-INLA reproduces NUTS.</strong> On one identical model, the largest difference in a state's posterior mean is %s posterior sds, the largest difference in a held-out match's expected margin or total is %s, and the held-out log scores agree to %s. R-INLA with hyperparameters at their mode, which the walk-forward uses, differs by at most %s.",
+    "<strong>R-INLA reproduces NUTS.</strong> On one identical model, the largest difference in a state's posterior mean is %s posterior sds, the largest difference in a held-out match's expected margin or total is %s, and the held-out log scores agree to %s. R-INLA with hyperparameters at their mode, which the walk-forward uses, differs by at most %s.%s",
     num(max(vapply(val, function(o) o$state[["max_abs_mean_diff_in_sd"]], 1)), 2), num(max(vapply(val, function(o) o$pred[["max_abs_mean_diff"]], 1)), 2),
     num(max(vapply(val, function(o) abs(o$log_score[["stan"]] - o$log_score[["inla_full_samples"]]), 1)), 4),
-    num(max(vapply(val, function(o) abs(o$log_score[["stan"]] - o$log_score[["inla_eb"]]), 1)), 4)
+    num(max(vapply(val, function(o) abs(o$log_score[["stan"]] - o$log_score[["inla_eb"]]), 1)), 4),
+    if (have(repro)) {
+      sprintf(
+        " R-INLA is not bit-reproducible between runs: of %s fits (eight models, %s runs on the same data), %s landed on a slightly different optimum (handball men's home advantage %s against %s).",
+        int(sum(repro$fits$n_runs)), int(length(repro$runs)), int(sum(repro$fits$n_runs) - sum(repro$fits$n_modal)),
+        num(repro$hfa$hfa_other[repro$hfa$cell == "hb_m"], 3),
+        num(repro$hfa$hfa_modal[repro$hfa$cell == "hb_m"], 3)
+      )
+    } else {
+      ""
+    }
   ))
 }
 phase_sd <- unlist(lapply(list(hbm, hbf, bbm, bbf), function(sc) {
@@ -351,7 +408,7 @@ phase_sd <- unlist(lapply(list(hbm, hbf, bbm, bbf), function(sc) {
   tapply(z[keep], droplevels(sc$phase[keep]), stats::sd)
 }))
 items <- c(items, sprintf(
-  "<strong>Walk-forward.</strong> %s matches scored over seasons 2023 to 2027 with weekly refits. The predictive spread is calibrated: the standardised margin residual has sd between %s and %s per cell, and between %s and %s in every regular-season phase of every cell. On the %s matches with a stored production forecast: handball margin %s, total %s, result %s; basketball margin %s, total %s, result %s (log score per match, v2 minus production, pooled over the sexes). Better in handball, level within noise in basketball.",
+  "<strong>Walk-forward.</strong> %s matches scored over seasons 2023 to 2027 with weekly refits. The predictive spread is calibrated: the standardised margin residual has sd between %s and %s per cell, and between %s and %s in every regular-season phase of every cell. On the %s matches with a stored production forecast: handball margin %s, total %s, result %s; basketball margin %s, total %s, result %s (log score per match, v2 minus production, pooled over the sexes). Better on handball totals; handball margin and result within noise; basketball within noise. Margin and total were scored separately; joint (home, away) scores were not evaluated.",
   int(sum(vapply(list(hbm, hbf, bbm, bbf), nrow, 1L))),
   num(min(vapply(list(hbm, hbf, bbm, bbf), function(s) stats::sd((s$margin_fit - s$mean_m) / s$s_m), 1)), 2),
   num(max(vapply(list(hbm, hbf, bbm, bbf), function(s) stats::sd((s$margin_fit - s$mean_m) / s$s_m), 1)), 2),
@@ -373,5 +430,5 @@ items <- c(items, sprintf(
   pct(mean(per$ok), 1), pct(ot_rate("male", "BD"), 1), int(sum(with(rbind(bbm[bbm$margin_fit == 0, c("mean_m", "margin")], bbf[bbf$margin_fit == 0, c("mean_m", "margin")]), ifelse(mean_m > 0, margin > 0, margin < 0)))),
   int(sum(bbm$margin_fit == 0) + sum(bbf$margin_fit == 0))
 ))
-items <- c(items, sprintf("<strong>Proposal.</strong> v2 on R-INLA for both sports (static for handball, %s for basketball), basketball on regulation time; swap the engine behind an adapter that keeps the published JSON contract; a four to five week shadow period per sport with a stated gate; store regulation-time scores. Six decisions are yours.", if (bb_keep_ar1) "with the within-season term" else "static"))
+items <- c(items, sprintf("<strong>Proposal.</strong> v2 on R-INLA for both sports (static for handball, %s for basketball), basketball on regulation time; swap the engine behind an adapter that keeps the published JSON contract; a four to five week shadow period per sport with a stated gate; store regulation-time scores. Seven decisions are yours.", if (bb_keep_ar1) "with the within-season term" else "static"))
 add("<ol>", paste0("<li>", items, "</li>", collapse = "\n"), "</ol>")

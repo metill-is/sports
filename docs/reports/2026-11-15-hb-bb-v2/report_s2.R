@@ -11,10 +11,6 @@ add("<h2 id=\"data\">What the data ask of the likelihood</h2>")
 add("<p>Before adding structure, the residuals of the simplest version of the new model (one fit per cell on every played match up to 14 November 2026) show what the scores actually look like once team strengths are accounted for. These residuals are in-sample; the calibration tables in the walk-forward section repeat the important ones out of sample.</p>")
 by_div <- do.call(rbind, lapply(names(CELLS), function(cl) {
   d <- desc[[cl]]$d
-  mu_h <- (d$mu_t + d$mu_m) / 2
-  mu_a <- (d$mu_t - d$mu_m) / 2
-  rh <- d$home_score - mu_h
-  ra <- d$away_score - mu_a
   do.call(rbind, lapply(split(seq_len(nrow(d)), d$division), function(ix) {
     x <- d[ix, ]
     data.frame(
@@ -24,7 +20,7 @@ by_div <- do.call(rbind, lapply(names(CELLS), function(cl) {
       home = pct(mean(x$margin > 0)), draw = if (CELLS[[cl]]$sport == "handball") pct(mean(x$margin == 0)) else "–",
       rsd = sprintf("%s / %s", num(stats::sd(x$r_m), 2), num(stats::sd(x$r_t), 2)),
       cor_mt = num(stats::cor(x$r_m, x$r_t), 2),
-      pois = num(mean(c(rh[ix]^2 / mu_h[ix], ra[ix]^2 / mu_a[ix])), 2),
+      pois = num(desc[[cl]]$disp$pearson_poisson[desc[[cl]]$disp$division == x$division[1]], 2),
       kurt = sprintf("%s / %s", num(mean((x$r_m / stats::sd(x$r_m))^4) - 3, 2), num(mean((x$r_t / stats::sd(x$r_t))^4) - 3, 2))
     )
   }))
@@ -35,11 +31,17 @@ add(tbl(by_div,
     "Cell", "Division", "Matches", "Margin: mean / sd", "Total: mean / sd", "Home wins", "Level scores", "Residual sd: margin / total",
     "Correlation of margin and total residuals", "Score variance / mean, given strengths", "Excess kurtosis: margin / total"
   ),
-  note = "Margin is home minus away, total is home plus away. \"Score variance / mean\" is the Pearson dispersion of each side's score around its fitted mean: 1 would be Poisson. Handball's PO rows are the 2026 play-offs only (16 and 20 matches)."
+  note = "Margin is home minus away, total is home plus away. \"Score variance / mean\" is the Pearson dispersion of each side's score around its fitted mean: 1 would be Poisson (stored as <code>pearson_poisson</code> in <code>out/descriptives.rds</code>, <code>[[cell]]$disp</code>). Handball's PO rows are the 2026 play-offs only (16 and 20 matches)."
 ))
+hb_disp <- do.call(rbind, lapply(hb, function(cl) desc[[cl]]$disp))
+hb_disp_league <- range(hb_disp$pearson_poisson[hb_disp$division != "PO"])
+hb_disp_po <- hb_disp$pearson_poisson[hb_disp$division == "PO"]
 add(paste0(
   "<p><strong>Margin and total are uncorrelated</strong> once strengths are in: every cell is within a few hundredths of zero. That is the condition under which the two can be modelled separately, and it holds. ",
-  "<strong>Handball scores are under-dispersed</strong>: the variance of a side's score is about half its mean in every division, for women as for men, so a Poisson model would be badly over-dispersed and a free Gaussian variance is the honest choice. ",
+  sprintf(
+    "<strong>Handball scores are under-dispersed</strong>: the variance of a side's score is %s to %s of its mean in the league divisions, for women as for men (%s in the two small play-off samples), so a Poisson model would be badly over-dispersed and a free Gaussian variance is the honest choice. ",
+    num(hb_disp_league[1], 2), num(hb_disp_league[2], 2), paste(num(hb_disp_po, 2), collapse = " and ")
+  ),
   "<strong>Tails are close to Gaussian</strong> in handball. Basketball margins are somewhat heavier-tailed, and women's 1. deild markedly so, with a few very large margins; the walk-forward tests whether a heavier-tailed predictive pays.</p>"
 ))
 

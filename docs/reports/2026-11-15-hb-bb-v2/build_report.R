@@ -16,6 +16,7 @@ val <- rd("compare_validation.rds")
 wf <- rd("wf_scores.rds")
 cmp <- rd("wf_compare.rds")
 desc <- rd("descriptives.rds")
+repro <- rd("repro_descriptives.rds")
 per <- readRDS(file.path(OUT, "kki", "periods_matched.rds"))
 iv <- lapply(stats::setNames(names(CELLS), names(CELLS)), function(cl) rd(sprintf("inla_validate_%s.rds", cl)))
 dat <- lapply(stats::setNames(names(CELLS), names(CELLS)), function(cl) rd(sprintf("data_%s_%s.rds", cl, cutoff)))
@@ -56,7 +57,7 @@ pool <- function(cells, a, b) {
 # ---------------------------------------------------------------- header
 n_r0 <- if (have(diag)) length(diag) else 0L
 add("<h1>Handball and basketball v2</h1>")
-add("<p class=\"meta\">Measured production fits, a lean (margin, total) model on R-INLA with Stan as reference, and a cutover proposal · four cells: handball and basketball, men and women · prepared 15 November 2026 on branch <code>feat/hb-bb-v2</code> · no production path, config or ingest was changed</p>")
+add("<p class=\"meta\">Measured production fits, a lean (margin, total) model on R-INLA with Stan as reference, and a cutover proposal · four cells: handball and basketball, men and women · prepared 15 November 2026, revised 16 November after an independent check, on branch <code>feat/hb-bb-v2</code> · no production path, config or ingest was changed</p>")
 
 wf_secs <- unlist(lapply(c("hb_m_none", "hb_f_none", "bb_m_none_reg", "bb_f_none_reg"), function(k) {
   f <- file.path(OUT, "out", sprintf("wf_%s.rds", k))
@@ -84,26 +85,33 @@ lede <- sprintf(
   paste0(
     "<p class=\"lede\">The handball and basketball models share the football model's structure and, measured, its defects. ",
     "The home advantage the production fits imply, set against the raw home-minus-away margin, is %s. In handball that is the same twofold inflation as in football. ",
-    "A much smaller model does the same job: one net strength per team for the margin, one scoring level per team for the total, a pooled home advantage, all Gaussian, fitted by R-INLA in about %s seconds per cell on one core (margin and total together), where the production fits took %s. ",
-    "Refitted every week and scored over five seasons (%s matches), it is calibrated, and on the %s matches where production's own stored forecasts exist it is better in handball (clearly so on totals) and level within noise in basketball. ",
+    "A much smaller model does the same job: one net strength per team for the margin, one scoring level per team for the total, a pooled home advantage, all Gaussian, fitted by R-INLA in about %s seconds per cell on one core (margin and total together; the median over %s weekly fits, timed on the same shared machine as the production fits, so good for the ratio and not a benchmark), where the production fits took %s. ",
+    "Refitted every week and scored over five seasons (%s matches), it is calibrated. On the %s matches where production's own stored forecasts exist it is better on handball totals; the handball margin and result differences, and every basketball difference, are within noise. ",
     "Two sport-specific findings matter for the product: regulation-time scores for basketball can be had from the source already in use (%s of stored games), and level scores after regulation are %s times as common in the men's top division as a smooth curve implies.</p>"
   ),
   paste(vapply(ha$cell[!is.na(ha$prod)], function(cl) {
     sprintf("%s against %s in %s (&times;%s)", num(ha$prod[ha$cell == cl], 2), num(ha$raw[ha$cell == cl], 2), tolower(LAB[[cl]]), num(ha$ratio[ha$cell == cl], 2))
   }, ""), collapse = ", "),
-  num(stats::median(wf_secs), 0), prod_wall_txt, int(sum(vapply(list(hbm, hbf, bbm, bbf), function(x) if (is.null(x)) 0L else nrow(x), 1L))),
+  num(stats::median(wf_secs), 0), int(length(wf_secs)), prod_wall_txt, int(sum(vapply(list(hbm, hbf, bbm, bbf), function(x) if (is.null(x)) 0L else nrow(x), 1L))),
   int(sum(vapply(names(CELLS), function(cl) if (is.null(cmp[[cl]]$cmp)) 0L else nrow(cmp[[cl]]$cmp), 1L))),
   pct(mean(per$ok), 1), num(mean(bbm$margin_fit[bbm$division == "BD"] == 0) / mean(bbm$p_draw[bbm$division == "BD"]), 1)
 )
 add(lede)
+add(paste0(
+  "<p class=\"note\"><strong>The HTML build of this report is local-only and is not in git</strong> (<code>docs/reports/*.html</code> is ignored). ",
+  "The branch carries what produces it: the build scripts in <code>docs/reports/2026-11-15-hb-bb-v2/</code>, a Markdown rendering written by the same run (<code>report.md</code> in that folder, tracked) and a <code>README.md</code> with the rebuild command. ",
+  "The result files the scripts read are local too (<code>", OUT, "/</code>); without them the report is rebuilt by rerunning the experiment (appendix, \"Reproducing\").</p>"
+))
 add("<nav><a href=\"#summary\">Summary</a><a href=\"#scope\">Measured and not measured</a><a href=\"#prod\">Production fits</a><a href=\"#data\">What the data ask for</a><a href=\"#ladder\">The ladder</a><a href=\"#spec\">The v2 model</a><a href=\"#inla\">INLA against Stan</a><a href=\"#handball\">Handball</a><a href=\"#basketball\">Basketball</a><a href=\"#wf\">Walk-forward</a><a href=\"#proposal\">Cutover proposal</a><a href=\"#decisions\">Your decisions</a><a href=\"#appendix\">Appendix</a></nav>")
 
 for (part in c("report_s1.R", "report_s2.R", "report_s3.R", "report_s4.R")) {
   source(file.path(EXP_DIR, part))
 }
 
-order <- c("head", "summary", "scope", "prod", "data", "ladder", "spec", "inla", "handball", "basketball", "wf", "proposal",
-           "decisions", "appendix")
+order <- c(
+  "head", "summary", "scope", "prod", "data", "ladder", "spec", "inla", "handball", "basketball", "wf", "proposal",
+  "decisions", "appendix"
+)
 stopifnot(all(names(S) %in% order))
 body <- paste(unlist(S[order]), collapse = "\n\n")
 html <- paste0(
@@ -114,3 +122,41 @@ html <- paste0(
 out_file <- "docs/reports/2026-11-15-hb-bb-v2.html"
 writeLines(html, out_file, useBytes = TRUE)
 cat(sprintf("wrote %s (%d bytes)\n", out_file, file.size(out_file)))
+
+# WHY: the HTML is git-ignored (docs/reports/*.html), so the same run writes a tracked
+# Markdown rendering: the report's text and tables, each figure reduced to its caption.
+pandoc <- Sys.which("pandoc")
+md_file <- file.path(EXP_DIR, "report.md")
+if (nzchar(pandoc)) {
+  md_html <- gsub("(?s)<nav>.*?</nav>", "", html, perl = TRUE)
+  md_html <- gsub(
+    "(?s)<figure>\\s*<svg.*?</svg>\\s*<figcaption>(.*?)</figcaption></figure>",
+    "<p><em>Figure (drawn in the HTML build only).</em> \\1</p>", md_html,
+    perl = TRUE
+  )
+  md_html <- gsub("(?s)<div class=\"eq\">(.*?)</div>", "<pre>\\1</pre>", md_html, perl = TRUE)
+  stopifnot(!grepl("<svg", md_html, fixed = TRUE))
+  tmp_html <- tempfile(fileext = ".html")
+  tmp_lua <- tempfile(fileext = ".lua")
+  tmp_md <- tempfile(fileext = ".md")
+  writeLines(md_html, tmp_html, useBytes = TRUE)
+  writeLines(c("function Div(el) return el.content end", "function Span(el) return el.content end"), tmp_lua)
+  status <- system2(pandoc, c(
+    "--from", "html", "--to", "gfm", "--wrap=none", "--lua-filter", shQuote(tmp_lua), "--output", shQuote(tmp_md), shQuote(tmp_html)
+  ))
+  stopifnot(status == 0L)
+  md <- readLines(tmp_md, encoding = "UTF-8", warn = FALSE)
+  for (h in regmatches(html, gregexpr("<h2 id=\"[^\"]+\">[^<]+</h2>", html))[[1]]) {
+    id <- sub("<h2 id=\"([^\"]+)\">.*", "\\1", h)
+    slug <- gsub(" ", "-", gsub("[^a-z0-9 -]", "", tolower(sub(".*\">([^<]+)</h2>", "\\1", h))))
+    md <- gsub(sprintf("](#%s)", id), sprintf("](#%s)", slug), md, fixed = TRUE)
+  }
+  md <- c(
+    "<!-- Generated by docs/reports/2026-11-15-hb-bb-v2/build_report.R from the result files.",
+    "     Do not edit by hand: change build_report.R or report_s*.R and rebuild. -->", "", md
+  )
+  writeLines(md, md_file, useBytes = TRUE)
+  cat(sprintf("wrote %s (%d lines)\n", md_file, length(md)))
+} else {
+  cat(sprintf("pandoc not found: %s not rewritten\n", md_file))
+}

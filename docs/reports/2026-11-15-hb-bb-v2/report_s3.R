@@ -252,7 +252,7 @@ if (have(bbm) && have(bbf)) {
 # ---------------------------------------------------------------- walk-forward
 cur <- "wf"
 add("<h2 id=\"wf\">Leak-free walk-forward</h2>")
-add("<p>For each cell, the model was refitted at every weekly cutoff from the start of season 2022 to 14 November 2026 on the results dated up to the cutoff (production's training filter, forfeits dropped) and asked for the matches of the following seven days. Hyperparameters are re-estimated at every cutoff. Season 2022 is used only to fit the second-stage quantities; scores are for seasons 2023 to 2027. The model is the static form of v2 fitted with R-INLA (hyperparameters at their mode); basketball is trained on regulation-time scores.</p>")
+add("<p>For each cell, the model was refitted at every weekly cutoff from the start of season 2022 to 14 November 2026 on the results dated up to the cutoff (production's training filter, forfeits dropped) and asked for the matches of the following seven days. Hyperparameters are re-estimated at every cutoff. Season 2022 is used only to fit the second-stage quantities; scores are for seasons 2023 to 2027. The model is the static form of v2 fitted with R-INLA (hyperparameters at their mode); basketball is trained on regulation-time scores. Margin and total are scored as two separate whole-number distributions. The joint (home, away) score distribution was not scored: the parity-respecting sampler for it exists and is unit-tested (<code>v2_sample_scores()</code> in <code>R/v2-margin-total-predict.R</code>), but no walk-forward score in this report uses it.</p>")
 wf_row <- function(cl, sc, label, m, t, w, mfit = "margin_fit") {
   z_m <- (sc$margin_fit - sc$mean_m) / sc$s_m
   z_t <- (sc$total_fit - sc$mean_t) / sc$s_t
@@ -400,8 +400,24 @@ if (have(hbm) && have(bbm)) {
       note = "Production's forecast is the newest archived fit dated strictly before the match (median lead two to three days); v2's cutoff is up to seven days before the match, so v2 is the one working with older information. The stored forecasts cover late April to May 2026 and September to November 2026. Basketball is scored on the final result; v2 reaches it from its regulation-time model through the tie probability and overtime. Positive differences favour v2."
     ))
     hj <- rbind(cmp$hb_m$cmp[, c("mean_m.prod", "mean_m.v2", "margin")], cmp$hb_f$cmp[, c("mean_m.prod", "mean_m.v2", "margin")])
+    pairs3 <- list(c("lsm_raw", "ls_margin"), c("lst_raw", "ls_total"), c("ll_wdl_raw", "ll_wdl"))
+    z_of <- function(cells, pr) {
+      x <- pool(cells, pr[1], pr[2])
+      x[["diff"]] / x[["se"]]
+    }
+    hb_z <- vapply(pairs3, function(pr) z_of(hb, pr), 1)
+    bb_z <- unlist(lapply(list(bb, "bb_m", "bb_f"), function(cs) vapply(pairs3, function(pr) z_of(cs, pr), 1)))
     add(sprintf(
-      "<p>In handball production expects the home side to win by %s goals on average over these matches; v2 expects %s and the result was %s. That is the home-advantage inflation showing up in the published numbers. In basketball the two are close on every measure; none of the basketball differences is larger than about one and a half standard errors.</p>",
+      paste0(
+        "<p><strong>What this supports.</strong> One difference is clear: the handball total (%s standard errors). ",
+        "The handball margin (%s standard errors) and result (%s) point the same way and are within noise. ",
+        "No basketball difference, per cell or pooled, is larger than %s standard errors: basketball is level within noise. ",
+        "So against production's stored forecasts v2 is better on handball totals, and not shown to be better or worse on anything else.</p>"
+      ),
+      num(hb_z[2], 1), num(hb_z[1], 1), num(hb_z[3], 1), num(max(abs(bb_z)), 1)
+    ))
+    add(sprintf(
+      "<p>In handball production expects the home side to win by %s goals on average over these matches; v2 expects %s and the result was %s. That is the home-advantage inflation showing up in the published numbers.</p>",
       num(mean(hj$mean_m.prod), 2), num(mean(hj$mean_m.v2), 2), num(mean(hj$margin), 2)
     ))
     mk <- do.call(rbind, lapply(names(CELLS), function(cl) {
@@ -431,7 +447,7 @@ if (have(hbm) && have(bbm)) {
     if (file.exists(f)) with(readRDS(f)$cut, secs_m + secs_t) else NULL
   }))
   add(sprintf(
-    "<p class=\"note\">Compute: %s weekly cutoffs, two R-INLA fits each (margin and total), median %s s per cutoff for both fits together, single core per cell, four cells side by side inside one slot of the shared limiter while a sibling session's job held the other slot.</p>",
+    "<p class=\"note\">Compute: %s weekly cutoffs, two R-INLA fits each (margin and total), median %s s per cutoff for both fits together, single core per cell, four cells side by side inside one slot of the shared limiter while a sibling session's job held the other slot. Like every time in this report it was taken on a shared machine: good for the ratio to the production fits, not a benchmark.</p>",
     int(length(secs)), num(stats::median(secs), 1)
   ))
 } else {
