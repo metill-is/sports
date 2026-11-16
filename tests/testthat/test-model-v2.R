@@ -450,6 +450,12 @@ test_that("production's extract_posteriors reads the adapted fit", {
   expect_true(all(b$home_goals >= 0))
 })
 
+test_that("fixtures from prepare_data keep their shape when there are none", {
+  none <- fv2_pred_from_prep(toy_prep()$pred_d[0, ])
+  expect_identical(nrow(none), 0L)
+  expect_identical(names(none), names(fv2_pred_from_prep(toy_prep()$pred_d)))
+})
+
 test_that("the adapter refuses training rows in a different order", {
   prep <- toy_prep()
   spec <- fv2_build(toy_matches()[c(2, 1, 3:6), ], fv2_pred_from_prep(prep$pred_d))
@@ -511,12 +517,31 @@ test_that("the INLA gate passes a sound fit and names each kind of failure", {
   })
   expect_false(no_mode$passed)
   expect_match(no_mode$breaches, "mode not found")
+  # A status that is absent, empty or NA must fail the check, not skip it.
+  for (status in list(NULL, integer(0), NA_integer_)) {
+    absent <- breach(function(f) {
+      f["mode_status"] <- list(status)
+      f
+    })
+    expect_false(absent$passed)
+    expect_match(absent$breaches, "mode not found")
+  }
 
   wide <- breach(function(f) {
     f$draws$hyper[, "tau_att"] <- 9
     f
   })
   expect_match(wide$breaches, "tau_att = 9")
+  unknown <- breach(function(f) {
+    f$draws$hyper[1, "sigma_att"] <- NA
+    f
+  })
+  expect_match(unknown$breaches, "sigma_att")
+  one_column <- breach(function(f) {
+    f$draws$hyper <- f$draws$hyper[, "tau_att", drop = FALSE]
+    f
+  })
+  expect_true(one_column$passed)
 
   not_finite <- breach(function(f) {
     f$draws$att[1, 1] <- NaN
@@ -552,13 +577,25 @@ test_that("the INLA gate skips the goals check when there is nothing to predict"
   expect_identical(c(g$evaluated, g$skipped), c(3L, 2L))
 })
 
+test_that("history is counted in seasons before the one being forecast", {
+  # One earlier season, before or during the next: the regime where INLA was
+  # measurably worse than NUTS.
+  expect_identical(fv2_earlier_seasons(2021L, 2022L), 1L)
+  expect_identical(fv2_earlier_seasons(c(2021L, 2021L, 2022L), 2022L), 1L)
+  # Two earlier seasons give the same answer before the third starts and
+  # once it is under way.
+  expect_identical(fv2_earlier_seasons(c(2021L, 2022L), 2023L), 2L)
+  expect_identical(fv2_earlier_seasons(c(2021L, 2022L, 2023L), 2023L), 2L)
+  expect_identical(FOOTBALL_V2_MIN_EARLIER_SEASONS, 2L)
+})
+
 test_that("the INLA engine is refused outside football and on short histories", {
   root <- withr::local_tempdir()
   s <- v2_store(root, n_season = 2L)
   prep <- prepare_data(s$league, "male", end_date = s$end_date, root = root)
   expect_error(
     fit_model_v2_inla(prep, s$league, "male", end_date = s$end_date, root = root),
-    "at least 3 seasons"
+    "at least 2 seasons of results before season 2022; this cell has 1"
   )
   handball <- utils::modifyList(s$league, list(sport = "handball"))
   expect_error(
@@ -576,9 +613,11 @@ test_that("fit_league fits with Stan unless the league says engine: inla", {
     gate = list(passed = TRUE, evaluated = 4L, skipped = 1L)
   )
   inla_args <- NULL
+  stan_args <- NULL
   testthat::local_mocked_bindings(
     fit_model = function(...) {
       called <<- c(called, "stan")
+      stan_args <<- list(...)
       structure(fake_fit, class = "CmdStanMCMC")
     },
     fit_model_v2_inla = function(prep, league, sex, ...) {
@@ -594,12 +633,23 @@ test_that("fit_league fits with Stan unless the league says engine: inla", {
   run <- function(league) {
     suppressMessages(fit_league(
       league = league, sex = "male", fit_date = s$end_date, root = root,
-      chains = 2L, iter_sampling = 150L, seed = 99L
+      chains = 2L, iter_warmup = 120L, iter_sampling = 150L, adapt_delta = 0.9, seed = 99L
     ))
   }
 
   run(s$league)
   expect_identical(called, "stan")
+  # The Stan call is the one fit_league() made before the engine key existed.
+  expect_setequal(
+    names(stan_args),
+    c("stan_data", "stan_model_path", "method", "chains", "iter_warmup", "iter_sampling", "adapt_delta", "seed")
+  )
+  expect_identical(
+    stan_args[c("method", "chains", "iter_warmup", "iter_sampling", "adapt_delta", "seed")],
+    list(method = "sample", chains = 2L, iter_warmup = 120L, iter_sampling = 150L, adapt_delta = 0.9, seed = 99L)
+  )
+  expect_identical(stan_args$stan_data$N, s$n_obs)
+  expect_identical(basename(stan_args$stan_model_path), "bivariate_poisson_no_inflation.stan")
   run(utils::modifyList(s$league, list(engine = "stan")))
   expect_identical(called, c("stan", "stan"))
   expect_false(dir.exists(file.path(root, "beliefs", "diagnostics")))
@@ -616,8 +666,13 @@ test_that("fit_league fits with Stan unless the league says engine: inla", {
   expect_identical(nrow(row), 1L)
   expect_identical(row$n_obs, s$n_obs)
   expect_identical(row$total_iter, 300L)
-  expect_true(is.na(row$div_frac) && is.na(row$max_rhat) && is.na(row$chains))
-  expect_true(row$passed)
+  sampler_only <- c(
+    "n_divergent", "div_frac", "n_max_treedepth", "treedepth_frac", "min_ebfmi", "max_rhat",
+    "min_ess_bulk", "min_ess_tail", "adapt_delta", "iter_sampling", "chains"
+  )
+  expect_identical(names(row)[vapply(row, anyNA, logical(1))], sampler_only)
+  expect_identical(row$passed, TRUE)
+  expect_identical(c(row$gates_evaluated, row$gates_skipped), c(4L, 1L))
 
   expect_error(run(utils::modifyList(s$league, list(engine = "laplace"))), "Unknown engine")
   expect_identical(called, c("stan", "stan", "inla"))
@@ -646,6 +701,30 @@ test_that("an INLA fit of a football store reads like a production fit", {
   beliefs <- extract_posteriors(fit, prep$pred_d, league = s$league, sex = "male", fit_date = s$end_date)
   expect_identical(nrow(beliefs), s$n_pred * 200L)
   expect_true(all(beliefs$home_goals >= 0 & beliefs$away_goals >= 0))
+
+  # What fit_league() saves: the draws under their production names and the
+  # record of how they were made.
+  file <- withr::local_tempfile(fileext = ".rds")
+  fit$save_object(file = file)
+  saved <- readRDS(file)
+  expect_identical(saved$meta$engine, "inla")
+  expect_identical(saved$meta$version, "2.0")
+  expect_identical(saved$meta$n_obs, s$n_obs)
+  expect_true(all(sprintf("goals1_pred[%d]", seq_len(s$n_pred)) %in% posterior::variables(saved$draws)))
+  expect_identical(posterior::ndraws(saved$draws), 200L)
+
+  # A round-mode replay at the end of a season has no fixture left.
+  nothing_ahead <- prep
+  nothing_ahead$pred_d <- prep$pred_d[0, ]
+  bare <- suppressWarnings(suppressMessages(fit_model_v2_inla(
+    nothing_ahead, s$league, "male",
+    end_date = s$end_date, root = root,
+    n_draws = 50L, seed = 7L, int_strategy = "eb", threads = "1:1"
+  )))
+  expect_true(bare$gate$passed)
+  expect_false("goals1_pred" %in% bare$variables)
+  expect_error(bare$draws("goals1_pred"), "no draws")
+  expect_identical(posterior::ndraws(bare$draws("home_advantage_tot")), 50L)
 
   # R-INLA reruns are not guaranteed bit-identical, so the rerun is compared
   # with a tolerance far below the posterior sd and far above rounding.

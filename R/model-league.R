@@ -206,6 +206,14 @@ fit_league <- function(league_key = NULL,
     stop("Stan model missing: ", stan_path, call. = FALSE)
   }
 
+  # `engine` is an optional league key. Checked here so a typo is refused
+  # before any data is read.
+  engine <- league$engine %||% "stan"
+  if (!engine %in% c("stan", "inla")) {
+    stop("Unknown engine: ", engine, " (expected \"stan\" or \"inla\")", call. = FALSE)
+  }
+  use_inla <- identical(engine, "inla")
+
   prep <- prepare_data(league, sex,
     end_date = end_date, root = root,
     from_season = from_season,
@@ -263,18 +271,11 @@ fit_league <- function(league_key = NULL,
     "fit_league({league$sport}/{league$country}/{sex}): sampler seed = {seed}"
   )
 
-  # Engine switch. `engine` is an optional league key; absent or "stan" is
-  # the path every league takes today, unchanged. "inla" fits football model
-  # v2 and returns a fit under the same variable names, so everything below
-  # this point is shared.
-  engine <- league$engine %||% "stan"
-  if (!engine %in% c("stan", "inla")) {
-    stop("Unknown engine: ", engine, " (expected \"stan\" or \"inla\")", call. = FALSE)
-  }
-  use_inla <- identical(engine, "inla")
-  n_draws <- as.integer(chains) * as.integer(iter_sampling)
-
+  # Engine switch. Absent or "stan" is the path every league takes today,
+  # unchanged. "inla" fits football model v2 and returns a fit under the same
+  # variable names, so everything below this point is shared.
   if (use_inla) {
+    n_draws <- as.integer(chains) * as.integer(iter_sampling)
     fit <- fit_model_v2_inla(
       prep, league, sex,
       end_date    = end_date,

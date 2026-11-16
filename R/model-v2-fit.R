@@ -18,13 +18,31 @@ football_v2_options <- function() {
   list(clock = "break", rho = 0.8, param = "sq", style = "static", level_walk = TRUE)
 }
 
-#' Fewest seasons of results the INLA engine accepts.
+#' Fewest seasons of results, before the season being forecast, that the INLA
+#' engine accepts.
 #'
 #' With one earlier season INLA's forecasts were measurably worse than NUTS's
 #' (exact-scoreline log score down 0.008 to 0.018 with full integration), so
-#' a league that short stays on Stan.
+#' a league with only one season of history stays on Stan.
 #' @noRd
-FOOTBALL_V2_MIN_SEASONS <- 3L
+FOOTBALL_V2_MIN_EARLIER_SEASONS <- 2L
+
+#' Seasons of results before the one being forecast.
+#'
+#' Counted against the season of the fixtures, not against the calendar, so
+#' the answer is the same before a season starts and a month into it.
+#' @noRd
+fv2_earlier_seasons <- function(train_seasons, forecast_season) {
+  sum(unique(train_seasons) < forecast_season)
+}
+
+#' A `save_object()` for an adapted fit that keeps only what it needs alive.
+#' @noRd
+fv2_saver <- function(draws, meta) {
+  force(draws)
+  force(meta)
+  function(file) saveRDS(list(meta = meta, draws = draws()), file)
+}
 
 #' Checks an INLA fit must pass before anything is extracted from it.
 #'
@@ -44,11 +62,15 @@ fv2_inla_gate <- function(f, spec, previous_sd = NULL, max_jump = 3,
   skipped <- character()
   d <- f$draws
 
-  if (!identical(as.integer(f$mode_status), 0L)) {
-    breaches <- c(breaches, sprintf("hyperparameter mode not found (mode.status = %s)", format(f$mode_status)))
+  # WHY: a status that is absent must fail the check, not skip it. sprintf()
+  # on a zero-length value returns nothing, which would add no breach.
+  status <- f$mode_status
+  if (length(status) != 1L || is.na(status) || status != 0L) {
+    shown <- if (length(status)) paste(format(status), collapse = ", ") else "missing"
+    breaches <- c(breaches, sprintf("hyperparameter mode not found (mode.status = %s)", shown))
   }
 
-  sds <- colMeans(d$hyper)
+  sds <- colMeans(as.matrix(d$hyper))
   bad <- !is.finite(sds) | sds < sd_range[[1]] | sds > sd_range[[2]]
   if (any(bad)) {
     breaches <- c(breaches, sprintf(
@@ -139,10 +161,13 @@ fit_model_v2_inla <- function(prep, league, sex, end_date,
   results$cell <- fv2_cell(results$division, results$season)
   train <- as.data.frame(model_training_results(results, league, end_date = end_date, from_season = from_season))
 
-  n_seasons <- length(unique(train$season))
-  if (n_seasons < FOOTBALL_V2_MIN_SEASONS) {
+  has_fixtures <- nrow(prep$pred_d) > 0L
+  fixture_season <- as.integer(format(prep$pred_d$match_date, "%Y"))
+  forecast_season <- max(c(train$season, fixture_season))
+  n_earlier <- fv2_earlier_seasons(train$season, forecast_season)
+  if (n_earlier < FOOTBALL_V2_MIN_EARLIER_SEASONS) {
     cli::cli_abort(c(
-      "The INLA engine needs at least {FOOTBALL_V2_MIN_SEASONS} seasons of results; this cell has {n_seasons}.",
+      "The INLA engine needs at least {FOOTBALL_V2_MIN_EARLIER_SEASONS} seasons of results before season {forecast_season}; this cell has {n_earlier}.",
       i = "With so little history INLA's forecasts were measurably worse than NUTS's. Use {.code engine: stan}."
     ))
   }
@@ -181,14 +206,13 @@ fit_model_v2_inla <- function(prep, league, sex, end_date,
     rbind(
       membership(results, results$season),
       if (!is.null(schedules) && nrow(schedules)) membership(schedules, schedules$season),
-      membership(prep$pred_d, format(prep$pred_d$match_date, "%Y"))
+      membership(prep$pred_d, fixture_season)
     ),
     fv2_rank_order(league)
   )
-  spec <- do.call(fv2_build, c(
-    list(train, fv2_pred_from_prep(prep$pred_d, cell_of = fv2_cell), divisions = divisions),
-    football_v2_options()
-  ))
+  # A round-mode replay at the end of a season has nothing left to predict.
+  pred <- if (has_fixtures) fv2_pred_from_prep(prep$pred_d, cell_of = fv2_cell)
+  spec <- do.call(fv2_build, c(list(train, pred, divisions = divisions), football_v2_options()))
 
   f <- fv2_fit_inla(spec, int_strategy = int_strategy, n_samp = n_draws, threads = threads, seed = seed)
   gate <- fv2_inla_gate(f, spec)
@@ -215,8 +239,9 @@ fit_model_v2_inla <- function(prep, league, sex, end_date,
   fit[names(meta)] <- meta
   # WHY: fit_league() saves every fit with fit$save_object(). What is worth
   # keeping from this engine is the draws under their production names and
-  # the record of how they were produced.
-  fit$save_object <- function(file) saveRDS(list(meta = meta, draws = fit$draws()), file)
+  # the record of how they were produced. The saver is built outside this
+  # function so it does not keep the INLA result and the results table alive.
+  fit$save_object <- fv2_saver(fit$draws, meta)
   fit
 }
 
@@ -247,7 +272,8 @@ persist_fit_diagnostics_inla <- function(fit, league, sex, fit_date,
     min_ess_bulk = NA_real_,
     min_ess_tail = NA_real_,
     adapt_delta = NA_real_,
-    iter_sampling = as.integer(n_draws),
+    # Per-chain draws have no meaning here; the total is in `total_iter`.
+    iter_sampling = NA_integer_,
     chains = NA_integer_,
     gates_evaluated = as.integer(gate$evaluated %||% 0L),
     gates_skipped = as.integer(gate$skipped %||% 0L),

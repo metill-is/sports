@@ -23,9 +23,10 @@ FV2_NO_SHARED_RATE <- -40
 #' @noRd
 fv2_pred_from_prep <- function(pred_d, cell_of = function(division, season) paste(division, season, sep = "@")) {
   season <- as.integer(format(pred_d$match_date, "%Y"))
+  unplayed <- rep(NA_integer_, nrow(pred_d))
   data.frame(
     match_date = pred_d$match_date, home_team = pred_d$home_team, away_team = pred_d$away_team,
-    home_score = NA_integer_, away_score = NA_integer_, season = season,
+    home_score = unplayed, away_score = unplayed, season = season,
     cell = cell_of(pred_d$division, season)
   )
 }

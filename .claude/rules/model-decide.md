@@ -62,8 +62,8 @@ paths:
   under the production Stan variable names (`fv2_as_fit()`,
   `R/model-v2-adapter.R`), so `extract_posteriors()`, the extractors and the
   publisher run unchanged. It is football-only, refuses a cell with fewer
-  than three seasons of results (INLA was measurably worse than NUTS on one
-  season), has its own gate (`fv2_inla_gate()`; the Stan sampler gate has no
+  than two seasons of results before the season being forecast (INLA was
+  measurably worse than NUTS on one earlier season), has its own gate (`fv2_inla_gate()`; the Stan sampler gate has no
   INLA counterpart) and writes a `fit_diagnostics` row with `n_obs` and `NA`
   sampler metrics, because `needs_refit()` reads `n_obs` off the newest row.
   `run_fit_targets()` must keep `engine` in its whitelisted slice
