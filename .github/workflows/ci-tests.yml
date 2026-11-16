@@ -49,6 +49,7 @@ jobs:
       # Stan model was compiled by any CI run: a broken .stan file passed green.
       # The cmdstanr R package already arrives via DESCRIPTION's
       # `Remotes: stan-dev/cmdstanr`; only the toolchain was missing.
+      #
       # ~/.cmdstan holds compiled objects (main.o, libtbb, the precompiled
       # header) that every model is linked against, so a cached copy is only
       # valid on the image and compiler that built it. The key carries both, so
