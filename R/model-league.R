@@ -276,13 +276,28 @@ fit_league <- function(league_key = NULL,
   # variable names, so everything below this point is shared.
   if (use_inla) {
     n_draws <- as.integer(chains) * as.integer(iter_sampling)
+    # The gate compares the fit's hyperparameters with the previous fit's. A
+    # round-mode replay writes no diagnostics row, so it has no previous fit.
+    previous_sd <- if (by_round_mode) NULL else fv2_previous_hyper(league, sex, fit_date, root = root)
+    if (is.null(previous_sd)) {
+      # WHY: a check that cannot run must be seen not to have run. Reporting a
+      # gate as passed when part of it never executed is how a collapsed
+      # hyperparameter would reach publish unnoticed.
+      cli::cli_alert_warning(paste0(
+        "fit_league({league$sport}/{league$country}/{sex}): the INLA gate's ",
+        "hyperparameter-jump check will not run: no earlier INLA fit of this ",
+        "cell is on record."
+      ))
+    }
     fit <- fit_model_v2_inla(
       prep, league, sex,
       end_date    = end_date,
       root        = root,
       from_season = from_season,
       n_draws     = n_draws,
-      seed        = seed
+      seed        = seed,
+      previous_sd = previous_sd,
+      accept_jump = identical(Sys.getenv("SPORTS_INLA_ACCEPT_JUMP"), "1")
     )
   } else {
     fit <- fit_model(

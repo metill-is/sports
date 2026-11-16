@@ -758,8 +758,10 @@ test_that("the INLA gate passes a sound fit and names each kind of failure", {
   ok <- fv2_inla_gate(gate_fit(spec), spec)
   expect_true(ok$passed)
   expect_identical(ok$breaches, character())
-  # The jump check needs a previous fit and is skipped without one.
+  # The jump check needs a previous fit and is skipped without one, and the
+  # gate says so.
   expect_identical(c(ok$evaluated, ok$skipped), c(4L, 1L))
+  expect_false(ok$jump_checked)
 
   breach <- function(change, ...) {
     f <- change(gate_fit(spec))
@@ -822,6 +824,7 @@ test_that("the INLA gate passes a sound fit and names each kind of failure", {
   steady <- breach(identity, previous_sd = c(tau_att = 0.5, sigma_att = 0.04))
   expect_true(steady$passed)
   expect_identical(c(steady$evaluated, steady$skipped), c(5L, 0L))
+  expect_true(steady$jump_checked)
 })
 
 test_that("the INLA gate skips the goals check when there is nothing to predict", {
@@ -864,7 +867,8 @@ test_that("fit_league fits with Stan unless the league says engine: inla", {
   called <- character()
   fake_fit <- list(
     save_object = function(file) saveRDS(NULL, file),
-    gate = list(passed = TRUE, evaluated = 4L, skipped = 1L)
+    gate = list(passed = TRUE, evaluated = 4L, skipped = 1L, jump_checked = FALSE),
+    hyper_sd = c(tau_str = 0.4), version = FOOTBALL_V2_VERSION
   )
   inla_args <- NULL
   stan_args <- NULL
@@ -1008,4 +1012,125 @@ test_that("before a season an INLA fit carries every scheduled team across the b
   expect_setequal(fit$carried, s$teams[3:6])
   beliefs <- extract_posteriors(fit, prep$pred_d, league = s$league, sex = "male", fit_date = s$end_date)
   expect_identical(nrow(beliefs), 100L)
+})
+
+test_that("an INLA fit's hyperparameters are stored and read back for the next fit's gate", {
+  root <- withr::local_tempdir()
+  league <- list(sport = "football", country = "iceland")
+  record <- function(date, sds, version = FOOTBALL_V2_VERSION, passed = TRUE) {
+    persist_fit_diagnostics_inla(
+      list(
+        gate = list(passed = passed, evaluated = 5L, skipped = 0L, jump_checked = TRUE),
+        hyper_sd = sds, version = version
+      ),
+      league,
+      sex = "male", fit_date = date, n_obs = 100L, n_draws = 400L, root = root
+    )
+  }
+  expect_null(fv2_previous_hyper(league, "male", "2027-04-10", root))
+  first <- c(tau_str = 0.40, sigma_str = 0.030)
+  second <- c(tau_str = 0.41, sigma_str = 0.031)
+  record("2027-04-08", first)
+  record("2027-04-09", second)
+  row <- as.data.frame(read_table("fit_diagnostics", root = root))
+  expect_identical(unique(row$engine), "inla")
+  expect_identical(unique(row$model_version), "2.0")
+
+  expect_equal(fv2_previous_hyper(league, "male", "2027-04-10", root), second)
+  # Strictly earlier: a rerun of the 9th is checked against the 8th.
+  expect_equal(fv2_previous_hyper(league, "male", "2027-04-09", root), first)
+  expect_null(fv2_previous_hyper(league, "male", "2027-04-08", root))
+  expect_null(fv2_previous_hyper(league, "female", "2027-04-10", root))
+
+  # A Stan fit's row, a row of another model version and a fit that failed
+  # its gate are not references.
+  stan_row <- row[1, ]
+  stan_row$fit_date <- as.Date("2027-04-10")
+  stan_row$engine <- NA_character_
+  stan_row$model_version <- NA_character_
+  stan_row$hyper_sd <- NA_character_
+  write_table(tibble::as_tibble(stan_row), "fit_diagnostics", root = root)
+  record("2027-04-11", c(tau_str = 9, sigma_str = 9), version = "9.9")
+  record("2027-04-12", c(tau_str = 8, sigma_str = 8), passed = FALSE)
+  expect_equal(fv2_previous_hyper(league, "male", "2027-04-13", root), second)
+})
+
+test_that("fit_league hands an INLA fit the previous fit's hyperparameters, and says when there are none", {
+  root <- withr::local_tempdir()
+  s <- v2_store(root)
+  sds <- c(tau_str = 0.4, sigma_str = 0.03)
+  seen <- list()
+  testthat::local_mocked_bindings(
+    fit_model_v2_inla = function(prep, league, sex, ...) {
+      args <- list(...)
+      seen[[length(seen) + 1L]] <<- args
+      checked <- !is.null(args$previous_sd)
+      list(
+        save_object = function(file) saveRDS(NULL, file),
+        gate = list(passed = TRUE, evaluated = 4L + checked, skipped = 1L - checked, jump_checked = checked),
+        hyper_sd = sds, version = FOOTBALL_V2_VERSION
+      )
+    },
+    extract_posteriors = function(...) tibble::tibble(),
+    extract_football_iceland = function(...) invisible(NULL),
+    .package = "sports"
+  )
+  inla <- utils::modifyList(s$league, list(engine = "inla"))
+  run <- function(date) {
+    fit_league(league = inla, sex = "male", fit_date = date, end_date = s$end_date, root = root, chains = 1L, iter_sampling = 50L)
+  }
+  first <- testthat::capture_messages(run(s$end_date))
+  # A check that did not run is reported, not passed over.
+  expect_true(any(grepl("hyperparameter-jump check will not run", first)))
+  expect_null(seen[[1]]$previous_sd)
+
+  second <- testthat::capture_messages(run(s$end_date + 1L))
+  expect_false(any(grepl("will not run", second)))
+  expect_equal(seen[[2]]$previous_sd, sds)
+  rows <- as.data.frame(read_table("fit_diagnostics", root = root))
+  rows <- rows[order(rows$fit_date), ]
+  expect_identical(rows$jump_checked, c(FALSE, TRUE))
+  expect_identical(rows$gates_skipped, c(1L, 0L))
+})
+
+test_that("a real INLA fit through fit_league is checked against the fit before it", {
+  skip_if_not_installed("INLA")
+  skip_if_not_installed("sn")
+  root <- withr::local_tempdir()
+  s <- v2_store(root)
+  inla <- utils::modifyList(s$league, list(engine = "inla"))
+  testthat::local_mocked_bindings(extract_football_iceland = function(...) invisible(NULL), .package = "sports")
+  run <- function(date) {
+    suppressWarnings(fit_league(
+      league = inla, sex = "male", fit_date = date, end_date = s$end_date, root = root,
+      chains = 1L, iter_sampling = 100L, seed = 5L
+    ))
+  }
+  rows <- function() {
+    d <- as.data.frame(read_table("fit_diagnostics", root = root))
+    d[order(d$fit_date), ]
+  }
+  expect_true(any(grepl("will not run", testthat::capture_messages(run(s$end_date)))))
+  expect_identical(rows()$jump_checked, FALSE)
+  suppressMessages(run(s$end_date + 1L))
+  expect_identical(rows()$jump_checked, c(FALSE, TRUE))
+  expect_identical(rows()$gates_skipped, c(1L, 0L))
+  expect_identical(nrow(read_table("beliefs_latest", root = root)), s$n_pred * 100L)
+
+  # The stored reference now says the innovation sd was 100 times larger:
+  # the next fit's sd has collapsed against it, and the fit is refused.
+  ref <- rows()[2, ]
+  ref$fit_date <- as.Date(ref$fit_date)
+  sds <- unlist(jsonlite::fromJSON(ref$hyper_sd))
+  sds[["sigma_str"]] <- sds[["sigma_str"]] * 100
+  ref$hyper_sd <- as.character(jsonlite::toJSON(as.list(sds), auto_unbox = TRUE, digits = NA))
+  write_table(tibble::as_tibble(ref), "fit_diagnostics", root = root)
+  expect_error(suppressMessages(run(s$end_date + 2L)), "moved by more than a factor")
+  expect_identical(nrow(rows()), 2L)
+
+  # An operator who has looked and agrees with the new values can say so.
+  withr::local_envvar(SPORTS_INLA_ACCEPT_JUMP = "1")
+  accepted <- testthat::capture_messages(run(s$end_date + 2L))
+  expect_true(any(grepl("accepted", accepted)))
+  expect_identical(nrow(rows()), 3L)
 })

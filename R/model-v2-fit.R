@@ -51,9 +51,13 @@ fv2_saver <- function(draws, meta) {
 #'
 #' @param f Result of `fv2_fit_inla()`.
 #' @param spec The spec it was fitted on.
-#' @param previous_sd Optional named vector of the previous fit's
-#'   hyperparameter sds; when given, a jump by more than `max_jump` fails.
-#' @return `list(passed, breaches, evaluated, skipped)`.
+#' @param previous_sd Named vector of the previous fit's hyperparameter sds
+#'   (`fv2_previous_hyper()`); a move by more than a factor `max_jump` in
+#'   either direction fails. Over the 2022 to 2026 walk-forward the largest
+#'   move between consecutive re-estimates of any hyperparameter was a factor
+#'   1.65. `NULL` skips the check, and `jump_checked` records that it did
+#'   not run: a caller must say so, not treat the gate as having passed it.
+#' @return `list(passed, breaches, evaluated, skipped, jump_checked)`.
 #' @noRd
 fv2_inla_gate <- function(f, spec, previous_sd = NULL, max_jump = 3,
                           sd_range = c(1e-5, 5), goals_range = c(1, 8),
@@ -126,8 +130,42 @@ fv2_inla_gate <- function(f, spec, previous_sd = NULL, max_jump = 3,
 
   list(
     passed = length(breaches) == 0L, breaches = breaches,
-    evaluated = 5L - length(skipped), skipped = length(skipped)
+    evaluated = 5L - length(skipped), skipped = length(skipped),
+    jump_checked = !is.null(previous_sd)
   )
+}
+
+#' The hyperparameter sds of the latest earlier INLA fit of a cell, for the
+#' gate's jump check.
+#'
+#' Read from the `fit_diagnostics` store, which the fit workflow commits, so
+#' the reference survives from one run to the next. Only a fit of the same
+#' engine and model version that passed its own gate counts, and only one
+#' from a strictly earlier date: a rerun is checked against the day before.
+#'
+#' @return Named numeric vector, or `NULL` when there is no such fit.
+#' @noRd
+fv2_previous_hyper <- function(league, sex, fit_date, root = here::here("data")) {
+  rows <- tryCatch(
+    as.data.frame(read_table(
+      "fit_diagnostics",
+      root = root,
+      filter = list(sport = league$sport, country = league$country, sex = sex)
+    )),
+    error = function(e) NULL
+  )
+  if (is.null(rows) || !nrow(rows) || !all(c("engine", "model_version", "hyper_sd") %in% names(rows))) {
+    return(NULL)
+  }
+  ok <- !is.na(rows$engine) & rows$engine == "inla" &
+    !is.na(rows$model_version) & rows$model_version == FOOTBALL_V2_VERSION &
+    !is.na(rows$hyper_sd) & rows$passed %in% TRUE &
+    as.Date(rows$fit_date) < as.Date(fit_date)
+  if (!any(ok)) {
+    return(NULL)
+  }
+  rows <- rows[ok, , drop = FALSE]
+  unlist(jsonlite::fromJSON(rows$hyper_sd[which.max(as.Date(rows$fit_date))]))
 }
 
 #' Fit football v2.0 with R-INLA and return a fit the extract and publish
@@ -141,13 +179,19 @@ fv2_inla_gate <- function(f, spec, previous_sd = NULL, max_jump = 3,
 #' @param n_draws Posterior draws to return.
 #' @param int_strategy "auto" integrates over the hyperparameters; "eb" fixes
 #'   them at their mode.
+#' @param previous_sd The previous fit's hyperparameter sds, for the gate's
+#'   jump check (`fv2_previous_hyper()`); `NULL` when there is none.
+#' @param accept_jump Let a fit through whose only breach is the jump check.
+#'   For an operator who has looked at the new values and agrees with them;
+#'   without it a real, lasting change would be refused every day.
 #' @return The adapted fit from `fv2_as_fit()`, with `$engine`, `$version`,
 #'   `$gate`, `$hyper` and `$n_obs` attached.
 #' @noRd
 fit_model_v2_inla <- function(prep, league, sex, end_date,
                               root = here::here("data"), from_season = NULL,
                               n_draws = 4000L, seed = 1L,
-                              int_strategy = "auto", threads = "4:1") {
+                              int_strategy = "auto", threads = "4:1",
+                              previous_sd = NULL, accept_jump = FALSE) {
   if (!identical(league$sport, "football")) {
     cli::cli_abort("The INLA engine fits the football model only; {.val {league$sport}} stays on Stan.")
   }
@@ -225,7 +269,17 @@ fit_model_v2_inla <- function(prep, league, sex, end_date,
   ))
 
   f <- fv2_fit_inla(spec, int_strategy = int_strategy, n_samp = n_draws, threads = threads, seed = seed)
-  gate <- fv2_inla_gate(f, spec)
+  gate <- fv2_inla_gate(f, spec, previous_sd = previous_sd)
+  jumped <- grepl("since the previous fit", gate$breaches, fixed = TRUE)
+  if (isTRUE(accept_jump) && any(jumped)) {
+    cli::cli_alert_warning(c(
+      "INLA gate: hyperparameter jump accepted on request for {league$sport}/{league$country}/{sex}: ",
+      "{gate$breaches[jumped]}"
+    ))
+    gate$breaches <- gate$breaches[!jumped]
+    gate$passed <- length(gate$breaches) == 0L
+    gate$jump_accepted <- TRUE
+  }
   if (!gate$passed) {
     cli::cli_abort(c(
       "INLA fit for {league$sport}/{league$country}/{sex} failed its diagnostics gate.",
@@ -239,6 +293,7 @@ fit_model_v2_inla <- function(prep, league, sex, end_date,
     int_strategy = int_strategy, gate = gate, hyper = f$hyper_summary,
     n_obs = spec$N, n_teams = spec$K, n_states = spec$S,
     forecast_season = forecast_season, carried = as.character(carry$team),
+    hyper_sd = colMeans(as.matrix(f$draws$hyper)),
     seconds = c(fit = f$t_fit, draws = f$t_samp),
     inla_version = as.character(utils::packageVersion("INLA"))
   )
@@ -261,7 +316,10 @@ fit_model_v2_inla <- function(prep, league, sex, end_date,
 #' `needs_refit()` reads `n_obs` from the latest row of a cell, so an INLA
 #' fit must write one or an old Stan row stays "latest". The sampler metrics
 #' have no INLA counterpart and are `NA`, which the health check reads as
-#' nothing to report.
+#' nothing to report. The row also carries the engine, the model version and
+#' the fit's hyperparameter sds (as JSON): the next fit's gate reads them
+#' back with `fv2_previous_hyper()`. Stan rows do not have these columns and
+#' read as `NA`.
 #' @noRd
 persist_fit_diagnostics_inla <- function(fit, league, sex, fit_date,
                                          n_obs = NA_integer_, n_draws = NA_integer_,
@@ -288,7 +346,15 @@ persist_fit_diagnostics_inla <- function(fit, league, sex, fit_date,
     chains = NA_integer_,
     gates_evaluated = as.integer(gate$evaluated %||% 0L),
     gates_skipped = as.integer(gate$skipped %||% 0L),
-    passed = isTRUE(gate$passed) && isTRUE(gate$evaluated > 0L)
+    passed = isTRUE(gate$passed) && isTRUE(gate$evaluated > 0L),
+    engine = "inla",
+    model_version = as.character(fit$version %||% NA_character_),
+    hyper_sd = if (length(fit$hyper_sd)) {
+      as.character(jsonlite::toJSON(as.list(fit$hyper_sd), auto_unbox = TRUE, digits = NA))
+    } else {
+      NA_character_
+    },
+    jump_checked = isTRUE(gate$jump_checked)
   )
   tryCatch(
     write_table(row, "fit_diagnostics", root = root),

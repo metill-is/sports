@@ -66,6 +66,17 @@ paths:
   measurably worse than NUTS on one earlier season), has its own gate (`fv2_inla_gate()`; the Stan sampler gate has no
   INLA counterpart) and writes a `fit_diagnostics` row with `n_obs` and `NA`
   sampler metrics, because `needs_refit()` reads `n_obs` off the newest row.
+  That row also carries `engine`, `model_version`, the fit's hyperparameter
+  sds as JSON (`hyper_sd`) and `jump_checked`; Stan rows read as `NA` there.
+  The gate's fifth check compares each hyperparameter with the previous INLA
+  fit of the cell (`fv2_previous_hyper()`, strictly earlier date, same model
+  version, gate passed) and refuses a move by more than a factor 3 (the
+  largest between consecutive re-estimates in the 2022 to 2026 walk-forward
+  was 1.65). When no previous fit is on record `fit_league()` says in the
+  log that the check will not run, and the row has `jump_checked = FALSE`:
+  a check that did not run is never reported as passed. If a refused change
+  is real, rerun with `SPORTS_INLA_ACCEPT_JUMP=1`; the accepted values become
+  the next reference.
   **What "current strength" means on this engine:** each team's state at its
   next match, and the league levels of the first fixture week. The simulators
   hold a team at one state for all its remaining matches and the forecast of
