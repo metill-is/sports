@@ -120,24 +120,42 @@ join_and <- function(x) {
   }
   paste(paste(x[-length(x)], collapse = ", "), "and", x[length(x)])
 }
-panel_v2_elo <- NULL
-if (!is.null(res$walk_forward)) {
+panel_pair <- function(a, b) {
   pw <- res$walk_forward |>
-    filter(!in_target, !friendly, model %in% c("base", "elo"), !is.na(log_1x2)) |>
+    filter(!in_target, !friendly, model %in% c(a, b), !is.na(log_1x2)) |>
     mutate(id = row_number(), .by = model) |>
     select(id, model, log_1x2) |>
     pivot_wider(names_from = "model", values_from = "log_1x2")
-  panel_v2_elo <- nt_paired_diff(pw$base, pw$elo)
+  nt_paired_diff(pw[[a]], pw[[b]])
 }
+panel_v2_elo <- NULL
+panel_venue <- NULL
+panel_cutoffs_won <- NULL
+if (!is.null(res$walk_forward)) {
+  panel_v2_elo <- panel_pair("base", "elo")
+  panel_venue <- panel_pair("novenue", "base")
+  cut_means <- res$walk_forward |>
+    filter(!in_target, !friendly, model %in% c("base", "elo"), !is.na(log_1x2)) |>
+    group_by(cutoff, model) |>
+    summarise(m_log = mean(log_1x2), .groups = "drop") |>
+    pivot_wider(names_from = "model", values_from = "m_log")
+  panel_cutoffs_won <- c(sum(cut_means$base < cut_means$elo), nrow(cut_means))
+}
+fit_secs <- res$fits$seconds
+fit_time_short <- sprintf(
+  "a median of %.0f seconds (range %.0f to %.0f) over the %d fits in this report",
+  median(fit_secs), min(fit_secs), max(fit_secs), length(fit_secs)
+)
+fit_time_text <- paste0(fit_time_short, ", on a machine shared with other model runs")
 ```
 
 ::: {.callout-note}
 
 ## Summary
 
-- **What was built.** v2 is a calendar-time Poisson model for national teams with a venue flag, pooled home advantage and twelve years of history, fitted with R-INLA in about a minute, plus a tournament simulator that plays knockout ties out with extra time and penalties.
+- **What was built.** v2 is a calendar-time Poisson model for national teams with a venue flag, pooled home advantage and twelve years of history, fitted with R-INLA, plus a tournament simulator that plays knockout ties out with extra time and penalties. A fit took `r fit_time_text`.
 - **How it scored.** Fitted before each of World Cup 2022, Euro 2024 and World Cup 2026 and scored on all `r n_all` matches, v2's 1X2 log score is `r sprintf("%.3f", abs(d_v2_prod$log_1x2$diff))` per match `r ifelse(d_v2_prod$log_1x2$diff < 0, "better", "worse")` than the production approach's (95% interval for the difference `r fmt_int(d_v2_prod$log_1x2)`; negative favours v2) and `r sprintf("%.3f", abs(d_v2_elo$log_1x2$diff))` `r ifelse(d_v2_elo$log_1x2$diff < 0, "better", "worse")` than the Elo baseline's (`r fmt_int(d_v2_elo$log_1x2)`). On exact scorelines it beats Elo by `r sprintf("%.3f", -d_v2_elo$log_score$diff)` (`r fmt_int(d_v2_elo$log_score)`).
-- **What that means.** `r n_all` matches cannot separate v2 from production: the evidence is "not worse, probably slightly better". `r if (!is.null(panel_v2_elo)) sprintf("On the larger walk-forward panel (%s competitive matches) v2 beats Elo by %.3f per match (%s).", format(panel_v2_elo$n, big.mark = ","), -panel_v2_elo$diff, fmt_int(panel_v2_elo)) else ""` The case for v2 is that it removes known misspecifications at no cost in accuracy and a fraction of the compute.
+- **What that means.** v2 is level with the production approach within noise: `r n_all` matches cannot separate them, the interval allows v2 to be up to `r sprintf("%.3f", d_v2_prod$log_1x2$upper)` worse or `r sprintf("%.3f", -d_v2_prod$log_1x2$lower)` better per match, and v2 is behind at `r join_and(v2_loses_prod)`. The clear result is against Elo on the larger walk-forward panel: `r if (!is.null(panel_v2_elo)) sprintf("%s per match (95%% interval %s) on %s competitive matches, ahead at %d of %d cutoffs", sprintf("%+.4f", panel_v2_elo$diff), fmt_int(panel_v2_elo, 4), format(panel_v2_elo$n, big.mark = ","), panel_cutoffs_won[1], panel_cutoffs_won[2]) else ""`. The case for v2 is that it removes known misspecifications with no measurable loss of accuracy and far less compute.
 - **Simulator.** Replacing the head-to-head matrix with played-out ties moves title probabilities by up to `r sprintf("%.1f", 100 * max(abs(sim$table$champion_extra_time - sim$table$champion_matrix)))` percentage points, all of it from the tie rule: favourites lose, outsiders gain.
 - **Known weakness.** v2 expects too few draws (`r sprintf("%.0f", sum(sc$p_draw[sc$model == "base"]))` against `r sum(res$matches$home_90 == res$matches$away_90)` at the tournaments). A one-parameter correction estimated out of sample recovers part of it (@sec-draws).
 - **Women.** The same code runs on the women's file. Trying it exposed one defect, now fixed: the team filter dropped sides that qualify through a finals tournament, Brazil's women among them (@sec-women).
@@ -338,9 +356,9 @@ rw_range <- range(c(rw_month, if (!is.null(res$walk_forward_hyper)) {
 knitr::kable(kp_tab, digits = 1)
 ```
 
-**Venue.** The "neutral flag ignored" row treats every match as home against away in training and forecast, which is what the club model does. It changes the tournament score by `r vd("novenue")`, where most matches are on neutral ground, and by a smaller but better-determined amount on the panel.
+**Venue.** The "neutral flag ignored" row treats every match as home against away in training and forecast, which is what the club model does. At the tournaments, where most matches are on neutral ground, it changes the score by `r vd("novenue")`, which does not separate from zero. The panel shows a small effect: `r if (!is.null(panel_venue)) fmt_ci(panel_venue, 4) else ""`.
 
-**Window.** Eight years of history score the same as twelve (`r vd("w8")`). Production's 4.4 years change the score by `r vd("w4")`: v2 on that window averages `r sprintf("%.3f", mean_of("w4"))`, against `r sprintf("%.3f", mean_of("production"))` for the production approach and `r sprintf("%.3f", mean_of("base"))` for v2. Most of v2's advantage over production at these tournaments comes from the longer history and the venue flag.
+**Window.** Eight years of history score the same as twelve (`r vd("w8")`). Production's 4.4 years change the score by `r vd("w4")`, which also does not separate from zero. v2 on that window averages `r sprintf("%.3f", mean_of("w4"))`, against `r sprintf("%.3f", mean_of("production"))` for the production approach and `r sprintf("%.3f", mean_of("base"))` for v2, so the point estimates are consistent with the longer history accounting for the gap, but these tournaments cannot attribute it: which of v2's changes matters most is unresolved.
 
 **Numerics.** A monthly grid and integrating over the hyperparameters instead of conditioning on their mode change nothing measurable (@tbl-sensitivity), so the quarterly grid and the faster empirical-Bayes fit are kept.
 
@@ -978,7 +996,7 @@ ggplot(long, aes(opponent, p, fill = result)) +
 2. *A group simulator with UEFA tie-breakers.* Head-to-head points come first in UEFA qualifying, unlike the goal-difference-first rule in the World Cup code. Vectorised over simulations like `nt_simulate_world_cup()`.
 3. *Best runners-up across groups of unequal size* (results against the bottom side are discarded in five-team groups) and the play-off paths, including the Nations League ranking and the host rule.
 4. *A publish contract and a page.* A new `data/publish/euro_2028/` tree modelled on the World Cup JSON, and a page on metill.is. Both need the owner's approval and are outside this work.
-5. *A workflow.* A new dispatch-only workflow, separate from the dormant `world-cup.yml`, run after each international window (five a year). One INLA fit takes about a minute; the runner needs R-INLA installed from its own repository.
+5. *A workflow.* A new dispatch-only workflow, separate from the dormant `world-cup.yml`, run after each international window (five a year). One INLA fit took between half a minute and three and a half minutes on the shared machine used here; the runner needs R-INLA installed from its own repository.
 6. *An accountability log from day one.* Every published forecast stored before kick-off and scored after, against the Elo baseline and, where Lengjan lists the match, the de-vigged line.
 
 **Order of work.**
@@ -993,7 +1011,7 @@ ggplot(long, aes(opponent, p, fill = result)) +
 
 ## Proposal and decisions for the owner {#sec-proposal}
 
-1. **Adopt v2 as the national-team model.** It removes the listed misspecifications, is not worse than the production approach on the three tournaments and probably slightly better, beats Elo clearly on the panel, fits in about a minute, and runs on the women's file. The production club model stays as it is for club football.
+1. **Adopt v2 as the national-team model.** It removes the listed misspecifications, is level with the production approach on the three tournaments within noise (`r fmt_ci(d_v2_prod$log_1x2)` in 1X2 log score), beats Elo clearly on the panel, fits in minutes instead of tens of minutes, and runs on the women's file. The production club model stays as it is for club football.
 2. **Specification: the one tested here as "v2".** Twelve-year window, quarterly grid, estimated random walk, pooled sign-free venue effects, pooled attack/defence split. No fixed half-life, no AR(1), no friendly term, no importance weights: none of them improved forecasts.
 3. **Adopt the played-out knockout simulator** (extra time at one third of the 90-minute rate, 50/50 shootout) for any future tournament forecast.
 4. **Draw correction: optional.** v2 expects too few draws. The one-parameter correction in @sec-draws helps a little out of sample; decide now or after the first qualifying windows.
@@ -1005,7 +1023,7 @@ Nothing in this work touches `world-cup.yml`, any other workflow, or the publish
 
 ## Limits of this evaluation {#sec-limits}
 
-- **Three tournaments, `r n_all` matches.** Enough to show v2 is not worse; not enough to rank close variants. The panel adds matches but mixes qualifiers with tournaments.
+- **Three tournaments, `r n_all` matches.** Enough to bound the difference from production to between `r sprintf("%+.3f", d_v2_prod$log_1x2$lower)` and `r sprintf("%+.3f", d_v2_prod$log_1x2$upper)` log score per match; not enough to say which is better, to rank close variants, or to attribute v2's point advantage to any one of its changes. The panel adds matches but mixes qualifiers with tournaments and has no production fits.
 - **Independence.** Intervals treat matches as independent although each tournament shares one fit.
 - **Hyperparameters at their mode.** The INLA fits condition on the hyperparameter mode (empirical Bayes). Integrating over them and the full Stan posterior both give the same forecasts here, but that was checked at one cutoff only.
 - **Independent Poisson.** v2 has no shared-goals term. On exact scorelines it only matches production, and it expected `r sprintf("%.1f", et$expected_level_at_90)` of the `r et$n_knockout` knockout matches to be level after 90 minutes when `r et$n_extra_time` were.
@@ -1027,6 +1045,7 @@ Rscript scripts/nt/walk_forward.R $D/data/men/results.csv $D/out/wf
 Rscript scripts/nt/simulate_compare.R $D/out/eval/fit_wc2026_base.rds $D/out/sim_compare_wc2026.rds
 Rscript scripts/nt/women_check.R $D/data/women/results.csv $D/out/women_check.rds
 Rscript scripts/nt/stan_reference.R $D/data/men/results.csv $D/out/stan wc2026
+Rscript scripts/nt/draw_correction.R $D/out $D/out/draw_correction.rds
 Rscript scripts/nt/build_report_data.R $D/out docs/reports/2026-11-15-national-team-v2/results.rds
 quarto render docs/reports/2026-11-15-national-team-v2.qmd
 ```
@@ -1038,7 +1057,7 @@ quarto render docs/reports/2026-11-15-national-team-v2.qmd
 | Tournament scores of v2, its variants and Elo (Tables 1 to 5, 8, 9, 10) | `eval/eval_wc2022.rds`, `eval/eval_euro2024.rds`, `eval/eval_wc2026.rds` (`$scores[[model]]`, `$fits[[model]]`) | `$scores`, `$matches`, `$fits` |
 | Production approach's scores and fit diagnostics | `prod/prod_wc2022.rds`, `prod/prod_euro2024.rds`, `prod/prod_wc2026.rds`, scored into the `eval_*.rds` files as model `production` | `$scores` (model `production`), `$production` |
 | Walk-forward panel (Tables 6, 7, Figures 2, 3, the draw counts) | `wf/base/walk_forward.rds`, `wf/hl3/…`, `wf/damp08/…`, `wf/novenue/…` | `$walk_forward`, `$walk_forward_hyper` |
-| Draw correction (Table 11) | computed in this report from the panel and tournament forecasts | `$walk_forward`, `$scores` |
+| Draw correction (Table 11) | `scripts/nt/draw_correction.R <out>` prints the same table from `wf/base/walk_forward.rds` (v2's panel forecasts of competitive, non-target matches before each tournament) and `eval/eval_*.rds` (v2's tournament forecasts); saved as `draw_correction.rds`. The report recomputes it at render time in chunk `draws-prep` with `nt_fit_draw_inflation()` and `nt_inflate_draws()`. | `$walk_forward`, `$scores` |
 | Knockout treatments and title probabilities (Table 12, Figure 4) | `sim_compare_wc2026.rds`, from the fit `eval/fit_wc2026_base.rds` | `$simulation` |
 | Production's pre-tournament title probabilities (Table 13) | `prod_forecast_wc2026.rds` | `$production_forecast` |
 | Extra-time counts and goals | derived from the `eval_*.rds` files by `scripts/nt/build_report_data.R` | `$extra_time` |
@@ -1049,4 +1068,4 @@ quarto render docs/reports/2026-11-15-national-team-v2.qmd
 
 Code: `R/nt-data.R`, `R/nt-model.R`, `R/nt-score.R`, `R/nt-baselines.R`, `R/nt-simulate.R`, `R/nt-stan.R`; tests in `tests/testthat/test-nt-*.R`.
 
-**On timings.** Every fit ran on a machine shared with other sessions' model runs, so no wall-clock figure here is a benchmark. As orders of magnitude: an INLA fit of v2 on four threads took between half a minute and a minute and a half while two other four-core jobs were running; the production model's four NUTS chains took tens of minutes per tournament under the same conditions. The Stan reference of v2 needed about `r if (have_stan) sprintf("%.0f", res$stan$base$mean_leapfrog) else "55"` leapfrog steps per iteration.
+**On timings.** Every fit ran on a machine shared with other sessions' model runs, at times heavily oversubscribed, so no wall-clock figure here is a benchmark. An INLA fit of v2, including drawing 1,000 posterior samples, took `r fit_time_short`; the three headline fits were among the slowest (`r paste(sprintf("%.0f", res$fits$seconds[res$fits$model == "base"]), collapse = ", ")` seconds) because they ran before the machine's job limiter was in place. The production model's four NUTS chains took tens of minutes per tournament. The Stan reference of v2 needed about `r if (have_stan) sprintf("%.0f", res$stan$base$mean_leapfrog) else "55"` leapfrog steps per iteration.
