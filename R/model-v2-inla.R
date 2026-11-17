@@ -48,15 +48,22 @@ fv2_check_inla_priors <- function(result, spec) {
 
 #' Fit the spec with R-INLA.
 #'
+#' Fitted on one thread with R-INLA's online optimisation off, a production
+#' fit returned the same numbers in 40 R processes of 40 (one machine, R-INLA
+#' 25.6.7, 2026-11-17).
+#'
 #' @param int_strategy "auto" (CCD or grid over the hyperparameters), "eb"
 #'   (hyperparameters fixed at their mode), "grid", "ccd".
+#' @param threads R-INLA's `num.threads`, "outer:inner". On more than one
+#'   thread the fit is faster and no two R processes returned the same
+#'   numbers.
 #' @param theta_init Optional internal-scale hyperparameter start (a previous
 #'   fit's `theta_mode`), which shortens the mode search.
 #' @param theta_fixed Hold the hyperparameters at `theta_init` instead of
 #'   re-estimating them: only the states are refitted.
 #' @noRd
 fv2_fit_inla <- function(spec, int_strategy = "auto", n_samp = 1000L,
-                         threads = "4:1", theta_init = NULL, theta_fixed = FALSE, seed = 1L,
+                         threads = "1:1", theta_init = NULL, theta_fixed = FALSE, seed = 1L,
                          verbose = FALSE, keep_result = FALSE) {
   stopifnot(requireNamespace("INLA", quietly = TRUE))
   p <- spec$priors
@@ -150,7 +157,14 @@ fv2_fit_inla <- function(spec, int_strategy = "auto", n_samp = 1000L,
     family = "poisson", data = INLA::inla.stack.data(stk),
     control.predictor = list(A = INLA::inla.stack.A(stk), compute = FALSE, link = 1),
     control.fixed = list(mean = fixed_mean, prec = fixed_prec),
-    control.compute = list(config = TRUE, dic = FALSE, waic = FALSE, mlik = TRUE),
+    # WHY: with R-INLA's defaults a fit does not repeat between R processes.
+    # Of 140 production fits of the two football cells, one process each
+    # (main at 26d55c550, R-INLA 25.6.7, one machine, 2026-11-17): on "4:1"
+    # every process returned a different result, with `internal.opt` on or
+    # off, as on "1:4" with it on; on "1:1" with it on, 39 of 40 agreed; on
+    # "1:1" with it off, 40 of 40. Passed here it holds for this call only:
+    # R-INLA reads its session-wide option when this one is NULL.
+    control.compute = list(config = TRUE, dic = FALSE, waic = FALSE, mlik = TRUE, internal.opt = FALSE),
     control.inla = list(int.strategy = int_strategy),
     control.mode = if (is.null(theta_init)) {
       list()

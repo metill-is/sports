@@ -179,6 +179,9 @@ fv2_previous_hyper <- function(league, sex, fit_date, root = here::here("data"))
 #' @param n_draws Posterior draws to return.
 #' @param int_strategy "auto" integrates over the hyperparameters; "eb" fixes
 #'   them at their mode.
+#' @param threads R-INLA's `num.threads`. One thread is what makes a refit of
+#'   the same data return the same numbers (`fv2_fit_inla()`); `fit_league()`
+#'   does not pass it.
 #' @param previous_sd The previous fit's hyperparameter sds, for the gate's
 #'   jump check (`fv2_previous_hyper()`); `NULL` when there is none.
 #' @param accept_jump Let a fit through whose only breach is the jump check.
@@ -190,7 +193,7 @@ fv2_previous_hyper <- function(league, sex, fit_date, root = here::here("data"))
 fit_model_v2_inla <- function(prep, league, sex, end_date,
                               root = here::here("data"), from_season = NULL,
                               n_draws = 4000L, seed = 1L,
-                              int_strategy = "auto", threads = "4:1",
+                              int_strategy = "auto", threads = "1:1",
                               previous_sd = NULL, accept_jump = FALSE) {
   if (!identical(league$sport, "football")) {
     cli::cli_abort("The INLA engine fits the football model only; {.val {league$sport}} stays on Stan.")

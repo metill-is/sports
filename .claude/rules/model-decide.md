@@ -77,6 +77,18 @@ paths:
   a check that did not run is never reported as passed. If a refused change
   is real, rerun with `SPORTS_INLA_ACCEPT_JUMP=1`; the accepted values become
   the next reference.
+  **Repeatability (2026-11-17):** the engine fits on one thread and passes
+  `internal.opt = FALSE` to R-INLA (`fv2_fit_inla()`), so that a refit of the
+  same data returns the same numbers. Of 140 production fits of the two
+  cells, one R process each, on one machine: on four threads no two agreed,
+  on one thread with the option on 39 of 40 did, on one thread with it off
+  40 of 40. On four threads a fixture's expected goals varied between
+  processes with an sd of 0.005 to 0.009 at the median (the Monte Carlo
+  standard error of 4,000 draws is 0.021) and by up to 0.17 between two
+  processes. One thread costs about 30 s of a men's fit's 108 s. Agreement
+  across machines was not measured. `fit_league()` passes no `threads`, and
+  `test-model-v2.R` pins the thread count, the option and a two-process
+  comparison.
   **What "current strength" means on this engine:** each team's state at its
   next match, and the league levels of the first fixture week. The simulators
   hold a team at one state for all its remaining matches and the forecast of
