@@ -351,18 +351,34 @@ if (have(val) && length(val) > 0) {
   } else {
     "R-INLA is the narrower engine for most hyperparameters in every model, though not for all of them."
   }
-  # The Stan side is one stored fit; the R-INLA side was fitted twice. How much of the
-  # agreement belongs to the run?
+  # The Stan side is one stored fit; the R-INLA side was fitted three times (twice with
+  # R-INLA's defaults, then with its online optimisation off). How much of the agreement
+  # belongs to the run?
   val1 <- rd("first-run/compare_validation.rds")
-  run_txt <- if (have(val1)) {
+  val2 <- rd("second-run/compare_validation.rds")
+  run_txt <- if (have(val1) && have(val2)) {
     st <- function(v) max(vapply(v, function(o) o$state[["max_abs_mean_diff_in_sd"]], 1))
     hy <- function(v) max(vapply(v, function(o) max(abs(o$hyper$diff_in_sd)), 1))
     ls <- function(v) max(vapply(v, function(o) abs(o$log_score[["stan"]] - o$log_score[["inla_full_samples"]]), 1))
-    moved <- vapply(names(val), function(k) max(abs(val[[k]]$hyper$inla_mean - val1[[k]]$hyper$inla_mean) / val[[k]]$hyper$stan_sd), 1)
+    moved <- function(a, b) vapply(names(a), function(k) max(abs(a[[k]]$hyper$inla_mean - b[[k]]$hyper$inla_mean) / a[[k]]$hyper$stan_sd), 1)
+    m12 <- moved(val2, val1)
+    m23 <- moved(val, val2)
+    which_fit <- function(m) paste(tolower(LAB[[val[[which.max(m)]]$cell]]), val[[which.max(m)]]$response)
+    three <- function(f, digits) paste(num(f(val1), digits), num(f(val2), digits), num(f(val), digits), sep = " / ")
     sprintf(
-      "<strong>These figures depend on the run.</strong> The R-INLA fits were made twice. In the first run the %s fit landed elsewhere (a hyperparameter mean %s Stan posterior sds away from the second run's), and the comparison read: largest state difference %s posterior sds against %s here, largest hyperparameter difference %s against %s, log scores agreeing to %s against %s.",
-      paste(tolower(LAB[[val[[which.max(moved)]]$cell]]), val[[which.max(moved)]]$response),
-      num(max(moved), 2), num(st(val1), 2), num(st(val), 2), num(hy(val1), 2), num(hy(val), 2), num(ls(val1), 4), num(ls(val), 4)
+      paste0(
+        "<strong>These figures depend on the run.</strong> The R-INLA fits were made three times: twice with R-INLA's defaults and then, for the figures here, with its online optimisation off. ",
+        "Between the first and the second run the %s fit landed elsewhere (a hyperparameter mean %s Stan posterior sds apart); %s ",
+        "The comparison read, first / second / here: largest state difference %s posterior sds, largest hyperparameter difference %s, log scores agreeing to %s. ",
+        "The full-integration log score is computed from 2,000 posterior draws, which were unseeded in the first two runs and are seeded now, so its last digits are draw noise."
+      ),
+      which_fit(m12), num(max(m12), 2),
+      if (max(m23) < 0.005) {
+        "between the second and the one here no hyperparameter mean of these four fits moved by as much as 0.005: started cold at one cutoff, they came out the same with the option off."
+      } else {
+        sprintf("between the second and the one here the largest such move is %s (the %s fit).", num(max(m23), 2), which_fit(m23))
+      },
+      three(st, 2), three(hy, 2), three(ls, 4)
     )
   } else {
     ""

@@ -44,6 +44,29 @@ bb_within_1d <- if (within_known) {
   NULL
 }
 
+# Where the rule stood in each run of the fits: the largest of the three pooled gains, in
+# standard errors.
+bb_rule_z <- function(w) {
+  j <- rbind(w[["bb_m_reg"]], w[["bb_f_reg"]])
+  if (is.null(j)) {
+    return(NA_real_)
+  }
+  z <- function(a, b) {
+    d <- j[[a]] - j[[b]]
+    mean(d) / (stats::sd(d) / sqrt(length(d)))
+  }
+  max(z("lsm_raw.ar1", "lsm_raw.static"), z("lst_raw.ar1", "lst_raw.static"), z("ll_wdl_raw.ar1", "ll_wdl_raw.static"))
+}
+bb_z <- if (within_known) {
+  earlier <- function(sub) {
+    x <- rd(file.path(sub, "wf_scores.rds"))
+    if (is.null(x)) NA_real_ else bb_rule_z(x$within_j)
+  }
+  c(first = earlier("first-run"), second = earlier("second-run"), here = bb_rule_z(wj))
+} else {
+  NULL
+}
+
 # ---------------------------------------------------------------- proposal
 cur <- "proposal"
 add("<h2 id=\"proposal\">Cutover proposal</h2>")
@@ -89,6 +112,19 @@ add(
   "<li>Both regulation-time and final-result probabilities come out of one fit.</li>",
   "</ul></div></div>"
 )
+if (have(bb_z) && !anyNA(bb_z)) {
+  within_txt <- paste0(within_txt, sprintf(
+    " Against the rule applied here (no pooled score counts against the term, and at least one improves by more than two standard errors), the largest gain stands at %s standard errors in the run reported here; it was %s in the first run and %s in the second. %s",
+    num(bb_z[["here"]], 2), num(bb_z[["first"]], 2), num(bb_z[["second"]], 2),
+    if (all(bb_z > 2)) {
+      "The term clears the rule in every run, each time by a small margin: the three figures are one comparison seen through three runs of the fits, and their spread is the size of the run-to-run movement."
+    } else if (bb_z[["here"]] > 2) {
+      "The term clears the rule in the run reported here but did not in every run: the choice rests on run-to-run movement and is the owner's to make."
+    } else {
+      "The term does not clear the rule in the run reported here, though it did in an earlier one: the choice rests on run-to-run movement and is the owner's to make."
+    }
+  ))
+}
 add(sprintf("<p>%s Stan stays in the repository as the reference: the same v2 model in <code>docs/reports/2026-11-15-hb-bb-v2/stan/v2_margin.stan</code> and <code>v2_total.stan</code>, to be run weekly during the shadow period.</p>", within_txt))
 
 add("<h3>What changes, layer by layer</h3>")
@@ -153,65 +189,83 @@ repro_li <- if (have(repro)) {
   }, "")
   sprintf(
     paste0(
-      "<li><strong>Not bit-reproducible between runs.</strong> The eight plug-in fits behind <a href=\"#data\">What the data ask of the likelihood</a> were run %s times in separate R processes on the same data (the original run, the rerun that stored the dispersion table, and four repeats). ",
+      "<li><strong>With R-INLA's defaults, not bit-reproducible between runs.</strong> The eight plug-in fits behind <a href=\"#data\">What the data ask of the likelihood</a> were run %s times in separate R processes on the same data (the original run, the rerun that stored the dispersion table, and four repeats). ",
       "%s of the %s results were bit-identical with the most frequent one; %s were not, each in a different run: %s. The cause was looked into afterwards (the reproducibility item above): with R-INLA's online internal optimisation off, the differences went away in every test made. ",
-      "The shifts are a small fraction of a posterior sd, but they mean that a refit on unchanged data can move a published number in the second decimal, which the proposed gate on the change from yesterday's fit has to allow for, ",
-      "and that a rerun of the walk-forward need not reproduce its scores to the last digit. The stored <code>descriptives.rds</code> is a run in which every fit is the most frequent result.</li>"
+      "The shifts are a small fraction of a posterior sd, but with the defaults they meant that a refit on unchanged data could move a published number in the second decimal, ",
+      "and that a rerun of the walk-forward did not reproduce its scores to the last digit. The fitter now switches that option off, and the stored <code>descriptives.rds</code> comes from that run%s.</li>"
     ),
     int(length(repro$runs)), int(sum(repro$fits$n_modal)), int(sum(repro$fits$n_runs)), int(sum(repro$fits$n_runs) - sum(repro$fits$n_modal)),
-    paste(odd_txt, collapse = " and ")
+    paste(odd_txt, collapse = " and "),
+    if (isTRUE(repro$stored_is_modal)) "; each of its eight fits equals the most frequent result of those runs made with the defaults" else "; not every one of its eight fits equals the most frequent result of those earlier runs"
   )
 } else {
   ""
 }
-mode_li <- if (have(wfst)) {
+main4 <- c("hb_m_none", "hb_f_none", "bb_m_none_reg", "bb_f_none_reg")
+left_out_n <- if (have(wf)) sum(unlist(lapply(wf[grep(" (none|none_reg|ar1|ar1_reg)$", names(wf))], function(x) x$failed_fit_rows_left_out)), na.rm = TRUE) else NA
+mode_li <- if (have(wfst) && have(wfst2)) {
   sprintf(
     paste0(
-      "<li><strong>A fit is returned whether or not the mode search succeeded.</strong> R-INLA reports the status of its search for the hyperparameter mode and returns a fit either way. <code>fit_v2_inla()</code> did not read it. It now returns it, warns unless it is 0, and every script stores it. ",
-      "Every R-INLA fit behind this report was run again with the status recorded: %s walk-forward fits and %s others. %s of the walk-forward fits and %s of the others ended with a status other than 0. ",
-      "The failed ones were total models of basketball walk-forwards; fitted again from a cold start their search succeeded, and those refits replaced them (%s matches, expected total moved by up to %s points). <code>wf_inla.R</code> now does that by itself. ",
-      "The walk-forward numbers in this report are those of that second run. Whether the first run had failed searches cannot be known: it did not keep the status. The check reads R-INLA's status and does not look at the Hessian at the mode. A fit that still fails after the cold repeat keeps its status, is not used to start the next fit, and its predictions are left out of the scores and counted; no stored fit is in that state.</li>"
+      "<li><strong>A fit is returned whether or not the mode search succeeded.</strong> R-INLA reports the status of its search for the hyperparameter mode and returns a fit either way. <code>fit_v2_inla()</code> did not read it. It now returns it and warns unless it is 0, every script stores it, and the walk-forward repeats a failed or throwing warm-started fit once from a cold start. ",
+      "In the run reported here: %s walk-forward fits, of which %s were repeated from a cold start and %s were still failed afterwards (%s predictions left out of the scores), and %s other fits, of which %s failed. ",
+      "In the second run, the first to keep the status, %s of %s walk-forward fits had failed, all total models of basketball walk-forwards whose hyperparameters looked like their neighbours'. Whether the first run had failed searches cannot be known. Switching the online optimisation off does not make a failed warm start rarer. ",
+      "The check reads R-INLA's status and does not look at the Hessian at the mode. A fit that is still failed after the cold repeat keeps its status, is not used to start the next fit, and its predictions are left out of the scores and counted.</li>"
     ),
-    int(sum(wfst$wf$fits)), int(nrow(wfst$other)), int(sum(wfst$wf$status_not_zero)), int(sum(!(wfst$other$status %in% 0L))),
-    int(sum(wfst$wf$refit_matches)), num(max(wfst$wf$refit_max_change), 2)
+    int(sum(wfst$wf$fits)), int(sum(wfst$wf$retried, na.rm = TRUE)), none_or(sum(wfst$wf$status_not_zero)), no_or(left_out_n),
+    int(nrow(wfst$other)), none_or(sum(!(wfst$other$status %in% 0L))),
+    int(sum(wfst2$wf$status_not_zero)), int(sum(wfst2$wf$fits))
   )
 } else {
   ""
 }
-ridge_li <- if (have(wfst)) {
-  main <- wfst$wf[wfst$wf$run %in% c("hb_m_none", "hb_f_none", "bb_m_none_reg", "bb_f_none_reg"), ]
-  sc <- wfst$scores
+ridge_li <- if (have(wfst) && have(wfst2)) {
+  m2 <- wfst2$wf[wfst2$wf$run %in% main4, ]
+  m3 <- wfst$wf[wfst$wf$run %in% main4, ]
   sprintf(
     paste0(
-      "<li><strong>A successful search is not a unique answer.</strong> The second run of the walk-forward used the same code path for the fits and the same data as the first, and the two do not give the same predictions. ",
-      "Over the four main walk-forwards a match's expected margin differs between the runs by %s to %s goals or points at the median and by up to %s; in %s of %s cutoffs some hyperparameter's median differs by more than a quarter. ",
-      "The scores hardly move: the mean margin, total and result scores of a cell change by at most %s between the runs (<a href=\"#wf\">table in the walk-forward section</a>). ",
+      "<li><strong>A successful search is not a unique answer.</strong> With R-INLA's defaults, the second run of the walk-forward did not give the first run's predictions: over the four main walk-forwards a match's expected margin differed by %s to %s goals or points at the median and by up to %s, and in %s of %s cutoffs some hyperparameter's median differed by more than a quarter. ",
+      "The scores hardly moved: no cell's mean margin, total or result score changed by more than %s (<a href=\"#wf\">tables in the walk-forward section</a>). ",
       "What moves is how a team's strength is split between the club level and the season level with its memory. With six seasons the two are close to interchangeable, each weekly fit starts from last week's answer, and a run stays with the split it began with. ",
-      "For a daily production fit this means a team's published strength components can differ between two equally good descriptions of the same data. The gate on the change from yesterday's fit would trip on it. Whether to start every fit cold, to integrate over the hyperparameters, or to fix the split has to be settled before a cutover, and the shadow period should record the day-to-day movement of the published numbers.</li>"
+      "Switching the online optimisation off makes a run repeatable; it does not settle which split is right. The run reported here differs from the second by up to %s in a match's expected margin (%s of %s cutoffs with a hyperparameter median more than a quarter apart%s) and by at most %s in a cell's mean score. ",
+      "For a daily production fit: a team's published strength components depend on which of several equally good descriptions the fit lands on. With the option off that no longer changes from run to run on the same data, but it can still change when the data do, by more than the new data warrant. The shadow period should record the day-to-day movement of the published numbers.</li>"
     ),
-    num(min(main$median_abs_diff_margin), 3), num(max(main$median_abs_diff_margin), 3), num(max(main$max_abs_diff_margin), 2),
-    int(sum(main$cutoffs_hyper_differs_25pct)), int(sum(main$cutoffs)), num(max(abs(sc$diff)), 4)
+    num(min(m2$median_abs_diff_margin), 3), num(max(m2$median_abs_diff_margin), 3), num(max(m2$max_abs_diff_margin), 2),
+    int(sum(m2$cutoffs_hyper_differs_25pct)), int(sum(m2$cutoffs)), num(max(abs(wfst2$scores$diff)), 4),
+    num(max(m3$max_abs_diff_margin), 2), int(sum(m3$cutoffs_hyper_differs_25pct)), int(sum(m3$cutoffs)),
+    if (sum(m3$cutoffs_hyper_differs_25pct) == sum(m2$cutoffs_hyper_differs_25pct) && !identical(m3$cutoffs_hyper_differs_25pct, m2$cutoffs_hyper_differs_25pct)) {
+      "; the same total as between the first two runs by coincidence, made up differently per walk-forward"
+    } else {
+      ""
+    },
+    num(max(abs(wfst$scores$diff)), 4)
   )
 } else {
   ""
 }
-repro_fix_li <- if (have(wfst) && have(wfst$cold) && have(wfst$noopt)) {
-  d0 <- wfst$cold[wfst$cold$setting == "R-INLA defaults", ]
-  d1 <- wfst$cold[wfst$cold$setting == "internal.opt = FALSE", ]
-  nn <- wfst$noopt
+repro_fix_li <- if (have(wfst2) && have(wfst2$cold) && have(wfst2$noopt) && have(ident)) {
+  d0 <- wfst2$cold[wfst2$cold$setting == "R-INLA defaults", ]
+  d1 <- wfst2$cold[wfst2$cold$setting == "internal.opt = FALSE", ]
+  nn <- wfst2$noopt
+  f <- ident$files
   sprintf(
     paste0(
-      "<li><strong>Reproducibility: a cause and a proposal, not applied.</strong> With R-INLA's defaults a fit started cold does not always come out the same in two R processes: %s gave the most frequent result at the two cutoffs tested. ",
-      "With R-INLA's online internal optimisation switched off (<code>inla.setOption(internal.opt = FALSE)</code>), %s did, and two whole walk-forwards of handball men came out %s (%s of %s predictions identical in every stored number). ",
-      "Proposed: switch that option off for the duration of a fit inside <code>fit_v2_inla()</code> and restore the caller's setting afterwards, so that a refit on unchanged data returns the same numbers and a gate on the change from yesterday's fit measures the data and not the run. ",
-      "What it costs: the fits with the option off took %s times as long at the median (both sets were timed on the shared machine, so this is a ratio and not a benchmark), and their expected margins differ from the default run's by %s at the median and by up to %s. ",
-      "It does not make the mode unique; it makes the choice between equally good descriptions repeatable. No reported number comes from a fit with the option off. ",
-      "The football engine on main calls R-INLA with its defaults and four threads; the same check is recommended there before its switch.</li>"
+      "<li><strong>Reproducibility: found, and applied.</strong> With R-INLA's defaults a fit started cold did not always come out the same in two R processes: %s processes gave the most frequent result at the two cutoffs tested. ",
+      "With R-INLA's online internal optimisation switched off (<code>inla.setOption(internal.opt = FALSE)</code>), %s did, and two test walk-forwards of handball men were identical in all %s predictions. ",
+      "<code>fit_v2_inla()</code> now switches that option off for the duration of a fit and puts the caller's setting back on exit, also when the fit throws (owner's decision of 17 November). ",
+      "Every R-INLA result in this report was then computed again, twice: %s. %s ",
+      "What the option costs: in the test, the fits with it off took %s times as long at the median as the default run's fits of the same cutoffs (both timed on the shared machine: a ratio, not a benchmark). ",
+      "The football engine on main calls R-INLA with its defaults and four threads; the same check there is still to be decided.</li>"
     ),
-    paste(sprintf("%s of %s processes", int(d0$most_frequent), int(d0$processes)), collapse = " and "),
+    paste(sprintf("%s of %s", int(d0$most_frequent), int(d0$processes)), collapse = " and "),
     paste(sprintf("%s of %s", int(d1$most_frequent), int(d1$processes)), collapse = " and "),
-    if (nn$identical_rows == nn$matches) "identical" else "different", int(nn$identical_rows), int(nn$matches),
-    num(nn$fit_seconds_ratio_to_default, 2), num(nn$median_abs_diff_margin_from_default_run, 3), num(nn$max_abs_diff_margin_from_default_run, 2)
+    int(nn$matches),
+    if (all(f$identical)) {
+      sprintf("the two runs agree in every one of %s stored numbers across %s result files", int(sum(f$numbers)), int(nrow(f)))
+    } else {
+      sprintf("the two runs differ in %s of %s result files (largest difference %s)", int(sum(!f$identical)), int(nrow(f)), num(max(f$max_abs_diff, na.rm = TRUE), 4))
+    },
+    draws_short(),
+    num(nn$fit_seconds_ratio_to_default, 2)
   )
 } else {
   ""
@@ -280,11 +334,12 @@ Rscript -e 'source(\"docs/reports/2026-11-15-hb-bb-v2/inla_validate.R\")'       
 Rscript -e 'source(\"docs/reports/2026-11-15-hb-bb-v2/compare_validation.R\")'    # against the Stan reference
 docs/reports/2026-11-15-hb-bb-v2/repro_descriptives.sh &amp;&amp; Rscript -e 'source(\"docs/reports/2026-11-15-hb-bb-v2/repro_descriptives.R\")'   # repeat runs, compared
 Rscript -e 'source(\"docs/reports/2026-11-15-hb-bb-v2/cold_start_check.R\")' 1   # one fit from a cold start; repeat with 2, 3
-Rscript -e 'source(\"docs/reports/2026-11-15-hb-bb-v2/wf_status.R\")'            # mode status; the two runs compared
+Rscript -e 'source(\"docs/reports/2026-11-15-hb-bb-v2/compare_runs.R\")' &lt;results of run a&gt; &lt;results of run b&gt;   # are two complete runs identical?
+Rscript -e 'source(\"docs/reports/2026-11-15-hb-bb-v2/wf_status.R\")'            # mode status; the reported run against an earlier one
 Rscript -e 'source(\"docs/reports/2026-11-15-hb-bb-v2/review_corrections.R\")'   # old value beside new
 Rscript -e 'source(\"docs/reports/2026-11-15-hb-bb-v2/ladder_summary.R\")'
 Rscript -e 'source(\"docs/reports/2026-11-15-hb-bb-v2/build_report.R\")'</div>")
-add("<p class=\"note\">The stored results were computed against the data and the config of the branch point (commit 67fcb6baa). Main has since been merged into the branch, and its <code>data/</code> holds newer results and a pruned forecast archive, so the scripts that read data (<code>prep.R</code>, <code>wf_inla.R</code>, <code>descriptives.R</code>, <code>wf_compare.R</code>, <code>kki_periods.R</code>, <code>cold_start_check.R</code>) reproduce the stored results only from a checkout of the last commit before the merge, or with <code>HBBB_DATA</code> pointing at that checkout's <code>data/</code>.</p>")
+add("<p class=\"note\">The stored results were computed against the data and the config of the branch point (commit 67fcb6baa). Main has since been merged into the branch, and its <code>data/</code> holds newer results and a pruned forecast archive, so the scripts that read data (<code>prep.R</code>, <code>wf_inla.R</code>, <code>descriptives.R</code>, <code>wf_compare.R</code>, <code>kki_periods.R</code>, <code>cold_start_check.R</code>) reproduce the stored results only from a checkout of the last commit before the merge, or with <code>HBBB_DATA</code> pointing at that checkout's <code>data/</code>. ", provenance_txt(), "</p>")
 add("<h3>What is on the branch</h3>")
 add(
   "<ul><li>Prototype functions, none called by production code: <code>R/v2-margin-total-data.R</code>, <code>R/v2-margin-total-inla.R</code>, <code>R/v2-margin-total-predict.R</code>, <code>R/v2-margin-total-adapter.R</code>, <code>R/ingest-kki-periods.R</code>.</li>",
@@ -314,7 +369,7 @@ src <- data.frame(
     "v2 and production against the Lengjan line",
     "Regulation-time coverage (99.7 %), overtime shares (7.1 % in men's B&oacute;nusdeild)",
     "Run-to-run reproducibility of the R-INLA plug-in fits",
-    "Mode status of every fit; the two runs of the walk-forward against each other; cold-start fits in separate processes",
+    "Mode status of every fit; the reported run against the second; the two default runs against each other; cold-start fits in separate processes; whether the two runs with the option off are identical",
     "Old value beside new for every number the review changed",
     "Package tests"
   ),
@@ -326,7 +381,7 @@ src <- data.frame(
     "<code>out/wf_scores.rds</code>", "<code>out/wf_scores.rds</code>", "<code>out/wf_scores.rds</code>", "<code>out/wf_compare.rds</code>", "<code>out/wf_compare.rds</code>",
     "<code>kki/periods_matched.rds</code> (parsed cards: <code>kki/periods.tsv</code>, raw cards: <code>kki/raw/</code>)",
     "<code>out/repro_descriptives.rds</code> (from the runs kept in <code>repro/run_*/out/descriptives.rds</code>)",
-    "<code>out/wf_status.rds</code> (first run: <code>out/first-run/</code>; cold starts: <code>out/cold_start_*.rds</code>)",
+    "<code>out/wf_status.rds</code> (reported run against <code>out/second-run/</code>), <code>out/second-run/wf_status.rds</code> (second against <code>out/first-run/</code>; cold starts <code>out/cold_start_*.rds</code>), <code>out/run_identity.rds</code> (the repeat is in <code>round3/b/</code>), <code>out/run_identity_first.rds</code> (the comparison before the draws were seeded; the fixed-cutoff files of that state are in <code>round3/{a,b}/out/unseeded-draws/</code>), <code>out/run_identity_seeding.rds</code> (fixed-cutoff fits before against after the seeding), <code>out/run_identity_vs_second.rds</code> (the second run against the reported one, file by file)",
     "<code>out/review_corrections.rds</code> (published results: <code>out/at-84b9e6e5b/</code>)", "<code>logs/full_tests.log</code>"
   ),
   field = c(
@@ -344,8 +399,8 @@ src <- data.frame(
     "<code>[[cell]]$market</code>: <code>ll_market</code>, <code>ll_v2</code>, <code>ll_prod</code>",
     "one row per stored game: <code>ok</code>, <code>overtime</code>, <code>home_reg</code>, <code>away_reg</code>, <code>sex</code>, <code>division</code>",
     "<code>$fits</code> (per cell and response: <code>n_runs</code>, <code>n_modal</code>, <code>max_abs_fitted_diff</code>, <code>hyper_q50_modal</code>, <code>hyper_q50_other</code>), <code>$hfa</code>",
-    "<code>$wf</code> (per walk-forward: <code>fits</code>, <code>status_not_zero</code>, differences between the runs), <code>$scores</code>, <code>$other</code> (status of the fits outside the walk-forward), <code>$cold</code>",
-    "one row per quantity: <code>published</code>, <code>corrected</code> (same predictions, corrected scripts), <code>final</code> (second run)",
+    "<code>$wf</code> (per walk-forward: <code>fits</code>, <code>status_not_zero</code>, <code>retried</code>, differences between the runs), <code>$scores</code>, <code>$other</code> (status of the fits outside the walk-forward), <code>$cold</code>, <code>$noopt</code>; <code>run_identity*.rds</code>: <code>$files</code> (<code>numbers</code>, <code>identical</code>, <code>max_abs_diff</code>), <code>$differing</code> (per stored component that differs: <code>values</code>, <code>differ</code>, <code>max_abs_diff</code>)",
+    "one row per quantity: <code>published</code>, <code>corrected</code> (same predictions, corrected scripts), <code>second</code> (second run), <code>final</code> (the run reported here), <code>moved_se</code>; <code>headline_changes.rds</code>: <code>$changed</code>",
     "summary reporter output of <code>devtools::test()</code>"
   )
 )
@@ -353,10 +408,38 @@ add(tbl(src, head = c("Numbers", "Result file", "Fields"),
         note = "Cells are <code>hb_m</code>, <code>hb_f</code>, <code>bb_m</code>, <code>bb_f</code>. The printed tables behind every section are also kept as text in <code>logs/</code>: <code>diag_prod.log</code>, <code>ladder_summary.log</code>, <code>compare_validation.log</code>, <code>wf_score.log</code>, <code>wf_compare.log</code>, <code>descriptives.log</code>, <code>kki_periods.log</code>."))
 
 add("<h3>Corrected after review</h3>")
-add("<p>An independent review of this report on 16 November confirmed 24 defects, and a second check of the fixes found twelve leftovers, which are corrected here too. The table puts old beside new for the numbers the review named, for the headline walk-forward scores, and for what moved when the fixed-cutoff fits were run again; every table and sentence in the body is built from the final state. \"Published\" is the report as first reviewed; \"corrected\" is the same walk-forward predictions scored by the corrected scripts, so published against corrected is the effect of a fix; \"final\" is the second run of the walk-forward, so corrected against final is the effect of running the fits again.</p>")
+add("<p>An independent review of this report on 16 November confirmed 24 defects, and a second check of the fixes found twelve leftovers, which are corrected here too. On 17 November the fitter was changed to switch R-INLA's online optimisation off and to seed its posterior draws, and every R-INLA fit behind the report was run again, twice. The table puts old beside new for the numbers the review named, for the headline walk-forward scores, and for what moved when the fixed-cutoff fits were run again; every table and sentence in the body is built from the final state. \"Published\" is the report as first reviewed; \"corrected\" is the same walk-forward predictions scored by the corrected scripts, so published against corrected is the effect of a fix; \"second run\" is the fits run again with R-INLA's defaults, so corrected against second run is the effect of running them again; \"final\" is the run with R-INLA's online optimisation off, which this report is built from, so second run against final is the effect of that option and, for the numbers computed from posterior draws, of a new set of draws.</p>")
 if (have(corr)) {
-  ctab <- data.frame(f = corr$finding, what = esc(corr$what), pub = esc(corr$published), cor = esc(corr$corrected), fin = esc(corr$final))
-  add(tbl(ctab, head = c("Finding", "Quantity", "Published", "Corrected", "Final")))
+  ctab <- data.frame(
+    f = corr$finding, what = esc(corr$what), pub = esc(corr$published), cor = esc(corr$corrected), sec = esc(corr$second), fin = esc(corr$final),
+    mv = ifelse(is.na(corr$moved_se), "", num(corr$moved_se, 2))
+  )
+  add(tbl(ctab,
+    hl = !is.na(corr$moved_se) & corr$moved_se > 1,
+    head = c("Finding", "Quantity", "Published", "Corrected", "Second run", "Final", "Second run to final, in standard errors"),
+    note = "The last column is the largest change of a value from the second run to the final one, in units of its standard error, where the value has one. Rows where it exceeds 1 are highlighted."
+  ))
+  moved <- corr[!is.na(corr$moved_se) & corr$moved_se > 1, ]
+  add(sprintf(
+    "<p>%s</p>",
+    if (nrow(moved) == 0) {
+      "No value in this table moved by more than its standard error between the second run and the final one."
+    } else {
+      sprintf("Moved by more than its standard error between the second run and the final one: %s.", paste(esc(moved$what), collapse = "; "))
+    }
+  ))
+  if (have(hl_changes)) {
+    add(sprintf(
+      "<p>Beyond this table, every headline number that <code>check_headlines.R</code> recomputes was compared between the second run and the final one: %s lines, of which %s differ in some printed digit. They are listed below%s.</p>",
+      int(hl_changes$n_lines), int(nrow(hl_changes$changed)),
+      if (any(grepl("seconds", hl_changes$changed$label))) "; one of them is a fit time, which is not a result" else ""
+    ))
+    add(
+      "<details><summary>Headline numbers that differ between the second run and the final one</summary>",
+      tbl(data.frame(l = esc(hl_changes$changed$label), a = esc(hl_changes$changed$second), b = esc(hl_changes$changed$final)), head = c("Number", "Second run", "Final")),
+      "</details>"
+    )
+  }
 } else {
   add(missing_note("the table of corrected numbers"))
 }
@@ -366,7 +449,7 @@ add(
   "<li><strong>Finding 2.</strong> Rung R1 was described as removing only the unused states. It also drops production's sum-to-zero constraint on each round's innovations and uses a different prior centre for the scoring level, so its drop in leapfrog steps cannot be put on the unused states alone. The text and the rung's name say so.</li>",
   "<li><strong>Finding 4.</strong> The sentence that R-INLA describes the total models' variance split more narrowly than NUTS was fixed text and false for the handball men total model. It is now generated from the comparison.</li>",
   "<li><strong>Findings 3, 5, 6, 15, 18 and 22</strong> are in the code and its tests: the R-INLA tests run in main's INLA Engine workflow; the priors of the total model, the random-walk form and the intercepts are asserted; a season nobody played and a two-division league are tested; with posterior draws the overtime share is weighted draw by draw. None changes a reported number.</li>",
-  "<li><strong>Finding 7.</strong> The fitter reads and returns the status of R-INLA's mode search, and every fit was run again with it kept. See <a href=\"#wf\">The walk-forward, run twice</a>.</li>",
+  "<li><strong>Finding 7.</strong> The fitter reads and returns the status of R-INLA's mode search, and every fit was run again with it kept. See <a href=\"#wf\">The R-INLA fits, run four times</a>.</li>",
   "<li><strong>Findings 8 and 9.</strong> The cutover table said the extract and the simulator needed no code and that the adapter supplied what they read. It supplies seven arrays, not the names or the fit object they read, and regulation-time basketball draws cannot be published without an overtime step. The table is rewritten.</li>",
   "<li><strong>Finding 11.</strong> This autumn's weeks 7 to 11 were labelled \"last 6 weeks\". They are now in the middle row.</li>",
   "<li><strong>Finding 12.</strong> The report said v2 always works with the older information. Production's forecast was the older one in about four matches in ten.</li>",
@@ -378,6 +461,7 @@ add(
   "<li><strong>Finding 21.</strong> A logit shift is an odds ratio; it was printed as a ratio of rates. Both are now given.</li>",
   "<li><strong>Finding 23.</strong> The variance form that grows with the expected total was centred on the scored season's own mean; the centre now comes from the training seasons.</li>",
   "<li><strong>Finding 24.</strong> The \"final result\" rows of the walk-forward table repeated the regulation-time calibration; they now show the calibration of the final-score predictive.</li>",
+  "<li><strong>17 November, reproducibility.</strong> <code>fit_v2_inla()</code> switches R-INLA's online internal optimisation off for the fit, puts the caller's setting back afterwards, and seeds R's generator for the posterior draws. Every R-INLA fit was run again, twice, and the stored results are the first of those two runs. See <a href=\"#wf\">The R-INLA fits, run four times</a>.</li>",
   "</ul>"
 )
 
@@ -401,8 +485,8 @@ measured <- c(
   ),
   sprintf("Regulation-time scores for %s of %s stored basketball games.", int(sum(per$ok)), int(nrow(per))),
   "Residual diagnostics by division, season and sex.",
-  if (have(repro)) sprintf("Run-to-run reproducibility of the R-INLA plug-in fits: %s runs of the eight fits on the same data.", int(length(repro$runs))),
-  if (have(wfst)) sprintf("The status of the mode search of every R-INLA fit behind the report (%s fits), and two complete runs of the walk-forward against each other.", int(sum(wfst$wf$fits) + nrow(wfst$other)))
+  if (have(repro)) sprintf("Run-to-run reproducibility of the R-INLA plug-in fits with R-INLA's defaults: %s runs of the eight fits on the same data.", int(length(repro$runs))),
+  if (have(wfst)) sprintf("The status of the mode search of every R-INLA fit behind the report (%s fits); four complete runs of those fits, two with R-INLA's defaults and two with its online optimisation off, compared with each other.", int(sum(wfst$wf$fits) + nrow(wfst$other)))
 )
 not_measured <- c(
   if (length(setdiff(names(CELLS), r0_done))) sprintf("Production fits for %s had not finished when this report was built.", paste(LAB[setdiff(names(CELLS), r0_done)], collapse = ", ")),
@@ -419,7 +503,11 @@ not_measured <- c(
   "A league-table (season simulation) comparison between the engines.",
   "Genius Sports LiveStats as a second source of period scores: not needed, not tried.",
   "Whether the market beats the model: too few priced matches (65 handball, 20 basketball).",
-  "Whether R-INLA's online internal optimisation is the whole reason the two runs of the walk-forward differ. With it off, fits were identical in every test made; the first run itself, made on a heavily loaded machine, cannot be repeated.",
+  paste0(
+    "Whether R-INLA's online internal optimisation is the whole reason the first two runs of the walk-forward differed. With it off, ",
+    if (have(ident) && all(ident$files$identical)) "two complete runs agree in every stored number" else "two complete runs do not agree in every stored number",
+    "; the first run itself, made on a heavily loaded machine, cannot be repeated."
+  ),
   "The Hessian at the mode: the fitter checks R-INLA's status of the mode search and nothing else, so a search that ends with status 0 on a poorly determined Hessian is not caught.",
   "A walk-forward that starts every fit cold, or one that integrates over the hyperparameters instead of fixing them at their mode.",
   "The inputs that would make the season simulator reproduce v2: stated from the algebra, not tested.",
@@ -491,24 +579,25 @@ if (have(ladder) && !is.na(lad("bb_f", "r0_prod", "elpd"))) {
 }
 if (have(val) && length(val)) {
   items <- c(items, sprintf(
-    "<strong>R-INLA reproduces NUTS.</strong> On one identical model, in the second run of the R-INLA fits (the figures depend on the run, see the section), the largest difference in a state's posterior mean is %s posterior sds, the largest difference in a held-out match's expected margin or total is %s (%s for the plug-in fit the walk-forward uses), and the held-out log scores agree to %s (plug-in: %s).%s%s",
+    "<strong>R-INLA reproduces NUTS.</strong> On one identical model, in the run of the R-INLA fits reported here (the figures depend on the run, see the section), the largest difference in a state's posterior mean is %s posterior sds, the largest difference in a held-out match's expected margin or total is %s (%s for the plug-in fit the walk-forward uses), and the held-out log scores agree to %s (plug-in: %s).%s%s",
     num(max(vapply(val, function(o) o$state[["max_abs_mean_diff_in_sd"]], 1)), 2), num(max(vapply(val, function(o) o$pred[["max_abs_mean_diff"]], 1)), 2),
     num(max(vapply(val, function(o) o$pred[["max_abs_mean_diff_eb"]], 1)), 2),
     num(max(vapply(val, function(o) abs(o$log_score[["stan"]] - o$log_score[["inla_full_samples"]]), 1)), 4),
     num(max(vapply(val, function(o) abs(o$log_score[["stan"]] - o$log_score[["inla_eb"]]), 1)), 4),
-    if (have(wfst)) {
+    if (have(wfst) && have(wfst2)) {
       sprintf(
-        " Of the %s R-INLA fits behind this report, %s ended the mode search with a status other than 0; refitted from a cold start they succeeded. A successful search is still not a unique answer: a second run of the walk-forward moved a match's expected margin by up to %s while moving no cell's mean score by more than %s.",
-        int(sum(wfst$wf$fits) + nrow(wfst$other)), int(sum(wfst$wf$status_not_zero) + sum(!(wfst$other$status %in% 0L))),
-        num(max(wfst$wf$max_abs_diff_margin[wfst$wf$run %in% c("hb_m_none", "hb_f_none", "bb_m_none_reg", "bb_f_none_reg")]), 1),
-        num(max(abs(wfst$scores$diff)), 4)
+        " The fits are reproducible now: the fitter switches R-INLA's online optimisation off and seeds its posterior draws, and two complete runs of all %s R-INLA fits behind this report %s. In that run %s walk-forward fits were repeated from a cold start and %s stayed failed. A successful search is still not a unique answer: with R-INLA's defaults a second run had moved a match's expected margin by up to %s while moving no cell's mean score by more than %s.",
+        int(sum(wfst$wf$fits) + nrow(wfst$other)),
+        if (have(ident) && all(ident$files$identical)) "agree in every stored number" else "do not agree in every stored number",
+        int(sum(wfst$wf$retried, na.rm = TRUE)), none_or(sum(wfst$wf$status_not_zero)),
+        num(max(wfst2$wf$max_abs_diff_margin[wfst2$wf$run %in% main4]), 1), num(max(abs(wfst2$scores$diff)), 4)
       )
     } else {
       ""
     },
     if (have(repro)) {
       sprintf(
-        " R-INLA is not bit-reproducible between runs: of %s fits (eight models, %s runs on the same data), %s landed on a slightly different optimum (handball men's home advantage %s against %s).",
+        " With the defaults the fits had not been bit-reproducible: of %s fits (eight models, %s runs on the same data), %s landed on a slightly different optimum (handball men's home advantage %s against %s).",
         int(sum(repro$fits$n_runs)), int(length(repro$runs)), int(sum(repro$fits$n_runs) - sum(repro$fits$n_modal)),
         num(repro$hfa$hfa_other[repro$hfa$cell == "hb_m"], 3),
         num(repro$hfa$hfa_modal[repro$hfa$cell == "hb_m"], 3)

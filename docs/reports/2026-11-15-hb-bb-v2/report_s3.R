@@ -423,84 +423,110 @@ if (have(hbm) && have(bbm)) {
     ), "</details>"
   )
 
-  if (have(wfst)) {
+  if (have(wfst) && have(wfst2)) {
     run_lab <- c(
       hb_m_none = "Handball men", hb_f_none = "Handball women", bb_m_none_reg = "Basketball men", bb_f_none_reg = "Basketball women",
       bb_m_ar1_reg = "Basketball men, within-season AR(1)", bb_f_ar1_reg = "Basketball women, within-season AR(1)",
       bb_m_none = "Basketball men, trained on final scores", bb_f_none = "Basketball women, trained on final scores"
     )
+    main4 <- names(run_lab)[1:4]
     w <- wfst$wf
-    add("<h3>The walk-forward, run twice</h3>")
+    w2 <- wfst2$wf
+    add("<h3>The R-INLA fits, run four times</h3>")
+    add(paste0(
+      "<p>The numbers in this report come from the third of four runs of the R-INLA fits. ",
+      "The <strong>first</strong> run is the one the report was first written from; it did not record whether a fit's search for the hyperparameter mode had succeeded. ",
+      "The <strong>second</strong> repeated every fit with that status kept. Both used R-INLA's default settings. ",
+      "The <strong>third and fourth</strong> are the same set of fits made twice more, with R-INLA's online internal optimisation switched off inside the fitter (<code>fit_v2_inla(reproducible = TRUE)</code>, now its default), which is the setting under which a fit comes out the same in two R processes. ",
+      "All four used the data and the config of the branch point, and the fitting code is otherwise the same; the third and fourth also repeat a failed mode search from a cold start by themselves. ",
+      "The fixed-cutoff fits of the third and fourth runs were made once more after their first comparison, for the reason given next.</p>"
+    ))
+    if (have(ident)) {
+      f <- ident$files
+      add(sprintf(
+        "<p><strong>Are the third and fourth runs identical?</strong> %s Compared: every stored number of %s result files (%s numbers: the predictions and hyperparameters of all eight walk-forwards, the descriptive fits, the fixed-cutoff fits with their posterior draws, the weekly-correlation fits), in the order stored, leaving out only timings, the record of what else the machine was doing, and data-frame row names. %s</p>",
+        if (all(f$identical)) "<span class=\"c\">Yes, in every stored number.</span>" else "<span class=\"x\">No.</span>",
+        int(nrow(f)), int(sum(f$numbers)),
+        if (all(f$identical)) {
+          "So running any of these fits again, from the same commit on the same data and machine, reproduces every stored result."
+        } else {
+          sprintf(
+            "Files that differ, with the largest absolute difference in any number: %s.",
+            paste(sprintf("<code>%s</code> (%s)", f$file[!f$identical], num(f$max_abs_diff[!f$identical], 4)), collapse = "; ")
+          )
+        }
+      ))
+      if (nzchar(draws_account())) add("<p>", draws_account(), " ", provenance_txt(), "</p>")
+    }
+    left_out <- sum(unlist(lapply(wf[grep(" (none|none_reg|ar1|ar1_reg)$", names(wf))], function(x) x$failed_fit_rows_left_out)), na.rm = TRUE)
     add(sprintf(
       paste0(
-        "<p>R-INLA returns a fit whether or not its search for the hyperparameter mode succeeded, and the first run of the walk-forward did not record that status. So every walk-forward was run a second time with the status kept. Of %s fits, %s ended with a status other than 0, by walk-forward: %s. ",
-        "Each of those was fitted again from a cold start, where the search succeeded, and the refit's predictions replaced the failed fit's: %s matches, whose expected total moved by up to %s points. The other response of the same cutoffs, whose search had succeeded, was left as it was. ",
-        "The numbers in this report are from the second run with those refits. The first run is kept, and scored by the same scripts, which makes the two a measure of how much a walk-forward depends on the run.</p>"
+        "<p><strong>Mode status.</strong> In the run reported here, %s of the %s walk-forward fits were repeated from a cold start because the warm-started search failed or threw (%s); after that %s were still failed, and %s predictions are left out of the scores for that reason. The %s fits outside the walk-forward: %s with a status other than 0. ",
+        "In the second run, %s of %s walk-forward fits had ended with a failed search (%s); each succeeded when fitted again from a cold start. The option does not make a failed warm start rarer.%s</p>"
       ),
-      int(sum(w$fits)), int(sum(w$status_not_zero)),
-      paste(sprintf("%s (%s)", run_lab[w$run[w$status_not_zero > 0]], int(w$status_not_zero[w$status_not_zero > 0])), collapse = "; "),
-      int(sum(w$refit_matches)), num(max(w$refit_max_change), 2)
+      int(sum(w$retried, na.rm = TRUE)), int(sum(w$fits)),
+      paste(sprintf("%s (%s)", run_lab[w$run[w$retried > 0]], int(w$retried[w$retried > 0])), collapse = "; "),
+      none_or(sum(w$status_not_zero)), no_or(left_out),
+      int(nrow(wfst$other)), none_or(sum(!(wfst$other$status %in% 0L))),
+      int(sum(w2$status_not_zero)), int(sum(w2$fits)),
+      paste(sprintf("%s (%s)", run_lab[w2$run[w2$status_not_zero > 0]], int(w2$status_not_zero[w2$status_not_zero > 0])), collapse = "; "),
+      # The repeat's retry flags are among the stored values the comparison found identical.
+      if (have(ident) && all(ident$files$identical)) " With it off, which searches fail is repeatable as well: the repeat of the reported run repeated the same fits." else ""
     ))
-    wtab <- data.frame(
-      run = run_lab[w$run], cutoffs = int(w$cutoffs), matches = int(w$matches),
-      dm = sprintf("%s / %s", num(w$median_abs_diff_margin, 3), num(w$max_abs_diff_margin, 2)), big = pct(w$share_margin_over_half, 1),
-      dt = sprintf("%s / %s", num(w$median_abs_diff_total, 3), num(w$max_abs_diff_total, 2)),
-      hy = sprintf("%s of %s", int(w$cutoffs_hyper_differs_25pct), int(w$cutoffs))
+    if (nzchar(cold_account(nrow(wfst$other)))) add("<p>", cold_account(nrow(wfst$other)), "</p>")
+    dist_tab <- function(x) {
+      data.frame(
+        run = run_lab[x$run], cutoffs = int(x$cutoffs), matches = int(x$matches),
+        dm = sprintf("%s / %s", num(x$median_abs_diff_margin, 3), num(x$max_abs_diff_margin, 2)), big = pct(x$share_margin_over_half, 1),
+        dt = sprintf("%s / %s", num(x$median_abs_diff_total, 3), num(x$max_abs_diff_total, 2)),
+        hy = sprintf("%s of %s", int(x$cutoffs_hyper_differs_25pct), int(x$cutoffs))
+      )
+    }
+    dist_head <- c(
+      "Walk-forward", "Cutoffs", "Matches", "Expected margin: median / largest difference between the runs",
+      "Matches whose expected margin differs by more than half a goal or point", "Expected total: median / largest difference",
+      "Cutoffs where some hyperparameter's median differs by more than 25 %"
     )
-    add(tbl(wtab,
-      right = names(wtab)[-1],
-      head = c(
-        "Walk-forward", "Cutoffs", "Matches", "Expected margin, first run against second: median / largest difference",
-        "Matches whose expected margin differs by more than half a goal or point", "Expected total: median / largest difference",
-        "Cutoffs where some hyperparameter's median differs by more than 25 %"
-      ),
-      note = "Same fitting code, same data, same weekly cutoffs, each fit started from the previous cutoff's mode. The first run was made on 15 and 16 November on a heavily loaded machine, the second on 16 November from a frozen checkout."
-    ))
-    sc2 <- wfst$scores
-    stab <- data.frame(
-      cell = LAB[sc2$cell], score = sc2$score, n = int(sc2$n), a = num(sc2$first_run, 4), b = num(sc2$second_run, 4),
-      d = pm(sc2$diff, sc2$diff_se, 4), mx = num(sc2$max_abs_match_diff, 2)
-    )
-    add(tbl(stab,
-      right = names(stab)[-(1:2)],
-      head = c("Cell", "Score", "Matches", "First run", "Second run", "Second minus first", "Largest change for one match"),
+    add("<p>How far apart the runs are. First, the two runs made with R-INLA's defaults, which differ in nothing but the run:</p>")
+    add(tbl(dist_tab(w2), right = c("cutoffs", "matches", "dm", "big", "dt", "hy"), head = dist_head,
+            note = "First run against second run. Same fitting code, same data, same weekly cutoffs, each fit started from the previous cutoff's mode. The first run was made on a heavily loaded machine."))
+    add("<p>Then the second run against the run reported here, which differ in the option only:</p>")
+    add(tbl(dist_tab(w), right = c("cutoffs", "matches", "dm", "big", "dt", "hy"), head = dist_head,
+            note = "Second run (R-INLA's defaults) against the third (online optimisation off)."))
+    score_tab <- function(x, a, b) {
+      data.frame(cell = LAB[x$cell], score = x$score, n = int(x$n), a = num(x$first_run, 4), b = num(x$second_run, 4), d = pm(x$diff, x$diff_se, 4), mx = num(x$max_abs_match_diff, 2))
+    }
+    sc_def <- wfst2$scores
+    sc_fin <- wfst$scores
+    both <- cbind(score_tab(sc_def), score_tab(sc_fin)[, c("b", "d", "mx")])
+    names(both) <- c("cell", "score", "n", "r1", "r2", "d12", "mx12", "r3", "d23", "mx23")
+    add(tbl(both[, c("cell", "score", "n", "r1", "r2", "r3", "d12", "d23", "mx23")],
+      right = c("n", "r1", "r2", "r3", "d12", "d23", "mx23"),
+      head = c("Cell", "Score", "Matches", "First run", "Second run", "Third run (reported)", "Second minus first", "Third minus second", "Largest change for one match, second to third"),
       note = "Mean out-of-sample log scores of the plain model, margin and total on the integer scale. Basketball is regulation time."
     ))
     # Cold starts in separate processes, with R-INLA's defaults and with its online optimisation off.
     cold_txt <- ""
-    if (have(wfst$cold)) {
-      cd <- wfst$cold
+    if (have(wfst2$cold)) {
+      cd <- wfst2$cold
       d0 <- cd[cd$setting == "R-INLA defaults", ]
       d1 <- cd[cd$setting == "internal.opt = FALSE", ]
       cold_txt <- sprintf(
-        "A warm start is not the whole story: a single fit started cold is not always the same either. The margin model of two handball men cutoffs was fitted from a cold start in separate R processes. With R-INLA's defaults, %s processes gave the most frequent result at the two cutoffs (the others differed by up to %s in an expected margin). ",
-        paste(sprintf("%s of %s", int(d0$most_frequent), int(d0$processes)), collapse = " and "), num(max(d0$max_abs_diff_between_processes), 3)
+        "Why the option: a warm start is not the whole story, because a single fit started cold was not always the same either. The margin model of two handball men cutoffs was fitted from a cold start in separate R processes. With R-INLA's defaults, %s processes gave the most frequent result at the two cutoffs (the others differed by up to %s in an expected margin). With the online optimisation off, %s did (R-INLA's help says no more about the option than \"internal online optimisations\"). ",
+        paste(sprintf("%s of %s", int(d0$most_frequent), int(d0$processes)), collapse = " and "), num(max(d0$max_abs_diff_between_processes), 3),
+        paste(sprintf("%s of %s", int(d1$most_frequent), int(d1$processes)), collapse = " and ")
       )
-      if (nrow(d1) > 0) {
-        cold_txt <- paste0(cold_txt, sprintf(
-          "With R-INLA's online internal optimisation switched off (<code>inla.setOption(internal.opt = FALSE)</code>), %s did%s. ",
-          paste(sprintf("%s of %s", int(d1$most_frequent), int(d1$processes)), collapse = " and "),
-          if (all(d1$most_frequent == d1$processes)) ": no difference at all, which points at that option as the source (R-INLA's help says no more about it than \"internal online optimisations\")" else ""
-        ))
-      }
-      if (have(wfst$noopt)) {
-        nn <- wfst$noopt
-        cold_txt <- paste0(cold_txt, sprintf(
-          "Two whole walk-forwards of handball men with the option off %s (%s of %s predictions identical in every stored number; largest difference in an expected margin %s). ",
-          if (nn$identical_rows == nn$matches) "came out identical to the last bit" else "did not come out identical",
-          int(nn$identical_rows), int(nn$matches), num(nn$max_abs_diff_margin, 3)
-        ))
-      }
     }
     add(sprintf(
       paste0(
-        "<p><strong>What this shows.</strong> The mean scores of a cell move by at most %s between the runs, far less than any difference this report draws a conclusion from. Single predictions do move: a match's expected margin by up to %s, and in %s of the %s cutoffs of the four main walk-forwards some hyperparameter's median differs by more than a quarter. ",
+        "<p><strong>What this shows.</strong> With R-INLA's defaults, two runs of the same walk-forward moved a match's expected margin by up to %s, and some hyperparameter's median by more than a quarter in %s of the %s cutoffs of the four main walk-forwards, while no cell's mean score moved by more than %s. ",
         "What differs is how a team's strength is divided between its long-run club level and its season level with the memory between seasons. With six seasons those are close to interchangeable, so several divisions describe the data about equally well; each weekly fit starts from the previous week's answer and stays with the division it began with. %s",
-        "A status of 0 therefore says the search ended at a mode, not that the mode is the only one. And the four failed searches were all total models of basketball, whose hyperparameters looked like their neighbours': without the status nothing would have singled them out.</p>"
+        "The option removes the difference between runs, not the choice between descriptions: the run reported here differs from the second by up to %s in a match's expected margin and by at most %s in a cell's mean score, which is one more draw from the same spread, now a repeatable one. ",
+        "A status of 0 says the search ended at a mode, not that the mode is the only one.</p>"
       ),
-      num(max(abs(sc2$diff)), 4), num(max(w$max_abs_diff_margin[w$run %in% names(run_lab)[1:4]]), 2),
-      int(sum(w$cutoffs_hyper_differs_25pct[w$run %in% names(run_lab)[1:4]])), int(sum(w$cutoffs[w$run %in% names(run_lab)[1:4]])),
-      cold_txt
+      num(max(w2$max_abs_diff_margin[w2$run %in% main4]), 2), int(sum(w2$cutoffs_hyper_differs_25pct[w2$run %in% main4])), int(sum(w2$cutoffs[w2$run %in% main4])),
+      num(max(abs(sc_def$diff)), 4), cold_txt,
+      num(max(w$max_abs_diff_margin[w$run %in% main4]), 2), num(max(abs(sc_fin$diff)), 4)
     ))
   }
 
