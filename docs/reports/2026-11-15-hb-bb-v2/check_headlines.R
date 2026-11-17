@@ -125,24 +125,46 @@ for (cl in cells) {
       sum(late & d$season == max(d$season)), stats::sd(((d$margin_fit - d$mean_m) / d$s_m)[late]))
 }
 
-cat("\n== wf_status.rds: $wf (fits, status_not_zero, differences between the two runs), $scores, $other, $cold\n")
+cat("\n== wf_status.rds: $wf (fits, status_not_zero, retried, distance from out/second-run/), $scores, $other\n")
 ws <- rd("wf_status.rds")
-say("walk-forward fits; mode status not 0 as run / after cold refit", "%d; %d / %d", sum(ws$wf$fits), sum(ws$wf$status_not_zero), sum(ws$wf$status_not_zero_after_refit))
-say("matches whose prediction came from a refit; largest change", "%d; %.3f", sum(ws$wf$refit_matches), max(ws$wf$refit_max_change))
+say("walk-forward fits; repeated from a cold start; still failed", "%d; %s; %d", sum(ws$wf$fits), format(sum(ws$wf$retried, na.rm = TRUE)), sum(ws$wf$status_not_zero))
+say("predictions left out of the scores for a failed fit", "%d", sum(unlist(lapply(wf[grep(" (none|none_reg|ar1|ar1_reg)$", names(wf))], function(x) x$failed_fit_rows_left_out)), na.rm = TRUE))
 say("other fits; with mode status not 0", "%d; %d", nrow(ws$other), sum(!(ws$other$status %in% 0L)))
 main <- ws$wf[ws$wf$run %in% c("hb_m_none", "hb_f_none", "bb_m_none_reg", "bb_f_none_reg"), ]
-say("two runs, expected margin: median diff range; largest", "%.4f to %.4f; %.2f", min(main$median_abs_diff_margin), max(main$median_abs_diff_margin), max(main$max_abs_diff_margin))
-say("two runs: cutoffs with a hyperparameter median differing > 25 %", "%d of %d", sum(main$cutoffs_hyper_differs_25pct), sum(main$cutoffs))
-say("two runs: largest change in a cell's mean score", "%.4f", max(abs(ws$scores$diff)))
-if (!is.null(ws$cold)) {
-  for (i in seq_len(nrow(ws$cold))) {
-    say(paste("cold start,", ws$cold$setting[i], ws$cold$cutoff[i]), "%d of %d processes give the most frequent result", ws$cold$most_frequent[i], ws$cold$processes[i])
-  }
+say("reported run against the second run, expected margin: median diff range; largest", "%.4f to %.4f; %.2f", min(main$median_abs_diff_margin),
+    max(main$median_abs_diff_margin), max(main$max_abs_diff_margin))
+say("... cutoffs with a hyperparameter median differing > 25 %", "%d of %d", sum(main$cutoffs_hyper_differs_25pct), sum(main$cutoffs))
+say("... largest change in a cell's mean score", "%.4f", max(abs(ws$scores$diff)))
+ws2 <- rd("second-run/wf_status.rds")
+m2 <- ws2$wf[ws2$wf$run %in% c("hb_m_none", "hb_f_none", "bb_m_none_reg", "bb_f_none_reg"), ]
+say("second run: walk-forward fits; mode status not 0", "%d; %d", sum(ws2$wf$fits), sum(ws2$wf$status_not_zero))
+say("first run against second run, expected margin: largest; cutoffs > 25 %; score", "%.2f; %d of %d; %.4f", max(m2$max_abs_diff_margin),
+    sum(m2$cutoffs_hyper_differs_25pct), sum(m2$cutoffs), max(abs(ws2$scores$diff)))
+for (i in seq_len(nrow(ws2$cold))) {
+  say(paste("cold start,", ws2$cold$setting[i], ws2$cold$cutoff[i]), "%d of %d processes give the most frequent result", ws2$cold$most_frequent[i], ws2$cold$processes[i])
 }
-if (!is.null(ws$noopt)) {
-  say("two walk-forwards with internal.opt = FALSE: identical predictions", "%d of %d; fit seconds ratio to the default run %.2f", ws$noopt$identical_rows,
-      ws$noopt$matches, ws$noopt$fit_seconds_ratio_to_default)
-}
+say("two test walk-forwards with the option off: identical predictions", "%d of %d", ws2$noopt$identical_rows, ws2$noopt$matches)
+
+cat("\n== run_identity.rds: $files (numbers, identical, max_abs_diff): the reported run against its repeat\n")
+ri <- rd("run_identity.rds")$files
+say("result files compared; numbers; identical files", "%d; %d; %d", nrow(ri), sum(ri$numbers), sum(ri$identical))
+if (any(!ri$identical)) print(ri[!ri$identical, ], row.names = FALSE)
+r1 <- rd("run_identity_first.rds")$files
+say("first comparison, before the draws were seeded: files; identical files", "%d; %d", nrow(r1), sum(r1$identical))
+ru <- rd("run_identity_first.rds")$differing
+is_draw <- grepl("[$]samples[$](loc|sigma)$", ru$component)
+sg <- ru[grepl("[$]samples[$]sigma$", ru$component), ]
+say("  components that differed; of them posterior draws; fits; share of a fit's draws that differed", "%d; %d; %d; %.1f%% to %.1f%%", nrow(ru), sum(is_draw), nrow(sg),
+    100 * min(sg$differ / sg$values), 100 * max(sg$differ / sg$values))
+say("  largest difference in a drawn value, handball / basketball", "%.2f / %.2f", max(ru$max_abs_diff[grepl("_hb_", ru$file)]), max(ru$max_abs_diff[grepl("_bb_", ru$file)]))
+rv <- rd("run_identity_vs_second.rds")$differing
+rv <- rv[!grepl("^wf_", rv$file) & !grepl("[$]samples[$](loc|sigma)$", rv$component), ]
+cold_moved <- unique(paste(rv$file, sub("^[$]([^$]+)[$].*", "\\1", rv$component)))
+say("fits outside the walk-forward whose summaries differ, second run against here", "%d of %d%s", length(cold_moved), nrow(ws$other),
+    if (length(cold_moved)) paste0(": ", paste(cold_moved, collapse = "; ")) else "")
+rs <- rd("run_identity_seeding.rds")
+say("fixed-cutoff fits before against after the seeding: components that differ; of them posterior draws; other numbers compared", "%d; %d; %d", nrow(rs$differing),
+    sum(grepl("[$]samples[$](loc|sigma)$", rs$differing$component)), sum(rs$files$numbers) - sum(rs$differing$values))
 
 cat("\n== wf_compare.rds: [[cell]]$cmp (production: ls_margin, ls_total, ll_wdl; v2: lsm_raw, lst_raw, ll_wdl_raw), $market\n")
 wc <- rd("wf_compare.rds")

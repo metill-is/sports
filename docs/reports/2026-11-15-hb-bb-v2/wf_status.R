@@ -1,13 +1,17 @@
 # Two questions about the R-INLA fits behind the report.
 # 1. Did any fit end with a failed search for the hyperparameter mode? Every script stores
-#    the status since the fitter reads it; this collects them.
-# 2. How far apart are two complete runs of the walk-forward? The first run (the one the
-#    report was first written from, kept under out/first-run/) and the second (out/) used
-#    the same code path for the fits and the same data.
+#    the status since the fitter reads it; this collects them for the results in out/.
+# 2. How far are the results in out/ from an earlier run of the same fits? The earlier run
+#    is the folder out/<WFS_REFERENCE>/ (default second-run: the run made with R-INLA's
+#    defaults, where out/ is the run made with its online optimisation off).
+# The comparison of the two runs made with R-INLA's defaults, the cold-start fits and the
+# two test walk-forwards was computed when out/ still held the second run, and is kept as
+# out/second-run/wf_status.rds.
 # Usage: Rscript -e 'source("docs/reports/2026-11-15-hb-bb-v2/wf_status.R")'
 options(width = 200)
 OUT <- Sys.getenv("HBBB_OUT", "/Users/brynjolfurjonsson/.claude-reviews/sports-hb-bb-v2")
 rd <- function(...) readRDS(file.path(OUT, "out", ...))
+REF <- Sys.getenv("WFS_REFERENCE", "second-run")
 key <- function(x) paste(x$match_date, x$home_team, x$away_team)
 se <- function(v) stats::sd(v) / sqrt(length(v))
 runs <- c("hb_m_none", "hb_f_none", "bb_m_none_reg", "bb_f_none_reg", "bb_m_ar1_reg", "bb_f_ar1_reg", "bb_m_none", "bb_f_none")
@@ -33,7 +37,7 @@ refit_change <- function(pred) {
 
 wf <- do.call(rbind, lapply(runs, function(k) {
   b <- rd(sprintf("wf_%s.rds", k))
-  a <- rd("first-run", sprintf("wf_%s.rds", k))
+  a <- rd(REF, sprintf("wf_%s.rds", k))
   i <- match(key(a$pred), key(b$pred))
   dm <- abs(a$pred$mean_m - b$pred$mean_m[i])
   dt <- abs(a$pred$mean_t - b$pred$mean_t[i])
@@ -46,6 +50,8 @@ wf <- do.call(rbind, lapply(runs, function(k) {
     status_not_zero = sum(!(first_status(b$cut, "m") %in% 0L)) + sum(!(first_status(b$cut, "t") %in% 0L)),
     status_not_zero_after_refit = sum(!(b$cut$status_m %in% 0L)) + sum(!(b$cut$status_t %in% 0L)),
     refit_matches = sum(refit_rows(b$pred)), refit_max_change = if (any(refit_rows(b$pred))) max(refit_change(b$pred)) else 0,
+    # Fits the walk-forward itself repeated from a cold start (wf_inla.R since the retry rule).
+    retried = if (is.null(b$cut$retried_m)) NA_integer_ else sum(b$cut$retried_m) + sum(b$cut$retried_t),
     matches = nrow(b$pred), in_both = sum(!is.na(i)),
     median_abs_diff_margin = stats::median(dm, na.rm = TRUE), max_abs_diff_margin = max(dm, na.rm = TRUE),
     share_margin_over_half = mean(dm > 0.5, na.rm = TRUE),
@@ -53,12 +59,12 @@ wf <- do.call(rbind, lapply(runs, function(k) {
     cutoffs_hyper_differs_25pct = sum(apply(rel, 1, max) > 0.25, na.rm = TRUE)
   )
 }))
-cat("Walk-forward: mode status of the second run, and distance between the two runs\n")
+cat(sprintf("Walk-forward: mode status of the run in out/, and its distance from the run in out/%s/\n", REF))
 print(format(wf, digits = 3), row.names = FALSE)
 
 # The same scores from each run's predictions, scored by the same script.
 s2 <- rd("wf_scores.rds")
-s1 <- rd("first-run", "wf_scores.rds")
+s1 <- rd(REF, "wf_scores.rds")
 tags <- c(hb_m = "hb_m none", hb_f = "hb_f none", bb_m = "bb_m none_reg", bb_f = "bb_f none_reg")
 cols <- c(margin = "lsm_raw", total = "lst_raw", result = "ll_wdl_raw")
 scores <- do.call(rbind, lapply(names(tags), function(cl) {
@@ -73,7 +79,7 @@ scores <- do.call(rbind, lapply(names(tags), function(cl) {
     )
   }))
 }))
-cat("\nMean out-of-sample scores from each run (second minus first, paired by match)\n")
+cat(sprintf("\nMean out-of-sample scores: out/%s/ (first_run column) and out/ (second_run column), paired by match\n", REF))
 print(format(scores, digits = 4), row.names = FALSE)
 
 # Mode status of the fits outside the walk-forward.
@@ -98,7 +104,7 @@ cat(sprintf("Walk-forward fits: %d, of which mode status not 0: %d as run, %d af
 # defaults and with its online internal optimisation switched off; against each other and
 # against the walk-forward's warm-started fit of the same cutoff.
 wfp <- rd("wf_hb_m_none.rds")$pred
-wfp1 <- rd("first-run", "wf_hb_m_none.rds")$pred
+wfp1 <- rd(REF, "wf_hb_m_none.rds")$pred
 cold_set <- function(pattern, label) {
   files <- sort(Sys.glob(file.path(OUT, "out", pattern)))
   if (length(files) < 2L) {
@@ -120,7 +126,16 @@ cold_set <- function(pattern, label) {
     )
   }))
 }
-cold <- rbind(cold_set("cold_start_[0-9]*.rds", "R-INLA defaults"), cold_set("cold_start_noopt_*.rds", "internal.opt = FALSE"))
+# WHY only against the first run: these two checks set the cold starts and the test
+# walk-forwards against the run made with R-INLA's defaults, which is out/ only while the
+# reference is the first run. With any other reference out/ is a different run, and the
+# stored checks are the ones in out/second-run/wf_status.rds.
+defaults_run_in_out <- REF == "first-run"
+cold <- if (defaults_run_in_out) {
+  rbind(cold_set("cold_start_[0-9]*.rds", "R-INLA defaults"), cold_set("cold_start_noopt_*.rds", "internal.opt = FALSE"))
+} else {
+  NULL
+}
 if (!is.null(cold)) {
   cat("\nCold-start fits of two handball men cutoffs in separate processes\n")
   print(format(cold, digits = 3), row.names = FALSE)
@@ -129,7 +144,7 @@ if (!is.null(cold)) {
 noopt <- NULL
 fa <- file.path(OUT, "noopt-a", "out", "wf_hb_m_none.rds")
 fb <- file.path(OUT, "noopt-b", "out", "wf_hb_m_none.rds")
-if (file.exists(fa) && file.exists(fb)) {
+if (defaults_run_in_out && file.exists(fa) && file.exists(fb)) {
   a <- readRDS(fa)$pred
   b <- readRDS(fb)$pred
   i <- match(key(a), key(b))
@@ -153,4 +168,4 @@ if (file.exists(fa) && file.exists(fb)) {
   cat("\nTwo walk-forwards of handball men with internal.opt = FALSE, against each other and against the second run\n")
   print(format(noopt, digits = 3), row.names = FALSE)
 }
-saveRDS(list(wf = wf, scores = scores, other = other, cold = cold, noopt = noopt), file.path(OUT, "out", "wf_status.rds"))
+saveRDS(list(wf = wf, scores = scores, other = other, cold = cold, noopt = noopt, reference = REF), file.path(OUT, "out", "wf_status.rds"))

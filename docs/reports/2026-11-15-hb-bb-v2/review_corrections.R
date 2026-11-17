@@ -1,22 +1,45 @@
-# Old value beside new for every number the review of 16 November changed.
-# Three states of the result files:
+# Old value beside new for every number the reviews of 16 and 17 November changed.
+# Four states of the result files:
 #   published  out/at-84b9e6e5b/  the results the report at 84b9e6e5b was built from
 #   corrected  out/first-run/     the same walk-forward predictions, scored by the corrected scripts
-#   final      out/               the second run of the walk-forward (mode status recorded), corrected scripts
-# So "published -> corrected" is the effect of a fix and "corrected -> final" the effect of
-# running the fits again.
+#   second     out/second-run/    the second run of the fits (R-INLA's defaults, mode status recorded)
+#   final      out/               the run with R-INLA's online optimisation off, made twice and identical
+# So "published -> corrected" is the effect of a fix, "corrected -> second" the effect of
+# running the fits again, and "second -> final" the effect of the reproducibility option.
+# `moved_se` is the largest change from second to final in units of the final standard
+# error, for the rows that carry one.
 # Usage: Rscript -e 'source("docs/reports/2026-11-15-hb-bb-v2/review_corrections.R")'
 source("docs/reports/2026-11-15-hb-bb-v2/common.R")
 state <- list(
   published = function(f) readRDS(file.path(OUT, "out", "at-84b9e6e5b", f)),
   corrected = function(f) readRDS(file.path(OUT, "out", "first-run", f)),
+  second = function(f) readRDS(file.path(OUT, "out", "second-run", f)),
   final = function(f) readRDS(file.path(OUT, "out", f))
 )
 pm <- function(d) sprintf("%+.4f (se %.4f)", mean(d), stats::sd(d) / sqrt(length(d)))
 rows <- list()
 add_row <- function(finding, what, f) {
   v <- vapply(names(state), function(s) tryCatch(f(state[[s]], s), error = function(e) paste("n/a:", conditionMessage(e))), "")
-  rows[[length(rows) + 1L]] <<- data.frame(finding = finding, what = what, published = v[["published"]], corrected = v[["corrected"]], final = v[["final"]])
+  rows[[length(rows) + 1L]] <<- data.frame(
+    finding = finding, what = what, published = v[["published"]], corrected = v[["corrected"]], second = v[["second"]], final = v[["final"]],
+    moved_se = moved_in_se(v[["second"]], v[["final"]])
+  )
+}
+# Every "mean (se x)" pair in a cell; the change between two cells in units of the newer se.
+mean_se <- function(txt) {
+  m <- regmatches(txt, gregexpr("[+-]?[0-9]+[.][0-9]+ [(]se [0-9]+[.][0-9]+[)]", txt))[[1]]
+  if (length(m) == 0L) {
+    return(NULL)
+  }
+  cbind(mean = as.numeric(sub(" .*", "", m)), se = as.numeric(sub(".*se ([0-9.]+)[)]", "\\1", m)))
+}
+moved_in_se <- function(old, new) {
+  a <- mean_se(old)
+  b <- mean_se(new)
+  if (is.null(a) || is.null(b) || nrow(a) != nrow(b)) {
+    return(NA_real_)
+  }
+  max(abs(b[, "mean"] - a[, "mean"]) / b[, "se"])
 }
 tags <- c(hb_m = "hb_m none", hb_f = "hb_f none", bb_m = "bb_m none_reg", bb_f = "bb_f none_reg")
 lab <- c(hb_m = "handball men", hb_f = "handball women", bb_m = "basketball men", bb_f = "basketball women")
@@ -166,6 +189,16 @@ for (g in list(c("hb_m", "hb_f"), c("bb_m", "bb_f"))) {
     paste(pool("lsm_raw", "ls_margin"), pool("lst_raw", "ls_total"), pool("ll_wdl_raw", "ll_wdl"), sep = " / ")
   })
 }
+
+# The rule behind the basketball within-season term: kept when no pooled score counts
+# against it and at least one improves by more than two standard errors.
+add_row("rule: basketball within-season term", "AR(1) minus static, basketball pooled, per match: margin / total / regulation 1X2; largest z", function(get, s) {
+  w <- get("wf_scores.rds")$within_j
+  j <- rbind(w[["bb_m_reg"]], w[["bb_f_reg"]])
+  d <- list(j$lsm_raw.ar1 - j$lsm_raw.static, j$lst_raw.ar1 - j$lst_raw.static, j$ll_wdl_raw.ar1 - j$ll_wdl_raw.static)
+  z <- vapply(d, function(x) mean(x) / (stats::sd(x) / sqrt(length(x))), 1)
+  sprintf("%s; largest z %.2f (n %d)", paste(vapply(d, pm, ""), collapse = " / "), max(z), nrow(j))
+})
 
 # Finding 7: what moved when the fixed-cutoff R-INLA fits were run again. The Stan side
 # of these comparisons is one stored fit; "corrected" still has the first run's R-INLA fits.
