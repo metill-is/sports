@@ -46,6 +46,7 @@ Run everything from the repository root (`common.R` calls `devtools::load_all(".
 | `wf_score.R`, `wf_compare.R` | Walk-forward scores and second-stage tests; comparison with production's stored forecasts and the Lengjan line | `out/wf_scores.rds`, `out/wf_compare.rds` |
 | `check_headlines.R` | Independent recomputation of the headline numbers | prints only |
 | `headline_changes.R` | The headline numbers of the second run against those of the results in `out/`, line by line | `out/headline_changes.rds` |
+| `report_table_changes.R [earlier report.md]` | Every table row of the report, an earlier build against the current one (default: the second run's build, `out/second-run/report.md`). The report quotes its totals, so build, run this, and build once more | `out/report_table_changes.rds`, `logs/report_table_changes.md` |
 | `build_report.R` | The report | `docs/reports/2026-11-15-hb-bb-v2.html` (ignored), `report.md` |
 
 ## Which data the results were computed against

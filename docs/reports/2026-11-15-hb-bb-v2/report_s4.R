@@ -434,6 +434,22 @@ if (have(corr)) {
       int(hl_changes$n_lines), int(nrow(hl_changes$changed)),
       if (any(grepl("seconds", hl_changes$changed$label))) "; one of them is a fit time, which is not a result" else ""
     ))
+    if (have(tab_changes)) {
+      tc <- tab_changes$changed[tab_changes$changed$result, ]
+      top <- tc[which.max(tc$move_se), ]
+      add(sprintf(
+        paste0(
+          "<p>Last, every table of this report was set row by row against the same table of the report built from the second run, leaving out this appendix and the section on the runs themselves: of %s table rows, %s differ in a result, in %s cells (a further %s cells are fit times or machine records). ",
+          "%s of those cells carry a standard error; %s. The full list is written to <code>logs/report_table_changes.md</code> by <code>report_table_changes.R</code>.</p>"
+        ),
+        int(tab_changes$rows_new), int(length(unique(tc$key))), int(nrow(tc)), int(sum(!tab_changes$changed$result)), int(sum(!is.na(tc$move_se))),
+        if (sum(tc$move_se > 1, na.rm = TRUE) == 0) {
+          sprintf("none moved by more than it, and the largest move is %s of a standard error (%s, %s, %s: %s to %s)", num(top$move_se, 2), esc(top$section), esc(top$first), esc(top$column), esc(top$old), esc(top$new))
+        } else {
+          sprintf("%s moved by more than it, the largest by %s standard errors (%s, %s, %s: %s to %s)", int(sum(tc$move_se > 1, na.rm = TRUE)), num(top$move_se, 2), esc(top$section), esc(top$first), esc(top$column), esc(top$old), esc(top$new))
+        }
+      ))
+    }
     add(
       "<details><summary>Headline numbers that differ between the second run and the final one</summary>",
       tbl(data.frame(l = esc(hl_changes$changed$label), a = esc(hl_changes$changed$second), b = esc(hl_changes$changed$final)), head = c("Number", "Second run", "Final")),

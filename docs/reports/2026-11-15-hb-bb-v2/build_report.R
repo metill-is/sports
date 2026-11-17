@@ -26,6 +26,7 @@ ident_cold <- rd("run_identity_vs_second.rds")
 prov_file <- file.path(OUT, "out", "run_provenance.tsv")
 prov <- if (file.exists(prov_file)) utils::read.delim(prov_file, stringsAsFactors = FALSE) else NULL
 hl_changes <- rd("headline_changes.rds")
+tab_changes <- rd("report_table_changes.rds")
 corr <- rd("review_corrections.rds")
 per <- readRDS(file.path(OUT, "kki", "periods_matched.rds"))
 iv <- lapply(stats::setNames(names(CELLS), names(CELLS)), function(cl) rd(sprintf("inla_validate_%s.rds", cl)))
@@ -90,7 +91,21 @@ if (have(ident_cold) && !is.null(ident_cold$differing)) {
   cold_moved <- do.call(rbind, lapply(seq_len(nrow(moved_fits)), function(i) {
     a <- rd(file.path("second-run", moved_fits$file[i]))[[moved_fits$fit[i]]]
     b <- rd(moved_fits$file[i])[[moved_fits$fit[i]]]
-    data.frame(cell = sub("^inla_validate_(.*)[.]rds$", "\\1", moved_fits$file[i]), fit = moved_fits$fit[i], mlik_second = unname(a$mlik), mlik_here = unname(b$mlik))
+    # Where the fit shows in the report: its rung of the ladder, held-out score of its response.
+    p <- strsplit(moved_fits$fit[i], " ")[[1]]
+    cl <- sub("^inla_validate_(.*)[.]rds$", "\\1", moved_fits$file[i])
+    rung <- sprintf("v2 %s, INLA %s", if (p[2] == "none") "static" else "+ within-season AR(1)", if (p[3] == "auto") "full" else "plug-in")
+    lad_score <- function(l) {
+      if (is.null(l)) {
+        return(NA_real_)
+      }
+      v <- l$tab[l$tab$cell == cl & l$tab$rung == rung, if (p[1] == "total") "ls_total" else "ls_margin"]
+      if (length(v) == 1) v else NA_real_
+    }
+    data.frame(
+      cell = cl, fit = moved_fits$fit[i], mlik_second = unname(a$mlik), mlik_here = unname(b$mlik), rung = rung, response = p[1],
+      score_second = lad_score(rd("second-run/ladder.rds")), score_here = lad_score(ladder)
+    )
   }))
 }
 cold_account <- function(n_other) {
@@ -113,10 +128,20 @@ cold_account <- function(n_other) {
       sprintf(
         "; the other%s %s.", if (n_moved == 1) " is" else "s are",
         paste(vapply(seq_len(n_moved), function(i) {
-          sprintf(
-            "%s, where the second run had ended on a mode with a %s log marginal likelihood (%s against %s here)",
-            fit_lab(cold_moved$cell[i], cold_moved$fit[i]), if (cold_moved$mlik_second[i] < cold_moved$mlik_here[i]) "lower" else "higher",
-            num(cold_moved$mlik_second[i], 2), num(cold_moved$mlik_here[i], 2)
+          paste0(
+            sprintf(
+              "%s, where the second run had ended on a mode with a %s log marginal likelihood (%s against %s here)",
+              fit_lab(cold_moved$cell[i], cold_moved$fit[i]), if (cold_moved$mlik_second[i] < cold_moved$mlik_here[i]) "lower" else "higher",
+              num(cold_moved$mlik_second[i], 2), num(cold_moved$mlik_here[i], 2)
+            ),
+            if (is.na(cold_moved$score_here[i]) || is.na(cold_moved$score_second[i])) {
+              ""
+            } else {
+              sprintf(
+                "; it is the \"%s\" row of that cell's ladder, whose held-out %s log score reads %s here and read %s in the second run",
+                cold_moved$rung[i], cold_moved$response[i], num(cold_moved$score_here[i], 3), num(cold_moved$score_second[i], 3)
+              )
+            }
           )
         }, ""), collapse = "; ")
       )

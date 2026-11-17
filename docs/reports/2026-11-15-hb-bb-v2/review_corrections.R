@@ -225,6 +225,14 @@ add_row("7 (fixed-cutoff fits)", "ladder, basketball men, v2 + AR(1) R-INLA full
   sprintf("%.1f / %.4f", r$elpd, r$ls_total)
 })
 
+# The one fit outside the walk-forward whose summaries differ between the second run and the
+# final one: the plug-in fit of the static total model for basketball women.
+add_row("option, cold-started fits", "ladder, basketball women, v2 static R-INLA plug-in: leave-one-out density / held-out total log score", function(get, s) {
+  t <- get("ladder.rds")$tab
+  r <- t[t$cell == "bb_f" & t$rung == "v2 static, INLA plug-in", ]
+  sprintf("%.1f / %.4f", r$elpd, r$ls_total)
+})
+
 tab <- do.call(rbind, rows)
 print(tab, right = FALSE, row.names = FALSE)
 saveRDS(tab, file.path(OUT, "out", "review_corrections.rds"))

@@ -672,7 +672,7 @@ The first comparison of the two runs was not clean: 10 of 14 files were identica
 
 **Mode status.** In the run reported here, 7 of the 2,138 walk-forward fits were repeated from a cold start because the warm-started search failed or threw (Basketball men (2); Basketball women (2); Basketball men, within-season AR(1) (1); Basketball men, trained on final scores (1); Basketball women, trained on final scores (1)); after that none were still failed, and no predictions are left out of the scores for that reason. The 46 fits outside the walk-forward: none with a status other than 0. In the second run, 4 of 2,138 walk-forward fits had ended with a failed search (Basketball men (1); Basketball men, within-season AR(1) (1); Basketball men, trained on final scores (1); Basketball women, trained on final scores (1)); each succeeded when fitted again from a cold start. The option does not make a failed warm start rarer. With it off, which searches fail is repeatable as well: the repeat of the reported run repeated the same fits.
 
-**Fits started cold.** The 46 fits outside the walk-forward take no starting values from another fit, so for them the second run and the run reported here differ in the option only. 45 of the 46 came out the same in every fit summary; the other is the plug-in fit of the static total model for basketball women, where the second run had ended on a mode with a lower log marginal likelihood (−5,276.94 against −5,276.44 here). A walk-forward chains its fits, each starting from the previous cutoff's answer, so a single fit that lands elsewhere is carried forward. That is consistent with all eight walk-forwards differing between the two runs (tables below).
+**Fits started cold.** The 46 fits outside the walk-forward take no starting values from another fit, so for them the second run and the run reported here differ in the option only. 45 of the 46 came out the same in every fit summary; the other is the plug-in fit of the static total model for basketball women, where the second run had ended on a mode with a lower log marginal likelihood (−5,276.94 against −5,276.44 here); it is the "v2 static, INLA plug-in" row of that cell's ladder, whose held-out total log score reads −4.369 here and read −4.378 in the second run. A walk-forward chains its fits, each starting from the previous cutoff's answer, so a single fit that lands elsewhere is carried forward. That is consistent with all eight walk-forwards differing between the two runs (tables below).
 
 How far apart the runs are. First, the two runs made with R-INLA's defaults, which differ in nothing but the run:
 
@@ -943,12 +943,15 @@ An independent review of this report on 16 November confirmed 24 defects, and a 
 | 7 (fixed-cutoff fits) | R-INLA against Stan: held-out log scores agree to (full integration) | 0.0026 | 0.0026 | 0.0017 | 0.0022 |  |
 | 7 (fixed-cutoff fits) | R-INLA, basketball men total model with the AR(1): medians of sd b / sd s_s / sd u_s | 2.72 / 2.07 / 4.74 | 2.72 / 2.07 / 4.74 | 1.84 / 1.18 / 5.41 | 1.84 / 1.18 / 5.41 |  |
 | 7 (fixed-cutoff fits) | ladder, basketball men, v2 + AR(1) R-INLA full: leave-one-out density / held-out total log score | -12963.2 / -4.2558 | -12963.2 / -4.2558 | -12963.1 / -4.2549 | -12963.1 / -4.2558 |  |
+| option, cold-started fits | ladder, basketball women, v2 static R-INLA plug-in: leave-one-out density / held-out total log score | -9379.2 / -4.3694 | -9379.2 / -4.3694 | -9379.1 / -4.3781 | -9379.2 / -4.3694 |  |
 
 The last column is the largest change of a value from the second run to the final one, in units of its standard error, where the value has one. Rows where it exceeds 1 are highlighted.
 
 No value in this table moved by more than its standard error between the second run and the final one.
 
 Beyond this table, every headline number that `check_headlines.R` recomputes was compared between the second run and the final one: 72 lines, of which 22 differ in some printed digit. They are listed below; one of them is a fit time, which is not a result.
+
+Last, every table of this report was set row by row against the same table of the report built from the second run, leaving out this appendix and the section on the runs themselves: of 378 table rows, 93 differ in a result, in 173 cells (a further 28 cells are fit times or machine records). 68 of those cells carry a standard error; none moved by more than it, and the largest move is 0.50 of a standard error (Leak-free walk-forward / Does a within-season term earn its place?, Handball men, Held-out result log likelihood: 0.000 ± 0.002 to +0.001 ± 0.002). The full list is written to `logs/report_table_changes.md` by `report_table_changes.R`.
 
 Headline numbers that differ between the second run and the final one
 
