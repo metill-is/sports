@@ -352,3 +352,34 @@ test_that("the same fit in two separate R processes returns the same numbers", {
   expect_identical(first$status, 0L)
   expect_identical(first, second)
 })
+
+test_that("the draws of a full-integration fit do not depend on where R's generator stands, and drawing them does not move it", {
+  # WHY: R-INLA's own seed reaches its sampler of the latent field only. Which
+  # hyperparameter configuration each draw comes from is picked with R's generator, so
+  # under full integration the same fit drew differently in two R processes: in two
+  # complete runs of the 16 full-integration fits behind the report, 3 % to 52 % of the
+  # 2,000 draws of a fit differed.
+  skip_if_no_inla()
+  sim <- simulate_v2_league()
+  m <- sim$matches
+  train <- m[m$match_date < as.Date("2026-12-01"), ]
+  pred <- m[m$match_date >= as.Date("2026-12-01"), ]
+  v <- build_v2_data(train, pred, sim$teams)
+  draws <- function(seed = 1L) {
+    fit_v2_inla(v, "margin", v2_priors("handball"), within = "none", int_strategy = "auto", n_samples = 200L, seed = seed)$samples
+  }
+
+  set.seed(11)
+  first <- draws()
+  after_drawing <- stats::runif(1)
+  set.seed(12)
+  second <- draws()
+
+  expect_identical(first, second)
+  expect_false(identical(draws(seed = 2L)$sigma, first$sigma))
+  # R-INLA's fit takes numbers from R's generator itself; the drawing takes none on top,
+  # so the caller's stream is where the same fit without draws leaves it.
+  set.seed(11)
+  fit_v2_inla(v, "margin", v2_priors("handball"), within = "none", int_strategy = "auto")
+  expect_identical(stats::runif(1), after_drawing)
+})

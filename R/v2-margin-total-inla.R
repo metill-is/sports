@@ -91,7 +91,10 @@ v2_priors <- function(sport = c("handball", "basketball")) {
 #' @param y Optional response vector for the training rows; overrides the
 #'   margin or total computed from `v$y_home` and `v$y_away` (used to train
 #'   on regulation-time scores).
-#' @param seed Seed for the posterior sampler.
+#' @param seed Seed for the posterior sampler: for R-INLA's sampler of the
+#'   latent field and for R's generator, which picks the hyperparameter
+#'   configuration of each draw. Drawing does not move the caller's random
+#'   stream; R-INLA's fit itself does, with or without draws.
 #' @param reproducible Switch R-INLA's online internal optimisation off for
 #'   this fit (`inla.setOption(internal.opt = FALSE)`) and put the caller's
 #'   setting back on exit. With the option on, which is R-INLA's default, the
@@ -272,9 +275,17 @@ fit_v2_inla <- function(v, response = c("margin", "total"),
   )
   if (n_samples > 0L && v$N_pred > 0L) {
     pred_rows <- idx[-seq_len(n_train)]
-    smp <- INLA::inla.posterior.sample(
-      n_samples, fit,
-      selection = list(APredictor = pred_rows), seed = seed, num.threads = num_threads
+    # WHY: R-INLA's own `seed` reaches its sampler of the latent field only.
+    # Which hyperparameter configuration each draw comes from is picked with
+    # R's generator, so under full integration the same fit drew differently
+    # in two R processes. Seeding R's generator for the call fixes both;
+    # with_seed() puts the caller's stream back afterwards.
+    smp <- withr::with_seed(
+      as.integer(seed),
+      INLA::inla.posterior.sample(
+        n_samples, fit,
+        selection = list(APredictor = pred_rows), seed = seed, num.threads = num_threads
+      )
     )
     out$samples <- list(
       loc = t(vapply(smp, function(s) as.numeric(s$latent[, 1]), numeric(length(pred_rows)))),
