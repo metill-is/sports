@@ -92,6 +92,14 @@ v2_priors <- function(sport = c("handball", "basketball")) {
 #'   margin or total computed from `v$y_home` and `v$y_away` (used to train
 #'   on regulation-time scores).
 #' @param seed Seed for the posterior sampler.
+#' @param reproducible Switch R-INLA's online internal optimisation off for
+#'   this fit (`inla.setOption(internal.opt = FALSE)`) and put the caller's
+#'   setting back on exit. With the option on, which is R-INLA's default, the
+#'   same fit did not always return the same numbers in two R processes: at
+#'   each of two cutoffs 37 of 44 processes agreed on the most frequent
+#'   result. With it off, 75 of 75 did, and two whole walk-forwards were
+#'   identical. It does not make the hyperparameter mode unique; it makes the
+#'   one that is found repeatable. `FALSE` leaves R-INLA's setting alone.
 #' @return A list: `pred` (latent mean and sd per prediction row), `sigma2`
 #'   (posterior mean of the observation variance), `hyper_sd` (posterior
 #'   summaries on the sd / correlation scale), `fixed`, `random` (state
@@ -106,11 +114,18 @@ fit_v2_inla <- function(v, response = c("margin", "total"),
                         rho_week = 0.98, club_level = TRUE,
                         int_strategy = "auto", num_threads = "1:1",
                         n_samples = 0L, cpo = FALSE, theta_start = NULL,
-                        y = NULL, seed = 1L) {
+                        y = NULL, seed = 1L, reproducible = TRUE) {
   response <- match.arg(response)
   within <- match.arg(within)
   if (!requireNamespace("INLA", quietly = TRUE)) {
     cli::cli_abort("{.fn fit_v2_inla} needs the {.pkg INLA} package.")
+  }
+  if (reproducible) {
+    # WHY on.exit: the option is session-wide. The caller gets its own setting back
+    # whether the fit returns or throws.
+    callers_setting <- INLA::inla.getOption("internal.opt")
+    INLA::inla.setOption(internal.opt = FALSE)
+    on.exit(INLA::inla.setOption(internal.opt = callers_setting), add = TRUE)
   }
   is_margin <- response == "margin"
   sgn <- if (is_margin) -1 else 1

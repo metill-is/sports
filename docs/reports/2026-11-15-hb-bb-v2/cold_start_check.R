@@ -2,15 +2,15 @@
 # cutoffs without a warm start and keeps the internal mode and the predictions. Run it
 # several times in separate R processes; wf_status.R compares the runs with each other and
 # with the walk-forward, which reached the same cutoffs through a chain of warm starts.
-# With "noopt" as second argument R-INLA's online internal optimisation is switched off
-# (inla.setOption(internal.opt = FALSE)), to see whether that is what makes separate
-# processes disagree.
+# With "noopt" as second argument R-INLA's online internal optimisation is switched off for
+# the fit (fit_v2_inla(reproducible = TRUE), the fitter's default since this test); without
+# it the fit runs with R-INLA's own setting, to see whether that option is what makes
+# separate processes disagree.
 # Usage: Rscript -e 'source("docs/reports/2026-11-15-hb-bb-v2/cold_start_check.R")' <run number> [noopt]
 source("docs/reports/2026-11-15-hb-bb-v2/common.R")
 args <- commandArgs(trailingOnly = TRUE)
 run <- args[[1]]
 noopt <- length(args) >= 2 && args[[2]] == "noopt"
-if (noopt) INLA::inla.setOption(internal.opt = FALSE)
 cell <- "hb_m"
 ci <- CELLS[[cell]]
 league <- load_leagues()[[ci$league]]
@@ -26,7 +26,7 @@ for (cu in c("2021-09-15", "2022-10-19")) {
   v <- build_v2_data(train, pred, teams,
     season_start = season_starts(res_all), n_weeks = season_weeks(res_all), division_map = DIVISION_MAP[[ci$sport]]
   )
-  f <- fit_v2_inla(v, "margin", v2_priors(ci$sport), within = "none", int_strategy = "eb")
+  f <- fit_v2_inla(v, "margin", v2_priors(ci$sport), within = "none", int_strategy = "eb", reproducible = noopt)
   out[[cu]] <- list(
     theta = f$theta, mode_status = f$mode_status,
     pred = data.frame(match_date = pred$match_date, home_team = pred$home_team, away_team = pred$away_team, mean_m = f$pred$mean)

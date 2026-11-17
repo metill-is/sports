@@ -270,3 +270,85 @@ test_that("a fit that reports no mode status at all is treated as a failed searc
   )
   expect_identical(bad$mode_status, NA_integer_)
 })
+
+# Set R-INLA's session option for the rest of a test and put the old value back after it.
+local_internal_opt <- function(value, env = parent.frame()) {
+  old <- INLA::inla.getOption("internal.opt")
+  INLA::inla.setOption(internal.opt = value)
+  withr::defer(INLA::inla.setOption(internal.opt = old), envir = env)
+}
+
+test_that("R-INLA's online optimisation is off at the fit, also when it throws, and the caller's setting comes back", {
+  # WHY: with that option on, the same fit does not always return the same numbers in two
+  # R processes. The fitter turns it off for its own call only; it is a session-wide
+  # setting, so whatever the caller had must be there again afterwards.
+  # WHY a throwing stand-in: R-INLA's fitting function cannot be called through a wrapper
+  # (it evaluates the model in its caller's frame), so the stand-in records the setting at
+  # the moment of the call and stops there. That is also the case of a fit that throws.
+  skip_if_no_inla()
+  sim <- simulate_v2_league()
+  v <- build_v2_data(sim$matches, sim$matches[0, ], sim$teams)
+  pr <- v2_priors("handball")
+  at_the_call <- NULL
+  local_mocked_bindings(
+    inla = function(...) {
+      at_the_call <<- INLA::inla.getOption("internal.opt")
+      stop("no fit today")
+    },
+    .package = "INLA"
+  )
+
+  for (callers_setting in c(TRUE, FALSE)) {
+    local_internal_opt(callers_setting)
+    at_the_call <- NULL
+    expect_error(fit_v2_inla(v, "margin", pr, within = "none", int_strategy = "eb"), "no fit today")
+    expect_false(at_the_call)
+    expect_identical(INLA::inla.getOption("internal.opt"), callers_setting)
+  }
+
+  # Asked not to, the fitter leaves R-INLA's setting alone.
+  local_internal_opt(TRUE)
+  expect_error(fit_v2_inla(v, "margin", pr, within = "none", int_strategy = "eb", reproducible = FALSE), "no fit today")
+  expect_true(at_the_call)
+})
+
+test_that("the option stays off until a fit that succeeds has been read, and then comes back", {
+  skip_if_no_inla()
+  sim <- simulate_v2_league()
+  v <- build_v2_data(sim$matches, sim$matches[0, ], sim$teams)
+  read_status <- v2_inla_mode_status
+  after_the_fit <- NULL
+  # The mode status is read after R-INLA returns and before the fitter does.
+  local_mocked_bindings(v2_inla_mode_status = function(fit) {
+    after_the_fit <<- INLA::inla.getOption("internal.opt")
+    read_status(fit)
+  })
+  local_internal_opt(TRUE)
+
+  fit <- fit_v2_inla(v, "margin", v2_priors("handball"), within = "none", int_strategy = "eb")
+
+  expect_false(after_the_fit)
+  expect_identical(fit$mode_status, 0L)
+  expect_true(INLA::inla.getOption("internal.opt"))
+})
+
+test_that("the same fit in two separate R processes returns the same numbers", {
+  skip_if_no_inla()
+  skip_if_not_installed("callr")
+  sim <- simulate_v2_league()
+  v <- build_v2_data(sim$matches, sim$matches[0, ], sim$teams)
+  root <- normalizePath(testthat::test_path("..", ".."))
+  fit_elsewhere <- function() {
+    callr::r(function(root, v) {
+      pkgload::load_all(root, quiet = TRUE)
+      f <- fit_v2_inla(v, "margin", v2_priors("handball"), within = "none", int_strategy = "eb")
+      list(theta = f$theta, fitted = f$fitted, hyper = f$hyper_sd, sigma2 = f$sigma2, status = f$mode_status)
+    }, args = list(root = root, v = v))
+  }
+
+  first <- fit_elsewhere()
+  second <- fit_elsewhere()
+
+  expect_identical(first$status, 0L)
+  expect_identical(first, second)
+})
