@@ -505,6 +505,76 @@ test_that("the seed fixes an INLA fit's draws, whatever R's own generator is doi
   expect_gt(max(abs(other$draws$att - a$draws$att)), 1e-3)
 })
 
+test_that("an INLA fit runs on one thread with R-INLA's online optimisation off", {
+  # WHY: with R-INLA's defaults the same fit does not return the same numbers
+  # in two R processes. Of 140 production fits of the two football cells, one
+  # R process each (main at 26d55c550, R-INLA 25.6.7, one machine,
+  # 2026-11-17): on four threads no two processes agreed, on one thread with
+  # the option on 39 of 40 did, on one thread with it off 40 of 40.
+  # The stand-in records what the fit was asked for and stops, so nothing is
+  # fitted.
+  skip_if_no_inla()
+  sim <- simulate_league()
+  train <- sim[sim$match_date < max(sim$match_date), ]
+  pred <- sim[sim$match_date == max(sim$match_date), ]
+  spec <- fv2_build(train, pred, clock = "break")
+  at_the_call <- NULL
+  local_mocked_bindings(
+    inla = function(..., control.compute = NULL, num.threads = NULL) {
+      at_the_call <<- list(internal_opt = control.compute$internal.opt, threads = num.threads)
+      stop("no fit today")
+    },
+    .package = "INLA"
+  )
+  session_option <- INLA::inla.getOption("internal.opt")
+
+  expect_error(fv2_fit_inla(spec), "no fit today")
+  expect_identical(at_the_call, list(internal_opt = FALSE, threads = "1:1"))
+
+  # The production entry, called the way fit_league() calls it: no `threads`.
+  root <- withr::local_tempdir()
+  s <- v2_store(root)
+  prep <- prepare_data(s$league, "male", end_date = s$end_date, root = root)
+  at_the_call <- NULL
+  expect_error(
+    suppressMessages(fit_model_v2_inla(prep, s$league, "male", end_date = s$end_date, root = root)),
+    "no fit today"
+  )
+  expect_identical(at_the_call, list(internal_opt = FALSE, threads = "1:1"))
+
+  # The option goes to the fit; R-INLA's session-wide setting is the caller's.
+  expect_identical(INLA::inla.getOption("internal.opt"), session_option)
+})
+
+test_that("the production INLA fit returns the same numbers in two separate R processes", {
+  skip_if_no_inla()
+  skip_if_not_installed("callr")
+  root <- withr::local_tempdir()
+  s <- v2_store(root)
+  pkg <- normalizePath(testthat::test_path("..", ".."))
+  fit_elsewhere <- function() {
+    callr::r(function(pkg, root, league, end_date) {
+      pkgload::load_all(pkg, quiet = TRUE)
+      prep <- prepare_data(league, "male", end_date = end_date, root = root)
+      # As fit_league() calls it: full integration and the default threads.
+      fit <- suppressWarnings(suppressMessages(fit_model_v2_inla(
+        prep, league, "male",
+        end_date = end_date, root = root, n_draws = 200L, seed = 7L
+      )))
+      published <- unclass(posterior::as_draws_matrix(fit$draws()))
+      attributes(published) <- attributes(published)[c("dim", "dimnames")]
+      list(passed = fit$gate$passed, hyper_sd = fit$hyper_sd, published = published)
+    }, args = list(pkg = pkg, root = root, league = s$league, end_date = s$end_date))
+  }
+
+  first <- fit_elsewhere()
+  second <- fit_elsewhere()
+
+  expect_true(first$passed)
+  expect_gt(ncol(first$published), 0L)
+  expect_identical(first, second)
+})
+
 test_that("the adapter speaks the production fit's variable names", {
   prep <- toy_prep()
   pred <- fv2_pred_from_prep(prep$pred_d)
@@ -916,6 +986,9 @@ test_that("fit_league fits with Stan unless the league says engine: inla", {
   expect_identical(inla_args$n_draws, 300L)
   expect_identical(inla_args$seed, 99L)
   expect_identical(inla_args$end_date, s$end_date)
+  # The thread count is the engine's to choose: its default, one thread, is
+  # the only setting at which a fit repeats between R processes.
+  expect_false("threads" %in% names(inla_args))
 
   # needs_refit() reads n_obs off the newest diagnostics row, so an INLA fit
   # has to write one; the sampler metrics have nothing to report.
@@ -984,8 +1057,9 @@ test_that("an INLA fit of a football store reads like a production fit", {
   expect_error(bare$draws("goals1_pred"), "no draws")
   expect_identical(posterior::ndraws(bare$draws("home_advantage_tot")), 50L)
 
-  # R-INLA reruns are not guaranteed bit-identical, so the rerun is compared
-  # with a tolerance far below the posterior sd and far above rounding.
+  # A rerun in the same process, compared with a tolerance far below the
+  # posterior sd and far above rounding; the two-process test above compares
+  # exactly.
   again <- fit_once()
   mean_of <- function(f, v) colMeans(posterior::as_draws_matrix(f$draws(v)))
   expect_equal(mean_of(again, "home_advantage_tot"), mean_of(fit, "home_advantage_tot"), tolerance = 0.01)

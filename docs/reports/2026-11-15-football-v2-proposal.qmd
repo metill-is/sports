@@ -976,6 +976,17 @@ An INLA fit also writes a row to the `fit_diagnostics` store, with the number of
 
 **Tests.** `tests/testthat/test-model-v2.R` covers the specification, the adapter, the gate, the engine choice in `fit_league()` (Stan unless the league says otherwise; an unknown engine is an error), the diagnostics row, and an end-to-end INLA fit of a small store read by production's `extract_posteriors()`. R-INLA reruns are not guaranteed to be bit-identical, so that test fixes the seed and the threads and compares a rerun at a tolerance. One test pins that no league is on the INLA engine, so the switch has to edit an expectation; another checks that the options the package fits are the variant this report evaluated. The engine tests skip where INLA is not installed, which today includes `ci-tests.yml`; the INLA workflow runs them with INLA present and treats a missing INLA as a failure.
 
+::: {.callout-note}
+## Added 2026-11-17: the engine now fits on one thread, so that a refit repeats
+
+After this report was written the engine's fits were found not to repeat between R processes. Of 140 production fits of the two cells, one process each (this Mac, R-INLA 25.6.7): on four threads, the setting behind every timing in this report, no two processes returned the same numbers; on one thread with R-INLA's `internal.opt` off, 40 of 40 did. On four threads a fixture's expected goals varied between processes with a standard deviation of 0.005 to 0.009 at the median, against a Monte Carlo standard error of 0.021 from 4,000 draws, and by up to 0.17 goals between two processes. The engine now fits on one thread and passes `internal.opt = FALSE` to R-INLA. Two things in this report read differently as a result:
+
+- **Fit times.** They were measured on four threads. On one thread the R-INLA fit takes 48 seconds where it took 18 for the men's cell, and 21 where it took 9 for the women's; the whole call with 4,000 draws takes 108 seconds against 79, and 70 against 57. Drawing the samples was single-threaded already.
+- **"R-INLA reruns are not bit-identical."** That describes the engine as it was. The tests that compare at a tolerance still do, and a new test compares the production fit in two R processes exactly.
+
+Agreement across machines was not measured.
+:::
+
 ### What an independent review of the pull request found {#sec-review}
 
 The owner had the pull request reviewed by a session that had not written it. It found nine defects. A second reviewer traced each one in the code and confirmed all nine. None is on the `engine: stan` path, so nothing that runs today was wrong; all of them would have mattered at the switch. Each was fixed test-first: the test was written, seen to fail for the stated reason, and only then made to pass.
