@@ -1,35 +1,35 @@
 {
-  "generated_at": "2026-11-17T20:27:08Z",
+  "generated_at": "2026-11-18T19:56:00Z",
   "overall": "WARN",
   "n_fail": 0,
-  "n_warn": 3,
+  "n_warn": 1,
   "checks": [
     {
       "check": "fit_freshness",
       "scope": "basketball_iceland male",
       "status": "OK",
-      "value": "1d old, current with results",
+      "value": "2d old, current with results",
       "threshold": "<= 2d"
     },
     {
       "check": "fit_freshness",
       "scope": "basketball_iceland female",
       "status": "OK",
-      "value": "1d old, current with results",
+      "value": "0d old, current with results",
       "threshold": "<= 2d"
     },
     {
       "check": "fit_freshness",
       "scope": "handball_iceland male",
       "status": "OK",
-      "value": "1d old, current with results",
+      "value": "2d old, current with results",
       "threshold": "<= 2d"
     },
     {
       "check": "fit_freshness",
       "scope": "handball_iceland female",
       "status": "OK",
-      "value": "1d old, current with results",
+      "value": "2d old, current with results",
       "threshold": "<= 2d"
     },
     {
@@ -49,15 +49,15 @@
     {
       "check": "odds_freshness",
       "scope": "basketball_iceland",
-      "status": "WARN",
-      "value": "next fixture in 2d, no upcoming odds scraped",
+      "status": "OK",
+      "value": "odds cover upcoming fixtures (next in 1d)",
       "threshold": "odds for fixtures within 3d"
     },
     {
       "check": "odds_freshness",
       "scope": "handball_iceland",
-      "status": "WARN",
-      "value": "next fixture in 1d, no upcoming odds scraped",
+      "status": "OK",
+      "value": "odds cover upcoming fixtures (next in 0d)",
       "threshold": "odds for fixtures within 3d"
     },
     {
@@ -71,7 +71,7 @@
       "check": "rhat_drift",
       "scope": "basketball/iceland/female",
       "status": "OK",
-      "value": "1.009",
+      "value": "1.010",
       "threshold": "< 1.020"
     },
     {
@@ -181,6 +181,13 @@
     },
     {
       "check": "unmapped_team_names",
+      "scope": "basketball_iceland",
+      "status": "OK",
+      "value": "0",
+      "threshold": "0 unmapped Lengjan renderings"
+    },
+    {
+      "check": "unmapped_team_names",
       "scope": "handball_iceland",
       "status": "OK",
       "value": "0",
@@ -190,56 +197,56 @@
       "check": "publish_freshness",
       "scope": "basketball_iceland male BD",
       "status": "OK",
-      "value": "3h old; 10 artefact(s)",
+      "value": "2h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "basketball_iceland male 1D",
       "status": "OK",
-      "value": "3h old; 10 artefact(s)",
+      "value": "2h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "basketball_iceland female BD",
       "status": "OK",
-      "value": "3h old; 10 artefact(s)",
+      "value": "2h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "basketball_iceland female 1D",
       "status": "OK",
-      "value": "3h old; 10 artefact(s)",
+      "value": "2h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "handball_iceland male OD",
       "status": "OK",
-      "value": "3h old; 10 artefact(s)",
+      "value": "2h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "handball_iceland male G66",
       "status": "OK",
-      "value": "3h old; 10 artefact(s)",
+      "value": "2h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "handball_iceland female OD",
       "status": "OK",
-      "value": "3h old; 10 artefact(s)",
+      "value": "2h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "handball_iceland female G66",
       "status": "OK",
-      "value": "3h old; 10 artefact(s)",
+      "value": "2h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
