@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-19T19:56:26Z",
+  "generated_at": "2026-11-20T19:35:37Z",
   "overall": "WARN",
   "n_fail": 0,
   "n_warn": 1,
@@ -8,14 +8,14 @@
       "check": "fit_freshness",
       "scope": "basketball_iceland male",
       "status": "OK",
-      "value": "3d old, current with results",
+      "value": "0d old, current with results",
       "threshold": "<= 2d"
     },
     {
       "check": "fit_freshness",
       "scope": "basketball_iceland female",
       "status": "OK",
-      "value": "0d old, current with results",
+      "value": "1d old, current with results",
       "threshold": "<= 2d"
     },
     {
@@ -29,7 +29,7 @@
       "check": "fit_freshness",
       "scope": "handball_iceland female",
       "status": "OK",
-      "value": "3d old, current with results",
+      "value": "4d old, current with results",
       "threshold": "<= 2d"
     },
     {
@@ -85,7 +85,7 @@
       "check": "rhat_drift",
       "scope": "basketball/iceland/male",
       "status": "OK",
-      "value": "1.010",
+      "value": "1.009",
       "threshold": "< 1.020"
     },
     {
@@ -141,7 +141,7 @@
       "check": "rhat_drift",
       "scope": "handball/iceland/male",
       "status": "OK",
-      "value": "1.013",
+      "value": "1.007",
       "threshold": "< 1.020"
     },
     {
