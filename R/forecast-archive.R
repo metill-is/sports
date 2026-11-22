@@ -217,7 +217,11 @@ forecast_archive_rows <- function(publish_root, sport, country, sex, cells,
   )
   rows <- rows[pre_match, , drop = FALSE]
 
-  rows$kickoff_time <- ifelse(is.na(rows$kickoff_at), NA_character_, format(rows$kickoff_at, "%H:%M", tz = "UTC"))
+  # Not ifelse(): with no row left it returns logical(0), and a 0-row result
+  # must keep the schema's types for whoever binds it to others.
+  rows$kickoff_time <- rep(NA_character_, nrow(rows))
+  known <- !is.na(rows$kickoff_at)
+  rows$kickoff_time[known] <- format(rows$kickoff_at[known], "%H:%M", tz = "UTC")
   rows$engine <- meta$engine
   rows$stan_model <- meta$stan_model
   rows$model_version <- meta$model_version

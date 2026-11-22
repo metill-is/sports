@@ -282,6 +282,18 @@ test_that("only forecasts published before kick-off are archived", {
   expect_equal(rows$xg_home, c(30.5, 30.5))
   expect_equal(unique(rows$fit_id), "fit-a")
   expect_equal(unique(rows$published_to), "handball/iceland/karla-od/next_games.json")
+
+  # Published after every kick-off: nothing left, and still the schema's
+  # types, so it binds to other cells' rows.
+  none <- forecast_archive_rows(
+    publish_root = publish_root, sport = "handball", country = "iceland",
+    sex = "male", cells = "karla-od", fit_date = as.Date("2100-01-16"), fit_id = "fit-a",
+    fit_meta = tibble::tibble(), kickoffs = kickoffs,
+    published_at = as.POSIXct("2100-01-18 12:00:00", tz = "UTC")
+  )
+  expect_equal(nrow(none), 0L)
+  expect_identical(vapply(none, function(x) class(x)[1], ""), vapply(.forecast_archive_empty(), function(x) class(x)[1], ""))
+  expect_no_error(dplyr::bind_rows(none, rows))
 })
 
 test_that("kick-offs come from the schedule, else from the newest odds scrape under federation names", {
