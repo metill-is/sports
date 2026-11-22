@@ -263,7 +263,10 @@ gate_fit <- function(spec, n_draw = 4L) {
 # research/football-v2/make_reference.R share it, so the reference and the
 # check are computed the same way): outcome probabilities and expected goals of
 # every fixture, the hyperparameters, each team's current attack and defence
-# state, and the league home advantage in the first fixture week.
+# state, and the league home advantage in the first fixture week. Fixtures and
+# teams carry their names: fv2_build() orders teams by name, so the order
+# depends on the collation (testthat compares under C, where Icelandic letters
+# sort after z), and a comparison must match by name, not by position.
 reference_summary <- function(draws, spec, max_goals = 12L) {
   pr <- fv2_predict(draws, spec)
   g <- 0:max_goals
@@ -274,6 +277,8 @@ reference_summary <- function(draws, spec, max_goals = 12L) {
     grid <- grid / sum(grid)
     c(home = sum(grid[lower.tri(grid)]), draw = sum(diag(grid)), away = sum(grid[upper.tri(grid)]))
   }, numeric(3)))
+  fixture <- paste(spec$teams[spec$pred$home_team], spec$teams[spec$pred$away_team], spec$pred$week_nr, sep = " | ")
+  rownames(probs) <- fixture
   state <- function(x) {
     x <- x[, spec$cur_slot, drop = FALSE]
     data.frame(team = spec$teams, mean = colMeans(x), sd = apply(x, 2L, stats::sd), row.names = NULL)
@@ -283,7 +288,7 @@ reference_summary <- function(draws, spec, max_goals = 12L) {
   ha <- draws$c_home - draws$c_away + if (is.null(draws$lvl_ha)) 0 else draws$lvl_ha[, spec$cur_week_nr]
   list(
     probs = probs,
-    xg = cbind(home = rowMeans(pr$lam_home), away = rowMeans(pr$lam_away)),
+    xg = cbind(home = rowMeans(pr$lam_home), away = rowMeans(pr$lam_away), deparse.level = 0L) |> `rownames<-`(fixture),
     hyper = data.frame(name = colnames(h), mean = colMeans(h), q05 = q(0.05), q50 = q(0.5), q95 = q(0.95), row.names = NULL),
     att = state(draws$att), def = state(draws$def),
     ha = c(mean = mean(ha), sd = stats::sd(ha))

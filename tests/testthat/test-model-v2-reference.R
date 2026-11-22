@@ -25,7 +25,10 @@ test_that("the stored NUTS reference is whole and came from a healthy fit", {
   n_fixtures <- nrow(ref$inputs$pred)
   expect_gt(n_fixtures, 0L)
   expect_identical(dim(ref$summary$probs), c(n_fixtures, 3L))
-  expect_equal(rowSums(ref$summary$probs), rep(1, n_fixtures), tolerance = 1e-9)
+  expect_equal(unname(rowSums(ref$summary$probs)), rep(1, n_fixtures), tolerance = 1e-9)
+  # Keyed by name, so a comparison survives a different team order.
+  expect_false(anyDuplicated(rownames(ref$summary$probs)) > 0 || is.null(rownames(ref$summary$probs)))
+  expect_false(anyDuplicated(ref$summary$att$team) > 0)
   expect_identical(nrow(ref$summary$att), nrow(ref$summary$def))
   # A reference worth comparing against: no divergences, chains that agree.
   expect_identical(ref$provenance$n_divergent, 0L)
@@ -63,7 +66,8 @@ compare_with_reference <- function(ref) {
   # Limits at about twice the differences seen when the engine was validated
   # (the proposal's table), so the test catches a break and not Monte Carlo
   # noise; 4,000 draws of each engine put that noise near 0.002 on average.
-  d_prob <- abs(got$probs - want$probs)
+  expect_setequal(rownames(got$probs), rownames(want$probs))
+  d_prob <- abs(got$probs[rownames(want$probs), , drop = FALSE] - want$probs)
   expect_lt(mean(d_prob), 0.005, label = sprintf("mean |p_INLA - p_NUTS| = %.4f", mean(d_prob)))
   expect_lt(max(d_prob), 0.025, label = sprintf("largest |p_INLA - p_NUTS| = %.4f", max(d_prob)))
 
@@ -79,9 +83,12 @@ compare_with_reference <- function(ref) {
 
   # Current states and the league home advantage: how far apart the posterior
   # means are, in NUTS posterior sds, on average.
+  expect_setequal(got$att$team, want$att$team)
+  att <- got$att[match(want$att$team, got$att$team), ]
+  def <- got$def[match(want$def$team, got$def$team), ]
   z <- c(
-    abs(got$att$mean - want$att$mean) / want$att$sd,
-    abs(got$def$mean - want$def$mean) / want$def$sd,
+    abs(att$mean - want$att$mean) / want$att$sd,
+    abs(def$mean - want$def$mean) / want$def$sd,
     abs(got$ha[["mean"]] - want$ha[["mean"]]) / want$ha[["sd"]]
   )
   expect_lt(mean(z), 0.15, label = sprintf("mean state difference %.3f posterior sds", mean(z)))
