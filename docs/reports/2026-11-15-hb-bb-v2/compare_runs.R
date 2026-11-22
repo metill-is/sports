@@ -15,14 +15,15 @@ OUT <- Sys.getenv("HBBB_OUT", "/Users/brynjolfurjonsson/.claude-reviews/sports-h
 not_results <- c("secs", "secs_m", "secs_t", "cpu", "machine")
 
 # Drop timing fields at any depth, so that what is compared is results only.
+# WHY `x[...] <- NULL` and `x[] <-`: both keep the object's other attributes (a class, a
+# status attached to a data frame); subsetting with `[` and rebuilding with lapply() drop
+# them, and a difference held only there would not be seen.
 strip <- function(x) {
-  if (is.data.frame(x)) {
-    return(x[, setdiff(names(x), not_results), drop = FALSE])
+  if (!is.list(x)) {
+    return(x)
   }
-  if (is.list(x)) {
-    if (!is.null(names(x))) x <- x[!names(x) %in% not_results]
-    return(lapply(x, strip))
-  }
+  if (!is.null(names(x))) x[names(x) %in% not_results] <- NULL
+  if (!is.data.frame(x)) x[] <- lapply(x, strip)
   x
 }
 # Largest absolute difference over every numeric value two stripped objects hold.

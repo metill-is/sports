@@ -5,7 +5,9 @@
 OUT <- Sys.getenv("HBBB_OUT", "/Users/brynjolfurjonsson/.claude-reviews/sports-hb-bb-v2")
 rd <- function(f) readRDS(file.path(OUT, "out", f))
 se <- function(v) stats::sd(v) / sqrt(length(v))
-say <- function(label, ...) cat(sprintf("%-58s %s\n", label, sprintf(...)))
+# WHY two spaces at least: headline_changes.R splits a line at its first run of two or
+# more spaces, and a label longer than the padding would otherwise be cut at its first space.
+say <- function(label, ...) cat(sprintf("%-58s  %s\n", label, sprintf(...)))
 cells <- c("hb_m", "hb_f", "bb_m", "bb_f")
 # The tie treatment proposed for regulation-time basketball (common.R: REG_SHIFT).
 reg_shift <- c(bb_m = "shift_div", bb_f = "shift")

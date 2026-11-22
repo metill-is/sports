@@ -1,0 +1,5 @@
+class-only difference seen: TRUE
+class on a list seen: TRUE
+attribute on a data frame seen: TRUE
+factor-level-only difference seen: TRUE
+timings dropped at depth: TRUE

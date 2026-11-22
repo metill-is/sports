@@ -8,6 +8,7 @@ E=docs/reports/2026-11-15-hb-bb-v2/evidence
 F=R/v2-margin-total-inla.R
 export LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 OMP_NUM_THREADS=1
 cp "$F" "$E/.fitter.keep"
+before=$(shasum "$F" | cut -d" " -f1)
 run() { Rscript "$E/run_test_file.R" tests/testthat/test-v2-margin-total-inla.R > "$E/mutation-$1.log" 2>&1; echo "mutation $1: $(grep '^TOTAL' "$E/mutation-$1.log")"; cp "$E/.fitter.keep" "$F"; }
 python3 - "$F" <<'PY'
 import sys; p = sys.argv[1]; s = open(p).read()
@@ -28,4 +29,5 @@ open(p, "w").write(s.replace(old, "  if (reproducible) INLA::inla.setOption(inte
 PY
 run C-session-option-also-switched
 rm "$E/.fitter.keep"
-git diff --quiet HEAD -- "$F" && echo "fitter: unchanged from HEAD (unexpected)" || echo "fitter: restored to the working-tree fix"
+# WHY a checksum: comparing with HEAD cannot tell a restored file from one left mutated.
+[ "$(shasum "$F" | cut -d" " -f1)" = "$before" ] && echo "fitter: restored, identical to the copy taken before the mutations" || echo "fitter: NOT restored, differs from the copy taken before the mutations"

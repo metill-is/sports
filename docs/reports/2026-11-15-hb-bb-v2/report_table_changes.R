@@ -35,6 +35,9 @@ read_rows <- function(path) {
       in_table <- FALSE
       next
     }
+    # WHY on the whole line: pandoc writes the separator as |----|----| with no spaces, so
+    # splitting it into cells leaves one cell that is not all dashes.
+    if (in_table && grepl("^[|][-:| ]+[|][[:space:]]*$", l)) next
     cells <- trimws(strsplit(sub("[|][[:space:]]*$", "", sub("^[|]", "", l)), " | ", fixed = TRUE)[[1]])
     # Markdown escapes (a backslash before a bracket, a pipe, a star) are not part of the text.
     cells <- gsub("\\\\(.)", "\\1", cells)
@@ -44,7 +47,6 @@ read_rows <- function(path) {
       header <- cells
       next
     }
-    if (all(grepl("^-+$", cells))) next
     out[[length(out) + 1L]] <- list(section = if (nzchar(h3)) paste(h2, h3, sep = " / ") else h2, h3 = h3, table = tno, header = header, cells = cells)
   }
   key <- vapply(out, function(r) paste(r$section, r$table, r$cells[1], sep = " :: "), "")
@@ -69,7 +71,10 @@ move_se <- function(a, b) {
   }
   max(abs(pb[, "value"] - pa[, "value"]) / pb[, "se"])
 }
-not_a_result <- function(header) grepl("time|seconds|slot|wall", header, ignore.case = TRUE)
+# The columns that hold fit times or the machine record, named exactly. WHY not a pattern:
+# "time" also matches "overtime" and "regulation-time", and "slot" a result column
+# ("Innovation slots no match touches").
+not_a_result <- function(header) header %in% c("R-INLA time: full / plug-in", "Wall time", "Machine slots when the fit started")
 
 old <- read_rows(old_file)
 new <- read_rows(new_file)

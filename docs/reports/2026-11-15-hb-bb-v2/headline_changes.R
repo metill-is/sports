@@ -2,6 +2,9 @@
 # each headline number on a line of its own; this compares its output for the second run
 # (kept as logs/check_headlines.second-run.log) with its output now, line by line within
 # each block, and keeps the lines whose text differs.
+# A log written before check_headlines.R put two spaces after every label (22 November 2026)
+# loses the labels longer than its padding: they are cut at their first space and then
+# dropped as duplicates.
 # The blocks about the runs themselves (wf_status.rds, run_identity.rds) are left out: they
 # describe different comparisons in the two states, not the same number twice.
 # Usage: Rscript -e 'source("docs/reports/2026-11-15-hb-bb-v2/headline_changes.R")'
