@@ -1,0 +1,661 @@
+HEAD abf04be95 2026-11-22 16:51
+ℹ Testing sports
+
+Attaching package: ‘testthat’
+
+The following object is masked from ‘package:devtools’:
+
+    test_file
+
+auto-place: ..................................................................................................
+backfill-final-positions: ........................
+backtest-divisions: .....
+backtest-engine: ........
+backtest-market: ......................
+backtest-marketcal: ...............
+backtest-metrics: ................................
+backtest-pit: .....................................
+backtest-sd: S..........
+backtest-stake: ....................
+backtest-universe: ...................
+backtest-walkforward-ci-isolation: .
+backtest-walkforward: ...............! normalise_lengjan_team_names: no team_names for football/iceland/male; passing through (odds rows=2)
+....! normalise_lengjan_team_names: no team_names for football/iceland/male; passing through (odds rows=1)
+...! normalise_lengjan_team_names: no team_names for football/iceland/male; passing through (odds rows=2)
+................................! walk-forward cutoff 2026-05-27 skipped: Stan diagnostic gate: 51 divergent transitions > 1.00% threshold
+..................! normalise_lengjan_team_names: no team_names mapping for football/iceland/male: A
+! normalise_lengjan_team_names: no team_names mapping for football/iceland/male: B
+.....! normalise_lengjan_team_names: no team_names mapping for football/iceland/male: A
+! normalise_lengjan_team_names: no team_names mapping for football/iceland/male: B
+! normalise_lengjan_team_names: no team_names mapping for football/iceland/male: A
+! normalise_lengjan_team_names: no team_names mapping for football/iceland/male: B
+..S
+betting-interlock: .......................................
+betting-ladder: ...............................................................
+commit-ledger: ............
+config-bankroll: ......
+config-betting-schema: .....................
+config: ....................W..W...............................
+cumulative-xpts: ...............
+dashboard-export: ! bt_pit_uniformity: 1 usable PIT value (< min_n = 30); reporting verdict = insufficient_data (mean_u only).
+! bt_pit_uniformity: 1 usable PIT value (< min_n = 30); reporting verdict = insufficient_data (mean_u only).
+.......! bt_pit_uniformity: 1 usable PIT value (< min_n = 30); reporting verdict = insufficient_data (mean_u only).
+! bt_pit_uniformity: 1 usable PIT value (< min_n = 30); reporting verdict = insufficient_data (mean_u only).
+.! bt_pit_uniformity: 1 usable PIT value (< min_n = 30); reporting verdict = insufficient_data (mean_u only).
+! bt_pit_uniformity: 1 usable PIT value (< min_n = 30); reporting verdict = insufficient_data (mean_u only).
+....
+decide-calibration: .............................................................
+decide-kelly: ..............................
+decide-normalise: .....................
+decide-odds: ! normalise_lengjan_team_names: no team_names for basketball/iceland/male; passing through (odds rows=4)
+......................................! normalise_lengjan_team_names: no team_names mapping for football/iceland/male: Throttur R.
+...! normalise_lengjan_team_names: no team_names for handball/iceland/male; passing through (odds rows=3)
+..! normalise_lengjan_team_names: no team_names for handball/iceland/female; passing through (odds rows=3)
+..! normalise_lengjan_team_names: no team_names for handball/iceland/female; passing through (odds rows=3)
+.................
+decide-pipeline: ! normalise_lengjan_team_names: no team_names for basketball/iceland/male; passing through (odds rows=2)
+.WWWW........! normalise_lengjan_team_names: no team_names for basketball/iceland/male; passing through (odds rows=2)
+...! normalise_lengjan_team_names: no team_names for basketball/iceland/male; passing through (odds rows=2)
+..! normalise_lengjan_team_names: no team_names for basketball/iceland/male; passing through (odds rows=2)
+..! normalise_lengjan_team_names: no team_names for basketball/iceland/male; passing through (odds rows=2)
+.! normalise_lengjan_team_names: no team_names for basketball/iceland/female; passing through (odds rows=2)
+.! normalise_lengjan_team_names: no team_names for basketball/iceland/male; passing through (odds rows=2)
+...! normalise_lengjan_team_names: no team_names for basketball/iceland/male; passing through (odds rows=2)
+WWWW...! normalise_lengjan_team_names: no team_names for basketball/iceland/male; passing through (odds rows=2)
+...! normalise_lengjan_team_names: no team_names for basketball/iceland/male; passing through (odds rows=2)
+...! normalise_lengjan_team_names: no team_names for basketball/iceland/male; passing through (odds rows=2)
+! normalise_lengjan_team_names: no team_names for basketball/iceland/female; passing through (odds rows=2)
+WWWWWWWWWW...! normalise_lengjan_team_names: no team_names for basketball/iceland/male; passing through (odds rows=2)
+! normalise_lengjan_team_names: no team_names for basketball/iceland/female; passing through (odds rows=2)
+WWWWWWWWWW! normalise_lengjan_team_names: no team_names for basketball/iceland/male; passing through (odds rows=2)
+WWWWWW...WWWW...! normalise_lengjan_team_names: no team_names for basketball/iceland/male; passing through (odds rows=2)
+WWWW...WWWW.! normalise_lengjan_team_names: no team_names for basketball/iceland/male; passing through (odds rows=2)
+! normalise_lengjan_team_names: no team_names for basketball/iceland/female; passing through (odds rows=2)
+WWWWWWWWWW.! normalise_lengjan_team_names: no team_names for basketball/iceland/female; passing through (odds rows=2)
+WWWWWW..WWWW.! normalise_lengjan_team_names: no team_names for basketball/iceland/female; passing through (odds rows=2)
+WWWW.! normalise_lengjan_team_names: no team_names for basketball/iceland/male; passing through (odds rows=2)
+WWWWWWWWWW.! normalise_lengjan_team_names: no team_names for basketball/iceland/female; passing through (odds rows=2)
+WWWWWW....WWWW.! normalise_lengjan_team_names: no team_names for basketball/iceland/male; passing through (odds rows=2)
+WWWW.! normalise_lengjan_team_names: no team_names for basketball/iceland/male; passing through (odds rows=2)
+WWWWWWWWWW..! normalise_lengjan_team_names: no team_names for basketball/iceland/male; passing through (odds rows=2)
+WWWW.! normalise_lengjan_team_names: no team_names for basketball/iceland/female; passing through (odds rows=2)
+..WWWW..i football/iceland/male: dropped 2 odds rows in excluded divisions "LD1_PO"
+.........
+decide-portfolio: ................
+decide-publish-integration: WW................................................
+decide-validation: Si basketball/iceland/male: betting.mode scrape is below paper -- no candidates or recommendations
+..
+derive-round: ..............
+discover-ci-isolation: ..
+discover-health: .....
+discover-lengjan: ...........................................................
+duckdb-views: Rebuilt DuckDB at '/var/folders/h6/tswmwqq108z_sbxzqjn17cd00000gn/T/RtmpQCBFgx/file14e925bd9417e/sports.duckdb'
+...
+etl-validation: SSS...Rebuilt DuckDB at '/Users/brynjolfurjonsson/sports/.claude/worktrees/hb-bb-v2/sports.duckdb'
+.
+extract-2dt-divisions: ................................................
+extract-2dt-draw-pulls: ...............
+extract-2dt-forfeits: .....
+extract-2dt-home-advantage-units: .............
+extract-2dt-round-strengths: .......................
+extract-2dt-season-projection: ............
+extract-2dt-tie-params: .........
+extract-2dt-tiebreak: .....
+extract-basketball-iceland: .................
+extract-fit-meta: .......................................................................
+extract-football-home-advantage-units: .............
+extract-football-iceland: SSSSS...........SSS...........................................SS.................................
+extract-handball-iceland: .................
+extract-iceland-read: ............................................
+extracts-retention: ..................
+fail-loud: ......! No schedules at /var/folders/h6/tswmwqq108z_sbxzqjn17cd00000gn/T//RtmpQCBFgx/file14e92cfb17f8/facts/schedules - defaulting all leagues to active
+v Wrote /var/folders/h6/tswmwqq108z_sbxzqjn17cd00000gn/T//RtmpQCBFgx/file14e9238e2a170.json (1/1 active)
+..v Wrote /var/folders/h6/tswmwqq108z_sbxzqjn17cd00000gn/T//RtmpQCBFgx/file14e92579be50e.json (1/1 active)
+.
+federation-seasons: ...................
+fit-league-prep-handoff: .
+fixture-harness: .................................................................................................................................
+fixture-skip-hygiene: ..............................................................................................................................................
+gisko-backtest: ........................................
+gisko: ....................................................
+health-format-agreement: ...............
+health-ladder: ............
+health-publish-freshness: ......................................
+health-season-resolution: ........................
+health: ....................................................................................
+healthcheck-ci-isolation: .
+iceland-division-helpers: ..........................................................................................................................................................................................
+iceland-division-preseason-hold: .......
+ingest-aliases: ....................
+ingest-dispatcher: .............
+ingest-hsi: .........................................................................................
+ingest-integration: ...................
+ingest-kki-periods: ...................................
+ingest-kki: ..................................................
+ingest-ksi: ...............S.....................
+ingest-lengjan-odds: .........................S.........
+ingest-log: .................i handball_iceland/male: dormant, last tried
+2026-09-04T08:00:00Z -- treating as off-season.
+.i handball_iceland/male: 0 rows (4 in a row) -- off-season.
+.....
+league-fixture-completion: ...............
+league-split-state: ................................
+ledger-lock: ................................
+lengjan-api-ingest: ...........................
+lengjan-api: .......................................
+lengjan-archive: ................................................................................................
+model-fit: Warning: 3 of 400 (1.0%) transitions ended with a divergence.
+See https://mc-stan.org/misc/warnings for details.
+
+Warning: 2 of 2 chains had an E-BFMI less than 0.3.
+See https://mc-stan.org/misc/warnings for details.
+
+..........! Stan diagnostic gate: 4 of 6 gates could not be evaluated (metric was NA): "divergences", "treedepth", "E-BFMI", and "tail ESS". The fit is only partially checked.
+..................
+model-golden: SSSSSS
+model-integration: ..............
+model-league: i fit_league(basketball/iceland/male): sampler seed = 1279738617
+.....i fit_league(basketball/iceland/male): sampler seed = 1279738617
+..i fit_league(football/iceland/male): sampler seed = 1176113387
+..i fit_league(football/iceland/male): sampler seed = 1176113387
+....i fit_league(basketball/iceland/male): sampler seed = 441485171
+.....
+model-posteriors: ...........
+model-prepare: ................................i training_filter: kept 2/6 matches (divisions="D2", lookback=900d)
+..............i Dropped 1 forfeit from training.
+..
+model-v2: .................................................................................................................................................................................................................................................................................................................
+pipeline-freshness: ..................................................
+pipeline-run-isolation: .........................................................................................
+placer-ci-isolation: .
+placer-ledger: ..................
+placer-load: ........! Dropping 2 recommendations for leagues below betting.mode manual: "football_iceland"
+.....! Dropping 2 recommendations for leagues below betting.mode manual: "football_iceland"
+......
+placer-locale: .
+placer-login: .S
+placer-navigate: .................
+placer-pipeline: 
+-- Lengjan Bet Placement Pipeline ----------------------------------------------
+! DRY RUN mode — no bets will be placed.
+i No pending recommendations.
+.
+-- Lengjan Bet Placement Pipeline ----------------------------------------------
+! DRY RUN mode — no bets will be placed.
+i No pending recommendations.
+.
+-- Lengjan Bet Placement Pipeline ----------------------------------------------
+! DRY RUN mode — no bets will be placed.
+i No pending recommendations.
+.
+-- Lengjan Bet Placement Pipeline ----------------------------------------------
+! DRY RUN mode — no bets will be placed.
+i No pending recommendations.
+.........! No competitions configured for this league.
+..........
+-- Lengjan Bet Placement Pipeline ----------------------------------------------
+! DRY RUN mode — no bets will be placed.
+..
+placer-place: ........................................
+placer-preview: i No pending recommendations.
+.
+-- Pending recommendations (1 total) -------------------------------------------
+i Total stake: 0 ISK
+football/iceland/male Fram vs Stjarnan (2026-04-26): moneyline/away @ 2.5 for 0
+ISK (p=0.4, ev=0)
+..
+-- Pending recommendations (1 total) -------------------------------------------
+i Total stake: 1890 ISK
+basketball/iceland/female Valur vs Haukar (2026-04-27): moneyline/home @ 1.65
+for 1890 ISK (p=0.65, ev=0.07)
+..
+-- Pending recommendations (2 total) -------------------------------------------
+i Total stake: 1180 ISK
+football/iceland/male KR vs FH (2026-04-26): moneyline/home @ 1.85 for 1180 ISK
+(p=0.55, ev=0.02)
+football/iceland/male Fram vs Stjarnan (2026-04-26): moneyline/away @ 2.5 for 0
+ISK (p=0.4, ev=0)
+.
+placer-validate: .............
+poll-tables: ..............
+publish-2dt-preseason: ..........................................
+publish-2dt-round-predictions: ..................
+publish-b4-acceptance: .....................................................................................................................................................................................................
+publish-cup-bracket: ....................................................................................................
+publish-divisions-config: .............................................................................................................................
+publish-divisions-schema: .........
+publish-empty-standings: .......
+publish-football-golden: .....................
+publish-football-round-predictions: ..........................SSSS
+publish-football-split: ...................
+publish-football: SSS.........SSSSSSSSSSSS
+publish-format: ................................................................................................................................................................
+publish-iceland-league: .....
+publish-legacy-cells: ......
+publish-meta-contract: ............................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................
+publish-next-games-contract: .................................................................................................................................................................................................................................................................................................................................................................................................................................................
+publish-next-games: ..................................................
+publish-no-silent-skip: ....
+publish-preseason-as-of: ....
+publish-profile-units: ..................
+publish-profile: ...........................................................................
+publish-quantile-grid: .................
+publish-refactor-hygiene: .........
+publish-schema-2dt: .......................................................
+publish-schema-arming: .........v publish_one(football_iceland/male): schema validation passed (1/1 files)
+...v publish_one(football_iceland/male): schema validation passed (1/1 files)
+...............
+publish-schema-generation: ..........................................................
+publish-schemas: ...............
+publish-surfaces: .......................................................................................................................................................................
+publish-xg-coverage: ............
+replay: S.S
+research-football-v2: ............................SS.................
+round-cutoff: ........
+schedule-active: v Wrote /var/folders/h6/tswmwqq108z_sbxzqjn17cd00000gn/T//RtmpQCBFgx/file14e92452e2685/config/active_competitions.json (1/2 active)
+...! No schedules at /var/folders/h6/tswmwqq108z_sbxzqjn17cd00000gn/T//RtmpQCBFgx/file14e92593bb81e/data-missing/facts/schedules - defaulting all leagues to active
+v Wrote /var/folders/h6/tswmwqq108z_sbxzqjn17cd00000gn/T//RtmpQCBFgx/file14e92593bb81e/config/active_competitions.json (1/1 active)
+.v Wrote /var/folders/h6/tswmwqq108z_sbxzqjn17cd00000gn/T//RtmpQCBFgx/file14e923b4ca9db/config/active_competitions.json (0/1 active)
+.
+script-ledger-commit: ..........................
+season-stamp: ........
+season-structure-2dt: ...............................................
+settle: .......................................................................................................
+simulate-2dt-equivalence: ....................................................................................................................
+simulate-2dt: ...............................! Prior-rating 1 unfitted team in this division: "NEW".
+.......! Prior-rating 1 unfitted team in this division: "NEW".
+....
+simulate-cup-bracket: ..........................................................
+simulate-league-season: ........................................................................................
+skill-conventions: ..
+stan-compile: ......
+storage-odds-evolution: .................
+storage-schemas: .......
+storage-upsert: ............................
+storage-validate: .......
+storage: .............................
+strength-trajectory: ...........
+stub-fit: ...............................................
+v2-margin-total-adapter: .........................................................................
+v2-margin-total-data: ..............................
+v2-margin-total-fit-rules: ..............................
+v2-margin-total-inla: ................................................................................................
+v2-margin-total-predict: ..........................................................................
+wc-accountability: ...................................v Wrote WC publish JSON to '/var/folders/h6/tswmwqq108z_sbxzqjn17cd00000gn/T//RtmpQCBFgx/file14e9222116e/publish/world_cup/karla'
+.......
+wc-ingest-overlay: Wv Applied 1 manual result martj42 hasn't published yet.
+v Ingested 1 played + 5 upcoming international matches (2 teams, 4 WC participants).
+....Wv Ingested 1 played + 2 upcoming international matches (2 teams, 3 WC participants).
+..Wv Ingested 1 played + 2 upcoming international matches (2 teams, 3 WC participants).
+..Wv Applied 1 manual result martj42 hasn't published yet.
+v Ingested 1 played + 0 upcoming international matches (2 teams, 2 WC participants).
+...v Wrote 2 WC shootout winners to '/var/folders/h6/tswmwqq108z_sbxzqjn17cd00000gn/T//RtmpQCBFgx/file14e921027cf77/wc/shootouts.csv'.
+.....
+wc-knockout-dates: .............i Official-calendar date correction: Argentina vs Egypt 2026-07-06 -> 2026-07-07 (match 95, Atlanta).
+i Official-calendar date correction: Switzerland vs Colombia 2026-07-06 -> 2026-07-07 (match 96, Vancouver).
+......i Official-calendar date correction: Portugal vs Spain 2026-07-04 -> 2026-07-06 (match 93, Dallas).
+.....
+wc-knockout: .................................
+wc-list-unscored: ....
+wc-manual-results: v Applied 1 manual result martj42 hasn't published yet.
+..........
+wc-publish: .................v Wrote WC publish JSON to '/var/folders/h6/tswmwqq108z_sbxzqjn17cd00000gn/T//RtmpQCBFgx/file14e924ced9950/publish/world_cup/karla'
+.........v Wrote WC publish JSON to '/var/folders/h6/tswmwqq108z_sbxzqjn17cd00000gn/T//RtmpQCBFgx/file14e9249ceef5/publish/world_cup/karla'
+............................................................................v Wrote WC publish JSON to '/var/folders/h6/tswmwqq108z_sbxzqjn17cd00000gn/T//RtmpQCBFgx/file14e9228a2b94d/publish/world_cup/karla'
+........v Wrote WC publish JSON to '/var/folders/h6/tswmwqq108z_sbxzqjn17cd00000gn/T//RtmpQCBFgx/file14e92210f3de7/publish/world_cup/karla'
+....v Wrote WC publish JSON to '/var/folders/h6/tswmwqq108z_sbxzqjn17cd00000gn/T//RtmpQCBFgx/file14e92435594e2/publish/world_cup/karla'
+.......v Wrote WC publish JSON to '/var/folders/h6/tswmwqq108z_sbxzqjn17cd00000gn/T//RtmpQCBFgx/file14e923ed7b052/publish/world_cup/karla'
+.v Wrote WC publish JSON to '/var/folders/h6/tswmwqq108z_sbxzqjn17cd00000gn/T//RtmpQCBFgx/file14e9241bf25f9/publish/world_cup/karla'
+......
+wc-schedule: ..........
+wc-simulate: ................................................................................................................................................................................................................................................................
+wc-structure: ..........................................
+wc-workflow-staging: ..
+workflow-cmdstan-cache: ...........................
+workflow-inla-engine: ....................
+workflow-push-retry: .....................................
+
+══ Skipped ═════════════════════════════════════════════════════════════════════
+1. 2d_gaussian_sd.stan compiles ('test-backtest-sd.R:3:3') - Reason: set SPORTS_TEST_STAN=1 to run Stan compile
+
+2. walk-forward yields OOS candidates and scores >= 1 bet with a real as-of fit (integration; opt-in) ('test-backtest-walkforward.R:706:3') - Reason: set SPORTS_RUN_WF_INTEGRATION=1 to run the Stan-backed walk-forward integration test
+
+3. decide_league replays match ledger within tolerance ('test-decide-validation.R:60:5') - Reason: decide_league does not yet accept a historical beliefs_date — wire this when walk-forward research lands.
+
+4. Parquet ledger total row count matches legacy (modulo sex=all) ('test-etl-validation.R:53:3') - Reason: post-cutover drift: parquet=1980 > legacy=1870 (placer added 110 new bets)
+
+5. Parquet ledger total PnL matches legacy to 0.01 ISK ('test-etl-validation.R:75:3') - Reason: post-cutover drift: parquet=1980 > legacy=1870 (placer added 110 new bets)
+
+6. Per-league PnL totals match legacy for each ledger file ('test-etl-validation.R:99:3') - Reason: post-cutover drift: parquet=1980 > legacy=1870 (placer added 110 new bets)
+
+7. extract_football_iceland writes all 6 Parquets with expected schemas + division column ('test-extract-football-iceland.R:26:3') - Reason: legacy football fit unavailable
+
+8. extract_football_iceland: BD and LD1 partitions contain disjoint team sets ('test-extract-football-iceland.R:132:3') - Reason: legacy football fit unavailable
+
+9. extract_football_iceland: target_divs subset only includes requested divisions ('test-extract-football-iceland.R:166:3') - Reason: legacy football fit unavailable
+
+10. predicted_matches.parquet preserves total draw count per match ('test-extract-football-iceland.R:195:3') - Reason: legacy football fit unavailable
+
+11. team_strengths_quantiles q=50 matches publisher's median per cell ('test-extract-football-iceland.R:230:3') - Reason: legacy football fit unavailable
+
+12. read_extracted_iceland: round-trips with extract_football_iceland ('test-extract-football-iceland.R:423:3') - Reason: legacy football fit unavailable
+
+13. final_positions.parquet matches publisher's final_positions.json ('test-extract-football-iceland.R:458:3') - Reason: legacy football fit unavailable
+
+14. extract_football_iceland: CUP target_div writes empty final_positions + points_distribution ('test-extract-football-iceland.R:520:3') - Reason: legacy football fit unavailable
+
+15. .extract_sim_inputs_pfi: drops orphan teams + warns when fit's team count exceeds nrow(teams) ('test-extract-football-iceland.R:773:3') - Reason: legacy football fit unavailable
+
+16. .extract_sim_inputs_pfi: succeeds without warning when fit's team count matches nrow(teams) ('test-extract-football-iceland.R:801:3') - Reason: legacy football fit unavailable
+
+17. parse_ksi_results_page with played_only drops unplayed ('test-ingest-ksi.R:88:1') - Reason: empty test
+
+18. ingest_lengjan_odds skips chromote bits with skip_if ('test-ingest-lengjan-odds.R:92:3') - Reason: set LENGJAN_LIVE_TEST=1 to run live scraper integration
+
+19. basketball male beliefs are sane vs backup ('test-model-golden.R:118:3') - Reason: backup absent: /Users/brynjolfurjonsson/sports-backup-20260424-163153
+
+20. basketball female beliefs are sane vs backup ('test-model-golden.R:122:3') - Reason: backup absent: /Users/brynjolfurjonsson/sports-backup-20260424-163153
+
+21. handball male beliefs are sane vs backup ('test-model-golden.R:126:3') - Reason: backup absent: /Users/brynjolfurjonsson/sports-backup-20260424-163153
+
+22. handball female beliefs are sane vs backup ('test-model-golden.R:130:3') - Reason: backup absent: /Users/brynjolfurjonsson/sports-backup-20260424-163153
+
+23. football male beliefs are sane vs backup ('test-model-golden.R:134:3') - Reason: backup absent: /Users/brynjolfurjonsson/sports-backup-20260424-163153
+
+24. football female beliefs are sane vs backup ('test-model-golden.R:138:3') - Reason: backup absent: /Users/brynjolfurjonsson/sports-backup-20260424-163153
+
+25. chromote_login skips when chromote is unavailable ('test-placer-login.R:12:5') - Reason: LENGJAN_USER unset; skip live login
+
+26. publish_iceland_league: empty archive -> empty history JSON, NA standings xG ('test-publish-football-round-predictions.R:313:3') - Reason: legacy football fit unavailable
+
+27. publish_iceland_league: partial archive -> partial cumulative xG with coverage indicators ('test-publish-football-round-predictions.R:382:3') - Reason: legacy football fit unavailable
+
+28. team_strengths_history covers every played matchweek from a single fit ('test-publish-football-round-predictions.R:476:5') - Reason: local football fit unavailable -- requires fresh local fit
+
+29. publish_iceland_league: standings xg_trend serialises as array (auto_unbox guard) ('test-publish-football-round-predictions.R:517:3') - Reason: legacy football fit unavailable
+
+30. publish_iceland_league: skip gracefully when backup fit absent ('test-publish-football.R:15:7') - Reason: legacy football fit unavailable: /Users/brynjolfurjonsson/sports-backup-20260424-163153/Sports/football/iceland/results/male/fit.rds
+
+31. publish_iceland_league female: writes the 7 always-on JSONs ('test-publish-football.R:89:5') - Reason: legacy female football fit unavailable
+
+32. publish_iceland_league: output_root creates directory ('test-publish-football.R:139:5') - Reason: legacy male football fit unavailable
+
+33. publish_iceland_league writes team_strengths_history.json (male) ('test-publish-football.R:249:5') - Reason: legacy male football fit unavailable
+
+34. publish_iceland_league writes team_strengths_history.json (female) ('test-publish-football.R:296:5') - Reason: legacy female football fit unavailable
+
+35. publish_iceland_league writes standings_history.json when matches have been played ('test-publish-football.R:333:5') - Reason: legacy football fits unavailable for both sexes
+
+36. publish_iceland_league: re-running dedups history on (round, team, ...) ('test-publish-football.R:402:5') - Reason: legacy male football fit unavailable
+
+37. publish_iceland_league: BD output unchanged after target_div refactor (regression) ('test-publish-football.R:445:5') - Reason: legacy football fit unavailable
+
+38. publish_iceland_league: writes karla-bd/ and karla-ld/ dirs ('test-publish-football.R:482:5') - Reason: legacy football fit unavailable
+
+39. publish_iceland_league: writes karla-bikar/ with is_cup=true and empty league-table JSONs ('test-publish-football.R:538:5') - Reason: legacy football fit unavailable
+
+40. publish_iceland_league: per-division next_games is filtered by division ('test-publish-football.R:594:5') - Reason: legacy football fit unavailable
+
+41. publish_iceland_league: per-division team_strengths scoped to division teams ('test-publish-football.R:639:5') - Reason: legacy football fit unavailable
+
+42. publish_iceland_league: embeds preseason field when prior fit exists ('test-publish-football.R:684:5') - Reason: legacy football fit unavailable
+
+43. publish_iceland_league: meta.json::fit_date reflects extracts partition, not end_date ('test-publish-football.R:768:5') - Reason: legacy male football fit unavailable
+
+44. publish_iceland_league: omits preseason when no prior fit exists ('test-publish-football.R:804:5') - Reason: legacy football fit unavailable
+
+45. replay_football_iceland: --no-fit publishes from existing extracts, honest fit_date ('test-replay.R:17:3') - Reason: legacy football fit unavailable
+
+46. replay_football_iceland: output_root override isolates the what-if write ('test-replay.R:82:3') - Reason: legacy football fit unavailable
+
+47. the Stan programs compile and read the spec ('test-research-football-v2.R:95:3') - Reason: set FV2_TEST_STAN=1 to compile and sample
+
+48. the Stan program's recursion is the R twin, so the same prior as INLA's precision ('test-research-football-v2.R:156:3') - Reason: set FV2_TEST_STAN=1 to compile and sample
+
+══ Warnings ════════════════════════════════════════════════════════════════════
+1. load_bankroll exposes kelly_ceiling and max_match_stake_default defaults ('test-config.R:197:3') - ! current_pool derived from the unscoped ledger (10000 ISK).
+i The ledger mixes bookmakers; set current_pool explicitly in bankroll.yml to the real Lengjan balance.
+
+2. load_bankroll honours explicit kelly_ceiling override ('test-config.R:212:3') - ! current_pool derived from the unscoped ledger (10000 ISK).
+i The ledger mixes bookmakers; set current_pool explicitly in bankroll.yml to the real Lengjan balance.
+
+3. decide_league writes candidates and recommendations ('test-decide-pipeline.R:71:3') - Invalid metadata$r
+
+4. decide_league writes candidates and recommendations ('test-decide-pipeline.R:71:3') - Invalid metadata$r
+
+5. decide_league writes candidates and recommendations ('test-decide-pipeline.R:71:3') - Invalid metadata$r
+
+6. decide_league writes candidates and recommendations ('test-decide-pipeline.R:71:3') - Invalid metadata$r
+
+7. decide_league recommendations contain only kept rows ('test-decide-pipeline.R:311:3') - Invalid metadata$r
+
+8. decide_league recommendations contain only kept rows ('test-decide-pipeline.R:311:3') - Invalid metadata$r
+
+9. decide_league recommendations contain only kept rows ('test-decide-pipeline.R:311:3') - Invalid metadata$r
+
+10. decide_league recommendations contain only kept rows ('test-decide-pipeline.R:311:3') - Invalid metadata$r
+
+11. decide_league keeps both sexes when they share a run_date ('test-decide-pipeline.R:447:3') - Invalid metadata$r
+
+12. decide_league keeps both sexes when they share a run_date ('test-decide-pipeline.R:447:3') - Invalid metadata$r
+
+13. decide_league keeps both sexes when they share a run_date ('test-decide-pipeline.R:447:3') - Invalid metadata$r
+
+14. decide_league keeps both sexes when they share a run_date ('test-decide-pipeline.R:447:3') - Invalid metadata$r
+
+15. decide_league keeps both sexes when they share a run_date ('test-decide-pipeline.R:447:3') - Invalid metadata$r
+
+16. decide_league keeps both sexes when they share a run_date ('test-decide-pipeline.R:447:3') - Invalid metadata$r
+
+17. decide_league keeps both sexes when they share a run_date ('test-decide-pipeline.R:450:3') - Invalid metadata$r
+
+18. decide_league keeps both sexes when they share a run_date ('test-decide-pipeline.R:450:3') - Invalid metadata$r
+
+19. decide_league keeps both sexes when they share a run_date ('test-decide-pipeline.R:450:3') - Invalid metadata$r
+
+20. decide_league keeps both sexes when they share a run_date ('test-decide-pipeline.R:450:3') - Invalid metadata$r
+
+21. rerunning one sex's decide replaces only that sex's rows ('test-decide-pipeline.R:461:3') - Invalid metadata$r
+
+22. rerunning one sex's decide replaces only that sex's rows ('test-decide-pipeline.R:461:3') - Invalid metadata$r
+
+23. rerunning one sex's decide replaces only that sex's rows ('test-decide-pipeline.R:461:3') - Invalid metadata$r
+
+24. rerunning one sex's decide replaces only that sex's rows ('test-decide-pipeline.R:461:3') - Invalid metadata$r
+
+25. rerunning one sex's decide replaces only that sex's rows ('test-decide-pipeline.R:461:3') - Invalid metadata$r
+
+26. rerunning one sex's decide replaces only that sex's rows ('test-decide-pipeline.R:461:3') - Invalid metadata$r
+
+27. rerunning one sex's decide replaces only that sex's rows ('test-decide-pipeline.R:464:3') - Invalid metadata$r
+
+28. rerunning one sex's decide replaces only that sex's rows ('test-decide-pipeline.R:464:3') - Invalid metadata$r
+
+29. rerunning one sex's decide replaces only that sex's rows ('test-decide-pipeline.R:464:3') - Invalid metadata$r
+
+30. rerunning one sex's decide replaces only that sex's rows ('test-decide-pipeline.R:464:3') - Invalid metadata$r
+
+31. rerunning one sex's decide replaces only that sex's rows ('test-decide-pipeline.R:468:3') - Invalid metadata$r
+
+32. rerunning one sex's decide replaces only that sex's rows ('test-decide-pipeline.R:468:3') - Invalid metadata$r
+
+33. rerunning one sex's decide replaces only that sex's rows ('test-decide-pipeline.R:468:3') - Invalid metadata$r
+
+34. rerunning one sex's decide replaces only that sex's rows ('test-decide-pipeline.R:468:3') - Invalid metadata$r
+
+35. rerunning one sex's decide replaces only that sex's rows ('test-decide-pipeline.R:468:3') - Invalid metadata$r
+
+36. rerunning one sex's decide replaces only that sex's rows ('test-decide-pipeline.R:468:3') - Invalid metadata$r
+
+37. rerunning one sex's decide replaces only that sex's rows ('test-decide-pipeline.R:475:3') - Invalid metadata$r
+
+38. rerunning one sex's decide replaces only that sex's rows ('test-decide-pipeline.R:475:3') - Invalid metadata$r
+
+39. rerunning one sex's decide replaces only that sex's rows ('test-decide-pipeline.R:475:3') - Invalid metadata$r
+
+40. rerunning one sex's decide replaces only that sex's rows ('test-decide-pipeline.R:475:3') - Invalid metadata$r
+
+41. a zero-row decide run for one sex leaves the other untouched ('test-decide-pipeline.R:487:3') - Invalid metadata$r
+
+42. a zero-row decide run for one sex leaves the other untouched ('test-decide-pipeline.R:487:3') - Invalid metadata$r
+
+43. a zero-row decide run for one sex leaves the other untouched ('test-decide-pipeline.R:487:3') - Invalid metadata$r
+
+44. a zero-row decide run for one sex leaves the other untouched ('test-decide-pipeline.R:487:3') - Invalid metadata$r
+
+45. a zero-row decide run for one sex leaves the other untouched ('test-decide-pipeline.R:494:3') - Invalid metadata$r
+
+46. a zero-row decide run for one sex leaves the other untouched ('test-decide-pipeline.R:494:3') - Invalid metadata$r
+
+47. a zero-row decide run for one sex leaves the other untouched ('test-decide-pipeline.R:494:3') - Invalid metadata$r
+
+48. a zero-row decide run for one sex leaves the other untouched ('test-decide-pipeline.R:494:3') - Invalid metadata$r
+
+49. a rerun with candidates but no recommendations clears that sex's ('test-decide-pipeline.R:502:3') - Invalid metadata$r
+
+50. a rerun with candidates but no recommendations clears that sex's ('test-decide-pipeline.R:502:3') - Invalid metadata$r
+
+51. a rerun with candidates but no recommendations clears that sex's ('test-decide-pipeline.R:502:3') - Invalid metadata$r
+
+52. a rerun with candidates but no recommendations clears that sex's ('test-decide-pipeline.R:502:3') - Invalid metadata$r
+
+53. a rerun with candidates but no recommendations clears that sex's ('test-decide-pipeline.R:502:3') - Invalid metadata$r
+
+54. a rerun with candidates but no recommendations clears that sex's ('test-decide-pipeline.R:502:3') - Invalid metadata$r
+
+55. a rerun with candidates but no recommendations clears that sex's ('test-decide-pipeline.R:503:3') - Invalid metadata$r
+
+56. a rerun with candidates but no recommendations clears that sex's ('test-decide-pipeline.R:503:3') - Invalid metadata$r
+
+57. a rerun with candidates but no recommendations clears that sex's ('test-decide-pipeline.R:503:3') - Invalid metadata$r
+
+58. a rerun with candidates but no recommendations clears that sex's ('test-decide-pipeline.R:503:3') - Invalid metadata$r
+
+59. a rerun with candidates but no recommendations clears that sex's ('test-decide-pipeline.R:508:3') - Invalid metadata$r
+
+60. a rerun with candidates but no recommendations clears that sex's ('test-decide-pipeline.R:508:3') - Invalid metadata$r
+
+61. a rerun with candidates but no recommendations clears that sex's ('test-decide-pipeline.R:508:3') - Invalid metadata$r
+
+62. a rerun with candidates but no recommendations clears that sex's ('test-decide-pipeline.R:508:3') - Invalid metadata$r
+
+63. a rerun with candidates but no recommendations clears that sex's ('test-decide-pipeline.R:508:3') - Invalid metadata$r
+
+64. a rerun with candidates but no recommendations clears that sex's ('test-decide-pipeline.R:508:3') - Invalid metadata$r
+
+65. a rerun with candidates but no recommendations clears that sex's ('test-decide-pipeline.R:513:3') - Invalid metadata$r
+
+66. a rerun with candidates but no recommendations clears that sex's ('test-decide-pipeline.R:513:3') - Invalid metadata$r
+
+67. a rerun with candidates but no recommendations clears that sex's ('test-decide-pipeline.R:513:3') - Invalid metadata$r
+
+68. a rerun with candidates but no recommendations clears that sex's ('test-decide-pipeline.R:513:3') - Invalid metadata$r
+
+69. a market-off run keeps the other sex and clears its own recs ('test-decide-pipeline.R:526:3') - Invalid metadata$r
+
+70. a market-off run keeps the other sex and clears its own recs ('test-decide-pipeline.R:526:3') - Invalid metadata$r
+
+71. a market-off run keeps the other sex and clears its own recs ('test-decide-pipeline.R:526:3') - Invalid metadata$r
+
+72. a market-off run keeps the other sex and clears its own recs ('test-decide-pipeline.R:526:3') - Invalid metadata$r
+
+73. a market-off run keeps the other sex and clears its own recs ('test-decide-pipeline.R:527:3') - Invalid metadata$r
+
+74. a market-off run keeps the other sex and clears its own recs ('test-decide-pipeline.R:527:3') - Invalid metadata$r
+
+75. a market-off run keeps the other sex and clears its own recs ('test-decide-pipeline.R:527:3') - Invalid metadata$r
+
+76. a market-off run keeps the other sex and clears its own recs ('test-decide-pipeline.R:527:3') - Invalid metadata$r
+
+77. a market-off run keeps the other sex and clears its own recs ('test-decide-pipeline.R:527:3') - Invalid metadata$r
+
+78. a market-off run keeps the other sex and clears its own recs ('test-decide-pipeline.R:527:3') - Invalid metadata$r
+
+79. a market-off run keeps the other sex and clears its own recs ('test-decide-pipeline.R:529:3') - Invalid metadata$r
+
+80. a market-off run keeps the other sex and clears its own recs ('test-decide-pipeline.R:529:3') - Invalid metadata$r
+
+81. a market-off run keeps the other sex and clears its own recs ('test-decide-pipeline.R:529:3') - Invalid metadata$r
+
+82. a market-off run keeps the other sex and clears its own recs ('test-decide-pipeline.R:529:3') - Invalid metadata$r
+
+83. a market-off run keeps the other sex and clears its own recs ('test-decide-pipeline.R:532:3') - Invalid metadata$r
+
+84. a market-off run keeps the other sex and clears its own recs ('test-decide-pipeline.R:532:3') - Invalid metadata$r
+
+85. a market-off run keeps the other sex and clears its own recs ('test-decide-pipeline.R:532:3') - Invalid metadata$r
+
+86. a market-off run keeps the other sex and clears its own recs ('test-decide-pipeline.R:532:3') - Invalid metadata$r
+
+87. a market-off run keeps the other sex and clears its own recs ('test-decide-pipeline.R:532:3') - Invalid metadata$r
+
+88. a market-off run keeps the other sex and clears its own recs ('test-decide-pipeline.R:532:3') - Invalid metadata$r
+
+89. a market-off run keeps the other sex and clears its own recs ('test-decide-pipeline.R:543:3') - Invalid metadata$r
+
+90. a market-off run keeps the other sex and clears its own recs ('test-decide-pipeline.R:543:3') - Invalid metadata$r
+
+91. a market-off run keeps the other sex and clears its own recs ('test-decide-pipeline.R:543:3') - Invalid metadata$r
+
+92. a market-off run keeps the other sex and clears its own recs ('test-decide-pipeline.R:543:3') - Invalid metadata$r
+
+93. a clear that would empty the day's partition leaves it in place ('test-decide-pipeline.R:556:3') - Invalid metadata$r
+
+94. a clear that would empty the day's partition leaves it in place ('test-decide-pipeline.R:556:3') - Invalid metadata$r
+
+95. a clear that would empty the day's partition leaves it in place ('test-decide-pipeline.R:556:3') - Invalid metadata$r
+
+96. a clear that would empty the day's partition leaves it in place ('test-decide-pipeline.R:556:3') - Invalid metadata$r
+
+97. a clear that would empty the day's partition leaves it in place ('test-decide-pipeline.R:559:3') - Invalid metadata$r
+
+98. a clear that would empty the day's partition leaves it in place ('test-decide-pipeline.R:559:3') - Invalid metadata$r
+
+99. a clear that would empty the day's partition leaves it in place ('test-decide-pipeline.R:559:3') - Invalid metadata$r
+
+100. a clear that would empty the day's partition leaves it in place ('test-decide-pipeline.R:559:3') - Invalid metadata$r
+
+101. a clear that would empty the day's partition leaves it in place ('test-decide-pipeline.R:559:3') - Invalid metadata$r
+
+102. a clear that would empty the day's partition leaves it in place ('test-decide-pipeline.R:559:3') - Invalid metadata$r
+
+103. a clear that would empty the day's partition leaves it in place ('test-decide-pipeline.R:561:3') - Invalid metadata$r
+
+104. a clear that would empty the day's partition leaves it in place ('test-decide-pipeline.R:561:3') - Invalid metadata$r
+
+105. a clear that would empty the day's partition leaves it in place ('test-decide-pipeline.R:561:3') - Invalid metadata$r
+
+106. a clear that would empty the day's partition leaves it in place ('test-decide-pipeline.R:561:3') - Invalid metadata$r
+
+107. decide_league aborts when the shared partition cannot be read ('test-decide-pipeline.R:572:3') - Invalid metadata$r
+
+108. decide_league aborts when the shared partition cannot be read ('test-decide-pipeline.R:572:3') - Invalid metadata$r
+
+109. decide_league aborts when the shared partition cannot be read ('test-decide-pipeline.R:572:3') - Invalid metadata$r
+
+110. decide_league aborts when the shared partition cannot be read ('test-decide-pipeline.R:572:3') - Invalid metadata$r
+
+111. decide_league aborts when the shared partition cannot be read ('test-decide-pipeline.R:584:3') - Invalid metadata$r
+
+112. decide_league aborts when the shared partition cannot be read ('test-decide-pipeline.R:584:3') - Invalid metadata$r
+
+113. decide_league aborts when the shared partition cannot be read ('test-decide-pipeline.R:584:3') - Invalid metadata$r
+
+114. decide_league aborts when the shared partition cannot be read ('test-decide-pipeline.R:584:3') - Invalid metadata$r
+
+115. decide_all populates candidates + recommendations for active leagues ('test-decide-publish-integration.R:15:3') - Invalid metadata$r
+
+116. decide_all populates candidates + recommendations for active leagues ('test-decide-publish-integration.R:15:3') - Invalid metadata$r
+
+117. wc_ingest_internationals merges the overlay into results ('test-wc-ingest-overlay.R:20:3') - wc_correct_knockout_dates: unmapped martj42 city value(s) "X" -- keeping martj42 dates for fixtures there.
+
+118. a header-only overlay file (comments + header, 0 data rows) is a clean no-op ('test-wc-ingest-overlay.R:47:3') - wc_correct_knockout_dates: unmapped martj42 city value(s) "X" -- keeping martj42 dates for fixtures there.
+
+119. a missing overlay file is a clean no-op ('test-wc-ingest-overlay.R:65:3') - wc_correct_knockout_dates: unmapped martj42 city value(s) "X" -- keeping martj42 dates for fixtures there.
+
+120. wc_ingest_internationals tolerates a pen_winner column in the overlay ('test-wc-ingest-overlay.R:89:3') - wc_correct_knockout_dates: unmapped martj42 city value(s) "X" -- keeping martj42 dates for fixtures there.
+
+══ DONE ════════════════════════════════════════════════════════════════════════
+
+FILES 169 | TESTS 1643 | PASSED 7577 | FAILED 0 | ERRORS 0 | SKIPPED 48 | WARNINGS 120
+DONE 2026-11-22 17:11

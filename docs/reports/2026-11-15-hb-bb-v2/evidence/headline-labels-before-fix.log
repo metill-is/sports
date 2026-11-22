@@ -1,0 +1,11 @@
+33 literal labels; 10 do not come back whole
+  stored descriptives.rds is the most frequent result for every fit -> stored
+  walk-forward fits; repeated from a cold start; still failed -> walk-forward
+  reported run against the second run, expected margin: median diff range; largest -> reported
+  first run against second run, expected margin: largest; cutoffs > 25 %; score -> first
+  two test walk-forwards with the option off: identical predictions -> two
+  first comparison, before the draws were seeded: files; identical files -> first
+    components that differed; of them posterior draws; fits; share of a fit's draws that differed -> components
+    largest difference in a drawn value, handball / basketball -> largest
+  fits outside the walk-forward whose summaries differ, second run against here -> fits
+  fixed-cutoff fits before against after the seeding: components that differ; of them posterior draws; other numbers compared -> fixed-cutoff
