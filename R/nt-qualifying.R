@@ -28,11 +28,14 @@ NULL
 # with groups of five and six, discarding results against sixth place; they
 # are reproduced in tests/testthat/test-nt-qualifying.R.
 #
-# Re-application (d) is applied again to any subset that is still level after
-# a re-application, until no further split happens: UEFA's own wording
-# describes one re-application, and the procedure "resumed from the
-# beginning for those teams that were still tied" is how the published
-# Euro 2024 qualifying explanations read it.
+# Re-application (d): the regulation's wording describes one re-application
+# of a) to c), after which e) to k) apply. Published explanations of the
+# Euro 2024 qualifying rules instead resume the procedure "from the
+# beginning for those teams that were still tied", which repeats it on any
+# subset still level. The two readings differ only when four or more teams
+# are level on points and the head-to-head criteria split them twice without
+# deciding. Every function here takes `h2h_reapply`: "repeat" (default, the
+# published reading) or "once" (the literal wording).
 #
 # Not modelled here: the play-offs (Articles 16 and 17) and the reserved host
 # places (14.04). nt_simulate_qualifying() returns every simulated group
@@ -153,13 +156,19 @@ nt_uefa_group_stats <- function(matches, teams = NULL) {
 #'   positions (lower ranks higher), used the same way for criterion k).
 #'   A tie that reaches j) or k) without a value for every team in it is left
 #'   unresolved: the next criterion applies only if this one does not decide.
+#' @param h2h_reapply How often criterion d) re-applies a) to c): `"repeat"`
+#'   (to any subset still level, until nothing splits) or `"once"` (one
+#'   re-application, then e) to k)). See the header of `R/nt-qualifying.R`.
 #' @return Data frame: the columns of [nt_uefa_group_stats()] plus `position`,
 #'   `decided_by` (the criterion that ranks the team above the next one,
 #'   empty for the last team) and `unresolved` (`TRUE` when the team is level
 #'   with the team below on every criterion available).
 #' @export
 nt_rank_uefa_group <- function(matches, teams = NULL, disciplinary = NULL,
-                               nl_rank = NULL) {
+                               nl_rank = NULL,
+                               h2h_reapply = c("repeat", "once")) {
+  h2h_reapply <- match.arg(h2h_reapply)
+  max_level <- if (h2h_reapply == "once") 2L else Inf
   m <- matches[!is.na(matches$home_score) & !is.na(matches$away_score), , drop = FALSE]
   if (is.null(teams)) teams <- sort(unique(c(m$home_team, m$away_team)))
   stats <- nt_uefa_group_stats(m, teams)
@@ -174,6 +183,9 @@ nt_rank_uefa_group <- function(matches, teams = NULL, disciplinary = NULL,
   }
 
   head_to_head <- function(set, split, level) {
+    if (level > max_level) {
+      return(overall(set, split))
+    }
     sub <- m[m$home_team %in% set & m$away_team %in% set, , drop = FALSE]
     h <- nt_uefa_group_stats(sub, set)
     keys <- h[, c("points", "gd", "gf")]
@@ -203,26 +215,51 @@ nt_rank_uefa_group <- function(matches, teams = NULL, disciplinary = NULL,
 #' Implements Article 23 of the Euro 2026-28 regulations: teams are ordered by
 #' group position, then by points, goal difference, goals scored, away goals,
 #' wins and away wins, then disciplinary points and Nations League position,
-#' counting only results against teams placed within the size of the
-#' smallest group (for groups of four and five: results against the
-#' fifth-placed team are discarded; for Euro 2024's groups of five and six,
-#' those against the sixth). Teams placed below that size keep all their
-#' matches.
+#' counting only results against teams placed within `counted_positions`
+#' (for groups of four and five: results against the fifth-placed team are
+#' discarded; for Euro 2024's groups of five and six, those against the
+#' sixth). Teams placed below that position keep all their matches.
+#'
+#' A group whose table is left unresolved (teams level on every criterion
+#' available) has no determined positions, so the overall ranking of its
+#' teams, and the matches discarded for them, are not determined either:
+#' the function warns and flags them in `group_position_unresolved`.
 #'
 #' @param matches Played matches with a `group` column (see
 #'   [nt_uefa_group_stats()]).
 #' @param groups Named list of the teams in each group.
-#' @inheritParams nt_rank_uefa_group
-#' @return Data frame: `rank`, `team`, `group`, `group_position`, the
-#'   statistics of the matches taken into account, `decided_by` and
-#'   `unresolved` (as in [nt_rank_uefa_group()]).
+#' @param disciplinary Disciplinary points over all group matches, for the
+#'   group tables (Article 15 j); see [nt_rank_uefa_group()].
+#' @param nl_rank Nations League overall positions, used in the group tables
+#'   (Article 15 k) and in this ranking (Article 23).
+#' @param disciplinary_overall Named numeric vector of disciplinary points in
+#'   the matches this ranking takes into account (Article 23 counts cards
+#'   only in those matches, so the values differ from `disciplinary` for a
+#'   team whose group had a discarded team).
+#' @param counted_positions Results against teams placed below this position
+#'   are discarded. Defaults to the size of the smallest group.
+#' @param h2h_reapply Passed to [nt_rank_uefa_group()].
+#' @return Data frame: `rank`, `team`, `group`, `group_position`,
+#'   `group_position_unresolved`, the statistics of the matches taken into
+#'   account, `decided_by` and `unresolved` (as in [nt_rank_uefa_group()]).
 #' @export
 nt_uefa_overall_ranking <- function(matches, groups, disciplinary = NULL,
-                                    nl_rank = NULL) {
-  comparable <- min(lengths(groups))
+                                    nl_rank = NULL,
+                                    disciplinary_overall = NULL,
+                                    counted_positions = NULL,
+                                    h2h_reapply = c("repeat", "once")) {
+  h2h_reapply <- match.arg(h2h_reapply)
+  comparable <- counted_positions %||% min(lengths(groups))
   rows <- lapply(names(groups), function(g) {
     gm <- matches[matches$group == g, , drop = FALSE]
-    tab <- nt_rank_uefa_group(gm, groups[[g]], disciplinary, nl_rank)
+    tab <- nt_rank_uefa_group(gm, groups[[g]], disciplinary, nl_rank, h2h_reapply)
+    open <- tab$unresolved | c(FALSE, utils::head(tab$unresolved, -1L))
+    if (any(open)) {
+      cli::cli_warn(c(
+        "Group {g}: {.val {tab$team[open]}} are level on every criterion available.",
+        "i" = "Their group positions, and the matches discarded for them, are not determined."
+      ))
+    }
     keep <- tab$team[tab$position <= comparable]
     do.call(rbind, lapply(seq_len(nrow(tab)), function(i) {
       team <- tab$team[i]
@@ -231,7 +268,10 @@ nt_uefa_overall_ranking <- function(matches, groups, disciplinary = NULL,
       } else {
         gm
       }
-      data.frame(group = g, group_position = tab$position[i], nt_uefa_group_stats(used, team))
+      data.frame(
+        group = g, group_position = tab$position[i],
+        group_position_unresolved = open[i], nt_uefa_group_stats(used, team)
+      )
     }))
   })
   tab <- do.call(rbind, rows)
@@ -245,7 +285,7 @@ nt_uefa_overall_ranking <- function(matches, groups, disciplinary = NULL,
   )
   neg <- function(v) if (is.null(v)) NULL else -v
   blocks <- .nt_order_blocks(tab$team, keys, labels, "")
-  blocks <- .nt_refine_blocks(blocks, neg(disciplinary), "disciplinary")
+  blocks <- .nt_refine_blocks(blocks, neg(disciplinary_overall), "disciplinary")
   blocks <- .nt_refine_blocks(blocks, neg(nl_rank), "nations_league_rank")
   out <- .nt_blocks_to_table(blocks, tab)
   out$rank <- seq_len(nrow(out))
@@ -277,8 +317,10 @@ nt_uefa_overall_ranking <- function(matches, groups, disciplinary = NULL,
 # arrays of what team i obtained against team j over their matches (points,
 # goal difference, goals) and n x k matrices of the overall statistics;
 # `tiebreak` (n x k, larger is better) settles whatever is still level after
-# criterion i).
-.nt_rank_group_vec <- function(pts_vs, gd_vs, gf_vs, overall, tiebreak) {
+# criterion i). Each pass of the loop computes a) to c) among the teams level
+# on everything so far: pass 1 is a) to c), later passes re-apply them (d).
+.nt_rank_group_vec <- function(pts_vs, gd_vs, gf_vs, overall, tiebreak,
+                               h2h_reapply = "repeat") {
   n <- dim(pts_vs)[1]
   k <- dim(pts_vs)[2]
   points <- apply(pts_vs, c(1, 2), sum)
@@ -294,7 +336,8 @@ nt_uefa_overall_ranking <- function(matches, groups, disciplinary = NULL,
     matrix(match(lab, unique(lab)), n, k)
   }
   cls <- class_of(keys)
-  for (pass in seq_len(k)) {
+  max_pass <- if (h2h_reapply == "once") 2L else k
+  for (pass in seq_len(max_pass)) {
     eq <- same_class(cls)
     h_pts <- apply(eq * pts_vs, c(1, 2), sum)
     h_gd <- apply(eq * gd_vs, c(1, 2), sum)
@@ -341,10 +384,10 @@ nt_uefa_overall_ranking <- function(matches, groups, disciplinary = NULL,
 }
 
 # Rank simulated tables of one group from the arrays of .nt_group_arrays().
-.nt_rank_group_arrays <- function(x, tiebreak) {
+.nt_rank_group_arrays <- function(x, tiebreak, h2h_reapply = "repeat") {
   total <- function(v) apply(v, c(1, 2), sum)
   overall <- lapply(x[c("gd", "gf", "away_gf", "won", "away_won")], total)
-  .nt_rank_group_vec(x$points, x$gd, x$gf, overall, tiebreak)
+  .nt_rank_group_vec(x$points, x$gd, x$gf, overall, tiebreak, h2h_reapply)
 }
 
 #' Simulate UEFA qualifying groups from a national-team fit.
@@ -367,9 +410,15 @@ nt_uefa_overall_ranking <- function(matches, groups, disciplinary = NULL,
 #' @param fixtures Optional data frame of group matches with `group`,
 #'   `home_team`, `away_team`, `home_score`, `away_score` (`NA` for unplayed)
 #'   and `venue` (1 when the home side plays at home, 0 at a neutral venue;
-#'   default 1). `NULL` plays every pair home and away, all unplayed.
+#'   default 1). Each group's fixtures must be its double round robin: every
+#'   ordered pair of its teams exactly once (Article 14.01). `NULL` plays
+#'   every pair home and away, all unplayed.
 #' @param n_sims Number of simulated group stages.
 #' @param n_best_runners_up Runners-up that qualify directly.
+#' @param counted_positions Results against teams placed below this position
+#'   are discarded from the runners-up ranking. Defaults to the size of the
+#'   smallest group (4 for Euro 2028: results against fifth place).
+#' @param h2h_reapply Passed to [nt_rank_uefa_group()].
 #' @param seed Optional seed.
 #' @return List: `teams` (tibble: `team`, `group`, `p_pos1` ... `p_posK`,
 #'   `p_winner`, `p_runner_up_direct`, `p_runner_up_other`, `p_qualify_direct`,
@@ -380,23 +429,21 @@ nt_uefa_overall_ranking <- function(matches, groups, disciplinary = NULL,
 #'   host-place step needs.
 #' @export
 nt_simulate_qualifying <- function(fit, groups, fixtures = NULL, n_sims = 10000L,
-                                   n_best_runners_up = 8L, seed = NULL) {
+                                   n_best_runners_up = 8L,
+                                   counted_positions = NULL,
+                                   h2h_reapply = c("repeat", "once"),
+                                   seed = NULL) {
+  h2h_reapply <- match.arg(h2h_reapply)
   if (!is.null(seed)) set.seed(seed)
+  groups <- lapply(groups, as.character)
   all_teams <- unlist(groups, use.names = FALSE)
   if (anyDuplicated(all_teams)) cli::cli_abort("A team appears in more than one group.")
   if (is.null(fixtures)) fixtures <- nt_qualifying_fixtures(groups)
-  if (is.null(fixtures$venue)) fixtures$venue <- 1L
-  for (g in names(groups)) {
-    f <- fixtures[fixtures$group == g, , drop = FALSE]
-    outside <- setdiff(c(f$home_team, f$away_team), groups[[g]])
-    if (length(outside) > 0L) {
-      cli::cli_abort("Group {g} fixtures include teams outside the group: {.val {outside}}.")
-    }
-  }
+  fixtures <- .nt_check_qualifying_fixtures(fixtures, groups)
   if (length(groups) < n_best_runners_up) {
     cli::cli_abort("{n_best_runners_up} best runners-up need at least that many groups.")
   }
-  comparable <- min(lengths(groups))
+  comparable <- counted_positions %||% min(lengths(groups))
 
   open <- which(is.na(fixtures$home_score) | is.na(fixtures$away_score))
   draw <- sample.int(length(fit$draws$mu), n_sims, replace = TRUE)
@@ -424,7 +471,9 @@ nt_simulate_qualifying <- function(fit, groups, fixtures = NULL, n_sims = 10000L
       fixtures$home_team[rows], fixtures$away_team[rows], tg,
       goals_h[, rows, drop = FALSE], goals_a[, rows, drop = FALSE]
     )
-    pos <- .nt_rank_group_arrays(x, matrix(stats::runif(n_sims * k), n_sims, k))
+    pos <- .nt_rank_group_arrays(
+      x, matrix(stats::runif(n_sims * k), n_sims, k), h2h_reapply
+    )
     positions[, tg] <- pos
     points[, tg] <- apply(x$points, c(1, 2), sum)
 
@@ -440,7 +489,10 @@ nt_simulate_qualifying <- function(fit, groups, fixtures = NULL, n_sims = 10000L
   }
 
   key_mat <- function(name) {
-    vapply(names(groups), function(g) ru_keys[[g]][[name]], numeric(n_sims))
+    matrix(
+      vapply(names(groups), function(g) ru_keys[[g]][[name]], numeric(n_sims)),
+      nrow = n_sims
+    )
   }
   ru_rank <- .nt_lexi_rank(list(
     key_mat("points"), key_mat("gd"), key_mat("gf"), key_mat("away_gf"),
@@ -476,6 +528,42 @@ nt_simulate_qualifying <- function(fit, groups, fixtures = NULL, n_sims = 10000L
     teams = team_tab, positions = positions, runner_up = runner_up,
     runner_up_rank = ru_rank, n_sims = n_sims
   )
+}
+
+# Check that the fixtures are each group's double round robin (every ordered
+# pair of its teams exactly once) and return them with character team and
+# group columns and a venue column.
+.nt_check_qualifying_fixtures <- function(fixtures, groups) {
+  need <- c("group", "home_team", "away_team", "home_score", "away_score")
+  missing <- setdiff(need, names(fixtures))
+  if (length(missing) > 0L) {
+    cli::cli_abort("Fixtures need the column{?s} {.field {missing}}.")
+  }
+  for (col in c("group", "home_team", "away_team")) {
+    fixtures[[col]] <- as.character(fixtures[[col]])
+  }
+  if (is.null(fixtures$venue)) fixtures$venue <- 1L
+  unknown <- setdiff(unique(fixtures$group), names(groups))
+  if (length(unknown) > 0L) {
+    cli::cli_abort("Fixtures name group{?s} not in {.arg groups}: {.val {unknown}}.")
+  }
+  for (g in names(groups)) {
+    f <- fixtures[fixtures$group == g, , drop = FALSE]
+    want <- nt_qualifying_fixtures(groups[g])
+    got_key <- paste(f$home_team, f$away_team, sep = "\r")
+    want_key <- paste(want$home_team, want$away_team, sep = "\r")
+    problems <- c(
+      if (length(setdiff(want_key, got_key)) > 0L) "missing pairings",
+      if (anyDuplicated(got_key)) "repeated pairings",
+      if (length(setdiff(got_key, want_key)) > 0L) "pairings that are not two different group teams"
+    )
+    if (length(problems) > 0L) {
+      cli::cli_abort(
+        "Group {g} fixtures are not its double round robin: {paste(problems, collapse = ', ')}."
+      )
+    }
+  }
+  fixtures
 }
 
 #' Double round-robin fixtures for qualifying groups.

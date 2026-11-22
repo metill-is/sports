@@ -309,6 +309,9 @@ nt_rw_sd_for_half_life <- function(half_life_years, matches_per_year = 11,
 #' @return List `home`, `away`: draws x fixtures matrices of Poisson rates.
 #' @export
 nt_match_rates <- function(fit, home, away, venue = 0L, friendly = FALSE) {
+  # WHY: factor team columns would index the draws by their integer codes.
+  home <- as.character(home)
+  away <- as.character(away)
   unknown <- setdiff(c(home, away), fit$teams)
   if (length(unknown) > 0L) {
     cli::cli_abort("Team{?s} not in the fit: {.val {unknown}}.")

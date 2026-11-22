@@ -160,10 +160,15 @@ nl <- data.frame(
   team = name_of(pot_code[in_qualifying]),
   rank = as.integer(vapply(pot, `[`, "", 3))[in_qualifying]
 )
-nl <- nl[!duplicated(nl$team), ]
-nl <- nl[nl$team %in% tables$team, ]
+if (anyDuplicated(nl$team) || anyDuplicated(nl$rank)) {
+  stop("a team or a Nations League rank appears twice in the seeding pots")
+}
 nl <- nl[order(nl$rank), ]
-if (nrow(nl) != 53L) stop("Nations League ranks found for ", nrow(nl), " of 53 teams")
+# The 2022-23 ranking has 55 places; Germany (10, host) and Russia (32,
+# banned) hold the two not in qualifying.
+if (!setequal(nl$rank, setdiff(1:55, c(10L, 32L))) || !setequal(nl$team, tables$team)) {
+  stop("Nations League ranks are not the 53 qualifying teams on places 1-55 without 10 and 32")
+}
 
 # Disciplinary points are not in any open data source; the only values the
 # validation needs are the two the overall ranking quotes in its note.

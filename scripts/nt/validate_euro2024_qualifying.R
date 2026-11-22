@@ -41,7 +41,7 @@ for (g in names(groups)) {
       r$decided_by[i], if (nzchar(note)) note else "(none)"))
   }
 }
-o <- nt_uefa_overall_ranking(m, groups, disc, nl_rank)
+o <- nt_uefa_overall_ranking(m, groups, nl_rank = nl_rank, disciplinary_overall = disc)
 same_order <- identical(o$team, ov$team)
 all_ok <- all_ok && same_order
 lines <- c(lines, "", sprintf("Overall ranking (results against sixth place discarded): %s",

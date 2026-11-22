@@ -4,7 +4,13 @@
 \alias{nt_rank_uefa_group}
 \title{Rank one qualifying group under UEFA's rules.}
 \usage{
-nt_rank_uefa_group(matches, teams = NULL, disciplinary = NULL, nl_rank = NULL)
+nt_rank_uefa_group(
+  matches,
+  teams = NULL,
+  disciplinary = NULL,
+  nl_rank = NULL,
+  h2h_reapply = c("repeat", "once")
+)
 }
 \arguments{
 \item{matches}{Played group matches (see [nt_uefa_group_stats()]).}
@@ -19,6 +25,10 @@ team still level has a value.}
 positions (lower ranks higher), used the same way for criterion k).
 A tie that reaches j) or k) without a value for every team in it is left
 unresolved: the next criterion applies only if this one does not decide.}
+
+\item{h2h_reapply}{How often criterion d) re-applies a) to c): `"repeat"`
+(to any subset still level, until nothing splits) or `"once"` (one
+re-application, then e) to k)). See the header of `R/nt-qualifying.R`.}
 }
 \value{
 Data frame: the columns of [nt_uefa_group_stats()] plus `position`,

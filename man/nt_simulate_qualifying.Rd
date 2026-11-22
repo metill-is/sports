@@ -10,6 +10,8 @@ nt_simulate_qualifying(
   fixtures = NULL,
   n_sims = 10000L,
   n_best_runners_up = 8L,
+  counted_positions = NULL,
+  h2h_reapply = c("repeat", "once"),
   seed = NULL
 )
 }
@@ -22,11 +24,19 @@ nt_simulate_qualifying(
 \item{fixtures}{Optional data frame of group matches with `group`,
 `home_team`, `away_team`, `home_score`, `away_score` (`NA` for unplayed)
 and `venue` (1 when the home side plays at home, 0 at a neutral venue;
-default 1). `NULL` plays every pair home and away, all unplayed.}
+default 1). Each group's fixtures must be its double round robin: every
+ordered pair of its teams exactly once (Article 14.01). `NULL` plays
+every pair home and away, all unplayed.}
 
 \item{n_sims}{Number of simulated group stages.}
 
 \item{n_best_runners_up}{Runners-up that qualify directly.}
+
+\item{counted_positions}{Results against teams placed below this position
+are discarded from the runners-up ranking. Defaults to the size of the
+smallest group (4 for Euro 2028: results against fifth place).}
+
+\item{h2h_reapply}{Passed to [nt_rank_uefa_group()].}
 
 \item{seed}{Optional seed.}
 }

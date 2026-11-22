@@ -4,7 +4,15 @@
 \alias{nt_uefa_overall_ranking}
 \title{Overall ranking of all teams across qualifying groups.}
 \usage{
-nt_uefa_overall_ranking(matches, groups, disciplinary = NULL, nl_rank = NULL)
+nt_uefa_overall_ranking(
+  matches,
+  groups,
+  disciplinary = NULL,
+  nl_rank = NULL,
+  disciplinary_overall = NULL,
+  counted_positions = NULL,
+  h2h_reapply = c("repeat", "once")
+)
 }
 \arguments{
 \item{matches}{Played matches with a `group` column (see
@@ -12,27 +20,39 @@ nt_uefa_overall_ranking(matches, groups, disciplinary = NULL, nl_rank = NULL)
 
 \item{groups}{Named list of the teams in each group.}
 
-\item{disciplinary}{Optional named numeric vector of disciplinary points
-(lower ranks higher), used only if criterion j) is reached and every
-team still level has a value.}
+\item{disciplinary}{Disciplinary points over all group matches, for the
+group tables (Article 15 j); see [nt_rank_uefa_group()].}
 
-\item{nl_rank}{Optional named numeric vector of Nations League overall
-positions (lower ranks higher), used the same way for criterion k).
-A tie that reaches j) or k) without a value for every team in it is left
-unresolved: the next criterion applies only if this one does not decide.}
+\item{nl_rank}{Nations League overall positions, used in the group tables
+(Article 15 k) and in this ranking (Article 23).}
+
+\item{disciplinary_overall}{Named numeric vector of disciplinary points in
+the matches this ranking takes into account (Article 23 counts cards
+only in those matches, so the values differ from `disciplinary` for a
+team whose group had a discarded team).}
+
+\item{counted_positions}{Results against teams placed below this position
+are discarded. Defaults to the size of the smallest group.}
+
+\item{h2h_reapply}{Passed to [nt_rank_uefa_group()].}
 }
 \value{
-Data frame: `rank`, `team`, `group`, `group_position`, the
-  statistics of the matches taken into account, `decided_by` and
-  `unresolved` (as in [nt_rank_uefa_group()]).
+Data frame: `rank`, `team`, `group`, `group_position`,
+  `group_position_unresolved`, the statistics of the matches taken into
+  account, `decided_by` and `unresolved` (as in [nt_rank_uefa_group()]).
 }
 \description{
 Implements Article 23 of the Euro 2026-28 regulations: teams are ordered by
 group position, then by points, goal difference, goals scored, away goals,
 wins and away wins, then disciplinary points and Nations League position,
-counting only results against teams placed within the size of the
-smallest group (for groups of four and five: results against the
-fifth-placed team are discarded; for Euro 2024's groups of five and six,
-those against the sixth). Teams placed below that size keep all their
-matches.
+counting only results against teams placed within `counted_positions`
+(for groups of four and five: results against the fifth-placed team are
+discarded; for Euro 2024's groups of five and six, those against the
+sixth). Teams placed below that position keep all their matches.
+}
+\details{
+A group whose table is left unresolved (teams level on every criterion
+available) has no determined positions, so the overall ranking of its
+teams, and the matches discarded for them, are not determined either:
+the function warns and flags them in `group_position_unresolved`.
 }
