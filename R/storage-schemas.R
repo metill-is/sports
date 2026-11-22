@@ -167,6 +167,33 @@ schemas <- function() {
       iter_sampling   = arrow::int32(),
       chains          = arrow::int32(),
       passed          = arrow::bool()
+    ),
+    # The weekly Stan reference fit's result, one row per football cell and
+    # run (R/model-v2-reference.R, scripts/engine_reference.R): how far apart
+    # R-INLA's and NUTS's outcome probabilities were, and whether both fits
+    # were sound. check_engine_reference() reads the newest row of each cell.
+    engine_reference = arrow::schema(
+      sport            = arrow::string(),
+      country          = arrow::string(),
+      sex              = arrow::string(),
+      run_date         = arrow::date32(),
+      run_at           = ts,
+      # "upcoming" (the fixtures inside the horizon) or "off-season pairings".
+      fixtures         = arrow::string(),
+      n_fixtures       = arrow::int32(),
+      n_train          = arrow::int32(),
+      mean_abs_diff    = arrow::float64(),
+      max_abs_diff     = arrow::float64(),
+      threshold        = arrow::float64(),
+      nuts_divergences = arrow::int32(),
+      nuts_max_rhat    = arrow::float64(),
+      inla_mode_status = arrow::int32(),
+      passed           = arrow::bool(),
+      inla_version     = arrow::string(),
+      cmdstan_version  = arrow::string(),
+      stan_md5         = arrow::string(),
+      model_version    = arrow::string(),
+      code_commit      = arrow::string()
     )
   )
 }

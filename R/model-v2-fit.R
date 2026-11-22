@@ -168,6 +168,84 @@ fv2_previous_hyper <- function(league, sex, fit_date, root = here::here("data"))
   unlist(jsonlite::fromJSON(rows$hyper_sd[which.max(as.Date(rows$fit_date))]))
 }
 
+#' The inputs of the v2.0 specification for one cell, as a production fit
+#' builds them.
+#'
+#' One function, so that what the INLA fit trains on and what the weekly Stan
+#' reference fit compares it on cannot drift apart: the training rows are
+#' `model_training_results()` at `end_date` in the store's own order; the
+#' fixtures are `prep$pred_d` unless `pred` is given; the division table uses
+#' every known match of a season, played or scheduled; and teams whose first
+#' match of the forecast season is beyond the horizon are carried across the
+#' break.
+#'
+#' @param prep Output of `prepare_data()` for the same league, sex and date.
+#' @param pred Fixture rows in `fv2_pred_from_prep()`'s shape to use in place
+#'   of `prep$pred_d` (the weekly reference fit's off-season pairings).
+#' @return `list(train, pred, carry, divisions, forecast_season, n_earlier)`;
+#'   `pred` is `NULL` when there is nothing to predict.
+#' @noRd
+fv2_production_inputs <- function(prep, league, sex, end_date,
+                                  root = here::here("data"), from_season = NULL,
+                                  pred = NULL) {
+  results <- read_table(
+    "results",
+    root = root,
+    filter = list(sport = league$sport, country = league$country, sex = sex)
+  )
+  results <- as.data.frame(results)
+  results$league_division <- fv2_league_division(results$division)
+  results$cell <- fv2_cell(results$division, results$season)
+  train <- as.data.frame(model_training_results(results, league, end_date = end_date, from_season = from_season))
+
+  if (is.null(pred) && nrow(prep$pred_d) > 0L) {
+    pred <- fv2_pred_from_prep(prep$pred_d, cell_of = fv2_cell)
+  }
+  fixture_season <- as.integer(format(prep$pred_d$match_date, "%Y"))
+  forecast_season <- max(c(train$season, if (!is.null(pred)) as.integer(pred$season)))
+  n_earlier <- fv2_earlier_seasons(train$season, forecast_season)
+
+  # WHY: which division a team plays in is schedule knowledge, public before
+  # a season's first match, and the season-break step needs it for every team
+  # with a fixture ahead: a team with no division row for the new season is
+  # treated as having stayed, and reverts toward the wrong division's mean.
+  # So the table uses every known match of a season, played or scheduled, on
+  # either side of `end_date`. No score enters it.
+  schedules <- tryCatch(
+    as.data.frame(read_table(
+      "schedules",
+      root = root,
+      filter = list(sport = league$sport, country = league$country, sex = sex)
+    )),
+    error = function(e) NULL
+  )
+  membership <- function(d, season) {
+    data.frame(
+      home_team = d$home_team, away_team = d$away_team,
+      season = as.integer(season), league_division = fv2_league_division(d$division)
+    )
+  }
+  divisions <- fv2_division_table(
+    rbind(
+      membership(results, results$season),
+      if (!is.null(schedules) && nrow(schedules)) membership(schedules, schedules$season),
+      membership(prep$pred_d, fixture_season)
+    ),
+    fv2_rank_order(league)
+  )
+  # Before a season, teams whose first match is beyond the horizon are carried
+  # across the break with the rest: the simulators play the whole season.
+  matches <- c("home_team", "away_team", "match_date", "season")
+  carry <- fv2_carry_slots(
+    train, pred,
+    rbind(results[matches], if (!is.null(schedules) && nrow(schedules)) schedules[matches])
+  )
+  list(
+    train = train, pred = pred, carry = carry, divisions = divisions,
+    forecast_season = forecast_season, n_earlier = n_earlier
+  )
+}
+
 #' Fit football v2.0 with R-INLA and return a fit the extract and publish
 #' layers can read.
 #'
@@ -198,20 +276,9 @@ fit_model_v2_inla <- function(prep, league, sex, end_date,
   if (!identical(league$sport, "football")) {
     cli::cli_abort("The INLA engine fits the football model only; {.val {league$sport}} stays on Stan.")
   }
-  results <- read_table(
-    "results",
-    root = root,
-    filter = list(sport = league$sport, country = league$country, sex = sex)
-  )
-  results <- as.data.frame(results)
-  results$league_division <- fv2_league_division(results$division)
-  results$cell <- fv2_cell(results$division, results$season)
-  train <- as.data.frame(model_training_results(results, league, end_date = end_date, from_season = from_season))
-
-  has_fixtures <- nrow(prep$pred_d) > 0L
-  fixture_season <- as.integer(format(prep$pred_d$match_date, "%Y"))
-  forecast_season <- max(c(train$season, fixture_season))
-  n_earlier <- fv2_earlier_seasons(train$season, forecast_season)
+  inputs <- fv2_production_inputs(prep, league, sex, end_date = end_date, root = root, from_season = from_season)
+  forecast_season <- inputs$forecast_season
+  n_earlier <- inputs$n_earlier
   if (n_earlier < FOOTBALL_V2_MIN_EARLIER_SEASONS) {
     cli::cli_abort(c(
       "The INLA engine needs at least {FOOTBALL_V2_MIN_EARLIER_SEASONS} seasons of results before season {forecast_season}; this cell has {n_earlier}.",
@@ -229,45 +296,9 @@ fit_model_v2_inla <- function(prep, league, sex, end_date,
     ))
   }
 
-  # WHY: which division a team plays in is schedule knowledge, public before
-  # a season's first match, and the season-break step needs it for every team
-  # with a fixture ahead: a team with no division row for the new season is
-  # treated as having stayed, and reverts toward the wrong division's mean.
-  # So the table uses every known match of a season, played or scheduled, on
-  # either side of `end_date`. No score enters it.
-  schedules <- tryCatch(
-    as.data.frame(read_table(
-      "schedules",
-      root = root,
-      filter = list(sport = league$sport, country = league$country, sex = sex)
-    )),
-    error = function(e) NULL
-  )
-  membership <- function(d, season) {
-    data.frame(
-      home_team = d$home_team, away_team = d$away_team,
-      season = as.integer(season), league_division = fv2_league_division(d$division)
-    )
-  }
-  divisions <- fv2_division_table(
-    rbind(
-      membership(results, results$season),
-      if (!is.null(schedules) && nrow(schedules)) membership(schedules, schedules$season),
-      membership(prep$pred_d, fixture_season)
-    ),
-    fv2_rank_order(league)
-  )
-  # A round-mode replay at the end of a season has nothing left to predict.
-  pred <- if (has_fixtures) fv2_pred_from_prep(prep$pred_d, cell_of = fv2_cell)
-  # Before a season, teams whose first match is beyond the horizon are carried
-  # across the break with the rest: the simulators play the whole season.
-  matches <- c("home_team", "away_team", "match_date", "season")
-  carry <- fv2_carry_slots(
-    train, pred,
-    rbind(results[matches], if (!is.null(schedules) && nrow(schedules)) schedules[matches])
-  )
+  carry <- inputs$carry
   spec <- do.call(fv2_build, c(
-    list(train, pred, carry = carry, divisions = divisions),
+    list(inputs$train, inputs$pred, carry = carry, divisions = inputs$divisions),
     football_v2_options()
   ))
 

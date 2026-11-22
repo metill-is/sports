@@ -27,7 +27,7 @@
 #   - `${{ env.ImageOS }}`: the `env` context holds only variables the workflow
 #     itself sets, so a runner-provided variable is the empty string there
 #     (checked in run 43859642089) and every image would share one key again.
-# This test pins the working spelling in all three workflows that share the
+# This test pins the working spelling in all four workflows that share the
 # cache.
 
 workflow_dir <- here::here(".github", "workflows")
@@ -65,7 +65,7 @@ test_that("the CmdStan cache is used by the workflows this test expects", {
   # step), and makes a new CmdStan workflow show up here for review.
   expect_setequal(
     names(.cmdstan_cache_jobs()),
-    c("ci-tests.yml:test", "fit.yml:fit", "world-cup.yml:forecast")
+    c("ci-tests.yml:test", "engine-reference.yml:reference", "fit.yml:fit", "world-cup.yml:forecast")
   )
 })
 
