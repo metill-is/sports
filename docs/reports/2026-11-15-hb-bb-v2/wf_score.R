@@ -336,7 +336,7 @@ for (cell in names(CELLS)) {
     ))
     cat("mean out-of-sample scores (integer-scale log score of margin and total; W/D/L log likelihood):\n")
     print(round(summarise_scores(sc), 4), row.names = FALSE)
-    cat("paired differences (positive = better than the comparison), match-clustered se:\n")
+    cat("paired differences (positive = better than the comparison), se treating matches as independent:\n")
     pt <- rbind(
       paired_table(sc, "lsm_raw", c(
         "lsm_constant", "lsm_by_mismatch", "lsm_by_division", "lsm_possession", "lsm_student",

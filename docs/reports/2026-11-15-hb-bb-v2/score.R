@@ -82,7 +82,10 @@ score_holdout <- function(pp, hold, sport, zero_shift = 0) {
   )
 }
 
-# Mean and standard error of a paired difference, clustered by match (one row per match).
+# Mean and standard error of a paired difference, one row per match, the matches treated
+# as independent. WHY this matters: matches share team-season strengths, the division's
+# season level and a season's tie rate, so their differences can be correlated and the
+# true standard error larger (whole-branch review, 22 November 2026; not measured).
 paired <- function(a, b) {
   dlt <- a - b
   c(diff = mean(dlt), se = stats::sd(dlt) / sqrt(length(dlt)))

@@ -36,8 +36,22 @@ add(tbl(by_div,
 hb_disp <- do.call(rbind, lapply(hb, function(cl) desc[[cl]]$disp))
 hb_disp_league <- range(hb_disp$pearson_poisson[hb_disp$division != "PO"])
 hb_disp_po <- hb_disp$pearson_poisson[hb_disp$division == "PO"]
+# Residual correlation of margin and total by division: the league divisions and the small
+# play-off samples are stated apart.
+cor_by <- do.call(rbind, lapply(names(CELLS), function(cl) {
+  d <- desc[[cl]]$d
+  do.call(rbind, lapply(split(seq_len(nrow(d)), d$division), function(ix) {
+    data.frame(cell = cl, division = d$division[ix[1]], n = length(ix), r = stats::cor(d$r_m[ix], d$r_t[ix]))
+  }))
+}))
+cor_league <- cor_by[cor_by$division != "PO", ]
+cor_po <- cor_by[cor_by$division == "PO", ]
 add(paste0(
-  "<p><strong>Margin and total are uncorrelated</strong> once strengths are in: every cell is within a few hundredths of zero. That is the condition under which the two can be modelled separately, and it holds. ",
+  sprintf(
+    "<p><strong>Margin and total are close to uncorrelated</strong> once strengths are in: in every league division the correlation of their residuals is within %s of zero%s. That is the condition under which the two can be modelled separately, and in the league divisions it holds. ",
+    num(max(abs(cor_league$r)), 2),
+    if (nrow(cor_po)) sprintf("; the small play-off samples (%s matches) give %s", paste(int(cor_po$n), collapse = " and "), paste(num(cor_po$r, 2), collapse = " and ")) else ""
+  ),
   sprintf(
     "<strong>Handball scores are under-dispersed</strong>: the variance of a side's score is %s to %s of its mean in the league divisions, for women as for men (%s in the two small play-off samples), so a Poisson model would be badly over-dispersed and a free Gaussian variance is the honest choice. ",
     num(hb_disp_league[1], 2), num(hb_disp_league[2], 2), paste(num(hb_disp_po, 2), collapse = " and ")
@@ -137,7 +151,7 @@ if (have(ladder)) {
       )
     ))
   }
-  add("<p class=\"note\">Log scores are per match, on the integer scale, higher is better; in brackets the paired difference from production with its match-clustered standard error. For the v2 rows \"leapfrog steps\" is the sum over the margin and the total fit. Highlighted rows are R-INLA fits of the same v2 models (\"full\" integrates over the hyperparameters, \"plug-in\" fixes them at their mode). The leave-one-out density is on the scale of the two scores for every row, so rows are comparable.</p>")
+  add("<p class=\"note\">Log scores are per match, on the integer scale, higher is better; in brackets the paired difference from production with its standard error, which treats the held-out matches as independent. For the v2 rows \"leapfrog steps\" is the sum over the margin and the total fit. Highlighted rows are R-INLA fits of the same v2 models (\"full\" integrates over the hyperparameters, \"plug-in\" fixes them at their mode). The leave-one-out density is on the scale of the two scores for every row, so rows are comparable. For the R-INLA rows the sd of the home advantage is that of the pooled term alone, without the team terms the Stan rows include, so it is wider and not comparable with the Stan rows.</p>")
   # Reading notes per cell with the full ladder: one sentence per rung, built from the table.
   g <- function(cl, rung, col) {
     x <- tab[tab$cell == cl & tab$rung == rung, col]
@@ -239,7 +253,7 @@ if (have(ladder)) {
 # ---------------------------------------------------------------- spec
 cur <- "spec"
 add("<h2 id=\"spec\">The v2 model</h2>")
-add("<p>Margin = home score minus away score, total = home plus away. The two are modelled separately because their residuals are uncorrelated.</p>")
+add("<p>Margin = home score minus away score, total = home plus away. The two are modelled separately because their residuals are close to uncorrelated (section \"What the data ask of the likelihood\").</p>")
 add("<div class=\"eq\">margin ~ Normal( hfa + ha[home] + s[home] - s[away] ,  sigma_m )
 total  ~ Normal( level[division, season] + p[home] + p[away] ,  sigma_t )
 

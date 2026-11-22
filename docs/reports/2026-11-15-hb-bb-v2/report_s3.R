@@ -113,7 +113,7 @@ if (have(hbm) && have(hbf)) {
     right = names(vt)[-1],
     head = c("Variance form", "Men: margin", "Men: total", "Women: margin", "Women: total"),
     note = sprintf(
-      "Change in the out-of-sample integer log score per match against the plain model (one free sd for the margin, one for the total), with its match-clustered standard error. Positive is better. Men n = %s, women n = %s.",
+      "Change in the out-of-sample integer log score per match against the plain model (one free sd for the margin, one for the total), with its standard error, which treats the matches as independent. Positive is better. Men n = %s, women n = %s.",
       int(nrow(hbm)), int(nrow(hbf))
     )
   ))
@@ -419,7 +419,7 @@ if (have(hbm) && have(bbm)) {
     "<details><summary>By division and season</summary>",
     tbl(by_s,
       right = names(by_s)[-(1:2)], head = c("Cell", "Division", "Season", "Matches", "Margin log score", "Total log score", "Result log likelihood", "Home wins: observed / predicted"),
-      note = "Basketball \"predicted\" home wins are regulation-time probabilities before the tie shift, so they sit a little above the observed share."
+      note = "Basketball \"predicted\" home wins are the regulation-time probability of a home win, without the probability of a level score after regulation; \"observed\" counts final results, overtime wins included. The two are not the same quantity."
     ), "</details>"
   )
 
@@ -438,7 +438,7 @@ if (have(hbm) && have(bbm)) {
       "The <strong>first</strong> run is the one the report was first written from; it did not record whether a fit's search for the hyperparameter mode had succeeded. ",
       "The <strong>second</strong> repeated every fit with that status kept. Both used R-INLA's default settings. ",
       "The <strong>third and fourth</strong> are the same set of fits made twice more, with R-INLA's online internal optimisation switched off inside the fitter (<code>fit_v2_inla(reproducible = TRUE)</code>, now its default), which is the setting under which a fit comes out the same in two R processes. ",
-      "All four used the data and the config of the branch point, and the fitting code is otherwise the same; the third and fourth also repeat a failed mode search from a cold start by themselves. ",
+      "All four used the data and the config of the branch point. The fitting code differs in one more respect: the second run passed the end point of a failed mode search on as the next cutoff's starting value, while the third and fourth pass on only the mode of a successful search and repeat a failed or throwing fit from a cold start at once. ",
       "The fixed-cutoff fits of the third and fourth runs were made once more after their first comparison, for the reason given next.</p>"
     ))
     if (have(ident)) {
@@ -462,7 +462,7 @@ if (have(hbm) && have(bbm)) {
     add(sprintf(
       paste0(
         "<p><strong>Mode status.</strong> In the run reported here, %s of the %s walk-forward fits were repeated from a cold start because the warm-started search failed or threw (%s); after that %s were still failed, and %s predictions are left out of the scores for that reason. The %s fits outside the walk-forward: %s with a status other than 0. ",
-        "In the second run, %s of %s walk-forward fits had ended with a failed search (%s); each succeeded when fitted again from a cold start. The option does not make a failed warm start rarer.%s</p>"
+        "In the second run, %s of %s walk-forward fits had ended with a failed search (%s); %s The two counts are not alike: the run reported here counts warm fits that failed or threw, the second run only those that ended with a status other than 0 (a fit that threw there was refitted cold without being recorded), so they do not say whether the option makes a failed warm start rarer.%s</p>"
       ),
       int(sum(w$retried, na.rm = TRUE)), int(sum(w$fits)),
       paste(sprintf("%s (%s)", run_lab[w$run[w$retried > 0]], int(w$retried[w$retried > 0])), collapse = "; "),
@@ -470,6 +470,7 @@ if (have(hbm) && have(bbm)) {
       int(nrow(wfst$other)), none_or(sum(!(wfst$other$status %in% 0L))),
       int(sum(w2$status_not_zero)), int(sum(w2$fits)),
       paste(sprintf("%s (%s)", run_lab[w2$run[w2$status_not_zero > 0]], int(w2$status_not_zero[w2$status_not_zero > 0])), collapse = "; "),
+      if (sum(w2$status_not_zero_after_refit) == 0) "Each succeeded when fitted again from a cold start." else sprintf("Fitted again from a cold start, %s still failed.", int(sum(w2$status_not_zero_after_refit))),
       # The repeat's retry flags are among the stored values the comparison found identical.
       if (have(ident) && all(ident$files$identical)) " With it off, which searches fail is repeatable as well: the repeat of the reported run repeated the same fits." else ""
     ))
@@ -490,7 +491,7 @@ if (have(hbm) && have(bbm)) {
     add("<p>How far apart the runs are. First, the two runs made with R-INLA's defaults, which differ in nothing but the run:</p>")
     add(tbl(dist_tab(w2), right = c("cutoffs", "matches", "dm", "big", "dt", "hy"), head = dist_head,
             note = "First run against second run. Same fitting code, same data, same weekly cutoffs, each fit started from the previous cutoff's mode. The first run was made on a heavily loaded machine."))
-    add("<p>Then the second run against the run reported here, which differ in the option only:</p>")
+    add("<p>Then the second run against the run reported here, which differ in the option and in the warm-start rule described above:</p>")
     add(tbl(dist_tab(w), right = c("cutoffs", "matches", "dm", "big", "dt", "hy"), head = dist_head,
             note = "Second run (R-INLA's defaults) against the third (online optimisation off)."))
     score_tab <- function(x, a, b) {

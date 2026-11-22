@@ -44,27 +44,25 @@ bb_within_1d <- if (within_known) {
   NULL
 }
 
-# Where the rule stood in each run of the fits: the largest of the three pooled gains, in
-# standard errors.
-bb_rule_z <- function(w) {
+# Where the rule stood in each run of the fits: the largest of the three pooled gains in
+# standard errors, and whether any pooled gain is negative (the rule's other half).
+bb_rule <- function(w) {
   j <- rbind(w[["bb_m_reg"]], w[["bb_f_reg"]])
   if (is.null(j)) {
-    return(NA_real_)
+    return(c(z = NA_real_, min = NA_real_))
   }
-  z <- function(a, b) {
-    d <- j[[a]] - j[[b]]
-    mean(d) / (stats::sd(d) / sqrt(length(d)))
-  }
-  max(z("lsm_raw.ar1", "lsm_raw.static"), z("lst_raw.ar1", "lst_raw.static"), z("ll_wdl_raw.ar1", "ll_wdl_raw.static"))
+  d <- list(j$lsm_raw.ar1 - j$lsm_raw.static, j$lst_raw.ar1 - j$lst_raw.static, j$ll_wdl_raw.ar1 - j$ll_wdl_raw.static)
+  c(z = max(vapply(d, function(x) mean(x) / (stats::sd(x) / sqrt(length(x))), 1)), min = min(vapply(d, mean, 1)))
 }
-bb_z <- if (within_known) {
+bb_z <- bb_min <- NULL
+if (within_known) {
   earlier <- function(sub) {
     x <- rd(file.path(sub, "wf_scores.rds"))
-    if (is.null(x)) NA_real_ else bb_rule_z(x$within_j)
+    if (is.null(x)) c(z = NA_real_, min = NA_real_) else bb_rule(x$within_j)
   }
-  c(first = earlier("first-run"), second = earlier("second-run"), here = bb_rule_z(wj))
-} else {
-  NULL
+  st <- list(first = earlier("first-run"), second = earlier("second-run"), here = bb_rule(wj))
+  bb_z <- vapply(st, function(x) x[["z"]], 1)
+  bb_min <- vapply(st, function(x) x[["min"]], 1)
 }
 
 # ---------------------------------------------------------------- proposal
@@ -116,9 +114,9 @@ if (have(bb_z) && !anyNA(bb_z)) {
   within_txt <- paste0(within_txt, sprintf(
     " Against the rule applied here (no pooled score counts against the term, and at least one improves by more than two standard errors), the largest gain stands at %s standard errors in the run reported here; it was %s in the first run and %s in the second. %s",
     num(bb_z[["here"]], 2), num(bb_z[["first"]], 2), num(bb_z[["second"]], 2),
-    if (all(bb_z > 2)) {
+    if (all(bb_z > 2 & bb_min >= 0)) {
       "The term clears the rule in every run, each time by a small margin: the three figures are one comparison seen through three runs of the fits, and their spread is the size of the run-to-run movement."
-    } else if (bb_z[["here"]] > 2) {
+    } else if (bb_z[["here"]] > 2 && bb_min[["here"]] >= 0) {
       "The term clears the rule in the run reported here but did not in every run: the choice rests on run-to-run movement and is the owner's to make."
     } else {
       "The term does not clear the rule in the run reported here, though it did in an earlier one: the choice rests on run-to-run movement and is the owner's to make."
@@ -208,7 +206,7 @@ mode_li <- if (have(wfst) && have(wfst2)) {
     paste0(
       "<li><strong>A fit is returned whether or not the mode search succeeded.</strong> R-INLA reports the status of its search for the hyperparameter mode and returns a fit either way. <code>fit_v2_inla()</code> did not read it. It now returns it and warns unless it is 0, every script stores it, and the walk-forward repeats a failed or throwing warm-started fit once from a cold start. ",
       "In the run reported here: %s walk-forward fits, of which %s were repeated from a cold start and %s were still failed afterwards (%s predictions left out of the scores), and %s other fits, of which %s failed. ",
-      "In the second run, the first to keep the status, %s of %s walk-forward fits had failed, all total models of basketball walk-forwards whose hyperparameters looked like their neighbours'. Whether the first run had failed searches cannot be known. Switching the online optimisation off does not make a failed warm start rarer. ",
+      "In the second run, the first to keep the status, %s of %s walk-forward fits had failed, all total models of basketball walk-forwards whose hyperparameters looked like their neighbours'. Whether the first run had failed searches cannot be known. The two counts are not alike (failed or threw against failed only), so they do not say whether the option makes a failed warm start rarer. ",
       "The check reads R-INLA's status and does not look at the Hessian at the mode. A fit that is still failed after the cold repeat keeps its status, is not used to start the next fit, and its predictions are left out of the scores and counted.</li>"
     ),
     int(sum(wfst$wf$fits)), int(sum(wfst$wf$retried, na.rm = TRUE)), none_or(sum(wfst$wf$status_not_zero)), no_or(left_out_n),
@@ -251,10 +249,10 @@ repro_fix_li <- if (have(wfst2) && have(wfst2$cold) && have(wfst2$noopt) && have
     paste0(
       "<li><strong>Reproducibility: found, and applied.</strong> With R-INLA's defaults a fit started cold did not always come out the same in two R processes: %s processes gave the most frequent result at the two cutoffs tested. ",
       "With R-INLA's online internal optimisation switched off (<code>inla.setOption(internal.opt = FALSE)</code>), %s did, and two test walk-forwards of handball men were identical in all %s predictions. ",
-      "<code>fit_v2_inla()</code> now switches that option off for the duration of a fit and puts the caller's setting back on exit, also when the fit throws (owner's decision of 17 November). ",
+      "<code>fit_v2_inla()</code> now asks R-INLA for every fit with that option off (owner's decision of 17 November); since 22 November it passes it in the call (<code>control.compute</code>), which R-INLA 25.6.7 treats like the session-wide switch the stored results were made with. ",
       "Every R-INLA result in this report was then computed again, twice: %s. %s ",
       "What the option costs: in the test, the fits with it off took %s times as long at the median as the default run's fits of the same cutoffs (both timed on the shared machine: a ratio, not a benchmark). ",
-      "The football engine on main calls R-INLA with its defaults and four threads; the same check there is still to be decided.</li>"
+      "The football engine on main passes the option off in the call and fits on one thread since PR #107.</li>"
     ),
     paste(sprintf("%s of %s", int(d0$most_frequent), int(d0$processes)), collapse = " and "),
     paste(sprintf("%s of %s", int(d1$most_frequent), int(d1$processes)), collapse = " and "),
@@ -351,7 +349,7 @@ add(
 )
 
 add("<h3>Where each number comes from</h3>")
-add(sprintf("<p>Every number in this report is read from a result file under <code>%s/</code>. The table names the file and the fields behind each headline number; <code>docs/reports/2026-11-15-hb-bb-v2/check_headlines.R</code> recomputes them from exactly these fields without going through the report builder (its output: <code>logs/check_headlines.log</code>).</p>", OUT))
+add(sprintf("<p>Every measured number in this report is read from a result file under <code>%s/</code>, except the counts of Baskethotel cards (3,286 fetched, 3,283 matched), which are typed from the fetch log. The table names the file and the fields behind each headline number; <code>docs/reports/2026-11-15-hb-bb-v2/check_headlines.R</code> recomputes them from exactly these fields without going through the report builder (its output: <code>logs/check_headlines.log</code>).</p>", OUT))
 src <- data.frame(
   what = c(
     "Production's implied home advantage, raw margin, ratio, by division; volatility scales; Student-t degrees of freedom",
@@ -361,13 +359,13 @@ src <- data.frame(
     "R-INLA against Stan: hyperparameters, states, held-out predictor, log scores, leave-one-out",
     "Within-season term at the fixed cutoff (sd, leave-one-out gain)",
     "Weekly-correlation sensitivity (0.90, 0.95, 0.98)",
-    "Walk-forward predictions; seconds per cutoff (about 6 s, on the shared machine)",
-    "Walk-forward scores (3,930 matches); level-score shift, variance forms, Student-t, overtime; calibration by phase",
-    "Within-season AR(1) minus static in the walk-forward (1,211 matches; 1. deild 549)",
+    "Walk-forward predictions; seconds per cutoff (on the shared machine)",
+    "Walk-forward scores; level-score shift, variance forms, Student-t, overtime; calibration by phase",
+    "Within-season AR(1) minus static in the walk-forward",
     "Regulation-trained plus overtime against the final-score model",
-    "v2 against production's stored forecasts (338 matches); mean expected margins; RMSE",
+    "v2 against production's stored forecasts; mean expected margins; RMSE",
     "v2 and production against the Lengjan line",
-    "Regulation-time coverage (99.7 %), overtime shares (7.1 % in men's B&oacute;nusdeild)",
+    "Regulation-time coverage, overtime shares",
     "Run-to-run reproducibility of the R-INLA plug-in fits",
     "Mode status of every fit; the reported run against the second; the two default runs against each other; cold-start fits in separate processes; whether the two runs with the option off are identical",
     "Old value beside new for every number the review changed",
@@ -420,12 +418,24 @@ if (have(corr)) {
     note = "The last column is the largest change of a value from the second run to the final one, in units of its standard error, where the value has one. Rows where it exceeds 1 are highlighted."
   ))
   moved <- corr[!is.na(corr$moved_se) & corr$moved_se > 1, ]
+  # The paired comparison in the walk-forward section is sharper than the table's
+  # standard errors: name the mean scores that moved by two paired standard errors.
+  paired2 <- if (have(wfst)) wfst$scores[abs(wfst$scores$diff) >= 2 * wfst$scores$diff_se, ] else NULL
   add(sprintf(
-    "<p>%s</p>",
+    "<p>%s%s</p>",
     if (nrow(moved) == 0) {
-      "No value in this table moved by more than its standard error between the second run and the final one."
+      sprintf("Of the %s rows that carry a standard error, none moved by more than one between the second run and the final one; the other rows carry none.", int(sum(!is.na(corr$moved_se))))
     } else {
       sprintf("Moved by more than its standard error between the second run and the final one: %s.", paste(esc(moved$what), collapse = "; "))
+    },
+    if (is.null(paired2) || nrow(paired2) == 0) {
+      ""
+    } else {
+      sprintf(
+        " Paired match by match, as in the walk-forward section, %s of the %s mean scores moved by two standard errors or more: %s.",
+        int(nrow(paired2)), int(nrow(wfst$scores)),
+        paste(sprintf("%s %s, %s", tolower(LAB[paired2$cell]), paired2$score, pm(paired2$diff, paired2$diff_se, 4)), collapse = "; ")
+      )
     }
   ))
   if (have(hl_changes)) {
@@ -477,7 +487,7 @@ add(
   "<li><strong>Finding 21.</strong> A logit shift is an odds ratio; it was printed as a ratio of rates. Both are now given.</li>",
   "<li><strong>Finding 23.</strong> The variance form that grows with the expected total was centred on the scored season's own mean; the centre now comes from the training seasons.</li>",
   "<li><strong>Finding 24.</strong> The \"final result\" rows of the walk-forward table repeated the regulation-time calibration; they now show the calibration of the final-score predictive.</li>",
-  "<li><strong>17 November, reproducibility.</strong> <code>fit_v2_inla()</code> switches R-INLA's online internal optimisation off for the fit, puts the caller's setting back afterwards, and seeds R's generator for the posterior draws. Every R-INLA fit was run again, twice, and the stored results are the first of those two runs. See <a href=\"#wf\">The R-INLA fits, run four times</a>.</li>",
+  "<li><strong>17 November, reproducibility.</strong> <code>fit_v2_inla()</code> asks R-INLA for every fit with its online internal optimisation off (since 22 November in the call itself) and seeds R's generator for the posterior draws. Every R-INLA fit was run again, twice, and the stored results are the first of those two runs. See <a href=\"#wf\">The R-INLA fits, run four times</a>.</li>",
   "</ul>"
 )
 
@@ -557,7 +567,7 @@ items <- c(items, sprintf(
   paste(num(ha$v2[ha$cell %in% hb], 2), collapse = " and "), paste(num(ha$v2[ha$cell %in% bb], 2), collapse = " and ")
 ))
 items <- c(items, sprintf(
-  "<strong>Margin and total can be modelled separately</strong>: their residuals are uncorrelated in every cell. Given the strengths, a handball side's score has %s to %s of the variance a Poisson count would in the league divisions; a Gaussian with a free sd fits, for the women as for the men.",
+  "<strong>Margin and total can be modelled separately</strong>: their residuals are close to uncorrelated in every league division. Given the strengths, a handball side's score has %s to %s of the variance a Poisson count would in the league divisions; a Gaussian with a free sd fits, for the women as for the men.",
   num(hb_disp_league[1], 2), num(hb_disp_league[2], 2)
 ))
 if (have(ladder)) {

@@ -1,6 +1,6 @@
-# Build the report from the saved results. Every number in the report is read from a
-# result file here; a section whose result file does not exist says so instead of
-# showing a number.
+# Build the report from the saved results. Every measured number in the report is read
+# from a result file here (the exception: the counts of Baskethotel cards, typed from the
+# fetch log); a section whose result file does not exist says so instead of showing a number.
 # Usage: Rscript -e 'source("docs/reports/2026-11-15-hb-bb-v2/build_report.R")'
 source("docs/reports/2026-11-15-hb-bb-v2/common.R")
 source(file.path(EXP_DIR, "score.R"))
@@ -85,8 +85,16 @@ if (have(ident_first) && have(ident_seed)) {
 # The fits outside the walk-forward start cold. Which of them have a fit summary that
 # differs between the second run (R-INLA's defaults) and the run reported here?
 cold_moved <- NULL
+other_moved <- if (have(ident_cold) && !is.null(ident_cold$differing)) {
+  unique(ident_cold$differing$file[grepl("^(descriptives|within_rho)", ident_cold$differing$file)])
+} else {
+  character()
+}
 if (have(ident_cold) && !is.null(ident_cold$differing)) {
-  dc <- ident_cold$differing[!is_draw(ident_cold$differing$component) & !grepl("^wf_", ident_cold$differing$file), ]
+  # WHY only the fixed-cutoff files: there the first component names one fit. In
+  # descriptives.rds it names a cell (two fits) and within_rho.rds is one table, so a
+  # difference there is reported by file (other_moved below), not by fit.
+  dc <- ident_cold$differing[!is_draw(ident_cold$differing$component) & grepl("^inla_validate_", ident_cold$differing$file), ]
   moved_fits <- unique(data.frame(file = dc$file, fit = sub("^[$]([^$]+)[$].*", "\\1", dc$component)))
   cold_moved <- do.call(rbind, lapply(seq_len(nrow(moved_fits)), function(i) {
     a <- rd(file.path("second-run", moved_fits$file[i]))[[moved_fits$fit[i]]]
@@ -146,7 +154,11 @@ cold_account <- function(n_other) {
         }, ""), collapse = "; ")
       )
     },
-    " A walk-forward chains its fits, each starting from the previous cutoff's answer, so a single fit that lands elsewhere is carried forward. That is consistent with all eight walk-forwards differing between the two runs (tables below)."
+    if (length(other_moved)) sprintf(" Outside the fixed-cutoff files, %s also differ%s.", paste(sprintf("<code>%s</code>", other_moved), collapse = " and "), if (length(other_moved) == 1) "s" else "") else "",
+    sprintf(
+      " A walk-forward chains its fits, each starting from the previous cutoff's answer, so a single fit that lands elsewhere is carried forward. That is consistent with %s of the eight walk-forwards differing between the two runs (tables below).",
+      if (have(wfst)) int(sum(wfst$wf$max_abs_diff_margin > 0 | wfst$wf$max_abs_diff_total > 0)) else "each"
+    )
   )
 }
 # The short form of draws_account(), for the list of engine risks.
