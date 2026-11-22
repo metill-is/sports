@@ -9,9 +9,11 @@ name: Engine Reference Fit
 # warns when a run did not pass (mean absolute difference above 0.01) or the
 # runs stop. Fixture-by-fixture numbers go to the run's artifact.
 #
-# Monday 09:23 UTC: after the 06:00 results scrape, before the 12:00 health
-# check, which then reads the new rows. It writes nothing else and starts no
-# other workflow. Pinned by tests/testthat/test-workflow-engine-reference.R.
+# Mondays. GitHub starts scheduled runs late (hours, of late) and now and
+# then not at all; the reference reads whatever data main holds when it runs,
+# and the health check warns once its newest row is more than 15 days old, so
+# one missed week is tolerated. It writes nothing else and starts no other
+# workflow. Pinned by tests/testthat/test-workflow-engine-reference.R.
 on:
   schedule:
     - cron: '23 9 * * 1'

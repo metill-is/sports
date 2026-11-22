@@ -21,11 +21,11 @@
   )
 }
 
-.fake_fit <- function(shift = 0, divergent = 0L, rhat = 1.001, mode_status = 0) {
+.fake_fit <- function(shift = 0, divergent = 0L, rhat = 1.001, mode_status = 0, gate_passed = TRUE) {
   function(spec) {
     d <- .flat_draws(spec, c_home = 0.3 + shift)
     list(
-      draws = d, mode_status = mode_status,
+      draws = d, mode_status = mode_status, gate_passed = gate_passed,
       diagnostics = list(n_divergent = divergent, state_max_rhat = rhat),
       summary = data.frame(variable = "sigma_str", rhat = rhat)
     )
@@ -138,19 +138,23 @@ test_that("the weekly reference compares the two engines' probabilities fixture 
   )
 })
 
-test_that("with no fixture ahead the weekly reference compares every pairing of the season's divisions", {
+test_that("with no fixture ahead the weekly reference compares every pairing on the next season's first day", {
   root <- withr::local_tempdir()
   s <- v2_store(root)
-  # The off-season: no fixture inside the horizon.
-  unlink(file.path(root, "facts", "schedules"), recursive = TRUE)
+  # The off-season as the store has it: the season's fixtures are long played
+  # (the schedule keeps them), and nothing lies inside the horizon.
+  later <- s$end_date + 30L
   res <- suppressMessages(fv2_weekly_reference(
-    s$league, "male",
-    end_date = s$end_date, root = root,
+    s$league, "male", end_date = later, root = root,
     fit_inla = .fake_fit(0), fit_nuts = .fake_fit(0)
   ))
+  last_season <- max(read_table("results", root = root)$season)
   expect_identical(res$row$fixtures, "off-season pairings")
   expect_equal(res$row$n_fixtures, length(s$teams) * (length(s$teams) - 1L))
-  expect_true(all(res$fixtures$match_date == s$end_date + 7L))
+  # The first day of the next season, so the comparison crosses the season
+  # break as a pre-season fit does.
+  expect_true(all(res$fixtures$match_date == as.Date(sprintf("%d-01-01", last_season + 1L))))
+  expect_identical(max(res$spec$slots$season), last_season + 1L)
 })
 
 test_that("a NUTS reference that is not converged, or an INLA fit without a mode, does not pass", {
@@ -165,6 +169,44 @@ test_that("a NUTS reference that is not converged, or an INLA fit without a mode
   expect_false(run(fit_inla = .fake_fit(0), fit_nuts = .fake_fit(0, divergent = 3L))$passed)
   expect_false(run(fit_inla = .fake_fit(0), fit_nuts = .fake_fit(0, rhat = 1.05))$passed)
   expect_false(run(fit_inla = .fake_fit(0, mode_status = 1), fit_nuts = .fake_fit(0))$passed)
+  expect_false(run(fit_inla = .fake_fit(0, gate_passed = FALSE), fit_nuts = .fake_fit(0))$passed)
+  # No Rhat at all is no evidence the chains agree.
+  no_rhat <- run(fit_inla = .fake_fit(0), fit_nuts = .fake_fit(0, rhat = NA_real_))
+  expect_false(no_rhat$passed)
+  expect_true(is.na(no_rhat$nuts_max_rhat))
+})
+
+test_that("real INLA draws go through the comparison: two seeds of one engine agree", {
+  skip_if_no_inla()
+  root <- withr::local_tempdir()
+  s <- v2_store(root)
+  inla_with <- function(seed) {
+    function(spec) {
+      f <- suppressWarnings(fv2_fit_inla(spec, int_strategy = "eb", n_samp = 1000L, threads = "1:1", seed = seed))
+      f$gate_passed <- isTRUE(fv2_inla_gate(f, spec)$passed)
+      f
+    }
+  }
+  # INLA's fit in the NUTS seat: the same posterior, so only Monte Carlo
+  # noise separates the two, and the shared-layout draws must read the same.
+  as_nuts <- function(fit) {
+    function(spec) {
+      f <- fit(spec)
+      f$diagnostics <- list(n_divergent = 0L, state_max_rhat = 1.001)
+      f$summary <- data.frame(variable = "x", rhat = 1.001)
+      f
+    }
+  }
+  res <- suppressMessages(fv2_weekly_reference(
+    s$league, "male", end_date = s$end_date, root = root,
+    fit_inla = inla_with(1L), fit_nuts = as_nuts(inla_with(2L))
+  ))
+  p <- as.matrix(res$fixtures[c("inla_home", "inla_draw", "inla_away")])
+  expect_equal(unname(rowSums(p)), rep(1, nrow(p)), tolerance = 1e-9)
+  expect_true(all(p > 0 & p < 1))
+  expect_lt(res$row$mean_abs_diff, 0.01)
+  expect_gt(res$row$mean_abs_diff, 0)
+  expect_true(res$row$inla_gate_passed)
 })
 
 test_that("the reference result is a registered store under data/health/engine_reference", {
@@ -181,7 +223,7 @@ test_that("the reference result is a registered store under data/health/engine_r
     fixtures = "upcoming", n_fixtures = 12L, n_train = 2900L,
     mean_abs_diff = mad, max_abs_diff = mad * 4, threshold = 0.01,
     nuts_divergences = divergences, nuts_max_rhat = rhat, inla_mode_status = 0L,
-    passed = passed, inla_version = "25.6.7", cmdstan_version = "2.38.0",
+    inla_gate_passed = TRUE, passed = passed, inla_version = "25.6.7", cmdstan_version = "2.38.0",
     stan_md5 = "abc", model_version = "2.0", code_commit = "sha"
   )
 }
@@ -200,7 +242,11 @@ test_that("the health check warns on a breach, an unconverged reference or a ref
   expect_true(all(h$status == "PAUSED"))
   expect_setequal(h$scope, c("football/iceland/male", "football/iceland/female"))
 
+  # The reference has run, but one cell has never produced a row.
   write_table(.ref_row("male"), "engine_reference", root = root)
+  expect_identical(status_of("male"), "OK")
+  expect_identical(status_of("female"), "WARN")
+
   write_table(.ref_row("female", mad = 0.014, passed = FALSE), "engine_reference", root = root)
   expect_identical(status_of("male"), "OK")
   expect_identical(status_of("female"), "WARN")
@@ -218,6 +264,16 @@ test_that("the health check warns on a breach, an unconverged reference or a ref
   expect_true(all(grepl("days old", h$value)))
 })
 
+test_that("an unreadable reference store is a warning, not a pause", {
+  root <- withr::local_tempdir()
+  bad <- file.path(root, "health", "engine_reference", "sport=football", "country=iceland", "sex=male", "run_date=2026-11-23")
+  dir.create(bad, recursive = TRUE)
+  writeLines("not parquet", file.path(bad, "part-0.parquet"))
+  h <- check_engine_reference(root, as.POSIXct("2026-11-25", tz = "UTC"), health_thresholds())
+  expect_true(all(h$status == "WARN"))
+  expect_true(all(grepl("unreadable", h$value)))
+})
+
 test_that("pipeline_health runs the engine reference check", {
   root <- withr::local_tempdir()
   h <- suppressWarnings(suppressMessages(pipeline_health(root = root, leagues = list())))
@@ -231,6 +287,9 @@ test_that("the weekly reference script fits as production does and stores only i
   expect_match(body, 'int_strategy = "auto"', fixed = TRUE)
   expect_match(body, 'threads = "1:1"', fixed = TRUE)
   expect_match(body, "research/football-v2/engines.R", fixed = TRUE)
+  # The INLA side is fit_league()'s fit of that day: its seed and its gate.
+  expect_match(body, ".fit_seed(league$sport, league$country, sex, format(end_date))", fixed = TRUE)
+  expect_match(body, "fv2_inla_gate(", fixed = TRUE)
   expect_match(body, 'write_table(res$row, "engine_reference"', fixed = TRUE)
   expect_false(grepl("write_table\\([^)]*\"(results|schedules|odds|ledger|candidates|recommendations|beliefs_[a-z]+|fit_diagnostics|forecast_archive)\"", body))
 })

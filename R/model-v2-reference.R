@@ -16,11 +16,15 @@ NULL
 # without a mode does not pass, and the health check
 # (check_engine_reference()) warns.
 #
-# The fitters are arguments: scripts/engine_reference.R passes R-INLA and the
-# research Stan wrapper (research/football-v2/engines.R), the tests pass fakes.
-# With no fixture inside the horizon (the off-season) the comparison is made on
-# every pairing of the season's league divisions a week ahead, so the check
-# runs all year.
+# The fitters are arguments: scripts/engine_reference.R passes R-INLA exactly
+# as fit_league() would call it that day (production seed, full integration,
+# one thread, the INLA gate), which on one thread reproduces the production
+# fit of the same data (model-decide.md, "Repeatability"), and the research
+# Stan wrapper (research/football-v2/engines.R); the tests pass fakes. With no
+# fixture inside the horizon (the off-season) the comparison is made on every
+# pairing of the season's league divisions on the first day of the next
+# season, or a week ahead if later: the season-break path a pre-season fit
+# takes, so the check runs all year.
 
 #' The largest mean absolute difference in outcome probabilities between INLA
 #' and NUTS that passes (decision 5: a breach raises a health warning).
@@ -100,9 +104,9 @@ fv2_outcome_probs <- function(draws, spec, fixtures = NULL, max_goals = 12L) {
 #'   as a production fit on that day sees it.
 #' @param root Storage root.
 #' @param fit_inla,fit_nuts Functions of a spec, each returning a fit with
-#'   `$draws` in the shared layout; `fit_inla`'s also carries `$mode_status`,
-#'   `fit_nuts`'s `$diagnostics` (`n_divergent`, `state_max_rhat`) and
-#'   `$summary` (`rhat`).
+#'   `$draws` in the shared layout; `fit_inla`'s also carries `$mode_status`
+#'   and `$gate_passed` (`fv2_inla_gate()`), `fit_nuts`'s `$diagnostics`
+#'   (`n_divergent`, `state_max_rhat`) and `$summary` (`rhat`).
 #' @param provenance Named list: `inla_version`, `cmdstan_version`,
 #'   `stan_md5`, recorded with the result.
 #' @return `list(row, fixtures, spec)`: `row` in the `engine_reference`
@@ -119,9 +123,13 @@ fv2_weekly_reference <- function(league, sex, end_date = Sys.Date(),
   if (is.null(inputs$pred) || nrow(inputs$pred) == 0L) {
     kind <- "off-season pairings"
     played <- unique(c(inputs$train$home_team, inputs$train$away_team))
+    season <- max(inputs$train$season)
+    # The next season's first day, or a week ahead if later: the break step a
+    # pre-season fit takes, not a mid-season week production never forecasts.
+    match_date <- max(end_date + 7L, as.Date(sprintf("%d-01-01", season + 1L)))
     pairs <- fv2_offseason_fixtures(
       inputs$divisions,
-      season = max(inputs$train$season), match_date = end_date + 7L, teams = played
+      season = season, match_date = match_date, teams = played
     )
     inputs <- fv2_production_inputs(
       prep, league, sex,
@@ -142,12 +150,17 @@ fv2_weekly_reference <- function(league, sex, end_date = Sys.Date(),
   p_nuts <- fv2_outcome_probs(nuts$draws, spec, inputs$pred)
   diff <- abs(p_inla - p_nuts)
 
-  nuts_rhat <- suppressWarnings(max(c(nuts$summary$rhat, nuts$diagnostics$state_max_rhat), na.rm = TRUE))
+  # The bar the stored NUTS reference is held to (test-model-v2-reference.R):
+  # no divergences and every Rhat below 1.01. With no Rhat at all there is no
+  # evidence the chains agree, which does not pass.
+  rhats <- c(nuts$summary$rhat, nuts$diagnostics$state_max_rhat)
+  nuts_rhat <- if (any(!is.na(rhats))) max(rhats, na.rm = TRUE) else NA_real_
   divergences <- as.integer(nuts$diagnostics$n_divergent)
   mode_status <- as.integer(inla$mode_status)
+  gate_passed <- isTRUE(inla$gate_passed)
   mad <- mean(diff)
   passed <- isTRUE(mad <= FV2_REFERENCE_MAX_MEAN_ABS_DIFF) && identical(divergences, 0L) &&
-    isTRUE(nuts_rhat <= 1.01) && identical(mode_status, 0L)
+    isTRUE(nuts_rhat <= 1.01) && identical(mode_status, 0L) && gate_passed
   prov <- function(name) as.character(provenance[[name]] %||% NA_character_)
 
   row <- tibble::tibble(
@@ -158,7 +171,7 @@ fv2_weekly_reference <- function(league, sex, end_date = Sys.Date(),
     mean_abs_diff = mad, max_abs_diff = max(diff),
     threshold = FV2_REFERENCE_MAX_MEAN_ABS_DIFF,
     nuts_divergences = divergences, nuts_max_rhat = nuts_rhat,
-    inla_mode_status = mode_status, passed = passed,
+    inla_mode_status = mode_status, inla_gate_passed = gate_passed, passed = passed,
     inla_version = prov("inla_version"), cmdstan_version = prov("cmdstan_version"),
     stan_md5 = prov("stan_md5"), model_version = FOOTBALL_V2_VERSION,
     code_commit = {

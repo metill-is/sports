@@ -3,8 +3,10 @@
 # the football cutover plan, docs/reports/2026-11-15-football-v2-proposal.qmd).
 #
 # For each football cell: the v2.0 specification on the latest data, as a
-# production fit builds it, fitted by R-INLA as production fits it (full
-# integration, one thread) and by NUTS with the Stan reference program
+# production fit builds it, fitted by R-INLA as fit_league() would fit it that
+# day (its seed, full integration, one thread, then its gate; on one thread a
+# refit of the same data reproduces the production fit) and by NUTS with the
+# Stan reference program
 # (research/football-v2/stan/), then the two engines' outcome probabilities
 # compared fixture by fixture (R/model-v2-reference.R). One summary row per
 # cell goes to data/health/engine_reference/, which check_engine_reference()
@@ -46,9 +48,18 @@ provenance <- list(
   stan_md5 = unname(tools::md5sum(stan_file))
 )
 
-# As production fits: full integration, one thread, 4,000 draws.
-fit_inla <- function(spec) {
-  suppressWarnings(fv2_fit_inla(spec, int_strategy = "auto", n_samp = 4000L, threads = "1:1", seed = 1L))
+# As fit_league() fits on that day: its seed (keyed on the cell and the fit
+# date), full integration, one thread, 4,000 draws, then its gate against the
+# cell's previous INLA fit, when there is one.
+fit_inla_for <- function(sex) {
+  seed <- .fit_seed(league$sport, league$country, sex, format(end_date))
+  function(spec) {
+    f <- suppressWarnings(fv2_fit_inla(spec, int_strategy = "auto", n_samp = 4000L, threads = "1:1", seed = seed))
+    gate <- fv2_inla_gate(f, spec, previous_sd = fv2_previous_hyper(league, sex, end_date, root = here::here("data")))
+    f$gate_passed <- isTRUE(gate$passed)
+    if (!f$gate_passed) cli::cli_alert_warning("{sex}: INLA gate: {paste(gate$breaches, collapse = '; ')}")
+    f
+  }
 }
 fit_nuts <- function(spec) {
   csv_dir <- tempfile("fv2-reference-csv-")
@@ -60,12 +71,17 @@ fit_nuts <- function(spec) {
 cli::cli_h1("Weekly Stan reference fit, football v2.0, data to {end_date}")
 failed <- character()
 for (sex in sexes) {
+  # One cell's failure, in the fits or the write, must not cost the other.
   res <- tryCatch(
-    fv2_weekly_reference(
-      league, sex,
-      end_date = end_date, root = here::here("data"),
-      fit_inla = fit_inla, fit_nuts = fit_nuts, provenance = provenance
-    ),
+    {
+      res <- fv2_weekly_reference(
+        league, sex,
+        end_date = end_date, root = here::here("data"),
+        fit_inla = fit_inla_for(sex), fit_nuts = fit_nuts, provenance = provenance
+      )
+      write_table(res$row, "engine_reference", root = here::here("data"))
+      res
+    },
     error = function(e) {
       cli::cli_alert_danger("{sex}: {conditionMessage(e)}")
       NULL
@@ -75,7 +91,6 @@ for (sex in sexes) {
     failed <- c(failed, sex)
     next
   }
-  write_table(res$row, "engine_reference", root = here::here("data"))
   if (!is.null(out_dir)) {
     utils::write.csv(res$fixtures, file.path(out_dir, sprintf("fixtures_%s.csv", sex)), row.names = FALSE)
     utils::write.csv(res$row, file.path(out_dir, sprintf("summary_%s.csv", sex)), row.names = FALSE)

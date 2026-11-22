@@ -32,6 +32,10 @@ test_that("the reference fit runs weekly and by hand, and nothing else starts it
   # name with glob characters would be unmatchable as a parent.
   expect_false(grepl("[][*?!]", yml$name))
   expect_true(nzchar(yml$name))
+  # No other workflow chains on it.
+  others <- setdiff(list.files(dirname(reference_workflow), pattern = "[.]ya?ml$", full.names = TRUE), reference_workflow)
+  chained <- vapply(others, function(f) any(grepl(yml$name, readLines(f, warn = FALSE), fixed = TRUE)), logical(1))
+  expect_identical(basename(others[chained]), character())
 })
 
 test_that("the reference fit can only write its own summary rows", {

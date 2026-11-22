@@ -113,15 +113,20 @@ paths:
   cell the v2.0 specification is built from the latest data by
   `fv2_production_inputs()` -- the same function `fit_model_v2_inla()` builds
   its inputs with, so the two cannot drift -- and fitted by R-INLA as
-  production fits it and by NUTS with `research/football-v2/stan/fv2_rev.stan`
-  (`fv2_weekly_reference()`, `R/model-v2-reference.R`). It compares the two
-  engines' outcome probabilities fixture by fixture; with no fixture inside
-  the horizon it compares every pairing of the season's league divisions a
-  week ahead, so it runs all year. A mean absolute difference above 0.01
-  (`FV2_REFERENCE_MAX_MEAN_ABS_DIFF`), a NUTS fit with divergences or Rhat
-  above 1.01, or an INLA fit without a mode does not pass; the summary row
-  goes to `data/health/engine_reference/` and `check_engine_reference()`
-  warns. The Stan program stays in `research/` until the switch.
+  `fit_league()` would fit it that day (its `.fit_seed()`, full integration,
+  one thread, `fv2_inla_gate()`; on one thread that reproduces the production
+  fit of the same data) and by NUTS with
+  `research/football-v2/stan/fv2_rev.stan` (`fv2_weekly_reference()`,
+  `R/model-v2-reference.R`). It compares the two engines' outcome
+  probabilities fixture by fixture; with no fixture inside the horizon it
+  compares every pairing of the season's league divisions on the next season's
+  first day (a week ahead if later), the break path a pre-season fit takes, so
+  it runs all year. A mean absolute difference above 0.01
+  (`FV2_REFERENCE_MAX_MEAN_ABS_DIFF`), a NUTS fit with divergences or any Rhat
+  above 1.01 (or none at all; the stored reference's bar), or an INLA fit
+  without a mode or failing its gate does not pass; the summary row goes to
+  `data/health/engine_reference/` and `check_engine_reference()` warns. The
+  Stan program stays in `research/` until the switch.
 - `extract_posteriors()` materialises posterior draws as the canonical
   `beliefs_latest` tibble (per-draw-per-match).
 - Stan models live in `Stan/{league_key}/{file}.stan`. `leagues.yml`'s

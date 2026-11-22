@@ -451,20 +451,42 @@ check_diagnostics_drift <- function(root, th, paused_cells = character(0)) {
 #' absolute difference in outcome probabilities above
 #' `engine_reference_max_mean_abs_diff`, an unconverged NUTS fit or an INLA fit
 #' without a mode), or when it is older than `engine_reference_max_age_days`
-#' (the weekly run stopped). PAUSED before the first run: nothing to judge, and
-#' not an alarm.
+#' (the weekly run stopped). PAUSED before the first run (no store yet):
+#' nothing to judge, and not an alarm. An unreadable store, or a cell with no
+#' row while the store exists, is WARN.
 #' @noRd
 check_engine_reference <- function(root, now, th) {
-  scopes <- paste0("football/iceland/", c("male", "female"))
+  sexes <- c("male", "female")
+  scope_of <- function(sx) paste0("football/iceland/", sx)
+  src <- file.path(root, "health", "engine_reference")
+  # PAUSED only before the first run, when the store does not exist. A store
+  # that will not read, or a cell that never produced a row while the store
+  # exists, is a reference that is not running: WARN, as for drift.
+  if (!dir.exists(src)) {
+    return(dplyr::bind_rows(lapply(sexes, function(sx) {
+      health_row("engine_reference", scope_of(sx), "PAUSED", "no weekly reference fit yet", "n/a")
+    })))
+  }
   rows <- tryCatch(
     read_table("engine_reference", root = root, filter = list(sport = "football", country = "iceland")),
-    error = function(e) tibble::tibble()
+    error = function(e) structure(list(), message = conditionMessage(e))
   )
-  dplyr::bind_rows(lapply(c("male", "female"), function(sx) {
-    scope <- paste0("football/iceland/", sx)
-    mine <- if (nrow(rows)) rows[rows$sex == sx, , drop = FALSE] else rows
+  if (!is.data.frame(rows)) {
+    return(dplyr::bind_rows(lapply(sexes, function(sx) {
+      health_row(
+        "engine_reference", scope_of(sx), "WARN",
+        paste("data/health/engine_reference/ unreadable:", attr(rows, "message")), "readable"
+      )
+    })))
+  }
+  dplyr::bind_rows(lapply(sexes, function(sx) {
+    scope <- scope_of(sx)
+    mine <- if (nrow(rows) && "sex" %in% names(rows)) rows[rows$sex == sx, , drop = FALSE] else rows[0, , drop = FALSE]
     if (nrow(mine) == 0L) {
-      return(health_row("engine_reference", scope, "PAUSED", "no weekly reference fit yet", "n/a"))
+      return(health_row(
+        "engine_reference", scope, "WARN",
+        "no weekly reference row for this cell, though the reference has run", "a row per cell"
+      ))
     }
     mine$run_date <- as.Date(as.character(mine$run_date))
     newest <- mine[order(mine$run_date, mine$run_at, decreasing = TRUE)[1L], , drop = FALSE]
@@ -485,7 +507,7 @@ check_engine_reference <- function(root, now, th) {
     } else {
       health_row(
         "engine_reference", scope, if (breach) "WARN" else "OK", what,
-        sprintf("<= %s, no divergences, Rhat <= 1.01, mode found", th$engine_reference_max_mean_abs_diff)
+        sprintf("<= %s, no divergences, Rhat <= 1.01, INLA mode found and gate passed", th$engine_reference_max_mean_abs_diff)
       )
     }
   }))

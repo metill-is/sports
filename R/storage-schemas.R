@@ -188,6 +188,8 @@ schemas <- function() {
       nuts_divergences = arrow::int32(),
       nuts_max_rhat    = arrow::float64(),
       inla_mode_status = arrow::int32(),
+      # fv2_inla_gate() on the INLA fit, as fit_league() runs it.
+      inla_gate_passed = arrow::bool(),
       passed           = arrow::bool(),
       inla_version     = arrow::string(),
       cmdstan_version  = arrow::string(),
