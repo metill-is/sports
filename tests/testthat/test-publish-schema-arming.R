@@ -104,7 +104,7 @@ test_that("publish_one carries schema_dir as its eighth formal", {
   fmls <- names(formals(publish_one))
   expect_equal(
     fmls,
-    c("static", "betting", "key", "sex", "root", "validate", "end_date", "schema_dir")
+    c("static", "betting", "key", "sex", "root", "validate", "end_date", "schema_dir", "archive_forecasts")
   )
 })
 

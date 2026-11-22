@@ -20,7 +20,8 @@ dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
 store <- file.path(out_dir, "store")
 unlink(store, recursive = TRUE)
 
-git <- function(...) system2("git", c(...), stdout = TRUE)
+# system2() hands its arguments to a shell, so each is quoted.
+git <- function(...) system2("git", shQuote(c(...)), stdout = TRUE)
 log <- git("log", "--reverse", "--format=%H %ct", ref, "--", "data/publish/*/iceland/*/next_games.json")
 commits <- data.frame(
   sha = sub(" .*", "", log),
