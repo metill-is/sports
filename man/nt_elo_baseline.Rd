@@ -21,7 +21,9 @@ nt_elo_baseline(
 
 \item{home, away}{Fixture team names.}
 
-\item{venue}{1 when `home` plays in its own country, else 0.}
+\item{venue}{1 when `home` plays in its own country, else 0. A neutral
+fixture's forecast averages the fixture and its mirror image, so it does
+not depend on which side is listed first.}
 
 \item{link_start}{First match date used to fit the two links.}
 

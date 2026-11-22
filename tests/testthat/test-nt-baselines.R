@@ -135,3 +135,43 @@ test_that("the Elo baseline orders the outcome by rating and venue", {
   expect_gte(f$probs$p_home[3], f$probs$p_home[1])
   expect_gt(f$probs$eg_home[1], f$probs$eg_away[1])
 })
+
+test_that("the Elo baseline's neutral-venue forecast ignores which side is listed first", {
+  withr::local_seed(2)
+  n <- 600L
+  teams <- LETTERS[1:8]
+  home <- sample(teams, n, replace = TRUE)
+  away <- vapply(home, function(h) sample(setdiff(teams, h), 1L), "")
+  # Home sides score far more than a 100-point Elo bonus explains, so the
+  # links' intercepts carry extra home advantage.
+  r <- tibble::tibble(
+    match_date = as.Date("2015-01-01") + sort(sample.int(3000L, n)),
+    home_team = home, away_team = unname(away),
+    home_score = stats::rpois(n, 2), away_score = stats::rpois(n, 0.8),
+    tournament = "Friendly", country = home, neutral = FALSE
+  )
+  f <- nt_elo_baseline(r, as.Date("2024-01-01"), c("A", "B", "A"), c("B", "A", "B"), venue = c(0, 0, 1))
+  p <- f$probs
+  expect_equal(p$p_home[1], p$p_away[2])
+  expect_equal(p$p_draw[1], p$p_draw[2])
+  expect_equal(p$eg_home[1], p$eg_away[2])
+  expect_equal(f$grid[1, , ], t(f$grid[2, , ]))
+  expect_gt(p$p_home[3], p$p_home[1])
+})
+
+test_that("the Elo baseline recycles a single venue over all fixtures", {
+  withr::local_seed(3)
+  n <- 300L
+  teams <- LETTERS[1:6]
+  home <- sample(teams, n, replace = TRUE)
+  away <- vapply(home, function(h) sample(setdiff(teams, h), 1L), "")
+  r <- tibble::tibble(
+    match_date = as.Date("2015-01-01") + sort(sample.int(3000L, n)),
+    home_team = home, away_team = unname(away),
+    home_score = stats::rpois(n, 1.8), away_score = stats::rpois(n, 0.9),
+    tournament = "Friendly", country = home, neutral = FALSE
+  )
+  one <- nt_elo_baseline(r, as.Date("2024-01-01"), c("A", "B"), c("B", "A"), venue = 0)
+  both <- nt_elo_baseline(r, as.Date("2024-01-01"), c("A", "B"), c("B", "A"), venue = c(0, 0))
+  expect_equal(one$probs, both$probs)
+})

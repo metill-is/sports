@@ -82,7 +82,9 @@ nt_elo <- function(results, home_adv = 100) {
 #' @param results Output of [nt_read_results()].
 #' @param cutoff Date; matches on or after it are ignored.
 #' @param home,away Fixture team names.
-#' @param venue 1 when `home` plays in its own country, else 0.
+#' @param venue 1 when `home` plays in its own country, else 0. A neutral
+#'   fixture's forecast averages the fixture and its mirror image, so it does
+#'   not depend on which side is listed first.
 #' @param link_start First match date used to fit the two links.
 #' @param max_goals Largest goal count per side in the scoreline grid.
 #' @return List: `probs` (tibble `p_home, p_draw, p_away, eg_home, eg_away`)
@@ -111,23 +113,42 @@ nt_elo_baseline <- function(results, cutoff, home, away, venue,
   if (length(unknown) > 0L) {
     cli::cli_abort("Team{?s} with no match before the cutoff: {.val {unknown}}.")
   }
+  venue <- rep_len(venue, length(home))
   x_new <- (elo$ratings[home] - elo$ratings[away] + 100 * venue) / 100
   x_new <- unname(x_new)
-  p_le_a <- stats::plogis(ol$cut_away - ol$slope * x_new)
-  p_le_d <- stats::plogis(ol$cut_draw - ol$slope * x_new)
-  lam_h <- exp(stats::coef(fit_h)[1] + stats::coef(fit_h)[2] * x_new)
-  lam_a <- exp(stats::coef(fit_a)[1] + stats::coef(fit_a)[2] * x_new)
   g <- 0:max_goals
-  grid <- array(0, dim = c(length(home), max_goals + 1L, max_goals + 1L))
-  for (m in seq_along(home)) {
-    grid[m, , ] <- outer(stats::dpois(g, lam_h[m]), stats::dpois(g, lam_a[m]))
+  forecast <- function(x) {
+    p_le_a <- stats::plogis(ol$cut_away - ol$slope * x)
+    p_le_d <- stats::plogis(ol$cut_draw - ol$slope * x)
+    lam_h <- unname(exp(stats::coef(fit_h)[1] + stats::coef(fit_h)[2] * x))
+    lam_a <- unname(exp(stats::coef(fit_a)[1] + stats::coef(fit_a)[2] * x))
+    grid <- array(0, dim = c(length(x), max_goals + 1L, max_goals + 1L))
+    for (m in seq_along(x)) {
+      grid[m, , ] <- outer(stats::dpois(g, lam_h[m]), stats::dpois(g, lam_a[m]))
+    }
+    list(
+      p = cbind(1 - p_le_d, p_le_d - p_le_a, p_le_a), eg = cbind(lam_h, lam_a),
+      grid = grid
+    )
+  }
+  f <- forecast(x_new)
+  # WHY: the links' intercepts absorb home advantage beyond the Elo bonus,
+  # which would favour whichever side a neutral fixture lists first. A
+  # neutral forecast is the average of the fixture and its mirror image.
+  neutral <- which(venue == 0)
+  if (length(neutral) > 0L) {
+    m <- forecast(-x_new[neutral])
+    f$p[neutral, ] <- (f$p[neutral, , drop = FALSE] + m$p[, 3:1, drop = FALSE]) / 2
+    f$eg[neutral, ] <- (f$eg[neutral, , drop = FALSE] + m$eg[, 2:1, drop = FALSE]) / 2
+    f$grid[neutral, , ] <- (f$grid[neutral, , , drop = FALSE] +
+      aperm(m$grid, c(1L, 3L, 2L))) / 2
   }
   list(
     probs = tibble::tibble(
-      p_home = 1 - p_le_d, p_draw = p_le_d - p_le_a, p_away = p_le_a,
-      eg_home = unname(lam_h), eg_away = unname(lam_a)
+      p_home = f$p[, 1], p_draw = f$p[, 2], p_away = f$p[, 3],
+      eg_home = f$eg[, 1], eg_away = f$eg[, 2]
     ),
-    grid = grid,
+    grid = f$grid,
     ratings = elo$ratings
   )
 }

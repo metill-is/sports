@@ -1035,6 +1035,7 @@ Nothing in this work touches `world-cup.yml`, any other workflow, or the publish
 - **Confederation structure.** Teams mostly play within their confederation, and the model has no confederation term; inter-confederation calibration rests on World Cups and friendlies.
 - **Knockout venues.** Host nations get home advantage in group matches in the simulation, not in knockout matches.
 - **Team filter.** The filter was broadened after the men's evaluation had run (@sec-women). The men's numbers here use the earlier form; the check on the two affected tournaments shows differences far smaller than any interval reported.
+- **Elo at neutral venues.** The Elo baseline's link functions carry home advantage in their intercepts, so its neutral-venue forecasts favoured whichever side the file listed first. Since 22 November a neutral fixture's forecast averages both listings. The Elo numbers here predate that fix. Recomputed with the 28 June results file (whose pre-tournament matches reproduce the stored Elo forecasts to within 0.016), the fix moves Elo's 1X2 log score on the 219 tournament matches from 0.9773 to 0.9770, and v2's advantage over Elo from 0.0141 to 0.0139 per match. The walk-forward panel was not recomputed.
 
 ## Reproducing this report {#sec-repro}
 
