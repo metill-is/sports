@@ -64,6 +64,13 @@ NULL
 # the national-team simulator's (.nt_wc_rank_group()). A uniform draw stands in
 # for team conduct and the FIFA ranking.
 .wc_group_table <- function(group_teams, matches) {
+  outside <- setdiff(c(matches$home_team, matches$away_team), group_teams)
+  if (length(outside) > 0L) {
+    cli::cli_abort("Group matches name team{?s} outside the group: {.val {outside}}.")
+  }
+  if (anyNA(matches$home_score) || anyNA(matches$away_score)) {
+    cli::cli_abort("A group match has a missing score.")
+  }
   # WHY: negated so a smaller draw still ranks higher, as in the goal-difference
   # order this replaced; the RNG stream is unchanged, so a run whose groups have
   # no head-to-head decision reproduces it for the same seed.

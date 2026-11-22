@@ -42,14 +42,29 @@ test_that(".wc_group_table ranks head-to-head before goal difference", {
   expect_equal(tbl$gf, c(2, 8, 1, 1))
 })
 
-test_that(".wc_group_table goes to goal difference when head-to-head is level", {
-  # A and B draw each other and finish on 7 points; B's goal difference is better.
+test_that(".wc_group_table goes to goal difference, then goals, when head-to-head is level", {
+  # A and B draw each other and finish on 7 points: B's goal difference is
+  # better (+3 v +2), A scored more (8 v 5), so goal difference must come
+  # before goals. C and D draw and differ only on goal difference.
   m <- wc_group_matches(
-    "A", "B", 1, 1, "A", "C", 1, 0, "A", "D", 1, 0,
-    "B", "C", 4, 0, "B", "D", 2, 0, "C", "D", 0, 0
+    "A", "B", 2, 2, "A", "C", 3, 2, "A", "D", 3, 2,
+    "B", "C", 1, 0, "B", "D", 2, 0, "C", "D", 0, 0
   )
   tbl <- .wc_group_table(c("A", "B", "C", "D"), m)
-  expect_equal(tbl$team[1:2], c("B", "A"))
+  expect_equal(tbl$team, c("B", "A", "C", "D"))
+  expect_equal(tbl$gd, c(3, 2, -2, -3))
+  expect_equal(tbl$gf, c(5, 8, 2, 2))
+})
+
+test_that(".wc_group_table refuses a team outside the group or a missing score", {
+  m <- wc_group_matches(
+    "A", "B", 1, 0, "A", "C", 0, 1, "A", "D", 1, 0,
+    "B", "C", 5, 0, "B", "D", 3, 0, "C", "X", 0, 1
+  )
+  expect_error(.wc_group_table(c("A", "B", "C", "D"), m), "X")
+  m$away_team[6] <- "D"
+  m$home_score[2] <- NA_integer_
+  expect_error(.wc_group_table(c("A", "B", "C", "D"), m), "score")
 })
 
 test_that(".wc_group_table re-applies head-to-head to the teams still level", {
