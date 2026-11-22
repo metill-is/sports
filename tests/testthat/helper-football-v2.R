@@ -257,3 +257,46 @@ gate_fit <- function(spec, n_draw = 4L) {
   )
   list(draws = d, mode_status = 0L)
 }
+
+# What the stored NUTS reference records about a fit, from draws in the
+# engine-neutral layout (test-model-v2-reference.R and
+# research/football-v2/make_reference.R share it, so the reference and the
+# check are computed the same way): outcome probabilities and expected goals of
+# every fixture, the hyperparameters, each team's current attack and defence
+# state, and the league home advantage in the first fixture week.
+reference_summary <- function(draws, spec, max_goals = 12L) {
+  pr <- fv2_predict(draws, spec)
+  g <- 0:max_goals
+  probs <- t(vapply(seq_len(nrow(pr$lam_home)), function(i) {
+    ph <- outer(g, pr$lam_home[i, ], stats::dpois)
+    pa <- outer(g, pr$lam_away[i, ], stats::dpois)
+    grid <- tcrossprod(ph, pa) / ncol(ph)
+    grid <- grid / sum(grid)
+    c(home = sum(grid[lower.tri(grid)]), draw = sum(diag(grid)), away = sum(grid[upper.tri(grid)]))
+  }, numeric(3)))
+  state <- function(x) {
+    x <- x[, spec$cur_slot, drop = FALSE]
+    data.frame(team = spec$teams, mean = colMeans(x), sd = apply(x, 2L, stats::sd), row.names = NULL)
+  }
+  h <- draws$hyper
+  q <- function(p) apply(h, 2L, stats::quantile, p, names = FALSE)
+  ha <- draws$c_home - draws$c_away + if (is.null(draws$lvl_ha)) 0 else draws$lvl_ha[, spec$cur_week_nr]
+  list(
+    probs = probs,
+    xg = cbind(home = rowMeans(pr$lam_home), away = rowMeans(pr$lam_away)),
+    hyper = data.frame(name = colnames(h), mean = colMeans(h), q05 = q(0.05), q50 = q(0.5), q95 = q(0.95), row.names = NULL),
+    att = state(draws$att), def = state(draws$def),
+    ha = c(mean = mean(ha), sd = stats::sd(ha))
+  )
+}
+
+# Why a stored reference no longer belongs to the code: the names of what
+# changed since it was made (empty when it still belongs).
+reference_staleness <- function(ref, stan_file) {
+  c(
+    if (!identical(ref$opts, football_v2_options())) "football_v2_options()",
+    if (!identical(ref$priors, fv2_priors())) "fv2_priors()",
+    if (!file.exists(stan_file)) "the Stan reference program (missing)"
+    else if (!identical(unname(tools::md5sum(stan_file)), ref$provenance$stan_md5)) "the Stan reference program"
+  )
+}
