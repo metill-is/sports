@@ -7,8 +7,10 @@
 #   Rscript tools/forecast_archive_history.R <out_dir> [ref]
 #
 # `ref` defaults to origin/main. Each commit is one publication: its commit
-# time is `published_at`, the fit date comes from meta.json, and the
-# kick-offs from today's schedule store. Run from the repo root.
+# time is `published_at`, the fit date comes from meta.json (and stands in for
+# the fit's id: the extract partitions it would be read from are pruned), and
+# the kick-offs come from today's schedule and odds stores. Run from the repo
+# root.
 options(width = 160)
 suppressMessages(devtools::load_all(".", quiet = TRUE))
 args <- commandArgs(trailingOnly = TRUE)
@@ -53,8 +55,17 @@ want$next_games <- blobs[seq_len(n)]
 want$meta <- blobs[n + seq_len(n)]
 
 leagues <- load_leagues()
-schedules <- read_table("schedules")
 stan_model <- function(sport) leagues[[paste0(sport, "_iceland")]]$stan_model
+kickoff_cache <- list()
+kickoffs_for <- function(sport, sex) {
+  k <- paste(sport, sex)
+  if (is.null(kickoff_cache[[k]])) {
+    kickoff_cache[[k]] <<- forecast_archive_kickoffs(
+      leagues[[paste0(sport, "_iceland")]], sex, here::here("data"), from = as.Date("2026-01-01")
+    )
+  }
+  kickoff_cache[[k]]
+}
 
 writes <- list()
 counts <- list()
@@ -72,9 +83,9 @@ for (j in seq_len(nrow(commits))) {
     writeLines(here_rows$next_games[[k]], file.path(pub, here_rows$cell[k], "next_games.json"))
     rows[[length(rows) + 1L]] <- forecast_archive_rows(
       publish_root = pub, sport = parts[1], country = parts[2], sex = sex,
-      cells = parts[3], fit_date = as.Date(meta$fit_date),
+      cells = parts[3], fit_date = as.Date(meta$fit_date), fit_id = meta$fit_date,
       fit_meta = tibble::tibble(),
-      schedules = schedules[schedules$sport == parts[1] & schedules$sex == sex, ],
+      kickoffs = kickoffs_for(parts[1], sex),
       published_at = commits$time[j], code_commit = commits$sha[j],
       stan_model_default = stan_model(parts[1])
     )

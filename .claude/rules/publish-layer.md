@@ -280,32 +280,44 @@ Partitions written before this change carry all 99 and still read correctly
 
 ## Forecast archive (2026-11-22)
 
-`data/archive/forecasts/sport=X/country=Y/sex=Z/fit_date=D/` (table
+`data/archive/forecasts/sport=X/country=Y/sex=Z/fit_date=D/batch=B/` (table
 `forecast_archive`, `R/forecast-archive.R`) holds every pre-match forecast the
 site published: one row per (fit, published file, match) with the numbers
 exactly as `next_games.json` carried them (`p_home_win`, `p_draw`,
-`p_away_win`, `xg_home`, `xg_away`), the division, the schedule's kick-off,
-the fit's `engine` / `stan_model` / `model_version` from `fit_meta`, the file
+`p_away_win`, `xg_home`, `xg_away`), the division, the kick-off, the fit's
+`engine` / `stan_model` / `model_version` from `fit_meta`, the file
 (`published_to`), the first publication time and the commit (`GITHUB_SHA`).
 WHY: `prune_extracts()` deletes old fit partitions on every fit, and the
 extracts were the only record of what a past fit forecast.
 
+- **The fit is `fit_date` + `fit_id`**, the md5 of the partition's
+  `predicted_matches.parquet`. A same-day refit overwrites that date's
+  partition; its forecasts are new publications and are archived beside the
+  first fit's.
 - **Written by `publish_one(archive_forecasts = TRUE)`**, after the cells are
-  validated and swapped in, from the files now in place. A forecast published
-  after its kick-off (or for a match dated before the publication day) is not
-  archived; one with no known kick-off is.
+  validated and swapped in, from the files now in place. Pre-match only:
+  kick-offs come from the schedule (KSÍ), else the newest odds scrape
+  (Lengjan's names mapped through `team_names`); a forecast published at or
+  after kick-off is not archived, nor one with no known kick-off for the
+  publication day itself (it may have been published after the game began).
 - **Only on CI.** `scripts/05_publish.R` archives on GitHub Actions or with
   `--archive` (`publish_archives_forecasts()`); `decide-publish.yml` and
-  `republish.yml` `git add` the tree. A local publish is not a publication,
-  and a local copy of a file CI rewrites is a binary stash/pop conflict.
-- **Append-only.** Republishing the same forecast writes nothing (partitions
-  that gain no row are not touched). A different forecast for a key already
-  stored is refused with a warning and the first version stays: it happens
-  when a same-day refit overwrites that `fit_date`'s extract partition.
-  `write_table()` itself refuses any write to the table that would change or
-  drop a stored row (`append_only_tables()`). Nothing prunes it;
-  `test-forecast-archive.R` pins all of this.
-- Read it with `read_forecast_archive(root, filter = list(...))`.
+  `republish.yml` stage the tree on its own `git add ... || true` line,
+  because the directory does not exist until something has been archived.
+- **Append-only, by construction.** Every write is a new `batch=` partition
+  (publication time and run id), so no file is ever rewritten and two runs
+  that publish at once (a queued decide-publish checks out its trigger's
+  commit; republish runs beside it) never conflict in git. A forecast both
+  archived is stored twice with the same numbers; `read_forecast_archive()`
+  keeps the earliest (`distinct = FALSE` shows all). Republishing a stored
+  forecast writes nothing. A different forecast under a stored key (same fit,
+  file and match: only a change to the publisher's output does that) is
+  refused with a warning. `write_table()` itself refuses a write into an
+  existing partition of the table and any row that contradicts a stored one
+  (`append_only_tables()`).
+- **Never pruned.** `prune_extracts()` skips any partition under an `archive`
+  directory, so even a call on the data root leaves this tree and
+  `beliefs/archive/` alone; `test-forecast-archive.R` pins all of the above.
 
 ## Daily driver
 

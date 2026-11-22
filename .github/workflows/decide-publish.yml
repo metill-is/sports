@@ -81,9 +81,13 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           # data/archive/forecasts/: every pre-match forecast this run published
-          # for the first time (R/forecast-archive.R). Append-only and never
-          # pruned; scripts/05_publish.R writes it only on GitHub Actions.
-          git add data/decisions/candidates/ data/decisions/recommendations/ data/publish/ data/beliefs/round_predictions_history/ data/archive/forecasts/
+          # for the first time (R/forecast-archive.R), as new files only.
+          # Append-only and never pruned; scripts/05_publish.R writes it only on
+          # GitHub Actions. On its own line and tolerant of a missing path: until
+          # a run has archived something the directory does not exist, and a
+          # failed `git add` would stage nothing at all and fail the commit.
+          git add data/decisions/candidates/ data/decisions/recommendations/ data/publish/ data/beliefs/round_predictions_history/
+          git add data/archive/forecasts/ 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "No decisions or publish JSONs changed"
             exit 0

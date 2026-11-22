@@ -15,18 +15,37 @@ table_partitions <- function() {
     recommendations = c("sport", "country", "run_date"),
     ledger = c("sport", "country"),
     fit_diagnostics = c("sport", "country", "sex", "fit_date"),
-    forecast_archive = c("sport", "country", "sex", "fit_date")
+    # `batch` is the write: every write is a new partition, so no file is ever
+    # rewritten (append_only_tables()).
+    forecast_archive = c("sport", "country", "sex", "fit_date", "batch")
   )
 }
 
 #' Tables whose stored rows may never change.
 #'
-#' `write_table()` overwrites whole partitions, so for these it first checks
-#' that every row already stored in a touched partition is present, unchanged,
-#' in the incoming frame. Appending works; changing or dropping a stored row is
-#' refused, whoever the caller is.
+#' Each is written one new partition at a time: its last partition column
+#' names the write. `write_table()` refuses a write into a partition that
+#' already exists, and a row whose `key` is stored under the same parent
+#' partition (every partition column but the last) with different `compare`
+#' columns. Appending works; changing a stored row is refused, whoever the
+#' caller is. Two rows with one key and the same `compare` values may both be
+#' stored (two writers that could not see each other); readers keep one.
+#' @return Named list: table -> `list(key, compare)`.
 #' @noRd
-append_only_tables <- function() "forecast_archive"
+append_only_tables <- function() {
+  list(
+    forecast_archive = list(
+      key = c(
+        "sport", "country", "sex", "fit_date", "fit_id", "published_to",
+        "match_date", "home_team", "away_team"
+      ),
+      compare = c(
+        "division", "p_home_win", "p_draw", "p_away_win", "xg_home", "xg_away",
+        "engine", "stan_model", "model_version"
+      )
+    )
+  )
+}
 
 #' Map each table to its subdirectory under `root` (spec §3.1)
 #' @noRd
@@ -201,8 +220,8 @@ validate_against_schema <- function(df, table) {
 #' 2026-05-15 §H.
 #'
 #' Append-only tables ([append_only_tables()], the forecast archive): the write
-#' is refused, and nothing is written, when any row already stored in a
-#' touched partition is missing from `df` or differs from its stored value.
+#' is refused, and nothing is written, when a touched partition already exists
+#' or a row contradicts a stored row with the same key.
 #' @export
 write_table <- function(df, table, root = here::here("data")) {
   if (nrow(df) == 0) {
@@ -215,7 +234,7 @@ write_table <- function(df, table, root = here::here("data")) {
   partitions <- table_partitions()[[table]]
 
   dest <- do.call(fs::path, c(list(root), table_subdir(table)))
-  if (table %in% append_only_tables()) {
+  if (table %in% names(append_only_tables())) {
     .refuse_changed_rows(df, table, dest, partitions)
   }
   fs::dir_create(dest, recurse = TRUE)
@@ -263,25 +282,43 @@ write_table <- function(df, table, root = here::here("data")) {
   invisible(NULL)
 }
 
-#' Rows stored in one partition of a table, with its partition columns.
+#' Rows stored under one partition of a table, with its partition columns.
 #'
-#' Reads the partition's Parquet files directly (they hold the non-partition
-#' columns) and adds the partition values from `keys`, so the types are the
-#' caller's, not Arrow's hive inference. A partition that does not exist reads
-#' as zero rows.
+#' `keys` gives values for the first partition columns (all of them, or a
+#' leading subset); every partition below is read, its values parsed from the
+#' directory names. The given values keep the caller's types rather than
+#' Arrow's hive inference. Nothing stored reads as `NULL`.
 #' @noRd
 .read_partition_rows <- function(dest, partitions, keys) {
-  segs <- vapply(partitions, function(p) paste0(p, "=", as.character(keys[[p]])), character(1))
-  dir <- do.call(fs::path, c(list(dest), as.list(segs)))
-  files <- if (fs::dir_exists(dir)) sort(list.files(dir, pattern = "[.]parquet$", full.names = TRUE)) else character()
-  if (length(files) == 0L) {
-    return(NULL)
+  known <- intersect(partitions, names(keys))
+  stopifnot(identical(known, partitions[seq_along(known)]))
+  segs <- vapply(known, function(p) paste0(p, "=", as.character(keys[[p]])), character(1))
+  leaves <- do.call(fs::path, c(list(dest), as.list(segs)))
+  for (p in setdiff(partitions, known)) {
+    leaves <- as.character(unlist(lapply(leaves[fs::dir_exists(leaves)], function(d) {
+      sub_dirs <- list.dirs(d, recursive = FALSE, full.names = TRUE)
+      sub_dirs[startsWith(basename(sub_dirs), paste0(p, "="))]
+    })))
   }
-  rows <- dplyr::bind_rows(lapply(files, function(f) tibble::as_tibble(arrow::read_parquet(f))))
-  for (p in partitions) {
-    rows[[p]] <- rep(keys[[p]], nrow(rows))
-  }
-  rows
+  leaves <- leaves[fs::dir_exists(leaves)]
+  rows <- lapply(sort(leaves), function(leaf) {
+    files <- sort(list.files(leaf, pattern = "[.]parquet$", full.names = TRUE))
+    if (length(files) == 0L) {
+      return(NULL)
+    }
+    r <- dplyr::bind_rows(lapply(files, function(f) tibble::as_tibble(arrow::read_parquet(f))))
+    for (p in known) {
+      r[[p]] <- rep(keys[[p]], nrow(r))
+    }
+    rel <- strsplit(sub(paste0("^", dest, "/?"), "", leaf), "/", fixed = TRUE)[[1]]
+    for (p in setdiff(partitions, known)) {
+      seg <- rel[startsWith(rel, paste0(p, "="))]
+      r[[p]] <- rep(sub(paste0("^", p, "="), "", seg), nrow(r))
+    }
+    r
+  })
+  rows <- dplyr::bind_rows(rows)
+  if (nrow(rows) == 0L) NULL else rows
 }
 
 #' One string per row that is equal exactly when the rows are.
@@ -309,26 +346,52 @@ write_table <- function(df, table, root = here::here("data")) {
   do.call(paste, c(unname(canon), sep = "\x1f"))
 }
 
-#' Refuse a write that would change or drop a stored row of an append-only
-#' table. See [append_only_tables()].
+#' Refuse a write that would change a stored row of an append-only table. See
+#' [append_only_tables()].
 #' @noRd
 .refuse_changed_rows <- function(df, table, dest, partitions) {
-  cols <- schemas()[[table]]$names
+  rule <- append_only_tables()[[table]]
+  parent <- partitions[-length(partitions)]
   keys <- dplyr::distinct(df[, partitions, drop = FALSE])
+  where <- function(k, cols) {
+    paste(paste0(cols, "=", vapply(cols, function(p) as.character(k[[p]]), character(1))), collapse = "/")
+  }
   for (i in seq_len(nrow(keys))) {
     k <- keys[i, , drop = FALSE]
+    segs <- vapply(partitions, function(p) paste0(p, "=", as.character(k[[p]])), character(1))
+    if (fs::dir_exists(do.call(fs::path, c(list(dest), as.list(segs))))) {
+      stop(
+        sprintf(
+          "Write to append-only table '%s' refused: partition %s already exists. Stored rows are never rewritten; write new rows to a new partition.",
+          table, where(k, partitions)
+        ),
+        call. = FALSE
+      )
+    }
+  }
+  incoming_key <- .row_signature(df[rule$key])
+  incoming_val <- .row_signature(df[rule$compare])
+  clash <- tapply(incoming_val, incoming_key, function(v) length(unique(v)) > 1L)
+  if (any(clash)) {
+    stop(sprintf("Write to append-only table '%s' refused: %d key(s) appear with different values in the incoming rows.", table, sum(clash)), call. = FALSE)
+  }
+  parents <- dplyr::distinct(df[, parent, drop = FALSE])
+  for (i in seq_len(nrow(parents))) {
+    k <- parents[i, , drop = FALSE]
     stored <- .read_partition_rows(dest, partitions, k)
     if (is.null(stored) || nrow(stored) == 0L) {
       next
     }
-    incoming <- dplyr::semi_join(df, k, by = partitions)
-    lost <- !.row_signature(stored[cols]) %in% .row_signature(incoming[cols])
-    if (any(lost)) {
-      where <- paste(paste0(partitions, "=", vapply(partitions, function(p) as.character(k[[p]]), character(1))), collapse = "/")
+    stored <- fill_optional_columns(stored, table)
+    mine <- dplyr::semi_join(df, k, by = parent)
+    at <- match(.row_signature(mine[rule$key]), .row_signature(stored[rule$key]))
+    hit <- !is.na(at)
+    differ <- .row_signature(mine[hit, rule$compare]) != .row_signature(stored[at[hit], rule$compare])
+    if (any(differ)) {
       stop(
         sprintf(
-          "Write to append-only table '%s' refused: it would change or remove %d stored row(s) in %s. Stored rows are never rewritten; pass every stored row unchanged and add new rows.",
-          table, sum(lost), where
+          "Write to append-only table '%s' refused: %d row(s) contradict stored rows with the same key under %s. Stored rows are never rewritten.",
+          table, sum(differ), where(k, parent)
         ),
         call. = FALSE
       )

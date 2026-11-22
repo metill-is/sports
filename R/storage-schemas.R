@@ -171,21 +171,26 @@ schemas <- function() {
     # Every pre-match forecast the site published, append-only and never
     # pruned (R/forecast-archive.R). One row per (fit, published file, match):
     # the numbers exactly as next_games.json carried them, where they were
-    # published, and what produced them. `write_table()` refuses a write that
-    # would change or drop a stored row (append_only_tables()).
+    # published, and what produced them. Each write is a new `batch=`
+    # partition; `write_table()` refuses a write into an existing partition or
+    # one that contradicts a stored row (append_only_tables()).
     forecast_archive = arrow::schema(
       sport         = arrow::string(),
       country       = arrow::string(),
       sex           = arrow::string(),
       fit_date      = arrow::date32(),
+      # md5 of the fit partition's predicted_matches.parquet: tells a same-day
+      # refit, which overwrites that fit_date's partition, from the first fit.
+      fit_id        = arrow::string(),
       # Path under data/publish/ of the file the forecast was published in.
       published_to  = arrow::string(),
       division      = arrow::string(),
       match_date    = arrow::date32(),
       home_team     = arrow::string(),
       away_team     = arrow::string(),
-      # "HH:MM" from the schedule when the forecast was first published (UTC,
-      # which is Iceland's time all year); NA where the source posts none.
+      # "HH:MM" UTC (Iceland's time all year) from the schedule, else from the
+      # newest odds scrape, when the forecast was first published; NA when
+      # neither had one.
       kickoff_time  = arrow::string(),
       p_home_win    = arrow::float64(),
       p_draw        = arrow::float64(),

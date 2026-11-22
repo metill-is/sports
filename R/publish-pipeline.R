@@ -190,16 +190,20 @@ publish_one <- function(static, betting, key, sex,
   # cannot unpublish it.
   if (isTRUE(archive_forecasts)) {
     published <- cell_names[dir.exists(file.path(sport_stage, cell_names))]
+    fit_dir <- file.path(
+      extracts_root, paste0("sport=", league$sport), paste0("country=", league$country),
+      paste0("sex=", sex), paste0("fit_date=", format(extracted$fit_date, "%Y-%m-%d"))
+    )
+    # The odds' kick-offs carry Lengjan's names, mapped back through the
+    # league's `team_names`, which the static slice handed in here leaves out.
+    full_league <- tryCatch(load_leagues()[[key]], error = function(e) NULL) %||% league
+    published_at <- Sys.time()
     rows <- forecast_archive_rows(
       publish_root = output_root, sport = league$sport, country = "iceland",
       sex = sex, cells = published, fit_date = extracted$fit_date,
-      fit_meta = extracted$fit_meta,
-      schedules = read_table(
-        "schedules",
-        root = root,
-        filter = list(sport = league$sport, country = league$country, sex = sex)
-      ),
-      published_at = Sys.time(), code_commit = .publish_code_commit(),
+      fit_id = forecast_archive_fit_id(fit_dir), fit_meta = extracted$fit_meta,
+      kickoffs = forecast_archive_kickoffs(full_league, sex, root, from = as.Date(published_at, tz = "UTC")),
+      published_at = published_at, code_commit = .publish_code_commit(),
       stan_model_default = league$stan_model %||% NA_character_
     )
     res <- archive_forecasts(rows, root = root)

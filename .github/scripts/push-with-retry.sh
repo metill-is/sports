@@ -48,9 +48,8 @@
 # smaller loss than the old behaviour, which threw away the whole run, and the
 # next run re-accumulates. Weigh it before adding the flag to a new caller.
 # The forecast archive (data/archive/forecasts/, decide-publish and republish)
-# accumulates too: if those two runs append to the same fit_date partition at
-# once, the rows only the sibling added are lost from that commit, and the
-# next publish of the same fit re-archives them with a later published_at.
+# is not exposed to this: every write is a new file (a batch= partition), so
+# two runs never touch the same path and git keeps both.
 
 set -euo pipefail
 

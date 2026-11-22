@@ -331,12 +331,11 @@ and `world-cup`, all of which rewrite `data/publish/` wholesale.
 record for the one round where two runs overlapped —
 `data/beliefs/round_predictions_history/**/round_predictions_history.json`
 is an accumulator (see the roxygen on `publish_football_iceland()`), as is
-the WC `prediction_log.json`, and so is the forecast archive under
-`data/archive/forecasts/` (a `fit_date=` partition gains rows when a fixture
-first enters the publish window). That is a strictly smaller loss than the old
-behaviour, which threw away the whole run, and the next run re-accumulates;
-for the archive, a lost row comes back at the next publish of the same fit,
-with a later `published_at`.
+the WC `prediction_log.json`. That is a strictly smaller loss than the old
+behaviour, which threw away the whole run, and the next run re-accumulates.
+An accumulator that must lose nothing writes new files only, as the forecast
+archive (`data/archive/forecasts/`) does: two runs then never touch the same
+path, and no conflict arises for `-X theirs` to resolve.
 
 **Enforcement:** `tests/testthat/test-workflow-push-retry.R` fails the build
 if any workflow that creates a commit does not route its push through the

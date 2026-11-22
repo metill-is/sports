@@ -51,6 +51,12 @@ prune_extracts <- function(root = here::here("data", "beliefs", "extracts"),
 
   parts <- list.dirs(root, recursive = TRUE, full.names = TRUE)
   parts <- parts[grepl("/fit_date=[0-9]{4}-[0-9]{2}-[0-9]{2}$", parts)]
+  # Never an archive. The forecast archive (data/archive/forecasts/) and the
+  # per-draw archive (data/beliefs/archive/) are partitioned
+  # sport=/country=/sex=/fit_date= as the extracts are, so a call on any root
+  # above them would otherwise list their partitions for deletion.
+  rel <- substring(parts, nchar(root) + 2L)
+  parts <- parts[!grepl("(^|/)archive(/|$)", rel)]
   if (length(parts) == 0L) {
     return(empty)
   }

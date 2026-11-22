@@ -12,38 +12,41 @@ NULL
 # been validated and swapped into data/publish/, from the next_games.json it
 # just wrote, so a row is the forecast exactly as published.
 #
-# Append-only, three ways:
-#   - a forecast already stored for the same fit, file and match is never
-#     rewritten: republishing it is a no-op, and a DIFFERENT forecast under the
-#     same key (a same-day refit overwrites its fit_date's extract partition)
-#     is refused with a warning, so the first published version stays;
-#   - write_table() itself refuses any write to the table that would change or
-#     drop a stored row (append_only_tables()), whoever calls it;
+# One row per published forecast: (fit, published file, match). The fit is
+# its date AND `fit_id`, a fingerprint of the extract partition's
+# predicted_matches.parquet, because a same-day refit overwrites the partition
+# of that date: its forecasts are new publications and are archived beside the
+# first fit's, told apart by fit_id.
+#
+# Append-only, by construction:
+#   - every write is a NEW partition, `batch=` below `fit_date=`; no file is
+#     ever rewritten, so two CI runs that publish at once (decide-publish's
+#     queued run checks out an older commit, republish runs beside it) write
+#     different files and git keeps both. A row both of them archived appears
+#     twice with the same forecast; read_forecast_archive() keeps the earliest;
+#   - a forecast already stored for the same key is not written again, and a
+#     DIFFERENT forecast under the same key (same fit, file and match: only a
+#     change to the publisher's own output does that) is refused with a
+#     warning, so the first published version stays;
+#   - write_table() refuses any write into an existing partition of the table,
+#     and any row that contradicts a stored one under the same key
+#     (append_only_tables()), whoever calls it;
 #   - nothing prunes it (tests/testthat/test-forecast-archive.R pins that).
+#
+# Pre-match: a forecast is archived only when it was published before
+# kick-off. Kick-offs come from the schedule (KSI posts them) and else from
+# the newest odds scrape (Lengjan lists them for the leagues it prices). With
+# no known kick-off a forecast for a later day is archived and one for the
+# publication day is not: it may have been published after the game began.
 #
 # Only CI archives (scripts/05_publish.R, publish_archives_forecasts()): the
 # site serves what CI commits, so a local publish is not a publication.
-
-# One row per (fit, published file, match).
-.FORECAST_ARCHIVE_KEY <- c(
-  "sport", "country", "sex", "fit_date", "published_to",
-  "match_date", "home_team", "away_team"
-)
-
-# What a republish of the same key must reproduce exactly. The first-seen
-# metadata (kickoff_time, published_at, code_commit) is not compared: it
-# describes the first publication, not the forecast.
-.FORECAST_ARCHIVE_FORECAST <- c(
-  "division", "p_home_win", "p_draw", "p_away_win", "xg_home", "xg_away",
-  "engine", "stan_model", "model_version"
-)
 
 #' Does this publish run archive its forecasts?
 #'
 #' On GitHub Actions, or when asked with `--archive`. A local publish is not a
 #' publication (the site serves what CI commits to main), and a local write
-#' would put a binary file CI also rewrites into the local tree, which the
-#' stash/pull/pop sync can only resolve by keeping one side's rows.
+#' would put files CI also writes into the local tree.
 #'
 #' @param flag Was `--archive` given?
 #' @param github_actions Value of the `GITHUB_ACTIONS` environment variable.
@@ -54,29 +57,93 @@ publish_archives_forecasts <- function(flag = FALSE,
   isTRUE(flag) || identical(github_actions, "true")
 }
 
+#' A fingerprint of the fit a publish read: the md5 of its extract
+#' partition's `predicted_matches.parquet`, the file next_games.json is made
+#' from. NA when the file is missing.
+#' @noRd
+forecast_archive_fit_id <- function(fit_dir) {
+  f <- file.path(fit_dir, "predicted_matches.parquet")
+  if (!file.exists(f)) {
+    return(NA_character_)
+  }
+  unname(tools::md5sum(f))
+}
+
+#' Kick-off instants (UTC) for a cell family's fixtures.
+#'
+#' The schedule's "HH:MM" first (KSI posts it; Iceland keeps UTC all year),
+#' else the newest odds scrape's `kickoff_at`, with Lengjan's names mapped to
+#' the federation's through the league's `team_names`. A read that fails gives
+#' no kick-offs, not an error: the archive then keeps only forecasts for later
+#' days.
+#'
+#' @param league Full league config (the odds names need `lengjan`).
+#' @param from Earliest match date of interest.
+#' @return Tibble match_date, home_team, away_team, kickoff_at.
+#' @noRd
+forecast_archive_kickoffs <- function(league, sex, root, from) {
+  none <- tibble::tibble(
+    match_date = as.Date(character()), home_team = character(),
+    away_team = character(), kickoff_at = as.POSIXct(character(), tz = "UTC")
+  )
+  sched <- tryCatch(
+    read_table("schedules", root = root, filter = list(sport = league$sport, country = league$country, sex = sex)),
+    error = function(e) NULL
+  )
+  from_schedule <- if (is.null(sched) || nrow(sched) == 0L || !"kickoff_time" %in% names(sched)) {
+    none
+  } else {
+    sched <- sched[!is.na(sched$kickoff_time) & as.Date(sched$match_date) >= from, , drop = FALSE]
+    tibble::tibble(
+      match_date = as.Date(sched$match_date), home_team = sched$home_team, away_team = sched$away_team,
+      kickoff_at = as.POSIXct(paste(format(as.Date(sched$match_date)), sched$kickoff_time), format = "%Y-%m-%d %H:%M", tz = "UTC")
+    )
+  }
+  odds <- tryCatch(
+    read_table("odds", root = root, filter = list(sport = league$sport, country = league$country)),
+    error = function(e) NULL
+  )
+  from_odds <- none
+  if (!is.null(odds) && nrow(odds) > 0L && all(c("sex", "kickoff_at") %in% names(odds))) {
+    odds <- odds[!is.na(odds$sex) & odds$sex == sex & !is.na(odds$kickoff_at) & as.Date(odds$match_date) >= from, , drop = FALSE]
+    if (nrow(odds) > 0L && !is.null(league$lengjan$team_names[[sex]])) {
+      odds <- odds[order(odds$scraped_at, decreasing = TRUE), , drop = FALSE]
+      odds <- odds[!duplicated(odds[c("match_date", "home_team", "away_team")]), c("match_date", "home_team", "away_team", "kickoff_at")]
+      odds <- suppressMessages(normalise_lengjan_team_names(odds, league, sex))
+      from_odds <- tibble::tibble(
+        match_date = as.Date(odds$match_date), home_team = odds$home_team, away_team = odds$away_team,
+        kickoff_at = as.POSIXct(odds$kickoff_at, tz = "UTC")
+      )
+    }
+  }
+  out <- dplyr::bind_rows(from_schedule, from_odds)
+  out <- out[!is.na(out$kickoff_at), , drop = FALSE]
+  out[!duplicated(out[c("match_date", "home_team", "away_team")]), , drop = FALSE]
+}
+
 #' Archive rows for the forecasts in a set of published cells.
 #'
 #' Reads each cell's `next_games.json` under `publish_root` and keeps the
-#' forecasts that were published before kick-off: a row whose schedule
-#' kick-off (UTC, Iceland's time all year) is at or before `published_at` is
-#' dropped, as is one for a match dated before the publication date. A row
-#' with no known kick-off is kept.
+#' forecasts that were published before kick-off: one whose kick-off is at or
+#' before `published_at` is dropped, as is one for a match dated before the
+#' publication day, and one with no known kick-off on the publication day
+#' itself.
 #'
 #' @param publish_root The publish tree (`data/publish`).
 #' @param sport,country,sex The cell family.
 #' @param cells Cell folder names under `<sport>/<country>/`.
 #' @param fit_date `Date` of the fit the cells were published from.
+#' @param fit_id `forecast_archive_fit_id()` of that fit's partition.
 #' @param fit_meta The fit partition's `fit_meta` (engine, stan_model,
 #'   model_version); 0 rows for a partition written before it existed.
-#' @param stan_model_default Stan program recorded when `fit_meta` has no row.
-#' @param schedules Schedule rows with `match_date`, `home_team`, `away_team`,
-#'   `kickoff_time`.
+#' @param kickoffs `forecast_archive_kickoffs()` output.
 #' @param published_at Publication time.
 #' @param code_commit Commit that published, or `NA`.
+#' @param stan_model_default Stan program recorded when `fit_meta` has no row.
 #' @return Tibble in the `forecast_archive` schema.
 #' @noRd
 forecast_archive_rows <- function(publish_root, sport, country, sex, cells,
-                                  fit_date, fit_meta, schedules,
+                                  fit_date, fit_id, fit_meta, kickoffs,
                                   published_at, code_commit = NA_character_,
                                   stan_model_default = NA_character_) {
   published_at <- .whole_seconds(published_at)
@@ -95,7 +162,7 @@ forecast_archive_rows <- function(publish_root, sport, country, sex, cells,
     num <- function(x) if (is.null(x)) rep(NA_real_, nrow(m)) else as.numeric(x)
     tibble::tibble(
       sport = sport, country = country, sex = sex,
-      fit_date = as.Date(fit_date), published_to = rel,
+      fit_date = as.Date(fit_date), fit_id = as.character(fit_id), published_to = rel,
       division = as.character(m$division),
       match_date = as.Date(m$date),
       home_team = as.character(m$home), away_team = as.character(m$away),
@@ -108,31 +175,26 @@ forecast_archive_rows <- function(publish_root, sport, country, sex, cells,
   if (nrow(rows) == 0L) {
     return(.forecast_archive_empty())
   }
-
-  kickoffs <- if (is.null(schedules) || nrow(schedules) == 0L) {
-    tibble::tibble(
+  if (is.null(kickoffs)) {
+    kickoffs <- tibble::tibble(
       match_date = as.Date(character()), home_team = character(),
-      away_team = character(), kickoff_time = character()
+      away_team = character(), kickoff_at = as.POSIXct(character(), tz = "UTC")
     )
-  } else {
-    schedules |>
-      dplyr::transmute(
-        match_date = as.Date(.data$match_date),
-        home_team = .data$home_team, away_team = .data$away_team,
-        kickoff_time = as.character(.data$kickoff_time)
-      ) |>
-      dplyr::distinct(.data$match_date, .data$home_team, .data$away_team, .keep_all = TRUE)
   }
-  rows <- dplyr::left_join(rows, kickoffs, by = c("match_date", "home_team", "away_team"))
-
-  kickoff_at <- as.POSIXct(
-    paste(format(rows$match_date, "%Y-%m-%d"), rows$kickoff_time),
-    format = "%Y-%m-%d %H:%M", tz = "UTC"
+  rows <- dplyr::left_join(
+    rows,
+    kickoffs[!duplicated(kickoffs[c("match_date", "home_team", "away_team")]), c("match_date", "home_team", "away_team", "kickoff_at")],
+    by = c("match_date", "home_team", "away_team")
   )
-  pre_match <- rows$match_date >= as.Date(published_at, tz = "UTC") &
-    (is.na(kickoff_at) | kickoff_at > published_at)
+  publication_day <- as.Date(published_at, tz = "UTC")
+  pre_match <- ifelse(
+    is.na(rows$kickoff_at),
+    rows$match_date > publication_day,
+    rows$match_date >= publication_day & rows$kickoff_at > published_at
+  )
   rows <- rows[pre_match, , drop = FALSE]
 
+  rows$kickoff_time <- ifelse(is.na(rows$kickoff_at), NA_character_, format(rows$kickoff_at, "%H:%M", tz = "UTC"))
   rows$engine <- meta$engine
   rows$stan_model <- meta$stan_model
   rows$model_version <- meta$model_version
@@ -143,19 +205,21 @@ forecast_archive_rows <- function(publish_root, sport, country, sex, cells,
 
 #' Add published forecasts to the archive.
 #'
-#' New keys (fit, published file, match) are appended. A key already stored
-#' with the same forecast is left alone -- the common case, since every
+#' Forecasts whose key (fit, fit_id, published file, match) is not stored yet
+#' are written, as one new `batch=` partition per fit date. A key already
+#' stored with the same forecast is left alone -- the common case, since every
 #' decide-publish run republishes the newest fit. A key already stored with a
 #' different forecast is refused: it is not written, and a warning names it.
-#' Stored rows are never rewritten; partitions that gain no row are not
-#' touched at all.
 #'
 #' @param rows Tibble in the `forecast_archive` schema.
 #' @param root Storage root.
+#' @param batch Name of the new partition; by default the publication time and
+#'   the CI run (or process) id.
 #' @return Invisibly, `list(appended = <rows written>, unchanged = <count>,
 #'   refused = <rows refused>)`.
 #' @export
-archive_forecasts <- function(rows, root = here::here("data")) {
+archive_forecasts <- function(rows, root = here::here("data"), batch = NULL) {
+  spec <- append_only_tables()$forecast_archive
   if (nrow(rows) == 0L) {
     return(invisible(list(appended = rows, unchanged = 0L, refused = rows)))
   }
@@ -163,24 +227,28 @@ archive_forecasts <- function(rows, root = here::here("data")) {
   rows$published_at <- .whole_seconds(rows$published_at)
   rows$fit_date <- as.Date(rows$fit_date)
   rows$match_date <- as.Date(rows$match_date)
-  rows <- rows[!duplicated(.row_signature(rows[.FORECAST_ARCHIVE_KEY])), , drop = FALSE]
+  rows <- rows[!duplicated(.row_signature(rows[spec$key])), , drop = FALSE]
 
   partitions <- table_partitions()[["forecast_archive"]]
+  parent <- setdiff(partitions, "batch")
   dest <- do.call(fs::path, c(list(root), table_subdir("forecast_archive")))
-  keys <- dplyr::distinct(rows[, partitions, drop = FALSE])
+  keys <- dplyr::distinct(rows[, parent, drop = FALSE])
   stored <- dplyr::bind_rows(lapply(seq_len(nrow(keys)), function(i) {
     .read_partition_rows(dest, partitions, keys[i, , drop = FALSE])
   }))
+  if (nrow(stored) > 0L) {
+    stored <- fill_optional_columns(stored, "forecast_archive")
+  }
 
   if (nrow(stored) == 0L) {
     is_new <- rep(TRUE, nrow(rows))
     same <- logical()
   } else {
-    stored_key <- .row_signature(stored[.FORECAST_ARCHIVE_KEY])
-    at <- match(.row_signature(rows[.FORECAST_ARCHIVE_KEY]), stored_key)
+    stored_key <- .row_signature(stored[spec$key])
+    at <- match(.row_signature(rows[spec$key]), stored_key)
     is_new <- is.na(at)
-    same <- .row_signature(rows[!is_new, .FORECAST_ARCHIVE_FORECAST]) ==
-      .row_signature(stored[at[!is_new], .FORECAST_ARCHIVE_FORECAST])
+    same <- .row_signature(rows[!is_new, spec$compare]) ==
+      .row_signature(stored[at[!is_new], spec$compare])
   }
   appended <- rows[is_new, , drop = FALSE]
   refused <- rows[!is_new, , drop = FALSE][!same, , drop = FALSE]
@@ -192,14 +260,13 @@ archive_forecasts <- function(rows, root = here::here("data")) {
     )
     cli::cli_warn(c(
       "Forecast archive: {nrow(refused)} forecast{?s} refused, kept as first published: {.val {what}}.",
-      "i" = "A forecast differs from the one already archived for the same fit, file and match, usually because a same-day refit overwrote that fit date's extract partition. Archived rows are never rewritten."
+      "i" = "The same fit (same extract partition) now publishes different numbers for these matches, so the publisher's output changed. Archived rows are never rewritten."
     ))
   }
 
   if (nrow(appended) > 0L) {
-    touched <- dplyr::distinct(appended[, partitions, drop = FALSE])
-    keep <- if (nrow(stored) == 0L) stored else dplyr::semi_join(stored, touched, by = partitions)
-    write_table(dplyr::bind_rows(keep, appended), "forecast_archive", root = root)
+    appended$batch <- batch %||% .forecast_archive_batch(dest, appended, parent)
+    write_table(appended, "forecast_archive", root = root)
   }
 
   invisible(list(appended = appended, unchanged = sum(same), refused = refused))
@@ -209,23 +276,36 @@ archive_forecasts <- function(rows, root = here::here("data")) {
 #'
 #' @param root Storage root.
 #' @param filter Optional named list of column = value filters.
+#' @param distinct With `TRUE` (default), one row per key, the earliest
+#'   publication: two CI runs that could not see each other's rows may both
+#'   have archived the same forecast. `FALSE` returns every stored row with its
+#'   `batch`.
 #' @return Tibble in the `forecast_archive` schema; 0 rows when nothing has
 #'   been archived.
 #' @export
-read_forecast_archive <- function(root = here::here("data"), filter = list()) {
+read_forecast_archive <- function(root = here::here("data"), filter = list(), distinct = TRUE) {
   out <- read_table("forecast_archive", root = root, filter = filter)
   if (nrow(out) == 0L) {
     return(.forecast_archive_empty())
   }
   out$fit_date <- as.Date(as.character(out$fit_date))
   out$published_at <- as.POSIXct(out$published_at, tz = "UTC")
-  out[schemas()$forecast_archive$names]
+  out$batch <- as.character(out$batch)
+  out <- out[order(out$published_at, out$batch), , drop = FALSE]
+  if (isTRUE(distinct)) {
+    key <- append_only_tables()$forecast_archive$key
+    out <- out[!duplicated(.row_signature(out[key])), schemas()$forecast_archive$names, drop = FALSE]
+  } else {
+    out <- out[c(schemas()$forecast_archive$names, "batch")]
+  }
+  rownames(out) <- NULL
+  tibble::as_tibble(out)
 }
 
 .forecast_archive_empty <- function() {
   tibble::tibble(
     sport = character(), country = character(), sex = character(),
-    fit_date = as.Date(character()), published_to = character(),
+    fit_date = as.Date(character()), fit_id = character(), published_to = character(),
     division = character(), match_date = as.Date(character()),
     home_team = character(), away_team = character(),
     kickoff_time = character(), p_home_win = numeric(), p_draw = numeric(),
@@ -235,6 +315,28 @@ read_forecast_archive <- function(root = here::here("data"), filter = list()) {
     published_at = as.POSIXct(character(), tz = "UTC"),
     code_commit = character()
   )
+}
+
+# A partition name no other write uses: the publication time and the CI run
+# (or process) id, with a counter if this process writes twice in a second.
+.forecast_archive_batch <- function(dest, rows, parent) {
+  run <- Sys.getenv("GITHUB_RUN_ID")
+  if (!nzchar(run)) run <- paste0("p", Sys.getpid())
+  base <- paste0(format(min(rows$published_at), "%Y%m%dT%H%M%SZ", tz = "UTC"), "-", run)
+  taken <- function(b) {
+    keys <- dplyr::distinct(rows[, parent, drop = FALSE])
+    any(vapply(seq_len(nrow(keys)), function(i) {
+      segs <- vapply(parent, function(p) paste0(p, "=", as.character(keys[[p]][[i]])), character(1))
+      fs::dir_exists(do.call(fs::path, c(list(dest), as.list(segs), paste0("batch=", b))))
+    }, logical(1)))
+  }
+  b <- base
+  k <- 1L
+  while (taken(b)) {
+    k <- k + 1L
+    b <- paste0(base, "-", k)
+  }
+  b
 }
 
 # Engine, Stan program and model version of the fit, from its fit_meta row.

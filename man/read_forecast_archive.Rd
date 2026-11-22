@@ -4,12 +4,21 @@
 \alias{read_forecast_archive}
 \title{Read the forecast archive.}
 \usage{
-read_forecast_archive(root = here::here("data"), filter = list())
+read_forecast_archive(
+  root = here::here("data"),
+  filter = list(),
+  distinct = TRUE
+)
 }
 \arguments{
 \item{root}{Storage root.}
 
 \item{filter}{Optional named list of column = value filters.}
+
+\item{distinct}{With `TRUE` (default), one row per key, the earliest
+publication: two CI runs that could not see each other's rows may both
+have archived the same forecast. `FALSE` returns every stored row with its
+`batch`.}
 }
 \value{
 Tibble in the `forecast_archive` schema; 0 rows when nothing has

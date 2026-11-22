@@ -4,22 +4,24 @@
 \alias{archive_forecasts}
 \title{Add published forecasts to the archive.}
 \usage{
-archive_forecasts(rows, root = here::here("data"))
+archive_forecasts(rows, root = here::here("data"), batch = NULL)
 }
 \arguments{
 \item{rows}{Tibble in the `forecast_archive` schema.}
 
 \item{root}{Storage root.}
+
+\item{batch}{Name of the new partition; by default the publication time and
+the CI run (or process) id.}
 }
 \value{
 Invisibly, `list(appended = <rows written>, unchanged = <count>,
   refused = <rows refused>)`.
 }
 \description{
-New keys (fit, published file, match) are appended. A key already stored
-with the same forecast is left alone -- the common case, since every
+Forecasts whose key (fit, fit_id, published file, match) is not stored yet
+are written, as one new `batch=` partition per fit date. A key already
+stored with the same forecast is left alone -- the common case, since every
 decide-publish run republishes the newest fit. A key already stored with a
 different forecast is refused: it is not written, and a warning names it.
-Stored rows are never rewritten; partitions that gain no row are not
-touched at all.
 }

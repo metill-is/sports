@@ -7,11 +7,11 @@
 # people before a match, so a published model can never be scored against what
 # it actually published -- the v2.0 re-examination due July 2027 needs exactly
 # that. The archive is append-only: a forecast, once stored, is never changed
-# or removed, and nothing prunes it.
+# or removed, every write is a new file, and nothing prunes it.
 
 .fa_row <- function(...,
                     sport = "football", country = "iceland", sex = "male",
-                    fit_date = as.Date("2100-01-15"),
+                    fit_date = as.Date("2100-01-15"), fit_id = "fit-a",
                     published_to = "football/iceland/karla-bd/next_games.json",
                     division = "BD", match_date = as.Date("2100-01-16"),
                     home_team = "Valur", away_team = "KR",
@@ -23,7 +23,7 @@
                     published_at = as.POSIXct("2100-01-15 08:00:00", tz = "UTC"),
                     code_commit = "abc123") {
   tibble::tibble(
-    sport = sport, country = country, sex = sex, fit_date = fit_date,
+    sport = sport, country = country, sex = sex, fit_date = fit_date, fit_id = fit_id,
     published_to = published_to, division = division, match_date = match_date,
     home_team = home_team, away_team = away_team, kickoff_time = kickoff_time,
     p_home_win = p_home_win, p_draw = p_draw, p_away_win = p_away_win,
@@ -44,13 +44,14 @@
   stats::setNames(unname(tools::md5sum(f)), sub(paste0("^", root, "/"), "", f))
 }
 
-test_that("the forecast archive is a registered store under data/archive/forecasts, partitioned by fit date", {
+test_that("the forecast archive is a registered store under data/archive/forecasts, one partition per write", {
   expect_true("forecast_archive" %in% names(schemas()))
   expect_identical(table_subdir("forecast_archive"), c("archive", "forecasts"))
   expect_identical(
     table_partitions()[["forecast_archive"]],
-    c("sport", "country", "sex", "fit_date")
+    c("sport", "country", "sex", "fit_date", "batch")
   )
+  expect_true("forecast_archive" %in% names(append_only_tables()))
   expect_setequal(
     schemas()$forecast_archive$names,
     names(.fa_row())
@@ -98,13 +99,13 @@ test_that("republishing the same forecasts writes nothing", {
   expect_equal(unique(stored$code_commit), "abc123")
 })
 
-test_that("a different forecast for a match already stored from that fit is refused and the stored row is kept", {
+test_that("a different forecast from the same fit, file and match is refused and the stored row is kept", {
   root <- withr::local_tempdir()
   suppressMessages(archive_forecasts(.fa_row(), root = root))
   before <- .fa_md5(root)
 
-  # A same-day refit overwrites the extract partition of that fit_date, so
-  # the next publish carries different numbers under the same fit date.
+  # Same fit (same extract partition), different published numbers: only a
+  # change to the publisher's own output does that.
   changed <- .fa_row(p_home_win = 0.55, p_away_win = 0.2)
   expect_warning(
     res <- suppressMessages(archive_forecasts(changed, root = root)),
@@ -133,7 +134,11 @@ test_that("new matches from the same fit are appended and stored rows are left a
       published_at = as.POSIXct("2100-01-16 08:00:00", tz = "UTC")
     )
   )
+  files_before <- .fa_md5(root)
   res <- suppressWarnings(suppressMessages(archive_forecasts(later, root = root)))
+  # The first write's file is untouched; the new row is in a new one.
+  expect_identical(.fa_md5(root)[names(files_before)], files_before)
+  expect_length(.fa_md5(root), length(files_before) + 1L)
   expect_equal(nrow(res$appended), 1L)
   expect_equal(res$appended$home_team, "Stjarnan")
   expect_equal(nrow(res$refused), 1L)
@@ -148,65 +153,141 @@ test_that("new matches from the same fit are appended and stored rows are left a
   )
 })
 
-test_that("write_table refuses a forecast-archive write that would drop or change a stored row", {
+test_that("a same-day refit is archived beside the first fit, told apart by fit_id", {
   root <- withr::local_tempdir()
-  rows <- dplyr::bind_rows(.fa_row(), .fa_row(home_team = "FH", away_team = "Fram"))
-  suppressMessages(archive_forecasts(rows, root = root))
-  before <- .fa_md5(root)
-
-  changed <- rows
-  changed$p_home_win[1] <- 0.9
-  expect_error(write_table(changed, "forecast_archive", root = root), "refused")
-  expect_error(write_table(rows[2, ], "forecast_archive", root = root), "refused")
-  expect_identical(.fa_md5(root), before)
-
-  # Appending through the store keeps working: every stored row, unchanged,
-  # plus a new one.
-  more <- dplyr::bind_rows(rows, .fa_row(home_team = "ÍA", away_team = "Vestri"))
-  expect_no_error(write_table(more, "forecast_archive", root = root))
-  expect_equal(nrow(read_forecast_archive(root)), 3L)
+  suppressMessages(archive_forecasts(.fa_row(), root = root))
+  # A second fit on the same day overwrites the fit_date's extract partition;
+  # what the site shows from then on is another fit's forecast.
+  refit <- .fa_row(fit_id = "fit-b", p_home_win = 0.55, p_away_win = 0.2,
+    published_at = as.POSIXct("2100-01-15 18:00:00", tz = "UTC"))
+  res <- suppressMessages(archive_forecasts(refit, root = root))
+  expect_equal(nrow(res$appended), 1L)
+  expect_equal(nrow(res$refused), 0L)
+  stored <- read_forecast_archive(root)
+  expect_equal(nrow(stored), 2L)
+  expect_setequal(stored$fit_id, c("fit-a", "fit-b"))
+  expect_equal(stored$p_home_win[stored$fit_id == "fit-a"], 0.5)
 })
 
-test_that("a forecast published after kick-off is not archived; one with no known kick-off is", {
+test_that("write_table refuses a forecast-archive write into a stored partition or against a stored row", {
+  root <- withr::local_tempdir()
+  rows <- dplyr::bind_rows(.fa_row(), .fa_row(home_team = "FH", away_team = "Fram"))
+  suppressMessages(archive_forecasts(rows, root = root, batch = "b1"))
+  before <- .fa_md5(root)
+
+  # Into the stored partition, even with the same rows.
+  expect_error(write_table(transform(rows, batch = "b1"), "forecast_archive", root = root), "refused")
+  # A new partition that contradicts a stored row under the same key.
+  changed <- rows[1, ]
+  changed$p_home_win <- 0.9
+  expect_error(write_table(transform(changed, batch = "b2"), "forecast_archive", root = root), "refused")
+  # Two values for one key in one write.
+  expect_error(write_table(transform(dplyr::bind_rows(rows[1, ], changed), batch = "b3"), "forecast_archive", root = root), "refused")
+  expect_identical(.fa_md5(root), before)
+
+  # New keys in a new partition are fine; so is a stored forecast repeated
+  # unchanged by a writer that could not see it (readers keep the earliest).
+  more <- .fa_row(home_team = "\u00cdA", away_team = "Vestri")
+  again <- rows[1, ]
+  again$published_at <- again$published_at + 60
+  expect_no_error(write_table(transform(dplyr::bind_rows(more, again), batch = "b4"), "forecast_archive", root = root))
+  expect_equal(nrow(read_forecast_archive(root, distinct = FALSE)), 4L)
+  stored <- read_forecast_archive(root)
+  expect_equal(nrow(stored), 3L)
+  expect_equal(stored$published_at[stored$home_team == "Valur"], rows$published_at[1])
+})
+
+test_that("two runs that could not see each other's rows both keep theirs", {
+  # decide-publish's queued run checks out the commit of its trigger, without
+  # the rows the run before it pushed; republish runs beside decide-publish.
+  # Each writes new files only, so git keeps both; nothing is lost and the
+  # earliest publication of a shared forecast is the one read back.
+  root_a <- withr::local_tempdir()
+  root_b <- withr::local_tempdir()
+  shared <- .fa_row()
+  only_a <- .fa_row(home_team = "FH", away_team = "Fram")
+  only_b <- .fa_row(home_team = "KA", away_team = "Fylkir")
+  suppressMessages(archive_forecasts(dplyr::bind_rows(shared, only_a), root = root_a))
+  late <- function(r) transform(r, published_at = r$published_at + 600)
+  suppressMessages(archive_forecasts(dplyr::bind_rows(late(shared), late(only_b)), root = root_b))
+  # What git does with two commits that add different files: the union.
+  merged <- withr::local_tempdir()
+  for (r in c(root_a, root_b)) file.copy(file.path(r, "archive"), merged, recursive = TRUE)
+  expect_length(.fa_partition_files(merged), 2L)
+  stored <- read_forecast_archive(merged)
+  expect_setequal(stored$home_team, c("Valur", "FH", "KA"))
+  expect_equal(stored$published_at[stored$home_team == "Valur"], shared$published_at)
+})
+
+test_that("only forecasts published before kick-off are archived", {
   publish_root <- withr::local_tempdir()
-  cell <- file.path(publish_root, "football", "iceland", "karla-bd")
+  cell <- file.path(publish_root, "handball", "iceland", "karla-od")
   dir.create(cell, recursive = TRUE)
   match <- function(home, away, date, p) {
     list(
-      date = date, venue = NULL, division = "BD", division_code = "BD",
-      home = home, away = away, mean_home_goals = 1.5, mean_away_goals = 1.2,
-      mean_goal_diff = 0.3, p_home_win = p, p_draw = 0.25, p_away_win = 0.75 - p,
+      date = date, venue = NULL, division = "OD", division_code = "OD",
+      home = home, away = away, mean_home_goals = 30.5, mean_away_goals = 28.25,
+      mean_goal_diff = 2.25, p_home_win = p, p_draw = 0.05, p_away_win = 0.95 - p,
       goal_diff_distribution = list()
     )
   }
   jsonlite::write_json(
-    list(generated_at = "2100-01-16T20:00:00+0000", matches = list(
-      match("Valur", "KR", "2100-01-16", 0.5),
-      match("FH", "Fram", "2100-01-16", 0.4),
-      match("ÍA", "KA", "2100-01-16", 0.45)
+    list(generated_at = "2100-01-16T19:00:00+0000", matches = list(
+      match("Valur", "FH", "2100-01-16", 0.5), # kick-off 18:00: already playing
+      match("KA", "Fram", "2100-01-16", 0.4), # kick-off 19:30: still to come
+      match("Haukar", "HK", "2100-01-16", 0.45), # kick-off unknown, today
+      match("Selfoss", "ÍR", "2100-01-17", 0.6) # kick-off unknown, tomorrow
     )),
     file.path(cell, "next_games.json"),
     auto_unbox = TRUE, null = "null", digits = 5
   )
-  schedules <- tibble::tibble(
+  kickoffs <- tibble::tibble(
     match_date = as.Date("2100-01-16"),
-    home_team = c("Valur", "FH", "ÍA"), away_team = c("KR", "Fram", "KA"),
-    kickoff_time = c("19:15", "21:00", NA)
+    home_team = c("Valur", "KA"), away_team = c("FH", "Fram"),
+    kickoff_at = as.POSIXct(c("2100-01-16 18:00:00", "2100-01-16 19:30:00"), tz = "UTC")
   )
   rows <- forecast_archive_rows(
-    publish_root = publish_root, sport = "football", country = "iceland",
-    sex = "male", cells = "karla-bd", fit_date = as.Date("2100-01-16"),
+    publish_root = publish_root, sport = "handball", country = "iceland",
+    sex = "male", cells = "karla-od", fit_date = as.Date("2100-01-16"), fit_id = "fit-a",
     fit_meta = tibble::tibble(engine = "stan", stan_model = "m.stan", model_version = NA_character_),
-    schedules = schedules,
-    published_at = as.POSIXct("2100-01-16 20:00:00", tz = "UTC"),
-    code_commit = NA_character_
+    kickoffs = kickoffs,
+    published_at = as.POSIXct("2100-01-16 19:00:00", tz = "UTC")
   )
-  # Iceland keeps UTC all year, so a schedule's "HH:MM" is a UTC instant.
-  expect_setequal(rows$home_team, c("FH", "ÍA"))
-  expect_equal(rows$kickoff_time[rows$home_team == "ÍA"], NA_character_)
-  expect_equal(rows$p_home_win[rows$home_team == "FH"], 0.4)
-  expect_equal(rows$xg_home, c(1.5, 1.5))
-  expect_equal(unique(rows$published_to), "football/iceland/karla-bd/next_games.json")
+  # A same-day forecast with no known kick-off may have been published after
+  # the game began, so it is not archived; tomorrow's is.
+  expect_setequal(rows$home_team, c("KA", "Selfoss"))
+  expect_equal(rows$kickoff_time[rows$home_team == "KA"], "19:30")
+  expect_equal(rows$kickoff_time[rows$home_team == "Selfoss"], NA_character_)
+  expect_equal(rows$p_home_win[rows$home_team == "KA"], 0.4)
+  expect_equal(rows$xg_home, c(30.5, 30.5))
+  expect_equal(unique(rows$fit_id), "fit-a")
+  expect_equal(unique(rows$published_to), "handball/iceland/karla-od/next_games.json")
+})
+
+test_that("kick-offs come from the schedule, else from the newest odds scrape under federation names", {
+  root <- withr::local_tempdir()
+  write_table(tibble::tibble(
+    sport = "handball", country = "iceland", sex = "male", season = 2100L,
+    match_date = as.Date("2100-01-16"), home_team = c("Valur", "KA"), away_team = c("FH", "Fram"),
+    division = "OD", round = 1L, kickoff_time = c("19:30", NA)
+  ), "schedules", root = root)
+  scrape <- function(at, kickoff) tibble::tibble(
+    sport = "handball", country = "iceland", scraped_at = as.POSIXct(at, tz = "UTC"),
+    match_date = as.Date("2100-01-16"), home_team = c("KA Akureyri", "Valur"), away_team = c("Fram", "FH"),
+    market = "moneyline", outcome = "home", line = NA_real_, odds = 2,
+    sex = "male", kickoff_at = as.POSIXct(kickoff, tz = "UTC")
+  )
+  write_table(scrape("2100-01-15 08:17:00", c("2100-01-16 18:00:00", "2100-01-16 20:00:00")), "odds", root = root)
+  write_table(scrape("2100-01-16 08:17:00", c("2100-01-16 18:15:00", "2100-01-16 20:00:00")), "odds", root = root)
+  league <- list(
+    sport = "handball", country = "iceland",
+    lengjan = list(team_names = list(male = list(KA = "KA Akureyri", Valur = "Valur", Fram = "Fram", FH = "FH")))
+  )
+  k <- forecast_archive_kickoffs(league, "male", root, from = as.Date("2100-01-16"))
+  at <- function(home) format(k$kickoff_at[k$home_team == home], "%H:%M", tz = "UTC")
+  expect_equal(at("Valur"), "19:30") # the schedule wins
+  expect_equal(at("KA"), "18:15") # the newest scrape, its Lengjan name mapped
+  expect_equal(nrow(k), 2L)
 })
 
 test_that("publish_one archives every published football fixture with the numbers it published", {
@@ -318,11 +399,39 @@ test_that("the publish script archives on GitHub Actions or when asked, and nowh
   expect_true(any(grepl("archive_forecasts =", body, fixed = TRUE)))
 })
 
-test_that("decide-publish and republish commit the forecast archive", {
+test_that("decide-publish and republish commit the forecast archive, and still commit before it exists", {
+  skip_if(Sys.which("git") == "" || Sys.which("bash") == "", "git and bash needed")
   for (wf in c("decide-publish.yml", "republish.yml")) {
-    lines <- readLines(testthat::test_path("..", "..", ".github", "workflows", wf), warn = FALSE)
-    adds <- grep("^\\s*git add ", lines, value = TRUE)
+    yml <- yaml::read_yaml(testthat::test_path("..", "..", ".github", "workflows", wf))
+    steps <- yml$jobs[[1]]$steps
+    commit <- steps[[which(vapply(steps, function(s) grepl("git commit", s$run %||% "", fixed = TRUE), logical(1)))]]
+    adds <- grep("^\\s*git add ", strsplit(commit$run, "\n")[[1]], value = TRUE)
     expect_true(any(grepl("data/archive/forecasts/", adds, fixed = TRUE)), info = wf)
+
+    # The step's own `git add` lines, under `bash -e` as Actions runs them, in
+    # a repository with publish output and with and without an archive.
+    for (with_archive in c(FALSE, TRUE)) {
+      repo <- withr::local_tempdir()
+      git <- function(...) system2("git", c("-C", repo, ...), stdout = TRUE, stderr = TRUE)
+      git("init", "-q")
+      # Every other path the step stages exists on main; give each a file.
+      others <- unlist(strsplit(trimws(sub("^\\s*git add", "", adds[!grepl("archive/forecasts", adds)])), "\\s+"))
+      for (d in others) {
+        dir.create(file.path(repo, d), recursive = TRUE, showWarnings = FALSE)
+        writeLines("{}", file.path(repo, d, "x.json"))
+      }
+      if (with_archive) {
+        dir.create(file.path(repo, "data", "archive", "forecasts"), recursive = TRUE)
+        writeLines("x", file.path(repo, "data", "archive", "forecasts", "part-0.parquet"))
+      }
+      script <- file.path(repo, "add.sh")
+      writeLines(c("set -e", paste("cd", shQuote(repo)), trimws(adds)), script)
+      status <- system2("bash", script, stdout = FALSE, stderr = FALSE)
+      expect_identical(status, 0L, info = paste(wf, "archive present:", with_archive))
+      staged <- git("diff", "--cached", "--name-only")
+      expect_true(all(file.path(sub("/$", "", others), "x.json") %in% staged), info = paste(wf, with_archive))
+      expect_identical("data/archive/forecasts/part-0.parquet" %in% staged, with_archive, info = paste(wf, with_archive))
+    }
   }
 })
 
@@ -348,6 +457,17 @@ test_that("nothing in the pipeline deletes from the forecast archive", {
     keep_season_anchor = FALSE, now = as.Date("2030-01-01"), dry_run = FALSE
   )
   expect_equal(nrow(pruned), 2L)
+  expect_identical(.fa_md5(root), before)
+  # The archive is laid out sport=/country=/sex=/fit_date= like the extracts.
+  # Pointed at the data root, retention still leaves both archives alone.
+  draws <- file.path(root, "beliefs", "archive", "sport=football", "country=iceland", "sex=male", "fit_date=2020-04-01")
+  dir.create(draws, recursive = TRUE)
+  writeLines("x", file.path(draws, "part-0.parquet"))
+  pruned <- prune_extracts(
+    root = root, keep_days = 0L, keep_min = 1L,
+    keep_season_anchor = FALSE, now = as.Date("2030-01-01"), dry_run = TRUE
+  )
+  expect_false(any(grepl("archive", pruned$path)))
   expect_identical(.fa_md5(root), before)
 
   # Static: no line of package code, script or workflow that names the archive
