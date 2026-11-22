@@ -95,14 +95,15 @@ v2_priors <- function(sport = c("handball", "basketball")) {
 #'   latent field and for R's generator, which picks the hyperparameter
 #'   configuration of each draw. Drawing does not move the caller's random
 #'   stream; R-INLA's fit itself does, with or without draws.
-#' @param reproducible Switch R-INLA's online internal optimisation off for
-#'   this fit (`inla.setOption(internal.opt = FALSE)`) and put the caller's
-#'   setting back on exit. With the option on, which is R-INLA's default, the
-#'   same fit did not always return the same numbers in two R processes: at
-#'   each of two cutoffs 37 of 44 processes agreed on the most frequent
-#'   result. With it off, 75 of 75 did, and two whole walk-forwards were
-#'   identical. It does not make the hyperparameter mode unique; it makes the
-#'   one that is found repeatable. `FALSE` leaves R-INLA's setting alone.
+#' @param reproducible Ask R-INLA for this fit with its online internal
+#'   optimisation off (`control.compute = list(internal.opt = FALSE)`, for
+#'   this call only; R-INLA's session-wide setting is not touched). With the
+#'   option on, which is R-INLA's default, the same fit did not always return
+#'   the same numbers in two R processes: at each of two cutoffs 37 of 44
+#'   processes agreed on the most frequent result. With it off, 75 of 75 did,
+#'   and two whole walk-forwards were identical. It does not make the
+#'   hyperparameter mode unique; it makes the one that is found repeatable.
+#'   `FALSE` passes nothing, so R-INLA goes by its session setting.
 #' @return A list: `pred` (latent mean and sd per prediction row), `sigma2`
 #'   (posterior mean of the observation variance), `hyper_sd` (posterior
 #'   summaries on the sd / correlation scale), `fixed`, `random` (state
@@ -122,13 +123,6 @@ fit_v2_inla <- function(v, response = c("margin", "total"),
   within <- match.arg(within)
   if (!requireNamespace("INLA", quietly = TRUE)) {
     cli::cli_abort("{.fn fit_v2_inla} needs the {.pkg INLA} package.")
-  }
-  if (reproducible) {
-    # WHY on.exit: the option is session-wide. The caller gets its own setting back
-    # whether the fit returns or throws.
-    callers_setting <- INLA::inla.getOption("internal.opt")
-    INLA::inla.setOption(internal.opt = FALSE)
-    on.exit(INLA::inla.setOption(internal.opt = callers_setting), add = TRUE)
   }
   is_margin <- response == "margin"
   sgn <- if (is_margin) -1 else 1
@@ -237,7 +231,13 @@ fit_v2_inla <- function(v, response = c("margin", "total"),
       prior = "pc.prec", param = c(u_sigma, 0.01), initial = start(u_sigma)
     ))),
     control.fixed = control_fixed,
-    control.compute = list(config = n_samples > 0L, cpo = cpo, dic = FALSE, waic = FALSE),
+    # WHY per call: R-INLA 25.6.7 reads its session-wide `internal.opt` only when the
+    # call's is NULL (inla.problem.section()), so this holds for this fit alone and
+    # there is nothing to put back. Not passing it leaves R-INLA's session setting.
+    control.compute = c(
+      list(config = n_samples > 0L, cpo = cpo, dic = FALSE, waic = FALSE),
+      if (reproducible) list(internal.opt = FALSE)
+    ),
     control.inla = list(int.strategy = int_strategy),
     control.mode = if (is.null(theta_start)) list() else list(theta = theta_start, restart = TRUE),
     num.threads = num_threads, verbose = FALSE
