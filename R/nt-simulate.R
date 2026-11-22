@@ -110,12 +110,26 @@ nt_head_to_head <- function(fit, teams, method = c("extra_time", "replay"),
   acc
 }
 
-.nt_group_rank <- function(pts, gd, gf) {
-  key <- pts * 1e6 + (gd + 500) * 1e3 + gf + stats::runif(length(pts)) * 0.5
-  dim(key) <- dim(pts)
-  rank <- key * 0
-  for (j in seq_len(ncol(key))) rank <- rank + (key[, j] > key)
-  list(rank = rank + 1, key = key)
+# Rank simulated World Cup group tables. FIFA World Cup 2026 Regulations,
+# Article 13 (https://digitalhub.fifa.com/m/636f5c9c6f29771f/original/FWC2026_regulations_EN.pdf):
+# points; then head-to-head points, goal difference and goals among the teams
+# level (step 1), re-applied to the teams still level (step 2); then goal
+# difference and goals in all group matches. `tiebreak` stands in for team
+# conduct and the FIFA ranking. "goal_difference" is the order used before
+# 2026 (points, goal difference, goals), kept to reproduce runs made with it.
+.nt_wc_rank_group <- function(home, away, teams, goals_h, goals_a, tiebreak,
+                              rule = "head_to_head", h2h_reapply = "repeat") {
+  x <- .nt_group_arrays(home, away, teams, goals_h, goals_a)
+  total <- function(v) apply(v, c(1, 2), sum)
+  points <- total(x$points)
+  gd <- total(x$gd)
+  gf <- total(x$gf)
+  rank <- if (rule == "head_to_head") {
+    .nt_rank_group_vec(x$points, x$gd, x$gf, list(gd, gf), tiebreak, h2h_reapply)
+  } else {
+    .nt_lexi_rank(list(points, gd, gf, tiebreak))
+  }
+  list(rank = rank, points = points, gd = gd, gf = gf)
 }
 
 #' Simulate the 48-team World Cup from a national-team fit.
@@ -131,6 +145,16 @@ nt_head_to_head <- function(fit, teams, method = c("extra_time", "replay"),
 #' @param knockout How a level knockout match is settled; see
 #'   [nt_knockout_win_prob()].
 #' @param et_factor,shootout_p Passed to [nt_simulate_knockout()].
+#' @param group_rule How teams level on points are ranked within a group:
+#'   `"head_to_head"` (FIFA World Cup 2026 Regulations, Article 13: results
+#'   between the teams level first, then goal difference and goals in all
+#'   group matches) or `"goal_difference"` (the earlier order: goal difference,
+#'   then goals). Team conduct and the FIFA ranking are not modelled; a random
+#'   draw settles what is still level. Third-placed teams are compared on
+#'   points, goal difference and goals under either rule.
+#' @param h2h_reapply How often step 2 re-applies the head-to-head criteria to
+#'   teams still level: `"repeat"` (until nothing changes) or `"once"`. With
+#'   groups of four the two differ only when all four are level on points.
 #' @param seed Optional seed.
 #' @return List: `teams` (tibble: `team`, `group`, group-position and
 #'   round-reached probabilities), `r32` (list `a`, `b`: simulations x 16 team
@@ -141,8 +165,12 @@ nt_head_to_head <- function(fit, teams, method = c("extra_time", "replay"),
 nt_simulate_world_cup <- function(fit, structure, n_sims = 20000L,
                                   knockout = c("extra_time", "replay"),
                                   et_factor = 1 / 3, shootout_p = 0.5,
+                                  group_rule = c("head_to_head", "goal_difference"),
+                                  h2h_reapply = c("repeat", "once"),
                                   seed = NULL) {
   knockout <- match.arg(knockout)
+  group_rule <- match.arg(group_rule)
+  h2h_reapply <- match.arg(h2h_reapply)
   if (!is.null(seed)) set.seed(seed)
   teams <- unlist(structure$groups, use.names = FALSE)
   wc_validate_teams(structure, fit$teams)
@@ -167,10 +195,12 @@ nt_simulate_world_cup <- function(fit, structure, n_sims = 20000L,
     )
   }
 
-  pts <- gf <- ga <- matrix(0, n_sims, nt)
+  games <- vector("list", n_groups)
   for (g in seq_len(n_groups)) {
     idx <- match(structure$groups[[g]], teams)
     pairs <- utils::combn(idx, 2L)
+    home <- away <- integer(ncol(pairs))
+    goals_h <- goals_a <- matrix(0L, n_sims, ncol(pairs))
     for (p in seq_len(ncol(pairs))) {
       h <- pairs[1, p]
       a <- pairs[2, p]
@@ -179,33 +209,33 @@ nt_simulate_world_cup <- function(fit, structure, n_sims = 20000L,
         a <- pairs[1, p]
       }
       r <- rates(rep(h, n_sims), rep(a, n_sims), venue = teams[h] %in% structure$hosts)
-      gh <- stats::rpois(n_sims, r$a)
-      gaw <- stats::rpois(n_sims, r$b)
-      pts[, h] <- pts[, h] + 3 * (gh > gaw) + (gh == gaw)
-      pts[, a] <- pts[, a] + 3 * (gaw > gh) + (gh == gaw)
-      gf[, h] <- gf[, h] + gh
-      ga[, h] <- ga[, h] + gaw
-      gf[, a] <- gf[, a] + gaw
-      ga[, a] <- ga[, a] + gh
+      goals_h[, p] <- stats::rpois(n_sims, r$a)
+      goals_a[, p] <- stats::rpois(n_sims, r$b)
+      home[p] <- h
+      away[p] <- a
     }
+    games[[g]] <- list(home = teams[home], away = teams[away], goals_h = goals_h, goals_a = goals_a)
   }
 
   finish <- matrix(0L, n_sims, nt)
   first <- second <- third <- matrix(0L, n_sims, n_groups)
   third_key <- matrix(0, n_sims, n_groups)
   for (g in seq_len(n_groups)) {
-    idx <- match(structure$groups[[g]], teams)
-    rk <- .nt_group_rank(
-      pts[, idx, drop = FALSE],
-      gf[, idx, drop = FALSE] - ga[, idx, drop = FALSE],
-      gf[, idx, drop = FALSE]
+    tg <- structure$groups[[g]]
+    idx <- match(tg, teams)
+    tiebreak <- matrix(stats::runif(n_sims * length(tg)), n_sims, length(tg))
+    rk <- .nt_wc_rank_group(
+      games[[g]]$home, games[[g]]$away, tg, games[[g]]$goals_h, games[[g]]$goals_a,
+      tiebreak, group_rule, h2h_reapply
     )
     finish[, idx] <- rk$rank
     first[, g] <- idx[max.col(rk$rank == 1, ties.method = "first")]
     second[, g] <- idx[max.col(rk$rank == 2, ties.method = "first")]
     pos3 <- max.col(rk$rank == 3, ties.method = "first")
     third[, g] <- idx[pos3]
-    third_key[, g] <- rk$key[cbind(seq_len(n_sims), pos3)]
+    at3 <- cbind(seq_len(n_sims), pos3)
+    third_key[, g] <- rk$points[at3] * 1e6 + (rk$gd[at3] + 500) * 1e3 + rk$gf[at3] +
+      tiebreak[at3] * 0.5
   }
   third_rank <- third_key * 0
   for (g in seq_len(n_groups)) third_rank <- third_rank + (third_key[, g] > third_key)

@@ -313,12 +313,15 @@ nt_uefa_overall_ranking <- function(matches, groups, disciplinary = NULL,
   1L + apply(above, c(1, 2), sum)
 }
 
-# Rank simulated tables of one group under Article 15. Inputs are n x k x k
-# arrays of what team i obtained against team j over their matches (points,
-# goal difference, goals) and n x k matrices of the overall statistics;
-# `tiebreak` (n x k, larger is better) settles whatever is still level after
-# criterion i). Each pass of the loop computes a) to c) among the teams level
-# on everything so far: pass 1 is a) to c), later passes re-apply them (d).
+# Rank simulated tables of one group: points, then head-to-head points, goal
+# difference and goals among the teams level on everything so far, re-applied
+# to the teams still level (UEFA Article 15 a) to d); FIFA World Cup 2026
+# Regulations, Article 13 steps 1 and 2). Inputs are n x k x k arrays of what
+# team i obtained against team j over their matches (points, goal difference,
+# goals); `overall` is a list of n x k matrices applied in order once the
+# head-to-head criteria are exhausted; `tiebreak` (n x k, larger is better)
+# settles whatever is still level after them. Pass 1 of the loop is a) to c),
+# later passes re-apply them.
 .nt_rank_group_vec <- function(pts_vs, gd_vs, gf_vs, overall, tiebreak,
                                h2h_reapply = "repeat") {
   n <- dim(pts_vs)[1]
@@ -348,7 +351,7 @@ nt_uefa_overall_ranking <- function(matches, groups, disciplinary = NULL,
     cls <- new_cls
     if (!split) break
   }
-  keys <- c(keys, overall[unname(.nt_uefa_overall_criteria)], list(tiebreak))
+  keys <- c(keys, unname(overall), list(tiebreak))
   .nt_lexi_rank(keys)
 }
 
@@ -386,7 +389,7 @@ nt_uefa_overall_ranking <- function(matches, groups, disciplinary = NULL,
 # Rank simulated tables of one group from the arrays of .nt_group_arrays().
 .nt_rank_group_arrays <- function(x, tiebreak, h2h_reapply = "repeat") {
   total <- function(v) apply(v, c(1, 2), sum)
-  overall <- lapply(x[c("gd", "gf", "away_gf", "won", "away_won")], total)
+  overall <- lapply(x[unname(.nt_uefa_overall_criteria)], total)
   .nt_rank_group_vec(x$points, x$gd, x$gf, overall, tiebreak, h2h_reapply)
 }
 

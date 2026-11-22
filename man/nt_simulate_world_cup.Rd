@@ -11,6 +11,8 @@ nt_simulate_world_cup(
   knockout = c("extra_time", "replay"),
   et_factor = 1/3,
   shootout_p = 0.5,
+  group_rule = c("head_to_head", "goal_difference"),
+  h2h_reapply = c("repeat", "once"),
   seed = NULL
 )
 }
@@ -25,6 +27,18 @@ nt_simulate_world_cup(
 [nt_knockout_win_prob()].}
 
 \item{et_factor, shootout_p}{Passed to [nt_simulate_knockout()].}
+
+\item{group_rule}{How teams level on points are ranked within a group:
+`"head_to_head"` (FIFA World Cup 2026 Regulations, Article 13: results
+between the teams level first, then goal difference and goals in all
+group matches) or `"goal_difference"` (the earlier order: goal difference,
+then goals). Team conduct and the FIFA ranking are not modelled; a random
+draw settles what is still level. Third-placed teams are compared on
+points, goal difference and goals under either rule.}
+
+\item{h2h_reapply}{How often step 2 re-applies the head-to-head criteria to
+teams still level: `"repeat"` (until nothing changes) or `"once"`. With
+groups of four the two differ only when all four are level on points.}
 
 \item{seed}{Optional seed.}
 }

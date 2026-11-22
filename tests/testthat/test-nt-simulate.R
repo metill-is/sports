@@ -122,3 +122,51 @@ test_that("simulation uses each draw's own strengths", {
   expect_gt(iran$p_champion, 0.45)
   expect_lt(iran$p_champion, 0.52)
 })
+
+wc_group_games <- function(...) {
+  m <- matrix(c(...), ncol = 4, byrow = TRUE)
+  list(
+    home = m[, 1], away = m[, 2],
+    goals_h = matrix(as.integer(m[, 3]), 1), goals_a = matrix(as.integer(m[, 4]), 1)
+  )
+}
+
+test_that("World Cup group ties go to head-to-head before goal difference", {
+  # A beat B and both finish on 6 points; B's goal difference is +7, A's +1.
+  # FIFA World Cup 2026 Regulations, art. 13: head-to-head comes first.
+  g <- wc_group_games(
+    "A", "B", 1, 0, "A", "C", 0, 1, "A", "D", 1, 0,
+    "B", "C", 5, 0, "B", "D", 3, 0, "C", "D", 0, 1
+  )
+  rk <- .nt_wc_rank_group(
+    g$home, g$away, c("A", "B", "C", "D"), g$goals_h, g$goals_a,
+    matrix(c(0.1, 0.2, 0.3, 0.4), 1)
+  )
+  expect_equal(rk$rank[1, ], c(1, 2, 4, 3))
+  expect_equal(rk$gd[1, ], c(1, 7, -5, -3))
+})
+
+test_that("World Cup group ties level on head-to-head go to overall goal difference", {
+  # A and B draw each other and finish on 7 points; B's goal difference is better.
+  g <- wc_group_games(
+    "A", "B", 1, 1, "A", "C", 1, 0, "A", "D", 1, 0,
+    "B", "C", 4, 0, "B", "D", 2, 0, "C", "D", 0, 0
+  )
+  rk <- .nt_wc_rank_group(
+    g$home, g$away, c("A", "B", "C", "D"), g$goals_h, g$goals_a,
+    matrix(c(0.4, 0.3, 0.2, 0.1), 1)
+  )
+  expect_equal(rk$rank[1, c(1, 2)], c(2, 1))
+})
+
+test_that("the World Cup simulator ranks groups under the rule it is given", {
+  s <- wc_structure()
+  teams <- unlist(s$groups, use.names = FALSE)
+  withr::local_seed(4)
+  fit <- nt_test_fit(stats::setNames(stats::rnorm(48, 0, 0.4), teams), mu = 0.15)
+  h2h <- nt_simulate_world_cup(fit, s, n_sims = 1000L, seed = 9L)
+  gd <- nt_simulate_world_cup(fit, s, n_sims = 1000L, group_rule = "goal_difference", seed = 9L)
+  expect_false(isTRUE(all.equal(h2h$teams$p_first, gd$teams$p_first)))
+  expect_equal(h2h$teams$p_first + h2h$teams$p_second + h2h$teams$p_third + h2h$teams$p_fourth, rep(1, 48))
+  expect_equal(sum(h2h$teams$p_advance), 32)
+})

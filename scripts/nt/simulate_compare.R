@@ -11,12 +11,18 @@
 #   replay     the same per-match rule, but simulated jointly per posterior draw
 #   extra_time joint simulation with extra time and a coin-toss shootout
 #
-# Usage: Rscript scripts/nt/simulate_compare.R <fit.rds> <out.rds> [n_sims]
+# Usage: Rscript scripts/nt/simulate_compare.R <fit.rds> <out.rds> [n_sims] \
+#          [group_rule=head_to_head|goal_difference]
+# The report of 2026-11-15 was made with group_rule=goal_difference, the order
+# the World Cup code used before it followed the 2026 regulations.
 
 suppressMessages(devtools::load_all(quiet = TRUE))
 options(width = 170)
 
-args <- commandArgs(trailingOnly = TRUE)
+all_args <- commandArgs(trailingOnly = TRUE)
+args <- all_args[!grepl("=", all_args, fixed = TRUE)]
+rule_arg <- grep("^group_rule=", all_args, value = TRUE)
+group_rule <- if (length(rule_arg)) sub("^group_rule=", "", rule_arg[[1]]) else "head_to_head"
 fit <- readRDS(args[[1]])
 out_path <- args[[2]]
 n_sims <- if (length(args) >= 3L) as.integer(args[[3]]) else 200000L
@@ -25,10 +31,12 @@ s <- wc_structure()
 teams <- unlist(s$groups, use.names = FALSE)
 
 sims <- list(
-  extra_time = nt_simulate_world_cup(fit, s, n_sims, "extra_time", seed = 11L),
-  replay = nt_simulate_world_cup(fit, s, n_sims, "replay", seed = 11L),
-  et_quarter = nt_simulate_world_cup(fit, s, n_sims, "extra_time", et_factor = 0.25, seed = 11L),
-  et_tilt = nt_simulate_world_cup(fit, s, n_sims, "extra_time", shootout_p = 0.5, seed = 12L)
+  extra_time = nt_simulate_world_cup(fit, s, n_sims, "extra_time", group_rule = group_rule, seed = 11L),
+  replay = nt_simulate_world_cup(fit, s, n_sims, "replay", group_rule = group_rule, seed = 11L),
+  et_quarter = nt_simulate_world_cup(fit, s, n_sims, "extra_time", et_factor = 0.25,
+                                     group_rule = group_rule, seed = 11L),
+  et_tilt = nt_simulate_world_cup(fit, s, n_sims, "extra_time", shootout_p = 0.5,
+                                  group_rule = group_rule, seed = 12L)
 )
 
 w <- nt_head_to_head(fit, teams, method = "replay")
@@ -82,7 +90,7 @@ curve$et_quarter <- nt_knockout_win_prob(curve$rate_a, curve$rate_b, "extra_time
 mc_se <- sqrt(0.13 * 0.87 / n_sims)
 saveRDS(
   list(
-    table = tab, curve = curve, n_sims = n_sims, mc_se_top = mc_se,
+    table = tab, curve = curve, n_sims = n_sims, group_rule = group_rule, mc_se_top = mc_se,
     decided = lapply(sims, function(x) x$decided),
     noise_check = max(abs(sims$et_tilt$teams$p_champion - sims$extra_time$teams$p_champion))
   ),

@@ -710,6 +710,8 @@ To isolate what changes the numbers, all three treatments below use the same v2 
 - **Replay**: the same per-match rule, simulated jointly.
 - **Extra time**: the new rule, simulated jointly.
 
+These runs ranked teams level on points by goal difference, then goals, as the World Cup code did then. Article 13 of the 2026 World Cup regulations puts the results between the teams level first, and since 22 November `nt_simulate_world_cup()` follows it by default (`group_rule = "head_to_head"`). The earlier order is kept as `group_rule = "goal_difference"`, which reproduces these runs. The tie rule changes only which side ranks higher when two finish level on points. It leaves the knockout treatments compared here untouched. It can shift the group-position and title probabilities in Tables 12 and 13, which have not been re-run under the new order.
+
 ```{r}
 #| label: tbl-sim
 #| tbl-cap: "Title probability (percent) before the 2026 World Cup under the three knockout treatments, v2 fit, top twelve."
@@ -989,12 +991,13 @@ ggplot(long, aes(opponent, p, fill = result)) +
 - Match forecasts for any fixture list (`nt_match_rates()`, `nt_scoreline_probs()`).
 - The knockout primitive with extra time and penalties (`nt_simulate_knockout()`), which the play-off ties need.
 - The scoring and calibration functions for an accountability log.
+- Added on 22 November: the qualifying group simulator (`nt_simulate_qualifying()`), with UEFA's group tie-breakers (`nt_rank_uefa_group()`) and the ranking across groups of unequal size (`nt_uefa_overall_ranking()`). It reproduces every Euro 2024 qualifying table and the 53-team overall ranking (`docs/reports/2026-11-22-euro-qualifying-simulator/euro2024_validation.log`).
 
 **What has to be built.**
 
 1. *Fixture ingest after the draw.* The source file lists scheduled fixtures with empty scores, as it did for the World Cup; otherwise a small CSV of the 2027 fixtures.
-2. *A group simulator with UEFA tie-breakers.* Head-to-head points come first in UEFA qualifying, unlike the goal-difference-first rule in the World Cup code. Vectorised over simulations like `nt_simulate_world_cup()`.
-3. *Best runners-up across groups of unequal size* (results against the bottom side are discarded in five-team groups) and the play-off paths, including the Nations League ranking and the host rule.
+2. *A group simulator with UEFA tie-breakers.* Done on 22 November (see above).
+3. *The play-off paths*, including the Nations League ranking and the host rule. The ranking of runners-up across groups of unequal size (results against the bottom side are discarded in five-team groups) was done on 22 November.
 4. *A publish contract and a page.* A new `data/publish/euro_2028/` tree modelled on the World Cup JSON, and a page on metill.is. Both need the owner's approval and are outside this work.
 5. *A workflow.* A new dispatch-only workflow, separate from the dormant `world-cup.yml`, run after each international window (five a year). One INLA fit took between half a minute and three and a half minutes on the shared machine used here; the runner needs R-INLA installed from its own repository.
 6. *An accountability log from day one.* Every published forecast stored before kick-off and scored after, against the Elo baseline and, where Lengjan lists the match, the de-vigged line.
@@ -1060,7 +1063,7 @@ done
 for v in base damp08 hl3 novenue; do  # one folder per variant; draw_correction.R reads wf/base/
   Rscript scripts/nt/walk_forward.R $D/data/men/results.csv $D/out/wf/$v variants=$v
 done
-Rscript scripts/nt/simulate_compare.R $D/out/eval/fit_wc2026_base.rds $D/out/sim_compare_wc2026.rds
+Rscript scripts/nt/simulate_compare.R $D/out/eval/fit_wc2026_base.rds $D/out/sim_compare_wc2026.rds group_rule=goal_difference
 Rscript scripts/nt/production_forecast.R $D/out/prod/prod_wc2026.rds $D/out/prod_forecast_wc2026.rds
 Rscript scripts/nt/stan_reference.R $D/data/men/results.csv $D/out/stan wc2026
 Rscript scripts/nt/stan_reference.R $D/data/men/results.csv $D/out/stan wc2026 damp=1
