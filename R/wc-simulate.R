@@ -58,34 +58,25 @@ NULL
 
 # ---- Group table -----------------------------------------------------------
 
+# Final table of one group under the FIFA World Cup 2026 Regulations, Article
+# 13: points, then head-to-head among the teams level (re-applied to those still
+# level), then goal difference and goals in all group matches. The ranking is
+# the national-team simulator's (.nt_wc_rank_group()). A uniform draw stands in
+# for team conduct and the FIFA ranking.
 .wc_group_table <- function(group_teams, matches) {
-  pts <- stats::setNames(numeric(length(group_teams)), group_teams)
-  gf <- pts
-  ga <- pts
-  for (i in seq_len(nrow(matches))) {
-    h <- matches$home_team[i]
-    a <- matches$away_team[i]
-    hs <- matches$home_score[i]
-    as_ <- matches$away_score[i]
-    gf[h] <- gf[h] + hs
-    ga[h] <- ga[h] + as_
-    gf[a] <- gf[a] + as_
-    ga[a] <- ga[a] + hs
-    if (hs > as_) {
-      pts[h] <- pts[h] + 3
-    } else if (as_ > hs) {
-      pts[a] <- pts[a] + 3
-    } else {
-      pts[h] <- pts[h] + 1
-      pts[a] <- pts[a] + 1
-    }
-  }
-  gd <- gf - ga
-  ord <- order(-pts, -gd, -gf, stats::runif(length(group_teams)))
+  # WHY: negated so a smaller draw still ranks higher, as in the goal-difference
+  # order this replaced; the RNG stream is unchanged, so a run whose groups have
+  # no head-to-head decision reproduces it for the same seed.
+  tiebreak <- matrix(-stats::runif(length(group_teams)), 1L)
+  rk <- .nt_wc_rank_group(
+    matches$home_team, matches$away_team, group_teams,
+    matrix(matches$home_score, 1L), matrix(matches$away_score, 1L), tiebreak
+  )
+  ord <- order(rk$rank[1L, ])
   ranked <- group_teams[ord]
   tibble::tibble(
     team = ranked, rank = seq_along(ranked),
-    pts = unname(pts[ranked]), gd = unname(gd[ranked]), gf = unname(gf[ranked])
+    pts = rk$points[1L, ord], gd = rk$gd[1L, ord], gf = rk$gf[1L, ord]
   )
 }
 
