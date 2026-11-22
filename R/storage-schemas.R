@@ -167,6 +167,40 @@ schemas <- function() {
       iter_sampling   = arrow::int32(),
       chains          = arrow::int32(),
       passed          = arrow::bool()
+    ),
+    # Every pre-match forecast the site published, append-only and never
+    # pruned (R/forecast-archive.R). One row per (fit, published file, match):
+    # the numbers exactly as next_games.json carried them, where they were
+    # published, and what produced them. `write_table()` refuses a write that
+    # would change or drop a stored row (append_only_tables()).
+    forecast_archive = arrow::schema(
+      sport         = arrow::string(),
+      country       = arrow::string(),
+      sex           = arrow::string(),
+      fit_date      = arrow::date32(),
+      # Path under data/publish/ of the file the forecast was published in.
+      published_to  = arrow::string(),
+      division      = arrow::string(),
+      match_date    = arrow::date32(),
+      home_team     = arrow::string(),
+      away_team     = arrow::string(),
+      # "HH:MM" from the schedule when the forecast was first published (UTC,
+      # which is Iceland's time all year); NA where the source posts none.
+      kickoff_time  = arrow::string(),
+      p_home_win    = arrow::float64(),
+      p_draw        = arrow::float64(),
+      p_away_win    = arrow::float64(),
+      xg_home       = arrow::float64(),
+      xg_away       = arrow::float64(),
+      # From the fit partition's fit_meta: `stan` or `inla`, the Stan program
+      # (NA for an INLA fit) and the model version (NA for a Stan fit).
+      engine        = arrow::string(),
+      stan_model    = arrow::string(),
+      model_version = arrow::string(),
+      # When the forecast was first published, and the commit that published
+      # it (GITHUB_SHA; NA for a run outside GitHub Actions).
+      published_at  = ts,
+      code_commit   = arrow::string()
     )
   )
 }

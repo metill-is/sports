@@ -1,4 +1,4 @@
-#' @include publish-profile.R publish-next-games.R extract-iceland-read.R publish-iceland-league.R validate-publish.R
+#' @include publish-profile.R publish-next-games.R extract-iceland-read.R publish-iceland-league.R validate-publish.R forecast-archive.R
 NULL
 
 #' Does an extract partition exist for this cell?
@@ -62,13 +62,19 @@ extract_partition_exists <- function(extracts_root, sport, country, sex) {
 #'   test can validate against a staging tree (e.g.
 #'   `config/publish-schemas/_draft/`, where a sport's schemas are reviewed
 #'   before they are armed) without arming the real one for the live pipeline.
+#' @param archive_forecasts Logical. When `TRUE`, the pre-match forecasts in
+#'   the cells just published (their `next_games.json`) are added to the
+#'   append-only forecast archive under `root` ([archive_forecasts()]), after
+#'   the cells have been validated and swapped into place. `FALSE` (default)
+#'   for tests and replays; `scripts/05_publish.R` turns it on for CI runs.
 #' @return invisible(NULL).
 #' @export
 publish_one <- function(static, betting, key, sex,
                         root = here::here("data"),
                         validate = TRUE,
                         end_date = Sys.Date(),
-                        schema_dir = here::here("config", "publish-schemas")) {
+                        schema_dir = here::here("config", "publish-schemas"),
+                        archive_forecasts = FALSE) {
   league <- static
   league$betting <- betting
 
@@ -177,6 +183,30 @@ publish_one <- function(static, betting, key, sex,
     unlink(dst, recursive = TRUE)
     file.copy(src, sport_out, recursive = TRUE)
   }
+
+  # Archive what was just published, from the files now in place. After the
+  # swap on purpose: a cell that failed validation was never published, so it
+  # has nothing to archive. An archive error fails this cell (a red run) but
+  # cannot unpublish it.
+  if (isTRUE(archive_forecasts)) {
+    published <- cell_names[dir.exists(file.path(sport_stage, cell_names))]
+    rows <- forecast_archive_rows(
+      publish_root = output_root, sport = league$sport, country = "iceland",
+      sex = sex, cells = published, fit_date = extracted$fit_date,
+      fit_meta = extracted$fit_meta,
+      schedules = read_table(
+        "schedules",
+        root = root,
+        filter = list(sport = league$sport, country = league$country, sex = sex)
+      ),
+      published_at = Sys.time(), code_commit = .publish_code_commit(),
+      stan_model_default = league$stan_model %||% NA_character_
+    )
+    res <- archive_forecasts(rows, root = root)
+    cli::cli_alert_info(
+      "publish_one({key}/{sex}): forecast archive: {nrow(res$appended)} new, {res$unchanged} already stored, {nrow(res$refused)} refused"
+    )
+  }
   invisible(NULL)
 }
 
@@ -281,7 +311,8 @@ publish_one <- function(static, betting, key, sex,
 #' @param targets Tibble of `key`/`sex` rows from `resolve_targets()`.
 #' @param leagues Leagues list.
 #' @param root Storage root.
-#' @param validate,end_date,schema_dir Forwarded to `publish_fn` by name.
+#' @param validate,end_date,schema_dir,archive_forecasts Forwarded to
+#'   `publish_fn` by name.
 #' @param publish_fn Injectable publisher; defaults to [publish_one()].
 #' @return `list(published = integer(1), failed = tibble(key, sex, message))`.
 #' @export
@@ -290,6 +321,7 @@ run_publish_targets <- function(targets, leagues,
                                 validate = TRUE,
                                 end_date = Sys.Date(),
                                 schema_dir = here::here("config", "publish-schemas"),
+                                archive_forecasts = FALSE,
                                 publish_fn = publish_one) {
   published <- 0L
   failed <- list()
@@ -308,7 +340,8 @@ run_publish_targets <- function(targets, leagues,
         publish_fn(
           static, betting, row$key, row$sex,
           root = root, validate = validate,
-          end_date = end_date, schema_dir = schema_dir
+          end_date = end_date, schema_dir = schema_dir,
+          archive_forecasts = archive_forecasts
         )
         TRUE
       },

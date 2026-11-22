@@ -12,7 +12,8 @@ publish_one(
   root = here::here("data"),
   validate = TRUE,
   end_date = Sys.Date(),
-  schema_dir = here::here("config", "publish-schemas")
+  schema_dir = here::here("config", "publish-schemas"),
+  archive_forecasts = FALSE
 )
 }
 \arguments{
@@ -37,6 +38,12 @@ replay passes a fixed date so a far-future fixture is not filtered out.}
 test can validate against a staging tree (e.g.
 `config/publish-schemas/_draft/`, where a sport's schemas are reviewed
 before they are armed) without arming the real one for the live pipeline.}
+
+\item{archive_forecasts}{Logical. When `TRUE`, the pre-match forecasts in
+the cells just published (their `next_games.json`) are added to the
+append-only forecast archive under `root` ([archive_forecasts()]), after
+the cells have been validated and swapped into place. `FALSE` (default)
+for tests and replays; `scripts/05_publish.R` turns it on for CI runs.}
 }
 \value{
 invisible(NULL).

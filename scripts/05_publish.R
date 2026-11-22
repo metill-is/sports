@@ -6,6 +6,12 @@
 # Usage:
 #   Rscript scripts/05_publish.R
 #   Rscript scripts/05_publish.R --league football_iceland
+#   Rscript scripts/05_publish.R --archive     # also archive outside CI
+#
+# On GitHub Actions every published pre-match forecast is also added to the
+# append-only forecast archive (data/archive/forecasts/, R/forecast-archive.R).
+# A local run does not archive unless asked: the site serves what CI commits,
+# so a local publish is not a publication.
 
 invisible(Sys.setlocale("LC_ALL", "en_US.UTF-8"))
 suppressPackageStartupMessages(devtools::load_all(here::here(), quiet = TRUE))
@@ -22,7 +28,10 @@ if (nrow(targets) == 0L) {
 leagues <- load_leagues()
 
 cli::cli_h1("Publish ({nrow(targets)} (league, sex) pairs)")
-res <- run_publish_targets(targets, leagues)
+res <- run_publish_targets(
+  targets, leagues,
+  archive_forecasts = publish_archives_forecasts(flag = opts$archive)
+)
 cli::cli_alert_success(
   "Publish complete: {res$published}/{nrow(targets)} cell{?s} published"
 )

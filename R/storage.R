@@ -14,9 +14,19 @@ table_partitions <- function() {
     candidates = c("sport", "country", "run_date"),
     recommendations = c("sport", "country", "run_date"),
     ledger = c("sport", "country"),
-    fit_diagnostics = c("sport", "country", "sex", "fit_date")
+    fit_diagnostics = c("sport", "country", "sex", "fit_date"),
+    forecast_archive = c("sport", "country", "sex", "fit_date")
   )
 }
+
+#' Tables whose stored rows may never change.
+#'
+#' `write_table()` overwrites whole partitions, so for these it first checks
+#' that every row already stored in a touched partition is present, unchanged,
+#' in the incoming frame. Appending works; changing or dropping a stored row is
+#' refused, whoever the caller is.
+#' @noRd
+append_only_tables <- function() "forecast_archive"
 
 #' Map each table to its subdirectory under `root` (spec §3.1)
 #' @noRd
@@ -32,6 +42,7 @@ table_subdir <- function(table) {
     recommendations = c("decisions", "recommendations"),
     ledger = c("decisions", "ledger"),
     fit_diagnostics = c("beliefs", "diagnostics"),
+    forecast_archive = c("archive", "forecasts"),
     stop("Unknown table: ", table, call. = FALSE)
   )
 }
@@ -188,6 +199,10 @@ validate_against_schema <- function(df, table) {
 #' if the arrow write fails, the on-disk state is unchanged; on success the
 #' visible state flips per partition via a single rename. See audit
 #' 2026-05-15 §H.
+#'
+#' Append-only tables ([append_only_tables()], the forecast archive): the write
+#' is refused, and nothing is written, when any row already stored in a
+#' touched partition is missing from `df` or differs from its stored value.
 #' @export
 write_table <- function(df, table, root = here::here("data")) {
   if (nrow(df) == 0) {
@@ -200,6 +215,9 @@ write_table <- function(df, table, root = here::here("data")) {
   partitions <- table_partitions()[[table]]
 
   dest <- do.call(fs::path, c(list(root), table_subdir(table)))
+  if (table %in% append_only_tables()) {
+    .refuse_changed_rows(df, table, dest, partitions)
+  }
   fs::dir_create(dest, recurse = TRUE)
 
   # Stage into a sibling directory adjacent to dest, then rename per-partition
@@ -243,6 +261,80 @@ write_table <- function(df, table, root = here::here("data")) {
   }
 
   invisible(NULL)
+}
+
+#' Rows stored in one partition of a table, with its partition columns.
+#'
+#' Reads the partition's Parquet files directly (they hold the non-partition
+#' columns) and adds the partition values from `keys`, so the types are the
+#' caller's, not Arrow's hive inference. A partition that does not exist reads
+#' as zero rows.
+#' @noRd
+.read_partition_rows <- function(dest, partitions, keys) {
+  segs <- vapply(partitions, function(p) paste0(p, "=", as.character(keys[[p]])), character(1))
+  dir <- do.call(fs::path, c(list(dest), as.list(segs)))
+  files <- if (fs::dir_exists(dir)) sort(list.files(dir, pattern = "[.]parquet$", full.names = TRUE)) else character()
+  if (length(files) == 0L) {
+    return(NULL)
+  }
+  rows <- dplyr::bind_rows(lapply(files, function(f) tibble::as_tibble(arrow::read_parquet(f))))
+  for (p in partitions) {
+    rows[[p]] <- rep(keys[[p]], nrow(rows))
+  }
+  rows
+}
+
+#' One string per row that is equal exactly when the rows are.
+#'
+#' Doubles are written with 17 significant digits, so two values print alike
+#' only when they are the same double; timestamps as whole seconds.
+#' @noRd
+.row_signature <- function(df) {
+  canon <- lapply(df, function(x) {
+    out <- if (inherits(x, "POSIXct")) {
+      sprintf("%.0f", as.numeric(x))
+    } else if (inherits(x, "Date")) {
+      format(x, "%Y-%m-%d")
+    } else if (is.double(x)) {
+      sprintf("%.17g", x)
+    } else {
+      as.character(x)
+    }
+    out[is.na(x)] <- "<NA>"
+    out
+  })
+  if (length(canon) == 0L) {
+    return(character())
+  }
+  do.call(paste, c(unname(canon), sep = "\x1f"))
+}
+
+#' Refuse a write that would change or drop a stored row of an append-only
+#' table. See [append_only_tables()].
+#' @noRd
+.refuse_changed_rows <- function(df, table, dest, partitions) {
+  cols <- schemas()[[table]]$names
+  keys <- dplyr::distinct(df[, partitions, drop = FALSE])
+  for (i in seq_len(nrow(keys))) {
+    k <- keys[i, , drop = FALSE]
+    stored <- .read_partition_rows(dest, partitions, k)
+    if (is.null(stored) || nrow(stored) == 0L) {
+      next
+    }
+    incoming <- dplyr::semi_join(df, k, by = partitions)
+    lost <- !.row_signature(stored[cols]) %in% .row_signature(incoming[cols])
+    if (any(lost)) {
+      where <- paste(paste0(partitions, "=", vapply(partitions, function(p) as.character(k[[p]]), character(1))), collapse = "/")
+      stop(
+        sprintf(
+          "Write to append-only table '%s' refused: it would change or remove %d stored row(s) in %s. Stored rows are never rewritten; pass every stored row unchanged and add new rows.",
+          table, sum(lost), where
+        ),
+        call. = FALSE
+      )
+    }
+  }
+  invisible(TRUE)
 }
 
 #' Natural match-key columns per table (for upsert dedup).

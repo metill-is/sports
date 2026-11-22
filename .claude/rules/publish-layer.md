@@ -278,6 +278,35 @@ cannot be recovered by republishing -- it needs a new fit.
 Partitions written before this change carry all 99 and still read correctly
 (the grid is a subset), and they age out via `prune_extracts()`.
 
+## Forecast archive (2026-11-22)
+
+`data/archive/forecasts/sport=X/country=Y/sex=Z/fit_date=D/` (table
+`forecast_archive`, `R/forecast-archive.R`) holds every pre-match forecast the
+site published: one row per (fit, published file, match) with the numbers
+exactly as `next_games.json` carried them (`p_home_win`, `p_draw`,
+`p_away_win`, `xg_home`, `xg_away`), the division, the schedule's kick-off,
+the fit's `engine` / `stan_model` / `model_version` from `fit_meta`, the file
+(`published_to`), the first publication time and the commit (`GITHUB_SHA`).
+WHY: `prune_extracts()` deletes old fit partitions on every fit, and the
+extracts were the only record of what a past fit forecast.
+
+- **Written by `publish_one(archive_forecasts = TRUE)`**, after the cells are
+  validated and swapped in, from the files now in place. A forecast published
+  after its kick-off (or for a match dated before the publication day) is not
+  archived; one with no known kick-off is.
+- **Only on CI.** `scripts/05_publish.R` archives on GitHub Actions or with
+  `--archive` (`publish_archives_forecasts()`); `decide-publish.yml` and
+  `republish.yml` `git add` the tree. A local publish is not a publication,
+  and a local copy of a file CI rewrites is a binary stash/pop conflict.
+- **Append-only.** Republishing the same forecast writes nothing (partitions
+  that gain no row are not touched). A different forecast for a key already
+  stored is refused with a warning and the first version stays: it happens
+  when a same-day refit overwrites that `fit_date`'s extract partition.
+  `write_table()` itself refuses any write to the table that would change or
+  drop a stored row (`append_only_tables()`). Nothing prunes it;
+  `test-forecast-archive.R` pins all of this.
+- Read it with `read_forecast_archive(root, filter = list(...))`.
+
 ## Daily driver
 
 `Rscript scripts/05_publish.R`. Wires fresh-fit-on-demand via
