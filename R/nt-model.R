@@ -318,7 +318,16 @@ nt_match_rates <- function(fit, home, away, venue = 0L, friendly = FALSE) {
   }
   d <- fit$draws
   n_fix <- length(home)
-  venue <- rep_len(as.numeric(venue), n_fix)
+  # WHY: as.numeric() on a factor returns its level codes (1, 2), not 0 and 1.
+  venue <- if (is.factor(venue)) {
+    suppressWarnings(as.numeric(as.character(venue)))
+  } else {
+    suppressWarnings(as.numeric(venue))
+  }
+  if (anyNA(venue) || !all(venue %in% c(0, 1))) {
+    cli::cli_abort("{.arg venue} must be 0 (neutral) or 1 (home side at home).")
+  }
+  venue <- rep_len(venue, n_fix)
   w <- ifelse(rep_len(friendly, n_fix), fit$kappa, 1)
   gap <- d$theta[, home, drop = FALSE] - d$theta[, away, drop = FALSE]
   open <- d$delta[, home, drop = FALSE] + d$delta[, away, drop = FALSE]

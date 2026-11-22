@@ -83,3 +83,17 @@ test_that("outcome probabilities put the stronger listed side where it belongs",
   expect_equal(c(one$p_home, one$p_draw, one$p_away), c(0.7, 0, 0.3))
   expect_equal(c(one$eg_home, one$eg_away), c(1.4, 0.3))
 })
+
+test_that("match rates read a factor or logical venue by its value", {
+  fit <- nt_test_fit(c(A = 0.2, B = -0.1), mu = 0.1, home_for = 0.3, home_against = -0.2)
+  want <- nt_match_rates(fit, c("A", "A"), c("B", "B"), venue = c(0L, 1L))
+  expect_equal(nt_match_rates(fit, c("A", "A"), c("B", "B"), venue = factor(c("0", "1"))), want)
+  expect_equal(nt_match_rates(fit, c("A", "A"), c("B", "B"), venue = c(FALSE, TRUE)), want)
+})
+
+test_that("match rates reject a venue that is not 0 or 1", {
+  fit <- nt_test_fit(c(A = 0.2, B = -0.1))
+  expect_error(nt_match_rates(fit, "A", "B", venue = 2), "venue")
+  expect_error(nt_match_rates(fit, "A", "B", venue = NA), "venue")
+  expect_error(nt_match_rates(fit, "A", "B", venue = factor("home")), "venue")
+})
