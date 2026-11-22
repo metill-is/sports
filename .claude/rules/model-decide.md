@@ -122,9 +122,10 @@ paths:
   compares every pairing of the season's league divisions on the next season's
   first day (a week ahead if later), the break path a pre-season fit takes, so
   it runs all year. A mean absolute difference above 0.01
-  (`FV2_REFERENCE_MAX_MEAN_ABS_DIFF`), a NUTS fit with divergences or any Rhat
-  above 1.01 (or none at all; the stored reference's bar), or an INLA fit
-  without a mode or failing its gate does not pass; the summary row goes to
+  (`FV2_REFERENCE_MAX_MEAN_ABS_DIFF`), a NUTS fit past the health layer's
+  bar for a Stan fit (divergences over 0.5 % of transitions or Rhat above
+  1.02, `health_thresholds()`; or no Rhat at all), or an INLA fit without a
+  mode or failing its gate does not pass; the summary row goes to
   `data/health/engine_reference/` and `check_engine_reference()` warns. The
   Stan program stays in `research/` until the switch.
 - `extract_posteriors()` materialises posterior draws as the canonical

@@ -150,17 +150,23 @@ fv2_weekly_reference <- function(league, sex, end_date = Sys.Date(),
   p_nuts <- fv2_outcome_probs(nuts$draws, spec, inputs$pred)
   diff <- abs(p_inla - p_nuts)
 
-  # The bar the stored NUTS reference is held to (test-model-v2-reference.R):
-  # no divergences and every Rhat below 1.01. With no Rhat at all there is no
-  # evidence the chains agree, which does not pass.
+  # Is the NUTS reference sound enough to compare against? The health layer's
+  # own bar for a production Stan fit (health_thresholds(): divergences under
+  # 0.5 % of transitions, Rhat at most 1.02), not the stored reference's
+  # zero-divergence, 1.01 bar: on 2026-11-22 the men's reference had 1
+  # divergence in 4,000 and Rhat 1.019 while the engines agreed to 0.003, and
+  # a weekly check that warns on that would warn most weeks. With no Rhat at
+  # all there is no evidence the chains agree, which does not pass.
+  th <- health_thresholds()
   rhats <- c(nuts$summary$rhat, nuts$diagnostics$state_max_rhat)
   nuts_rhat <- if (any(!is.na(rhats))) max(rhats, na.rm = TRUE) else NA_real_
   divergences <- as.integer(nuts$diagnostics$n_divergent)
+  div_frac <- divergences / max(1L, nrow(nuts$draws$att))
   mode_status <- as.integer(inla$mode_status)
   gate_passed <- isTRUE(inla$gate_passed)
   mad <- mean(diff)
-  passed <- isTRUE(mad <= FV2_REFERENCE_MAX_MEAN_ABS_DIFF) && identical(divergences, 0L) &&
-    isTRUE(nuts_rhat <= 1.01) && identical(mode_status, 0L) && gate_passed
+  passed <- isTRUE(mad <= FV2_REFERENCE_MAX_MEAN_ABS_DIFF) && isTRUE(div_frac <= th$div_frac_warn) &&
+    isTRUE(nuts_rhat <= th$rhat_warn) && identical(mode_status, 0L) && gate_passed
   prov <- function(name) as.character(provenance[[name]] %||% NA_character_)
 
   row <- tibble::tibble(

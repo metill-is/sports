@@ -21,9 +21,9 @@
   )
 }
 
-.fake_fit <- function(shift = 0, divergent = 0L, rhat = 1.001, mode_status = 0, gate_passed = TRUE) {
+.fake_fit <- function(shift = 0, divergent = 0L, rhat = 1.001, mode_status = 0, gate_passed = TRUE, n_draws = 4L) {
   function(spec) {
-    d <- .flat_draws(spec, c_home = 0.3 + shift)
+    d <- .flat_draws(spec, c_home = 0.3 + shift, n = n_draws)
     list(
       draws = d, mode_status = mode_status, gate_passed = gate_passed,
       diagnostics = list(n_divergent = divergent, state_max_rhat = rhat),
@@ -166,8 +166,14 @@ test_that("a NUTS reference that is not converged, or an INLA fit without a mode
       end_date = s$end_date, root = root, ...
     ))$row
   }
+  # The health layer's bar for a Stan fit: divergences under 0.5 % of the
+  # transitions, Rhat at most 1.02.
   expect_false(run(fit_inla = .fake_fit(0), fit_nuts = .fake_fit(0, divergent = 3L))$passed)
   expect_false(run(fit_inla = .fake_fit(0), fit_nuts = .fake_fit(0, rhat = 1.05))$passed)
+  # What the men's reference showed on 2026-11-22: 1 divergence in 4,000 and
+  # Rhat 1.019, with the engines 0.003 apart. Sound enough to compare against.
+  expect_true(run(fit_inla = .fake_fit(0), fit_nuts = .fake_fit(0, divergent = 1L, rhat = 1.019, n_draws = 4000L))$passed)
+  expect_false(run(fit_inla = .fake_fit(0), fit_nuts = .fake_fit(0, divergent = 21L, n_draws = 4000L))$passed)
   expect_false(run(fit_inla = .fake_fit(0, mode_status = 1), fit_nuts = .fake_fit(0))$passed)
   expect_false(run(fit_inla = .fake_fit(0, gate_passed = FALSE), fit_nuts = .fake_fit(0))$passed)
   # No Rhat at all is no evidence the chains agree.

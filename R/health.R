@@ -449,8 +449,9 @@ check_diagnostics_drift <- function(root, th, paused_cells = character(0)) {
 #' Reads the newest `engine_reference` row of each football cell
 #' (scripts/engine_reference.R, weekly). WARN when that run did not pass (mean
 #' absolute difference in outcome probabilities above
-#' `engine_reference_max_mean_abs_diff`, an unconverged NUTS fit or an INLA fit
-#' without a mode), or when it is older than `engine_reference_max_age_days`
+#' `engine_reference_max_mean_abs_diff`, a NUTS fit past `div_frac_warn` or
+#' `rhat_warn`, or an INLA fit without a mode or failing its gate), or when it
+#' is older than `engine_reference_max_age_days`
 #' (the weekly run stopped). PAUSED before the first run (no store yet):
 #' nothing to judge, and not an alarm. An unreadable store, or a cell with no
 #' row while the store exists, is WARN.
@@ -507,7 +508,10 @@ check_engine_reference <- function(root, now, th) {
     } else {
       health_row(
         "engine_reference", scope, if (breach) "WARN" else "OK", what,
-        sprintf("<= %s, no divergences, Rhat <= 1.01, INLA mode found and gate passed", th$engine_reference_max_mean_abs_diff)
+        sprintf(
+          "<= %s; NUTS divergences < %.1f%%, Rhat <= %s; INLA mode found and gate passed",
+          th$engine_reference_max_mean_abs_diff, 100 * th$div_frac_warn, th$rhat_warn
+        )
       )
     }
   }))
