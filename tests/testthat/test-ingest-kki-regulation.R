@@ -108,7 +108,8 @@ test_that("card requests are capped per run, newest first, and paced", {
   srv <- card_server(cards)
   pauses <- 0L
 
-  out <- kki_add_regulation_scores(results, "male", root = root, fetch_card = srv$fetch, max_cards = 3L, pause = function() pauses <<- pauses + 1L)
+  # Day 0 of the rotation (see the starvation test): the queue starts at the newest game.
+  out <- kki_add_regulation_scores(results, "male", root = root, fetch_card = srv$fetch, max_cards = 3L, pause = function() pauses <<- pauses + 1L, today = as.Date("1970-01-01"))
 
   expect_identical(srv$asked(), c("5", "4", "3"))
   expect_identical(pauses, 2L)
@@ -149,8 +150,11 @@ test_that("the card step stops after three failed requests in a row", {
   srv <- card_server(stats::setNames(rep(list(simpleError("timeout")), 6), as.character(1:6)))
 
   expect_warning(
-    out <- kki_add_regulation_scores(results, "male", root = root, fetch_card = srv$fetch, pause = function() NULL),
-    "in a row"
+    expect_warning(
+      out <- kki_add_regulation_scores(results, "male", root = root, fetch_card = srv$fetch, pause = function() NULL),
+      "in a row"
+    ),
+    "could not be fetched"
   )
   expect_length(srv$asked(), 3L)
   expect_true(all(is.na(out$home_score_reg)))
@@ -166,7 +170,7 @@ test_that("a success between failures resets the count of failures in a row", {
   # Asked newest first: 6, 5, 4, 3, 2, 1.
   srv <- card_server(list(`6` = err, `5` = err, `4` = ok, `3` = err, `2` = err, `1` = ok))
 
-  suppressWarnings(out <- kki_add_regulation_scores(results, "male", root = root, fetch_card = srv$fetch, pause = function() NULL))
+  suppressWarnings(out <- kki_add_regulation_scores(results, "male", root = root, fetch_card = srv$fetch, pause = function() NULL, today = as.Date("1970-01-01")))
 
   expect_length(srv$asked(), 6L)
   expect_identical(sum(!is.na(out$home_score_reg)), 2L)
@@ -190,17 +194,34 @@ test_that("the card step stops when its time budget is spent", {
     out <- kki_add_regulation_scores(results, "male", root = root, fetch_card = srv$fetch, pause = function() NULL, time_budget = 250, clock = clock),
     "time budget"
   )
-  expect_lt(length(srv$asked()), 6L)
-  expect_gte(length(srv$asked()), 1L)
+  # The clock reads 100 s at the start and 100 s more before each request: 100 and 200 s
+  # have passed before the first two requests, 300 s before the third, which is not
+  # started. Exactly two, so the check runs before each request, not after it.
+  expect_identical(length(srv$asked()), 2L)
 })
 
-test_that("a card request waits a bounded time for a retry and for the server", {
-  # WHY: httr2 honours a Retry-After header without a cap unless told one.
-  req <- baskethotel_card_request("6040499", 130403L, "male")
-  expect_true(is.finite(req$policies$retry_max_wait))
-  expect_lte(req$policies$retry_max_wait, 10)
-  expect_lte(req$policies$retry_max_tries, 2)
-  expect_lte(req$options$timeout_ms, 20000)
+test_that("a card request that meets a 503 with Retry-After makes one request and does not wait", {
+  # WHY: httr2 sleeps for a server's Retry-After without a cap, its retry deadline checked
+  # only before the sleep, so one card could hold the daily ingest for an hour. A card
+  # request is not retried: the next daily run asks for the card again.
+  # WHY these two stand-ins: httr2's own response mocking answers before the retry loop,
+  # so it cannot see a retry. Replacing the single attempt (req_perform1) runs the real
+  # loop; replacing its sleep records the wait instead of serving it.
+  calls <- 0L
+  slept <- numeric()
+  local_mocked_bindings(
+    req_perform1 = function(req, ...) {
+      calls <<- calls + 1L
+      httr2::response(status_code = 503, headers = "Retry-After: 3600")
+    },
+    sys_sleep = function(seconds, ...) slept <<- c(slept, seconds),
+    .package = "httr2"
+  )
+
+  expect_error(fetch_baskethotel_card("6040499", 130403L, "male"))
+
+  expect_identical(calls, 1L)
+  expect_true(all(slept == 0))
 })
 
 test_that("a card result the store would reject is not used, whatever the parser says", {
@@ -261,4 +282,29 @@ test_that("ingest_league writes the regulation score through the real KKI step",
   back <- read_table("results", root = root)
   expect_identical(back$game_id, "1")
   expect_identical(c(back$home_score_reg, back$away_score_reg), c(109L, 96L))
+})
+
+test_that("cards that fail every day cannot keep older games from being reached", {
+  # WHY: the queue is newest first, so three cards that always fail, at its front, would
+  # stop every run before any older game. The queue starts at a different point each day.
+  root <- withr::local_tempdir()
+  results <- dplyr::bind_rows(lapply(1:4, function(i) {
+    kki_rows(game_id = as.character(i), home_team = paste0("H", i), match_date = as.Date("2026-03-01") + i)
+  }))
+  err <- simpleError("timeout")
+  # Games 4, 3 and 2 are the newest and always fail; game 1, the oldest, has a card.
+  cards <- list(`4` = err, `3` = err, `2` = err, `1` = card_text("game_card_regulation.txt"))
+
+  reached <- vapply(0:3, function(day) {
+    srv <- card_server(cards)
+    out <- suppressWarnings(kki_add_regulation_scores(
+      results, "male", root = root, fetch_card = srv$fetch, pause = function() NULL,
+      today = as.Date("1970-01-01") + day
+    ))
+    !is.na(out$home_score_reg[out$game_id == "1"])
+  }, logical(1))
+
+  expect_true(any(reached))
+  # On day 0 the queue starts at the newest game and stops after the three failures.
+  expect_false(reached[1])
 })

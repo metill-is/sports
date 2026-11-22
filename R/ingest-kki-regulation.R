@@ -1,14 +1,14 @@
 #' The request for one Baskethotel game card.
 #'
-#' The pipeline's user agent, a 20-second timeout and one retry that waits at
-#' most 10 seconds. WHY the cap: httr2 honours a `Retry-After` header without a
-#' limit unless given `max_seconds`, and one slow card must not hold the
-#' daily ingest of every league.
+#' The pipeline's user agent and a 20-second timeout, and no retry. WHY no
+#' retry: httr2 sleeps for a server's `Retry-After` without a cap (its
+#' `max_seconds` deadline is checked only before the sleep, httr2 1.2.2), so a
+#' retried 503 could hold the daily ingest of every league for as long as the
+#' server asks. A card that fails is asked for again by the next daily run.
 #' @noRd
 baskethotel_card_request <- function(game_id, season_id, sex) {
   httr2::request(baskethotel_game_url(game_id, season_id, sex)) |>
     httr2::req_user_agent("sports-pipeline (+https://github.com/metill-is/sports)") |>
-    httr2::req_retry(max_tries = 2L, max_seconds = 10) |>
     httr2::req_timeout(20L)
 }
 
@@ -37,9 +37,11 @@ fetch_baskethotel_card <- function(game_id, season_id, sex) {
 #' [parse_baskethotel_game_periods()]; a game whose regulation score is
 #' already stored is not fetched again, and its stored score is copied in.
 #'
-#' Polite by construction: at most `max_cards` requests per run, newest games
-#' first, one at a time with `pause()` between them. A daily run fetches the
-#' games played since the day before; a backlog is worked off over several
+#' Polite by construction: at most `max_cards` requests per run, one at a time
+#' with `pause()` between them. The queue is newest first, started at a
+#' different point each day (an offset from `today`), so cards that fail every
+#' day cannot keep older games from ever being reached. A daily run fetches
+#' the games played since the day before; a backlog is worked off over several
 #' runs (or in one, by the backfill script, which lifts the cap).
 #'
 #' Never fatal, and bounded in time: a card that cannot be fetched, cannot be
@@ -63,6 +65,7 @@ fetch_baskethotel_card <- function(game_id, season_id, sex) {
 #' @param max_failures Failed requests in a row after which the step stops.
 #' @param time_budget Seconds after which the step stops starting requests.
 #' @param clock Returns the current time (injectable for tests).
+#' @param today Date that sets where the queue starts.
 #' @return `results` with `home_score_reg` and `away_score_reg`.
 #' @keywords internal
 #' @noRd
@@ -72,7 +75,7 @@ kki_add_regulation_scores <- function(results, sex, root = here::here("data"),
                                       pause = function() Sys.sleep(1),
                                       max_failures = 3L,
                                       time_budget = getOption("sports.kki_card_budget_secs", 300),
-                                      clock = Sys.time) {
+                                      clock = Sys.time, today = Sys.Date()) {
   for (col in c("home_score_reg", "away_score_reg")) {
     if (!col %in% names(results)) results[[col]] <- NA_integer_
   }
@@ -111,6 +114,11 @@ kki_add_regulation_scores <- function(results, sex, root = here::here("data"),
     is.na(results$home_score_reg) & !is.na(results$game_id) & nzchar(results$game_id) &
     !is.na(season_id) & !.is_forfeit(results, "basketball"))
   todo <- todo[order(results$match_date[todo], decreasing = TRUE)]
+  # WHY rotate: three cards that always fail at the front of a newest-first queue would
+  # stop every run before any older game; a daily offset moves the starting point.
+  offset <- if (length(todo) > 1L) as.integer(today) %% length(todo) else 0L
+  # WHY the guard: todo[-seq_len(0)] is todo[-integer(0)], which is empty, not todo.
+  if (offset > 0L) todo <- c(todo[-seq_len(offset)], todo[seq_len(offset)])
   left <- max(length(todo) - max_cards, 0L)
   todo <- utils::head(todo, max_cards)
 
