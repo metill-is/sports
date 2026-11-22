@@ -203,12 +203,11 @@ read_extracted_iceland <- function(league, sex, fit_date = NULL,
     NULL
   }
 
-  # Partition-level provenance: n_draws, fit_date, stan_model, model_units.
-  # Optional -- football partitions written before the contract existed have
-  # none, and `required_extracts` deliberately does not gate on it.
-  out$fit_meta <- .read_partition_extract(
-    fit_dir, "fit_meta", empty_tibbles[["fit_meta"]]
-  )
+  # Partition-level provenance: n_draws, fit_date, stan_model, model_units,
+  # engine, model_version. Optional -- football partitions written before the
+  # contract existed have none, and `required_extracts` deliberately does not
+  # gate on it.
+  out$fit_meta <- .read_fit_meta(fit_dir, empty_tibbles[["fit_meta"]])
 
   out$fit_date <- fit_date_out
   out
@@ -255,6 +254,23 @@ read_extracted_iceland <- function(league, sex, fit_date = NULL,
 
 # A partition-level (division-free) extract file, or its empty shape.
 # @noRd
+# A partition's `fit_meta`, with the engine columns every caller can rely on.
+#
+# The engine columns arrived with football v2 on INLA. Every partition written
+# before that, and every Stan fit since, has none: those ARE Stan fits, so the
+# reader says so instead of leaving each caller to guess what a missing column
+# means.
+# @noRd
+.read_fit_meta <- function(fit_dir, empty = tibble::tibble(
+                             n_draws = integer(), fit_date = as.Date(character()),
+                             stan_model = character(), model_units = character()
+                           )) {
+  fm <- .read_partition_extract(fit_dir, "fit_meta", empty)
+  if (!"engine" %in% names(fm)) fm$engine <- rep("stan", nrow(fm))
+  if (!"model_version" %in% names(fm)) fm$model_version <- rep(NA_character_, nrow(fm))
+  fm
+}
+
 .read_partition_extract <- function(fit_dir, file_type, empty) {
   p <- file.path(fit_dir, paste0(file_type, ".parquet"))
   if (!file.exists(p)) {

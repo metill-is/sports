@@ -52,6 +52,62 @@ paths:
   question before it is a sampler question.
 - `fit_model()` is a pure cmdstanr wrapper — takes stan_data + stan_path,
   returns the fit. Callers save to disk.
+- **Engine switch (2026-11-16).** `fit_league()` reads an optional league key
+  `engine` (`stan` | `inla`, absent = `stan`; schema enum in
+  `config/leagues.schema.json`). No league sets it, so every fit is Stan.
+  `engine: inla` routes to `fit_model_v2_inla()` (`R/model-v2-fit.R`), which
+  fits football model **v2.0** (`football_v2_options()`: one strength walk
+  per team, reversion 0.8 at the season break, fixed style, league-wide
+  scoring-level and home-advantage walks) with R-INLA and returns a fit
+  under the production Stan variable names (`fv2_as_fit()`,
+  `R/model-v2-adapter.R`), so `extract_posteriors()`, the extractors and the
+  publisher run unchanged. It is football-only, refuses a cell with fewer
+  than two seasons of results before the season being forecast (INLA was
+  measurably worse than NUTS on one earlier season), has its own gate (`fv2_inla_gate()`; the Stan sampler gate has no
+  INLA counterpart) and writes a `fit_diagnostics` row with `n_obs` and `NA`
+  sampler metrics, because `needs_refit()` reads `n_obs` off the newest row.
+  That row also carries `engine`, `model_version`, the fit's hyperparameter
+  sds as JSON (`hyper_sd`) and `jump_checked`; Stan rows read as `NA` there.
+  The gate's fifth check compares each hyperparameter with the previous INLA
+  fit of the cell (`fv2_previous_hyper()`, strictly earlier date, same model
+  version, gate passed) and refuses a move by more than a factor 3 (the
+  largest between consecutive re-estimates in the 2022 to 2026 walk-forward
+  was 1.65). When no previous fit is on record `fit_league()` says in the
+  log that the check will not run, and the row has `jump_checked = FALSE`:
+  a check that did not run is never reported as passed. If a refused change
+  is real, rerun with `SPORTS_INLA_ACCEPT_JUMP=1`; the accepted values become
+  the next reference.
+  **Repeatability (2026-11-17):** the engine fits on one thread and passes
+  `internal.opt = FALSE` to R-INLA (`fv2_fit_inla()`), so that a refit of the
+  same data returns the same numbers. Of 140 production fits of the two
+  cells, one R process each, on one machine: on four threads no two agreed,
+  on one thread with the option on 39 of 40 did, on one thread with it off
+  40 of 40. On four threads a fixture's expected goals varied between
+  processes with an sd of 0.005 to 0.009 at the median (the Monte Carlo
+  standard error of 4,000 draws is 0.021) and by up to 0.17 between two
+  processes. One thread costs about 30 s of a men's fit's 108 s. Agreement
+  across machines was not measured. `fit_league()` passes no `threads`, and
+  `test-model-v2.R` pins the thread count, the option and a two-process
+  comparison.
+  **What "current strength" means on this engine:** each team's state at its
+  next match, and the league levels of the first fixture week. The simulators
+  hold a team at one state for all its remaining matches and the forecast of
+  the next match reads the state at that match, so both read the same state
+  (`cur_slot`, `cur_week_nr` in `fv2_build()`). Before a season that state
+  has crossed the break: it has reverted toward the division mean and carries
+  the break variance. Teams whose first match is beyond the fit horizon are
+  carried into the new season as likelihood-free states
+  (`fv2_carry_slots()`), so a simulated table never mixes teams on both
+  sides of a season break. Who reverts, and toward which mean, is defined
+  once (`fv2_reversion_groups()`) and read by both the INLA precision and
+  the Stan reference program.
+  `run_fit_targets()` must keep `engine` in its whitelisted slice
+  (`test-pipeline-run-isolation.R`). INLA is not in `DESCRIPTION`: the code
+  guards with `requireNamespace()` (for INLA and for `sn`, which INLA only
+  suggests but its posterior sampler needs) and the tests skip without them. Switching
+  a league is the owner's decision; `test-model-v2.R` pins "no league is on
+  the INLA engine" so the switch has to edit that expectation. Evidence and
+  cutover plan: `docs/reports/2026-11-15-football-v2-proposal.qmd`.
 - `extract_posteriors()` materialises posterior draws as the canonical
   `beliefs_latest` tibble (per-draw-per-match).
 - Stan models live in `Stan/{league_key}/{file}.stan`. `leagues.yml`'s

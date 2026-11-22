@@ -22,6 +22,7 @@ Imports:
     jsonlite,
     jsonvalidate,
     lubridate,
+    Matrix,
     nloptr,
     posterior,
     purrr,
@@ -54,6 +55,10 @@ Collate:
     'auto-place.R'
     'round-cutoff.R'
     'model-prepare.R'
+    'model-v2-spec.R'
+    'model-v2-inla.R'
+    'model-v2-adapter.R'
+    'model-v2-fit.R'
     'publish-iceland-league.R'
     'publish-divisions.R'
     'extract-football-iceland.R'
@@ -106,6 +111,7 @@ Collate:
     'health-season.R'
     'ingest-ksi-football.R'
     'ingest-log.R'
+    'lengjan-archive.R'
     'model-fit.R'
     'model-posteriors.R'
     'model-league.R'

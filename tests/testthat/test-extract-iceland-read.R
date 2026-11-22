@@ -30,6 +30,8 @@ test_that("read_extracted_iceland splits a 2DT partition by division", {
   expect_equal(nrow(out$fit_meta), 1L)
   expect_false("division" %in% names(out$fit_meta))
   expect_equal(out$fit_meta$n_draws, FIXTURE_N_DRAWS)
+  # The fixture partition predates the engine column: it reads as a Stan fit.
+  expect_identical(out$fit_meta$engine, "stan")
   for (code in .iceland_division_codes("basketball_iceland", "male")) {
     expect_null(out[[code]]$fit_meta, info = code)
   }

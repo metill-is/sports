@@ -78,6 +78,73 @@ Runs **after** `setup-r-dependencies`:
   cache key, so the first run of each workflow after the pin reinstalls the
   package library (one-off extra minutes).
 
+## 4. The CmdStan cache key names the runner image and compiler (2026-11-16)
+
+`ci-tests.yml`, `fit.yml` and `world-cup.yml` cache `~/.cmdstan` under one
+shared key, so a PR run restores what `main` built:
+
+```yaml
+- name: Identify the runner image for the CmdStan cache key
+  id: image
+  run: |
+    . /etc/os-release
+    echo "id=${ID}-${VERSION_ID}-$(uname -m)-gcc$(g++ -dumpfullversion)" >> "$GITHUB_OUTPUT"
+
+- name: Cache CmdStan installation
+  id: cache-cmdstan
+  uses: actions/cache@v5
+  with:
+    path: ~/.cmdstan
+    key: cmdstan-${{ env.CMDSTAN_VERSION }}-${{ steps.image.outputs.id }}
+```
+
+- **Why:** `~/.cmdstan` is not just source. Installing CmdStan compiles
+  `main.o`, `libtbb.so.2`, the SUNDIALS archives and a precompiled model
+  header, and every Stan model compiled later is linked against them. A cached
+  copy is therefore only valid on the image and compiler that built it.
+- **Incident:** the key used to end in the literal `ubuntu-latest`. GitHub
+  moved that label from Ubuntu 24.04 to 26.04 on 2026-11-11, and the objects
+  built on 24.04 (GCC 13.3.0, cached 2026-04-27) were restored onto 26.04,
+  where models are compiled by GCC 15.2.0. Both 2DT executables then died at
+  the start of sampling with glibc's `double free or corruption (out)`
+  (SIGABRT; cmdstanr reports return code `-6` and "No chains finished
+  successfully"). `fit.yml` failed on 2026-11-12, 13, 14 and 15 (runs
+  43237541505, 43436868442, 43596971307, 43718485883), so handball and
+  basketball had no fit for four days, and `CI Tests` went red on `main` on
+  `test-simulate-2dt-equivalence.R`. The R package cache in the same
+  workflows is keyed by the OS release and rolled over on its own.
+- **Proof:** run 43858721937 ran one commit three ways. Restored cache on
+  26.04: both models exit 134. CmdStan 2.38.0 built on 26.04: both exit 0 and
+  the tests pass. Restored cache on 24.04: both exit 0 and the tests pass.
+  Neither the image nor the cache is broken alone; the pairing is. The
+  backtrace (run 43859642089) puts the abort in a `free()` inside
+  `stan::math::gradient`, which lives in the cached `main.o` and calls into
+  the freshly compiled model.
+- **It does not look like a toolchain fault from outside.** The build
+  succeeds, every model compiles, and a small model survives the same mix
+  (8 schools in `test-model-fit.R` stayed green), so the symptom reads as a
+  bug in one Stan model. In `fit.yml` it surfaces as the diagnostic gate's
+  "every diagnostic metric was NA". When chains return `-6` or `134` after a
+  runner-image change, check the cache key first.
+- **Why the key and not a pinned `runs-on: ubuntu-24.04`:** a pin leaves the
+  key a constant, so the same failure returns the day the pin is bumped or
+  GitHub retires the image. The key has to name the image either way, and once
+  it does a moved image costs one CmdStan rebuild (2 min 11 s on 4 cores in
+  the run above) instead of days of failed fits. CmdStan 2.38.0 builds and
+  samples on 26.04, so nothing needs holding back.
+- **Two spellings that look right and are not:** a literal label
+  (`ubuntu-latest`, `ubuntu-24.04`) describes what the workflow asked for, not
+  what it got. `${{ env.ImageOS }}` is the empty string (checked in run
+  43859642089, where the shell saw `ImageOS=ubuntu26`): the `env` context
+  holds only variables the workflow itself sets, not the runner's own. Compute
+  the id in a step, as above.
+- **Limits:** `actions/cache` saves only when the job succeeds, so a fit run
+  that builds CmdStan and then fails rebuilds it next time. A cache saved by a
+  PR run is visible to that PR only; `main` builds its own on its first run
+  after a key change.
+- **Enforcement:** `tests/testthat/test-workflow-cmdstan-cache.R` pins the key
+  expression, the image step and its position in all three workflows.
+
 ## Detection if a future package adds an unmet sysreq
 
 With `PKG_SYSREQS=false`, pak still _prints_ system requirements but
@@ -118,6 +185,7 @@ meta-characters.
 | `republish.yml` | `workflow_dispatch` only | Re-run publish from existing extraction archive (lever for fast publisher iteration) |
 | `healthcheck.yml` | cron 2×/day + dispatch | Read-only `pipeline_health()` → `data/health/status.json`; commits if changed; fails the run on `overall == FAIL` so GitHub's failure email fires (the alert channel). `test-healthcheck-ci-isolation.R` proves it never writes the ledger. |
 | `world-cup.yml` | **dispatch only** (cron retired 2026-09-02) | HM 2026 forecast: download martj42 internationals → ingest → fit → simulate → publish `data/publish/world_cup/karla/*.json`. Self-contained (own ingest, no `workflow_run` parent). A cheap SHA pre-gate (`git ls-remote` martj42's tip vs the tracked `data/wc/martj42_pointer.txt`, read over raw.github — no clone of this ~11 GB repo) no-ops every poll where martj42 hasn't committed; the facts-diff is the precise second gate. See note below. |
+| `inla-engine.yml` | PR to `main` touching `R/**`, `tests/testthat/**`, `config/**`, `DESCRIPTION` or `research/football-v2/**`; weekly cron (Mon 06:41 UTC); dispatch | Runs the tests that fit with R-INLA, which skip in `ci-tests.yml` because INLA is not in `DESCRIPTION`. Installs INLA at a pinned version (tarball by name from INLA's own repository, after an `apt-get` of the GDAL/GEOS/PROJ/udunits libraries `sf` loads, with `fmesher`, `MatrixModels` and `sn` as extra packages: INLA only suggests `sn` but its posterior sampler stops without it). Sets `SPORTS_REQUIRE_INLA=1`, under which `skip_if_no_inla()` **fails** instead of skipping, and runs every test file that calls that helper (found by grep, not listed). Dispatch with `replay: true` also fits both football cells on real data through `fit_league()` (`research/football-v2/run_replay.R`) and uploads the result. Read-only permissions, writes under `RUNNER_TEMP`, creates no commit, and checks that `data/` is untouched. Pinned by `tests/testthat/test-workflow-inla-engine.R`. When a league is switched to `engine: inla`, the same install steps go into `fit.yml` and the other workflows that fit. |
 | `discover-leagues.yml` | cron 2×/week (Mon+Thu) + dispatch | Read-only Lengjan JSON-API discovery (no browser; visits every league at betting.mode scrape or above) → `data/discovery/proposals.json`; commits if changed. Surfaces via the `discovery` health WARN. References no placer token. |
 
 The `decide-publish` chain reading `workflow_run` from *both* parents
