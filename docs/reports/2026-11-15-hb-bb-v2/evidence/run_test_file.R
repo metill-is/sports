@@ -1,5 +1,6 @@
 # Run one test file with R-INLA required, and print one row per test and a total.
 # Usage (repository root, through the machine limiter):
+# Sports sessions share one heavy slot: start it only when `slot.sh status` shows no sports-* owner.
 #   LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 slot.sh run sports-hbbb -- \
 #     Rscript docs/reports/2026-11-15-hb-bb-v2/evidence/run_test_file.R tests/testthat/<file>.R
 options(width = 200)

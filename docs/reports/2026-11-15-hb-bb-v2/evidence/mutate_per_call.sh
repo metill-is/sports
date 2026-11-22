@@ -2,6 +2,7 @@
 # Three mutations of the per-call internal.opt in fit_v2_inla(); each is applied, the fitter's
 # test file is run, and the fitter is put back. Run from the repository root, inside one
 # limiter slot:  slot.sh run sports-hbbb -- bash docs/reports/2026-11-15-hb-bb-v2/evidence/mutate_per_call.sh
+# Sports sessions share one heavy slot: start it only when `slot.sh status` shows no sports-* owner.
 set -u
 E=docs/reports/2026-11-15-hb-bb-v2/evidence
 F=R/v2-margin-total-inla.R
