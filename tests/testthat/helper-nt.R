@@ -29,3 +29,31 @@ nt_test_fit <- function(theta, delta = NULL, mu = 0, home_for = 0,
     teams = teams, kappa = kappa
   )
 }
+
+# Euro 2024 qualifying fixture (see fixtures/euro2024_qualifying/SOURCES.md).
+nt_e24_fixture <- function() {
+  read <- function(f) {
+    utils::read.csv(
+      testthat::test_path("fixtures", "euro2024_qualifying", f),
+      stringsAsFactors = FALSE, encoding = "UTF-8"
+    )
+  }
+  tables <- read("tables.csv")
+  nl <- read("nations_league_rank.csv")
+  disc <- read("disciplinary.csv")
+  list(
+    matches = read("matches.csv"),
+    tables = tables,
+    overall = read("overall.csv"),
+    groups = split(tables$team, tables$group),
+    nl_rank = stats::setNames(nl$rank, nl$team),
+    disciplinary = stats::setNames(disc$points, disc$team)
+  )
+}
+
+nt_q_matches <- function(...) {
+  rows <- tibble::tribble(~home_team, ~away_team, ~home_score, ~away_score, ...)
+  rows$home_score <- as.integer(rows$home_score)
+  rows$away_score <- as.integer(rows$away_score)
+  rows
+}

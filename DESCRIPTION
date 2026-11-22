@@ -121,6 +121,7 @@ Collate:
     'nt-score.R'
     'nt-simulate.R'
     'nt-stan.R'
+    'nt-qualifying.R'
     'placer-ledger.R'
     'placer-login.R'
     'placer-navigate.R'

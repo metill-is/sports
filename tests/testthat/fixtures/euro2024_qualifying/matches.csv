@@ -1,0 +1,231 @@
+"match_date","group","home_team","away_team","home_score","away_score","neutral"
+2023-03-23,"C","Italy","England",1,2,FALSE
+2023-03-23,"C","North Macedonia","Malta",2,1,FALSE
+2023-03-23,"H","Denmark","Finland",3,1,FALSE
+2023-03-23,"H","Kazakhstan","Slovenia",1,2,FALSE
+2023-03-23,"H","San Marino","Northern Ireland",0,2,FALSE
+2023-03-23,"J","Bosnia and Herzegovina","Iceland",3,0,FALSE
+2023-03-23,"J","Portugal","Liechtenstein",4,0,FALSE
+2023-03-23,"J","Slovakia","Luxembourg",0,0,FALSE
+2023-03-24,"B","France","Netherlands",4,0,FALSE
+2023-03-24,"B","Gibraltar","Greece",0,3,TRUE
+2023-03-24,"E","Czech Republic","Poland",3,1,FALSE
+2023-03-24,"E","Moldova","Faroe Islands",1,1,FALSE
+2023-03-24,"F","Austria","Azerbaijan",4,1,FALSE
+2023-03-24,"F","Sweden","Belgium",0,3,FALSE
+2023-03-24,"G","Bulgaria","Montenegro",0,1,FALSE
+2023-03-24,"G","Serbia","Lithuania",2,0,FALSE
+2023-03-25,"A","Scotland","Cyprus",3,0,FALSE
+2023-03-25,"A","Spain","Norway",3,0,FALSE
+2023-03-25,"D","Armenia","Turkey",1,2,FALSE
+2023-03-25,"D","Croatia","Wales",1,1,FALSE
+2023-03-25,"I","Andorra","Romania",0,2,FALSE
+2023-03-25,"I","Belarus","Switzerland",0,5,TRUE
+2023-03-25,"I","Israel","Kosovo",1,1,FALSE
+2023-03-26,"C","England","Ukraine",2,0,FALSE
+2023-03-26,"C","Malta","Italy",0,2,FALSE
+2023-03-26,"H","Kazakhstan","Denmark",3,2,FALSE
+2023-03-26,"H","Northern Ireland","Finland",0,1,FALSE
+2023-03-26,"H","Slovenia","San Marino",2,0,FALSE
+2023-03-26,"J","Liechtenstein","Iceland",0,7,FALSE
+2023-03-26,"J","Luxembourg","Portugal",0,6,FALSE
+2023-03-26,"J","Slovakia","Bosnia and Herzegovina",2,0,FALSE
+2023-03-27,"B","Netherlands","Gibraltar",3,0,FALSE
+2023-03-27,"B","Republic of Ireland","France",0,1,FALSE
+2023-03-27,"E","Moldova","Czech Republic",0,0,FALSE
+2023-03-27,"E","Poland","Albania",1,0,FALSE
+2023-03-27,"F","Austria","Estonia",2,1,FALSE
+2023-03-27,"F","Sweden","Azerbaijan",5,0,FALSE
+2023-03-27,"G","Hungary","Bulgaria",3,0,FALSE
+2023-03-27,"G","Montenegro","Serbia",0,2,FALSE
+2023-03-28,"A","Georgia","Norway",1,1,FALSE
+2023-03-28,"A","Scotland","Spain",2,0,FALSE
+2023-03-28,"D","Turkey","Croatia",0,2,FALSE
+2023-03-28,"D","Wales","Latvia",1,0,FALSE
+2023-03-28,"I","Kosovo","Andorra",1,1,FALSE
+2023-03-28,"I","Romania","Belarus",2,1,FALSE
+2023-03-28,"I","Switzerland","Israel",3,0,FALSE
+2023-06-16,"B","Gibraltar","France",0,3,TRUE
+2023-06-16,"B","Greece","Republic of Ireland",2,1,FALSE
+2023-06-16,"C","Malta","England",0,4,FALSE
+2023-06-16,"C","North Macedonia","Ukraine",2,3,FALSE
+2023-06-16,"D","Latvia","Turkey",2,3,FALSE
+2023-06-16,"D","Wales","Armenia",2,4,FALSE
+2023-06-16,"H","Denmark","Northern Ireland",1,0,FALSE
+2023-06-16,"H","Finland","Slovenia",2,0,FALSE
+2023-06-16,"H","San Marino","Kazakhstan",0,3,TRUE
+2023-06-16,"I","Andorra","Switzerland",1,2,FALSE
+2023-06-16,"I","Belarus","Israel",1,2,TRUE
+2023-06-16,"I","Kosovo","Romania",0,0,FALSE
+2023-06-17,"A","Cyprus","Georgia",1,2,FALSE
+2023-06-17,"A","Norway","Scotland",1,2,FALSE
+2023-06-17,"E","Albania","Moldova",2,0,FALSE
+2023-06-17,"E","Faroe Islands","Czech Republic",0,3,FALSE
+2023-06-17,"F","Azerbaijan","Estonia",1,1,FALSE
+2023-06-17,"F","Belgium","Austria",1,1,FALSE
+2023-06-17,"G","Lithuania","Bulgaria",1,1,FALSE
+2023-06-17,"G","Montenegro","Hungary",0,0,FALSE
+2023-06-17,"J","Iceland","Slovakia",1,2,FALSE
+2023-06-17,"J","Luxembourg","Liechtenstein",2,0,FALSE
+2023-06-17,"J","Portugal","Bosnia and Herzegovina",3,0,FALSE
+2023-06-19,"B","France","Greece",1,0,FALSE
+2023-06-19,"B","Republic of Ireland","Gibraltar",3,0,FALSE
+2023-06-19,"C","England","North Macedonia",7,0,FALSE
+2023-06-19,"C","Ukraine","Malta",1,0,TRUE
+2023-06-19,"D","Armenia","Latvia",2,1,FALSE
+2023-06-19,"D","Turkey","Wales",2,0,FALSE
+2023-06-19,"H","Finland","San Marino",6,0,FALSE
+2023-06-19,"H","Northern Ireland","Kazakhstan",0,1,FALSE
+2023-06-19,"H","Slovenia","Denmark",1,1,FALSE
+2023-06-19,"I","Belarus","Kosovo",2,1,TRUE
+2023-06-19,"I","Israel","Andorra",2,1,FALSE
+2023-06-19,"I","Switzerland","Romania",2,2,FALSE
+2023-06-20,"A","Norway","Cyprus",3,1,FALSE
+2023-06-20,"A","Scotland","Georgia",2,0,FALSE
+2023-06-20,"E","Faroe Islands","Albania",1,3,FALSE
+2023-06-20,"E","Moldova","Poland",3,2,FALSE
+2023-06-20,"F","Austria","Sweden",2,0,FALSE
+2023-06-20,"F","Estonia","Belgium",0,3,FALSE
+2023-06-20,"G","Bulgaria","Serbia",1,1,FALSE
+2023-06-20,"G","Hungary","Lithuania",2,0,FALSE
+2023-06-20,"J","Bosnia and Herzegovina","Luxembourg",0,2,FALSE
+2023-06-20,"J","Iceland","Portugal",0,1,FALSE
+2023-06-20,"J","Liechtenstein","Slovakia",0,1,FALSE
+2023-09-07,"B","France","Republic of Ireland",2,0,FALSE
+2023-09-07,"B","Netherlands","Greece",3,0,FALSE
+2023-09-07,"E","Czech Republic","Albania",1,1,FALSE
+2023-09-07,"E","Poland","Faroe Islands",2,0,FALSE
+2023-09-07,"G","Lithuania","Montenegro",2,2,FALSE
+2023-09-07,"G","Serbia","Hungary",1,2,FALSE
+2023-09-07,"H","Denmark","San Marino",4,0,FALSE
+2023-09-07,"H","Kazakhstan","Finland",0,1,FALSE
+2023-09-07,"H","Slovenia","Northern Ireland",4,2,FALSE
+2023-09-08,"A","Cyprus","Scotland",0,3,FALSE
+2023-09-08,"A","Georgia","Spain",1,7,FALSE
+2023-09-08,"D","Croatia","Latvia",5,0,FALSE
+2023-09-08,"D","Turkey","Armenia",1,1,FALSE
+2023-09-08,"J","Bosnia and Herzegovina","Liechtenstein",2,1,FALSE
+2023-09-08,"J","Luxembourg","Iceland",3,1,FALSE
+2023-09-08,"J","Slovakia","Portugal",0,1,FALSE
+2023-09-09,"C","North Macedonia","Italy",1,1,FALSE
+2023-09-09,"C","Ukraine","England",1,1,TRUE
+2023-09-09,"F","Azerbaijan","Belgium",0,1,FALSE
+2023-09-09,"F","Estonia","Sweden",0,5,FALSE
+2023-09-09,"I","Andorra","Belarus",0,0,FALSE
+2023-09-09,"I","Kosovo","Switzerland",2,2,FALSE
+2023-09-09,"I","Romania","Israel",1,1,FALSE
+2023-09-10,"B","Greece","Gibraltar",5,0,FALSE
+2023-09-10,"B","Republic of Ireland","Netherlands",1,2,FALSE
+2023-09-10,"E","Albania","Poland",2,0,FALSE
+2023-09-10,"E","Faroe Islands","Moldova",0,1,FALSE
+2023-09-10,"G","Lithuania","Serbia",1,3,FALSE
+2023-09-10,"G","Montenegro","Bulgaria",2,1,FALSE
+2023-09-10,"H","Finland","Denmark",0,1,FALSE
+2023-09-10,"H","Kazakhstan","Northern Ireland",1,0,FALSE
+2023-09-10,"H","San Marino","Slovenia",0,4,FALSE
+2023-09-11,"D","Armenia","Croatia",0,1,FALSE
+2023-09-11,"D","Latvia","Wales",0,2,FALSE
+2023-09-11,"J","Iceland","Bosnia and Herzegovina",1,0,FALSE
+2023-09-11,"J","Portugal","Luxembourg",9,0,FALSE
+2023-09-11,"J","Slovakia","Liechtenstein",3,0,FALSE
+2023-09-12,"A","Norway","Georgia",2,1,FALSE
+2023-09-12,"A","Spain","Cyprus",6,0,FALSE
+2023-09-12,"C","Italy","Ukraine",2,1,FALSE
+2023-09-12,"C","Malta","North Macedonia",0,2,FALSE
+2023-09-12,"F","Belgium","Estonia",5,0,FALSE
+2023-09-12,"F","Sweden","Austria",1,3,FALSE
+2023-09-12,"I","Israel","Belarus",1,0,FALSE
+2023-09-12,"I","Romania","Kosovo",2,0,FALSE
+2023-09-12,"I","Switzerland","Andorra",3,0,FALSE
+2023-10-12,"A","Cyprus","Norway",0,4,FALSE
+2023-10-12,"A","Spain","Scotland",2,0,FALSE
+2023-10-12,"D","Croatia","Turkey",0,1,FALSE
+2023-10-12,"D","Latvia","Armenia",2,0,FALSE
+2023-10-12,"E","Albania","Czech Republic",3,0,FALSE
+2023-10-12,"E","Faroe Islands","Poland",0,2,FALSE
+2023-10-12,"I","Andorra","Kosovo",0,3,FALSE
+2023-10-12,"I","Belarus","Romania",0,0,TRUE
+2023-10-13,"B","Netherlands","France",1,2,FALSE
+2023-10-13,"B","Republic of Ireland","Greece",0,2,FALSE
+2023-10-13,"F","Austria","Belgium",2,3,FALSE
+2023-10-13,"F","Estonia","Azerbaijan",0,2,FALSE
+2023-10-13,"J","Iceland","Luxembourg",1,1,FALSE
+2023-10-13,"J","Liechtenstein","Bosnia and Herzegovina",0,2,FALSE
+2023-10-13,"J","Portugal","Slovakia",3,2,FALSE
+2023-10-14,"C","Italy","Malta",4,0,FALSE
+2023-10-14,"C","Ukraine","North Macedonia",2,0,TRUE
+2023-10-14,"G","Bulgaria","Lithuania",0,2,FALSE
+2023-10-14,"G","Hungary","Serbia",2,1,FALSE
+2023-10-14,"H","Denmark","Kazakhstan",3,1,FALSE
+2023-10-14,"H","Northern Ireland","San Marino",3,0,FALSE
+2023-10-14,"H","Slovenia","Finland",3,0,FALSE
+2023-10-15,"A","Georgia","Cyprus",4,0,FALSE
+2023-10-15,"A","Norway","Spain",0,1,FALSE
+2023-10-15,"D","Turkey","Latvia",4,0,FALSE
+2023-10-15,"D","Wales","Croatia",2,1,FALSE
+2023-10-15,"E","Czech Republic","Faroe Islands",1,0,FALSE
+2023-10-15,"E","Poland","Moldova",1,1,FALSE
+2023-10-15,"I","Romania","Andorra",4,0,FALSE
+2023-10-15,"I","Switzerland","Belarus",3,3,FALSE
+2023-10-16,"B","Gibraltar","Republic of Ireland",0,4,TRUE
+2023-10-16,"B","Greece","Netherlands",0,1,FALSE
+2023-10-16,"F","Azerbaijan","Austria",0,1,FALSE
+2023-10-16,"F","Belgium","Sweden",1,1,FALSE
+2023-10-16,"J","Bosnia and Herzegovina","Portugal",0,5,FALSE
+2023-10-16,"J","Iceland","Liechtenstein",4,0,FALSE
+2023-10-16,"J","Luxembourg","Slovakia",0,1,FALSE
+2023-10-17,"C","England","Italy",3,1,FALSE
+2023-10-17,"C","Malta","Ukraine",1,3,FALSE
+2023-10-17,"G","Lithuania","Hungary",2,2,FALSE
+2023-10-17,"G","Serbia","Montenegro",3,1,FALSE
+2023-10-17,"H","Finland","Kazakhstan",1,2,FALSE
+2023-10-17,"H","Northern Ireland","Slovenia",0,1,FALSE
+2023-10-17,"H","San Marino","Denmark",1,2,FALSE
+2023-11-12,"I","Kosovo","Israel",1,0,FALSE
+2023-11-15,"I","Israel","Switzerland",1,1,TRUE
+2023-11-16,"A","Cyprus","Spain",1,3,FALSE
+2023-11-16,"A","Georgia","Scotland",2,2,FALSE
+2023-11-16,"F","Azerbaijan","Sweden",3,0,FALSE
+2023-11-16,"F","Estonia","Austria",0,2,FALSE
+2023-11-16,"G","Bulgaria","Hungary",2,2,FALSE
+2023-11-16,"G","Montenegro","Lithuania",2,0,FALSE
+2023-11-16,"J","Liechtenstein","Portugal",0,2,FALSE
+2023-11-16,"J","Luxembourg","Bosnia and Herzegovina",4,1,FALSE
+2023-11-16,"J","Slovakia","Iceland",4,2,FALSE
+2023-11-17,"C","England","Malta",2,0,FALSE
+2023-11-17,"C","Italy","North Macedonia",5,2,FALSE
+2023-11-17,"E","Moldova","Albania",1,1,FALSE
+2023-11-17,"E","Poland","Czech Republic",1,1,FALSE
+2023-11-17,"H","Denmark","Slovenia",2,1,FALSE
+2023-11-17,"H","Finland","Northern Ireland",4,0,FALSE
+2023-11-17,"H","Kazakhstan","San Marino",3,1,FALSE
+2023-11-18,"B","France","Gibraltar",14,0,FALSE
+2023-11-18,"B","Netherlands","Republic of Ireland",1,0,FALSE
+2023-11-18,"D","Armenia","Wales",1,1,FALSE
+2023-11-18,"D","Latvia","Croatia",0,2,FALSE
+2023-11-18,"I","Belarus","Andorra",1,0,TRUE
+2023-11-18,"I","Israel","Romania",1,2,TRUE
+2023-11-18,"I","Switzerland","Kosovo",1,1,FALSE
+2023-11-19,"A","Scotland","Norway",3,3,FALSE
+2023-11-19,"A","Spain","Georgia",3,1,FALSE
+2023-11-19,"F","Belgium","Azerbaijan",5,0,FALSE
+2023-11-19,"F","Sweden","Estonia",2,0,FALSE
+2023-11-19,"G","Hungary","Montenegro",3,1,FALSE
+2023-11-19,"G","Serbia","Bulgaria",2,2,FALSE
+2023-11-19,"J","Bosnia and Herzegovina","Slovakia",1,2,FALSE
+2023-11-19,"J","Liechtenstein","Luxembourg",0,1,FALSE
+2023-11-19,"J","Portugal","Iceland",2,0,FALSE
+2023-11-20,"C","North Macedonia","England",1,1,FALSE
+2023-11-20,"C","Ukraine","Italy",0,0,TRUE
+2023-11-20,"E","Albania","Faroe Islands",0,0,FALSE
+2023-11-20,"E","Czech Republic","Moldova",3,0,FALSE
+2023-11-20,"H","Northern Ireland","Denmark",2,0,FALSE
+2023-11-20,"H","San Marino","Finland",1,2,FALSE
+2023-11-20,"H","Slovenia","Kazakhstan",2,1,FALSE
+2023-11-21,"B","Gibraltar","Netherlands",0,6,TRUE
+2023-11-21,"B","Greece","France",2,2,FALSE
+2023-11-21,"D","Croatia","Armenia",1,0,FALSE
+2023-11-21,"D","Wales","Turkey",1,1,FALSE
+2023-11-21,"I","Andorra","Israel",0,2,FALSE
+2023-11-21,"I","Kosovo","Belarus",0,1,FALSE
+2023-11-21,"I","Romania","Switzerland",1,0,FALSE
