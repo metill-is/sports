@@ -1,0 +1,35 @@
+Euro 2024 qualifying reproduced from the results with R/nt-qualifying.R
+Run 2026-11-22 19:19 GMT; 230 matches, 10 groups.
+
+Group A: matches the official table  1 Spain (21), 2 Scotland (17), 3 Norway (11), 4 Georgia (8), 5 Cyprus (0)
+Group B: matches the official table  1 France (22), 2 Netherlands (18), 3 Greece (13), 4 Republic of Ireland (6), 5 Gibraltar (0)
+Group C: matches the official table  1 England (20), 2 Italy (14), 3 Ukraine (14), 4 North Macedonia (8), 5 Malta (0)
+  Italy above Ukraine on a_h2h_points; official note: Head-to-head points: Italy 4, Ukraine 1.
+Group D: matches the official table  1 Turkey (17), 2 Croatia (16), 3 Wales (12), 4 Armenia (8), 5 Latvia (3)
+Group E: matches the official table  1 Albania (15), 2 Czech Republic (15), 3 Poland (11), 4 Moldova (10), 5 Faroe Islands (2)
+  Albania above Czech Republic on a_h2h_points; official note: Head to head points: Albania 4, Czech Republic 1.
+Group F: matches the official table  1 Belgium (20), 2 Austria (19), 3 Sweden (10), 4 Azerbaijan (7), 5 Estonia (1)
+Group G: matches the official table  1 Hungary (18), 2 Serbia (14), 3 Montenegro (11), 4 Lithuania (6), 5 Bulgaria (4)
+Group H: matches the official table  1 Denmark (22), 2 Slovenia (22), 3 Finland (18), 4 Kazakhstan (18), 5 Northern Ireland (9), 6 San Marino (0)
+  Denmark above Slovenia on a_h2h_points; official note: Head to head points: Denmark 4, Slovenia 1.
+  Finland above Kazakhstan on e_goal_difference; official note: Goal difference in all group matches: Finland +8, Kazakhstan +4.
+Group I: matches the official table  1 Romania (22), 2 Switzerland (17), 3 Israel (15), 4 Belarus (12), 5 Kosovo (11), 6 Andorra (2)
+Group J: matches the official table  1 Portugal (30), 2 Slovakia (22), 3 Luxembourg (17), 4 Iceland (10), 5 Bosnia and Herzegovina (9), 6 Liechtenstein (0)
+
+Overall ranking (results against sixth place discarded): all 53 ranks match
+Runners-up in order: 
+  11 Austria (F): 19 pts, GD +10, GF 17
+  12 Netherlands (B): 18 pts, GD +10, GF 17
+  13 Scotland (A): 17 pts, GD +9, GF 17
+  14 Croatia (D): 16 pts, GD +9, GF 13
+  15 Slovenia (H): 16 pts, GD +5, GF 14
+  16 Slovakia (J): 16 pts, GD +5, GF 13
+  17 Czech Republic (E): 15 pts, GD +6, GF 12
+  18 Italy (C): 14 pts, GD +7, GF 16
+  19 Serbia (G): 14 pts, GD +6, GF 15
+  20 Switzerland (I): 11 pts, GD +7, GF 17
+  rank 4 Belgium above England on away_goals; official note: Goals scored away from home: Belgium 10, England 8.
+  rank 44 Bosnia and Herzegovina above Latvia on disciplinary; official note: Fair play points: Bosnia and Herzegovina −20, Latvia −29.
+Statistics differing from the published overall table: Iceland (gf 6 here, 7 published)
+
+RESULT: all ten tables and the overall order reproduced.
