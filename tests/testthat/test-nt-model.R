@@ -1,4 +1,7 @@
-nt_sim_prep <- function(n_teams = 8L, n_periods = 8L, per_period = 60L, seed = 11L) {
+# `jump` (named, e.g. c(T8 = 1.4)) is added to those teams' strengths from
+# period `jump_from` on.
+nt_sim_prep <- function(n_teams = 8L, n_periods = 8L, per_period = 60L, seed = 11L,
+                        jump = NULL, jump_from = n_periods) {
   withr::local_seed(seed)
   teams <- paste0("T", seq_len(n_teams))
   theta <- seq(0.7, -0.7, length.out = n_teams)
@@ -6,7 +9,10 @@ nt_sim_prep <- function(n_teams = 8L, n_periods = 8L, per_period = 60L, seed = 1
   home <- sample.int(n_teams, n, replace = TRUE)
   away <- vapply(home, function(h) sample(setdiff(seq_len(n_teams), h), 1L), 1L)
   venue <- stats::rbinom(n, 1L, 0.6)
-  gap <- theta[home] - theta[away]
+  period <- rep(seq_len(n_periods), each = per_period)
+  th <- matrix(theta, n_teams, n_periods, dimnames = list(teams, NULL))
+  for (tm in names(jump)) th[tm, jump_from:n_periods] <- th[tm, jump_from:n_periods] + jump[[tm]]
+  gap <- th[cbind(home, period)] - th[cbind(away, period)]
   matches <- tibble::tibble(
     match_date = as.Date("2020-01-15") + 91L * (rep(seq_len(n_periods), each = per_period) - 1L),
     home_team = teams[home], away_team = teams[away],
@@ -14,7 +20,7 @@ nt_sim_prep <- function(n_teams = 8L, n_periods = 8L, per_period = 60L, seed = 1
     away_score = stats::rpois(n, exp(0.2 - gap - 0.2 * venue)),
     tournament = "FIFA World Cup qualification",
     home_nr = home, away_nr = away,
-    period = rep(seq_len(n_periods), each = per_period),
+    period = period,
     venue = venue, friendly = rep(c(FALSE, TRUE), length.out = n)
   )
   list(
@@ -65,6 +71,17 @@ test_that("the INLA fit recovers simulated strengths and venue effects", {
   expect_lt(mean(fit$draws$home_against), 0)
   expect_equal(dim(fit$draws$theta), c(200L, 8L))
   expect_true("sd u per sqrt(month)" %in% fit$hyper$parameter)
+})
+
+test_that("the posterior draws are the strengths at the end of the window", {
+  skip_if_no_inla()
+  # T8 starts weakest and jumps above everyone for the last three periods;
+  # a draw from any earlier period would leave it below mid-table.
+  sim <- nt_sim_prep(jump = c(T8 = 1.6), jump_from = 6L)
+  fit <- nt_fit_inla(sim$prep, n_draws = 200L, threads = "1:1")
+  th <- colMeans(fit$draws$theta)
+  expect_gt(th[["T8"]], th[["T3"]])
+  expect_gt(th[["T8"]] - th[["T7"]], 0.8)
 })
 
 test_that("a fixed random-walk sd is honoured, not silently ignored", {
