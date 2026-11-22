@@ -145,6 +145,33 @@ shared key, so a PR run restores what `main` built:
 - **Enforcement:** `tests/testthat/test-workflow-cmdstan-cache.R` pins the key
   expression, the image step and its position in all three workflows.
 
+## 5. R-INLA in `fit.yml`, pinned with `inla-engine.yml` (2026-11-22)
+
+- **What:** `fit.yml` runs `inla-engine.yml`'s R-INLA steps after the V8
+  reinstall, at the same `INLA_VERSION` / `INLA_REPO`:
+  - sf's system libraries (apt)
+  - R-INLA's R dependencies (`fmesher`, `MatrixModels`, `sn`), in their own
+    step, outside the fit's dependency step
+  - the pinned tarball, with a version check
+  - a smoke `INLA::inla()` fit, because `packageVersion()` loads nothing
+- **Non-blocking until a switch:** while no league has `engine: inla`, the four
+  steps are `continue-on-error: true`, so an outage at R-INLA's host, an apt
+  mirror or a package repository cannot cost a day of Stan fits. The commit
+  that switches a league removes it. `test-workflow-inla-engine.R` fails if
+  the steps are blocking before a switch or non-blocking after one, and if
+  their commands drift from `inla-engine.yml`'s. A failure shows as an
+  annotation on a green run; the weekly INLA Engine Tests run is the hard
+  signal.
+- **Why it is not in `DESCRIPTION`:** pak, which installs every workflow's
+  packages, does not read `Additional_repositories`, and the repository lists
+  every release with the newest first. A `Suggests` entry would therefore
+  break the install step of each workflow that resolves suggested packages
+  (`fit`, `decide-publish`, `republish`, `world-cup`; checked with pak 0.9.2
+  on 2026-11-22). A `Remotes:` URL might satisfy pak, but it would put the
+  73 MB tarball on all four workflows, three of which never call R-INLA.
+- **Bumping R-INLA:** change both pins together, and re-run the engine evidence
+  first. Every number behind the football cutover was measured on 25.06.07.
+
 ## Detection if a future package adds an unmet sysreq
 
 With `PKG_SYSREQS=false`, pak still _prints_ system requirements but
@@ -180,12 +207,12 @@ meta-characters.
 | `ci-tests.yml` | push, PR | `devtools::test()` |
 | `scrape-results.yml` | cron 1×/day | Federation results + schedules |
 | `scrape-odds.yml` | cron 5×/day (08,11,14,17,20 UTC, minute 17) | Lengjan odds snapshot (Chromote DOM for football; JSON API for handball/basketball) |
-| `fit.yml` | `workflow_run` from scrape-results | Stan fit |
+| `fit.yml` | `workflow_run` from scrape-results | Stan fit; also installs R-INLA at `inla-engine.yml`'s pin for the football v2 engine, non-blocking while no league uses it (section 5) |
 | `decide-publish.yml` | `workflow_run` from fit AND scrape-odds | Recommendations + JSONs |
 | `republish.yml` | `workflow_dispatch` only | Re-run publish from existing extraction archive (lever for fast publisher iteration) |
 | `healthcheck.yml` | cron 2×/day + dispatch | Read-only `pipeline_health()` → `data/health/status.json`; commits if changed; fails the run on `overall == FAIL` so GitHub's failure email fires (the alert channel). `test-healthcheck-ci-isolation.R` proves it never writes the ledger. |
 | `world-cup.yml` | **dispatch only** (cron retired 2026-09-02) | HM 2026 forecast: download martj42 internationals → ingest → fit → simulate → publish `data/publish/world_cup/karla/*.json`. Self-contained (own ingest, no `workflow_run` parent). A cheap SHA pre-gate (`git ls-remote` martj42's tip vs the tracked `data/wc/martj42_pointer.txt`, read over raw.github — no clone of this ~11 GB repo) no-ops every poll where martj42 hasn't committed; the facts-diff is the precise second gate. See note below. |
-| `inla-engine.yml` | PR to `main` touching `R/**`, `tests/testthat/**`, `config/**`, `DESCRIPTION` or `research/football-v2/**`; weekly cron (Mon 06:41 UTC); dispatch | Runs the tests that fit with R-INLA, which skip in `ci-tests.yml` because INLA is not in `DESCRIPTION`. Installs INLA at a pinned version (tarball by name from INLA's own repository, after an `apt-get` of the GDAL/GEOS/PROJ/udunits libraries `sf` loads, with `fmesher`, `MatrixModels` and `sn` as extra packages: INLA only suggests `sn` but its posterior sampler stops without it). Sets `SPORTS_REQUIRE_INLA=1`, under which `skip_if_no_inla()` **fails** instead of skipping, and runs every test file that calls that helper (found by grep, not listed). Dispatch with `replay: true` also fits both football cells on real data through `fit_league()` (`research/football-v2/run_replay.R`) and uploads the result. Read-only permissions, writes under `RUNNER_TEMP`, creates no commit, and checks that `data/` is untouched. Pinned by `tests/testthat/test-workflow-inla-engine.R`. When a league is switched to `engine: inla`, the same install steps go into `fit.yml` and the other workflows that fit. |
+| `inla-engine.yml` | PR to `main` touching `R/**`, `tests/testthat/**`, `config/**`, `DESCRIPTION` or `research/football-v2/**`; weekly cron (Mon 06:41 UTC); dispatch | Runs the tests that fit with R-INLA, which skip in `ci-tests.yml` because INLA is not in `DESCRIPTION`. Installs INLA at a pinned version (tarball by name from INLA's own repository, after an `apt-get` of the GDAL/GEOS/PROJ/udunits libraries `sf` loads, with `fmesher`, `MatrixModels` and `sn` as extra packages: INLA only suggests `sn` but its posterior sampler stops without it). Sets `SPORTS_REQUIRE_INLA=1`, under which `skip_if_no_inla()` **fails** instead of skipping, and runs every test file that calls that helper (found by grep, not listed). Dispatch with `replay: true` also fits both football cells on real data through `fit_league()` (`research/football-v2/run_replay.R`) and uploads the result. Read-only permissions, writes under `RUNNER_TEMP`, creates no commit, and checks that `data/` is untouched. Pinned by `tests/testthat/test-workflow-inla-engine.R`. `fit.yml` carries the same install steps (section 5). |
 | `discover-leagues.yml` | cron 2×/week (Mon+Thu) + dispatch | Read-only Lengjan JSON-API discovery (no browser; visits every league at betting.mode scrape or above) → `data/discovery/proposals.json`; commits if changed. Surfaces via the `discovery` health WARN. References no placer token. |
 
 The `decide-publish` chain reading `workflow_run` from *both* parents
