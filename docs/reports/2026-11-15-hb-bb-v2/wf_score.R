@@ -45,7 +45,9 @@ load_wf <- function(cell, tag) {
   # Such rows are left out and counted; a walk-forward stored before the status was kept
   # (the first run) cannot be filtered and is passed whole.
   d <- v2_successful_predictions(stored$pred, stored$cut)
-  dropped <- attr(d, "dropped")
+  # A cutoff whose fit threw on its warm and its cold attempt has no rows at all; its
+  # matches are counted as left out too (stored since 22 November 2026, see wf_inla.R).
+  dropped <- attr(d, "dropped") + if (is.null(stored$lost)) 0L else sum(stored$lost$n_pred)
   if (isTRUE(dropped > 0L)) cat(sprintf("%s [%s]: %d predictions left out, from cutoffs with a failed mode search\n", cell, tag, dropped))
   attr(d, "dropped") <- NULL
   sport <- CELLS[[cell]]$sport
@@ -91,7 +93,9 @@ shapes <- list(
     v_n <- exp(par[2])
     mu_h <- (d$mean_t + d$mean_m) / 2
     mu_a <- (d$mean_t - d$mean_m) / 2
-    n <- pmax(n, max(mu_h, mu_a) + 1)
+    # WHY row by row: a bound over every row would make one match's variance depend on
+    # the other matches' predictions, later cutoffs included.
+    n <- pmax(n, pmax(mu_h, mu_a) + 1)
     binom <- mu_h * (1 - mu_h / n) + mu_a * (1 - mu_a / n)
     list(
       s_m = sqrt(d$sd_m^2 + binom + ((mu_h - mu_a) / n)^2 * v_n),

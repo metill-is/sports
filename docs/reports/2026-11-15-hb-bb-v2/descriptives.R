@@ -2,8 +2,11 @@
 # played matches up to the newest result): what does the data ask of the likelihood?
 # Residuals are in-sample, so variances are slightly optimistic; the calibration tables
 # in the report use the walk-forward predictions instead.
-# Usage: Rscript -e 'source("docs/reports/2026-11-15-hb-bb-v2/descriptives.R")'
+# Usage: Rscript -e 'source("docs/reports/2026-11-15-hb-bb-v2/descriptives.R")' [defaults]
+#   "defaults" fits with R-INLA's own setting of its online optimisation instead of the
+#   fitter's (reproducible = FALSE), as the runs measured in the report were made.
 source("docs/reports/2026-11-15-hb-bb-v2/common.R")
+reproducible <- !identical(commandArgs(trailingOnly = TRUE)[1], "defaults")
 out <- list()
 for (cell in names(CELLS)) {
   ci <- CELLS[[cell]]
@@ -16,8 +19,8 @@ for (cell in names(CELLS)) {
     n_weeks = season_weeks(res_all), division_map = DIVISION_MAP[[ci$sport]]
   )
   pr <- v2_priors(ci$sport)
-  fm <- fit_v2_inla(v, "margin", pr, within = "none", int_strategy = "eb", cpo = TRUE)
-  ft <- fit_v2_inla(v, "total", pr, within = "none", int_strategy = "eb", cpo = TRUE)
+  fm <- fit_v2_inla(v, "margin", pr, within = "none", int_strategy = "eb", cpo = TRUE, reproducible = reproducible)
+  ft <- fit_v2_inla(v, "total", pr, within = "none", int_strategy = "eb", cpo = TRUE, reproducible = reproducible)
   d <- train[, c("match_date", "season", "division", "round", "home_team", "away_team", "home_score", "away_score")]
   d$margin <- d$home_score - d$away_score
   d$total <- d$home_score + d$away_score

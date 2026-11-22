@@ -57,6 +57,9 @@ if (refit_failed) {
 }
 pred_rows <- list()
 cut_rows <- list()
+# WHY: a cutoff whose fit throws on its warm and on its cold attempt writes no row, so
+# without this list it would vanish from every count of fits and failures.
+lost_rows <- list()
 theta <- list(margin = NULL, total = NULL)
 t_start <- Sys.time()
 for (i in seq_along(cutoffs)) {
@@ -77,6 +80,7 @@ for (i in seq_along(cutoffs)) {
   )
   fits <- list()
   retried <- c(margin = FALSE, total = FALSE)
+  threw <- NA_character_
   for (resp in c("margin", "total")) {
     th <- if (refit_failed) NULL else theta[[resp]]
     r <- v2_fit_with_retry(
@@ -84,13 +88,17 @@ for (i in seq_along(cutoffs)) {
       theta_start = th
     )
     f <- r$fit
-    if (is.null(f)) break
+    if (is.null(f)) {
+      threw <- resp
+      break
+    }
     retried[[resp]] <- r$retried
     theta[[resp]] <- v2_warm_start(f)
     fits[[resp]] <- f
   }
   if (length(fits) < 2L) {
-    cat(sprintf("FAIL %s cutoff %s\n", cell, cu))
+    cat(sprintf("FAIL %s cutoff %s: the %s fit threw on every attempt\n", cell, cu, threw))
+    lost_rows[[length(lost_rows) + 1L]] <- data.frame(cutoff = cu, n_pred = nrow(pred), threw = threw)
     next
   }
   keep <- c("match_date", "season", "division", "home_team", "away_team", "home_score", "away_score",
@@ -114,7 +122,7 @@ for (i in seq_along(cutoffs)) {
     cat(sprintf("%s %s cutoff %s (%d/%d): n_train %d, pred %d, fit %.1f + %.1f s, elapsed %.0f min\n",
                 cell, tag, cu, i, length(cutoffs), nrow(train), nrow(pred),
                 fits$margin$secs, fits$total$secs, as.numeric(difftime(Sys.time(), t_start, units = "mins"))))
-    saveRDS(list(pred = do.call(rbind, pred_rows), cut = do.call(rbind, cut_rows)), out_file)
+    saveRDS(list(pred = do.call(rbind, pred_rows), cut = do.call(rbind, cut_rows), lost = do.call(rbind, lost_rows)), out_file)
   }
 }
 if (refit_failed) {
@@ -155,13 +163,14 @@ if (refit_failed) {
       }
     }
   }
+  stored$lost <- rbind(stored$lost, do.call(rbind, lost_rows))
   saveRDS(stored, out_file)
   cut_rows <- split(stored$cut, seq_len(nrow(stored$cut)))
   pred_rows <- list(stored$pred)
 } else {
-  saveRDS(list(pred = do.call(rbind, pred_rows), cut = do.call(rbind, cut_rows)), out_file)
+  saveRDS(list(pred = do.call(rbind, pred_rows), cut = do.call(rbind, cut_rows), lost = do.call(rbind, lost_rows)), out_file)
 }
 cut_all <- do.call(rbind, cut_rows)
-cat(sprintf("WF DONE %s %s: %d cutoffs fitted, %d matches predicted; fits whose mode search did not end with status 0: %d of %d\n", cell, tag,
+cat(sprintf("WF DONE %s %s: %d cutoffs fitted, %d matches predicted; fits whose mode search did not end with status 0: %d of %d; cutoffs lost to a fit that threw on every attempt: %d\n", cell, tag,
             length(cut_rows), nrow(do.call(rbind, pred_rows)),
-            sum(!(cut_all$status_m %in% 0L)) + sum(!(cut_all$status_t %in% 0L)), 2L * nrow(cut_all)))
+            sum(!(cut_all$status_m %in% 0L)) + sum(!(cut_all$status_t %in% 0L)), 2L * nrow(cut_all), length(lost_rows)))

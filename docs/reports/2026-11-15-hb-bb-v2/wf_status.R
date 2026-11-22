@@ -52,6 +52,8 @@ wf <- do.call(rbind, lapply(runs, function(k) {
     refit_matches = sum(refit_rows(b$pred)), refit_max_change = if (any(refit_rows(b$pred))) max(refit_change(b$pred)) else 0,
     # Fits the walk-forward itself repeated from a cold start (wf_inla.R since the retry rule).
     retried = if (is.null(b$cut$retried_m)) NA_integer_ else sum(b$cut$retried_m) + sum(b$cut$retried_t),
+    # Cutoffs whose fit threw on every attempt: no row in `cut` (recorded since 22 November 2026).
+    cutoffs_lost = if (is.null(b$lost)) 0L else nrow(b$lost),
     matches = nrow(b$pred), in_both = sum(!is.na(i)),
     median_abs_diff_margin = stats::median(dm, na.rm = TRUE), max_abs_diff_margin = max(dm, na.rm = TRUE),
     share_margin_over_half = mean(dm > 0.5, na.rm = TRUE),

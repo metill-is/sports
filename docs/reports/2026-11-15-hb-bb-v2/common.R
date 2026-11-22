@@ -5,6 +5,7 @@ suppressMessages(devtools::load_all(".", quiet = TRUE))
 
 EXP_DIR <- "docs/reports/2026-11-15-hb-bb-v2"
 OUT <- Sys.getenv("HBBB_OUT", "/Users/brynjolfurjonsson/.claude-reviews/sports-hb-bb-v2")
+dir.create(file.path(OUT, "out"), recursive = TRUE, showWarnings = FALSE)
 # WHY an override: the stored results were computed against the data of the branch
 # point; a re-run from a later checkout names that data here instead of reading newer rows.
 DATA_ROOT <- Sys.getenv("HBBB_DATA", "data")
