@@ -50,8 +50,7 @@ test_that("the design matrices encode strength gap, openness and damping", {
 })
 
 test_that("the INLA fit recovers simulated strengths and venue effects", {
-  skip_if_not_installed("INLA")
-  skip_on_ci()
+  skip_if_no_inla()
   sim <- nt_sim_prep()
   fit <- nt_fit_inla(sim$prep, n_draws = 200L, threads = "1:1")
   est <- colMeans(fit$draws$theta)
@@ -69,8 +68,7 @@ test_that("the INLA fit recovers simulated strengths and venue effects", {
 })
 
 test_that("a fixed random-walk sd is honoured, not silently ignored", {
-  skip_if_not_installed("INLA")
-  skip_on_ci()
+  skip_if_no_inla()
   sim <- nt_sim_prep()
   fit <- nt_fit_inla(sim$prep, rw_sd = 0.01, n_draws = 10L, threads = "1:1", keep_result = TRUE)
   expect_false(any(grepl("^sd u", fit$hyper$parameter)))
@@ -81,8 +79,7 @@ test_that("a fixed random-walk sd is honoured, not silently ignored", {
 })
 
 test_that("the PC priors reach INLA", {
-  skip_if_not_installed("INLA")
-  skip_on_ci()
+  skip_if_no_inla()
   sim <- nt_sim_prep()
   fit <- nt_fit_inla(sim$prep, n_draws = 10L, threads = "1:1", keep_result = TRUE)
   priors <- vapply(fit$result$all.hyper$random, function(h) h$hyper$theta$prior, "")
