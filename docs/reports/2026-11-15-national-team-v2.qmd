@@ -365,7 +365,7 @@ knitr::kable(kp_tab, digits = 1)
 
 **Window.** Eight years of history score the same as twelve (`r vd("w8")`). Production's 4.4 years change the score by `r vd("w4")`, which also does not separate from zero. v2 on that window averages `r sprintf("%.3f", mean_of("w4"))`, against `r sprintf("%.3f", mean_of("production"))` for the production approach and `r sprintf("%.3f", mean_of("base"))` for v2, so the point estimates are consistent with the longer history accounting for the gap, but these tournaments cannot attribute it: which of v2's changes matters most is unresolved.
 
-**Numerics.** A monthly grid and integrating over the hyperparameters instead of conditioning on their mode change nothing measurable (@tbl-sensitivity), so the quarterly grid and the faster empirical-Bayes fit are kept.
+**Numerics.** A monthly grid and integrating over the hyperparameters instead of conditioning on their mode change nothing measurable (@tbl-sensitivity), so the quarterly grid and the faster empirical-Bayes fit are kept. The random-walk prior bounds the walk's sd per time step, so the monthly check also loosened that prior, to about 0.17 per quarter against 0.1. The estimated walk sd is well inside both bounds.
 
 ## A larger panel for the model choices {#sec-panel}
 

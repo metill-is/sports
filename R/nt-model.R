@@ -130,6 +130,8 @@ nt_fit_inla <- function(prep,
     step_sd <- rw_sd * sqrt(prep$step_months)
     bquote(list(prec = list(initial = .(log(1 / step_sd^2)), fixed = TRUE)))
   } else {
+    # WHY: the bound is per time step, so a monthly grid (step_months = 1)
+    # loosens it to about 0.17 per quarter; only the quarterly grid was tuned.
     pc(0.1)
   }
   u_term <- if (dynamics == "ar1") {
