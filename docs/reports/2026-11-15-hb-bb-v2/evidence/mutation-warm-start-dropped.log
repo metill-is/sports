@@ -1,0 +1,13 @@
+Saving _problems/test-v2-margin-total-inla-427.R
+[ FAIL 1 | WARN 0 | SKIP 0 | PASS 2 ]
+
+══ Failed tests ════════════════════════════════════════════════════════════════
+── Failure ('test-v2-margin-total-inla.R:427:3'): a warm start reaches R-INLA's mode search, and a cold fit starts without one ──
+Expected `unname(warm$fit$.args$control.mode$theta)` to equal `unname(cold$theta)`.
+Differences:
+`actual` is NULL
+`expected` is a double vector (-3.31240672088293, -2.01832790395401, 1.03849584756991, -0.543394756001073, 1.41399198095405)
+
+
+[ FAIL 1 | WARN 0 | SKIP 0 | PASS 2 ]
+TOTAL expectations 3 | failed 1 | errors 0

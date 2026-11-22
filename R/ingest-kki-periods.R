@@ -28,9 +28,9 @@ baskethotel_game_url <- function(game_id, season_id, sex = c("male", "female")) 
 
 #' Parse per-period scores out of a Baskethotel game-view widget response.
 #'
-#' Pure function: takes the response body, returns one row. Only digits and ASCII class names are
-#' matched, byte-wise, so the response's ISO-8859-1 team names cannot break
-#' the parse.
+#' Pure function: takes the response body, returns one row. Only digits and
+#' ASCII class names are matched, byte-wise, so the response's ISO-8859-1
+#' team names cannot break the parse.
 #'
 #' Regulation time is the first four periods. KKI's cards list exactly four
 #' quarters even when the game went to overtime (measured on 3,286 cards,

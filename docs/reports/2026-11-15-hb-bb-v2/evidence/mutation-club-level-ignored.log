@@ -1,0 +1,20 @@
+Saving _problems/test-v2-margin-total-inla-452.R
+Saving _problems/test-v2-margin-total-inla-453.R
+[ FAIL 2 | WARN 0 | SKIP 0 | PASS 2 ]
+
+══ Failed tests ════════════════════════════════════════════════════════════════
+── Failure ('test-v2-margin-total-inla.R:452:3'): without the club level the fit has no club term and no club sd ──
+Expected `"b" %in% names(without$random)` to be FALSE.
+Differences:
+`actual`:   TRUE 
+`expected`: FALSE
+
+── Failure ('test-v2-margin-total-inla.R:453:3'): without the club level the fit has no club term and no club sd ──
+Expected `"sd: b" %in% without$hyper_sd$parameter` to be FALSE.
+Differences:
+`actual`:   TRUE 
+`expected`: FALSE
+
+
+[ FAIL 2 | WARN 0 | SKIP 0 | PASS 2 ]
+TOTAL expectations 4 | failed 2 | errors 0

@@ -1,0 +1,13 @@
+Saving _problems/test-v2-margin-total-inla-465.R
+[ FAIL 1 | WARN 0 | SKIP 0 | PASS 2 ]
+
+══ Failed tests ════════════════════════════════════════════════════════════════
+── Failure ('test-v2-margin-total-inla.R:465:3'): hyperparameters are reported on the sd and correlation scale ──
+Expected `h$q50[h$parameter == "rho: u_s"]` to equal `s["Rho for u_s", "0.5quant"]`.
+Differences:
+  `actual`: 1.09
+`expected`: 0.50
+
+
+[ FAIL 1 | WARN 0 | SKIP 0 | PASS 2 ]
+TOTAL expectations 3 | failed 1 | errors 0

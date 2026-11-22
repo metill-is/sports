@@ -1,0 +1,20 @@
+Saving _problems/test-ingest-kki-periods-97.R
+Saving _problems/test-ingest-kki-periods-98.R
+[ FAIL 2 | WARN 1 | SKIP 0 | PASS 1 ]
+
+══ Failed tests ════════════════════════════════════════════════════════════════
+── Failure ('test-ingest-kki-periods.R:97:3'): team names in ISO-8859-1 bytes do not break the parse ──
+Expected `p$ok` to be TRUE.
+Differences:
+`actual`:   FALSE
+`expected`: TRUE 
+
+── Failure ('test-ingest-kki-periods.R:98:3'): team names in ISO-8859-1 bytes do not break the parse ──
+Expected `c(p$home_reg, p$away_reg)` to equal `c(109L, 96L)`.
+Differences:
+  `actual`:  NA NA
+`expected`: 109 96
+
+
+[ FAIL 2 | WARN 1 | SKIP 0 | PASS 1 ]
+TOTAL expectations 4 | failed 2 | errors 0

@@ -1,0 +1,48 @@
+HEAD 2dfd73266 (working tree changed)
+Saving _problems/test-v2-margin-total-fit-rules-97.R
+Saving _problems/test-v2-margin-total-fit-rules-100.R
+Assertion failed: (def->n > 1), function inla_parse_ffield, file inla-parse.c, line 17290.
+sh: line 1: 30013 Abort trap: 6           '/Library/Frameworks/R.framework/Versions/4.5-arm64/Resources/library/INLA/bin/mac.arm64/inla.run' -s -v -t1:1 -P compact '/var/folders/h6/tswmwqq108z_sbxzqjn17cd00000gn/T//RtmpoRJiKy/file73a37ed8f421/Model.ini' > '/var/folders/h6/tswmwqq108z_sbxzqjn17cd00000gn/T//RtmpoRJiKy/file73a37ed8f421/Logfile.txt'
+
+ *** inla.core.safe:  The inla program failed, but will rerun in case better initial values may help. try=1/1 
+Assertion failed: (def->n > 1), function inla_parse_ffield, file inla-parse.c, line 17290.
+sh: line 1: 30128 Abort trap: 6           '/Library/Frameworks/R.framework/Versions/4.5-arm64/Resources/library/INLA/bin/mac.arm64/inla.run' -s -v -t1:1 -P compact '/var/folders/h6/tswmwqq108z_sbxzqjn17cd00000gn/T//RtmpoRJiKy/file73a31e17c0bf/Model.ini' > '/var/folders/h6/tswmwqq108z_sbxzqjn17cd00000gn/T//RtmpoRJiKy/file73a31e17c0bf/Logfile.txt'
+Saving _problems/test-v2-margin-total-fit-rules-111.R
+[ FAIL 3 | WARN 0 | SKIP 0 | PASS 27 ]
+
+══ Failed tests ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+── Failure ('test-v2-margin-total-fit-rules.R:97:3'): predictions without a cutoff column are refused, and a tibble without status columns comes back whole ────────────────────────────────────────────
+Expected `v2_successful_predictions(data.frame(x = 1:2), cut)` to throw a error.
+── Failure ('test-v2-margin-total-fit-rules.R:100:3'): predictions without a cutoff column are refused, and a tibble without status columns comes back whole ───────────────────────────────────────────
+Expected `kept <- v2_successful_predictions(pred, tibble::tibble(cutoff = as.Date("2026-01-01")))` not to throw any warnings.
+Actually got a <rlang_warning> with message:
+  Unknown or uninitialised column: `status_m`.
+── Error ('test-v2-margin-total-fit-rules.R:111:3'): a fit without training rows is refused before R-INLA is asked ─────────────────────────────────────────────────────────────────────────────────────
+Error in `inla.core.safe(formula = formula, family = family, contrasts = contrasts, data = data, quantiles = quantiles, E = E, offset = offset, scale = scale, weights = weights, Ntrials = Ntrials, strata = strata, lp.scale = lp.scale, link.covariates = link.covariates, verbose = verbose, lincomb = lincomb, selection = selection, control.compute = control.compute, control.predictor = control.predictor, control.family = control.family, control.inla = control.inla, control.fixed = control.fixed, control.mode = control.mode,      control.expert = control.expert, control.hazard = control.hazard, control.lincomb = control.lincomb, control.update = control.update, control.lp.scale = control.lp.scale, control.pardiso = control.pardiso, control.stiles = control.stiles, control.taucs = control.taucs, control.numa = control.numa, only.hyperparam = only.hyperparam, inla.call = inla.call, inla.arg = inla.arg, num.threads = num.threads, keep = keep, working.directory = working.directory, silent = silent, inla.mode = inla.mode,      safe = FALSE, debug = debug, .parent.frame = .parent.frame)`: The inla-program exited with an error. Unless you interupted it yourself, please rerun with verbose=TRUE and check the output carefully.
+  If this does not help, please contact the developers at <help@r-inla.org>.
+The inla program failed and the maximum number of tries has been reached.
+Backtrace:
+    ▆
+ 1. ├─testthat::expect_error(...) at test-v2-margin-total-fit-rules.R:111:3
+ 2. │ └─testthat:::expect_condition_matching_(...)
+ 3. │   └─testthat:::quasi_capture(...)
+ 4. │     ├─testthat (local) .capture(...)
+ 5. │     │ └─base::withCallingHandlers(...)
+ 6. │     └─rlang::eval_bare(quo_get_expr(.quo), quo_get_env(.quo))
+ 7. └─sports:::fit_v2_inla(v, "margin", v2_priors("handball"))
+ 8.   └─INLA::inla(...) at hb-bb-v2/R/v2-margin-total-inla.R:226:3
+ 9.     └─INLA:::inla.core.safe(...)
+
+[ FAIL 3 | WARN 0 | SKIP 0 | PASS 27 ]
+                                                                                                  test nb failed skipped error warning
+                                      only a mode status of exactly zero counts as a successful search  2      0   FALSE FALSE       0
+                                                                a successful warm fit is kept as it is  3      0   FALSE FALSE       0
+                                     a warm fit whose search failed is repeated once from a cold start  3      0   FALSE FALSE       0
+                      when the cold repeat fails too the fit is returned as failed, after two attempts  3      0   FALSE FALSE       0
+                       a warm fit that throws is followed by exactly one cold fit, whatever its status  2      0   FALSE FALSE       0
+                                                                          a cold fit is never repeated  4      0   FALSE FALSE       0
+                                       the next fit starts warm only from a fit whose search succeeded  4      0   FALSE FALSE       0
+                            predictions from a cutoff with a failed fit are not passed on to be scored  4      0   FALSE FALSE       0
+ predictions without a cutoff column are refused, and a tibble without status columns comes back whole  4      2   FALSE FALSE       0
+                                         a fit without training rows is refused before R-INLA is asked  0      0   FALSE  TRUE       0
+TOTAL expectations 29 | failed 2 | errors 1 | skipped 0
