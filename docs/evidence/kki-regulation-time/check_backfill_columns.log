@@ -1,0 +1,12 @@
+sport=basketball/country=iceland/sex=female/season=2021/part-0.parquet      rows  184 ->  184 | old columns identical: TRUE | added: game_id,home_score_reg,away_score_reg
+sport=basketball/country=iceland/sex=female/season=2022/part-0.parquet      rows  220 ->  220 | old columns identical: TRUE | added: game_id,home_score_reg,away_score_reg
+sport=basketball/country=iceland/sex=female/season=2023/part-0.parquet      rows  246 ->  246 | old columns identical: TRUE | added: game_id,home_score_reg,away_score_reg
+sport=basketball/country=iceland/sex=female/season=2024/part-0.parquet      rows  227 ->  227 | old columns identical: TRUE | added: game_id,home_score_reg,away_score_reg
+sport=basketball/country=iceland/sex=female/season=2025/part-0.parquet      rows  208 ->  208 | old columns identical: TRUE | added: game_id,home_score_reg,away_score_reg
+sport=basketball/country=iceland/sex=female/season=2026/part-0.parquet      rows  235 ->  235 | old columns identical: TRUE | added: game_id,home_score_reg,away_score_reg
+sport=basketball/country=iceland/sex=male/season=2021/part-0.parquet        rows  254 ->  254 | old columns identical: TRUE | added: game_id,home_score_reg,away_score_reg
+sport=basketball/country=iceland/sex=male/season=2022/part-0.parquet        rows  305 ->  305 | old columns identical: TRUE | added: game_id,home_score_reg,away_score_reg
+sport=basketball/country=iceland/sex=male/season=2023/part-0.parquet        rows  309 ->  309 | old columns identical: TRUE | added: game_id,home_score_reg,away_score_reg
+sport=basketball/country=iceland/sex=male/season=2024/part-0.parquet        rows  317 ->  317 | old columns identical: TRUE | added: game_id,home_score_reg,away_score_reg
+sport=basketball/country=iceland/sex=male/season=2025/part-0.parquet        rows  319 ->  319 | old columns identical: TRUE | added: game_id,home_score_reg,away_score_reg
+sport=basketball/country=iceland/sex=male/season=2026/part-0.parquet        rows  321 ->  321 | old columns identical: TRUE | added: game_id,home_score_reg,away_score_reg
