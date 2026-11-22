@@ -326,7 +326,10 @@ download_baskethotel_xlsx <- function(season_id,
 #'
 #' Pure function — takes a file path and context, returns a tibble matching
 #' `schemas()$results` (even for schedule exports; the caller drops score
-#' columns). Fixture-testable: no network.
+#' columns). Fixture-testable: no network. `game_id` is the export's first
+#' column, Baskethotel's id of the game, which names its card
+#' ([kki_add_regulation_scores()]); the regulation-time scores are left to
+#' that step.
 #'
 #' @param path Path to XLSX file.
 #' @param sport,country,sex,division,season Context columns applied to every
@@ -380,7 +383,8 @@ parse_baskethotel_xlsx <- function(path, sport, country, sex, division, season) 
     home_score = home_score,
     away_score = away_score,
     division = division,
-    round = NA_integer_
+    round = NA_integer_,
+    game_id = trimws(as.character(cleaned$id))
   )
 
   # Drop rows with missing dates / teams (extra safety against stray separator rows).
@@ -489,7 +493,8 @@ parse_baskethotel_xlsx_empty <- function() {
     home_score = integer(),
     away_score = integer(),
     division = character(),
-    round = integer()
+    round = integer(),
+    game_id = character()
   )
 }
 
@@ -541,6 +546,11 @@ register_ingest_source(
   "kki_basketball",
   list(
     fetch_results = fetch_results_kki,
-    fetch_schedule = fetch_schedule_kki
+    fetch_schedule = fetch_schedule_kki,
+    # WHY a wrapper: kki_add_regulation_scores() is defined in a file collated
+    # after this one, so it is looked up when the step runs, not here.
+    enrich_results = function(results, league, sex, root) {
+      kki_add_regulation_scores(results, sex, root = root)
+    }
   )
 )

@@ -342,3 +342,40 @@ test_that("a non-odds table keeps the old read-error swallow", {
   back <- read_table("results", root = root)
   expect_equal(back$home_team, "Haukar")
 })
+
+test_that("a re-ingested result without regulation scores keeps the stored ones", {
+  # WHY: the daily ingest re-fetches the season from the export, which has no regulation
+  # scores, and the new row wins on the natural key; without this the morning's upsert
+  # would blank every regulation score fetched before.
+  tmp <- withr::local_tempdir()
+  first <- make_result_row(sport = "basketball", division = "BD", home_score = 101L, away_score = 97L)
+  first$game_id <- "6040499"
+  first$home_score_reg <- 88L
+  first$away_score_reg <- 88L
+  upsert_table(first, "results", root = tmp)
+
+  again <- make_result_row(sport = "basketball", division = "BD", home_score = 101L, away_score = 97L)
+  upsert_table(again, "results", root = tmp)
+
+  back <- read_table("results", root = tmp)
+  expect_equal(nrow(back), 1L)
+  expect_identical(back$home_score_reg, 88L)
+  expect_identical(back$away_score_reg, 88L)
+  expect_identical(back$game_id, "6040499")
+})
+
+test_that("a corrected final score drops the stored regulation scores", {
+  tmp <- withr::local_tempdir()
+  first <- make_result_row(sport = "basketball", division = "BD", home_score = 101L, away_score = 97L)
+  first$home_score_reg <- 88L
+  first$away_score_reg <- 88L
+  upsert_table(first, "results", root = tmp)
+
+  corrected <- make_result_row(sport = "basketball", division = "BD", home_score = 99L, away_score = 97L)
+  upsert_table(corrected, "results", root = tmp)
+
+  back <- read_table("results", root = tmp)
+  expect_identical(back$home_score, 99L)
+  expect_identical(back$home_score_reg, NA_integer_)
+  expect_identical(back$away_score_reg, NA_integer_)
+})

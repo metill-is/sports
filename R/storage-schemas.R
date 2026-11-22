@@ -21,7 +21,15 @@ schemas <- function() {
       home_score  = arrow::int32(),
       away_score  = arrow::int32(),
       division    = arrow::string(),
-      round       = arrow::int32()
+      round       = arrow::int32(),
+      # Nullable, added 2026-11-22 for basketball: the federation source's game id
+      # (Baskethotel's, for KKI) and the score after regulation time, read from the
+      # game's card. A bookmaker settles basketball on regulation time; the final
+      # score includes overtime. Writers may omit them -- optional_columns() fills
+      # typed NA -- so football, handball and all earlier history carry NA.
+      game_id        = arrow::string(),
+      home_score_reg = arrow::int32(),
+      away_score_reg = arrow::int32()
     ),
     schedules = arrow::schema(
       sport        = arrow::string(),
@@ -184,6 +192,11 @@ schemas <- function() {
 #' @noRd
 optional_columns <- function(table) {
   switch(table,
+    results = list(
+      game_id = NA_character_,
+      home_score_reg = NA_integer_,
+      away_score_reg = NA_integer_
+    ),
     odds = list(
       sex = NA_character_,
       event_id = NA_character_,

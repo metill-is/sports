@@ -46,22 +46,29 @@ get_ingest_source <- function(name) {
 #' the right source module, calls `fetch_results` / `fetch_schedule`, and writes
 #' to `data/facts/\{results,schedules\}/` via `write_table()`. Team names listed
 #' in `league$data_source$team_aliases[[sex]]` are rewritten to their stored
-#' spelling first.
+#' spelling first. A source module may also register `enrich_results`, a
+#' second step that fills columns its export lacks (KKI: the regulation-time
+#' score from each game's card); it runs after the aliases and is best effort.
 #'
 #' @param league A single entry from `load_leagues()`.
 #' @param sex "male" or "female".
 #' @param root Data root. Defaults to `here::here("data")`.
 #' @param seasons Optional integer vector to pass through to `fetch_results`.
+#' @param schedule Fetch and write the schedule too? `FALSE` for a backfill of
+#'   past seasons' results, which must leave the current schedule alone.
 #' @return Integer count of rows written (results + schedules), invisibly.
 #' @export
 ingest_league <- function(league, sex,
                           root = here::here("data"),
-                          seasons = NULL) {
+                          seasons = NULL, schedule = TRUE) {
   results_mod <- get_ingest_source(league$data_source$results)
   schedule_mod <- get_ingest_source(league$data_source$schedule)
 
   results <- results_mod$fetch_results(league, sex, seasons = seasons)
-  schedule <- schedule_mod$fetch_schedule(league, sex)
+  # WHY optional: a backfill of past seasons' results must leave the current
+  # season's schedule, which the daily ingest owns, as it is.
+  want_schedule <- schedule
+  schedule <- if (want_schedule) schedule_mod$fetch_schedule(league, sex) else results[0, setdiff(names(results), c("home_score", "away_score"))]
 
   # A federation can rename a club between seasons (KKÍ: "Þór Akureyri" in
   # 2021, "Þór Ak." since). Normalise before the upsert, whose natural key
@@ -71,6 +78,24 @@ ingest_league <- function(league, sex,
   aliases <- league$data_source$team_aliases[[sex]]
   results <- .apply_team_aliases(results, aliases)
   schedule <- .apply_team_aliases(schedule, aliases)
+
+  # A source can fill columns its export lacks in a second step (KKI: the
+  # regulation-time score from each game's card). It runs after the aliases,
+  # so it sees the stored team names. It is best effort: an error in it is a
+  # warning, and the results are written without what it would have added
+  # (upsert_table() keeps what an earlier run stored).
+  if (!is.null(results_mod$enrich_results) && nrow(results) > 0) {
+    results <- tryCatch(
+      results_mod$enrich_results(results, league, sex, root),
+      error = function(e) {
+        cli::cli_warn(c(
+          "{league$sport} {sex}: the source's enrichment step failed; results are written without it.",
+          "i" = "{conditionMessage(e)}"
+        ))
+        results
+      }
+    )
+  }
 
   # kickoff_time is captured in the shared KSÍ parser and rides along on
   # results, but the results schema has no such column -- drop it so results

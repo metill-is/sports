@@ -1,0 +1,20 @@
+HEAD a5544b589
+test-storage-schemas.R           expectations   8 | failed 1 | errors 1 | skipped 0
+    FAILING: results carries the game id and the regulation-time scores as nullable columns
+test-storage-validate.R          expectations  12 | failed 4 | errors 0 | skipped 0
+    FAILING: write_table rejects regulation-time scores that cannot go with the final score
+test-storage-upsert.R            expectations  35 | failed 3 | errors 0 | skipped 0
+    FAILING: a re-ingested result without regulation scores keeps the stored ones
+test-ingest-kki.R                expectations  56 | failed 3 | errors 0 | skipped 0
+    FAILING: parse_baskethotel_xlsx reads a results file into canonical columns
+test-ingest-kki-periods.R        expectations  35 | failed 0 | errors 0 | skipped 0
+test-ingest-kki-regulation.R     expectations   4 | failed 2 | errors 6 | skipped 0
+    FAILING: a played game without a regulation score gets one from its card
+    FAILING: a game whose regulation score is already stored is not fetched again
+    FAILING: unplayed games, games without an id and seasons without an id are not fetched
+    FAILING: a card that cannot be fetched or read leaves the scores empty, warns, and does not stop
+    FAILING: a card whose final score disagrees with the result is not used
+    FAILING: card requests are capped per run, newest first, and paced
+    FAILING: the KKI source registers the regulation-time step
+    FAILING: an enrichment step that fails does not stop the ingest
+test-ingest-dispatcher.R         expectations  13 | failed 0 | errors 0 | skipped 0

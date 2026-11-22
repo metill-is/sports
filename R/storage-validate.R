@@ -30,6 +30,43 @@ check_result_values <- function(df) {
       ))
     }
   }
+  c(v, check_regulation_values(df))
+}
+
+#' Regulation-time scores must be possible beside the final score.
+#'
+#' Overtime only adds points, and only after a level regulation: a regulation
+#' score is never above the final; when regulation was not level the final is
+#' the regulation score; when it was level the final is not (overtime cannot
+#' end level). A row without regulation scores is not checked.
+#' @noRd
+check_regulation_values <- function(df) {
+  if (!all(c("home_score_reg", "away_score_reg") %in% names(df))) {
+    return(character(0))
+  }
+  v <- character(0)
+  hr <- df$home_score_reg
+  ar <- df$away_score_reg
+  hf <- df$home_score
+  af <- df$away_score
+  first <- function(bad) which(bad)[[1L]]
+  for (col in c("home_score_reg", "away_score_reg")) {
+    neg <- !is.na(df[[col]]) & df[[col]] < 0L
+    if (any(neg)) v <- c(v, sprintf("%s has %d negative value(s) (first: row %d)", col, sum(neg), first(neg)))
+  }
+  both <- !is.na(hr) & !is.na(ar) & !is.na(hf) & !is.na(af)
+  above_h <- both & hr > hf
+  above_a <- both & ar > af
+  if (any(above_h)) v <- c(v, sprintf("home_score_reg is above home_score (first: row %d)", first(above_h)))
+  if (any(above_a)) v <- c(v, sprintf("away_score_reg is above away_score (first: row %d)", first(above_a)))
+  no_ot_but_changed <- both & hr != ar & (hf != hr | af != ar)
+  ot_but_level <- both & hr == ar & hf == af
+  if (any(no_ot_but_changed)) {
+    v <- c(v, sprintf("final score differs from a regulation score that was not level, so there was no overtime to add points (first: row %d)", first(no_ot_but_changed)))
+  }
+  if (any(ot_but_level)) {
+    v <- c(v, sprintf("final score is level after a level regulation score, which overtime cannot leave (first: row %d)", first(ot_but_level)))
+  }
   v
 }
 

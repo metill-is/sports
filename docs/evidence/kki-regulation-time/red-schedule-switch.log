@@ -1,0 +1,2 @@
+[1] "ingest_league with schedule = FALSE fetches and writes results only"
+expectations 13 | failed 0 | errors 1

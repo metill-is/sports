@@ -4,7 +4,13 @@
 \alias{ingest_league}
 \title{Ingest results + schedules for one (league, sex) pair.}
 \usage{
-ingest_league(league, sex, root = here::here("data"), seasons = NULL)
+ingest_league(
+  league,
+  sex,
+  root = here::here("data"),
+  seasons = NULL,
+  schedule = TRUE
+)
 }
 \arguments{
 \item{league}{A single entry from `load_leagues()`.}
@@ -14,6 +20,9 @@ ingest_league(league, sex, root = here::here("data"), seasons = NULL)
 \item{root}{Data root. Defaults to `here::here("data")`.}
 
 \item{seasons}{Optional integer vector to pass through to `fetch_results`.}
+
+\item{schedule}{Fetch and write the schedule too? `FALSE` for a backfill of
+past seasons' results, which must leave the current schedule alone.}
 }
 \value{
 Integer count of rows written (results + schedules), invisibly.
@@ -23,5 +32,7 @@ Reads `league$data_source$results` and `league$data_source$schedule` to pick
 the right source module, calls `fetch_results` / `fetch_schedule`, and writes
 to `data/facts/\{results,schedules\}/` via `write_table()`. Team names listed
 in `league$data_source$team_aliases[[sex]]` are rewritten to their stored
-spelling first.
+spelling first. A source module may also register `enrich_results`, a
+second step that fills columns its export lacks (KKI: the regulation-time
+score from each game's card); it runs after the aliases and is best effort.
 }
