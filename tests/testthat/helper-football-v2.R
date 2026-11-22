@@ -299,8 +299,10 @@ reference_summary <- function(draws, spec, max_goals = 12L) {
 # changed since it was made (empty when it still belongs).
 reference_staleness <- function(ref, stan_file) {
   c(
-    if (!identical(ref$opts, football_v2_options())) "football_v2_options()",
-    if (!identical(ref$priors, fv2_priors())) "fv2_priors()",
+    # all.equal(), not identical(): a prior such as log(1.4) is computed, and
+    # two platforms' libm may round its last bit differently.
+    if (!isTRUE(all.equal(ref$opts, football_v2_options(), tolerance = 1e-12))) "football_v2_options()",
+    if (!isTRUE(all.equal(ref$priors, fv2_priors(), tolerance = 1e-12))) "fv2_priors()",
     if (!file.exists(stan_file)) "the Stan reference program (missing)"
     else if (!identical(unname(tools::md5sum(stan_file)), ref$provenance$stan_md5)) "the Stan reference program"
   )

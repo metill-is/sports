@@ -63,9 +63,11 @@ compare_with_reference <- function(ref) {
   got <- reference_summary(f$draws, spec)
   want <- ref$summary
 
-  # Limits at about twice the differences seen when the engine was validated
-  # (the proposal's table), so the test catches a break and not Monte Carlo
-  # noise; 4,000 draws of each engine put that noise near 0.002 on average.
+  # The limits are the proposal's (about twice what its validation saw), so
+  # the test catches a break and not Monte Carlo noise. On this fixture, when
+  # it was made (R-INLA 25.6.7, macOS): match probabilities 0.0023 apart on
+  # average and 0.0078 at most; walk and style sds within 1.2 %; near-zero
+  # sds within a factor 1.36; states 0.026 posterior sds apart on average.
   expect_setequal(rownames(got$probs), rownames(want$probs))
   d_prob <- abs(got$probs[rownames(want$probs), , drop = FALSE] - want$probs)
   expect_lt(mean(d_prob), 0.005, label = sprintf("mean |p_INLA - p_NUTS| = %.4f", mean(d_prob)))
@@ -73,12 +75,15 @@ compare_with_reference <- function(ref) {
 
   ratio <- stats::setNames(got$hyper$mean / want$hyper$mean[match(got$hyper$name, want$hyper$name)], got$hyper$name)
   expect_false(anyNA(ratio))
-  near_zero <- c("omega_att", "omega_def", "sigma_lvl_goal", "sigma_lvl_ha")
+  # The grouping is the proposal's: the team home-advantage deviations and the
+  # home-advantage level walk sit near zero, where INLA loses the lower tail.
+  # Means of the draws, the statistic production stores as hyper_sd.
+  near_zero <- c("omega_att", "omega_def", "sigma_lvl_ha")
   walk <- setdiff(names(ratio), near_zero)
   expect_true(all(near_zero %in% names(ratio)))
-  # Entry-level, innovation, season-break and style sds: within 10 %.
+  # Entry-level, innovation, season-break, style and scoring-level sds: within 10 %.
   expect_lt(max(abs(ratio[walk] - 1)), 0.10, label = paste(sprintf("%s %.3f", walk, ratio[walk]), collapse = ", "))
-  # Sds near zero, where INLA loses the lower tail: within a factor 1.5.
+  # Sds near zero: within a factor 1.5.
   expect_lt(max(abs(log(ratio[near_zero]))), log(1.5), label = paste(sprintf("%s %.3f", near_zero, ratio[near_zero]), collapse = ", "))
 
   # Current states and the league home advantage: how far apart the posterior
