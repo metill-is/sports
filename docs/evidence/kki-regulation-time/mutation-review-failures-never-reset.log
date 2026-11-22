@@ -1,0 +1,1 @@
+expectations 38 | failed 2 | errors 0 | failing: a success between failures resets the count of failures in a row

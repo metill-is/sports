@@ -43,7 +43,9 @@ cat(sprintf(
   paste(seasons, collapse = ", "), nrow(before), current
 ))
 
-options(sports.kki_max_cards = Inf)
+# The daily step's per-run cap and time budget are lifted; its stop after three failed
+# requests in a row stays, so an outage ends the run instead of trying every card.
+options(sports.kki_max_cards = Inf, sports.kki_card_budget_secs = Inf)
 for (sex in league$sexes) {
   cat(sprintf("\n== %s\n", sex))
   ingest_league(league, sex, seasons = seasons, schedule = FALSE)

@@ -1,0 +1,1 @@
+expectations 38 | failed 1 | errors 0 | failing: ingest_league writes the regulation score through the real KKI step

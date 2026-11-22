@@ -313,8 +313,11 @@ carry_enrichment <- function(kept, dropped, table, nat_key) {
     if (col %in% names(kept)) same_final <- same_final & (kept[[col]] %in% NA & dropped[[col]][at] %in% NA | kept[[col]] == dropped[[col]][at])
   }
   same_final[is.na(same_final)] <- FALSE
+  # WHY "" too: an export cell left blank reads as an empty string, which says no
+  # more about the game than NA does.
+  missing <- function(x) is.na(x) | (is.character(x) & !nzchar(x))
   for (col in cols) {
-    fill <- same_final & is.na(kept[[col]]) & !is.na(dropped[[col]][at])
+    fill <- same_final & missing(kept[[col]]) & !missing(dropped[[col]][at])
     kept[[col]][fill] <- dropped[[col]][at][fill]
   }
   kept

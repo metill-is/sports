@@ -379,3 +379,16 @@ test_that("a corrected final score drops the stored regulation scores", {
   expect_identical(back$home_score_reg, NA_integer_)
   expect_identical(back$away_score_reg, NA_integer_)
 })
+
+test_that("an empty game id in a re-ingested row does not replace the stored one", {
+  tmp <- withr::local_tempdir()
+  first <- make_result_row(sport = "basketball", division = "BD")
+  first$game_id <- "6040499"
+  upsert_table(first, "results", root = tmp)
+
+  again <- make_result_row(sport = "basketball", division = "BD")
+  again$game_id <- ""
+  upsert_table(again, "results", root = tmp)
+
+  expect_identical(read_table("results", root = tmp)$game_id, "6040499")
+})

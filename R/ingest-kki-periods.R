@@ -89,7 +89,9 @@ parse_baskethotel_game_periods <- function(text) {
   out$away_reg <- sum(per[1:4, 2L])
   out$home_ot <- out$home_final - out$home_reg
   out$away_ot <- out$away_final - out$away_reg
-  decided_in_regulation <- out$home_ot == 0L && out$away_ot == 0L
+  # WHY not level: a level regulation score with no overtime points is a level final,
+  # which overtime cannot leave and the store rejects (check_regulation_values()).
+  decided_in_regulation <- out$home_ot == 0L && out$away_ot == 0L && out$home_reg != out$away_reg
   out$overtime <- out$home_reg == out$away_reg && out$home_ot >= 0L &&
     out$away_ot >= 0L && out$home_ot != out$away_ot
   listed_all <- sum(per[, 1L]) == out$home_final && sum(per[, 2L]) == out$away_final
