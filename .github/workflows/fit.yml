@@ -47,6 +47,12 @@ jobs:
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       CMDSTAN_VERSION: '2.38.0'
+      # R-INLA for the football v2 engine (engine: inla). The same pin and
+      # repository as inla-engine.yml; test-workflow-inla-engine.R keeps the
+      # two equal. No league uses the engine yet: installed so the install is
+      # proven on this runner before one does.
+      INLA_VERSION: '25.06.07'
+      INLA_REPO: 'https://inla.r-inla-download.org/R/stable'
 
     steps:
       - uses: actions/checkout@v5
@@ -60,6 +66,14 @@ jobs:
           # extra-repositories and logs an "Unexpected input(s)" annotation.
           extra-repositories: 'https://stan-dev.r-universe.dev'
 
+      # INLA imports fmesher, which imports sf, and sf's binary loads GDAL,
+      # GEOS, PROJ and udunits. pak's own system-requirements step is off
+      # (ci-conventions.md section 1), so they are installed here.
+      - name: Install the system libraries sf loads
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libgdal-dev libgeos-dev libproj-dev libudunits2-dev
+
       - uses: r-lib/actions/setup-r-dependencies@v2
         env:
           PKG_SYSREQS: "false"
@@ -67,12 +81,24 @@ jobs:
           extra-packages: |
             any::devtools
             any::cmdstanr
+            any::fmesher
+            any::MatrixModels
+            any::sn
 
       - name: Reinstall V8 from source with bundled static libv8
         env:
           DOWNLOAD_STATIC_LIBV8: "1"
         run: |
           Rscript -e 'install.packages("V8", type = "source", repos = c(CRAN = "https://cloud.r-project.org"))'
+
+      # R-INLA is not on CRAN and is not in DESCRIPTION (pak does not read
+      # Additional_repositories). Its repository serves one tarball per
+      # release, so the pin is the file name. sn is installed above: INLA only
+      # suggests it, but its posterior sampler stops without it.
+      - name: Install R-INLA at the pinned version
+        run: |
+          Rscript -e 'install.packages(sprintf("%s/src/contrib/INLA_%s.tar.gz", Sys.getenv("INLA_REPO"), Sys.getenv("INLA_VERSION")), repos = NULL, type = "source")'
+          Rscript -e 'stopifnot(packageVersion("INLA") == Sys.getenv("INLA_VERSION")); cat("INLA", as.character(packageVersion("INLA")), "\n")'
 
       # ~/.cmdstan holds compiled objects (main.o, libtbb, the precompiled
       # header) that every model is linked against, so a cached copy is only

@@ -145,6 +145,22 @@ shared key, so a PR run restores what `main` built:
 - **Enforcement:** `tests/testthat/test-workflow-cmdstan-cache.R` pins the key
   expression, the image step and its position in all three workflows.
 
+## 5. R-INLA in `fit.yml`, pinned with `inla-engine.yml` (2026-11-22)
+
+- **What:** `fit.yml` installs sf's system libraries before
+  `setup-r-dependencies`, adds `fmesher`, `MatrixModels` and `sn` to its
+  extra packages, and installs R-INLA from its repository's tarball after them.
+  These are the same steps and the same `INLA_VERSION` / `INLA_REPO` as
+  `inla-engine.yml`, and `test-workflow-inla-engine.R` fails if the two differ.
+- **Why it is not in `DESCRIPTION`:** pak, which installs every workflow's
+  packages, does not read `Additional_repositories`, and the repository lists
+  every release with the newest first. A `Suggests` entry would therefore
+  break the install step of each workflow that resolves suggested packages
+  (`fit`, `decide-publish`, `republish`, `world-cup`; checked with pak 0.9.2
+  on 2026-11-22).
+- **Bumping R-INLA:** change both pins together, and re-run the engine evidence
+  first. Every number behind the football cutover was measured on 25.06.07.
+
 ## Detection if a future package adds an unmet sysreq
 
 With `PKG_SYSREQS=false`, pak still _prints_ system requirements but
@@ -180,7 +196,7 @@ meta-characters.
 | `ci-tests.yml` | push, PR | `devtools::test()` |
 | `scrape-results.yml` | cron 1×/day | Federation results + schedules |
 | `scrape-odds.yml` | cron 5×/day (08,11,14,17,20 UTC, minute 17) | Lengjan odds snapshot (Chromote DOM for football; JSON API for handball/basketball) |
-| `fit.yml` | `workflow_run` from scrape-results | Stan fit |
+| `fit.yml` | `workflow_run` from scrape-results | Stan fit; also installs R-INLA at `inla-engine.yml`'s pin for the football v2 engine (no league uses it yet) |
 | `decide-publish.yml` | `workflow_run` from fit AND scrape-odds | Recommendations + JSONs |
 | `republish.yml` | `workflow_dispatch` only | Re-run publish from existing extraction archive (lever for fast publisher iteration) |
 | `healthcheck.yml` | cron 2×/day + dispatch | Read-only `pipeline_health()` → `data/health/status.json`; commits if changed; fails the run on `overall == FAIL` so GitHub's failure email fires (the alert channel). `test-healthcheck-ci-isolation.R` proves it never writes the ledger. |
