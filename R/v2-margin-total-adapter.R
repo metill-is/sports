@@ -6,12 +6,17 @@
 #'
 #' The extract, season-simulation and publish code for handball and
 #' basketball consumes the Stan model's variables: an attack and a defence
-#' strength per team, a home effect for each, one scoring level, a score sd
-#' and a score correlation, with
+#' strength per team, a home effect for each, a scoring level, and a score
+#' sd and correlation, with
 #' `mu_home = level + off_home + ha_off - def_away` and
 #' `mu_away = level + off_away - def_home - ha_def`.
 #' Every mean that code computes depends on attack and defence only through
-#' their sum and difference, so the v2 quantities map onto it exactly:
+#' their sum and difference, so the v2 means map onto it exactly. The scales
+#' do not map one to one: the basketball simulator (`R/simulate-2dt.R`) builds
+#' a correlation per fixture from `alpha_rho`, `beta*_rho` and the strengths,
+#' and handball reads an sd per team (`sigma_team`). The adapter returns one
+#' sd and one correlation; a caller would set `alpha_rho = qlogis((1 + rho) / 2)`
+#' with the betas at 0, and fill `sigma_team` with `sigma`. The mapping:
 #'
 #' * `off = (net + pace - mean(pace)) / 2`, `def = (net - pace + mean(pace)) / 2`,
 #'   where `net` is the margin model's strength and `pace` the total model's

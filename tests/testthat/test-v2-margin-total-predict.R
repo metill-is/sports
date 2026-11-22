@@ -208,3 +208,19 @@ test_that("the share of draws on an observed margin can leave out the draws on a
   expect_equal(v2_draws_pmf(draws, 0, ties = FALSE), 0)
   expect_gt(v2_draws_pmf(draws, 1, ties = FALSE), v2_draws_pmf(draws, 1))
 })
+
+test_that("a scale or df that fits neither the draws nor the matches is refused", {
+  # WHY: with a draws-by-matches location a scale vector is one value per draw. A scale
+  # given per match would be spread over the draws in a cycle, silently.
+  loc <- matrix(c(-3, 3), nrow = 4, ncol = 2, byrow = TRUE)
+  expect_error(v2_cdf(c(0, 0), loc, c(5, 50)), "scale")
+  expect_error(v2_cdf(c(0, 0), c(-3, 3), c(5, 50, 7)), "scale")
+  expect_error(v2_cdf(c(0, 0), loc, 5, df = c(3, 30)), "df")
+  expect_error(v2_cdf(c(0, 0), c(-3, 3), 5, df = c(3, 30)), "df")
+
+  # Accepted: one scale per draw, one per match for a single predictive, a scalar, a matrix.
+  expect_equal(v2_cdf(c(0, 0), loc, c(5, 5, 50, 50)), colMeans(rbind(stats::pnorm(c(3, -3) / 5), stats::pnorm(c(3, -3) / 5), stats::pnorm(c(3, -3) / 50), stats::pnorm(c(3, -3) / 50))))
+  expect_equal(v2_cdf(c(0, 0), c(-3, 3), c(5, 50)), stats::pnorm(c(3 / 5, -3 / 50)))
+  expect_equal(v2_cdf(c(0, 0), loc, 5), stats::pnorm(c(3, -3) / 5))
+  expect_equal(v2_cdf(c(0, 0), loc, matrix(5, 4, 2), df = rep(10, 4)), stats::pt(c(3, -3) / 5, df = 10))
+})

@@ -1,0 +1,11 @@
+HEAD 2dfd73266 (working tree changed)
+[ FAIL 0 | WARN 0 | SKIP 0 | PASS 35 ]
+                                                                            test nb failed skipped error warning
+ a game decided in regulation yields four periods that add up to the final score  7      0   FALSE FALSE       0
+           an overtime game is four level quarters with a final score above them  6      0   FALSE FALSE       0
+           a card that lists the overtime period keeps it out of regulation time  5      0   FALSE FALSE       0
+      a final score that is neither the quarter sum nor a broken tie is rejected  4      0   FALSE FALSE       0
+              a card with fewer than four periods or no period block is rejected  6      0   FALSE FALSE       0
+             the game URL names the widget, the game and the league for that sex  4      0   FALSE FALSE       0
+                           team names in ISO-8859-1 bytes do not break the parse  3      0   FALSE FALSE       0
+TOTAL expectations 35 | failed 0 | errors 0 | skipped 0

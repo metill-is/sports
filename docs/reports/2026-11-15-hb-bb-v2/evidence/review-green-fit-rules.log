@@ -1,0 +1,14 @@
+HEAD 3a63479de (working tree changed)
+[ FAIL 0 | WARN 0 | SKIP 0 | PASS 30 ]
+                                                                                                  test nb failed skipped error warning
+                                      only a mode status of exactly zero counts as a successful search  2      0   FALSE FALSE       0
+                                                                a successful warm fit is kept as it is  3      0   FALSE FALSE       0
+                                     a warm fit whose search failed is repeated once from a cold start  3      0   FALSE FALSE       0
+                      when the cold repeat fails too the fit is returned as failed, after two attempts  3      0   FALSE FALSE       0
+                       a warm fit that throws is followed by exactly one cold fit, whatever its status  2      0   FALSE FALSE       0
+                                                                          a cold fit is never repeated  4      0   FALSE FALSE       0
+                                       the next fit starts warm only from a fit whose search succeeded  4      0   FALSE FALSE       0
+                            predictions from a cutoff with a failed fit are not passed on to be scored  4      0   FALSE FALSE       0
+ predictions without a cutoff column are refused, and a tibble without status columns comes back whole  4      0   FALSE FALSE       0
+                                         a fit without training rows is refused before R-INLA is asked  1      0   FALSE FALSE       0
+TOTAL expectations 30 | failed 0 | errors 0 | skipped 0

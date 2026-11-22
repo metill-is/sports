@@ -91,3 +91,22 @@ test_that("predictions from a cutoff with a failed fit are not passed on to be s
   expect_equal(nrow(unknown), 4L)
   expect_identical(attr(unknown, "dropped"), NA_integer_)
 })
+
+test_that("predictions without a cutoff column are refused, and a tibble without status columns comes back whole", {
+  cut <- data.frame(cutoff = as.Date("2026-01-01"), status_m = 0L, status_t = 0L)
+  expect_error(v2_successful_predictions(data.frame(x = 1:2), cut), "cutoff")
+
+  pred <- data.frame(cutoff = as.Date("2026-01-01"), x = 1:2)
+  expect_no_warning(kept <- v2_successful_predictions(pred, tibble::tibble(cutoff = as.Date("2026-01-01"))))
+  expect_identical(nrow(kept), 2L)
+  expect_identical(attr(kept, "dropped"), NA_integer_)
+})
+
+test_that("a fit without training rows is refused before R-INLA is asked", {
+  train <- data.frame(
+    match_date = as.Date(c("2025-09-01", "2025-09-08")), season = 2026L, division = "OD",
+    home_team = c("A", "B"), away_team = c("B", "A"), home_score = c(30, 28), away_score = c(27, 29)
+  )
+  v <- build_v2_data(train[0, ], train, teams = c("A", "B"))
+  expect_error(fit_v2_inla(v, "margin", v2_priors("handball")), "training")
+})

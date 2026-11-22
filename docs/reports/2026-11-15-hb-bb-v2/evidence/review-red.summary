@@ -1,0 +1,5 @@
+inla: TOTAL expectations 96 | failed 1 | errors 0 | skipped 0
+predict: TOTAL expectations 75 | failed 4 | errors 0 | skipped 0
+fit-rules: TOTAL expectations 29 | failed 2 | errors 1 | skipped 0
+kki: TOTAL expectations 35 | failed 0 | errors 0 | skipped 0
+EXIT 0

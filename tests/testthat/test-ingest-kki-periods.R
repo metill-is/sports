@@ -16,7 +16,10 @@ test_that("a game decided in regulation yields four periods that add up to the f
 })
 
 test_that("an overtime game is four level quarters with a final score above them", {
-  # KKI lists only the four quarters: 109-109 after regulation, 121-118 final.
+  # The fixture is the regulation card edited by hand to the layout the stored cards show
+  # for overtime (four quarters only; measured on 3,286 cards, 138 of them overtime): the
+  # fourth quarter and the final changed, 109-109 after regulation, 121-118 final. No
+  # captured overtime card was kept.
   p <- parse_baskethotel_game_periods(read_card("game_card_overtime.txt"))
 
   expect_true(p$ok)
@@ -76,4 +79,21 @@ test_that("the game URL names the widget, the game and the league for that sex",
   expect_match(male, "[param][game_id]=6040504", fixed = TRUE)
   expect_match(male, "[param][league_id]=190", fixed = TRUE)
   expect_match(female, "[param][league_id]=189", fixed = TRUE)
+})
+
+test_that("team names in ISO-8859-1 bytes do not break the parse", {
+  # WHY: the widget answers in ISO-8859-1. Bytes that are not valid UTF-8 must not stop the
+  # pattern matching, which runs byte-wise.
+  name <- rawToChar(as.raw(c(0xde, 0xf3, 0x72, 0x20, 0xde, 0x2e)))
+  card <- sub(
+    "<div class=\\\"mbt-gamecard-result", paste0("<span class=\\\"mbt-team-name\\\">", name, "</span><div class=\\\"mbt-gamecard-result"),
+    read_card("game_card_regulation.txt"),
+    fixed = TRUE, useBytes = TRUE
+  )
+  expect_true(grepl(name, card, fixed = TRUE, useBytes = TRUE))
+
+  p <- parse_baskethotel_game_periods(card)
+
+  expect_true(p$ok)
+  expect_equal(c(p$home_reg, p$away_reg), c(109L, 96L))
 })

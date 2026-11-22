@@ -81,7 +81,11 @@ v2_priors <- function(sport = c("handball", "basketball")) {
 #' @param club_level Include the long-run club level `b`?
 #' @param int_strategy R-INLA hyperparameter integration (`"auto"`, `"ccd"`,
 #'   `"grid"` or `"eb"` for the plug-in mode).
-#' @param num_threads R-INLA thread specification.
+#' @param num_threads R-INLA thread specification. Repeatable fits need
+#'   `"1:1"`, the default: on more threads R-INLA did not return the same
+#'   numbers in two R processes, with its online optimisation on or off (the
+#'   football engine's measurement, `R/model-v2-inla.R`). Posterior draws are
+#'   always made on one thread, which R-INLA's sampler requires with a seed.
 #' @param n_samples If positive, draw this many joint posterior samples of
 #'   the prediction rows' linear predictor and of the observation sd.
 #' @param cpo Compute leave-one-out predictive densities (`cpo`) for the
@@ -102,8 +106,9 @@ v2_priors <- function(sport = c("handball", "basketball")) {
 #'   the same numbers in two R processes: at each of two cutoffs 37 of 44
 #'   processes agreed on the most frequent result. With it off, 75 of 75 did,
 #'   and two whole walk-forwards were identical. It does not make the
-#'   hyperparameter mode unique; it makes the one that is found repeatable.
-#'   `FALSE` passes nothing, so R-INLA goes by its session setting.
+#'   hyperparameter mode unique; it makes the one that is found repeatable,
+#'   and only on one thread (`num_threads = "1:1"`). `FALSE` passes nothing,
+#'   so R-INLA goes by its session setting.
 #' @return A list: `pred` (latent mean and sd per prediction row), `sigma2`
 #'   (posterior mean of the observation variance), `hyper_sd` (posterior
 #'   summaries on the sd / correlation scale), `fixed`, `random` (state
@@ -121,6 +126,11 @@ fit_v2_inla <- function(v, response = c("margin", "total"),
                         y = NULL, seed = 1L, reproducible = TRUE) {
   response <- match.arg(response)
   within <- match.arg(within)
+  # WHY before R-INLA is asked: with no training rows its program exits with an error
+  # that does not say why.
+  if (v$N == 0L) {
+    cli::cli_abort("{.fn fit_v2_inla} needs training rows; {.arg v} has none ({v$N_pred} to predict).")
+  }
   if (!requireNamespace("INLA", quietly = TRUE)) {
     cli::cli_abort("{.fn fit_v2_inla} needs the {.pkg INLA} package.")
   }
@@ -284,7 +294,9 @@ fit_v2_inla <- function(v, response = c("margin", "total"),
       as.integer(seed),
       INLA::inla.posterior.sample(
         n_samples, fit,
-        selection = list(APredictor = pred_rows), seed = seed, num.threads = num_threads
+        # WHY "1:1": with a seed the sampler runs on one thread whatever it is asked, and
+        # warns when asked for more.
+        selection = list(APredictor = pred_rows), seed = seed, num.threads = "1:1"
       )
     )
     out$samples <- list(
@@ -382,11 +394,16 @@ v2_warm_start <- function(fit) {
 #'   comes back whole with `dropped = NA`: nothing can be known about it.
 #' @noRd
 v2_successful_predictions <- function(pred, cut) {
-  if (is.null(cut$status_m) || is.null(cut$status_t)) {
+  if (is.null(pred[["cutoff"]])) {
+    cli::cli_abort("{.arg pred} needs a {.field cutoff} column to be matched with {.arg cut}.")
+  }
+  # WHY [[ ]]: `$` on a tibble without the column warns; a walk-forward stored without the
+  # status columns is an expected input here.
+  if (is.null(cut[["status_m"]]) || is.null(cut[["status_t"]])) {
     return(structure(pred, dropped = NA_integer_))
   }
-  at <- match(format(pred$cutoff), format(cut$cutoff))
-  ok <- v2_mode_ok(cut$status_m[at]) & v2_mode_ok(cut$status_t[at])
+  at <- match(format(pred[["cutoff"]]), format(cut[["cutoff"]]))
+  ok <- v2_mode_ok(cut[["status_m"]][at]) & v2_mode_ok(cut[["status_t"]][at])
   structure(pred[ok, , drop = FALSE], dropped = sum(!ok))
 }
 

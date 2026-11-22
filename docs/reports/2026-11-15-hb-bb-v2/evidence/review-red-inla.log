@@ -1,0 +1,34 @@
+HEAD 2dfd73266 (working tree changed)
+Saving _problems/test-v2-margin-total-inla-416.R
+[ FAIL 1 | WARN 0 | SKIP 0 | PASS 95 ]
+
+══ Failed tests ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+── Failure ('test-v2-margin-total-inla.R:413:3'): drawing after a fit on more than one thread does not warn ────────────────────────────────────────────────────────────────────────────────────────────
+Expected `fit_v2_inla(...)` not to throw any warnings matching pattern 'parallel model is disabled'.
+Actually got a <simpleWarning> with message:
+  Since 'seed!=0', parallel model is disabled and serial model is selected, num.threads='1:1'
+
+[ FAIL 1 | WARN 0 | SKIP 0 | PASS 95 ]
+                                                                                                               test nb failed skipped error warning
+                                    the INLA margin fit recovers the home advantage and each team-season's strength  7      0   FALSE FALSE       0
+                                                       the within-season walk sums to zero inside every team-season  2      0   FALSE FALSE       0
+                               the INLA total fit recovers the scoring level and returns one intercept per division  4      0   FALSE FALSE       0
+                                                                     a supplied response replaces the stored scores  1      0   FALSE FALSE       0
+                                          the priors and starting values the fitter states are the ones R-INLA uses 14      0   FALSE FALSE       0
+                                 the mode status is read from the fit and a missing status is not taken for success  4      0   FALSE FALSE       0
+                                       a fit returns the status of its mode search and warns when the search failed  4      0   FALSE FALSE       0
+                                       the total fit keeps each division's level on that division's own season path  3      0   FALSE FALSE       0
+                              the total model and the random-walk form run on the priors and starting values stated 16      0   FALSE FALSE       0
+                                    the margin model's home-advantage prior and starting values are the ones stated  6      0   FALSE FALSE       0
+                                             a fit that reports no mode status at all is treated as a failed search  2      0   FALSE FALSE       0
+            the fitter asks R-INLA for its online optimisation off in the call and leaves the session setting alone  8      0   FALSE FALSE       0
+                     a fit that succeeds was made with the option off and leaves R-INLA's session setting as it was  3      0   FALSE FALSE       0
+                                                  the same fit in two separate R processes returns the same numbers  2      0   FALSE FALSE       0
+ the draws of a full-integration fit do not depend on where R's generator stands, and drawing them does not move it  3      0   FALSE FALSE       0
+                                           the posterior draws are of the prediction rows and of the observation sd  3      0   FALSE FALSE       0
+                                                          drawing after a fit on more than one thread does not warn  1      1   FALSE FALSE       0
+                                       a warm start reaches R-INLA's mode search, and a cold fit starts without one  3      0   FALSE FALSE       0
+                                         leave-one-out densities come back for the training rows, and only for them  3      0   FALSE FALSE       0
+                                                     without the club level the fit has no club term and no club sd  4      0   FALSE FALSE       0
+                                                       hyperparameters are reported on the sd and correlation scale  3      0   FALSE FALSE       0
+TOTAL expectations 96 | failed 1 | errors 0 | skipped 0

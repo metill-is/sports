@@ -380,3 +380,93 @@ test_that("the draws of a full-integration fit do not depend on where R's genera
   fit_v2_inla(v, "margin", v2_priors("handball"), within = "none", int_strategy = "auto")
   expect_identical(stats::runif(1), after_drawing)
 })
+
+# Training and prediction rows from the simulated league: the third season's matches from
+# December on are predicted.
+v2_train_pred <- function() {
+  sim <- simulate_v2_league()
+  m <- sim$matches
+  train <- m[m$match_date < as.Date("2026-12-01"), ]
+  pred <- m[m$match_date >= as.Date("2026-12-01"), ]
+  list(train = train, pred = pred, v = build_v2_data(train, pred, sim$teams))
+}
+
+test_that("the posterior draws are of the prediction rows and of the observation sd", {
+  # WHY: the draws feed the full-integration scores; draws of the wrong rows would score
+  # other matches without any error.
+  skip_if_no_inla()
+  d <- v2_train_pred()
+  fit <- fit_v2_inla(d$v, "margin", v2_priors("handball"), within = "none", int_strategy = "auto", n_samples = 1000L)
+
+  expect_identical(dim(fit$samples$loc), c(1000L, nrow(d$pred)))
+  # Each match's draws centre on its own predictive mean; the Monte Carlo error of 1,000
+  # draws is about 3 % of the predictive sd.
+  expect_lt(max(abs(colMeans(fit$samples$loc) - fit$pred$mean) / fit$pred$sd), 0.15)
+  expect_equal(mean(fit$samples$sigma^2), fit$sigma2, tolerance = 0.05)
+})
+
+test_that("drawing after a fit on more than one thread does not warn", {
+  # WHY: with a seed, R-INLA's sampler runs on one thread whatever it is asked, and warns
+  # when asked for more. The fitter asks for the one thread it gets.
+  skip_if_no_inla()
+  d <- v2_train_pred()
+  expect_no_warning(
+    fit_v2_inla(d$v, "margin", v2_priors("handball"), within = "none", int_strategy = "auto", n_samples = 50L, num_threads = "2:1"),
+    message = "parallel model is disabled"
+  )
+})
+
+test_that("a warm start reaches R-INLA's mode search, and a cold fit starts without one", {
+  skip_if_no_inla()
+  d <- v2_train_pred()
+  pr <- v2_priors("handball")
+  cold <- fit_v2_inla(d$v, "margin", pr, within = "none", int_strategy = "eb")
+  warm <- fit_v2_inla(d$v, "margin", pr, within = "none", int_strategy = "eb", theta_start = cold$theta)
+
+  expect_null(cold$fit$.args$control.mode$theta)
+  expect_equal(unname(warm$fit$.args$control.mode$theta), unname(cold$theta))
+  expect_true(warm$fit$.args$control.mode$restart)
+})
+
+test_that("leave-one-out densities come back for the training rows, and only for them", {
+  # R-INLA has no leave-one-out density for a row without an outcome (a fixture), so a
+  # prediction row read by mistake shows up as NA.
+  skip_if_no_inla()
+  d <- v2_train_pred()
+  fit <- fit_v2_inla(d$v, "margin", v2_priors("handball"), within = "none", int_strategy = "eb", cpo = TRUE)
+
+  expect_length(fit$cpo, nrow(d$train))
+  expect_true(all(is.finite(fit$cpo) & fit$cpo > 0))
+  expect_null(fit_v2_inla(d$v, "margin", v2_priors("handball"), within = "none", int_strategy = "eb")$cpo)
+})
+
+test_that("without the club level the fit has no club term and no club sd", {
+  skip_if_no_inla()
+  d <- v2_train_pred()
+  pr <- v2_priors("handball")
+  with_club <- fit_v2_inla(d$v, "margin", pr, within = "none", int_strategy = "eb")
+  without <- fit_v2_inla(d$v, "margin", pr, within = "none", int_strategy = "eb", club_level = FALSE)
+
+  expect_true("b" %in% names(with_club$random))
+  expect_true("sd: b" %in% with_club$hyper_sd$parameter)
+  expect_false("b" %in% names(without$random))
+  expect_false("sd: b" %in% without$hyper_sd$parameter)
+})
+
+test_that("hyperparameters are reported on the sd and correlation scale", {
+  # R-INLA's own summary gives precisions and the season memory on the correlation scale;
+  # a quantile carries through a monotone transform, so the medians must agree.
+  skip_if_no_inla()
+  d <- v2_train_pred()
+  fit <- fit_v2_inla(d$v, "margin", v2_priors("handball"), within = "none", int_strategy = "eb")
+  h <- fit$hyper_sd
+  s <- fit$fit$summary.hyperpar
+
+  expect_equal(h$q50[h$parameter == "rho: u_s"], s["Rho for u_s", "0.5quant"], tolerance = 0.02)
+  expect_equal(
+    h$q50[h$parameter == "sd: the Gaussian observations"],
+    1 / sqrt(s["Precision for the Gaussian observations", "0.5quant"]),
+    tolerance = 0.02
+  )
+  expect_true(all(h$q05 <= h$q50 & h$q50 <= h$q95))
+})

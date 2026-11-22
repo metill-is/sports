@@ -6,8 +6,11 @@
 #'
 #' @param x Points to evaluate, one per match.
 #' @param loc,scale Location and scale, vector or draws-by-matches matrix.
-#' @param df Degrees of freedom; `Inf` (default) is the Gaussian. A scalar or
-#'   one value per draw.
+#'   With a matrix `loc`, a vector `scale` is one value per draw (or a scalar);
+#'   with a vector `loc`, one per match (or a scalar). Any other length is
+#'   refused rather than recycled.
+#' @param df Degrees of freedom; `Inf` (default) is the Gaussian. A scalar or,
+#'   with a matrix `loc`, one value per draw.
 #' @return One probability per match.
 #' @noRd
 v2_cdf <- function(x, loc, scale, df = Inf) {
@@ -22,7 +25,16 @@ v2_cdf <- function(x, loc, scale, df = Inf) {
 #' @noRd
 v2_cdf_draws <- function(x, loc, scale, df = Inf) {
   if (!is.matrix(loc)) loc <- matrix(loc, nrow = 1L)
-  if (!is.matrix(scale)) scale <- matrix(scale, nrow = nrow(loc), ncol = ncol(loc), byrow = nrow(loc) == 1L)
+  # WHY the checks: matrix() recycles, so a scale given per match with a draws-by-matches
+  # location would be spread over the draws in a cycle without a word.
+  per_draw <- nrow(loc) > 1L
+  if (!is.matrix(scale) && !length(scale) %in% c(1L, if (per_draw) nrow(loc) else ncol(loc))) {
+    cli::cli_abort("{.arg scale} has {length(scale)} value{?s}; it needs 1 or one per {if (per_draw) 'draw' else 'match'} ({if (per_draw) nrow(loc) else ncol(loc)}).")
+  }
+  if (!length(df) %in% c(1L, nrow(loc))) {
+    cli::cli_abort("{.arg df} has {length(df)} value{?s}; it needs 1 or one per draw ({nrow(loc)}).")
+  }
+  if (!is.matrix(scale)) scale <- matrix(scale, nrow = nrow(loc), ncol = ncol(loc), byrow = !per_draw)
   stopifnot(length(x) == ncol(loc), identical(dim(loc), dim(scale)))
   z <- (matrix(x, nrow(loc), ncol(loc), byrow = TRUE) - loc) / scale
   df <- rep_len(df, nrow(loc))
@@ -77,6 +89,13 @@ v2_integer_pmf <- function(k, loc, scale, df = Inf, zero_shift = 0, ties = TRUE)
 #' level score: the rounded mass on zero, moved by `zero_shift`. With
 #' `ties = FALSE` (a result that cannot be level) the home side wins when the
 #' continuous margin is positive.
+#'
+#' Three functions here give a result that cannot be level, each by its own
+#' rule, and they differ by up to about 0.7 percentage points for one game:
+#' this one (`P(X > 0)`), `v2_integer_pmf(ties = FALSE)` (`P(X > 0.5)`
+#' renormalised over the non-zero margins) and [v2_basketball_result_probs()]
+#' (regulation time plus overtime). A harness that scores the final margin
+#' and the final result of one game should use the same rule for both.
 #'
 #' @inheritParams v2_integer_pmf
 #' @param ties Can the result be level?
