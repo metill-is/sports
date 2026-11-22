@@ -1035,22 +1035,44 @@ Nothing in this work touches `world-cup.yml`, any other workflow, or the publish
 
 ## Reproducing this report {#sec-repro}
 
-All experiment output is under `/Users/brynjolfurjonsson/.claude-reviews/sports-national-team-v2/` (data snapshots in `data/`, results in `out/`, logs in `logs/`). The source files were downloaded from `martj42/international_results` and `martj42/womens-international-results` on 2026-11-15.
+The report renders from one committed file, `docs/reports/2026-11-15-national-team-v2/results.rds`, which `scripts/nt/build_report_data.R` built at 00:40 GMT on 16 November 2026 (its `built_at` field). `quarto render docs/reports/2026-11-15-national-team-v2.qmd` needs nothing else.
+
+The experiment output that file was built from (data snapshots, per-tournament fits and scores, logs) lived in a folder outside the repository. That folder was emptied on 18 November 2026 and had no backup, so `results.rds` is now the record of these results. The commands below rebuild the experiment from scratch. They have not been re-run since the deletion.
+
+**Data.** The inputs are `results.csv` from `martj42/international_results` (men) and `martj42/womens-international-results` (women), downloaded on 15 November 2026. On that day the men's master branch was at commit `b0948cb558c927c357db4067eac5b37b96d0e4bb` (31 October; the next commit landed on 18 November) and the women's at `d2aa1d5e5337881481b04844339f8a43a5f132f2`. Fetch the files at those commits to get the same input.
+
+**Code.** The men's tournament, panel, simulation and Stan runs predate commit `440cf6f9c`, which broadened the team filter (@sec-women). At that commit or later, the same commands fit the broad-filter teams. The team-filter check in @sec-women measures that difference on World Cup 2022 and Euro 2024, and it is far inside every interval here. INLA fits that use more than one thread are not bit-for-bit repeatable, so a rebuild agrees within that noise, not to the last digit.
 
 ```bash
-D=/Users/brynjolfurjonsson/.claude-reviews/sports-national-team-v2
-Rscript scripts/nt/prod_refit.R wc2026 $D/data/men/results.csv $D/out/prod
-Rscript scripts/nt/evaluate_tournaments.R $D/data/men/results.csv $D/out/eval wc2026
-Rscript scripts/nt/walk_forward.R $D/data/men/results.csv $D/out/wf
+D=<an output folder outside the repository>
+mkdir -p $D/data/men $D/data/women
+curl -fsSL -o $D/data/men/results.csv \
+  https://raw.githubusercontent.com/martj42/international_results/b0948cb558c927c357db4067eac5b37b96d0e4bb/results.csv
+curl -fsSL -o $D/data/women/results.csv \
+  https://raw.githubusercontent.com/martj42/womens-international-results/d2aa1d5e5337881481b04844339f8a43a5f132f2/results.csv
+for key in wc2022 euro2024 wc2026; do
+  Rscript scripts/nt/prod_refit.R $key $D/data/men/results.csv $D/out/prod
+  Rscript scripts/nt/evaluate_tournaments.R $D/data/men/results.csv $D/out/eval $key prod_dir=$D/out/prod
+done
+for key in wc2022 euro2024; do  # team-filter check, run at 440cf6f9c or later
+  Rscript scripts/nt/evaluate_tournaments.R $D/data/men/results.csv $D/out/eval_wide $key variants=base
+done
+for v in base damp08 hl3 novenue; do  # one folder per variant; draw_correction.R reads wf/base/
+  Rscript scripts/nt/walk_forward.R $D/data/men/results.csv $D/out/wf/$v variants=$v
+done
 Rscript scripts/nt/simulate_compare.R $D/out/eval/fit_wc2026_base.rds $D/out/sim_compare_wc2026.rds
-Rscript scripts/nt/women_check.R $D/data/women/results.csv $D/out/women_check.rds
+Rscript scripts/nt/production_forecast.R $D/out/prod/prod_wc2026.rds $D/out/prod_forecast_wc2026.rds
 Rscript scripts/nt/stan_reference.R $D/data/men/results.csv $D/out/stan wc2026
+Rscript scripts/nt/stan_reference.R $D/data/men/results.csv $D/out/stan wc2026 damp=1
+Rscript scripts/nt/women_check.R $D/data/women/results.csv $D/out/women_check.rds
+Rscript scripts/nt/current_strengths.R $D/data/men/results.csv $D/out/current_men.rds
+Rscript scripts/nt/current_strengths.R $D/data/women/results.csv $D/out/current_women.rds
 Rscript scripts/nt/draw_correction.R $D/out $D/out/draw_correction.rds
 Rscript scripts/nt/build_report_data.R $D/out docs/reports/2026-11-15-national-team-v2/results.rds
 quarto render docs/reports/2026-11-15-national-team-v2.qmd
 ```
 
-**The file behind each headline number.** Paths under "Experiment output" are relative to `/Users/brynjolfurjonsson/.claude-reviews/sports-national-team-v2/out/`; the last column is the element of the committed `docs/reports/2026-11-15-national-team-v2/results.rds` that this report reads.
+**The file behind each headline number.** Paths under "Experiment output" are relative to `$D/out/` in the commands above. The original run's files were deleted. The last column names the element of the committed `docs/reports/2026-11-15-national-team-v2/results.rds` that holds what was read from them, and that element is what this report reads.
 
 | Headline number | Experiment output | In `results.rds` |
 | --- | --- | --- |
