@@ -1,0 +1,11 @@
+Saving _problems/test-v2-margin-total-inla-404.R
+[ FAIL 1 | WARN 0 | SKIP 0 | PASS 2 ]
+
+══ Failed tests ════════════════════════════════════════════════════════════════
+── Failure ('test-v2-margin-total-inla.R:404:3'): the posterior draws are of the prediction rows and of the observation sd ──
+Expected `max(abs(colMeans(fit$samples$loc) - fit$pred$mean)/fit$pred$sd)` < 0.15.
+Actual comparison: 4.3 >= 0.1
+Difference: 4.1 >= 0
+
+[ FAIL 1 | WARN 0 | SKIP 0 | PASS 2 ]
+TOTAL expectations 3 | failed 1 | errors 0

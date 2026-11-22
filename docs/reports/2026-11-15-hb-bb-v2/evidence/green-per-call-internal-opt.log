@@ -1,0 +1,19 @@
+HEAD cf456e6ed (working tree changed)
+[ FAIL 0 | WARN 0 | SKIP 0 | PASS 79 ]
+                                                                                                               test nb failed skipped error warning
+                                    the INLA margin fit recovers the home advantage and each team-season's strength  7      0   FALSE FALSE       0
+                                                       the within-season walk sums to zero inside every team-season  2      0   FALSE FALSE       0
+                               the INLA total fit recovers the scoring level and returns one intercept per division  4      0   FALSE FALSE       0
+                                                                     a supplied response replaces the stored scores  1      0   FALSE FALSE       0
+                                          the priors and starting values the fitter states are the ones R-INLA uses 14      0   FALSE FALSE       0
+                                 the mode status is read from the fit and a missing status is not taken for success  4      0   FALSE FALSE       0
+                                       a fit returns the status of its mode search and warns when the search failed  4      0   FALSE FALSE       0
+                                       the total fit keeps each division's level on that division's own season path  3      0   FALSE FALSE       0
+                              the total model and the random-walk form run on the priors and starting values stated 16      0   FALSE FALSE       0
+                                    the margin model's home-advantage prior and starting values are the ones stated  6      0   FALSE FALSE       0
+                                             a fit that reports no mode status at all is treated as a failed search  2      0   FALSE FALSE       0
+            the fitter asks R-INLA for its online optimisation off in the call and leaves the session setting alone  8      0   FALSE FALSE       0
+                     a fit that succeeds was made with the option off and leaves R-INLA's session setting as it was  3      0   FALSE FALSE       0
+                                                  the same fit in two separate R processes returns the same numbers  2      0   FALSE FALSE       0
+ the draws of a full-integration fit do not depend on where R's generator stands, and drawing them does not move it  3      0   FALSE FALSE       0
+TOTAL expectations 79 | failed 0 | errors 0 | skipped 0

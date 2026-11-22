@@ -1,0 +1,38 @@
+HEAD 2dfd73266 (working tree changed)
+Saving _problems/test-v2-margin-total-predict-216.R
+Saving _problems/test-v2-margin-total-predict-217.R
+Saving _problems/test-v2-margin-total-predict-218.R
+Saving _problems/test-v2-margin-total-predict-219.R
+[ FAIL 4 | WARN 1 | SKIP 0 | PASS 70 ]
+
+══ Failed tests ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+── Failure ('test-v2-margin-total-predict.R:216:3'): a scale or df that fits neither the draws nor the matches is refused ──────────────────────────────────────────────────────────────────────────────
+Expected `v2_cdf(c(0, 0), loc, c(5, 50))` to throw a error.
+── Failure ('test-v2-margin-total-predict.R:217:3'): a scale or df that fits neither the draws nor the matches is refused ──────────────────────────────────────────────────────────────────────────────
+Expected `v2_cdf(c(0, 0), c(-3, 3), c(5, 50, 7))` to throw a error.
+── Failure ('test-v2-margin-total-predict.R:218:3'): a scale or df that fits neither the draws nor the matches is refused ──────────────────────────────────────────────────────────────────────────────
+Expected `v2_cdf(c(0, 0), loc, 5, df = c(3, 30))` to throw a error.
+── Failure ('test-v2-margin-total-predict.R:219:3'): a scale or df that fits neither the draws nor the matches is refused ──────────────────────────────────────────────────────────────────────────────
+Expected `v2_cdf(c(0, 0), c(-3, 3), 5, df = c(3, 30))` to throw a error.
+
+[ FAIL 4 | WARN 1 | SKIP 0 | PASS 70 ]
+                                                                                     test nb failed skipped error warning
+                      the rounded pmf is a proper distribution and matches the normal CDF  2      0   FALSE FALSE       0
+                     a Student-t predictive puts more mass in the tails than the Gaussian  2      0   FALSE FALSE       0
+                          posterior draws are averaged per match, with one scale per draw  1      0   FALSE FALSE       0
+ zero_shift moves the level-score probability on the logit scale and keeps total mass one  4      0   FALSE FALSE       0
+                          outcome probabilities agree with the pmf at zero and sum to one  7      0   FALSE FALSE       0
+                          without ties the home side wins on a positive continuous margin  2      0   FALSE FALSE       0
+                                   the zero-shift estimate recovers a simulated inflation  3      0   FALSE FALSE       0
+           basketball final-result probabilities resolve regulation ties through overtime  7      0   FALSE FALSE       0
+                          proportional de-vigging returns probabilities and the overround  3      0   FALSE FALSE       0
+                sampled scores are whole, non-negative and reproduce the margin and total  6      0   FALSE FALSE       0
+       sampled level scores match the analytic draw probability, with and without a shift  5      0   FALSE FALSE       0
+                    rho_mt carries through to the correlation of sampled margin and total  2      0   FALSE FALSE       0
+                         a per-match zero_shift vector moves each match by its own amount  3      0   FALSE FALSE       0
+                         with posterior draws the overtime share is weighted draw by draw  4      0   FALSE FALSE       0
+                 a margin that cannot be level puts nothing on zero and still sums to one  4      0   FALSE FALSE       0
+                           a game too lopsided to reach overtime still has a final result  6      0   FALSE FALSE       0
+        the share of draws on an observed margin can leave out the draws on a level score  5      0   FALSE FALSE       0
+                     a scale or df that fits neither the draws nor the matches is refused  9      4   FALSE FALSE       1
+TOTAL expectations 75 | failed 4 | errors 0 | skipped 0

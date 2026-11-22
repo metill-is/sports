@@ -1,0 +1,13 @@
+inla: TOTAL expectations 96 | failed 0 | errors 0 | skipped 0
+predict: TOTAL expectations 74 | failed 0 | errors 0 | skipped 0
+fit-rules: TOTAL expectations 30 | failed 0 | errors 0 | skipped 0
+kki: TOTAL expectations 35 | failed 0 | errors 0 | skipped 0
+mutation draws-of-training-rows: TOTAL expectations 3 | failed 1 | errors 0
+mutation sampler-threads-from-fit: TOTAL expectations 1 | failed 1 | errors 0
+mutation warm-start-dropped: TOTAL expectations 3 | failed 1 | errors 0
+mutation cpo-all-rows: TOTAL expectations 3 | failed 2 | errors 0
+mutation club-level-ignored: TOTAL expectations 4 | failed 2 | errors 0
+mutation rho-on-internal-scale: TOTAL expectations 3 | failed 1 | errors 0
+mutation parser-not-bytewise: TOTAL expectations 4 | failed 2 | errors 0
+parser: unchanged from HEAD, as it should be
+EXIT 0

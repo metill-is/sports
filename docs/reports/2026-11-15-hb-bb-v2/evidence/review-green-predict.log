@@ -1,0 +1,22 @@
+HEAD 3a63479de (working tree changed)
+[ FAIL 0 | WARN 0 | SKIP 0 | PASS 74 ]
+                                                                                     test nb failed skipped error warning
+                      the rounded pmf is a proper distribution and matches the normal CDF  2      0   FALSE FALSE       0
+                     a Student-t predictive puts more mass in the tails than the Gaussian  2      0   FALSE FALSE       0
+                          posterior draws are averaged per match, with one scale per draw  1      0   FALSE FALSE       0
+ zero_shift moves the level-score probability on the logit scale and keeps total mass one  4      0   FALSE FALSE       0
+                          outcome probabilities agree with the pmf at zero and sum to one  7      0   FALSE FALSE       0
+                          without ties the home side wins on a positive continuous margin  2      0   FALSE FALSE       0
+                                   the zero-shift estimate recovers a simulated inflation  3      0   FALSE FALSE       0
+           basketball final-result probabilities resolve regulation ties through overtime  7      0   FALSE FALSE       0
+                          proportional de-vigging returns probabilities and the overround  3      0   FALSE FALSE       0
+                sampled scores are whole, non-negative and reproduce the margin and total  6      0   FALSE FALSE       0
+       sampled level scores match the analytic draw probability, with and without a shift  5      0   FALSE FALSE       0
+                    rho_mt carries through to the correlation of sampled margin and total  2      0   FALSE FALSE       0
+                         a per-match zero_shift vector moves each match by its own amount  3      0   FALSE FALSE       0
+                         with posterior draws the overtime share is weighted draw by draw  4      0   FALSE FALSE       0
+                 a margin that cannot be level puts nothing on zero and still sums to one  4      0   FALSE FALSE       0
+                           a game too lopsided to reach overtime still has a final result  6      0   FALSE FALSE       0
+        the share of draws on an observed margin can leave out the draws on a level score  5      0   FALSE FALSE       0
+                     a scale or df that fits neither the draws nor the matches is refused  8      0   FALSE FALSE       0
+TOTAL expectations 74 | failed 0 | errors 0 | skipped 0

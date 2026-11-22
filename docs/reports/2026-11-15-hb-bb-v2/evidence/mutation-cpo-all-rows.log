@@ -1,0 +1,17 @@
+Saving _problems/test-v2-margin-total-inla-438.R
+Saving _problems/test-v2-margin-total-inla-439.R
+[ FAIL 2 | WARN 0 | SKIP 0 | PASS 1 ]
+
+══ Failed tests ════════════════════════════════════════════════════════════════
+── Failure ('test-v2-margin-total-inla.R:438:3'): leave-one-out densities come back for the training rows, and only for them ──
+Expected `fit$cpo` to have length 140.
+Actual length: 168.
+── Failure ('test-v2-margin-total-inla.R:439:3'): leave-one-out densities come back for the training rows, and only for them ──
+Expected `all(is.finite(fit$cpo) & fit$cpo > 0)` to be TRUE.
+Differences:
+`actual`:   FALSE
+`expected`: TRUE 
+
+
+[ FAIL 2 | WARN 0 | SKIP 0 | PASS 1 ]
+TOTAL expectations 3 | failed 2 | errors 0

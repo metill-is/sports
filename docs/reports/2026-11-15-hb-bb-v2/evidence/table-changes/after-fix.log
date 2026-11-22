@@ -1,0 +1,28 @@
+345 table rows before, 345 now (appendix and run section left out); 177 cells in 93 rows differ in a result, 24 cells in a time or machine record; rows in one build only: 0 / 0
+cells with a standard error: 68; moved by more than one standard error: 0; largest move 0.50 (Leak-free walk-forward / Does a within-season term earn its place?, Handball men, 0.42 [0.09, 1.21], Held-out result log likelihood: 0.000 ± 0.002 -> +0.001 ± 0.002)
+ section                                                                                            row                                                        column                         old                     new                     result
+ Leak-free walk-forward / Does a within-season term earn its place?                                 Handball men, 0.42 [0.09, 1.21]                            Held-out result log likelihood 0.000 ± 0.002           +0.001 ± 0.002          TRUE  
+ Basketball: regulation time / Does training on regulation time cost anything for the final result? Basketball women, 962                                      Difference                     +0.0032 ± 0.0013        +0.0026 ± 0.0013        TRUE  
+ Leak-free walk-forward / Does a within-season term earn its place?                                 Basketball men, first 6 weeks                              Total log score                −0.0017 ± 0.0054        +0.0009 ± 0.0057        TRUE  
+ Leak-free walk-forward / Does a within-season term earn its place?                                 Basketball men, all                                        Total log score                +0.0014 ± 0.0024        +0.0020 ± 0.0024        TRUE  
+ The ladder / Basketball women · 94 held-out matches                                                v2 static, INLA plug-in, –                                 Held-out total log score       −4.378 (+0.008 ± 0.033) −4.369 (+0.016 ± 0.034) TRUE  
+ Leak-free walk-forward / Does a within-season term earn its place?                                 Basketball women, first 6 weeks                            Total log score                +0.0028 ± 0.0055        +0.0040 ± 0.0052        TRUE  
+ Handball: draws and the variance question / Possession-informed variance against a free variance   Student-t with fitted degrees of freedom, +0.0015 ± 0.0013 Women: total                   0.0000 ± 0.0005         −0.0001 ± 0.0005        TRUE  
+ Leak-free walk-forward / Does a within-season term earn its place?                                 Basketball women, first 6 weeks                            Margin log score               +0.0033 ± 0.0115        +0.0052 ± 0.0114        TRUE  
+ Basketball: regulation time / Does training on regulation time cost anything for the final result? Basketball men, 1,335                                      Difference                     +0.0006 ± 0.0006        +0.0005 ± 0.0006        TRUE  
+ Leak-free walk-forward / Does a within-season term earn its place?                                 Basketball women, middle                                   Total log score                +0.0105 ± 0.0046        +0.0099 ± 0.0042        TRUE  
+ Leak-free walk-forward / Does a within-season term earn its place?                                 Basketball women, first 6 weeks                            Result log likelihood          −0.0010 ± 0.0071        −0.0001 ± 0.0070        TRUE  
+ The ladder / Handball men · 103 held-out matches                                                   v2 static, INLA full, –                                    Held-out total log score       −3.463 (+0.021 ± 0.017) −3.461 (+0.023 ± 0.017) TRUE  
+ move_se  
+ 0.5000000
+ 0.4615385
+ 0.4561404
+ 0.2500000
+ 0.2352941
+ 0.2307692
+ 0.2000000
+ 0.1666667
+ 0.1666667
+ 0.1428571
+ 0.1285714
+ 0.1176471

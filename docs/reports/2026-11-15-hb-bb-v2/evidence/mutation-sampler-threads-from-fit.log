@@ -1,0 +1,11 @@
+Saving _problems/test-v2-margin-total-inla-416.R
+[ FAIL 1 | WARN 0 | SKIP 0 | PASS 0 ]
+
+══ Failed tests ════════════════════════════════════════════════════════════════
+── Failure ('test-v2-margin-total-inla.R:413:3'): drawing after a fit on more than one thread does not warn ──
+Expected `fit_v2_inla(...)` not to throw any warnings matching pattern 'parallel model is disabled'.
+Actually got a <simpleWarning> with message:
+  Since 'seed!=0', parallel model is disabled and serial model is selected, num.threads='1:1'
+
+[ FAIL 1 | WARN 0 | SKIP 0 | PASS 0 ]
+TOTAL expectations 1 | failed 1 | errors 0
