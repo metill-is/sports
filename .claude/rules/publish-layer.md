@@ -290,20 +290,24 @@ exactly as `next_games.json` carried them (`p_home_win`, `p_draw`,
 WHY: `prune_extracts()` deletes old fit partitions on every fit, and the
 extracts were the only record of what a past fit forecast.
 
-- **The fit is `fit_date` + `fit_id`**, the md5 of the partition's
-  `predicted_matches.parquet`. A same-day refit overwrites that date's
-  partition; its forecasts are new publications and are archived beside the
-  first fit's.
+- **The fit is `fit_date` + `fit_id`**, an md5 of the forecasts (rows, not
+  bytes) in the partition's `predicted_matches.parquet`. A same-day refit
+  overwrites that date's partition; its forecasts are new publications and are
+  archived beside the first fit's. A partition rewritten with the same
+  forecasts keeps its `fit_id`.
 - **Written by `publish_one(archive_forecasts = TRUE)`**, after the cells are
   validated and swapped in, from the files now in place. Pre-match only:
   kick-offs come from the schedule (KSÍ), else the newest odds scrape
   (Lengjan's names mapped through `team_names`); a forecast published at or
   after kick-off is not archived, nor one with no known kick-off for the
   publication day itself (it may have been published after the game began).
+  `kickoff_time` is what was known at the row's first archiving: Lengjan lists
+  games a day or two ahead, so for basketball and handball it is mostly NA.
 - **Only on CI.** `scripts/05_publish.R` archives on GitHub Actions or with
   `--archive` (`publish_archives_forecasts()`); `decide-publish.yml` and
-  `republish.yml` stage the tree on its own `git add ... || true` line,
-  because the directory does not exist until something has been archived.
+  `republish.yml` stage the tree on its own line, only when the directory
+  exists: until something has been archived it does not, and `git add` of a
+  missing path fails the whole commit step.
 - **Append-only, by construction.** Every write is a new `batch=` partition
   (publication time and run id), so no file is ever rewritten and two runs
   that publish at once (a queued decide-publish checks out its trigger's

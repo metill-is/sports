@@ -153,6 +153,26 @@ test_that("new matches from the same fit are appended and stored rows are left a
   )
 })
 
+test_that("a fit's id is its forecasts, not its file's bytes", {
+  fit_dir <- withr::local_tempdir()
+  forecasts <- tibble::tibble(
+    home_team = c("Valur", "FH"), away_team = c("KR", "Fram"),
+    match_date = as.Date("2100-01-16"), home_goals = c(1, 2), away_goals = c(0, 2), count = c(10L, 7L)
+  )
+  write <- function(d, compression) arrow::write_parquet(d, file.path(fit_dir, "predicted_matches.parquet"), compression = compression)
+  write(forecasts, "snappy")
+  id <- forecast_archive_fit_id(fit_dir)
+  expect_false(is.na(id))
+  # The same forecasts rewritten (rows reordered, another codec): the same fit.
+  write(forecasts[2:1, ], "gzip")
+  expect_identical(forecast_archive_fit_id(fit_dir), id)
+  # Another forecast: another fit.
+  forecasts$count[1] <- 11L
+  write(forecasts, "snappy")
+  expect_false(identical(forecast_archive_fit_id(fit_dir), id))
+  expect_identical(forecast_archive_fit_id(withr::local_tempdir()), NA_character_)
+})
+
 test_that("a same-day refit is archived beside the first fit, told apart by fit_id", {
   root <- withr::local_tempdir()
   suppressMessages(archive_forecasts(.fa_row(), root = root))
@@ -333,6 +353,17 @@ test_that("publish_one archives every published football fixture with the number
     expect_equal(joined[[paste0(col, ".stored")]], joined[[col]], info = col)
   }
   expect_setequal(unique(stored$sex), c("male", "female"))
+  # The fit's id is the one of the partition each cell was published from.
+  for (sx in c("male", "female")) {
+    part <- list.dirs(file.path(extracts_root, "sport=football", "country=iceland", paste0("sex=", sx)), recursive = FALSE)
+    expect_length(part, 1L)
+    expect_identical(unique(stored$fit_id[stored$sex == sx]), forecast_archive_fit_id(part))
+  }
+  # Kick-offs from the schedule, which posts one for every fixture here.
+  sched <- read_table("schedules", root = root, filter = list(sport = "football"))
+  k <- sched$kickoff_time[match(paste(stored$match_date, stored$home_team, stored$away_team), paste(sched$match_date, sched$home_team, sched$away_team))]
+  expect_false(anyNA(k))
+  expect_identical(stored$kickoff_time, k)
   expect_true(all(stored$engine == "stan"))
   expect_true(all(!is.na(stored$stan_model)))
   expect_true(all(stored$published_at <= Sys.time()))
@@ -405,7 +436,7 @@ test_that("decide-publish and republish commit the forecast archive, and still c
     yml <- yaml::read_yaml(testthat::test_path("..", "..", ".github", "workflows", wf))
     steps <- yml$jobs[[1]]$steps
     commit <- steps[[which(vapply(steps, function(s) grepl("git commit", s$run %||% "", fixed = TRUE), logical(1)))]]
-    adds <- grep("^\\s*git add ", strsplit(commit$run, "\n")[[1]], value = TRUE)
+    adds <- trimws(grep("git add ", strsplit(commit$run, "\n")[[1]], value = TRUE))
     expect_true(any(grepl("data/archive/forecasts/", adds, fixed = TRUE)), info = wf)
 
     # The step's own `git add` lines, under `bash -e` as Actions runs them, in
@@ -415,7 +446,7 @@ test_that("decide-publish and republish commit the forecast archive, and still c
       git <- function(...) system2("git", c("-C", repo, ...), stdout = TRUE, stderr = TRUE)
       git("init", "-q")
       # Every other path the step stages exists on main; give each a file.
-      others <- unlist(strsplit(trimws(sub("^\\s*git add", "", adds[!grepl("archive/forecasts", adds)])), "\\s+"))
+      others <- unlist(strsplit(trimws(sub("^git add", "", adds[!grepl("archive/forecasts", adds)])), "\\s+"))
       for (d in others) {
         dir.create(file.path(repo, d), recursive = TRUE, showWarnings = FALSE)
         writeLines("{}", file.path(repo, d, "x.json"))

@@ -196,7 +196,10 @@ publish_one <- function(static, betting, key, sex,
     )
     # The odds' kick-offs carry Lengjan's names, mapped back through the
     # league's `team_names`, which the static slice handed in here leaves out.
-    full_league <- tryCatch(load_leagues()[[key]], error = function(e) NULL) %||% league
+    full_league <- tryCatch(load_leagues()[[key]], error = function(e) {
+      cli::cli_alert_warning("publish_one({key}/{sex}): forecast archive without odds kick-offs, the league config did not load: {conditionMessage(e)}")
+      NULL
+    }) %||% league
     published_at <- Sys.time()
     rows <- forecast_archive_rows(
       publish_root = output_root, sport = league$sport, country = "iceland",

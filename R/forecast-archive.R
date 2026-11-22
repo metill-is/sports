@@ -13,10 +13,10 @@ NULL
 # just wrote, so a row is the forecast exactly as published.
 #
 # One row per published forecast: (fit, published file, match). The fit is
-# its date AND `fit_id`, a fingerprint of the extract partition's
-# predicted_matches.parquet, because a same-day refit overwrites the partition
-# of that date: its forecasts are new publications and are archived beside the
-# first fit's, told apart by fit_id.
+# its date AND `fit_id`, a fingerprint of the forecasts in the extract
+# partition's predicted_matches.parquet (its rows, not its bytes), because a
+# same-day refit overwrites the partition of that date: its forecasts are new
+# publications and are archived beside the first fit's, told apart by fit_id.
 #
 # Append-only, by construction:
 #   - every write is a NEW partition, `batch=` below `fit_date=`; no file is
@@ -35,9 +35,12 @@ NULL
 #
 # Pre-match: a forecast is archived only when it was published before
 # kick-off. Kick-offs come from the schedule (KSI posts them) and else from
-# the newest odds scrape (Lengjan lists them for the leagues it prices). With
-# no known kick-off a forecast for a later day is archived and one for the
-# publication day is not: it may have been published after the game began.
+# the newest odds scrape (Lengjan lists them for the leagues it prices, a day
+# or two ahead). With no known kick-off a forecast for a later day is archived
+# and one for the publication day is not: it may have been published after
+# the game began. `kickoff_time` is what was known when the row was first
+# archived, so for the 2DT sports it is mostly NA except close to the match;
+# join today's schedule or odds for a kick-off when scoring.
 #
 # Only CI archives (scripts/05_publish.R, publish_archives_forecasts()): the
 # site serves what CI commits, so a local publish is not a publication.
@@ -57,16 +60,29 @@ publish_archives_forecasts <- function(flag = FALSE,
   isTRUE(flag) || identical(github_actions, "true")
 }
 
-#' A fingerprint of the fit a publish read: the md5 of its extract
-#' partition's `predicted_matches.parquet`, the file next_games.json is made
-#' from. NA when the file is missing.
+#' A fingerprint of the fit a publish read: an md5 of the forecasts in its
+#' extract partition's `predicted_matches.parquet`, the file next_games.json
+#' is made from. Of the rows, in a fixed order, not of the file's bytes: a
+#' partition rewritten with the same forecasts (a cup go-live patch, another
+#' arrow version) is the same fit. NA when the file is missing.
 #' @noRd
 forecast_archive_fit_id <- function(fit_dir) {
   f <- file.path(fit_dir, "predicted_matches.parquet")
   if (!file.exists(f)) {
     return(NA_character_)
   }
-  unname(tools::md5sum(f))
+  d <- as.data.frame(arrow::read_parquet(f))
+  d <- d[sort(names(d))]
+  for (nm in names(d)) {
+    if (is.list(d[[nm]])) {
+      d[[nm]] <- vapply(d[[nm]], function(x) as.character(jsonlite::toJSON(x, digits = NA)), character(1))
+    }
+  }
+  lines <- sort(.row_signature(d))
+  tmp <- tempfile()
+  on.exit(unlink(tmp), add = TRUE)
+  writeLines(c(paste(names(d), collapse = "\x1f"), lines), tmp, useBytes = TRUE)
+  unname(tools::md5sum(tmp))
 }
 
 #' Kick-off instants (UTC) for a cell family's fixtures.
@@ -109,11 +125,18 @@ forecast_archive_kickoffs <- function(league, sex, root, from) {
     if (nrow(odds) > 0L && !is.null(league$lengjan$team_names[[sex]])) {
       odds <- odds[order(odds$scraped_at, decreasing = TRUE), , drop = FALSE]
       odds <- odds[!duplicated(odds[c("match_date", "home_team", "away_team")]), c("match_date", "home_team", "away_team", "kickoff_at")]
-      odds <- suppressMessages(normalise_lengjan_team_names(odds, league, sex))
-      from_odds <- tibble::tibble(
-        match_date = as.Date(odds$match_date), home_team = odds$home_team, away_team = odds$away_team,
-        kickoff_at = as.POSIXct(odds$kickoff_at, tz = "UTC")
-      )
+      # A team_names map the normaliser refuses (two canonicals on one
+      # rendering) fails decide loudly; here it only costs the odds' kick-offs.
+      odds <- tryCatch(suppressMessages(normalise_lengjan_team_names(odds, league, sex)), error = function(e) {
+        cli::cli_alert_warning("Forecast archive: odds kick-offs unused for {league$sport}/{sex}: {conditionMessage(e)}")
+        NULL
+      })
+      if (!is.null(odds)) {
+        from_odds <- tibble::tibble(
+          match_date = as.Date(odds$match_date), home_team = odds$home_team, away_team = odds$away_team,
+          kickoff_at = as.POSIXct(odds$kickoff_at, tz = "UTC")
+        )
+      }
     }
   }
   out <- dplyr::bind_rows(from_schedule, from_odds)
