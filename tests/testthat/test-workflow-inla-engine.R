@@ -71,11 +71,13 @@ test_that("skip_if_no_inla() skips by default and fails where INLA is required",
   })
 })
 
-test_that("the fit workflow installs R-INLA at the version the INLA engine tests run", {
+test_that("the fit workflow installs R-INLA as the INLA engine tests do, and cannot be stopped by it before a league uses it", {
   # WHY: when a league switches to engine: inla, fit.yml is where it fits. The
   # install mirrors inla-engine.yml step for step, at the same pinned version,
-  # so the engine is exercised daily on the runner that will use it before any
-  # league depends on it, and the tests and the fits cannot drift apart.
+  # so it is exercised on the runner that will use it before any league
+  # depends on it. While no league does, the steps are continue-on-error, so an
+  # outage at R-INLA's host or an apt mirror cannot cost a day of Stan fits;
+  # the commit that switches a league must make them blocking.
   # R-INLA is not in DESCRIPTION: pak, which installs every workflow's
   # packages, does not read Additional_repositories, so a Suggests entry would
   # break the install step of every workflow that resolves suggested packages.
@@ -86,23 +88,50 @@ test_that("the fit workflow installs R-INLA at the version the INLA engine tests
   expect_identical(fit$env$INLA_VERSION, engine$env$INLA_VERSION)
   expect_identical(fit$env$INLA_REPO, engine$env$INLA_REPO)
 
-  steps <- fit$steps
-  step_at <- function(pattern) {
+  first_step <- function(steps, pattern) {
     hit <- which(vapply(steps, function(s) any(grepl(pattern, c(s$uses %||% "", s$run %||% ""))), logical(1)))
     if (length(hit)) hit[[1]] else NA_integer_
   }
-  sysreqs <- step_at("libgdal-dev libgeos-dev libproj-dev libudunits2-dev")
-  deps <- step_at("setup-r-dependencies")
-  inla <- step_at("INLA_%s.tar.gz")
-  fit_step <- step_at("scripts/03_fit.R")
-  # sf's system libraries before the R packages that load them, R-INLA after
-  # its R dependencies, and all of it before the fit.
-  expect_false(anyNA(c(sysreqs, deps, inla, fit_step)))
-  expect_true(sysreqs < deps && deps < inla && inla < fit_step)
-  extra <- strsplit(trimws(steps[[deps]]$with$`extra-packages`), "\\s+")[[1]]
-  expect_true(all(c("any::fmesher", "any::MatrixModels", "any::sn") %in% extra))
-  # The same install command as inla-engine.yml, and a check that it took.
-  install_of <- function(s) grep("INLA_%s.tar.gz|packageVersion\\(\"INLA\"\\)", strsplit(s$run, "\n")[[1]], value = TRUE)
-  engine_install <- engine$steps[[which(vapply(engine$steps, function(s) grepl("INLA_%s.tar.gz", s$run %||% ""), logical(1)))]]
-  expect_identical(trimws(install_of(steps[[inla]])), trimws(install_of(engine_install)))
+  lines_of <- function(step, pattern) trimws(grep(pattern, strsplit(step$run %||% "", "\n")[[1]], value = TRUE))
+  steps <- fit$steps
+  at <- c(
+    sysreqs = first_step(steps, "apt-get install"),
+    rdeps = first_step(steps, "install.packages\\(c\\(\"fmesher\""),
+    inla = first_step(steps, "INLA_%s.tar.gz"),
+    smoke = first_step(steps, "INLA::inla\\("),
+    fit = first_step(steps, "scripts/03_fit.R")
+  )
+  # sf's system libraries, then R-INLA's R dependencies, R-INLA, a fit with
+  # it, and all of it before the league fits.
+  expect_false(anyNA(at), info = paste(names(at)[is.na(at)], collapse = ", "))
+  expect_identical(order(at), seq_along(at))
+
+  # The same commands as inla-engine.yml: system libraries, the install and its
+  # version check, the smoke fit.
+  e_steps <- engine$steps
+  e_apt <- e_steps[[first_step(e_steps, "apt-get install")]]
+  expect_identical(lines_of(steps[[at[["sysreqs"]]]], "apt-get"), lines_of(e_apt, "apt-get"))
+  pin <- "INLA_%s.tar.gz|packageVersion\\(\"INLA\"\\)"
+  expect_identical(lines_of(steps[[at[["inla"]]]], pin), lines_of(e_steps[[first_step(e_steps, "INLA_%s.tar.gz")]], pin))
+  smoke <- "INLA::inla\\("
+  expect_identical(lines_of(steps[[at[["smoke"]]]], smoke), lines_of(e_steps[[first_step(e_steps, smoke)]], smoke))
+  # R-INLA's R dependencies are the ones the engine job installs for it.
+  e_deps <- e_steps[[first_step(e_steps, "setup-r-dependencies")]]
+  e_extra <- sub("^any::", "", strsplit(trimws(e_deps$with$`extra-packages`), "\\s+")[[1]])
+  rdeps <- regmatches(steps[[at[["rdeps"]]]]$run, gregexpr("\"[A-Za-z0-9.]+\"", steps[[at[["rdeps"]]]]$run))[[1]]
+  expect_setequal(gsub("\"", "", rdeps), setdiff(e_extra, c("devtools", "testthat")))
+  # The fit's own dependency step is untouched by them.
+  f_extra <- strsplit(trimws(steps[[first_step(steps, "setup-r-dependencies")]]$with$`extra-packages`), "\\s+")[[1]]
+  expect_false(any(c("any::fmesher", "any::MatrixModels", "any::sn") %in% f_extra))
+
+  # Non-blocking exactly while no league uses the engine; never skipped.
+  inla_steps <- steps[at[c("sysreqs", "rdeps", "inla", "smoke")]]
+  engines <- vapply(load_leagues(), function(l) l$engine %||% "stan", character(1))
+  blocking <- vapply(inla_steps, function(s) !isTRUE(s[["continue-on-error"]]), logical(1))
+  if (any(engines == "inla")) {
+    expect_true(all(blocking), info = "a league uses engine: inla, so its install must stop the fit when it fails")
+  } else {
+    expect_false(any(blocking), info = "no league uses engine: inla, so its install must not stop the Stan fits")
+  }
+  expect_true(all(vapply(inla_steps, function(s) is.null(s[["if"]]), logical(1))))
 })
