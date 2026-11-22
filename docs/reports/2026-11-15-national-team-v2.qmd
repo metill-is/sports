@@ -31,6 +31,12 @@ suppressPackageStartupMessages({
   library(ggplot2)
 })
 res <- readRDS(here::here("docs", "reports", "2026-11-15-national-team-v2", "results.rds"))
+# Pair models on the same match: every model scores each cutoff's matches in
+# the same order, so key rows before anything is filtered out.
+if (!is.null(res$walk_forward)) {
+  res$walk_forward <- res$walk_forward |>
+    dplyr::mutate(match_key = paste(cutoff, dplyr::row_number(), sep = "_"), .by = c(model, cutoff))
+}
 theme_set(metill::theme_metill())
 
 model_labels <- c(
@@ -123,8 +129,7 @@ join_and <- function(x) {
 panel_pair <- function(a, b) {
   pw <- res$walk_forward |>
     filter(!in_target, !friendly, model %in% c(a, b), !is.na(log_1x2)) |>
-    mutate(id = row_number(), .by = model) |>
-    select(id, model, log_1x2) |>
+    select(id = match_key, model, log_1x2) |>
     pivot_wider(names_from = "model", values_from = "log_1x2")
   nt_paired_diff(pw[[a]], pw[[b]])
 }
@@ -371,8 +376,7 @@ wf <- res$walk_forward |> filter(!in_target, !is.na(log_1x2))
 wf_models <- intersect(c("elo", "base", "hl3", "damp08", "novenue"), unique(wf$model))
 wf_wide <- function(metric, data) {
   data |>
-    mutate(id = paste(cutoff, match_date, row_number(), sep = "_"), .by = model) |>
-    select(id, model, all_of(metric)) |>
+    select(id = match_key, model, all_of(metric)) |>
     pivot_wider(names_from = "model", values_from = all_of(metric))
 }
 wf_comp <- wf |> filter(!friendly)
