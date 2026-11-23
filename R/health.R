@@ -31,9 +31,14 @@ health_thresholds <- function() {
     # and a two-day publish outage looks healthy. Revisit after the first
     # month of bb/hb publishing, citing observed inter-commit gaps.
     publish_max_age_hours = 36,
-    unmapped_window_days = 14 # look-back for unmapped Lengjan team names;
+    unmapped_window_days = 14, # look-back for unmapped Lengjan team names;
     # matches check_odds_freshness's fixture horizon, so a name Lengjan is
     # actively pricing stays flagged while a retired rendering ages out.
+    # The weekly Stan reference fit (check_engine_reference): decision 5 of the
+    # football cutover plan, and how old its newest result may be -- a weekly
+    # run, a missed week and a day of slack.
+    engine_reference_max_mean_abs_diff = FV2_REFERENCE_MAX_MEAN_ABS_DIFF,
+    engine_reference_max_age_days = 15
   )
 }
 
@@ -437,6 +442,79 @@ check_diagnostics_drift <- function(root, th, paused_cells = character(0)) {
     )
   }
   dplyr::bind_rows(rows)
+}
+
+#' The weekly Stan reference fit: do R-INLA and NUTS still agree?
+#'
+#' Reads the newest `engine_reference` row of each football cell
+#' (scripts/engine_reference.R, weekly). WARN when that run did not pass (mean
+#' absolute difference in outcome probabilities above
+#' `engine_reference_max_mean_abs_diff`, a NUTS fit past `div_frac_warn` or
+#' `rhat_warn`, or an INLA fit without a mode or failing its gate), or when it
+#' is older than `engine_reference_max_age_days`
+#' (the weekly run stopped). PAUSED before the first run (no store yet):
+#' nothing to judge, and not an alarm. An unreadable store, or a cell with no
+#' row while the store exists, is WARN.
+#' @noRd
+check_engine_reference <- function(root, now, th) {
+  sexes <- c("male", "female")
+  scope_of <- function(sx) paste0("football/iceland/", sx)
+  src <- file.path(root, "health", "engine_reference")
+  # PAUSED only before the first run, when the store does not exist. A store
+  # that will not read, or a cell that never produced a row while the store
+  # exists, is a reference that is not running: WARN, as for drift.
+  if (!dir.exists(src)) {
+    return(dplyr::bind_rows(lapply(sexes, function(sx) {
+      health_row("engine_reference", scope_of(sx), "PAUSED", "no weekly reference fit yet", "n/a")
+    })))
+  }
+  rows <- tryCatch(
+    read_table("engine_reference", root = root, filter = list(sport = "football", country = "iceland")),
+    error = function(e) structure(list(), message = conditionMessage(e))
+  )
+  if (!is.data.frame(rows)) {
+    return(dplyr::bind_rows(lapply(sexes, function(sx) {
+      health_row(
+        "engine_reference", scope_of(sx), "WARN",
+        paste("data/health/engine_reference/ unreadable:", attr(rows, "message")), "readable"
+      )
+    })))
+  }
+  dplyr::bind_rows(lapply(sexes, function(sx) {
+    scope <- scope_of(sx)
+    mine <- if (nrow(rows) && "sex" %in% names(rows)) rows[rows$sex == sx, , drop = FALSE] else rows[0, , drop = FALSE]
+    if (nrow(mine) == 0L) {
+      return(health_row(
+        "engine_reference", scope, "WARN",
+        "no weekly reference row for this cell, though the reference has run", "a row per cell"
+      ))
+    }
+    mine$run_date <- as.Date(as.character(mine$run_date))
+    newest <- mine[order(mine$run_date, mine$run_at, decreasing = TRUE)[1L], , drop = FALSE]
+    age <- as.numeric(difftime(now, newest$run_at, units = "days"))
+    breach <- !isTRUE(newest$passed) ||
+      isTRUE(newest$mean_abs_diff > th$engine_reference_max_mean_abs_diff)
+    what <- sprintf(
+      "%s: mean |p_INLA - p_NUTS| = %.4f over %d fixtures (%s); NUTS %d divergences, Rhat %.3f; INLA mode status %d",
+      format(newest$run_date), newest$mean_abs_diff, newest$n_fixtures, newest$fixtures,
+      newest$nuts_divergences, newest$nuts_max_rhat, newest$inla_mode_status
+    )
+    if (age > th$engine_reference_max_age_days) {
+      health_row(
+        "engine_reference", scope, "WARN",
+        sprintf("newest reference is %.0f days old (%s)", age, what),
+        sprintf("<= %s days old", th$engine_reference_max_age_days)
+      )
+    } else {
+      health_row(
+        "engine_reference", scope, if (breach) "WARN" else "OK", what,
+        sprintf(
+          "<= %s; NUTS divergences < %.1f%%, Rhat <= %s; INLA mode found and gate passed",
+          th$engine_reference_max_mean_abs_diff, 100 * th$div_frac_warn, th$rhat_warn
+        )
+      )
+    }
+  }))
 }
 
 #' "sport/country/sex" cells whose `fit_freshness` row is PAUSED.
@@ -972,6 +1050,7 @@ pipeline_health <- function(root = here::here("data"),
     fit_rows,
     safe(check_odds_freshness(leagues, root, now, th)),
     safe(check_diagnostics_drift(root, th, paused_cells)),
+    safe(check_engine_reference(root, now, th)),
     safe(check_orphaned_bets(root, now, th)),
     safe(check_capture_rate(root, now, th, leagues)),
     safe(check_placement_health(root, now, th)),

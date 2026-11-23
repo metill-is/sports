@@ -14,7 +14,8 @@ table_partitions <- function() {
     candidates = c("sport", "country", "run_date"),
     recommendations = c("sport", "country", "run_date"),
     ledger = c("sport", "country"),
-    fit_diagnostics = c("sport", "country", "sex", "fit_date")
+    fit_diagnostics = c("sport", "country", "sex", "fit_date"),
+    engine_reference = c("sport", "country", "sex", "run_date")
   )
 }
 
@@ -32,6 +33,7 @@ table_subdir <- function(table) {
     recommendations = c("decisions", "recommendations"),
     ledger = c("decisions", "ledger"),
     fit_diagnostics = c("beliefs", "diagnostics"),
+    engine_reference = c("health", "engine_reference"),
     stop("Unknown table: ", table, call. = FALSE)
   )
 }

@@ -51,10 +51,13 @@ semantics or a coordination mechanism.
 ## Health & monitoring (2026-05-30)
 
 `R/health.R::pipeline_health(root, now)` is a **read-only** snapshot composing
-**eleven** checks into a `{check, scope, status, value, threshold}` tibble
+**thirteen** checks into a `{check, scope, status, value, threshold}` tibble
 (`OK` < `WARN` < `FAIL`, plus `PAUSED` for off-season cells via
 `has_upcoming_games`): fit/odds freshness, persisted Stan-diagnostic drift
-(`data/beliefs/diagnostics/`, written per fit by `fit_league`), orphaned-bet,
+(`data/beliefs/diagnostics/`, written per fit by `fit_league`), the weekly
+Stan reference fit (`check_engine_reference`: WARN when the newest
+`data/health/engine_reference/` row of a football cell did not pass or is over
+15 days old, PAUSED before the first run), orphaned-bet,
 **placement-capture-rate** (recommendations for now-played matches that never
 reached the ledger — the forensic review found ~45% capture), placement health,
 bankroll/drawdown, discovery, and the three publish-side checks added

@@ -1,0 +1,142 @@
+name: Engine Reference Fit
+
+# The weekly Stan reference fit (decision 5 of the football cutover plan,
+# docs/reports/2026-11-15-football-v2-proposal.qmd): football v2.0 on the
+# latest data, fitted by R-INLA as production fits it and by NUTS with the
+# Stan reference program, both cells, and the two engines' outcome
+# probabilities compared (scripts/engine_reference.R). One summary row per
+# cell is committed under data/health/engine_reference/; the health check
+# warns when a run did not pass (mean absolute difference above 0.01) or the
+# runs stop. Fixture-by-fixture numbers go to the run's artifact.
+#
+# Mondays. GitHub starts scheduled runs late (hours, of late) and now and
+# then not at all; the reference reads whatever data main holds when it runs,
+# and the health check warns once its newest row is more than 15 days old, so
+# one missed week is tolerated. It writes nothing else and starts no other
+# workflow. Pinned by tests/testthat/test-workflow-engine-reference.R.
+on:
+  schedule:
+    - cron: '23 9 * * 1'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: engine-reference
+  cancel-in-progress: false
+
+jobs:
+  reference:
+    runs-on: ubuntu-latest
+    # Two cells, each one INLA fit (about two minutes on one thread) and one
+    # four-chain NUTS fit (about five), plus setup.
+    timeout-minutes: 120
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      CMDSTAN_VERSION: '2.38.0'
+      # The same pin and repository as inla-engine.yml and fit.yml;
+      # test-workflow-engine-reference.R keeps them equal.
+      INLA_VERSION: '25.06.07'
+      INLA_REPO: 'https://inla.r-inla-download.org/R/stable'
+
+    steps:
+      - uses: actions/checkout@v5
+
+      # The runner context does not exist where job-level env is evaluated,
+      # so the output directory is set from a step.
+      - name: Choose an output directory outside the checkout
+        run: echo "REFERENCE_OUT=$RUNNER_TEMP/engine-reference" >> "$GITHUB_ENV"
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: '4.5.3' # pinned to local R, not 'release' (ci-conventions.md section 3)
+          use-public-rspm: true
+          # cmdstanr comes from the stan-dev r-universe, which setup-r (not
+          # setup-r-dependencies) configures.
+          extra-repositories: 'https://stan-dev.r-universe.dev'
+
+      # INLA imports fmesher, which imports sf, and sf's binary loads GDAL,
+      # GEOS, PROJ and udunits. pak's own system-requirements step is off
+      # (ci-conventions.md section 1), so they are installed here.
+      - name: "R-INLA: install the system libraries sf loads"
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libgdal-dev libgeos-dev libproj-dev libudunits2-dev
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        env:
+          PKG_SYSREQS: "false"
+        with:
+          extra-packages: |
+            any::devtools
+            any::cmdstanr
+
+      - name: Reinstall V8 from source with bundled static libv8
+        env:
+          DOWNLOAD_STATIC_LIBV8: "1"
+        run: |
+          Rscript -e 'install.packages("V8", type = "source", repos = c(CRAN = "https://cloud.r-project.org"))'
+
+      # sn: INLA only suggests it, but its posterior sampler stops without it.
+      - name: "R-INLA: install its R dependencies"
+        run: |
+          Rscript -e 'install.packages(c("fmesher", "MatrixModels", "sn"))'
+
+      # Not on CRAN and not in DESCRIPTION. The repository serves one tarball
+      # per release, so the pin is the file name. Blocking here, unlike in
+      # fit.yml: the reference cannot run without INLA.
+      - name: "R-INLA: install the pinned version"
+        run: |
+          Rscript -e 'install.packages(sprintf("%s/src/contrib/INLA_%s.tar.gz", Sys.getenv("INLA_REPO"), Sys.getenv("INLA_VERSION")), repos = NULL, type = "source")'
+          Rscript -e 'stopifnot(packageVersion("INLA") == Sys.getenv("INLA_VERSION")); cat("INLA", as.character(packageVersion("INLA")), "\n")'
+
+      # ~/.cmdstan holds compiled objects every model is linked against, so a
+      # cached copy is only valid on the image and compiler that built it; the
+      # key names both (ci-conventions.md section 4, test-workflow-cmdstan-cache.R).
+      - name: Identify the runner image for the CmdStan cache key
+        id: image
+        run: |
+          . /etc/os-release
+          echo "id=${ID}-${VERSION_ID}-$(uname -m)-gcc$(g++ -dumpfullversion)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache CmdStan installation
+        id: cache-cmdstan
+        uses: actions/cache@v5
+        with:
+          path: ~/.cmdstan
+          key: cmdstan-${{ env.CMDSTAN_VERSION }}-${{ steps.image.outputs.id }}
+
+      - name: Install CmdStan if not cached
+        if: steps.cache-cmdstan.outputs.cache-hit != 'true'
+        run: Rscript -e 'cmdstanr::install_cmdstan(version = Sys.getenv("CMDSTAN_VERSION"), cores = 2)'
+
+      - name: Fit both football cells with R-INLA and NUTS and compare
+        run: Rscript scripts/engine_reference.R --out "$REFERENCE_OUT"
+
+      - name: Upload the fixture-by-fixture comparison
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: engine-reference
+          path: ${{ runner.temp }}/engine-reference/*.csv
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Commit the summary rows
+        # always(): a cell that fitted is committed even when the other failed
+        # (the script exits non-zero then). Nothing else is staged.
+        if: always()
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/health/engine_reference/ 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "No reference rows written"
+            exit 0
+          fi
+          git commit -m "data: engine reference fit $(date -u +%Y-%m-%dT%H:%MZ)"
+          # Its one path is written by nothing else, so plain retry: a content
+          # conflict here would mean something unexpected and should fail.
+          .github/scripts/push-with-retry.sh
