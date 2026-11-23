@@ -159,12 +159,27 @@ needs_refit <- function(static, sex, root = here::here("data"),
   if (nrow(diag) == 0L || !"n_obs" %in% names(diag)) {
     return(FALSE)
   }
-  n_obs <- diag$n_obs[as.Date(diag$fit_date) == last_fit & !is.na(diag$n_obs)]
+  at_fit <- as.Date(diag$fit_date) == last_fit
+  n_obs <- diag$n_obs[at_fit & !is.na(diag$n_obs)]
   if (length(n_obs) == 0L) {
     return(FALSE)
   }
-  n_now <- nrow(model_training_results(completed, static, end_date = last_fit))
-  !n_now %in% n_obs
+  trained <- model_training_results(completed, static, end_date = last_fit)
+  if (!nrow(trained) %in% n_obs) {
+    return(TRUE)
+  }
+  # A model trained on regulation time (basketball v2) records how many rows
+  # had it; a score that arrives later changes its data, not the row count.
+  n_reg <- if ("n_obs_regulation" %in% names(diag)) diag$n_obs_regulation[at_fit & !is.na(diag$n_obs_regulation)] else integer()
+  if (length(n_reg) == 0L) {
+    return(FALSE)
+  }
+  has_reg <- if (all(c("home_score_reg", "away_score_reg") %in% names(trained))) {
+    sum(!is.na(trained$home_score_reg) & !is.na(trained$away_score_reg))
+  } else {
+    0L
+  }
+  !has_reg %in% n_reg
 }
 
 # TRUE when the refit horizon holds fixtures and the newest fit predicted none

@@ -751,6 +751,59 @@ test_that("needs_refit() is FALSE once a fit has trained on every row", {
   expect_false(needs_refit(.bb_static, "male", root = refit, today = as.Date("2100-04-03")))
 })
 
+test_that("needs_refit() refits a regulation-time fit when regulation scores arrive after it", {
+  # Basketball v2 trains on regulation time; a game whose game card failed
+  # sits outside the likelihood until the card arrives. The row count does
+  # not move, so only the regulation count can say the data changed.
+  seed_diag <- function(root, n_reg) {
+    write_table(
+      tibble::tibble(
+        sport = "basketball", country = "iceland", sex = "male",
+        fit_date = as.Date("2100-04-02"), n_obs = 1L, n_divergent = NA_integer_,
+        total_iter = 4000L, div_frac = NA_real_, n_max_treedepth = NA_integer_,
+        treedepth_frac = NA_real_, min_ebfmi = NA_real_, max_rhat = NA_real_,
+        min_ess_bulk = NA_real_, min_ess_tail = NA_real_, adapt_delta = NA_real_,
+        iter_sampling = NA_integer_, chains = NA_integer_, passed = TRUE,
+        engine = "inla", n_obs_regulation = n_reg
+      ),
+      "fit_diagnostics",
+      root = root
+    )
+  }
+  with_reg <- function(root, reg) {
+    arrow::write_parquet(
+      tibble::tibble(
+        home_team = "A", away_team = "B", match_date = as.Date("2100-04-01"),
+        home_score = 80L, away_score = 70L, division = "BD", round = 22L,
+        home_score_reg = reg[1], away_score_reg = reg[2]
+      ),
+      fs::path(root, "facts", "results", "sport=basketball", "country=iceland", "sex=male", "season=2100", "part-0.parquet")
+    )
+  }
+  today <- as.Date("2100-04-03")
+  root <- withr::local_tempdir()
+  .seed_refit_cell(root, "2100-04-02")
+  seed_diag(root, 0L)
+  with_reg(root, c(NA_integer_, NA_integer_))
+  expect_false(needs_refit(.bb_static, "male", root = root, today = today))
+  with_reg(root, c(80L, 70L))
+  expect_true(needs_refit(.bb_static, "male", root = root, today = today))
+
+  # A fit that trained on it does not refit again.
+  done <- withr::local_tempdir()
+  .seed_refit_cell(done, "2100-04-02")
+  seed_diag(done, 1L)
+  with_reg(done, c(80L, 70L))
+  expect_false(needs_refit(.bb_static, "male", root = done, today = today))
+
+  # A fit row without the regulation count (Stan, handball) ignores it.
+  stan <- withr::local_tempdir()
+  .seed_refit_cell(stan, "2100-04-02")
+  .seed_fit_n_obs(stan, "2100-04-02", n_obs = 1L)
+  with_reg(stan, c(80L, 70L))
+  expect_false(needs_refit(.bb_static, "male", root = stan, today = today))
+})
+
 test_that("needs_refit() recounts over the newest fit's own training window", {
   # At the 09-01 fit, R1 v R2 (BD, 2099-09-05) sits inside the 365-day
   # lookback, so the fit trained on it and on Q1 v Q2: n_obs 2. By 09-20 R1

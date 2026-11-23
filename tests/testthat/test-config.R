@@ -370,10 +370,11 @@ test_that("load_leagues() accepts engine: stan or inla and nothing else", {
   expect_error(load_leagues(with_engine("laplace"), schema_path = schema_path()), "engine|enum|allowed")
 })
 
-test_that("load_leagues() refuses engine: inla for a league that is not football", {
-  # The INLA engine fits the football model only. A handball or basketball
-  # league that asked for it used to load, and then abort at every nightly
-  # fit; the config has to be refused when it is read.
+test_that("load_leagues() accepts engine: inla for every sport it models", {
+  # The INLA engine fits football model v2 and, since the handball /
+  # basketball switch path, v2 (margin, total) for the two 2DT sports.
+  # Whether a league uses it is the league's `engine:` line, which no league
+  # sets (test-model-v2.R pins that).
   league_yml <- function(sport, engine) {
     tmp <- withr::local_tempfile(fileext = ".yml", .local_envir = parent.frame())
     league <- list(minimal_league(list(
@@ -384,10 +385,13 @@ test_that("load_leagues() refuses engine: inla for a league that is not football
     yaml::write_yaml(league, tmp)
     tmp
   }
-  for (sport in c("handball", "basketball")) {
-    expect_error(load_leagues(league_yml(sport, "inla"), schema_path = schema_path()), "sport", info = sport)
+  for (sport in c("football", "handball", "basketball")) {
+    loaded <- load_leagues(league_yml(sport, "inla"), schema_path = schema_path())
+    expect_identical(loaded[[paste0(sport, "_iceland")]]$engine, "inla", info = sport)
     expect_no_error(load_leagues(league_yml(sport, "stan"), schema_path = schema_path()))
   }
-  expect_no_error(load_leagues(league_yml("football", "inla"), schema_path = schema_path()))
-  expect_no_error(load_leagues(league_yml("football", "stan"), schema_path = schema_path()))
+  expect_error(
+    load_leagues(league_yml("handball", "laplace"), schema_path = schema_path()),
+    "engine|enum|allowed"
+  )
 })

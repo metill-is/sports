@@ -1,7 +1,7 @@
 #' Index data for the v2 (margin, total) model.
 #'
-#' PROTOTYPE (2026-11-15, handball / basketball v2): not called by the
-#' production fit path.
+#' Handball / basketball v2 (2026-11-15). On the production fit path only
+#' for a league set to `engine: inla` (`R/model-v2-hbbb.R`); none is.
 #'
 #' The v2 model writes a team's strength on a given date as
 #' `b[team] + u[team, season] + w[team-season, week]`: a long-run club level, a

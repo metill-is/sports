@@ -470,3 +470,58 @@ test_that("hyperparameters are reported on the sd and correlation scale", {
   )
   expect_true(all(h$q05 <= h$q50 & h$q50 <= h$q95))
 })
+
+# The prediction rows rebuilt from the sampled latent components, draw by draw:
+# what the switch path's adapter does for every team and round.
+compose_v2_loc <- function(lat, v, response) {
+  idx <- function(name, i) lat[[name]][, match(i, as.integer(colnames(lat[[name]]))), drop = FALSE]
+  side <- function(team, ts) {
+    out <- idx("b", team) + idx("u_s", (team - 1L) * v$NS + v$season_pred)
+    if (!is.null(lat$w_t)) out <- out + idx("w_t", (ts - 1L) * v$W + v$wk_pred)
+    out
+  }
+  h <- side(v$home_pred, v$ts_home_pred)
+  a <- side(v$away_pred, v$ts_away_pred)
+  if (response == "margin") {
+    return(as.vector(lat$hfa) + idx("ha", v$home_pred) + h - a)
+  }
+  alpha <- do.call(cbind, lat[paste0("alpha", seq_len(v$ND))])[, v$div_pred, drop = FALSE]
+  alpha + idx("s_s", (v$div_pred - 1L) * v$NS + v$season_pred) + h + a
+}
+
+test_that("latent draws are joint with the prediction rows and index the components as the formula does", {
+  # WHY: the switch path builds every published strength from these draws. A
+  # component read under the wrong index still looks like a strength; only a
+  # comparison with R-INLA's own predictor for the same draw shows it.
+  skip_if_no_inla()
+  d <- v2_train_pred()
+  for (response in c("margin", "total")) {
+    fit <- fit_v2_inla(d$v, response, v2_priors("handball"), within = "ar1",
+                       int_strategy = "eb", n_samples = 200L, latent = TRUE)
+    lat <- fit$samples$latent
+    expected <- c("u_s", "b", "w_t", if (response == "margin") c("ha", "hfa") else c("s_s", paste0("alpha", seq_len(d$v$ND))))
+    expect_setequal(names(lat), expected)
+    expect_identical(dim(lat$u_s), c(200L, d$v$K * d$v$NS))
+    expect_identical(dim(lat$w_t), c(200L, d$v$TS * d$v$W))
+    # R-INLA's predictor carries a tiny noise term (precision exp(15)), so the
+    # two agree to about 1e-3, not to the last digit.
+    expect_lt(max(abs(compose_v2_loc(lat, d$v, response) - fit$samples$loc)), 0.01, label = response)
+  }
+})
+
+test_that("latent draws can be limited to chosen nodes and come back under their own indices", {
+  skip_if_no_inla()
+  d <- v2_train_pred()
+  pick <- c(17L, 3L, 9L)
+  fit <- fit_v2_inla(d$v, "margin", v2_priors("handball"), within = "ar1", int_strategy = "eb",
+                     n_samples = 50L, latent = list(w_t = pick, hfa = 0L))
+  expect_setequal(names(fit$samples$latent), c("w_t", "hfa"))
+  expect_identical(colnames(fit$samples$latent$w_t), as.character(pick))
+  all_nodes <- fit_v2_inla(d$v, "margin", v2_priors("handball"), within = "ar1", int_strategy = "eb",
+                           n_samples = 50L, latent = list(w_t = 0L))
+  expect_equal(fit$samples$latent$w_t, all_nodes$samples$latent$w_t[, pick])
+  expect_error(
+    fit_v2_inla(d$v, "margin", v2_priors("handball"), within = "none", n_samples = 5L, latent = list(w_t = 1L)),
+    "w_t"
+  )
+})
