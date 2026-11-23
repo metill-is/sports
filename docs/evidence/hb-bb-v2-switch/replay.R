@@ -1,7 +1,11 @@
 # Replay of the handball / basketball v2 switch path for one date, in a
 # temporary data root:
 #
-#   Rscript docs/evidence/hb-bb-v2-switch/replay.R <handball|basketball> <YYYY-MM-DD>
+#   Rscript docs/evidence/hb-bb-v2-switch/replay.R <handball|basketball> <YYYY-MM-DD> [<data dir>]
+#
+# The optional data directory is read instead of the checkout's data/ (for
+# example the data of a newer origin/main, extracted with `git archive`); it
+# is only read, never written.
 #
 # Nothing under data/ is written. The sport's facts, its extracts and archive
 # from before the date, and its published cells are copied into a temporary
@@ -14,7 +18,7 @@
 # next to this script.
 options(width = 150, warn = 1)
 args <- commandArgs(trailingOnly = TRUE)
-stopifnot(length(args) == 2L, args[1] %in% c("handball", "basketball"))
+stopifnot(length(args) %in% 2:3, args[1] %in% c("handball", "basketball"))
 sport <- args[1]
 end_date <- as.Date(args[2])
 suppressMessages(devtools::load_all(quiet = TRUE))
@@ -26,7 +30,7 @@ git_data <- function() {
 }
 data_before <- git_data()
 
-src <- file.path(repo, "data")
+src <- if (length(args) == 3L) normalizePath(args[3]) else file.path(repo, "data")
 root <- tempfile("hbbb-replay-")
 dir.create(root)
 sp <- paste0("sport=", sport)
@@ -103,7 +107,8 @@ lines <- c(
     system2("git", c("-C", shQuote(repo), "rev-parse", "--short", "HEAD"), stdout = TRUE), sport, format(end_date)
   ),
   sprintf(
-    "R-INLA %s. Temporary root, copied from data/: %s files.", as.character(utils::packageVersion("INLA")),
+    "R-INLA %s. Temporary root, copied from %s: %s files.", as.character(utils::packageVersion("INLA")),
+    if (length(args) == 3L) Sys.getenv("REPLAY_DATA_NOTE", "an extracted data tree") else "data/",
     paste(sprintf("%s %d", names(copied), copied), collapse = ", ")
   ),
   "",
