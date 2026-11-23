@@ -1,0 +1,9 @@
+"sport","sex","info_date","fixtures","gate","breaches","seconds"
+"handball","male",2026-11-15,2,TRUE,"",33.4477870464325
+"handball","male",2026-11-18,3,TRUE,"",31.8697009086609
+"handball","male",2026-11-19,5,TRUE,"",31.020357131958
+"handball","male",2026-11-20,1,TRUE,"",31.508780002594
+"handball","female",2026-11-15,9,TRUE,"",31.2360048294067
+"basketball","male",2026-11-15,11,TRUE,"",195.144912958145
+"basketball","female",2026-11-15,2,TRUE,"",295.824840068817
+"basketball","female",2026-11-18,4,TRUE,"",391.796158075333
