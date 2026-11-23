@@ -380,14 +380,22 @@ test_that("the INLA gate passes a sound fit and names each kind of failure", {
     f$margin$mode_status <- NA_integer_
     f
   }), "margin model: hyperparameter mode not found", all = FALSE)
+  # The team effects switched off (the degenerate mode R-INLA can settle in):
+  # club and season spread both near zero.
   expect_match(breach(function(f) {
-    f$margin$hyper_sd$mean[4] <- 1e-4
+    f$margin$hyper_sd$mean[c(2, 4)] <- 1e-4
     f
-  }), "at a bound.*margin sd: b", all = FALSE)
+  }), "team spread.*margin sd: team", all = FALSE)
   expect_match(breach(function(f) {
     f$total$hyper_sd$mean[2] <- 200
     f
-  }), "at a bound.*total sd: u_s", all = FALSE)
+  }), "above 5 times its prior bound.*total sd: u_s", all = FALSE)
+  # One weakly identified component near zero is not a failure: the club /
+  # season split is not unique (report, "Engine risks"), and a men's handball
+  # total fit has its club sd at 0.57 with a 90 % interval down to 0.003.
+  lone <- gate_fits()
+  lone$total$hyper_sd$mean[4] <- 1e-3
+  expect_true(hbbb_v2_gate(lone, gate_spec(), "handball")$passed)
   expect_match(breach(function(f) {
     f$margin$fixed["hfa", "mean"] <- 9
     f
@@ -406,8 +414,15 @@ test_that("the INLA gate passes a sound fit and names each kind of failure", {
   expect_true(same$passed)
   expect_identical(c(same$evaluated, same$skipped), c(4L, 0L))
   expect_true(same$jump_checked)
-  prev["total sd: b"] <- prev["total sd: b"] * 4
-  expect_match(breach(identity, previous_sd = prev), "factor 3 since the previous fit: total sd: b", all = FALSE)
+  expect_true(all(c("margin sd: team", "total sd: team") %in% names(prev)))
+  moved_b <- prev
+  moved_b["total sd: b"] <- moved_b["total sd: b"] * 4
+  expect_true(hbbb_v2_gate(gate_fits(), gate_spec(), "handball", previous_sd = moved_b)$passed)
+  prev["total sd: the Gaussian observations"] <- prev["total sd: the Gaussian observations"] * 4
+  expect_match(breach(identity, previous_sd = prev), "factor 3 since the previous fit: total sd: the Gaussian observations", all = FALSE)
+  prev <- hbbb_v2_hyper_sd(gate_fits())
+  prev["margin sd: team"] <- prev["margin sd: team"] / 4
+  expect_match(breach(identity, previous_sd = prev), "factor 3 since the previous fit: margin sd: team", all = FALSE)
 
   bb <- hbbb_v2_gate(gate_fits("basketball"), gate_spec(TRUE), "basketball")
   expect_true(bb$passed)
@@ -491,6 +506,17 @@ test_that("the extract writes the Stan path's parquets, in the same columns, fro
     expect_equal(pm$p_home_win + pm$p_draw + pm$p_away_win, rep(1, nrow(pm)), tolerance = 1e-9)
     if (sport == "basketball") expect_true(all(pm$p_draw == 0))
   }
+})
+
+test_that("a basketball cell without regulation-time scores is refused before R-INLA is asked", {
+  root <- fixture_facts_root()
+  league <- load_leagues()[["basketball_iceland"]]
+  prep <- suppressMessages(prepare_data(league, "male", end_date = FIXTURE_END_DATE, root = root))
+  local_mocked_bindings(fit_v2_inla = function(...) stop("R-INLA was asked"))
+  expect_error(
+    fit_model_v2_hbbb(prep, league, "male", end_date = FIXTURE_END_DATE, root = root),
+    "no regulation-time scores"
+  )
 })
 
 # ---- R-INLA -------------------------------------------------------------------------

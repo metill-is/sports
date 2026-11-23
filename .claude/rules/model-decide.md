@@ -143,10 +143,15 @@ paths:
   the Stan 2DT names (`cur_*`, `offense[r,k]`, `home_advantage_*`,
   `mean_goals`, and the simulator scalars set so its bivariate draw is the
   v2 Gaussian: one sd, one correlation, `nu = 1e6`). Gate
-  `hbbb_v2_gate()`: mode status 0 for both halves, no sd at a bound, home
-  advantage / sds / mean total in `HBBB_V2_SANITY`, basketball regulation
-  coverage of the latest season at least 90 %, and the jump check against
-  `fv2_previous_hyper(version = HBBB_V2_VERSION)`. The diagnostics row is
+  `hbbb_v2_gate()`: mode status 0 for both halves, each model's team spread
+  (root sum of squares of the club, season and week sds) and the home
+  advantage, observation sds and mean total inside `HBBB_V2_SANITY`, no sd
+  above 5 times its prior bound, basketball regulation coverage of the latest
+  season at least 90 %, and the jump check against
+  `fv2_previous_hyper(version = HBBB_V2_VERSION)` on the observation sds and
+  team spreads only (`HBBB_V2_JUMP_CHECKED`): the club / season split is
+  weakly identified, so a per-component floor or jump would stop fits for
+  nothing. The diagnostics row is
   the football engine's (`persist_fit_diagnostics_inla()`, `n_obs` =
   `prepare_data()`'s N). No league is switched.
 - `extract_posteriors()` materialises posterior draws as the canonical

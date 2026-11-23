@@ -47,12 +47,28 @@ HBBB_V2_OT_MIN_GAMES <- 20L
 HBBB_V2_MIN_REG_COVERAGE <- 0.9
 
 #' Sanity ranges of the INLA gate, per sport, in goals or points: the league
-#' home advantage, the two observation sds and the mean predicted total.
-#' Wide on purpose: they catch a fit that has gone wrong, not a moved league.
+#' home advantage, the two observation sds, the mean predicted total and each
+#' model's team spread (`hbbb_v2_hyper_sd()`'s "sd: team"). Wide on purpose:
+#' they catch a fit that has gone wrong, not a moved league. The team floor is
+#' a twentieth of the club level's prior bound; R-INLA's degenerate mode with
+#' the team effects switched off sits near its starting sd of 0.14 per
+#' component.
 #' @noRd
 HBBB_V2_SANITY <- list(
-  handball = list(hfa = c(-2, 4), sigma = c(2, 15), total = c(30, 80)),
-  basketball = list(hfa = c(-5, 10), sigma = c(4, 30), total = c(100, 230))
+  handball = list(hfa = c(-2, 4), sigma = c(2, 15), total = c(30, 80), team = c(0.5, 15)),
+  basketball = list(hfa = c(-5, 10), sigma = c(4, 30), total = c(100, 230), team = c(1.25, 40))
+)
+
+#' The hyperparameter sds the gate's jump check compares with the previous
+#' fit: the observation sds and each model's team spread. The split of that
+#' spread between club, season and week, the team home-advantage sd and the
+#' division level's walk are weakly identified (one men's handball total fit
+#' put its club sd at 0.57 with a 90 % interval from 0.003 to 2.3), so they
+#' are stored but not gated.
+#' @noRd
+HBBB_V2_JUMP_CHECKED <- c(
+  "margin sd: the Gaussian observations", "total sd: the Gaussian observations",
+  "margin sd: team", "total sd: team"
 )
 
 #' The frozen v2 specification per sport and sex.
@@ -411,34 +427,38 @@ hbbb_v2_zero_shift <- function(fit_margin, spec) {
   list(per_fixture = per, table = table)
 }
 
-#' The fit's hyperparameter sds (posterior means), named `"<response> <parameter>"`.
+#' The fit's hyperparameter sds (posterior means), named `"<response> <parameter>"`,
+#' plus each model's team spread `"<response> sd: team"`: the root sum of
+#' squares of the club, season and week sds, the sd of a team's strength
+#' (R-INLA's AR(1) terms are parameterised by their marginal sd).
 #' @noRd
 hbbb_v2_hyper_sd <- function(fits) {
   unlist(lapply(c("margin", "total"), function(resp) {
     h <- fits[[resp]]$hyper_sd
     h <- h[startsWith(h$parameter, "sd: "), , drop = FALSE]
-    stats::setNames(h$mean, paste(resp, h$parameter))
+    team <- h$mean[h$parameter %in% c("sd: b", "sd: u_s", "sd: w_t")]
+    stats::setNames(c(h$mean, sqrt(sum(team^2))), paste(resp, c(h$parameter, "sd: team")))
   }))
 }
 
 #' Checks a handball / basketball INLA fit must pass before it is used.
 #'
 #' 1. R-INLA's mode search succeeded for both halves (status 0).
-#' 2. No sd sits at a bound: every hyperparameter sd above `sd_floor` (the
-#'    degenerate mode R-INLA can settle in has a team effect switched off)
-#'    and below `sd_ceiling` times its prior's 99 % bound.
+#' 2. No sd at a bound: each model's team spread inside the sport's range
+#'    (the degenerate mode R-INLA can settle in has the team effects switched
+#'    off), and no sd above `sd_ceiling` times its prior's 99 % bound.
 #' 3. Sanity, per sport: the league home advantage, the two observation sds
 #'    and the mean predicted total inside `HBBB_V2_SANITY`.
 #' 4. Basketball: regulation-time scores for at least
 #'    `HBBB_V2_MIN_REG_COVERAGE` of the latest season's training rows.
-#' 5. No hyperparameter sd moved by more than a factor `max_jump` since the
-#'    previous INLA fit of the cell (`previous_sd`; skipped, and recorded as
-#'    not run, when there is none).
+#' 5. None of `HBBB_V2_JUMP_CHECKED` moved by more than a factor `max_jump`
+#'    since the previous INLA fit of the cell (`previous_sd`; skipped, and
+#'    recorded as not run, when there is none).
 #'
 #' @return `list(passed, breaches, evaluated, skipped, jump_checked)`.
 #' @noRd
 hbbb_v2_gate <- function(fits, spec, sport, previous_sd = NULL, max_jump = 3,
-                         sd_floor = 0.01, sd_ceiling = 5,
+                         sd_ceiling = 5,
                          sanity = HBBB_V2_SANITY[[sport]], priors = v2_priors(sport)) {
   breaches <- character()
   skipped <- character()
@@ -464,11 +484,19 @@ hbbb_v2_gate <- function(fits, spec, sport, previous_sd = NULL, max_jump = 3,
     )
   }
   ceiling <- sd_ceiling * vapply(names(sds), bound_of, numeric(1))
-  bad <- !is.finite(sds) | sds < sd_floor | (!is.na(ceiling) & sds > ceiling)
+  bad <- !is.finite(sds) | (!is.na(ceiling) & sds > ceiling)
   if (any(bad)) {
     breaches <- c(breaches, sprintf(
-      "hyperparameter sd at a bound (below %g or above %g times its prior bound): %s",
-      sd_floor, sd_ceiling, paste(sprintf("%s = %.3g", names(sds)[bad], sds[bad]), collapse = ", ")
+      "hyperparameter sd above %g times its prior bound: %s",
+      sd_ceiling, paste(sprintf("%s = %.3g", names(sds)[bad], sds[bad]), collapse = ", ")
+    ))
+  }
+  team <- sds[c("margin sd: team", "total sd: team")]
+  off <- !is.finite(team) | team < sanity$team[[1]] | team > sanity$team[[2]]
+  if (any(off)) {
+    breaches <- c(breaches, sprintf(
+      "team spread outside [%g, %g]: %s", sanity$team[[1]], sanity$team[[2]],
+      paste(sprintf("%s = %.3g", names(team)[off], team[off]), collapse = ", ")
     ))
   }
 
@@ -503,7 +531,7 @@ hbbb_v2_gate <- function(fits, spec, sport, previous_sd = NULL, max_jump = 3,
   if (is.null(previous_sd)) {
     skipped <- c(skipped, "hyperparameter jump")
   } else {
-    common <- intersect(names(previous_sd), names(sds))
+    common <- intersect(intersect(names(previous_sd), names(sds)), HBBB_V2_JUMP_CHECKED)
     ratio <- sds[common] / previous_sd[common]
     jumped <- !is.finite(ratio) | ratio > max_jump | ratio < 1 / max_jump
     if (any(jumped)) {
@@ -648,6 +676,16 @@ fit_model_v2_hbbb <- function(prep, league, sex, end_date,
   if (!sport %in% c("handball", "basketball")) {
     cli::cli_abort("{.fn fit_model_v2_hbbb} fits handball and basketball; {.val {sport}} is not one of them.")
   }
+  opts <- hbbb_v2_options(sport, sex)
+  spec <- hbbb_v2_spec(prep, league, sex, end_date = end_date, root = root, from_season = from_season, opts = opts)
+  if (!any(spec$observed)) {
+    # WHY before R-INLA: with every response missing its program fails
+    # without saying why.
+    cli::cli_abort(c(
+      "{sport}/{league$country}/{sex}: no regulation-time scores in the {spec$v$N} training rows.",
+      i = "The basketball model trains on regulation time; the results need {.field home_score_reg} and {.field away_score_reg}."
+    ))
+  }
   absent <- c("INLA", "sn")[!vapply(c("INLA", "sn"), requireNamespace, logical(1), quietly = TRUE)]
   if (length(absent)) {
     cli::cli_abort(c(
@@ -655,8 +693,6 @@ fit_model_v2_hbbb <- function(prep, league, sex, end_date,
       i = "INLA installs from {.url https://inla.r-inla-download.org/R/stable}, sn from CRAN; or set {.code engine: stan}."
     ))
   }
-  opts <- hbbb_v2_options(sport, sex)
-  spec <- hbbb_v2_spec(prep, league, sex, end_date = end_date, root = root, from_season = from_season, opts = opts)
   priors <- v2_priors(sport)
   t0 <- Sys.time()
   fits <- list()
