@@ -94,7 +94,17 @@ v2_priors <- function(sport = c("handball", "basketball")) {
 #'   fit of the same model, to start the optimiser from.
 #' @param y Optional response vector for the training rows; overrides the
 #'   margin or total computed from `v$y_home` and `v$y_away` (used to train
-#'   on regulation-time scores).
+#'   on regulation-time scores). An `NA` leaves that row out of the
+#'   likelihood; it keeps its indices, so its state is still estimated.
+#' @param latent With `n_samples`, also draw latent components jointly with
+#'   the prediction rows: `TRUE` for every component (`u_s`, `b`, `w_t`, `ha`
+#'   and `hfa` for the margin; `u_s`, `b`, `w_t`, `s_s` and `alpha1` ...
+#'   for the total; whichever the formula has), or a named list of node
+#'   indices per component, where `0` means all of that component's nodes.
+#'   Returned as `samples$latent`, one draws-by-nodes matrix per component
+#'   with the node indices as column names (index `(k - 1) * NS + s` for
+#'   team `k` in season `s` in `u_s`, `(ts - 1) * W + week` in `w_t`,
+#'   `(d - 1) * NS + s` for division `d` in `s_s`).
 #' @param seed Seed for the posterior sampler: for R-INLA's sampler of the
 #'   latent field and for R's generator, which picks the hyperparameter
 #'   configuration of each draw. Drawing does not move the caller's random
@@ -123,7 +133,8 @@ fit_v2_inla <- function(v, response = c("margin", "total"),
                         rho_week = 0.98, club_level = TRUE,
                         int_strategy = "auto", num_threads = "1:1",
                         n_samples = 0L, cpo = FALSE, theta_start = NULL,
-                        y = NULL, seed = 1L, reproducible = TRUE) {
+                        y = NULL, seed = 1L, reproducible = TRUE,
+                        latent = NULL) {
   response <- match.arg(response)
   within <- match.arg(within)
   # WHY before R-INLA is asked: with no training rows its program exits with an error
@@ -283,8 +294,20 @@ fit_v2_inla <- function(v, response = c("margin", "total"),
     cpo = if (cpo) fit$cpo$cpo[idx[seq_len(n_train)]] else NULL,
     theta = fit$mode$theta, mode_status = mode_status, mlik = fit$mlik[1, 1], secs = secs, fit = fit
   )
-  if (n_samples > 0L && v$N_pred > 0L) {
+  if (n_samples > 0L && (v$N_pred > 0L || !is.null(latent))) {
     pred_rows <- idx[-seq_len(n_train)]
+    sizes <- c(
+      vapply(fit$summary.random, nrow, integer(1)),
+      stats::setNames(rep(1L, length(fixed_names)), fixed_names)
+    )
+    if (isTRUE(latent)) {
+      latent <- stats::setNames(as.list(rep(0L, length(sizes))), names(sizes))
+    }
+    unknown <- setdiff(names(latent), names(sizes))
+    if (length(unknown)) {
+      cli::cli_abort("The {response} model has no latent component{?s} {.val {unknown}} to draw (it has {.val {names(sizes)}}).")
+    }
+    selection <- c(if (v$N_pred > 0L) list(APredictor = pred_rows), latent)
     # WHY: R-INLA's own `seed` reaches its sampler of the latent field only.
     # Which hyperparameter configuration each draw comes from is picked with
     # R's generator, so under full integration the same fit drew differently
@@ -296,13 +319,32 @@ fit_v2_inla <- function(v, response = c("margin", "total"),
         n_samples, fit,
         # WHY "1:1": with a seed the sampler runs on one thread whatever it is asked, and
         # warns when asked for more.
-        selection = list(APredictor = pred_rows), seed = seed, num.threads = "1:1"
+        selection = selection, seed = seed, num.threads = "1:1"
       )
     )
+    # WHY by name: R-INLA returns the selected nodes sorted by index within each
+    # component, whatever order they were asked for in.
+    rn <- rownames(smp[[1]]$latent)
+    pull <- function(keys) {
+      at <- match(keys, rn)
+      stopifnot(!anyNA(at))
+      matrix(unlist(lapply(smp, function(s) s$latent[at, 1]), use.names = FALSE),
+        nrow = n_samples, byrow = TRUE
+      )
+    }
     out$samples <- list(
-      loc = t(vapply(smp, function(s) as.numeric(s$latent[, 1]), numeric(length(pred_rows)))),
       sigma = vapply(smp, function(s) 1 / sqrt(s$hyperpar[[prec_name]]), numeric(1))
     )
+    if (v$N_pred > 0L) out$samples$loc <- pull(paste0("APredictor:", pred_rows))
+    if (length(latent)) {
+      out$samples$latent <- stats::setNames(lapply(names(latent), function(nm) {
+        nodes <- as.integer(latent[[nm]])
+        if (all(nodes == 0L)) nodes <- seq_len(sizes[[nm]])
+        m <- pull(paste0(nm, ":", nodes))
+        colnames(m) <- nodes
+        m
+      }), names(latent))
+    }
   }
   out
 }
