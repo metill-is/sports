@@ -54,3 +54,18 @@ test_that("posterior draws keep their shape and get one level, sd and correlatio
   expect_equal(p$offense + p$defense, net)
   expect_equal(p$offense - p$defense, pace - rowMeans(pace))
 })
+
+test_that("a supplied scoring level replaces the mean over teams and keeps every margin and total", {
+  set.seed(2)
+  net <- matrix(stats::rnorm(12), 3)
+  pace <- matrix(stats::rnorm(12, 27, 2), 3)
+  ha <- matrix(0.6, 3, 4)
+  level <- c(26.5, 27.2, 28)
+  out <- v2_as_attack_defence(net, pace, ha, 5, 6, level = level)
+  expect_equal(out$mean_goals, level)
+  expect_equal(out$offense, (net + pace - level) / 2)
+  mu_h <- level + out$offense[, 1] + out$home_advantage_off[, 1] - out$defense[, 2]
+  mu_a <- level + out$offense[, 2] - out$defense[, 1] - out$home_advantage_def[, 1]
+  expect_equal(mu_h + mu_a, pace[, 1] + pace[, 2])
+  expect_equal(mu_h - mu_a, 0.6 + net[, 1] - net[, 2])
+})

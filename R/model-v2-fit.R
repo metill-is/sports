@@ -393,6 +393,11 @@ persist_fit_diagnostics_inla <- function(fit, league, sex, fit_date,
     },
     jump_checked = isTRUE(gate$jump_checked)
   )
+  # Basketball v2 trains on regulation time: the rows that had it, which
+  # needs_refit() recounts. Written only for such a model, so a fit on final
+  # scores keeps the row it always had.
+  n_reg <- as.integer(fit$n_obs_regulation %||% NA_integer_)
+  if (!is.na(n_reg)) row$n_obs_regulation <- n_reg
   tryCatch(
     write_table(row, "fit_diagnostics", root = root),
     error = function(e) {

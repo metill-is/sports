@@ -43,17 +43,23 @@
 #' @param ha Home advantage per team in margin units (league value plus team
 #'   deviation), same shape as `net`.
 #' @param sigma_m,sigma_t Margin and total sds, a scalar or one per draw.
+#' @param level The scoring level the attack and defence terms are centred
+#'   on, one per draw; `NULL` takes the mean of `pace` over every team. Any
+#'   value reproduces every margin and total; the switch path passes the mean
+#'   over the teams playing in the current season, so long-gone clubs' states
+#'   add no noise.
 #' @return List: `offense`, `defense`, `home_advantage_off`,
 #'   `home_advantage_def` (shaped like `net`), `mean_goals`, `sigma`, `rho`
 #'   (one per draw).
 #' @noRd
-v2_as_attack_defence <- function(net, pace, ha, sigma_m, sigma_t) {
+v2_as_attack_defence <- function(net, pace, ha, sigma_m, sigma_t, level = NULL) {
   as_draws <- function(x) if (is.matrix(x)) x else matrix(x, nrow = 1L)
   net <- as_draws(net)
   pace <- as_draws(pace)
   ha <- as_draws(ha)
   stopifnot(identical(dim(net), dim(pace)), identical(dim(net), dim(ha)))
-  level <- rowMeans(pace)
+  if (is.null(level)) level <- rowMeans(pace)
+  stopifnot(length(level) == nrow(pace))
   centred <- pace - level
   list(
     offense = (net + centred) / 2,

@@ -48,7 +48,9 @@ HBBB_V2_MIN_REG_COVERAGE <- 0.9
 
 #' Sanity ranges of the INLA gate, per sport, in goals or points: the league
 #' home advantage, the two observation sds, the mean predicted total and each
-#' model's team spread (`hbbb_v2_hyper_sd()`'s "sd: team"). Wide on purpose:
+#' model's team spread (`hbbb_v2_hyper_sd()`'s "sd: team") and, basketball
+#' only, the within-season sd of each model (well identified: five to seven
+#' points in the report, and the composite spread would hide its loss). Wide on purpose:
 #' they catch a fit that has gone wrong, not a moved league. The team floor is
 #' a twentieth of the club level's prior bound; R-INLA's degenerate mode with
 #' the team effects switched off sits near its starting sd of 0.14 per
@@ -56,8 +58,17 @@ HBBB_V2_MIN_REG_COVERAGE <- 0.9
 #' @noRd
 HBBB_V2_SANITY <- list(
   handball = list(hfa = c(-2, 4), sigma = c(2, 15), total = c(30, 80), team = c(0.5, 15)),
-  basketball = list(hfa = c(-5, 10), sigma = c(4, 30), total = c(100, 230), team = c(1.25, 40))
+  basketball = list(
+    hfa = c(-5, 10), sigma = c(4, 30), total = c(100, 230), team = c(1.25, 40),
+    within = c(0.5, 40)
+  )
 )
+
+#' Fewest latest-season basketball rows without regulation-time scores that
+#' can fail the coverage check: early in a season one failed game card would
+#' otherwise take a few rows below the share and stop the fit.
+#' @noRd
+HBBB_V2_MIN_REG_MISSING <- 4L
 
 #' The hyperparameter sds the gate's jump check compares with the previous
 #' fit: the observation sds and each model's team spread. The split of that
@@ -118,8 +129,10 @@ inla_model_version <- function(sport) {
 #' season starts it has crossed the break as the forecasts have.
 #'
 #' @return A list: `v` (build_v2_data()), `opts`, `train`, `pred`, `y`
-#'   (margin and total responses), `observed`, `coverage`, `last_season`,
+#'   (margin and total responses), `observed`, `coverage`, `reg_missing`
+#'   (the latest season's rows without regulation scores), `last_season`,
 #'   `s_cur` / `s_cur_label` (the current season's index and label),
+#'   `cur_active` (teams with a match of the current season),
 #'   `nodes`, `node_id` (per training side, fixture side and team), `slot`
 #'   (node of each team's r-th training match, carried forward), `latent`
 #'   (the components to draw per response), `ot`, `n_seasons`, `teams`.
@@ -146,10 +159,10 @@ hbbb_v2_spec <- function(prep, league, sex, end_date, root = here::here("data"),
 
   pred <- as.data.frame(prep$pred_d)
   pred$season <- integer(nrow(pred))
+  sched <- tryCatch(as.data.frame(read_table("schedules", root = root, filter = filt)), error = function(e) NULL)
+  cols <- c("match_date", "home_team", "away_team", "season", "division")
+  known <- rbind(if (!is.null(sched) && nrow(sched)) sched[, cols, drop = FALSE], results[, cols, drop = FALSE])
   if (nrow(pred)) {
-    sched <- tryCatch(as.data.frame(read_table("schedules", root = root, filter = filt)), error = function(e) NULL)
-    cols <- c("match_date", "home_team", "away_team", "season")
-    known <- rbind(if (!is.null(sched) && nrow(sched)) sched[, cols, drop = FALSE], results[, cols, drop = FALSE])
     key <- function(d) paste(format(as.Date(d$match_date)), d$home_team, d$away_team)
     pred$season <- as.integer(known$season[match(key(pred), key(known))])
     if (anyNA(pred$season)) {
@@ -169,6 +182,7 @@ hbbb_v2_spec <- function(prep, league, sex, end_date, root = here::here("data"),
   observed <- !is.na(y_home) & !is.na(y_away)
   last_season <- max(train$season)
   coverage <- mean(observed[train$season == last_season])
+  reg_missing <- sum(!observed[train$season == last_season])
   train_v <- train
   train_v$home_score <- y_home
   train_v$away_score <- y_away
@@ -189,22 +203,40 @@ hbbb_v2_spec <- function(prep, league, sex, end_date, root = here::here("data"),
     pred_away = node(v$away_pred, v$season_pred, v$ts_away_pred, v$wk_pred, v$div_pred)
   )
   s_cur <- if (v$N_pred > 0L) max(v$season_pred) else max(v$season)
+  mapped <- function(d) {
+    d <- as.character(d)
+    hit <- d %in% names(opts$division_map)
+    d[hit] <- unname(opts$division_map[d[hit]])
+    d
+  }
+  cur_active <- logical(v$K)
   side$cur <- do.call(rbind, lapply(seq_len(v$K), function(k) {
     ahead <- which(v$season_pred == s_cur & (v$home_pred == k | v$away_pred == k))
     if (length(ahead)) {
+      cur_active[k] <<- TRUE
       j <- ahead[1]
       return(if (v$home_pred[j] == k) side$pred_home[j, ] else side$pred_away[j, ])
     }
     played <- which(v$season == s_cur & (v$home == k | v$away == k))
     if (length(played)) {
+      cur_active[k] <<- TRUE
       i <- played[length(played)]
       return(if (v$home[i] == k) side$train_home[i, ] else side$train_away[i, ])
     }
     # WHY: a team with no match in the current season still has a season level
-    # there (the AR(1) carries it across the break); it has no week term.
+    # there (the AR(1) carries it across the break); it has no week term. Its
+    # division is that of its first scheduled match of the season when one is
+    # known (a promoted or relegated side), else the one it last played in.
     rows <- c(which(v$home == k | v$away == k))
-    i <- rows[length(rows)]
-    node(k, s_cur, NA_integer_, NA_integer_, v$div[i])
+    d <- v$div[rows[length(rows)]]
+    team <- teams[k]
+    ahead <- known[(known$home_team == team | known$away_team == team) &
+      known$season == v$seasons[s_cur] & as.Date(known$match_date) > as.Date(end_date), , drop = FALSE]
+    if (nrow(ahead)) {
+      first <- match(mapped(ahead$division[which.min(as.Date(ahead$match_date))]), v$divisions)
+      if (!is.na(first)) d <- first
+    }
+    node(k, s_cur, NA_integer_, NA_integer_, d)
   }))
   key_of <- function(f) paste(f$k, f$s, f$ts, f$wk, f$d)
   all_nodes <- do.call(rbind, side)
@@ -254,8 +286,8 @@ hbbb_v2_spec <- function(prep, league, sex, end_date, root = here::here("data"),
   list(
     v = v, opts = opts, train = train, pred = pred,
     y = list(margin = y_home - y_away, total = y_home + y_away),
-    observed = observed, coverage = coverage, last_season = last_season,
-    s_cur = s_cur, s_cur_label = v$seasons[s_cur],
+    observed = observed, coverage = coverage, reg_missing = reg_missing, last_season = last_season,
+    s_cur = s_cur, s_cur_label = v$seasons[s_cur], cur_active = cur_active,
     nodes = nodes, node_id = node_id, slot = slot, latent = latent, ot = ot,
     n_seasons = as.integer(sd$N_seasons), teams = teams
   )
@@ -290,11 +322,29 @@ hbbb_v2_level <- function(lat, nodes, v) {
   alpha[, nodes$d, drop = FALSE] + .v2_nodes_of(lat$s_s, (nodes$d - 1L) * v$NS + nodes$s, "s_s")
 }
 
+#' Shuffle one fit's draws as a block, with its own seed.
+#'
+#' R-INLA returns a fit's draws sorted by hyperparameter configuration
+#' (`inla.posterior.sample()` sorts the configurations it samples). Two fits
+#' with the same number of hyperparameters share their design points, so
+#' pairing draw `i` of one with draw `i` of the other would pair matching
+#' configurations of two independent posteriors. One permutation is applied
+#' to every component and to the sd, so each draw stays one joint draw of its
+#' fit; the caller's random stream is left where it was.
+#' @noRd
+hbbb_v2_shuffle_draws <- function(samples, seed) {
+  n <- length(samples$sigma)
+  perm <- withr::with_seed(as.integer(seed), sample.int(n))
+  samples$sigma <- samples$sigma[perm]
+  samples$latent <- lapply(samples$latent, function(m) m[perm, , drop = FALSE])
+  samples
+}
+
 #' Compose the published quantities from the two fits' joint draws.
 #'
-#' Draw `i` of the margin fit is paired with draw `i` of the total fit: the
-#' two halves are separate models with independent posteriors, so any pairing
-#' is a joint draw.
+#' Draw `i` of the margin fit is paired with draw `i` of the total fit, after
+#' the total fit's draws were shuffled (`hbbb_v2_shuffle_draws()`): the two
+#' halves are separate models with independent posteriors.
 #'
 #' @param samples_m,samples_t The `samples` of the margin and total fits
 #'   (`latent` and `sigma`).
@@ -450,7 +500,9 @@ hbbb_v2_hyper_sd <- function(fits) {
 #' 3. Sanity, per sport: the league home advantage, the two observation sds
 #'    and the mean predicted total inside `HBBB_V2_SANITY`.
 #' 4. Basketball: regulation-time scores for at least
-#'    `HBBB_V2_MIN_REG_COVERAGE` of the latest season's training rows.
+#'    `HBBB_V2_MIN_REG_COVERAGE` of the latest season's training rows, unless
+#'    fewer than `HBBB_V2_MIN_REG_MISSING` rows lack them; and each model's
+#'    within-season sd inside the sport's range.
 #' 5. None of `HBBB_V2_JUMP_CHECKED` moved by more than a factor `max_jump`
 #'    since the previous INLA fit of the cell (`previous_sd`; skipped, and
 #'    recorded as not run, when there is none).
@@ -517,13 +569,25 @@ hbbb_v2_gate <- function(fits, spec, sport, previous_sd = NULL, max_jump = 3,
   )
   breaches <- c(breaches, insane)
 
+  if (!is.null(sanity$within) && !identical(spec$opts$within, "none")) {
+    week <- sds[c("margin sd: w_t", "total sd: w_t")]
+    low <- !is.finite(week) | week < sanity$within[[1]] | week > sanity$within[[2]]
+    if (any(low)) {
+      breaches <- c(breaches, sprintf(
+        "within-season sd outside [%g, %g]: %s", sanity$within[[1]], sanity$within[[2]],
+        paste(sprintf("%s = %.3g", c("margin sd: w_t", "total sd: w_t")[low], week[low]), collapse = ", ")
+      ))
+    }
+  }
+
   n_checks <- 4L
   if (isTRUE(spec$opts$regulation)) {
     n_checks <- 5L
-    if (!is.finite(spec$coverage) || spec$coverage < HBBB_V2_MIN_REG_COVERAGE) {
+    short <- !is.finite(spec$coverage) || spec$coverage < HBBB_V2_MIN_REG_COVERAGE
+    if (short && (spec$reg_missing %||% Inf) >= HBBB_V2_MIN_REG_MISSING) {
       breaches <- c(breaches, sprintf(
-        "regulation-time scores for %.0f %% of season %s's training rows, below %.0f %%",
-        100 * spec$coverage, spec$last_season, 100 * HBBB_V2_MIN_REG_COVERAGE
+        "regulation-time scores for %.0f %% of season %s's training rows (%d rows without), below %.0f %%",
+        100 * spec$coverage, spec$last_season, as.integer(spec$reg_missing), 100 * HBBB_V2_MIN_REG_COVERAGE
       ))
     }
   }
@@ -575,9 +639,13 @@ hbbb_v2_as_fit <- function(comp, spec, prep, sport, zero_shift = 0, level_sd = 0
   }
   scalar <- function(x, name) matrix(rep_len(x, n_draw), ncol = 1L, dimnames = list(NULL, name))
 
+  pace_cur <- comp$pace[, id$cur, drop = FALSE]
+  active <- spec$cur_active %||% rep(TRUE, K)
+  if (!any(active)) active <- rep(TRUE, K)
   rot <- v2_as_attack_defence(
-    comp$net[, id$cur, drop = FALSE], comp$pace[, id$cur, drop = FALSE], comp$ha,
-    comp$sigma_m, comp$sigma_t
+    comp$net[, id$cur, drop = FALSE], pace_cur, comp$ha,
+    comp$sigma_m, comp$sigma_t,
+    level = rowMeans(pace_cur[, active, drop = FALSE])
   )
   level <- rot$mean_goals
   off <- rot$offense
@@ -654,6 +722,35 @@ hbbb_v2_as_fit <- function(comp, spec, prep, sport, zero_shift = 0, level_sd = 0
   )
 }
 
+#' Fit both halves of v2 on a spec with R-INLA, latent components drawn.
+#'
+#' The one place the production engine's fitting settings live, so the
+#' scorecard (`hbbb_v2_forecast_day()`) fits exactly as production does.
+#' @return `list(margin, total)` of `fit_v2_inla()` results.
+#' @noRd
+hbbb_v2_fit_halves <- function(spec, sport, n_draws = 4000L, seed = 1L, int_strategy = "auto") {
+  priors <- v2_priors(sport)
+  fits <- list()
+  for (resp in c("margin", "total")) {
+    # WHY two seeds: R-INLA's latent sampler, seeded alike in two fits of the
+    # same size, would draw the same normal vectors for both halves.
+    fits[[resp]] <- fit_v2_inla(
+      spec$v, resp, priors,
+      within = spec$opts$within, rho_week = spec$opts$rho_week, int_strategy = int_strategy,
+      n_samples = as.integer(n_draws), y = spec$y[[resp]],
+      seed = as.integer(seed) + (resp == "total"), latent = spec$latent[[resp]]
+    )
+  }
+  fits
+}
+
+#' The two halves' draws composed, the total fit's shuffled first
+#' (`hbbb_v2_shuffle_draws()`), as the production engine pairs them.
+#' @noRd
+hbbb_v2_pair <- function(fits, spec, seed = 1L) {
+  hbbb_v2_compose(fits$margin$samples, hbbb_v2_shuffle_draws(fits$total$samples, as.integer(seed) + 2L), spec)
+}
+
 #' Fit handball / basketball v2 with R-INLA and return a fit the extract and
 #' publish layers can read.
 #'
@@ -693,19 +790,8 @@ fit_model_v2_hbbb <- function(prep, league, sex, end_date,
       i = "INLA installs from {.url https://inla.r-inla-download.org/R/stable}, sn from CRAN; or set {.code engine: stan}."
     ))
   }
-  priors <- v2_priors(sport)
   t0 <- Sys.time()
-  fits <- list()
-  for (resp in c("margin", "total")) {
-    # WHY two seeds: R-INLA's latent sampler, seeded alike in two fits of the
-    # same size, would draw the same normal vectors for both halves.
-    fits[[resp]] <- fit_v2_inla(
-      spec$v, resp, priors,
-      within = opts$within, rho_week = opts$rho_week, int_strategy = int_strategy,
-      n_samples = as.integer(n_draws), y = spec$y[[resp]],
-      seed = as.integer(seed) + (resp == "total"), latent = spec$latent[[resp]]
-    )
-  }
+  fits <- hbbb_v2_fit_halves(spec, sport, n_draws = n_draws, seed = seed, int_strategy = int_strategy)
   secs <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
 
   gate <- hbbb_v2_gate(fits, spec, sport, previous_sd = previous_sd)
@@ -728,7 +814,7 @@ fit_model_v2_hbbb <- function(prep, league, sex, end_date,
 
   shift <- hbbb_v2_zero_shift(fits$margin, spec)
   level_sd <- fits$total$hyper_sd$mean[fits$total$hyper_sd$parameter == "sd: s_s"]
-  comp <- hbbb_v2_compose(fits$margin$samples, fits$total$samples, spec)
+  comp <- hbbb_v2_pair(fits, spec, seed = seed)
   fit <- hbbb_v2_as_fit(
     comp, spec, prep, sport,
     zero_shift = shift$per_fixture, level_sd = if (length(level_sd)) level_sd else 0, seed = seed
@@ -743,6 +829,9 @@ fit_model_v2_hbbb <- function(prep, league, sex, end_date,
     hyper_sd = hbbb_v2_hyper_sd(fits),
     mode_status = c(margin = fits$margin$mode_status, total = fits$total$mode_status),
     n_obs = as.integer(prep$stan_data$N), n_trained = sum(spec$observed),
+    # WHY: needs_refit() compares this with a recount, so a regulation score
+    # that arrives after the fit starts a refit although the row count stands.
+    n_obs_regulation = if (isTRUE(opts$regulation)) sum(spec$observed) else NA_integer_,
     n_teams = spec$v$K, current_season = spec$s_cur_label,
     regulation_coverage = if (isTRUE(opts$regulation)) spec$coverage else NA_real_,
     zero_shift = shift$table, overtime = spec$ot,

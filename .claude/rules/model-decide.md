@@ -153,7 +153,12 @@ paths:
   weakly identified, so a per-component floor or jump would stop fits for
   nothing. The diagnostics row is
   the football engine's (`persist_fit_diagnostics_inla()`, `n_obs` =
-  `prepare_data()`'s N). No league is switched.
+  `prepare_data()`'s N), plus, for basketball, `n_obs_regulation` (the rows
+  with regulation scores), which `needs_refit()` recounts: a game card that
+  arrives after the fit starts a refit though the row count stands. R-INLA
+  returns draws sorted by hyperparameter configuration, so the total fit's
+  draws are shuffled before draw i of each half is paired
+  (`hbbb_v2_pair()`). No league is switched.
 - `extract_posteriors()` materialises posterior draws as the canonical
   `beliefs_latest` tibble (per-draw-per-match).
 - Stan models live in `Stan/{league_key}/{file}.stan`. `leagues.yml`'s

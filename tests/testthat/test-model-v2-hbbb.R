@@ -102,6 +102,32 @@ test_that("a fixture's season is its schedule's, and a new season moves every cu
   expect_true(all(s$nodes$s[s$node_id$cur] == s$s_cur))
 })
 
+test_that("a team with no match yet in the current season takes its scheduled division, and is left out of the level", {
+  # Pre-season: one handball men's OD side has no fixture inside the horizon;
+  # its first scheduled match of the new season is in G66. Its scoring level
+  # must be G66's, not the OD it played in last season.
+  moved <- NULL
+  edit <- function(s) {
+    hb <- s$sport == "handball" & s$sex == "male"
+    x <- s$home_team[which(hb & s$division == "OD")[1]]
+    moved <<- x
+    s <- s[!(hb & (s$home_team == x | s$away_team == x)), ]
+    g <- s[s$sport == "handball" & s$sex == "male" & s$division == "G66", ][1, ]
+    g$home_team <- x
+    g$match_date <- as.Date("2100-03-01")
+    rbind(s, g)
+  }
+  root <- fixture_hbbb_root(schedule_season = 2101L, schedule_edit = edit)
+  s <- hbbb_fixture_spec("handball", root = root)$spec
+  k <- match(moved, s$teams)
+  node <- s$nodes[s$node_id$cur[k], ]
+  expect_identical(node$s, s$s_cur)
+  expect_identical(s$v$divisions[node$d], "G66")
+  # Only teams with a match of the current season set the scoring level.
+  expect_false(s$cur_active[k])
+  expect_identical(sum(s$cur_active), length(unique(c(s$pred$home_team, s$pred$away_team))))
+})
+
 # ---- Composition and the adapted fit -------------------------------------------
 
 test_that("fixture locations are the v2 formulas of the drawn components", {
@@ -181,6 +207,18 @@ test_that("attack and defence reproduce a fixture's v2 margin and total when it 
   }
 })
 
+test_that("the scoring level is the mean over the teams playing in the current season", {
+  root <- fixture_hbbb_root()
+  f <- hbbb_fixture_spec("handball", root = root)
+  s <- f$spec
+  s$cur_active[c(1, 2)] <- FALSE
+  smp <- synthetic_v2_samples(s, "handball")
+  comp <- hbbb_v2_compose(smp$margin, smp$total, s)
+  fit <- hbbb_v2_as_fit(comp, s, f$prep, "handball")
+  level <- as.vector(posterior::as_draws_matrix(fit$draws("mean_goals"))[, 1])
+  expect_equal(level, rowMeans(comp$pace[, s$node_id$cur[-(1:2)]]))
+})
+
 test_that("the season simulator, fed these inputs, draws the v2 predictive", {
   root <- fixture_hbbb_root()
   for (sport in c("handball", "basketball")) {
@@ -253,6 +291,59 @@ test_that("the score draws leave the caller's random stream where it was", {
   set.seed(9)
   synthetic_hbbb_fit(f$spec, f$prep, "basketball")
   expect_identical(stats::runif(1), expected)
+})
+
+test_that("the total model's draws are shuffled as one block before they are paired with the margin model's", {
+  # WHY: R-INLA returns each fit's draws sorted by hyperparameter
+  # configuration, so draw i of the margin fit and draw i of the total fit
+  # would come from matching design points of two independent posteriors.
+  n <- 1000L
+  s <- list(
+    latent = list(
+      b = matrix(c(seq_len(n), -seq_len(n)), n, 2, dimnames = list(NULL, c("1", "2"))),
+      alpha1 = matrix(seq_len(n) * 10, n, 1, dimnames = list(NULL, "1"))
+    ),
+    sigma = seq_len(n) / 100
+  )
+  set.seed(4)
+  expected <- stats::runif(1)
+  set.seed(4)
+  out <- hbbb_v2_shuffle_draws(s, seed = 7L)
+  expect_identical(stats::runif(1), expected)
+  perm <- round(out$sigma * 100)
+  expect_setequal(perm, seq_len(n))
+  # One permutation for every component and the sd: a draw stays a draw.
+  expect_equal(out$latent$b[, 1], perm)
+  expect_equal(out$latent$b[, 2], -perm)
+  expect_equal(out$latent$alpha1[, 1], perm * 10)
+  expect_identical(colnames(out$latent$b), c("1", "2"))
+  expect_lt(abs(stats::cor(seq_len(n), perm, method = "spearman")), 0.1)
+  expect_identical(hbbb_v2_shuffle_draws(s, seed = 7L), out)
+})
+
+test_that("the production fit shuffles the total draws once and passes a fit through its gate", {
+  skip_if_no_inla()
+  root <- fixture_hbbb_root()
+  league <- load_leagues()[["basketball_iceland"]]
+  prep <- suppressMessages(prepare_data(league, "male", end_date = FIXTURE_END_DATE, root = root))
+  shuffled <- 0L
+  local_mocked_bindings(
+    fit_v2_inla = fake_v2_inla_fit,
+    hbbb_v2_shuffle_draws = function(samples, seed) {
+      shuffled <<- shuffled + 1L
+      samples
+    }
+  )
+  fit <- suppressMessages(fit_model_v2_hbbb(prep, league, "male", end_date = FIXTURE_END_DATE, root = root, n_draws = 30L))
+  expect_identical(shuffled, 1L)
+  expect_true(fit$gate$passed)
+  res <- as.data.frame(read_table("results", root = root, filter = list(sport = "basketball", country = "iceland", sex = "male")))
+  res <- res[res$match_date <= FIXTURE_END_DATE, ]
+  expect_identical(fit$n_obs_regulation, sum(!is.na(res$home_score_reg)))
+  hb <- load_leagues()[["handball_iceland"]]
+  hb_prep <- suppressMessages(prepare_data(hb, "male", end_date = FIXTURE_END_DATE, root = root))
+  hb_fit <- suppressMessages(fit_model_v2_hbbb(hb_prep, hb, "male", end_date = FIXTURE_END_DATE, root = root, n_draws = 30L))
+  expect_identical(hb_fit$n_obs_regulation, NA_integer_)
 })
 
 # ---- Overtime and the level-score shift ----------------------------------------
@@ -340,10 +431,12 @@ test_that("the level-score shift is zero for handball, per division for men and 
 gate_fits <- function(sport = "handball") {
   scale <- if (sport == "basketball") 2.5 else 1
   hyper <- function(obs) {
-    data.frame(
+    h <- data.frame(
       parameter = c("sd: the Gaussian observations", "sd: u_s", "rho: u_s", "sd: b", "sd: ha"),
       mean = c(obs, 2 * scale, 0.7, 3 * scale, 0.4 * scale)
     )
+    if (sport == "basketball") h <- rbind(h, data.frame(parameter = "sd: w_t", mean = 5))
+    h
   }
   list(
     margin = list(
@@ -351,13 +444,16 @@ gate_fits <- function(sport = "handball") {
       fixed = data.frame(mean = 0.7 * scale, row.names = "hfa")
     ),
     total = list(
-      mode_status = 0L, hyper_sd = hyper(6.5 * scale)[1:4, ], sigma2 = (6.5 * scale)^2,
+      mode_status = 0L, hyper_sd = hyper(6.5 * scale)[-5, ], sigma2 = (6.5 * scale)^2,
       pred = data.frame(mean = if (sport == "basketball") c(160, 170) else c(54, 58))
     )
   )
 }
-gate_spec <- function(regulation = FALSE, coverage = 1) {
-  list(opts = list(regulation = regulation, within = "none"), coverage = coverage, last_season = 2027L)
+gate_spec <- function(regulation = FALSE, coverage = 1, missing = 0L) {
+  list(
+    opts = list(regulation = regulation, within = if (regulation) "ar1" else "none"),
+    coverage = coverage, reg_missing = as.integer(missing), last_season = 2027L
+  )
 }
 
 test_that("the INLA gate passes a sound fit and names each kind of failure", {
@@ -428,10 +524,19 @@ test_that("the INLA gate passes a sound fit and names each kind of failure", {
   expect_true(bb$passed)
   expect_identical(c(bb$evaluated, bb$skipped), c(4L, 1L))
   expect_match(
-    breach(identity, sport = "basketball", spec = gate_spec(TRUE, coverage = 0.4)),
-    "regulation-time scores for 40 % of season 2027",
-    all = FALSE
+    breach(identity, sport = "basketball", spec = gate_spec(TRUE, coverage = 0.4, missing = 12L)),
+    "regulation-time scores for 40 % of season 2027.*12 rows without", all = FALSE
   )
+  # Early in a season one failed game card can take the share below 90 %;
+  # fewer than four missing rows do not stop the fit.
+  early <- hbbb_v2_gate(gate_fits("basketball"), gate_spec(TRUE, coverage = 0.875, missing = 1L), "basketball")
+  expect_true(early$passed)
+  # The within-season term switched off: the composite team spread still
+  # looks healthy, so basketball's week sd has its own floor.
+  expect_match(breach(function(f) {
+    f$margin$hyper_sd$mean[f$margin$hyper_sd$parameter == "sd: w_t"] <- 0.01
+    f
+  }, sport = "basketball", spec = gate_spec(TRUE)), "within-season sd.*margin sd: w_t", all = FALSE)
 })
 
 # ---- fit_league and the extract --------------------------------------------------
@@ -463,6 +568,14 @@ test_that("fit_league sends a handball or basketball league on the INLA engine t
     expect_identical(diag$engine, "inla")
     expect_identical(diag$model_version, HBBB_V2_VERSION)
     expect_true(diag$passed)
+    # Only the regulation-time model records how many rows had regulation scores.
+    if (sport == "basketball") {
+      spec <- hbbb_v2_spec(prep, league, "male", end_date = FIXTURE_END_DATE, root = root)
+      expect_identical(diag$n_obs_regulation, sum(spec$observed))
+      expect_lte(diag$n_obs_regulation, diag$n_obs)
+    } else {
+      expect_false("n_obs_regulation" %in% names(diag))
+    }
     partition <- file.path(
       root, "beliefs", "extracts", paste0("sport=", sport), "country=iceland", "sex=male",
       paste0("fit_date=", format(FIXTURE_END_DATE))
@@ -582,6 +695,26 @@ test_that("an R-INLA fit of a simulated league passes the gate and forecasts the
     expect_gt(total, if (sport == "basketball") 140 else 45)
     expect_lt(total, if (sport == "basketball") 190 else 65)
     if (sport == "basketball") expect_false(any(h == a))
+  }
+})
+
+test_that("the composed fixture locations are R-INLA's own predictor, draw by draw", {
+  skip_if_no_inla()
+  for (sport in c("handball", "basketball")) {
+    sim <- simulated_hbbb_root(sport)
+    league <- load_leagues()[[paste0(sport, "_iceland")]]
+    prep <- suppressMessages(prepare_data(league, "male", end_date = sim$end_date, root = sim$root))
+    spec <- hbbb_v2_spec(prep, league, "male", end_date = sim$end_date, root = sim$root)
+    fits <- lapply(c(margin = "margin", total = "total"), function(resp) {
+      fit_v2_inla(spec$v, resp, v2_priors(sport),
+        within = spec$opts$within, int_strategy = "eb", n_samples = 100L,
+        y = spec$y[[resp]], latent = spec$latent[[resp]]
+      )
+    })
+    comp <- hbbb_v2_compose(fits$margin$samples, fits$total$samples, spec)
+    # R-INLA's predictor carries a tiny noise term (precision exp(15)).
+    expect_lt(max(abs(comp$loc_m - fits$margin$samples$loc)), 0.01, label = paste(sport, "margin"))
+    expect_lt(max(abs(comp$loc_t - fits$total$samples$loc)), 0.01, label = paste(sport, "total"))
   }
 })
 
