@@ -272,13 +272,18 @@ fit_league <- function(league_key = NULL,
   )
 
   # Engine switch. Absent or "stan" is the path every league takes today,
-  # unchanged. "inla" fits football model v2 and returns a fit under the same
+  # unchanged. "inla" fits model v2 (football v2.0, or the handball /
+  # basketball margin-and-total model) and returns a fit under the same
   # variable names, so everything below this point is shared.
   if (use_inla) {
     n_draws <- as.integer(chains) * as.integer(iter_sampling)
     # The gate compares the fit's hyperparameters with the previous fit's. A
     # round-mode replay writes no diagnostics row, so it has no previous fit.
-    previous_sd <- if (by_round_mode) NULL else fv2_previous_hyper(league, sex, fit_date, root = root)
+    previous_sd <- if (by_round_mode) {
+      NULL
+    } else {
+      fv2_previous_hyper(league, sex, fit_date, root = root, version = inla_model_version(league$sport))
+    }
     if (is.null(previous_sd)) {
       # WHY: a check that cannot run must be seen not to have run. Reporting a
       # gate as passed when part of it never executed is how a collapsed
@@ -289,7 +294,8 @@ fit_league <- function(league_key = NULL,
         "cell is on record."
       ))
     }
-    fit <- fit_model_v2_inla(
+    fit_inla <- if (identical(league$sport, "football")) fit_model_v2_inla else fit_model_v2_hbbb
+    fit <- fit_inla(
       prep, league, sex,
       end_date    = end_date,
       root        = root,

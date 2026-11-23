@@ -143,9 +143,12 @@ fv2_inla_gate <- function(f, spec, previous_sd = NULL, max_jump = 3,
 #' engine and model version that passed its own gate counts, and only one
 #' from a strictly earlier date: a rerun is checked against the day before.
 #'
+#' @param version The model version a previous fit must have
+#'   (`inla_model_version()` of the sport).
 #' @return Named numeric vector, or `NULL` when there is no such fit.
 #' @noRd
-fv2_previous_hyper <- function(league, sex, fit_date, root = here::here("data")) {
+fv2_previous_hyper <- function(league, sex, fit_date, root = here::here("data"),
+                               version = FOOTBALL_V2_VERSION) {
   rows <- tryCatch(
     as.data.frame(read_table(
       "fit_diagnostics",
@@ -158,7 +161,7 @@ fv2_previous_hyper <- function(league, sex, fit_date, root = here::here("data"))
     return(NULL)
   }
   ok <- !is.na(rows$engine) & rows$engine == "inla" &
-    !is.na(rows$model_version) & rows$model_version == FOOTBALL_V2_VERSION &
+    !is.na(rows$model_version) & rows$model_version == version &
     !is.na(rows$hyper_sd) & rows$passed %in% TRUE &
     as.Date(rows$fit_date) < as.Date(fit_date)
   if (!any(ok)) {

@@ -60,6 +60,7 @@ Collate:
     'model-v2-adapter.R'
     'model-v2-fit.R'
     'model-v2-reference.R'
+    'model-v2-hbbb.R'
     'publish-iceland-league.R'
     'publish-divisions.R'
     'extract-football-iceland.R'

@@ -61,7 +61,8 @@ paths:
   scoring-level and home-advantage walks) with R-INLA and returns a fit
   under the production Stan variable names (`fv2_as_fit()`,
   `R/model-v2-adapter.R`), so `extract_posteriors()`, the extractors and the
-  publisher run unchanged. It is football-only, refuses a cell with fewer
+  publisher run unchanged. This branch is football's; handball and basketball
+  have their own (below). It refuses a cell with fewer
   than two seasons of results before the season being forecast (INLA was
   measurably worse than NUTS on one earlier season), has its own gate (`fv2_inla_gate()`; the Stan sampler gate has no
   INLA counterpart) and writes a `fit_diagnostics` row with `n_obs` and `NA`
@@ -128,6 +129,26 @@ paths:
   mode or failing its gate does not pass; the summary row goes to
   `data/health/engine_reference/` and `check_engine_reference()` warns. The
   Stan program stays in `research/` until the switch.
+- **Handball / basketball on the INLA engine (switch path, 2026-11-23).**
+  `engine: inla` on `handball_iceland` or `basketball_iceland` routes to
+  `fit_model_v2_hbbb()` (`R/model-v2-hbbb.R`): v2 (margin, total) of
+  `docs/reports/2026-11-15-hb-bb-v2/report.md`, two `fit_v2_inla()` fits with
+  the latent components drawn jointly (`latent =`). Handball is the static
+  form on final scores with no draw shift (D4 open); basketball has the
+  within-season AR(1), trains on regulation-time scores (rows without them
+  leave the likelihood but keep their state), takes a level-score shift per
+  division (men) or one (women) from each training row's leave-one-out
+  predictive, and sends level regulation draws through overtime, so
+  `goals*_pred` are final scores and never level. `hbbb_v2_as_fit()` emits
+  the Stan 2DT names (`cur_*`, `offense[r,k]`, `home_advantage_*`,
+  `mean_goals`, and the simulator scalars set so its bivariate draw is the
+  v2 Gaussian: one sd, one correlation, `nu = 1e6`). Gate
+  `hbbb_v2_gate()`: mode status 0 for both halves, no sd at a bound, home
+  advantage / sds / mean total in `HBBB_V2_SANITY`, basketball regulation
+  coverage of the latest season at least 90 %, and the jump check against
+  `fv2_previous_hyper(version = HBBB_V2_VERSION)`. The diagnostics row is
+  the football engine's (`persist_fit_diagnostics_inla()`, `n_obs` =
+  `prepare_data()`'s N). No league is switched.
 - `extract_posteriors()` materialises posterior draws as the canonical
   `beliefs_latest` tibble (per-draw-per-match).
 - Stan models live in `Stan/{league_key}/{file}.stan`. `leagues.yml`'s

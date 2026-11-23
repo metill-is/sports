@@ -3,8 +3,8 @@ NULL
 
 #' Prior scales for the v2 (margin, total) model, per sport.
 #'
-#' PROTOTYPE (2026-11-15, handball / basketball v2): not called by the
-#' production fit path.
+#' Handball / basketball v2 (2026-11-15). On the production fit path only
+#' for a league set to `engine: inla` (`R/model-v2-hbbb.R`); none is.
 #'
 #' Every standard deviation in the model gets an exponential prior stated as
 #' "the sd exceeds `u_*` with probability 1 %": R-INLA's `pc.prec(u, 0.01)`
@@ -51,8 +51,9 @@ v2_priors <- function(sport = c("handball", "basketball")) {
 
 #' Fit one half of the v2 model (margin or total) with R-INLA.
 #'
-#' PROTOTYPE (2026-11-15, handball / basketball v2): not called by the
-#' production fit path. Needs the INLA package, which is not on CRAN.
+#' Handball / basketball v2 (2026-11-15). On the production fit path only
+#' for a league set to `engine: inla` (`R/model-v2-hbbb.R`); none is.
+#' Needs the INLA package, which is not on CRAN.
 #'
 #' The model is linear and Gaussian throughout, so R-INLA's Laplace step is
 #' exact; the only approximation is the numerical integration over the six
