@@ -2,7 +2,10 @@
 # no workflow may run it (tests/testthat/test-hbbb-v2-scorecard.R checks).
 #
 #   ml run -- Rscript scripts/hbbb_v2_scorecard.R [--from 2026-11-17]
-#       [--to YYYY-MM-DD] [--draws 4000] [--cache DIR] [--out DIR]
+#       [--to YYYY-MM-DD] [--draws 4000] [--cache DIR] [--out DIR] [--root DIR]
+#
+# --root reads another data tree instead of the checkout's data/ (for example
+# a newer origin/main's, extracted with `git archive`); it is only read.
 #
 # Every handball and basketball match played from --from to --to (default
 # yesterday) that production forecast is scored twice, as the report scored
@@ -38,7 +41,7 @@ n_draws <- as.integer(arg("draws", "4000"))
 default_cache <- Sys.getenv("SPORTS_SCORECARD_CACHE", file.path(tools::R_user_dir("sports", "cache"), "hbbb-v2-scorecard"))
 cache_dir <- arg("cache", default_cache)
 out_dir <- arg("out", here::here("docs", "reports", sprintf("%s-hb-bb-v2-scorecard", format(to))))
-root <- here::here("data")
+root <- normalizePath(arg("root", here::here("data")))
 dir.create(cache_dir, recursive = TRUE, showWarnings = FALSE)
 dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
 seed <- 1L
@@ -162,6 +165,7 @@ lines <- hbbb_scorecard_note(
   ),
   gate = gate, cmp = cmp, accuracy = accuracy, market = market, fits = fits, paired = paired
 )
-lines <- c(lines, sprintf("%d played matches in the window had no stored production forecast and are not scored.", n_unpaired), "")
+lines <- c(lines, sprintf("%d played matches in the window had no stored production forecast and are not scored.", n_unpaired), "",
+  sprintf("Data: %s.", Sys.getenv("SCORECARD_DATA_NOTE", if (identical(root, normalizePath(here::here("data")))) "the checkout's data/" else root)), "")
 writeLines(lines, file.path(out_dir, "scorecard.md"))
 cat(lines, sep = "\n")
