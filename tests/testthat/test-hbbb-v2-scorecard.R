@@ -258,21 +258,37 @@ test_that("the cache key is the fit's exact inputs: it moves with the data and t
 })
 
 test_that("an information date's v2 fit keeps its forecasts and gate, without aborting on a failed gate", {
-  skip_if_no_inla()
   root <- fixture_hbbb_root()
   league <- load_leagues()[["handball_iceland"]]
   res <- as.data.frame(read_table("results", root = root, filter = list(sport = "handball", country = "iceland", sex = "male")))
   dates <- sort(unique(res$match_date))
   fixtures <- res[res$match_date == max(dates), c("match_date", "home_team", "away_team")]
   inp <- hbbb_v2_info_inputs(league, "male", dates[length(dates) - 1L], fixtures, root = root)
-  f <- suppressMessages(suppressWarnings(hbbb_v2_fit_info(inp, "handball", n_draws = 200L)))
+  # WHY a stand-in for R-INLA: on a fixture this small its fit is ill-posed and
+  # differs from machine to machine (two CI runners of 2026-11-23: one crashed
+  # in the binary, the other in the marginals). R-INLA's own fit of a cell is
+  # tested on a simulated league in test-model-v2-hbbb.R.
+  local_mocked_bindings(fit_v2_inla = fake_v2_inla_fit)
+  f <- suppressMessages(hbbb_v2_fit_info(inp, "handball", n_draws = 200L))
+  expect_true(f$gate$passed)
   expect_identical(nrow(f$fixtures), nrow(fixtures))
   expect_identical(dim(f$loc_m), c(200L, nrow(fixtures)))
-  expect_true(is.logical(f$gate$passed))
   expect_true(all(c("margin sd: team", "total sd: team") %in% names(f$hyper_sd)))
   s <- hbbb_v2_score_fit(f, res)
   expect_identical(nrow(s), nrow(fixtures))
   expect_true(all(is.finite(s$ls_margin)))
+
+  # A fit the production gate refuses is recorded with its forecasts, not
+  # aborted on: the scorecard counts what production would have refused.
+  local_mocked_bindings(fit_v2_inla = function(...) {
+    fit <- fake_v2_inla_fit(...)
+    fit$mode_status <- 1L
+    fit
+  })
+  refused <- suppressMessages(hbbb_v2_fit_info(inp, "handball", n_draws = 200L))
+  expect_false(refused$gate$passed)
+  expect_match(paste(refused$gate$breaches, collapse = "; "), "mode not found")
+  expect_identical(dim(refused$loc_m), c(200L, nrow(fixtures)))
 })
 
 # ---- The Lengjan line -------------------------------------------------------------
