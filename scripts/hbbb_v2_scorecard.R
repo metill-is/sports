@@ -22,8 +22,9 @@
 # the observed, and every v2 fit through the production gate. Writes
 # scorecard.md and its CSV tables to docs/reports/<to>-hb-bb-v2-scorecard/.
 #
-# One v2 fit per cell and information date (about half a minute to two
-# minutes each here). Fits are cached under --cache (default: the user cache
+# One v2 fit per cell and information date: about half a minute each for
+# handball and three to seven minutes for basketball (first run,
+# 2026-11-23). Fits are cached under --cache (default: the user cache
 # directory, or SPORTS_SCORECARD_CACHE), keyed on their exact inputs and
 # code; scores are always computed from the current results, so a late or
 # corrected result counts on the next run. A failed fit is not cached.
@@ -165,7 +166,9 @@ lines <- hbbb_scorecard_note(
   ),
   gate = gate, cmp = cmp, accuracy = accuracy, market = market, fits = fits, paired = paired
 )
-lines <- c(lines, sprintf("%d played matches in the window had no stored production forecast and are not scored.", n_unpaired), "",
-  sprintf("Data: %s.", Sys.getenv("SCORECARD_DATA_NOTE", if (identical(root, normalizePath(here::here("data")))) "the checkout's data/" else root)), "")
+lines <- c(
+  lines, sprintf("%d played matches in the window had no stored production forecast and are not scored.", n_unpaired), "",
+  sprintf("Data: %s.", Sys.getenv("SCORECARD_DATA_NOTE", if (identical(root, normalizePath(here::here("data")))) "the checkout's data/" else root)), ""
+)
 writeLines(lines, file.path(out_dir, "scorecard.md"))
 cat(lines, sep = "\n")
