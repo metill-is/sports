@@ -21,7 +21,15 @@ schemas <- function() {
       home_score  = arrow::int32(),
       away_score  = arrow::int32(),
       division    = arrow::string(),
-      round       = arrow::int32()
+      round       = arrow::int32(),
+      # Nullable, added 2026-11-22 for basketball: the federation source's game id
+      # (Baskethotel's, for KKI) and the score after regulation time, read from the
+      # game's card. A bookmaker settles basketball on regulation time; the final
+      # score includes overtime. Writers may omit them -- optional_columns() fills
+      # typed NA -- so football, handball and all earlier history carry NA.
+      game_id        = arrow::string(),
+      home_score_reg = arrow::int32(),
+      away_score_reg = arrow::int32()
     ),
     schedules = arrow::schema(
       sport        = arrow::string(),
@@ -206,6 +214,35 @@ schemas <- function() {
       # it (GITHUB_SHA; NA for a run outside GitHub Actions).
       published_at  = ts,
       code_commit   = arrow::string()
+    ),
+    # The weekly Stan reference fit's result, one row per football cell and
+    # run (R/model-v2-reference.R, scripts/engine_reference.R): how far apart
+    # R-INLA's and NUTS's outcome probabilities were, and whether both fits
+    # were sound. check_engine_reference() reads the newest row of each cell.
+    engine_reference = arrow::schema(
+      sport            = arrow::string(),
+      country          = arrow::string(),
+      sex              = arrow::string(),
+      run_date         = arrow::date32(),
+      run_at           = ts,
+      # "upcoming" (the fixtures inside the horizon) or "off-season pairings".
+      fixtures         = arrow::string(),
+      n_fixtures       = arrow::int32(),
+      n_train          = arrow::int32(),
+      mean_abs_diff    = arrow::float64(),
+      max_abs_diff     = arrow::float64(),
+      threshold        = arrow::float64(),
+      nuts_divergences = arrow::int32(),
+      nuts_max_rhat    = arrow::float64(),
+      inla_mode_status = arrow::int32(),
+      # fv2_inla_gate() on the INLA fit, as fit_league() runs it.
+      inla_gate_passed = arrow::bool(),
+      passed           = arrow::bool(),
+      inla_version     = arrow::string(),
+      cmdstan_version  = arrow::string(),
+      stan_md5         = arrow::string(),
+      model_version    = arrow::string(),
+      code_commit      = arrow::string()
     )
   )
 }
@@ -223,6 +260,11 @@ schemas <- function() {
 #' @noRd
 optional_columns <- function(table) {
   switch(table,
+    results = list(
+      game_id = NA_character_,
+      home_score_reg = NA_integer_,
+      away_score_reg = NA_integer_
+    ),
     odds = list(
       sex = NA_character_,
       event_id = NA_character_,

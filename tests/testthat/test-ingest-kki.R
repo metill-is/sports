@@ -22,9 +22,13 @@ test_that("parse_baskethotel_xlsx reads a results file into canonical columns", 
     c(
       "sport", "country", "sex", "season", "match_date",
       "home_team", "away_team", "home_score", "away_score",
-      "division", "round"
+      "division", "round", "game_id"
     )
   )
+  # The export's first column is Baskethotel's game id, which names the game's card.
+  expect_type(parsed$game_id, "character")
+  expect_identical(parsed$game_id[1:2], c("6040499", "6040500"))
+  expect_true(all(grepl("^[0-9]+$", parsed$game_id)))
   expect_s3_class(parsed$match_date, "Date")
   expect_type(parsed$season, "integer")
   expect_gt(nrow(parsed), 5)

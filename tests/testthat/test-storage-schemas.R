@@ -1,4 +1,4 @@
-test_that("all 11 schemas are defined by name", {
+test_that("all 12 schemas are defined by name", {
   s <- schemas()
   expect_setequal(
     names(s),
@@ -6,7 +6,8 @@ test_that("all 11 schemas are defined by name", {
       "results", "schedules", "odds",
       "beliefs_latest", "beliefs_archive", "beliefs_by_round",
       "candidates", "recommendations", "ledger", "fit_diagnostics",
-      "forecast_archive"
+      "forecast_archive",
+      "engine_reference"
     )
   )
 })
@@ -48,4 +49,18 @@ test_that("recommendations schema has run_id timestamp", {
   # name is "Timestamp" (plan's "TimestampType" was an older naming guess).
   expect_r6_class(field$type, "Timestamp")
   expect_equal(field$type$ToString(), "timestamp[s, tz=UTC]")
+})
+
+test_that("results carries the game id and the regulation-time scores as nullable columns", {
+  s <- schemas()$results
+  expect_true(all(c("game_id", "home_score_reg", "away_score_reg") %in% s$names))
+  expect_equal(s$GetFieldByName("game_id")$type$ToString(), "string")
+  expect_equal(s$GetFieldByName("home_score_reg")$type$ToString(), "int32")
+  expect_equal(s$GetFieldByName("away_score_reg")$type$ToString(), "int32")
+  # Writers that know nothing of them (KSI, HSI, the ETL, older fixtures) still write:
+  # write_table() fills them with typed NA.
+  opt <- optional_columns("results")
+  expect_identical(opt$game_id, NA_character_)
+  expect_identical(opt$home_score_reg, NA_integer_)
+  expect_identical(opt$away_score_reg, NA_integer_)
 })

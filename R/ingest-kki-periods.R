@@ -1,12 +1,10 @@
 #' Baskethotel game-view widget URL (per-period scores for one game).
 #'
-#' PROTOTYPE (2026-11-15, handball / basketball v2): not wired into
-#' `ingest_league()`.
-#'
-#' The results export the production ingest reads carries a game id in its
-#' first column (the parser drops it). Widget 400 (`GAME_FULL_VIEW_WIDGET` in
-#' Baskethotel's `api.js`) renders that game's card, including one
-#' `home - away` score per period.
+#' Used by the KKI ingest's regulation-time step
+#' ([kki_add_regulation_scores()]). The results export carries a game id in
+#' its first column (stored as `results.game_id`). Widget 400
+#' (`GAME_FULL_VIEW_WIDGET` in Baskethotel's `api.js`) renders that game's
+#' card, including one `home - away` score per period.
 #'
 #' @param game_id Baskethotel game id (first column of the results export).
 #' @param season_id Baskethotel season id, see `KKI_SEASON_IDS`.
@@ -30,10 +28,9 @@ baskethotel_game_url <- function(game_id, season_id, sex = c("male", "female")) 
 
 #' Parse per-period scores out of a Baskethotel game-view widget response.
 #'
-#' PROTOTYPE (2026-11-15, handball / basketball v2). Pure function: takes the
-#' response body, returns one row. Only digits and ASCII class names are
-#' matched, byte-wise, so the response's ISO-8859-1 team names cannot break
-#' the parse.
+#' Pure function: takes the response body, returns one row. Only digits and
+#' ASCII class names are matched, byte-wise, so the response's ISO-8859-1
+#' team names cannot break the parse.
 #'
 #' Regulation time is the first four periods. KKI's cards list exactly four
 #' quarters even when the game went to overtime (measured on 3,286 cards,
@@ -92,7 +89,9 @@ parse_baskethotel_game_periods <- function(text) {
   out$away_reg <- sum(per[1:4, 2L])
   out$home_ot <- out$home_final - out$home_reg
   out$away_ot <- out$away_final - out$away_reg
-  decided_in_regulation <- out$home_ot == 0L && out$away_ot == 0L
+  # WHY not level: a level regulation score with no overtime points is a level final,
+  # which overtime cannot leave and the store rejects (check_regulation_values()).
+  decided_in_regulation <- out$home_ot == 0L && out$away_ot == 0L && out$home_reg != out$away_reg
   out$overtime <- out$home_reg == out$away_reg && out$home_ot >= 0L &&
     out$away_ot >= 0L && out$home_ot != out$away_ot
   listed_all <- sum(per[, 1L]) == out$home_final && sum(per[, 2L]) == out$away_final

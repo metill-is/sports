@@ -17,7 +17,8 @@ table_partitions <- function() {
     fit_diagnostics = c("sport", "country", "sex", "fit_date"),
     # `batch` is the write: every write is a new partition, so no file is ever
     # rewritten (append_only_tables()).
-    forecast_archive = c("sport", "country", "sex", "fit_date", "batch")
+    forecast_archive = c("sport", "country", "sex", "fit_date", "batch"),
+    engine_reference = c("sport", "country", "sex", "run_date")
   )
 }
 
@@ -62,6 +63,7 @@ table_subdir <- function(table) {
     ledger = c("decisions", "ledger"),
     fit_diagnostics = c("beliefs", "diagnostics"),
     forecast_archive = c("archive", "forecasts"),
+    engine_reference = c("health", "engine_reference"),
     stop("Unknown table: ", table, call. = FALSE)
   )
 }
@@ -435,6 +437,49 @@ natural_key_for <- function(table) {
   )
 }
 
+#' Columns a source fills in a second step, which a plain re-fetch lacks.
+#'
+#' The KKI export carries no regulation-time scores; they are read from each
+#' game's card once, after the game. The daily ingest re-fetches the season from
+#' the export, and the new row wins on the natural key, so these columns would
+#' be blanked every morning without [carry_enrichment()].
+#' @noRd
+enrichment_columns <- function(table) {
+  switch(table,
+    results = c("game_id", "home_score_reg", "away_score_reg"),
+    character(0)
+  )
+}
+
+#' Keep a stored row's enrichment where the winning new row has none.
+#'
+#' Only while the final score is unchanged: a corrected final score makes a
+#' stored regulation score suspect, so it is dropped and fetched again.
+#' @param kept Rows that won the natural-key dedup (new rows first).
+#' @param dropped The stored rows they replaced.
+#' @noRd
+carry_enrichment <- function(kept, dropped, table, nat_key) {
+  cols <- intersect(enrichment_columns(table), intersect(names(kept), names(dropped)))
+  if (length(cols) == 0L || nrow(dropped) == 0L) {
+    return(kept)
+  }
+  key <- function(x) do.call(paste, c(lapply(x[, nat_key, drop = FALSE], as.character), sep = "\r"))
+  at <- match(key(kept), key(dropped))
+  same_final <- !is.na(at)
+  for (col in c("home_score", "away_score")) {
+    if (col %in% names(kept)) same_final <- same_final & (kept[[col]] %in% NA & dropped[[col]][at] %in% NA | kept[[col]] == dropped[[col]][at])
+  }
+  same_final[is.na(same_final)] <- FALSE
+  # WHY "" too: an export cell left blank reads as an empty string, which says no
+  # more about the game than NA does.
+  missing <- function(x) is.na(x) | (is.character(x) & !nzchar(x))
+  for (col in cols) {
+    fill <- same_final & missing(kept[[col]]) & !missing(dropped[[col]][at])
+    kept[[col]][fill] <- dropped[[col]][at][fill]
+  }
+  kept
+}
+
 #' Write a frame into the store with per-partition merge semantics.
 #'
 #' Unlike [write_table()], which overwrites all Parquet files that match the
@@ -573,7 +618,7 @@ upsert_table <- function(df, table, root = here::here("data"),
       # natural-key collisions.
       bound <- dplyr::bind_rows(new_rows, existing)
       dup <- duplicated(bound[, nat_key, drop = FALSE])
-      bound[!dup, , drop = FALSE]
+      carry_enrichment(bound[!dup, , drop = FALSE], bound[dup, , drop = FALSE], table, nat_key)
     } else {
       new_rows
     }

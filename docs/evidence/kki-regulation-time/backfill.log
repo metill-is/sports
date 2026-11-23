@@ -1,0 +1,39 @@
+Backfill of seasons 2021, 2022, 2023, 2024, 2025, 2026: 3145 stored rows; current season 2027 left to the daily ingest
+
+== male
+KKI male: 1825 cards requested, 1820 regulation-time scores added, 5 cards unusable, 0 games left for later runs.
+
+== female
+KKI female: 1320 cards requested, 1314 regulation-time scores added, 6 cards unusable, 0 games left for later runs.
+
+Rows before 3145, after 3145; stored rows missing after: 0; rows added: 0; final scores changed: 0
+
+Coverage of regulation-time scores among played games
+    sex season division games with_reg overtime   share
+ female   2021       1D    91       91        3 100.0 %
+ female   2021       BD    93       92        2  98.9 %
+ female   2022       1D   124      123        2  99.2 %
+ female   2022       BD    96       95        2  99.0 %
+ female   2023       1D   121      121        3 100.0 %
+ female   2023       BD   125      125        2 100.0 %
+ female   2024       1D    97       96        5  99.0 %
+ female   2024       BD   130      130        2 100.0 %
+ female   2025       1D    72       71        0  98.6 %
+ female   2025       BD   136      136        4 100.0 %
+ female   2026       1D    98       97        2  99.0 %
+ female   2026       BD   137      137        5 100.0 %
+   male   2021       1D    93       91        4  97.8 %
+   male   2021       BD   161      161        7 100.0 %
+   male   2022       1D   146      146        6 100.0 %
+   male   2022       BD   159      159       15 100.0 %
+   male   2023       1D   147      147        4 100.0 %
+   male   2023       BD   162      162       13 100.0 %
+   male   2024       1D   154      151        4  98.1 %
+   male   2024       BD   163      163       12 100.0 %
+   male   2025       1D   158      158       12 100.0 %
+   male   2025       BD   161      161       11 100.0 %
+   male   2026       1D   159      159        4 100.0 %
+   male   2026       BD   162      162       11 100.0 %
+
+Total: 3134 of 3145 played games (99.7 %), 135 of them overtime games
+EXIT 0
