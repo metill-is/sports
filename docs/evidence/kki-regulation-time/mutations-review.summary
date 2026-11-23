@@ -1,0 +1,3 @@
+mutation stored-copy-ignores-final: expectations 38 | failed 2 | errors 0 | failing: a stored regulation score is copied only while the final score is the stored one
+mutation failures-never-reset: expectations 38 | failed 2 | errors 0 | failing: a success between failures resets the count of failures in a row
+mutation wrapper-does-nothing: expectations 38 | failed 1 | errors 0 | failing: ingest_league writes the regulation score through the real KKI step

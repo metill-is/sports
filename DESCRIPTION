@@ -110,6 +110,7 @@ Collate:
     'ingest-hsi-handball.R'
     'health-season.R'
     'ingest-kki-periods.R'
+    'ingest-kki-regulation.R'
     'ingest-ksi-football.R'
     'ingest-log.R'
     'lengjan-archive.R'

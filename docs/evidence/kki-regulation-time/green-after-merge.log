@@ -1,0 +1,12 @@
+HEAD dab181728
+test-storage-schemas.R           expectations  14 | failed 0 | errors 0 | skipped 0
+test-storage-validate.R          expectations  12 | failed 0 | errors 0 | skipped 0
+test-storage-upsert.R            expectations  35 | failed 0 | errors 0 | skipped 0
+test-ingest-kki.R                expectations  53 | failed 0 | errors 0 | skipped 0
+test-ingest-kki-periods.R        expectations  35 | failed 0 | errors 0 | skipped 0
+KKI male: 2 cards requested, 2 regulation-time scores added, 0 cards unusable, 0 games left for later runs.
+KKI male: 2 cards requested, 0 regulation-time scores added, 1 card unusable, 0 games left for later runs.
+KKI male: 1 card requested, 0 regulation-time scores added, 1 card unusable, 0 games left for later runs.
+KKI male: 3 cards requested, 3 regulation-time scores added, 0 cards unusable, 2 games left for later runs.
+test-ingest-kki-regulation.R     expectations  18 | failed 0 | errors 0 | skipped 0
+test-ingest-dispatcher.R         expectations  16 | failed 0 | errors 0 | skipped 0

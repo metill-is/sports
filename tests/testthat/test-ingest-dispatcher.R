@@ -124,3 +124,36 @@ test_that("ingest_league applies data_source.team_aliases before writing", {
   expect_equal(rf$home_team, thor_ak_long)
   expect_equal(sf$away_team, thor_th_long)
 })
+
+test_that("ingest_league with schedule = FALSE fetches and writes results only", {
+  # WHY: the regulation-time backfill re-ingests past seasons' results; the schedule is
+  # the current season's, which the daily job owns, and must stay as it is.
+  schedule_asked <- FALSE
+  fake <- list(
+    fetch_results = function(league, sex, seasons = NULL) {
+      tibble::tibble(
+        sport = league$sport, country = league$country, sex = sex, season = 2026L,
+        match_date = as.Date("2026-01-01"), home_team = "A", away_team = "B",
+        home_score = 10L, away_score = 8L, division = "D1", round = 1L
+      )
+    },
+    fetch_schedule = function(league, sex) {
+      schedule_asked <<- TRUE
+      tibble::tibble(
+        sport = league$sport, country = league$country, sex = sex, season = 2026L,
+        match_date = as.Date("2026-02-01"), home_team = "C", away_team = "D",
+        division = "D1", round = 2L
+      )
+    }
+  )
+  register_ingest_source("results_only_stub", fake)
+  on.exit(unregister_ingest_source("results_only_stub"), add = TRUE)
+  league <- list(sport = "basketball", country = "iceland", sexes = "male", data_source = list(results = "results_only_stub", schedule = "results_only_stub"))
+  tmp <- withr::local_tempdir()
+
+  ingest_league(league, "male", root = tmp, schedule = FALSE)
+
+  expect_false(schedule_asked)
+  expect_equal(nrow(read_table("results", root = tmp)), 1L)
+  expect_equal(nrow(read_table("schedules", root = tmp)), 0L)
+})

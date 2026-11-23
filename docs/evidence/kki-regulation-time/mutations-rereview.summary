@@ -1,0 +1,3 @@
+mutation budget-checked-after-request: expectations 38 | failed 1 | errors 0 | failing: the card step stops when its time budget is spent
+mutation no-rotation: expectations 38 | failed 1 | errors 0 | failing: cards that fail every day cannot keep older games from being reached
+mutation retry-restored: expectations 38 | failed 2 | errors 0 | failing: a card request that meets a 503 with Retry-After makes one request and does not wait

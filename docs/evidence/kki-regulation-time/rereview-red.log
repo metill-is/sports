@@ -1,0 +1,19 @@
+HEAD 25b92c98b (R or tests changed in the working tree)
+test-storage-schemas.R           expectations  14 | failed 0 | errors 0 | skipped 0
+test-storage-validate.R          expectations  12 | failed 0 | errors 0 | skipped 0
+test-storage-upsert.R            expectations  36 | failed 0 | errors 0 | skipped 0
+test-ingest-kki.R                expectations  53 | failed 0 | errors 0 | skipped 0
+test-ingest-kki-periods.R        expectations  43 | failed 0 | errors 0 | skipped 0
+KKI male: 2 cards requested, 2 regulation-time scores added, 0 cards unusable, 0 games left for later runs.
+KKI male: 2 cards requested, 0 regulation-time scores added, 1 card unusable, 0 games left for later runs.
+KKI male: 1 card requested, 0 regulation-time scores added, 1 card unusable, 0 games left for later runs.
+KKI male: 3 cards requested, 0 regulation-time scores added, 0 cards unusable, 3 games left for later runs.
+KKI male: 2 cards requested, 2 regulation-time scores added, 0 cards unusable, 4 games left for later runs.
+KKI male: 1 card requested, 0 regulation-time scores added, 1 card unusable, 0 games left for later runs.
+KKI male: 1 card requested, 0 regulation-time scores added, 1 card unusable, 0 games left for later runs.
+test-ingest-kki-regulation.R     expectations  31 | failed 2 | errors 3 | skipped 0
+    FAILING: card requests are capped per run, newest first, and paced
+    FAILING: a success between failures resets the count of failures in a row
+    FAILING: a card request that meets a 503 with Retry-After makes one request and does not wait
+    FAILING: cards that fail every day cannot keep older games from being reached
+test-ingest-dispatcher.R         expectations  16 | failed 0 | errors 0 | skipped 0

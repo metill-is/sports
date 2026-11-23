@@ -97,3 +97,28 @@ test_that("team names in ISO-8859-1 bytes do not break the parse", {
   expect_true(p$ok)
   expect_equal(c(p$home_reg, p$away_reg), c(109L, 96L))
 })
+
+test_that("a card level after four quarters and level at the end is rejected", {
+  # WHY: the store rejects such a row (overtime cannot end level), so the parser must not
+  # pass it on as a game decided in regulation.
+  # The fixture is level after four quarters (109-109); make the final level too.
+  level <- sub(">121<", ">109<", sub(">118<", ">109<", read_card("game_card_overtime.txt"), fixed = TRUE), fixed = TRUE)
+  p <- parse_baskethotel_game_periods(level)
+
+  expect_equal(c(p$home_reg, p$away_reg), c(109L, 109L))
+  expect_equal(c(p$home_final, p$away_final), c(109L, 109L))
+  expect_false(p$ok)
+})
+
+test_that("a captured overtime card parses as overtime", {
+  # A real card, captured once on 22 November 2026: the bytes from the start of the
+  # widget's answer to the end of its period block, unedited.
+  card <- read_card("game_card_overtime_captured.txt")
+  p <- parse_baskethotel_game_periods(card)
+
+  expect_true(p$ok)
+  expect_true(p$overtime)
+  expect_identical(p$home_reg, p$away_reg)
+  expect_true(p$home_final != p$away_final)
+  expect_true(p$home_ot >= 0L && p$away_ot >= 0L)
+})
