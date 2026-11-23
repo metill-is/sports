@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-11-23T00:09:10Z",
+  "generated_at": "2026-11-23T23:20:41Z",
   "overall": "WARN",
   "n_fail": 0,
-  "n_warn": 2,
+  "n_warn": 4,
   "checks": [
     {
       "check": "fit_freshness",
@@ -15,14 +15,14 @@
       "check": "fit_freshness",
       "scope": "basketball_iceland female",
       "status": "OK",
-      "value": "1d old, current with results",
+      "value": "0d old, current with results",
       "threshold": "<= 2d"
     },
     {
       "check": "fit_freshness",
       "scope": "handball_iceland male",
       "status": "OK",
-      "value": "1d old, current with results",
+      "value": "0d old, current with results",
       "threshold": "<= 2d"
     },
     {
@@ -71,7 +71,7 @@
       "check": "rhat_drift",
       "scope": "basketball/iceland/female",
       "status": "OK",
-      "value": "1.008",
+      "value": "1.009",
       "threshold": "< 1.020"
     },
     {
@@ -134,15 +134,29 @@
       "check": "divergence_drift",
       "scope": "handball/iceland/male",
       "status": "OK",
-      "value": "0.175%",
+      "value": "0.025%",
       "threshold": "< 0.5%"
     },
     {
       "check": "rhat_drift",
       "scope": "handball/iceland/male",
       "status": "OK",
-      "value": "1.010",
+      "value": "1.014",
       "threshold": "< 1.020"
+    },
+    {
+      "check": "engine_reference",
+      "scope": "football/iceland/male",
+      "status": "WARN",
+      "value": "2026-11-23: mean |p_INLA - p_NUTS| = 0.0032 over 528 fixtures (off-season pairings); NUTS 0 divergences, Rhat 1.026; INLA mode status 0",
+      "threshold": "<= 0.01; NUTS divergences < 0.5%, Rhat <= 1.02; INLA mode found and gate passed"
+    },
+    {
+      "check": "engine_reference",
+      "scope": "football/iceland/female",
+      "status": "OK",
+      "value": "2026-11-23: mean |p_INLA - p_NUTS| = 0.0030 over 312 fixtures (off-season pairings); NUTS 0 divergences, Rhat 1.005; INLA mode status 0",
+      "threshold": "<= 0.01; NUTS divergences < 0.5%, Rhat <= 1.02; INLA mode found and gate passed"
     },
     {
       "check": "orphaned_bets",
@@ -175,8 +189,8 @@
     {
       "check": "discovery",
       "scope": "lengjan",
-      "status": "OK",
-      "value": "0",
+      "status": "WARN",
+      "value": "1: basketball/female BD (id=1291)",
       "threshold": "0 un-actioned modelled competitions"
     },
     {
@@ -197,42 +211,42 @@
       "check": "publish_freshness",
       "scope": "basketball_iceland male BD",
       "status": "OK",
-      "value": "2h old; 10 artefact(s)",
+      "value": "3h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "basketball_iceland male 1D",
       "status": "OK",
-      "value": "2h old; 10 artefact(s)",
+      "value": "3h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "basketball_iceland female BD",
       "status": "OK",
-      "value": "2h old; 10 artefact(s)",
+      "value": "3h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "basketball_iceland female 1D",
       "status": "OK",
-      "value": "2h old; 10 artefact(s)",
+      "value": "3h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "handball_iceland male OD",
       "status": "OK",
-      "value": "2h old; 10 artefact(s)",
+      "value": "3h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
       "check": "publish_freshness",
       "scope": "handball_iceland male G66",
       "status": "OK",
-      "value": "2h old; 10 artefact(s)",
+      "value": "3h old; 10 artefact(s)",
       "threshold": "36h"
     },
     {
