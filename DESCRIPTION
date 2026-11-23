@@ -98,6 +98,7 @@ Collate:
     'extracts-retention.R'
     'ingest.R'
     'federation-seasons.R'
+    'forecast-archive.R'
     'gisko-backtest.R'
     'gisko-report.R'
     'gisko.R'

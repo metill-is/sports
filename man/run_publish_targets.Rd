@@ -11,6 +11,7 @@ run_publish_targets(
   validate = TRUE,
   end_date = Sys.Date(),
   schema_dir = here::here("config", "publish-schemas"),
+  archive_forecasts = FALSE,
   publish_fn = publish_one
 )
 }
@@ -21,7 +22,8 @@ run_publish_targets(
 
 \item{root}{Storage root.}
 
-\item{validate, end_date, schema_dir}{Forwarded to `publish_fn` by name.}
+\item{validate, end_date, schema_dir, archive_forecasts}{Forwarded to
+`publish_fn` by name.}
 
 \item{publish_fn}{Injectable publisher; defaults to [publish_one()].}
 }

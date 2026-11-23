@@ -1,4 +1,4 @@
-test_that("all 11 schemas are defined by name", {
+test_that("all 12 schemas are defined by name", {
   s <- schemas()
   expect_setequal(
     names(s),
@@ -6,6 +6,7 @@ test_that("all 11 schemas are defined by name", {
       "results", "schedules", "odds",
       "beliefs_latest", "beliefs_archive", "beliefs_by_round",
       "candidates", "recommendations", "ledger", "fit_diagnostics",
+      "forecast_archive",
       "engine_reference"
     )
   )

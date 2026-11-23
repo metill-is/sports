@@ -176,6 +176,45 @@ schemas <- function() {
       chains          = arrow::int32(),
       passed          = arrow::bool()
     ),
+    # Every pre-match forecast the site published, append-only and never
+    # pruned (R/forecast-archive.R). One row per (fit, published file, match):
+    # the numbers exactly as next_games.json carried them, where they were
+    # published, and what produced them. Each write is a new `batch=`
+    # partition; `write_table()` refuses a write into an existing partition or
+    # one that contradicts a stored row (append_only_tables()).
+    forecast_archive = arrow::schema(
+      sport         = arrow::string(),
+      country       = arrow::string(),
+      sex           = arrow::string(),
+      fit_date      = arrow::date32(),
+      # md5 of the fit partition's predicted_matches.parquet: tells a same-day
+      # refit, which overwrites that fit_date's partition, from the first fit.
+      fit_id        = arrow::string(),
+      # Path under data/publish/ of the file the forecast was published in.
+      published_to  = arrow::string(),
+      division      = arrow::string(),
+      match_date    = arrow::date32(),
+      home_team     = arrow::string(),
+      away_team     = arrow::string(),
+      # "HH:MM" UTC (Iceland's time all year) from the schedule, else from the
+      # newest odds scrape, when the forecast was first published; NA when
+      # neither had one.
+      kickoff_time  = arrow::string(),
+      p_home_win    = arrow::float64(),
+      p_draw        = arrow::float64(),
+      p_away_win    = arrow::float64(),
+      xg_home       = arrow::float64(),
+      xg_away       = arrow::float64(),
+      # From the fit partition's fit_meta: `stan` or `inla`, the Stan program
+      # (NA for an INLA fit) and the model version (NA for a Stan fit).
+      engine        = arrow::string(),
+      stan_model    = arrow::string(),
+      model_version = arrow::string(),
+      # When the forecast was first published, and the commit that published
+      # it (GITHUB_SHA; NA for a run outside GitHub Actions).
+      published_at  = ts,
+      code_commit   = arrow::string()
+    ),
     # The weekly Stan reference fit's result, one row per football cell and
     # run (R/model-v2-reference.R, scripts/engine_reference.R): how far apart
     # R-INLA's and NUTS's outcome probabilities were, and whether both fits

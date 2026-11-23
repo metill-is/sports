@@ -69,22 +69,26 @@ test_that("an all-green publish run reports every target and no failures", {
   expect_named(res$failed, c("key", "sex", "message"))
 })
 
-test_that("run_publish_targets forwards end_date, validate and schema_dir by name", {
+test_that("run_publish_targets forwards end_date, validate, schema_dir and archive_forecasts by name", {
   # The plan's own gap list: nothing threads end_date into publish_one, and it
   # is correct only by accident today because production wants the Sys.Date()
   # default. Named here so a future replay caller cannot silently lose it.
+  # archive_forecasts joins them for the same reason: a caller that dropped it
+  # would publish without archiving and nothing would say so.
   fmls <- names(formals(run_publish_targets))
-  expect_true(all(c("root", "validate", "end_date", "schema_dir", "publish_fn") %in% fmls))
+  expect_true(all(c("root", "validate", "end_date", "schema_dir", "archive_forecasts", "publish_fn") %in% fmls))
+  expect_false(formals(run_publish_targets)$archive_forecasts)
 
   seen <- list()
   suppressMessages(run_publish_targets(
     .iso_targets()[1, ], .iso_leagues(),
     root = "/r", validate = FALSE, end_date = as.Date("2100-01-01"),
-    schema_dir = "/s",
-    publish_fn = function(static, betting, key, sex, root, validate, end_date, schema_dir) {
+    schema_dir = "/s", archive_forecasts = TRUE,
+    publish_fn = function(static, betting, key, sex, root, validate, end_date, schema_dir, archive_forecasts) {
       seen <<- list(
         root = root, validate = validate,
-        end_date = end_date, schema_dir = schema_dir
+        end_date = end_date, schema_dir = schema_dir,
+        archive_forecasts = archive_forecasts
       )
       invisible(NULL)
     }
@@ -93,6 +97,7 @@ test_that("run_publish_targets forwards end_date, validate and schema_dir by nam
   expect_false(seen$validate)
   expect_equal(seen$end_date, as.Date("2100-01-01"))
   expect_equal(seen$schema_dir, "/s")
+  expect_true(seen$archive_forecasts)
 })
 
 test_that("scripts/05_publish.R delegates and exits non-zero on ANY failure", {

@@ -208,8 +208,8 @@ meta-characters.
 | `scrape-results.yml` | cron 1×/day | Federation results + schedules |
 | `scrape-odds.yml` | cron 5×/day (08,11,14,17,20 UTC, minute 17) | Lengjan odds snapshot (Chromote DOM for football; JSON API for handball/basketball) |
 | `fit.yml` | `workflow_run` from scrape-results | Stan fit; also installs R-INLA at `inla-engine.yml`'s pin for the football v2 engine, non-blocking while no league uses it (section 5) |
-| `decide-publish.yml` | `workflow_run` from fit AND scrape-odds | Recommendations + JSONs |
-| `republish.yml` | `workflow_dispatch` only | Re-run publish from existing extraction archive (lever for fast publisher iteration) |
+| `decide-publish.yml` | `workflow_run` from fit AND scrape-odds | Recommendations + JSONs, and the forecast archive (`data/archive/forecasts/`: each pre-match forecast the first time it is published; append-only, never pruned) |
+| `republish.yml` | `workflow_dispatch` only | Re-run publish from existing extraction archive (lever for fast publisher iteration); adds to the forecast archive like `decide-publish` |
 | `healthcheck.yml` | cron 2×/day + dispatch | Read-only `pipeline_health()` → `data/health/status.json`; commits if changed; fails the run on `overall == FAIL` so GitHub's failure email fires (the alert channel). `test-healthcheck-ci-isolation.R` proves it never writes the ledger. |
 | `world-cup.yml` | **dispatch only** (cron retired 2026-09-02) | HM 2026 forecast: download martj42 internationals → ingest → fit → simulate → publish `data/publish/world_cup/karla/*.json`. Self-contained (own ingest, no `workflow_run` parent). A cheap SHA pre-gate (`git ls-remote` martj42's tip vs the tracked `data/wc/martj42_pointer.txt`, read over raw.github — no clone of this ~11 GB repo) no-ops every poll where martj42 hasn't committed; the facts-diff is the precise second gate. See note below. |
 | `inla-engine.yml` | PR to `main` touching `R/**`, `tests/testthat/**`, `config/**`, `DESCRIPTION` or `research/football-v2/**`; weekly cron (Mon 06:41 UTC); dispatch | Runs the tests that fit with R-INLA, which skip in `ci-tests.yml` because INLA is not in `DESCRIPTION`. Installs INLA at a pinned version (tarball by name from INLA's own repository, after an `apt-get` of the GDAL/GEOS/PROJ/udunits libraries `sf` loads, with `fmesher`, `MatrixModels` and `sn` as extra packages: INLA only suggests `sn` but its posterior sampler stops without it). Sets `SPORTS_REQUIRE_INLA=1`, under which `skip_if_no_inla()` **fails** instead of skipping, and runs every test file that calls that helper (found by grep, not listed). Dispatch with `replay: true` also fits both football cells on real data through `fit_league()` (`research/football-v2/run_replay.R`) and uploads the result. Read-only permissions, writes under `RUNNER_TEMP`, creates no commit, and checks that `data/` is untouched. Pinned by `tests/testthat/test-workflow-inla-engine.R`. `fit.yml` carries the same install steps (section 5). |
@@ -334,6 +334,9 @@ record for the one round where two runs overlapped —
 is an accumulator (see the roxygen on `publish_football_iceland()`), as is
 the WC `prediction_log.json`. That is a strictly smaller loss than the old
 behaviour, which threw away the whole run, and the next run re-accumulates.
+An accumulator that must lose nothing writes new files only, as the forecast
+archive (`data/archive/forecasts/`) does: two runs then never touch the same
+path, and no conflict arises for `-X theirs` to resolve.
 
 **Enforcement:** `tests/testthat/test-workflow-push-retry.R` fails the build
 if any workflow that creates a commit does not route its push through the

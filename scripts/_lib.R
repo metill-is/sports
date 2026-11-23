@@ -15,7 +15,8 @@ parse_pipeline_args <- function(args = commandArgs(trailingOnly = TRUE)) {
   list(
     league = get_flag("league"),
     sex = get_flag("sex"),
-    force = has_flag("force")
+    force = has_flag("force"),
+    archive = has_flag("archive")
   )
 }
 

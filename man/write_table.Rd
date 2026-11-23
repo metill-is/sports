@@ -43,4 +43,8 @@ SIGKILL'd Stan fit. The staged-rename pattern narrows the failure window:
 if the arrow write fails, the on-disk state is unchanged; on success the
 visible state flips per partition via a single rename. See audit
 2026-05-15 §H.
+
+Append-only tables ([append_only_tables()], the forecast archive): the write
+is refused, and nothing is written, when a touched partition already exists
+or a row contradicts a stored row with the same key.
 }
