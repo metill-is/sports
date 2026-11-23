@@ -20,6 +20,96 @@ test_that(".wc_group_table ranks an unambiguous group correctly", {
   expect_equal(tbl$pts, c(9, 6, 3, 0))
 })
 
+wc_group_matches <- function(...) {
+  m <- matrix(c(...), ncol = 4, byrow = TRUE)
+  tibble::tibble(
+    home_team = m[, 1], away_team = m[, 2],
+    home_score = as.integer(m[, 3]), away_score = as.integer(m[, 4])
+  )
+}
+
+test_that(".wc_group_table ranks head-to-head before goal difference", {
+  # A beat B and both finish on 6 points; B's goal difference is +7, A's +1.
+  # FIFA World Cup 2026 Regulations, art. 13: head-to-head comes first.
+  m <- wc_group_matches(
+    "A", "B", 1, 0, "A", "C", 0, 1, "A", "D", 1, 0,
+    "B", "C", 5, 0, "B", "D", 3, 0, "C", "D", 0, 1
+  )
+  tbl <- .wc_group_table(c("A", "B", "C", "D"), m)
+  expect_equal(tbl$team, c("A", "B", "D", "C"))
+  expect_equal(tbl$pts, c(6, 6, 3, 3))
+  expect_equal(tbl$gd, c(1, 7, -3, -5))
+  expect_equal(tbl$gf, c(2, 8, 1, 1))
+})
+
+test_that(".wc_group_table goes to goal difference, then goals, when head-to-head is level", {
+  # A and B draw each other and finish on 7 points: B's goal difference is
+  # better (+3 v +2), A scored more (8 v 5), so goal difference must come
+  # before goals. C and D draw and differ only on goal difference.
+  m <- wc_group_matches(
+    "A", "B", 2, 2, "A", "C", 3, 2, "A", "D", 3, 2,
+    "B", "C", 1, 0, "B", "D", 2, 0, "C", "D", 0, 0
+  )
+  tbl <- .wc_group_table(c("A", "B", "C", "D"), m)
+  expect_equal(tbl$team, c("B", "A", "C", "D"))
+  expect_equal(tbl$gd, c(3, 2, -2, -3))
+  expect_equal(tbl$gf, c(5, 8, 2, 2))
+})
+
+test_that(".wc_group_table refuses a team outside the group or a missing score", {
+  m <- wc_group_matches(
+    "A", "B", 1, 0, "A", "C", 0, 1, "A", "D", 1, 0,
+    "B", "C", 5, 0, "B", "D", 3, 0, "C", "X", 0, 1
+  )
+  expect_error(.wc_group_table(c("A", "B", "C", "D"), m), "X")
+  m$away_team[6] <- "D"
+  m$home_score[2] <- NA_integer_
+  expect_error(.wc_group_table(c("A", "B", "C", "D"), m), "score")
+})
+
+test_that(".wc_group_table re-applies head-to-head to the teams still level", {
+  # A, B and C finish on 6 points. Among the three, A and B are level (3 points,
+  # +1, 4 goals) and C is third; art. 13 step 2 then settles A and B on their
+  # own match, which A won, although B's overall goal difference is better.
+  m <- wc_group_matches(
+    "A", "B", 3, 1, "C", "A", 2, 1, "B", "C", 3, 0,
+    "A", "D", 1, 0, "B", "D", 4, 0, "C", "D", 1, 0
+  )
+  tbl <- .wc_group_table(c("A", "B", "C", "D"), m)
+  expect_equal(tbl$team, c("A", "B", "C", "D"))
+  expect_equal(tbl$gd, c(2, 5, -1, -6))
+})
+
+test_that(".wc_group_table settles a dead heat on the smaller uniform draw", {
+  # Every match 0-0: the draw decides, as it did before head-to-head was added,
+  # so seeded runs without head-to-head decisions reproduce.
+  m <- wc_group_matches(
+    "A", "B", 0, 0, "A", "C", 0, 0, "A", "D", 0, 0,
+    "B", "C", 0, 0, "B", "D", 0, 0, "C", "D", 0, 0
+  )
+  u <- withr::with_seed(5, stats::runif(4))
+  tbl <- withr::with_seed(5, .wc_group_table(c("A", "B", "C", "D"), m))
+  expect_equal(tbl$team, c("A", "B", "C", "D")[order(u)])
+})
+
+test_that("simulate_world_cup ranks a played group by head-to-head", {
+  s <- wc_structure()
+  teams <- unlist(s$groups, use.names = FALSE)
+  fx <- make_wc_fixtures(s)
+  ga <- s$groups$A
+  in_a <- which(fx$group == "A")
+  expect_equal(fx$home_team[in_a], ga[c(1, 1, 1, 2, 2, 3)])
+  fx$home_score[in_a] <- c(1L, 0L, 1L, 5L, 3L, 0L)
+  fx$away_score[in_a] <- c(0L, 1L, 0L, 0L, 0L, 1L)
+  fx$played[in_a] <- TRUE
+  si <- make_sim_inputs(teams, n_draws = 20L)
+  out <- simulate_world_cup(si$team, si$scalar, fx, s, pairing_seed = 7L)
+  gp <- out$group_probs[match(ga, out$group_probs$team), ]
+  expect_equal(gp$p_first, c(1, 0, 0, 0))
+  expect_equal(gp$p_second, c(0, 1, 0, 0))
+  expect_equal(gp$p_third, c(0, 0, 0, 1))
+})
+
 # ---- Thirds allocation -----------------------------------------------------
 
 test_that(".wc_bipartite_thirds returns a valid eligibility-respecting matching", {

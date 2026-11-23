@@ -154,7 +154,9 @@ nt_head_to_head <- function(fit, teams, method = c("extra_time", "replay"),
 #'   points, goal difference and goals under either rule.
 #' @param h2h_reapply How often step 2 re-applies the head-to-head criteria to
 #'   teams still level: `"repeat"` (until nothing changes) or `"once"`. With
-#'   groups of four the two differ only when all four are level on points.
+#'   groups of four the two always give the same table: a third pass needs all
+#'   four teams level on points, and then the last two can never be separated
+#'   by their own match.
 #' @param seed Optional seed.
 #' @return List: `teams` (tibble: `team`, `group`, group-position and
 #'   round-reached probabilities), `r32` (list `a`, `b`: simulations x 16 team
