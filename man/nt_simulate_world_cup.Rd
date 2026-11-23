@@ -38,7 +38,9 @@ points, goal difference and goals under either rule.}
 
 \item{h2h_reapply}{How often step 2 re-applies the head-to-head criteria to
 teams still level: `"repeat"` (until nothing changes) or `"once"`. With
-groups of four the two differ only when all four are level on points.}
+groups of four the two always give the same table: a third pass needs all
+four teams level on points, and then the last two can never be separated
+by their own match.}
 
 \item{seed}{Optional seed.}
 }
