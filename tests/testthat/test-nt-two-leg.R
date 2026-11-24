@@ -173,3 +173,10 @@ test_that("the 2027 bracket keeps group winners A and B apart until the final", 
   expect_gt(get(sim_ab, "Brazil", "p_final") + get(sim_ab, "T5", "p_final"), 1.95)
   expect_equal(get(sim_ac, "Brazil", "p_sf") + get(sim_ac, "T9", "p_sf"), 1, tolerance = 0.02)
 })
+
+test_that("a scalar rate is recycled across simulated ties", {
+  withr::local_seed(4)
+  sim <- nt_simulate_two_leg(rep(1, 50), 1, 1, 1)
+  expect_false(anyNA(sim$a_wins))
+  expect_length(sim$leg2_b, 50L)
+})

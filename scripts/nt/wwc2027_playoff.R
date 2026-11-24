@@ -103,12 +103,17 @@ legs <- list(
 # is Poisson(b1 + b2) and Portugal's Poisson(a1 + a2).
 lam_ice <- pick(leg1$away) + pick(leg2$home)
 lam_por <- pick(leg1$home) + pick(leg2$away)
-margins <- -4:4
+margins <- -30:30
 agg <- vapply(margins, function(m) {
   mean(rowSums(outer(lam_por, 0:40, function(l, g) stats::dpois(g, l)) *
     outer(lam_ice, 0:40, function(l, g) stats::dpois(g + m, l))))
 }, numeric(1))
-aggregate <- tibble::tibble(iceland_margin = margins, p = agg)
+mid <- abs(margins) <= 4
+aggregate <- tibble::tibble(
+  iceland_margin = c("<= -5", as.character(margins[mid]), ">= 5"),
+  p = c(sum(agg[margins <= -5]), agg[mid], sum(agg[margins >= 5]))
+)
+stopifnot(abs(sum(aggregate$p) - 1) < 1e-6)
 
 # After the first leg: reweight the draws by the probability of the leg-1
 # score (the posterior update from that result), then play the second leg
@@ -167,8 +172,12 @@ elo_ahead <- sum(outer(ice_tot, por_tot) * outer(gg, gg, ">"))
 elo_level <- sum(outer(ice_tot, por_tot) * outer(gg, gg, "=="))
 v2_level <- mean(pick(tie$a_extra_time + tie$b_extra_time + tie$a_shootout + tie$b_shootout))
 v2_ice_given_level <- mean(pick(tie$b_extra_time + tie$b_shootout)) / v2_level
+# WHY both: the ordered logit gives Elo's 1X2, but the tie number needs
+# scorelines, which come from the Poisson goal links; legs_grid is the 1X2 of
+# that grid, the one behind p_iceland.
 elo_check <- list(
-  legs = elo$probs, ratings = elo$ratings[c("Iceland", "Portugal")],
+  legs = elo$probs, legs_grid = nt_outcome_probs(elo$grid),
+  ratings = elo$ratings[c("Iceland", "Portugal")],
   ice_ahead_180 = elo_ahead, level_180 = elo_level,
   p_iceland = elo_ahead + elo_level * v2_ice_given_level
 )
@@ -209,8 +218,9 @@ cat("\nAfter leg 1 (Portugal-Iceland score -> P(Iceland))\n")
 print(as.data.frame(after_leg1), digits = 3)
 cat("\nSensitivity\n")
 print(as.data.frame(sens), digits = 3)
-cat("\nElo cross-check\n")
+cat("\nElo cross-check (ordered logit, then scoreline grid)\n")
 print(elo_check$legs, digits = 3)
+print(elo_check$legs_grid, digits = 3)
 cat(sprintf(
   "Elo: Iceland ahead after 180 %.3f, level %.3f, P(Iceland) %.3f\n",
   elo_ahead, elo_level, elo_check$p_iceland

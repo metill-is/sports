@@ -97,6 +97,9 @@ nt_fit_inla <- function(prep,
   rlang::check_installed("INLA", reason = "to fit the national-team model")
   dynamics <- match.arg(dynamics)
   friendly <- match.arg(friendly)
+  if (reproducible && !identical(threads, "1:1")) {
+    cli::cli_warn("A reproducible fit also needs one thread ({.code threads = \"1:1\"}); got {.val {threads}}.")
+  }
   if (friendly != "damped") kappa <- 1
   des <- .nt_design(prep, kappa = kappa)
   k <- des$k

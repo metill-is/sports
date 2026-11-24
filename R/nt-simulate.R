@@ -138,7 +138,11 @@ nt_two_leg_win_prob <- function(rate_a1, rate_b1, rate_a2, rate_b2,
 #' @export
 nt_simulate_two_leg <- function(rate_a1, rate_b1, rate_a2, rate_b2,
                                 et_factor = 1 / 3, shootout_p = 0.5) {
-  n <- length(rate_a1)
+  n <- max(length(rate_a1), length(rate_b1), length(rate_a2), length(rate_b2))
+  rate_a1 <- rep_len(rate_a1, n)
+  rate_b1 <- rep_len(rate_b1, n)
+  rate_a2 <- rep_len(rate_a2, n)
+  rate_b2 <- rep_len(rate_b2, n)
   leg1_a <- stats::rpois(n, rate_a1)
   leg1_b <- stats::rpois(n, rate_b1)
   leg2_a <- stats::rpois(n, rate_a2)

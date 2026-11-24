@@ -26,10 +26,6 @@ suppressPackageStartupMessages({
 })
 res <- readRDS(here::here("docs", "reports", "2026-11-24-wwc2027-iceland-portugal", "results.rds"))
 pct <- function(x, d = 0) sprintf(paste0("%.", d, "f%%"), 100 * x)
-iv <- function(q) {
-  r <- res$iceland[res$iceland$quantity == q, ]
-  sprintf("%s (90%% interval %s to %s)", pct(r$mean), pct(r$q05), pct(r$q95))
-}
 m <- function(q) res$iceland$mean[res$iceland$quantity == q]
 win <- res$iceland[res$iceland$quantity == "win", ]
 rk <- function(team) res$strength$rank[res$strength$team == team]
@@ -42,7 +38,7 @@ rk <- function(team) res$strength$rank[res$strength$team == team]
 - The number is the model's average over `r format(res$run$n_draws, big.mark = ",")` posterior draws of the two teams' strengths; its Monte Carlo error is `r sprintf("%.1f", 100 * win$mc_se)` points.
 - How sure the model is of the strengths: the per-draw chance ranges from `r pct(win$q05)` to `r pct(win$q95)` (90% interval). That spread is uncertainty about how good the teams are now, not about the match.
 - The tie goes beyond 180 minutes with probability `r pct(m("goes_to_extra_time"))` and to penalties with probability `r pct(m("goes_to_penalties"))`.
-- The Elo baseline, fitted on the same file, gives Iceland `r pct(res$elo$p_iceland)` (a level aggregate split as v2 splits it). Elo rates the two sides almost level (Iceland `r round(res$elo$ratings[['Iceland']])`, Portugal `r round(res$elo$ratings[['Portugal']])`) and adds a fixed home bonus of 100 points tuned on men's football, so it makes Portugal `r pct(res$elo$legs$p_home[1])` favourites at home where v2 says `r pct(res$legs$leg1$outcome$p_home)`. v2 estimates the women's home advantage from the women's matches, and finds it smaller than the men's (below).
+- The Elo baseline, fitted on the same file, gives Iceland `r pct(res$elo$p_iceland)` (a level aggregate split as v2 splits it). Elo rates the two sides almost level (Iceland `r round(res$elo$ratings[['Iceland']])`, Portugal `r round(res$elo$ratings[['Portugal']])`) and adds a fixed home bonus of 100 points tuned on men's football, so it makes Portugal `r pct(res$elo$legs_grid$p_home[1])` favourites at home where v2 says `r pct(res$legs$leg1$outcome$p_home)`. v2 estimates the women's home advantage from the women's matches, and finds it smaller than the men's (below).
 
 ## How the tie is decided
 
@@ -72,7 +68,7 @@ res$iceland |>
 
 ```{r}
 #| label: tbl-legs
-#| tbl-cap: "Each leg over 90 minutes (home side first). v2 posterior-predictive; Elo baseline for comparison."
+#| tbl-cap: "Each leg over 90 minutes (home side first). v2 posterior-predictive; Elo baseline for comparison (from the scoreline grid of its Poisson goal links, the grid behind its tie number)."
 leg_row <- function(l, elo_row, label) {
   tibble(
     Leg = label,
@@ -82,8 +78,8 @@ leg_row <- function(l, elo_row, label) {
   )
 }
 bind_rows(
-  leg_row(res$legs$leg1, res$elo$legs[1, ], "1 Dec, in Portugal: Portugal v Iceland"),
-  leg_row(res$legs$leg2, res$elo$legs[2, ], "5 Dec, Laugardalsvöllur: Iceland v Portugal")
+  leg_row(res$legs$leg1, res$elo$legs_grid[1, ], "1 Dec, in Portugal: Portugal v Iceland"),
+  leg_row(res$legs$leg2, res$elo$legs_grid[2, ], "5 Dec, Laugardalsvöllur: Iceland v Portugal")
 ) |> knitr::kable()
 ```
 
@@ -176,9 +172,10 @@ Code ready in this branch:
 Steps after the draw:
 
 1. Refit with the 5 December results (`scripts/nt/wwc2027_fit.R`, cutoff at the draw), adding any extra-time second legs of round 2 to `nt_extra_time_matches("women")`.
-2. Confirm the group tie-break order in FIFA's 2027 regulations (not found on 2026-11-24; 2023 ranked on goal difference first, the 2026 men's tournament on head-to-head first) and pass it as `group_rule`.
-3. Weights for the play-off placeholders: until a model of the February play-off tournament exists, use the candidates' chances from simple per-match forecasts, stated as such.
-4. Publishing on metill.is is the owner's decision; the dormant World Cup publisher (`R/wc-publish.R`) writes eight JSONs for the men's 2026 tournament and would need a women's tree.
+2. Decide whether Brazil's knockout matches count as home matches. The simulator plays every knockout match at a neutral venue, as for the three-host men's tournament of 2026; in a one-host tournament every Brazil match is in Brazil, worth the estimated home effects (+0.05 and -0.16 on the log scale) in each.
+3. Confirm the group tie-break order in FIFA's 2027 regulations (not found on 2026-11-24; 2023 ranked on goal difference first, the 2026 men's tournament on head-to-head first) and pass it as `group_rule`.
+4. Weights for the play-off placeholders: until a model of the February play-off tournament exists, use the candidates' chances from simple per-match forecasts, stated as such.
+5. Publishing on metill.is is the owner's decision; the dormant World Cup publisher (`R/wc-publish.R`) writes eight JSONs for the men's 2026 tournament and would need a women's tree.
 
 ## Reproduction
 

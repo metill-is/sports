@@ -249,6 +249,15 @@ nt_prepare <- function(results, cutoff, window_years = 12, min_matches = 5L,
   corrected <- logical(nrow(d))
   if (!is.null(ninety)) {
     hit <- .nt_ninety_rows(d, ninety)
+    # WHY: extra time only adds goals, so a 90-minute count above the stored
+    # one is a mistyped or swapped entry.
+    above <- hit$home_90 > d$home_score[hit$row] | hit$away_90 > d$away_score[hit$row]
+    if (any(above)) {
+      cli::cli_warn(c(
+        "{sum(above)} 90-minute score{?s} above the stored score: check the order of {.arg ninety}'s teams.",
+        i = "{paste(d$match_date[hit$row][above], d$home_team[hit$row][above], 'v', d$away_team[hit$row][above])}"
+      ))
+    }
     d$home_score[hit$row] <- hit$home_90
     d$away_score[hit$row] <- hit$away_90
     corrected[hit$row] <- TRUE

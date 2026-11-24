@@ -155,3 +155,12 @@ test_that("drawing from the posterior does not consume the caller's random strea
   expect_identical(stats::runif(1), expected)
   expect_identical(smp_free, .nt_posterior_draws(fit$result, 5L, list(mu = 1), seed = 3L))
 })
+
+test_that("asking for a reproducible fit on several threads warns", {
+  skip_if_no_inla()
+  sim <- nt_sim_prep()
+  expect_warning(
+    nt_fit_inla(sim$prep, n_draws = 5L, threads = "2:1", reproducible = TRUE),
+    "one thread"
+  )
+})

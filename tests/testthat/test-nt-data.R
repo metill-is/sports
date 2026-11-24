@@ -199,3 +199,17 @@ test_that("a correction inside the window that matches no match warns", {
   outside$match_date <- as.Date("2027-01-10")
   expect_no_warning(nt_prepare(r, as.Date("2026-12-01"), min_matches = 1L, ninety = outside))
 })
+
+test_that("a 90-minute score above the stored score warns (swapped entry)", {
+  r <- nt_test_results(
+    "2026-10-13", "Poland", "Belgium", 3, 2, "FIFA World Cup qualification", "Poland", FALSE
+  )
+  swapped <- tibble::tibble(
+    match_date = as.Date("2026-10-13"), team_a = "Poland", team_b = "Belgium",
+    a_90 = 1L, b_90 = 3L, shootout = TRUE
+  )
+  expect_warning(
+    nt_prepare(r, as.Date("2026-12-01"), min_matches = 1L, ninety = swapped),
+    "above"
+  )
+})
