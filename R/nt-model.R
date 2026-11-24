@@ -316,7 +316,7 @@ nt_rw_sd_for_half_life <- function(half_life_years, matches_per_year = 11,
 # Scoring rates of simulated matches: `draw` (one posterior draw per row) and
 # `home`, `away` (matrices or vectors of column indices into the fit's teams,
 # one row per draw entry) give each match's teams; `venue` is recycled along
-# the columns. Same arithmetic, in the same order, as nt_match_rates().
+# the columns, or given as a matrix of the same shape. Same arithmetic, in the same order, as nt_match_rates().
 .nt_sim_rates <- function(fit, draw, home, away, venue) {
   d <- fit$draws
   home <- as.matrix(home)
@@ -327,7 +327,7 @@ nt_rw_sd_for_half_life <- function(half_life_years, matches_per_year = 11,
   get <- function(x, idx) matrix(x[cbind(rows, c(idx))], n, m)
   gap <- get(d$theta, home) - get(d$theta, away)
   base <- d$mu[draw] + (get(d$delta, home) + get(d$delta, away))
-  venue <- matrix(rep(venue, each = n), n, m)
+  if (!is.matrix(venue)) venue <- matrix(rep(venue, each = n), n, m)
   list(
     home = exp(base + gap + d$home_for[draw] * venue),
     away = exp(base - gap + d$home_against[draw] * venue)

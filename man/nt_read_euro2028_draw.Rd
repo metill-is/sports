@@ -32,7 +32,7 @@ List: `groups` (named list of slot labels: team names in the
   martj42 spelling or `QFk winner` / `QFk defeated`), `fixtures` (in slot
   labels, with an integer `venue`), `teams` (the 54 entrants),
   `quarter_finals`, `seeding`, `hosts`, `separate` and `conditions` (see
-  [nt_euro2028_facts()]).
+  [nt_euro2028_facts()]), and `neutral_home`.
 }
 \description{
 `groups` is a CSV with one row per drawn team: `group` (A to L), `team`
