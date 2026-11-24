@@ -108,3 +108,68 @@ test_that("play-off places average over draws and weigh every combination", {
   expect_equal(sum(out$p_direct), mean(rep(1, 2)))
   expect_equal(sum(out$p_win), 2)
 })
+
+wwc_test_groups <- function() {
+  teams <- c("Brazil", paste0("T", 2:32))
+  stats::setNames(split(teams, rep(1:8, each = 4)), LETTERS[1:8])
+}
+
+test_that("the 2027 Women's World Cup structure has eight groups and FIFA's bracket", {
+  s <- nt_wwc2027_structure(wwc_test_groups())
+  expect_equal(names(s$groups), LETTERS[1:8])
+  expect_equal(s$hosts, "Brazil")
+  expect_null(s$third_slots)
+  r16 <- s$bracket[s$bracket$round == "R16", ]
+  expect_equal(r16$match_no, 49:56)
+  expect_equal(paste(r16$feeder_a, r16$feeder_b),
+    c("1A 2B", "1C 2D", "1B 2A", "1D 2C", "1E 2F", "1G 2H", "1F 2E", "1H 2G"))
+  qf <- s$bracket[s$bracket$round == "QF", ]
+  expect_equal(paste(qf$match_no, qf$feeder_a, qf$feeder_b),
+    c("57 W49 W50", "58 W53 W54", "59 W51 W52", "60 W55 W56"))
+  sf <- s$bracket[s$bracket$round == "SF", ]
+  expect_equal(paste(sf$match_no, sf$feeder_a, sf$feeder_b), c("61 W57 W58", "62 W59 W60"))
+  expect_equal(paste(s$third_place$feeder_a, s$third_place$feeder_b), "L61 L62")
+})
+
+test_that("the 2027 structure refuses a draw without the host in group A", {
+  g <- wwc_test_groups()
+  g$A[1] <- "T99"
+  g$B[1] <- "Brazil"
+  expect_error(nt_wwc2027_structure(g), "Brazil")
+  expect_error(nt_wwc2027_structure(g[1:7]), "eight groups")
+})
+
+test_that("a 32-team World Cup simulates with no third-placed qualifiers", {
+  s <- nt_wwc2027_structure(wwc_test_groups())
+  teams <- unlist(s$groups, use.names = FALSE)
+  fit <- nt_test_fit(stats::setNames(seq(0.6, -0.6, length.out = 32), teams), mu = 0.1,
+    home_for = 0.15, home_against = -0.2, n_draws = 3L)
+  sim <- nt_simulate_world_cup(fit, s, n_sims = 600L, seed = 3L)
+  t <- sim$teams
+  expect_equal(sum(t$p_advance), 16)
+  expect_equal(t$p_advance, t$p_first + t$p_second, ignore_attr = TRUE)
+  expect_equal(t$p_r16, t$p_advance)
+  expect_equal(sum(t$p_qf), 8)
+  expect_equal(sum(t$p_sf), 4)
+  expect_equal(sum(t$p_final), 2)
+  expect_equal(sum(t$p_champion), 1)
+  expect_equal(sum(t$p_bronze), 1)
+  expect_null(sim$r32)
+  expect_equal(sim$first_round$round, "R16")
+  expect_equal(dim(sim$first_round$a), c(600L, 8L))
+})
+
+test_that("the 2027 bracket keeps group winners A and B apart until the final", {
+  s <- nt_wwc2027_structure(wwc_test_groups())
+  teams <- unlist(s$groups, use.names = FALSE)
+  base <- stats::setNames(rep(0, 32), teams)
+  ab <- base
+  ab[c("Brazil", "T5")] <- 6 # A1 and B1
+  ac <- base
+  ac[c("Brazil", "T9")] <- 6 # A1 and C1: same quarter-final (57)
+  sim_ab <- nt_simulate_world_cup(nt_test_fit(ab), s, n_sims = 300L, seed = 1L)$teams
+  sim_ac <- nt_simulate_world_cup(nt_test_fit(ac), s, n_sims = 300L, seed = 1L)$teams
+  get <- function(sim, team, col) unname(sim[[col]][sim$team == team])
+  expect_gt(get(sim_ab, "Brazil", "p_final") + get(sim_ab, "T5", "p_final"), 1.95)
+  expect_equal(get(sim_ac, "Brazil", "p_sf") + get(sim_ac, "T9", "p_sf"), 1, tolerance = 0.02)
+})
