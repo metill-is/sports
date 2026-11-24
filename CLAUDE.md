@@ -64,6 +64,8 @@ Rscript scripts/05_publish.R
 Rscript scripts/06_settle.R                           # resolve win/pnl ad hoc (auto_place.R also settles each cycle)
 Rscript scripts/07_healthcheck.R                      # read-only health snapshot -> data/health/status.json (or /pipeline-doctor)
 Rscript scripts/0N_discover.R                         # discover Lengjan leagues we model but don't yet scrape
+Rscript scripts/0Nc_compare_odds_sources.R --competition 296 --country england  # LOCAL ONLY: DOM vs JSON API odds, in memory, writes nothing (docs/runbooks/odds-source-cutover.md; run with `ml run --`)
+Rscript scripts/0Nc_audit_team_names.R                # LOCAL ONLY: Lengjan participant names vs team_names
 Rscript scripts/hbbb_v2_scorecard.R                   # LOCAL ONLY, monthly: handball/basketball v2 against production + Lengjan -> docs/reports/<date>-hb-bb-v2-scorecard/ (run it with `ml run --`)
 
 # Historical replay (re-fit + re-publish for any past date; football iceland only)
