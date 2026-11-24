@@ -105,15 +105,24 @@ nt_euro2028_facts <- function(facts_dir = here::here("data", "nt", "euro2028")) 
   num[!grepl("\\bqf\\s*[0-9]+", low, perl = TRUE)] <- NA_integer_
   out <- rep(NA_character_, length(x))
   for (i in which(!is.na(kind))) {
-    k <- num[i]
-    if (is.na(k) && grepl("/", x[i])) {
-      rest <- gsub("(?i)\\b(winners?|defeated|team|losers?)\\b", "", x[i], perl = TRUE)
+    k_pair <- NA_integer_
+    if (grepl("/", x[i])) {
+      rest <- gsub("(?i)\\b(qf\\s*[0-9]+|winners?|defeated|team|losers?)\\b|[()]", "", x[i], perl = TRUE)
       pair <- sort(nt_uefa_to_martj42(strsplit(rest, "/", fixed = TRUE)[[1]]))
       hit <- which(vapply(seq_len(nrow(qf)), function(j) {
         identical(sort(c(qf$first_leg_home[j], qf$second_leg_home[j])), pair)
       }, logical(1)))
-      if (length(hit) == 1L) k <- qf$qf[hit]
+      if (length(hit) == 1L) k_pair <- qf$qf[hit]
     }
+    # WHY: our QF numbers need not be UEFA's; a pairing written next to a
+    # number shows which tie is meant, so a disagreement is refused.
+    if (!is.na(num[i]) && !is.na(k_pair) && num[i] != k_pair) {
+      cli::cli_abort(c(
+        "{.val {x[i]}}: QF{num[i]} is {qf$first_leg_home[qf$qf == num[i]]}/{qf$second_leg_home[qf$qf == num[i]]} in {.file quarter_finals.csv}, not the pairing named.",
+        "i" = "Write placeholders by pairing (e.g. {.val Spain/France winner}); UEFA's QF numbers may differ from ours."
+      ))
+    }
+    k <- if (!is.na(k_pair)) k_pair else num[i]
     if (!is.na(k) && k %in% qf$qf) out[i] <- paste0("QF", k, " ", kind[i])
   }
   out
@@ -417,9 +426,14 @@ nt_simulate_euro_playoffs <- function(qual, fit, seeding, hosts,
   ru_sorted <- matrix(ru[cbind(rep(sims, n_groups), c(ord))], n, n_groups)
   ru_out <- ru_sorted[, seq.int(n_best_runners_up + 1L, n_groups), drop = FALSE]
   ov <- qual$overall
+  # Article 23 among the hosts: group position, then the counted statistics;
+  # two runners-up level on all of them keep their order in the runners-up
+  # ranking, so the direct-place cut and the reserved places agree.
+  ru_order <- vapply(hosts, function(h) -rowSums((ru == h) * rr), numeric(n))
   host_rank <- .nt_lexi_rank(c(
     list(-pos[, hosts, drop = FALSE]),
-    lapply(ov[c("points", "gd", "gf", "away_gf", "won", "away_won", "tiebreak")], function(m) m[, hosts, drop = FALSE])
+    lapply(ov[c("points", "gd", "gf", "away_gf", "won", "away_won")], function(m) m[, hosts, drop = FALSE]),
+    list(matrix(ru_order, n), ov$tiebreak[, hosts, drop = FALSE])
   ))
 
   host_place <- playoff <- via_ru <- matrix(FALSE, n, n_teams, dimnames = list(NULL, teams))

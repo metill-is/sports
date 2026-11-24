@@ -50,7 +50,7 @@
    ```
 
    - Groups A-F have four teams (pots 1-4), G-L five (pots 1-5). The `pot` column is optional; when present it is checked against the seeding and catches a team typed in the wrong row.
-   - The eight Nations League quarter-finalists are drawn as placeholders. Write them by pairing (`Spain/France winner`, `Norway/England defeated team`, in either order; `loser` also works) or by number (`QF1 winner`, numbered as in `data/nt/euro2028/quarter_finals.csv`: 1 Spain/France, 2 Norway/England, 3 Netherlands/Portugal, 4 Belgium/Germany). UEFA's own numbering may differ, so the pairing form is safer.
+   - The eight Nations League quarter-finalists are drawn as placeholders. Write them by pairing (`Spain/France winner`, `Norway/England defeated team`, in either order; `loser` also works) or by number (`QF1 winner`, numbered as in `data/nt/euro2028/quarter_finals.csv`: 1 Spain/France, 2 Norway/England, 3 Netherlands/Portugal, 4 Belgium/Germany). UEFA's own numbering may differ, so the pairing form is safer; a label giving both (`QF1 winners (Netherlands/Portugal)`) is refused when the two disagree.
    - UEFA spellings Türkiye, Czechia and Bosnia-Herzegovina map to the results file's names; the results file's own spelling also works.
 
 2. **Run the odds:**
@@ -60,7 +60,7 @@
    ```
 
    - An error naming teams means a typing error: a team missing, repeated, unknown or in the wrong pot, or a quarter-finalist typed as itself instead of as a placeholder.
-   - A **warning** that the groups break draw conditions means the typed groups cannot be UEFA's draw (a team in the wrong group, most likely). Check the named groups against UEFA's page. If the file is right, UEFA changed a condition: update `data/nt/euro2028/draw_conditions.csv`.
+   - A **warning** that the groups break draw conditions means the typed groups cannot be UEFA's draw (a team in the wrong group, most likely). Check the named groups against UEFA's page. If the file is right, UEFA changed a condition: update `data/nt/euro2028/draw_conditions.csv`. One exception: a winter warning that counts a Norway/England placeholder, or a host warning that counts an England placeholder, may be UEFA reading those conditions differently from us (the procedure does not say how they apply to placeholders); the odds are still computed, so note it and carry on.
 
 3. **Read `odds.md`** in the output folder. It starts with Iceland, then has one table per group, the quarter-finalists, the reserved host places and play-off format, and the **Article 15 d) comparison**: how often the "repeat" (published explanations) and "once" (the regulation's literal wording) readings change a group table, the direct qualifiers or the play-off field. Which reading to use is the owner's decision; the default is "repeat". `teams.csv`, `teams_once.csv` and `slots.csv` hold the numbers; `odds.rds` holds them for later steps.
 

@@ -479,7 +479,7 @@ test_that("every team's overall statistics discard results against fifth place, 
   expect_gt(checked, 10)
 })
 
-test_that("a simulation without placeholders is unchanged by the slot bookkeeping", {
+test_that("without placeholders the team and slot views coincide", {
   groups <- list(A = c("W", "X", "Y", "Z"), B = c("P", "Q", "R", "S", "U"))
   fit <- nt_test_fit(c(W = 1, X = 0, Y = 0, Z = 0, P = 0.5, Q = 0, R = 0, S = 0, U = -1), mu = 0.2)
   s <- nt_simulate_qualifying(fit, groups, n_sims = 50L, n_best_runners_up = 1L, seed = 1L)
@@ -497,4 +497,21 @@ test_that("the Euro 2024 fixture flags venues as the simulator does: 1 at home, 
   neutral <- table(m$home_team[m$venue == 0L])
   expect_equal(sum(neutral), 16L)
   expect_equal(as.vector(neutral[c("Belarus", "Ukraine", "Israel", "Gibraltar", "San Marino")]), c(5L, 4L, 2L, 4L, 1L))
+})
+
+test_that("a seeded run reproduces the group stage of the simulator before placeholders", {
+  # Numbers from origin/main's nt_simulate_qualifying() (at 21bf1653b),
+  # loaded into a separate environment, 2026-11-24.
+  groups <- list(A = c("W", "X", "Y", "Z"), B = c("P", "Q", "R", "S", "U"), C = c("C1", "C2", "C3", "C4"))
+  fit <- nt_test_fit(
+    c(W = 1, X = 0, Y = 0.2, Z = 0, P = 0.5, Q = 0, R = 0.1, S = 0, U = -1, C1 = 0.3, C2 = 0, C3 = -0.2, C4 = 0.1),
+    n_draws = 7L, mu = 0.2, home_for = 0.2, home_against = -0.1
+  )
+  fx <- nt_qualifying_fixtures(groups)
+  fx$venue[fx$home_team == "U"] <- 0L
+  s <- nt_simulate_qualifying(fit, groups, fx, n_sims = 300L, n_best_runners_up = 2L, seed = 11L)
+  expect_equal(unname(colSums(s$positions == 1L)), c(295, 0, 4, 1, 246, 13, 29, 12, 0, 190, 36, 11, 63))
+  expect_equal(unname(colSums(s$runner_up_rank)), c(700, 576, 524))
+  ru <- table(factor(s$runner_up, levels = unlist(groups)))
+  expect_equal(as.vector(ru), c(5, 59, 169, 67, 41, 74, 120, 65, 0, 70, 91, 33, 106))
 })

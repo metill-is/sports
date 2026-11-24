@@ -294,9 +294,13 @@ test_that("Northern Ireland may share a path with a host only when nothing else 
   withr::local_seed(3)
   part <- c("Scotland", "Ukraine", "Wales", "Hungary", "Northern Ireland", "Albania", "Iceland", "Slovakia")
   # Two paths, two hosts in different paths: Northern Ireland must join one of them.
-  b <- .nt_euro_playoff_draw(part, "paths", hosts = c("Scotland", "Wales"), northern_ireland = "Northern Ireland")
-  expect_identical(dim(b), c(2L, 4L))
-  expect_false(any(apply(b, 1, function(p) all(c("Scotland", "Wales") %in% p))))
+  for (i in 1:20) {
+    b <- .nt_euro_playoff_draw(part, "paths", hosts = c("Scotland", "Wales"), northern_ireland = "Northern Ireland")
+    expect_identical(dim(b), c(2L, 4L))
+    expect_false(any(apply(b, 1, function(p) all(c("Scotland", "Wales") %in% p))))
+    ni_path <- b[which(apply(b, 1, function(p) "Northern Ireland" %in% p)), ]
+    expect_true(any(c("Scotland", "Wales") %in% ni_path))
+  }
 })
 
 test_that("simulated play-offs fill exactly 24 places, seeded sides hosting", {
@@ -456,4 +460,89 @@ test_that("slots carry the total qualification odds of whoever fills them", {
     }
   }
   expect_equal(sum(sl$p_qualify), 24)
+})
+
+test_that("a placeholder's number and pairing must agree", {
+  g <- utils::read.csv(e28_groups_csv(), stringsAsFactors = FALSE, encoding = "UTF-8")
+  write_g <- function(x) {
+    path <- withr::local_tempfile(fileext = ".csv", .local_envir = parent.frame())
+    utils::write.csv(x, path, row.names = FALSE, fileEncoding = "UTF-8")
+    path
+  }
+  agree <- g
+  agree$team[agree$team == "QF3 winner"] <- "QF3 winners (Netherlands/Portugal)"
+  expect_identical(nt_read_euro2028_draw(write_g(agree), facts_dir = e28_facts_dir())$groups$C[1], "QF3 winner")
+  clash <- g
+  clash$team[clash$team == "QF1 winner"] <- "QF1 winners (Netherlands/Portugal)"
+  expect_error(nt_read_euro2028_draw(write_g(clash), facts_dir = e28_facts_dir()), "Netherlands/Portugal")
+})
+
+test_that("the winner slot carries the winner's odds and the defeated slot the defeated team's", {
+  d <- nt_read_euro2028_draw(e28_groups_csv(), facts_dir = e28_facts_dir())
+  fit <- e28_fit(c(France = 5), n_draws = 3L, mu = 0.1)
+  out <- nt_simulate_euro2028(fit, d, n_sims = 150L, seed = 14L)
+  tm <- stats::setNames(out$teams$p_qualify, out$teams$team)
+  sl <- stats::setNames(out$slots$p_qualify, out$slots$slot)
+  expect_equal(sl[["QF1 winner"]], tm[["France"]])
+  expect_equal(sl[["QF1 defeated"]], tm[["Spain"]])
+  expect_false(isTRUE(all.equal(tm[["France"]], tm[["Spain"]])))
+})
+
+# Away sides cannot score, so each leg goes to the home side or ends 0-0; the
+# aggregate is symmetric, and only extra time, played at the second leg's
+# home, favours the side at home in the second leg: it wins with probability
+# 0.5 + P(level) x (P(it scores in extra time) - 1/2 x P(it scores)) = 0.544.
+e28_second_leg_edge <- function() {
+  lev <- sum(stats::dpois(0:30, 1)^2)
+  et <- 1 - exp(-1 / 3)
+  0.5 + lev * (et + (1 - et) * 0.5 - 0.5)
+}
+
+test_that("quarter-finals play the second leg, and extra time, at the second-named side's home", {
+  d <- nt_read_euro2028_draw(e28_groups_csv(), facts_dir = e28_facts_dir())
+  fit <- e28_fit(n_draws = 2L, mu = 0, home_for = 0, home_against = -20)
+  s <- nt_simulate_qualifying(fit, d$groups, d$fixtures, n_sims = 1500L, quarter_finals = d$quarter_finals, seed = 15L)
+  share <- mean(sweep(s$qf_winner, 2, d$quarter_finals$second_leg_home, `==`))
+  expect_equal(e28_second_leg_edge(), 0.5436, tolerance = 1e-3)
+  expect_gt(share, 0.515)
+})
+
+test_that("in home-and-away play-off ties the seeded side plays the second leg at home", {
+  d <- nt_read_euro2028_draw(e28_groups_csv(), facts_dir = e28_facts_dir())
+  hosts <- stats::setNames(rep(4, 4), d$hosts)
+  fit <- e28_fit(hosts, n_draws = 2L, mu = 0, home_for = 0, home_against = -20)
+  out <- nt_simulate_euro2028(fit, d, n_sims = 600L, seed = 16L)
+  expect_true(all(out$n_host_places == 0L))
+  seeded_won <- sum(out$playoff_winner & !is.na(out$playoff_seed) & out$playoff_seed <= 4L)
+  expect_gt(seeded_won / (4 * 600), 0.51)
+})
+
+test_that("hosts out of the direct places are ranked as the runners-up ranking ranks them", {
+  s <- e28_seeding()
+  teams <- s$team
+  fit <- e28_fit(n_draws = 2L)
+  winners <- c("England", "Portugal", "France", "Germany", "Spain", "Belgium", "Netherlands", "Norway",
+    "Greece", "Italy", "Denmark", "Croatia")
+  runners <- c("Turkey", "Czech Republic", "Switzerland", "Sweden", "Austria", "Northern Ireland",
+    "Slovenia", "Hungary", "Republic of Ireland", "Wales", "Scotland", "Serbia")
+  pos <- matrix(3L, 1, 54, dimnames = list(NULL, teams))
+  pos[1, winners] <- 1L
+  pos[1, runners] <- 2L
+  zero <- matrix(0, 1, 54, dimnames = list(NULL, teams))
+  tb <- zero
+  tb[1, ] <- seq(0.01, 0.54, length.out = 54)
+  tb[1, c("Scotland", "Wales", "Republic of Ireland")] <- c(0.9, 0.6, 0.3)
+  qual <- list(
+    positions = pos,
+    runner_up = matrix(runners, 1, dimnames = list(NULL, LETTERS[1:12])),
+    runner_up_rank = matrix(1:12, 1, dimnames = list(NULL, LETTERS[1:12])),
+    overall = list(points = zero, gd = zero, gf = zero, away_gf = zero, won = zero, away_won = zero, tiebreak = tb),
+    draw = 1L, n_sims = 1L
+  )
+  po <- nt_simulate_euro_playoffs(qual, fit, s, c("England", "Republic of Ireland", "Scotland", "Wales"), seed = 1L)
+  # Level on every statistic, Ireland (9th) and Wales (10th) rank above
+  # Scotland (11th) among the runners-up, whatever the stand-in tie-break says.
+  expect_true(all(po$host_place[1, c("Republic of Ireland", "Wales")]))
+  expect_false(po$host_place[1, "Scotland"])
+  expect_true(po$playoff[1, "Scotland"])
 })
