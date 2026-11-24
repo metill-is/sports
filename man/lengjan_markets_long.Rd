@@ -19,5 +19,7 @@ Tibble: event_id, market_id, market_version, market_code,
 The lossless counterpart of [lengjan_markets_to_odds()]: one row per
 selection that is open and priced above 1, whatever the market. `line` is
 `special_value` as a number (a total's 2.5, a handicap's signed -1), NA for
-a market without one; `special_value` keeps the raw string.
+a market without one; `special_value` keeps the raw string. A market listed
+in two groups gives one set of rows (the first): event, market id and
+selection are the odds_markets key within a scrape.
 }

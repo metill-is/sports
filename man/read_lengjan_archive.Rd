@@ -29,7 +29,8 @@ listed event's embedded main market. With `table = "odds"` that gives
 moneyline rows where the embedded market is an open, pre-match primary
 `3WAY` ([parse_lengjan_program_markets()]); with `table = "odds_markets"`
 every embedded market's open, priced selections, in-play ones included
-and flagged by `is_live`.}
+and flagged by `is_live`, with `market_group` `"program"` (the program
+carries no group).}
 
 \item{leagues}{League definitions, used only to fill `sex`.}
 

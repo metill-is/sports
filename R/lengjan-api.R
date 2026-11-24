@@ -256,10 +256,16 @@ parse_lengjan_markets <- function(groups) {
 }
 
 #' One scalar as a string; NA for a missing, empty, list or longer value.
+#'
+#' A double is written in full: as.character() gives "3e+09" for a round id
+#' or version that arrives as a JSON number.
 #' @noRd
 .scalar_chr <- function(x) {
   if (is.null(x) || length(x) != 1L || is.list(x)) {
     return(NA_character_)
+  }
+  if (is.double(x) && !is.na(x)) {
+    return(format(x, scientific = FALSE, trim = TRUE, digits = 15))
   }
   as.character(x)
 }
@@ -335,7 +341,9 @@ lengjan_markets_to_odds <- function(markets) {
 #' The lossless counterpart of [lengjan_markets_to_odds()]: one row per
 #' selection that is open and priced above 1, whatever the market. `line` is
 #' `special_value` as a number (a total's 2.5, a handicap's signed -1), NA for
-#' a market without one; `special_value` keeps the raw string.
+#' a market without one; `special_value` keeps the raw string. A market listed
+#' in two groups gives one set of rows (the first): event, market id and
+#' selection are the odds_markets key within a scrape.
 #'
 #' @param markets Output of [parse_lengjan_markets()].
 #' @return Tibble: event_id, market_id, market_version, market_code,
@@ -344,6 +352,9 @@ lengjan_markets_to_odds <- function(markets) {
 #' @export
 lengjan_markets_long <- function(markets) {
   m <- .lengjan_open_priced(markets)
+  # WHY: upsert_table() de-duplicates only against stored rows, so a duplicate
+  # within the first write of a day would be stored and dropped by the next.
+  m <- m[!duplicated(m[, c("event_id", "market_id", "selection")]), , drop = FALSE]
   tibble::tibble(
     event_id = m$event_id,
     market_id = m$market_id,
@@ -511,7 +522,8 @@ empty_lengjan_api_market_rows <- function() {
 #' decide maps ([lengjan_api_odds_rows()]), and `odds_markets`, every open,
 #' priced selection of every market ([lengjan_api_market_rows()]). Both row
 #' sets are built before either is written, so an unparseable kickoff writes
-#' neither.
+#' neither. A failed `odds_markets` write raises after `odds` is written: the
+#' league fails loudly, and the scrape workflow still commits the odds.
 #'
 #' @param leagues Named list of league definitions (each with `lengjan`).
 #' @param scraped_at Single timestamp for the whole run.

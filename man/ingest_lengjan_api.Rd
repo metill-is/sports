@@ -36,5 +36,6 @@ Writes two tables from the same responses: `odds`, the three markets
 decide maps ([lengjan_api_odds_rows()]), and `odds_markets`, every open,
 priced selection of every market ([lengjan_api_market_rows()]). Both row
 sets are built before either is written, so an unparseable kickoff writes
-neither.
+neither. A failed `odds_markets` write raises after `odds` is written: the
+league fails loudly, and the scrape workflow still commits the odds.
 }

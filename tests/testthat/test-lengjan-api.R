@@ -167,6 +167,7 @@ test_that("lengjan_markets_long keeps every open, priced selection of every mark
   expect_equal(codes("4412294"), c(1L, 18L, 47L, 234L))
   expect_length(codes("4601670"), 28L)
   expect_true(all(is.finite(long$odds) & long$odds > 1))
+  expect_equal(anyDuplicated(long[, c("event_id", "market_id", "selection")]), 0L)
   expect_named(long, c(
     "event_id", "market_id", "market_version", "market_code", "market_type",
     "market_group", "market_name", "special_value", "line", "selection",
@@ -283,4 +284,28 @@ test_that("lengjan_program_once fetches once and does not keep a failed fetch", 
   expect_equal(program(), list(events = list(), liveSoon = list()))
   program()
   expect_equal(calls, 2L)
+})
+
+test_that("a market listed in two groups gives one set of long rows", {
+  ou <- list(
+    id = "21", version = "1", eventId = "1", externalId = "18", typeName = "OU",
+    status = "open", specialValue = "2.5",
+    selections = list(list(name = "Yfir", odds = 190), list(name = "Undir", odds = 185))
+  )
+  groups <- list(list(name = "OU_FT", markets = list(ou)), list(name = "single-21", markets = list(ou)))
+  expect_equal(nrow(parse_lengjan_markets(groups)), 4L)
+  long <- lengjan_markets_long(parse_lengjan_markets(groups))
+  expect_equal(long$selection, c("Yfir", "Undir"))
+  expect_equal(unique(long$market_group), "OU_FT")
+})
+
+test_that("ids and versions that arrive as JSON numbers are written in full", {
+  expect_equal(.scalar_chr(3e9), "3000000000")
+  expect_equal(.scalar_chr(1e5), "100000")
+  expect_equal(.scalar_chr(13904004L), "13904004")
+  expect_equal(.scalar_chr(2.5), "2.5")
+  expect_equal(.scalar_chr("1535685747"), "1535685747")
+  expect_true(is.na(.scalar_chr(NA_real_)))
+  expect_true(is.na(.scalar_chr(NULL)))
+  expect_true(is.na(.scalar_chr(list("a"))))
 })
