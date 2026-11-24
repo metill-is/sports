@@ -479,12 +479,12 @@ nt_simulate_euro_playoffs <- function(qual, fit, seeding, hosts,
   list(
     teams = tibble::tibble(
       team = teams,
-      p_host_place = colMeans(host_place),
-      p_playoff = colMeans(playoff),
-      p_playoff_runner_up = colMeans(via_ru),
-      p_playoff_nations_league = colMeans(playoff & !via_ru),
-      p_qualify_playoff = colMeans(playoff_winner),
-      p_qualify = colMeans(qualified)
+      p_host_place = unname(colMeans(host_place)),
+      p_playoff = unname(colMeans(playoff)),
+      p_playoff_runner_up = unname(colMeans(via_ru)),
+      p_playoff_nations_league = unname(colMeans(playoff & !via_ru)),
+      p_qualify_playoff = unname(colMeans(playoff_winner)),
+      p_qualify = unname(colMeans(qualified))
     ),
     qualified = qualified, host_place = host_place, playoff = playoff,
     playoff_winner = playoff_winner, playoff_seed = playoff_seed,
@@ -508,7 +508,9 @@ nt_simulate_euro_playoffs <- function(qual, fit, seeding, hosts,
 #'   `p_runner_up_direct`, `p_qualify_direct`, `p_host_place`, `p_playoff`,
 #'   `p_playoff_runner_up`, `p_playoff_nations_league`, `p_qualify_playoff`,
 #'   `p_qualify`, `exp_points`, `p_pos1` ... `p_pos5`), `slots` (per group
-#'   slot, from [nt_simulate_qualifying()]), `qualifying` (its full output),
+#'   slot, from [nt_simulate_qualifying()], plus `p_host_place`, `p_playoff`
+#'   and `p_qualify` of whichever team fills the slot), `qualifying` (its full
+#'   output),
 #'   and the per-simulation matrices of [nt_simulate_euro_playoffs()].
 #' @export
 nt_simulate_euro2028 <- function(fit, draw, n_sims = 10000L,
@@ -533,7 +535,25 @@ nt_simulate_euro2028 <- function(fit, draw, n_sims = 10000L,
     p_qualify_playoff = pt$p_qualify_playoff, p_qualify = pt$p_qualify,
     exp_points = qt$exp_points, qt[, pos_cols]
   )
-  c(list(teams = teams, slots = q$slots, qualifying = q), po[setdiff(names(po), "teams")])
+  # Per slot: the team filling it in each simulation.
+  slots <- q$slots$slot
+  n <- q$n_sims
+  fill <- matrix(match(slots, qt$team), n, length(slots), byrow = TRUE)
+  qf <- draw$quarter_finals
+  for (i in seq_len(ncol(q$qf_winner %||% matrix(nrow = 0, ncol = 0)))) {
+    k <- match(colnames(q$qf_winner)[i], paste0("QF", qf$qf))
+    w <- q$qf_winner[, i]
+    other <- ifelse(w == qf$first_leg_home[k], qf$second_leg_home[k], qf$first_leg_home[k])
+    fill[, match(qf$winner_slot[k], slots)] <- match(w, qt$team)
+    fill[, match(qf$defeated_slot[k], slots)] <- match(other, qt$team)
+  }
+  at <- cbind(rep(seq_len(n), length(slots)), c(fill))
+  slot_mean <- function(m) colMeans(matrix(m[, qt$team][at], n, length(slots)))
+  sl <- q$slots
+  sl$p_host_place <- unname(slot_mean(po$host_place))
+  sl$p_playoff <- unname(slot_mean(po$playoff))
+  sl$p_qualify <- unname(slot_mean(po$qualified))
+  c(list(teams = teams, slots = sl, qualifying = q), po[setdiff(names(po), "teams")])
 }
 
 #' Compare the two readings of Article 15 d), simulation by simulation.

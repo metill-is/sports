@@ -31,7 +31,9 @@ List: `teams` (tibble per team: `team`, `group`, `p_winner`,
   `p_runner_up_direct`, `p_qualify_direct`, `p_host_place`, `p_playoff`,
   `p_playoff_runner_up`, `p_playoff_nations_league`, `p_qualify_playoff`,
   `p_qualify`, `exp_points`, `p_pos1` ... `p_pos5`), `slots` (per group
-  slot, from [nt_simulate_qualifying()]), `qualifying` (its full output),
+  slot, from [nt_simulate_qualifying()], plus `p_host_place`, `p_playoff`
+  and `p_qualify` of whichever team fills the slot), `qualifying` (its full
+  output),
   and the per-simulation matrices of [nt_simulate_euro_playoffs()].
 }
 \description{

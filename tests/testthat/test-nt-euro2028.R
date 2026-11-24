@@ -435,3 +435,25 @@ test_that("the two readings of Article 15 d) are compared simulation by simulati
   expect_equal(same$direct, 0)
   expect_equal(same$field, 0)
 })
+
+test_that("slots carry the total qualification odds of whoever fills them", {
+  d <- nt_read_euro2028_draw(e28_groups_csv(), facts_dir = e28_facts_dir())
+  withr::local_seed(12)
+  fit <- e28_fit(stats::setNames(stats::rnorm(54, 0, 0.4), d$teams), n_draws = 4L, mu = 0.1)
+  out <- nt_simulate_euro2028(fit, d, n_sims = 200L, seed = 13L)
+  sl <- out$slots
+  tm <- out$teams
+  fixed <- intersect(sl$slot, tm$team)
+  for (col in c("p_host_place", "p_playoff", "p_qualify")) {
+    expect_equal(sl[[col]][match(fixed, sl$slot)], tm[[col]][match(fixed, tm$team)], info = col)
+    for (q in seq_len(nrow(d$quarter_finals))) {
+      qf <- d$quarter_finals[q, ]
+      expect_equal(
+        sum(sl[[col]][sl$slot %in% c(qf$winner_slot, qf$defeated_slot)]),
+        sum(tm[[col]][tm$team %in% c(qf$first_leg_home, qf$second_leg_home)]),
+        info = paste(col, qf$winner_slot)
+      )
+    }
+  }
+  expect_equal(sum(sl$p_qualify), 24)
+})
