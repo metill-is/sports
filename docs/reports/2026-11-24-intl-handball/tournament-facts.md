@@ -2,10 +2,7 @@
 
 Researched 2026-11-24 from official sources (EHF and IHF sites, regulations, official schedule PDFs). Wikipedia used only as a cross-check, and it gets one venue fact wrong (see Discrepancies).
 
-Files in `/Users/brynjolfurjonsson/.claude-reviews/intl-handball/`:
-
-- `euro2026w_groups.csv`, `euro2026w_schedule.csv` (65 matches), `wc2027m_groups.csv`, `wc2027m_schedule.csv` (112 matches)
-- `sources/`: local copies of every regulation and schedule PDF cited below, plus `make_csvs.py` / `parse_ihf.py`. Re-generate with `python3 -I sources/parse_ihf.py <dir of ihf.info match-day HTML> > rows.txt && python3 -I sources/make_csvs.py <out dir> rows.txt`. The script asserts that every preliminary pairing is inside its group, that no main-round pairing is between two teams from the same preliminary group, that the WC has 112 matches, and that the WC group positions reproduce the IHF day template.
+The groups and schedules are in this repository: `config/intl-handball/euro2026w/` and `config/intl-handball/wc2027m/` (`groups.csv`, `schedule.csv`; 65 and 112 matches). They were built from the EHF match data and the IHF match pages; the build checked that every preliminary pairing is inside its group, that no main-round pairing is between two teams of the same preliminary group, that the WC has 112 matches and that the WC group positions reproduce the IHF day template.
 
 Page numbers for regulations are the **printed** numbers, which sit in the page footer. I checked several pages of each PDF: in both documents the PDF page number is the printed number + 1.
 
@@ -37,8 +34,8 @@ Time zones: Oradea and Cluj-Napoca are EET (UTC+2), Antalya is TRT (UTC+3), and 
 Main sources:
 
 - **EHF match API** behind https://ehfeuro.eurohandball.com/women/2026/matches/ : `https://ehfeuro.eurohandball.com/umbraco/api/competitionmatchesapi/GetInitMatches?contentId=117758&competitionId=geUe4-8vreQ-I8HeX-A38w`, paged with `GetMatches?...&matchId=<id>&futureMatches=true`. Read 2026-11-24. It returned 71 final-tournament records: 65 matches plus 6 "carried-over" placeholders (see 1.4).
-- **Schedule PDF v9** ("W EURO26 matchshedule_vertical_v9", created 2026-10-01), linked from the matches page: https://ehfeuro.eurohandball.com/media/kmnlbjo1/match-schedule-illustrated-version-vertical-womens-ehf-euro-2026.pdf . Local copy: `sources/ehf-euro-2026w-match-schedule-vertical-v9.pdf`. Its times are printed in **CET**.
-- **Regulations**: "EHF EURO Regulations – Women's EHF EURO 2026", 105 pp., PDF created 2026-05-05: https://www.eurohandball.com/media/ipvbgerz/womens-ehf-euro-2026-regulations.pdf (listed at https://www.eurohandball.com/en/what-we-do/regulations/national-team-competitions/). Local copy: `sources/womens-ehf-euro-2026-regulations.pdf`.
+- **Schedule PDF v9** ("W EURO26 matchshedule_vertical_v9", created 2026-10-01), linked from the matches page: https://ehfeuro.eurohandball.com/media/kmnlbjo1/match-schedule-illustrated-version-vertical-womens-ehf-euro-2026.pdf . Its times are printed in **CET**.
+- **Regulations**: "EHF EURO Regulations – Women's EHF EURO 2026", 105 pp., PDF created 2026-05-05: https://www.eurohandball.com/media/ipvbgerz/womens-ehf-euro-2026-regulations.pdf (listed at https://www.eurohandball.com/en/what-we-do/regulations/national-team-competitions/).
 
 ### 1.2 Groups and draw positions
 
@@ -158,10 +155,10 @@ All venues use CET (UTC+1).
 
 Main sources:
 
-- **Schedule PDF V1** (16 Jun 2026), linked from https://www.ihf.info/media-center/news/match-schedule-confirmed-2027-ihf-mens-world-championship (Dropbox link on that page). Local copy: `sources/wc2027-spielplan-v1-1-2026-06-16.pdf`.
-- **Schedule PDF V2** (15 Oct 2026, same fixtures and times as V1) from the organiser site: https://www.handball2027.com/sites/staging.handballworldcup2027.com/files/2026-10/Spielplan_Schedule_WM27.pdf (linked at https://www.handball2027.com/de/wm-spielplan-modus). Local copy: `sources/wc2027-spielplan-schedule-v2-2026-10-15.pdf`.
+- **Schedule PDF V1** (16 Jun 2026), linked from https://www.ihf.info/media-center/news/match-schedule-confirmed-2027-ihf-mens-world-championship (Dropbox link on that page).
+- **Schedule PDF V2** (15 Oct 2026, same fixtures and times as V1) from the organiser site: https://www.handball2027.com/sites/staging.handballworldcup2027.com/files/2026-10/Spielplan_Schedule_WM27.pdf (linked at https://www.handball2027.com/de/wm-spielplan-modus).
 - **ihf.info match pages** (pairings, home/away, venues, IHF match ids; no times entered, all "00:00"): https://www.ihf.info/competitions/men/308/30th-ihf-mens-handball-world-championship-2027-germany/263667/matches/2027-01-13 (and the other dates).
-- **Regulations:** "Regulations for IHF Competitions (Indoor Handball)", edition 21 August 2024, the version linked on https://www.ihf.info/regulations-documents on 2026-11-24: https://www.ihf.info/sites/default/files/2024-12/Regulations%20for%20IHF%20Competitions_Indoor%20Handball_E.pdf . Chapter II covers Men's and Women's World Championships. Local copy: `sources/ihf-regulations-for-competitions-indoor-2024-08-21.pdf`. I found no 2027-specific tournament manual or regulations online.
+- **Regulations:** "Regulations for IHF Competitions (Indoor Handball)", edition 21 August 2024, the version linked on https://www.ihf.info/regulations-documents on 2026-11-24: https://www.ihf.info/sites/default/files/2024-12/Regulations%20for%20IHF%20Competitions_Indoor%20Handball_E.pdf . Chapter II covers Men's and Women's World Championships. I found no 2027-specific tournament manual or regulations online.
 
 ### 2.2 Groups and draw positions
 
