@@ -36,7 +36,13 @@ List: `rows` (tibble: sport, country, scraped_at, match_date,
   paired match link: league, competition_id, position, event_id, href,
   match_date, home_team, away_team, detail = "ok" / "failed" /
   "not_visited", n_rows) and `pages` (one row per competition page:
-  league, competition_id, n_links, n_matches).
+  league, competition_id, n_containers, n_links, n_matches).
+
+A competition page without match containers is a quiet 0 rows (no
+listing). Match containers on at least one page and no row parsed from
+any of them is a classed `lengjan_parse_error`: a layout or selector change
+must fail the scrape loudly. It is not a `lengjan_fetch_error`, so
+`ingest_one_lengjan()` does not soft-fail it.
 }
 \description{
 The Chromote DOM scraper without the write: for each competition, the

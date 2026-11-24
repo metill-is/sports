@@ -269,7 +269,13 @@ parse_lengjan_dates <- function(date_strings) {
 #'   paired match link: league, competition_id, position, event_id, href,
 #'   match_date, home_team, away_team, detail = "ok" / "failed" /
 #'   "not_visited", n_rows) and `pages` (one row per competition page:
-#'   league, competition_id, n_links, n_matches).
+#'   league, competition_id, n_containers, n_links, n_matches).
+#'
+#' A competition page without match containers is a quiet 0 rows (no
+#' listing). Match containers on at least one page and no row parsed from
+#' any of them is a classed `lengjan_parse_error`: a layout or selector change
+#' must fail the scrape loudly. It is not a `lengjan_fetch_error`, so
+#' `ingest_one_lengjan()` does not soft-fail it.
 #' @export
 scrape_lengjan_dom <- function(leagues, scraped_at = Sys.time(),
                                chromote_session = NULL, max_detail = Inf,
@@ -315,6 +321,9 @@ scrape_lengjan_dom <- function(leagues, scraped_at = Sys.time(),
       n_matches <- nrow(comp_rows) %/% 3L
       pages[[length(pages) + 1L]] <- tibble::tibble(
         league = key, competition_id = as.character(comp$id),
+        n_containers = length(
+          rvest::html_elements(html, .lengjan_selectors$match_container)
+        ),
         n_links = length(match_links), n_matches = n_matches
       )
       for (i in seq_along(match_links)) {
@@ -374,16 +383,32 @@ scrape_lengjan_dom <- function(leagues, scraped_at = Sys.time(),
 
   all_rows <- dplyr::bind_rows(c(list(empty_lengjan_dom_rows()), rows))
   all_rows$scraped_at <- rep(scraped_at, nrow(all_rows))
+  pages <- dplyr::bind_rows(c(list(tibble::tibble(
+    league = character(), competition_id = character(),
+    n_containers = integer(), n_links = integer(), n_matches = integer()
+  )), pages))
+  n_containers <- sum(pages$n_containers)
+  if (nrow(all_rows) == 0L && n_containers > 0L) {
+    stop(structure(
+      class = c("lengjan_parse_error", "error", "condition"),
+      list(
+        message = paste0(
+          "Lengjan DOM scrape: ", n_containers, " match container(s) on ",
+          sum(pages$n_containers > 0L), " competition page(s) but no row ",
+          "parsed (no team spans or fewer than 3 numeric odds). The page ",
+          "layout or the selectors have likely changed."
+        ),
+        call = NULL
+      )
+    ))
+  }
   list(
     rows = all_rows[, c(
       "sport", "country", "scraped_at", "match_date",
       "home_team", "away_team", "market", "outcome", "line", "odds"
     )],
     visits = dplyr::bind_rows(c(list(empty_lengjan_dom_visits()), visits)),
-    pages = dplyr::bind_rows(c(list(tibble::tibble(
-      league = character(), competition_id = character(),
-      n_links = integer(), n_matches = integer()
-    )), pages))
+    pages = pages
   )
 }
 

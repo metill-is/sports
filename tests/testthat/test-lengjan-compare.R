@@ -232,6 +232,69 @@ test_that("scrape_lengjan_dom records skipped and failed detail pages", {
   expect_equal(nrow(failed$rows), 3L)
 })
 
+.dom_page <- function(odds = c("2.10", "3.40", "3.05"), containers = TRUE) {
+  btns <- paste0(
+    '<button class="uazl1c1"><div class="h7cub57"><p>', odds, "</p></div></button>",
+    collapse = ""
+  )
+  body <- if (containers) {
+    paste0(
+      '<div class="lj1n6v0"><a class="lj1n6v1" href="/?sport=1&match=42"><p>10. apr.</p></a>',
+      '<div class="lj1n6v9"><span>KR</span><span>-</span><span>Valur</span></div>',
+      '<ol class="lj1n6vd">', btns, "</ol></div>"
+    )
+  } else {
+    "<div>Engir leikir</div>"
+  }
+  rvest::read_html(paste0("<html><body>", body, "</body></html>"))
+}
+
+test_that("match containers that parse to nothing raise lengjan_parse_error", {
+  # A layout or selector change leaves the containers but no numeric odds or
+  # team spans. main crashed there ("Column `sport` doesn't exist"), turning
+  # scrape-odds red; it must stay a loud failure, not a green 0-row scrape.
+  good <- function(session, url, expand_aria = character(0)) .dom_page()
+  ok <- suppressMessages(scrape_lengjan_dom(
+    .dom_league(),
+    chromote_session = "fake", fetch = good, delay_s = c(min = 0, max = 0)
+  ))
+  expect_equal(ok$rows$odds, c(2.10, 3.40, 3.05)) # the page itself is well formed
+
+  broken <- function(session, url, expand_aria = character(0)) {
+    .dom_page(odds = c("-", "-", "-"))
+  }
+  err <- expect_error(
+    suppressMessages(scrape_lengjan_dom(
+      .dom_league(),
+      chromote_session = "fake", fetch = broken, delay_s = c(min = 0, max = 0)
+    )),
+    class = "lengjan_parse_error"
+  )
+  expect_false(inherits(err, "lengjan_fetch_error")) # not soft-failed upstream
+  expect_match(conditionMessage(err), "1 match container")
+
+  testthat::local_mocked_bindings(.lengjan_fetch = broken)
+  expect_error(
+    suppressMessages(ingest_lengjan_odds(
+      .dom_league(),
+      root = withr::local_tempdir(), chromote_session = "fake"
+    )),
+    class = "lengjan_parse_error"
+  )
+})
+
+test_that("a competition page without match containers is still 0 rows, no error", {
+  empty <- function(session, url, expand_aria = character(0)) {
+    .dom_page(containers = FALSE)
+  }
+  out <- suppressMessages(scrape_lengjan_dom(
+    .dom_league(),
+    chromote_session = "fake", fetch = empty, delay_s = c(min = 0, max = 0)
+  ))
+  expect_equal(nrow(out$rows), 0L)
+  expect_equal(out$pages$n_containers, 0L)
+})
+
 test_that("ingest_lengjan_odds writes exactly the rows scrape_lengjan_dom returns", {
   root <- withr::local_tempdir()
   rows <- .cmp_row(home = "KR", away = "Valur", odds = 2.1)
