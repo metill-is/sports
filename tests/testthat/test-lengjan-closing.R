@@ -195,7 +195,9 @@ test_that("zero input rows give zero closing rows with the added columns", {
     home_score = 80L, away_score = 75L, division = "BD", round = 8L,
     game_id = "g1", home_score_reg = 70L, away_score_reg = 70L
   )
-  dplyr::bind_rows(base, tibble::tibble(...))
+  extra <- tibble::tibble(...)
+  for (col in setdiff(names(base), names(extra))) extra[[col]] <- rep(base[[col]], nrow(extra))
+  dplyr::bind_rows(base, extra)
 }
 
 test_that("closing rows join to results by canonical names, with regulation scores", {
@@ -239,6 +241,52 @@ test_that("two candidate results in the window leave the event unjoined as ambig
   got <- lengjan_closing_results(closing, res, leagues = .leagues())
   expect_equal(unique(got$result_join), "ambiguous")
   expect_true(all(is.na(got$home_score)))
+})
+
+test_that("a voided event relisted the next day does not take its result twice", {
+  rows <- dplyr::bind_rows(
+    .mrows("E1", "2026-11-22 12:00:00", "2026-11-22 19:15:00"),
+    .mrows("E2", "2026-11-23 19:00:00", "2026-11-23 19:15:00")
+  )
+  closing <- lengjan_closing_odds(rows, as_of = .as_of)
+  got <- lengjan_closing_results(closing, .results()[1, ], leagues = .leagues())
+  by_event <- got[!duplicated(got$event_id), ]
+  join <- stats::setNames(by_event$result_join, by_event$event_id)
+  expect_equal(join[["E2"]], "exact")
+  expect_equal(join[["E1"]], "duplicate")
+  expect_equal(by_event$home_score[by_event$event_id == "E2"], 80L)
+  expect_true(is.na(by_event$home_score[by_event$event_id == "E1"]))
+})
+
+test_that("two events matching one result, with no exact date to decide, both stay unjoined", {
+  rows <- dplyr::bind_rows(
+    .mrows("E1", "2026-11-22 12:00:00", "2026-11-22 19:15:00"),
+    .mrows("E2", "2026-11-24 12:00:00", "2026-11-24 19:15:00"),
+    .mrows("E3", "2026-11-23 12:00:00", "2026-11-23 19:15:00", home_team = "KR kv"),
+    .mrows("E4", "2026-11-23 13:00:00", "2026-11-23 19:15:00", home_team = "KR kv")
+  )
+  closing <- lengjan_closing_odds(rows, as_of = .as_of)
+  res <- .results(home_team = "KR", away_team = "Haukar", home_score = 70L, away_score = 60L)
+  got <- lengjan_closing_results(closing, res, leagues = .leagues())
+  by_event <- got[!duplicated(got$event_id), ]
+  expect_equal(stats::setNames(by_event$result_join, by_event$event_id)[c("E1", "E2", "E3", "E4")],
+    c(E1 = "duplicate", E2 = "duplicate", E3 = "duplicate", E4 = "duplicate"))
+  expect_true(all(is.na(by_event$home_score)))
+})
+
+test_that("a window match may take the one result in reach that no exact match claimed", {
+  rows <- dplyr::bind_rows(
+    .mrows("E1", "2026-11-23 12:00:00", "2026-11-23 19:15:00"),
+    .mrows("E2", "2026-11-24 12:00:00", "2026-11-24 19:15:00")
+  )
+  closing <- lengjan_closing_odds(rows, as_of = .as_of)
+  res <- .results(match_date = as.Date("2026-11-25"), home_team = "Valur", away_team = "Haukar",
+    home_score = 60L, away_score = 61L)
+  got <- lengjan_closing_results(closing, res, leagues = .leagues())
+  by_event <- got[!duplicated(got$event_id), ]
+  expect_equal(stats::setNames(by_event$result_join, by_event$event_id)[c("E1", "E2")],
+    c(E1 = "exact", E2 = "date_window"))
+  expect_equal(by_event$result_date[by_event$event_id == "E2"], as.Date("2026-11-25"))
 })
 
 test_that("an unwired competition and a missing result are named, not dropped", {
@@ -329,6 +377,18 @@ test_that("coverage counts closing captures within the threshold against listed 
   expect_equal(wide$status[wide$event_id == "E5"], "within")
 })
 
+test_that("an event seen only after its kick-off is not counted against coverage", {
+  as_of <- .utc("2026-11-24 00:00:00")
+  listings <- dplyr::bind_rows(
+    .listing("E1", "2026-11-23 19:05:00", "2026-11-23 19:15:00"),
+    .listing("E9", "2026-11-23 19:40:00", "2026-11-23 19:30:00", is_live = TRUE),
+    .listing("E9", "2026-11-23 19:50:00", "2026-11-23 19:30:00", is_live = TRUE)
+  )
+  closing <- lengjan_closing_odds(.mrows("E1", "2026-11-23 19:05:00", "2026-11-23 19:15:00"), as_of = as_of)
+  cov <- lengjan_closing_coverage(listings, closing, as_of = as_of)
+  expect_equal(cov$event_id, "E1")
+})
+
 test_that("coverage carries the result join when the closing rows have one", {
   as_of <- .utc("2026-11-24 00:00:00")
   closing <- lengjan_closing_odds(.mrows("E1", "2026-11-23 19:05:00", "2026-11-23 19:15:00"), as_of = as_of)
@@ -345,13 +405,29 @@ test_that("coverage carries the result join when the closing rows have one", {
 
 test_that("the closing table's output path is never under data/ or a trackable path", {
   repo <- here::here()
-  expect_error(closing_odds_out_dir(file.path(repo, "data", "closing"), repo = repo), "data/")
-  expect_error(closing_odds_out_dir(file.path(repo, "data"), repo = repo), "data/")
+  expect_error(closing_odds_out_dir(file.path(repo, "data", "closing"), repo = repo), "never goes under data/")
+  expect_error(closing_odds_out_dir(file.path(repo, "data"), repo = repo), "never goes under data/")
   expect_error(closing_odds_out_dir(file.path(repo, "docs", "closing"), repo = repo), "git-ignored")
   ok <- file.path(repo, "research", "results", "closing-odds")
   expect_equal(closing_odds_out_dir(ok, repo = repo), normalizePath(ok, mustWork = FALSE))
   outside <- withr::local_tempdir()
   expect_equal(closing_odds_out_dir(outside, repo = repo), normalizePath(outside))
+})
+
+test_that("a relative output path is resolved against the working directory before the checks", {
+  repo <- here::here()
+  withr::local_dir(repo)
+  expect_error(closing_odds_out_dir("data/facts/closing", repo = repo), "never goes under data/")
+  expect_error(closing_odds_out_dir("docs/closing", repo = repo), "git-ignored")
+  expect_error(closing_odds_out_dir("research/../data/closing", repo = repo), "never goes under data/")
+  expect_error(closing_odds_out_dir("no-such-dir/../data/closing", repo = repo), "never goes under data/")
+  withr::local_envvar(SPORTS_CLOSING_ODDS_DIR = "data/facts/closing")
+  expect_error(closing_odds_out_dir(repo = repo), "never goes under data/")
+  withr::local_dir(file.path(repo, "research"))
+  expect_error(closing_odds_out_dir("../data/x", repo = repo), "never goes under data/")
+  ok <- closing_odds_out_dir("results/closing-odds", repo = repo)
+  expect_true(endsWith(ok, "/research/results/closing-odds"))
+  expect_true(startsWith(ok, "/"))
 })
 
 test_that("the output path comes from the argument, then SPORTS_CLOSING_ODDS_DIR, then research/results", {

@@ -29,11 +29,12 @@ Tibble, one row per event, sorted by kick-off: `event_id`, `sport`,
   it, `result_join`.
 }
 \description{
-One row per event that was listed with at least one market and kicked off
-by `as_of`, with how close to kick-off its closing capture came. The
-listed events come from [lengjan_archive_events()] (every capture's
-program body), so an event that never got a market-detail capture still
-counts, as a miss.
+One row per event that was listed with at least one market before its
+kick-off (a listing's own) and kicked off by `as_of`, with how close to
+kick-off its closing capture came. An event seen only once in play, with
+no pre-match listing in the window, is not counted. The listed events come
+from [lengjan_archive_events()] (every capture's program body), so an
+event that never got a market-detail capture still counts, as a miss.
 }
 \examples{
 \dontrun{

@@ -112,8 +112,10 @@ lengjan_closing_odds <- function(rows, as_of) {
 #' matched on (sport, country, sex, match_date, home_team, away_team). An
 #' event with no exact match falls back to a result for the same pairing
 #' within `match_date_window_days` of the listed date (a rescheduled match),
-#' when exactly one such result exists. The join is per event; every closing
-#' row of the event gets its result.
+#' when exactly one such result exists that no exact match has claimed. A
+#' result is never joined to two events: one that two events reach equally
+#' (exact, or both through the window) goes to neither. The join is per
+#' event; every closing row of the event gets its result.
 #'
 #' The league is the one in `leagues` with the row's sport and country whose
 #' Lengjan competitions list the row's `competition_id`. A row with no `sex`
@@ -136,8 +138,9 @@ lengjan_closing_odds <- function(rows, as_of) {
 #'   `lengjan_away_team`, and the result in `result_date`, `home_score`,
 #'   `away_score`, `home_score_reg`, `away_score_reg` and `result_join`:
 #'   `"exact"`, `"date_window"`, `"ambiguous"` (more than one result in the
-#'   window), `"no_result"` or `"unwired"`. Unjoined events keep their rows
-#'   with NA scores.
+#'   window), `"duplicate"` (its result also matches another event: a listing
+#'   Lengjan voided and relisted, or one match listed twice), `"no_result"` or
+#'   `"unwired"`. Unjoined events keep their rows with NA scores.
 #' @examples
 #' \dontrun{
 #' joined <- lengjan_closing_results(closing, read_table("results"))
@@ -175,23 +178,43 @@ lengjan_closing_results <- function(closing, results, leagues = load_leagues(),
   for (col in scores) ev[[col]] <- rep(NA_integer_, nrow(ev))
   ev$result_join <- ifelse(wired, "no_result", "unwired")
 
+  exact <- near <- vector("list", nrow(ev))
   for (i in which(wired)) {
     pair <- results$sport == ev$sport[[i]] & results$country == ev$country[[i]] &
       results$sex == ev$sex[[i]] & tag_utf8(results$home_team) == tag_utf8(ev$home_team[[i]]) &
       tag_utf8(results$away_team) == tag_utf8(ev$away_team[[i]])
     pair <- pair & !is.na(pair)
     gap <- abs(as.integer(results$match_date - ev$match_date[[i]]))
-    exact <- which(pair & gap == 0L)
-    near <- which(pair & gap <= match_date_window_days)
-    hit <- if (length(exact) == 1L) exact else if (length(exact) == 0L && length(near) == 1L) near
-    if (length(hit) == 1L) {
-      ev$result_join[[i]] <- if (length(exact) == 1L) "exact" else "date_window"
-      ev$result_date[[i]] <- results$match_date[[hit]]
-      for (col in scores) ev[[col]][[i]] <- as.integer(results[[col]][[hit]])
-    } else if (length(near) > 1L) {
-      ev$result_join[[i]] <- "ambiguous"
+    exact[[i]] <- which(pair & gap == 0L)
+    near[[i]] <- which(pair & gap <= match_date_window_days)
+  }
+
+  hit <- rep(NA_integer_, nrow(ev))
+  how <- rep(NA_character_, nrow(ev))
+  one <- which(lengths(exact) == 1L)
+  hit[one] <- unlist(exact[one])
+  how[one] <- "exact"
+  ev$result_join[lengths(exact) > 1L] <- "ambiguous"
+  # WHY: exact matches claim their results first, so a voided listing
+  # relisted on another day cannot reach the same result through the window.
+  claimed <- hit[!is.na(hit)]
+  for (i in which(wired & lengths(exact) == 0L & lengths(near) > 0L)) {
+    free <- setdiff(near[[i]], claimed)
+    if (length(free) == 1L) {
+      hit[[i]] <- free
+      how[[i]] <- "date_window"
+    } else {
+      ev$result_join[[i]] <- if (length(free) > 1L) "ambiguous" else "duplicate"
     }
   }
+  twice <- !is.na(hit) & hit %in% hit[duplicated(hit)]
+  ev$result_join[twice] <- "duplicate"
+  hit[twice] <- NA_integer_
+
+  ok <- which(!is.na(hit))
+  ev$result_join[ok] <- how[ok]
+  ev$result_date[ok] <- results$match_date[hit[ok]]
+  for (col in scores) ev[[col]][ok] <- as.integer(results[[col]][hit[ok]])
 
   added <- c(
     "home_team", "away_team", "lengjan_home_team", "lengjan_away_team",
@@ -224,11 +247,12 @@ lengjan_closing_results <- function(closing, results, leagues = load_leagues(),
 
 #' How well the archive's captures cover each event's close.
 #'
-#' One row per event that was listed with at least one market and kicked off
-#' by `as_of`, with how close to kick-off its closing capture came. The
-#' listed events come from [lengjan_archive_events()] (every capture's
-#' program body), so an event that never got a market-detail capture still
-#' counts, as a miss.
+#' One row per event that was listed with at least one market before its
+#' kick-off (a listing's own) and kicked off by `as_of`, with how close to
+#' kick-off its closing capture came. An event seen only once in play, with
+#' no pre-match listing in the window, is not counted. The listed events come
+#' from [lengjan_archive_events()] (every capture's program body), so an
+#' event that never got a market-detail capture still counts, as a miss.
 #'
 #' @param listings Output of [lengjan_archive_events()].
 #' @param closing Output of [lengjan_closing_odds()] or
@@ -265,7 +289,10 @@ lengjan_closing_coverage <- function(listings, closing, as_of = NULL,
     competition_name = last$competition_name,
     home_team = last$home_team, away_team = last$away_team,
     kickoff_at = last$kickoff_at,
-    max_markets = agg(listings$market_count, function(x) max(c(0L, x), na.rm = TRUE)),
+    pre_match = agg(
+      listings$scraped_at <= listings$kickoff_at & listings$market_count > 0L,
+      function(x) any(x %in% TRUE)
+    ),
     live_flagged = agg(listings$is_live, function(x) any(x %in% TRUE))
   )
 
@@ -278,7 +305,7 @@ lengjan_closing_coverage <- function(listings, closing, as_of = NULL,
   ko <- cl$kickoff_at[i]
   ev$kickoff_at[!is.na(ko)] <- ko[!is.na(ko)]
 
-  ev <- ev[ev$max_markets > 0L & !is.na(ev$home_team) & !is.na(ev$away_team) &
+  ev <- ev[ev$pre_match & !is.na(ev$home_team) & !is.na(ev$away_team) &
     !is.na(ev$kickoff_at) & ev$kickoff_at <= as_of, , drop = FALSE]
   ev$status <- ifelse(is.na(ev$closing_at), "no_detail",
     ifelse(ev$minutes_before <= within_minutes, "within", "stale")
@@ -286,7 +313,7 @@ lengjan_closing_coverage <- function(listings, closing, as_of = NULL,
   if ("result_join" %in% names(closing)) {
     ev$result_join <- cl$result_join[match(ev$event_id, cl$event_id)]
   }
-  ev$max_markets <- NULL
+  ev$pre_match <- NULL
   ev[order(ev$kickoff_at, ev$event_id), , drop = FALSE]
 }
 
@@ -299,7 +326,7 @@ lengjan_closing_coverage <- function(listings, closing, as_of = NULL,
 closing_odds_out_dir <- function(out = NULL, repo = here::here()) {
   if (is.null(out) || !nzchar(out)) out <- Sys.getenv("SPORTS_CLOSING_ODDS_DIR", unset = "")
   if (!nzchar(out)) out <- file.path(repo, "research", "results", "closing-odds")
-  path <- normalizePath(out, mustWork = FALSE)
+  path <- .closing_abs_path(out)
   root <- normalizePath(repo, mustWork = TRUE)
   if (!startsWith(paste0(path, "/"), paste0(root, "/"))) {
     return(path)
@@ -321,4 +348,20 @@ closing_odds_out_dir <- function(out = NULL, repo = here::here()) {
     )
   }
   path
+}
+
+#' An absolute path with `.` and `..` collapsed (fs::path_abs() does both)
+#' and symlinks resolved as far as the path exists. normalizePath() alone
+#' returns a missing relative path unchanged, which would pass for a path
+#' outside the repo.
+#' @noRd
+.closing_abs_path <- function(p) {
+  p <- as.character(fs::path_abs(path.expand(p)))
+  rest <- character()
+  while (!file.exists(p) && dirname(p) != p) {
+    rest <- c(basename(p), rest)
+    p <- dirname(p)
+  }
+  p <- normalizePath(p, mustWork = TRUE)
+  if (length(rest) == 0L) p else paste(c(p, rest), collapse = "/")
 }

@@ -29,8 +29,9 @@ side of the listed date the fallback may look. `0` disables it.}
   `lengjan_away_team`, and the result in `result_date`, `home_score`,
   `away_score`, `home_score_reg`, `away_score_reg` and `result_join`:
   `"exact"`, `"date_window"`, `"ambiguous"` (more than one result in the
-  window), `"no_result"` or `"unwired"`. Unjoined events keep their rows
-  with NA scores.
+  window), `"duplicate"` (its result also matches another event: a listing
+  Lengjan voided and relisted, or one match listed twice), `"no_result"` or
+  `"unwired"`. Unjoined events keep their rows with NA scores.
 }
 \description{
 Results carry no Lengjan event id, so the join is the settle layer's
@@ -39,8 +40,10 @@ Results carry no Lengjan event id, so the join is the settle layer's
 matched on (sport, country, sex, match_date, home_team, away_team). An
 event with no exact match falls back to a result for the same pairing
 within `match_date_window_days` of the listed date (a rescheduled match),
-when exactly one such result exists. The join is per event; every closing
-row of the event gets its result.
+when exactly one such result exists that no exact match has claimed. A
+result is never joined to two events: one that two events reach equally
+(exact, or both through the window) goes to neither. The join is per
+event; every closing row of the event gets its result.
 }
 \details{
 The league is the one in `leagues` with the row's sport and country whose
