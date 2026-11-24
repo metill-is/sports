@@ -20,7 +20,7 @@ The facts are in `data/nt/euro2028/` with a README citing each. Three points sha
 | 2. UEFA-to-martj42 names, every drawn team in the fit | `nt_uefa_to_martj42()` (Türkiye, Czechia, Bosnia-Herzegovina and variants); the loader aborts on a team absent from the fit, missing, repeated or in the wrong pot, and warns when the groups break a draw condition | Done |
 | 3. Quarter-final placeholders | `nt_simulate_qualifying(quarter_finals = )`: each tie simulated per posterior draw as two legs (`nt_simulate_two_leg()` from metill-is/sports#123, extra time at the end of the second leg) | Done |
 | 4. Reserved host places; play-offs | `nt_simulate_euro_playoffs()`: Article 14.04, then Article 16 (8 or 12 teams, Nations League selection including the League D and ranking steps, pots, host and Northern Ireland separation) and Articles 17 and 22 (single-leg paths, home-and-away ties) | Done: the regulations were readable |
-| 5. Article 15 d) measured | `nt_compare_h2h_readings()`; run on 500 simulated draws below and on the real groups on draw night | Done: no difference in 500,000 simulated campaigns; the reading is the owner's call |
+| 5. Article 15 d) measured | `nt_compare_h2h_readings()`; run on 500 simulated draws below and on the real groups on draw night | Done: no difference in 500,000 simulated campaigns; moot, not ruled |
 | 6. Monte Carlo of the draw | `nt_simulate_uefa_draw()` (the published procedure with an exact lookahead), `nt_check_uefa_draw()`; `scripts/nt/euro2028_draw_mc.R` | Done |
 | 7. Draw-night runbook | `docs/runbooks/euro2028-draw-night.md`, `scripts/nt/euro2028_odds.R`, `scripts/nt/euro2028_fit.R` | Done, rehearsed |
 
@@ -62,7 +62,7 @@ None of those ties made the readings differ. The unit tests build a four-way tie
 
 ## Decisions for the owner
 
-1. **Article 15 d)**: "repeat" (published Euro 2024 explanations; the default) or "once" (the regulation's wording). Measured above, the choice does not move any probability: the readings never differed in 500,000 simulated campaigns. It would matter only if a real group ended with four or more teams level on points. The draw-night run repeats the comparison on the real groups.
+1. **Article 15 d)**: moot, not ruled. The owner has not chosen between "repeat" (published Euro 2024 explanations) and "once" (the regulation's wording), and there is no need to: measured above, the readings never differed in 500,000 simulated campaigns, so the choice does not move any probability. It would matter only if a real group ended with four or more teams level on points. The code keeps "repeat" as its default, and the draw-night run repeats the comparison on the real groups.
 2. **Publishing**: the odds exist as files only. A publish contract and a metill.is page need the owner's approval.
 
 ## Not modelled, or assumed
