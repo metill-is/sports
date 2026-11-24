@@ -37,8 +37,9 @@ NULL
 #' Set from measured differences (2026-11-24, `.claude/rules/model-decide.md`,
 #' `docs/evidence/hbbb-engine-reference/`): within a season, where the check
 #' is to catch the approximation getting worse as data arrive, the largest
-#' measured means were 0.0031 (result) and 0.0116 (a line), over eight
-#' cell-runs at three dates. Across the season break -- a fixture in a season
+#' measured means were 0.0039 (result) and 0.0116 (a line), over twelve
+#' cell-runs at three dates (late in the regular season, a round or two into
+#' a season, mid-season). Across the season break -- a fixture in a season
 #' the cell has no match of yet: pre-season, and the first fixtures of a
 #' season -- a team's next-season state depends on how its strength splits
 #' between club and season level, which the data identify only as a sum; the
@@ -414,7 +415,8 @@ hbbb_v2_rhat_groups <- function(summary) {
 #' The NUTS side of the weekly reference: both halves fitted with the Stan
 #' reference programs.
 #'
-#' Four chains of 1,000 warm-up and 1,000 sampling iterations and a tree
+#' Four chains of 1,000 warm-up and 1,000 sampling iterations (2,000 across
+#' the season break, below) and a tree
 #' depth of 10, started at zero, as the programs were validated in the report,
 #' but with `adapt_delta` 0.99 where the report used 0.95: on 2026-11-24 the
 #' women's basketball margin model had 41 divergences in 4,000 transitions at
@@ -426,20 +428,31 @@ hbbb_v2_rhat_groups <- function(summary) {
 #' held: a team's club and season levels are identified only as a sum, and
 #' their Rhat runs above 1.02 on fits whose forecasts have converged.
 #'
+#' Across the season break (`hbbb_v2_across_break()`) each chain samples
+#' `iter_sampling_break` iterations instead: there the forecast reads the
+#' club / season split itself (the next season's level is the AR(1)'s
+#' reversion of the last), and that split mixes slowly. On men's basketball
+#' at 2026-07-01 (off-season pairings) the forecasts' Rhat was 1.023 with
+#' 1,000 sampling iterations, past the bar, and 1.003 with 2,000 (smallest
+#' bulk ESS 27 against 143), for about 1.4 times the cell's time.
+#'
 #' @param sport `"handball"` or `"basketball"`.
 #' @param stan_dir Directory of `v2_margin.stan`, `v2_total.stan` and the
 #'   fragments they include.
 #' @param exe_dir Where the compiled programs are kept.
 #' @param seed Sampler seed.
+#' @param iter_sampling,iter_sampling_break Sampling iterations per chain
+#'   within a season and across the season break.
 #' @return A function of a spec for `hbbb_v2_weekly_reference()`.
 #' @noRd
 hbbb_v2_reference_nuts <- function(sport, stan_dir, exe_dir, seed, chains = 4L, iter_warmup = 1000L,
-                                   iter_sampling = 1000L, adapt_delta = 0.99, refresh = 0L) {
+                                   iter_sampling = 1000L, iter_sampling_break = 2000L,
+                                   adapt_delta = 0.99, refresh = 0L) {
   if (!requireNamespace("cmdstanr", quietly = TRUE)) {
     cli::cli_abort("The NUTS reference needs {.pkg cmdstanr} and CmdStan.")
   }
   priors <- v2_priors(sport)
-  one <- function(spec, response) {
+  one <- function(spec, response, iter_sampling) {
     mod <- cmdstanr::cmdstan_model(
       file.path(stan_dir, sprintf("v2_%s.stan", response)),
       dir = exe_dir, include_paths = stan_dir, quiet = TRUE
@@ -479,8 +492,9 @@ hbbb_v2_reference_nuts <- function(sport, stan_dir, exe_dir, seed, chains = 4L, 
     )
   }
   function(spec) {
-    m <- one(spec, "margin")
-    t <- one(spec, "total")
+    iter <- as.integer(if (hbbb_v2_across_break(spec)) iter_sampling_break else iter_sampling)
+    m <- one(spec, "margin", iter)
+    t <- one(spec, "total", iter)
     list(
       loc_m = m$loc, loc_t = t$loc, sigma_m = m$sigma, sigma_t = t$sigma,
       diagnostics = list(margin = m$diagnostics, total = t$diagnostics)

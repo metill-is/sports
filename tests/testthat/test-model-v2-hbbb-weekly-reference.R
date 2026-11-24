@@ -144,6 +144,40 @@ test_that("NUTS is held to the Rhat of what the comparison reads, not of the clu
   expect_true(is.na(hbbb_v2_rhat_groups(sm[!grepl("^(mu_pred|sigma$)", sm$variable), ])$pred))
 })
 
+test_that("NUTS samples twice as long across the season break, where the club / season split mixes slowly", {
+  skip_if_not_installed("cmdstanr")
+  skip_if_not_installed("posterior")
+  withr::local_seed(1L)
+  sampled <- list()
+  # cmdstanr's model as the factory uses it: $sample() records what it was
+  # asked for and returns draws of every variable the factory reads.
+  fake_model <- function(stan_file, ...) {
+    list(sample = function(data, chains, iter_sampling, ...) {
+      sampled[[length(sampled) + 1L]] <<- list(program = basename(stan_file), iter = iter_sampling)
+      vars <- c(
+        "sigma", "sigma_b", "sigma_u", "theta_rho", "sigma_w[1]", "sigma_ha", "hfa", "sigma_season",
+        sprintf("alpha[%d]", seq_len(data$ND)), sprintf("b[%d]", seq_len(data$K)),
+        sprintf("u[%d,%d]", rep(seq_len(data$K), data$NS), rep(seq_len(data$NS), each = data$K)),
+        sprintf("mu_pred[%d]", seq_len(data$N_pred))
+      )
+      dm <- posterior::as_draws_matrix(matrix(stats::rnorm(100L * length(vars)), 100L, dimnames = list(NULL, vars)))
+      list(
+        draws = function(variables) posterior::subset_draws(dm, variable = variables),
+        diagnostic_summary = function(...) list(num_divergent = rep(0L, chains), num_max_treedepth = rep(0L, chains))
+      )
+    })
+  }
+  local_mocked_bindings(cmdstan_model = fake_model, .package = "cmdstanr")
+  nuts <- hbbb_v2_reference_nuts("handball", hbbb_stan_dir(), withr::local_tempdir(), seed = 1L)
+  within <- nuts(hbbb_fixture_spec("handball", root = fixture_hbbb_root())$spec)
+  across <- nuts(hbbb_fixture_spec("handball", root = fixture_hbbb_root(schedule_season = 2101L))$spec)
+  expect_identical(vapply(sampled, `[[`, character(1), "program"), rep(c("v2_margin.stan", "v2_total.stan"), 2L))
+  expect_identical(vapply(sampled, `[[`, integer(1), "iter"), c(1000L, 1000L, 2000L, 2000L))
+  # The row's divergence fraction is over the draws actually taken.
+  expect_identical(c(within$diagnostics$margin$n_draws, within$diagnostics$total$n_draws), c(4000L, 4000L))
+  expect_identical(c(across$diagnostics$margin$n_draws, across$diagnostics$total$n_draws), c(8000L, 8000L))
+})
+
 # ---- Fixtures when none lies inside the horizon ------------------------------------
 
 .break_train <- function() {

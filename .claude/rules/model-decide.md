@@ -214,8 +214,8 @@ paths:
   when nothing is scheduled (`hbbb_v2_break_fixtures()`). Limits
   (`HBBB_REFERENCE_LIMITS`, mean absolute differences, set from measured ones
   in `docs/evidence/hbbb-engine-reference/`): within a season 0.01 on the
-  result and 0.025 on each line (largest measured 0.0031 and 0.0116 over
-  eight cell-runs at three dates); across the season break, when a fixture's
+  result and 0.025 on each line (largest measured 0.0039 and 0.0116 over
+  twelve cell-runs at three dates, one a round or two into a season); across the season break, when a fixture's
   season has no training match yet (pre-season and the first fixtures of a
   season; `hbbb_v2_across_break()`), 0.02 and 0.05 (largest measured 0.0065
   and 0.0250). The break is looser because a team's next-season state
@@ -231,7 +231,10 @@ paths:
   1.007, the same split the gate's jump check leaves ungated. The other
   groups' Rhat goes to the run's `diagnostics_*.csv`. NUTS runs at
   `adapt_delta` 0.99 (women's basketball margin: 41 divergences in 4,000 at
-  0.95, none at 0.99, 1.7 times the sampling time).
+  0.95, none at 0.99, 1.7 times the sampling time), and each chain samples
+  2,000 iterations instead of 1,000 across the season break, where the
+  forecast reads the slow club / season split (men's basketball off-season:
+  forecast Rhat 1.023 at 1,000, 1.003 at 2,000).
 - `extract_posteriors()` materialises posterior draws as the canonical
   `beliefs_latest` tibble (per-draw-per-match).
 - Stan models live in `Stan/{league_key}/{file}.stan`. `leagues.yml`'s
