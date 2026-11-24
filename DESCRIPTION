@@ -118,6 +118,7 @@ Collate:
     'ingest-ksi-football.R'
     'ingest-log.R'
     'lengjan-archive.R'
+    'lengjan-closing.R'
     'lengjan-compare.R'
     'model-fit.R'
     'model-posteriors.R'
