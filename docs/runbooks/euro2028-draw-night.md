@@ -32,10 +32,10 @@
 
    The fit is repeatable on one machine (one thread, R-INLA's online optimisation off, seeded draws).
 
-3. **Rehearse** on a simulated draw typed the way UEFA prints it (`/Users/brynjolfurjonsson/.claude-reviews/euro2028-draw/rehearsal/groups.csv`, made 2026-11-24):
+3. **Rehearse** on a simulated draw typed the way UEFA prints it (`docs/reports/2026-11-24-euro2028-draw-readiness/rehearsal/groups.csv`, made 2026-11-24; its output of that day is beside it):
 
    ```bash
-   LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 ml light -- Rscript scripts/nt/euro2028_odds.R fit=/Users/brynjolfurjonsson/.claude-reviews/euro2028-draw/fit/nt_fit_2026-11-18.rds groups=/Users/brynjolfurjonsson/.claude-reviews/euro2028-draw/rehearsal/groups.csv out=/Users/brynjolfurjonsson/.claude-reviews/euro2028-draw/rehearsal/odds
+   LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 ml light -- Rscript scripts/nt/euro2028_odds.R fit=/Users/brynjolfurjonsson/.claude-reviews/euro2028-draw/fit/nt_fit_2026-11-18.rds groups=docs/reports/2026-11-24-euro2028-draw-readiness/rehearsal/groups.csv out=/Users/brynjolfurjonsson/.claude-reviews/euro2028-draw/rehearsal/odds
    ```
 
 ## On the night
@@ -79,4 +79,4 @@
 
 ## Before the draw: what the draw itself may bring
 
-`scripts/nt/euro2028_draw_mc.R` simulates the draw under the published procedure and conditions, then qualifying per draw: odds averaged over the draw, Iceland's likely groups and opponents, and the Article 15 d) comparison across every simulated campaign. Heavy (about 3 s per draw at 1,000 simulations): `ml run`. The run of 24 November is recorded in `docs/reports/2026-11-24-euro2028-draw-readiness.md`.
+`scripts/nt/euro2028_draw_mc.R` simulates the draw under the published procedure and conditions, then qualifying per draw: odds averaged over the draw, Iceland's likely groups and opponents, and the Article 15 d) comparison across every simulated campaign. Heavy (2.3 s per draw at 1,000 simulations under both readings: 500 draws took 21 minutes on 24 November): `ml run`. That run is recorded in `docs/reports/2026-11-24-euro2028-draw-readiness.md`, its output in the folder of the same name.

@@ -1,0 +1,501 @@
+"draw","group","opponents","p_winner","p_qualify_direct","p_playoff","p_qualify"
+1,"L","QF3 defeated, Austria, San Marino, Liechtenstein",0.05,0.235,0.743,0.402
+2,"I","Greece, Slovenia, Moldova, Malta",0.245,0.465,0.497,0.6
+3,"L","Italy, Serbia, Bulgaria, Malta",0.108,0.328,0.643,0.492
+4,"A","QF4 defeated, Czech Republic, Faroe Islands",0.052,0.267,0.692,0.452
+5,"A","QF1 defeated, Turkey, Faroe Islands",0.032,0.2,0.754,0.393
+6,"G","QF2 defeated, Sweden, San Marino, Andorra",0.073,0.299,0.697,0.439
+7,"C","Greece, Republic of Ireland, Faroe Islands",0.254,0.448,0.531,0.583
+8,"A","Denmark, Wales, Faroe Islands",0.109,0.344,0.625,0.504
+9,"L","QF1 defeated, Switzerland, Finland, Azerbaijan",0.016,0.058,0.924,0.265
+10,"H","QF1 defeated, Turkey, Luxembourg, Malta",0.03,0.196,0.762,0.398
+11,"J","Italy, Wales, Moldova, Gibraltar",0.125,0.413,0.572,0.555
+12,"H","Italy, Republic of Ireland, San Marino, Liechtenstein",0.131,0.463,0.509,0.591
+13,"J","QF2 defeated, Austria, Armenia, Andorra",0.05,0.205,0.748,0.366
+14,"I","Denmark, Northern Ireland, San Marino, Azerbaijan",0.125,0.436,0.552,0.591
+15,"L","QF4 defeated, Czech Republic, Latvia, Gibraltar",0.054,0.349,0.598,0.505
+16,"A","QF3 defeated, Slovenia, San Marino",0.073,0.411,0.54,0.556
+17,"I","QF2 defeated, Austria, Moldova, Malta",0.048,0.203,0.758,0.39
+18,"J","QF4 defeated, Sweden, Bulgaria, Azerbaijan",0.049,0.197,0.782,0.371
+19,"A","QF1 winner, Austria, Estonia",0.023,0.156,0.826,0.333
+20,"H","Italy, Bosnia and Herzegovina, Luxembourg, Liechtenstein",0.117,0.416,0.566,0.569
+21,"A","QF3 defeated, Republic of Ireland, Cyprus",0.076,0.332,0.643,0.48
+22,"K","Denmark, Turkey, Moldova, Lithuania",0.099,0.272,0.717,0.46
+23,"J","QF3 defeated, Austria, Moldova, Lithuania",0.039,0.168,0.811,0.357
+24,"B","QF3 defeated, Slovenia, Luxembourg",0.061,0.295,0.686,0.462
+25,"J","Denmark, Austria, Latvia, Malta",0.076,0.224,0.765,0.397
+26,"C","QF3 winner, Slovenia, Cyprus",0.055,0.273,0.704,0.455
+27,"H","QF3 defeated, Turkey, Luxembourg, Andorra",0.052,0.223,0.728,0.404
+28,"L","Greece, Republic of Ireland, Bulgaria, Lithuania",0.253,0.443,0.526,0.598
+29,"K","QF4 defeated, Northern Ireland, Finland, Malta",0.051,0.194,0.762,0.371
+30,"D","QF1 winner, Serbia, Estonia",0.032,0.242,0.716,0.425
+31,"A","QF1 winner, Turkey, Armenia",0.016,0.178,0.778,0.375
+32,"H","QF1 defeated, Switzerland, Moldova, Andorra",0.018,0.082,0.901,0.313
+33,"K","Denmark, Turkey, Kazakhstan, Liechtenstein",0.095,0.292,0.695,0.453
+34,"C","QF2 defeated, Hungary, San Marino",0.097,0.434,0.557,0.552
+35,"L","Italy, Slovenia, Moldova, Lithuania",0.101,0.308,0.679,0.491
+36,"J","QF2 defeated, Czech Republic, Luxembourg, Azerbaijan",0.087,0.291,0.673,0.457
+37,"G","QF2 defeated, Sweden, San Marino, Liechtenstein",0.081,0.342,0.654,0.481
+38,"K","Croatia, Czech Republic, Finland, Malta",0.18,0.311,0.671,0.505
+39,"C","QF1 defeated, Republic of Ireland, Finland",0.033,0.168,0.8,0.385
+40,"J","Italy, Bosnia and Herzegovina, Bulgaria, Lithuania",0.132,0.398,0.574,0.565
+41,"G","QF2 defeated, Czech Republic, Armenia, Liechtenstein",0.085,0.372,0.596,0.521
+42,"D","QF3 winner, Northern Ireland, Faroe Islands",0.054,0.31,0.676,0.485
+43,"G","QF2 defeated, Austria, San Marino, Liechtenstein",0.07,0.263,0.721,0.414
+44,"K","Croatia, Sweden, Armenia, Gibraltar",0.129,0.351,0.628,0.483
+45,"K","Italy, Slovenia, Luxembourg, Gibraltar",0.101,0.293,0.658,0.451
+46,"B","QF3 defeated, Bosnia and Herzegovina, Moldova",0.072,0.429,0.533,0.583
+47,"A","QF3 defeated, Wales, Armenia",0.069,0.343,0.648,0.513
+48,"I","Denmark, Austria, Moldova, Gibraltar",0.07,0.248,0.74,0.422
+49,"C","QF1 defeated, Wales, Bulgaria",0.046,0.251,0.723,0.429
+50,"H","QF1 defeated, Switzerland, Finland, Malta",0.011,0.061,0.886,0.268
+51,"A","Greece, Hungary, Latvia",0.251,0.484,0.51,0.606
+52,"L","Italy, Wales, Bulgaria, Liechtenstein",0.115,0.365,0.628,0.533
+53,"L","QF2 defeated, Austria, San Marino, Andorra",0.058,0.225,0.758,0.416
+54,"J","Croatia, Switzerland, Armenia, Gibraltar",0.053,0.224,0.758,0.392
+55,"L","QF2 defeated, Turkey, Luxembourg, Andorra",0.058,0.245,0.725,0.42
+56,"G","Italy, Republic of Ireland, Bulgaria, Andorra",0.096,0.307,0.674,0.489
+57,"E","QF2 winner, Serbia, Belarus",0.037,0.239,0.725,0.412
+58,"L","QF3 defeated, Switzerland, Moldova, Lithuania",0.039,0.12,0.848,0.31
+59,"L","QF4 defeated, Sweden, Moldova, Andorra",0.052,0.254,0.729,0.409
+60,"K","Greece, Hungary, Kazakhstan, Lithuania",0.243,0.415,0.543,0.556
+61,"H","Denmark, Austria, Kazakhstan, Lithuania",0.073,0.213,0.734,0.369
+62,"G","QF4 defeated, Sweden, Kazakhstan, Lithuania",0.043,0.205,0.757,0.386
+63,"B","QF4 defeated, Bosnia and Herzegovina, Moldova",0.06,0.419,0.562,0.568
+64,"L","Denmark, Turkey, Kazakhstan, Liechtenstein",0.081,0.289,0.655,0.449
+65,"H","QF3 defeated, Czech Republic, Latvia, Andorra",0.063,0.348,0.621,0.539
+66,"K","Greece, Wales, Bulgaria, Azerbaijan",0.261,0.45,0.524,0.578
+67,"B","QF3 defeated, Serbia, Cyprus",0.073,0.314,0.617,0.45
+68,"K","QF1 defeated, Czech Republic, Armenia, Andorra",0.041,0.314,0.669,0.478
+69,"G","QF4 defeated, Turkey, San Marino, Azerbaijan",0.062,0.246,0.717,0.415
+70,"J","Greece, Bosnia and Herzegovina, San Marino, Andorra",0.302,0.593,0.387,0.68
+71,"H","Greece, Wales, Armenia, Gibraltar",0.231,0.46,0.528,0.601
+72,"G","Greece, Slovenia, Finland, Andorra",0.212,0.315,0.664,0.48
+73,"J","Croatia, Austria, Armenia, Gibraltar",0.122,0.284,0.679,0.447
+74,"I","Denmark, Northern Ireland, Armenia, Malta",0.108,0.336,0.658,0.499
+75,"G","QF4 defeated, Czech Republic, Kazakhstan, Lithuania",0.049,0.296,0.685,0.483
+76,"I","QF4 defeated, Austria, Finland, Malta",0.021,0.095,0.871,0.312
+77,"A","Greece, Czech Republic, Luxembourg",0.233,0.444,0.527,0.588
+78,"H","Italy, Wales, Bulgaria, Andorra",0.111,0.332,0.647,0.489
+79,"A","Italy, Northern Ireland, San Marino",0.139,0.519,0.477,0.636
+80,"G","QF3 defeated, Switzerland, Latvia, Gibraltar",0.029,0.115,0.862,0.292
+81,"H","QF2 defeated, Sweden, Armenia, Liechtenstein",0.074,0.29,0.69,0.444
+82,"J","QF2 defeated, Sweden, Luxembourg, Gibraltar",0.058,0.232,0.764,0.408
+83,"I","QF2 defeated, Austria, Luxembourg, Gibraltar",0.062,0.202,0.788,0.405
+84,"D","QF3 winner, Slovenia, Cyprus",0.043,0.292,0.673,0.455
+85,"I","QF3 defeated, Turkey, Moldova, Liechtenstein",0.057,0.264,0.722,0.448
+86,"K","Greece, Hungary, Moldova, Gibraltar",0.224,0.482,0.497,0.603
+87,"J","Greece, Slovenia, Moldova, Lithuania",0.23,0.437,0.545,0.58
+88,"J","Italy, Hungary, Bulgaria, Gibraltar",0.107,0.335,0.629,0.484
+89,"H","Greece, Republic of Ireland, Luxembourg, Azerbaijan",0.231,0.432,0.54,0.565
+90,"L","QF4 defeated, Northern Ireland, Moldova, Azerbaijan",0.06,0.33,0.663,0.503
+91,"H","QF1 defeated, Turkey, Bulgaria, Azerbaijan",0.029,0.172,0.773,0.356
+92,"G","QF1 defeated, Turkey, Armenia, Lithuania",0.027,0.195,0.778,0.398
+93,"J","QF2 defeated, Turkey, Armenia, Malta",0.062,0.255,0.713,0.447
+94,"J","Greece, Republic of Ireland, Luxembourg, Azerbaijan",0.266,0.44,0.55,0.581
+95,"G","Croatia, Austria, Luxembourg, Malta",0.104,0.25,0.738,0.423
+96,"A","QF2 defeated, Czech Republic, Belarus",0.077,0.303,0.668,0.481
+97,"J","QF2 defeated, Switzerland, Bulgaria, Andorra",0.04,0.138,0.835,0.31
+98,"B","QF1 winner, Bosnia and Herzegovina, Luxembourg",0.015,0.295,0.696,0.49
+99,"H","QF4 defeated, Northern Ireland, San Marino, Gibraltar",0.062,0.437,0.554,0.575
+100,"A","Italy, Republic of Ireland, Luxembourg",0.124,0.364,0.615,0.514
+101,"H","QF4 defeated, Sweden, Armenia, Malta",0.055,0.246,0.733,0.409
+102,"H","Denmark, Switzerland, Latvia, Gibraltar",0.056,0.168,0.818,0.357
+103,"B","Greece, Hungary, Kazakhstan",0.227,0.416,0.563,0.558
+104,"K","QF1 defeated, Turkey, Latvia, Malta",0.028,0.19,0.777,0.371
+105,"K","QF2 defeated, Austria, Bulgaria, Liechtenstein",0.05,0.169,0.793,0.346
+106,"J","Denmark, Czech Republic, Luxembourg, Lithuania",0.131,0.352,0.624,0.496
+107,"H","Denmark, Switzerland, San Marino, Gibraltar",0.035,0.182,0.796,0.385
+108,"L","QF2 defeated, Czech Republic, Bulgaria, Gibraltar",0.087,0.32,0.658,0.477
+109,"B","QF2 defeated, Sweden, San Marino",0.076,0.333,0.656,0.486
+110,"K","QF4 defeated, Turkey, Kazakhstan, Lithuania",0.037,0.197,0.78,0.384
+111,"I","QF2 defeated, Austria, Luxembourg, Azerbaijan",0.057,0.183,0.778,0.357
+112,"L","QF2 defeated, Turkey, San Marino, Azerbaijan",0.07,0.258,0.715,0.418
+113,"D","QF2 winner, Slovenia, Belarus",0.045,0.208,0.738,0.39
+114,"G","QF2 defeated, Sweden, Armenia, Andorra",0.058,0.259,0.725,0.449
+115,"A","QF2 winner, Sweden, Moldova",0.055,0.286,0.704,0.456
+116,"L","Italy, Bosnia and Herzegovina, San Marino, Lithuania",0.113,0.448,0.523,0.603
+117,"D","QF3 winner, Bosnia and Herzegovina, Faroe Islands",0.045,0.308,0.637,0.494
+118,"A","Croatia, Slovenia, Armenia",0.194,0.436,0.528,0.553
+119,"B","QF3 winner, Turkey, Luxembourg",0.053,0.226,0.73,0.394
+120,"G","Denmark, Czech Republic, Bulgaria, Liechtenstein",0.125,0.37,0.585,0.495
+121,"K","Denmark, Austria, Armenia, Malta",0.07,0.225,0.708,0.411
+122,"I","Croatia, Northern Ireland, Latvia, Gibraltar",0.183,0.445,0.547,0.61
+123,"L","QF2 defeated, Switzerland, Luxembourg, Malta",0.041,0.133,0.817,0.33
+124,"K","Italy, Wales, Moldova, Lithuania",0.124,0.345,0.632,0.505
+125,"K","QF2 defeated, Turkey, Armenia, Gibraltar",0.07,0.275,0.685,0.429
+126,"B","QF3 winner, Hungary, Estonia",0.056,0.264,0.702,0.445
+127,"E","QF1 winner, Serbia, Faroe Islands",0.025,0.227,0.735,0.411
+128,"G","Croatia, Northern Ireland, Bulgaria, Malta",0.181,0.425,0.567,0.557
+129,"H","QF2 defeated, Switzerland, Armenia, Malta",0.02,0.118,0.855,0.327
+130,"G","QF3 defeated, Switzerland, Luxembourg, Gibraltar",0.034,0.121,0.84,0.343
+131,"J","QF1 defeated, Turkey, Latvia, Andorra",0.043,0.217,0.723,0.389
+132,"A","QF4 defeated, Republic of Ireland, Bulgaria",0.044,0.279,0.708,0.444
+133,"K","Italy, Hungary, Kazakhstan, Liechtenstein",0.097,0.324,0.629,0.501
+134,"H","Denmark, Turkey, Latvia, Azerbaijan",0.063,0.215,0.742,0.392
+135,"H","QF2 defeated, Austria, Armenia, Gibraltar",0.057,0.24,0.743,0.386
+136,"H","QF1 defeated, Northern Ireland, Moldova, Andorra",0.035,0.316,0.675,0.502
+137,"J","Croatia, Northern Ireland, Armenia, Gibraltar",0.177,0.446,0.551,0.6
+138,"C","QF3 winner, Serbia, Latvia",0.047,0.308,0.659,0.478
+139,"B","Denmark, Switzerland, Belarus",0.033,0.157,0.797,0.337
+140,"L","QF1 defeated, Sweden, Latvia, Andorra",0.03,0.211,0.785,0.396
+141,"H","QF2 defeated, Czech Republic, Armenia, Gibraltar",0.067,0.323,0.65,0.492
+142,"I","QF1 defeated, Austria, Luxembourg, Malta",0.028,0.142,0.833,0.339
+143,"L","QF3 defeated, Northern Ireland, Armenia, Gibraltar",0.048,0.339,0.647,0.502
+144,"K","Croatia, Switzerland, Kazakhstan, Lithuania",0.052,0.178,0.801,0.376
+145,"H","QF2 defeated, Austria, Luxembourg, Liechtenstein",0.066,0.205,0.754,0.389
+146,"G","Greece, Republic of Ireland, Luxembourg, Andorra",0.244,0.443,0.544,0.582
+147,"B","QF1 winner, Slovenia, Faroe Islands",0.026,0.211,0.735,0.409
+148,"L","QF2 defeated, Czech Republic, Moldova, Gibraltar",0.088,0.401,0.586,0.554
+149,"A","QF3 defeated, Bosnia and Herzegovina, Faroe Islands",0.07,0.316,0.656,0.491
+150,"K","QF2 defeated, Czech Republic, Moldova, Andorra",0.096,0.38,0.578,0.52
+151,"G","Greece, Hungary, Bulgaria, Liechtenstein",0.242,0.465,0.508,0.581
+152,"I","Croatia, Czech Republic, Moldova, Gibraltar",0.175,0.454,0.519,0.589
+153,"H","QF4 defeated, Austria, Bulgaria, Lithuania",0.039,0.171,0.81,0.363
+154,"A","Greece, Republic of Ireland, Cyprus",0.249,0.473,0.486,0.613
+155,"J","QF4 defeated, Northern Ireland, Bulgaria, Gibraltar",0.063,0.311,0.684,0.495
+156,"I","QF3 defeated, Czech Republic, Bulgaria, Malta",0.06,0.287,0.685,0.497
+157,"G","Croatia, Sweden, Armenia, Liechtenstein",0.15,0.342,0.652,0.499
+158,"G","Croatia, Sweden, Armenia, Liechtenstein",0.161,0.373,0.607,0.495
+159,"B","QF2 winner, Slovenia, Moldova",0.044,0.325,0.63,0.487
+160,"I","QF1 defeated, Northern Ireland, Armenia, Andorra",0.038,0.309,0.687,0.494
+161,"I","QF3 defeated, Northern Ireland, Luxembourg, Andorra",0.069,0.334,0.653,0.497
+162,"A","Italy, Bosnia and Herzegovina, Moldova",0.12,0.484,0.497,0.617
+163,"G","Denmark, Northern Ireland, Bulgaria, Liechtenstein",0.101,0.363,0.626,0.521
+164,"I","Italy, Serbia, Luxembourg, Malta",0.122,0.343,0.633,0.5
+165,"B","Italy, Switzerland, Cyprus",0.042,0.148,0.836,0.368
+166,"A","QF2 winner, Hungary, San Marino",0.07,0.423,0.559,0.545
+167,"H","Italy, Republic of Ireland, San Marino, Andorra",0.118,0.413,0.544,0.564
+168,"H","Italy, Hungary, Moldova, Malta",0.096,0.351,0.634,0.505
+169,"C","QF3 defeated, Bosnia and Herzegovina, Finland",0.068,0.254,0.704,0.437
+170,"A","Italy, Turkey, Latvia",0.097,0.295,0.665,0.471
+171,"G","Croatia, Northern Ireland, San Marino, Gibraltar",0.205,0.526,0.462,0.616
+172,"K","QF1 defeated, Turkey, Armenia, Lithuania",0.02,0.204,0.786,0.397
+173,"L","Greece, Wales, Armenia, Andorra",0.226,0.47,0.511,0.619
+174,"L","QF2 defeated, Switzerland, Armenia, Andorra",0.032,0.117,0.828,0.297
+175,"C","QF1 winner, Slovenia, Moldova",0.028,0.279,0.68,0.445
+176,"J","QF2 defeated, Turkey, Moldova, Malta",0.068,0.245,0.712,0.417
+177,"J","Denmark, Austria, Latvia, Andorra",0.078,0.241,0.731,0.401
+178,"H","QF1 defeated, Czech Republic, Moldova, Liechtenstein",0.035,0.347,0.626,0.509
+179,"G","QF1 defeated, Switzerland, Bulgaria, Andorra",0.012,0.065,0.915,0.292
+180,"J","Greece, Bosnia and Herzegovina, Latvia, Gibraltar",0.275,0.529,0.447,0.646
+181,"I","QF2 defeated, Switzerland, Armenia, Malta",0.035,0.128,0.838,0.329
+182,"K","QF3 defeated, Turkey, Bulgaria, Malta",0.05,0.226,0.751,0.413
+183,"K","Greece, Serbia, Moldova, Lithuania",0.245,0.457,0.501,0.587
+184,"H","QF3 defeated, Sweden, Bulgaria, Andorra",0.04,0.234,0.754,0.424
+185,"G","QF1 defeated, Turkey, Moldova, Azerbaijan",0.021,0.189,0.77,0.392
+186,"L","Greece, Slovenia, Finland, Liechtenstein",0.19,0.331,0.631,0.504
+187,"A","Italy, Czech Republic, Armenia",0.133,0.412,0.564,0.551
+188,"A","QF3 defeated, Czech Republic, Finland",0.068,0.231,0.757,0.424
+189,"B","Italy, Serbia, San Marino",0.114,0.432,0.554,0.574
+190,"H","QF1 defeated, Czech Republic, San Marino, Andorra",0.037,0.372,0.596,0.53
+191,"A","QF4 defeated, Czech Republic, Faroe Islands",0.069,0.288,0.68,0.467
+192,"I","Greece, Wales, Armenia, Liechtenstein",0.262,0.492,0.469,0.6
+193,"G","QF2 defeated, Czech Republic, Armenia, Gibraltar",0.06,0.346,0.607,0.508
+194,"K","QF4 defeated, Austria, Moldova, Lithuania",0.037,0.17,0.816,0.356
+195,"B","QF3 defeated, Turkey, Cyprus",0.053,0.266,0.724,0.425
+196,"A","QF2 winner, Serbia, Luxembourg",0.051,0.3,0.69,0.497
+197,"B","QF2 defeated, Czech Republic, Armenia",0.086,0.377,0.583,0.488
+198,"A","QF2 winner, Austria, Bulgaria",0.033,0.175,0.809,0.366
+199,"I","QF2 defeated, Sweden, Bulgaria, Andorra",0.074,0.23,0.742,0.401
+200,"G","Greece, Serbia, San Marino, Lithuania",0.249,0.459,0.509,0.588
+201,"C","QF3 winner, Northern Ireland, Faroe Islands",0.056,0.304,0.695,0.484
+202,"K","QF4 defeated, Switzerland, Moldova, Malta",0.02,0.097,0.865,0.306
+203,"J","Denmark, Czech Republic, Armenia, Andorra",0.104,0.362,0.596,0.503
+204,"A","QF4 winner, Serbia, Estonia",0.04,0.272,0.711,0.462
+205,"J","Italy, Hungary, Armenia, Andorra",0.114,0.375,0.601,0.524
+206,"J","Greece, Republic of Ireland, Moldova, Gibraltar",0.236,0.499,0.475,0.612
+207,"I","QF4 defeated, Northern Ireland, Latvia, Malta",0.061,0.347,0.645,0.509
+208,"H","Croatia, Northern Ireland, San Marino, Liechtenstein",0.177,0.528,0.462,0.626
+209,"B","QF1 defeated, Serbia, Cyprus",0.032,0.302,0.671,0.489
+210,"I","QF2 defeated, Sweden, Moldova, Azerbaijan",0.054,0.229,0.761,0.408
+211,"A","QF1 defeated, Serbia, San Marino",0.039,0.386,0.592,0.519
+212,"A","QF3 defeated, Republic of Ireland, Finland",0.06,0.196,0.792,0.431
+213,"H","QF2 defeated, Turkey, Moldova, Gibraltar",0.081,0.286,0.695,0.443
+214,"G","QF3 defeated, Sweden, Moldova, Lithuania",0.05,0.23,0.766,0.402
+215,"B","QF3 defeated, Bosnia and Herzegovina, Luxembourg",0.06,0.384,0.566,0.547
+216,"I","QF2 defeated, Austria, San Marino, Andorra",0.057,0.232,0.765,0.407
+217,"G","QF1 defeated, Turkey, Latvia, Malta",0.023,0.217,0.755,0.416
+218,"I","Croatia, Northern Ireland, Armenia, Andorra",0.193,0.447,0.544,0.587
+219,"D","Italy, Republic of Ireland, Cyprus",0.112,0.355,0.607,0.525
+220,"K","Greece, Republic of Ireland, Armenia, Andorra",0.246,0.477,0.499,0.613
+221,"E","QF3 winner, Republic of Ireland, Faroe Islands",0.054,0.293,0.699,0.491
+222,"B","QF4 defeated, Slovenia, Moldova",0.072,0.343,0.638,0.511
+223,"L","Denmark, Austria, Kazakhstan, Liechtenstein",0.063,0.21,0.775,0.398
+224,"H","QF2 defeated, Sweden, Luxembourg, Andorra",0.062,0.223,0.749,0.402
+225,"K","QF4 defeated, Northern Ireland, Luxembourg, Andorra",0.056,0.304,0.687,0.458
+226,"D","QF2 winner, Slovenia, Cyprus",0.04,0.265,0.716,0.454
+227,"J","QF3 defeated, Austria, Finland, Andorra",0.047,0.138,0.823,0.308
+228,"J","QF3 defeated, Turkey, Luxembourg, Andorra",0.043,0.222,0.746,0.404
+229,"D","QF4 winner, Republic of Ireland, Finland",0.05,0.197,0.776,0.391
+230,"I","Italy, Bosnia and Herzegovina, Latvia, Azerbaijan",0.125,0.429,0.55,0.572
+231,"H","Italy, Serbia, Bulgaria, Gibraltar",0.102,0.318,0.646,0.496
+232,"H","QF4 defeated, Czech Republic, Moldova, Azerbaijan",0.048,0.309,0.688,0.46
+233,"G","Denmark, Northern Ireland, Moldova, Azerbaijan",0.124,0.382,0.61,0.53
+234,"I","QF1 defeated, Turkey, Latvia, Azerbaijan",0.025,0.219,0.725,0.425
+235,"L","QF3 defeated, Sweden, Finland, Andorra",0.044,0.161,0.815,0.369
+236,"G","QF2 defeated, Czech Republic, San Marino, Azerbaijan",0.087,0.347,0.617,0.495
+237,"A","Greece, Turkey, Armenia",0.173,0.414,0.564,0.553
+238,"B","QF2 winner, Serbia, Bulgaria",0.04,0.263,0.709,0.465
+239,"G","Greece, Serbia, Bulgaria, Azerbaijan",0.234,0.409,0.562,0.545
+240,"L","QF1 defeated, Turkey, Bulgaria, Malta",0.034,0.191,0.763,0.389
+241,"K","Denmark, Sweden, Kazakhstan, Lithuania",0.099,0.258,0.734,0.434
+242,"J","Italy, Wales, Bulgaria, Andorra",0.126,0.326,0.662,0.495
+243,"A","Croatia, Sweden, San Marino",0.146,0.409,0.586,0.53
+244,"H","QF2 defeated, Austria, Armenia, Andorra",0.054,0.206,0.767,0.388
+245,"K","QF3 defeated, Turkey, Latvia, Gibraltar",0.045,0.249,0.71,0.42
+246,"I","Greece, Slovenia, Finland, Azerbaijan",0.184,0.312,0.629,0.446
+247,"L","Croatia, Switzerland, Armenia, Andorra",0.057,0.226,0.766,0.407
+248,"C","QF4 defeated, Serbia, Finland",0.045,0.2,0.751,0.368
+249,"L","Italy, Republic of Ireland, San Marino, Azerbaijan",0.113,0.349,0.646,0.5
+250,"J","Greece, Republic of Ireland, Luxembourg, Azerbaijan",0.231,0.434,0.525,0.569
+251,"J","QF1 defeated, Turkey, Finland, Andorra",0.03,0.126,0.842,0.347
+252,"J","QF4 defeated, Turkey, Bulgaria, Gibraltar",0.049,0.218,0.751,0.392
+253,"L","QF1 defeated, Sweden, Finland, Malta",0.025,0.134,0.827,0.317
+254,"I","QF2 defeated, Austria, Bulgaria, Liechtenstein",0.06,0.193,0.765,0.378
+255,"C","QF1 winner, Austria, Latvia",0.023,0.187,0.778,0.378
+256,"J","Croatia, Austria, Bulgaria, Malta",0.122,0.268,0.701,0.431
+257,"I","QF2 defeated, Czech Republic, Bulgaria, Malta",0.075,0.323,0.66,0.505
+258,"H","QF4 defeated, Czech Republic, Kazakhstan, Lithuania",0.063,0.309,0.652,0.518
+259,"G","Denmark, Northern Ireland, San Marino, Malta",0.114,0.415,0.58,0.552
+260,"A","QF3 winner, Northern Ireland, Latvia",0.067,0.368,0.631,0.543
+261,"H","QF2 defeated, Switzerland, San Marino, Azerbaijan",0.042,0.15,0.803,0.349
+262,"K","QF2 defeated, Austria, San Marino, Gibraltar",0.05,0.257,0.714,0.417
+263,"J","Italy, Wales, Armenia, Liechtenstein",0.114,0.396,0.592,0.529
+264,"D","QF1 winner, Bosnia and Herzegovina, Belarus",0.023,0.308,0.681,0.492
+265,"A","QF1 winner, Switzerland, Moldova",0.011,0.085,0.896,0.306
+266,"I","Greece, Wales, Armenia, Malta",0.271,0.479,0.508,0.6
+267,"G","QF3 defeated, Turkey, Armenia, Gibraltar",0.053,0.239,0.706,0.423
+268,"C","QF4 winner, Bosnia and Herzegovina, Finland",0.046,0.233,0.744,0.44
+269,"H","QF2 defeated, Turkey, Luxembourg, Andorra",0.062,0.237,0.725,0.411
+270,"J","QF3 defeated, Switzerland, Armenia, Lithuania",0.021,0.111,0.852,0.314
+271,"C","Greece, Slovenia, Estonia",0.243,0.435,0.538,0.587
+272,"I","QF4 defeated, Austria, San Marino, Liechtenstein",0.053,0.261,0.701,0.431
+273,"J","QF3 defeated, Switzerland, Latvia, Liechtenstein",0.027,0.117,0.843,0.303
+274,"G","QF1 defeated, Turkey, Bulgaria, Andorra",0.029,0.22,0.746,0.395
+275,"L","QF1 defeated, Czech Republic, Bulgaria, Andorra",0.026,0.279,0.693,0.487
+276,"I","QF2 defeated, Sweden, Armenia, Gibraltar",0.051,0.237,0.74,0.429
+277,"G","Croatia, Northern Ireland, Armenia, Malta",0.199,0.451,0.543,0.559
+278,"E","Italy, Slovenia, Cyprus",0.113,0.354,0.636,0.508
+279,"G","QF4 defeated, Sweden, San Marino, Liechtenstein",0.06,0.306,0.669,0.466
+280,"C","QF3 winner, Czech Republic, Armenia",0.063,0.369,0.61,0.536
+281,"K","Denmark, Czech Republic, Latvia, Gibraltar",0.113,0.393,0.591,0.541
+282,"C","QF2 winner, Hungary, Cyprus",0.048,0.324,0.642,0.5
+283,"K","QF1 defeated, Turkey, Moldova, Azerbaijan",0.017,0.199,0.76,0.394
+284,"E","QF4 winner, Austria, Estonia",0.046,0.172,0.801,0.363
+285,"I","QF2 defeated, Switzerland, Bulgaria, Azerbaijan",0.029,0.115,0.833,0.322
+286,"K","QF1 defeated, Turkey, Luxembourg, Liechtenstein",0.035,0.205,0.773,0.377
+287,"B","QF3 winner, Czech Republic, San Marino",0.063,0.477,0.501,0.568
+288,"L","Italy, Bosnia and Herzegovina, Armenia, Liechtenstein",0.133,0.5,0.486,0.626
+289,"H","QF1 defeated, Turkey, Luxembourg, Liechtenstein",0.034,0.21,0.766,0.411
+290,"B","QF3 defeated, Sweden, Cyprus",0.071,0.254,0.722,0.392
+291,"J","Italy, Wales, Bulgaria, Malta",0.119,0.346,0.629,0.51
+292,"J","Denmark, Austria, Kazakhstan, Liechtenstein",0.07,0.233,0.742,0.418
+293,"G","QF1 defeated, Austria, Latvia, Liechtenstein",0.026,0.149,0.844,0.321
+294,"K","Greece, Wales, Latvia, Liechtenstein",0.264,0.498,0.48,0.625
+295,"J","QF1 defeated, Northern Ireland, Armenia, Andorra",0.032,0.313,0.675,0.478
+296,"H","QF2 defeated, Austria, Moldova, Malta",0.071,0.223,0.763,0.409
+297,"K","QF2 defeated, Sweden, Bulgaria, Gibraltar",0.059,0.228,0.738,0.397
+298,"H","QF3 defeated, Northern Ireland, Moldova, Liechtenstein",0.069,0.364,0.63,0.517
+299,"L","QF3 defeated, Northern Ireland, Armenia, Liechtenstein",0.069,0.379,0.612,0.52
+300,"H","Greece, Wales, Moldova, Gibraltar",0.253,0.521,0.473,0.638
+301,"G","QF3 defeated, Switzerland, Latvia, Malta",0.031,0.12,0.865,0.309
+302,"K","QF1 defeated, Northern Ireland, Luxembourg, Andorra",0.03,0.278,0.709,0.477
+303,"G","QF1 defeated, Northern Ireland, Luxembourg, Andorra",0.043,0.281,0.711,0.479
+304,"J","Greece, Serbia, Moldova, Azerbaijan",0.242,0.444,0.533,0.561
+305,"J","QF2 defeated, Czech Republic, Armenia, Andorra",0.095,0.37,0.59,0.538
+306,"K","QF2 defeated, Sweden, Luxembourg, Gibraltar",0.062,0.244,0.733,0.42
+307,"B","QF2 winner, Switzerland, Armenia",0.025,0.116,0.865,0.324
+308,"J","Italy, Bosnia and Herzegovina, Kazakhstan, Lithuania",0.116,0.392,0.593,0.555
+309,"A","QF2 defeated, Serbia, Armenia",0.073,0.338,0.634,0.481
+310,"H","Italy, Serbia, Kazakhstan, Liechtenstein",0.112,0.326,0.643,0.497
+311,"H","Croatia, Switzerland, Luxembourg, Malta",0.061,0.182,0.777,0.398
+312,"I","QF3 defeated, Czech Republic, Latvia, Malta",0.041,0.303,0.656,0.469
+313,"I","QF1 defeated, Northern Ireland, Latvia, Azerbaijan",0.036,0.314,0.673,0.478
+314,"B","QF4 winner, Wales, Cyprus",0.068,0.358,0.621,0.528
+315,"K","Croatia, Czech Republic, Luxembourg, Andorra",0.177,0.412,0.578,0.574
+316,"K","Italy, Bosnia and Herzegovina, Armenia, Andorra",0.114,0.41,0.566,0.558
+317,"B","QF1 winner, Northern Ireland, San Marino",0.029,0.438,0.552,0.554
+318,"A","QF3 winner, Slovenia, Luxembourg",0.058,0.279,0.702,0.45
+319,"J","QF1 defeated, Switzerland, San Marino, Malta",0.023,0.102,0.844,0.297
+320,"J","QF2 defeated, Austria, Moldova, Liechtenstein",0.047,0.207,0.777,0.391
+321,"G","Croatia, Austria, Kazakhstan, Lithuania",0.118,0.28,0.686,0.46
+322,"J","Croatia, Northern Ireland, Bulgaria, Azerbaijan",0.197,0.433,0.555,0.577
+323,"G","Greece, Republic of Ireland, Armenia, Andorra",0.25,0.488,0.5,0.603
+324,"J","Italy, Bosnia and Herzegovina, Kazakhstan, Lithuania",0.113,0.406,0.578,0.574
+325,"K","Italy, Slovenia, Luxembourg, Lithuania",0.1,0.278,0.693,0.45
+326,"B","QF1 winner, Serbia, Luxembourg",0.019,0.243,0.723,0.454
+327,"J","Italy, Slovenia, Latvia, Andorra",0.123,0.329,0.644,0.498
+328,"A","QF1 winner, Hungary, San Marino",0.027,0.393,0.575,0.529
+329,"L","Croatia, Czech Republic, Finland, Andorra",0.161,0.301,0.675,0.462
+330,"C","QF1 winner, Slovenia, Faroe Islands",0.034,0.215,0.762,0.389
+331,"A","QF3 winner, Switzerland, Finland",0.029,0.075,0.895,0.294
+332,"D","QF4 winner, Republic of Ireland, Luxembourg",0.042,0.278,0.712,0.46
+333,"H","Italy, Bosnia and Herzegovina, Bulgaria, Malta",0.122,0.371,0.607,0.53
+334,"L","QF3 defeated, Switzerland, Bulgaria, Liechtenstein",0.022,0.094,0.881,0.287
+335,"B","QF1 defeated, Bosnia and Herzegovina, Estonia",0.042,0.333,0.651,0.535
+336,"B","QF1 winner, Turkey, Latvia",0.034,0.228,0.753,0.411
+337,"A","QF4 winner, Hungary, Finland",0.044,0.181,0.77,0.38
+338,"H","Denmark, Austria, Kazakhstan, Liechtenstein",0.084,0.238,0.741,0.407
+339,"C","Greece, Hungary, Armenia",0.222,0.468,0.489,0.583
+340,"K","QF4 defeated, Czech Republic, Moldova, Malta",0.05,0.326,0.643,0.484
+341,"I","QF4 defeated, Switzerland, Moldova, Gibraltar",0.029,0.109,0.845,0.347
+342,"I","Denmark, Sweden, Finland, Gibraltar",0.077,0.185,0.793,0.395
+343,"H","QF3 defeated, Turkey, Armenia, Liechtenstein",0.053,0.261,0.707,0.437
+344,"B","Denmark, Austria, Kazakhstan",0.077,0.211,0.748,0.411
+345,"J","QF2 defeated, Switzerland, Moldova, Andorra",0.033,0.143,0.806,0.311
+346,"C","Greece, Republic of Ireland, Cyprus",0.231,0.48,0.506,0.596
+347,"B","Greece, Czech Republic, Cyprus",0.235,0.462,0.5,0.58
+348,"J","Italy, Bosnia and Herzegovina, Luxembourg, Lithuania",0.103,0.388,0.584,0.559
+349,"B","QF3 defeated, Turkey, Luxembourg",0.071,0.26,0.698,0.444
+350,"L","Croatia, Sweden, Finland, Gibraltar",0.127,0.231,0.73,0.382
+351,"G","QF3 defeated, Northern Ireland, Bulgaria, Liechtenstein",0.058,0.317,0.67,0.472
+352,"K","Italy, Serbia, Luxembourg, Gibraltar",0.11,0.315,0.65,0.464
+353,"B","Italy, Northern Ireland, Bulgaria",0.121,0.335,0.659,0.521
+354,"K","QF4 defeated, Switzerland, Luxembourg, Malta",0.02,0.096,0.881,0.313
+355,"A","QF4 winner, Hungary, San Marino",0.062,0.396,0.59,0.538
+356,"L","QF1 defeated, Northern Ireland, Bulgaria, Lithuania",0.028,0.228,0.768,0.451
+357,"J","QF4 defeated, Switzerland, Armenia, Gibraltar",0.025,0.094,0.869,0.312
+358,"I","QF4 defeated, Switzerland, Moldova, Gibraltar",0.03,0.135,0.837,0.317
+359,"H","QF4 defeated, Northern Ireland, Latvia, Liechtenstein",0.049,0.344,0.656,0.499
+360,"G","Greece, Hungary, Bulgaria, Andorra",0.233,0.45,0.533,0.582
+361,"A","QF4 defeated, Austria, Latvia",0.044,0.199,0.793,0.395
+362,"L","Italy, Slovenia, San Marino, Gibraltar",0.098,0.396,0.571,0.543
+363,"H","QF3 defeated, Switzerland, Moldova, Liechtenstein",0.03,0.117,0.857,0.352
+364,"B","QF2 defeated, Turkey, San Marino",0.091,0.364,0.589,0.504
+365,"J","Croatia, Northern Ireland, San Marino, Gibraltar",0.188,0.523,0.472,0.611
+366,"I","Denmark, Turkey, Luxembourg, Gibraltar",0.089,0.276,0.678,0.448
+367,"H","QF4 defeated, Northern Ireland, Bulgaria, Andorra",0.054,0.316,0.68,0.473
+368,"H","QF1 defeated, Turkey, Latvia, Malta",0.022,0.196,0.777,0.411
+369,"H","QF3 defeated, Austria, Finland, Gibraltar",0.044,0.13,0.815,0.306
+370,"J","Greece, Republic of Ireland, Moldova, Malta",0.26,0.482,0.496,0.605
+371,"C","QF3 winner, Northern Ireland, San Marino",0.054,0.446,0.533,0.557
+372,"J","QF3 defeated, Austria, Moldova, Lithuania",0.041,0.184,0.812,0.398
+373,"C","QF4 winner, Hungary, Cyprus",0.048,0.281,0.698,0.466
+374,"G","QF2 defeated, Turkey, San Marino, Azerbaijan",0.06,0.258,0.706,0.421
+375,"L","Greece, Serbia, Finland, Gibraltar",0.191,0.295,0.678,0.453
+376,"E","QF1 winner, Bosnia and Herzegovina, Faroe Islands",0.02,0.268,0.699,0.433
+377,"A","QF3 defeated, Turkey, San Marino",0.058,0.368,0.599,0.493
+378,"K","QF2 defeated, Turkey, Bulgaria, Liechtenstein",0.076,0.23,0.761,0.41
+379,"J","QF1 defeated, Czech Republic, Armenia, Andorra",0.031,0.336,0.63,0.504
+380,"K","QF4 defeated, Sweden, San Marino, Andorra",0.048,0.27,0.722,0.445
+381,"J","QF1 defeated, Sweden, Latvia, Liechtenstein",0.026,0.231,0.762,0.421
+382,"G","Greece, Bosnia and Herzegovina, Moldova, Malta",0.268,0.527,0.461,0.644
+383,"G","Italy, Hungary, Latvia, Gibraltar",0.107,0.37,0.609,0.521
+384,"G","Denmark, Northern Ireland, Moldova, Liechtenstein",0.121,0.423,0.576,0.579
+385,"B","QF3 defeated, Turkey, Belarus",0.058,0.222,0.761,0.412
+386,"C","Greece, Switzerland, Faroe Islands",0.076,0.257,0.712,0.457
+387,"G","QF2 defeated, Austria, Luxembourg, Liechtenstein",0.054,0.202,0.768,0.363
+388,"K","Denmark, Czech Republic, Bulgaria, Andorra",0.111,0.367,0.607,0.526
+389,"G","QF2 defeated, Czech Republic, Moldova, Liechtenstein",0.088,0.402,0.58,0.522
+390,"K","QF1 defeated, Northern Ireland, Moldova, Liechtenstein",0.056,0.374,0.616,0.533
+391,"C","Greece, Slovenia, San Marino",0.244,0.535,0.45,0.629
+392,"L","QF3 defeated, Switzerland, Finland, Liechtenstein",0.025,0.076,0.901,0.27
+393,"K","Croatia, Austria, Moldova, Gibraltar",0.127,0.33,0.627,0.456
+394,"C","QF3 winner, Hungary, Bulgaria",0.054,0.307,0.656,0.474
+395,"K","Italy, Slovenia, Bulgaria, Lithuania",0.108,0.315,0.651,0.466
+396,"J","Italy, Slovenia, Moldova, Azerbaijan",0.099,0.33,0.636,0.497
+397,"G","QF3 defeated, Czech Republic, Luxembourg, Lithuania",0.053,0.291,0.684,0.492
+398,"A","QF2 defeated, Czech Republic, Bulgaria",0.092,0.321,0.642,0.482
+399,"J","Greece, Serbia, Bulgaria, Liechtenstein",0.239,0.45,0.513,0.586
+400,"A","Croatia, Wales, Latvia",0.184,0.472,0.497,0.606
+401,"I","Greece, Slovenia, Armenia, Liechtenstein",0.234,0.467,0.513,0.608
+402,"I","QF1 defeated, Austria, Bulgaria, Malta",0.023,0.142,0.843,0.306
+403,"A","Italy, Serbia, Cyprus",0.123,0.366,0.627,0.524
+404,"C","QF3 winner, Slovenia, Faroe Islands",0.052,0.254,0.712,0.462
+405,"G","QF2 defeated, Czech Republic, San Marino, Azerbaijan",0.069,0.368,0.601,0.551
+406,"G","QF3 defeated, Austria, Latvia, Malta",0.041,0.197,0.79,0.393
+407,"H","Greece, Serbia, Bulgaria, Lithuania",0.236,0.42,0.556,0.558
+408,"E","QF4 winner, Serbia, Estonia",0.056,0.261,0.721,0.435
+409,"A","QF3 winner, Northern Ireland, Armenia",0.053,0.322,0.67,0.504
+410,"G","Greece, Hungary, Bulgaria, Malta",0.256,0.433,0.544,0.542
+411,"K","QF2 defeated, Czech Republic, San Marino, Liechtenstein",0.081,0.466,0.499,0.586
+412,"I","QF4 defeated, Northern Ireland, Finland, Malta",0.056,0.213,0.752,0.424
+413,"K","QF2 defeated, Switzerland, Bulgaria, Liechtenstein",0.039,0.122,0.843,0.307
+414,"H","Greece, Republic of Ireland, Armenia, Liechtenstein",0.268,0.51,0.462,0.632
+415,"A","Croatia, Austria, Latvia",0.109,0.294,0.684,0.459
+416,"G","QF4 defeated, Sweden, Latvia, Liechtenstein",0.032,0.211,0.758,0.385
+417,"I","Italy, Republic of Ireland, Bulgaria, Lithuania",0.121,0.336,0.639,0.508
+418,"L","Italy, Serbia, Armenia, Malta",0.101,0.348,0.633,0.512
+419,"B","QF1 defeated, Sweden, Latvia",0.026,0.227,0.754,0.432
+420,"K","Denmark, Turkey, Finland, Azerbaijan",0.08,0.197,0.785,0.405
+421,"K","QF2 defeated, Turkey, Bulgaria, Gibraltar",0.068,0.246,0.717,0.428
+422,"L","QF2 defeated, Sweden, Armenia, Gibraltar",0.069,0.267,0.716,0.422
+423,"C","Greece, Wales, Armenia",0.239,0.507,0.476,0.613
+424,"I","QF3 defeated, Czech Republic, Armenia, Malta",0.061,0.316,0.654,0.473
+425,"F","QF3 winner, Republic of Ireland, Estonia",0.05,0.28,0.714,0.452
+426,"I","Italy, Slovenia, San Marino, Lithuania",0.118,0.376,0.589,0.54
+427,"B","Italy, Republic of Ireland, Estonia",0.111,0.325,0.647,0.497
+428,"H","Denmark, Northern Ireland, Moldova, Gibraltar",0.128,0.436,0.556,0.57
+429,"A","QF2 winner, Sweden, Luxembourg",0.048,0.246,0.747,0.441
+430,"A","QF3 winner, Bosnia and Herzegovina, Finland",0.053,0.218,0.756,0.441
+431,"H","Croatia, Austria, San Marino, Andorra",0.1,0.317,0.652,0.5
+432,"J","Greece, Wales, Bulgaria, Lithuania",0.256,0.432,0.548,0.589
+433,"J","Denmark, Turkey, Latvia, Andorra",0.091,0.286,0.684,0.448
+434,"I","Italy, Slovenia, Armenia, Malta",0.099,0.326,0.642,0.475
+435,"K","QF1 defeated, Czech Republic, San Marino, Azerbaijan",0.042,0.302,0.672,0.481
+436,"A","QF2 defeated, Slovenia, Belarus",0.098,0.279,0.689,0.431
+437,"H","QF1 defeated, Austria, San Marino, Lithuania",0.029,0.152,0.826,0.37
+438,"G","QF1 defeated, Czech Republic, San Marino, Azerbaijan",0.03,0.311,0.659,0.483
+439,"I","QF1 defeated, Sweden, Latvia, Azerbaijan",0.028,0.203,0.787,0.406
+440,"J","Greece, Wales, Armenia, Gibraltar",0.248,0.485,0.499,0.609
+441,"B","QF4 defeated, Switzerland, Belarus",0.015,0.109,0.866,0.297
+442,"I","Greece, Republic of Ireland, Luxembourg, Azerbaijan",0.258,0.428,0.55,0.558
+443,"D","QF4 winner, Bosnia and Herzegovina, Luxembourg",0.074,0.383,0.592,0.52
+444,"B","Denmark, Hungary, Estonia",0.101,0.32,0.636,0.47
+445,"L","QF2 defeated, Sweden, Armenia, Malta",0.059,0.232,0.755,0.408
+446,"J","QF1 defeated, Turkey, Luxembourg, Liechtenstein",0.036,0.217,0.745,0.407
+447,"C","QF2 winner, Bosnia and Herzegovina, Bulgaria",0.044,0.348,0.637,0.537
+448,"K","Denmark, Northern Ireland, Armenia, Malta",0.101,0.363,0.626,0.509
+449,"A","QF2 winner, Switzerland, Cyprus",0.022,0.112,0.838,0.296
+450,"G","QF2 defeated, Sweden, Bulgaria, Andorra",0.064,0.229,0.747,0.389
+451,"B","QF4 defeated, Slovenia, Moldova",0.068,0.339,0.628,0.5
+452,"I","QF2 defeated, Switzerland, San Marino, Azerbaijan",0.035,0.136,0.858,0.337
+453,"H","QF2 defeated, Czech Republic, San Marino, Malta",0.072,0.379,0.587,0.518
+454,"J","Croatia, Northern Ireland, Luxembourg, Liechtenstein",0.222,0.434,0.558,0.569
+455,"C","QF1 defeated, Czech Republic, Faroe Islands",0.035,0.28,0.693,0.462
+456,"I","Croatia, Austria, Kazakhstan, Liechtenstein",0.119,0.31,0.654,0.464
+457,"K","QF1 defeated, Czech Republic, Latvia, Liechtenstein",0.037,0.299,0.65,0.477
+458,"L","Denmark, Switzerland, Bulgaria, Gibraltar",0.056,0.154,0.811,0.34
+459,"L","QF2 defeated, Austria, San Marino, Malta",0.049,0.225,0.77,0.429
+460,"H","QF2 defeated, Switzerland, Moldova, Azerbaijan",0.026,0.114,0.844,0.312
+461,"I","QF1 defeated, Northern Ireland, Finland, Liechtenstein",0.033,0.169,0.815,0.373
+462,"H","QF1 defeated, Sweden, Finland, Azerbaijan",0.019,0.123,0.867,0.353
+463,"G","Croatia, Northern Ireland, Moldova, Lithuania",0.18,0.452,0.538,0.592
+464,"K","Italy, Republic of Ireland, Latvia, Liechtenstein",0.099,0.349,0.615,0.5
+465,"H","Italy, Slovenia, Kazakhstan, Liechtenstein",0.111,0.305,0.687,0.471
+466,"C","QF1 winner, Wales, Faroe Islands",0.031,0.247,0.727,0.437
+467,"J","Italy, Republic of Ireland, Latvia, Azerbaijan",0.126,0.362,0.616,0.536
+468,"L","QF3 defeated, Northern Ireland, Latvia, Malta",0.064,0.345,0.648,0.527
+469,"J","Italy, Slovenia, San Marino, Gibraltar",0.102,0.401,0.582,0.532
+470,"B","QF3 winner, Republic of Ireland, Finland",0.04,0.168,0.804,0.371
+471,"C","QF3 winner, Czech Republic, Estonia",0.058,0.261,0.707,0.459
+472,"L","QF2 defeated, Switzerland, Bulgaria, Andorra",0.035,0.125,0.839,0.318
+473,"J","Denmark, Northern Ireland, San Marino, Liechtenstein",0.123,0.509,0.48,0.614
+474,"K","Italy, Slovenia, Kazakhstan, Liechtenstein",0.098,0.323,0.652,0.484
+475,"G","Greece, Serbia, Armenia, Malta",0.235,0.465,0.512,0.602
+476,"B","QF1 winner, Serbia, Faroe Islands",0.03,0.25,0.702,0.4
+477,"I","QF4 defeated, Turkey, Luxembourg, Gibraltar",0.048,0.223,0.757,0.419
+478,"B","QF3 defeated, Wales, Faroe Islands",0.078,0.315,0.669,0.514
+479,"H","QF3 defeated, Switzerland, Latvia, Gibraltar",0.017,0.114,0.837,0.304
+480,"G","QF1 defeated, Switzerland, Luxembourg, Azerbaijan",0.015,0.074,0.891,0.257
+481,"H","Greece, Wales, Armenia, Gibraltar",0.237,0.489,0.474,0.597
+482,"J","QF2 defeated, Switzerland, Armenia, Gibraltar",0.021,0.13,0.837,0.307
+483,"K","Greece, Bosnia and Herzegovina, Bulgaria, Lithuania",0.273,0.479,0.5,0.602
+484,"I","Denmark, Sweden, Moldova, Gibraltar",0.085,0.318,0.677,0.47
+485,"L","QF1 defeated, Czech Republic, Armenia, Liechtenstein",0.04,0.321,0.646,0.489
+486,"I","Greece, Slovenia, Bulgaria, Andorra",0.204,0.42,0.564,0.561
+487,"J","Croatia, Turkey, Latvia, Azerbaijan",0.144,0.319,0.654,0.511
+488,"J","QF1 defeated, Northern Ireland, Finland, Liechtenstein",0.032,0.175,0.781,0.367
+489,"L","Denmark, Turkey, Armenia, Gibraltar",0.089,0.281,0.686,0.418
+490,"K","QF1 defeated, Czech Republic, Bulgaria, Liechtenstein",0.036,0.296,0.674,0.447
+491,"G","Croatia, Northern Ireland, Latvia, Azerbaijan",0.182,0.397,0.587,0.545
+492,"L","Italy, Republic of Ireland, Finland, Andorra",0.116,0.253,0.734,0.423
+493,"I","QF3 defeated, Northern Ireland, Finland, Andorra",0.053,0.207,0.783,0.424
+494,"C","QF1 defeated, Wales, San Marino",0.036,0.458,0.529,0.57
+495,"K","QF4 defeated, Northern Ireland, Moldova, Andorra",0.064,0.344,0.647,0.501
+496,"L","QF3 defeated, Northern Ireland, Luxembourg, Andorra",0.063,0.324,0.674,0.53
+497,"I","QF3 defeated, Turkey, Latvia, Andorra",0.052,0.255,0.69,0.439
+498,"B","QF1 defeated, Switzerland, San Marino",0.021,0.154,0.79,0.325
+499,"K","QF1 defeated, Sweden, Armenia, Malta",0.031,0.236,0.749,0.415
+500,"G","QF4 defeated, Switzerland, Kazakhstan, Liechtenstein",0.026,0.112,0.879,0.333

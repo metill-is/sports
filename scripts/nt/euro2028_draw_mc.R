@@ -8,7 +8,8 @@
 # Usage:
 #   Rscript scripts/nt/euro2028_draw_mc.R fit=<fit.rds> out=<dir>
 #       [n_draws=500] [n_sims=1000] [seed=2028] [team=Iceland]
-# Heavy (about 3 s per draw at 1,000 simulations): run it as `ml run -- Rscript ...`.
+# Heavy (measured 2026-11-24: 2.3 s per draw at 1,000 simulations, both readings;
+# 500 draws in 21 minutes): run it as `ml run -- Rscript ...`.
 
 suppressMessages(devtools::load_all(quiet = TRUE))
 options(width = 160)
@@ -167,7 +168,7 @@ lines <- c(
   sprintf("- In groups of four: %d draws with any difference.", sum(cmp_tab$four > 0)),
   sprintf(
     "- Five-team group tables that differ: %s of %s (%s).", round(sum(cmp_tab$five_mean * 6 * n_sims)),
-    format(6 * n_tables, big.mark = ","), sprintf("%.5f%%", 100 * mean(cmp_tab$five_mean))
+    format(6 * n_tables, big.mark = ",", scientific = FALSE), sprintf("%.5f%%", 100 * mean(cmp_tab$five_mean))
   ),
   sprintf(
     "- The 20 direct qualifiers differ: %d campaigns; the host places or play-off field: %d.",
