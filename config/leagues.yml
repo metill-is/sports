@@ -73,13 +73,17 @@ basketball_iceland:
     # check. The men's season opened 2026-10-08 with nothing wired: its odds
     # up to this point were never captured. Keep `division` on every entry:
     # check_odds_freshness() expects odds only for the (sex, division) cells
-    # the competitions name. Bónusdeild kvenna and both 1. deild competitions
-    # are not wired; discovery (0N_discover.R) proposes them when Lengjan
-    # lists them and /wire-league adds them here with `division: BD` or `1D`.
+    # the competitions name. 1291 (Bónusdeild kvenna) wired 2026-11-24 via
+    # /wire-league from the 2026-11-23 discovery proposal (proposed on and off
+    # since 2026-09-28); none of the 30 women's games played this season had
+    # odds before it. Both 1. deild competitions are not wired; discovery
+    # (0N_discover.R) proposes them when Lengjan lists them and /wire-league
+    # adds them here with `division: 1D`.
     # Last season's playoff umbrellas were 1519 (karla) and 1528 (kvenna).
     source: api
     competitions:
       - { id: "1292", name: "Bónusdeild karla", sex: male, division: BD }
+      - { id: "1291", name: "Bónusdeild kvenna", sex: female, division: BD }
     team_names:
       # Lengjan uses bare team names for the men's draw: verified against the
       # data/facts/odds 2026-04-29 scrape (úrslitakeppni, id 1519) and the
@@ -110,9 +114,13 @@ basketball_iceland:
         Njarðvík: Njarðvík kv
         Haukar: Haukar kv
         Keflavík: Keflavík kv
+        # Discovery could not match this one (low confidence); confirmed as the
+        # only Tindastóll in women's BD 2027 results.
         Tindastóll: UMF Tindastoll kv
         Ármann: Ármann kv
         Stjarnan: Stjarnan kv
+        Fjölnir: Fjölnir kv     # 1291 proposal, 2026-11-23
+        KR: KR kv               # 1291 proposal, 2026-11-23
   # Publish cells. No cup division is ingested for basketball: the distinct
   # `division` values in data/facts/results for season 2026 are exactly
   # {BD, 1D}, so every entry is is_cup: false and there is no cup cell.

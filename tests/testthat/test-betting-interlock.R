@@ -40,8 +40,8 @@ test_that("handball and basketball scrape their wired competitions via the API",
   expect_equal(comp_cells(hb), c("1269 male OD", "1270 female OD"))
   bb <- lg$basketball_iceland$lengjan
   expect_equal(bb$source, "api")
-  # Bonusdeild karla only (wired 2026-11-15): no women's or 1. deild comp yet.
-  expect_equal(comp_cells(bb), "1292 male BD")
+  # Bonusdeild karla (wired 2026-11-15) and kvenna (2026-11-24); no 1. deild comp yet.
+  expect_equal(comp_cells(bb), c("1292 male BD", "1291 female BD"))
   # Football keeps its full slate on the DOM scraper until the Milestone B cutover.
   expect_gt(length(lg$football_iceland$lengjan$competitions), 0L)
   expect_null(lg$football_iceland$lengjan$source)
