@@ -387,6 +387,108 @@ read_lengjan_archive <- function(dir = NULL, from = NULL, to = NULL,
   }
 }
 
+#' Events listed in a local Lengjan odds archive, capture by capture.
+#'
+#' Reads only each capture's program body, so it sees every listed event of
+#' the country, whether or not a capture fetched its market detail: the
+#' denominator for [lengjan_closing_coverage()]. An event's country is the
+#' program's `countryCode`, or its `countryName` where the code is empty (an
+#' Icelandic event's `liveSoon` copy carries `countryName` `"IS"` and no
+#' code), as in [parse_lengjan_program()]. Captures are read and skipped as
+#' in [read_lengjan_archive()].
+#'
+#' @inheritParams read_lengjan_archive
+#' @param country_code Lengjan country code to keep (`"IS"` for Iceland).
+#' @return Tibble, one row per capture and listed event, sorted by
+#'   `scraped_at` then `event_id`: `scraped_at`, `event_id`, `sport` (NA for a
+#'   sport the package does not know), `sport_id`, `competition_id`,
+#'   `competition_name`, `country_code`, `kickoff_at`, `home_team`,
+#'   `away_team` (NA for an outright), `market_count` and `is_live` (Lengjan's
+#'   event-level live flag: live betting will be offered).
+#' @examples
+#' \dontrun{
+#' listings <- lengjan_archive_events(from = "2026-11-16")
+#' }
+#' @export
+lengjan_archive_events <- function(dir = NULL, from = NULL, to = NULL,
+                                   country_code = "IS") {
+  dir <- .lengjan_archive_dir(dir)
+  ix <- lengjan_archive_index(dir)
+  ix <- ix[.lengjan_in_window(ix$ts, from, to) &
+    ix$status %in% c("ok", "partial"), , drop = FALSE]
+  rows <- list(empty_lengjan_archive_events())
+  skipped <- character()
+  for (i in seq_len(nrow(ix))) {
+    stamp <- format(ix$ts[[i]], "%Y-%m-%dT%H:%M:%SZ", tz = "UTC")
+    got <- .lengjan_read_bodies(dir, ix$program_file[[i]])
+    if (!is.character(got)) {
+      got <- tryCatch(
+        .lengjan_listed_events(got[[1L]], country_code, ix$ts[[i]]),
+        error = function(e) conditionMessage(e)
+      )
+    }
+    if (is.character(got)) {
+      skipped <- c(skipped, paste0(stamp, ": ", got))
+      next
+    }
+    rows[[length(rows) + 1L]] <- got
+  }
+  if (length(skipped) > 0L) {
+    warning(.lengjan_skip_report("capture", skipped), call. = FALSE)
+  }
+  out <- dplyr::bind_rows(rows)
+  out[order(out$scraped_at, out$event_id), , drop = FALSE]
+}
+
+#' One program body's events of one country, as lengjan_archive_events() rows.
+#' @noRd
+.lengjan_listed_events <- function(prog, country_code, scraped_at) {
+  evs <- .lengjan_program_events(prog)
+  country <- vapply(evs, function(e) {
+    cc <- .scalar_chr(e$countryCode)
+    if (is.na(cc) || !nzchar(cc)) cc <- .scalar_chr(e$countryName)
+    cc
+  }, character(1))
+  evs <- evs[country %in% country_code]
+  if (length(evs) == 0L) {
+    return(empty_lengjan_archive_events())
+  }
+  live <- stats::setNames(
+    vapply(evs, function(e) isTRUE(e$live), logical(1)),
+    vapply(evs, function(e) .scalar_chr(e$id), character(1))
+  )
+  ids <- names(live)
+  # WHY: parse only this country's events; a program lists about a thousand.
+  ev <- parse_lengjan_program(.lengjan_program_subset(prog, ids))
+  tibble::tibble(
+    scraped_at = rep(scraped_at, nrow(ev)),
+    event_id = ev$event_id,
+    sport = .lengjan_sport_from_id(ev$sport_id),
+    sport_id = ev$sport_id,
+    competition_id = ev$competition_id,
+    competition_name = ev$competition_name,
+    country_code = ev$country_code,
+    kickoff_at = ev$kickoff_at,
+    home_team = ev$home_team,
+    away_team = ev$away_team,
+    market_count = ev$market_count,
+    is_live = unname(live[ev$event_id])
+  )
+}
+
+#' @noRd
+empty_lengjan_archive_events <- function() {
+  tibble::tibble(
+    scraped_at = as.POSIXct(character(), tz = "UTC"),
+    event_id = character(), sport = character(), sport_id = integer(),
+    competition_id = character(), competition_name = character(),
+    country_code = character(),
+    kickoff_at = as.POSIXct(character(), tz = "UTC"),
+    home_team = character(), away_team = character(),
+    market_count = integer(), is_live = logical()
+  )
+}
+
 #' The program with its event arrays cut down to the given event ids.
 #' @noRd
 .lengjan_program_subset <- function(prog, event_ids) {
