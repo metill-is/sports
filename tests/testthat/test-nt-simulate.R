@@ -170,3 +170,29 @@ test_that("the World Cup simulator ranks groups under the rule it is given", {
   expect_equal(h2h$teams$p_first + h2h$teams$p_second + h2h$teams$p_third + h2h$teams$p_fourth, rep(1, 48))
   expect_equal(sum(h2h$teams$p_advance), 32)
 })
+
+test_that("a two-legged tie matches its closed form, extra time at the second leg's rates", {
+  withr::local_seed(8)
+  n <- 200000L
+  leg1 <- list(a = rep(1.6, n), b = rep(0.9, n))
+  leg2 <- list(a = rep(1.1, n), b = rep(1.4, n))
+  res <- nt_simulate_two_legged(leg1, leg2, et_factor = 1 / 3, shootout_p = 0.5)
+  agg <- sports:::.nt_poisson_compare(1.6 + 1.1, 0.9 + 1.4)
+  et <- sports:::.nt_poisson_compare(1.1 / 3, 1.4 / 3)
+  want <- agg$win + agg$draw * (et$win + et$draw * 0.5)
+  near <- function(x, p) expect_lt(abs(mean(x) - p), 4 * sqrt(p * (1 - p) / n))
+  near(res$a_wins, want)
+  near(res$decided == 1L, 1 - agg$draw)
+  near(res$decided == 3L, agg$draw * et$draw)
+  # A shootout won by A with probability 1 shifts every penalty decision to A.
+  sure <- nt_simulate_two_legged(leg1, leg2, shootout_p = 1)
+  expect_true(all(sure$a_wins[sure$decided == 3L]))
+})
+
+test_that("two-legged ties use each draw's own rates", {
+  withr::local_seed(9)
+  leg1 <- list(a = c(8, 0.01), b = c(0.01, 8))
+  leg2 <- list(a = c(8, 0.01), b = c(0.01, 8))
+  res <- nt_simulate_two_legged(leg1, leg2)
+  expect_identical(res$a_wins, c(TRUE, FALSE))
+})

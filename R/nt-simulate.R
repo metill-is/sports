@@ -83,6 +83,40 @@ nt_simulate_knockout <- function(rate_a, rate_b,
   list(a_wins = a_wins, decided = decided)
 }
 
+#' Simulate two-legged knockout ties.
+#'
+#' Side A is at home in the first leg and side B in the second. The side with
+#' more goals over the two legs advances (no away-goals rule); if the aggregate
+#' is level, 30 minutes of extra time are played at the end of the second leg,
+#' at `et_factor` times that leg's 90-minute rates, then a shootout won by A
+#' with probability `shootout_p` (as in UEFA's two-legged Nations League
+#' quarter-finals and EURO play-off ties).
+#'
+#' @param leg1,leg2 Lists `a`, `b` of 90-minute scoring rates of the two sides
+#'   in each leg (vectors of one length, one element per tie).
+#' @inheritParams nt_knockout_win_prob
+#' @return List: `a_wins` (logical) and `decided` (1 = over the two legs,
+#'   2 = in extra time, 3 = on penalties).
+#' @export
+nt_simulate_two_legged <- function(leg1, leg2, et_factor = 1 / 3, shootout_p = 0.5) {
+  n <- length(leg1$a)
+  agg_a <- stats::rpois(n, leg1$a) + stats::rpois(n, leg2$a)
+  agg_b <- stats::rpois(n, leg1$b) + stats::rpois(n, leg2$b)
+  a_wins <- agg_a > agg_b
+  decided <- rep(1L, n)
+  level <- which(agg_a == agg_b)
+  if (length(level) > 0L) {
+    ga <- stats::rpois(length(level), leg2$a[level] * et_factor)
+    gb <- stats::rpois(length(level), leg2$b[level] * et_factor)
+    a_wins[level] <- ga > gb
+    decided[level] <- 2L
+    pens <- level[ga == gb]
+    a_wins[pens] <- stats::runif(length(pens)) < shootout_p
+    decided[pens] <- 3L
+  }
+  list(a_wins = a_wins, decided = decided)
+}
+
 #' Head-to-head advancement probabilities at a neutral venue.
 #'
 #' Shootouts are a coin toss here: a tilted shootout needs a rule for which

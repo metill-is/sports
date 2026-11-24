@@ -1,0 +1,34 @@
+rule,team_a,team_b
+separate,England,
+separate,Republic of Ireland,
+separate,Scotland,
+separate,Wales,
+separate,Northern Ireland,
+winter,Estonia,
+winter,Faroe Islands,
+winter,Finland,
+winter,Iceland,
+winter,Latvia,
+winter,Lithuania,
+winter,Norway,
+prohibited,Armenia,Azerbaijan
+prohibited,Belarus,Ukraine
+prohibited,Gibraltar,Spain
+prohibited,Kosovo,Bosnia-Herzegovina
+prohibited,Kosovo,Serbia
+travel,Kazakhstan,Andorra
+travel,Kazakhstan,England
+travel,Kazakhstan,France
+travel,Kazakhstan,Gibraltar
+travel,Kazakhstan,Iceland
+travel,Kazakhstan,Malta
+travel,Kazakhstan,Northern Ireland
+travel,Kazakhstan,Portugal
+travel,Kazakhstan,Republic of Ireland
+travel,Kazakhstan,Scotland
+travel,Kazakhstan,Spain
+travel,Kazakhstan,Wales
+travel,Iceland,Azerbaijan
+travel,Portugal,Azerbaijan
+travel,Armenia,Iceland
+travel,Cyprus,Iceland

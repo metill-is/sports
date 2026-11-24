@@ -480,3 +480,34 @@ test_that("the simulator ranks played Euro 2028-shaped groups like the reference
   expect_gt(checked, 15)
   expect_gt(discards_mattered, 0)
 })
+
+test_that("every team's overall statistics discard results against fifth place, except for fifth place", {
+  sizes <- c(rep(5L, 6), rep(4L, 6))
+  teams <- paste0("T", seq_len(sum(sizes)))
+  groups <- split(teams, rep(LETTERS[1:12], sizes))
+  fit <- nt_test_fit(stats::setNames(rep(0, length(teams)), teams))
+  checked <- 0L
+  for (seed in 1:25) {
+    withr::local_seed(seed)
+    fx <- nt_qualifying_fixtures(groups)
+    fx$home_score <- stats::rpois(nrow(fx), 1.4)
+    fx$away_score <- stats::rpois(nrow(fx), 1.1)
+    ref <- suppressWarnings(nt_uefa_overall_ranking(fx, groups))
+    if (any(ref$group_position_unresolved)) next
+    s <- nt_simulate_qualifying(fit, groups, fx, n_sims = 2L, seed = seed)
+    for (nm in c("points", "gd", "gf", "away_gf", "won", "away_won")) {
+      expect_equal(s$overall[[nm]][1, ref$team], ref[[nm]], ignore_attr = TRUE, info = paste(seed, nm))
+    }
+    checked <- checked + 1L
+  }
+  expect_gt(checked, 10)
+})
+
+test_that("a simulation without placeholders is unchanged by the slot bookkeeping", {
+  groups <- list(A = c("W", "X", "Y", "Z"), B = c("P", "Q", "R", "S", "U"))
+  fit <- nt_test_fit(c(W = 1, X = 0, Y = 0, Z = 0, P = 0.5, Q = 0, R = 0, S = 0, U = -1), mu = 0.2)
+  s <- nt_simulate_qualifying(fit, groups, n_sims = 50L, n_best_runners_up = 1L, seed = 1L)
+  expect_identical(s$positions, s$slot_positions)
+  expect_null(s$qf_winner)
+  expect_identical(s$teams$group, rep(c("A", "B"), c(4L, 5L)))
+})
