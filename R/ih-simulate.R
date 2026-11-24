@@ -292,7 +292,8 @@ ih_rank_table <- function(teams, home, away, gh, ga, h2h_reapply = "none") {
 #' @param matches [ih_read_matches()] rows of the championship's sex.
 #' @param spec [ih_tournament_spec()].
 #' @return data.frame: `stage` ("preliminary", "main", "knockout"),
-#'   `match_date`, `home_team`, `away_team`, `home_60`, `away_60`,
+#'   `match_date`, `home_team`, `away_team`, `home_60`, `away_60` (a
+#'   preliminary or main-round match without them takes its final score),
 #'   `home_score`, `away_score`, `pen_home`, `pen_away`, `home_wins` (went
 #'   through, knockouts).
 #' @noRd
@@ -306,6 +307,13 @@ ih_tournament_results <- function(matches, spec) {
   last_prelim <- max(spec$prelim$match_date)
   first_ko <- min(spec$knockout$match_date, na.rm = TRUE)
   r$stage <- ifelse(r$match_date <= last_prelim, "preliminary", ifelse(r$match_date < first_ko, "main", "knockout"))
+  # WHY: the tables and the simulator read the 60-minute score, and one NA
+  # stops the ranking. A preliminary or main-round match never goes to extra
+  # time, so its final score is its 60-minute score; a knockout match keeps NA
+  # (its final score may include extra time, and only home_wins is read).
+  no_60 <- r$stage != "knockout" & (is.na(r$home_60) | is.na(r$away_60))
+  r$home_60[no_60] <- r$home_score[no_60]
+  r$away_60[no_60] <- r$away_score[no_60]
   r$home_wins <- r$home_score > r$away_score |
     (r$home_score == r$away_score & !is.na(r$pen_home) & r$pen_home > r$pen_away)
   r[, c(

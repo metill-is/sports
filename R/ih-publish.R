@@ -216,7 +216,15 @@ ih_publish_tournament <- function(fit, sim, spec, results, out_dir, names = ih_t
       p_pos = as.list(rnd(p_pos)), p_advance = rnd(p_advance)
     )
   }
-  ordered_teams <- function(tab, exp_pos) {
+  # WHY two orders: a finished group is listed as the rules rank it
+  # (ih_rank_table()'s position, head to head before overall goal difference),
+  # the order its p_pos and the main-round slots already follow; while it is
+  # being played, by points, goal difference and goals, then the simulated
+  # expected position (lots would shuffle teams that have not played).
+  ordered_teams <- function(tab, exp_pos, complete) {
+    if (isTRUE(complete)) {
+      return(tab$team[order(tab$position)])
+    }
     tab$exp_pos <- exp_pos[tab$team]
     tab$team[order(-tab$points, -tab$gd, -tab$gf, tab$exp_pos)]
   }
@@ -228,7 +236,7 @@ ih_publish_tournament <- function(fit, sim, spec, results, out_dir, names = ih_t
     rows <- tm[tm$group == g, , drop = FALSE]
     pp <- as.matrix(rows[, paste0("p_pos", 1:4)])
     exp_pos <- stats::setNames(as.vector(pp %*% (1:4)), rows$team)
-    ord <- ordered_teams(tab, exp_pos)
+    ord <- ordered_teams(tab, exp_pos, actual$prelim[[g]]$complete)
     groups[[length(groups) + 1L]] <- list(
       group = g, label_is = paste("Ri\u00f0ill", g), stage = "preliminary",
       venue_is = venue_is(unique(spec$prelim$venue_city[spec$prelim$group == g])),
@@ -247,7 +255,7 @@ ih_publish_tournament <- function(fit, sim, spec, results, out_dir, names = ih_t
     k <- length(am$members)
     pp <- as.matrix(d[, paste0("p_pos", seq_len(k))])
     exp_pos <- stats::setNames(as.vector(pp %*% seq_len(k)), d$team)
-    ord <- ordered_teams(am$table, exp_pos)
+    ord <- ordered_teams(am$table, exp_pos, am$complete)
     adv <- 2L
     groups[[length(groups) + 1L]] <- list(
       group = G, label_is = paste("Milliri\u00f0ill", G), stage = "main",
