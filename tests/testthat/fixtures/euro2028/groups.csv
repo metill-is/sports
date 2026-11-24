@@ -1,17 +1,17 @@
 group,pot,team
-A,1,QF1 winner
+A,1,Spain/France winners
 A,2,Serbia
 A,3,Israel
 A,4,Estonia
-B,1,QF2 winner
+B,1,Norway/England winners
 B,2,Slovenia
 B,3,Romania
 B,4,Belarus
-C,1,QF3 winner
+C,1,Netherlands/Portugal winners
 C,2,Wales
 C,3,Georgia
 C,4,Faroe Islands
-D,1,QF4 winner
+D,1,Belgium/Germany winners
 D,2,Hungary
 D,3,North Macedonia
 D,4,Cyprus
@@ -23,22 +23,22 @@ F,1,Italy
 F,2,Bosnia-Herzegovina
 F,3,Poland
 F,4,Bulgaria
-G,1,QF1 defeated
+G,1,Spain/France defeated team
 G,2,Türkiye
 G,3,Scotland
 G,4,Finland
 G,5,Malta
-H,1,QF2 defeated
+H,1,Norway/England defeated team
 H,2,Czechia
 H,3,Iceland
 H,4,Luxembourg
 H,5,Andorra
-I,1,QF3 defeated
+I,1,Netherlands/Portugal defeated team
 I,2,Switzerland
 I,3,Ukraine
 I,4,Kazakhstan
 I,5,Liechtenstein
-J,1,QF4 defeated
+J,1,Belgium/Germany defeated team
 J,2,Sweden
 J,3,Montenegro
 J,4,Armenia

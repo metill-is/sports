@@ -92,17 +92,18 @@ nt_euro2028_facts <- function(facts_dir = here::here("data", "nt", "euro2028")) 
   )
 }
 
-# Canonical slot label ("QF2 winner") for a placeholder written by number or
-# by pairing ("QF2 winners", "Winner QF2", "Norway/England defeated team",
-# "England / Norway loser"); NA when `x` is not a placeholder.
+# Canonical slot label ("QF2 winner") for a placeholder written by pairing
+# ("Norway/England defeated team", "England / Norway loser", "QF2 winners
+# (Norway/England)", whose number is UEFA's and ignored); NA when `x` is not
+# a placeholder. A placeholder without a pairing ("QF2 winners") is refused:
+# the draw procedure prints "QFx winners" without saying which tie each x
+# is, and the numbers in quarter_finals.csv are our own.
 .nt_parse_qf_slot <- function(x, qf) {
   low <- tolower(x)
   kind <- ifelse(
     grepl("\\bwinners?\\b", low, perl = TRUE), "winner",
     ifelse(grepl("\\b(defeated|losers?)\\b", low, perl = TRUE), "defeated", NA_character_)
   )
-  num <- suppressWarnings(as.integer(sub(".*\\bqf\\s*([0-9]+).*", "\\1", low, perl = TRUE)))
-  num[!grepl("\\bqf\\s*[0-9]+", low, perl = TRUE)] <- NA_integer_
   out <- rep(NA_character_, length(x))
   for (i in which(!is.na(kind))) {
     k_pair <- NA_integer_
@@ -114,16 +115,15 @@ nt_euro2028_facts <- function(facts_dir = here::here("data", "nt", "euro2028")) 
       }, logical(1)))
       if (length(hit) == 1L) k_pair <- qf$qf[hit]
     }
-    # WHY: our QF numbers need not be UEFA's; a pairing written next to a
-    # number shows which tie is meant, so a disagreement is refused.
-    if (!is.na(num[i]) && !is.na(k_pair) && num[i] != k_pair) {
+    # WHY the number is ignored: a number printed beside the pairing is
+    # UEFA's, which need not match ours; the pairing alone names the tie.
+    if (is.na(k_pair)) {
       cli::cli_abort(c(
-        "{.val {x[i]}}: QF{num[i]} is {qf$first_leg_home[qf$qf == num[i]]}/{qf$second_leg_home[qf$qf == num[i]]} in {.file quarter_finals.csv}, not the pairing named.",
-        "i" = "Write placeholders by pairing (e.g. {.val Spain/France winner}); UEFA's QF numbers may differ from ours."
+        "{.val {x[i]}}: write a quarter-final placeholder with its pairing, e.g. {.val Spain/France winners}.",
+        "i" = "UEFA's draw procedure does not say which tie each QF number is, and the numbers in {.file quarter_finals.csv} are ours."
       ))
     }
-    k <- if (!is.na(k_pair)) k_pair else num[i]
-    if (!is.na(k) && k %in% qf$qf) out[i] <- paste0("QF", k, " ", kind[i])
+    out[i] <- paste0("QF", k_pair, " ", kind[i])
   }
   out
 }
@@ -218,6 +218,32 @@ nt_read_euro2028_draw <- function(groups, fixtures = NULL,
   nt_euro2028_draw(group_list, fx, facts = facts, fit = fit, neutral_home = neutral_home)
 }
 
+# Group sizes and pot make-up of the draw (procedure page 3; Article 13.02):
+# A-F four teams, one from each of pots 1-4; G-L five, one from each of pots
+# 1-5. The quarter-final placeholders are pot 1. WHY a stop, not a warning:
+# the simulator counts results against the top four in every group
+# (Article 23), so a wrongly sized group gives silently wrong odds.
+.nt_euro2028_shape <- function(groups, facts) {
+  qf <- facts$quarter_finals
+  pot_of <- stats::setNames(facts$seeding$pot, facts$seeding$team)
+  pot_of[c(qf$winner_slot, qf$defeated_slot)] <- 1L
+  size <- stats::setNames(rep(c(4L, 5L), each = 6L), LETTERS[1:12])
+  if (!setequal(names(groups), names(size)) || anyDuplicated(names(groups)) > 0L) {
+    return(sprintf("the groups are %s, not A to L", toString(names(groups))))
+  }
+  out <- character()
+  for (g in names(size)) {
+    n <- length(groups[[g]])
+    pots <- sort(unname(pot_of[groups[[g]]]))
+    if (n != size[[g]]) {
+      out <- c(out, sprintf("group %s has %d teams, not %d", g, n, size[[g]]))
+    } else if (!identical(pots, seq_len(n))) {
+      out <- c(out, sprintf("group %s: pots %s, not one team from each of pots 1-%d", g, toString(pots), n))
+    }
+  }
+  out
+}
+
 #' Build a EURO 2028 draw object from groups.
 #'
 #' The core of [nt_read_euro2028_draw()], for groups already in slot labels
@@ -248,6 +274,13 @@ nt_euro2028_draw <- function(groups, fixtures = NULL, facts = nt_euro2028_facts(
   )
   if (length(problems) > 0L) {
     cli::cli_abort(c("The groups are not the 54-team draw.", stats::setNames(problems, rep("x", length(problems)))))
+  }
+  shape <- .nt_euro2028_shape(groups, facts)
+  if (length(shape) > 0L) {
+    cli::cli_abort(c(
+      "The groups do not have the draw's shape: A-F four teams from pots 1-4, G-L five from pots 1-5.",
+      stats::setNames(shape, rep("x", length(shape)))
+    ))
   }
   broken <- nt_check_uefa_draw(groups, facts)
   if (length(broken) > 0L) {
@@ -509,13 +542,17 @@ nt_simulate_euro_playoffs <- function(qual, fit, seeding, hosts,
 #'
 #' Runs [nt_simulate_qualifying()] on the draw (with the Nations League
 #' quarter-final placeholders) and [nt_simulate_euro_playoffs()] on its
-#' result, one posterior draw per simulation throughout.
+#' result, one posterior draw per simulation throughout. Runners-up are
+#' ranked on their results against the teams placed first to fourth in every
+#' group (Article 23: the fifth-placed team's matches are discarded).
 #'
 #' @param fit A fit from [nt_fit_inla()] covering every drawn team.
 #' @param draw Output of [nt_read_euro2028_draw()].
 #' @param n_sims Number of simulations.
 #' @param h2h_reapply Passed to [nt_simulate_qualifying()].
 #' @param seed Optional seed.
+#' @param et_factor,shootout_p Extra time and shoot-out of every knockout tie
+#'   (the quarter-finals and the play-offs); see [nt_knockout_win_prob()].
 #' @param ... Passed to [nt_simulate_euro_playoffs()].
 #' @return List: `teams` (tibble per team: `team`, `group`, `p_winner`,
 #'   `p_runner_up_direct`, `p_qualify_direct`, `p_host_place`, `p_playoff`,
@@ -527,13 +564,15 @@ nt_simulate_euro_playoffs <- function(qual, fit, seeding, hosts,
 #'   and the per-simulation matrices of [nt_simulate_euro_playoffs()].
 #' @export
 nt_simulate_euro2028 <- function(fit, draw, n_sims = 10000L,
-                                 h2h_reapply = c("repeat", "once"), seed = NULL, ...) {
+                                 h2h_reapply = c("repeat", "once"), seed = NULL,
+                                 et_factor = 1 / 3, shootout_p = 0.5, ...) {
   h2h_reapply <- match.arg(h2h_reapply)
   q <- nt_simulate_qualifying(
     fit, draw$groups, draw$fixtures, n_sims = n_sims, h2h_reapply = h2h_reapply,
-    quarter_finals = draw$quarter_finals, seed = seed
+    counted_positions = 4L, quarter_finals = draw$quarter_finals,
+    et_factor = et_factor, shootout_p = shootout_p, seed = seed
   )
-  args <- list(...)
+  args <- c(list(et_factor = et_factor, shootout_p = shootout_p), list(...))
   if (is.null(args$neutral_home) && !is.null(draw$neutral_home)) args$neutral_home <- draw$neutral_home
   po <- do.call(nt_simulate_euro_playoffs, c(list(q, fit, draw$seeding, draw$hosts), args))
   qt <- q$teams

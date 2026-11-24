@@ -24,7 +24,7 @@ The facts are in `data/nt/euro2028/` with a README citing each. Three points sha
 | 6. Monte Carlo of the draw | `nt_simulate_uefa_draw()` (the published procedure with an exact lookahead), `nt_check_uefa_draw()`; `scripts/nt/euro2028_draw_mc.R` | Done |
 | 7. Draw-night runbook | `docs/runbooks/euro2028-draw-night.md`, `scripts/nt/euro2028_odds.R`, `scripts/nt/euro2028_fit.R` | Done, rehearsed |
 
-The rehearsal and the 500-draw run below were produced at 6f0b55e97. Merging main afterwards replaced this branch's two-legged tie simulator with the one from metill-is/sports#123 (`nt_simulate_two_leg()`). The rule is the same but the four leg scores are drawn in a different order, so reruns on the merged code agree within Monte Carlo error rather than to the digit. Rerunning the rehearsal moved Iceland from 44.5% to 44.1%; the largest change for any team was 1.2 points.
+The rehearsal and the 500-draw run below, and so the headline 46.5% for Iceland, were produced at ae34903bd (its R code is that of 6f0b55e97) with the old order of random draws. Merging main afterwards replaced this branch's two-legged tie simulator with the one from metill-is/sports#123 (`nt_simulate_two_leg()`). The rule is the same but the four leg scores are drawn in a different order, so reruns on the merged code agree within Monte Carlo error rather than to the digit. Rerunning the rehearsal moved Iceland from 44.5% to 44.1%; the largest change for any team was 1.2 points.
 
 Without placeholders the qualifying simulator gives bit-identical outcomes to the code of PR metill-is/sports#110 (a 54-team, 2,000-simulation run under both readings), and the Euro 2024 validation still reproduces all ten tables and the overall order.
 

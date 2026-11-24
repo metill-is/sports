@@ -72,10 +72,11 @@ test_that("the draw loader asserts every drawn team is in the fit", {
 
 test_that("placeholders may name the quarter-final pairing instead of its number", {
   g <- utils::read.csv(e28_groups_csv(), stringsAsFactors = FALSE, encoding = "UTF-8")
-  g$team[g$team == "QF1 winner"] <- "Winner Spain/France"
-  g$team[g$team == "QF1 defeated"] <- "France / Spain defeated team"
-  g$team[g$team == "QF2 winner"] <- "QF2 winners"
-  g$team[g$team == "QF2 defeated"] <- "Norway/England loser"
+  at <- function(grp) g$group == grp & g$pot == 1L
+  g$team[at("A")] <- "Winner Spain/France"
+  g$team[at("G")] <- "France / Spain defeated team"
+  g$team[at("B")] <- "England / Norway winner"
+  g$team[at("H")] <- "Norway/England loser"
   path <- withr::local_tempfile(fileext = ".csv")
   utils::write.csv(g, path, row.names = FALSE, fileEncoding = "UTF-8")
   d <- nt_read_euro2028_draw(path, facts_dir = e28_facts_dir())
@@ -99,7 +100,7 @@ test_that("the draw loader refuses a missing, repeated or unknown team", {
   unknown$team[unknown$team == "Malta"] <- "Atlantis"
   expect_error(nt_read_euro2028_draw(write_g(unknown), facts_dir = e28_facts_dir()), "Atlantis")
   direct <- g
-  direct$team[direct$team == "QF1 winner"] <- "Spain"
+  direct$team[direct$group == "A" & direct$pot == 1L] <- "Spain"
   expect_error(nt_read_euro2028_draw(write_g(direct), facts_dir = e28_facts_dir()), "QF1")
   wrong_pot <- g
   wrong_pot$pot[wrong_pot$team == "Iceland"] <- 2L
@@ -109,6 +110,16 @@ test_that("the draw loader refuses a missing, repeated or unknown team", {
 test_that("a fixture list's venue may be written as home/neutral or 1/0", {
   d <- nt_read_euro2028_draw(e28_groups_csv(), facts_dir = e28_facts_dir())
   fx <- d$fixtures
+  # Placeholders as UEFA prints them, with their pairing.
+  qf <- d$quarter_finals
+  uefa <- stats::setNames(
+    c(paste0(qf$first_leg_home, "/", qf$second_leg_home, " winners"),
+      paste0(qf$first_leg_home, "/", qf$second_leg_home, " defeated team")),
+    c(qf$winner_slot, qf$defeated_slot)
+  )
+  relabel <- function(x) ifelse(x %in% names(uefa), uefa[x], x)
+  fx$home_team <- relabel(fx$home_team)
+  fx$away_team <- relabel(fx$away_team)
   fx$match_date <- "2027-09-04"
   fx$venue <- ifelse(fx$venue == 1L, "home", "neutral")
   fx$venue[fx$home_team == "Iceland"] <- "neutral"
@@ -307,11 +318,16 @@ test_that("simulated play-offs fill exactly 24 places, seeded sides hosting", {
   d <- nt_read_euro2028_draw(e28_groups_csv(), facts_dir = e28_facts_dir())
   withr::local_seed(6)
   th <- stats::setNames(stats::rnorm(54, 0, 0.3), d$teams)
-  fit <- e28_fit(th, n_draws = 5L, mu = 0.1, home_for = 2.5, home_against = -2.5)
+  # WHY 4: at home_for = 2.5 an away win or draw has a chance of about 0.1% to
+  # 0.5% a match, enough to break "all" below on some seeds; at 4 it is below
+  # 1e-8, so the assertion holds on any random stream.
+  fit <- e28_fit(th, n_draws = 5L, mu = 0.1, home_for = 4, home_against = -4)
   out <- nt_simulate_euro2028(fit, d, n_sims = 300L, seed = 7L)
   expect_true(all(rowSums(out$qualified) == 24L))
   expect_equal(sum(out$teams$p_qualify), 24)
-  expect_true(all(out$teams$p_qualify >= out$teams$p_qualify_direct))
+  # WHY the margin: p_qualify_direct is a sum of two means, p_qualify one mean,
+  # so a team that always qualifies directly can differ in the last bit.
+  expect_true(all(out$teams$p_qualify >= out$teams$p_qualify_direct - 1e-12))
   expect_equal(sum(out$teams$p_host_place), mean(out$n_host_places))
   expect_true(all(out$teams$p_host_place[!out$teams$team %in% d$hosts] == 0))
   expect_equal(sum(out$teams$p_playoff), mean(ifelse(out$n_host_places == 1L, 12, 8)))
@@ -462,7 +478,7 @@ test_that("slots carry the total qualification odds of whoever fills them", {
   expect_equal(sum(sl$p_qualify), 24)
 })
 
-test_that("a placeholder's number and pairing must agree", {
+test_that("the pairing decides a placeholder's tie, whatever number is printed beside it", {
   g <- utils::read.csv(e28_groups_csv(), stringsAsFactors = FALSE, encoding = "UTF-8")
   write_g <- function(x) {
     path <- withr::local_tempfile(fileext = ".csv", .local_envir = parent.frame())
@@ -470,11 +486,14 @@ test_that("a placeholder's number and pairing must agree", {
     path
   }
   agree <- g
-  agree$team[agree$team == "QF3 winner"] <- "QF3 winners (Netherlands/Portugal)"
+  agree$team[agree$group == "C" & agree$pot == 1L] <- "QF3 winners (Netherlands/Portugal)"
   expect_identical(nt_read_euro2028_draw(write_g(agree), facts_dir = e28_facts_dir())$groups$C[1], "QF3 winner")
-  clash <- g
-  clash$team[clash$team == "QF1 winner"] <- "QF1 winners (Netherlands/Portugal)"
-  expect_error(nt_read_euro2028_draw(write_g(clash), facts_dir = e28_facts_dir()), "Netherlands/Portugal")
+  # UEFA's QF1 need not be our QF1: the pairing wins.
+  other <- g
+  other$team[other$group == "A" & other$pot == 1L] <- "QF1 winners (Netherlands/Portugal)"
+  other$team[other$group == "C" & other$pot == 1L] <- "QF3 winners (Spain/France)"
+  d <- nt_read_euro2028_draw(write_g(other), facts_dir = e28_facts_dir())
+  expect_identical(c(d$groups$A[1], d$groups$C[1]), c("QF3 winner", "QF1 winner"))
 })
 
 test_that("the winner slot carries the winner's odds and the defeated slot the defeated team's", {
@@ -545,4 +564,66 @@ test_that("hosts out of the direct places are ranked as the runners-up ranking r
   expect_true(all(po$host_place[1, c("Republic of Ireland", "Wales")]))
   expect_false(po$host_place[1, "Scotland"])
   expect_true(po$playoff[1, "Scotland"])
+})
+
+# ---- Draw-night input checks (review of 2026-11-24) ------------------------
+
+e28_write_groups <- function(x, env = parent.frame()) {
+  path <- withr::local_tempfile(fileext = ".csv", .local_envir = env)
+  utils::write.csv(x, path, row.names = FALSE, fileEncoding = "UTF-8")
+  path
+}
+
+test_that("the draw loader stops on wrong group sizes or pot make-up", {
+  g <- utils::read.csv(e28_groups_csv(), stringsAsFactors = FALSE, encoding = "UTF-8")
+  moved <- g
+  moved$group[moved$team == "Estonia"] <- "G"
+  expect_error(nt_read_euro2028_draw(e28_write_groups(moved), facts_dir = e28_facts_dir()), "group A has 3 teams")
+  swapped <- g
+  swapped$group[g$team == "Estonia"] <- "G"
+  swapped$group[g$team == "Malta"] <- "A"
+  expect_error(nt_read_euro2028_draw(e28_write_groups(swapped), facts_dir = e28_facts_dir()), "group A: pots")
+})
+
+test_that("runners-up are ranked on results against the top four in every group", {
+  d <- nt_read_euro2028_draw(e28_groups_csv(), facts_dir = e28_facts_dir())
+  seen <- NULL
+  local_mocked_bindings(nt_simulate_qualifying = function(...) {
+    seen <<- list(...)
+    stop("captured")
+  })
+  expect_error(nt_simulate_euro2028(e28_fit(), d, n_sims = 5L, seed = 1L), "captured")
+  expect_identical(seen$counted_positions, 4L)
+})
+
+test_that("a placeholder written by number alone is refused", {
+  g <- utils::read.csv(e28_groups_csv(), stringsAsFactors = FALSE, encoding = "UTF-8")
+  g$team[g$group == "B" & g$pot == 1L] <- "QF2 winners"
+  expect_error(nt_read_euro2028_draw(e28_write_groups(g), facts_dir = e28_facts_dir()), "pairing")
+})
+
+test_that("extra-time and shoot-out settings reach the quarter-final ties", {
+  d <- nt_read_euro2028_draw(e28_groups_csv(), facts_dir = e28_facts_dir())
+  # Scoring all but impossible: every tie goes to penalties, won by the side
+  # named first (at home in the first leg) when shootout_p = 1.
+  fit <- e28_fit(n_draws = 3L, mu = -12)
+  out <- nt_simulate_euro2028(fit, d, n_sims = 60L, seed = 2L, et_factor = 0, shootout_p = 1)
+  qf <- d$quarter_finals
+  for (i in seq_len(nrow(qf))) {
+    expect_true(all(out$qualifying$qf_winner[, paste0("QF", qf$qf[i])] == qf$first_leg_home[i]), info = qf$first_leg_home[i])
+  }
+})
+
+test_that("the odds script stops when a named fixture list is missing", {
+  skip_if_not(file.exists(file.path(R.home("bin"), "Rscript")))
+  root <- normalizePath(testthat::test_path("..", ".."))
+  out <- withr::local_tempdir()
+  res <- withr::with_dir(root, suppressWarnings(system2(
+    file.path(R.home("bin"), "Rscript"),
+    c("scripts/nt/euro2028_odds.R", "fit=/nonexistent/fit.rds", paste0("out=", out),
+      paste0("fixtures=", file.path(out, "no_such_list.csv"))),
+    stdout = TRUE, stderr = TRUE
+  )))
+  expect_false(is.null(attr(res, "status")))
+  expect_match(paste(res, collapse = "\n"), "fixtures= names a file that does not exist")
 })

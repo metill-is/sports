@@ -46,11 +46,11 @@
    group,pot,team
    A,1,Spain/France winner
    A,2,Türkiye
-   G,1,QF3 defeated
+   G,1,Netherlands/Portugal defeated team
    ```
 
-   - Groups A-F have four teams (pots 1-4), G-L five (pots 1-5). The `pot` column is optional; when present it is checked against the seeding and catches a team typed in the wrong row.
-   - The eight Nations League quarter-finalists are drawn as placeholders. Write them by pairing (`Spain/France winner`, `Norway/England defeated team`, in either order; `loser` also works) or by number (`QF1 winner`, numbered as in `data/nt/euro2028/quarter_finals.csv`: 1 Spain/France, 2 Norway/England, 3 Netherlands/Portugal, 4 Belgium/Germany). UEFA's own numbering may differ, so the pairing form is safer; a label giving both (`QF1 winners (Netherlands/Portugal)`) is refused when the two disagree.
+   - Groups A-F have four teams (pots 1-4), G-L five (pots 1-5); any other size or pot make-up stops the loader. The `pot` column is optional; when present it is checked against the seeding and catches a team typed in the wrong row.
+   - The eight Nations League quarter-finalists are drawn as placeholders. Write each with its pairing (`Spain/France winners`, `Norway/England defeated team`, in either order; `loser` also works). UEFA prints them as "QFx winners" and its draw procedure does not say which tie each `x` is, so a label without a pairing (`QF2 winners`) is refused: find the pairing on UEFA's draw page and add it. A number beside the pairing (`QF2 winners (Norway/England)`) is UEFA's and is ignored; the pairing decides.
    - UEFA spellings Türkiye, Czechia and Bosnia-Herzegovina map to the results file's names; the results file's own spelling also works.
 
 2. **Run the odds:**
@@ -59,7 +59,7 @@
    LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 ml light -- Rscript scripts/nt/euro2028_odds.R fit=/Users/brynjolfurjonsson/.claude-reviews/euro2028-draw/fit/nt_fit_2026-11-18.rds out=docs/reports/2026-12-06-euro2028-draw
    ```
 
-   - An error naming teams means a typing error: a team missing, repeated, unknown or in the wrong pot, or a quarter-finalist typed as itself instead of as a placeholder.
+   - An error naming teams means a typing error: a team missing, repeated, unknown or in the wrong pot, a group of the wrong size or pot make-up, a quarter-finalist typed as itself instead of as a placeholder, or a placeholder without its pairing. A `fixtures=` path that does not exist also stops the script.
    - A **warning** that the groups break draw conditions means the typed groups cannot be UEFA's draw (a team in the wrong group, most likely). Check the named groups against UEFA's page. If the file is right, UEFA changed a condition: update `data/nt/euro2028/draw_conditions.csv`. One exception: a winter warning that counts a Norway/England placeholder, or a host warning that counts an England placeholder, may be UEFA reading those conditions differently from us (the procedure does not say how they apply to placeholders); the odds are still computed, so note it and carry on.
 
 3. **Read `odds.md`** in the output folder. It starts with Iceland, then has one table per group, the quarter-finalists, the reserved host places and play-off format, and the **Article 15 d) comparison**: how often the "repeat" (published explanations) and "once" (the regulation's literal wording) readings change a group table, the direct qualifiers or the play-off field. Which reading to use is the owner's decision; the default is "repeat". `teams.csv`, `teams_once.csv` and `slots.csv` hold the numbers; `odds.rds` holds them for later steps.
@@ -71,6 +71,7 @@
 ## What the odds assume
 
 - Strengths are the fit's posterior at its cutoff; they do not move between windows. Refit after each window (March, June, September, October, November 2027).
+- **Known gap:** the Nations League quarter-finals are always simulated. Once they are played (March 2027) there is no way yet to fix their results, so later runs still treat decided ties as open. A `winner` column in `quarter_finals.csv` would close it.
 - Each Nations League quarter-final is two legs, extra time in the second leg at a third of that leg's rate, then a coin-toss shootout. The same applies to two-legged play-off ties; single-leg play-off matches use extra time and a shootout too.
 - Disciplinary points (Article 15 j, Article 23) are not modelled: a random draw settles ties that reach them.
 - Without a fixture list, Belarus, Ukraine and Israel play home matches at neutral venues (UEFA decision for the first two; every competitive Israel home match since June 2025 was in Hungary). All other home matches are at home.

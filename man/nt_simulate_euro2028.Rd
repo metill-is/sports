@@ -10,6 +10,8 @@ nt_simulate_euro2028(
   n_sims = 10000L,
   h2h_reapply = c("repeat", "once"),
   seed = NULL,
+  et_factor = 1/3,
+  shootout_p = 0.5,
   ...
 )
 }
@@ -23,6 +25,9 @@ nt_simulate_euro2028(
 \item{h2h_reapply}{Passed to [nt_simulate_qualifying()].}
 
 \item{seed}{Optional seed.}
+
+\item{et_factor, shootout_p}{Extra time and shoot-out of every knockout tie
+(the quarter-finals and the play-offs); see [nt_knockout_win_prob()].}
 
 \item{...}{Passed to [nt_simulate_euro_playoffs()].}
 }
@@ -39,5 +44,7 @@ List: `teams` (tibble per team: `team`, `group`, `p_winner`,
 \description{
 Runs [nt_simulate_qualifying()] on the draw (with the Nations League
 quarter-final placeholders) and [nt_simulate_euro_playoffs()] on its
-result, one posterior draw per simulation throughout.
+result, one posterior draw per simulation throughout. Runners-up are
+ranked on their results against the teams placed first to fourth in every
+group (Article 23: the fifth-placed team's matches are discarded).
 }

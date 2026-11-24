@@ -8,8 +8,9 @@
 #   Rscript scripts/nt/euro2028_odds.R fit=<fit.rds> out=<dir>
 #       [groups=data/nt/euro2028/groups.csv] [fixtures=data/nt/euro2028/fixtures_2027.csv]
 #       [n_sims=20000] [seed=2028] [team=Iceland]
-# The fixtures file is optional (used when it exists): without it every pair
-# plays home and away, Belarus, Ukraine and Israel at neutral venues.
+# The default fixtures file is used when it exists: without it every pair
+# plays home and away, Belarus, Ukraine and Israel at neutral venues. A
+# fixtures= file that does not exist stops the script.
 # Measured 2026-11-24 with the real fit: 62 s and 1.44 GB peak at 20,000
 # simulations (both readings), 31 s and 1.32 GB at 10,000; under every heavy
 # threshold, so `ml light -- Rscript ...`. Identical output on a rerun.
@@ -25,8 +26,14 @@ fit_path <- opt("fit")
 out_dir <- opt("out")
 if (is.null(fit_path) || is.null(out_dir)) stop("Usage: euro2028_odds.R fit=<fit.rds> out=<dir> [key=value ...]")
 groups_csv <- opt("groups", here::here("data", "nt", "euro2028", "groups.csv"))
-fixtures_csv <- opt("fixtures", here::here("data", "nt", "euro2028", "fixtures_2027.csv"))
-if (!file.exists(fixtures_csv)) fixtures_csv <- NULL
+fixtures_given <- opt("fixtures")
+fixtures_csv <- fixtures_given %||% here::here("data", "nt", "euro2028", "fixtures_2027.csv")
+if (!file.exists(fixtures_csv)) {
+  # WHY: a fixture list named on the command line and missing is a typing
+  # error; falling back to generated fixtures would hide it.
+  if (!is.null(fixtures_given)) stop("fixtures= names a file that does not exist: ", fixtures_given)
+  fixtures_csv <- NULL
+}
 n_sims <- as.integer(opt("n_sims", "20000"))
 seed <- as.integer(opt("seed", "2028"))
 focus <- opt("team", "Iceland")
