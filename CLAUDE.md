@@ -88,7 +88,7 @@ print(DBI::dbGetQuery(con, "SELECT sport, country, COUNT(*) AS n, SUM(pnl) AS pn
 '
 ```
 
-- **Raw Lengjan odds archive (local, read-only):** `read_lengjan_archive()` reads a local copy into odds-shaped rows and never writes to `data/facts/odds/`: [`docs/runbooks/odds-archive.md`](docs/runbooks/odds-archive.md).
+- **Raw Lengjan odds archive (local, read-only):** `read_lengjan_archive()` reads a local copy into odds-shaped rows and never writes to `data/facts/odds/`; `scripts/0No_closing_odds.R` builds the closing-odds table from it into a git-ignored folder: [`docs/runbooks/odds-archive.md`](docs/runbooks/odds-archive.md).
 
 ### World Cup
 

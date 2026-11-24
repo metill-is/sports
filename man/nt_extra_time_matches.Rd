@@ -4,7 +4,10 @@
 \alias{nt_extra_time_matches}
 \title{Knockout matches that went to extra time, with their 90-minute scores.}
 \usage{
-nt_extra_time_matches()
+nt_extra_time_matches(sex = c("men", "women"))
+}
+\arguments{
+\item{sex}{`"men"` or `"women"`.}
 }
 \value{
 Tibble `match_date, team_a, team_b, a_90, b_90, shootout`; the pair
@@ -14,6 +17,18 @@ Tibble `match_date, team_a, team_b, a_90, b_90, shootout`; the pair
 The source file stores the score after extra time, so a knockout match that
 was level after 90 minutes shows either its extra-time winner or, for a
 shootout, the 120-minute draw. The model predicts 90 minutes, so scoring
-needs the regulation score. Goal minutes are from the English Wikipedia
-match boxes of each tournament's knockout pages (read 2026-11-15).
+needs the regulation score, and so does training (see the `ninety`
+argument of [nt_prepare()]).
+}
+\details{
+Men: the knockout matches of World Cup 2022, Euro 2024 and World Cup 2026;
+goal minutes from the English Wikipedia match boxes of each tournament's
+knockout pages (read 2026-11-15). Women: the second legs of round 1 of the
+UEFA play-offs for the 2027 Women's World Cup (October 2026). Of its 16
+ties only three had scores that allowed extra time; Poland v Belgium went
+to extra time and penalties (2-1 after 90 minutes, 3-2 after 120:
+Flashscore's match report and uefa.com's round-2 preview, read
+2026-11-24), while Scotland v Czechia and Slovenia v Turkey were settled
+in 90 minutes (Football Web Pages match listings, read 2026-11-24). In a
+second leg the 90-minute score need not be level; the aggregate is.
 }

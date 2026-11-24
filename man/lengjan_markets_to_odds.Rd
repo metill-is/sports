@@ -18,7 +18,7 @@ group OU_FT -> total over/under at `special_value`; group HC_FT (3-way
 handicap) -> spread home/draw/away at `special_value`, which is home's
 signed handicap ("Forgjof 1-0" -> 1, as [parse_handicap()] encodes it).
 Everything else -- half-time, double chance, Asian handicap, BTTS -- is
-dropped, as is any selection that is not open or whose price is not a
-valid decimal (> 1): one suspended market must not abort the whole write
-through validate_values().
+dropped here and kept by [lengjan_markets_long()], as is any selection
+that is not open or whose price is not a valid decimal (> 1): one
+suspended market must not abort the whole write through validate_values().
 }

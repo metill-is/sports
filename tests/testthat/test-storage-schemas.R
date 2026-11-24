@@ -1,9 +1,9 @@
-test_that("all 12 schemas are defined by name", {
+test_that("all 13 schemas are defined by name", {
   s <- schemas()
   expect_setequal(
     names(s),
     c(
-      "results", "schedules", "odds",
+      "results", "schedules", "odds", "odds_markets",
       "beliefs_latest", "beliefs_archive", "beliefs_by_round",
       "candidates", "recommendations", "ledger", "fit_diagnostics",
       "forecast_archive",
@@ -63,4 +63,22 @@ test_that("results carries the game id and the regulation-time scores as nullabl
   expect_identical(opt$game_id, NA_character_)
   expect_identical(opt$home_score_reg, NA_integer_)
   expect_identical(opt$away_score_reg, NA_integer_)
+})
+
+test_that("odds_markets carries the odds match columns, then one selection of one market", {
+  s <- schemas()$odds_markets
+  expect_equal(s$names, c(
+    "sport", "country", "scraped_at", "match_date", "home_team", "away_team",
+    "sex", "event_id", "competition_id", "kickoff_at",
+    "market_id", "market_version", "market_code", "market_type",
+    "market_group", "market_name", "special_value", "line", "selection",
+    "odds", "is_primary", "is_live", "closes_at"
+  ))
+  expect_equal(s$GetFieldByName("odds")$type$ToString(), "double")
+  expect_equal(s$GetFieldByName("line")$type$ToString(), "double")
+  expect_equal(s$GetFieldByName("is_primary")$type$ToString(), "bool")
+  expect_equal(s$GetFieldByName("closes_at")$type$ToString(), "timestamp[s, tz=UTC]")
+  expect_equal(table_partitions()$odds_markets, c("sport", "country", "scraped_date"))
+  expect_identical(table_subdir("odds_markets"), c("facts", "odds_markets"))
+  expect_equal(natural_key_for("odds_markets"), c("scraped_at", "event_id", "market_id", "selection"))
 })

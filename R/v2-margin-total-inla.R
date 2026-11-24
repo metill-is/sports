@@ -294,9 +294,14 @@ fit_v2_inla <- function(v, response = c("margin", "total"),
   idx <- INLA::inla.stack.index(stk, "obs")$data
   lp <- fit$summary.linear.predictor[idx, c("mean", "sd")]
   prec_name <- "Precision for the Gaussian observations"
-  sigma2 <- INLA::inla.emarginal(
-    function(x) exp(-x),
-    fit$internal.marginals.hyperpar[["Log precision for the Gaussian observations"]]
+  # WHY tryCatch: a marginal R-INLA could not build (non-finite densities) makes its
+  # summaries stop with an error; read as NA it is refused by the gate instead.
+  sigma2 <- tryCatch(
+    INLA::inla.emarginal(
+      function(x) exp(-x),
+      fit$internal.marginals.hyperpar[["Log precision for the Gaussian observations"]]
+    ),
+    error = function(e) NA_real_
   )
 
   out <- list(
@@ -472,6 +477,12 @@ v2_successful_predictions <- function(pred, cut) {
 #' monotone transform, which stays finite where the user-scale precision
 #' marginal's spline can dip below zero.
 #'
+#' A marginal that cannot be summarised (R-INLA returned non-finite
+#' densities, seen on one CI runner of 2026-11-23, where `inla.qmarginal()`
+#' stopped with "zero non-NA points") gives a row of `NA` instead of an
+#' error, so that the fit is refitted or refused (`hbbb_v2_fit_halves()`,
+#' `hbbb_v2_gate()`) rather than lost to an opaque error.
+#'
 #' @param fit An `inla` fit.
 #' @return Data frame with one row per hyperparameter: `parameter`, `mean`,
 #'   `sd`, `q05`, `q50`, `q95`.
@@ -489,13 +500,19 @@ v2_inla_hyper_sd <- function(fit) {
       f <- identity
       label <- nm
     }
-    q <- sort(f(INLA::inla.qmarginal(c(0.05, 0.5, 0.95), m)))
-    m1 <- INLA::inla.emarginal(f, m)
-    m2 <- INLA::inla.emarginal(function(x) f(x)^2, m)
-    data.frame(
-      parameter = label, mean = m1, sd = sqrt(max(m2 - m1^2, 0)),
-      q05 = q[1], q50 = q[2], q95 = q[3]
+    # WHY suppressWarnings: on a broken marginal R-INLA warns (min / max of nothing)
+    # before it stops; the row reads as NA and is dealt with downstream.
+    s <- tryCatch(
+      suppressWarnings({
+        q <- sort(f(INLA::inla.qmarginal(c(0.05, 0.5, 0.95), m)), na.last = TRUE)
+        m1 <- INLA::inla.emarginal(f, m)
+        m2 <- INLA::inla.emarginal(function(x) f(x)^2, m)
+        c(mean = m1, sd = sqrt(max(m2 - m1^2, 0)), q05 = q[1], q50 = q[2], q95 = q[3])
+      }),
+      error = function(e) NULL
     )
+    if (length(s) != 5L || !all(is.finite(s))) s <- rep(NA_real_, 5L)
+    data.frame(parameter = label, mean = s[[1]], sd = s[[2]], q05 = s[[3]], q50 = s[[4]], q95 = s[[5]])
   })
   do.call(rbind, rows)
 }

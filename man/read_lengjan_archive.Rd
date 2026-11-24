@@ -9,7 +9,8 @@ read_lengjan_archive(
   from = NULL,
   to = NULL,
   what = c("detail", "program"),
-  leagues = load_leagues()
+  leagues = load_leagues(),
+  table = c("odds", "odds_markets")
 )
 }
 \arguments{
@@ -22,39 +23,48 @@ or a string (`"2026-11-19"`, `"2026-11-19T18:00:00Z"`); strings without
 an offset are UTC. A `to` given as a date covers that whole day. `NULL`
 leaves the side unbounded.}
 
-\item{what}{`"detail"` reads the market-detail bodies: moneyline, total
-and spread rows for the events a capture fetched detail for. `"program"`
-reads only the program body: moneyline rows from each listed event's
-embedded main market, where that is an open, pre-match primary `3WAY`
-([parse_lengjan_program_markets()]).}
+\item{what}{`"detail"` reads the market-detail bodies, for the events a
+capture fetched detail for. `"program"` reads only the program body: each
+listed event's embedded main market. With `table = "odds"` that gives
+moneyline rows where the embedded market is an open, pre-match primary
+`3WAY` ([parse_lengjan_program_markets()]); with `table = "odds_markets"`
+every embedded market's open, priced selections, in-play ones included
+and flagged by `is_live`, with `market_group` `"program"` (the program
+carries no group).}
 
 \item{leagues}{League definitions, used only to fill `sex`.}
+
+\item{table}{`"odds"` returns the odds table's columns: moneyline, total
+and spread only. `"odds_markets"` returns the odds_markets table's
+columns: every open selection priced above 1 of every market, with
+Lengjan's market id, version, code (`externalId`), type, group and name.}
 }
 \value{
-Tibble with the columns of the odds table (`sport`, `country`,
-  `scraped_at`, `match_date`, `home_team`, `away_team`, `market`,
-  `outcome`, `line`, `odds`, `sex`, `event_id`, `competition_id`,
-  `kickoff_at`) followed by `sport_id`, `sport_name`, `country_code` and
-  `competition_name` from the payload. `scraped_at` is the capture time.
-  `sport` and `country` are `NA` for a sport id or country code the
-  package does not know; `sex` is `NA` unless `leagues` lists the
-  competition under the row's sport. `match_date` is the UTC date of
-  `kickoff_at`; both are `NA` for an event whose kickoff does not parse
-  (the live scrape treats that as an error; a research read keeps the
-  prices). Zero rows, same columns, when no capture falls in the window.
+Tibble with the columns of the chosen table (`schemas()$odds` or
+  `schemas()$odds_markets`) followed by `sport_id`, `sport_name`,
+  `country_code` and `competition_name` from the payload. `scraped_at` is
+  the capture time. `sport` and `country` are `NA` for a sport id or
+  country code the package does not know; `sex` is `NA` unless `leagues`
+  lists the competition under the row's sport. `match_date` is the UTC
+  date of `kickoff_at`; both are `NA` for an event whose kickoff does not
+  parse (the live scrape treats that as an error; a research read keeps
+  the prices). Zero rows, same columns, when no capture falls in the
+  window.
 }
 \description{
 Parses the raw bodies each capture points at with the functions the live
 scrape uses ([parse_lengjan_program()], [parse_lengjan_markets()],
-[lengjan_markets_to_odds()]) and returns one row per capture, event,
-market, outcome and line. A captured event comes back whether or not
-`leagues` knows its competition, as long as it has a market the live
-mapping knows (an event with none has no row). Nothing is de-duplicated
-across captures, so an event listed in two captures has two sets of rows,
-told apart by `scraped_at`. Team names stay as Lengjan renders them.
+[lengjan_markets_to_odds()] or [lengjan_markets_long()]) and returns one
+row per capture, event, market, outcome and line (`table = "odds"`) or one
+row per capture and selection of every market (`table = "odds_markets"`).
+A captured event comes back whether or not `leagues` knows its
+competition, as long as it has a row to give (an event with none has no
+row). Nothing is de-duplicated across captures, so an event listed in two
+captures has two sets of rows, told apart by `scraped_at`. Team names stay
+as Lengjan renders them.
 }
 \details{
-Read-only: the rows are not validated against `schemas()$odds`, nothing is
+Read-only: the rows are not validated against `schemas()`, nothing is
 written to the facts store and no network request is made.
 
 A capture whose status is `error` is skipped with a note naming it, a
@@ -68,5 +78,6 @@ and what was wrong with it; the rest are returned.
 \dontrun{
 odds <- read_lengjan_archive(from = "2026-11-19", to = "2026-11-20")
 main <- read_lengjan_archive(from = "2026-11-19", what = "program")
+every <- read_lengjan_archive(from = "2026-11-22", table = "odds_markets")
 }
 }
