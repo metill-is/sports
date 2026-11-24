@@ -9,13 +9,14 @@
 # combination of candidates is simulated with its share of `sims`, so the
 # pooled numbers are the mixture over who qualifies.
 #
-# The group tie-break order of the 2027 regulations was not found on
-# 2026-11-24 (2023 used goal difference first, the 2026 men's head-to-head
-# first); confirm it and pass group_rule= accordingly.
+# Groups are ranked by the 2023 order and Brazil plays its knockout matches at
+# home: the defaults of nt_wwc2027_structure(), from the owner's decision of
+# 24 November 2026 ("Take all three"). group_rule= overrides the order if the
+# 2027 regulations differ.
 #
 # Usage:
 #   Rscript scripts/nt/wwc2027_finals.R <fit.rds> <groups.csv> <out.rds> \
-#     [sims=20000] [group_rule=head_to_head]
+#     [sims=20000] [group_rule=wwc_2023]
 
 suppressMessages(devtools::load_all(quiet = TRUE))
 options(width = 160)
@@ -29,7 +30,7 @@ fit <- readRDS(args[[1]])$fit
 draw <- utils::read.csv(args[[2]], stringsAsFactors = FALSE, encoding = "UTF-8")
 out_path <- args[[3]]
 n_total <- as.integer(opt("sims", "20000"))
-group_rule <- opt("group_rule", "head_to_head")
+group_rule <- opt("group_rule", NULL)
 
 if (!"candidates" %in% names(draw)) draw$candidates <- ""
 draw$candidates[is.na(draw$candidates)] <- ""

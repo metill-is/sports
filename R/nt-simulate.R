@@ -244,8 +244,12 @@ nt_head_to_head <- function(fit, teams, method = c("extra_time", "replay"),
 # points; then head-to-head points, goal difference and goals among the teams
 # level (step 1), re-applied to the teams still level (step 2); then goal
 # difference and goals in all group matches. `tiebreak` stands in for team
-# conduct and the FIFA ranking. "goal_difference" is the order used before
-# 2026 (points, goal difference, goals), kept to reproduce runs made with it.
+# conduct and the FIFA ranking. "wwc_2023" is the FIFA Women's World Cup 2023
+# order (Regulations, Article 13): points, goal difference and goals in all
+# group matches; then head-to-head points, goal difference and goals among the
+# teams level on all three, applied once; `tiebreak` stands in for team
+# conduct and the drawing of lots. "goal_difference" (points, goal difference,
+# goals, then `tiebreak`) is kept to reproduce runs made with it.
 .nt_wc_rank_group <- function(home, away, teams, goals_h, goals_a, tiebreak,
                               rule = "head_to_head", h2h_reapply = "repeat") {
   x <- .nt_group_arrays(home, away, teams, goals_h, goals_a)
@@ -253,11 +257,14 @@ nt_head_to_head <- function(fit, teams, method = c("extra_time", "replay"),
   points <- total(x$points)
   gd <- total(x$gd)
   gf <- total(x$gf)
-  rank <- if (rule == "head_to_head") {
-    .nt_rank_group_vec(x$points, x$gd, x$gf, list(gd, gf), tiebreak, h2h_reapply)
-  } else {
-    .nt_lexi_rank(list(points, gd, gf, tiebreak))
-  }
+  rank <- switch(rule,
+    head_to_head = .nt_rank_group_vec(x$points, x$gd, x$gf, list(gd, gf), tiebreak, h2h_reapply),
+    wwc_2023 = .nt_rank_group_vec(x$points, x$gd, x$gf, list(), tiebreak, "none",
+      level = list(points, gd, gf)
+    ),
+    goal_difference = .nt_lexi_rank(list(points, gd, gf, tiebreak)),
+    cli::cli_abort("Unknown group rule {.val {rule}}.")
+  )
   list(rank = rank, points = points, gd = gd, gf = gf)
 }
 
@@ -272,16 +279,31 @@ nt_head_to_head <- function(fit, teams, method = c("extra_time", "replay"),
 #' 61 and 62 the semi-finals. Winners of groups A and B can meet only in the
 #' final.
 #'
+#' The defaults follow the owner's decision of 24 November 2026, "Take all
+#' three": rank groups by the 2023 order until FIFA publishes the 2027
+#' regulations, and count Brazil's knockout matches as home matches (every
+#' match is played in Brazil).
+#'
 #' @param groups Named list `A` to `H` of four team names each (martj42
 #'   spelling), from the final draw of 11 December 2026. Brazil must be in
 #'   group A.
+#' @param group_rule How teams level on points are ranked within a group; see
+#'   [nt_simulate_world_cup()]. Default `"wwc_2023"`: the FIFA Women's World
+#'   Cup 2023 order, goal difference and goals in all group matches before
+#'   head-to-head.
+#' @param host_knockout_home Whether Brazil has home advantage in its knockout
+#'   matches (the bronze final included). Default `TRUE`.
 #' @return A structure for [nt_simulate_world_cup()]: `groups`, `group_of`,
-#'   `hosts`, `bracket` (tibble `match_no`, `round`, `feeder_a`, `feeder_b`;
-#'   `"1A"` = winner of group A, `"2B"` = runner-up of group B, `"W49"` =
-#'   winner of match 49), `third_slots` (`NULL`: no third-placed team
-#'   qualifies), `rounds` and `third_place` (the bronze final).
+#'   `hosts`, `knockout_hosts` (`"Brazil"`, or empty when
+#'   `host_knockout_home = FALSE`), `group_rule`, `bracket` (tibble
+#'   `match_no`, `round`, `feeder_a`, `feeder_b`; `"1A"` = winner of group A,
+#'   `"2B"` = runner-up of group B, `"W49"` = winner of match 49),
+#'   `third_slots` (`NULL`: no third-placed team qualifies), `rounds` and
+#'   `third_place` (the bronze final).
 #' @export
-nt_wwc2027_structure <- function(groups) {
+nt_wwc2027_structure <- function(groups, group_rule = "wwc_2023",
+                                 host_knockout_home = TRUE) {
+  group_rule <- match.arg(group_rule, c("wwc_2023", "head_to_head", "goal_difference"))
   if (length(groups) != 8L || !identical(names(groups), LETTERS[1:8]) ||
     any(lengths(groups) != 4L)) {
     cli::cli_abort("{.arg groups} must be eight groups named A to H of four teams each.")
@@ -315,6 +337,8 @@ nt_wwc2027_structure <- function(groups) {
     groups = groups,
     group_of = stats::setNames(rep(names(groups), lengths(groups)), teams),
     hosts = "Brazil",
+    knockout_hosts = if (isTRUE(host_knockout_home)) "Brazil" else character(),
+    group_rule = group_rule,
     bracket = bracket,
     third_slots = NULL,
     rounds = c("R16", "QF", "SF", "Final", "Champion"),
@@ -327,7 +351,9 @@ nt_wwc2027_structure <- function(groups) {
 #' Group stage and knockouts are simulated jointly: each simulation uses one
 #' posterior draw of the strengths for every match, so a team's uncertain
 #' strength carries through its whole run. Hosts play their group matches at
-#' home; knockout matches are neutral. The format comes from `structure`: the
+#' home; knockout matches are neutral, except that a team in
+#' `structure$knockout_hosts` plays its knockout matches at home (Brazil in
+#' 2027 by default; nobody in 2026). The format comes from `structure`: the
 #' 48-team men's World Cup of 2026 ([wc_structure()]: twelve groups, eight
 #' best third-placed teams, a round of 32) or the 32-team Women's World Cup of
 #' 2027 ([nt_wwc2027_structure()]: eight groups, the top two to a round of
@@ -344,10 +370,14 @@ nt_wwc2027_structure <- function(groups) {
 #' @param group_rule How teams level on points are ranked within a group:
 #'   `"head_to_head"` (FIFA World Cup 2026 Regulations, Article 13: results
 #'   between the teams level first, then goal difference and goals in all
-#'   group matches) or `"goal_difference"` (the earlier order: goal difference,
-#'   then goals). Team conduct and the FIFA ranking are not modelled; a random
-#'   draw settles what is still level. Third-placed teams are compared on
-#'   points, goal difference and goals under either rule.
+#'   group matches), `"wwc_2023"` (FIFA Women's World Cup 2023 Regulations,
+#'   Article 13: goal difference and goals in all group matches, then
+#'   head-to-head points, goal difference and goals among the teams still
+#'   level) or `"goal_difference"` (goal difference, then goals, kept to
+#'   reproduce earlier runs). `NULL` (the default) takes `structure$group_rule`
+#'   and falls back to `"head_to_head"`. Team conduct and the FIFA ranking are
+#'   not modelled; a random draw settles what is still level. Third-placed
+#'   teams are compared on points, goal difference and goals under any rule.
 #' @param h2h_reapply How often step 2 re-applies the head-to-head criteria to
 #'   teams still level: `"repeat"` (until nothing changes) or `"once"`. With
 #'   groups of four the two always give the same table: a third pass needs all
@@ -366,11 +396,12 @@ nt_wwc2027_structure <- function(groups) {
 nt_simulate_world_cup <- function(fit, structure, n_sims = 20000L,
                                   knockout = c("extra_time", "replay"),
                                   et_factor = 1 / 3, shootout_p = 0.5,
-                                  group_rule = c("head_to_head", "goal_difference"),
+                                  group_rule = NULL,
                                   h2h_reapply = c("repeat", "once"),
                                   seed = NULL) {
   knockout <- match.arg(knockout)
-  group_rule <- match.arg(group_rule)
+  if (is.null(group_rule)) group_rule <- structure$group_rule %||% "head_to_head"
+  group_rule <- match.arg(group_rule, c("head_to_head", "wwc_2023", "goal_difference"))
   h2h_reapply <- match.arg(h2h_reapply)
   if (!is.null(seed)) set.seed(seed)
   teams <- unlist(structure$groups, use.names = FALSE)
@@ -385,16 +416,17 @@ nt_simulate_world_cup <- function(fit, structure, n_sims = 20000L,
   mu <- d$mu[pick]
   home_for <- d$home_for[pick]
   home_against <- d$home_against[pick]
-  rates <- function(a, b, venue = 0) {
+  rates <- function(a, b, venue = 0, venue_b = 0) {
     ia <- cbind(seq_len(n_sims), a)
     ib <- cbind(seq_len(n_sims), b)
     base <- mu + dl[ia] + dl[ib]
     gap <- th[ia] - th[ib]
     list(
-      a = exp(base + gap + home_for * venue),
-      b = exp(base - gap + home_against * venue)
+      a = exp(base + gap + home_for * venue + home_against * venue_b),
+      b = exp(base - gap + home_against * venue + home_for * venue_b)
     )
   }
+  ko_hosts <- structure$knockout_hosts
 
   games <- vector("list", n_groups)
   for (g in seq_len(n_groups)) {
@@ -478,7 +510,13 @@ nt_simulate_world_cup <- function(fit, structure, n_sims = 20000L,
   fr_a <- fr_b <- matrix(0L, n_sims, sum(structure$bracket$round == first_ko))
   fr_i <- 0L
   play <- function(a, b) {
-    r <- rates(a, b)
+    r <- if (length(ko_hosts) == 0L) {
+      rates(a, b)
+    } else {
+      at_a <- teams[a] %in% ko_hosts
+      at_b <- teams[b] %in% ko_hosts
+      rates(a, b, venue = at_a & !at_b, venue_b = at_b & !at_a)
+    }
     res <- nt_simulate_knockout(r$a, r$b, knockout, et_factor, shootout_p)
     decided <<- decided + tabulate(res$decided, nbins = 3L)
     list(winner = ifelse(res$a_wins, a, b), loser = ifelse(res$a_wins, b, a))

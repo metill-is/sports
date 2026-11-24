@@ -174,6 +174,39 @@ test_that("the 2027 bracket keeps group winners A and B apart until the final", 
   expect_equal(get(sim_ac, "Brazil", "p_sf") + get(sim_ac, "T9", "p_sf"), 1, tolerance = 0.02)
 })
 
+test_that("the 2027 structure defaults to the 2023 group order and Brazil at home in knockouts", {
+  s <- nt_wwc2027_structure(wwc_test_groups())
+  expect_equal(s$group_rule, "wwc_2023")
+  expect_equal(s$knockout_hosts, "Brazil")
+  s0 <- nt_wwc2027_structure(wwc_test_groups(), group_rule = "head_to_head", host_knockout_home = FALSE)
+  expect_equal(s0$group_rule, "head_to_head")
+  expect_length(s0$knockout_hosts, 0L)
+})
+
+test_that("the simulator ranks groups by the structure's rule unless given one", {
+  s <- nt_wwc2027_structure(wwc_test_groups())
+  teams <- unlist(s$groups, use.names = FALSE)
+  withr::local_seed(5)
+  fit <- nt_test_fit(stats::setNames(stats::rnorm(32, 0, 0.4), teams), mu = 0.1)
+  by_default <- nt_simulate_world_cup(fit, s, n_sims = 800L, seed = 2L)$teams
+  given <- nt_simulate_world_cup(fit, s, n_sims = 800L, group_rule = "wwc_2023", seed = 2L)$teams
+  h2h <- nt_simulate_world_cup(fit, s, n_sims = 800L, group_rule = "head_to_head", seed = 2L)$teams
+  expect_identical(by_default, given)
+  expect_false(isTRUE(all.equal(by_default$p_first, h2h$p_first)))
+})
+
+test_that("Brazil plays its knockout matches at home unless the structure says not", {
+  teams <- unlist(wwc_test_groups(), use.names = FALSE)
+  fit <- nt_test_fit(stats::setNames(rep(0, 32), teams), home_for = 3, home_against = -3)
+  champion <- function(home) {
+    s <- nt_wwc2027_structure(wwc_test_groups(), host_knockout_home = home)
+    t <- nt_simulate_world_cup(fit, s, n_sims = 400L, seed = 6L)$teams
+    unname(t$p_champion[t$team == "Brazil"])
+  }
+  expect_gt(champion(TRUE), 0.95)
+  expect_lt(champion(FALSE), 0.2)
+})
+
 test_that("a scalar rate is recycled across simulated ties", {
   withr::local_seed(4)
   sim <- nt_simulate_two_leg(rep(1, 50), 1, 1, 1)

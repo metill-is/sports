@@ -172,8 +172,8 @@ Code ready in this branch:
 Steps after the draw:
 
 1. Refit with the 5 December results (`scripts/nt/wwc2027_fit.R`, cutoff at the draw), adding any extra-time second legs of round 2 to `nt_extra_time_matches("women")`.
-2. Decide whether Brazil's knockout matches count as home matches. The simulator plays every knockout match at a neutral venue, as for the three-host men's tournament of 2026; in a one-host tournament every Brazil match is in Brazil, worth the estimated home effects (+0.05 and -0.16 on the log scale) in each.
-3. Confirm the group tie-break order in FIFA's 2027 regulations (not found on 2026-11-24; 2023 ranked on goal difference first, the 2026 men's tournament on head-to-head first) and pass it as `group_rule`.
+2. Brazil's knockout matches count as home matches (decided by the owner on 24 November 2026; the default of `nt_wwc2027_structure()`): every Brazil match is in Brazil, worth the estimated home effects (+0.05 and -0.16 on the log scale) in each.
+3. Groups are ranked by the 2023 order, goal difference and goals before head-to-head, until FIFA publishes the 2027 regulations (the same decision; `group_rule = "wwc_2023"`, the structure's default). If the 2027 regulations differ, pass their order as `group_rule`.
 4. Weights for the play-off placeholders: until a model of the February play-off tournament exists, use the candidates' chances from simple per-match forecasts, stated as such.
 5. Publishing on metill.is is the owner's decision; the dormant World Cup publisher (`R/wc-publish.R`) writes eight JSONs for the men's 2026 tournament and would need a women's tree.
 

@@ -321,13 +321,15 @@ nt_uefa_overall_ranking <- function(matches, groups, disciplinary = NULL,
 # goals); `overall` is a list of n x k matrices applied in order once the
 # head-to-head criteria are exhausted; `tiebreak` (n x k, larger is better)
 # settles whatever is still level after them. Pass 1 of the loop is a) to c),
-# later passes re-apply them.
+# later passes re-apply them; `h2h_reapply = "none"` stops after pass 1.
+# `level` (a list of n x k matrices, default the points) is what teams must be
+# level on before the head-to-head step: the FIFA Women's World Cup 2023 order
+# passes points, goal difference and goals in all group matches.
 .nt_rank_group_vec <- function(pts_vs, gd_vs, gf_vs, overall, tiebreak,
-                               h2h_reapply = "repeat") {
+                               h2h_reapply = "repeat", level = NULL) {
   n <- dim(pts_vs)[1]
   k <- dim(pts_vs)[2]
-  points <- apply(pts_vs, c(1, 2), sum)
-  keys <- list(points)
+  keys <- if (is.null(level)) list(apply(pts_vs, c(1, 2), sum)) else level
   same_class <- function(cls) {
     ci <- array(cls, c(n, k, k))
     eq <- ci == aperm(ci, c(1, 3, 2))
@@ -339,7 +341,7 @@ nt_uefa_overall_ranking <- function(matches, groups, disciplinary = NULL,
     matrix(match(lab, unique(lab)), n, k)
   }
   cls <- class_of(keys)
-  max_pass <- if (h2h_reapply == "once") 2L else k
+  max_pass <- switch(h2h_reapply, once = 2L, none = 1L, k)
   for (pass in seq_len(max_pass)) {
     eq <- same_class(cls)
     h_pts <- apply(eq * pts_vs, c(1, 2), sum)
