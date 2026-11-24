@@ -11,6 +11,8 @@
 # The default fixtures file is used when it exists: without it every pair
 # plays home and away, Belarus, Ukraine and Israel at neutral venues. A
 # fixtures= file that does not exist stops the script.
+# odds.rds is nt_euro2028_odds()'s list, the input of
+# scripts/nt/euro2028_publish.R (the publish JSON).
 # Measured 2026-11-24 with the real fit: 62 s and 1.44 GB peak at 20,000
 # simulations (both readings), 31 s and 1.32 GB at 10,000; under every heavy
 # threshold, so `ml light -- Rscript ...`. Identical output on a rerun.
@@ -42,10 +44,9 @@ dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
 fit <- readRDS(fit_path)
 draw <- nt_read_euro2028_draw(groups_csv, fixtures_csv, fit = fit)
 t0 <- Sys.time()
-rep_run <- nt_simulate_euro2028(fit, draw, n_sims = n_sims, seed = seed)
-once_run <- nt_simulate_euro2028(fit, draw, n_sims = n_sims, h2h_reapply = "once", seed = seed)
+odds <- nt_euro2028_odds(fit, draw, n_sims = n_sims, seed = seed, fixtures_source = fixtures_csv %||% "generated")
 secs <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
-cmp <- nt_compare_h2h_readings(rep_run, once_run)
+cmp <- odds$compare
 
 round_df <- function(x) {
   num <- vapply(x, is.numeric, logical(1))
@@ -53,10 +54,10 @@ round_df <- function(x) {
   x
 }
 order_teams <- function(x) x[order(x$group, -x$p_qualify), , drop = FALSE]
-teams <- order_teams(rep_run$teams)
+teams <- order_teams(odds$teams)
 utils::write.csv(round_df(teams), file.path(out_dir, "teams.csv"), row.names = FALSE, fileEncoding = "UTF-8")
-utils::write.csv(round_df(order_teams(once_run$teams)), file.path(out_dir, "teams_once.csv"), row.names = FALSE, fileEncoding = "UTF-8")
-utils::write.csv(round_df(rep_run$slots), file.path(out_dir, "slots.csv"), row.names = FALSE, fileEncoding = "UTF-8")
+utils::write.csv(round_df(order_teams(odds$teams_once)), file.path(out_dir, "teams_once.csv"), row.names = FALSE, fileEncoding = "UTF-8")
+utils::write.csv(round_df(odds$slots), file.path(out_dir, "slots.csv"), row.names = FALSE, fileEncoding = "UTF-8")
 
 pct <- function(p) sprintf("%.1f%%", 100 * p)
 qf <- draw$quarter_finals
@@ -91,7 +92,7 @@ if (nrow(ft) == 1L) {
 }
 lines <- c(lines, "## Groups", "")
 for (g in names(draw$groups)) {
-  sl <- rep_run$slots[rep_run$slots$group == g, , drop = FALSE]
+  sl <- odds$slots[odds$slots$group == g, , drop = FALSE]
   sl <- sl[order(-sl$p_qualify), , drop = FALSE]
   lines <- c(
     lines, sprintf("### Group %s", g), "",
@@ -112,7 +113,7 @@ if (nrow(qf) > 0L) {
     sprintf("| %s | %s | %s | %s | %s |", qt$team, qt$group, pct(qt$p_winner), pct(qt$p_qualify_direct), pct(qt$p_qualify)), ""
   )
 }
-hp <- table(factor(rep_run$n_host_places, 0:2))
+hp <- table(factor(odds$n_host_places, 0:2))
 lines <- c(
   lines, "## Host places and play-off format", "",
   sprintf(
@@ -124,7 +125,7 @@ lines <- c(
 )
 
 by_g <- cmp$by_group[cmp$by_group > 0]
-dq <- merge(rep_run$teams[, c("team", "p_qualify_direct", "p_qualify")], once_run$teams[, c("team", "p_qualify_direct", "p_qualify")], by = "team", suffixes = c("_repeat", "_once"))
+dq <- merge(odds$teams[, c("team", "p_qualify_direct", "p_qualify")], odds$teams_once[, c("team", "p_qualify_direct", "p_qualify")], by = "team", suffixes = c("_repeat", "_once"))
 lines <- c(
   lines, "## Article 15 d): the two readings", "",
   "Both runs share every simulated score (same seed), so differences come from the reading alone.", "",
@@ -137,9 +138,5 @@ lines <- c(
   ), ""
 )
 writeLines(lines, file.path(out_dir, "odds.md"), useBytes = FALSE)
-saveRDS(list(
-  teams = rep_run$teams, teams_once = once_run$teams, slots = rep_run$slots, compare = cmp,
-  n_host_places = rep_run$n_host_places, groups = draw$groups, n_sims = n_sims, seed = seed,
-  fit_source = src, fit_settings = fit$settings
-), file.path(out_dir, "odds.rds"))
+saveRDS(odds, file.path(out_dir, "odds.rds"))
 cat(lines, sep = "\n")
