@@ -86,8 +86,30 @@ paths:
   40 of 40. On four threads a fixture's expected goals varied between
   processes with an sd of 0.005 to 0.009 at the median (the Monte Carlo
   standard error of 4,000 draws is 0.021) and by up to 0.17 between two
-  processes. One thread costs about 30 s of a men's fit's 108 s. Agreement
-  across machines was not measured. `fit_league()` passes no `threads`, and
+  processes. One thread costs about 30 s of a men's fit's 108 s.
+  **Across machines it does not hold (measured 2026-11-24, PR #120):**
+  R-INLA's Linux build runs on MKL, whose code path follows the CPU, so a
+  GitHub runner with an Intel CPU and one with an AMD CPU return different
+  fits of the same data. `fit.yml` and `engine-reference.yml` both take
+  whichever `ubuntu-latest` runner GitHub assigns. AMD EPYC 7763, 9V74 and
+  9V45 agreed with each other bit for bit; Intel Xeon 6973P-C, 6975P-C and
+  Platinum 8573C did not agree with them. The difference starts in the last
+  bits but does not stay there: on a flat hyperparameter posterior the
+  optimiser ends at a different point of the ridge. Two MKL code paths on
+  one runner (default against `MKL_CBWR=COMPATIBLE`, real handball and
+  basketball cells) moved the observation sds by at most 0.5 %, each model's
+  team spread by up to 7 % and single components (the club / season / week
+  split) by up to 56 %. On the simulated handball league of
+  `test-model-v2-hbbb.R` it decided the gate (club sd 1.23 on AMD, 9.08e9 on
+  Intel). Measured on handball/basketball fits; football runs the same
+  binary. So a fit is repeatable on one machine, not across runner vendors.
+  The known lever is `MKL_CBWR=COMPATIBLE`, the only setting that gave
+  bit-identical fits on Intel and AMD. Its cost was measured for handball and
+  basketball only, on one AMD runner: 7.9 against 7.9 s for men's handball,
+  35.0 against 35.3 s for men's basketball, 35.8 against 27.0 s for women's
+  basketball (two fits each). It was not measured on Intel or for football.
+  It is not set; pinning it changes every engine's numbers and is the owner's
+  call. `fit_league()` passes no `threads`, and
   `test-model-v2.R` pins the thread count, the option and a two-process
   comparison.
   **What "current strength" means on this engine:** each team's state at its
@@ -116,7 +138,8 @@ paths:
   its inputs with, so the two cannot drift -- and fitted by R-INLA as
   `fit_league()` would fit it that day (its `.fit_seed()`, full integration,
   one thread, `fv2_inla_gate()`; on one thread that reproduces the production
-  fit of the same data) and by NUTS with
+  fit of the same data when both runners have the same CPU vendor, which
+  nothing guarantees: see Repeatability) and by NUTS with
   `research/football-v2/stan/fv2_rev.stan` (`fv2_weekly_reference()`,
   `R/model-v2-reference.R`). It compares the two engines' outcome
   probabilities fixture by fixture; with no fixture inside the horizon it
@@ -165,9 +188,11 @@ paths:
   `attempts` per half; the gate then judges the second attempt as it would
   the first. Why: R-INLA's Linux build runs on MKL, whose code path follows
   the CPU, and on the simulated handball league the total model's numerical
-  Hessian at the (same) mode came out nearly singular on an Intel Xeon
-  6973P-C runner and not on AMD EPYC ones (club sd 9.08e9, the engine CI
-  failures of 2026-11-23/24); the restart recomputes it (club sd 1.25). A
+  Hessian at the mode came out nearly singular on Intel Xeon runners and not
+  on AMD EPYC ones, which end at a nearby point of the same flat ridge (club
+  sd 9.08e9; the engine CI failures of 2026-11-23/24). The restart lands on
+  the same mode to ten digits and recomputes the Hessian there (club sd
+  1.25). A
   cold refit would repeat the first attempt bit for bit. No league is switched.
 - `extract_posteriors()` materialises posterior draws as the canonical
   `beliefs_latest` tibble (per-draw-per-match).

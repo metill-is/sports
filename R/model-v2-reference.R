@@ -19,7 +19,9 @@ NULL
 # The fitters are arguments: scripts/engine_reference.R passes R-INLA exactly
 # as fit_league() would call it that day (production seed, full integration,
 # one thread, the INLA gate), which on one thread reproduces the production
-# fit of the same data (model-decide.md, "Repeatability"), and the research
+# fit of the same data when both runners have the same CPU vendor; across
+# Intel and AMD runners R-INLA's MKL build does not (model-decide.md,
+# "Repeatability"), and the research
 # Stan wrapper (research/football-v2/engines.R); the tests pass fakes. With no
 # fixture inside the horizon (the off-season) the comparison is made on every
 # pairing of the season's league divisions on the first day of the next

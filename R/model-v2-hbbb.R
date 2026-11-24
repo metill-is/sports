@@ -527,11 +527,11 @@ hbbb_v2_sd_bound <- function(name, priors, within) {
 #' singular in one direction: the asymmetric Gaussian it builds each marginal
 #' from then reaches absurd values. On the simulated handball league of
 #' `test-model-v2-hbbb.R` the MKL build R-INLA runs on Linux did that for the
-#' total model on an Intel Xeon 6973P-C runner and not on AMD EPYC runners
-#' (club sd 9.08e9, one Hessian direction with sd 15.8 against at most 2 on
-#' AMD): the same mode, a different last bit. These are the gate's
-#' "mode not found" and "sd above its prior bound" breaches; the gate's other
-#' checks are about the fit's values, not its numerics.
+#' total model on Intel Xeon runners and not on AMD EPYC runners (club sd
+#' 9.08e9, one Hessian direction with sd 15.8 against at most 2 on AMD),
+#' which end their search at a nearby point of the same flat ridge. These are
+#' the gate's "mode not found" and "sd above its prior bound" breaches; the
+#' gate's other checks are about the fit's values, not its numerics.
 #'
 #' @param fit One half as `fit_v2_inla()` returns it.
 #' @param priors Prior scales, see [v2_priors()].
