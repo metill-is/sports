@@ -164,4 +164,92 @@ test_that("ingest_lengjan_api writes nothing when a selected event's kickoff is 
     "API may have changed"
   )
   expect_equal(nrow(read_table("odds", root = root)), 0L)
+  expect_equal(nrow(read_table("odds_markets", root = root)), 0L)
+})
+
+# ---- Every market: the odds_markets table (2026-11-24) -------------------------
+#
+# The fixture's handball event 4616742 has 30 open, priced selections and the
+# basketball event 4412294 has 19 (test-lengjan-api.R).
+
+test_that("lengjan_api_market_rows has the odds_markets columns and every selection", {
+  ev <- parse_lengjan_program(.fx("current-program.json"))
+  mk <- parse_lengjan_markets(.fx("markets.json"))
+  rows <- lengjan_api_market_rows(ev, mk, .api_league("9281", "handball"), .t0)
+  expect_named(rows, schemas()$odds_markets$names)
+  expect_equal(nrow(rows), 30L)
+  expect_true(all(rows$sex == "male"))
+  expect_true(all(rows$event_id == "4616742" & rows$competition_id == "9281"))
+  expect_equal(unique(rows$home_team), "Stuttgart")
+  expect_equal(unique(rows$match_date), as.Date("2026-09-24"))
+  expect_equal(unique(rows$scraped_at), .t0)
+  expect_equal(nrow(dplyr::distinct(rows[, c("market_id", "selection")])), 30L)
+  expect_equal(nrow(lengjan_api_market_rows(ev, mk, .api_league("9281", "basketball"), .t0)), 0L)
+  none <- lengjan_api_market_rows(ev, mk, .api_league("1269", "handball"), .t0)
+  expect_named(none, schemas()$odds_markets$names)
+  expect_equal(nrow(none), 0L)
+})
+
+test_that("ingest_lengjan_api writes every market to odds_markets and returns the odds count", {
+  root <- withr::local_tempdir()
+  leagues <- list(
+    handball_x = .api_league("9281", "handball"),
+    basketball_x = .api_league("9445", "basketball", sex = "female")
+  )
+  scrape <- function(at) {
+    suppressMessages(ingest_lengjan_api(leagues,
+      scraped_at = at, root = root,
+      fetch_program = function() .fx("current-program.json"),
+      fetch_markets = function(ids) .fx("markets.json")
+    ))
+  }
+  expect_equal(scrape(.t0), 14L)
+  back <- read_table("odds_markets", root = root)
+  expect_equal(nrow(back), 49L) # 30 handball + 19 basketball
+  expect_equal(nrow(read_table("odds", root = root)), 14L)
+  expect_setequal(unique(back$sex), c("male", "female"))
+  expect_equal(sort(unique(back$market_code[back$sport == "basketball"])), c("1", "18", "234", "47"))
+  # A later scrape the same day accretes; the same scrape again does not.
+  scrape(.t0 + 3600)
+  scrape(.t0 + 3600)
+  back <- read_table("odds_markets", root = root)
+  expect_equal(nrow(back), 98L)
+  expect_equal(as.integer(table(format(back$scraped_at, "%H:%M", tz = "UTC"))), c(49L, 49L))
+})
+
+test_that("ingest_one_lengjan hands its program fetcher to the API scraper", {
+  seen <- NULL
+  testthat::local_mocked_bindings(
+    .is_league_active = function(active_path, key) TRUE,
+    ingest_lengjan_api = function(leagues, ..., fetch_program) {
+      seen <<- fetch_program
+      3L
+    }
+  )
+  program <- function() "the run's program"
+  res <- suppressMessages(ingest_one_lengjan(
+    list(sport = "handball", country = "iceland"),
+    list(source = "api", competitions = list(list(id = "1269", name = "x", sex = "male"))),
+    "handball_iceland", "active.json",
+    fetch_program = program
+  ))
+  expect_identical(res, 3L)
+  expect_identical(seen, program)
+})
+
+test_that("two API leagues sharing lengjan_program_once make one program request", {
+  calls <- 0L
+  program <- lengjan_program_once(function() {
+    calls <<- calls + 1L
+    .fx("current-program.json")
+  })
+  root <- withr::local_tempdir()
+  for (lg in list(handball_x = .api_league("9281", "handball"), basketball_x = .api_league("9445", "basketball"))) {
+    suppressMessages(ingest_lengjan_api(list(lg),
+      scraped_at = .t0, root = root,
+      fetch_program = program, fetch_markets = function(ids) .fx("markets.json")
+    ))
+  }
+  expect_equal(calls, 1L)
+  expect_equal(nrow(read_table("odds", root = root)), 14L)
 })

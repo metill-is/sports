@@ -19,14 +19,22 @@ ingest_lengjan_api(
 
 \item{root}{Storage root.}
 
-\item{fetch_program, fetch_markets}{Injectable fetchers; tests pass fixtures.}
+\item{fetch_program, fetch_markets}{Injectable fetchers; tests pass fixtures,
+and the scrape script passes one [lengjan_program_once()] to every league.}
 }
 \value{
-Number of odds rows written (invisible integer).
+Number of `odds` rows written (invisible integer).
 }
 \description{
 One program request, then markets for the leagues' open events in batches
 of 20 -- typically 2-4 requests in all. The API counterpart of
 [ingest_lengjan_odds()] (the Chromote DOM scraper), chosen per league by
 `lengjan.source: api` in [ingest_one_lengjan()].
+}
+\details{
+Writes two tables from the same responses: `odds`, the three markets
+decide maps ([lengjan_api_odds_rows()]), and `odds_markets`, every open,
+priced selection of every market ([lengjan_api_market_rows()]). Both row
+sets are built before either is written, so an unparseable kickoff writes
+neither.
 }

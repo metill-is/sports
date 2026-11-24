@@ -101,7 +101,8 @@ check_recommendation_values <- function(df) {
 #' `validate_against_schema()` only checks columns + types. This catches
 #' impossible *values* that are structurally valid int32/float64 but would
 #' poison the Kelly stake or the Stan likelihood: negative / absurd scores,
-#' odds <= 1 or non-finite, recommendation `p` outside `[0, 1]`. Tables that
+#' odds <= 1 or non-finite (in `odds` and `odds_markets`), recommendation `p`
+#' outside `[0, 1]`. Tables that
 #' do not feed the money path or the likelihood (schedules, beliefs_*,
 #' candidates, ledger, fit_diagnostics) have no value rules and pass through.
 #' The ledger is deliberately exempt: the placer writes real Lengjan figures
@@ -112,6 +113,7 @@ validate_values <- function(df, table) {
   violations <- switch(table,
     results = check_result_values(df),
     odds = check_odds_values(df),
+    odds_markets = check_odds_values(df),
     recommendations = check_recommendation_values(df),
     character(0)
   )

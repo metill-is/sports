@@ -356,3 +356,52 @@ test_that("an event with no id cannot shift which events are kept", {
   expect_equal(at_noon(read_lengjan_archive(dir, what = "detail", leagues = .hb())), with_odds)
   expect_equal(at_noon(read_lengjan_archive(dir, what = "program", leagues = .hb())), with_odds)
 })
+
+# ---- table = "odds_markets" (2026-11-24) ---------------------------------------
+
+.payload_cols <- c("sport_id", "sport_name", "country_code", "competition_name")
+
+test_that("odds_markets detail rows for a configured competition equal lengjan_api_market_rows()", {
+  dir <- .two_captures()
+  got <- read_lengjan_archive(dir, what = "detail", leagues = .hb(), table = "odds_markets")
+  expect_named(got, c(schemas()$odds_markets$names, .payload_cols))
+  ts <- as.POSIXct("2026-09-23 12:00:00", tz = "UTC")
+  want <- lengjan_api_market_rows(parse_lengjan_program(.fx("current-program.json")),
+    parse_lengjan_markets(.fx("markets.json")), .hb()$handball_x, ts)
+  expect_equal(nrow(want), 30L)
+  mine <- got[got$scraped_at == ts & got$competition_id %in% "9281", names(want)]
+  key <- c("event_id", "market_id", "selection")
+  expect_equal(dplyr::arrange(mine, dplyr::across(dplyr::all_of(key))),
+               dplyr::arrange(want, dplyr::across(dplyr::all_of(key))))
+  expect_equal(nrow(got[got$scraped_at == ts, ]), 200L)          # 151 + 30 + 19: every event, configured or not
+  expect_equal(length(unique(got$scraped_at)), 2L)
+})
+
+test_that("odds_markets program rows are each event's embedded main market", {
+  got <- read_lengjan_archive(.two_captures(), what = "program", leagues = .hb(), table = "odds_markets")
+  expect_equal(nrow(got), 18L)                                     # 3 events x 3 selections x 2 captures
+  expect_equal(unique(got$market_code), "1")
+  expect_true(all(got$is_primary) && !any(got$is_live))
+  expect_equal(unique(got$sex[got$competition_id == "9281"]), "male")
+})
+
+test_that("an in-play embedded market is kept by odds_markets and flagged is_live", {
+  in_play <- list(
+    id = "9", market = list(
+      id = "90", externalId = "1", typeName = "3WAY", primary = TRUE, status = "open", live = TRUE,
+      selections = list(list(name = "1", odds = 150L), list(name = "X", odds = 400L), list(name = "2", odds = 600L))
+    )
+  )
+  prog <- list(events = list(), liveSoon = list(), liveNow = list(in_play))
+  long <- lengjan_markets_long(parse_lengjan_markets(.lengjan_program_market_groups(prog, in_play = TRUE)))
+  expect_equal(long$odds, c(1.5, 4, 6))
+  expect_true(all(long$is_live))
+  expect_equal(nrow(parse_lengjan_program_markets(prog)), 0L)     # the odds shape still drops it
+})
+
+test_that("an empty window gives a zero-row tibble of the odds_markets shape", {
+  none <- read_lengjan_archive(.two_captures(), from = as.Date("2027-01-01"), leagues = .hb(), table = "odds_markets")
+  expect_equal(nrow(none), 0L)
+  expect_named(none, c(schemas()$odds_markets$names, .payload_cols))
+  expect_error(read_lengjan_archive(.two_captures(), leagues = .hb(), table = "markets"), "should be one of")
+})

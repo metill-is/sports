@@ -411,10 +411,15 @@ ingest_one_league <- function(static, key, active_path,
 #'   `betting.mode` "scrape" up (spec 2026-09-23 WS1); at "off" the scrape is
 #'   refused outright. Trailing and defaulted so existing four-arg calls keep
 #'   working.
+#' @param fetch_program Current-program fetcher handed to
+#'   [ingest_lengjan_api()] for a `lengjan.source: api` league. The scrape
+#'   script passes one [lengjan_program_once()] to every league, so a run
+#'   fetches the program once.
 #' @return Number of odds rows written (integer).
 #' @export
 ingest_one_lengjan <- function(static, lengjan, key, active_path,
-                               betting = NULL) {
+                               betting = NULL,
+                               fetch_program = lengjan_fetch_program) {
   # Betting ladder (spec 2026-09-23 WS1): odds are scraped from mode "scrape"
   # up. Checked before the activation gate, so a league at "off" never touches
   # Lengjan even when it has fixtures today. An absent `betting` slice is
@@ -434,7 +439,7 @@ ingest_one_lengjan <- function(static, lengjan, key, active_path,
   # the Chromote DOM scraper. Both raise lengjan_fetch_error on transport
   # failure, soft-failed below.
   scrape_fn <- if (identical(lengjan$source, "api")) {
-    ingest_lengjan_api
+    function(leagues) ingest_lengjan_api(leagues, fetch_program = fetch_program)
   } else {
     ingest_lengjan_odds
   }
