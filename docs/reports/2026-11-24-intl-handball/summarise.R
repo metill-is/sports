@@ -22,8 +22,12 @@ order_t <- c("w_euro2022", "w_wc2023", "w_euro2024", "w_wc2025", "m_wc2023", "m_
 p$target <- factor(p$target, levels = intersect(order_t, unique(p$target)))
 metrics <- c("log_1x2", "rps", "log_margin", "log_total")
 
+# WHY: the legacy model cannot score a match with a nation it never trained on;
+# n counts the matches a model scored, and the means are over those.
 agg <- function(d) {
-  data.frame(n = nrow(d), t(vapply(metrics, function(m) mean(d[[m]]), numeric(1))))
+  ok <- !is.na(d$log_1x2)
+  m <- vapply(metrics, function(k) if (all(is.na(d[[k]][ok]))) NA_real_ else mean(d[[k]][ok], na.rm = TRUE), numeric(1))
+  data.frame(n = sum(ok), n_target = nrow(d), t(m))
 }
 by_t <- do.call(rbind, lapply(split(p, list(p$target, p$model), drop = TRUE), function(d) {
   cbind(target = as.character(d$target[1]), model = d$model[1], agg(d))
@@ -59,7 +63,7 @@ utils::write.csv(paired, file.path(here_dir, "backtest_paired.csv"), row.names =
 print(paired[paired$target == "pooled", ], digits = 3)
 
 cal <- do.call(rbind, lapply(split(p, p$model), function(d) {
-  br <- cut(d$p_draw, c(0, 0.04, 0.06, 0.08, 0.10, 0.15, 1))
+  br <- cut(d$p_draw, c(0, 0.04, 0.06, 0.08, 0.10, 0.15, 1), include.lowest = TRUE)
   dr <- stats::aggregate(cbind(pred = d$p_draw, obs = d$outcome == "D") ~ br, data = data.frame(br, d), FUN = mean)
   dr$n <- as.vector(table(br)[as.character(dr$br)])
   dr$event <- "draw"

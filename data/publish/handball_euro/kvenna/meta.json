@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "placeholder": false,
+  "generated_at": "2026-11-24T22:00:27Z",
+  "fit_date": "2026-11-24",
+  "start_date": "2026-12-03",
+  "end_date": "2026-12-20",
+  "title": "Women's EHF EURO 2026",
+  "n_teams": 24,
+  "n_groups": 6,
+  "n_draws": 20000,
+  "matches_played": 0,
+  "matches_group_total": 36,
+  "focus_team": "Iceland",
+  "focus_round": "SF",
+  "champion_favourite": {
+    "team": "Norway",
+    "team_is": "Noregur",
+    "p_champion": 0.6776
+  },
+  "model": {
+    "engine": "inla",
+    "model_version": "ih-v2.0",
+    "n_train": 4131,
+    "hfa": 0.967,
+    "sigma_margin": 5.301,
+    "h2h_reapply": "none"
+  }
+}
