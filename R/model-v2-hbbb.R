@@ -491,6 +491,66 @@ hbbb_v2_hyper_sd <- function(fits) {
   }))
 }
 
+#' How many times its prior's 99 % bound an sd may reach before the gate
+#' refuses the fit, and before `hbbb_v2_fit_halves()` fits that half again.
+#' @noRd
+HBBB_V2_SD_CEILING <- 5
+
+#' The prior's 99 % bound for one of a v2 fit's hyperparameter sds.
+#'
+#' @param name The sd's name as `hbbb_v2_hyper_sd()` gives it,
+#'   `"<response> sd: <term>"`.
+#' @param priors Prior scales, see [v2_priors()].
+#' @param within The spec's within-season form (`"none"`, `"rw1"`, `"ar1"`).
+#' @return The bound, or `NA` for a name with no prior bound (the composite
+#'   `sd: team`).
+#' @noRd
+hbbb_v2_sd_bound <- function(name, priors, within) {
+  term <- sub("^(margin|total) sd: ", "", name)
+  switch(term,
+    "the Gaussian observations" = if (startsWith(name, "margin")) priors$u_sigma_m else priors$u_sigma_t,
+    u_s = priors$u_u,
+    b = priors$u_b,
+    ha = priors$u_ha,
+    s_s = priors$u_season,
+    w_t = if (identical(within, "ar1")) priors$u_w_ar1 else priors$u_w,
+    NA_real_
+  )
+}
+
+#' Why one half's hyperparameter summary cannot be used, if it cannot.
+#'
+#' The numerical failures a second attempt can repair: R-INLA's mode search
+#' failed, or an sd's posterior summary is not finite (a marginal R-INLA could
+#' not build) or above `sd_ceiling` times its prior's bound. The last two are
+#' what R-INLA returns when its numerical Hessian at the mode comes out nearly
+#' singular in one direction: the asymmetric Gaussian it builds each marginal
+#' from then reaches absurd values. On the simulated handball league of
+#' `test-model-v2-hbbb.R` the MKL build R-INLA runs on Linux did that for the
+#' total model on Intel Xeon runners and not on AMD EPYC runners (club sd
+#' 9.08e9, one Hessian direction with sd 15.8 against at most 2 on AMD),
+#' which end their search at a nearby point of the same flat ridge. These are
+#' the gate's "mode not found" and "sd above its prior bound" breaches; the
+#' gate's other checks are about the fit's values, not its numerics.
+#'
+#' @param fit One half as `fit_v2_inla()` returns it.
+#' @param priors Prior scales, see [v2_priors()].
+#' @param within The spec's within-season form.
+#' @param sd_ceiling See `HBBB_V2_SD_CEILING`.
+#' @return Character vector of reasons, empty when the summary is usable.
+#' @noRd
+hbbb_v2_half_unusable <- function(fit, priors, within, sd_ceiling = HBBB_V2_SD_CEILING) {
+  reasons <- character()
+  if (!isTRUE(v2_mode_ok(fit$mode_status))) {
+    reasons <- sprintf("mode not found (mode.status = %s)", paste(format(fit$mode_status), collapse = ", "))
+  }
+  h <- fit$hyper_sd[startsWith(fit$hyper_sd$parameter, "sd: "), , drop = FALSE]
+  name <- paste(fit$response, h$parameter)
+  bound <- vapply(name, hbbb_v2_sd_bound, numeric(1), priors = priors, within = within)
+  bad <- !is.finite(h$mean) | (!is.na(bound) & h$mean > sd_ceiling * bound)
+  c(reasons, sprintf("%s = %.3g", name[bad], h$mean[bad]))
+}
+
 #' Checks a handball / basketball INLA fit must pass before it is used.
 #'
 #' 1. R-INLA's mode search succeeded for both halves (status 0).
@@ -510,7 +570,7 @@ hbbb_v2_hyper_sd <- function(fits) {
 #' @return `list(passed, breaches, evaluated, skipped, jump_checked)`.
 #' @noRd
 hbbb_v2_gate <- function(fits, spec, sport, previous_sd = NULL, max_jump = 3,
-                         sd_ceiling = 5,
+                         sd_ceiling = HBBB_V2_SD_CEILING,
                          sanity = HBBB_V2_SANITY[[sport]], priors = v2_priors(sport)) {
   breaches <- character()
   skipped <- character()
@@ -523,19 +583,7 @@ hbbb_v2_gate <- function(fits, spec, sport, previous_sd = NULL, max_jump = 3,
   }
 
   sds <- hbbb_v2_hyper_sd(fits)
-  bound_of <- function(name) {
-    term <- sub("^(margin|total) sd: ", "", name)
-    switch(term,
-      "the Gaussian observations" = if (startsWith(name, "margin")) priors$u_sigma_m else priors$u_sigma_t,
-      u_s = priors$u_u,
-      b = priors$u_b,
-      ha = priors$u_ha,
-      s_s = priors$u_season,
-      w_t = if (identical(spec$opts$within, "ar1")) priors$u_w_ar1 else priors$u_w,
-      NA_real_
-    )
-  }
-  ceiling <- sd_ceiling * vapply(names(sds), bound_of, numeric(1))
+  ceiling <- sd_ceiling * vapply(names(sds), hbbb_v2_sd_bound, numeric(1), priors = priors, within = spec$opts$within)
   bad <- !is.finite(sds) | (!is.na(ceiling) & sds > ceiling)
   if (any(bad)) {
     breaches <- c(breaches, sprintf(
@@ -726,7 +774,20 @@ hbbb_v2_as_fit <- function(comp, spec, prep, sport, zero_shift = 0, level_sd = 0
 #'
 #' The one place the production engine's fitting settings live, so the
 #' scorecard (`hbbb_v2_forecast_day()`) fits exactly as production does.
-#' @return `list(margin, total)` of `fit_v2_inla()` results.
+#'
+#' A half whose summary is unusable (`hbbb_v2_half_unusable()`: the mode
+#' search failed, or an sd's summary is not finite or above the gate's
+#' ceiling) is fitted once more, restarting R-INLA's optimiser at that fit's
+#' own mode. On the CI failure of 2026-11-23/24 the restart ended at the same
+#' mode to ten digits and recomputed a well-conditioned Hessian there (club
+#' sd 1.25 instead of 9.08e9). A cold refit would be no second attempt: on
+#' one thread with `internal.opt = FALSE` it repeats the first bit for bit.
+#' The second attempt is kept whatever it returns; the gate decides whether
+#' it is used. Both attempts are deterministic, so a fit stays repeatable.
+#'
+#' @return `list(margin, total)` of `fit_v2_inla()` results, each with
+#'   `attempts` (1 or 2) and, after a second attempt, `first_attempt` (why
+#'   the first was unusable).
 #' @noRd
 hbbb_v2_fit_halves <- function(spec, sport, n_draws = 4000L, seed = 1L, int_strategy = "auto") {
   priors <- v2_priors(sport)
@@ -734,12 +795,29 @@ hbbb_v2_fit_halves <- function(spec, sport, n_draws = 4000L, seed = 1L, int_stra
   for (resp in c("margin", "total")) {
     # WHY two seeds: R-INLA's latent sampler, seeded alike in two fits of the
     # same size, would draw the same normal vectors for both halves.
-    fits[[resp]] <- fit_v2_inla(
-      spec$v, resp, priors,
-      within = spec$opts$within, rho_week = spec$opts$rho_week, int_strategy = int_strategy,
-      n_samples = as.integer(n_draws), y = spec$y[[resp]],
-      seed = as.integer(seed) + (resp == "total"), latent = spec$latent[[resp]]
-    )
+    fit_once <- function(theta_start) {
+      fit_v2_inla(
+        spec$v, resp, priors,
+        within = spec$opts$within, rho_week = spec$opts$rho_week, int_strategy = int_strategy,
+        n_samples = as.integer(n_draws), y = spec$y[[resp]],
+        seed = as.integer(seed) + (resp == "total"), latent = spec$latent[[resp]],
+        theta_start = theta_start
+      )
+    }
+    fit <- fit_once(NULL)
+    fit$attempts <- 1L
+    why <- hbbb_v2_half_unusable(fit, priors, spec$opts$within)
+    if (length(why) && length(fit$theta) && all(is.finite(fit$theta))) {
+      cli::cli_alert_warning(c(
+        "R-INLA's {resp} fit is unusable ({paste(why, collapse = '; ')}); ",
+        "fitting it once more, restarting at its mode."
+      ))
+      theta <- fit$theta
+      fit <- fit_once(theta)
+      fit$attempts <- 2L
+      fit$first_attempt <- why
+    }
+    fits[[resp]] <- fit
   }
   fits
 }
@@ -762,8 +840,9 @@ hbbb_v2_pair <- function(fits, spec, seed = 1L) {
 #'   jump check (`fv2_previous_hyper()`); `NULL` when there is none.
 #' @param accept_jump Let a fit through whose only breach is the jump check.
 #' @return The adapted fit from `hbbb_v2_as_fit()`, with `$engine`,
-#'   `$version`, `$gate`, `$hyper_sd`, `$n_obs` and the record of how it was
-#'   made attached.
+#'   `$version`, `$gate`, `$hyper_sd`, `$n_obs`, `$attempts` (R-INLA fits per
+#'   half, see `hbbb_v2_fit_halves()`) and the record of how it was made
+#'   attached.
 #' @noRd
 fit_model_v2_hbbb <- function(prep, league, sex, end_date,
                               root = here::here("data"), from_season = NULL,
@@ -828,6 +907,7 @@ fit_model_v2_hbbb <- function(prep, league, sex, end_date,
     int_strategy = int_strategy, gate = gate, hyper = hyper,
     hyper_sd = hbbb_v2_hyper_sd(fits),
     mode_status = c(margin = fits$margin$mode_status, total = fits$total$mode_status),
+    attempts = c(margin = fits$margin$attempts, total = fits$total$attempts),
     n_obs = as.integer(prep$stan_data$N), n_trained = sum(spec$observed),
     # WHY: needs_refit() compares this with a recount, so a regulation score
     # that arrives after the fit starts a refit although the row count stands.
