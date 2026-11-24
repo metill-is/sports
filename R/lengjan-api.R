@@ -157,10 +157,13 @@ parse_lengjan_program <- function(prog) {
 #' @noRd
 .lengjan_event_row <- function(e) {
   parts <- e$participants %||% list()
+  # WHY squish: the API carries stray spaces in some names ("Newcastle ",
+  # "Víkingur "); the site shows them trimmed, which is what the DOM scraper
+  # wrote and what team_names maps (football cutover audit, 2026-11-24).
   side <- function(k) {
     for (p in parts) {
       if (identical(as.integer(p$homeOrAway), k)) {
-        return(as.character(p$name))
+        return(stringr::str_squish(as.character(p$name)))
       }
     }
     NA_character_

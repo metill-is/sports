@@ -435,8 +435,9 @@ ingest_one_lengjan <- function(static, lengjan, key, active_path,
   league <- static
   league$lengjan <- lengjan
   # lengjan.source picks the scraper (spec 2026-09-23 WS2/WS3): "api" is the
-  # JSON API, anything else (absent = football until its Milestone B cutover)
-  # the Chromote DOM scraper. Both raise lengjan_fetch_error on transport
+  # JSON API (every shipped league since the football cutover), anything else
+  # the Chromote DOM scraper, kept one release as the fallback; it needs
+  # Chrome, which scrape-odds.yml no longer installs. Both raise lengjan_fetch_error on transport
   # failure, soft-failed below.
   scrape_fn <- if (identical(lengjan$source, "api")) {
     function(leagues) ingest_lengjan_api(leagues, fetch_program = fetch_program)

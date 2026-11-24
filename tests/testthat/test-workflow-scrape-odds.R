@@ -35,3 +35,14 @@ test_that("the scrape script hands every league one shared program fetcher", {
   per_league <- grep("^scrape_one <- function", script)
   expect_true(made < per_league && per_league < passed)
 })
+
+test_that("scrape-odds.yml installs Chrome exactly when a league scrapes the DOM", {
+  # The DOM scraper (lengjan.source absent or dom) needs Chrome on the runner;
+  # once every league is on the JSON API the workflow carries none. A league
+  # rolled back to dom without Chrome would fail every scrape.
+  yml <- readLines(testthat::test_path("..", "..", ".github", "workflows", "scrape-odds.yml"), warn = FALSE)
+  has_chrome <- any(grepl("setup-chrome", yml, fixed = TRUE))
+  lg <- filter_leagues(load_leagues(), active_only = TRUE, has_lengjan = TRUE)
+  on_dom <- names(lg)[!vapply(lg, function(l) identical(l$lengjan$source, "api"), logical(1))]
+  expect_identical(has_chrome, length(on_dom) > 0L, info = paste(on_dom, collapse = ", "))
+})

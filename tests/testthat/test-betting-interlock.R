@@ -42,9 +42,9 @@ test_that("handball and basketball scrape their wired competitions via the API",
   expect_equal(bb$source, "api")
   # Bonusdeild karla (wired 2026-11-15) and kvenna (2026-11-24); no 1. deild comp yet.
   expect_equal(comp_cells(bb), c("1292 male BD", "1291 female BD"))
-  # Football keeps its full slate on the DOM scraper until the Milestone B cutover.
+  # Football moved its full slate to the API at the Milestone B cutover.
   expect_gt(length(lg$football_iceland$lengjan$competitions), 0L)
-  expect_null(lg$football_iceland$lengjan$source)
+  expect_equal(lg$football_iceland$lengjan$source, "api")
 })
 
 test_that("handball team_names cover all 12 Olisdeild karla teams", {

@@ -26,8 +26,9 @@ requirements.
   runtime), and the standard `ubuntu-latest` libraries (libcurl,
   libssl, libxml2, libyaml) cover every other declared
   `SystemRequirements` in the project's package set. The
-  `browser-actions/setup-chrome@v2` step in the scrape workflows
-  further pins Chrome and exports `CHROMOTE_CHROME`.
+  `browser-actions/setup-chrome@v2` step in `scrape-results.yml`
+  further pins Chrome and exports `CHROMOTE_CHROME` (`scrape-odds.yml` has
+  had no Chrome since the football API cutover).
 
 ## 2. Reinstall V8 from source with `DOWNLOAD_STATIC_LIBV8=1`
 
@@ -206,7 +207,7 @@ meta-characters.
 |---|---|---|
 | `ci-tests.yml` | push, PR | `devtools::test()` |
 | `scrape-results.yml` | cron 1×/day | Federation results + schedules |
-| `scrape-odds.yml` | cron 5×/day (08,11,14,17,20 UTC, minute 17) | Lengjan odds snapshot (Chromote DOM for football; JSON API for handball/basketball). Commits `data/facts/odds/` and, for the API leagues, every market's selections in `data/facts/odds_markets/` (added only once the folder exists: a bare `git add` of a missing path exits 128; pinned by `test-workflow-scrape-odds.R`) |
+| `scrape-odds.yml` | cron 5×/day (08,11,14,17,20 UTC, minute 17) | Lengjan odds snapshot, every league through the JSON API (no Chrome since the football cutover; `R/ingest-lengjan-odds.R` is the one-release DOM fallback and needs Chrome back). Commits `data/facts/odds/` and, for the API leagues, every market's selections in `data/facts/odds_markets/` (added only once the folder exists: a bare `git add` of a missing path exits 128; pinned by `test-workflow-scrape-odds.R`) |
 | `fit.yml` | `workflow_run` from scrape-results | Stan fit; also installs R-INLA at `inla-engine.yml`'s pin for the football v2 engine, non-blocking while no league uses it (section 5) |
 | `decide-publish.yml` | `workflow_run` from fit AND scrape-odds | Recommendations + JSONs, and the forecast archive (`data/archive/forecasts/`: each pre-match forecast the first time it is published; append-only, never pruned) |
 | `republish.yml` | `workflow_dispatch` only | Re-run publish from existing extraction archive (lever for fast publisher iteration); adds to the forecast archive like `decide-publish` |

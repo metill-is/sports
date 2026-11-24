@@ -33,19 +33,16 @@ jobs:
           r-version: '4.5.3' # pinned to local R, not 'release' (ci-conventions.md section 3)
           use-public-rspm: true
 
-      - uses: browser-actions/setup-chrome@v2
-        id: setup-chrome
-        with:
-          chrome-version: stable
-
       - uses: r-lib/actions/setup-r-dependencies@v2
         env:
           PKG_SYSREQS: "false"
         with:
           dependencies: '"hard"'
+          # No Chrome: every league scrapes the JSON API (R/lengjan-api.R).
+          # chromote still installs as a hard dependency (the local placer and
+          # scrape-results use it); nothing here starts a browser.
           extra-packages: |
             any::devtools
-            any::chromote
 
       - name: Reinstall V8 from source with bundled static libv8
         env:
@@ -54,8 +51,6 @@ jobs:
           Rscript -e 'install.packages("V8", type = "source", repos = c(CRAN = "https://cloud.r-project.org"))'
 
       - name: Scrape Lengjan odds
-        env:
-          CHROMOTE_CHROME: ${{ steps.setup-chrome.outputs.chrome-path }}
         run: Rscript scripts/02_scrape_odds.R
 
       - name: Commit if data changed
