@@ -539,6 +539,113 @@ test_that("the INLA gate passes a sound fit and names each kind of failure", {
   }, sport = "basketball", spec = gate_spec(TRUE)), "within-season sd.*margin sd: w_t", all = FALSE)
 })
 
+# ---- A half R-INLA summarised badly ---------------------------------------------
+
+test_that("a half is unusable for a failed mode search, an sd it could not summarise or one above the gate's ceiling", {
+  priors <- v2_priors("handball")
+  half <- function(change = identity) change(c(gate_fits()$total, response = "total"))
+  expect_identical(hbbb_v2_half_unusable(half(), priors, "none"), character())
+  expect_identical(hbbb_v2_half_unusable(half(function(f) {
+    f$mode_status <- 1L
+    f
+  }), priors, "none"), "mode not found (mode.status = 1)")
+  expect_match(hbbb_v2_half_unusable(half(function(f) {
+    f$hyper_sd$mean[f$hyper_sd$parameter == "sd: b"] <- NA_real_
+    f
+  }), priors, "none"), "total sd: b = NA")
+  # The CI failure of 2026-11-23/24: the club sd's posterior mean at 9.08e9.
+  expect_match(hbbb_v2_half_unusable(half(function(f) {
+    f$hyper_sd$mean[f$hyper_sd$parameter == "sd: b"] <- 9.08e9
+    f
+  }), priors, "none"), "total sd: b = 9.08e\\+09")
+  # The ceiling is the gate's: 5 times the prior's bound (u_b = 10 for handball).
+  near <- function(x) {
+    half(function(f) {
+      f$hyper_sd$mean[f$hyper_sd$parameter == "sd: b"] <- x
+      f
+    })
+  }
+  expect_identical(hbbb_v2_half_unusable(near(49), priors, "none"), character())
+  expect_length(hbbb_v2_half_unusable(near(51), priors, "none"), 1L)
+  # A weakly identified component near zero is the gate's business, not a
+  # numerical failure.
+  expect_identical(hbbb_v2_half_unusable(near(1e-3), priors, "none"), character())
+})
+
+# A stand-in for fit_v2_inla() that records each call and spoils the summary of
+# the attempts `spoil(response, attempt)` names.
+spoiling_inla <- function(spoil) {
+  calls <- list()
+  list(
+    fit = function(v, response, priors, ..., theta_start = NULL) {
+      attempt <- 1L + sum(vapply(calls, function(cl) identical(cl$response, response), logical(1)))
+      calls[[length(calls) + 1L]] <<- list(response = response, theta_start = theta_start)
+      fit <- fake_v2_inla_fit(v, response, priors, ...)
+      fit$theta <- if (response == "margin") c(-3.1, 0.4) else c(-3.8, 0.3)
+      if (spoil(response, attempt)) fit$hyper_sd$mean[fit$hyper_sd$parameter == "sd: b"] <- 9.08e9
+      fit
+    },
+    calls = function() calls
+  )
+}
+
+test_that("a half with an unusable summary is fitted once more, restarting at its own mode", {
+  f <- hbbb_fixture_spec("handball", root = fixture_hbbb_root())
+  s <- spoiling_inla(function(response, attempt) response == "total" && attempt == 1L)
+  local_mocked_bindings(fit_v2_inla = s$fit)
+  fits <- suppressMessages(hbbb_v2_fit_halves(f$spec, "handball", n_draws = 20L))
+  calls <- s$calls()
+  expect_identical(vapply(calls, `[[`, "", "response"), c("margin", "total", "total"))
+  expect_null(calls[[1]]$theta_start)
+  expect_null(calls[[2]]$theta_start)
+  expect_identical(calls[[3]]$theta_start, c(-3.8, 0.3))
+  expect_identical(c(fits$margin$attempts, fits$total$attempts), c(1L, 2L))
+  expect_match(fits$total$first_attempt, "total sd: b = 9.08e\\+09")
+  expect_true(hbbb_v2_gate(fits, f$spec, "handball")$passed)
+})
+
+test_that("a half still unusable after its second attempt comes back as it is, for the gate to refuse", {
+  f <- hbbb_fixture_spec("handball", root = fixture_hbbb_root())
+  s <- spoiling_inla(function(response, attempt) response == "total")
+  local_mocked_bindings(fit_v2_inla = s$fit)
+  fits <- suppressMessages(hbbb_v2_fit_halves(f$spec, "handball", n_draws = 20L))
+  expect_length(s$calls(), 3L)
+  expect_identical(fits$total$attempts, 2L)
+  g <- hbbb_v2_gate(fits, f$spec, "handball")
+  expect_false(g$passed)
+  expect_match(g$breaches, "above 5 times its prior bound: total sd: b", all = FALSE)
+})
+
+test_that("the production fit records how many attempts each half took", {
+  skip_if_no_inla()
+  root <- fixture_hbbb_root()
+  league <- load_leagues()[["handball_iceland"]]
+  prep <- suppressMessages(prepare_data(league, "male", end_date = FIXTURE_END_DATE, root = root))
+  s <- spoiling_inla(function(response, attempt) response == "margin" && attempt == 1L)
+  local_mocked_bindings(fit_v2_inla = s$fit)
+  fit <- suppressMessages(fit_model_v2_hbbb(prep, league, "male", end_date = FIXTURE_END_DATE, root = root, n_draws = 30L))
+  expect_true(fit$gate$passed)
+  expect_identical(fit$attempts, c(margin = 2L, total = 1L))
+})
+
+test_that("a hyperparameter marginal R-INLA cannot summarise reads as NA, not as an error", {
+  skip_if_no_inla()
+  x <- seq(-3, 3, length.out = 61)
+  good <- cbind(x = x, y = stats::dnorm(x))
+  # What the scorecard test's R-INLA fit returned on one runner of 2026-11-23:
+  # splinefun() then stops with "zero non-NA points".
+  broken <- cbind(x = x, y = NA_real_)
+  fit <- list(internal.marginals.hyperpar = list(
+    "Log precision for the Gaussian observations" = good,
+    "Log precision for b" = broken,
+    "Rho_intern for u_s" = good
+  ))
+  h <- v2_inla_hyper_sd(fit)
+  expect_identical(h$parameter, c("sd: the Gaussian observations", "sd: b", "rho: u_s"))
+  expect_true(all(is.finite(unlist(h[c(1, 3), -1]))))
+  expect_true(all(is.na(unlist(h[2, -1]))))
+})
+
 # ---- fit_league and the extract --------------------------------------------------
 
 test_that("fit_league sends a handball or basketball league on the INLA engine to the v2 fit and records it", {
