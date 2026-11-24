@@ -64,6 +64,7 @@ Rscript scripts/05_publish.R
 Rscript scripts/06_settle.R                           # resolve win/pnl ad hoc (auto_place.R also settles each cycle)
 Rscript scripts/07_healthcheck.R                      # read-only health snapshot -> data/health/status.json (or /pipeline-doctor)
 Rscript scripts/0N_discover.R                         # discover Lengjan leagues we model but don't yet scrape
+Rscript scripts/hbbb_v2_scorecard.R                   # LOCAL ONLY, monthly: handball/basketball v2 against production + Lengjan -> docs/reports/<date>-hb-bb-v2-scorecard/ (run it with `ml run --`)
 
 # Historical replay (re-fit + re-publish for any past date; football iceland only)
 Rscript scripts/0Nr_replay.R --league football_iceland --sex male --as-of 2026-05-15

@@ -1,0 +1,3 @@
+"sport","n","bias","bias_se","passed","reasons"
+"basketball",17,2.83867522444703,1.92192845078807,FALSE,"17 scored matches, fewer than 150; mean expected home margin 1.90 against -0.94 observed: off by +2.84 (se 1.92), more than one standard error"
+"handball",20,0.529125681276841,1.17249697818303,FALSE,"20 scored matches, fewer than 150"
