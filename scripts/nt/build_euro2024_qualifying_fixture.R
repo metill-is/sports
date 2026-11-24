@@ -132,8 +132,11 @@ if (any(bad)) {
   stop("martj42 and Wikipedia disagree on ", sum(bad), " scores")
 }
 if (nrow(m) != nrow(qual)) stop("martj42 has ", nrow(qual), " qualifying matches, Wikipedia ", nrow(m))
+# venue: 1 when the listed home side plays in its own country, 0 at a neutral
+# venue (the flag nt_simulate_qualifying() and nt_match_rates() take).
+m$venue <- as.integer(!m$neutral)
 matches <- m[order(m$match_date, m$group, m$home_team), c(
-  "match_date", "group", "home_team", "away_team", "home_score", "away_score", "neutral"
+  "match_date", "group", "home_team", "away_team", "home_score", "away_score", "venue"
 )]
 
 sec <- section("Overall")

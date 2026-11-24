@@ -245,12 +245,7 @@ test_that("fixtures are a double round robin per group", {
 test_that("simulating the played Euro 2024 groups returns the real tables in every run", {
   e <- nt_e24_fixture()
   fit <- nt_test_fit(stats::setNames(rep(0, 53), unlist(e$groups)))
-  fx <- data.frame(
-    group = e$matches$group, home_team = e$matches$home_team,
-    away_team = e$matches$away_team, home_score = e$matches$home_score,
-    away_score = e$matches$away_score, venue = as.integer(!e$matches$neutral)
-  )
-  s <- nt_simulate_qualifying(fit, e$groups, fx, n_sims = 50L, seed = 1L)
+  s <- nt_simulate_qualifying(fit, e$groups, e$matches, n_sims = 50L, seed = 1L)
   for (g in names(e$groups)) {
     want <- e$tables$position[e$tables$group == g]
     expect_true(all(t(s$positions[, e$groups[[g]]]) == want), info = paste("Group", g))
@@ -491,4 +486,15 @@ test_that("a simulation without placeholders is unchanged by the slot bookkeepin
   expect_identical(s$positions, s$slot_positions)
   expect_null(s$qf_winner)
   expect_identical(s$teams$group, rep(c("A", "B"), c(4L, 5L)))
+})
+
+test_that("the Euro 2024 fixture flags venues as the simulator does: 1 at home, 0 neutral", {
+  m <- nt_e24_fixture()$matches
+  expect_false("neutral" %in% names(m))
+  expect_true(all(m$venue %in% c(0L, 1L)))
+  # Belarus, Ukraine and Israel moved home matches abroad; Gibraltar played
+  # four and San Marino one at a neutral venue.
+  neutral <- table(m$home_team[m$venue == 0L])
+  expect_equal(sum(neutral), 16L)
+  expect_equal(as.vector(neutral[c("Belarus", "Ukraine", "Israel", "Gibraltar", "San Marino")]), c(5L, 4L, 2L, 4L, 1L))
 })
