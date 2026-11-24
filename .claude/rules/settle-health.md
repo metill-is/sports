@@ -55,9 +55,12 @@ semantics or a coordination mechanism.
 (`OK` < `WARN` < `FAIL`, plus `PAUSED` for off-season cells via
 `has_upcoming_games`): fit/odds freshness, persisted Stan-diagnostic drift
 (`data/beliefs/diagnostics/`, written per fit by `fit_league`), the weekly
-Stan reference fit (`check_engine_reference`: WARN when the newest
-`data/health/engine_reference/` row of a football cell did not pass or is over
-15 days old, PAUSED before the first run), orphaned-bet,
+Stan reference fit (`check_engine_reference`: one row per football, handball
+and basketball cell; WARN when the cell's newest
+`data/health/engine_reference/` row did not pass or is over 15 days old, or
+when a run covered its sport (the rows' `run_sports`) and wrote no row for it;
+PAUSED before the first run and for a sport no run has covered yet),
+orphaned-bet,
 **placement-capture-rate** (recommendations for now-played matches that never
 reached the ledger — the forensic review found ~45% capture), placement health,
 bankroll/drawdown, discovery, and the three publish-side checks added

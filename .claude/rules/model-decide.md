@@ -194,6 +194,44 @@ paths:
   the same mode to ten digits and recomputes the Hessian there (club sd
   1.25). A
   cold refit would repeat the first attempt bit for bit. No league is switched.
+  **Weekly Stan reference fit (2026-11-24).** `scripts/engine_reference.R`
+  also runs each handball and basketball cell (`hbbb_v2_weekly_reference()`,
+  `R/model-v2-hbbb-reference.R`): the spec `hbbb_v2_spec()` builds, fitted by
+  R-INLA as `fit_league()` would that day (`hbbb_v2_reference_inla()`: its
+  `.fit_seed()`, 4,000 draws, full integration, the production pairing and
+  gate) and by NUTS with `docs/reports/2026-11-15-hb-bb-v2/stan/v2_margin.stan`
+  and `v2_total.stan` (`hbbb_v2_reference_nuts()`; the Stan data is the same
+  spec, `hbbb_v2_stan_data()`, with basketball rows lacking regulation scores
+  dropped from the likelihood as R-INLA's `NA` drops them). It compares, per
+  fixture, the result probabilities (home, level, away; regulation time for
+  basketball) and the probabilities of clearing the half-point spread and
+  total lines nearest the expected margin and total, from the predictive
+  locations and sds (no score draws, no level-score shift, no overtime: both
+  are the same for either engine). With no fixture inside the horizon it
+  compares every pairing of each division on the date of the next scheduled
+  fixture (a break inside the season keeps the season; women's handball on
+  2026-11-24 had none until 2026-12-10), or a week ahead in the next season
+  when nothing is scheduled (`hbbb_v2_break_fixtures()`). Limits
+  (`HBBB_REFERENCE_LIMITS`, mean absolute differences, set from measured ones
+  in `docs/evidence/hbbb-engine-reference/`): within a season 0.01 on the
+  result and 0.025 on each line (largest measured 0.0031 and 0.0116 over
+  eight cell-runs at three dates); across the season break, when a fixture's
+  season has no training match yet (pre-season and the first fixtures of a
+  season; `hbbb_v2_across_break()`), 0.02 and 0.05 (largest measured 0.0065
+  and 0.0250). The break is looser because a team's next-season state
+  depends on how its strength splits between club and season level, which the
+  data identify only as a sum, and the engines differ there (basketball's
+  off-season totals 0.4 to 0.8 points apart on average, NUTS converged). The
+  row stores the limits it was judged by (`threshold`, `line_threshold`) and
+  the health check reads them. **The NUTS bar** is the health layer's
+  (divergences under 0.5 % of transitions per half, Rhat at most 1.02) applied
+  to what the comparison reads, each fixture's predictive location and the
+  observation sd (`hbbb_v2_rhat_groups()`): the club and season levels and
+  their sds run at Rhat 1.02 to 1.05 on fits whose forecasts are at 1.003 to
+  1.007, the same split the gate's jump check leaves ungated. The other
+  groups' Rhat goes to the run's `diagnostics_*.csv`. NUTS runs at
+  `adapt_delta` 0.99 (women's basketball margin: 41 divergences in 4,000 at
+  0.95, none at 0.99, 1.7 times the sampling time).
 - `extract_posteriors()` materialises posterior draws as the canonical
   `beliefs_latest` tibble (per-draw-per-match).
 - Stan models live in `Stan/{league_key}/{file}.stan`. `leagues.yml`'s

@@ -1,0 +1,3 @@
+"half","n_divergent","n_draws","n_max_treedepth","max_rhat","rhat_hyper","rhat_states","rhat_pred","min_ess_bulk","nuts_secs","inla_mode_status","inla_gate"
+"margin",0,4000,0,1.00339839865844,1.01352301684734,1.00963908248504,1.00339839865844,332.455524917032,40.8553891181946,0,"passed"
+"total",0,4000,0,1.00277959390856,1.00964650529965,1.0070622957252,1.00277959390856,574.89462041108,53.9572319984436,0,"passed"

@@ -1,12 +1,15 @@
 name: Engine Reference Fit
 
 # The weekly Stan reference fit (decision 5 of the football cutover plan,
-# docs/reports/2026-11-15-football-v2-proposal.qmd): football v2.0 on the
-# latest data, fitted by R-INLA as production fits it and by NUTS with the
-# Stan reference program, both cells, and the two engines' outcome
+# docs/reports/2026-11-15-football-v2-proposal.qmd, and the shadow period's
+# reference check for handball and basketball v2,
+# docs/reports/2026-11-15-hb-bb-v2/report.md): every football, handball and
+# basketball cell on the latest data, fitted by R-INLA as production fits it
+# and by NUTS with the Stan reference programs, and the two engines' outcome
 # probabilities compared (scripts/engine_reference.R). One summary row per
 # cell is committed under data/health/engine_reference/; the health check
-# warns when a run did not pass (mean absolute difference above 0.01) or the
+# warns when a run did not pass (a mean absolute difference above its limit,
+# an unsound NUTS fit, an INLA fit without a mode or past its gate) or the
 # runs stop. Fixture-by-fixture numbers go to the run's artifact.
 #
 # Mondays. GitHub starts scheduled runs late (hours, of late) and now and
@@ -29,9 +32,13 @@ concurrency:
 jobs:
   reference:
     runs-on: ubuntu-latest
-    # Two cells, each one INLA fit (about two minutes on one thread) and one
-    # four-chain NUTS fit (about five), plus setup.
-    timeout-minutes: 120
+    # Six cells, each an INLA fit on one thread and four-chain NUTS fits.
+    # Measured on the Mac on 2026-11-24 (data to that day): football 13 min,
+    # handball 6, basketball 20 (its within-season AR(1) is the slow part on
+    # both engines); football's fitting step took 1.23 times as long on the
+    # runner on 2026-11-23, so about 50 minutes here. Basketball's grows with
+    # the season's matches; the limit leaves room for that, not for a hang.
+    timeout-minutes: 150
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
@@ -112,7 +119,9 @@ jobs:
         if: steps.cache-cmdstan.outputs.cache-hit != 'true'
         run: Rscript -e 'cmdstanr::install_cmdstan(version = Sys.getenv("CMDSTAN_VERSION"), cores = 2)'
 
-      - name: Fit both football cells with R-INLA and NUTS and compare
+      # Every sport: the script's default. A cell that fails does not stop the
+      # others; the script then exits non-zero after the rest have run.
+      - name: Fit every football, handball and basketball cell with R-INLA and NUTS and compare
         run: Rscript scripts/engine_reference.R --out "$REFERENCE_OUT"
 
       - name: Upload the fixture-by-fixture comparison
