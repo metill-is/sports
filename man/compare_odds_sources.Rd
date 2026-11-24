@@ -33,7 +33,12 @@ A list of class `odds_source_comparison`: `dom` (the DOM rows with
   `api_only` (API rows with no DOM row: key, `odds_before`, `odds_after`,
   `cause`), `mispaired` (visits whose link is another match),
   `duplicates` (keys a side lists more than once, with the side) and
-  `summary` (one row of counts; `pass` is TRUE when every DOM row passes).
+  `summary` (one row of counts). `pass` is TRUE only when there are DOM
+  rows, every one passes, at least one match on both sides has DOM handicap
+  or total rows (a detail page was compared), and, when `visits` is given,
+  at least one detail page loaded. Otherwise `fail_reason` lists, in this
+  order, `no_dom_rows`, `dom_rows_fail`, `no_shared_detail` and
+  `no_detail_page_ok`; it is NA on a pass.
 }
 \description{
 Rows are keyed on (match_date, home_team, away_team, market, outcome,

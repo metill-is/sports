@@ -48,7 +48,50 @@ test_that("prices compare to the cent, not by floating-point identity", {
   api <- .cmp_row(odds = 139 / 100)
   api$odds <- api$odds + 1e-12
   cmp <- compare_odds_sources(dom, api, api)
-  expect_true(cmp$summary$pass)
+  expect_equal(cmp$dom$verdict, "pass")
+})
+
+.cmp_visit <- function(detail, home = "A", away = "B", n_rows = 0L) {
+  tibble::tibble(
+    league = "x", competition_id = "1", position = seq_along(detail),
+    event_id = as.character(seq_along(detail)), href = "",
+    match_date = as.Date("2030-05-01"), home_team = home, away_team = away,
+    detail = detail, n_rows = n_rows
+  )
+}
+
+test_that("a run passes only with DOM rows and a compared detail page", {
+  ml <- dplyr::bind_rows(
+    .cmp_row(outcome = "home", odds = 2.1), .cmp_row(outcome = "draw", odds = 3.4),
+    .cmp_row(outcome = "away", odds = 3.0)
+  )
+  hc <- .cmp_row(market = "spread", outcome = "home", line = -1, odds = 3.9)
+  api <- dplyr::bind_rows(ml, hc)
+
+  # No DOM rows at all: all() of nothing is TRUE, which must not read as PASS.
+  none <- compare_odds_sources(ml[0, ], api, api, visits = .cmp_visit(character()))
+  expect_false(none$summary$pass)
+  expect_match(none$summary$fail_reason, "no_dom_rows")
+
+  # Every detail page failed: the 1x2 rows match, the handicap is API-only
+  # as dom_detail_failed (an allowed cause), yet nothing was compared.
+  failed <- compare_odds_sources(ml, api, api, visits = .cmp_visit("failed"))
+  expect_true(all(failed$dom$verdict == "pass"))
+  expect_equal(failed$api_only$cause, "dom_detail_failed")
+  expect_false(failed$summary$pass)
+  expect_match(failed$summary$fail_reason, "no_detail_page_ok")
+  expect_match(failed$summary$fail_reason, "no_shared_detail")
+
+  # A detail page that loads but renders no rows (a detail-page layout change).
+  blank <- compare_odds_sources(ml, api, api, visits = .cmp_visit("ok"))
+  expect_false(blank$summary$pass)
+  expect_equal(blank$summary$fail_reason, "no_shared_detail")
+
+  # The control: 1x2 plus a handicap row from a detail page that loaded.
+  good <- compare_odds_sources(api, api, api, visits = .cmp_visit("ok", n_rows = 1L))
+  expect_true(good$summary$pass)
+  expect_true(is.na(good$summary$fail_reason))
+  expect_equal(good$summary$shared_detail_matches, 1L)
 })
 
 test_that("each failing DOM row gets the first cause that applies", {

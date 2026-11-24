@@ -102,7 +102,12 @@ NULL
 #'   `api_only` (API rows with no DOM row: key, `odds_before`, `odds_after`,
 #'   `cause`), `mispaired` (visits whose link is another match),
 #'   `duplicates` (keys a side lists more than once, with the side) and
-#'   `summary` (one row of counts; `pass` is TRUE when every DOM row passes).
+#'   `summary` (one row of counts). `pass` is TRUE only when there are DOM
+#'   rows, every one passes, at least one match on both sides has DOM handicap
+#'   or total rows (a detail page was compared), and, when `visits` is given,
+#'   at least one detail page loaded. Otherwise `fail_reason` lists, in this
+#'   order, `no_dom_rows`, `dom_rows_fail`, `no_shared_detail` and
+#'   `no_detail_page_ok`; it is NA on a pass.
 #' @export
 compare_odds_sources <- function(dom, api_before, api_after, visits = NULL,
                                  api_events = NULL, api_closed = NULL) {
@@ -208,8 +213,22 @@ compare_odds_sources <- function(dom, api_before, api_after, visits = NULL,
   api_out <- api[, c(.ODDS_COMPARE_KEY, "odds_before", "odds_after", "cause"),
     drop = FALSE
   ]
+  shared <- intersect(dom_match, api_match)
+  detail_shared <- unique(dom$match_key[detail_market(dom) &
+    dom$match_key %in% shared])
+  reasons <- c(
+    if (nrow(dom) == 0L) "no_dom_rows",
+    if (any(dom$verdict == "fail")) "dom_rows_fail",
+    if (length(detail_shared) == 0L) "no_shared_detail",
+    if (!is.null(visits) && !any(visits$detail == "ok")) "no_detail_page_ok"
+  )
   summary <- tibble::tibble(
-    pass = all(dom$verdict == "pass"),
+    pass = length(reasons) == 0L,
+    fail_reason = if (length(reasons) == 0L) {
+      NA_character_
+    } else {
+      paste(reasons, collapse = "; ")
+    },
     dom_rows = nrow(dom),
     dom_pass = sum(dom$verdict == "pass"),
     dom_fail = sum(dom$verdict == "fail"),
@@ -217,7 +236,8 @@ compare_odds_sources <- function(dom, api_before, api_after, visits = NULL,
     api_only = nrow(api),
     dom_matches = length(dom_match),
     api_matches = length(api_match),
-    shared_matches = length(intersect(dom_match, api_match)),
+    shared_matches = length(shared),
+    shared_detail_matches = length(detail_shared),
     detail_visits = if (is.null(visits)) NA_integer_ else nrow(visits),
     detail_ok = if (is.null(visits)) NA_integer_ else sum(visits$detail == "ok"),
     mispaired_visits = nrow(mispaired),

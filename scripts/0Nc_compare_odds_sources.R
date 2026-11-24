@@ -126,9 +126,9 @@ if (nrow(cmp$duplicates) > 0L) {
 }
 
 if (cmp$summary$pass) {
-  cli::cli_alert_success("PASS: every DOM row has an API row at the same price in a bracketing snapshot.")
+  cli::cli_alert_success("PASS: all {cmp$summary$dom_rows} DOM rows have an API row at the same price in a bracketing snapshot; {cmp$summary$shared_detail_matches} shared match{?es} compared on detail rows.")
 } else {
-  cli::cli_alert_danger("FAIL: {cmp$summary$dom_fail} DOM row{?s} without a same-priced API row.")
+  cli::cli_alert_danger("FAIL ({cmp$summary$fail_reason}): {cmp$summary$dom_fail} of {cmp$summary$dom_rows} DOM row{?s} without a same-priced API row; {cmp$summary$shared_detail_matches} shared match{?es} with detail rows.")
 }
 
 if (!is.null(out_dir)) {

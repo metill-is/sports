@@ -40,7 +40,11 @@ that time. The proposed rule:
    snapshot A or snapshot B.
 2. **A run passes** when every DOM row passes, after the one known
    systematic difference, stray whitespace in names, is fixed in the API
-   parser (see below).
+   parser (see below). It also needs DOM rows, at least one match on both
+   sides with DOM handicap or total rows (so a detail page was compared),
+   and at least one detail page that loaded: a run with no DOM rows, or
+   whose detail pages all failed, is a fail (`summary$fail_reason`), not a
+   vacuous pass.
 3. **API-only rows are allowed** and listed with a cause. Expected causes:
    `extra_line_on_api` (the API lists handicap or total lines the DOM detail
    page does not render), `changed_during_run`, `dom_detail_not_visited`
