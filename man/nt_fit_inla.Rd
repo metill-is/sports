@@ -15,7 +15,8 @@ nt_fit_inla(
   threads = "4:1",
   seed = 1L,
   theta_init = NULL,
-  keep_result = FALSE
+  keep_result = FALSE,
+  reproducible = FALSE
 )
 }
 \arguments{
@@ -48,6 +49,13 @@ hyperparameters (the `theta_mode` of an earlier fit of the same model), to
 speed up walk-forward refits.}
 
 \item{keep_result}{Keep the raw INLA result as `result` (large).}
+
+\item{reproducible}{Fit with R-INLA's online internal optimisation off
+(`control.compute = list(internal.opt = FALSE)`, for this call only).
+With it on, R-INLA's default, the same football fit did not always
+return the same numbers in two R processes; with it off and one thread
+(`threads = "1:1"`) it did (see `R/model-v2-inla.R`). `FALSE` passes
+nothing, so R-INLA goes by its session setting.}
 }
 \value{
 List with `draws` (`theta`, `delta`: draws x teams matrices; `mu`,
