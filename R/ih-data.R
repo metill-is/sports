@@ -79,6 +79,10 @@ ih_venue <- function(m, hosts = ih_hosts()) {
   as.integer(out)
 }
 
+#' One nation under two names in the match table: the second is used
+#' @noRd
+IH_TEAM_ALIASES <- c(RHF = "Russia")
+
 #' Read the international handball matches of one sex
 #'
 #' @param sex `"female"` or `"male"`.
@@ -90,7 +94,8 @@ ih_venue <- function(m, hosts = ih_hosts()) {
 #'   `home_team`, `away_team`, `home_score`, `away_score` (final, after any
 #'   extra time, shootout excluded), `home_60`, `away_60` (after 60 minutes;
 #'   NA when unknown), `extra_time`, `penalties`, `pen_home`, `pen_away`,
-#'   `venue` ([ih_venue()]) and `division` (`"intl"`).
+#'   `awarded` (a result awarded or a walkover: its score is not a played
+#'   one), `venue` ([ih_venue()]) and `division` (`"intl"`).
 #' @noRd
 ih_read_matches <- function(sex = c("female", "male"), dir = ih_data_dir(), hosts = ih_hosts()) {
   sex <- match.arg(sex)
@@ -120,6 +125,11 @@ ih_read_matches <- function(sex = c("female", "male"), dir = ih_data_dir(), host
     stringsAsFactors = FALSE
   )
   m <- m[!is.na(m$match_date), , drop = FALSE]
+  for (side in c("home_team", "away_team")) {
+    hit <- m[[side]] %in% names(IH_TEAM_ALIASES)
+    m[[side]][hit] <- unname(IH_TEAM_ALIASES[m[[side]][hit]])
+  }
+  m$awarded <- !is.na(m$status) & m$status %in% c("Awrd", "WO")
   m$season <- ih_season(m$match_date)
   m$venue <- ih_venue(m, hosts)
   m$division <- "intl"

@@ -48,6 +48,7 @@ ih_fit <- function(matches, fixtures, as_of, season = NULL, from_season = NULL,
   as_of <- as.Date(as_of)
   train <- matches[matches$match_date < as_of & !is.na(matches$home_score) & !is.na(matches$away_score), , drop = FALSE]
   if (!is.null(from_season)) train <- train[train$season >= from_season, , drop = FALSE]
+  if (!is.null(train$awarded)) train <- train[!train$awarded, , drop = FALSE]
   fixtures <- as.data.frame(fixtures)
   if (is.null(season)) {
     season <- if (nrow(fixtures)) ih_season(min(fixtures$match_date)) else ih_season(as_of)
