@@ -340,3 +340,38 @@ test_that("coverage carries the result join when the closing rows have one", {
   expect_equal(cov$result_join, "exact")
   expect_equal(cov$home_team, "Valur kv") # coverage keeps Lengjan's names
 })
+
+# --- the local build script's output path -------------------------------------
+
+test_that("the closing table's output path is never under data/ or a trackable path", {
+  repo <- here::here()
+  expect_error(closing_odds_out_dir(file.path(repo, "data", "closing"), repo = repo), "data/")
+  expect_error(closing_odds_out_dir(file.path(repo, "data"), repo = repo), "data/")
+  expect_error(closing_odds_out_dir(file.path(repo, "docs", "closing"), repo = repo), "git-ignored")
+  ok <- file.path(repo, "research", "results", "closing-odds")
+  expect_equal(closing_odds_out_dir(ok, repo = repo), normalizePath(ok, mustWork = FALSE))
+  outside <- withr::local_tempdir()
+  expect_equal(closing_odds_out_dir(outside, repo = repo), normalizePath(outside))
+})
+
+test_that("the output path comes from the argument, then SPORTS_CLOSING_ODDS_DIR, then research/results", {
+  repo <- here::here()
+  outside <- withr::local_tempdir()
+  withr::local_envvar(SPORTS_CLOSING_ODDS_DIR = outside)
+  expect_equal(closing_odds_out_dir(repo = repo), normalizePath(outside))
+  withr::local_envvar(SPORTS_CLOSING_ODDS_DIR = NA)
+  expect_equal(
+    closing_odds_out_dir(repo = repo),
+    normalizePath(file.path(repo, "research", "results", "closing-odds"), mustWork = FALSE)
+  )
+})
+
+test_that("no GitHub Actions workflow builds the closing table", {
+  yml <- list.files(here::here(".github", "workflows"), pattern = "\\.ya?ml$", full.names = TRUE)
+  skip_if(length(yml) == 0L, "no workflow files")
+  hits <- unlist(lapply(yml, function(f) {
+    x <- readLines(f, warn = FALSE)
+    if (any(grepl("closing_odds|lengjan_closing|LENGJAN_ARCHIVE_DIR|lengjan_archive", x))) basename(f)
+  }))
+  expect_identical(hits, NULL)
+})

@@ -289,3 +289,36 @@ lengjan_closing_coverage <- function(listings, closing, as_of = NULL,
   ev$max_markets <- NULL
   ev[order(ev$kickoff_at, ev$event_id), , drop = FALSE]
 }
+
+#' Where scripts/0No_closing_odds.R writes: `out`, else environment variable
+#' `SPORTS_CLOSING_ODDS_DIR`, else the git-ignored
+#' `research/results/closing-odds/`. A path inside the repo must be
+#' git-ignored and never under `data/`: the closing table shows when the
+#' archive captured, and whether that is published is the owner's call.
+#' @noRd
+closing_odds_out_dir <- function(out = NULL, repo = here::here()) {
+  if (is.null(out) || !nzchar(out)) out <- Sys.getenv("SPORTS_CLOSING_ODDS_DIR", unset = "")
+  if (!nzchar(out)) out <- file.path(repo, "research", "results", "closing-odds")
+  path <- normalizePath(out, mustWork = FALSE)
+  root <- normalizePath(repo, mustWork = TRUE)
+  if (!startsWith(paste0(path, "/"), paste0(root, "/"))) {
+    return(path)
+  }
+  rel <- substring(path, nchar(root) + 2L)
+  if (identical(rel, "data") || startsWith(rel, "data/")) {
+    stop(
+      "The closing table never goes under data/ (", rel, "): pass --out or ",
+      "SPORTS_CLOSING_ODDS_DIR outside it.",
+      call. = FALSE
+    )
+  }
+  ignored <- .git_run(c("-C", root, "check-ignore", "-q", file.path(rel, "x")))
+  if (!ignored$ok) {
+    stop(
+      "The closing table's output path must be git-ignored inside the repo; ",
+      rel, " is not. Use research/results/ or a path outside the repo.",
+      call. = FALSE
+    )
+  }
+  path
+}
