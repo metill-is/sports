@@ -159,14 +159,6 @@ lengjan_archive_index <- function(dir = NULL) {
 }
 
 #' @noRd
-.scalar_chr <- function(x) {
-  if (is.null(x) || length(x) != 1L || is.list(x)) {
-    return(NA_character_)
-  }
-  as.character(x)
-}
-
-#' @noRd
 empty_lengjan_archive_index <- function() {
   tibble::tibble(
     ts = as.POSIXct(character(), tz = "UTC"),
@@ -200,16 +192,24 @@ empty_lengjan_archive_index <- function() {
 #' }
 #' @export
 parse_lengjan_program_markets <- function(prog) {
+  groups <- .lengjan_program_market_groups(prog, in_play = FALSE)
+  lengjan_markets_to_odds(parse_lengjan_markets(groups))
+}
+
+#' The program's embedded main markets as market groups (group name
+#' `"program"`), one per event that has one, each stamped with its event id.
+#' `in_play = FALSE` drops a market flagged `live`.
+#' @noRd
+.lengjan_program_market_groups <- function(prog, in_play) {
   evs <- .lengjan_program_events(prog)
   evs <- evs[vapply(evs, function(e) {
-    is.list(e$market) && !isTRUE(e$market$live)
+    is.list(e$market) && (in_play || !isTRUE(e$market$live))
   }, logical(1))]
-  groups <- lapply(evs, function(e) {
+  lapply(evs, function(e) {
     market <- e$market
     market$eventId <- e$id
     list(name = "program", markets = list(market))
   })
-  lengjan_markets_to_odds(parse_lengjan_markets(groups))
 }
 
 #' The program's events across its four arrays, first copy of each id. An
@@ -232,14 +232,16 @@ parse_lengjan_program_markets <- function(prog) {
 #'
 #' Parses the raw bodies each capture points at with the functions the live
 #' scrape uses ([parse_lengjan_program()], [parse_lengjan_markets()],
-#' [lengjan_markets_to_odds()]) and returns one row per capture, event,
-#' market, outcome and line. A captured event comes back whether or not
-#' `leagues` knows its competition, as long as it has a market the live
-#' mapping knows (an event with none has no row). Nothing is de-duplicated
-#' across captures, so an event listed in two captures has two sets of rows,
-#' told apart by `scraped_at`. Team names stay as Lengjan renders them.
+#' [lengjan_markets_to_odds()] or [lengjan_markets_long()]) and returns one
+#' row per capture, event, market, outcome and line (`table = "odds"`) or one
+#' row per capture and selection of every market (`table = "odds_markets"`).
+#' A captured event comes back whether or not `leagues` knows its
+#' competition, as long as it has a row to give (an event with none has no
+#' row). Nothing is de-duplicated across captures, so an event listed in two
+#' captures has two sets of rows, told apart by `scraped_at`. Team names stay
+#' as Lengjan renders them.
 #'
-#' Read-only: the rows are not validated against `schemas()$odds`, nothing is
+#' Read-only: the rows are not validated against `schemas()`, nothing is
 #' written to the facts store and no network request is made.
 #'
 #' A capture whose status is `error` is skipped with a note naming it, a
@@ -256,39 +258,48 @@ parse_lengjan_program_markets <- function(prog) {
 #'   or a string (`"2026-11-19"`, `"2026-11-19T18:00:00Z"`); strings without
 #'   an offset are UTC. A `to` given as a date covers that whole day. `NULL`
 #'   leaves the side unbounded.
-#' @param what `"detail"` reads the market-detail bodies: moneyline, total
-#'   and spread rows for the events a capture fetched detail for. `"program"`
-#'   reads only the program body: moneyline rows from each listed event's
-#'   embedded main market, where that is an open, pre-match primary `3WAY`
-#'   ([parse_lengjan_program_markets()]).
+#' @param what `"detail"` reads the market-detail bodies, for the events a
+#'   capture fetched detail for. `"program"` reads only the program body: each
+#'   listed event's embedded main market. With `table = "odds"` that gives
+#'   moneyline rows where the embedded market is an open, pre-match primary
+#'   `3WAY` ([parse_lengjan_program_markets()]); with `table = "odds_markets"`
+#'   every embedded market's open, priced selections, in-play ones included
+#'   and flagged by `is_live`, with `market_group` `"program"` (the program
+#'   carries no group).
 #' @param leagues League definitions, used only to fill `sex`.
-#' @return Tibble with the columns of the odds table (`sport`, `country`,
-#'   `scraped_at`, `match_date`, `home_team`, `away_team`, `market`,
-#'   `outcome`, `line`, `odds`, `sex`, `event_id`, `competition_id`,
-#'   `kickoff_at`) followed by `sport_id`, `sport_name`, `country_code` and
-#'   `competition_name` from the payload. `scraped_at` is the capture time.
-#'   `sport` and `country` are `NA` for a sport id or country code the
-#'   package does not know; `sex` is `NA` unless `leagues` lists the
-#'   competition under the row's sport. `match_date` is the UTC date of
-#'   `kickoff_at`; both are `NA` for an event whose kickoff does not parse
-#'   (the live scrape treats that as an error; a research read keeps the
-#'   prices). Zero rows, same columns, when no capture falls in the window.
+#' @param table `"odds"` returns the odds table's columns: moneyline, total
+#'   and spread only. `"odds_markets"` returns the odds_markets table's
+#'   columns: every open selection priced above 1 of every market, with
+#'   Lengjan's market id, version, code (`externalId`), type, group and name.
+#' @return Tibble with the columns of the chosen table (`schemas()$odds` or
+#'   `schemas()$odds_markets`) followed by `sport_id`, `sport_name`,
+#'   `country_code` and `competition_name` from the payload. `scraped_at` is
+#'   the capture time. `sport` and `country` are `NA` for a sport id or
+#'   country code the package does not know; `sex` is `NA` unless `leagues`
+#'   lists the competition under the row's sport. `match_date` is the UTC
+#'   date of `kickoff_at`; both are `NA` for an event whose kickoff does not
+#'   parse (the live scrape treats that as an error; a research read keeps
+#'   the prices). Zero rows, same columns, when no capture falls in the
+#'   window.
 #' @examples
 #' \dontrun{
 #' odds <- read_lengjan_archive(from = "2026-11-19", to = "2026-11-20")
 #' main <- read_lengjan_archive(from = "2026-11-19", what = "program")
+#' every <- read_lengjan_archive(from = "2026-11-22", table = "odds_markets")
 #' }
 #' @export
 read_lengjan_archive <- function(dir = NULL, from = NULL, to = NULL,
                                  what = c("detail", "program"),
-                                 leagues = load_leagues()) {
+                                 leagues = load_leagues(),
+                                 table = c("odds", "odds_markets")) {
   what <- match.arg(what)
+  table <- match.arg(table)
   dir <- .lengjan_archive_dir(dir)
   ix <- lengjan_archive_index(dir)
   ix <- ix[.lengjan_in_window(ix$ts, from, to), , drop = FALSE]
   comp_sex <- .lengjan_competition_sex(leagues)
 
-  rows <- list(empty_lengjan_archive())
+  rows <- list(empty_lengjan_archive(table))
   skipped <- character()
   for (i in seq_len(nrow(ix))) {
     status <- ix$status[[i]]
@@ -305,7 +316,7 @@ read_lengjan_archive <- function(dir = NULL, from = NULL, to = NULL,
     got <- .lengjan_read_bodies(dir, files)
     if (!is.character(got)) {
       got <- tryCatch(
-        .lengjan_capture_rows(got, what, ix$ts[[i]], comp_sex),
+        .lengjan_capture_rows(got, what, table, ix$ts[[i]], comp_sex),
         error = function(e) conditionMessage(e)
       )
     }
@@ -321,20 +332,25 @@ read_lengjan_archive <- function(dir = NULL, from = NULL, to = NULL,
   dplyr::bind_rows(rows)
 }
 
-#' Odds-shaped rows for one capture. `bodies` is the parsed program body
-#' followed, in detail mode, by the capture's markets bodies.
+#' Rows of `table`'s shape for one capture. `bodies` is the parsed program
+#' body followed, in detail mode, by the capture's markets bodies.
 #' @noRd
-.lengjan_capture_rows <- function(bodies, what, scraped_at, comp_sex) {
+.lengjan_capture_rows <- function(bodies, what, table, scraped_at, comp_sex) {
   prog <- bodies[[1L]]
-  odds <- if (what == "detail") {
-    groups <- unlist(bodies[-1L], recursive = FALSE)
-    lengjan_markets_to_odds(parse_lengjan_markets(groups))
+  groups <- if (what == "detail") {
+    unlist(bodies[-1L], recursive = FALSE)
   } else {
-    parse_lengjan_program_markets(prog)
+    .lengjan_program_market_groups(prog, in_play = table == "odds_markets")
+  }
+  markets <- parse_lengjan_markets(groups)
+  rows <- if (table == "odds") {
+    lengjan_markets_to_odds(markets)
+  } else {
+    lengjan_markets_long(markets)
   }
   # WHY: parse_lengjan_program() costs about 3 ms per event, and a program
-  # lists about a thousand; only events with odds rows survive the join.
-  prog <- .lengjan_program_subset(prog, unique(odds$event_id))
+  # lists about a thousand; only events with rows survive the join.
+  prog <- .lengjan_program_subset(prog, unique(rows$event_id))
   events <- parse_lengjan_program(prog)
   listed <- .lengjan_program_events(prog)
   sport_names <- stats::setNames(
@@ -342,24 +358,33 @@ read_lengjan_archive <- function(dir = NULL, from = NULL, to = NULL,
     vapply(listed, function(e) .scalar_chr(e$id), character(1))
   )
 
-  j <- dplyr::inner_join(odds, events, by = "event_id")
+  j <- dplyr::inner_join(rows, events, by = "event_id")
   j <- j[!is.na(j$home_team) & !is.na(j$away_team), , drop = FALSE]
   sport <- .lengjan_sport_from_id(j$sport_id)
-  tibble::tibble(
+  match <- tibble::tibble(
     sport = sport,
     country = .lengjan_country_from_code(j$country_code),
     scraped_at = rep(scraped_at, nrow(j)),
     match_date = as.Date(j$kickoff_at, tz = "UTC"),
-    home_team = j$home_team, away_team = j$away_team,
-    market = j$market, outcome = j$outcome, line = j$line, odds = j$odds,
+    home_team = j$home_team, away_team = j$away_team
+  )
+  ids <- tibble::tibble(
     sex = unname(comp_sex[paste(sport, j$competition_id)]),
     event_id = j$event_id, competition_id = j$competition_id,
-    kickoff_at = j$kickoff_at,
+    kickoff_at = j$kickoff_at
+  )
+  payload <- tibble::tibble(
     sport_id = j$sport_id,
     sport_name = unname(sport_names[j$event_id]),
     country_code = j$country_code,
     competition_name = j$competition_name
   )
+  if (table == "odds") {
+    odds <- j[, c("market", "outcome", "line", "odds"), drop = FALSE]
+    dplyr::bind_cols(match, odds, ids, payload)
+  } else {
+    dplyr::bind_cols(match, ids, j[, .LENGJAN_MARKET_COLUMNS, drop = FALSE], payload)
+  }
 }
 
 #' The program with its event arrays cut down to the given event ids.
@@ -477,9 +502,9 @@ read_lengjan_archive <- function(dir = NULL, from = NULL, to = NULL,
 }
 
 #' @noRd
-empty_lengjan_archive <- function() {
+empty_lengjan_archive <- function(table = "odds") {
   dplyr::bind_cols(
-    empty_lengjan_api_odds(),
+    if (table == "odds") empty_lengjan_api_odds() else empty_lengjan_api_market_rows(),
     tibble::tibble(
       sport_id = integer(), sport_name = character(),
       country_code = character(), competition_name = character()

@@ -8,6 +8,7 @@ table_partitions <- function() {
     results = c("sport", "country", "sex", "season"),
     schedules = c("sport", "country", "sex", "season"),
     odds = c("sport", "country", "scraped_date"),
+    odds_markets = c("sport", "country", "scraped_date"),
     beliefs_latest = c("sport", "country", "sex"),
     beliefs_archive = c("sport", "country", "sex", "fit_date"),
     beliefs_by_round = c("sport", "country", "sex", "season", "round_cutoff"),
@@ -55,6 +56,7 @@ table_subdir <- function(table) {
     results = c("facts", "results"),
     schedules = c("facts", "schedules"),
     odds = c("facts", "odds"),
+    odds_markets = c("facts", "odds_markets"),
     beliefs_latest = c("beliefs", "latest"),
     beliefs_archive = c("beliefs", "archive"),
     beliefs_by_round = c("beliefs", "by_round"),
@@ -77,7 +79,8 @@ table_subdir <- function(table) {
 #' Audit 2026-05-15 Important §I3 / Data M.
 #' @noRd
 add_virtual_partitions <- function(df, table) {
-  if (table == "odds" && !("scraped_date" %in% names(df)) && "scraped_at" %in% names(df)) {
+  if (table %in% c("odds", "odds_markets") && !("scraped_date" %in% names(df)) &&
+    "scraped_at" %in% names(df)) {
     df$scraped_date <- as.Date(df$scraped_at, tz = "UTC")
   }
   if (table %in% c("candidates", "recommendations") &&
@@ -402,6 +405,13 @@ write_table <- function(df, table, root = here::here("data")) {
   invisible(TRUE)
 }
 
+#' Tables of scraped snapshots, which cannot be fetched again.
+#'
+#' `upsert_table()` lets a read error on one of their partitions propagate
+#' rather than overwrite the partition.
+#' @noRd
+snapshot_tables <- function() c("odds", "odds_markets")
+
 #' Natural match-key columns per table (for upsert dedup).
 #'
 #' Unlike the partition columns, which identify which Parquet files to write,
@@ -410,10 +420,10 @@ write_table <- function(df, table, root = here::here("data")) {
 #' the newer row; re-ingests that return a strict subset of an earlier fetch
 #' keep the full union.
 #'
-#' For \code{odds}, `scraped_at` is part of the natural key so each cron
-#' snapshot accretes within the day's partition rather than overwriting
-#' earlier snapshots. Same-second re-runs (typically only in tests) dedup
-#' against the bet's full identity.
+#' For \code{odds} and \code{odds_markets}, `scraped_at` is part of the
+#' natural key so each cron snapshot accretes within the day's partition
+#' rather than overwriting earlier snapshots. Same-second re-runs (typically
+#' only in tests) dedup against the bet's full identity.
 #' @noRd
 natural_key_for <- function(table) {
   switch(table,
@@ -433,6 +443,9 @@ natural_key_for <- function(table) {
       "sport", "country", "sex", "scraped_at", "match_date",
       "home_team", "away_team", "market", "outcome", "line"
     ),
+    # One selection of one market in one scrape. Sport, country and the
+    # scrape's date are fixed within a partition.
+    odds_markets = c("scraped_at", "event_id", "market_id", "selection"),
     stop("upsert_table not supported for table: ", table, call. = FALSE)
   )
 }
@@ -491,17 +504,18 @@ carry_enrichment <- function(kept, dropped, table, nat_key) {
 #' When the new frame collides with an existing row on the natural match key,
 #' the NEW row wins — this lets corrections (e.g. finalised scores) propagate.
 #'
-#' Currently supports `"results"`, `"schedules"` and `"odds"`. Other tables
-#' fall through to `natural_key_for()` which raises a clear error.
+#' Currently supports `"results"`, `"schedules"`, `"odds"` and
+#' `"odds_markets"`. Other tables fall through to `natural_key_for()` which
+#' raises a clear error.
 #'
 #' A partition that exists but cannot be read is treated as empty (and so
 #' overwritten) for `"results"` and `"schedules"`, which can be re-ingested.
-#' For `"odds"` the read error propagates instead and nothing is written:
-#' snapshots cannot be re-scraped. An absent table directory is not an error
+#' For `"odds"` and `"odds_markets"` the read error propagates instead and
+#' nothing is written: snapshots cannot be re-scraped. An absent table directory is not an error
 #' ([read_table()] returns an empty tibble), so a first write still works.
 #'
 #' @param df A tibble or data frame matching the schema for `table`.
-#' @param table One of `"results"`, `"schedules"`, `"odds"`.
+#' @param table One of `"results"`, `"schedules"`, `"odds"`, `"odds_markets"`.
 #' @param root Filesystem root (defaults to `here::here("data")`).
 #' @param snapshot_future_by Optional character vector of scope columns (e.g.
 #'   `"division"`). When set, the incoming frame is treated as the
@@ -558,7 +572,7 @@ upsert_table <- function(df, table, root = here::here("data"),
     # propagate: swallowing it as "no existing rows" would overwrite the
     # partition and silently drop the day's earlier snapshots (final review
     # F4). Other tables keep the swallow: their rows are re-ingestable.
-    existing <- if (identical(table, "odds")) {
+    existing <- if (table %in% snapshot_tables()) {
       read_table(table, root = root, filter = part_filter)
     } else {
       tryCatch(

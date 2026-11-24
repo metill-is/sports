@@ -68,6 +68,12 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/facts/odds/
+          # Every market's selections from the JSON-API leagues. Guarded: until
+          # the first API write creates it, a bare `git add` of the missing
+          # folder exits 128 and this run's odds would go uncommitted.
+          if [ -d data/facts/odds_markets ]; then
+            git add data/facts/odds_markets/
+          fi
           if git diff --cached --quiet; then
             echo "No data changed"
             exit 0

@@ -65,6 +65,43 @@ schemas <- function() {
       competition_id = arrow::string(),
       kickoff_at     = ts
     ),
+    # Every open, priced selection of every market Lengjan's JSON API offers for
+    # the events the odds scrape fetches (R/lengjan-api.R), one row per
+    # selection per scrape: lossless, where `odds` keeps only the three
+    # markets decide maps. Added 2026-11-24. The match columns are the odds
+    # table's. `market_code` is the payload's `externalId`, a stable code for
+    # the market type (1 or 0 full-time 1X2, 18 total, 14 three-way handicap,
+    # 16 Asian handicap, ...); `market_type` its `typeName` (3WAY, OU, HC, AH,
+    # NWAY, YN, DC, CSO); `market_group` the group it came in (OU_FT, HC_FT,
+    # single-<id>, ...); `market_name` the Icelandic label. `market_version`
+    # changes when Lengjan moves the market. `line` is `special_value` as a
+    # number, NA where the market has none. `is_primary` and `is_live`, not
+    # `primary` and `live`: PRIMARY is a reserved word in DuckDB's SQL.
+    odds_markets = arrow::schema(
+      sport          = arrow::string(),
+      country        = arrow::string(),
+      scraped_at     = ts,
+      match_date     = arrow::date32(),
+      home_team      = arrow::string(),
+      away_team      = arrow::string(),
+      sex            = arrow::string(),
+      event_id       = arrow::string(),
+      competition_id = arrow::string(),
+      kickoff_at     = ts,
+      market_id      = arrow::string(),
+      market_version = arrow::string(),
+      market_code    = arrow::string(),
+      market_type    = arrow::string(),
+      market_group   = arrow::string(),
+      market_name    = arrow::string(),
+      special_value  = arrow::string(),
+      line           = arrow::float64(),
+      selection      = arrow::string(),
+      odds           = arrow::float64(),
+      is_primary     = arrow::bool(),
+      is_live        = arrow::bool(),
+      closes_at      = ts
+    ),
     beliefs_latest = arrow::schema(
       sport       = arrow::string(),
       country     = arrow::string(),

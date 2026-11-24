@@ -2,7 +2,9 @@
 # scripts/02_scrape_odds.R --
 # Scrape Lengjan odds for active leagues with upcoming games.
 #
-# Writes data/facts/odds/sport=*/country=*/scraped_date=YYYY-MM-DD/.
+# Writes data/facts/odds/sport=*/country=*/scraped_date=YYYY-MM-DD/ and, for
+# the JSON-API leagues, every market's selections to data/facts/odds_markets/
+# (same partitions).
 # Skips leagues with no game in the next 14 days (rule: "don't scrape
 # odds if there are no upcoming games").
 #
@@ -37,6 +39,9 @@ if (!fs::file_exists(active_path)) {
 }
 
 cli::cli_h1("Scrape odds ({length(active)} Lengjan-eligible leagues)")
+# Every JSON-API league reads the same current-program body: one request per
+# run, not one per league.
+program_once <- lengjan_program_once()
 # One league's plain error (e.g. an unexpected Lengjan API shape on the
 # handball path) must not stop the leagues after it: config order puts
 # football, the live money path, last. run_per_league() contains each failure
@@ -67,7 +72,8 @@ scrape_one <- function(key) {
   cli::cli_h2("{key}")
   ingest_one_lengjan(
     static, lengjan, key, active_path,
-    betting = league_def[["betting"]]
+    betting = league_def[["betting"]],
+    fetch_program = program_once
   )
 }
 res <- run_per_league(names(active), scrape_one, what = "odds scrape")
