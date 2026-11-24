@@ -44,7 +44,32 @@ every <- read_lengjan_archive(from = "2026-11-22", table = "odds_markets")
 - A capture whose file is missing or cut off in the local copy, or whose body
   has an unexpected shape, is skipped; one warning lists the skipped captures.
 
-**What it never does.** It never writes to `data/facts/odds/`,
+**Closing odds.** `lengjan_closing_odds(rows, as_of)` turns
+`read_lengjan_archive(table = "odds_markets")` rows into each event's closing
+prices: its last capture before kick-off and market close, keeping only the
+rows that capture lists, so a line withdrawn earlier does not linger.
+`as_of` is the last capture read (`max(lengjan_archive_index()$ts)`); a match
+not yet kicked off by then has not closed. `minutes_before` says how far the
+closing capture was from kick-off: filter on it, since an event whose detail
+stopped early still closes, hours out. `lengjan_closing_results()` joins the
+rows to results the way settlement does (canonical names per league and sex,
+then a unique result within a date window) and names what it could not join
+(`unwired`, `ambiguous`, `no_result`). Basketball's 1X2 is settled on
+regulation time: use `home_score_reg`/`away_score_reg`.
+`lengjan_archive_events()` lists every event a capture's program held, so
+`lengjan_closing_coverage()` can count events that never got market detail.
+
+```bash
+Rscript scripts/0No_closing_odds.R [--from 2026-11-16] [--to YYYY-MM-DD] [--out DIR]
+```
+
+It writes `closing_odds.parquet`, `coverage.csv` and `coverage.md` to `--out`,
+else `SPORTS_CLOSING_ODDS_DIR`, else the git-ignored
+`research/results/closing-odds/`, and refuses `data/` or any other path git
+would track: the table shows when the archive captured, and whether that is
+published is the owner's decision. Local only; no workflow runs it.
+
+**What the reader never does.** It never writes to `data/facts/odds/`,
 `data/facts/odds_markets/` or anywhere else, does not validate against
 `schemas()`, and makes no network request.
 The on-disk format (version 1) is the capture job's contract and is documented
