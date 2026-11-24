@@ -10,8 +10,9 @@
 #       [n_sims=20000] [seed=2028] [team=Iceland]
 # The fixtures file is optional (used when it exists): without it every pair
 # plays home and away, Belarus, Ukraine and Israel at neutral venues.
-# Heavy at the default 20,000 simulations (about a minute per reading): run it
-# as `ml run -- Rscript ...`.
+# Measured 2026-11-24 with the real fit: 62 s and 1.44 GB peak at 20,000
+# simulations (both readings), 31 s and 1.32 GB at 10,000; under every heavy
+# threshold, so `ml light -- Rscript ...`. Identical output on a rerun.
 
 suppressMessages(devtools::load_all(quiet = TRUE))
 options(width = 160)

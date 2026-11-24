@@ -37,10 +37,9 @@ NULL
 # deciding. Every function here takes `h2h_reapply`: "repeat" (default, the
 # published reading) or "once" (the literal wording).
 #
-# Not modelled here: the play-offs (Articles 16 and 17) and the reserved host
-# places (14.04). nt_simulate_qualifying() returns every simulated group
-# position and the runners-up ranking, which is all a later play-off step
-# needs besides the Nations League ranking.
+# The reserved host places (14.04) and the play-offs (Articles 16 and 17) are
+# in R/nt-euro2028.R, which takes nt_simulate_qualifying()'s group positions,
+# runners-up ranking and per-team Article 23 statistics.
 
 .nt_uefa_overall_criteria <- c(
   e_goal_difference = "gd", f_goals_for = "gf", g_away_goals = "away_gf",
