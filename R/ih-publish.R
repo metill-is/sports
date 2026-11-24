@@ -230,7 +230,7 @@ ih_publish_tournament <- function(fit, sim, spec, results, out_dir, names = ih_t
     exp_pos <- stats::setNames(as.vector(pp %*% (1:4)), rows$team)
     ord <- ordered_teams(tab, exp_pos)
     groups[[length(groups) + 1L]] <- list(
-      group = g, label_is = paste("Riðill", g), stage = "preliminary",
+      group = g, label_is = paste("Ri\u00f0ill", g), stage = "preliminary",
       venue_is = venue_is(unique(spec$prelim$venue_city[spec$prelim$group == g])),
       advance_n = spec$n_main,
       teams = lapply(ord, function(t) {
@@ -250,7 +250,7 @@ ih_publish_tournament <- function(fit, sim, spec, results, out_dir, names = ih_t
     ord <- ordered_teams(am$table, exp_pos)
     adv <- 2L
     groups[[length(groups) + 1L]] <- list(
-      group = G, label_is = paste("Millieriðill", G), stage = "main",
+      group = G, label_is = paste("Milliri\u00f0ill", G), stage = "main",
       venue_is = venue_is(unname(spec$main_city[G])), advance_n = adv,
       teams = lapply(ord, function(t) {
         r <- d[d$team == t, ]
