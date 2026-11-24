@@ -17,7 +17,7 @@
 # Usage:
 #   Rscript scripts/0Nc_audit_team_names.R                  # football_iceland
 #   Rscript scripts/0Nc_audit_team_names.R --league football_iceland --live
-#   Options: --archive-dir <dir>, --archive-every-hours 6, --out <dir> (CSVs)
+#   Options: --archive-dir <dir>, --archive-every-hours 6, --out <dir> (CSVs; never under data/)
 
 invisible(Sys.setlocale("LC_ALL", "en_US.UTF-8"))
 options(width = 150)
@@ -28,6 +28,7 @@ flag <- function(name, default = NULL) {
   i <- which(args == paste0("--", name))
   if (length(i) == 0L) default else args[[i + 1L]]
 }
+out_dir <- odds_compare_out_dir(flag("out"))
 key <- flag("league", "football_iceland")
 league <- load_leagues()[[key]]
 if (is.null(league)) stop("Unknown league: ", key)
@@ -175,7 +176,6 @@ print(as.data.frame(dplyr::mutate(
   away_team = sprintf("[%s]", .data$away_team)
 )))
 
-out_dir <- flag("out")
 if (!is.null(out_dir)) {
   fs::dir_create(out_dir)
   readr::write_csv(comp_table, file.path(out_dir, "competitions.csv"))

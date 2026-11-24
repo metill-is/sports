@@ -412,3 +412,27 @@ team_name_rendering_coverage <- function(league, seen) {
   out$seen <- out$rendering %in% seen
   out
 }
+
+#' The `--out` folder of `scripts/0Nc_compare_odds_sources.R` and
+#' `scripts/0Nc_audit_team_names.R`: an absolute path with `.` and `..`
+#' collapsed and symlinks resolved as far as it exists (`.closing_abs_path()`),
+#' refused when it is `data/` or under it. A relative path resolves against
+#' the working directory first, so `data/reports` is refused before it exists:
+#' `normalizePath(mustWork = FALSE)` returns such a path unchanged, which
+#' passed the old prefix check. NULL (no `--out`) stays NULL.
+#' @noRd
+odds_compare_out_dir <- function(out, repo = here::here()) {
+  if (is.null(out)) {
+    return(NULL)
+  }
+  path <- .closing_abs_path(out)
+  data_dir <- .closing_abs_path(file.path(repo, "data"))
+  if (identical(path, data_dir) || startsWith(path, paste0(data_dir, "/"))) {
+    stop(
+      "--out must not be under data/ (", path, "): these scripts write ",
+      "nothing there.",
+      call. = FALSE
+    )
+  }
+  path
+}

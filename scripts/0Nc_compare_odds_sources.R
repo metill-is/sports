@@ -32,14 +32,7 @@ flag <- function(name, default = NULL) {
   if (length(i) == 0L) default else args[[i + 1L]]
 }
 max_detail <- as.numeric(flag("max-detail", "Inf"))
-out_dir <- flag("out")
-if (!is.null(out_dir)) {
-  data_dir <- normalizePath(here::here("data"), mustWork = FALSE)
-  out_abs <- normalizePath(out_dir, mustWork = FALSE)
-  if (startsWith(paste0(out_abs, "/"), paste0(data_dir, "/"))) {
-    stop("--out must not be under data/: this script writes nothing there.")
-  }
-}
+out_dir <- odds_compare_out_dir(flag("out"))
 
 if (!is.null(flag("competition"))) {
   comp <- flag("competition")

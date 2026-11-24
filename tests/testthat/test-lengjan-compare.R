@@ -491,3 +491,55 @@ test_that("the compare and audit scripts write nothing to data/ and stay off CI"
   hits <- unlist(lapply(wf, function(f) grep("0Nc_", readLines(f, warn = FALSE), value = TRUE)))
   expect_length(hits, 0L)
 })
+
+# --- --out never lands under data/ ---------------------------------------------
+
+test_that("odds_compare_out_dir refuses data/, even relative and not yet created", {
+  repo <- withr::local_tempdir()
+  dir.create(file.path(repo, "data"))
+  dir.create(file.path(repo, "research"))
+  withr::local_dir(repo)
+  expect_false(dir.exists("data/reports")) # the case normalizePath() missed
+  expect_error(odds_compare_out_dir("data/reports", repo = repo), "under data/")
+  expect_error(odds_compare_out_dir("research/../data/x", repo = repo), "under data/")
+  expect_error(odds_compare_out_dir("data", repo = repo), "under data/")
+  expect_error(odds_compare_out_dir(file.path(repo, "data", "a", "b"), repo = repo), "under data/")
+  ok <- odds_compare_out_dir("research/shadow", repo = repo)
+  expect_equal(ok, file.path(normalizePath(repo), "research", "shadow"))
+  expect_equal(
+    odds_compare_out_dir("dataset", repo = repo),
+    file.path(normalizePath(repo), "dataset")
+  )
+  expect_null(odds_compare_out_dir(NULL, repo = repo))
+})
+
+test_that("both scripts resolve --out through odds_compare_out_dir before any work", {
+  for (s in c("0Nc_compare_odds_sources.R", "0Nc_audit_team_names.R")) {
+    code <- readLines(testthat::test_path("..", "..", "scripts", s), warn = FALSE)
+    code <- code[!grepl("^\\s*#", code)]
+    guard <- grep("out_dir <- odds_compare_out_dir(flag(\"out\"))", code, fixed = TRUE)
+    expect_length(guard, 1L)
+    first_work <- grep("load_leagues\\(|lengjan_fetch_program|write_csv|saveRDS", code)
+    expect_true(length(guard) == 1L && guard < min(first_work), info = s)
+    expect_false(any(grepl("normalizePath(out", code, fixed = TRUE)), info = s)
+  }
+})
+
+test_that("a relative --out under data/ stops each script before it does anything", {
+  skip_on_ci() # the scripts are local-only by design
+  root <- normalizePath(testthat::test_path("..", ".."))
+  target <- paste0("data/zz-out-guard-", Sys.getpid())
+  withr::defer(unlink(file.path(root, target), recursive = TRUE))
+  rscript <- file.path(R.home("bin"), "Rscript")
+  for (s in c("0Nc_compare_odds_sources.R", "0Nc_audit_team_names.R")) {
+    out <- withr::with_dir(root, suppressWarnings(system2(
+      rscript,
+      c(file.path("scripts", s), "--league", "no_such_league", "--out", target),
+      stdout = TRUE, stderr = TRUE
+    )))
+    expect_false(is.null(attr(out, "status")), info = s) # non-zero exit
+    expect_true(any(grepl("under data/", out)), info = paste(s, paste(out, collapse = "\n")))
+    expect_false(any(grepl("Unknown league", out)), info = s)
+    expect_false(dir.exists(file.path(root, target)), info = s)
+  }
+})
