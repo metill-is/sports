@@ -39,9 +39,11 @@ ih_priors <- function() {
 #' @return List: `teams`; per draw (rows) `m_state`, `t_state` (draws by
 #'   nations), `level`, `hfa`, `ha` (draws by nations), `sigma_m`, `sigma_t`;
 #'   `fixtures` with `loc_m` and `loc_t` (draws by fixtures, as R-INLA's
-#'   predictor gives them); `hyper_sd`, `fixed`, `mode_status` (margin,
-#'   total), `n_train`, `n_train_60` (rows in the likelihood), `as_of`,
-#'   `season`.
+#'   predictor gives them); `hyper_sd`, `fixed`, `mode_status` and
+#'   `attempts` (margin, total; a half found unusable is fitted once more,
+#'   restarting at its mode), `unusable` (what is still wrong after that, as
+#'   `hbbb_v2_half_unusable()` words it), `n_train`, `n_train_60` (rows in the
+#'   likelihood), `as_of`, `season`.
 #' @noRd
 ih_fit <- function(matches, fixtures, as_of, season = NULL, from_season = NULL,
                    n_draws = 4000L, seed = 1L, int_strategy = "auto") {
@@ -86,13 +88,30 @@ ih_fit <- function(matches, fixtures, as_of, season = NULL, from_season = NULL,
   )
   priors <- ih_priors()
   fits <- list()
+  unusable <- character()
   for (resp in c("margin", "total")) {
-    fits[[resp]] <- fit_v2_inla(
-      v, resp, priors,
-      within = "none", int_strategy = int_strategy, n_samples = as.integer(n_draws),
-      y = y60[[resp]], seed = as.integer(seed) + (resp == "total"), latent = latent[[resp]],
-      venue = if (resp == "margin") venue else NULL
-    )
+    fit_once <- function(theta_start) {
+      fit_v2_inla(
+        v, resp, priors,
+        within = "none", int_strategy = int_strategy, n_samples = as.integer(n_draws),
+        y = y60[[resp]], seed = as.integer(seed) + (resp == "total"), latent = latent[[resp]],
+        venue = if (resp == "margin") venue else NULL, theta_start = theta_start
+      )
+    }
+    # WHY a second attempt: as in hbbb_v2_fit_halves(), R-INLA's MKL build can
+    # return a near-singular Hessian at a sound mode on some CPUs; a restart at
+    # that mode recomputes it.
+    fit <- fit_once(NULL)
+    fit$attempts <- 1L
+    why <- hbbb_v2_half_unusable(fit, priors, "none")
+    if (length(why) && length(fit$theta) && all(is.finite(fit$theta))) {
+      cli::cli_alert_warning("R-INLA's {resp} fit is unusable ({paste(why, collapse = '; ')}); fitting it once more, restarting at its mode.")
+      fit <- fit_once(fit$theta)
+      fit$attempts <- 2L
+      why <- hbbb_v2_half_unusable(fit, priors, "none")
+    }
+    unusable <- c(unusable, why)
+    fits[[resp]] <- fit
   }
   sm <- fits$margin$samples
   st <- hbbb_v2_shuffle_draws(fits$total$samples, as.integer(seed) + 2L)
@@ -120,6 +139,7 @@ ih_fit <- function(matches, fixtures, as_of, season = NULL, from_season = NULL,
     ),
     fixed = list(margin = fits$margin$fixed, total = fits$total$fixed),
     mode_status = c(margin = fits$margin$mode_status, total = fits$total$mode_status),
+    attempts = c(margin = fits$margin$attempts, total = fits$total$attempts), unusable = unusable,
     n_train = nrow(train), n_train_60 = sum(!is.na(y60$margin)),
     as_of = as_of, season = season
   )
@@ -131,6 +151,8 @@ ih_fit <- function(matches, fixtures, as_of, season = NULL, from_season = NULL,
 #'
 #' The checks a fit must pass before its forecast is published: R-INLA found
 #' the hyperparameter mode for both halves, every draw is finite, and the
+#' no hyperparameter sd is unusable after [ih_fit()]'s restart at the mode
+#' (`hbbb_v2_half_unusable()`: none above 5 times its prior bound), the
 #' observation sds, home advantage and scoring level sit inside the handball
 #' leagues' sanity ranges (`HBBB_V2_SANITY$handball`). The leagues' team-spread
 #' range is not applied: nations differ far more than clubs (`ih_priors()`).
@@ -142,6 +164,7 @@ ih_fit_check <- function(fit) {
   s <- HBBB_V2_SANITY$handball
   out <- character()
   if (!all(v2_mode_ok(fit$mode_status))) out <- c(out, "R-INLA did not find the hyperparameter mode")
+  if (length(fit$unusable)) out <- c(out, sprintf("unusable after a restart at the mode: %s", paste(fit$unusable, collapse = "; ")))
   draws <- list(
     sigma_margin = fit$sigma_m, sigma_total = fit$sigma_t, hfa = fit$hfa, level = fit$level,
     margin_state = fit$m_state, total_state = fit$t_state

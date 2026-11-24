@@ -61,6 +61,8 @@ test_that("the nations fit's composed locations are R-INLA's own predictor, draw
   fit <- ih_fit(m, fx, as_of, n_draws = 300L, int_strategy = "eb")
 
   expect_identical(unname(fit$mode_status), c(0L, 0L))
+  expect_identical(fit$unusable, character())
+  expect_identical(ih_fit_check(fit), character())
   expect_equal(fit$season, 2024L)
   loc <- ih_locations(fit, fx$home_team, fx$away_team, fx$venue)
   expect_lt(max(abs(loc$loc_m - fit$loc_m)), 0.01)
@@ -114,4 +116,8 @@ test_that("a fit that has gone wrong is refused before anything is published", {
   expect_length(p, 2L)
   expect_match(p[1], "observation sd of the margin 40.00 outside \\[2, 15\\]")
   expect_match(p[2], "mean total 120.00 outside \\[30, 80\\]")
+
+  stuck <- ok
+  stuck$unusable <- "total sd: b = 9.08e+09"
+  expect_match(ih_fit_check(stuck), "unusable after a restart at the mode: total sd: b = 9.08e\\+09")
 })
