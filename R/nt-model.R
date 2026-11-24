@@ -72,6 +72,12 @@ NULL
 #'   hyperparameters (the `theta_mode` of an earlier fit of the same model), to
 #'   speed up walk-forward refits.
 #' @param keep_result Keep the raw INLA result as `result` (large).
+#' @param reproducible Fit with R-INLA's online internal optimisation off
+#'   (`control.compute = list(internal.opt = FALSE)`, for this call only).
+#'   With it on, R-INLA's default, the same football fit did not always
+#'   return the same numbers in two R processes; with it off and one thread
+#'   (`threads = "1:1"`) it did (see `R/model-v2-inla.R`). `FALSE` passes
+#'   nothing, so R-INLA goes by its session setting.
 #' @return List with `draws` (`theta`, `delta`: draws x teams matrices; `mu`,
 #'   `home_for`, `home_against`: vectors), `teams`, `kappa`, `hyper`, `fixed`,
 #'   `mlik`, `theta_mode`, `seconds` and `settings`.
@@ -86,7 +92,8 @@ nt_fit_inla <- function(prep,
                         threads = "4:1",
                         seed = 1L,
                         theta_init = NULL,
-                        keep_result = FALSE) {
+                        keep_result = FALSE,
+                        reproducible = FALSE) {
   rlang::check_installed("INLA", reason = "to fit the national-team model")
   dynamics <- match.arg(dynamics)
   friendly <- match.arg(friendly)
@@ -165,7 +172,10 @@ nt_fit_inla <- function(prep,
     family = "poisson",
     data = INLA::inla.stack.data(stk),
     control.predictor = list(A = INLA::inla.stack.A(stk), compute = FALSE, link = 1),
-    control.compute = list(config = TRUE, dic = FALSE, waic = FALSE, mlik = TRUE),
+    control.compute = c(
+      list(config = TRUE, dic = FALSE, waic = FALSE, mlik = TRUE),
+      if (reproducible) list(internal.opt = FALSE)
+    ),
     control.fixed = list(prec = 0.25),
     control.inla = list(int.strategy = int_strategy),
     control.mode = if (is.null(theta_init)) {
@@ -178,14 +188,14 @@ nt_fit_inla <- function(prep,
   t_fit <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
 
   t1 <- Sys.time()
-  smp <- INLA::inla.posterior.sample(
-    n_draws, res,
+  smp <- .nt_posterior_draws(
+    res, n_draws,
     selection = list(
       alpha = seq_len(k), delta = seq_len(k),
       u = (seq_len(k) - 1L) * n_t + n_t,
       mu = 1, home_for = 1, home_against = 1
     ),
-    seed = seed, num.threads = "1:1"
+    seed = seed
   )
   latent <- vapply(smp, function(s) s$latent[, 1], numeric(nrow(smp[[1]]$latent)))
   part <- sub(":.*$", "", rownames(smp[[1]]$latent))
@@ -213,9 +223,22 @@ nt_fit_inla <- function(prep,
     seconds = c(fit = t_fit, draws = t_draw),
     settings = list(
       dynamics = dynamics, friendly = friendly, rw_sd = rw_sd,
-      int_strategy = int_strategy, cutoff = prep$cutoff,
+      int_strategy = int_strategy, reproducible = reproducible, cutoff = prep$cutoff,
       n_matches = nrow(prep$matches), n_teams = k, n_periods = n_t,
       step_months = prep$step_months
+    )
+  )
+}
+
+# WHY: R-INLA's own `seed` reaches only its sampler of the latent field; which
+# hyperparameter configuration each draw comes from is picked with R's
+# generator. Seeding R's generator for the call fixes both, and with_seed()
+# puts the caller's stream back afterwards.
+.nt_posterior_draws <- function(res, n_draws, selection, seed) {
+  withr::with_seed(
+    as.integer(seed),
+    INLA::inla.posterior.sample(
+      n_draws, res, selection = selection, seed = as.integer(seed), num.threads = "1:1"
     )
   )
 }

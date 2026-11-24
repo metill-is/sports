@@ -11,7 +11,8 @@ nt_prepare(
   min_matches = 5L,
   step_months = 3L,
   core_pattern = .nt_core_pattern,
-  core_exclude = "^CONIFA|Island Games"
+  core_exclude = "^CONIFA|Island Games",
+  ninety = NULL
 )
 }
 \arguments{
@@ -28,11 +29,20 @@ months. National teams play in a handful of windows a year, so a quarterly
 grid loses little and keeps the latent field small.}
 
 \item{core_pattern, core_exclude}{Passed to [nt_core_teams()].}
+
+\item{ninety}{Optional table of 90-minute scores in the layout of
+[nt_extra_time_matches()]. The source files store scores after extra
+time; the model is of 90 minutes, so each listed match is trained on its
+90-minute score. A listed match inside the window that is not in
+`results` raises a warning (usually a misspelt team). `NULL`, the
+default, trains on the scores as stored, as every fit before 2026-11-24
+did.}
 }
 \value{
 List: `matches` (tibble), `teams` (character), `origin` (Date, first
   day of the first month), `n_periods` (the time index of `cutoff`),
-  `step_months`, `cutoff`.
+  `step_months`, `cutoff`, `n_corrected` (matches trained on a 90-minute
+  score from `ninety`).
 }
 \description{
 Keeps played matches in `[cutoff - window_years, cutoff)` between core teams

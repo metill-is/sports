@@ -132,3 +132,26 @@ test_that("the Stan reference model is syntactically valid", {
   )
   expect_true(suppressMessages(mod$check_syntax(quiet = TRUE)))
 })
+
+test_that("a reproducible fit turns R-INLA's internal optimisation off and repeats its draws", {
+  skip_if_no_inla()
+  sim <- nt_sim_prep()
+  a <- nt_fit_inla(sim$prep, n_draws = 20L, threads = "1:1", reproducible = TRUE,
+    seed = 5L, keep_result = TRUE)
+  b <- nt_fit_inla(sim$prep, n_draws = 20L, threads = "1:1", reproducible = TRUE, seed = 5L)
+  expect_false(a$result$.args$control.compute$internal.opt)
+  expect_identical(a$draws, b$draws)
+  expect_true(a$settings$reproducible)
+})
+
+test_that("drawing from the posterior does not consume the caller's random stream", {
+  skip_if_no_inla()
+  sim <- nt_sim_prep()
+  fit <- nt_fit_inla(sim$prep, n_draws = 5L, threads = "1:1", reproducible = TRUE,
+    keep_result = TRUE)
+  withr::local_seed(99)
+  expected <- withr::with_seed(99, stats::runif(1))
+  smp_free <- .nt_posterior_draws(fit$result, 5L, list(mu = 1), seed = 3L)
+  expect_identical(stats::runif(1), expected)
+  expect_identical(smp_free, .nt_posterior_draws(fit$result, 5L, list(mu = 1), seed = 3L))
+})

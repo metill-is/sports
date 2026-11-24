@@ -155,3 +155,47 @@ test_that("nt_prepare drops teams below the match floor until stable", {
   expect_equal(p$teams, c("A", "B"))
   expect_equal(nrow(p$matches), 3L)
 })
+
+test_that("the women's extra-time table holds the October 2026 play-off shoot-out", {
+  et <- nt_extra_time_matches("women")
+  pb <- et[et$team_a == "Poland" & et$team_b == "Belgium", ]
+  expect_equal(pb$match_date, as.Date("2026-10-13"))
+  expect_equal(c(pb$a_90, pb$b_90), c(2L, 1L))
+  expect_true(pb$shootout)
+  expect_identical(nt_extra_time_matches(), nt_extra_time_matches("men"))
+})
+
+test_that("nt_prepare trains on the 90-minute score when given corrections", {
+  r <- nt_test_results(
+    "2026-10-09", "Belgium", "Poland", 1, 0, "FIFA World Cup qualification", "Belgium", FALSE,
+    "2026-10-13", "Poland", "Belgium", 3, 2, "FIFA World Cup qualification", "Poland", FALSE
+  )
+  ninety <- tibble::tibble(
+    match_date = as.Date("2026-10-13"), team_a = "Belgium", team_b = "Poland",
+    a_90 = 1L, b_90 = 2L, shootout = TRUE
+  )
+  raw <- nt_prepare(r, as.Date("2026-12-01"), min_matches = 1L)
+  fixed <- nt_prepare(r, as.Date("2026-12-01"), min_matches = 1L, ninety = ninety)
+  expect_equal(raw$matches$home_score, c(1L, 3L))
+  expect_equal(fixed$matches$home_score, c(1L, 2L))
+  expect_equal(fixed$matches$away_score, c(0L, 1L))
+  expect_equal(fixed$n_corrected, 1L)
+  expect_equal(raw$n_corrected, 0L)
+})
+
+test_that("a correction inside the window that matches no match warns", {
+  r <- nt_test_results(
+    "2026-10-13", "Poland", "Belgium", 3, 2, "FIFA World Cup qualification", "Poland", FALSE
+  )
+  typo <- tibble::tibble(
+    match_date = as.Date("2026-10-13"), team_a = "Polland", team_b = "Belgium",
+    a_90 = 2L, b_90 = 1L, shootout = TRUE
+  )
+  expect_warning(
+    nt_prepare(r, as.Date("2026-12-01"), min_matches = 1L, ninety = typo),
+    "match no"
+  )
+  outside <- typo
+  outside$match_date <- as.Date("2027-01-10")
+  expect_no_warning(nt_prepare(r, as.Date("2026-12-01"), min_matches = 1L, ninety = outside))
+})
