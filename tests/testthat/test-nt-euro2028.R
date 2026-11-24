@@ -393,3 +393,45 @@ test_that("the loader warns when the typed draw breaks a condition", {
   utils::write.csv(g, path, row.names = FALSE, fileEncoding = "UTF-8")
   expect_warning(nt_read_euro2028_draw(path, facts_dir = e28_facts_dir()), "Kosovo")
 })
+
+test_that("a simulated draw becomes a draw object like the loader's", {
+  f <- e28_facts()
+  csv <- nt_read_euro2028_draw(e28_groups_csv(), facts_dir = e28_facts_dir())
+  d <- nt_euro2028_draw(csv$groups, facts = f)
+  expect_identical(d$groups, csv$groups)
+  expect_identical(d$fixtures, csv$fixtures)
+  expect_identical(d$teams, csv$teams)
+  sim <- nt_simulate_uefa_draw(f, n_draws = 1L, seed = 4L)[[1]]
+  expect_silent(d2 <- nt_euro2028_draw(sim, facts = f, fit = e28_fit()))
+  expect_equal(nrow(d2$fixtures), 192L)
+})
+
+test_that("the two readings of Article 15 d) are compared simulation by simulation", {
+  f <- e28_facts()
+  d <- nt_read_euro2028_draw(e28_groups_csv(), facts_dir = e28_facts_dir())
+  # Group K plays out the four-way tie on which the readings disagree.
+  k <- d$groups$K
+  tie <- nt_four_way_tie()
+  map <- stats::setNames(k, c("A", "B", "C", "D", "E"))
+  fx <- d$fixtures
+  key <- paste(fx$home_team, fx$away_team)
+  played <- paste(map[tie$home_team], map[tie$away_team])
+  fx$home_score[match(played, key)] <- tie$home_score
+  fx$away_score[match(played, key)] <- tie$away_score
+  d$fixtures <- fx
+  fit <- e28_fit(n_draws = 3L, mu = 0.1)
+  a <- nt_simulate_euro2028(fit, d, n_sims = 40L, seed = 9L)
+  b <- nt_simulate_euro2028(fit, d, n_sims = 40L, h2h_reapply = "once", seed = 9L)
+  cmp <- nt_compare_h2h_readings(a, b)
+  expect_equal(cmp$n_sims, 40L)
+  expect_equal(cmp$any_position, 1)
+  expect_equal(cmp$by_group[["K"]], 1)
+  expect_true(all(cmp$by_group[setdiff(names(cmp$by_group), "K")] == 0))
+  # C (Albania) and D (Latvia) swap second and third place.
+  expect_true(all(a$qualifying$positions[, "Albania"] == 2L))
+  expect_true(all(b$qualifying$positions[, "Albania"] == 3L))
+  same <- nt_compare_h2h_readings(a, a)
+  expect_equal(same$any_position, 0)
+  expect_equal(same$direct, 0)
+  expect_equal(same$field, 0)
+})

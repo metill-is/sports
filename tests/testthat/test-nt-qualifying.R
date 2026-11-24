@@ -313,25 +313,6 @@ test_that("bad inputs are refused", {
 
 # ---- Review findings (independent review of 9a6180f9b, 2026-11-22) ---------
 
-nt_four_way_tie <- function() {
-  # A, B, C and D level on 13 points. Head-to-head among the four puts A
-  # first; re-applied among B, C and D it puts B last; C and D are still
-  # level. Their own matches put C first (4 points to 1); overall goal
-  # difference puts D first (+5 against +1).
-  nt_q_matches(
-    "C", "D", 1, 0, "D", "C", 0, 0,
-    "C", "B", 1, 0, "B", "C", 1, 0,
-    "D", "B", 1, 0, "B", "D", 0, 1,
-    "C", "A", 0, 1, "A", "C", 1, 0,
-    "D", "A", 0, 1, "A", "D", 1, 0,
-    "B", "A", 1, 0, "A", "B", 0, 0,
-    "A", "E", 0, 1, "E", "A", 1, 0,
-    "B", "E", 1, 0, "E", "B", 0, 1,
-    "C", "E", 1, 0, "E", "C", 0, 1,
-    "D", "E", 5, 0, "E", "D", 0, 1
-  )
-}
-
 test_that("re-application can be limited to the single pass the regulation's wording describes", {
   m <- nt_four_way_tie()
   teams <- c("A", "B", "C", "D", "E")

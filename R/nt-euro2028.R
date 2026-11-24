@@ -176,12 +176,59 @@ nt_read_euro2028_draw <- function(groups, fixtures = NULL,
   if (!all(need %in% names(g))) cli::cli_abort("The groups file needs columns {.field {need}}.")
   slot <- .nt_parse_qf_slot(g$team, qf)
   slot[is.na(slot)] <- nt_uefa_to_martj42(g$team[is.na(slot)])
-  g$slot <- slot
-  g$group <- trimws(g$group)
+  if (!is.null(g$pot)) {
+    team_pot <- stats::setNames(seed$pot, seed$team)
+    slot_pot <- ifelse(slot %in% c(qf$winner_slot, qf$defeated_slot), 1L, team_pot[slot])
+    off <- !is.na(g$pot) & !is.na(slot_pot) & g$pot != slot_pot
+    if (any(off)) {
+      cli::cli_abort("Pot differs from the seeding for {.val {g$team[off]}}.")
+    }
+  }
+  group <- trimws(g$group)
+  group_list <- lapply(split(slot, factor(group, levels = sort(unique(group)))), unname)
 
+  fx <- NULL
+  if (!is.null(fixtures)) {
+    f <- .nt_read_csv(fixtures)
+    need <- c("group", "home_team", "away_team", "venue")
+    if (!all(need %in% names(f))) cli::cli_abort("The fixtures file needs columns {.field {need}}.")
+    to_slot <- function(x) {
+      s <- .nt_parse_qf_slot(x, qf)
+      ifelse(is.na(s), nt_uefa_to_martj42(x), s)
+    }
+    fx <- data.frame(
+      group = trimws(f$group),
+      match_date = if (is.null(f$match_date)) NA_character_ else as.character(f$match_date),
+      home_team = to_slot(f$home_team), away_team = to_slot(f$away_team),
+      home_score = if (is.null(f$home_score)) NA_integer_ else as.integer(f$home_score),
+      away_score = if (is.null(f$away_score)) NA_integer_ else as.integer(f$away_score),
+      venue = .nt_venue_flag(f$venue),
+      stringsAsFactors = FALSE
+    )
+  }
+  nt_euro2028_draw(group_list, fx, facts = facts, fit = fit, neutral_home = neutral_home)
+}
+
+#' Build a EURO 2028 draw object from groups.
+#'
+#' The core of [nt_read_euro2028_draw()], for groups already in slot labels
+#' (team names in the martj42 spelling, placeholders as `QFk winner` /
+#' `QFk defeated`), such as a draw from [nt_simulate_uefa_draw()].
+#'
+#' @param groups Named list (A to L) of slot labels.
+#' @param fixtures Optional fixture list in slot labels with an integer
+#'   `venue`; `NULL` generates the double round robin.
+#' @param facts Output of [nt_euro2028_facts()].
+#' @inheritParams nt_read_euro2028_draw
+#' @return As [nt_read_euro2028_draw()].
+#' @export
+nt_euro2028_draw <- function(groups, fixtures = NULL, facts = nt_euro2028_facts(), fit = NULL,
+                             neutral_home = c("Belarus", "Ukraine", "Israel")) {
+  qf <- facts$quarter_finals
+  seed <- facts$seeding
+  slot <- unlist(groups, use.names = FALSE)
   qf_teams <- c(qf$first_leg_home, qf$second_leg_home)
-  placeholders <- c(qf$winner_slot, qf$defeated_slot)
-  want <- c(setdiff(seed$team, qf_teams), placeholders)
+  want <- c(setdiff(seed$team, qf_teams), qf$winner_slot, qf$defeated_slot)
   problems <- c(
     if (length(x <- unique(slot[duplicated(slot)])) > 0L) paste("repeated:", toString(x)),
     if (length(x <- setdiff(slot, c(want, qf_teams))) > 0L) paste("not an entrant:", toString(x)),
@@ -191,23 +238,12 @@ nt_read_euro2028_draw <- function(groups, fixtures = NULL,
     if (length(x <- setdiff(want, slot)) > 0L) paste("missing:", toString(x))
   )
   if (length(problems) > 0L) {
-    cli::cli_abort(c("The groups file is not the 54-team draw.", stats::setNames(problems, rep("x", length(problems)))))
+    cli::cli_abort(c("The groups are not the 54-team draw.", stats::setNames(problems, rep("x", length(problems)))))
   }
-  if (!is.null(g$pot)) {
-    team_pot <- stats::setNames(seed$pot, seed$team)
-    slot_pot <- ifelse(slot %in% placeholders, 1L, team_pot[slot])
-    off <- !is.na(g$pot) & g$pot != slot_pot
-    if (any(off)) {
-      cli::cli_abort("Pot differs from the seeding for {.val {g$team[off]}}.")
-    }
-  }
-
-  group_list <- split(g$slot, factor(g$group, levels = sort(unique(g$group))))
-  group_list <- lapply(group_list, unname)
-  broken <- nt_check_uefa_draw(group_list, facts)
+  broken <- nt_check_uefa_draw(groups, facts)
   if (length(broken) > 0L) {
     cli::cli_warn(c(
-      "The groups break {length(broken)} draw condition{?s}; check the file against UEFA's published draw.",
+      "The groups break {length(broken)} draw condition{?s}; check them against UEFA's published draw.",
       stats::setNames(broken, rep("!", length(broken)))
     ))
   }
@@ -218,32 +254,13 @@ nt_read_euro2028_draw <- function(groups, fixtures = NULL,
       cli::cli_abort("Drawn team{?s} not in the fit: {.val {absent}}.")
     }
   }
-
-  fx <- if (is.null(fixtures)) {
-    out <- nt_qualifying_fixtures(group_list)
-    out$venue <- ifelse(out$home_team %in% neutral_home, 0L, 1L)
-    out
-  } else {
-    f <- .nt_read_csv(fixtures)
-    need <- c("group", "home_team", "away_team", "venue")
-    if (!all(need %in% names(f))) cli::cli_abort("The fixtures file needs columns {.field {need}}.")
-    to_slot <- function(x) {
-      s <- .nt_parse_qf_slot(x, qf)
-      ifelse(is.na(s), nt_uefa_to_martj42(x), s)
-    }
-    data.frame(
-      group = trimws(f$group),
-      match_date = if (is.null(f$match_date)) NA_character_ else as.character(f$match_date),
-      home_team = to_slot(f$home_team), away_team = to_slot(f$away_team),
-      home_score = if (is.null(f$home_score)) NA_integer_ else as.integer(f$home_score),
-      away_score = if (is.null(f$away_score)) NA_integer_ else as.integer(f$away_score),
-      venue = .nt_venue_flag(f$venue),
-      stringsAsFactors = FALSE
-    )
+  if (is.null(fixtures)) {
+    fixtures <- nt_qualifying_fixtures(groups)
+    fixtures$venue <- ifelse(fixtures$home_team %in% neutral_home, 0L, 1L)
   }
-  fx <- .nt_check_qualifying_fixtures(fx, group_list)
+  fixtures <- .nt_check_qualifying_fixtures(fixtures, groups)
   list(
-    groups = group_list, fixtures = fx, teams = teams, quarter_finals = qf,
+    groups = groups, fixtures = fixtures, teams = teams, quarter_finals = qf,
     seeding = seed, hosts = facts$hosts, separate = facts$separate,
     conditions = facts$conditions, neutral_home = neutral_home
   )
@@ -517,4 +534,41 @@ nt_simulate_euro2028 <- function(fit, draw, n_sims = 10000L,
     exp_points = qt$exp_points, qt[, pos_cols]
   )
   c(list(teams = teams, slots = q$slots, qualifying = q), po[setdiff(names(po), "teams")])
+}
+
+#' Compare the two readings of Article 15 d), simulation by simulation.
+#'
+#' `a` and `b` are runs of [nt_simulate_euro2028()] on the same draw, fit,
+#' number of simulations and seed, one per `h2h_reapply` reading. They then
+#' share every simulated score, so any difference in a group table comes from
+#' the reading alone. Play-off results are not compared: the play-off draw
+#' consumes random numbers, so they diverge after the first simulation whose
+#' field differs.
+#'
+#' @param a,b Outputs of [nt_simulate_euro2028()].
+#' @return List: `n_sims`; `any_position` (share of simulations in which any
+#'   group position differs); `by_group` (that share per group); `direct`
+#'   (share in which the 20 direct qualifiers differ); `field` (share in which
+#'   the reserved host places or the play-off field differ).
+#' @export
+nt_compare_h2h_readings <- function(a, b) {
+  pa <- a$qualifying$slot_positions
+  pb <- b$qualifying$slot_positions
+  if (!identical(dim(pa), dim(pb)) || !identical(colnames(pa), colnames(pb)) ||
+    !identical(a$qualifying$draw, b$qualifying$draw)) {
+    cli::cli_abort("The runs differ in more than the reading: use the same draw, fit, n_sims and seed.")
+  }
+  differs <- pa != pb
+  slots <- a$qualifying$slots
+  by_group <- vapply(split(slots$slot, slots$group), function(s) {
+    mean(rowSums(differs[, s, drop = FALSE]) > 0)
+  }, numeric(1))
+  direct <- function(x) x$qualified & !x$host_place & !x$playoff_winner
+  list(
+    n_sims = nrow(pa),
+    any_position = mean(rowSums(differs) > 0),
+    by_group = by_group,
+    direct = mean(rowSums(direct(a) != direct(b)) > 0),
+    field = mean(rowSums(a$host_place != b$host_place | a$playoff != b$playoff) > 0)
+  )
 }
