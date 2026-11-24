@@ -129,6 +129,7 @@ Collate:
     'nt-stan.R'
     'nt-qualifying.R'
     'nt-euro2028.R'
+    'nt-euro2028-draw.R'
     'placer-ledger.R'
     'placer-login.R'
     'placer-navigate.R'

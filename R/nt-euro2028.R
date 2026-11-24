@@ -151,6 +151,9 @@ nt_euro2028_facts <- function(facts_dir = here::here("data", "nt", "euro2028")) 
 #' @param facts_dir Directory of the draw facts (see [nt_euro2028_facts()]).
 #' @param fit Optional national-team fit: every drawn team must be in
 #'   `fit$teams`.
+#' @details The groups are checked against the draw conditions with
+#'   [nt_check_uefa_draw()]; a broken condition gives a warning (UEFA's draw
+#'   is the authority, so a breach most likely means a typing error).
 #' @param neutral_home Teams whose home matches are played on neutral ground:
 #'   Belarus and Ukraine (UEFA Executive Committee decisions, draw procedure
 #'   page 6) and Israel (every competitive home match since June 2025 in
@@ -201,6 +204,13 @@ nt_read_euro2028_draw <- function(groups, fixtures = NULL,
 
   group_list <- split(g$slot, factor(g$group, levels = sort(unique(g$group))))
   group_list <- lapply(group_list, unname)
+  broken <- nt_check_uefa_draw(group_list, facts)
+  if (length(broken) > 0L) {
+    cli::cli_warn(c(
+      "The groups break {length(broken)} draw condition{?s}; check the file against UEFA's published draw.",
+      stats::setNames(broken, rep("!", length(broken)))
+    ))
+  }
   teams <- seed$team
   if (!is.null(fit)) {
     absent <- setdiff(teams, fit$teams)

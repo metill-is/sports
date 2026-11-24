@@ -318,3 +318,78 @@ test_that("simulated play-offs fill exactly 24 places, seeded sides hosting", {
   per <- ifelse(out$n_host_places == 1L, 3L, 2L)
   for (i in which(paths)) expect_true(all(out$playoff_seed[i, won[i, ]] <= per[i]), info = paste("simulation", i))
 })
+
+# ---- The draw ---------------------------------------------------------------
+
+e28_facts <- function() nt_euro2028_facts(e28_facts_dir())
+
+test_that("the fixture draw keeps every published condition", {
+  d <- nt_read_euro2028_draw(e28_groups_csv(), facts_dir = e28_facts_dir())
+  expect_identical(nt_check_uefa_draw(d$groups, e28_facts()), character())
+})
+
+test_that("draws that break a condition are reported", {
+  f <- e28_facts()
+  g <- nt_read_euro2028_draw(e28_groups_csv(), facts_dir = e28_facts_dir())$groups
+  swap <- function(g, a, b) {
+    ga <- names(g)[vapply(g, function(x) a %in% x, logical(1))]
+    gb <- names(g)[vapply(g, function(x) b %in% x, logical(1))]
+    g[[ga]][g[[ga]] == a] <- b
+    g[[gb]][g[[gb]] == b] <- a
+    g
+  }
+  expect_match(nt_check_uefa_draw(swap(g, "Romania", "Ukraine"), f), "Ukraine|Belarus", all = FALSE)
+  expect_match(nt_check_uefa_draw(swap(g, "Kosovo", "Poland"), f), "Kosovo", all = FALSE)
+  expect_match(nt_check_uefa_draw(swap(g, "Kosovo", "Scotland"), f), "host", all = FALSE)
+  expect_match(nt_check_uefa_draw(swap(g, "QF4 winner", "Croatia"), f), "QF4 winner", all = FALSE)
+  expect_match(nt_check_uefa_draw(swap(g, "Estonia", "Finland"), f), "group of five|play-off", all = FALSE)
+  expect_match(nt_check_uefa_draw(swap(g, "Luxembourg", "Latvia"), f), "winter", all = FALSE)
+  expect_match(nt_check_uefa_draw(swap(g, "Liechtenstein", "Malta"), f), "travel", all = FALSE)
+})
+
+test_that("simulated draws keep every condition", {
+  f <- e28_facts()
+  draws <- nt_simulate_uefa_draw(f, n_draws = 25L, seed = 1L)
+  expect_length(draws, 25L)
+  for (i in seq_along(draws)) {
+    expect_identical(nt_check_uefa_draw(draws[[i]], f), character(), info = paste("draw", i))
+  }
+  iceland <- vapply(draws, function(g) names(g)[vapply(g, function(x) "Iceland" %in% x, logical(1))], "")
+  expect_gt(length(unique(iceland)), 3L)
+})
+
+test_that("each drawn team goes to the first group that keeps the rest of the draw possible", {
+  f <- e28_facts()
+  pot1 <- c("Greece", "Italy", "Denmark", "Croatia", paste0("QF", 1:4, " defeated"), paste0("QF", 1:4, " winner"))
+  g <- nt_simulate_uefa_draw(f, draw_order = list(pot1), seed = 2L)[[1]]
+  got <- vapply(g, `[`, "", 1)
+  # A and B take Greece and Italy; C-F must be left for the four winners, so
+  # Denmark, Croatia and the defeated teams skip to G-L.
+  expect_identical(unname(got), c(
+    "Greece", "Italy", paste0("QF", 1:4, " winner"), "Denmark", "Croatia",
+    paste0("QF", 1:4, " defeated")
+  ))
+})
+
+test_that("a prohibited clash sends the drawn team to the next available group", {
+  f <- e28_facts()
+  pot1 <- c(paste0("QF", 1:4, " winner"), "Greece", "Italy", paste0("QF", 1:4, " defeated"), "Denmark", "Croatia")
+  s <- f$seeding
+  pot2 <- c("Serbia", "Bosnia and Herzegovina", setdiff(s$team[s$pot == 2], c("Serbia", "Bosnia and Herzegovina")))
+  pot3 <- c("Kosovo", setdiff(s$team[s$pot == 3], "Kosovo"))
+  g <- nt_simulate_uefa_draw(f, draw_order = list(pot1, pot2, pot3), seed = 3L)[[1]]
+  where <- function(t) names(g)[vapply(g, function(x) t %in% x, logical(1))]
+  expect_identical(where("Serbia"), "A")
+  expect_identical(where("Bosnia and Herzegovina"), "B")
+  expect_identical(where("Kosovo"), "C")
+})
+
+test_that("the loader warns when the typed draw breaks a condition", {
+  g <- utils::read.csv(e28_groups_csv(), stringsAsFactors = FALSE, encoding = "UTF-8")
+  a <- which(g$team == "Kosovo")
+  b <- which(g$team == "Poland")
+  g$group[c(a, b)] <- g$group[c(b, a)]
+  path <- withr::local_tempfile(fileext = ".csv")
+  utils::write.csv(g, path, row.names = FALSE, fileEncoding = "UTF-8")
+  expect_warning(nt_read_euro2028_draw(path, facts_dir = e28_facts_dir()), "Kosovo")
+})

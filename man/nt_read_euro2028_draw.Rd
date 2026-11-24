@@ -48,4 +48,8 @@ pairing, e.g. `Spain/France winner`.
 `match_date`, `home_score`, `away_score`. Without it every pair plays home
 and away, at home except for `neutral_home` teams, whose home matches are
 at a neutral venue.
+
+The groups are checked against the draw conditions with
+  [nt_check_uefa_draw()]; a broken condition gives a warning (UEFA's draw
+  is the authority, so a breach most likely means a typing error).
 }
