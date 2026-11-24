@@ -148,6 +148,7 @@ Collate:
     'ih-data.R'
     'ih-model.R'
     'ih-simulate.R'
+    'ih-publish.R'
     'v2-margin-total-predict.R'
     'wc-structure.R'
     'wc-simulate.R'

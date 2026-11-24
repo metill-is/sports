@@ -129,19 +129,21 @@ ih_tournament_spec <- function(id, names = ih_team_names()) {
     kickoff = utc(mr$date, mr$local_time, mr$tz),
     home_slot = mr$home_team, away_slot = mr$away_team, stringsAsFactors = FALSE
   )
-  main_host <- vapply(names(spec$main), function(G) {
+  main_city <- vapply(names(spec$main), function(G) {
     city <- unique(mr$venue_city[mr$group == G])
-    if (length(city) != 1L) NA_character_ else host_of(city)
+    if (length(city) != 1L) NA_character_ else city
   }, character(1))
+  main_host <- stats::setNames(host_of(main_city), names(main_city))
   ko <- spec$knockout
   at <- match(ko$match_no, s$match_no)
   ko$match_date <- as.Date(s$date[at])
   ko$kickoff <- utc(s$date[at], s$local_time[at], s$tz[at])
   ko$venue_city <- s$venue_city[at]
   ko$host <- host_of(ko$venue_city)
+  spec$knockout <- NULL
   c(spec, list(
     id = id, groups = split(g$team, g$group), prelim = prelim, main_fixtures = main_fixtures,
-    main_host = main_host, knockout = ko
+    main_city = main_city, main_host = main_host, knockout = ko
   ))
 }
 
