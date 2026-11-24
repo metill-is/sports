@@ -72,6 +72,12 @@ NULL
 #'   hyperparameters (the `theta_mode` of an earlier fit of the same model), to
 #'   speed up walk-forward refits.
 #' @param keep_result Keep the raw INLA result as `result` (large).
+#' @param reproducible Fit with R-INLA's online internal optimisation off
+#'   (`control.compute = list(internal.opt = FALSE)`, this call only) and draw
+#'   under `withr::with_seed(seed)`, so that the same fit repeats in another R
+#'   process. Needs `threads = "1:1"`: with more threads R-INLA's result
+#'   differs from process to process with or without the option (measured on
+#'   the football and handball/basketball v2 engines, 2026-11-16/17).
 #' @return List with `draws` (`theta`, `delta`: draws x teams matrices; `mu`,
 #'   `home_for`, `home_against`: vectors), `teams`, `kappa`, `hyper`, `fixed`,
 #'   `mlik`, `theta_mode`, `seconds` and `settings`.
@@ -86,8 +92,12 @@ nt_fit_inla <- function(prep,
                         threads = "4:1",
                         seed = 1L,
                         theta_init = NULL,
-                        keep_result = FALSE) {
+                        keep_result = FALSE,
+                        reproducible = FALSE) {
   rlang::check_installed("INLA", reason = "to fit the national-team model")
+  if (reproducible && !identical(threads, "1:1")) {
+    cli::cli_abort("A reproducible fit needs one thread ({.code threads = \"1:1\"}).")
+  }
   dynamics <- match.arg(dynamics)
   friendly <- match.arg(friendly)
   if (friendly != "damped") kappa <- 1
@@ -165,7 +175,12 @@ nt_fit_inla <- function(prep,
     family = "poisson",
     data = INLA::inla.stack.data(stk),
     control.predictor = list(A = INLA::inla.stack.A(stk), compute = FALSE, link = 1),
-    control.compute = list(config = TRUE, dic = FALSE, waic = FALSE, mlik = TRUE),
+    # WHY per call: R-INLA reads its session-wide `internal.opt` only when the
+    # call's is NULL, so this holds for this fit alone.
+    control.compute = c(
+      list(config = TRUE, dic = FALSE, waic = FALSE, mlik = TRUE),
+      if (reproducible) list(internal.opt = FALSE)
+    ),
     control.fixed = list(prec = 0.25),
     control.inla = list(int.strategy = int_strategy),
     control.mode = if (is.null(theta_init)) {
@@ -178,15 +193,20 @@ nt_fit_inla <- function(prep,
   t_fit <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
 
   t1 <- Sys.time()
-  smp <- INLA::inla.posterior.sample(
-    n_draws, res,
-    selection = list(
-      alpha = seq_len(k), delta = seq_len(k),
-      u = (seq_len(k) - 1L) * n_t + n_t,
-      mu = 1, home_for = 1, home_against = 1
-    ),
-    seed = seed, num.threads = "1:1"
-  )
+  sample_draws <- function() {
+    INLA::inla.posterior.sample(
+      n_draws, res,
+      selection = list(
+        alpha = seq_len(k), delta = seq_len(k),
+        u = (seq_len(k) - 1L) * n_t + n_t,
+        mu = 1, home_for = 1, home_against = 1
+      ),
+      seed = seed, num.threads = "1:1"
+    )
+  }
+  # WHY: the sampler's seed covers only its Gaussian draws; R's generator picks
+  # each draw's hyperparameter configuration.
+  smp <- if (reproducible) withr::with_seed(seed, sample_draws()) else sample_draws()
   latent <- vapply(smp, function(s) s$latent[, 1], numeric(nrow(smp[[1]]$latent)))
   part <- sub(":.*$", "", rownames(smp[[1]]$latent))
   pick <- function(name) t(latent[part == name, , drop = FALSE])
@@ -213,7 +233,7 @@ nt_fit_inla <- function(prep,
     seconds = c(fit = t_fit, draws = t_draw),
     settings = list(
       dynamics = dynamics, friendly = friendly, rw_sd = rw_sd,
-      int_strategy = int_strategy, cutoff = prep$cutoff,
+      int_strategy = int_strategy, reproducible = reproducible, cutoff = prep$cutoff,
       n_matches = nrow(prep$matches), n_teams = k, n_periods = n_t,
       step_months = prep$step_months
     )

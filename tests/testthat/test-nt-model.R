@@ -132,3 +132,13 @@ test_that("the Stan reference model is syntactically valid", {
   )
   expect_true(suppressMessages(mod$check_syntax(quiet = TRUE)))
 })
+
+test_that("a reproducible fit runs on one thread without online optimisation and repeats its draws", {
+  skip_if_no_inla()
+  sim <- nt_sim_prep()
+  a <- nt_fit_inla(sim$prep, n_draws = 50L, threads = "1:1", reproducible = TRUE, seed = 5L)
+  b <- nt_fit_inla(sim$prep, n_draws = 50L, threads = "1:1", reproducible = TRUE, seed = 5L)
+  expect_true(a$settings$reproducible)
+  expect_identical(a$draws, b$draws)
+  expect_error(nt_fit_inla(sim$prep, threads = "4:1", reproducible = TRUE), "one thread")
+})

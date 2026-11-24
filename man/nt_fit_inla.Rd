@@ -15,7 +15,8 @@ nt_fit_inla(
   threads = "4:1",
   seed = 1L,
   theta_init = NULL,
-  keep_result = FALSE
+  keep_result = FALSE,
+  reproducible = FALSE
 )
 }
 \arguments{
@@ -48,6 +49,13 @@ hyperparameters (the `theta_mode` of an earlier fit of the same model), to
 speed up walk-forward refits.}
 
 \item{keep_result}{Keep the raw INLA result as `result` (large).}
+
+\item{reproducible}{Fit with R-INLA's online internal optimisation off
+(`control.compute = list(internal.opt = FALSE)`, this call only) and draw
+under `withr::with_seed(seed)`, so that the same fit repeats in another R
+process. Needs `threads = "1:1"`: with more threads R-INLA's result
+differs from process to process with or without the option (measured on
+the football and handball/basketball v2 engines, 2026-11-16/17).}
 }
 \value{
 List with `draws` (`theta`, `delta`: draws x teams matrices; `mu`,
