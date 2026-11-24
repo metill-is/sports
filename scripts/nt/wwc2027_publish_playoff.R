@@ -8,7 +8,8 @@
 # The ties are data/wc/structure/wwc2027_playoff_round2.csv (ties, hosts and
 # ranks from uefa.com, 11 November 2026; dates known only for Iceland's tie).
 # After the first legs fill in leg1_goals_a and leg1_goals_b, after the
-# second legs the winner, and run this again. A first-leg score reweights the
+# second legs the winner (the second leg's score is not recorded), and run
+# this again. A first-leg score reweights the
 # draws by its likelihood, so use it only with a fit whose data predate the
 # first legs (or the match is counted twice).
 #
@@ -31,7 +32,7 @@ ties <- utils::read.csv(ties_csv,
 )
 fc <- nt_two_leg_forecast(saved$fit, ties)
 out <- publish_wwc2027_playoff(fc,
-  n_direct = 7L, fit_date = saved$cutoff, data_through = saved$last_match, root = root
+  n_direct = 7L, state_as_of = saved$cutoff, data_through = saved$last_match, root = root
 )
 pl <- jsonlite::read_json(file.path(out, "playoff.json"))
 cat(sprintf("Wrote %s (effective draws %.0f of %d)\n", out, pl$effective_draws, pl$n_draws))

@@ -84,16 +84,23 @@ test_that("the play-off JSON holds the forecast's numbers", {
   )
   fc <- nt_two_leg_forecast(fit, ties)
   out <- publish_wwc2027_playoff(fc,
-    n_direct = 1L, fit_date = as.Date("2026-12-01"), data_through = as.Date("2026-10-13"),
-    root = dir, country_csv = wwc_names_csv(dir), featured_team = "X"
+    n_direct = 1L, state_as_of = as.Date("2026-12-01"), data_through = as.Date("2026-10-13"),
+    root = dir, country_csv = wwc_names_csv(dir), featured_team = "X",
+    generated_at = "2026-11-25T08:00:00Z"
   )
   expect_equal(out, file.path(dir, "publish", "world_cup", "kvenna"))
   meta <- jsonlite::read_json(file.path(out, "meta.json"))
   expect_equal(meta$stage, "playoff")
   expect_equal(meta$sex, "female")
   expect_equal(meta$featured_team_is, "X\u00f0")
+  # fit_date is the publish day, as in the 2026 men's tree (metill-platform
+  # reads it as the day of the update); the fit's cutoff is state_as_of.
+  expect_equal(meta$fit_date, "2026-11-25")
+  expect_equal(meta$state_as_of, "2026-12-01")
+  expect_equal(meta$files, list("playoff.json"))
   pl <- jsonlite::read_json(file.path(out, "playoff.json"))
   expect_length(pl$ties, 2L)
+  expect_equal(c(pl$fit_date, pl$state_as_of), c("2026-11-25", "2026-12-01"))
   w <- fc$weights
 
   t1 <- pl$ties[[1]]
@@ -136,7 +143,7 @@ test_that("the publisher refuses a team without an Icelandic name", {
   fc <- nt_two_leg_forecast(wwc_tie_fit(), wwc_tie_table())
   expect_error(
     publish_wwc2027_playoff(fc,
-      n_direct = 1L, fit_date = as.Date("2026-12-01"), data_through = as.Date("2026-10-13"),
+      n_direct = 1L, state_as_of = as.Date("2026-12-01"), data_through = as.Date("2026-10-13"),
       root = dir, country_csv = wwc_names_csv(dir, c("P", "Q", "X"))
     ),
     "Y"
@@ -188,11 +195,12 @@ test_that("the finals JSON holds the pooled forecast in Icelandic names", {
   fc <- nt_wwc2027_finals(fit, wwc_finals_draw(), n_sims = 400L, seed = 3L)
   csv <- wwc_names_csv(dir, fit$teams)
   out <- publish_wwc2027_finals(fc,
-    fit_date = as.Date("2026-12-11"), data_through = as.Date("2026-12-05"),
-    root = dir, country_csv = csv
+    state_as_of = as.Date("2026-12-11"), data_through = as.Date("2026-12-05"),
+    root = dir, country_csv = csv, generated_at = "2026-12-12T09:00:00Z"
   )
   meta <- jsonlite::read_json(file.path(out, "meta.json"))
   expect_equal(meta$stage, "finals")
+  expect_equal(c(meta$fit_date, meta$state_as_of), c("2026-12-12", "2026-12-11"))
   expect_equal(meta$group_rule, "wwc_2023")
   expect_equal(meta$n_sims, 400L)
   top <- fc$teams$team[which.max(fc$teams$p_champion)]
@@ -213,4 +221,50 @@ test_that("the finals JSON holds the pooled forecast in Icelandic names", {
   expect_equal(sum(rec$probability[rec$round_name == "Champion"]), 1, tolerance = 1e-3)
   expect_equal(sum(rec$probability[rec$round_name == "R16"]), 16, tolerance = 1e-2)
   expect_equal(sum(rec$probability[rec$round_name == "Fourth"]), 1, tolerance = 1e-3)
+})
+
+test_that("leg probabilities cover every score, however lopsided the match", {
+  # A home rate near 20 goals: a grid cut at 10 goals would miss most of it.
+  dir <- withr::local_tempdir()
+  teams <- c("P", "Q", "X", "Y")
+  fit <- nt_test_fit(stats::setNames(c(1.5, 0, -1.5, 0), teams), mu = 0.1, home_for = 0.1)
+  fc <- nt_two_leg_forecast(fit, wwc_tie_table())
+  out <- publish_wwc2027_playoff(fc,
+    n_direct = 1L, state_as_of = as.Date("2026-12-01"), data_through = as.Date("2026-10-13"),
+    root = dir, country_csv = wwc_names_csv(dir), featured_team = "X"
+  )
+  pl <- jsonlite::read_json(file.path(out, "playoff.json"))
+  for (t in pl$ties) {
+    for (l in t$legs) expect_equal(l$p_home + l$p_draw + l$p_away, 1, tolerance = 2e-4)
+  }
+  rates <- nt_match_rates(fit, "P", "X", venue = 1L)
+  exact <- .nt_poisson_compare(rates$home[1, 1], rates$away[1, 1], max_goals = 60L)
+  expect_equal(pl$ties[[1]]$legs[[1]]$p_home, round(unname(exact$win), 4))
+})
+
+test_that("republishing the play-off after the finals keeps the finals meta and every file", {
+  dir <- withr::local_tempdir()
+  fit <- wwc_finals_fit()
+  csv <- wwc_names_csv(dir, c(fit$teams, "P", "Q", "X", "Y"))
+  fc <- nt_two_leg_forecast(wwc_tie_fit(), wwc_tie_table())
+  publish_playoff <- function() {
+    publish_wwc2027_playoff(fc,
+      n_direct = 1L, state_as_of = as.Date("2026-12-01"), data_through = as.Date("2026-10-13"),
+      root = dir, country_csv = csv, featured_team = "X"
+    )
+  }
+  out <- publish_playoff()
+  finals <- nt_wwc2027_finals(fit, wwc_finals_draw(), n_sims = 200L, seed = 3L)
+  publish_wwc2027_finals(finals,
+    state_as_of = as.Date("2026-12-11"), data_through = as.Date("2026-12-05"),
+    root = dir, country_csv = csv
+  )
+  all_files <- c("groups.json", "playoff.json", "tournament_placements.json")
+  meta <- jsonlite::read_json(file.path(out, "meta.json"))
+  expect_setequal(unlist(meta$files), all_files)
+  publish_playoff()
+  again <- jsonlite::read_json(file.path(out, "meta.json"))
+  expect_equal(again$stage, "finals")
+  expect_setequal(unlist(again$files), all_files)
+  expect_equal(again$champion_favourite, meta$champion_favourite)
 })

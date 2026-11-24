@@ -38,7 +38,7 @@ finals <- nt_wwc2027_finals(saved$fit, draw,
   group_rule = opt("group_rule", "wwc_2023")
 )
 out <- publish_wwc2027_finals(finals,
-  fit_date = saved$cutoff, data_through = saved$last_match,
+  state_as_of = saved$cutoff, data_through = saved$last_match,
   n_draws = length(saved$fit$draws$mu), root = opt("root", here::here("data"))
 )
 rds <- opt("out", NA)

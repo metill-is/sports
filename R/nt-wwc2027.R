@@ -144,16 +144,41 @@ nt_two_leg_forecast <- function(fit, ties, et_factor = 1 / 3, shootout_p = 0.5) 
   )
 }
 
-.wwc_meta <- function(stage, fit_date, data_through, n_draws, generated_at, extra = list()) {
-  c(
+# The day of a publish. `fit_date` carries it in every file, as in the 2026
+# men's tree, where metill-platform reads it as the day of the update; the
+# fit's cutoff goes in `state_as_of`.
+.wwc_publish_day <- function(generated_at) substr(generated_at, 1L, 10L)
+
+.wwc_stage_rank <- c(playoff = 1L, finals = 2L)
+.wwc_files <- c("playoff.json", "groups.json", "tournament_placements.json")
+
+# Write meta.json for a stage. `files` lists every file of the tree present on
+# disk, whichever stage wrote it. Republishing an earlier stage (the play-off
+# after the finals) keeps the later stage's meta and records only its own
+# timestamp, so the finals' fields are never overwritten.
+.wwc_write_meta <- function(out_dir, stage, state_as_of, data_through, n_draws, generated_at,
+                            extra = list()) {
+  path <- file.path(out_dir, "meta.json")
+  old <- if (file.exists(path)) jsonlite::read_json(path) else NULL
+  files <- as.list(intersect(.wwc_files, list.files(out_dir)))
+  if (!is.null(old$stage) && old$stage %in% names(.wwc_stage_rank) &&
+    .wwc_stage_rank[[old$stage]] > .wwc_stage_rank[[stage]]) {
+    old$files <- files
+    old[[paste0(stage, "_generated_at")]] <- generated_at
+    return(.wwc_write_json(old, path))
+  }
+  meta <- c(
     list(
       tournament = "HM kvenna 2027", tournament_en = "FIFA Women's World Cup 2027",
       sport = "football", country = "world", sex = "female", stage = stage,
-      generated_at = generated_at, fit_date = as.character(fit_date),
+      generated_at = generated_at, fit_date = .wwc_publish_day(generated_at),
+      state_as_of = as.character(state_as_of),
       data_through = as.character(data_through), n_draws = as.integer(n_draws)
     ),
-    extra
+    extra,
+    list(files = files)
   )
+  .wwc_write_json(meta, path)
 }
 
 #' Publish the 2027 Women's World Cup play-off forecast.
@@ -169,12 +194,17 @@ nt_two_leg_forecast <- function(fit, ties, et_factor = 1 / 3, shootout_p = 0.5) 
 #' play-off ([nt_playoff_places()]). Probabilities are averaged over the
 #' forecast's weighted draws and rounded to four decimals.
 #'
+#' The second leg's score is not recorded: a decided tie lists its second
+#' leg as unplayed, with no score and no forecast.
+#'
 #' @param forecast Output of [nt_two_leg_forecast()]; its `ties` need
 #'   `rank_a` and `rank_b` (smaller is better) and may carry `leg1_date` and
 #'   `leg2_date`.
 #' @param n_direct Number of winners that qualify directly (seven of eight in
 #'   the 2027 UEFA play-offs).
-#' @param fit_date,data_through The fit's cutoff and its last match date.
+#' @param state_as_of,data_through The fit's cutoff (written as `state_as_of`)
+#'   and its last match date. Every file's `fit_date` is the day of the
+#'   publish, from `generated_at`, as in the 2026 men's tree.
 #' @param root Data root.
 #' @param country_csv English to Icelandic team names; a team missing from it
 #'   is an error.
@@ -182,7 +212,7 @@ nt_two_leg_forecast <- function(fit, ties, et_factor = 1 / 3, shootout_p = 0.5) 
 #' @param generated_at Timestamp string; default now (UTC).
 #' @return Invisibly the output directory.
 #' @export
-publish_wwc2027_playoff <- function(forecast, n_direct = 7L, fit_date, data_through,
+publish_wwc2027_playoff <- function(forecast, n_direct = 7L, state_as_of, data_through,
                                     root = here::here("data"),
                                     country_csv = here::here(
                                       "data", "wc", "structure", "country_names_is.csv"
@@ -223,11 +253,16 @@ publish_wwc2027_playoff <- function(forecast, n_direct = 7L, fit_date, data_thro
     if (played || !open) {
       return(rec)
     }
-    grid <- .nt_weighted_grid(rate_home, rate_away, w)
+    # WHY: home/draw/away from the Poisson comparison, which sums every
+    # score; a grid cut at a fixed goal count loses mass in a lopsided match.
+    hda <- .nt_poisson_compare(rate_home, rate_away, max_goals = 60L)
+    p_home <- wmean(hda$win)
+    p_draw <- wmean(hda$draw)
+    top_goals <- min(40L, max(10L, stats::qpois(1 - 1e-6, max(rate_home, rate_away))))
+    grid <- .nt_weighted_grid(rate_home, rate_away, w, max_goals = top_goals)
     top <- arrayInd(order(grid, decreasing = TRUE)[1:10], dim(grid))
     c(rec, list(
-      p_home = rnd(sum(grid[lower.tri(grid)])), p_draw = rnd(sum(diag(grid))),
-      p_away = rnd(sum(grid[upper.tri(grid)])),
+      p_home = rnd(p_home), p_draw = rnd(p_draw), p_away = rnd(1 - p_home - p_draw),
       xg_home = rnd(wmean(rate_home), 3L), xg_away = rnd(wmean(rate_away), 3L),
       scorelines = lapply(seq_len(nrow(top)), function(i) {
         list(home_goals = top[i, 1] - 1L, away_goals = top[i, 2] - 1L, p = rnd(grid[top[i, , drop = FALSE]]))
@@ -308,7 +343,8 @@ publish_wwc2027_playoff <- function(forecast, n_direct = 7L, fit_date, data_thro
 
   places <- nt_playoff_places(d$a_wins, ties, n_direct = n_direct, weights = w)
   playoff <- list(
-    generated_at = generated_at, fit_date = as.character(fit_date),
+    generated_at = generated_at, fit_date = .wwc_publish_day(generated_at),
+    state_as_of = as.character(state_as_of),
     data_through = as.character(data_through), n_draws = length(w),
     effective_draws = round(forecast$ess, 1),
     rules = list(
@@ -325,13 +361,10 @@ publish_wwc2027_playoff <- function(forecast, n_direct = 7L, fit_date, data_thro
     })
   )
   .wwc_write_json(playoff, file.path(out_dir, "playoff.json"))
-  .wwc_write_json(
-    .wwc_meta("playoff", fit_date, data_through, length(w), generated_at, list(
-      featured_team = featured_team, featured_team_is = is_name(featured_team),
-      n_ties = nrow(ties), files = list("playoff.json")
-    )),
-    file.path(out_dir, "meta.json")
-  )
+  .wwc_write_meta(out_dir, "playoff", state_as_of, data_through, length(w), generated_at, list(
+    featured_team = featured_team, featured_team_is = is_name(featured_team),
+    n_ties = nrow(ties)
+  ))
   invisible(out_dir)
 }
 
@@ -429,12 +462,13 @@ nt_wwc2027_finals <- function(fit, draw, n_sims = 20000L, group_rule = "wwc_2023
 #' `<root>/publish/world_cup/kvenna/`. `playoff.json`, if there, is kept.
 #'
 #' @param finals Output of [nt_wwc2027_finals()].
-#' @param fit_date,data_through The fit's cutoff and its last match date.
+#' @param state_as_of,data_through The fit's cutoff (written as `state_as_of`)
+#'   and its last match date; `fit_date` is the day of the publish.
 #' @param n_draws Posterior draws in the fit (recorded in `meta.json`).
 #' @inheritParams publish_wwc2027_playoff
 #' @return Invisibly the output directory.
 #' @export
-publish_wwc2027_finals <- function(finals, fit_date, data_through, n_draws = NA_integer_,
+publish_wwc2027_finals <- function(finals, state_as_of, data_through, n_draws = NA_integer_,
                                    root = here::here("data"),
                                    country_csv = here::here(
                                      "data", "wc", "structure", "country_names_is.csv"
@@ -465,7 +499,8 @@ publish_wwc2027_finals <- function(finals, fit_date, data_through, n_draws = NA_
   })
   .wwc_write_json(
     list(
-      generated_at = generated_at, fit_date = as.character(fit_date),
+      generated_at = generated_at, fit_date = .wwc_publish_day(generated_at),
+      state_as_of = as.character(state_as_of),
       group_rule = finals$group_rule, groups = groups
     ),
     file.path(out_dir, "groups.json")
@@ -494,17 +529,12 @@ publish_wwc2027_finals <- function(finals, fit_date, data_through, n_draws = NA_
   )
 
   fav <- which.max(t$p_champion)
-  files <- intersect(c("groups.json", "tournament_placements.json", "playoff.json"), list.files(out_dir))
-  .wwc_write_json(
-    .wwc_meta("finals", fit_date, data_through, n_draws, generated_at, list(
-      n_teams = 32L, n_groups = 8L, n_sims = as.integer(finals$n_sims),
-      group_rule = finals$group_rule, knockout_hosts = as.list(finals$knockout_hosts),
-      champion_favourite = list(
-        team = t$team[fav], team_is = is_name(t$team[fav]), p_champion = rnd(t$p_champion[fav])
-      ),
-      files = as.list(files)
-    )),
-    file.path(out_dir, "meta.json")
-  )
+  .wwc_write_meta(out_dir, "finals", state_as_of, data_through, n_draws, generated_at, list(
+    n_teams = 32L, n_groups = 8L, n_sims = as.integer(finals$n_sims),
+    group_rule = finals$group_rule, knockout_hosts = as.list(finals$knockout_hosts),
+    champion_favourite = list(
+      team = t$team[fav], team_is = is_name(t$team[fav]), p_champion = rnd(t$p_champion[fav])
+    )
+  ))
   invisible(out_dir)
 }

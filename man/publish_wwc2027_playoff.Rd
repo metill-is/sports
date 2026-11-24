@@ -7,7 +7,7 @@
 publish_wwc2027_playoff(
   forecast,
   n_direct = 7L,
-  fit_date,
+  state_as_of,
   data_through,
   root = here::here("data"),
   country_csv = here::here("data", "wc", "structure", "country_names_is.csv"),
@@ -23,7 +23,9 @@ publish_wwc2027_playoff(
 \item{n_direct}{Number of winners that qualify directly (seven of eight in
 the 2027 UEFA play-offs).}
 
-\item{fit_date, data_through}{The fit's cutoff and its last match date.}
+\item{state_as_of, data_through}{The fit's cutoff (written as `state_as_of`)
+and its last match date. Every file's `fit_date` is the day of the
+publish, from `generated_at`, as in the 2026 men's tree.}
 
 \item{root}{Data root.}
 
@@ -48,4 +50,8 @@ is unplayed, P(`team_a` wins) after each first-leg score up to 4-4. Then
 every team's chance of a direct place and of the inter-confederation
 play-off ([nt_playoff_places()]). Probabilities are averaged over the
 forecast's weighted draws and rounded to four decimals.
+}
+\details{
+The second leg's score is not recorded: a decided tie lists its second
+leg as unplayed, with no score and no forecast.
 }

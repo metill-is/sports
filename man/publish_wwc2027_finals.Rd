@@ -6,7 +6,7 @@
 \usage{
 publish_wwc2027_finals(
   finals,
-  fit_date,
+  state_as_of,
   data_through,
   n_draws = NA_integer_,
   root = here::here("data"),
@@ -17,7 +17,8 @@ publish_wwc2027_finals(
 \arguments{
 \item{finals}{Output of [nt_wwc2027_finals()].}
 
-\item{fit_date, data_through}{The fit's cutoff and its last match date.}
+\item{state_as_of, data_through}{The fit's cutoff (written as `state_as_of`)
+and its last match date; `fit_date` is the day of the publish.}
 
 \item{n_draws}{Posterior draws in the fit (recorded in `meta.json`).}
 
