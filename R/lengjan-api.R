@@ -386,16 +386,19 @@ lengjan_markets_long <- function(markets) {
 #' An event belongs to the league when its sport matches and its competition
 #' id is one of the league's `lengjan.competitions`; the row takes that
 #' competition's `sex`. An event with no home or away team is dropped. A
-#' selected event with no parseable kickoff is an error naming the event: its
-#' rows would be written with match_date NA, never joinable and never
-#' reported (final review F3). A plain error, not lengjan_fetch_error, so it
-#' is never soft-failed; the scrape script's run_per_league() contains it to
-#' this league.
+#' selected event with no parseable kickoff would be written with match_date
+#' NA, never joinable and never reported (final review F3).
+#' `bad_kickoff = "stop"` makes that an error naming the event: a plain
+#' error, not lengjan_fetch_error, so it is never soft-failed; the scrape
+#' script's run_per_league() contains it to this league. `"drop"` drops the
+#' event's rows with a warning naming it instead.
 #'
 #' @param rows Rows keyed by `event_id` (odds or long market rows).
 #' @return `rows` joined to `events`, with a `sex` column.
 #' @noRd
-.lengjan_league_rows <- function(events, rows, league) {
+.lengjan_league_rows <- function(events, rows, league,
+                                 bad_kickoff = c("stop", "drop")) {
+  bad_kickoff <- match.arg(bad_kickoff)
   comps <- league$lengjan$competitions %||% list()
   comp_ids <- vapply(comps, function(cp) as.character(cp$id), character(1))
   comp_sex <- stats::setNames(
@@ -408,12 +411,14 @@ lengjan_markets_long <- function(markets) {
   j <- j[!is.na(j$home_team) & !is.na(j$away_team), , drop = FALSE]
   bad <- unique(j$event_id[is.na(j$kickoff_at)])
   if (length(bad) > 0L) {
-    stop(
+    msg <- paste0(
       "Lengjan API: no parseable kickoff (datePlayed) for ",
       league$sport, " event(s) ", paste(bad, collapse = ", "),
-      "; Lengjan's API may have changed.",
-      call. = FALSE
+      "; Lengjan's API may have changed."
     )
+    if (bad_kickoff == "stop") stop(msg, call. = FALSE)
+    warning(msg, " Their market rows are not written.", call. = FALSE)
+    j <- j[!j$event_id %in% bad, , drop = FALSE]
   }
   j$sex <- unname(comp_sex[j$competition_id])
   j
@@ -469,15 +474,19 @@ empty_lengjan_api_odds <- function() {
 #' Every market's rows for one league, for the odds_markets table.
 #'
 #' Selects the league's events as [lengjan_api_odds_rows()] does (same sport
-#' and competition test, same `sex`, same error on an unparseable kickoff)
-#' and keeps every open, priced selection of every market
-#' ([lengjan_markets_long()]).
+#' and competition test, same `sex`) and keeps every open, priced selection
+#' of every market ([lengjan_markets_long()]). An event with no parseable
+#' kickoff is dropped with a warning naming it, not an error: the long table
+#' holds markets the odds table never keeps, so an error here would reach
+#' events the odds table never checks.
 #'
 #' @inheritParams lengjan_api_odds_rows
 #' @return Tibble matching `schemas()$odds_markets`.
 #' @export
 lengjan_api_market_rows <- function(events, markets, league, scraped_at) {
-  j <- .lengjan_league_rows(events, lengjan_markets_long(markets), league)
+  j <- .lengjan_league_rows(events, lengjan_markets_long(markets), league,
+    bad_kickoff = "drop"
+  )
   if (nrow(j) == 0L) {
     return(empty_lengjan_api_market_rows())
   }
@@ -520,10 +529,13 @@ empty_lengjan_api_market_rows <- function() {
 #'
 #' Writes two tables from the same responses: `odds`, the three markets
 #' decide maps ([lengjan_api_odds_rows()]), and `odds_markets`, every open,
-#' priced selection of every market ([lengjan_api_market_rows()]). Both row
-#' sets are built before either is written, so an unparseable kickoff writes
-#' neither. A failed `odds_markets` write raises after `odds` is written: the
-#' league fails loudly, and the scrape workflow still commits the odds.
+#' priced selection of every market ([lengjan_api_market_rows()]). `odds` is
+#' built and written first, exactly as before `odds_markets` existed, so
+#' nothing about the second table can stop the first: an unparseable kickoff
+#' on an event with an odds-table market writes neither table; on an event
+#' with only other markets it drops that event's market rows with a warning.
+#' A failed `odds_markets` write raises after `odds` is written: the league
+#' fails loudly, and the scrape workflow still commits the odds.
 #'
 #' @param leagues Named list of league definitions (each with `lengjan`).
 #' @param scraped_at Single timestamp for the whole run.
@@ -561,13 +573,15 @@ ingest_lengjan_api <- function(leagues, scraped_at = Sys.time(),
     ))
   }
   rows <- per_league(lengjan_api_odds_rows)
+  upsert_table(rows, "odds", root = root)
+  # WHY after the odds write: decide reads odds, and the long table covers
+  # markets and events the odds mapping never reaches (PR #119 review).
   market_rows <- per_league(lengjan_api_market_rows)
+  upsert_table(market_rows, "odds_markets", root = root)
   if (nrow(rows) == 0L && nrow(market_rows) == 0L) {
     cli::cli_alert_info("Lengjan API: {length(wanted)} event{?s} but no open, priced selections")
     return(invisible(0L))
   }
-  upsert_table(rows, "odds", root = root)
-  upsert_table(market_rows, "odds_markets", root = root)
   n_markets <- nrow(dplyr::distinct(market_rows[, c("event_id", "market_id")]))
   cli::cli_alert_success(paste(
     "Lengjan API: wrote {nrow(rows)} odds rows and {nrow(market_rows)} market",

@@ -34,8 +34,11 @@ of 20 -- typically 2-4 requests in all. The API counterpart of
 \details{
 Writes two tables from the same responses: `odds`, the three markets
 decide maps ([lengjan_api_odds_rows()]), and `odds_markets`, every open,
-priced selection of every market ([lengjan_api_market_rows()]). Both row
-sets are built before either is written, so an unparseable kickoff writes
-neither. A failed `odds_markets` write raises after `odds` is written: the
-league fails loudly, and the scrape workflow still commits the odds.
+priced selection of every market ([lengjan_api_market_rows()]). `odds` is
+built and written first, exactly as before `odds_markets` existed, so
+nothing about the second table can stop the first: an unparseable kickoff
+on an event with an odds-table market writes neither table; on an event
+with only other markets it drops that event's market rows with a warning.
+A failed `odds_markets` write raises after `odds` is written: the league
+fails loudly, and the scrape workflow still commits the odds.
 }

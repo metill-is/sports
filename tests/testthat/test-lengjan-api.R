@@ -309,3 +309,21 @@ test_that("ids and versions that arrive as JSON numbers are written in full", {
   expect_true(is.na(.scalar_chr(NULL)))
   expect_true(is.na(.scalar_chr(list("a"))))
 })
+
+test_that("the long rows keep each market's version, name, group and close time", {
+  long <- lengjan_markets_long(parse_lengjan_markets(.fx("markets.json")))
+  ml <- long[long$market_id == "13904004", ]
+  expect_equal(ml$selection, c("1", "X", "2"))
+  expect_equal(unique(ml$market_version), "1535685747")
+  expect_equal(unique(ml$market_name), "\u00darslit leiksins")
+  expect_equal(unique(ml$market_group), "single-13904004")
+  expect_equal(unique(ml$closes_at), as.POSIXct("2026-09-24 16:55:00", tz = "UTC"))
+  expect_true(all(ml$is_primary))
+  ou <- long[long$market_id == "14027141", ]
+  expect_equal(ou$selection, c("Yfir", "Undir"))
+  expect_equal(unique(ou$market_version), "1535476425")
+  expect_equal(unique(ou$market_name), "Yfir/undir 57.5")
+  expect_equal(unique(ou$special_value), "57.5")
+  expect_equal(unique(ou$line), 57.5)
+  expect_false(any(ou$is_primary))
+})

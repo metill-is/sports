@@ -405,3 +405,31 @@ test_that("an empty window gives a zero-row tibble of the odds_markets shape", {
   expect_named(none, c(schemas()$odds_markets$names, .payload_cols))
   expect_error(read_lengjan_archive(.two_captures(), leagues = .hb(), table = "markets"), "should be one of")
 })
+
+# The fixture's three embedded markets are all open, pre-match, primary 3WAY,
+# which the odds shape keeps too, so they cannot tell the two shapes apart.
+# Here one is in play and one is a 2WAY.
+test_that("program mode: odds drops in-play and non-3WAY embedded markets, odds_markets keeps both", {
+  dir <- .two_captures()
+  prog <- .fx("current-program.json")
+  expect_equal(prog$events[[1]]$id, "4616742")
+  expect_equal(prog$events[[2]]$id, "4412294")
+  prog$events[[1]]$market$live <- TRUE
+  prog$events[[2]]$market$typeName <- "2WAY"
+  prog$events[[2]]$market$selections <- prog$events[[2]]$market$selections[c(1, 3)]
+  first <- list.files(file.path(dir, "raw"), pattern = "120000Z-program", recursive = TRUE, full.names = TRUE)
+  jsonlite::write_json(prog, gzfile(first), auto_unbox = TRUE, null = "null", digits = NA)
+  noon <- as.POSIXct("2026-09-23 12:00:00", tz = "UTC")
+
+  od <- read_lengjan_archive(dir, what = "program", leagues = .hb())
+  expect_equal(unique(od$event_id[od$scraped_at == noon]), "4601670")
+  expect_setequal(unique(od$event_id[od$scraped_at != noon]), c("4412294", "4601670", "4616742"))
+
+  om <- read_lengjan_archive(dir, what = "program", leagues = .hb(), table = "odds_markets")
+  om <- om[om$scraped_at == noon, ]
+  expect_equal(as.integer(table(om$event_id)[c("4412294", "4601670", "4616742")]), c(2L, 3L, 3L))
+  expect_true(all(om$is_live[om$event_id == "4616742"]))
+  expect_false(any(om$is_live[om$event_id != "4616742"]))
+  expect_equal(unique(om$market_type[om$event_id == "4412294"]), "2WAY")
+  expect_equal(unique(om$market_group), "program")
+})

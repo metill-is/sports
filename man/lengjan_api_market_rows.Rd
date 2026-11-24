@@ -20,7 +20,9 @@ Tibble matching `schemas()$odds_markets`.
 }
 \description{
 Selects the league's events as [lengjan_api_odds_rows()] does (same sport
-and competition test, same `sex`, same error on an unparseable kickoff)
-and keeps every open, priced selection of every market
-([lengjan_markets_long()]).
+and competition test, same `sex`) and keeps every open, priced selection
+of every market ([lengjan_markets_long()]). An event with no parseable
+kickoff is dropped with a warning naming it, not an error: the long table
+holds markets the odds table never keeps, so an error here would reach
+events the odds table never checks.
 }
