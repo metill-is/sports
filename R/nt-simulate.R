@@ -11,12 +11,14 @@ NULL
 # wins), which hands the stronger side more of the drawn ties than extra time
 # and a coin-toss shootout do.
 
-.nt_poisson_compare <- function(rate_a, rate_b, max_goals = 30L) {
+# P(A + lead > B) and P(A + lead == B) for independent Poisson goal counts A
+# and B; `lead` is a goal advantage A carries in (an earlier leg's margin).
+.nt_poisson_compare <- function(rate_a, rate_b, max_goals = 30L, lead = 0L) {
   win <- draw <- rate_a * 0
   for (g in 0:max_goals) {
     pb <- stats::dpois(g, rate_b)
-    win <- win + pb * stats::ppois(g, rate_a, lower.tail = FALSE)
-    draw <- draw + pb * stats::dpois(g, rate_a)
+    win <- win + pb * stats::ppois(g - lead, rate_a, lower.tail = FALSE)
+    draw <- draw + pb * stats::dpois(g - lead, rate_a)
   }
   list(win = win, draw = draw)
 }
@@ -81,6 +83,129 @@ nt_simulate_knockout <- function(rate_a, rate_b,
     decided[pens] <- 3L
   }
   list(a_wins = a_wins, decided = decided)
+}
+
+#' How a two-legged tie ends, in closed form.
+#'
+#' The side with more goals over the two legs goes through; away goals do not
+#' count. Level after the second leg, the tie goes to extra time at the
+#' second leg's venue (rates `et_factor` times the second leg's 90-minute
+#' rates) and then to a shoot-out won by A with probability `shootout_p`. This
+#' is the rule of the UEFA Women's European Qualifiers play-offs for the 2027
+#' Women's World Cup (Articles 27.03 and 28.01 of their regulations) and of
+#' most UEFA two-legged ties since 2021.
+#'
+#' Given the rates the four leg scores are independent Poisson counts, so each
+#' side's aggregate is Poisson with the summed rate and the 180 minutes reduce
+#' to one comparison. Pass per-draw rates (draws x ties matrices from
+#' [nt_match_rates()]) and average the result over draws: the legs share the
+#' uncertain strengths, so averaging the rates first would be wrong.
+#'
+#' @param rate_a1,rate_b1 First-leg 90-minute scoring rates of sides A and B.
+#' @param rate_a2,rate_b2 Second-leg rates (extra time is played there).
+#' @param et_factor,shootout_p See [nt_knockout_win_prob()].
+#' @param lead Goals A leads by before the legs given here. To condition on a
+#'   played first leg, pass zero first-leg rates and its margin as `lead`.
+#' @return List of arrays shaped like the rates: `a_wins` and the six ways the
+#'   tie ends, which sum to one: `a_regulation`, `a_extra_time`, `a_shootout`,
+#'   `b_regulation`, `b_extra_time`, `b_shootout`.
+#' @export
+nt_two_leg_win_prob <- function(rate_a1, rate_b1, rate_a2, rate_b2,
+                                et_factor = 1 / 3, shootout_p = 0.5, lead = 0L) {
+  reg <- .nt_poisson_compare(rate_a1 + rate_a2, rate_b1 + rate_b2, max_goals = 40L, lead = lead)
+  et <- .nt_poisson_compare(rate_a2 * et_factor, rate_b2 * et_factor)
+  out <- list(
+    a_regulation = reg$win,
+    a_extra_time = reg$draw * et$win,
+    a_shootout = reg$draw * et$draw * shootout_p,
+    b_regulation = 1 - reg$win - reg$draw,
+    b_extra_time = reg$draw * (1 - et$win - et$draw),
+    b_shootout = reg$draw * et$draw * (1 - shootout_p)
+  )
+  c(list(a_wins = out$a_regulation + out$a_extra_time + out$a_shootout), out)
+}
+
+#' Simulate two-legged ties.
+#'
+#' Plays out what [nt_two_leg_win_prob()] computes: both legs over 90
+#' minutes, then, with the aggregate level, extra time at the second leg's
+#' rates and a shoot-out.
+#'
+#' @inheritParams nt_two_leg_win_prob
+#' @return List: 90-minute goals `leg1_a`, `leg1_b`, `leg2_a`, `leg2_b`;
+#'   `a_wins` (logical); `decided` (1 = on aggregate after 180 minutes, 2 = in
+#'   extra time, 3 = on penalties).
+#' @export
+nt_simulate_two_leg <- function(rate_a1, rate_b1, rate_a2, rate_b2,
+                                et_factor = 1 / 3, shootout_p = 0.5) {
+  n <- length(rate_a1)
+  leg1_a <- stats::rpois(n, rate_a1)
+  leg1_b <- stats::rpois(n, rate_b1)
+  leg2_a <- stats::rpois(n, rate_a2)
+  leg2_b <- stats::rpois(n, rate_b2)
+  margin <- leg1_a + leg2_a - leg1_b - leg2_b
+  a_wins <- margin > 0
+  decided <- rep(1L, n)
+  level <- which(margin == 0)
+  if (length(level) > 0L) {
+    ga <- stats::rpois(length(level), rate_a2[level] * et_factor)
+    gb <- stats::rpois(length(level), rate_b2[level] * et_factor)
+    a_wins[level] <- ga > gb
+    decided[level] <- 2L
+    pens <- level[ga == gb]
+    a_wins[pens] <- stats::runif(length(pens)) < shootout_p
+    decided[pens] <- 3L
+  }
+  list(
+    leg1_a = leg1_a, leg1_b = leg1_b, leg2_a = leg2_a, leg2_b = leg2_b,
+    a_wins = a_wins, decided = decided
+  )
+}
+
+#' Places won from a round of play-off ties ranked on a table.
+#'
+#' Of the ties' winners the `n_direct` best-ranked take the direct places and
+#' the rest the other places (for the 2027 Women's World Cup UEFA play-offs:
+#' eight winners, the seven best-ranked on the 2026 Women's European
+#' Qualifiers overall league ranking qualify, the last goes to the
+#' inter-confederation play-off; Article 27.08). Every combination of results
+#' is weighed exactly, per draw, with the ties independent given the draw.
+#'
+#' @param p_win Draws x ties matrix: P(`team_a` wins its tie) in each draw.
+#' @param ties Tibble `team_a, team_b, rank_a, rank_b` (smaller is better),
+#'   one row per column of `p_win`.
+#' @param n_direct Number of direct places.
+#' @return Tibble `team, rank, p_win, p_direct, p_other`, by rank.
+#' @export
+nt_playoff_places <- function(p_win, ties, n_direct) {
+  p_win <- as.matrix(p_win)
+  k <- nrow(ties)
+  if (ncol(p_win) != k) {
+    cli::cli_abort("{.arg p_win} has {ncol(p_win)} column{?s} for {k} tie{?s}.")
+  }
+  if (k > 16L) {
+    cli::cli_abort("{k} ties is too many to enumerate.")
+  }
+  a_wins <- as.matrix(expand.grid(rep(list(c(TRUE, FALSE)), k)))
+  prob <- matrix(1, nrow(p_win), nrow(a_wins))
+  for (j in seq_len(k)) {
+    prob <- prob * outer(p_win[, j], a_wins[, j], function(p, a) ifelse(a, p, 1 - p))
+  }
+  winner_rank <- ifelse(a_wins, rep(ties$rank_a, each = nrow(a_wins)),
+    rep(ties$rank_b, each = nrow(a_wins)))
+  direct <- t(apply(winner_rank, 1L, rank, ties.method = "first")) <= n_direct
+  p_combo <- colMeans(prob)
+  side <- function(won, place) {
+    vapply(seq_len(k), function(j) sum(p_combo[won[, j] & place[, j]]), numeric(1))
+  }
+  out <- tibble::tibble(
+    team = c(ties$team_a, ties$team_b),
+    rank = c(ties$rank_a, ties$rank_b),
+    p_win = c(colMeans(p_win), 1 - colMeans(p_win)),
+    p_direct = c(side(a_wins, direct), side(!a_wins, direct)),
+    p_other = c(side(a_wins, !direct), side(!a_wins, !direct))
+  )
+  out[order(out$rank), , drop = FALSE]
 }
 
 #' Head-to-head advancement probabilities at a neutral venue.
