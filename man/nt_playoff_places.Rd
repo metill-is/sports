@@ -4,7 +4,7 @@
 \alias{nt_playoff_places}
 \title{Places won from a round of play-off ties ranked on a table.}
 \usage{
-nt_playoff_places(p_win, ties, n_direct)
+nt_playoff_places(p_win, ties, n_direct, weights = NULL)
 }
 \arguments{
 \item{p_win}{Draws x ties matrix: P(`team_a` wins its tie) in each draw.}
@@ -13,6 +13,9 @@ nt_playoff_places(p_win, ties, n_direct)
 one row per column of `p_win`.}
 
 \item{n_direct}{Number of direct places.}
+
+\item{weights}{Optional weight per draw (for example after reweighting the
+draws by results already played); the default weighs draws equally.}
 }
 \value{
 Tibble `team, rank, p_win, p_direct, p_other`, by rank.

@@ -179,14 +179,21 @@ nt_simulate_two_leg <- function(rate_a1, rate_b1, rate_a2, rate_b2,
 #' @param ties Tibble `team_a, team_b, rank_a, rank_b` (smaller is better),
 #'   one row per column of `p_win`.
 #' @param n_direct Number of direct places.
+#' @param weights Optional weight per draw (for example after reweighting the
+#'   draws by results already played); the default weighs draws equally.
 #' @return Tibble `team, rank, p_win, p_direct, p_other`, by rank.
 #' @export
-nt_playoff_places <- function(p_win, ties, n_direct) {
+nt_playoff_places <- function(p_win, ties, n_direct, weights = NULL) {
   p_win <- as.matrix(p_win)
   k <- nrow(ties)
   if (ncol(p_win) != k) {
     cli::cli_abort("{.arg p_win} has {ncol(p_win)} column{?s} for {k} tie{?s}.")
   }
+  if (!is.null(weights) && (length(weights) != nrow(p_win) || any(weights < 0) ||
+    sum(weights) <= 0)) {
+    cli::cli_abort("{.arg weights} must be {nrow(p_win)} non-negative number{?s} with a positive sum.")
+  }
+  avg <- if (is.null(weights)) colMeans else function(m) colSums(m * (weights / sum(weights)))
   if (k > 16L) {
     cli::cli_abort("{k} ties is too many to enumerate.")
   }
@@ -198,14 +205,14 @@ nt_playoff_places <- function(p_win, ties, n_direct) {
   winner_rank <- ifelse(a_wins, rep(ties$rank_a, each = nrow(a_wins)),
     rep(ties$rank_b, each = nrow(a_wins)))
   direct <- t(apply(winner_rank, 1L, rank, ties.method = "first")) <= n_direct
-  p_combo <- colMeans(prob)
+  p_combo <- avg(prob)
   side <- function(won, place) {
     vapply(seq_len(k), function(j) sum(p_combo[won[, j] & place[, j]]), numeric(1))
   }
   out <- tibble::tibble(
     team = c(ties$team_a, ties$team_b),
     rank = c(ties$rank_a, ties$rank_b),
-    p_win = c(colMeans(p_win), 1 - colMeans(p_win)),
+    p_win = c(avg(p_win), 1 - avg(p_win)),
     p_direct = c(side(a_wins, direct), side(!a_wins, direct)),
     p_other = c(side(a_wins, !direct), side(!a_wins, !direct))
   )
