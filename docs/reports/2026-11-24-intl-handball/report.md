@@ -2,8 +2,8 @@
 
 24 November 2026. Owner's words the same day: "We can very well handle setting up a
 INLA version of the international handball model and deploy it in time for the
-tournament. We'll do that." and "we can also plan to deploy results and forecasts to
-production with the scraped data as it's still a personal project".
+tournament. We'll do that." The same day he agreed that its results and forecasts
+may be published on metill.is.
 
 ## What was built
 

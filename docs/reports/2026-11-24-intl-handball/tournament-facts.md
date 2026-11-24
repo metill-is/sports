@@ -18,7 +18,7 @@ Page numbers for regulations are the **printed** numbers, which sit in the page 
 | Hosts | Romania, Türkiye, Czechia, Slovakia, Poland. EHF calls it the first EURO with five host countries | Draw article |
 | Teams | 24 | Regulations Art. 7.1 (p. 22) |
 | Draw | 16 April 2026, Katowice | Draw article |
-| Group A | Oradea (ROU), Oradea Arena | Schedule PDF v9; EHF match API |
+| Group A | Oradea (ROU), Oradea Arena | Schedule PDF v9; EHF match pages |
 | Group B | Cluj-Napoca (ROU), BT Arena | same |
 | Group C | Antalya (TUR), Antalya Sports Hall | same |
 | Group D | Brno (CZE), T-Mobile Arena (PDF says "T-Arena") | same |
@@ -29,17 +29,17 @@ Page numbers for regulations are the **printed** numbers, which sit in the page 
 | Final weekend | Katowice, Spodek Arena: semi-finals and 5/6 on 18 Dec; bronze and final on 20 Dec; rest days 17 and 19 Dec | same |
 | Hosts pre-allocated before the draw | Hungary to A (Oradea), Romania to B, Türkiye to C, Czechia to D, Poland to E, Slovakia to F | https://ehfcl.eurohandball.com/news/en/all-you-need-to-know-about-women-s-ehf-euro-2026-draw-on-16-april/ |
 
-Time zones: Oradea and Cluj-Napoca are EET (UTC+2), Antalya is TRT (UTC+3), and Brno, Katowice and Bratislava are CET (UTC+1). I derived these from each match's UTC vs local time in the EHF API. They agree with the EHF article "Preliminary round across three time zones": https://ehfcl.eurohandball.com/news/en/ehf-confirms-throw-off-times-for-women-s-ehf-euro-2026/
+Time zones: Oradea and Cluj-Napoca are EET (UTC+2), Antalya is TRT (UTC+3), and Brno, Katowice and Bratislava are CET (UTC+1). I derived these from each match's UTC vs local time on the EHF match pages. They agree with the EHF article "Preliminary round across three time zones": https://ehfcl.eurohandball.com/news/en/ehf-confirms-throw-off-times-for-women-s-ehf-euro-2026/
 
 Main sources:
 
-- **EHF match API** behind https://ehfeuro.eurohandball.com/women/2026/matches/ : `https://ehfeuro.eurohandball.com/umbraco/api/competitionmatchesapi/GetInitMatches?contentId=117758&competitionId=geUe4-8vreQ-I8HeX-A38w`, paged with `GetMatches?...&matchId=<id>&futureMatches=true`. Read 2026-11-24. It returned 71 final-tournament records: 65 matches plus 6 "carried-over" placeholders (see 1.4).
+- **EHF match pages**: https://ehfeuro.eurohandball.com/women/2026/matches/ (each match with its date, venue and local and UTC times). Read 2026-11-24: 71 final-tournament entries, 65 matches plus 6 "carried-over" placeholders (see 1.4).
 - **Schedule PDF v9** ("W EURO26 matchshedule_vertical_v9", created 2026-10-01), linked from the matches page: https://ehfeuro.eurohandball.com/media/kmnlbjo1/match-schedule-illustrated-version-vertical-womens-ehf-euro-2026.pdf . Its times are printed in **CET**.
 - **Regulations**: "EHF EURO Regulations – Women's EHF EURO 2026", 105 pp., PDF created 2026-05-05: https://www.eurohandball.com/media/ipvbgerz/womens-ehf-euro-2026-regulations.pdf (listed at https://www.eurohandball.com/en/what-we-do/regulations/national-team-competitions/).
 
 ### 1.2 Groups and draw positions
 
-Positions are from the regulations' Enclosure 2 match template (p. 99: match 1 = A3–A4, 2 = A1–A2, 3 = A1–A3, 4 = A2–A4, 5 = A4–A1, 6 = A3–A2, and the same pattern for B–F) matched against the API pairings. They coincide with the order the EHF lists the teams and with the seeding pots (position = pot).
+Positions are from the regulations' Enclosure 2 match template (p. 99: match 1 = A3–A4, 2 = A1–A2, 3 = A1–A3, 4 = A2–A4, 5 = A4–A1, 6 = A3–A2, and the same pattern for B–F) matched against the pairings on the EHF match pages. They coincide with the order the EHF lists the teams and with the seeding pots (position = pot).
 
 | Group (city) | 1 | 2 | 3 | 4 |
 |---|---|---|---|---|
@@ -54,7 +54,7 @@ Pots (draw article): 1 Norway, Denmark, Hungary, France, Sweden, Netherlands; 2 
 
 ### 1.3 Schedule
 
-The full schedule is in `euro2026w_schedule.csv`. Match numbers are the EHF match-ID suffixes (e.g. 202612010101**001**), and local times come from the API.
+The full schedule is in `config/intl-handball/euro2026w/schedule.csv`. Match numbers are the EHF match-ID suffixes (e.g. 202612010101**001**), and local times come from the EHF match pages.
 
 Group A (Oradea Arena, local EET):
 
@@ -69,7 +69,7 @@ Group A (Oradea Arena, local EET):
 
 Match days by group: A and C play 3/5/7 Dec; B, D and F play 4/6/8 Dec; E plays 5/7/9 Dec.
 
-Basic times: preliminary round 18:30 & 21:00 local in A/B/C and 18:00 & 20:30 in D/E/F. The exception is Group F on Sun 6 Dec: 15:30 Sweden–Slovakia and 18:00 Germany–Serbia, from the API and PDF v9. The older PDF of 22 April 2026 had 18:00 Germany–Serbia and 20:30 Sweden–Slovakia, so it is superseded. Main Round I is 16:00 / 18:30 / 21:00 local (EET). Main Round II is 15:30 / 18:00 / 20:30 CET. Fixtures in both main rounds have not yet been assigned to slots.
+Basic times: preliminary round 18:30 & 21:00 local in A/B/C and 18:00 & 20:30 in D/E/F. The exception is Group F on Sun 6 Dec: 15:30 Sweden–Slovakia and 18:00 Germany–Serbia, from the EHF match pages and PDF v9. The older PDF of 22 April 2026 had 18:00 Germany–Serbia and 20:30 Sweden–Slovakia, so it is superseded. Main Round I is 16:00 / 18:30 / 21:00 local (EET). Main Round II is 15:30 / 18:00 / 20:30 CET. Fixtures in both main rounds have not yet been assigned to slots.
 
 Final weekend (CET):
 
@@ -100,7 +100,7 @@ Main-round fixture pattern, with the order as listed by the EHF:
 - **5/6 match (9.26–9.30, p. 29):** 3rd MR I v 3rd MR II.
 - **Semi-finals (9.34–9.35, p. 30):** "The teams ranked first (1st) in the main round groups play against the teams ranked second (2nd) in the other main round group":
   - SF: 1st MR I v 2nd MR II
-  - SF: 1st MR II v 2nd MR I (the API lists it as "MR 2. I v MR 1. II")
+  - SF: 1st MR II v 2nd MR I (the EHF match pages list it as "MR 2. I v MR 1. II")
   - Losers play the bronze match (9.36) and winners the final (9.37).
 - **Extra time, for the 5/6 match, semi-finals, bronze match and final only (9.28–9.30, 9.38–9.42, pp. 29–31):** if level after 60 min, there is a 5-min break, then 2×5 min extra time (1-min half-time). If still level, a second 2×5 min extra time follows after another 5-min break. If still level, penalty throws (9.43, pp. 31–32):
   - Five nominated throwers each, alternating. If still level, further rounds of five, and the second round is decided "once there is a difference in goals after both teams have executed the same number of throws".
@@ -162,7 +162,7 @@ Main sources:
 
 ### 2.2 Groups and draw positions
 
-The IHF lists the teams in this order (draw article and ihf.info standings), and the order is position 1–4. I confirmed it for all 8 groups against the regulations' day template (Ch. II §2.2.1, p. 27: Day 1 1–3, 2–4; Day 2 4–1, 2–3; Day 3 3–4, 1–2). Every official fixture, including its home/away order, matches, and `make_csvs.py` asserts this.
+The IHF lists the teams in this order (draw article and ihf.info standings), and the order is position 1–4. I confirmed it for all 8 groups against the regulations' day template (Ch. II §2.2.1, p. 27: Day 1 1–3, 2–4; Day 2 4–1, 2–3; Day 3 3–4, 1–2). Every official fixture, including its home/away order, matches; the schedule build checked this for all 112 matches.
 
 | Group (city) | 1 | 2 | 3 | 4 |
 |---|---|---|---|---|
@@ -179,7 +179,7 @@ Team-name variants: ihf.info match pages write "Turkiye" and the IHF articles wr
 
 ### 2.3 Schedule
 
-The full schedule is in `wc2027m_schedule.csv`. `match_no` is the **ihf.info match id** (e.g. 307599), because the IHF publishes no sequential match numbers.
+The full schedule is in `config/intl-handball/wc2027m/schedule.csv`. `match_no` is the **ihf.info match id** (e.g. 307599), because the IHF publishes no sequential match numbers.
 
 Group H (GETEC Arena, Magdeburg, CET), from schedule PDF V1/V2 and ihf.info:
 
@@ -288,8 +288,8 @@ No believed fact is wrong.
 
 - **E1. EHF tie-break with 3+ teams level is ambiguous.** Clause (f) ("If the ranking of one of these teams is determined, the criteria are consecutively followed until the ranking of all teams is determined") does not say whether the mini-table (a)–(c) is recomputed among the remaining tied teams after one team is separated, or whether ranking simply continues to the next criterion. The literal reading is to continue down the list. I found no EHF clarification. A simulator should make this a switch.
 - **E2. IHF tie-break with 3+ teams level is not specified.** The IHF text has no re-application clause at all. It is unspecified whether the head-to-head is recomputed for a sub-group once one team is separated.
-- **E3. Women's EURO match numbering for the final weekend.** In the EHF API, 61/62 are the semi-finals, 63 is 5/6, 64 is bronze and 65 is the final. Regulations Enclosure 2 (p. 99) numbers 61 as 5/6, 62/63 as the semi-finals, 64 bronze and 65 final. The CSV uses the API numbering. Home/away for the second semi-final also differs: the API has 2 MR I v 1 MR II, and PDF v9 has 1.II – 2.I.
-- **E4. EHF schedule versions.** The 22 Apr 2026 horizontal PDF (https://tickets.eurohandball.com/fileadmin/fm_de/EHF2026W/Schedule/260422_EHF2026-W_Match_Schedule_horizontal.pdf) has Group F on 6 Dec at 18:00 Germany–Serbia and 20:30 Sweden–Slovakia. PDF v9 and the API have 15:30 Sweden–Slovakia and 18:00 Germany–Serbia. The CSV follows the API. The EHF reserves the right to change match order for TV.
+- **E3. Women's EURO match numbering for the final weekend.** On the EHF match pages, 61/62 are the semi-finals, 63 is 5/6, 64 is bronze and 65 is the final. Regulations Enclosure 2 (p. 99) numbers 61 as 5/6, 62/63 as the semi-finals, 64 bronze and 65 final. The CSV uses the match pages' numbering. Home/away for the second semi-final also differs: the match pages have 2 MR I v 1 MR II, and PDF v9 has 1.II – 2.I.
+- **E4. EHF schedule versions.** The 22 Apr 2026 horizontal PDF (https://tickets.eurohandball.com/fileadmin/fm_de/EHF2026W/Schedule/260422_EHF2026-W_Match_Schedule_horizontal.pdf) has Group F on 6 Dec at 18:00 Germany–Serbia and 20:30 Sweden–Slovakia. PDF v9 and the match pages have 15:30 Sweden–Slovakia and 18:00 Germany–Serbia. The CSV follows the match pages. The EHF reserves the right to change match order for TV.
 - **E5. Unpublished times.**
   - EHF main-round and semi-final fixture-to-slot allocation is not published (set after the preliminary and main rounds).
   - IHF Group D times are still "18:00/18:30" and "20:30/21:00" (CSV keeps both).
