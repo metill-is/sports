@@ -73,11 +73,11 @@ NULL
 #'   speed up walk-forward refits.
 #' @param keep_result Keep the raw INLA result as `result` (large).
 #' @param reproducible Fit with R-INLA's online internal optimisation off
-#'   (`control.compute = list(internal.opt = FALSE)`, this call only) and draw
-#'   under `withr::with_seed(seed)`, so that the same fit repeats in another R
-#'   process. Needs `threads = "1:1"`: with more threads R-INLA's result
-#'   differs from process to process with or without the option (measured on
-#'   the football and handball/basketball v2 engines, 2026-11-16/17).
+#'   (`control.compute = list(internal.opt = FALSE)`, for this call only).
+#'   With it on, R-INLA's default, the same football fit did not always
+#'   return the same numbers in two R processes; with it off and one thread
+#'   (`threads = "1:1"`) it did (see `R/model-v2-inla.R`). `FALSE` passes
+#'   nothing, so R-INLA goes by its session setting.
 #' @return List with `draws` (`theta`, `delta`: draws x teams matrices; `mu`,
 #'   `home_for`, `home_against`: vectors), `teams`, `kappa`, `hyper`, `fixed`,
 #'   `mlik`, `theta_mode`, `seconds` and `settings`.
@@ -95,11 +95,11 @@ nt_fit_inla <- function(prep,
                         keep_result = FALSE,
                         reproducible = FALSE) {
   rlang::check_installed("INLA", reason = "to fit the national-team model")
-  if (reproducible && !identical(threads, "1:1")) {
-    cli::cli_abort("A reproducible fit needs one thread ({.code threads = \"1:1\"}).")
-  }
   dynamics <- match.arg(dynamics)
   friendly <- match.arg(friendly)
+  if (reproducible && !identical(threads, "1:1")) {
+    cli::cli_warn("A reproducible fit also needs one thread ({.code threads = \"1:1\"}); got {.val {threads}}.")
+  }
   if (friendly != "damped") kappa <- 1
   des <- .nt_design(prep, kappa = kappa)
   k <- des$k
@@ -193,20 +193,15 @@ nt_fit_inla <- function(prep,
   t_fit <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
 
   t1 <- Sys.time()
-  sample_draws <- function() {
-    INLA::inla.posterior.sample(
-      n_draws, res,
-      selection = list(
-        alpha = seq_len(k), delta = seq_len(k),
-        u = (seq_len(k) - 1L) * n_t + n_t,
-        mu = 1, home_for = 1, home_against = 1
-      ),
-      seed = seed, num.threads = "1:1"
-    )
-  }
-  # WHY: the sampler's seed covers only its Gaussian draws; R's generator picks
-  # each draw's hyperparameter configuration.
-  smp <- if (reproducible) withr::with_seed(seed, sample_draws()) else sample_draws()
+  smp <- .nt_posterior_draws(
+    res, n_draws,
+    selection = list(
+      alpha = seq_len(k), delta = seq_len(k),
+      u = (seq_len(k) - 1L) * n_t + n_t,
+      mu = 1, home_for = 1, home_against = 1
+    ),
+    seed = seed
+  )
   latent <- vapply(smp, function(s) s$latent[, 1], numeric(nrow(smp[[1]]$latent)))
   part <- sub(":.*$", "", rownames(smp[[1]]$latent))
   pick <- function(name) t(latent[part == name, , drop = FALSE])
@@ -236,6 +231,19 @@ nt_fit_inla <- function(prep,
       int_strategy = int_strategy, reproducible = reproducible, cutoff = prep$cutoff,
       n_matches = nrow(prep$matches), n_teams = k, n_periods = n_t,
       step_months = prep$step_months
+    )
+  )
+}
+
+# WHY: R-INLA's own `seed` reaches only its sampler of the latent field; which
+# hyperparameter configuration each draw comes from is picked with R's
+# generator. Seeding R's generator for the call fixes both, and with_seed()
+# puts the caller's stream back afterwards.
+.nt_posterior_draws <- function(res, n_draws, selection, seed) {
+  withr::with_seed(
+    as.integer(seed),
+    INLA::inla.posterior.sample(
+      n_draws, res, selection = selection, seed = as.integer(seed), num.threads = "1:1"
     )
   )
 }

@@ -60,6 +60,17 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      # R-INLA's Linux build runs on Intel MKL, whose code path depends on the
+      # CPU, so one fit of the same data differs between Intel and AMD runners,
+      # on a weakly identified model by more than its last bits: the handball
+      # total fit of test-model-v2-hbbb.R broke on Intel Xeon runners and not
+      # on AMD EPYC 7763 / 9V74 / 9V45 (2026-11-24). Logged so an outcome can
+      # be tied to the hardware it ran on.
+      - name: Describe the runner's CPU
+        run: |
+          lscpu | grep -E '^(Vendor ID|Model name|CPU\(s\)):'
+          grep -q -m1 -w avx512f /proc/cpuinfo && echo "avx512f: yes" || echo "avx512f: no"
+
       # The runner context does not exist where job-level env is evaluated,
       # so the output directory is set from a step.
       - name: Choose an output directory outside the checkout

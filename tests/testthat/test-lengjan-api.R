@@ -131,3 +131,199 @@ test_that("lengjan_api_get retries transport failures and sends the pipeline UA"
   expect_identical(q$live, "false")
   expect_identical(q[["eventIds[0]"]], "1")
 })
+
+# ---- Every market: the odds_markets table (2026-11-24) -------------------------
+#
+# Counts of open selections priced above 1 in markets.json, read with a
+# separate script: football 4601670 has 151 in 37 markets of 28 market codes,
+# handball 4616742 has 30 in 9, basketball 4412294 has 19 in 4.
+
+test_that("parse_lengjan_markets keeps each market's id, version, code, name, live flag and close", {
+  mk <- parse_lengjan_markets(.fx("markets.json"))
+  ml <- mk[mk$event_id == "4616742" & mk$primary, ]
+  expect_equal(nrow(ml), 3L)
+  expect_equal(unique(ml$market_id), "13904004")
+  expect_equal(unique(ml$market_version), "1535685747")
+  expect_equal(unique(ml$market_code), "1")
+  expect_equal(unique(ml$market_name), "\u00darslit leiksins")
+  expect_false(any(ml$live))
+  expect_equal(unique(ml$closes_at), as.POSIXct("2026-09-24 16:55:00", tz = "UTC"))
+  # `type` is 1 for the primary market and 2 for every other: not a market
+  # type. The stable code is `externalId`, 18 for every full-time total.
+  ou <- mk[mk$event_id == "4616742" & mk$group == "OU_FT", ]
+  expect_equal(unique(ou$type), "2")
+  expect_equal(unique(ou$market_code), "18")
+  expect_equal(length(unique(ou$market_id)), 3L)
+})
+
+test_that("lengjan_markets_long keeps every open, priced selection of every market", {
+  long <- lengjan_markets_long(parse_lengjan_markets(.fx("markets.json")))
+  ev <- c("4601670", "4616742", "4412294")
+  expect_equal(as.integer(table(long$event_id)[ev]), c(151L, 30L, 19L))
+  n_markets <- tapply(long$market_id, long$event_id, function(x) length(unique(x)))
+  expect_equal(as.integer(n_markets[ev]), c(37L, 9L, 4L))
+  codes <- function(e) sort(as.integer(unique(long$market_code[long$event_id == e])))
+  expect_equal(codes("4616742"), c(1L, 10L, 18L, 47L, 52L, 60L, 83L))
+  expect_equal(codes("4412294"), c(1L, 18L, 47L, 234L))
+  expect_length(codes("4601670"), 28L)
+  expect_true(all(is.finite(long$odds) & long$odds > 1))
+  expect_equal(anyDuplicated(long[, c("event_id", "market_id", "selection")]), 0L)
+  expect_named(long, c(
+    "event_id", "market_id", "market_version", "market_code", "market_type",
+    "market_group", "market_name", "special_value", "line", "selection",
+    "odds", "is_primary", "is_live", "closes_at"
+  ))
+  q <- long[long$event_id == "4412294" & long$market_code == "234", ]
+  expect_equal(q$odds[q$selection == "Jafnt"], 11.23)
+})
+
+test_that("line is special_value as a number, NA for a market without one", {
+  long <- lengjan_markets_long(parse_lengjan_markets(.fx("markets.json")))
+  ah <- long[long$event_id == "4601670" & long$market_group == "AH_FT", ]
+  expect_equal(unique(ah$market_code), "16")
+  expect_equal(unique(ah$market_type), "AH")
+  expect_setequal(unique(ah$line), c(0.5, -0.5, -1.5))
+  expect_equal(ah$special_value[ah$line == -1.5][[1]], "-1.5")
+  hc <- long[long$market_code == "14", ]
+  expect_setequal(unique(hc$line), c(1, -1, 2, -2, 3, -3))
+  dc <- long[long$event_id == "4616742" & long$market_code == "10", ]
+  expect_setequal(dc$selection, c("1X", "12", "X2"))
+  expect_true(all(is.na(dc$special_value) & is.na(dc$line)))
+})
+
+test_that("the long rows carry every price the odds mapping keeps", {
+  mk <- parse_lengjan_markets(.fx("markets.json"))
+  od <- lengjan_markets_to_odds(mk)
+  long <- lengjan_markets_long(mk)
+  ml <- long[long$is_primary & long$market_type == "3WAY", ]
+  tot <- long[long$market_group == "OU_FT", ]
+  hc <- long[long$market_group == "HC_FT", ]
+  expect_equal(sort(ml$odds), sort(od$odds[od$market == "moneyline"]))
+  expect_equal(sort(tot$odds), sort(od$odds[od$market == "total"]))
+  expect_equal(sort(hc$odds), sort(od$odds[od$market == "spread"]))
+  expect_equal(nrow(od), 39L)
+  expect_equal(nrow(long), 200L)
+})
+
+test_that("lengjan_markets_long drops closed markets and invalid prices row by row", {
+  groups <- list(list(name = "single-1", markets = list(
+    list(
+      id = "11", eventId = "1", typeName = "3WAY", primary = TRUE, status = "open",
+      selections = list(list(name = "1", odds = 100), list(name = "X", odds = NULL), list(name = "2", odds = 250))
+    ),
+    list(
+      id = "12", eventId = "2", typeName = "3WAY", primary = TRUE, status = "suspended",
+      selections = list(list(name = "1", odds = 180), list(name = "X", odds = 340))
+    )
+  )))
+  long <- lengjan_markets_long(parse_lengjan_markets(groups))
+  expect_equal(nrow(long), 1L)
+  expect_equal(long$selection, "2")
+  expect_equal(long$odds, 2.5)
+  expect_equal(long$market_id, "11")
+  # A field the market lacks reads NA, not an error.
+  expect_true(is.na(long$market_version) && is.na(long$closes_at) && !long$is_live)
+  expect_equal(nrow(lengjan_markets_long(parse_lengjan_markets(list()))), 0L)
+})
+
+test_that("lengjan_api_get treats 429, 500, 502, 503 and 504 as transient", {
+  for (st in c(429L, 500L, 502L, 503L, 504L)) {
+    expect_true(.lengjan_is_transient(httr2::response(st)), info = st)
+  }
+  for (st in c(400L, 403L, 404L)) {
+    expect_false(.lengjan_is_transient(httr2::response(st)), info = st)
+  }
+  expect_equal(.lengjan_retry_after(httr2::response(503L, headers = "Retry-After: 5")), 5)
+  expect_equal(.lengjan_retry_after(httr2::response(503L, headers = "Retry-After: 3600")), 60)
+  expect_true(is.na(.lengjan_retry_after(httr2::response(503L))))
+})
+
+# httr2 sleeps a server's Retry-After uncapped (httr2 1.2.2), and
+# local_mocked_responses() answers before the retry loop, so the single attempt
+# and the sleep are mocked inside httr2 instead.
+test_that("a Retry-After of an hour is waited for 60 s, three tries in all", {
+  tries <- 0L
+  slept <- numeric()
+  testthat::local_mocked_bindings(
+    req_perform1 = function(req, ...) {
+      tries <<- tries + 1L
+      httr2::response(503L, headers = "Retry-After: 3600")
+    },
+    sys_sleep = function(seconds, ...) slept <<- c(slept, seconds),
+    .package = "httr2"
+  )
+  expect_error(lengjan_api_get("current-program"), class = "lengjan_fetch_error")
+  expect_equal(tries, 3L)
+  # httr2 also calls its sleep with 0 s outside the retry wait; the two waits
+  # between the three tries are the positive ones.
+  expect_equal(slept[slept > 0], c(60, 60))
+})
+
+test_that("a 502 is retried and the success that follows is returned", {
+  tries <- 0L
+  testthat::local_mocked_bindings(
+    req_perform1 = function(req, ...) {
+      tries <<- tries + 1L
+      if (tries < 3L) httr2::response(502L) else httr2::response_json(body = list(ok = TRUE))
+    },
+    sys_sleep = function(seconds, ...) NULL,
+    .package = "httr2"
+  )
+  expect_equal(lengjan_api_get("current-program"), list(ok = TRUE))
+  expect_equal(tries, 3L)
+})
+
+test_that("lengjan_program_once fetches once and does not keep a failed fetch", {
+  calls <- 0L
+  program <- lengjan_program_once(function() {
+    calls <<- calls + 1L
+    if (calls == 1L) stop("Lengjan blip")
+    list(events = list(), liveSoon = list())
+  })
+  expect_error(program(), "Lengjan blip")
+  expect_equal(program(), list(events = list(), liveSoon = list()))
+  program()
+  expect_equal(calls, 2L)
+})
+
+test_that("a market listed in two groups gives one set of long rows", {
+  ou <- list(
+    id = "21", version = "1", eventId = "1", externalId = "18", typeName = "OU",
+    status = "open", specialValue = "2.5",
+    selections = list(list(name = "Yfir", odds = 190), list(name = "Undir", odds = 185))
+  )
+  groups <- list(list(name = "OU_FT", markets = list(ou)), list(name = "single-21", markets = list(ou)))
+  expect_equal(nrow(parse_lengjan_markets(groups)), 4L)
+  long <- lengjan_markets_long(parse_lengjan_markets(groups))
+  expect_equal(long$selection, c("Yfir", "Undir"))
+  expect_equal(unique(long$market_group), "OU_FT")
+})
+
+test_that("ids and versions that arrive as JSON numbers are written in full", {
+  expect_equal(.scalar_chr(3e9), "3000000000")
+  expect_equal(.scalar_chr(1e5), "100000")
+  expect_equal(.scalar_chr(13904004L), "13904004")
+  expect_equal(.scalar_chr(2.5), "2.5")
+  expect_equal(.scalar_chr("1535685747"), "1535685747")
+  expect_true(is.na(.scalar_chr(NA_real_)))
+  expect_true(is.na(.scalar_chr(NULL)))
+  expect_true(is.na(.scalar_chr(list("a"))))
+})
+
+test_that("the long rows keep each market's version, name, group and close time", {
+  long <- lengjan_markets_long(parse_lengjan_markets(.fx("markets.json")))
+  ml <- long[long$market_id == "13904004", ]
+  expect_equal(ml$selection, c("1", "X", "2"))
+  expect_equal(unique(ml$market_version), "1535685747")
+  expect_equal(unique(ml$market_name), "\u00darslit leiksins")
+  expect_equal(unique(ml$market_group), "single-13904004")
+  expect_equal(unique(ml$closes_at), as.POSIXct("2026-09-24 16:55:00", tz = "UTC"))
+  expect_true(all(ml$is_primary))
+  ou <- long[long$market_id == "14027141", ]
+  expect_equal(ou$selection, c("Yfir", "Undir"))
+  expect_equal(unique(ou$market_version), "1535476425")
+  expect_equal(unique(ou$market_name), "Yfir/undir 57.5")
+  expect_equal(unique(ou$special_value), "57.5")
+  expect_equal(unique(ou$line), 57.5)
+  expect_false(any(ou$is_primary))
+})

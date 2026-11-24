@@ -47,7 +47,7 @@ slots: `winner_slot`, `defeated_slot` (labels used in `groups`),
 `first_leg_home`, `second_leg_home` (teams in the fit). Rows whose slots
 are not drawn are ignored.}
 
-\item{et_factor, shootout_p}{Passed to [nt_simulate_two_legged()].}
+\item{et_factor, shootout_p}{Passed to [nt_simulate_two_leg()].}
 
 \item{seed}{Optional seed.}
 }
@@ -83,7 +83,7 @@ of the smallest group.
 Groups may hold placeholders for the two sides of a two-legged tie that is
 played before the qualifiers (the 2026/27 Nations League quarter-finals
 enter the EURO 2028 draw as "QFk winner" and "QFk defeated"). Each tie is
-simulated per simulation with [nt_simulate_two_legged()], each side at home
+simulated per simulation with [nt_simulate_two_leg()], each side at home
 in one leg, and the placeholders take its winner and defeated team.
 
 Disciplinary points (criterion j) are not modelled: a uniform random draw

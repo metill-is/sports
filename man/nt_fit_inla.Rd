@@ -51,11 +51,11 @@ speed up walk-forward refits.}
 \item{keep_result}{Keep the raw INLA result as `result` (large).}
 
 \item{reproducible}{Fit with R-INLA's online internal optimisation off
-(`control.compute = list(internal.opt = FALSE)`, this call only) and draw
-under `withr::with_seed(seed)`, so that the same fit repeats in another R
-process. Needs `threads = "1:1"`: with more threads R-INLA's result
-differs from process to process with or without the option (measured on
-the football and handball/basketball v2 engines, 2026-11-16/17).}
+(`control.compute = list(internal.opt = FALSE)`, for this call only).
+With it on, R-INLA's default, the same football fit did not always
+return the same numbers in two R processes; with it off and one thread
+(`threads = "1:1"`) it did (see `R/model-v2-inla.R`). `FALSE` passes
+nothing, so R-INLA goes by its session setting.}
 }
 \value{
 List with `draws` (`theta`, `delta`: draws x teams matrices; `mu`,

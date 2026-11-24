@@ -1,0 +1,189 @@
+---
+title: "Iceland v Portugal, Women's World Cup 2027 play-off round 2"
+subtitle: "Two-legged tie forecast from the national-team v2 model, and the plan for the finals"
+date: 2026-11-24
+date-format: "YYYY-MM-DD"
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    toc-location: left
+    theme: cosmo
+    embed-resources: true
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r}
+#| label: setup
+#| include: false
+options(width = 110)
+suppressPackageStartupMessages({
+  library(dplyr)
+  library(tidyr)
+})
+res <- readRDS(here::here("docs", "reports", "2026-11-24-wwc2027-iceland-portugal", "results.rds"))
+pct <- function(x, d = 0) sprintf(paste0("%.", d, "f%%"), 100 * x)
+m <- function(q) res$iceland$mean[res$iceland$quantity == q]
+win <- res$iceland[res$iceland$quantity == "win", ]
+rk <- function(team) res$strength$rank[res$strength$team == team]
+```
+
+## The answer
+
+**Iceland win the tie with probability `r pct(win$mean, 1)`.** Winning it is the same as reaching Brazil: Iceland are 11th on UEFA's overall league ranking, and only the six teams above them (England 5, Norway 6, Netherlands 7, Italy 8, Republic of Ireland 9, Sweden 10) can finish above them among the eight winners, each in a different tie, so Iceland would be at worst seventh of eight and qualify directly (Article 27.08).
+
+- The number is the model's average over `r format(res$run$n_draws, big.mark = ",")` posterior draws of the two teams' strengths; its Monte Carlo error is `r sprintf("%.1f", 100 * win$mc_se)` points.
+- How sure the model is of the strengths: the per-draw chance ranges from `r pct(win$q05)` to `r pct(win$q95)` (90% interval). That spread is uncertainty about how good the teams are now, not about the match.
+- The tie goes beyond 180 minutes with probability `r pct(m("goes_to_extra_time"))` and to penalties with probability `r pct(m("goes_to_penalties"))`.
+- The Elo baseline, fitted on the same file, gives Iceland `r pct(res$elo$p_iceland)` (a level aggregate split as v2 splits it). Elo rates the two sides almost level (Iceland `r round(res$elo$ratings[['Iceland']])`, Portugal `r round(res$elo$ratings[['Portugal']])`) and adds a fixed home bonus of 100 points tuned on men's football, so it makes Portugal `r pct(res$elo$legs_grid$p_home[1])` favourites at home where v2 says `r pct(res$legs$leg1$outcome$p_home)`. v2 estimates the women's home advantage from the women's matches, and finds it smaller than the men's (below).
+
+## How the tie is decided
+
+Rules: most goals over the two legs; level, two 15-minute periods of extra time at the end of the second leg (in Reykjavík), then penalties. Away goals do not count (Articles 27.03 and 28.01 of the 2026 Women's European Qualifiers regulations, read on documents.uefa.com 2026-11-24).
+
+```{r}
+#| label: tbl-decided
+#| tbl-cap: "How the tie ends. Mean over posterior draws; 90% interval of the per-draw probability."
+lab <- c(
+  ice_regulation = "Iceland, on aggregate after 180 minutes",
+  ice_extra_time = "Iceland, in extra time",
+  ice_penalties = "Iceland, on penalties",
+  por_regulation = "Portugal, on aggregate after 180 minutes",
+  por_extra_time = "Portugal, in extra time",
+  por_penalties = "Portugal, on penalties",
+  goes_to_extra_time = "Tie goes to extra time",
+  goes_to_penalties = "Tie goes to penalties"
+)
+res$iceland |>
+  filter(quantity %in% names(lab)) |>
+  mutate(outcome = lab[quantity], p = pct(mean, 1), interval = paste(pct(q05), "to", pct(q95))) |>
+  select(Outcome = outcome, Probability = p, `90% interval` = interval) |>
+  knitr::kable()
+```
+
+## The two legs
+
+```{r}
+#| label: tbl-legs
+#| tbl-cap: "Each leg over 90 minutes (home side first). v2 posterior-predictive; Elo baseline for comparison (from the scoreline grid of its Poisson goal links, the grid behind its tie number)."
+leg_row <- function(l, elo_row, label) {
+  tibble(
+    Leg = label,
+    `Home win` = pct(l$outcome$p_home), Draw = pct(l$outcome$p_draw), `Away win` = pct(l$outcome$p_away),
+    `Expected goals` = sprintf("%.2f-%.2f", l$outcome$eg_home, l$outcome$eg_away),
+    `Elo (H/D/A)` = paste(pct(elo_row$p_home), pct(elo_row$p_draw), pct(elo_row$p_away), sep = " / ")
+  )
+}
+bind_rows(
+  leg_row(res$legs$leg1, res$elo$legs_grid[1, ], "1 Dec, in Portugal: Portugal v Iceland"),
+  leg_row(res$legs$leg2, res$elo$legs_grid[2, ], "5 Dec, Laugardalsvöllur: Iceland v Portugal")
+) |> knitr::kable()
+```
+
+```{r}
+#| label: tbl-scores
+#| tbl-cap: "Most likely 90-minute scores in each leg."
+tibble(
+  `Leg 1 (Portugal first)` = res$legs$leg1$top$score[1:8] |> sub("^Portugal ", "", x = _) |> sub(" Iceland$", "", x = _),
+  `P (leg 1)` = pct(res$legs$leg1$top$p[1:8], 1),
+  `Leg 2 (Iceland first)` = res$legs$leg2$top$score[1:8] |> sub("^Iceland ", "", x = _) |> sub(" Portugal$", "", x = _),
+  `P (leg 2)` = pct(res$legs$leg2$top$p[1:8], 1)
+) |> knitr::kable()
+```
+
+```{r}
+#| label: tbl-aggregate
+#| tbl-cap: "Iceland's goal margin over the 180 minutes (positive: Iceland ahead)."
+res$aggregate |>
+  mutate(p = pct(p, 1)) |>
+  pivot_wider(names_from = iceland_margin, values_from = p) |>
+  knitr::kable()
+```
+
+## After the first leg
+
+The chance Iceland go through given the first-leg score in Portugal. Each draw is reweighted by how likely it made that score, which is the posterior update from the result, and the second leg is played with the margin carried in. Averaged over every first-leg score this gives back the `r pct(win$mean)` above (checked in the script).
+
+```{r}
+#| label: tbl-after-leg1
+#| tbl-cap: "P(Iceland win the tie) by first-leg score. Rows: Portugal's goals; columns: Iceland's. In brackets, the chance of that score."
+res$after_leg1 |>
+  filter(portugal <= 3, iceland <= 3) |>
+  mutate(cell = sprintf("%s (%s)", pct(p_iceland), pct(p_score))) |>
+  select(portugal, iceland, cell) |>
+  pivot_wider(names_from = iceland, values_from = cell, names_prefix = "Iceland ") |>
+  rename(`Portugal goals` = portugal) |>
+  knitr::kable()
+```
+
+## The other ties, and Portugal's path
+
+The seven best-ranked of the eight winners qualify; the last goes to the inter-confederation play-off in February 2027. Iceland (11th) always qualify if they win. Portugal (18th) would qualify directly only if Scotland (19), Wales (20) or Finland (21) also win; otherwise Portugal go to the play-off.
+
+```{r}
+#| label: tbl-places
+#| tbl-cap: "All eight round-2 ties under the same model (first-named team hosts the first leg). Places: P(win), P(direct qualification), P(inter-confederation play-off)."
+res$places |>
+  mutate(across(c(p_win, p_direct, p_other), \(x) pct(x))) |>
+  select(Team = team, `UEFA rank` = rank, `Win tie` = p_win, `Qualify directly` = p_direct, `Play-off` = p_other) |>
+  knitr::kable()
+```
+
+## Model and data
+
+- **Model.** National-team v2 (`R/nt-model.R`, merged in PR #110), unchanged, fitted on the women's file: independent Poisson goals, one strength per team on a quarterly random walk, a small pooled attack/defence split and pooled venue effects; 12-year window; fitted with R-INLA on one thread with its internal optimisation off and seeded draws, so the fit repeats.
+- **Data.** martj42 `womens-international-results`, commit `1102e600` (23 Nov 2026); `r format(res$run$n_matches, big.mark = ",")` matches in the window, the last on `r res$run$last_match`, state taken at `r res$run$cutoff` (the first leg). Iceland rank `r rk("Iceland")` and Portugal `r rk("Portugal")` of all teams in the fit by strength.
+- **Extra time.** The file stores scores after extra time, and until now training used them as stored. This fit trains on the 90-minute score for Poland v Belgium, 13 October 2026 (2-1 after 90, 3-2 after extra time, Poland through on penalties): the only round-1 play-off that went beyond 90 minutes. Two others whose scores allowed it, Scotland v Czechia and Slovenia v Turkey, were settled in 90 minutes. Other women's extra-time matches in the window are not corrected: the file's shoot-out list alone has 104 matches since 1 December 2014, and extra-time wins without a shoot-out are not flagged anywhere in it. Each adds about a third of a match of goals to one row, as in every men's fit so far.
+- **Hyperparameters.** Below. Against the men's fit (team-level sd 0.73, walk 0.019 to 0.021 per square-root month, home side's rate +0.14, away side's -0.22), the women's teams are further apart (team-level sd `r sprintf('%.2f', res$run$hyper$mode[1])`), their strengths move about twice as fast (`r sprintf('%.3f', res$run$hyper$mode[4])` per square-root month), which is why a team's current level is less certain and the interval above is wide, and home advantage is smaller (`r sprintf('%+.2f', res$run$fixed['home_for', 'mean'])` and `r sprintf('%+.2f', res$run$fixed['home_against', 'mean'])`).
+
+```{r}
+#| label: tbl-hyper
+res$run$hyper |> knitr::kable(digits = 3, row.names = FALSE)
+res$run$fixed |> knitr::kable(digits = 3)
+```
+
+## What could move the number
+
+```{r}
+#| label: tbl-sens
+#| tbl-cap: "P(Iceland) under other extra-time and shoot-out assumptions."
+res$sensitivity |>
+  mutate(p_iceland = pct(p_iceland, 1)) |>
+  rename(Setting = setting, `P(Iceland)` = p_iceland) |>
+  knitr::kable()
+```
+
+- **Too few draws.** On the men's data v2 predicts too few draws (50 against 63 at three tournaments); a level aggregate is the route to extra time, so the extra-time and penalty shares here are probably a little low. The win probability hardly moves: Iceland win `r pct(m('ice_regulation') / (m('ice_regulation') + m('por_regulation')))` of the aggregates decided in 180 minutes and `r pct((m('ice_extra_time') + m('ice_penalties')) / m('goes_to_extra_time'))` of the level ones, so moving even five points of probability from decided to level aggregates lowers Iceland's chance by about `r sprintf('%.1f', 100 * 0.05 * (m('ice_regulation') / (m('ice_regulation') + m('por_regulation')) - (m('ice_extra_time') + m('ice_penalties')) / m('goes_to_extra_time')))` points.
+- **No team news.** Squads, injuries and form inside the window are not in the model; strengths move only through results.
+- **Ukraine's first leg** is treated as neutral (Ukraine have played home matches abroad since 2022); it matters only for the other ties.
+- **One model.** The only independent check is the Elo baseline above. No bookmaker prices were compared.
+
+## The finals, after the 11 December draw
+
+Code ready in this branch:
+
+- `nt_simulate_world_cup()` no longer assumes 48 teams. It ranks best third-placed teams only when the structure asks for them and plays the knockout rounds of the structure's bracket; the 2026 path is unchanged bit for bit.
+- `nt_wwc2027_structure(groups)` builds the 2027 format: eight groups of four, the top two to a round of 16, wired as FIFA's match schedule of 19 November 2026 (round of 16: 1A-2B, 1C-2D, 1B-2A, 1D-2C, 1E-2F, 1G-2H, 1F-2E, 1H-2G; quarter-finals W49-W50, W53-W54, W51-W52, W55-W56; semi-finals W57-W58 and W59-W60; bronze final). Brazil play their group matches at home.
+- `scripts/nt/wwc2027_finals.R` takes the draw as a CSV and mixes over the three inter-confederation play-off places, simulating each combination of candidates with its share of the runs.
+
+Steps after the draw:
+
+1. Refit with the 5 December results (`scripts/nt/wwc2027_fit.R`, cutoff at the draw), adding any extra-time second legs of round 2 to `nt_extra_time_matches("women")`.
+2. Decide whether Brazil's knockout matches count as home matches. The simulator plays every knockout match at a neutral venue, as for the three-host men's tournament of 2026; in a one-host tournament every Brazil match is in Brazil, worth the estimated home effects (+0.05 and -0.16 on the log scale) in each.
+3. Confirm the group tie-break order in FIFA's 2027 regulations (not found on 2026-11-24; 2023 ranked on goal difference first, the 2026 men's tournament on head-to-head first) and pass it as `group_rule`.
+4. Weights for the play-off placeholders: until a model of the February play-off tournament exists, use the candidates' chances from simple per-match forecasts, stated as such.
+5. Publishing on metill.is is the owner's decision; the dormant World Cup publisher (`R/wc-publish.R`) writes eight JSONs for the men's 2026 tournament and would need a women's tree.
+
+## Reproduction
+
+```bash
+# women's file pinned at martj42/womens-international-results 1102e60045cf3c1bc1d4651d0e76a72804ee2d25
+ml run -- Rscript scripts/nt/wwc2027_fit.R results.csv fit.rds
+Rscript scripts/nt/wwc2027_playoff.R fit.rds results.csv docs/reports/2026-11-24-wwc2027-iceland-portugal/results.rds
+quarto render docs/reports/2026-11-24-wwc2027-iceland-portugal.qmd
+```
+
+`results.rds` (committed) is the record behind every number here. Results file md5: `r res$run$results_md5`.

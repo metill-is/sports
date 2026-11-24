@@ -2,7 +2,7 @@
 % Please edit documentation in R/nt-simulate.R
 \name{nt_simulate_world_cup}
 \alias{nt_simulate_world_cup}
-\title{Simulate the 48-team World Cup from a national-team fit.}
+\title{Simulate a World Cup from a national-team fit.}
 \usage{
 nt_simulate_world_cup(
   fit,
@@ -19,7 +19,7 @@ nt_simulate_world_cup(
 \arguments{
 \item{fit}{A fit from [nt_fit_inla()].}
 
-\item{structure}{Output of [wc_structure()].}
+\item{structure}{Output of [wc_structure()] or [nt_wwc2027_structure()].}
 
 \item{n_sims}{Number of simulated tournaments.}
 
@@ -46,14 +46,23 @@ by their own match.}
 }
 \value{
 List: `teams` (tibble: `team`, `group`, group-position and
-  round-reached probabilities), `r32` (list `a`, `b`: simulations x 16 team
-  indices of the round-of-32 pairings, in bracket order), `decided`
-  (share of knockout ties settled in 90 minutes, extra time, on penalties)
-  and `team_names`.
+  round-reached probabilities; `p_advance` is reaching the first knockout
+  round, so it equals `p_r16` in a 32-team tournament), `first_round`
+  (list `round`, `a`, `b`: simulations x matches team indices of the first
+  knockout round's pairings, in bracket order), `r32` (the same as
+  `first_round`'s `a` and `b` when that round is the round of 32, else
+  `NULL`), `decided` (share of knockout ties settled in 90 minutes, extra
+  time, on penalties) and `team_names`.
 }
 \description{
 Group stage and knockouts are simulated jointly: each simulation uses one
-posterior draw of the strengths for all 104 matches, so a team's uncertain
+posterior draw of the strengths for every match, so a team's uncertain
 strength carries through its whole run. Hosts play their group matches at
-home; knockout matches are neutral.
+home; knockout matches are neutral. The format comes from `structure`: the
+48-team men's World Cup of 2026 ([wc_structure()]: twelve groups, eight
+best third-placed teams, a round of 32) or the 32-team Women's World Cup of
+2027 ([nt_wwc2027_structure()]: eight groups, the top two to a round of
+16). Best third-placed teams are ranked only when `structure` has
+`third_slots`; the knockout rounds are those of `structure$bracket`, in
+its order.
 }

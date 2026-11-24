@@ -57,5 +57,5 @@ home) and a final at the home of the winner of the pot 1 semi-final, and
 four home-and-away ties if no reserved place is used. Each simulation uses
 the posterior draw of its group stage. Matches level after 90 minutes go
 to extra time and penalties ([nt_simulate_knockout()],
-[nt_simulate_two_legged()]).
+[nt_simulate_two_leg()]).
 }

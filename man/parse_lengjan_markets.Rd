@@ -11,8 +11,12 @@ parse_lengjan_markets(groups)
 each with `name` ("OU_FT", "HC_FT", "single-<id>", ...) and `markets`.}
 }
 \value{
-Tibble: event_id, group, type, type_name, primary, status,
-  special_value, selection, odds (decimal: the API's integer / 100, L3).
+Tibble: event_id, market_id, market_version, group, type,
+  market_code (the payload's `externalId`: a stable code for the market
+  type), type_name, market_name (Lengjan's Icelandic label), primary, live
+  (the market is in play), status, special_value, closes_at (POSIXct UTC,
+  from `dateClosed`), selection, odds (decimal: the API's integer / 100,
+  L3). Every selection is kept, open or not, priced or not.
 }
 \description{
 Flatten Lengjan's markets JSON into one row per selection.

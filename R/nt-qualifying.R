@@ -405,7 +405,7 @@ nt_uefa_overall_ranking <- function(matches, groups, disciplinary = NULL,
 #' Groups may hold placeholders for the two sides of a two-legged tie that is
 #' played before the qualifiers (the 2026/27 Nations League quarter-finals
 #' enter the EURO 2028 draw as "QFk winner" and "QFk defeated"). Each tie is
-#' simulated per simulation with [nt_simulate_two_legged()], each side at home
+#' simulated per simulation with [nt_simulate_two_leg()], each side at home
 #' in one leg, and the placeholders take its winner and defeated team.
 #'
 #' Disciplinary points (criterion j) are not modelled: a uniform random draw
@@ -432,7 +432,7 @@ nt_uefa_overall_ranking <- function(matches, groups, disciplinary = NULL,
 #'   slots: `winner_slot`, `defeated_slot` (labels used in `groups`),
 #'   `first_leg_home`, `second_leg_home` (teams in the fit). Rows whose slots
 #'   are not drawn are ignored.
-#' @param et_factor,shootout_p Passed to [nt_simulate_two_legged()].
+#' @param et_factor,shootout_p Passed to [nt_simulate_two_leg()].
 #' @param seed Optional seed.
 #' @return List:
 #'   * `teams`: tibble per team (`team`, `group` (for a team behind a
@@ -487,9 +487,8 @@ nt_simulate_qualifying <- function(fit, groups, fixtures = NULL, n_sims = 10000L
       b <- qf$second_leg_home[i]
       legs <- function(x) matrix(rep(match(x, fit$teams), each = n_sims), n_sims)
       r <- .nt_sim_rates(fit, draw, legs(c(a, b)), legs(c(b, a)), c(1, 1))
-      res <- nt_simulate_two_legged(
-        list(a = r$home[, 1], b = r$away[, 1]), list(a = r$away[, 2], b = r$home[, 2]),
-        et_factor, shootout_p
+      res <- nt_simulate_two_leg(
+        r$home[, 1], r$away[, 1], r$away[, 2], r$home[, 2], et_factor, shootout_p
       )
       qf_winner[, i] <- ifelse(res$a_wins, a, b)
       slot_team[, qf$winner_slot[i]] <- qf_winner[, i]

@@ -57,13 +57,34 @@ nt_tournaments <- function() {
 #' The source file stores the score after extra time, so a knockout match that
 #' was level after 90 minutes shows either its extra-time winner or, for a
 #' shootout, the 120-minute draw. The model predicts 90 minutes, so scoring
-#' needs the regulation score. Goal minutes are from the English Wikipedia
-#' match boxes of each tournament's knockout pages (read 2026-11-15).
+#' needs the regulation score, and so does training (see the `ninety`
+#' argument of [nt_prepare()]).
 #'
+#' Men: the knockout matches of World Cup 2022, Euro 2024 and World Cup 2026;
+#' goal minutes from the English Wikipedia match boxes of each tournament's
+#' knockout pages (read 2026-11-15). Women: the second legs of round 1 of the
+#' UEFA play-offs for the 2027 Women's World Cup (October 2026). Of its 16
+#' ties only three had scores that allowed extra time; Poland v Belgium went
+#' to extra time and penalties (2-1 after 90 minutes, 3-2 after 120:
+#' Flashscore's match report and uefa.com's round-2 preview, read
+#' 2026-11-24), while Scotland v Czechia and Slovenia v Turkey were settled
+#' in 90 minutes (Football Web Pages match listings, read 2026-11-24). In a
+#' second leg the 90-minute score need not be level; the aggregate is.
+#'
+#' @param sex `"men"` or `"women"`.
 #' @return Tibble `match_date, team_a, team_b, a_90, b_90, shootout`; the pair
 #'   is unordered (match on both orientations).
 #' @export
-nt_extra_time_matches <- function() {
+nt_extra_time_matches <- function(sex = c("men", "women")) {
+  sex <- match.arg(sex)
+  if (sex == "women") {
+    et <- tibble::tribble(
+      ~match_date, ~team_a, ~team_b, ~a_90, ~b_90, ~shootout,
+      "2026-10-13", "Poland", "Belgium", 2L, 1L, TRUE
+    )
+    et$match_date <- as.Date(et$match_date)
+    return(et)
+  }
   et <- tibble::tribble(
     ~match_date, ~team_a, ~team_b, ~a_90, ~b_90, ~shootout,
     "2022-12-05", "Japan", "Croatia", 1L, 1L, TRUE,
@@ -110,26 +131,39 @@ nt_tournament_matches <- function(results, key) {
   ]
   m$key <- key
   m$stage <- ifelse(m$match_date >= spec$knockout_start, "knockout", "group")
+  hit <- .nt_ninety_rows(m, nt_extra_time_matches())
   m$home_90 <- m$home_score
   m$away_90 <- m$away_score
-  m$extra_time <- FALSE
-  et <- nt_extra_time_matches()
+  m$home_90[hit$row] <- hit$home_90
+  m$away_90[hit$row] <- hit$away_90
+  m$extra_time <- seq_len(nrow(m)) %in% hit$row
+  m
+}
+
+# Rows of `m` that each correction in `et` (an nt_extra_time_matches() table)
+# names, in either listing order, with the 90-minute score in m's orientation.
+# `matched` flags, per correction, whether a unique row was found.
+.nt_ninety_rows <- function(m, et) {
+  row <- home_90 <- away_90 <- integer()
+  matched <- logical(nrow(et))
   for (i in seq_len(nrow(et))) {
     fwd <- which(m$match_date == et$match_date[i] &
       m$home_team == et$team_a[i] & m$away_team == et$team_b[i])
     rev <- which(m$match_date == et$match_date[i] &
       m$home_team == et$team_b[i] & m$away_team == et$team_a[i])
     if (length(fwd) == 1L) {
-      m$home_90[fwd] <- et$a_90[i]
-      m$away_90[fwd] <- et$b_90[i]
-      m$extra_time[fwd] <- TRUE
+      row <- c(row, fwd)
+      home_90 <- c(home_90, et$a_90[i])
+      away_90 <- c(away_90, et$b_90[i])
+      matched[i] <- TRUE
     } else if (length(rev) == 1L) {
-      m$home_90[rev] <- et$b_90[i]
-      m$away_90[rev] <- et$a_90[i]
-      m$extra_time[rev] <- TRUE
+      row <- c(row, rev)
+      home_90 <- c(home_90, et$b_90[i])
+      away_90 <- c(away_90, et$a_90[i])
+      matched[i] <- TRUE
     }
   }
-  m
+  list(row = row, home_90 = as.integer(home_90), away_90 = as.integer(away_90), matched = matched)
 }
 
 # Qualifiers of any sanctioned competition, plus the finals of the World Cup,
@@ -188,14 +222,23 @@ nt_core_teams <- function(results, pattern = .nt_core_pattern,
 #'   months. National teams play in a handful of windows a year, so a quarterly
 #'   grid loses little and keeps the latent field small.
 #' @param core_pattern,core_exclude Passed to [nt_core_teams()].
+#' @param ninety Optional table of 90-minute scores in the layout of
+#'   [nt_extra_time_matches()]. The source files store scores after extra
+#'   time; the model is of 90 minutes, so each listed match is trained on its
+#'   90-minute score. A listed match inside the window that is not in
+#'   `results` raises a warning (usually a misspelt team). `NULL`, the
+#'   default, trains on the scores as stored, as every fit before 2026-11-24
+#'   did.
 #' @return List: `matches` (tibble), `teams` (character), `origin` (Date, first
 #'   day of the first month), `n_periods` (the time index of `cutoff`),
-#'   `step_months`, `cutoff`.
+#'   `step_months`, `cutoff`, `n_corrected` (matches trained on a 90-minute
+#'   score from `ninety`).
 #' @export
 nt_prepare <- function(results, cutoff, window_years = 12, min_matches = 5L,
                        step_months = 3L,
                        core_pattern = .nt_core_pattern,
-                       core_exclude = "^CONIFA|Island Games") {
+                       core_exclude = "^CONIFA|Island Games",
+                       ninety = NULL) {
   cutoff <- as.Date(cutoff)
   window_start <- cutoff - round(365.25 * window_years)
   d <- results[
@@ -203,14 +246,41 @@ nt_prepare <- function(results, cutoff, window_years = 12, min_matches = 5L,
       results$match_date >= window_start & results$match_date < cutoff, ,
     drop = FALSE
   ]
+  corrected <- logical(nrow(d))
+  if (!is.null(ninety)) {
+    hit <- .nt_ninety_rows(d, ninety)
+    # WHY: extra time only adds goals, so a 90-minute count above the stored
+    # one is a mistyped or swapped entry.
+    above <- hit$home_90 > d$home_score[hit$row] | hit$away_90 > d$away_score[hit$row]
+    if (any(above)) {
+      cli::cli_warn(c(
+        "{sum(above)} 90-minute score{?s} above the stored score: check the order of {.arg ninety}'s teams.",
+        i = "{paste(d$match_date[hit$row][above], d$home_team[hit$row][above], 'v', d$away_team[hit$row][above])}"
+      ))
+    }
+    d$home_score[hit$row] <- hit$home_90
+    d$away_score[hit$row] <- hit$away_90
+    corrected[hit$row] <- TRUE
+    inside <- ninety$match_date >= window_start & ninety$match_date < cutoff
+    missing <- inside & !hit$matched
+    if (any(missing)) {
+      cli::cli_warn(c(
+        "{sum(missing)} 90-minute correction{?s} in the window match no played match.",
+        i = "{paste(ninety$match_date[missing], ninety$team_a[missing], 'v', ninety$team_b[missing])}"
+      ))
+    }
+  }
   core <- nt_core_teams(d, core_pattern, core_exclude)
-  d <- d[d$home_team %in% core & d$away_team %in% core, , drop = FALSE]
+  in_core <- d$home_team %in% core & d$away_team %in% core
+  d <- d[in_core, , drop = FALSE]
+  corrected <- corrected[in_core]
   repeat {
     n <- table(c(d$home_team, d$away_team))
     keep <- names(n)[n >= min_matches]
     ok <- d$home_team %in% keep & d$away_team %in% keep
     if (all(ok)) break
     d <- d[ok, , drop = FALSE]
+    corrected <- corrected[ok]
   }
   teams <- sort(unique(c(d$home_team, d$away_team)))
   origin <- as.Date(format(min(d$match_date), "%Y-%m-01"))
@@ -233,6 +303,7 @@ nt_prepare <- function(results, cutoff, window_years = 12, min_matches = 5L,
     origin = origin,
     n_periods = .nt_period_index(cutoff, origin, step_months),
     step_months = step_months,
-    cutoff = cutoff
+    cutoff = cutoff,
+    n_corrected = sum(corrected)
   )
 }

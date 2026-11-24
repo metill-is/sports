@@ -381,7 +381,7 @@ nt_euro2028_draw <- function(groups, fixtures = NULL, facts = nt_euro2028_facts(
 #' four home-and-away ties if no reserved place is used. Each simulation uses
 #' the posterior draw of its group stage. Matches level after 90 minutes go
 #' to extra time and penalties ([nt_simulate_knockout()],
-#' [nt_simulate_two_legged()]).
+#' [nt_simulate_two_leg()]).
 #'
 #' @param qual Output of [nt_simulate_qualifying()].
 #' @param fit The fit `qual` was simulated from.
@@ -479,9 +479,8 @@ nt_simulate_euro_playoffs <- function(qual, fit, seeding, hosts,
     unseeded <- t4[, 3]
     r1 <- rates(sim, unseeded, seeded)
     r2 <- rates(sim, seeded, unseeded)
-    res <- nt_simulate_two_legged(
-      list(a = r1$home[, 1], b = r1$away[, 1]), list(a = r2$away[, 1], b = r2$home[, 1]),
-      et_factor, shootout_p
+    res <- nt_simulate_two_leg(
+      r1$home[, 1], r1$away[, 1], r2$away[, 1], r2$home[, 1], et_factor, shootout_p
     )
     winners$ties <- cbind(sim, ifelse(res$a_wins, unseeded, seeded))
   }

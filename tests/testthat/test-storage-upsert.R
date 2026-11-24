@@ -392,3 +392,53 @@ test_that("an empty game id in a re-ingested row does not replace the stored one
 
   expect_identical(read_table("results", root = tmp)$game_id, "6040499")
 })
+
+# ---- odds_markets: snapshots too (2026-11-24) ----------------------------------
+
+.om_row <- function(scraped_at, odds = 2.0) {
+  tibble::tibble(
+    sport = "handball", country = "iceland",
+    scraped_at = as.POSIXct(scraped_at, tz = "UTC"),
+    match_date = as.Date("2100-01-05"),
+    home_team = "Valur", away_team = "Haukar", sex = "male",
+    event_id = "1", competition_id = "1269",
+    kickoff_at = as.POSIXct("2100-01-05 19:30:00", tz = "UTC"),
+    market_id = "11", market_version = "1", market_code = "10",
+    market_type = "DC", market_group = "single-11", market_name = "x",
+    special_value = NA_character_, line = NA_real_, selection = "1X",
+    odds = odds, is_primary = FALSE, is_live = FALSE,
+    closes_at = as.POSIXct("2100-01-05 19:25:00", tz = "UTC")
+  )
+}
+
+test_that("an odds_markets read error propagates and leaves the day's snapshots untouched", {
+  root <- withr::local_tempdir()
+  write_table(.om_row("2100-01-01 08:00:00"), "odds_markets", root = root)
+  om_dir <- fs::path(root, "facts", "odds_markets")
+  files_before <- fs::dir_ls(om_dir, recurse = TRUE, type = "file")
+  md5_before <- unname(tools::md5sum(files_before))
+  expect_gt(length(files_before), 0L)
+  expect_true(any(grepl("scraped_date=2100-01-01", files_before, fixed = TRUE)))
+
+  local({
+    testthat::local_mocked_bindings(
+      read_table = function(...) stop("cast error in one odds_markets fragment")
+    )
+    expect_error(
+      upsert_table(.om_row("2100-01-01 14:00:00"), "odds_markets", root = root),
+      "cast error in one odds_markets fragment"
+    )
+  })
+
+  expect_equal(unname(tools::md5sum(fs::dir_ls(om_dir, recurse = TRUE, type = "file"))), md5_before)
+  back <- read_table("odds_markets", root = root)
+  expect_equal(nrow(back), 1L)
+  expect_equal(back$scraped_at, as.POSIXct("2100-01-01 08:00:00", tz = "UTC"))
+})
+
+test_that("an odds_markets write refuses a price that is not a valid decimal", {
+  root <- withr::local_tempdir()
+  expect_error(write_table(.om_row("2100-01-01 08:00:00", odds = 1), "odds_markets", root = root), "odds must be finite and > 1")
+  expect_error(upsert_table(.om_row("2100-01-01 08:00:00", odds = NA_real_), "odds_markets", root = root), "odds must be finite and > 1")
+  expect_false(fs::dir_exists(fs::path(root, "facts", "odds_markets", "sport=handball")))
+})

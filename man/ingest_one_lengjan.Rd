@@ -4,7 +4,14 @@
 \alias{ingest_one_lengjan}
 \title{Run Lengjan odds ingest for a single league (DAG wrapper).}
 \usage{
-ingest_one_lengjan(static, lengjan, key, active_path, betting = NULL)
+ingest_one_lengjan(
+  static,
+  lengjan,
+  key,
+  active_path,
+  betting = NULL,
+  fetch_program = lengjan_fetch_program
+)
 }
 \arguments{
 \item{static}{Per-league static slice.}
@@ -19,6 +26,11 @@ ingest_one_lengjan(static, lengjan, key, active_path, betting = NULL)
 `betting.mode` "scrape" up (spec 2026-09-23 WS1); at "off" the scrape is
 refused outright. Trailing and defaulted so existing four-arg calls keep
 working.}
+
+\item{fetch_program}{Current-program fetcher handed to
+[ingest_lengjan_api()] for a `lengjan.source: api` league. The scrape
+script passes one [lengjan_program_once()] to every league, so a run
+fetches the program once.}
 }
 \value{
 Number of odds rows written (integer).
