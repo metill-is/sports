@@ -158,7 +158,17 @@ paths:
   arrives after the fit starts a refit though the row count stands. R-INLA
   returns draws sorted by hyperparameter configuration, so the total fit's
   draws are shuffled before draw i of each half is paired
-  (`hbbb_v2_pair()`). No league is switched.
+  (`hbbb_v2_pair()`). A half whose summary is numerically unusable (mode
+  search failed, or an sd not finite or above 5 times its prior bound,
+  `hbbb_v2_half_unusable()`) is fitted once more, restarting R-INLA's
+  optimiser at its own mode (`hbbb_v2_fit_halves()`), and the fit records
+  `attempts` per half; the gate then judges the second attempt as it would
+  the first. Why: R-INLA's Linux build runs on MKL, whose code path follows
+  the CPU, and on the simulated handball league the total model's numerical
+  Hessian at the (same) mode came out nearly singular on an Intel Xeon
+  6973P-C runner and not on AMD EPYC ones (club sd 9.08e9, the engine CI
+  failures of 2026-11-23/24); the restart recomputes it (club sd 1.25). A
+  cold refit would repeat the first attempt bit for bit. No league is switched.
 - `extract_posteriors()` materialises posterior draws as the canonical
   `beliefs_latest` tibble (per-draw-per-match).
 - Stan models live in `Stan/{league_key}/{file}.stan`. `leagues.yml`'s
