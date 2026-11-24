@@ -207,6 +207,21 @@ test_that("Brazil plays its knockout matches at home unless the structure says n
   expect_lt(champion(FALSE), 0.2)
 })
 
+test_that("Brazil's knockout home edge holds when Brazil is the second-named side", {
+  # Swap every knockout pairing so Brazil is always feeder_b (venue_b).
+  teams <- unlist(wwc_test_groups(), use.names = FALSE)
+  fit <- nt_test_fit(stats::setNames(rep(0, 32), teams), home_for = 3, home_against = -3)
+  champion <- function(home) {
+    s <- nt_wwc2027_structure(wwc_test_groups(), host_knockout_home = home)
+    s$bracket[c("feeder_a", "feeder_b")] <- s$bracket[c("feeder_b", "feeder_a")]
+    s$third_place[c("feeder_a", "feeder_b")] <- s$third_place[c("feeder_b", "feeder_a")]
+    t <- nt_simulate_world_cup(fit, s, n_sims = 400L, seed = 6L)$teams
+    unname(t$p_champion[t$team == "Brazil"])
+  }
+  expect_gt(champion(TRUE), 0.95)
+  expect_lt(champion(FALSE), 0.2)
+})
+
 test_that("a scalar rate is recycled across simulated ties", {
   withr::local_seed(4)
   sim <- nt_simulate_two_leg(rep(1, 50), 1, 1, 1)
