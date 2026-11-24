@@ -1,0 +1,3041 @@
+{
+  "generated_at": "2026-11-24T23:10:37Z",
+  "fit_date": "2026-12-01",
+  "data_through": "2026-10-13",
+  "n_draws": 4000,
+  "effective_draws": 4000,
+  "rules": {
+    "away_goals": false,
+    "extra_time": "two 15-minute periods at the second leg",
+    "penalties": true,
+    "n_direct": 7
+  },
+  "ties": [
+    {
+      "tie": 1,
+      "status": "scheduled",
+      "team_a": "Ukraine",
+      "team_a_is": "Úkraína",
+      "rank_a": 16,
+      "team_b": "England",
+      "team_b_is": "England",
+      "rank_b": 5,
+      "winner": null,
+      "winner_is": null,
+      "p_a": 0.0105,
+      "p_b": 0.9895,
+      "p_a_interval": [0.0001, 0.0422],
+      "p_b_interval": [0.9578, 0.9999],
+      "legs": [
+        {
+          "leg": 1,
+          "date": null,
+          "home": "Ukraine",
+          "home_is": "Úkraína",
+          "away": "England",
+          "away_is": "England",
+          "played": false,
+          "goals_home": null,
+          "goals_away": null,
+          "p_home": 0.0257,
+          "p_draw": 0.0699,
+          "p_away": 0.9007,
+          "xg_home": 0.413,
+          "xg_away": 3.557,
+          "scorelines": [
+            {
+              "home_goals": 0,
+              "away_goals": 3,
+              "p": 0.1323
+            },
+            {
+              "home_goals": 0,
+              "away_goals": 2,
+              "p": 0.1181
+            },
+            {
+              "home_goals": 0,
+              "away_goals": 4,
+              "p": 0.1162
+            },
+            {
+              "home_goals": 0,
+              "away_goals": 5,
+              "p": 0.0852
+            },
+            {
+              "home_goals": 0,
+              "away_goals": 1,
+              "p": 0.0735
+            },
+            {
+              "home_goals": 1,
+              "away_goals": 3,
+              "p": 0.0544
+            },
+            {
+              "home_goals": 0,
+              "away_goals": 6,
+              "p": 0.0544
+            },
+            {
+              "home_goals": 1,
+              "away_goals": 2,
+              "p": 0.0505
+            },
+            {
+              "home_goals": 1,
+              "away_goals": 4,
+              "p": 0.046
+            },
+            {
+              "home_goals": 1,
+              "away_goals": 1,
+              "p": 0.0327
+            }
+          ]
+        },
+        {
+          "leg": 2,
+          "date": null,
+          "home": "England",
+          "home_is": "England",
+          "away": "Ukraine",
+          "away_is": "Úkraína",
+          "played": false,
+          "goals_home": null,
+          "goals_away": null,
+          "p_home": 0.9183,
+          "p_draw": 0.0582,
+          "p_away": 0.0184,
+          "xg_home": 3.738,
+          "xg_away": 0.351,
+          "scorelines": [
+            {
+              "home_goals": 3,
+              "away_goals": 0,
+              "p": 0.1368
+            },
+            {
+              "home_goals": 4,
+              "away_goals": 0,
+              "p": 0.125
+            },
+            {
+              "home_goals": 2,
+              "away_goals": 0,
+              "p": 0.1174
+            },
+            {
+              "home_goals": 5,
+              "away_goals": 0,
+              "p": 0.0954
+            },
+            {
+              "home_goals": 1,
+              "away_goals": 0,
+              "p": 0.0701
+            },
+            {
+              "home_goals": 6,
+              "away_goals": 0,
+              "p": 0.0633
+            },
+            {
+              "home_goals": 3,
+              "away_goals": 1,
+              "p": 0.0482
+            },
+            {
+              "home_goals": 2,
+              "away_goals": 1,
+              "p": 0.043
+            },
+            {
+              "home_goals": 4,
+              "away_goals": 1,
+              "p": 0.0424
+            },
+            {
+              "home_goals": 7,
+              "away_goals": 0,
+              "p": 0.0376
+            }
+          ]
+        }
+      ],
+      "decided_by": {
+        "a_regulation": 0.0071,
+        "a_extra_time": 0.0008,
+        "a_penalties": 0.0026,
+        "b_regulation": 0.9793,
+        "b_extra_time": 0.0077,
+        "b_penalties": 0.0026
+      },
+      "p_extra_time": 0.0136,
+      "p_penalties": 0.0052,
+      "aggregate_margin": [
+        {
+          "margin_a": "<= -5",
+          "p": 0.7113
+        },
+        {
+          "margin_a": "-4",
+          "p": 0.1042
+        },
+        {
+          "margin_a": "-3",
+          "p": 0.0805
+        },
+        {
+          "margin_a": "-2",
+          "p": 0.0535
+        },
+        {
+          "margin_a": "-1",
+          "p": 0.0298
+        },
+        {
+          "margin_a": "0",
+          "p": 0.0136
+        },
+        {
+          "margin_a": "1",
+          "p": 0.005
+        },
+        {
+          "margin_a": "2",
+          "p": 0.0015
+        },
+        {
+          "margin_a": "3",
+          "p": 0.0004
+        },
+        {
+          "margin_a": "4",
+          "p": 0.0001
+        },
+        {
+          "margin_a": ">= 5",
+          "p": 0
+        }
+      ],
+      "after_first_leg": [
+        {
+          "goals_a": 0,
+          "goals_b": 0,
+          "p_score": 0.0239,
+          "p_a": 0.0493
+        },
+        {
+          "goals_a": 1,
+          "goals_b": 0,
+          "p_score": 0.011,
+          "p_a": 0.1665
+        },
+        {
+          "goals_a": 2,
+          "goals_b": 0,
+          "p_score": 0.0027,
+          "p_a": 0.3692
+        },
+        {
+          "goals_a": 3,
+          "goals_b": 0,
+          "p_score": 0.0005,
+          "p_a": 0.6004
+        },
+        {
+          "goals_a": 4,
+          "goals_b": 0,
+          "p_score": 0.0001,
+          "p_a": 0.7898
+        },
+        {
+          "goals_a": 0,
+          "goals_b": 1,
+          "p_score": 0.0735,
+          "p_a": 0.0094
+        },
+        {
+          "goals_a": 1,
+          "goals_b": 1,
+          "p_score": 0.0327,
+          "p_a": 0.0493
+        },
+        {
+          "goals_a": 2,
+          "goals_b": 1,
+          "p_score": 0.0077,
+          "p_a": 0.1657
+        },
+        {
+          "goals_a": 3,
+          "goals_b": 1,
+          "p_score": 0.0013,
+          "p_a": 0.3673
+        },
+        {
+          "goals_a": 4,
+          "goals_b": 1,
+          "p_score": 0.0002,
+          "p_a": 0.5978
+        },
+        {
+          "goals_a": 0,
+          "goals_b": 2,
+          "p_score": 0.1181,
+          "p_a": 0.0012
+        },
+        {
+          "goals_a": 1,
+          "goals_b": 2,
+          "p_score": 0.0505,
+          "p_a": 0.0095
+        },
+        {
+          "goals_a": 2,
+          "goals_b": 2,
+          "p_score": 0.0114,
+          "p_a": 0.0492
+        },
+        {
+          "goals_a": 3,
+          "goals_b": 2,
+          "p_score": 0.0018,
+          "p_a": 0.1649
+        },
+        {
+          "goals_a": 4,
+          "goals_b": 2,
+          "p_score": 0.0002,
+          "p_a": 0.3653
+        },
+        {
+          "goals_a": 0,
+          "goals_b": 3,
+          "p_score": 0.1323,
+          "p_a": 0.0001
+        },
+        {
+          "goals_a": 1,
+          "goals_b": 3,
+          "p_score": 0.0544,
+          "p_a": 0.0013
+        },
+        {
+          "goals_a": 2,
+          "goals_b": 3,
+          "p_score": 0.0118,
+          "p_a": 0.0095
+        },
+        {
+          "goals_a": 3,
+          "goals_b": 3,
+          "p_score": 0.0018,
+          "p_a": 0.0492
+        },
+        {
+          "goals_a": 4,
+          "goals_b": 3,
+          "p_score": 0.0002,
+          "p_a": 0.164
+        },
+        {
+          "goals_a": 0,
+          "goals_b": 4,
+          "p_score": 0.1162,
+          "p_a": 0
+        },
+        {
+          "goals_a": 1,
+          "goals_b": 4,
+          "p_score": 0.046,
+          "p_a": 0.0001
+        },
+        {
+          "goals_a": 2,
+          "goals_b": 4,
+          "p_score": 0.0096,
+          "p_a": 0.0013
+        },
+        {
+          "goals_a": 3,
+          "goals_b": 4,
+          "p_score": 0.0014,
+          "p_a": 0.0096
+        },
+        {
+          "goals_a": 4,
+          "goals_b": 4,
+          "p_score": 0.0002,
+          "p_a": 0.0491
+        }
+      ]
+    },
+    {
+      "tie": 2,
+      "status": "scheduled",
+      "team_a": "Finland",
+      "team_a_is": "Finnland",
+      "rank_a": 21,
+      "team_b": "Italy",
+      "team_b_is": "Ítalía",
+      "rank_b": 8,
+      "winner": null,
+      "winner_is": null,
+      "p_a": 0.2096,
+      "p_b": 0.7904,
+      "p_a_interval": [0.0292, 0.4928],
+      "p_b_interval": [0.5072, 0.9708],
+      "legs": [
+        {
+          "leg": 1,
+          "date": null,
+          "home": "Finland",
+          "home_is": "Finnland",
+          "away": "Italy",
+          "away_is": "Ítalía",
+          "played": false,
+          "goals_home": null,
+          "goals_away": null,
+          "p_home": 0.2259,
+          "p_draw": 0.2352,
+          "p_away": 0.5389,
+          "xg_home": 0.935,
+          "xg_away": 1.667,
+          "scorelines": [
+            {
+              "home_goals": 0,
+              "away_goals": 1,
+              "p": 0.1213
+            },
+            {
+              "home_goals": 1,
+              "away_goals": 1,
+              "p": 0.1106
+            },
+            {
+              "home_goals": 0,
+              "away_goals": 2,
+              "p": 0.1014
+            },
+            {
+              "home_goals": 1,
+              "away_goals": 2,
+              "p": 0.0881
+            },
+            {
+              "home_goals": 0,
+              "away_goals": 0,
+              "p": 0.0767
+            },
+            {
+              "home_goals": 1,
+              "away_goals": 0,
+              "p": 0.0733
+            },
+            {
+              "home_goals": 0,
+              "away_goals": 3,
+              "p": 0.0597
+            },
+            {
+              "home_goals": 2,
+              "away_goals": 1,
+              "p": 0.0533
+            },
+            {
+              "home_goals": 1,
+              "away_goals": 3,
+              "p": 0.0495
+            },
+            {
+              "home_goals": 2,
+              "away_goals": 2,
+              "p": 0.0405
+            }
+          ]
+        },
+        {
+          "leg": 2,
+          "date": null,
+          "home": "Italy",
+          "home_is": "Ítalía",
+          "away": "Finland",
+          "away_is": "Finnland",
+          "played": false,
+          "goals_home": null,
+          "goals_away": null,
+          "p_home": 0.6618,
+          "p_draw": 0.1953,
+          "p_away": 0.1428,
+          "xg_home": 2.065,
+          "xg_away": 0.755,
+          "scorelines": [
+            {
+              "home_goals": 2,
+              "away_goals": 0,
+              "p": 0.1217
+            },
+            {
+              "home_goals": 1,
+              "away_goals": 0,
+              "p": 0.1212
+            },
+            {
+              "home_goals": 1,
+              "away_goals": 1,
+              "p": 0.0918
+            },
+            {
+              "home_goals": 2,
+              "away_goals": 1,
+              "p": 0.088
+            },
+            {
+              "home_goals": 3,
+              "away_goals": 0,
+              "p": 0.086
+            },
+            {
+              "home_goals": 0,
+              "away_goals": 0,
+              "p": 0.0637
+            },
+            {
+              "home_goals": 3,
+              "away_goals": 1,
+              "p": 0.0593
+            },
+            {
+              "home_goals": 0,
+              "away_goals": 1,
+              "p": 0.0506
+            },
+            {
+              "home_goals": 4,
+              "away_goals": 0,
+              "p": 0.0482
+            },
+            {
+              "home_goals": 1,
+              "away_goals": 2,
+              "p": 0.0368
+            }
+          ]
+        }
+      ],
+      "decided_by": {
+        "a_regulation": 0.1633,
+        "a_extra_time": 0.0172,
+        "a_penalties": 0.0291,
+        "b_regulation": 0.7155,
+        "b_extra_time": 0.0458,
+        "b_penalties": 0.0291
+      },
+      "p_extra_time": 0.1213,
+      "p_penalties": 0.0582,
+      "aggregate_margin": [
+        {
+          "margin_a": "<= -5",
+          "p": 0.171
+        },
+        {
+          "margin_a": "-4",
+          "p": 0.1047
+        },
+        {
+          "margin_a": "-3",
+          "p": 0.1359
+        },
+        {
+          "margin_a": "-2",
+          "p": 0.1543
+        },
+        {
+          "margin_a": "-1",
+          "p": 0.1496
+        },
+        {
+          "margin_a": "0",
+          "p": 0.1213
+        },
+        {
+          "margin_a": "1",
+          "p": 0.0813
+        },
+        {
+          "margin_a": "2",
+          "p": 0.0456
+        },
+        {
+          "margin_a": "3",
+          "p": 0.0219
+        },
+        {
+          "margin_a": "4",
+          "p": 0.0092
+        },
+        {
+          "margin_a": ">= 5",
+          "p": 0.0052
+        }
+      ],
+      "after_first_leg": [
+        {
+          "goals_a": 0,
+          "goals_b": 0,
+          "p_score": 0.0767,
+          "p_a": 0.2326
+        },
+        {
+          "goals_a": 1,
+          "goals_b": 0,
+          "p_score": 0.0733,
+          "p_a": 0.4802
+        },
+        {
+          "goals_a": 2,
+          "goals_b": 0,
+          "p_score": 0.0371,
+          "p_a": 0.7237
+        },
+        {
+          "goals_a": 3,
+          "goals_b": 0,
+          "p_score": 0.0132,
+          "p_a": 0.8845
+        },
+        {
+          "goals_a": 4,
+          "goals_b": 0,
+          "p_score": 0.0037,
+          "p_a": 0.9614
+        },
+        {
+          "goals_a": 0,
+          "goals_b": 1,
+          "p_score": 0.1213,
+          "p_a": 0.0779
+        },
+        {
+          "goals_a": 1,
+          "goals_b": 1,
+          "p_score": 0.1106,
+          "p_a": 0.232
+        },
+        {
+          "goals_a": 2,
+          "goals_b": 1,
+          "p_score": 0.0533,
+          "p_a": 0.4785
+        },
+        {
+          "goals_a": 3,
+          "goals_b": 1,
+          "p_score": 0.0181,
+          "p_a": 0.7216
+        },
+        {
+          "goals_a": 4,
+          "goals_b": 1,
+          "p_score": 0.0049,
+          "p_a": 0.883
+        },
+        {
+          "goals_a": 0,
+          "goals_b": 2,
+          "p_score": 0.1014,
+          "p_a": 0.0186
+        },
+        {
+          "goals_a": 1,
+          "goals_b": 2,
+          "p_score": 0.0881,
+          "p_a": 0.078
+        },
+        {
+          "goals_a": 2,
+          "goals_b": 2,
+          "p_score": 0.0405,
+          "p_a": 0.2314
+        },
+        {
+          "goals_a": 3,
+          "goals_b": 2,
+          "p_score": 0.0132,
+          "p_a": 0.4768
+        },
+        {
+          "goals_a": 4,
+          "goals_b": 2,
+          "p_score": 0.0034,
+          "p_a": 0.7195
+        },
+        {
+          "goals_a": 0,
+          "goals_b": 3,
+          "p_score": 0.0597,
+          "p_a": 0.0033
+        },
+        {
+          "goals_a": 1,
+          "goals_b": 3,
+          "p_score": 0.0495,
+          "p_a": 0.0188
+        },
+        {
+          "goals_a": 2,
+          "goals_b": 3,
+          "p_score": 0.0217,
+          "p_a": 0.0781
+        },
+        {
+          "goals_a": 3,
+          "goals_b": 3,
+          "p_score": 0.0067,
+          "p_a": 0.2309
+        },
+        {
+          "goals_a": 4,
+          "goals_b": 3,
+          "p_score": 0.0017,
+          "p_a": 0.4751
+        },
+        {
+          "goals_a": 0,
+          "goals_b": 4,
+          "p_score": 0.0279,
+          "p_a": 0.0005
+        },
+        {
+          "goals_a": 1,
+          "goals_b": 4,
+          "p_score": 0.0221,
+          "p_a": 0.0034
+        },
+        {
+          "goals_a": 2,
+          "goals_b": 4,
+          "p_score": 0.0092,
+          "p_a": 0.0189
+        },
+        {
+          "goals_a": 3,
+          "goals_b": 4,
+          "p_score": 0.0027,
+          "p_a": 0.0783
+        },
+        {
+          "goals_a": 4,
+          "goals_b": 4,
+          "p_score": 0.0006,
+          "p_a": 0.2304
+        }
+      ]
+    },
+    {
+      "tie": 3,
+      "status": "scheduled",
+      "team_a": "Portugal",
+      "team_a_is": "Portúgal",
+      "rank_a": 18,
+      "team_b": "Iceland",
+      "team_b_is": "Ísland",
+      "rank_b": 11,
+      "winner": null,
+      "winner_is": null,
+      "p_a": 0.3838,
+      "p_b": 0.6162,
+      "p_a_interval": [0.1124, 0.7038],
+      "p_b_interval": [0.2962, 0.8876],
+      "legs": [
+        {
+          "leg": 1,
+          "date": "2026-12-01",
+          "home": "Portugal",
+          "home_is": "Portúgal",
+          "away": "Iceland",
+          "away_is": "Ísland",
+          "played": false,
+          "goals_home": null,
+          "goals_away": null,
+          "p_home": 0.3373,
+          "p_draw": 0.2816,
+          "p_away": 0.3811,
+          "xg_home": 1.041,
+          "xg_away": 1.134,
+          "scorelines": [
+            {
+              "home_goals": 0,
+              "away_goals": 1,
+              "p": 0.1282
+            },
+            {
+              "home_goals": 1,
+              "away_goals": 1,
+              "p": 0.1263
+            },
+            {
+              "home_goals": 1,
+              "away_goals": 0,
+              "p": 0.1192
+            },
+            {
+              "home_goals": 0,
+              "away_goals": 0,
+              "p": 0.1153
+            },
+            {
+              "home_goals": 0,
+              "away_goals": 2,
+              "p": 0.0756
+            },
+            {
+              "home_goals": 1,
+              "away_goals": 2,
+              "p": 0.0709
+            },
+            {
+              "home_goals": 2,
+              "away_goals": 1,
+              "p": 0.0658
+            },
+            {
+              "home_goals": 2,
+              "away_goals": 0,
+              "p": 0.0652
+            },
+            {
+              "home_goals": 2,
+              "away_goals": 2,
+              "p": 0.0352
+            },
+            {
+              "home_goals": 0,
+              "away_goals": 3,
+              "p": 0.0315
+            }
+          ]
+        },
+        {
+          "leg": 2,
+          "date": "2026-12-05",
+          "home": "Iceland",
+          "home_is": "Ísland",
+          "away": "Portugal",
+          "away_is": "Portúgal",
+          "played": false,
+          "goals_home": null,
+          "goals_away": null,
+          "p_home": 0.4978,
+          "p_draw": 0.2649,
+          "p_away": 0.2373,
+          "xg_home": 1.405,
+          "xg_away": 0.841,
+          "scorelines": [
+            {
+              "home_goals": 1,
+              "away_goals": 0,
+              "p": 0.1458
+            },
+            {
+              "home_goals": 1,
+              "away_goals": 1,
+              "p": 0.1188
+            },
+            {
+              "home_goals": 0,
+              "away_goals": 0,
+              "p": 0.1085
+            },
+            {
+              "home_goals": 2,
+              "away_goals": 0,
+              "p": 0.1038
+            },
+            {
+              "home_goals": 0,
+              "away_goals": 1,
+              "p": 0.0928
+            },
+            {
+              "home_goals": 2,
+              "away_goals": 1,
+              "p": 0.0806
+            },
+            {
+              "home_goals": 3,
+              "away_goals": 0,
+              "p": 0.0522
+            },
+            {
+              "home_goals": 1,
+              "away_goals": 2,
+              "p": 0.0512
+            },
+            {
+              "home_goals": 0,
+              "away_goals": 2,
+              "p": 0.0419
+            },
+            {
+              "home_goals": 3,
+              "away_goals": 1,
+              "p": 0.0386
+            }
+          ]
+        }
+      ],
+      "decided_by": {
+        "a_regulation": 0.3076,
+        "a_extra_time": 0.0295,
+        "a_penalties": 0.0467,
+        "b_regulation": 0.5198,
+        "b_extra_time": 0.0498,
+        "b_penalties": 0.0467
+      },
+      "p_extra_time": 0.1726,
+      "p_penalties": 0.0934,
+      "aggregate_margin": [
+        {
+          "margin_a": "<= -5",
+          "p": 0.0533
+        },
+        {
+          "margin_a": "-4",
+          "p": 0.0564
+        },
+        {
+          "margin_a": "-3",
+          "p": 0.0959
+        },
+        {
+          "margin_a": "-2",
+          "p": 0.1409
+        },
+        {
+          "margin_a": "-1",
+          "p": 0.1732
+        },
+        {
+          "margin_a": "0",
+          "p": 0.1726
+        },
+        {
+          "margin_a": "1",
+          "p": 0.1368
+        },
+        {
+          "margin_a": "2",
+          "p": 0.0879
+        },
+        {
+          "margin_a": "3",
+          "p": 0.0472
+        },
+        {
+          "margin_a": "4",
+          "p": 0.0219
+        },
+        {
+          "margin_a": ">= 5",
+          "p": 0.0139
+        }
+      ],
+      "after_first_leg": [
+        {
+          "goals_a": 0,
+          "goals_b": 0,
+          "p_score": 0.1153,
+          "p_a": 0.3571
+        },
+        {
+          "goals_a": 1,
+          "goals_b": 0,
+          "p_score": 0.1192,
+          "p_a": 0.641
+        },
+        {
+          "goals_a": 2,
+          "goals_b": 0,
+          "p_score": 0.0652,
+          "p_a": 0.8514
+        },
+        {
+          "goals_a": 3,
+          "goals_b": 0,
+          "p_score": 0.0251,
+          "p_a": 0.9532
+        },
+        {
+          "goals_a": 4,
+          "goals_b": 0,
+          "p_score": 0.0077,
+          "p_a": 0.9884
+        },
+        {
+          "goals_a": 0,
+          "goals_b": 1,
+          "p_score": 0.1282,
+          "p_a": 0.1354
+        },
+        {
+          "goals_a": 1,
+          "goals_b": 1,
+          "p_score": 0.1263,
+          "p_a": 0.3561
+        },
+        {
+          "goals_a": 2,
+          "goals_b": 1,
+          "p_score": 0.0658,
+          "p_a": 0.6389
+        },
+        {
+          "goals_a": 3,
+          "goals_b": 1,
+          "p_score": 0.0242,
+          "p_a": 0.8495
+        },
+        {
+          "goals_a": 4,
+          "goals_b": 1,
+          "p_score": 0.0071,
+          "p_a": 0.9522
+        },
+        {
+          "goals_a": 0,
+          "goals_b": 2,
+          "p_score": 0.0756,
+          "p_a": 0.0361
+        },
+        {
+          "goals_a": 1,
+          "goals_b": 2,
+          "p_score": 0.0709,
+          "p_a": 0.1355
+        },
+        {
+          "goals_a": 2,
+          "goals_b": 2,
+          "p_score": 0.0352,
+          "p_a": 0.3551
+        },
+        {
+          "goals_a": 3,
+          "goals_b": 2,
+          "p_score": 0.0124,
+          "p_a": 0.6367
+        },
+        {
+          "goals_a": 4,
+          "goals_b": 2,
+          "p_score": 0.0034,
+          "p_a": 0.8476
+        },
+        {
+          "goals_a": 0,
+          "goals_b": 3,
+          "p_score": 0.0315,
+          "p_a": 0.0071
+        },
+        {
+          "goals_a": 1,
+          "goals_b": 3,
+          "p_score": 0.0281,
+          "p_a": 0.0364
+        },
+        {
+          "goals_a": 2,
+          "goals_b": 3,
+          "p_score": 0.0133,
+          "p_a": 0.1357
+        },
+        {
+          "goals_a": 3,
+          "goals_b": 3,
+          "p_score": 0.0045,
+          "p_a": 0.3543
+        },
+        {
+          "goals_a": 4,
+          "goals_b": 3,
+          "p_score": 0.0012,
+          "p_a": 0.6347
+        },
+        {
+          "goals_a": 0,
+          "goals_b": 4,
+          "p_score": 0.0104,
+          "p_a": 0.0011
+        },
+        {
+          "goals_a": 1,
+          "goals_b": 4,
+          "p_score": 0.0089,
+          "p_a": 0.0072
+        },
+        {
+          "goals_a": 2,
+          "goals_b": 4,
+          "p_score": 0.004,
+          "p_a": 0.0367
+        },
+        {
+          "goals_a": 3,
+          "goals_b": 4,
+          "p_score": 0.0013,
+          "p_a": 0.136
+        },
+        {
+          "goals_a": 4,
+          "goals_b": 4,
+          "p_score": 0.0003,
+          "p_a": 0.3535
+        }
+      ]
+    },
+    {
+      "tie": 4,
+      "status": "scheduled",
+      "team_a": "Wales",
+      "team_a_is": "Wales",
+      "rank_a": 20,
+      "team_b": "Norway",
+      "team_b_is": "Noregur",
+      "rank_b": 6,
+      "winner": null,
+      "winner_is": null,
+      "p_a": 0.1719,
+      "p_b": 0.8281,
+      "p_a_interval": [0.0221, 0.434],
+      "p_b_interval": [0.566, 0.9779],
+      "legs": [
+        {
+          "leg": 1,
+          "date": null,
+          "home": "Wales",
+          "home_is": "Wales",
+          "away": "Norway",
+          "away_is": "Noregur",
+          "played": false,
+          "goals_home": null,
+          "goals_away": null,
+          "p_home": 0.1888,
+          "p_draw": 0.2386,
+          "p_away": 0.5727,
+          "xg_home": 0.77,
+          "xg_away": 1.643,
+          "scorelines": [
+            {
+              "home_goals": 0,
+              "away_goals": 1,
+              "p": 0.144
+            },
+            {
+              "home_goals": 0,
+              "away_goals": 2,
+              "p": 0.118
+            },
+            {
+              "home_goals": 1,
+              "away_goals": 1,
+              "p": 0.1086
+            },
+            {
+              "home_goals": 0,
+              "away_goals": 0,
+              "p": 0.093
+            },
+            {
+              "home_goals": 1,
+              "away_goals": 2,
+              "p": 0.0847
+            },
+            {
+              "home_goals": 1,
+              "away_goals": 0,
+              "p": 0.0738
+            },
+            {
+              "home_goals": 0,
+              "away_goals": 3,
+              "p": 0.0683
+            },
+            {
+              "home_goals": 1,
+              "away_goals": 3,
+              "p": 0.0467
+            },
+            {
+              "home_goals": 2,
+              "away_goals": 1,
+              "p": 0.0436
+            },
+            {
+              "home_goals": 2,
+              "away_goals": 2,
+              "p": 0.0323
+            }
+          ]
+        },
+        {
+          "leg": 2,
+          "date": null,
+          "home": "Norway",
+          "home_is": "Noregur",
+          "away": "Wales",
+          "away_is": "Wales",
+          "played": false,
+          "goals_home": null,
+          "goals_away": null,
+          "p_home": 0.6882,
+          "p_draw": 0.1934,
+          "p_away": 0.1183,
+          "xg_home": 2.035,
+          "xg_away": 0.621,
+          "scorelines": [
+            {
+              "home_goals": 1,
+              "away_goals": 0,
+              "p": 0.1405
+            },
+            {
+              "home_goals": 2,
+              "away_goals": 0,
+              "p": 0.1385
+            },
+            {
+              "home_goals": 3,
+              "away_goals": 0,
+              "p": 0.0963
+            },
+            {
+              "home_goals": 1,
+              "away_goals": 1,
+              "p": 0.088
+            },
+            {
+              "home_goals": 2,
+              "away_goals": 1,
+              "p": 0.0826
+            },
+            {
+              "home_goals": 0,
+              "away_goals": 0,
+              "p": 0.0755
+            },
+            {
+              "home_goals": 3,
+              "away_goals": 1,
+              "p": 0.0547
+            },
+            {
+              "home_goals": 4,
+              "away_goals": 0,
+              "p": 0.0531
+            },
+            {
+              "home_goals": 0,
+              "away_goals": 1,
+              "p": 0.0498
+            },
+            {
+              "home_goals": 1,
+              "away_goals": 2,
+              "p": 0.0293
+            }
+          ]
+        }
+      ],
+      "decided_by": {
+        "a_regulation": 0.1294,
+        "a_extra_time": 0.014,
+        "a_penalties": 0.0285,
+        "b_regulation": 0.7559,
+        "b_extra_time": 0.0437,
+        "b_penalties": 0.0285
+      },
+      "p_extra_time": 0.1147,
+      "p_penalties": 0.057,
+      "aggregate_margin": [
+        {
+          "margin_a": "<= -5",
+          "p": 0.1854
+        },
+        {
+          "margin_a": "-4",
+          "p": 0.1135
+        },
+        {
+          "margin_a": "-3",
+          "p": 0.1454
+        },
+        {
+          "margin_a": "-2",
+          "p": 0.1612
+        },
+        {
+          "margin_a": "-1",
+          "p": 0.1503
+        },
+        {
+          "margin_a": "0",
+          "p": 0.1147
+        },
+        {
+          "margin_a": "1",
+          "p": 0.0705
+        },
+        {
+          "margin_a": "2",
+          "p": 0.0355
+        },
+        {
+          "margin_a": "3",
+          "p": 0.0151
+        },
+        {
+          "margin_a": "4",
+          "p": 0.0056
+        },
+        {
+          "margin_a": ">= 5",
+          "p": 0.0027
+        }
+      ],
+      "after_first_leg": [
+        {
+          "goals_a": 0,
+          "goals_b": 0,
+          "p_score": 0.093,
+          "p_a": 0.2065
+        },
+        {
+          "goals_a": 1,
+          "goals_b": 0,
+          "p_score": 0.0738,
+          "p_a": 0.4583
+        },
+        {
+          "goals_a": 2,
+          "goals_b": 0,
+          "p_score": 0.0312,
+          "p_a": 0.7134
+        },
+        {
+          "goals_a": 3,
+          "goals_b": 0,
+          "p_score": 0.0094,
+          "p_a": 0.8823
+        },
+        {
+          "goals_a": 4,
+          "goals_b": 0,
+          "p_score": 0.0022,
+          "p_a": 0.9618
+        },
+        {
+          "goals_a": 0,
+          "goals_b": 1,
+          "p_score": 0.144,
+          "p_a": 0.0615
+        },
+        {
+          "goals_a": 1,
+          "goals_b": 1,
+          "p_score": 0.1086,
+          "p_a": 0.2061
+        },
+        {
+          "goals_a": 2,
+          "goals_b": 1,
+          "p_score": 0.0436,
+          "p_a": 0.4567
+        },
+        {
+          "goals_a": 3,
+          "goals_b": 1,
+          "p_score": 0.0124,
+          "p_a": 0.7113
+        },
+        {
+          "goals_a": 4,
+          "goals_b": 1,
+          "p_score": 0.0028,
+          "p_a": 0.8808
+        },
+        {
+          "goals_a": 0,
+          "goals_b": 2,
+          "p_score": 0.118,
+          "p_a": 0.0127
+        },
+        {
+          "goals_a": 1,
+          "goals_b": 2,
+          "p_score": 0.0847,
+          "p_a": 0.0617
+        },
+        {
+          "goals_a": 2,
+          "goals_b": 2,
+          "p_score": 0.0323,
+          "p_a": 0.2057
+        },
+        {
+          "goals_a": 3,
+          "goals_b": 2,
+          "p_score": 0.0087,
+          "p_a": 0.4549
+        },
+        {
+          "goals_a": 4,
+          "goals_b": 2,
+          "p_score": 0.0019,
+          "p_a": 0.7091
+        },
+        {
+          "goals_a": 0,
+          "goals_b": 3,
+          "p_score": 0.0683,
+          "p_a": 0.0019
+        },
+        {
+          "goals_a": 1,
+          "goals_b": 3,
+          "p_score": 0.0467,
+          "p_a": 0.0129
+        },
+        {
+          "goals_a": 2,
+          "goals_b": 3,
+          "p_score": 0.0169,
+          "p_a": 0.0619
+        },
+        {
+          "goals_a": 3,
+          "goals_b": 3,
+          "p_score": 0.0043,
+          "p_a": 0.2052
+        },
+        {
+          "goals_a": 4,
+          "goals_b": 3,
+          "p_score": 0.0009,
+          "p_a": 0.4531
+        },
+        {
+          "goals_a": 0,
+          "goals_b": 4,
+          "p_score": 0.0313,
+          "p_a": 0.0002
+        },
+        {
+          "goals_a": 1,
+          "goals_b": 4,
+          "p_score": 0.0204,
+          "p_a": 0.002
+        },
+        {
+          "goals_a": 2,
+          "goals_b": 4,
+          "p_score": 0.007,
+          "p_a": 0.013
+        },
+        {
+          "goals_a": 3,
+          "goals_b": 4,
+          "p_score": 0.0017,
+          "p_a": 0.062
+        },
+        {
+          "goals_a": 4,
+          "goals_b": 4,
+          "p_score": 0.0003,
+          "p_a": 0.2046
+        }
+      ]
+    },
+    {
+      "tie": 5,
+      "status": "scheduled",
+      "team_a": "Switzerland",
+      "team_a_is": "Sviss",
+      "rank_a": 17,
+      "team_b": "Austria",
+      "team_b_is": "Austurríki",
+      "rank_b": 12,
+      "winner": null,
+      "winner_is": null,
+      "p_a": 0.5501,
+      "p_b": 0.4499,
+      "p_a_interval": [0.2226, 0.8555],
+      "p_b_interval": [0.1445, 0.7774],
+      "legs": [
+        {
+          "leg": 1,
+          "date": null,
+          "home": "Switzerland",
+          "home_is": "Sviss",
+          "away": "Austria",
+          "away_is": "Austurríki",
+          "played": false,
+          "goals_home": null,
+          "goals_away": null,
+          "p_home": 0.4739,
+          "p_draw": 0.2468,
+          "p_away": 0.2793,
+          "xg_home": 1.51,
+          "xg_away": 1.063,
+          "scorelines": [
+            {
+              "home_goals": 1,
+              "away_goals": 1,
+              "p": 0.1163
+            },
+            {
+              "home_goals": 1,
+              "away_goals": 0,
+              "p": 0.1138
+            },
+            {
+              "home_goals": 2,
+              "away_goals": 0,
+              "p": 0.0874
+            },
+            {
+              "home_goals": 2,
+              "away_goals": 1,
+              "p": 0.0853
+            },
+            {
+              "home_goals": 0,
+              "away_goals": 1,
+              "p": 0.0837
+            },
+            {
+              "home_goals": 0,
+              "away_goals": 0,
+              "p": 0.0782
+            },
+            {
+              "home_goals": 1,
+              "away_goals": 2,
+              "p": 0.0628
+            },
+            {
+              "home_goals": 0,
+              "away_goals": 2,
+              "p": 0.0473
+            },
+            {
+              "home_goals": 3,
+              "away_goals": 0,
+              "p": 0.0473
+            },
+            {
+              "home_goals": 3,
+              "away_goals": 1,
+              "p": 0.044
+            }
+          ]
+        },
+        {
+          "leg": 2,
+          "date": null,
+          "home": "Austria",
+          "home_is": "Austurríki",
+          "away": "Switzerland",
+          "away_is": "Sviss",
+          "played": false,
+          "goals_home": null,
+          "goals_away": null,
+          "p_home": 0.394,
+          "p_draw": 0.2549,
+          "p_away": 0.3511,
+          "xg_home": 1.317,
+          "xg_away": 1.219,
+          "scorelines": [
+            {
+              "home_goals": 1,
+              "away_goals": 1,
+              "p": 0.1201
+            },
+            {
+              "home_goals": 1,
+              "away_goals": 0,
+              "p": 0.1042
+            },
+            {
+              "home_goals": 0,
+              "away_goals": 1,
+              "p": 0.0975
+            },
+            {
+              "home_goals": 0,
+              "away_goals": 0,
+              "p": 0.0808
+            },
+            {
+              "home_goals": 2,
+              "away_goals": 1,
+              "p": 0.0782
+            },
+            {
+              "home_goals": 1,
+              "away_goals": 2,
+              "p": 0.0731
+            },
+            {
+              "home_goals": 2,
+              "away_goals": 0,
+              "p": 0.071
+            },
+            {
+              "home_goals": 0,
+              "away_goals": 2,
+              "p": 0.0622
+            },
+            {
+              "home_goals": 2,
+              "away_goals": 2,
+              "p": 0.0454
+            },
+            {
+              "home_goals": 3,
+              "away_goals": 1,
+              "p": 0.0359
+            }
+          ]
+        }
+      ],
+      "decided_by": {
+        "a_regulation": 0.472,
+        "a_extra_time": 0.0371,
+        "a_penalties": 0.041,
+        "b_regulation": 0.3667,
+        "b_extra_time": 0.0421,
+        "b_penalties": 0.041
+      },
+      "p_extra_time": 0.1613,
+      "p_penalties": 0.0821,
+      "aggregate_margin": [
+        {
+          "margin_a": "<= -5",
+          "p": 0.0291
+        },
+        {
+          "margin_a": "-4",
+          "p": 0.0343
+        },
+        {
+          "margin_a": "-3",
+          "p": 0.0628
+        },
+        {
+          "margin_a": "-2",
+          "p": 0.1011
+        },
+        {
+          "margin_a": "-1",
+          "p": 0.1394
+        },
+        {
+          "margin_a": "0",
+          "p": 0.1613
+        },
+        {
+          "margin_a": "1",
+          "p": 0.155
+        },
+        {
+          "margin_a": "2",
+          "p": 0.125
+        },
+        {
+          "margin_a": "3",
+          "p": 0.0864
+        },
+        {
+          "margin_a": "4",
+          "p": 0.0524
+        },
+        {
+          "margin_a": ">= 5",
+          "p": 0.0531
+        }
+      ],
+      "after_first_leg": [
+        {
+          "goals_a": 0,
+          "goals_b": 0,
+          "p_score": 0.0782,
+          "p_a": 0.4624
+        },
+        {
+          "goals_a": 1,
+          "goals_b": 0,
+          "p_score": 0.1138,
+          "p_a": 0.7215
+        },
+        {
+          "goals_a": 2,
+          "goals_b": 0,
+          "p_score": 0.0874,
+          "p_a": 0.892
+        },
+        {
+          "goals_a": 3,
+          "goals_b": 0,
+          "p_score": 0.0473,
+          "p_a": 0.9679
+        },
+        {
+          "goals_a": 4,
+          "goals_b": 0,
+          "p_score": 0.0203,
+          "p_a": 0.9925
+        },
+        {
+          "goals_a": 0,
+          "goals_b": 1,
+          "p_score": 0.0837,
+          "p_a": 0.2182
+        },
+        {
+          "goals_a": 1,
+          "goals_b": 1,
+          "p_score": 0.1163,
+          "p_a": 0.4619
+        },
+        {
+          "goals_a": 2,
+          "goals_b": 1,
+          "p_score": 0.0853,
+          "p_a": 0.7202
+        },
+        {
+          "goals_a": 3,
+          "goals_b": 1,
+          "p_score": 0.044,
+          "p_a": 0.8909
+        },
+        {
+          "goals_a": 4,
+          "goals_b": 1,
+          "p_score": 0.018,
+          "p_a": 0.9673
+        },
+        {
+          "goals_a": 0,
+          "goals_b": 2,
+          "p_score": 0.0473,
+          "p_a": 0.0761
+        },
+        {
+          "goals_a": 1,
+          "goals_b": 2,
+          "p_score": 0.0628,
+          "p_a": 0.2186
+        },
+        {
+          "goals_a": 2,
+          "goals_b": 2,
+          "p_score": 0.044,
+          "p_a": 0.4613
+        },
+        {
+          "goals_a": 3,
+          "goals_b": 2,
+          "p_score": 0.0217,
+          "p_a": 0.7188
+        },
+        {
+          "goals_a": 4,
+          "goals_b": 2,
+          "p_score": 0.0085,
+          "p_a": 0.8897
+        },
+        {
+          "goals_a": 0,
+          "goals_b": 3,
+          "p_score": 0.0189,
+          "p_a": 0.0202
+        },
+        {
+          "goals_a": 1,
+          "goals_b": 3,
+          "p_score": 0.0239,
+          "p_a": 0.0766
+        },
+        {
+          "goals_a": 2,
+          "goals_b": 3,
+          "p_score": 0.016,
+          "p_a": 0.219
+        },
+        {
+          "goals_a": 3,
+          "goals_b": 3,
+          "p_score": 0.0075,
+          "p_a": 0.4608
+        },
+        {
+          "goals_a": 4,
+          "goals_b": 3,
+          "p_score": 0.0028,
+          "p_a": 0.7175
+        },
+        {
+          "goals_a": 0,
+          "goals_b": 4,
+          "p_score": 0.006,
+          "p_a": 0.0042
+        },
+        {
+          "goals_a": 1,
+          "goals_b": 4,
+          "p_score": 0.0072,
+          "p_a": 0.0205
+        },
+        {
+          "goals_a": 2,
+          "goals_b": 4,
+          "p_score": 0.0046,
+          "p_a": 0.0771
+        },
+        {
+          "goals_a": 3,
+          "goals_b": 4,
+          "p_score": 0.0021,
+          "p_a": 0.2194
+        },
+        {
+          "goals_a": 4,
+          "goals_b": 4,
+          "p_score": 0.0007,
+          "p_a": 0.4603
+        }
+      ]
+    },
+    {
+      "tie": 6,
+      "status": "scheduled",
+      "team_a": "Scotland",
+      "team_a_is": "Skotland",
+      "rank_a": 19,
+      "team_b": "Sweden",
+      "team_b_is": "Svíþjóð",
+      "rank_b": 10,
+      "winner": null,
+      "winner_is": null,
+      "p_a": 0.1701,
+      "p_b": 0.8299,
+      "p_a_interval": [0.0206, 0.4269],
+      "p_b_interval": [0.5731, 0.9794],
+      "legs": [
+        {
+          "leg": 1,
+          "date": null,
+          "home": "Scotland",
+          "home_is": "Skotland",
+          "away": "Sweden",
+          "away_is": "Svíþjóð",
+          "played": false,
+          "goals_home": null,
+          "goals_away": null,
+          "p_home": 0.1887,
+          "p_draw": 0.2357,
+          "p_away": 0.5756,
+          "xg_home": 0.782,
+          "xg_away": 1.671,
+          "scorelines": [
+            {
+              "home_goals": 0,
+              "away_goals": 1,
+              "p": 0.1406
+            },
+            {
+              "home_goals": 0,
+              "away_goals": 2,
+              "p": 0.117
+            },
+            {
+              "home_goals": 1,
+              "away_goals": 1,
+              "p": 0.108
+            },
+            {
+              "home_goals": 0,
+              "away_goals": 0,
+              "p": 0.0895
+            },
+            {
+              "home_goals": 1,
+              "away_goals": 2,
+              "p": 0.0856
+            },
+            {
+              "home_goals": 1,
+              "away_goals": 0,
+              "p": 0.0722
+            },
+            {
+              "home_goals": 0,
+              "away_goals": 3,
+              "p": 0.0687
+            },
+            {
+              "home_goals": 1,
+              "away_goals": 3,
+              "p": 0.0478
+            },
+            {
+              "home_goals": 2,
+              "away_goals": 1,
+              "p": 0.0441
+            },
+            {
+              "home_goals": 2,
+              "away_goals": 2,
+              "p": 0.0332
+            }
+          ]
+        },
+        {
+          "leg": 2,
+          "date": null,
+          "home": "Sweden",
+          "home_is": "Svíþjóð",
+          "away": "Scotland",
+          "away_is": "Skotland",
+          "played": false,
+          "goals_home": null,
+          "goals_away": null,
+          "p_home": 0.6917,
+          "p_draw": 0.1906,
+          "p_away": 0.1176,
+          "xg_home": 2.069,
+          "xg_away": 0.631,
+          "scorelines": [
+            {
+              "home_goals": 2,
+              "away_goals": 0,
+              "p": 0.1369
+            },
+            {
+              "home_goals": 1,
+              "away_goals": 0,
+              "p": 0.1369
+            },
+            {
+              "home_goals": 3,
+              "away_goals": 0,
+              "p": 0.0965
+            },
+            {
+              "home_goals": 1,
+              "away_goals": 1,
+              "p": 0.0873
+            },
+            {
+              "home_goals": 2,
+              "away_goals": 1,
+              "p": 0.0832
+            },
+            {
+              "home_goals": 0,
+              "away_goals": 0,
+              "p": 0.0724
+            },
+            {
+              "home_goals": 3,
+              "away_goals": 1,
+              "p": 0.0559
+            },
+            {
+              "home_goals": 4,
+              "away_goals": 0,
+              "p": 0.054
+            },
+            {
+              "home_goals": 0,
+              "away_goals": 1,
+              "p": 0.0485
+            },
+            {
+              "home_goals": 4,
+              "away_goals": 1,
+              "p": 0.0298
+            }
+          ]
+        }
+      ],
+      "decided_by": {
+        "a_regulation": 0.1283,
+        "a_extra_time": 0.0139,
+        "a_penalties": 0.0279,
+        "b_regulation": 0.7586,
+        "b_extra_time": 0.0435,
+        "b_penalties": 0.0279
+      },
+      "p_extra_time": 0.1132,
+      "p_penalties": 0.0557,
+      "aggregate_margin": [
+        {
+          "margin_a": "<= -5",
+          "p": 0.1911
+        },
+        {
+          "margin_a": "-4",
+          "p": 0.114
+        },
+        {
+          "margin_a": "-3",
+          "p": 0.145
+        },
+        {
+          "margin_a": "-2",
+          "p": 0.1599
+        },
+        {
+          "margin_a": "-1",
+          "p": 0.1485
+        },
+        {
+          "margin_a": "0",
+          "p": 0.1132
+        },
+        {
+          "margin_a": "1",
+          "p": 0.0697
+        },
+        {
+          "margin_a": "2",
+          "p": 0.0353
+        },
+        {
+          "margin_a": "3",
+          "p": 0.0151
+        },
+        {
+          "margin_a": "4",
+          "p": 0.0056
+        },
+        {
+          "margin_a": ">= 5",
+          "p": 0.0026
+        }
+      ],
+      "after_first_leg": [
+        {
+          "goals_a": 0,
+          "goals_b": 0,
+          "p_score": 0.0895,
+          "p_a": 0.2048
+        },
+        {
+          "goals_a": 1,
+          "goals_b": 0,
+          "p_score": 0.0722,
+          "p_a": 0.4534
+        },
+        {
+          "goals_a": 2,
+          "goals_b": 0,
+          "p_score": 0.031,
+          "p_a": 0.7072
+        },
+        {
+          "goals_a": 3,
+          "goals_b": 0,
+          "p_score": 0.0094,
+          "p_a": 0.8775
+        },
+        {
+          "goals_a": 4,
+          "goals_b": 0,
+          "p_score": 0.0023,
+          "p_a": 0.9593
+        },
+        {
+          "goals_a": 0,
+          "goals_b": 1,
+          "p_score": 0.1406,
+          "p_a": 0.0616
+        },
+        {
+          "goals_a": 1,
+          "goals_b": 1,
+          "p_score": 0.108,
+          "p_a": 0.2044
+        },
+        {
+          "goals_a": 2,
+          "goals_b": 1,
+          "p_score": 0.0441,
+          "p_a": 0.4518
+        },
+        {
+          "goals_a": 3,
+          "goals_b": 1,
+          "p_score": 0.0127,
+          "p_a": 0.7052
+        },
+        {
+          "goals_a": 4,
+          "goals_b": 1,
+          "p_score": 0.0029,
+          "p_a": 0.876
+        },
+        {
+          "goals_a": 0,
+          "goals_b": 2,
+          "p_score": 0.117,
+          "p_a": 0.0129
+        },
+        {
+          "goals_a": 1,
+          "goals_b": 2,
+          "p_score": 0.0856,
+          "p_a": 0.0617
+        },
+        {
+          "goals_a": 2,
+          "goals_b": 2,
+          "p_score": 0.0332,
+          "p_a": 0.204
+        },
+        {
+          "goals_a": 3,
+          "goals_b": 2,
+          "p_score": 0.0091,
+          "p_a": 0.4502
+        },
+        {
+          "goals_a": 4,
+          "goals_b": 2,
+          "p_score": 0.002,
+          "p_a": 0.703
+        },
+        {
+          "goals_a": 0,
+          "goals_b": 3,
+          "p_score": 0.0687,
+          "p_a": 0.002
+        },
+        {
+          "goals_a": 1,
+          "goals_b": 3,
+          "p_score": 0.0478,
+          "p_a": 0.013
+        },
+        {
+          "goals_a": 2,
+          "goals_b": 3,
+          "p_score": 0.0177,
+          "p_a": 0.0619
+        },
+        {
+          "goals_a": 3,
+          "goals_b": 3,
+          "p_score": 0.0046,
+          "p_a": 0.2036
+        },
+        {
+          "goals_a": 4,
+          "goals_b": 3,
+          "p_score": 0.001,
+          "p_a": 0.4485
+        },
+        {
+          "goals_a": 0,
+          "goals_b": 4,
+          "p_score": 0.0321,
+          "p_a": 0.0002
+        },
+        {
+          "goals_a": 1,
+          "goals_b": 4,
+          "p_score": 0.0212,
+          "p_a": 0.002
+        },
+        {
+          "goals_a": 2,
+          "goals_b": 4,
+          "p_score": 0.0075,
+          "p_a": 0.0132
+        },
+        {
+          "goals_a": 3,
+          "goals_b": 4,
+          "p_score": 0.0019,
+          "p_a": 0.0621
+        },
+        {
+          "goals_a": 4,
+          "goals_b": 4,
+          "p_score": 0.0004,
+          "p_a": 0.2032
+        }
+      ]
+    },
+    {
+      "tie": 7,
+      "status": "scheduled",
+      "team_a": "Poland",
+      "team_a_is": "Pólland",
+      "rank_a": 14,
+      "team_b": "Republic of Ireland",
+      "team_b_is": "Írland",
+      "rank_b": 9,
+      "winner": null,
+      "winner_is": null,
+      "p_a": 0.3752,
+      "p_b": 0.6248,
+      "p_a_interval": [0.1078, 0.699],
+      "p_b_interval": [0.301, 0.8922],
+      "legs": [
+        {
+          "leg": 1,
+          "date": null,
+          "home": "Poland",
+          "home_is": "Pólland",
+          "away": "Republic of Ireland",
+          "away_is": "Írland",
+          "played": false,
+          "goals_home": null,
+          "goals_away": null,
+          "p_home": 0.3343,
+          "p_draw": 0.2764,
+          "p_away": 0.3893,
+          "xg_home": 1.059,
+          "xg_away": 1.176,
+          "scorelines": [
+            {
+              "home_goals": 0,
+              "away_goals": 1,
+              "p": 0.1255
+            },
+            {
+              "home_goals": 1,
+              "away_goals": 1,
+              "p": 0.1254
+            },
+            {
+              "home_goals": 1,
+              "away_goals": 0,
+              "p": 0.1141
+            },
+            {
+              "home_goals": 0,
+              "away_goals": 0,
+              "p": 0.1088
+            },
+            {
+              "home_goals": 0,
+              "away_goals": 2,
+              "p": 0.0766
+            },
+            {
+              "home_goals": 1,
+              "away_goals": 2,
+              "p": 0.073
+            },
+            {
+              "home_goals": 2,
+              "away_goals": 1,
+              "p": 0.0665
+            },
+            {
+              "home_goals": 2,
+              "away_goals": 0,
+              "p": 0.0635
+            },
+            {
+              "home_goals": 2,
+              "away_goals": 2,
+              "p": 0.0369
+            },
+            {
+              "home_goals": 0,
+              "away_goals": 3,
+              "p": 0.033
+            }
+          ]
+        },
+        {
+          "leg": 2,
+          "date": null,
+          "home": "Republic of Ireland",
+          "home_is": "Írland",
+          "away": "Poland",
+          "away_is": "Pólland",
+          "played": false,
+          "goals_home": null,
+          "goals_away": null,
+          "p_home": 0.5078,
+          "p_draw": 0.2584,
+          "p_away": 0.2338,
+          "xg_home": 1.456,
+          "xg_away": 0.855,
+          "scorelines": [
+            {
+              "home_goals": 1,
+              "away_goals": 0,
+              "p": 0.1416
+            },
+            {
+              "home_goals": 1,
+              "away_goals": 1,
+              "p": 0.1172
+            },
+            {
+              "home_goals": 2,
+              "away_goals": 0,
+              "p": 0.1044
+            },
+            {
+              "home_goals": 0,
+              "away_goals": 0,
+              "p": 0.1018
+            },
+            {
+              "home_goals": 0,
+              "away_goals": 1,
+              "p": 0.0884
+            },
+            {
+              "home_goals": 2,
+              "away_goals": 1,
+              "p": 0.0823
+            },
+            {
+              "home_goals": 3,
+              "away_goals": 0,
+              "p": 0.0543
+            },
+            {
+              "home_goals": 1,
+              "away_goals": 2,
+              "p": 0.0515
+            },
+            {
+              "home_goals": 3,
+              "away_goals": 1,
+              "p": 0.0408
+            },
+            {
+              "home_goals": 0,
+              "away_goals": 2,
+              "p": 0.0407
+            }
+          ]
+        }
+      ],
+      "decided_by": {
+        "a_regulation": 0.3014,
+        "a_extra_time": 0.0289,
+        "a_penalties": 0.0448,
+        "b_regulation": 0.5302,
+        "b_extra_time": 0.0497,
+        "b_penalties": 0.0448
+      },
+      "p_extra_time": 0.1683,
+      "p_penalties": 0.0897,
+      "aggregate_margin": [
+        {
+          "margin_a": "<= -5",
+          "p": 0.0586
+        },
+        {
+          "margin_a": "-4",
+          "p": 0.0596
+        },
+        {
+          "margin_a": "-3",
+          "p": 0.0989
+        },
+        {
+          "margin_a": "-2",
+          "p": 0.1419
+        },
+        {
+          "margin_a": "-1",
+          "p": 0.1711
+        },
+        {
+          "margin_a": "0",
+          "p": 0.1683
+        },
+        {
+          "margin_a": "1",
+          "p": 0.1329
+        },
+        {
+          "margin_a": "2",
+          "p": 0.0857
+        },
+        {
+          "margin_a": "3",
+          "p": 0.0465
+        },
+        {
+          "margin_a": "4",
+          "p": 0.0219
+        },
+        {
+          "margin_a": ">= 5",
+          "p": 0.0144
+        }
+      ],
+      "after_first_leg": [
+        {
+          "goals_a": 0,
+          "goals_b": 0,
+          "p_score": 0.1088,
+          "p_a": 0.3493
+        },
+        {
+          "goals_a": 1,
+          "goals_b": 0,
+          "p_score": 0.1141,
+          "p_a": 0.6307
+        },
+        {
+          "goals_a": 2,
+          "goals_b": 0,
+          "p_score": 0.0635,
+          "p_a": 0.8438
+        },
+        {
+          "goals_a": 3,
+          "goals_b": 0,
+          "p_score": 0.025,
+          "p_a": 0.9496
+        },
+        {
+          "goals_a": 4,
+          "goals_b": 0,
+          "p_score": 0.0078,
+          "p_a": 0.9872
+        },
+        {
+          "goals_a": 0,
+          "goals_b": 1,
+          "p_score": 0.1255,
+          "p_a": 0.1328
+        },
+        {
+          "goals_a": 1,
+          "goals_b": 1,
+          "p_score": 0.1254,
+          "p_a": 0.3491
+        },
+        {
+          "goals_a": 2,
+          "goals_b": 1,
+          "p_score": 0.0665,
+          "p_a": 0.6293
+        },
+        {
+          "goals_a": 3,
+          "goals_b": 1,
+          "p_score": 0.0249,
+          "p_a": 0.8424
+        },
+        {
+          "goals_a": 4,
+          "goals_b": 1,
+          "p_score": 0.0074,
+          "p_a": 0.9489
+        },
+        {
+          "goals_a": 0,
+          "goals_b": 2,
+          "p_score": 0.0766,
+          "p_a": 0.0358
+        },
+        {
+          "goals_a": 1,
+          "goals_b": 2,
+          "p_score": 0.073,
+          "p_a": 0.1335
+        },
+        {
+          "goals_a": 2,
+          "goals_b": 2,
+          "p_score": 0.0369,
+          "p_a": 0.349
+        },
+        {
+          "goals_a": 3,
+          "goals_b": 2,
+          "p_score": 0.0132,
+          "p_a": 0.628
+        },
+        {
+          "goals_a": 4,
+          "goals_b": 2,
+          "p_score": 0.0037,
+          "p_a": 0.841
+        },
+        {
+          "goals_a": 0,
+          "goals_b": 3,
+          "p_score": 0.033,
+          "p_a": 0.0072
+        },
+        {
+          "goals_a": 1,
+          "goals_b": 3,
+          "p_score": 0.03,
+          "p_a": 0.0362
+        },
+        {
+          "goals_a": 2,
+          "goals_b": 3,
+          "p_score": 0.0144,
+          "p_a": 0.1342
+        },
+        {
+          "goals_a": 3,
+          "goals_b": 3,
+          "p_score": 0.0049,
+          "p_a": 0.349
+        },
+        {
+          "goals_a": 4,
+          "goals_b": 3,
+          "p_score": 0.0013,
+          "p_a": 0.6268
+        },
+        {
+          "goals_a": 0,
+          "goals_b": 4,
+          "p_score": 0.0113,
+          "p_a": 0.0011
+        },
+        {
+          "goals_a": 1,
+          "goals_b": 4,
+          "p_score": 0.0098,
+          "p_a": 0.0073
+        },
+        {
+          "goals_a": 2,
+          "goals_b": 4,
+          "p_score": 0.0045,
+          "p_a": 0.0367
+        },
+        {
+          "goals_a": 3,
+          "goals_b": 4,
+          "p_score": 0.0015,
+          "p_a": 0.1349
+        },
+        {
+          "goals_a": 4,
+          "goals_b": 4,
+          "p_score": 0.0004,
+          "p_a": 0.3491
+        }
+      ]
+    },
+    {
+      "tie": 8,
+      "status": "scheduled",
+      "team_a": "Slovenia",
+      "team_a_is": "Slóvenía",
+      "rank_a": 13,
+      "team_b": "Netherlands",
+      "team_b_is": "Holland",
+      "rank_b": 7,
+      "winner": null,
+      "winner_is": null,
+      "p_a": 0.0445,
+      "p_b": 0.9555,
+      "p_a_interval": [0.0008, 0.1637],
+      "p_b_interval": [0.8363, 0.9992],
+      "legs": [
+        {
+          "leg": 1,
+          "date": null,
+          "home": "Slovenia",
+          "home_is": "Slóvenía",
+          "away": "Netherlands",
+          "away_is": "Holland",
+          "played": false,
+          "goals_home": null,
+          "goals_away": null,
+          "p_home": 0.0838,
+          "p_draw": 0.132,
+          "p_away": 0.7834,
+          "xg_home": 0.699,
+          "xg_away": 2.813,
+          "scorelines": [
+            {
+              "home_goals": 0,
+              "away_goals": 2,
+              "p": 0.1124
+            },
+            {
+              "home_goals": 0,
+              "away_goals": 3,
+              "p": 0.1038
+            },
+            {
+              "home_goals": 0,
+              "away_goals": 1,
+              "p": 0.0857
+            },
+            {
+              "home_goals": 1,
+              "away_goals": 2,
+              "p": 0.0778
+            },
+            {
+              "home_goals": 0,
+              "away_goals": 4,
+              "p": 0.0758
+            },
+            {
+              "home_goals": 1,
+              "away_goals": 3,
+              "p": 0.0685
+            },
+            {
+              "home_goals": 1,
+              "away_goals": 1,
+              "p": 0.0622
+            },
+            {
+              "home_goals": 1,
+              "away_goals": 4,
+              "p": 0.0478
+            },
+            {
+              "home_goals": 0,
+              "away_goals": 5,
+              "p": 0.0467
+            },
+            {
+              "home_goals": 0,
+              "away_goals": 0,
+              "p": 0.0345
+            }
+          ]
+        },
+        {
+          "leg": 2,
+          "date": null,
+          "home": "Netherlands",
+          "home_is": "Holland",
+          "away": "Slovenia",
+          "away_is": "Slóvenía",
+          "played": false,
+          "goals_home": null,
+          "goals_away": null,
+          "p_home": 0.8681,
+          "p_draw": 0.0855,
+          "p_away": 0.0428,
+          "xg_home": 3.484,
+          "xg_away": 0.564,
+          "scorelines": [
+            {
+              "home_goals": 3,
+              "away_goals": 0,
+              "p": 0.1135
+            },
+            {
+              "home_goals": 2,
+              "away_goals": 0,
+              "p": 0.1034
+            },
+            {
+              "home_goals": 4,
+              "away_goals": 0,
+              "p": 0.0984
+            },
+            {
+              "home_goals": 5,
+              "away_goals": 0,
+              "p": 0.0718
+            },
+            {
+              "home_goals": 1,
+              "away_goals": 0,
+              "p": 0.0663
+            },
+            {
+              "home_goals": 3,
+              "away_goals": 1,
+              "p": 0.0629
+            },
+            {
+              "home_goals": 2,
+              "away_goals": 1,
+              "p": 0.06
+            },
+            {
+              "home_goals": 4,
+              "away_goals": 1,
+              "p": 0.0521
+            },
+            {
+              "home_goals": 6,
+              "away_goals": 0,
+              "p": 0.046
+            },
+            {
+              "home_goals": 1,
+              "away_goals": 1,
+              "p": 0.0403
+            }
+          ]
+        }
+      ],
+      "decided_by": {
+        "a_regulation": 0.0334,
+        "a_extra_time": 0.0036,
+        "a_penalties": 0.0075,
+        "b_regulation": 0.928,
+        "b_extra_time": 0.02,
+        "b_penalties": 0.0075
+      },
+      "p_extra_time": 0.0386,
+      "p_penalties": 0.0149,
+      "aggregate_margin": [
+        {
+          "margin_a": "<= -5",
+          "p": 0.5362
+        },
+        {
+          "margin_a": "-4",
+          "p": 0.1235
+        },
+        {
+          "margin_a": "-3",
+          "p": 0.1129
+        },
+        {
+          "margin_a": "-2",
+          "p": 0.0913
+        },
+        {
+          "margin_a": "-1",
+          "p": 0.0641
+        },
+        {
+          "margin_a": "0",
+          "p": 0.0386
+        },
+        {
+          "margin_a": "1",
+          "p": 0.0198
+        },
+        {
+          "margin_a": "2",
+          "p": 0.0087
+        },
+        {
+          "margin_a": "3",
+          "p": 0.0033
+        },
+        {
+          "margin_a": "4",
+          "p": 0.0011
+        },
+        {
+          "margin_a": ">= 5",
+          "p": 0.0005
+        }
+      ],
+      "after_first_leg": [
+        {
+          "goals_a": 0,
+          "goals_b": 0,
+          "p_score": 0.0345,
+          "p_a": 0.0899
+        },
+        {
+          "goals_a": 1,
+          "goals_b": 0,
+          "p_score": 0.0263,
+          "p_a": 0.2424
+        },
+        {
+          "goals_a": 2,
+          "goals_b": 0,
+          "p_score": 0.0106,
+          "p_a": 0.4649
+        },
+        {
+          "goals_a": 3,
+          "goals_b": 0,
+          "p_score": 0.003,
+          "p_a": 0.687
+        },
+        {
+          "goals_a": 4,
+          "goals_b": 0,
+          "p_score": 0.0007,
+          "p_a": 0.849
+        },
+        {
+          "goals_a": 0,
+          "goals_b": 1,
+          "p_score": 0.0857,
+          "p_a": 0.0231
+        },
+        {
+          "goals_a": 1,
+          "goals_b": 1,
+          "p_score": 0.0622,
+          "p_a": 0.0896
+        },
+        {
+          "goals_a": 2,
+          "goals_b": 1,
+          "p_score": 0.024,
+          "p_a": 0.2411
+        },
+        {
+          "goals_a": 3,
+          "goals_b": 1,
+          "p_score": 0.0065,
+          "p_a": 0.4624
+        },
+        {
+          "goals_a": 4,
+          "goals_b": 1,
+          "p_score": 0.0014,
+          "p_a": 0.6843
+        },
+        {
+          "goals_a": 0,
+          "goals_b": 2,
+          "p_score": 0.1124,
+          "p_a": 0.0043
+        },
+        {
+          "goals_a": 1,
+          "goals_b": 2,
+          "p_score": 0.0778,
+          "p_a": 0.0232
+        },
+        {
+          "goals_a": 2,
+          "goals_b": 2,
+          "p_score": 0.0286,
+          "p_a": 0.0894
+        },
+        {
+          "goals_a": 3,
+          "goals_b": 2,
+          "p_score": 0.0074,
+          "p_a": 0.2399
+        },
+        {
+          "goals_a": 4,
+          "goals_b": 2,
+          "p_score": 0.0015,
+          "p_a": 0.46
+        },
+        {
+          "goals_a": 0,
+          "goals_b": 3,
+          "p_score": 0.1038,
+          "p_a": 0.0006
+        },
+        {
+          "goals_a": 1,
+          "goals_b": 3,
+          "p_score": 0.0685,
+          "p_a": 0.0043
+        },
+        {
+          "goals_a": 2,
+          "goals_b": 3,
+          "p_score": 0.024,
+          "p_a": 0.0232
+        },
+        {
+          "goals_a": 3,
+          "goals_b": 3,
+          "p_score": 0.0059,
+          "p_a": 0.0892
+        },
+        {
+          "goals_a": 4,
+          "goals_b": 3,
+          "p_score": 0.0012,
+          "p_a": 0.2386
+        },
+        {
+          "goals_a": 0,
+          "goals_b": 4,
+          "p_score": 0.0758,
+          "p_a": 0.0001
+        },
+        {
+          "goals_a": 1,
+          "goals_b": 4,
+          "p_score": 0.0478,
+          "p_a": 0.0006
+        },
+        {
+          "goals_a": 2,
+          "goals_b": 4,
+          "p_score": 0.016,
+          "p_a": 0.0044
+        },
+        {
+          "goals_a": 3,
+          "goals_b": 4,
+          "p_score": 0.0038,
+          "p_a": 0.0233
+        },
+        {
+          "goals_a": 4,
+          "goals_b": 4,
+          "p_score": 0.0007,
+          "p_a": 0.0889
+        }
+      ]
+    }
+  ],
+  "places": [
+    {
+      "team": "England",
+      "team_is": "England",
+      "rank": 5,
+      "p_win": 0.9895,
+      "p_direct": 0.9895,
+      "p_interconf_playoff": 0
+    },
+    {
+      "team": "Norway",
+      "team_is": "Noregur",
+      "rank": 6,
+      "p_win": 0.8281,
+      "p_direct": 0.8281,
+      "p_interconf_playoff": 0
+    },
+    {
+      "team": "Netherlands",
+      "team_is": "Holland",
+      "rank": 7,
+      "p_win": 0.9555,
+      "p_direct": 0.9555,
+      "p_interconf_playoff": 0
+    },
+    {
+      "team": "Italy",
+      "team_is": "Ítalía",
+      "rank": 8,
+      "p_win": 0.7904,
+      "p_direct": 0.7904,
+      "p_interconf_playoff": 0
+    },
+    {
+      "team": "Republic of Ireland",
+      "team_is": "Írland",
+      "rank": 9,
+      "p_win": 0.6248,
+      "p_direct": 0.6248,
+      "p_interconf_playoff": 0
+    },
+    {
+      "team": "Sweden",
+      "team_is": "Svíþjóð",
+      "rank": 10,
+      "p_win": 0.8299,
+      "p_direct": 0.8299,
+      "p_interconf_playoff": 0
+    },
+    {
+      "team": "Iceland",
+      "team_is": "Ísland",
+      "rank": 11,
+      "p_win": 0.6162,
+      "p_direct": 0.6162,
+      "p_interconf_playoff": 0
+    },
+    {
+      "team": "Austria",
+      "team_is": "Austurríki",
+      "rank": 12,
+      "p_win": 0.4499,
+      "p_direct": 0.3598,
+      "p_interconf_playoff": 0.0901
+    },
+    {
+      "team": "Slovenia",
+      "team_is": "Slóvenía",
+      "rank": 13,
+      "p_win": 0.0445,
+      "p_direct": 0.0403,
+      "p_interconf_playoff": 0.0042
+    },
+    {
+      "team": "Poland",
+      "team_is": "Pólland",
+      "rank": 14,
+      "p_win": 0.3752,
+      "p_direct": 0.3193,
+      "p_interconf_playoff": 0.0559
+    },
+    {
+      "team": "Ukraine",
+      "team_is": "Úkraína",
+      "rank": 16,
+      "p_win": 0.0105,
+      "p_direct": 0.0088,
+      "p_interconf_playoff": 0.0016
+    },
+    {
+      "team": "Switzerland",
+      "team_is": "Sviss",
+      "rank": 17,
+      "p_win": 0.5501,
+      "p_direct": 0.3668,
+      "p_interconf_playoff": 0.1833
+    },
+    {
+      "team": "Portugal",
+      "team_is": "Portúgal",
+      "rank": 18,
+      "p_win": 0.3838,
+      "p_direct": 0.1749,
+      "p_interconf_playoff": 0.2089
+    },
+    {
+      "team": "Scotland",
+      "team_is": "Skotland",
+      "rank": 19,
+      "p_win": 0.1701,
+      "p_direct": 0.0593,
+      "p_interconf_playoff": 0.1107
+    },
+    {
+      "team": "Wales",
+      "team_is": "Wales",
+      "rank": 20,
+      "p_win": 0.1719,
+      "p_direct": 0.0363,
+      "p_interconf_playoff": 0.1356
+    },
+    {
+      "team": "Finland",
+      "team_is": "Finnland",
+      "rank": 21,
+      "p_win": 0.2096,
+      "p_direct": 0,
+      "p_interconf_playoff": 0.2096
+    }
+  ]
+}

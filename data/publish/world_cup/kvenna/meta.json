@@ -1,0 +1,18 @@
+{
+  "tournament": "HM kvenna 2027",
+  "tournament_en": "FIFA Women's World Cup 2027",
+  "sport": "football",
+  "country": "world",
+  "sex": "female",
+  "stage": "playoff",
+  "generated_at": "2026-11-24T23:10:37Z",
+  "fit_date": "2026-12-01",
+  "data_through": "2026-10-13",
+  "n_draws": 4000,
+  "featured_team": "Iceland",
+  "featured_team_is": "Ísland",
+  "n_ties": 8,
+  "files": [
+    "playoff.json"
+  ]
+}
