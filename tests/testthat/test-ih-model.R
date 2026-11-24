@@ -90,3 +90,28 @@ test_that("states can be drawn for a season with no fixture", {
   expect_identical(dim(fit$m_state), c(50L, 12L))
   expect_null(fit$loc_m)
 })
+test_that("a fit that has gone wrong is refused before anything is published", {
+  ok <- list(
+    mode_status = c(margin = 0L, total = 0L),
+    sigma_m = rep(5.3, 20), sigma_t = rep(6, 20), hfa = rep(1, 20), level = rep(54, 20),
+    m_state = matrix(0, 20, 3), t_state = matrix(0, 20, 3)
+  )
+  expect_identical(ih_fit_check(ok), character())
+
+  no_mode <- ok
+  no_mode$mode_status[["total"]] <- 1L
+  expect_match(ih_fit_check(no_mode), "mode", all = FALSE)
+
+  nan <- ok
+  nan$sigma_t[3] <- NaN
+  nan$m_state[2, 2] <- Inf
+  expect_match(ih_fit_check(nan), "non-finite draws in sigma_total, margin_state")
+
+  wide <- ok
+  wide$sigma_m <- rep(40, 20)
+  wide$level <- rep(120, 20)
+  p <- ih_fit_check(wide)
+  expect_length(p, 2L)
+  expect_match(p[1], "observation sd of the margin 40.00 outside \\[2, 15\\]")
+  expect_match(p[2], "mean total 120.00 outside \\[30, 80\\]")
+})

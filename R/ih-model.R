@@ -127,6 +127,42 @@ ih_fit <- function(matches, fixtures, as_of, season = NULL, from_season = NULL,
   out
 }
 
+#' Refuse a nations fit that has gone wrong
+#'
+#' The checks a fit must pass before its forecast is published: R-INLA found
+#' the hyperparameter mode for both halves, every draw is finite, and the
+#' observation sds, home advantage and scoring level sit inside the handball
+#' leagues' sanity ranges (`HBBB_V2_SANITY$handball`). The leagues' team-spread
+#' range is not applied: nations differ far more than clubs (`ih_priors()`).
+#'
+#' @param fit [ih_fit()] result.
+#' @return Character vector of problems; empty when the fit passes.
+#' @noRd
+ih_fit_check <- function(fit) {
+  s <- HBBB_V2_SANITY$handball
+  out <- character()
+  if (!all(v2_mode_ok(fit$mode_status))) out <- c(out, "R-INLA did not find the hyperparameter mode")
+  draws <- list(
+    sigma_margin = fit$sigma_m, sigma_total = fit$sigma_t, hfa = fit$hfa, level = fit$level,
+    margin_state = fit$m_state, total_state = fit$t_state
+  )
+  bad <- names(draws)[!vapply(draws, function(x) length(x) > 0L && all(is.finite(x)), logical(1))]
+  if (length(bad)) {
+    return(c(out, sprintf("non-finite draws in %s", paste(bad, collapse = ", "))))
+  }
+  inside <- function(x, r) x >= r[[1]] && x <= r[[2]]
+  checks <- list(
+    list("observation sd of the margin", stats::median(fit$sigma_m), s$sigma),
+    list("observation sd of the total", stats::median(fit$sigma_t), s$sigma),
+    list("home advantage", stats::median(fit$hfa), s$hfa),
+    list("mean total", stats::median(fit$level), s$total)
+  )
+  for (k in checks) {
+    if (!inside(k[[2]], k[[3]])) out <- c(out, sprintf("%s %.2f outside [%g, %g]", k[[1]], k[[2]], k[[3]][[1]], k[[3]][[2]]))
+  }
+  out
+}
+
 #' Margin and total locations of any pairing, per draw
 #'
 #' @param fit [ih_fit()] result.

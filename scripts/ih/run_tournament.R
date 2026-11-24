@@ -37,7 +37,8 @@ empty <- data.frame(match_date = as.Date(character()), home_team = character(), 
 t0 <- Sys.time()
 fit <- ih_fit(matches, empty, as_of, season = season, n_draws = n_draws, seed = seed)
 cli::cli_inform("Fit: {fit$n_train} training matches ({fit$n_train_60} with a 60-minute score), mode status {paste(fit$mode_status, collapse = '/')}, {round(as.numeric(difftime(Sys.time(), t0, units = 'secs')))} s.")
-if (!all(v2_mode_ok(fit$mode_status))) cli::cli_abort("R-INLA did not find the hyperparameter mode; nothing published.")
+problems <- ih_fit_check(fit)
+if (length(problems)) cli::cli_abort(c("The fit failed its checks; nothing published.", stats::setNames(problems, rep("x", length(problems)))))
 missing <- setdiff(unlist(spec$groups), fit$teams)
 if (length(missing)) cli::cli_abort("No training match for {.val {missing}}.")
 
