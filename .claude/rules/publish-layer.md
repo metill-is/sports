@@ -329,6 +329,23 @@ extracts were the only record of what a past fit forecast.
   directory, so even a call on the data root leaves this tree and
   `beliefs/archive/` alone; `test-forecast-archive.R` pins all of the above.
 
+## EURO 2028 qualifying (since 2026-11-24, not published yet)
+
+`publish_euro2028()` (`R/nt-euro2028-publish.R`, called by
+`scripts/nt/euro2028_publish.R`) writes `meta.json`, `groups.json` and
+`teams.json` to `data/publish/euro2028/karla/` from the draw-night odds
+(`nt_euro2028_odds()`). Like `publish_world_cup()` it never calls
+`publish_one()` and has no `config/publish-schemas/` directory: a schema there
+would arm metill-platform's validator for the tree at once, so it ships with the
+platform page. Its own checks fail closed instead (`nt_check_euro2028_publish()`:
+totals of 24 places, 12 group winners, 20 direct places, one slot per group
+position, Icelandic names that survived a C locale), on a staging copy that only
+replaces the folder once it passes. The platform mirrors all of `data/publish/`,
+so committing this folder to main publishes it to the platform repository even
+before a page reads it: that commit needs the owner's approval. The platform's
+cross-file team check reads only `next_games.json`, which this tree does not
+write.
+
 ## Daily driver
 
 `Rscript scripts/05_publish.R`. Wires fresh-fit-on-demand via

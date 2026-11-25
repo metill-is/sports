@@ -62,11 +62,20 @@
    - An error naming teams means a typing error: a team missing, repeated, unknown or in the wrong pot, a group of the wrong size or pot make-up, a quarter-finalist typed as itself instead of as a placeholder, or a placeholder without its pairing. A `fixtures=` path that does not exist also stops the script.
    - A **warning** that the groups break draw conditions means the typed groups cannot be UEFA's draw (a team in the wrong group, most likely). Check the named groups against UEFA's page. If the file is right, UEFA changed a condition: update `data/nt/euro2028/draw_conditions.csv`. One exception: a winter warning that counts a Norway/England placeholder, or a host warning that counts an England placeholder, may be UEFA reading those conditions differently from us (the procedure does not say how they apply to placeholders); the odds are still computed, so note it and carry on.
 
-3. **Read `odds.md`** in the output folder. It starts with Iceland, then has one table per group, the quarter-finalists, the reserved host places and play-off format, and the **Article 15 d) comparison**: how often the "repeat" (published explanations) and "once" (the regulation's literal wording) readings change a group table, the direct qualifiers or the play-off field. Which reading to use is the owner's decision; the default is "repeat". `teams.csv`, `teams_once.csv` and `slots.csv` hold the numbers; `odds.rds` holds them for later steps.
+3. **Read `odds.md`** in the output folder. It starts with Iceland, then has one table per group, the quarter-finalists, the reserved host places and play-off format, and the **Article 15 d) comparison**: how often the "repeat" (published explanations) and "once" (the regulation's literal wording) readings change a group table, the direct qualifiers or the play-off field. The reading is moot and not ruled (no difference in 500,000 simulated campaigns); the default is "repeat". `teams.csv`, `teams_once.csv` and `slots.csv` hold the numbers; `odds.rds` holds them for later steps.
 
-4. **Commit** `data/nt/euro2028/groups.csv` and the output folder on a branch. Publishing on metill.is needs a publish contract and the owner's approval; neither exists yet.
+4. **Commit** `data/nt/euro2028/groups.csv` and the output folder on a branch.
 
-5. **When UEFA publishes the fixture list**, save it as `data/nt/euro2028/fixtures_2027.csv` (`group,match_date,home_team,away_team,venue`, with `venue` `home` or `neutral`, placeholders as above) and rerun step 2. The script uses that file whenever it exists. Venues matter (home advantage); dates do not.
+5. **The publish JSON** (`meta.json`, `groups.json`, `teams.json`, Icelandic names; see `publish_euro2028()`). First write it somewhere to look at it:
+
+   ```bash
+   LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 Rscript scripts/nt/euro2028_publish.R odds=docs/reports/2026-12-06-euro2028-draw/odds.rds out=/Users/brynjolfurjonsson/.claude-reviews/euro2028-draw/publish_json
+   ```
+
+   - Without `out=` it writes `data/publish/euro2028/karla/`. metill-platform mirrors all of `data/publish/` (`pull-sports-data.yml`), so **committing that folder to main publishes it**. The platform has no page for it yet, so the files would sit in its repository as data. Commit it only with the owner's approval.
+   - The script checks the files before writing them (24 places, 12 group winners, 20 direct places, every position filled once per group, Icelandic names intact). A failed check leaves the folder as it was.
+
+6. **When UEFA publishes the fixture list**, save it as `data/nt/euro2028/fixtures_2027.csv` (`group,match_date,home_team,away_team,venue`, with `venue` `home` or `neutral`, placeholders as above) and rerun step 2 (and step 5 if the JSON is published). The script uses that file whenever it exists. Venues matter (home advantage); dates do not.
 
 ## What the odds assume
 
@@ -76,7 +85,7 @@
 - Disciplinary points (Article 15 j, Article 23) are not modelled: a random draw settles ties that reach them.
 - Without a fixture list, Belarus, Ukraine and Israel play home matches at neutral venues (UEFA decision for the first two; every competitive Israel home match since June 2025 was in Hungary). All other home matches are at home.
 - The play-off draw keeps hosts apart and Northern Ireland away from hosts when possible (Article 16.03), each such allocation equally likely. Further conditions the UEFA Executive Committee may add are not modelled.
-- Code: `R/nt-euro2028.R` (facts, loader, host places, play-offs), `R/nt-euro2028-draw.R` (draw simulator and condition check), `R/nt-qualifying.R` (groups, Article 15 and 23 rankings).
+- Code: `R/nt-euro2028.R` (facts, loader, host places, play-offs), `R/nt-euro2028-draw.R` (draw simulator and condition check), `R/nt-euro2028-publish.R` (the odds under both readings, the publish JSON), `R/nt-qualifying.R` (groups, Article 15 and 23 rankings).
 
 ## Before the draw: what the draw itself may bring
 

@@ -134,6 +134,7 @@ Collate:
     'nt-wwc2027.R'
     'nt-euro2028.R'
     'nt-euro2028-draw.R'
+    'nt-euro2028-publish.R'
     'placer-ledger.R'
     'placer-login.R'
     'placer-navigate.R'
