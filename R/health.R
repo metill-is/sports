@@ -35,9 +35,15 @@ health_thresholds <- function() {
     # matches check_odds_freshness's fixture horizon, so a name Lengjan is
     # actively pricing stays flagged while a retired rendering ages out.
     # The weekly Stan reference fit (check_engine_reference): decision 5 of the
-    # football cutover plan, and how old its newest result may be -- a weekly
-    # run, a missed week and a day of slack.
+    # football cutover plan, handball / basketball's limits within a season
+    # (set from measured differences; a row across the season break carries
+    # its own looser ones, R/model-v2-hbbb-reference.R), and how old its newest
+    # result may be -- a weekly run, a missed week and a day of slack.
     engine_reference_max_mean_abs_diff = FV2_REFERENCE_MAX_MEAN_ABS_DIFF,
+    engine_reference_hbbb_max_mean_abs_diff = HBBB_REFERENCE_LIMITS$in_season[["result"]],
+    engine_reference_hbbb_max_line_mean_abs_diff = HBBB_REFERENCE_LIMITS$in_season[["line"]],
+    engine_reference_hbbb_max_fixture_abs_diff = HBBB_REFERENCE_LIMITS$in_season[["result_max"]],
+    engine_reference_hbbb_max_line_fixture_abs_diff = HBBB_REFERENCE_LIMITS$in_season[["line_max"]],
     engine_reference_max_age_days = 15
   )
 }
@@ -446,44 +452,71 @@ check_diagnostics_drift <- function(root, th, paused_cells = character(0)) {
 
 #' The weekly Stan reference fit: do R-INLA and NUTS still agree?
 #'
-#' Reads the newest `engine_reference` row of each football cell
-#' (scripts/engine_reference.R, weekly). WARN when that run did not pass (mean
-#' absolute difference in outcome probabilities above
-#' `engine_reference_max_mean_abs_diff`, a NUTS fit past `div_frac_warn` or
-#' `rhat_warn`, or an INLA fit without a mode or failing its gate), or when it
-#' is older than `engine_reference_max_age_days`
-#' (the weekly run stopped). PAUSED before the first run (no store yet):
-#' nothing to judge, and not an alarm. An unreadable store, or a cell with no
-#' row while the store exists, is WARN.
+#' Reads the newest `engine_reference` row of each cell, football, handball
+#' and basketball (scripts/engine_reference.R, weekly). WARN when that run did
+#' not pass (a mean absolute difference in outcome probabilities above its
+#' limit -- `engine_reference_max_mean_abs_diff` for football; for handball and
+#' basketball the limits stored on the row, which depend on whether the row's
+#' fixtures cross the season break: `threshold` on the mean result
+#' difference, `line_threshold` on the mean difference on each of the spread
+#' and total lines, `max_threshold` and `line_max_threshold` on any single
+#' fixture's, else the in-season `engine_reference_hbbb_*` limits -- a NUTS
+#' fit past `div_frac_warn` or `rhat_warn`, or an INLA fit without a mode or
+#' failing its gate), or when it is older than
+#' `engine_reference_max_age_days` (the weekly run stopped). PAUSED before the
+#' first run (no store yet), and for a sport no run has covered yet (no row's
+#' `run_sports` names it; a row without one covered its own sport): nothing to
+#' judge, and not an alarm. An unreadable store, or a cell with no row while a
+#' run has covered its sport, is WARN. The value names what the row's Rhat
+#' covers (`nuts_rhat_scope`): the forecasts for handball and basketball, the
+#' hyperparameters and states for football.
 #' @noRd
 check_engine_reference <- function(root, now, th) {
-  sexes <- c("male", "female")
-  scope_of <- function(sx) paste0("football/iceland/", sx)
+  cells <- expand.grid(
+    sex = c("male", "female"), sport = c("football", "handball", "basketball"),
+    stringsAsFactors = FALSE
+  )
+  scope_of <- function(sport, sx) paste0(sport, "/iceland/", sx)
+  each_cell <- function(f) dplyr::bind_rows(lapply(seq_len(nrow(cells)), function(i) f(cells$sport[i], cells$sex[i])))
   src <- file.path(root, "health", "engine_reference")
   # PAUSED only before the first run, when the store does not exist. A store
-  # that will not read, or a cell that never produced a row while the store
-  # exists, is a reference that is not running: WARN, as for drift.
+  # that will not read, or a cell that never produced a row while a run has
+  # covered its sport, is a reference that is not running: WARN, as for drift.
   if (!dir.exists(src)) {
-    return(dplyr::bind_rows(lapply(sexes, function(sx) {
-      health_row("engine_reference", scope_of(sx), "PAUSED", "no weekly reference fit yet", "n/a")
-    })))
+    return(each_cell(function(sport, sx) {
+      health_row("engine_reference", scope_of(sport, sx), "PAUSED", "no weekly reference fit yet", "n/a")
+    }))
   }
   rows <- tryCatch(
-    read_table("engine_reference", root = root, filter = list(sport = "football", country = "iceland")),
+    read_table("engine_reference", root = root, filter = list(country = "iceland")),
     error = function(e) structure(list(), message = conditionMessage(e))
   )
   if (!is.data.frame(rows)) {
-    return(dplyr::bind_rows(lapply(sexes, function(sx) {
+    return(each_cell(function(sport, sx) {
       health_row(
-        "engine_reference", scope_of(sx), "WARN",
+        "engine_reference", scope_of(sport, sx), "WARN",
         paste("data/health/engine_reference/ unreadable:", attr(rows, "message")), "readable"
       )
-    })))
+    }))
   }
-  dplyr::bind_rows(lapply(sexes, function(sx) {
-    scope <- scope_of(sx)
-    mine <- if (nrow(rows) && "sex" %in% names(rows)) rows[rows$sex == sx, , drop = FALSE] else rows[0, , drop = FALSE]
+  covered <- if (nrow(rows) && "sport" %in% names(rows)) {
+    runs <- if ("run_sports" %in% names(rows)) as.character(rows$run_sports) else rep(NA_character_, nrow(rows))
+    runs[is.na(runs)] <- as.character(rows$sport[is.na(runs)])
+    unique(trimws(unlist(strsplit(runs, ",", fixed = TRUE))))
+  } else {
+    character()
+  }
+  each_cell(function(sport, sx) {
+    scope <- scope_of(sport, sx)
+    mine <- if (nrow(rows) && all(c("sport", "sex") %in% names(rows))) {
+      rows[rows$sport == sport & rows$sex == sx, , drop = FALSE]
+    } else {
+      rows[0, , drop = FALSE]
+    }
     if (nrow(mine) == 0L) {
+      if (!sport %in% covered) {
+        return(health_row("engine_reference", scope, "PAUSED", sprintf("no weekly reference fit of %s yet", sport), "n/a"))
+      }
       return(health_row(
         "engine_reference", scope, "WARN",
         "no weekly reference row for this cell, though the reference has run", "a row per cell"
@@ -492,13 +525,52 @@ check_engine_reference <- function(root, now, th) {
     mine$run_date <- as.Date(as.character(mine$run_date))
     newest <- mine[order(mine$run_date, mine$run_at, decreasing = TRUE)[1L], , drop = FALSE]
     age <- as.numeric(difftime(now, newest$run_at, units = "days"))
-    breach <- !isTRUE(newest$passed) ||
-      isTRUE(newest$mean_abs_diff > th$engine_reference_max_mean_abs_diff)
-    what <- sprintf(
-      "%s: mean |p_INLA - p_NUTS| = %.4f over %d fixtures (%s); NUTS %d divergences, Rhat %.3f; INLA mode status %d",
-      format(newest$run_date), newest$mean_abs_diff, newest$n_fixtures, newest$fixtures,
-      newest$nuts_divergences, newest$nuts_max_rhat, newest$inla_mode_status
+    rhat_scope <- if ("nuts_rhat_scope" %in% names(newest) && !is.na(newest$nuts_rhat_scope)) {
+      newest$nuts_rhat_scope
+    } else if (identical(sport, "football")) {
+      FV2_REFERENCE_RHAT_SCOPE
+    } else {
+      HBBB_REFERENCE_RHAT_SCOPE
+    }
+    tail_of <- sprintf(
+      "over %d fixtures (%s); NUTS %d divergences, Rhat %.3f (%s); INLA mode status %d",
+      newest$n_fixtures, newest$fixtures, newest$nuts_divergences, newest$nuts_max_rhat, rhat_scope,
+      newest$inla_mode_status
     )
+    if (identical(sport, "football")) {
+      breach <- !isTRUE(newest$passed) ||
+        isTRUE(newest$mean_abs_diff > th$engine_reference_max_mean_abs_diff)
+      what <- sprintf("%s: mean |p_INLA - p_NUTS| = %.4f %s", format(newest$run_date), newest$mean_abs_diff, tail_of)
+      limits <- sprintf("<= %s", th$engine_reference_max_mean_abs_diff)
+    } else {
+      # The limits the row was judged by: its regime's (within a season or
+      # across the season break); the in-season ones for a row without them.
+      stored <- function(col, default) {
+        x <- if (col %in% names(newest)) newest[[col]] else NA_real_
+        if (is.na(x)) default else x
+      }
+      result <- stored("threshold", th$engine_reference_hbbb_max_mean_abs_diff)
+      line <- stored("line_threshold", th$engine_reference_hbbb_max_line_mean_abs_diff)
+      result_max <- stored("max_threshold", th$engine_reference_hbbb_max_fixture_abs_diff)
+      line_max <- stored("line_max_threshold", th$engine_reference_hbbb_max_line_fixture_abs_diff)
+      breach <- !isTRUE(newest$passed) ||
+        isTRUE(newest$mean_abs_diff > result) ||
+        isTRUE(newest$spread_mean_abs_diff > line) || isTRUE(newest$total_mean_abs_diff > line) ||
+        isTRUE(newest$max_abs_diff > result_max) ||
+        isTRUE(newest$spread_max_abs_diff > line_max) || isTRUE(newest$total_max_abs_diff > line_max)
+      what <- sprintf(
+        paste(
+          "%s: mean |p_INLA - p_NUTS| = %.4f (result), %.4f (spread line), %.4f (total line);",
+          "largest at one fixture %.4f, %.4f, %.4f %s"
+        ),
+        format(newest$run_date), newest$mean_abs_diff, newest$spread_mean_abs_diff, newest$total_mean_abs_diff,
+        newest$max_abs_diff, newest$spread_max_abs_diff, newest$total_max_abs_diff, tail_of
+      )
+      limits <- sprintf(
+        "mean: result <= %s, spread and total lines <= %s; one fixture: result <= %s, lines <= %s",
+        result, line, result_max, line_max
+      )
+    }
     if (age > th$engine_reference_max_age_days) {
       health_row(
         "engine_reference", scope, "WARN",
@@ -509,12 +581,12 @@ check_engine_reference <- function(root, now, th) {
       health_row(
         "engine_reference", scope, if (breach) "WARN" else "OK", what,
         sprintf(
-          "<= %s; NUTS divergences < %.1f%%, Rhat <= %s; INLA mode found and gate passed",
-          th$engine_reference_max_mean_abs_diff, 100 * th$div_frac_warn, th$rhat_warn
+          "%s; NUTS divergences < %.1f%%, Rhat <= %s; INLA mode found and gate passed",
+          limits, 100 * th$div_frac_warn, th$rhat_warn
         )
       )
     }
-  }))
+  })
 }
 
 #' "sport/country/sex" cells whose `fit_freshness` row is PAUSED.

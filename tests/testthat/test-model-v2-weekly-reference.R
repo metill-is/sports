@@ -121,7 +121,11 @@ test_that("the weekly reference compares the two engines' probabilities fixture 
   expect_identical(res$row$sex, "male")
   expect_identical(res$row$run_date, s$end_date)
   expect_equal(res$row$n_train, s$n_obs)
-  expect_no_error(validate_against_schema(res$row, "engine_reference"))
+  # Its Rhat covers the hyperparameters and states, where handball's and
+  # basketball's covers the forecasts.
+  expect_identical(res$row$nuts_rhat_scope, "hyperparameters and states")
+  # As write_table() stores it: the columns football does not fill are optional.
+  expect_no_error(validate_against_schema(fill_optional_columns(res$row, "engine_reference"), "engine_reference"))
 
   # NUTS puts the home side 0.25 higher on the log scale: far above 0.01.
   apart <- suppressMessages(fv2_weekly_reference(
@@ -246,7 +250,7 @@ test_that("the health check warns on a breach, an unconverged reference or a ref
   # Nothing has run yet: nothing to judge, and not an alarm.
   h <- check_engine_reference(root, now, th)
   expect_true(all(h$status == "PAUSED"))
-  expect_setequal(h$scope, c("football/iceland/male", "football/iceland/female"))
+  expect_setequal(h$scope, paste0(rep(c("football", "handball", "basketball"), each = 2), "/iceland/", c("male", "female")))
 
   # The reference has run, but one cell has never produced a row.
   write_table(.ref_row("male"), "engine_reference", root = root)
@@ -266,6 +270,7 @@ test_that("the health check warns on a breach, an unconverged reference or a ref
 
   later <- now + as.difftime(th$engine_reference_max_age_days + 1, units = "days")
   h <- check_engine_reference(root, later, th)
+  h <- h[startsWith(h$scope, "football/"), ]
   expect_true(all(h$status == "WARN"))
   expect_true(all(grepl("days old", h$value)))
 })

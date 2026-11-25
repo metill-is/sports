@@ -1,0 +1,2 @@
+"sport","country","sex","run_date","run_at","fixtures","n_fixtures","n_train","mean_abs_diff","max_abs_diff","threshold","nuts_divergences","nuts_max_rhat","inla_mode_status","inla_gate_passed","passed","inla_version","cmdstan_version","stan_md5","model_version","code_commit","run_sports","seconds"
+"football","iceland","male",2026-11-24,2026-11-24 18:34:49,"off-season pairings",528,2999,0.00323270241779528,0.0144512987882337,0.01,0,1.04055925826844,0,TRUE,FALSE,"25.6.7","2.40.0","4ef7d6a01455a8a140368a5d973be2c3","2.0",NA,"football,handball,basketball",477

@@ -61,6 +61,7 @@ Collate:
     'model-v2-fit.R'
     'model-v2-reference.R'
     'model-v2-hbbb.R'
+    'model-v2-hbbb-reference.R'
     'hbbb-v2-scorecard.R'
     'publish-iceland-league.R'
     'publish-divisions.R'

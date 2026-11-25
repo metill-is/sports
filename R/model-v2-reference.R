@@ -33,6 +33,12 @@ NULL
 #' @noRd
 FV2_REFERENCE_MAX_MEAN_ABS_DIFF <- 0.01
 
+#' What a football row's `nuts_max_rhat` covers: the hyperparameters and
+#' every state (the fit's summary and `state_max_rhat`), where a handball /
+#' basketball row's covers the forecasts (`HBBB_REFERENCE_RHAT_SCOPE`).
+#' @noRd
+FV2_REFERENCE_RHAT_SCOPE <- "hyperparameters and states"
+
 #' Every pairing, both ways, of the teams of each league division in a season.
 #'
 #' @param divisions `fv2_division_table()` output (team, season, division,
@@ -185,7 +191,8 @@ fv2_weekly_reference <- function(league, sex, end_date = Sys.Date(),
     code_commit = {
       sha <- Sys.getenv("GITHUB_SHA")
       if (nzchar(sha)) sha else NA_character_
-    }
+    },
+    nuts_rhat_scope = FV2_REFERENCE_RHAT_SCOPE
   )
   fixtures <- tibble::tibble(
     match_date = as.Date(inputs$pred$match_date),
