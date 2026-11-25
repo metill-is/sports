@@ -52,8 +52,9 @@ test_that("the private repository and the table's path come only from secrets, i
   expect_true(all(api == "repos/$IH_DATA_REPO"), info = paste(api, collapse = ", "))
   dispatch <- regmatches(code, regexpr("--repo [^ ]+", code))
   expect_true(all(dispatch == "--repo metill-is/metill-platform"), info = paste(dispatch, collapse = ", "))
-  # Nothing is fetched from the web by a browser here: the fetch is not CI's.
-  expect_false(any(grepl("chrom", code, ignore.case = TRUE)))
+  # The workflow only reads the match table: one gh api call, nothing else.
+  expect_equal(lengths(regmatches(fetch$run, gregexpr("gh api", fetch$run, fixed = TRUE))), 1L)
+  expect_false(grepl("Rscript|curl |wget ", fetch$run))
   expect_false(any(grepl("GITHUB_WORKSPACE", code, fixed = TRUE)))
 })
 
