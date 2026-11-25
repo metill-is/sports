@@ -252,8 +252,9 @@ schemas <- function() {
       published_at  = ts,
       code_commit   = arrow::string()
     ),
-    # The weekly Stan reference fit's result, one row per football cell and
-    # run (R/model-v2-reference.R, scripts/engine_reference.R): how far apart
+    # The weekly Stan reference fit's result, one row per cell (football,
+    # handball, basketball) and run (R/model-v2-reference.R,
+    # R/model-v2-hbbb-reference.R, scripts/engine_reference.R): how far apart
     # R-INLA's and NUTS's outcome probabilities were, and whether both fits
     # were sound. check_engine_reference() reads the newest row of each cell.
     engine_reference = arrow::schema(
@@ -279,7 +280,30 @@ schemas <- function() {
       cmdstan_version  = arrow::string(),
       stan_md5         = arrow::string(),
       model_version    = arrow::string(),
-      code_commit      = arrow::string()
+      code_commit      = arrow::string(),
+      # Handball / basketball (R/model-v2-hbbb-reference.R): the two engines'
+      # probabilities of clearing the spread and total lines nearest each
+      # fixture's expected margin and total (mean_abs_diff above is the result
+      # probabilities), and the limit each mean is held to. NA on football rows;
+      # optional_columns() fills them.
+      spread_mean_abs_diff = arrow::float64(),
+      spread_max_abs_diff  = arrow::float64(),
+      total_mean_abs_diff  = arrow::float64(),
+      total_max_abs_diff   = arrow::float64(),
+      line_threshold       = arrow::float64(),
+      # The limits on any single fixture's difference, result and each line
+      # (HBBB_REFERENCE_LIMITS' result_max and line_max). NA on football rows.
+      max_threshold        = arrow::float64(),
+      line_max_threshold   = arrow::float64(),
+      # What nuts_max_rhat covers: "forecasts" on handball / basketball rows
+      # (each fixture's predictive location and the observation sd),
+      # "hyperparameters and states" on football's. NA on rows written
+      # before 2026-11-25, whose scope follows from the sport.
+      nuts_rhat_scope      = arrow::string(),
+      # The sports the run fitted, comma-separated: tells a cell its run never
+      # covered (PAUSED) from one it covered and wrote nothing for (WARN). NA
+      # on rows written before 2026-11-24, which covered football only.
+      run_sports           = arrow::string()
     )
   )
 }
@@ -307,6 +331,17 @@ optional_columns <- function(table) {
       event_id = NA_character_,
       competition_id = NA_character_,
       kickoff_at = .POSIXct(NA_real_, tz = "UTC")
+    ),
+    engine_reference = list(
+      spread_mean_abs_diff = NA_real_,
+      spread_max_abs_diff = NA_real_,
+      total_mean_abs_diff = NA_real_,
+      total_max_abs_diff = NA_real_,
+      line_threshold = NA_real_,
+      max_threshold = NA_real_,
+      line_max_threshold = NA_real_,
+      nuts_rhat_scope = NA_character_,
+      run_sports = NA_character_
     ),
     list()
   )

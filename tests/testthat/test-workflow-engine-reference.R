@@ -1,8 +1,8 @@
 # The weekly Stan reference fit's workflow (.github/workflows/engine-reference.yml).
 #
-# It fits football v2.0 with R-INLA and with NUTS once a week and commits one
-# summary row per cell under data/health/engine_reference/, which the health
-# check reads. It must not be able to touch anything else on main, must not
+# It fits football v2.0 and handball / basketball v2 with R-INLA and with NUTS
+# once a week and commits one summary row per cell under
+# data/health/engine_reference/, which the health check reads. It must not be able to touch anything else on main, must not
 # set off the workflows that push data (fit, decide-publish), and must install
 # its two engines the way the workflows that already run them do.
 
@@ -59,9 +59,22 @@ test_that("the reference fit can only write its own summary rows", {
     expect_false(any(grepl(forbidden, code)), info = forbidden)
   }
   expect_true(any(grepl("scripts/engine_reference.R", code, fixed = TRUE)))
-  # A run longer than this is broken, not slow: two cells, each one INLA and
-  # one four-chain NUTS fit.
-  expect_lte(yml$jobs[[1]][["timeout-minutes"]], 120)
+  # A run longer than this is broken, not slow: six cells, each an INLA fit
+  # and four-chain NUTS fits, about 50 minutes on the runner in season and 60
+  # off-season (the workflow's comment has the measurements).
+  expect_lte(yml$jobs[[1]][["timeout-minutes"]], 150)
+})
+
+test_that("the reference fit runs every sport and stores what it measured", {
+  skip_if_not(file.exists(reference_workflow), "workflow not present")
+  steps <- read_reference_workflow()$jobs[[1]]$steps
+  run <- steps[[first_step(steps, "scripts/engine_reference.R")]]$run
+  # The script's default is every sport; a --sport filter here would leave
+  # cells to go stale, a --no-write run would store nothing to warn from.
+  expect_false(grepl("--sport", run, fixed = TRUE))
+  expect_false(grepl("--no-write", run, fixed = TRUE))
+  src <- readLines(here::here("scripts", "engine_reference.R"), warn = FALSE)
+  expect_true(any(grepl('split_flag("sport", c("football", "handball", "basketball"))', src, fixed = TRUE)))
 })
 
 test_that("the reference fit follows the CI conventions for R and its packages", {

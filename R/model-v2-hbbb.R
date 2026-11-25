@@ -128,6 +128,10 @@ inla_model_version <- function(sport) {
 #' that season, else its season level there (no week term), so before a
 #' season starts it has crossed the break as the forecasts have.
 #'
+#' @param pred Fixture rows to use in place of `prep$pred_d`, with their own
+#'   `season` (`match_date`, `season`, `division`, `home_team`, `away_team`):
+#'   the weekly reference fit's pairings when no fixture lies inside the
+#'   horizon (`hbbb_v2_break_fixtures()`).
 #' @return A list: `v` (build_v2_data()), `opts`, `train`, `pred`, `y`
 #'   (margin and total responses), `observed`, `coverage`, `reg_missing`
 #'   (the latest season's rows without regulation scores), `last_season`,
@@ -138,7 +142,8 @@ inla_model_version <- function(sport) {
 #'   (the components to draw per response), `ot`, `n_seasons`, `teams`.
 #' @noRd
 hbbb_v2_spec <- function(prep, league, sex, end_date, root = here::here("data"),
-                         from_season = NULL, opts = hbbb_v2_options(league$sport, sex)) {
+                         from_season = NULL, opts = hbbb_v2_options(league$sport, sex),
+                         pred = NULL) {
   filt <- list(sport = league$sport, country = league$country, sex = sex)
   results <- as.data.frame(read_table("results", root = root, filter = filt))
   train <- as.data.frame(model_training_results(results, league, end_date = end_date, from_season = from_season))
@@ -157,12 +162,19 @@ hbbb_v2_spec <- function(prep, league, sex, end_date, root = here::here("data"),
     ))
   }
 
-  pred <- as.data.frame(prep$pred_d)
-  pred$season <- integer(nrow(pred))
+  given <- !is.null(pred)
+  if (given) {
+    pred <- as.data.frame(pred)
+    stopifnot(all(c("match_date", "season", "division", "home_team", "away_team") %in% names(pred)))
+    pred$season <- as.integer(pred$season)
+  } else {
+    pred <- as.data.frame(prep$pred_d)
+    pred$season <- integer(nrow(pred))
+  }
   sched <- tryCatch(as.data.frame(read_table("schedules", root = root, filter = filt)), error = function(e) NULL)
   cols <- c("match_date", "home_team", "away_team", "season", "division")
   known <- rbind(if (!is.null(sched) && nrow(sched)) sched[, cols, drop = FALSE], results[, cols, drop = FALSE])
-  if (nrow(pred)) {
+  if (nrow(pred) && !given) {
     key <- function(d) paste(format(as.Date(d$match_date)), d$home_team, d$away_team)
     pred$season <- as.integer(known$season[match(key(pred), key(known))])
     if (anyNA(pred$season)) {
@@ -191,8 +203,9 @@ hbbb_v2_spec <- function(prep, league, sex, end_date, root = here::here("data"),
   within <- !identical(opts$within, "none")
   node <- function(k, s, ts, wk, d) {
     if (!within) {
-      ts <- NA_integer_
-      wk <- NA_integer_
+      # WHY rep(): with no fixture, k is empty and a scalar NA would not fit beside it.
+      ts <- rep(NA_integer_, length(k))
+      wk <- rep(NA_integer_, length(k))
     }
     data.frame(k = as.integer(k), s = as.integer(s), ts = as.integer(ts), wk = as.integer(wk), d = as.integer(d))
   }

@@ -1,0 +1,2 @@
+"sport","country","sex","run_date","run_at","fixtures","n_fixtures","n_train","mean_abs_diff","max_abs_diff","threshold","nuts_divergences","nuts_max_rhat","inla_mode_status","inla_gate_passed","passed","inla_version","cmdstan_version","stan_md5","model_version","code_commit","run_sports","seconds"
+"football","iceland","female",2026-11-24,2026-11-24 18:39:40,"off-season pairings",312,1500,0.00266688471568187,0.0153451173750113,0.01,0,1.00477306974047,0,TRUE,TRUE,"25.6.7","2.40.0","4ef7d6a01455a8a140368a5d973be2c3","2.0",NA,"football,handball,basketball",290

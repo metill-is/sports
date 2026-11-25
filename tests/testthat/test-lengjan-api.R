@@ -327,3 +327,34 @@ test_that("the long rows keep each market's version, name, group and close time"
   expect_equal(unique(ou$line), 57.5)
   expect_false(any(ou$is_primary))
 })
+
+test_that("parse_lengjan_program squishes participant names as the site shows them", {
+  # The API carries stray spaces in some names ("Newcastle ", "Víkingur ");
+  # the site trims them, and team_names maps the trimmed form.
+  prog <- list(events = list(list(
+    id = 1, sportId = 1, compId = 296, compName = "x", countryCode = "ENG",
+    datePlayed = "2030-05-01T15:00:00Z", marketCount = 3,
+    participants = list(
+      list(homeOrAway = 1, name = "Newcastle "),
+      list(homeOrAway = 2, name = " Man.  Utd.")
+    )
+  )), liveSoon = list())
+  ev <- parse_lengjan_program(prog)
+  expect_equal(ev$home_team, "Newcastle")
+  expect_equal(ev$away_team, "Man. Utd.")
+})
+
+test_that("parse_lengjan_program keeps raw participant names on request", {
+  # The team-name audit lists names with stray spaces, so it needs them unsquished.
+  prog <- list(events = list(list(
+    id = 1, sportId = 1, compId = 296, compName = "x", countryCode = "ENG",
+    datePlayed = "2030-05-01T15:00:00Z", marketCount = 3,
+    participants = list(
+      list(homeOrAway = 1, name = "Newcastle "),
+      list(homeOrAway = 2, name = " Man.  Utd.")
+    )
+  )), liveSoon = list())
+  ev <- parse_lengjan_program(prog, squish_names = FALSE)
+  expect_equal(ev$home_team, "Newcastle ")
+  expect_equal(ev$away_team, " Man.  Utd.")
+})
