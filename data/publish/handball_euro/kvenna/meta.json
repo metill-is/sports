@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "placeholder": false,
-  "generated_at": "2026-11-25T09:37:45Z",
+  "generated_at": "2026-11-25T16:50:58Z",
   "fit_date": "2026-11-25",
   "start_date": "2026-12-03",
   "end_date": "2026-12-20",
@@ -16,14 +16,14 @@
   "champion_favourite": {
     "team": "Norway",
     "team_is": "Noregur",
-    "p_champion": 0.668
+    "p_champion": 0.6642
   },
   "model": {
     "engine": "inla",
     "model_version": "ih-v2.0",
     "n_train": 4136,
-    "hfa": 1.199,
-    "sigma_margin": 5.289,
+    "hfa": 1.2,
+    "sigma_margin": 5.282,
     "h2h_reapply": "none"
   }
 }
