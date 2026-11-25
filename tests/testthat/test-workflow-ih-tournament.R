@@ -26,9 +26,12 @@ test_that("the refresh is dispatched by hand only, one run per championship at a
   # YAML 1.1 reads the key `on` as the boolean TRUE.
   on <- wf[["on"]] %||% wf[["TRUE"]]
   expect_named(on, "workflow_dispatch")
-  expect_setequal(names(on$workflow_dispatch$inputs), c("tournament", "as_of"))
-  expect_setequal(unlist(on$workflow_dispatch$inputs$tournament$options), names(IH_TOURNAMENTS))
-  expect_equal(wf$concurrency$group, "ih-tournament-${{ inputs.tournament }}")
+  inputs <- on$workflow_dispatch$inputs
+  expect_setequal(names(inputs), c("tournament", "as_of", "replay", "as_of_dates", "data_ref"))
+  expect_setequal(unlist(inputs$tournament$options), names(IH_TOURNAMENTS))
+  expect_setequal(unlist(inputs$replay$options), c("none", names(IH_REPLAYS)))
+  expect_equal(inputs$replay$default, "none")
+  expect_equal(wf$concurrency$group, "ih-tournament-${{ inputs.replay != 'none' && format('replay-{0}', inputs.replay) || inputs.tournament }}")
   expect_false(isTRUE(wf$concurrency$`cancel-in-progress`))
   fit <- yaml::read_yaml(here::here(".github", "workflows", "fit.yml"))
   expect_false(identical(wf$concurrency$group, fit$concurrency$group))
@@ -43,7 +46,9 @@ test_that("the private repository and the table's path come only from secrets, i
   expect_identical(fetch$env$GH_TOKEN, "${{ secrets.IH_DATA_TOKEN }}")
   expect_match(fetch$run, "::add-mask::$IH_DATA_REPO", fixed = TRUE)
   expect_match(fetch$run, 'dir="$RUNNER_TEMP/', fixed = TRUE)
-  expect_match(fetch$run, 'repos/$IH_DATA_REPO/contents/$IH_DATA_FILE" > "$dir/', fixed = TRUE)
+  expect_match(fetch$run, 'repos/$IH_DATA_REPO/contents/$IH_DATA_FILE?ref=$ref" > "$dir/', fixed = TRUE)
+  # The table is read at the commit the refresh pushed when it says which.
+  expect_match(fetch$run, 'ref="$DATA_REF"', fixed = TRUE)
 
   lines <- readLines(ih_workflow, warn = FALSE)
   code <- sub("#.*$", "", lines)
@@ -65,8 +70,9 @@ test_that("only the championship's publish folder is committed, and the platform
   expect_identical(adds, 'git add -- "$pub"')
   expect_match(commit$run, "IH_TOURNAMENTS[[", fixed = TRUE)
   expect_match(commit$run, ".github/scripts/push-with-retry.sh", fixed = TRUE)
+  expect_identical(commit$`if`, "inputs.replay == 'none'")
   dispatch <- ih_step("Dispatch metill-platform's pull")
-  expect_identical(dispatch$`if`, "steps.commit.outputs.changed == 'true'")
+  expect_identical(dispatch$`if`, "inputs.replay == 'none' && steps.commit.outputs.changed == 'true'")
   expect_match(dispatch$run, "gh workflow run pull-sports-data.yml --repo metill-is/metill-platform --ref main", fixed = TRUE)
   run <- ih_step("Fit, simulate and write the forecast")
   expect_match(run$run, "scripts/ih/run_tournament.R", fixed = TRUE)
@@ -74,6 +80,28 @@ test_that("only the championship's publish folder is committed, and the platform
   runner <- readLines(here::here("scripts", "ih", "run_tournament.R"), warn = FALSE)
   expect_true(any(grepl("problems <- ih_fit_check(fit)", runner, fixed = TRUE)))
   expect_true(any(grepl("nothing published", runner, fixed = TRUE)))
+})
+
+test_that("a replay writes only under RUNNER_TEMP: it never publishes, commits or dispatches", {
+  skip_if_not(file.exists(ih_workflow))
+  live <- ih_step("Fit, simulate and write the forecast")
+  expect_identical(live$`if`, "inputs.replay == 'none'")
+  replay <- ih_step("Replay the championship day by day")
+  expect_identical(replay$`if`, "inputs.replay != 'none'")
+  expect_match(replay$run, 'scripts/ih/replay_tournament.R --replay "$REPLAY"', fixed = TRUE)
+  expect_match(replay$run, '--out "$RUNNER_TEMP/replay"', fixed = TRUE)
+  guard <- ih_step("Check that the replay changed nothing in the checkout")
+  expect_identical(guard$`if`, "always() && inputs.replay != 'none'")
+  expect_match(guard$run, "git status --porcelain", fixed = TRUE)
+  upload <- ih_step("Upload the replay")
+  expect_identical(upload$with$path, "${{ runner.temp }}/replay")
+  # Every step that writes the repository or tells the platform is live only.
+  for (s in ih_steps()) {
+    run <- s$run %||% ""
+    if (grepl("git commit|git push|push-with-retry|gh workflow run", run)) {
+      expect_match(s$`if` %||% "", "inputs.replay == 'none'", fixed = TRUE, info = s$name)
+    }
+  }
 })
 
 test_that("the job runs in the ih-refresh environment with least privilege, two scoped tokens and pinned actions", {

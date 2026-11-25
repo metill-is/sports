@@ -19,6 +19,16 @@ name: International Handball Forecast
 # pinned to a commit (its tag in the comment). ih_fit_check() is the publish
 # gate: a fit that fails it publishes nothing and fails the run.
 #
+# Replay (input `replay`): a past championship (IH_REPLAYS, R/ih-replay.R)
+# is forecast day by day as if live (scripts/ih/replay_tournament.R), each
+# day's files checked against what actually happened, into RUNNER_TEMP and an
+# artifact only: a replay never writes data/publish, never commits and never
+# dispatches the platform, and the workflow fails if the checkout changed.
+#
+# `data_ref`, when given, is the commit of the private repository to read the
+# table from (the refresh passes the commit it pushed), so the fit uses
+# exactly the table that run fetched.
+#
 # R-INLA's Linux build runs on MKL, whose code path follows the CPU, so a
 # runner's fit can differ slightly from a Mac's; ih_fit() restarts an
 # unusable half at its mode for the degenerate case. Pinned by
@@ -27,16 +37,32 @@ on:
   workflow_dispatch:
     inputs:
       tournament:
-        description: 'Championship'
+        description: 'Championship (live; ignored by a replay)'
         type: choice
         options:
           - euro2026w
           - wc2027m
-        required: true
+        default: euro2026w
       as_of:
-        description: "The forecast's day, YYYY-MM-DD (UTC): its matches count"
+        description: "The forecast's day, YYYY-MM-DD (UTC): its matches count (live)"
         type: string
-        required: true
+        default: ''
+      replay:
+        description: 'Replay a past championship instead (artifact only, publishes nothing)'
+        type: choice
+        options:
+          - none
+          - euro2024w
+          - wc2025m
+        default: none
+      as_of_dates:
+        description: "A replay's days: per-round, or dates separated by commas"
+        type: string
+        default: per-round
+      data_ref:
+        description: "Commit of the data repository to read the table from (default: its main, or replay/<id>)"
+        type: string
+        default: ''
 
 # Least privilege: nothing at the top; the job asks for what it needs.
 permissions: {}
@@ -44,7 +70,7 @@ permissions: {}
 # One run per championship at a time; not fit.yml's group (a fit runs about
 # two hours). A second dispatch waits rather than cancelling a running fit.
 concurrency:
-  group: ih-tournament-${{ inputs.tournament }}
+  group: ih-tournament-${{ inputs.replay != 'none' && format('replay-{0}', inputs.replay) || inputs.tournament }}
   cancel-in-progress: false
 
 jobs:
@@ -53,9 +79,11 @@ jobs:
     environment: ih-refresh
     permissions:
       contents: write
-    # Measured on the Mac on 2026-11-25: the WC fit 61 s and 20,000
-    # simulations; the R-INLA install is most of a cold run.
-    timeout-minutes: 60
+    # Live: measured on the Mac on 2026-11-25, the WC fit 61 s and 20,000
+    # simulations; the R-INLA install is most of a cold run. A replay fits
+    # once a day of its championship (about 20 fits); its step has its own
+    # limit.
+    timeout-minutes: 150
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
@@ -65,10 +93,20 @@ jobs:
       INLA_REPO: 'https://inla.r-inla-download.org/R/stable'
       TOURNAMENT: ${{ inputs.tournament }}
       AS_OF: ${{ inputs.as_of }}
+      REPLAY: ${{ inputs.replay }}
+      AS_OF_DATES: ${{ inputs.as_of_dates }}
+      DATA_REF: ${{ inputs.data_ref }}
 
     steps:
       - name: Check the inputs
         run: |
+          [[ -z "$DATA_REF" || "$DATA_REF" =~ ^[0-9a-f]{7,40}$ ]] || { echo "data_ref must be a commit SHA, got: $DATA_REF"; exit 1; }
+          if [ "$REPLAY" != "none" ]; then
+            case "$REPLAY" in euro2024w|wc2025m) ;; *) echo "unknown replay: $REPLAY"; exit 1 ;; esac
+            [[ "$AS_OF_DATES" == "per-round" || "$AS_OF_DATES" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}(,[0-9]{4}-[0-9]{2}-[0-9]{2})*$ ]] \
+              || { echo "as_of_dates must be per-round or YYYY-MM-DD,YYYY-MM-DD,..., got: $AS_OF_DATES"; exit 1; }
+            exit 0
+          fi
           [[ "$AS_OF" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || { echo "as_of must be YYYY-MM-DD, got: $AS_OF"; exit 1; }
           case "$TOURNAMENT" in euro2026w|wc2027m) ;; *) echo "unknown championship: $TOURNAMENT"; exit 1 ;; esac
 
@@ -128,18 +166,48 @@ jobs:
           echo "::add-mask::$IH_DATA_FILE"
           dir="$RUNNER_TEMP/ih-data"
           mkdir -p "$dir"
-          gh api -H "Accept: application/vnd.github.raw" "repos/$IH_DATA_REPO/contents/$IH_DATA_FILE" > "$dir/handball_matches.parquet"
+          ref="$DATA_REF"
+          if [ -z "$ref" ]; then if [ "$REPLAY" != "none" ]; then ref="replay/$REPLAY"; else ref="main"; fi; fi
+          gh api -H "Accept: application/vnd.github.raw" "repos/$IH_DATA_REPO/contents/$IH_DATA_FILE?ref=$ref" > "$dir/handball_matches.parquet"
           [ "$(head -c 4 "$dir/handball_matches.parquet")" = "PAR1" ] || { echo "the match table did not download as a parquet file"; exit 1; }
           echo "Match table: $(wc -c < "$dir/handball_matches.parquet") bytes"
           echo "IH_DATA_DIR=$dir" >> "$GITHUB_ENV"
 
       - name: Fit, simulate and write the forecast
+        if: inputs.replay == 'none'
         run: Rscript scripts/ih/run_tournament.R --tournament "$TOURNAMENT" --as-of "$AS_OF"
+
+      # A replay: one forecast per day into RUNNER_TEMP, each checked against
+      # what actually happened; the step fails on any failed check.
+      - name: Replay the championship day by day
+        if: inputs.replay != 'none'
+        timeout-minutes: 120
+        run: Rscript scripts/ih/replay_tournament.R --replay "$REPLAY" --as-of-dates "$AS_OF_DATES" --out "$RUNNER_TEMP/replay"
+
+      - name: Check that the replay changed nothing in the checkout
+        if: always() && inputs.replay != 'none'
+        run: |
+          changed=$(git status --porcelain)
+          [ -z "$changed" ] || { echo "a replay must not change the checkout:"; echo "$changed"; exit 1; }
+
+      - name: Replay summary
+        if: always() && inputs.replay != 'none'
+        run: cat "$RUNNER_TEMP/replay/$REPLAY/summary.md" >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || echo "no replay summary written" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the replay
+        if: always() && inputs.replay != 'none'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ih-replay-${{ inputs.replay }}
+          path: ${{ runner.temp }}/replay
+          if-no-files-found: warn
+          retention-days: 30
 
       # Only the championship's own publish folder is staged; its path comes
       # from the championship's spec (IH_TOURNAMENTS), not from a second list.
       - name: Commit the forecast
         id: commit
+        if: inputs.replay == 'none'
         run: |
           # shellcheck disable=SC2016 # the $ inside the quotes is R, not the shell
           sub=$(Rscript -e 'suppressMessages(devtools::load_all(quiet = TRUE)); cat(paste(IH_TOURNAMENTS[[Sys.getenv("TOURNAMENT")]]$publish, collapse = "/"))')
@@ -160,7 +228,7 @@ jobs:
           echo "changed=true" >> "$GITHUB_OUTPUT"
 
       - name: Dispatch metill-platform's pull
-        if: steps.commit.outputs.changed == 'true'
+        if: inputs.replay == 'none' && steps.commit.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ secrets.PLATFORM_DISPATCH_TOKEN }}
         run: gh workflow run pull-sports-data.yml --repo metill-is/metill-platform --ref main
