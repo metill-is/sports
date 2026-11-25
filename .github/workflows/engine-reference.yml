@@ -36,8 +36,11 @@ jobs:
     # Measured on the Mac on 2026-11-24 (data to that day): football 13 min,
     # handball 6, basketball 20 (its within-season AR(1) is the slow part on
     # both engines); football's fitting step took 1.23 times as long on the
-    # runner on 2026-11-23, so about 50 minutes here. Basketball's grows with
-    # the season's matches; the limit leaves room for that, not for a hang.
+    # runner on 2026-11-23, so about 50 minutes here. Off-season the cells
+    # compare every pairing and handball / basketball NUTS samples 2,000
+    # iterations: men's basketball took 17 min on 2026-07-01 data, so about
+    # 60 minutes here. Basketball's grows with the season's matches; the
+    # limit leaves room for that, not for a hang.
     timeout-minutes: 150
 
     env:

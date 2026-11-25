@@ -60,8 +60,8 @@ test_that("the reference fit can only write its own summary rows", {
   }
   expect_true(any(grepl("scripts/engine_reference.R", code, fixed = TRUE)))
   # A run longer than this is broken, not slow: six cells, each an INLA fit
-  # and four-chain NUTS fits, about 50 minutes on the runner (the workflow's
-  # comment has the measurement).
+  # and four-chain NUTS fits, about 50 minutes on the runner in season and 60
+  # off-season (the workflow's comment has the measurements).
   expect_lte(yml$jobs[[1]][["timeout-minutes"]], 150)
 })
 
