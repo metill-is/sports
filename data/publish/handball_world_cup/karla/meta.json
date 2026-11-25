@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "placeholder": false,
+  "generated_at": "2026-11-25T08:22:31Z",
+  "fit_date": "2026-11-25",
+  "start_date": "2027-01-13",
+  "end_date": "2027-01-31",
+  "title": "Men's IHF World Championship 2027",
+  "n_teams": 32,
+  "n_groups": 8,
+  "n_draws": 20000,
+  "matches_played": 0,
+  "matches_group_total": 48,
+  "focus_team": "Iceland",
+  "focus_round": "QF",
+  "champion_favourite": {
+    "team": "Denmark",
+    "team_is": "Danmörk",
+    "p_champion": 0.3945
+  },
+  "model": {
+    "engine": "inla",
+    "model_version": "ih-v2.0",
+    "n_train": 5623,
+    "hfa": 1.461,
+    "sigma_margin": 4.911,
+    "h2h_reapply": "none"
+  }
+}

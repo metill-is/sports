@@ -5,6 +5,10 @@ INLA version of the international handball model and deploy it in time for the
 tournament. We'll do that." The same day he agreed that its results and forecasts
 may be published on metill.is.
 
+Updated 25 November: the venue rule (training now gives home advantage as the
+simulator does; see Venues), the backtest re-run under it, the EURO forecast
+refreshed and the men's WC 2027 forecast added.
+
 ## What was built
 
 - **Data.** Every senior national-team match of both sexes from 2012 to today
@@ -40,12 +44,19 @@ Changes from the league engine, and why:
 1. **Venue.** `fit_v2_inla()` takes an optional venue per row: 1 when the listed home
    side plays at home, 0 on neutral ground, −1 when the listed away side is the host.
    League fits pass nothing and are unchanged (a test pins that a venue of 1 on every
-   row is the default fit). Qualifiers and the EHF Euro Cup are home and away (1);
-   friendlies are the listed home side's home match (1), except in friendly
-   tournaments named after their host (Golden League, Posten Cup), where only the
-   host is at home; championship matches are neutral except for a host nation
-   (`config/intl-handball/hosts.csv`: EURO, world championship and Olympics hosts
-   since 2012). Continental championships are treated as neutral.
+   row is the default fit). As in the simulator, a nation is at home only in a match
+   played in its own country (since 25 November; see Venues below):
+   - Qualifiers played home and away, and the EHF Euro Cup: 1.
+   - Qualification tournaments played at one venue (Olympic qualification
+     tournaments, first stages, continental qualifiers): at home only for the
+     nation of the venue's country (`config/intl-handball/qualifier_venues.csv`).
+   - Championship matches: at home only for a host playing in its own country
+     (`hosts.csv`: EURO, world championship and Olympics hosts since 2012;
+     `championship_venues.csv`: where hosts played at co-hosted championships).
+   - Friendlies are the listed home side's home match (1), except in friendly
+     tournaments named after their host (Golden League, Posten Cup), where only the
+     host is at home.
+   - Continental championships are treated as neutral.
 2. **Priors.** Nations differ far more than clubs: the club level's 1 % bound is
    30 goals instead of 10 and the season level's 12 instead of 8. Everything else is
    `v2_priors("handball")`.
@@ -97,11 +108,11 @@ models scored.
 
 | | log 1X2 | RPS | log margin | log total |
 |---|---|---|---|---|
-| v2 (682 matches) | 0.551 | 0.1230 | 3.057 | 3.355 |
+| v2 (682 matches) | 0.550 | 0.1227 | 3.057 | 3.355 |
 | legacy (643) | 0.569 | 0.1269 | 3.068 | 3.375 |
 | base (682) | 0.882 | 0.2489 | | |
-| **v2 − legacy, paired (643)** | **−0.009 (se 0.009)** | **−0.002 (se 0.003)** | **−0.006 (se 0.012)** | **−0.017 (se 0.014)** |
-| v2 − base, paired (682) | −0.331 (se 0.018) | −0.126 (se 0.007) | | |
+| **v2 − legacy, paired (643)** | **−0.010 (se 0.009)** | **−0.002 (se 0.003)** | **−0.006 (se 0.012)** | **−0.017 (se 0.014)** |
+| v2 − base, paired (682) | −0.332 (se 0.018) | −0.126 (se 0.007) | | |
 
 v2 is a little better than the legacy model on all four scores, and none of the four
 differences is more than 1.2 standard errors from zero: on this evidence the two
@@ -109,16 +120,44 @@ models forecast equally well. v2 is chosen because it scores every match (the
 legacy model has no prediction for a nation new to it), fits in about 45 seconds
 against the legacy model's 9 to 16 minutes, and is the engine the handball leagues
 already run on. By championship, v2's 1X2 log score is better at three of the eight
-(the women's EURO 2022, −0.018 (se 0.023), the women's WC 2023, −0.046 (se 0.021), and
-the men's EURO 2024, −0.059 (se 0.026)), within 0.003 at four, and worse at the men's
-WC 2025, +0.032 (se 0.031).
-Per-championship numbers: `backtest_scores.csv` and `backtest_paired.csv`.
+(the women's EURO 2022, −0.019 (se 0.025), the women's WC 2023, −0.047 (se 0.022), and
+the men's EURO 2024, −0.060 (se 0.025)), within 0.003 at four, and worse at the men's
+WC 2025, +0.030 (se 0.030).
+Per-championship numbers: `backtest_scores.csv` and `backtest_paired.csv`. The
+numbers are those of the venue rule of 25 November (see Venues).
 
 **Calibration** (`backtest_calibration.csv`). When v2 makes a side favourite at
 50 to 95 %, that side wins about as often as it says (54 % at 55 %, 65 % at 65 %,
-80 % at 75 %, 89 % at 85 %, 90 % at 93 %, 99 % at 98 %). Both models predict too few draws after 60 minutes: 43 of the 682
+79 % at 75 %, 89 % at 85 %, 91 % at 92 %, 99 % at 98 %). Both models predict too few draws after 60 minutes: 43 of the 682
 matches were drawn, v2 expected 29 and the legacy model 28 (on its 643), and the gap
-is in the matches it called close (8 % and 11 % drawn where it gave 5 % and 7 %).
+is in the matches it called close (9 % and 11 % drawn where it gave 5 % and 7 %).
+
+### Venues (25 November)
+
+A review of the first version found that training and the simulator gave home
+advantage differently. The simulator gives it to a host only in its own country, by
+venue city; training gave it to a host in every match of its championship, to the
+listed home side when two hosts met, and to every listed home side at a
+qualification tournament played at one venue (112 of those matches had the host
+listed away). Training now follows the simulator: a nation is at home only in a
+match played in its own country.
+
+- Qualification tournaments at one venue are found from the match table's structure
+  (a short single round robin whose pairs meet nowhere else in the stage, with its
+  play-off and placement matches): 603 matches in 95 tournaments. Their venue
+  countries (`config/intl-handball/qualifier_venues.csv`, 8 at neutral venues) and
+  the venues of the 198 matches hosts played at co-hosted championships
+  (`championship_venues.csv`; 35 host appearances outside the host's own country)
+  come from the English Wikipedia articles and EHF pages each row cites; 15 rows were
+  checked against the pages by hand.
+- The championship being forecast trains on its own schedule's venues.
+
+The fitted home advantage rises from about 1.0 goal to 1.2 for women and from
+1.1–1.2 to 1.5 for men (the fits before each backtest championship), as the
+neutral matches no longer dilute it. The forecasts barely change: paired over the
+682 backtest matches, the new rule minus the old is −0.0008 (se 0.0010) in the 1X2
+log score, −0.0003 (se 0.0004) in RPS and −0.0005 (se 0.0013) in the margin log
+score. The table above is the new rule's.
 
 To re-run: `IH_DATA_DIR=<match table folder> IH_RESULTS_DIR=<per-match output folder>
 ml run -- Rscript docs/reports/2026-11-24-intl-handball/backtest.R --models
@@ -127,30 +166,51 @@ predictions stay outside this repository; the three CSV files here are the recor
 
 ## Forecast
 
-**Women's EURO 2026**, as of 24 November 2026 (fitted on 4,131 women's matches up
+**Women's EURO 2026**, as of 25 November 2026 (fitted on 4,136 women's matches up
 to that day, 20,000 simulations of the championship; published to
 `data/publish/handball_euro/kvenna/`).
 
 | Nation | Main round | Semi-final | Final | Champion |
 |---|---|---|---|---|
-| Norway | 100 % | 96 % | 83 % | 68 % |
-| Denmark | 100 % | 64 % | 39 % | 11 % |
-| France | 99 % | 74 % | 31 % | 11 % |
-| Germany | 99 % | 51 % | 14 % | 3.9 % |
-| Netherlands | 98 % | 47 % | 13 % | 3.4 % |
-| Hungary | 96 % | 23 % | 10 % | 1.9 % |
-| Sweden | 95 % | 24 % | 4.8 % | 0.9 % |
+| Norway | 100 % | 96 % | 83 % | 67 % |
+| Denmark | 100 % | 63 % | 38 % | 11 % |
+| France | 99 % | 73 % | 31 % | 11 % |
+| Germany | 99 % | 52 % | 16 % | 4.3 % |
+| Netherlands | 98 % | 46 % | 13 % | 3.3 % |
+| Hungary | 96 % | 24 % | 10 % | 2.0 % |
+| Sweden | 95 % | 24 % | 4.9 % | 1.2 % |
 
 Iceland, in group A in Oradea: 19 % to reach the main round (3 % to win the group,
 16 % second, 30 % third, 51 % fourth). Match by match: Slovenia–Iceland on 3 December
-59 % / 6 % / 35 %, Montenegro–Iceland on 5 December 65 % / 6 % / 29 %, Iceland–Hungary
+59 % / 6 % / 35 %, Montenegro–Iceland on 5 December 64 % / 6 % / 30 %, Iceland–Hungary
 on 7 December 6 % / 2 % / 92 %.
 
-Norway at 68 % is the model's own figure: its rating is 4.7 goals above Denmark's,
+Norway at 67 % is the model's own figure: its rating is 4.6 goals above Denmark's,
 the next best, and it is 96 % to reach the semi-finals. No bookmaker's outright price
-was compared.
+was compared. Against the forecast of 24 November (the old venue rule), no nation's
+chance of reaching the main round moved by more than 1.4 points.
 
-<!-- WC2027 -->
+**Men's WC 2027**, as of 25 November 2026 (fitted on 5,623 men's matches, the last
+on 8 November; 20,000 simulations; published to
+`data/publish/handball_world_cup/karla/`, which replaces the placeholder of
+metill.is's `/hm2027-handbolti/`). Germany is the only host and is at home in every
+match.
+
+| Nation | Main round | Quarter-final | Semi-final | Final | Champion |
+|---|---|---|---|---|---|
+| Denmark | 100 % | 96 % | 74 % | 56 % | 39 % |
+| Germany | 100 % | 90 % | 65 % | 34 % | 18 % |
+| France | 100 % | 83 % | 47 % | 30 % | 15 % |
+| Sweden | 99 % | 83 % | 46 % | 18 % | 7.7 % |
+| Iceland | 100 % | 69 % | 33 % | 17 % | 6.2 % |
+| Egypt | 100 % | 68 % | 36 % | 12 % | 3.9 % |
+| Spain | 100 % | 53 % | 18 % | 8.7 % | 3.1 % |
+
+Iceland, in group H in Magdeburg: 99.7 % to reach the main round, 84 % to win the
+group. Match by match: Iceland–Bahrain on 15 January 91 % / 3 % / 6 %, Japan–Iceland
+on 17 January 2 % / 1 % / 97 %, Iceland–North Macedonia on 19 January 82 % / 4 % /
+14 %. The men's friendlies of December and January are not in yet; the forecast is
+re-run before the championship.
 
 ## Not done, and open points
 

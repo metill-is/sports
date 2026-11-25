@@ -1,0 +1,199 @@
+competition,sex,edition,match_date,home_team,away_team,venue_city,venue_country,source
+EURO,female,2014,2014-12-07,Hungary,Russia,Győr,Hungary,https://en.wikipedia.org/wiki/2014_European_Women%27s_Handball_Championship
+EURO,female,2014,2014-12-08,Sweden,Croatia,Varaždin,Croatia,https://en.wikipedia.org/wiki/2014_European_Women%27s_Handball_Championship
+EURO,female,2014,2014-12-09,Poland,Hungary,Győr,Hungary,https://en.wikipedia.org/wiki/2014_European_Women%27s_Handball_Championship
+EURO,female,2014,2014-12-10,Croatia,Germany,Varaždin,Croatia,https://en.wikipedia.org/wiki/2014_European_Women%27s_Handball_Championship
+EURO,female,2014,2014-12-11,Hungary,Spain,Győr,Hungary,https://en.wikipedia.org/wiki/2014_European_Women%27s_Handball_Championship
+EURO,female,2014,2014-12-12,Croatia,Netherlands,Varaždin,Croatia,https://en.wikipedia.org/wiki/2014_European_Women%27s_Handball_Championship
+EURO,female,2014,2014-12-13,Hungary,Romania,Debrecen,Hungary,https://en.wikipedia.org/wiki/2014_European_Women%27s_Handball_Championship
+EURO,female,2014,2014-12-15,Hungary,Denmark,Debrecen,Hungary,https://en.wikipedia.org/wiki/2014_European_Women%27s_Handball_Championship
+EURO,female,2014,2014-12-17,Hungary,Norway,Debrecen,Hungary,https://en.wikipedia.org/wiki/2014_European_Women%27s_Handball_Championship
+EURO,female,2014,2014-12-19,Hungary,France,Budapest,Hungary,https://en.wikipedia.org/wiki/2014_European_Women%27s_Handball_Championship
+EURO,female,2022,2022-11-04,Denmark,Slovenia,Celje,Slovenia,https://en.wikipedia.org/wiki/2022_European_Women%27s_Handball_Championship
+EURO,female,2022,2022-11-05,France,North Macedonia,Skopje,North Macedonia,https://en.wikipedia.org/wiki/2022_European_Women%27s_Handball_Championship
+EURO,female,2022,2022-11-05,Montenegro,Spain,Podgorica,Montenegro,https://en.wikipedia.org/wiki/2022_European_Women%27s_Handball_Championship
+EURO,female,2022,2022-11-06,Slovenia,Sweden,Celje,Slovenia,https://en.wikipedia.org/wiki/2022_European_Women%27s_Handball_Championship
+EURO,female,2022,2022-11-07,Germany,Montenegro,Podgorica,Montenegro,https://en.wikipedia.org/wiki/2022_European_Women%27s_Handball_Championship
+EURO,female,2022,2022-11-07,North Macedonia,Netherlands,Skopje,North Macedonia,https://en.wikipedia.org/wiki/2022_European_Women%27s_Handball_Championship
+EURO,female,2022,2022-11-08,Slovenia,Serbia,Celje,Slovenia,https://en.wikipedia.org/wiki/2022_European_Women%27s_Handball_Championship
+EURO,female,2022,2022-11-09,North Macedonia,Romania,Skopje,North Macedonia,https://en.wikipedia.org/wiki/2022_European_Women%27s_Handball_Championship
+EURO,female,2022,2022-11-09,Poland,Montenegro,Podgorica,Montenegro,https://en.wikipedia.org/wiki/2022_European_Women%27s_Handball_Championship
+EURO,female,2022,2022-11-10,Croatia,Slovenia,Ljubljana,Slovenia,https://en.wikipedia.org/wiki/2022_European_Women%27s_Handball_Championship
+EURO,female,2022,2022-11-13,France,Montenegro,Skopje,North Macedonia,https://en.wikipedia.org/wiki/2022_European_Women%27s_Handball_Championship
+EURO,female,2022,2022-11-14,Norway,Slovenia,Ljubljana,Slovenia,https://en.wikipedia.org/wiki/2022_European_Women%27s_Handball_Championship
+EURO,female,2022,2022-11-15,Romania,Montenegro,Skopje,North Macedonia,https://en.wikipedia.org/wiki/2022_European_Women%27s_Handball_Championship
+EURO,female,2022,2022-11-16,Netherlands,Montenegro,Skopje,North Macedonia,https://en.wikipedia.org/wiki/2022_European_Women%27s_Handball_Championship
+EURO,female,2022,2022-11-16,Hungary,Slovenia,Ljubljana,Slovenia,https://en.wikipedia.org/wiki/2022_European_Women%27s_Handball_Championship
+EURO,female,2022,2022-11-18,Denmark,Montenegro,Ljubljana,Slovenia,https://en.wikipedia.org/wiki/2022_European_Women%27s_Handball_Championship
+EURO,female,2022,2022-11-20,Montenegro,France,Ljubljana,Slovenia,https://en.wikipedia.org/wiki/2022_European_Women%27s_Handball_Championship
+EURO,female,2024,2024-11-28,Austria,Slovakia,Innsbruck,Austria,https://en.wikipedia.org/wiki/2024_European_Women%27s_Handball_Championship
+EURO,female,2024,2024-11-28,Hungary,Turkey,Debrecen,Hungary,https://en.wikipedia.org/wiki/2024_European_Women%27s_Handball_Championship
+EURO,female,2024,2024-11-29,Switzerland,Faroe Islands,Basel,Switzerland,https://en.wikipedia.org/wiki/2024_European_Women%27s_Handball_Championship
+EURO,female,2024,2024-11-30,Norway,Austria,Innsbruck,Austria,https://en.wikipedia.org/wiki/2024_European_Women%27s_Handball_Championship
+EURO,female,2024,2024-11-30,Sweden,Hungary,Debrecen,Hungary,https://en.wikipedia.org/wiki/2024_European_Women%27s_Handball_Championship
+EURO,female,2024,2024-12-01,Denmark,Switzerland,Basel,Switzerland,https://en.wikipedia.org/wiki/2024_European_Women%27s_Handball_Championship
+EURO,female,2024,2024-12-02,North Macedonia,Hungary,Debrecen,Hungary,https://en.wikipedia.org/wiki/2024_European_Women%27s_Handball_Championship
+EURO,female,2024,2024-12-02,Slovenia,Austria,Innsbruck,Austria,https://en.wikipedia.org/wiki/2024_European_Women%27s_Handball_Championship
+EURO,female,2024,2024-12-03,Croatia,Switzerland,Basel,Switzerland,https://en.wikipedia.org/wiki/2024_European_Women%27s_Handball_Championship
+EURO,female,2024,2024-12-05,Switzerland,Germany,Vienna,Austria,https://en.wikipedia.org/wiki/2024_European_Women%27s_Handball_Championship
+EURO,female,2024,2024-12-05,Hungary,Montenegro,Debrecen,Hungary,https://en.wikipedia.org/wiki/2024_European_Women%27s_Handball_Championship
+EURO,female,2024,2024-12-06,Hungary,Poland,Debrecen,Hungary,https://en.wikipedia.org/wiki/2024_European_Women%27s_Handball_Championship
+EURO,female,2024,2024-12-07,Switzerland,Slovenia,Vienna,Austria,https://en.wikipedia.org/wiki/2024_European_Women%27s_Handball_Championship
+EURO,female,2024,2024-12-08,Hungary,Romania,Debrecen,Hungary,https://en.wikipedia.org/wiki/2024_European_Women%27s_Handball_Championship
+EURO,female,2024,2024-12-09,Switzerland,Netherlands,Vienna,Austria,https://en.wikipedia.org/wiki/2024_European_Women%27s_Handball_Championship
+EURO,female,2024,2024-12-10,Hungary,France,Debrecen,Hungary,https://en.wikipedia.org/wiki/2024_European_Women%27s_Handball_Championship
+EURO,female,2024,2024-12-11,Switzerland,Norway,Vienna,Austria,https://en.wikipedia.org/wiki/2024_European_Women%27s_Handball_Championship
+EURO,female,2024,2024-12-13,Hungary,Norway,Vienna,Austria,https://en.wikipedia.org/wiki/2024_European_Women%27s_Handball_Championship
+EURO,female,2024,2024-12-15,France,Hungary,Vienna,Austria,https://en.wikipedia.org/wiki/2024_European_Women%27s_Handball_Championship
+WC,female,2023,2023-11-29,Norway,Greenland,Stavanger,Norway,https://en.wikipedia.org/wiki/2023_World_Women%27s_Handball_Championship
+WC,female,2023,2023-12-01,Austria,Norway,Stavanger,Norway,https://en.wikipedia.org/wiki/2023_World_Women%27s_Handball_Championship
+WC,female,2023,2023-12-01,Sweden,China,Gothenburg,Sweden,https://en.wikipedia.org/wiki/2023_World_Women%27s_Handball_Championship
+WC,female,2023,2023-12-01,Denmark,Serbia,Herning,Denmark,https://en.wikipedia.org/wiki/2023_World_Women%27s_Handball_Championship
+WC,female,2023,2023-12-03,Senegal,Sweden,Gothenburg,Sweden,https://en.wikipedia.org/wiki/2023_World_Women%27s_Handball_Championship
+WC,female,2023,2023-12-03,Chile,Denmark,Herning,Denmark,https://en.wikipedia.org/wiki/2023_World_Women%27s_Handball_Championship
+WC,female,2023,2023-12-03,Norway,South Korea,Stavanger,Norway,https://en.wikipedia.org/wiki/2023_World_Women%27s_Handball_Championship
+WC,female,2023,2023-12-05,Sweden,Croatia,Gothenburg,Sweden,https://en.wikipedia.org/wiki/2023_World_Women%27s_Handball_Championship
+WC,female,2023,2023-12-05,Denmark,Romania,Herning,Denmark,https://en.wikipedia.org/wiki/2023_World_Women%27s_Handball_Championship
+WC,female,2023,2023-12-06,Norway,Angola,Trondheim,Norway,https://en.wikipedia.org/wiki/2023_World_Women%27s_Handball_Championship
+WC,female,2023,2023-12-07,Sweden,Cameroon,Gothenburg,Sweden,https://en.wikipedia.org/wiki/2023_World_Women%27s_Handball_Championship
+WC,female,2023,2023-12-07,Denmark,Japan,Herning,Denmark,https://en.wikipedia.org/wiki/2023_World_Women%27s_Handball_Championship
+WC,female,2023,2023-12-08,Slovenia,Norway,Trondheim,Norway,https://en.wikipedia.org/wiki/2023_World_Women%27s_Handball_Championship
+WC,female,2023,2023-12-09,Poland,Denmark,Herning,Denmark,https://en.wikipedia.org/wiki/2023_World_Women%27s_Handball_Championship
+WC,female,2023,2023-12-09,Hungary,Sweden,Gothenburg,Sweden,https://en.wikipedia.org/wiki/2023_World_Women%27s_Handball_Championship
+WC,female,2023,2023-12-10,France,Norway,Trondheim,Norway,https://en.wikipedia.org/wiki/2023_World_Women%27s_Handball_Championship
+WC,female,2023,2023-12-11,Germany,Denmark,Herning,Denmark,https://en.wikipedia.org/wiki/2023_World_Women%27s_Handball_Championship
+WC,female,2023,2023-12-11,Montenegro,Sweden,Gothenburg,Sweden,https://en.wikipedia.org/wiki/2023_World_Women%27s_Handball_Championship
+WC,female,2023,2023-12-12,Netherlands,Norway,Trondheim,Norway,https://en.wikipedia.org/wiki/2023_World_Women%27s_Handball_Championship
+WC,female,2023,2023-12-13,Sweden,Germany,Herning,Denmark,https://en.wikipedia.org/wiki/2023_World_Women%27s_Handball_Championship
+WC,female,2023,2023-12-13,Denmark,Montenegro,Herning,Denmark,https://en.wikipedia.org/wiki/2023_World_Women%27s_Handball_Championship
+WC,female,2023,2023-12-15,Denmark,Norway,Herning,Denmark,https://en.wikipedia.org/wiki/2023_World_Women%27s_Handball_Championship
+WC,female,2023,2023-12-15,Sweden,France,Herning,Denmark,https://en.wikipedia.org/wiki/2023_World_Women%27s_Handball_Championship
+WC,female,2023,2023-12-17,Sweden,Denmark,Herning,Denmark,https://en.wikipedia.org/wiki/2023_World_Women%27s_Handball_Championship
+WC,female,2023,2023-12-17,France,Norway,Herning,Denmark,https://en.wikipedia.org/wiki/2023_World_Women%27s_Handball_Championship
+WC,female,2025,2025-11-26,Germany,Iceland,Stuttgart,Germany,https://en.wikipedia.org/wiki/2025_World_Women%27s_Handball_Championship
+WC,female,2025,2025-11-28,Netherlands,Argentina,Rotterdam,Netherlands,https://en.wikipedia.org/wiki/2025_World_Women%27s_Handball_Championship
+WC,female,2025,2025-11-28,Uruguay,Germany,Stuttgart,Germany,https://en.wikipedia.org/wiki/2025_World_Women%27s_Handball_Championship
+WC,female,2025,2025-11-30,Germany,Serbia,Stuttgart,Germany,https://en.wikipedia.org/wiki/2025_World_Women%27s_Handball_Championship
+WC,female,2025,2025-11-30,Egypt,Netherlands,Rotterdam,Netherlands,https://en.wikipedia.org/wiki/2025_World_Women%27s_Handball_Championship
+WC,female,2025,2025-12-02,Germany,Faroe Islands,Dortmund,Germany,https://en.wikipedia.org/wiki/2025_World_Women%27s_Handball_Championship
+WC,female,2025,2025-12-02,Netherlands,Austria,Rotterdam,Netherlands,https://en.wikipedia.org/wiki/2025_World_Women%27s_Handball_Championship
+WC,female,2025,2025-12-04,Montenegro,Germany,Dortmund,Germany,https://en.wikipedia.org/wiki/2025_World_Women%27s_Handball_Championship
+WC,female,2025,2025-12-04,Netherlands,Tunisia,Rotterdam,Netherlands,https://en.wikipedia.org/wiki/2025_World_Women%27s_Handball_Championship
+WC,female,2025,2025-12-06,Poland,Netherlands,Rotterdam,Netherlands,https://en.wikipedia.org/wiki/2025_World_Women%27s_Handball_Championship
+WC,female,2025,2025-12-06,Spain,Germany,Dortmund,Germany,https://en.wikipedia.org/wiki/2025_World_Women%27s_Handball_Championship
+WC,female,2025,2025-12-08,France,Netherlands,Rotterdam,Netherlands,https://en.wikipedia.org/wiki/2025_World_Women%27s_Handball_Championship
+WC,female,2025,2025-12-09,Germany,Brazil,Dortmund,Germany,https://en.wikipedia.org/wiki/2025_World_Women%27s_Handball_Championship
+WC,female,2025,2025-12-10,Netherlands,Hungary,Rotterdam,Netherlands,https://en.wikipedia.org/wiki/2025_World_Women%27s_Handball_Championship
+WC,female,2025,2025-12-12,France,Germany,Rotterdam,Netherlands,https://en.wikipedia.org/wiki/2025_World_Women%27s_Handball_Championship
+WC,female,2025,2025-12-12,Netherlands,Norway,Rotterdam,Netherlands,https://en.wikipedia.org/wiki/2025_World_Women%27s_Handball_Championship
+WC,female,2025,2025-12-14,France,Netherlands,Rotterdam,Netherlands,https://en.wikipedia.org/wiki/2025_World_Women%27s_Handball_Championship
+WC,female,2025,2025-12-14,Germany,Norway,Rotterdam,Netherlands,https://en.wikipedia.org/wiki/2025_World_Women%27s_Handball_Championship
+EURO,male,2020,2020-01-10,Norway,Bosnia & Herzegovina,Trondheim,Norway,https://en.wikipedia.org/wiki/2020_European_Men%27s_Handball_Championship
+EURO,male,2020,2020-01-10,Sweden,Switzerland,Gothenburg,Sweden,https://en.wikipedia.org/wiki/2020_European_Men%27s_Handball_Championship
+EURO,male,2020,2020-01-10,Czech Republic,Austria,Vienna,Austria,https://en.wikipedia.org/wiki/2020_European_Men%27s_Handball_Championship
+EURO,male,2020,2020-01-12,Austria,Ukraine,Vienna,Austria,https://en.wikipedia.org/wiki/2020_European_Men%27s_Handball_Championship
+EURO,male,2020,2020-01-12,France,Norway,Trondheim,Norway,https://en.wikipedia.org/wiki/2020_European_Men%27s_Handball_Championship
+EURO,male,2020,2020-01-12,Sweden,Slovenia,Gothenburg,Sweden,https://en.wikipedia.org/wiki/2020_European_Men%27s_Handball_Championship
+EURO,male,2020,2020-01-14,Austria,North Macedonia,Vienna,Austria,https://en.wikipedia.org/wiki/2020_European_Men%27s_Handball_Championship
+EURO,male,2020,2020-01-14,Poland,Sweden,Gothenburg,Sweden,https://en.wikipedia.org/wiki/2020_European_Men%27s_Handball_Championship
+EURO,male,2020,2020-01-14,Portugal,Norway,Trondheim,Norway,https://en.wikipedia.org/wiki/2020_European_Men%27s_Handball_Championship
+EURO,male,2020,2020-01-16,Croatia,Austria,Vienna,Austria,https://en.wikipedia.org/wiki/2020_European_Men%27s_Handball_Championship
+EURO,male,2020,2020-01-17,Portugal,Sweden,Malmö,Sweden,https://en.wikipedia.org/wiki/2020_European_Men%27s_Handball_Championship
+EURO,male,2020,2020-01-17,Norway,Hungary,Malmö,Sweden,https://en.wikipedia.org/wiki/2020_European_Men%27s_Handball_Championship
+EURO,male,2020,2020-01-18,Spain,Austria,Vienna,Austria,https://en.wikipedia.org/wiki/2020_European_Men%27s_Handball_Championship
+EURO,male,2020,2020-01-19,Norway,Sweden,Malmö,Sweden,https://en.wikipedia.org/wiki/2020_European_Men%27s_Handball_Championship
+EURO,male,2020,2020-01-20,Austria,Germany,Vienna,Austria,https://en.wikipedia.org/wiki/2020_European_Men%27s_Handball_Championship
+EURO,male,2020,2020-01-21,Hungary,Sweden,Malmö,Sweden,https://en.wikipedia.org/wiki/2020_European_Men%27s_Handball_Championship
+EURO,male,2020,2020-01-21,Norway,Iceland,Malmö,Sweden,https://en.wikipedia.org/wiki/2020_European_Men%27s_Handball_Championship
+EURO,male,2020,2020-01-22,Norway,Slovenia,Malmö,Sweden,https://en.wikipedia.org/wiki/2020_European_Men%27s_Handball_Championship
+EURO,male,2020,2020-01-22,Iceland,Sweden,Malmö,Sweden,https://en.wikipedia.org/wiki/2020_European_Men%27s_Handball_Championship
+EURO,male,2020,2020-01-22,Belarus,Austria,Vienna,Austria,https://en.wikipedia.org/wiki/2020_European_Men%27s_Handball_Championship
+EURO,male,2020,2020-01-24,Norway,Croatia,Stockholm,Sweden,https://en.wikipedia.org/wiki/2020_European_Men%27s_Handball_Championship
+EURO,male,2020,2020-01-25,Slovenia,Norway,Stockholm,Sweden,https://en.wikipedia.org/wiki/2020_European_Men%27s_Handball_Championship
+EURO,male,2022,2022-01-13,Norway,Slovakia,Košice,Slovakia,https://en.wikipedia.org/wiki/2022_European_Men%27s_Handball_Championship
+EURO,male,2022,2022-01-13,Hungary,Netherlands,Budapest,Hungary,https://en.wikipedia.org/wiki/2022_European_Men%27s_Handball_Championship
+EURO,male,2022,2022-01-15,Slovakia,Lithuania,Košice,Slovakia,https://en.wikipedia.org/wiki/2022_European_Men%27s_Handball_Championship
+EURO,male,2022,2022-01-16,Portugal,Hungary,Budapest,Hungary,https://en.wikipedia.org/wiki/2022_European_Men%27s_Handball_Championship
+EURO,male,2022,2022-01-17,Slovakia,Russia,Košice,Slovakia,https://en.wikipedia.org/wiki/2022_European_Men%27s_Handball_Championship
+EURO,male,2022,2022-01-18,Iceland,Hungary,Budapest,Hungary,https://en.wikipedia.org/wiki/2022_European_Men%27s_Handball_Championship
+EURO,male,2026,2026-01-15,Norway,Ukraine,Bærum,Norway,https://en.wikipedia.org/wiki/2026_European_Men%27s_Handball_Championship
+EURO,male,2026,2026-01-16,Denmark,North Macedonia,Herning,Denmark,https://en.wikipedia.org/wiki/2026_European_Men%27s_Handball_Championship
+EURO,male,2026,2026-01-17,Czech Republic,Norway,Bærum,Norway,https://en.wikipedia.org/wiki/2026_European_Men%27s_Handball_Championship
+EURO,male,2026,2026-01-17,Sweden,Netherlands,Malmö,Sweden,https://en.wikipedia.org/wiki/2026_European_Men%27s_Handball_Championship
+EURO,male,2026,2026-01-18,Romania,Denmark,Herning,Denmark,https://en.wikipedia.org/wiki/2026_European_Men%27s_Handball_Championship
+EURO,male,2026,2026-01-19,France,Norway,Bærum,Norway,https://en.wikipedia.org/wiki/2026_European_Men%27s_Handball_Championship
+EURO,male,2026,2026-01-19,Georgia,Sweden,Malmö,Sweden,https://en.wikipedia.org/wiki/2026_European_Men%27s_Handball_Championship
+EURO,male,2026,2026-01-20,Denmark,Portugal,Herning,Denmark,https://en.wikipedia.org/wiki/2026_European_Men%27s_Handball_Championship
+EURO,male,2026,2026-01-21,Sweden,Croatia,Malmö,Sweden,https://en.wikipedia.org/wiki/2026_European_Men%27s_Handball_Championship
+EURO,male,2026,2026-01-22,Spain,Norway,Herning,Denmark,https://en.wikipedia.org/wiki/2026_European_Men%27s_Handball_Championship
+EURO,male,2026,2026-01-22,France,Denmark,Herning,Denmark,https://en.wikipedia.org/wiki/2026_European_Men%27s_Handball_Championship
+EURO,male,2026,2026-01-23,Slovenia,Sweden,Malmö,Sweden,https://en.wikipedia.org/wiki/2026_European_Men%27s_Handball_Championship
+EURO,male,2026,2026-01-24,Spain,Denmark,Herning,Denmark,https://en.wikipedia.org/wiki/2026_European_Men%27s_Handball_Championship
+EURO,male,2026,2026-01-24,Germany,Norway,Herning,Denmark,https://en.wikipedia.org/wiki/2026_European_Men%27s_Handball_Championship
+EURO,male,2026,2026-01-25,Iceland,Sweden,Malmö,Sweden,https://en.wikipedia.org/wiki/2026_European_Men%27s_Handball_Championship
+EURO,male,2026,2026-01-26,Portugal,Norway,Herning,Denmark,https://en.wikipedia.org/wiki/2026_European_Men%27s_Handball_Championship
+EURO,male,2026,2026-01-26,Germany,Denmark,Herning,Denmark,https://en.wikipedia.org/wiki/2026_European_Men%27s_Handball_Championship
+EURO,male,2026,2026-01-27,Sweden,Hungary,Malmö,Sweden,https://en.wikipedia.org/wiki/2026_European_Men%27s_Handball_Championship
+EURO,male,2026,2026-01-28,Denmark,Norway,Herning,Denmark,https://en.wikipedia.org/wiki/2026_European_Men%27s_Handball_Championship
+EURO,male,2026,2026-01-28,Switzerland,Sweden,Malmö,Sweden,https://en.wikipedia.org/wiki/2026_European_Men%27s_Handball_Championship
+EURO,male,2026,2026-01-30,Denmark,Iceland,Herning,Denmark,https://en.wikipedia.org/wiki/2026_European_Men%27s_Handball_Championship
+EURO,male,2026,2026-01-30,Portugal,Sweden,Herning,Denmark,https://en.wikipedia.org/wiki/2026_European_Men%27s_Handball_Championship
+EURO,male,2026,2026-02-01,Denmark,Germany,Herning,Denmark,https://en.wikipedia.org/wiki/2026_European_Men%27s_Handball_Championship_final
+WC,male,2019,2019-01-10,Germany,Korea,Berlin,Germany,https://en.wikipedia.org/wiki/2019_World_Men%27s_Handball_Championship
+WC,male,2019,2019-01-10,Chile,Denmark,Copenhagen,Denmark,https://en.wikipedia.org/wiki/2019_World_Men%27s_Handball_Championship
+WC,male,2019,2019-01-12,Germany,Brazil,Berlin,Germany,https://en.wikipedia.org/wiki/2019_World_Men%27s_Handball_Championship
+WC,male,2019,2019-01-12,Denmark,Tunisia,Herning,Denmark,https://en.wikipedia.org/wiki/2019_World_Men%27s_Handball_Championship
+WC,male,2019,2019-01-14,Russia,Germany,Berlin,Germany,https://en.wikipedia.org/wiki/2019_World_Men%27s_Handball_Championship
+WC,male,2019,2019-01-14,Denmark,Saudi Arabia,Herning,Denmark,https://en.wikipedia.org/wiki/2019_World_Men%27s_Handball_Championship
+WC,male,2019,2019-01-15,Germany,France,Berlin,Germany,https://en.wikipedia.org/wiki/2019_World_Men%27s_Handball_Championship
+WC,male,2019,2019-01-15,Austria,Denmark,Herning,Denmark,https://en.wikipedia.org/wiki/2019_World_Men%27s_Handball_Championship
+WC,male,2019,2019-01-17,Denmark,Norway,Herning,Denmark,https://en.wikipedia.org/wiki/2019_World_Men%27s_Handball_Championship
+WC,male,2019,2019-01-17,Germany,Serbia,Berlin,Germany,https://en.wikipedia.org/wiki/2019_World_Men%27s_Handball_Championship
+WC,male,2019,2019-01-19,Germany,Iceland,Cologne,Germany,https://en.wikipedia.org/wiki/2019_World_Men%27s_Handball_Championship
+WC,male,2019,2019-01-19,Denmark,Hungary,Herning,Denmark,https://en.wikipedia.org/wiki/2019_World_Men%27s_Handball_Championship
+WC,male,2019,2019-01-21,Croatia,Germany,Cologne,Germany,https://en.wikipedia.org/wiki/2019_World_Men%27s_Handball_Championship
+WC,male,2019,2019-01-21,Egypt,Denmark,Herning,Denmark,https://en.wikipedia.org/wiki/2019_World_Men%27s_Handball_Championship
+WC,male,2019,2019-01-23,Germany,Spain,Cologne,Germany,https://en.wikipedia.org/wiki/2019_World_Men%27s_Handball_Championship
+WC,male,2019,2019-01-23,Denmark,Sweden,Herning,Denmark,https://en.wikipedia.org/wiki/2019_World_Men%27s_Handball_Championship
+WC,male,2019,2019-01-25,Germany,Norway,Hamburg,Germany,https://en.wikipedia.org/wiki/2019_World_Men%27s_Handball_Championship
+WC,male,2019,2019-01-25,Denmark,France,Hamburg,Germany,https://en.wikipedia.org/wiki/2019_World_Men%27s_Handball_Championship
+WC,male,2019,2019-01-27,Germany,France,Herning,Denmark,https://en.wikipedia.org/wiki/2019_World_Men%27s_Handball_Championship
+WC,male,2019,2019-01-27,Norway,Denmark,Herning,Denmark,https://en.wikipedia.org/wiki/2019_World_Men%27s_Handball_Championship
+WC,male,2023,2023-01-11,France,Poland,Katowice,Poland,https://en.wikipedia.org/wiki/2023_World_Men%27s_Handball_Championship
+WC,male,2023,2023-01-12,Sweden,Brazil,Gothenburg,Sweden,https://en.wikipedia.org/wiki/2023_World_Men%27s_Handball_Championship
+WC,male,2023,2023-01-14,Poland,Slovenia,Katowice,Poland,https://en.wikipedia.org/wiki/2023_World_Men%27s_Handball_Championship
+WC,male,2023,2023-01-14,Sweden,Cape Verde,Gothenburg,Sweden,https://en.wikipedia.org/wiki/2023_World_Men%27s_Handball_Championship
+WC,male,2023,2023-01-16,Uruguay,Sweden,Gothenburg,Sweden,https://en.wikipedia.org/wiki/2023_World_Men%27s_Handball_Championship
+WC,male,2023,2023-01-16,Poland,Saudi Arabia,Katowice,Poland,https://en.wikipedia.org/wiki/2023_World_Men%27s_Handball_Championship
+WC,male,2023,2023-01-18,Sweden,Hungary,Gothenburg,Sweden,https://en.wikipedia.org/wiki/2023_World_Men%27s_Handball_Championship
+WC,male,2023,2023-01-18,Spain,Poland,Kraków,Poland,https://en.wikipedia.org/wiki/2023_World_Men%27s_Handball_Championship
+WC,male,2023,2023-01-20,Montenegro,Poland,Kraków,Poland,https://en.wikipedia.org/wiki/2023_World_Men%27s_Handball_Championship
+WC,male,2023,2023-01-20,Iceland,Sweden,Gothenburg,Sweden,https://en.wikipedia.org/wiki/2023_World_Men%27s_Handball_Championship
+WC,male,2023,2023-01-22,Sweden,Portugal,Gothenburg,Sweden,https://en.wikipedia.org/wiki/2023_World_Men%27s_Handball_Championship
+WC,male,2023,2023-01-22,Iran,Poland,Kraków,Poland,https://en.wikipedia.org/wiki/2023_World_Men%27s_Handball_Championship
+WC,male,2023,2023-01-25,Sweden,Egypt,Stockholm,Sweden,https://en.wikipedia.org/wiki/2023_World_Men%27s_Handball_Championship
+WC,male,2023,2023-01-27,France,Sweden,Stockholm,Sweden,https://en.wikipedia.org/wiki/2023_World_Men%27s_Handball_Championship
+WC,male,2023,2023-01-29,Sweden,Spain,Stockholm,Sweden,https://en.wikipedia.org/wiki/2023_World_Men%27s_Handball_Championship
+WC,male,2025,2025-01-14,Denmark,Algeria,Herning,Denmark,https://en.wikipedia.org/wiki/2025_World_Men%27s_Handball_Championship
+WC,male,2025,2025-01-15,Norway,Brazil,Bærum,Norway,https://en.wikipedia.org/wiki/2025_World_Men%27s_Handball_Championship
+WC,male,2025,2025-01-15,Croatia,Bahrain,Zagreb,Croatia,https://en.wikipedia.org/wiki/2025_World_Men%27s_Handball_Championship
+WC,male,2025,2025-01-16,Tunisia,Denmark,Herning,Denmark,https://en.wikipedia.org/wiki/2025_World_Men%27s_Handball_Championship
+WC,male,2025,2025-01-17,USA,Norway,Bærum,Norway,https://en.wikipedia.org/wiki/2025_World_Men%27s_Handball_Championship
+WC,male,2025,2025-01-17,Croatia,Argentina,Zagreb,Croatia,https://en.wikipedia.org/wiki/2025_World_Men%27s_Handball_Championship
+WC,male,2025,2025-01-18,Denmark,Italy,Herning,Denmark,https://en.wikipedia.org/wiki/2025_World_Men%27s_Handball_Championship
+WC,male,2025,2025-01-19,Egypt,Croatia,Zagreb,Croatia,https://en.wikipedia.org/wiki/2025_World_Men%27s_Handball_Championship
+WC,male,2025,2025-01-19,Norway,Portugal,Bærum,Norway,https://en.wikipedia.org/wiki/2025_World_Men%27s_Handball_Championship
+WC,male,2025,2025-01-21,Denmark,Germany,Herning,Denmark,https://en.wikipedia.org/wiki/2025_World_Men%27s_Handball_Championship
+WC,male,2025,2025-01-22,Norway,Spain,Bærum,Norway,https://en.wikipedia.org/wiki/2025_World_Men%27s_Handball_Championship
+WC,male,2025,2025-01-22,Cape Verde,Croatia,Zagreb,Croatia,https://en.wikipedia.org/wiki/2025_World_Men%27s_Handball_Championship
+WC,male,2025,2025-01-23,Denmark,Switzerland,Herning,Denmark,https://en.wikipedia.org/wiki/2025_World_Men%27s_Handball_Championship
+WC,male,2025,2025-01-24,Chile,Norway,Bærum,Norway,https://en.wikipedia.org/wiki/2025_World_Men%27s_Handball_Championship
+WC,male,2025,2025-01-24,Croatia,Iceland,Zagreb,Croatia,https://en.wikipedia.org/wiki/2025_World_Men%27s_Handball_Championship
+WC,male,2025,2025-01-25,Czech Republic,Denmark,Herning,Denmark,https://en.wikipedia.org/wiki/2025_World_Men%27s_Handball_Championship
+WC,male,2025,2025-01-26,Norway,Sweden,Bærum,Norway,https://en.wikipedia.org/wiki/2025_World_Men%27s_Handball_Championship
+WC,male,2025,2025-01-26,Croatia,Slovenia,Zagreb,Croatia,https://en.wikipedia.org/wiki/2025_World_Men%27s_Handball_Championship
+WC,male,2025,2025-01-28,Croatia,Hungary,Zagreb,Croatia,https://en.wikipedia.org/wiki/2025_World_Men%27s_Handball_Championship
+WC,male,2025,2025-01-29,Denmark,Brazil,Bærum,Norway,https://en.wikipedia.org/wiki/2025_World_Men%27s_Handball_Championship
+WC,male,2025,2025-01-30,France,Croatia,Zagreb,Croatia,https://en.wikipedia.org/wiki/2025_World_Men%27s_Handball_Championship
+WC,male,2025,2025-01-31,Denmark,Portugal,Bærum,Norway,https://en.wikipedia.org/wiki/2025_World_Men%27s_Handball_Championship
+WC,male,2025,2025-02-02,Croatia,Denmark,Bærum,Norway,https://en.wikipedia.org/wiki/2025_World_Men%27s_Handball_Championship

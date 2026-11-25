@@ -1,0 +1,4294 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-11-25T08:22:31Z",
+  "matches": [
+    {
+      "match_date": "2027-01-13",
+      "kickoff": "2027-01-13T16:30:00Z",
+      "stage": "preliminary",
+      "group": "A",
+      "venue_is": "Munich",
+      "home": "Serbia",
+      "home_is": "Serbía",
+      "away": "Uruguay",
+      "away_is": "Úrúgvæ",
+      "p_home": 0.9993,
+      "p_draw": 0.0003,
+      "p_away": 0.0004,
+      "eg_home": 38.29,
+      "eg_away": 19.58,
+      "goal_diff_distribution": [
+        {
+          "diff": -4,
+          "p": 0
+        },
+        {
+          "diff": -2,
+          "p": 0.0001
+        },
+        {
+          "diff": 0,
+          "p": 0.0016
+        },
+        {
+          "diff": 2,
+          "p": 0.0008
+        },
+        {
+          "diff": 4,
+          "p": 0.0073
+        },
+        {
+          "diff": 6,
+          "p": 0.0044
+        },
+        {
+          "diff": 8,
+          "p": 0.0356
+        },
+        {
+          "diff": 10,
+          "p": 0.0203
+        },
+        {
+          "diff": 12,
+          "p": 0.1061
+        },
+        {
+          "diff": 14,
+          "p": 0.0505
+        },
+        {
+          "diff": 16,
+          "p": 0.1878
+        },
+        {
+          "diff": 18,
+          "p": 0.0724
+        },
+        {
+          "diff": 20,
+          "p": 0.513
+        }
+      ]
+    },
+    {
+      "match_date": "2027-01-13",
+      "kickoff": "2027-01-13T17:00:00Z",
+      "stage": "preliminary",
+      "group": "B",
+      "venue_is": "Stuttgart",
+      "home": "Italy",
+      "home_is": "Ítalía",
+      "away": "Saudi Arabia",
+      "away_is": "Sádi-Arabía",
+      "p_home": 0.8074,
+      "p_draw": 0.0466,
+      "p_away": 0.146,
+      "eg_home": 31.51,
+      "eg_away": 26.25,
+      "goal_diff_distribution": [
+        {
+          "diff": -16,
+          "p": 0.0001
+        },
+        {
+          "diff": -14,
+          "p": 0.0001
+        },
+        {
+          "diff": -12,
+          "p": 0.0015
+        },
+        {
+          "diff": -10,
+          "p": 0.0014
+        },
+        {
+          "diff": -8,
+          "p": 0.0127
+        },
+        {
+          "diff": -6,
+          "p": 0.0094
+        },
+        {
+          "diff": -4,
+          "p": 0.0522
+        },
+        {
+          "diff": -2,
+          "p": 0.0318
+        },
+        {
+          "diff": 0,
+          "p": 0.1385
+        },
+        {
+          "diff": 2,
+          "p": 0.0595
+        },
+        {
+          "diff": 4,
+          "p": 0.2102
+        },
+        {
+          "diff": 6,
+          "p": 0.0725
+        },
+        {
+          "diff": 8,
+          "p": 0.1908
+        },
+        {
+          "diff": 10,
+          "p": 0.0477
+        },
+        {
+          "diff": 12,
+          "p": 0.1057
+        },
+        {
+          "diff": 14,
+          "p": 0.0212
+        },
+        {
+          "diff": 16,
+          "p": 0.0321
+        },
+        {
+          "diff": 18,
+          "p": 0.0043
+        },
+        {
+          "diff": 20,
+          "p": 0.0082
+        }
+      ]
+    },
+    {
+      "match_date": "2027-01-13",
+      "kickoff": "2027-01-13T19:30:00Z",
+      "stage": "preliminary",
+      "group": "A",
+      "venue_is": "Munich",
+      "home": "Germany",
+      "home_is": "Þýskaland",
+      "away": "Tunisia",
+      "away_is": "Túnis",
+      "p_home": 0.9795,
+      "p_draw": 0.0087,
+      "p_away": 0.0118,
+      "eg_home": 37.11,
+      "eg_away": 25.32,
+      "goal_diff_distribution": [
+        {
+          "diff": -8,
+          "p": 0.0004
+        },
+        {
+          "diff": -6,
+          "p": 0.0001
+        },
+        {
+          "diff": -4,
+          "p": 0.0042
+        },
+        {
+          "diff": -2,
+          "p": 0.0032
+        },
+        {
+          "diff": 0,
+          "p": 0.0223
+        },
+        {
+          "diff": 2,
+          "p": 0.0132
+        },
+        {
+          "diff": 4,
+          "p": 0.0813
+        },
+        {
+          "diff": 6,
+          "p": 0.0394
+        },
+        {
+          "diff": 8,
+          "p": 0.1742
+        },
+        {
+          "diff": 10,
+          "p": 0.067
+        },
+        {
+          "diff": 12,
+          "p": 0.2162
+        },
+        {
+          "diff": 14,
+          "p": 0.068
+        },
+        {
+          "diff": 16,
+          "p": 0.165
+        },
+        {
+          "diff": 18,
+          "p": 0.0368
+        },
+        {
+          "diff": 20,
+          "p": 0.1087
+        }
+      ]
+    },
+    {
+      "match_date": "2027-01-13",
+      "kickoff": "2027-01-13T19:30:00Z",
+      "stage": "preliminary",
+      "group": "B",
+      "venue_is": "Stuttgart",
+      "home": "Egypt",
+      "home_is": "Egyptaland",
+      "away": "Cape Verde",
+      "away_is": "Grænhöfðaeyjar",
+      "p_home": 0.9665,
+      "p_draw": 0.0118,
+      "p_away": 0.0217,
+      "eg_home": 35.35,
+      "eg_away": 24.93,
+      "goal_diff_distribution": [
+        {
+          "diff": -12,
+          "p": 0
+        },
+        {
+          "diff": -8,
+          "p": 0.0008
+        },
+        {
+          "diff": -6,
+          "p": 0.0006
+        },
+        {
+          "diff": -4,
+          "p": 0.0063
+        },
+        {
+          "diff": -2,
+          "p": 0.0063
+        },
+        {
+          "diff": 0,
+          "p": 0.0346
+        },
+        {
+          "diff": 2,
+          "p": 0.0236
+        },
+        {
+          "diff": 4,
+          "p": 0.1092
+        },
+        {
+          "diff": 6,
+          "p": 0.0558
+        },
+        {
+          "diff": 8,
+          "p": 0.1974
+        },
+        {
+          "diff": 10,
+          "p": 0.0742
+        },
+        {
+          "diff": 12,
+          "p": 0.2052
+        },
+        {
+          "diff": 14,
+          "p": 0.0574
+        },
+        {
+          "diff": 16,
+          "p": 0.1322
+        },
+        {
+          "diff": 18,
+          "p": 0.0275
+        },
+        {
+          "diff": 20,
+          "p": 0.069
+        }
+      ]
+    },
+    {
+      "match_date": "2027-01-14",
+      "kickoff": "2027-01-14T17:00:00Z",
+      "stage": "preliminary",
+      "group": "C",
+      "venue_is": "Munich",
+      "home": "Spain",
+      "home_is": "Spánn",
+      "away": "Turkey",
+      "away_is": "Tyrkland",
+      "p_home": 0.9631,
+      "p_draw": 0.012,
+      "p_away": 0.025,
+      "eg_home": 36.38,
+      "eg_away": 25.96,
+      "goal_diff_distribution": [
+        {
+          "diff": -12,
+          "p": 0.0001
+        },
+        {
+          "diff": -10,
+          "p": 0
+        },
+        {
+          "diff": -8,
+          "p": 0.0013
+        },
+        {
+          "diff": -6,
+          "p": 0.0009
+        },
+        {
+          "diff": -4,
+          "p": 0.0082
+        },
+        {
+          "diff": -2,
+          "p": 0.005
+        },
+        {
+          "diff": 0,
+          "p": 0.0374
+        },
+        {
+          "diff": 2,
+          "p": 0.0228
+        },
+        {
+          "diff": 4,
+          "p": 0.1118
+        },
+        {
+          "diff": 6,
+          "p": 0.0518
+        },
+        {
+          "diff": 8,
+          "p": 0.1882
+        },
+        {
+          "diff": 10,
+          "p": 0.0746
+        },
+        {
+          "diff": 12,
+          "p": 0.2131
+        },
+        {
+          "diff": 14,
+          "p": 0.0573
+        },
+        {
+          "diff": 16,
+          "p": 0.1298
+        },
+        {
+          "diff": 18,
+          "p": 0.0261
+        },
+        {
+          "diff": 20,
+          "p": 0.0716
+        }
+      ]
+    },
+    {
+      "match_date": "2027-01-14",
+      "kickoff": "2027-01-14T17:00:00Z",
+      "stage": "preliminary",
+      "group": "D",
+      "venue_is": "Stuttgart",
+      "home": "Argentina",
+      "home_is": "Argentína",
+      "away": "Brazil",
+      "away_is": "Brasilía",
+      "p_home": 0.2865,
+      "p_draw": 0.065,
+      "p_away": 0.6484,
+      "eg_home": 27.22,
+      "eg_away": 29.73,
+      "goal_diff_distribution": [
+        {
+          "diff": -20,
+          "p": 0.0015
+        },
+        {
+          "diff": -18,
+          "p": 0.0014
+        },
+        {
+          "diff": -16,
+          "p": 0.0109
+        },
+        {
+          "diff": -14,
+          "p": 0.0088
+        },
+        {
+          "diff": -12,
+          "p": 0.0508
+        },
+        {
+          "diff": -10,
+          "p": 0.0268
+        },
+        {
+          "diff": -8,
+          "p": 0.1298
+        },
+        {
+          "diff": -6,
+          "p": 0.0596
+        },
+        {
+          "diff": -4,
+          "p": 0.2165
+        },
+        {
+          "diff": -2,
+          "p": 0.0717
+        },
+        {
+          "diff": 0,
+          "p": 0.1942
+        },
+        {
+          "diff": 2,
+          "p": 0.049
+        },
+        {
+          "diff": 4,
+          "p": 0.107
+        },
+        {
+          "diff": 6,
+          "p": 0.0203
+        },
+        {
+          "diff": 8,
+          "p": 0.0364
+        },
+        {
+          "diff": 10,
+          "p": 0.0062
+        },
+        {
+          "diff": 12,
+          "p": 0.008
+        },
+        {
+          "diff": 14,
+          "p": 0.0007
+        },
+        {
+          "diff": 16,
+          "p": 0.0006
+        },
+        {
+          "diff": 20,
+          "p": 0
+        }
+      ]
+    },
+    {
+      "match_date": "2027-01-14",
+      "kickoff": "2027-01-14T17:00:00Z",
+      "stage": "preliminary",
+      "group": "E",
+      "venue_is": "Kiel",
+      "home": "Sweden",
+      "home_is": "Svíþjóð",
+      "away": "Greece",
+      "away_is": "Grikkland",
+      "p_home": 0.8918,
+      "p_draw": 0.0294,
+      "p_away": 0.0788,
+      "eg_home": 33.73,
+      "eg_away": 26.47,
+      "goal_diff_distribution": [
+        {
+          "diff": -16,
+          "p": 0.0001
+        },
+        {
+          "diff": -12,
+          "p": 0.0006
+        },
+        {
+          "diff": -10,
+          "p": 0.0004
+        },
+        {
+          "diff": -8,
+          "p": 0.0049
+        },
+        {
+          "diff": -6,
+          "p": 0.0044
+        },
+        {
+          "diff": -4,
+          "p": 0.0255
+        },
+        {
+          "diff": -2,
+          "p": 0.0185
+        },
+        {
+          "diff": 0,
+          "p": 0.0887
+        },
+        {
+          "diff": 2,
+          "p": 0.0432
+        },
+        {
+          "diff": 4,
+          "p": 0.1873
+        },
+        {
+          "diff": 6,
+          "p": 0.0711
+        },
+        {
+          "diff": 8,
+          "p": 0.216
+        },
+        {
+          "diff": 10,
+          "p": 0.0651
+        },
+        {
+          "diff": 12,
+          "p": 0.1492
+        },
+        {
+          "diff": 14,
+          "p": 0.0319
+        },
+        {
+          "diff": 16,
+          "p": 0.0635
+        },
+        {
+          "diff": 18,
+          "p": 0.0108
+        },
+        {
+          "diff": 20,
+          "p": 0.019
+        }
+      ]
+    },
+    {
+      "match_date": "2027-01-14",
+      "kickoff": "2027-01-14T17:00:00Z",
+      "stage": "preliminary",
+      "group": "F",
+      "venue_is": "Magdeburg",
+      "home": "Faroe Islands",
+      "home_is": "Færeyjar",
+      "away": "Algeria",
+      "away_is": "Alsír",
+      "p_home": 0.6899,
+      "p_draw": 0.0631,
+      "p_away": 0.247,
+      "eg_home": 30.35,
+      "eg_away": 27.13,
+      "goal_diff_distribution": [
+        {
+          "diff": -18,
+          "p": 0
+        },
+        {
+          "diff": -16,
+          "p": 0.0004
+        },
+        {
+          "diff": -14,
+          "p": 0.0004
+        },
+        {
+          "diff": -12,
+          "p": 0.0052
+        },
+        {
+          "diff": -10,
+          "p": 0.0042
+        },
+        {
+          "diff": -8,
+          "p": 0.0272
+        },
+        {
+          "diff": -6,
+          "p": 0.0174
+        },
+        {
+          "diff": -4,
+          "p": 0.0929
+        },
+        {
+          "diff": -2,
+          "p": 0.0471
+        },
+        {
+          "diff": 0,
+          "p": 0.185
+        },
+        {
+          "diff": 2,
+          "p": 0.0703
+        },
+        {
+          "diff": 4,
+          "p": 0.2128
+        },
+        {
+          "diff": 6,
+          "p": 0.06
+        },
+        {
+          "diff": 8,
+          "p": 0.1503
+        },
+        {
+          "diff": 10,
+          "p": 0.0336
+        },
+        {
+          "diff": 12,
+          "p": 0.063
+        },
+        {
+          "diff": 14,
+          "p": 0.0107
+        },
+        {
+          "diff": 16,
+          "p": 0.015
+        },
+        {
+          "diff": 18,
+          "p": 0.0022
+        },
+        {
+          "diff": 20,
+          "p": 0.0025
+        }
+      ]
+    },
+    {
+      "match_date": "2027-01-14",
+      "kickoff": "2027-01-14T19:30:00Z",
+      "stage": "preliminary",
+      "group": "C",
+      "venue_is": "Munich",
+      "home": "Croatia",
+      "home_is": "Króatía",
+      "away": "Chile",
+      "away_is": "Síle",
+      "p_home": 0.9762,
+      "p_draw": 0.0084,
+      "p_away": 0.0153,
+      "eg_home": 35.18,
+      "eg_away": 23.71,
+      "goal_diff_distribution": [
+        {
+          "diff": -12,
+          "p": 0
+        },
+        {
+          "diff": -8,
+          "p": 0.0005
+        },
+        {
+          "diff": -6,
+          "p": 0.0005
+        },
+        {
+          "diff": -4,
+          "p": 0.004
+        },
+        {
+          "diff": -2,
+          "p": 0.0045
+        },
+        {
+          "diff": 0,
+          "p": 0.0266
+        },
+        {
+          "diff": 2,
+          "p": 0.0152
+        },
+        {
+          "diff": 4,
+          "p": 0.0881
+        },
+        {
+          "diff": 6,
+          "p": 0.0411
+        },
+        {
+          "diff": 8,
+          "p": 0.1776
+        },
+        {
+          "diff": 10,
+          "p": 0.0707
+        },
+        {
+          "diff": 12,
+          "p": 0.2147
+        },
+        {
+          "diff": 14,
+          "p": 0.0654
+        },
+        {
+          "diff": 16,
+          "p": 0.158
+        },
+        {
+          "diff": 18,
+          "p": 0.0338
+        },
+        {
+          "diff": 20,
+          "p": 0.0993
+        }
+      ]
+    },
+    {
+      "match_date": "2027-01-14",
+      "kickoff": "2027-01-14T19:30:00Z",
+      "stage": "preliminary",
+      "group": "D",
+      "venue_is": "Stuttgart",
+      "home": "France",
+      "home_is": "Frakkland",
+      "away": "Kuwait",
+      "away_is": "Kúveit",
+      "p_home": 0.9942,
+      "p_draw": 0.0021,
+      "p_away": 0.0037,
+      "eg_home": 37.44,
+      "eg_away": 23.4,
+      "goal_diff_distribution": [
+        {
+          "diff": -8,
+          "p": 0.0001
+        },
+        {
+          "diff": -4,
+          "p": 0.0009
+        },
+        {
+          "diff": -2,
+          "p": 0.001
+        },
+        {
+          "diff": 0,
+          "p": 0.0073
+        },
+        {
+          "diff": 2,
+          "p": 0.0069
+        },
+        {
+          "diff": 4,
+          "p": 0.0423
+        },
+        {
+          "diff": 6,
+          "p": 0.0233
+        },
+        {
+          "diff": 8,
+          "p": 0.12
+        },
+        {
+          "diff": 10,
+          "p": 0.0578
+        },
+        {
+          "diff": 12,
+          "p": 0.202
+        },
+        {
+          "diff": 14,
+          "p": 0.0699
+        },
+        {
+          "diff": 16,
+          "p": 0.2046
+        },
+        {
+          "diff": 18,
+          "p": 0.0571
+        },
+        {
+          "diff": 20,
+          "p": 0.2067
+        }
+      ]
+    },
+    {
+      "match_date": "2027-01-14",
+      "kickoff": "2027-01-14T19:30:00Z",
+      "stage": "preliminary",
+      "group": "E",
+      "venue_is": "Kiel",
+      "home": "Norway",
+      "home_is": "Noregur",
+      "away": "Qatar",
+      "away_is": "Katar",
+      "p_home": 0.9009,
+      "p_draw": 0.0296,
+      "p_away": 0.0696,
+      "eg_home": 33.91,
+      "eg_away": 26.51,
+      "goal_diff_distribution": [
+        {
+          "diff": -12,
+          "p": 0.0003
+        },
+        {
+          "diff": -10,
+          "p": 0.0004
+        },
+        {
+          "diff": -8,
+          "p": 0.004
+        },
+        {
+          "diff": -6,
+          "p": 0.0032
+        },
+        {
+          "diff": -4,
+          "p": 0.0253
+        },
+        {
+          "diff": -2,
+          "p": 0.0158
+        },
+        {
+          "diff": 0,
+          "p": 0.0856
+        },
+        {
+          "diff": 2,
+          "p": 0.0455
+        },
+        {
+          "diff": 4,
+          "p": 0.1802
+        },
+        {
+          "diff": 6,
+          "p": 0.0725
+        },
+        {
+          "diff": 8,
+          "p": 0.219
+        },
+        {
+          "diff": 10,
+          "p": 0.0678
+        },
+        {
+          "diff": 12,
+          "p": 0.1532
+        },
+        {
+          "diff": 14,
+          "p": 0.036
+        },
+        {
+          "diff": 16,
+          "p": 0.0618
+        },
+        {
+          "diff": 18,
+          "p": 0.0102
+        },
+        {
+          "diff": 20,
+          "p": 0.0193
+        }
+      ]
+    },
+    {
+      "match_date": "2027-01-14",
+      "kickoff": "2027-01-14T19:30:00Z",
+      "stage": "preliminary",
+      "group": "F",
+      "venue_is": "Magdeburg",
+      "home": "Portugal",
+      "home_is": "Portúgal",
+      "away": "Poland",
+      "away_is": "Pólland",
+      "p_home": 0.573,
+      "p_draw": 0.0747,
+      "p_away": 0.3523,
+      "eg_home": 31.55,
+      "eg_away": 30,
+      "goal_diff_distribution": [
+        {
+          "diff": -20,
+          "p": 0.0001
+        },
+        {
+          "diff": -18,
+          "p": 0.0001
+        },
+        {
+          "diff": -16,
+          "p": 0.0013
+        },
+        {
+          "diff": -14,
+          "p": 0.0008
+        },
+        {
+          "diff": -12,
+          "p": 0.0096
+        },
+        {
+          "diff": -10,
+          "p": 0.0069
+        },
+        {
+          "diff": -8,
+          "p": 0.0481
+        },
+        {
+          "diff": -6,
+          "p": 0.028
+        },
+        {
+          "diff": -4,
+          "p": 0.131
+        },
+        {
+          "diff": -2,
+          "p": 0.0605
+        },
+        {
+          "diff": 0,
+          "p": 0.2155
+        },
+        {
+          "diff": 2,
+          "p": 0.0686
+        },
+        {
+          "diff": 4,
+          "p": 0.1989
+        },
+        {
+          "diff": 6,
+          "p": 0.0518
+        },
+        {
+          "diff": 8,
+          "p": 0.1083
+        },
+        {
+          "diff": 10,
+          "p": 0.0215
+        },
+        {
+          "diff": 12,
+          "p": 0.0344
+        },
+        {
+          "diff": 14,
+          "p": 0.006
+        },
+        {
+          "diff": 16,
+          "p": 0.0075
+        },
+        {
+          "diff": 18,
+          "p": 0.0004
+        },
+        {
+          "diff": 20,
+          "p": 0.0008
+        }
+      ]
+    },
+    {
+      "match_date": "2027-01-15",
+      "kickoff": "2027-01-15T17:00:00Z",
+      "stage": "preliminary",
+      "group": "A",
+      "venue_is": "Munich",
+      "home": "Serbia",
+      "home_is": "Serbía",
+      "away": "Tunisia",
+      "away_is": "Túnis",
+      "p_home": 0.897,
+      "p_draw": 0.0296,
+      "p_away": 0.0734,
+      "eg_home": 34.45,
+      "eg_away": 27.18,
+      "goal_diff_distribution": [
+        {
+          "diff": -16,
+          "p": 0.0001
+        },
+        {
+          "diff": -14,
+          "p": 0.0001
+        },
+        {
+          "diff": -12,
+          "p": 0.0002
+        },
+        {
+          "diff": -10,
+          "p": 0.0006
+        },
+        {
+          "diff": -8,
+          "p": 0.0042
+        },
+        {
+          "diff": -6,
+          "p": 0.0031
+        },
+        {
+          "diff": -4,
+          "p": 0.0261
+        },
+        {
+          "diff": -2,
+          "p": 0.0169
+        },
+        {
+          "diff": 0,
+          "p": 0.0891
+        },
+        {
+          "diff": 2,
+          "p": 0.0456
+        },
+        {
+          "diff": 4,
+          "p": 0.1872
+        },
+        {
+          "diff": 6,
+          "p": 0.0717
+        },
+        {
+          "diff": 8,
+          "p": 0.2172
+        },
+        {
+          "diff": 10,
+          "p": 0.0643
+        },
+        {
+          "diff": 12,
+          "p": 0.1482
+        },
+        {
+          "diff": 14,
+          "p": 0.0354
+        },
+        {
+          "diff": 16,
+          "p": 0.0609
+        },
+        {
+          "diff": 18,
+          "p": 0.0117
+        },
+        {
+          "diff": 20,
+          "p": 0.0174
+        }
+      ]
+    },
+    {
+      "match_date": "2027-01-15",
+      "kickoff": "2027-01-15T17:00:00Z",
+      "stage": "preliminary",
+      "group": "B",
+      "venue_is": "Stuttgart",
+      "home": "Saudi Arabia",
+      "home_is": "Sádi-Arabía",
+      "away": "Egypt",
+      "away_is": "Egyptaland",
+      "p_home": 0.0192,
+      "p_draw": 0.0102,
+      "p_away": 0.9706,
+      "eg_home": 23.42,
+      "eg_away": 34.19,
+      "goal_diff_distribution": [
+        {
+          "diff": -20,
+          "p": 0.0794
+        },
+        {
+          "diff": -18,
+          "p": 0.03
+        },
+        {
+          "diff": -16,
+          "p": 0.1372
+        },
+        {
+          "diff": -14,
+          "p": 0.0628
+        },
+        {
+          "diff": -12,
+          "p": 0.2122
+        },
+        {
+          "diff": -10,
+          "p": 0.0708
+        },
+        {
+          "diff": -8,
+          "p": 0.1883
+        },
+        {
+          "diff": -6,
+          "p": 0.0506
+        },
+        {
+          "diff": -4,
+          "p": 0.1046
+        },
+        {
+          "diff": -2,
+          "p": 0.0192
+        },
+        {
+          "diff": 0,
+          "p": 0.0333
+        },
+        {
+          "diff": 2,
+          "p": 0.0043
+        },
+        {
+          "diff": 4,
+          "p": 0.0057
+        },
+        {
+          "diff": 6,
+          "p": 0.0006
+        },
+        {
+          "diff": 8,
+          "p": 0.0009
+        },
+        {
+          "diff": 10,
+          "p": 0
+        },
+        {
+          "diff": 14,
+          "p": 0
+        }
+      ]
+    },
+    {
+      "match_date": "2027-01-15",
+      "kickoff": "2027-01-15T17:00:00Z",
+      "stage": "preliminary",
+      "group": "G",
+      "venue_is": "Kiel",
+      "home": "Slovenia",
+      "home_is": "Slóvenía",
+      "away": "Angola",
+      "away_is": "Angóla",
+      "p_home": 0.9644,
+      "p_draw": 0.012,
+      "p_away": 0.0237,
+      "eg_home": 35.03,
+      "eg_away": 24.45,
+      "goal_diff_distribution": [
+        {
+          "diff": -12,
+          "p": 0
+        },
+        {
+          "diff": -10,
+          "p": 0.0001
+        },
+        {
+          "diff": -8,
+          "p": 0.0008
+        },
+        {
+          "diff": -6,
+          "p": 0.0008
+        },
+        {
+          "diff": -4,
+          "p": 0.009
+        },
+        {
+          "diff": -2,
+          "p": 0.0057
+        },
+        {
+          "diff": 0,
+          "p": 0.0341
+        },
+        {
+          "diff": 2,
+          "p": 0.022
+        },
+        {
+          "diff": 4,
+          "p": 0.1052
+        },
+        {
+          "diff": 6,
+          "p": 0.052
+        },
+        {
+          "diff": 8,
+          "p": 0.1908
+        },
+        {
+          "diff": 10,
+          "p": 0.0754
+        },
+        {
+          "diff": 12,
+          "p": 0.2059
+        },
+        {
+          "diff": 14,
+          "p": 0.0582
+        },
+        {
+          "diff": 16,
+          "p": 0.1335
+        },
+        {
+          "diff": 18,
+          "p": 0.0295
+        },
+        {
+          "diff": 20,
+          "p": 0.077
+        }
+      ]
+    },
+    {
+      "match_date": "2027-01-15",
+      "kickoff": "2027-01-15T17:00:00Z",
+      "stage": "preliminary",
+      "group": "H",
+      "venue_is": "Magdeburg",
+      "home": "North Macedonia",
+      "home_is": "Norður-Makedónía",
+      "away": "Japan",
+      "away_is": "Japan",
+      "p_home": 0.8135,
+      "p_draw": 0.0433,
+      "p_away": 0.1432,
+      "eg_home": 33.28,
+      "eg_away": 27.97,
+      "goal_diff_distribution": [
+        {
+          "diff": -16,
+          "p": 0.0002
+        },
+        {
+          "diff": -12,
+          "p": 0.0015
+        },
+        {
+          "diff": -10,
+          "p": 0.001
+        },
+        {
+          "diff": -8,
+          "p": 0.0114
+        },
+        {
+          "diff": -6,
+          "p": 0.0091
+        },
+        {
+          "diff": -4,
+          "p": 0.0545
+        },
+        {
+          "diff": -2,
+          "p": 0.029
+        },
+        {
+          "diff": 0,
+          "p": 0.1323
+        },
+        {
+          "diff": 2,
+          "p": 0.0592
+        },
+        {
+          "diff": 4,
+          "p": 0.2149
+        },
+        {
+          "diff": 6,
+          "p": 0.0751
+        },
+        {
+          "diff": 8,
+          "p": 0.1926
+        },
+        {
+          "diff": 10,
+          "p": 0.0486
+        },
+        {
+          "diff": 12,
+          "p": 0.1045
+        },
+        {
+          "diff": 14,
+          "p": 0.0216
+        },
+        {
+          "diff": 16,
+          "p": 0.033
+        },
+        {
+          "diff": 18,
+          "p": 0.0041
+        },
+        {
+          "diff": 20,
+          "p": 0.0075
+        }
+      ]
+    },
+    {
+      "match_date": "2027-01-15",
+      "kickoff": "2027-01-15T19:30:00Z",
+      "stage": "preliminary",
+      "group": "A",
+      "venue_is": "Munich",
+      "home": "Uruguay",
+      "home_is": "Úrúgvæ",
+      "away": "Germany",
+      "away_is": "Þýskaland",
+      "p_home": 0,
+      "p_draw": 0,
+      "p_away": 1,
+      "eg_home": 17.64,
+      "eg_away": 40.91,
+      "goal_diff_distribution": [
+        {
+          "diff": -20,
+          "p": 0.8024
+        },
+        {
+          "diff": -18,
+          "p": 0.0452
+        },
+        {
+          "diff": -16,
+          "p": 0.0936
+        },
+        {
+          "diff": -14,
+          "p": 0.0179
+        },
+        {
+          "diff": -12,
+          "p": 0.029
+        },
+        {
+          "diff": -10,
+          "p": 0.0045
+        },
+        {
+          "diff": -8,
+          "p": 0.0059
+        },
+        {
+          "diff": -6,
+          "p": 0.0007
+        },
+        {
+          "diff": -4,
+          "p": 0.0007
+        },
+        {
+          "diff": -2,
+          "p": 0.0001
+        },
+        {
+          "diff": 0,
+          "p": 0
+        }
+      ]
+    },
+    {
+      "match_date": "2027-01-15",
+      "kickoff": "2027-01-15T19:30:00Z",
+      "stage": "preliminary",
+      "group": "B",
+      "venue_is": "Stuttgart",
+      "home": "Italy",
+      "home_is": "Ítalía",
+      "away": "Cape Verde",
+      "away_is": "Grænhöfðaeyjar",
+      "p_home": 0.7889,
+      "p_draw": 0.0492,
+      "p_away": 0.162,
+      "eg_home": 32.58,
+      "eg_away": 27.74,
+      "goal_diff_distribution": [
+        {
+          "diff": -16,
+          "p": 0.0001
+        },
+        {
+          "diff": -14,
+          "p": 0.0001
+        },
+        {
+          "diff": -12,
+          "p": 0.002
+        },
+        {
+          "diff": -10,
+          "p": 0.0017
+        },
+        {
+          "diff": -8,
+          "p": 0.0146
+        },
+        {
+          "diff": -6,
+          "p": 0.01
+        },
+        {
+          "diff": -4,
+          "p": 0.056
+        },
+        {
+          "diff": -2,
+          "p": 0.0344
+        },
+        {
+          "diff": 0,
+          "p": 0.15
+        },
+        {
+          "diff": 2,
+          "p": 0.0637
+        },
+        {
+          "diff": 4,
+          "p": 0.2139
+        },
+        {
+          "diff": 6,
+          "p": 0.0724
+        },
+        {
+          "diff": 8,
+          "p": 0.1857
+        },
+        {
+          "diff": 10,
+          "p": 0.0489
+        },
+        {
+          "diff": 12,
+          "p": 0.0936
+        },
+        {
+          "diff": 14,
+          "p": 0.0173
+        },
+        {
+          "diff": 16,
+          "p": 0.0271
+        },
+        {
+          "diff": 18,
+          "p": 0.004
+        },
+        {
+          "diff": 20,
+          "p": 0.0044
+        }
+      ]
+    },
+    {
+      "match_date": "2027-01-15",
+      "kickoff": "2027-01-15T19:30:00Z",
+      "stage": "preliminary",
+      "group": "G",
+      "venue_is": "Kiel",
+      "home": "Denmark",
+      "home_is": "Danmörk",
+      "away": "USA",
+      "away_is": "Bandaríkin",
+      "p_home": 0.9989,
+      "p_draw": 0.0008,
+      "p_away": 0.0003,
+      "eg_home": 39.51,
+      "eg_away": 21.44,
+      "goal_diff_distribution": [
+        {
+          "diff": -2,
+          "p": 0.0001
+        },
+        {
+          "diff": 0,
+          "p": 0.0014
+        },
+        {
+          "diff": 2,
+          "p": 0.0013
+        },
+        {
+          "diff": 4,
+          "p": 0.0074
+        },
+        {
+          "diff": 6,
+          "p": 0.0071
+        },
+        {
+          "diff": 8,
+          "p": 0.0392
+        },
+        {
+          "diff": 10,
+          "p": 0.025
+        },
+        {
+          "diff": 12,
+          "p": 0.1173
+        },
+        {
+          "diff": 14,
+          "p": 0.0554
+        },
+        {
+          "diff": 16,
+          "p": 0.2054
+        },
+        {
+          "diff": 18,
+          "p": 0.0725
+        },
+        {
+          "diff": 20,
+          "p": 0.4679
+        }
+      ]
+    },
+    {
+      "match_date": "2027-01-15",
+      "kickoff": "2027-01-15T19:30:00Z",
+      "stage": "preliminary",
+      "group": "H",
+      "venue_is": "Magdeburg",
+      "home": "Iceland",
+      "home_is": "Ísland",
+      "away": "Bahrain",
+      "away_is": "Barein",
+      "p_home": 0.9114,
+      "p_draw": 0.0262,
+      "p_away": 0.0624,
+      "eg_home": 33.16,
+      "eg_away": 25.48,
+      "goal_diff_distribution": [
+        {
+          "diff": -12,
+          "p": 0.0004
+        },
+        {
+          "diff": -10,
+          "p": 0.0003
+        },
+        {
+          "diff": -8,
+          "p": 0.0034
+        },
+        {
+          "diff": -6,
+          "p": 0.0022
+        },
+        {
+          "diff": -4,
+          "p": 0.0216
+        },
+        {
+          "diff": -2,
+          "p": 0.0147
+        },
+        {
+          "diff": 0,
+          "p": 0.0804
+        },
+        {
+          "diff": 2,
+          "p": 0.0436
+        },
+        {
+          "diff": 4,
+          "p": 0.1797
+        },
+        {
+          "diff": 6,
+          "p": 0.0696
+        },
+        {
+          "diff": 8,
+          "p": 0.2168
+        },
+        {
+          "diff": 10,
+          "p": 0.0674
+        },
+        {
+          "diff": 12,
+          "p": 0.162
+        },
+        {
+          "diff": 14,
+          "p": 0.0366
+        },
+        {
+          "diff": 16,
+          "p": 0.0683
+        },
+        {
+          "diff": 18,
+          "p": 0.0113
+        },
+        {
+          "diff": 20,
+          "p": 0.0216
+        }
+      ]
+    },
+    {
+      "match_date": "2027-01-16",
+      "kickoff": "2027-01-16T17:00:00Z",
+      "stage": "preliminary",
+      "group": "C",
+      "venue_is": "Munich",
+      "home": "Spain",
+      "home_is": "Spánn",
+      "away": "Chile",
+      "away_is": "Síle",
+      "p_home": 0.9822,
+      "p_draw": 0.0064,
+      "p_away": 0.0114,
+      "eg_home": 36.04,
+      "eg_away": 24.05,
+      "goal_diff_distribution": [
+        {
+          "diff": -8,
+          "p": 0.0003
+        },
+        {
+          "diff": -6,
+          "p": 0.0003
+        },
+        {
+          "diff": -4,
+          "p": 0.0032
+        },
+        {
+          "diff": -2,
+          "p": 0.0031
+        },
+        {
+          "diff": 0,
+          "p": 0.0209
+        },
+        {
+          "diff": 2,
+          "p": 0.0154
+        },
+        {
+          "diff": 4,
+          "p": 0.0741
+        },
+        {
+          "diff": 6,
+          "p": 0.0407
+        },
+        {
+          "diff": 8,
+          "p": 0.1693
+        },
+        {
+          "diff": 10,
+          "p": 0.0683
+        },
+        {
+          "diff": 12,
+          "p": 0.213
+        },
+        {
+          "diff": 14,
+          "p": 0.0677
+        },
+        {
+          "diff": 16,
+          "p": 0.1659
+        },
+        {
+          "diff": 18,
+          "p": 0.0404
+        },
+        {
+          "diff": 20,
+          "p": 0.1173
+        }
+      ]
+    },
+    {
+      "match_date": "2027-01-16",
+      "kickoff": "2027-01-16T17:00:00Z",
+      "stage": "preliminary",
+      "group": "D",
+      "venue_is": "Stuttgart",
+      "home": "France",
+      "home_is": "Frakkland",
+      "away": "Brazil",
+      "away_is": "Brasilía",
+      "p_home": 0.8232,
+      "p_draw": 0.0447,
+      "p_away": 0.1321,
+      "eg_home": 34.04,
+      "eg_away": 28.43,
+      "goal_diff_distribution": [
+        {
+          "diff": -20,
+          "p": 0
+        },
+        {
+          "diff": -16,
+          "p": 0
+        },
+        {
+          "diff": -14,
+          "p": 0.0001
+        },
+        {
+          "diff": -12,
+          "p": 0.0014
+        },
+        {
+          "diff": -10,
+          "p": 0.0019
+        },
+        {
+          "diff": -8,
+          "p": 0.0104
+        },
+        {
+          "diff": -6,
+          "p": 0.0086
+        },
+        {
+          "diff": -4,
+          "p": 0.0491
+        },
+        {
+          "diff": -2,
+          "p": 0.0278
+        },
+        {
+          "diff": 0,
+          "p": 0.1292
+        },
+        {
+          "diff": 2,
+          "p": 0.0597
+        },
+        {
+          "diff": 4,
+          "p": 0.2038
+        },
+        {
+          "diff": 6,
+          "p": 0.0698
+        },
+        {
+          "diff": 8,
+          "p": 0.1968
+        },
+        {
+          "diff": 10,
+          "p": 0.0539
+        },
+        {
+          "diff": 12,
+          "p": 0.1097
+        },
+        {
+          "diff": 14,
+          "p": 0.0233
+        },
+        {
+          "diff": 16,
+          "p": 0.0382
+        },
+        {
+          "diff": 18,
+          "p": 0.0066
+        },
+        {
+          "diff": 20,
+          "p": 0.0094
+        }
+      ]
+    },
+    {
+      "match_date": "2027-01-16",
+      "kickoff": "2027-01-16T17:00:00Z",
+      "stage": "preliminary",
+      "group": "E",
+      "venue_is": "Kiel",
+      "home": "Qatar",
+      "home_is": "Katar",
+      "away": "Sweden",
+      "away_is": "Svíþjóð",
+      "p_home": 0.0328,
+      "p_draw": 0.0164,
+      "p_away": 0.9508,
+      "eg_home": 25.18,
+      "eg_away": 34.63,
+      "goal_diff_distribution": [
+        {
+          "diff": -20,
+          "p": 0.0475
+        },
+        {
+          "diff": -18,
+          "p": 0.0212
+        },
+        {
+          "diff": -16,
+          "p": 0.1068
+        },
+        {
+          "diff": -14,
+          "p": 0.052
+        },
+        {
+          "diff": -12,
+          "p": 0.1918
+        },
+        {
+          "diff": -10,
+          "p": 0.0759
+        },
+        {
+          "diff": -8,
+          "p": 0.2132
+        },
+        {
+          "diff": -6,
+          "p": 0.0624
+        },
+        {
+          "diff": -4,
+          "p": 0.131
+        },
+        {
+          "diff": -2,
+          "p": 0.0269
+        },
+        {
+          "diff": 0,
+          "p": 0.0502
+        },
+        {
+          "diff": 2,
+          "p": 0.0082
+        },
+        {
+          "diff": 4,
+          "p": 0.01
+        },
+        {
+          "diff": 6,
+          "p": 0.0014
+        },
+        {
+          "diff": 8,
+          "p": 0.0013
+        },
+        {
+          "diff": 12,
+          "p": 0.0001
+        }
+      ]
+    },
+    {
+      "match_date": "2027-01-16",
+      "kickoff": "2027-01-16T17:00:00Z",
+      "stage": "preliminary",
+      "group": "F",
+      "venue_is": "Magdeburg",
+      "home": "Algeria",
+      "home_is": "Alsír",
+      "away": "Portugal",
+      "away_is": "Portúgal",
+      "p_home": 0.0773,
+      "p_draw": 0.0323,
+      "p_away": 0.8904,
+      "eg_home": 27.08,
+      "eg_away": 33.98,
+      "goal_diff_distribution": [
+        {
+          "diff": -20,
+          "p": 0.0138
+        },
+        {
+          "diff": -18,
+          "p": 0.0091
+        },
+        {
+          "diff": -16,
+          "p": 0.0499
+        },
+        {
+          "diff": -14,
+          "p": 0.03
+        },
+        {
+          "diff": -12,
+          "p": 0.1447
+        },
+        {
+          "diff": -10,
+          "p": 0.061
+        },
+        {
+          "diff": -8,
+          "p": 0.223
+        },
+        {
+          "diff": -6,
+          "p": 0.073
+        },
+        {
+          "diff": -4,
+          "p": 0.1944
+        },
+        {
+          "diff": -2,
+          "p": 0.0493
+        },
+        {
+          "diff": 0,
+          "p": 0.098
+        },
+        {
+          "diff": 2,
+          "p": 0.0173
+        },
+        {
+          "diff": 4,
+          "p": 0.0281
+        },
+        {
+          "diff": 6,
+          "p": 0.0037
+        },
+        {
+          "diff": 8,
+          "p": 0.0039
+        },
+        {
+          "diff": 10,
+          "p": 0.0004
+        },
+        {
+          "diff": 12,
+          "p": 0.0004
+        },
+        {
+          "diff": 14,
+          "p": 0.0001
+        }
+      ]
+    },
+    {
+      "match_date": "2027-01-16",
+      "kickoff": "2027-01-16T19:30:00Z",
+      "stage": "preliminary",
+      "group": "C",
+      "venue_is": "Munich",
+      "home": "Turkey",
+      "home_is": "Tyrkland",
+      "away": "Croatia",
+      "away_is": "Króatía",
+      "p_home": 0.0283,
+      "p_draw": 0.0139,
+      "p_away": 0.9578,
+      "eg_home": 25.63,
+      "eg_away": 35.57,
+      "goal_diff_distribution": [
+        {
+          "diff": -20,
+          "p": 0.0584
+        },
+        {
+          "diff": -18,
+          "p": 0.0255
+        },
+        {
+          "diff": -16,
+          "p": 0.1192
+        },
+        {
+          "diff": -14,
+          "p": 0.055
+        },
+        {
+          "diff": -12,
+          "p": 0.2032
+        },
+        {
+          "diff": -10,
+          "p": 0.0692
+        },
+        {
+          "diff": -8,
+          "p": 0.2036
+        },
+        {
+          "diff": -6,
+          "p": 0.0566
+        },
+        {
+          "diff": -4,
+          "p": 0.1216
+        },
+        {
+          "diff": -2,
+          "p": 0.0256
+        },
+        {
+          "diff": 0,
+          "p": 0.0445
+        },
+        {
+          "diff": 2,
+          "p": 0.0072
+        },
+        {
+          "diff": 4,
+          "p": 0.0076
+        },
+        {
+          "diff": 6,
+          "p": 0.001
+        },
+        {
+          "diff": 8,
+          "p": 0.0013
+        },
+        {
+          "diff": 10,
+          "p": 0.0001
+        },
+        {
+          "diff": 12,
+          "p": 0.0003
+        },
+        {
+          "diff": 14,
+          "p": 0
+        }
+      ]
+    },
+    {
+      "match_date": "2027-01-16",
+      "kickoff": "2027-01-16T19:30:00Z",
+      "stage": "preliminary",
+      "group": "D",
+      "venue_is": "Stuttgart",
+      "home": "Kuwait",
+      "home_is": "Kúveit",
+      "away": "Argentina",
+      "away_is": "Argentína",
+      "p_home": 0.1226,
+      "p_draw": 0.0415,
+      "p_away": 0.836,
+      "eg_home": 24.65,
+      "eg_away": 30.51,
+      "goal_diff_distribution": [
+        {
+          "diff": -20,
+          "p": 0.0092
+        },
+        {
+          "diff": -18,
+          "p": 0.0073
+        },
+        {
+          "diff": -16,
+          "p": 0.0406
+        },
+        {
+          "diff": -14,
+          "p": 0.023
+        },
+        {
+          "diff": -12,
+          "p": 0.1173
+        },
+        {
+          "diff": -10,
+          "p": 0.0527
+        },
+        {
+          "diff": -8,
+          "p": 0.2012
+        },
+        {
+          "diff": -6,
+          "p": 0.0741
+        },
+        {
+          "diff": -4,
+          "p": 0.2065
+        },
+        {
+          "diff": -2,
+          "p": 0.0576
+        },
+        {
+          "diff": 0,
+          "p": 0.1221
+        },
+        {
+          "diff": 2,
+          "p": 0.0269
+        },
+        {
+          "diff": 4,
+          "p": 0.0434
+        },
+        {
+          "diff": 6,
+          "p": 0.0079
+        },
+        {
+          "diff": 8,
+          "p": 0.0077
+        },
+        {
+          "diff": 10,
+          "p": 0.001
+        },
+        {
+          "diff": 12,
+          "p": 0.0016
+        },
+        {
+          "diff": 14,
+          "p": 0
+        }
+      ]
+    },
+    {
+      "match_date": "2027-01-16",
+      "kickoff": "2027-01-16T19:30:00Z",
+      "stage": "preliminary",
+      "group": "E",
+      "venue_is": "Kiel",
+      "home": "Norway",
+      "home_is": "Noregur",
+      "away": "Greece",
+      "away_is": "Grikkland",
+      "p_home": 0.8063,
+      "p_draw": 0.0465,
+      "p_away": 0.1472,
+      "eg_home": 32.99,
+      "eg_away": 27.83,
+      "goal_diff_distribution": [
+        {
+          "diff": -16,
+          "p": 0
+        },
+        {
+          "diff": -14,
+          "p": 0.0001
+        },
+        {
+          "diff": -12,
+          "p": 0.0015
+        },
+        {
+          "diff": -10,
+          "p": 0.0013
+        },
+        {
+          "diff": -8,
+          "p": 0.0124
+        },
+        {
+          "diff": -6,
+          "p": 0.0082
+        },
+        {
+          "diff": -4,
+          "p": 0.0527
+        },
+        {
+          "diff": -2,
+          "p": 0.0307
+        },
+        {
+          "diff": 0,
+          "p": 0.143
+        },
+        {
+          "diff": 2,
+          "p": 0.0622
+        },
+        {
+          "diff": 4,
+          "p": 0.2125
+        },
+        {
+          "diff": 6,
+          "p": 0.0736
+        },
+        {
+          "diff": 8,
+          "p": 0.1902
+        },
+        {
+          "diff": 10,
+          "p": 0.0493
+        },
+        {
+          "diff": 12,
+          "p": 0.1016
+        },
+        {
+          "diff": 14,
+          "p": 0.0199
+        },
+        {
+          "diff": 16,
+          "p": 0.0295
+        },
+        {
+          "diff": 18,
+          "p": 0.0044
+        },
+        {
+          "diff": 20,
+          "p": 0.0069
+        }
+      ]
+    },
+    {
+      "match_date": "2027-01-16",
+      "kickoff": "2027-01-16T19:30:00Z",
+      "stage": "preliminary",
+      "group": "F",
+      "venue_is": "Magdeburg",
+      "home": "Faroe Islands",
+      "home_is": "Færeyjar",
+      "away": "Poland",
+      "away_is": "Pólland",
+      "p_home": 0.3204,
+      "p_draw": 0.0687,
+      "p_away": 0.6108,
+      "eg_home": 27.9,
+      "eg_away": 29.96,
+      "goal_diff_distribution": [
+        {
+          "diff": -20,
+          "p": 0.0014
+        },
+        {
+          "diff": -18,
+          "p": 0.001
+        },
+        {
+          "diff": -16,
+          "p": 0.0102
+        },
+        {
+          "diff": -14,
+          "p": 0.006
+        },
+        {
+          "diff": -12,
+          "p": 0.0442
+        },
+        {
+          "diff": -10,
+          "p": 0.0261
+        },
+        {
+          "diff": -8,
+          "p": 0.1222
+        },
+        {
+          "diff": -6,
+          "p": 0.0538
+        },
+        {
+          "diff": -4,
+          "p": 0.2034
+        },
+        {
+          "diff": -2,
+          "p": 0.0746
+        },
+        {
+          "diff": 0,
+          "p": 0.2001
+        },
+        {
+          "diff": 2,
+          "p": 0.0568
+        },
+        {
+          "diff": 4,
+          "p": 0.1128
+        },
+        {
+          "diff": 6,
+          "p": 0.0253
+        },
+        {
+          "diff": 8,
+          "p": 0.0436
+        },
+        {
+          "diff": 10,
+          "p": 0.0066
+        },
+        {
+          "diff": 12,
+          "p": 0.0093
+        },
+        {
+          "diff": 14,
+          "p": 0.0011
+        },
+        {
+          "diff": 16,
+          "p": 0.0013
+        },
+        {
+          "diff": 18,
+          "p": 0.0001
+        },
+        {
+          "diff": 20,
+          "p": 0.0001
+        }
+      ]
+    },
+    {
+      "match_date": "2027-01-17",
+      "kickoff": "2027-01-17T17:00:00Z",
+      "stage": "preliminary",
+      "group": "A",
+      "venue_is": "Munich",
+      "home": "Tunisia",
+      "home_is": "Túnis",
+      "away": "Uruguay",
+      "away_is": "Úrúgvæ",
+      "p_home": 0.9756,
+      "p_draw": 0.0091,
+      "p_away": 0.0153,
+      "eg_home": 35.45,
+      "eg_away": 24.05,
+      "goal_diff_distribution": [
+        {
+          "diff": -8,
+          "p": 0.0004
+        },
+        {
+          "diff": -6,
+          "p": 0.0006
+        },
+        {
+          "diff": -4,
+          "p": 0.0033
+        },
+        {
+          "diff": -2,
+          "p": 0.0044
+        },
+        {
+          "diff": 0,
+          "p": 0.0263
+        },
+        {
+          "diff": 2,
+          "p": 0.017
+        },
+        {
+          "diff": 4,
+          "p": 0.0902
+        },
+        {
+          "diff": 6,
+          "p": 0.0445
+        },
+        {
+          "diff": 8,
+          "p": 0.1806
+        },
+        {
+          "diff": 10,
+          "p": 0.0684
+        },
+        {
+          "diff": 12,
+          "p": 0.2136
+        },
+        {
+          "diff": 14,
+          "p": 0.0641
+        },
+        {
+          "diff": 16,
+          "p": 0.153
+        },
+        {
+          "diff": 18,
+          "p": 0.0346
+        },
+        {
+          "diff": 20,
+          "p": 0.099
+        }
+      ]
+    },
+    {
+      "match_date": "2027-01-17",
+      "kickoff": "2027-01-17T17:00:00Z",
+      "stage": "preliminary",
+      "group": "B",
+      "venue_is": "Stuttgart",
+      "home": "Cape Verde",
+      "home_is": "Grænhöfðaeyjar",
+      "away": "Saudi Arabia",
+      "away_is": "Sádi-Arabía",
+      "p_home": 0.4931,
+      "p_draw": 0.0693,
+      "p_away": 0.4376,
+      "eg_home": 28.94,
+      "eg_away": 28.52,
+      "goal_diff_distribution": [
+        {
+          "diff": -20,
+          "p": 0.0002
+        },
+        {
+          "diff": -18,
+          "p": 0.0003
+        },
+        {
+          "diff": -16,
+          "p": 0.0033
+        },
+        {
+          "diff": -14,
+          "p": 0.0026
+        },
+        {
+          "diff": -12,
+          "p": 0.0194
+        },
+        {
+          "diff": -10,
+          "p": 0.0124
+        },
+        {
+          "diff": -8,
+          "p": 0.0692
+        },
+        {
+          "diff": -6,
+          "p": 0.0373
+        },
+        {
+          "diff": -4,
+          "p": 0.161
+        },
+        {
+          "diff": -2,
+          "p": 0.0644
+        },
+        {
+          "diff": 0,
+          "p": 0.2037
+        },
+        {
+          "diff": 2,
+          "p": 0.0681
+        },
+        {
+          "diff": 4,
+          "p": 0.1734
+        },
+        {
+          "diff": 6,
+          "p": 0.0418
+        },
+        {
+          "diff": 8,
+          "p": 0.0902
+        },
+        {
+          "diff": 10,
+          "p": 0.0161
+        },
+        {
+          "diff": 12,
+          "p": 0.0275
+        },
+        {
+          "diff": 14,
+          "p": 0.0036
+        },
+        {
+          "diff": 16,
+          "p": 0.0046
+        },
+        {
+          "diff": 18,
+          "p": 0.0004
+        },
+        {
+          "diff": 20,
+          "p": 0.0004
+        }
+      ]
+    },
+    {
+      "match_date": "2027-01-17",
+      "kickoff": "2027-01-17T17:00:00Z",
+      "stage": "preliminary",
+      "group": "G",
+      "venue_is": "Kiel",
+      "home": "Slovenia",
+      "home_is": "Slóvenía",
+      "away": "USA",
+      "away_is": "Bandaríkin",
+      "p_home": 0.9759,
+      "p_draw": 0.0087,
+      "p_away": 0.0154,
+      "eg_home": 36.77,
+      "eg_away": 25.38,
+      "goal_diff_distribution": [
+        {
+          "diff": -10,
+          "p": 0
+        },
+        {
+          "diff": -8,
+          "p": 0.0004
+        },
+        {
+          "diff": -6,
+          "p": 0.0005
+        },
+        {
+          "diff": -4,
+          "p": 0.0042
+        },
+        {
+          "diff": -2,
+          "p": 0.0044
+        },
+        {
+          "diff": 0,
+          "p": 0.0266
+        },
+        {
+          "diff": 2,
+          "p": 0.0182
+        },
+        {
+          "diff": 4,
+          "p": 0.093
+        },
+        {
+          "diff": 6,
+          "p": 0.0436
+        },
+        {
+          "diff": 8,
+          "p": 0.1734
+        },
+        {
+          "diff": 10,
+          "p": 0.0714
+        },
+        {
+          "diff": 12,
+          "p": 0.213
+        },
+        {
+          "diff": 14,
+          "p": 0.064
+        },
+        {
+          "diff": 16,
+          "p": 0.1512
+        },
+        {
+          "diff": 18,
+          "p": 0.037
+        },
+        {
+          "diff": 20,
+          "p": 0.0989
+        }
+      ]
+    },
+    {
+      "match_date": "2027-01-17",
+      "kickoff": "2027-01-17T17:00:00Z",
+      "stage": "preliminary",
+      "group": "H",
+      "venue_is": "Magdeburg",
+      "home": "North Macedonia",
+      "home_is": "Norður-Makedónía",
+      "away": "Bahrain",
+      "away_is": "Barein",
+      "p_home": 0.6206,
+      "p_draw": 0.0693,
+      "p_away": 0.31,
+      "eg_home": 29.57,
+      "eg_away": 27.41,
+      "goal_diff_distribution": [
+        {
+          "diff": -20,
+          "p": 0
+        },
+        {
+          "diff": -18,
+          "p": 0
+        },
+        {
+          "diff": -16,
+          "p": 0.0008
+        },
+        {
+          "diff": -14,
+          "p": 0.0006
+        },
+        {
+          "diff": -12,
+          "p": 0.0076
+        },
+        {
+          "diff": -10,
+          "p": 0.0054
+        },
+        {
+          "diff": -8,
+          "p": 0.0399
+        },
+        {
+          "diff": -6,
+          "p": 0.0225
+        },
+        {
+          "diff": -4,
+          "p": 0.1168
+        },
+        {
+          "diff": -2,
+          "p": 0.0545
+        },
+        {
+          "diff": 0,
+          "p": 0.2054
+        },
+        {
+          "diff": 2,
+          "p": 0.0734
+        },
+        {
+          "diff": 4,
+          "p": 0.2042
+        },
+        {
+          "diff": 6,
+          "p": 0.0578
+        },
+        {
+          "diff": 8,
+          "p": 0.1252
+        },
+        {
+          "diff": 10,
+          "p": 0.0256
+        },
+        {
+          "diff": 12,
+          "p": 0.043
+        },
+        {
+          "diff": 14,
+          "p": 0.0063
+        },
+        {
+          "diff": 16,
+          "p": 0.0086
+        },
+        {
+          "diff": 18,
+          "p": 0.0008
+        },
+        {
+          "diff": 20,
+          "p": 0.0012
+        }
+      ]
+    },
+    {
+      "match_date": "2027-01-17",
+      "kickoff": "2027-01-17T19:30:00Z",
+      "stage": "preliminary",
+      "group": "A",
+      "venue_is": "Munich",
+      "home": "Germany",
+      "home_is": "Þýskaland",
+      "away": "Serbia",
+      "away_is": "Serbía",
+      "p_home": 0.7679,
+      "p_draw": 0.0535,
+      "p_away": 0.1786,
+      "eg_home": 32.56,
+      "eg_away": 28.05,
+      "goal_diff_distribution": [
+        {
+          "diff": -16,
+          "p": 0.0001
+        },
+        {
+          "diff": -14,
+          "p": 0
+        },
+        {
+          "diff": -12,
+          "p": 0.0016
+        },
+        {
+          "diff": -10,
+          "p": 0.0025
+        },
+        {
+          "diff": -8,
+          "p": 0.0168
+        },
+        {
+          "diff": -6,
+          "p": 0.0105
+        },
+        {
+          "diff": -4,
+          "p": 0.067
+        },
+        {
+          "diff": -2,
+          "p": 0.0373
+        },
+        {
+          "diff": 0,
+          "p": 0.1553
+        },
+        {
+          "diff": 2,
+          "p": 0.0658
+        },
+        {
+          "diff": 4,
+          "p": 0.2162
+        },
+        {
+          "diff": 6,
+          "p": 0.0711
+        },
+        {
+          "diff": 8,
+          "p": 0.1769
+        },
+        {
+          "diff": 10,
+          "p": 0.0422
+        },
+        {
+          "diff": 12,
+          "p": 0.0867
+        },
+        {
+          "diff": 14,
+          "p": 0.0158
+        },
+        {
+          "diff": 16,
+          "p": 0.0248
+        },
+        {
+          "diff": 18,
+          "p": 0.0046
+        },
+        {
+          "diff": 20,
+          "p": 0.0048
+        }
+      ]
+    },
+    {
+      "match_date": "2027-01-17",
+      "kickoff": "2027-01-17T19:30:00Z",
+      "stage": "preliminary",
+      "group": "B",
+      "venue_is": "Stuttgart",
+      "home": "Egypt",
+      "home_is": "Egyptaland",
+      "away": "Italy",
+      "away_is": "Ítalía",
+      "p_home": 0.831,
+      "p_draw": 0.0456,
+      "p_away": 0.1234,
+      "eg_home": 33.04,
+      "eg_away": 27.43,
+      "goal_diff_distribution": [
+        {
+          "diff": -14,
+          "p": 0.0002
+        },
+        {
+          "diff": -12,
+          "p": 0.0006
+        },
+        {
+          "diff": -10,
+          "p": 0.0012
+        },
+        {
+          "diff": -8,
+          "p": 0.0088
+        },
+        {
+          "diff": -6,
+          "p": 0.0073
+        },
+        {
+          "diff": -4,
+          "p": 0.0447
+        },
+        {
+          "diff": -2,
+          "p": 0.0264
+        },
+        {
+          "diff": 0,
+          "p": 0.1278
+        },
+        {
+          "diff": 2,
+          "p": 0.0568
+        },
+        {
+          "diff": 4,
+          "p": 0.2144
+        },
+        {
+          "diff": 6,
+          "p": 0.0748
+        },
+        {
+          "diff": 8,
+          "p": 0.2088
+        },
+        {
+          "diff": 10,
+          "p": 0.0548
+        },
+        {
+          "diff": 12,
+          "p": 0.1069
+        },
+        {
+          "diff": 14,
+          "p": 0.0215
+        },
+        {
+          "diff": 16,
+          "p": 0.0328
+        },
+        {
+          "diff": 18,
+          "p": 0.0043
+        },
+        {
+          "diff": 20,
+          "p": 0.0077
+        }
+      ]
+    },
+    {
+      "match_date": "2027-01-17",
+      "kickoff": "2027-01-17T19:30:00Z",
+      "stage": "preliminary",
+      "group": "G",
+      "venue_is": "Kiel",
+      "home": "Angola",
+      "home_is": "Angóla",
+      "away": "Denmark",
+      "away_is": "Danmörk",
+      "p_home": 0.0008,
+      "p_draw": 0.0006,
+      "p_away": 0.9987,
+      "eg_home": 20.5,
+      "eg_away": 37.79,
+      "goal_diff_distribution": [
+        {
+          "diff": -20,
+          "p": 0.4135
+        },
+        {
+          "diff": -18,
+          "p": 0.0714
+        },
+        {
+          "diff": -16,
+          "p": 0.2108
+        },
+        {
+          "diff": -14,
+          "p": 0.0618
+        },
+        {
+          "diff": -12,
+          "p": 0.135
+        },
+        {
+          "diff": -10,
+          "p": 0.0289
+        },
+        {
+          "diff": -8,
+          "p": 0.0537
+        },
+        {
+          "diff": -6,
+          "p": 0.0086
+        },
+        {
+          "diff": -4,
+          "p": 0.012
+        },
+        {
+          "diff": -2,
+          "p": 0.0019
+        },
+        {
+          "diff": 0,
+          "p": 0.0022
+        },
+        {
+          "diff": 2,
+          "p": 0.0002
+        }
+      ]
+    },
+    {
+      "match_date": "2027-01-17",
+      "kickoff": "2027-01-17T19:30:00Z",
+      "stage": "preliminary",
+      "group": "H",
+      "venue_is": "Magdeburg",
+      "home": "Japan",
+      "home_is": "Japan",
+      "away": "Iceland",
+      "away_is": "Ísland",
+      "p_home": 0.0168,
+      "p_draw": 0.0107,
+      "p_away": 0.9726,
+      "eg_home": 26.02,
+      "eg_away": 36.83,
+      "goal_diff_distribution": [
+        {
+          "diff": -20,
+          "p": 0.0768
+        },
+        {
+          "diff": -18,
+          "p": 0.0298
+        },
+        {
+          "diff": -16,
+          "p": 0.139
+        },
+        {
+          "diff": -14,
+          "p": 0.0589
+        },
+        {
+          "diff": -12,
+          "p": 0.2172
+        },
+        {
+          "diff": -10,
+          "p": 0.0731
+        },
+        {
+          "diff": -8,
+          "p": 0.1948
+        },
+        {
+          "diff": -6,
+          "p": 0.0499
+        },
+        {
+          "diff": -4,
+          "p": 0.0994
+        },
+        {
+          "diff": -2,
+          "p": 0.0204
+        },
+        {
+          "diff": 0,
+          "p": 0.0308
+        },
+        {
+          "diff": 2,
+          "p": 0.0034
+        },
+        {
+          "diff": 4,
+          "p": 0.0053
+        },
+        {
+          "diff": 6,
+          "p": 0.0006
+        },
+        {
+          "diff": 8,
+          "p": 0.0005
+        },
+        {
+          "diff": 12,
+          "p": 0.0001
+        },
+        {
+          "diff": 16,
+          "p": 0
+        }
+      ]
+    },
+    {
+      "match_date": "2027-01-18",
+      "kickoff": "2027-01-18T17:00:00Z",
+      "stage": "preliminary",
+      "group": "C",
+      "venue_is": "Munich",
+      "home": "Chile",
+      "home_is": "Síle",
+      "away": "Turkey",
+      "away_is": "Tyrkland",
+      "p_home": 0.3586,
+      "p_draw": 0.0691,
+      "p_away": 0.5724,
+      "eg_home": 30.06,
+      "eg_away": 31.58,
+      "goal_diff_distribution": [
+        {
+          "diff": -20,
+          "p": 0.0011
+        },
+        {
+          "diff": -18,
+          "p": 0.001
+        },
+        {
+          "diff": -16,
+          "p": 0.0091
+        },
+        {
+          "diff": -14,
+          "p": 0.006
+        },
+        {
+          "diff": -12,
+          "p": 0.0362
+        },
+        {
+          "diff": -10,
+          "p": 0.0232
+        },
+        {
+          "diff": -8,
+          "p": 0.1074
+        },
+        {
+          "diff": -6,
+          "p": 0.0525
+        },
+        {
+          "diff": -4,
+          "p": 0.1904
+        },
+        {
+          "diff": -2,
+          "p": 0.0702
+        },
+        {
+          "diff": 0,
+          "p": 0.2092
+        },
+        {
+          "diff": 2,
+          "p": 0.0591
+        },
+        {
+          "diff": 4,
+          "p": 0.1304
+        },
+        {
+          "diff": 6,
+          "p": 0.0296
+        },
+        {
+          "diff": 8,
+          "p": 0.0515
+        },
+        {
+          "diff": 10,
+          "p": 0.0074
+        },
+        {
+          "diff": 12,
+          "p": 0.012
+        },
+        {
+          "diff": 14,
+          "p": 0.0019
+        },
+        {
+          "diff": 16,
+          "p": 0.0016
+        },
+        {
+          "diff": 18,
+          "p": 0.0001
+        },
+        {
+          "diff": 20,
+          "p": 0.0001
+        }
+      ]
+    },
+    {
+      "match_date": "2027-01-18",
+      "kickoff": "2027-01-18T17:00:00Z",
+      "stage": "preliminary",
+      "group": "D",
+      "venue_is": "Stuttgart",
+      "home": "Brazil",
+      "home_is": "Brasilía",
+      "away": "Kuwait",
+      "away_is": "Kúveit",
+      "p_home": 0.9265,
+      "p_draw": 0.0224,
+      "p_away": 0.0511,
+      "eg_home": 32.85,
+      "eg_away": 24.4,
+      "goal_diff_distribution": [
+        {
+          "diff": -12,
+          "p": 0.0002
+        },
+        {
+          "diff": -10,
+          "p": 0.0001
+        },
+        {
+          "diff": -8,
+          "p": 0.0026
+        },
+        {
+          "diff": -6,
+          "p": 0.0018
+        },
+        {
+          "diff": -4,
+          "p": 0.0188
+        },
+        {
+          "diff": -2,
+          "p": 0.0117
+        },
+        {
+          "diff": 0,
+          "p": 0.0653
+        },
+        {
+          "diff": 2,
+          "p": 0.0356
+        },
+        {
+          "diff": 4,
+          "p": 0.158
+        },
+        {
+          "diff": 6,
+          "p": 0.0629
+        },
+        {
+          "diff": 8,
+          "p": 0.2182
+        },
+        {
+          "diff": 10,
+          "p": 0.07
+        },
+        {
+          "diff": 12,
+          "p": 0.1756
+        },
+        {
+          "diff": 14,
+          "p": 0.0459
+        },
+        {
+          "diff": 16,
+          "p": 0.0868
+        },
+        {
+          "diff": 18,
+          "p": 0.0159
+        },
+        {
+          "diff": 20,
+          "p": 0.0307
+        }
+      ]
+    },
+    {
+      "match_date": "2027-01-18",
+      "kickoff": "2027-01-18T17:00:00Z",
+      "stage": "preliminary",
+      "group": "E",
+      "venue_is": "Kiel",
+      "home": "Greece",
+      "home_is": "Grikkland",
+      "away": "Qatar",
+      "away_is": "Katar",
+      "p_home": 0.6199,
+      "p_draw": 0.0698,
+      "p_away": 0.3103,
+      "eg_home": 30,
+      "eg_away": 27.86,
+      "goal_diff_distribution": [
+        {
+          "diff": -20,
+          "p": 0
+        },
+        {
+          "diff": -18,
+          "p": 0.0001
+        },
+        {
+          "diff": -16,
+          "p": 0.0004
+        },
+        {
+          "diff": -14,
+          "p": 0.0008
+        },
+        {
+          "diff": -12,
+          "p": 0.0076
+        },
+        {
+          "diff": -10,
+          "p": 0.0055
+        },
+        {
+          "diff": -8,
+          "p": 0.0366
+        },
+        {
+          "diff": -6,
+          "p": 0.0233
+        },
+        {
+          "diff": -4,
+          "p": 0.1162
+        },
+        {
+          "diff": -2,
+          "p": 0.0554
+        },
+        {
+          "diff": 0,
+          "p": 0.2065
+        },
+        {
+          "diff": 2,
+          "p": 0.076
+        },
+        {
+          "diff": 4,
+          "p": 0.2082
+        },
+        {
+          "diff": 6,
+          "p": 0.0584
+        },
+        {
+          "diff": 8,
+          "p": 0.1206
+        },
+        {
+          "diff": 10,
+          "p": 0.0266
+        },
+        {
+          "diff": 12,
+          "p": 0.0418
+        },
+        {
+          "diff": 14,
+          "p": 0.0063
+        },
+        {
+          "diff": 16,
+          "p": 0.0076
+        },
+        {
+          "diff": 18,
+          "p": 0.0008
+        },
+        {
+          "diff": 20,
+          "p": 0.0011
+        }
+      ]
+    },
+    {
+      "match_date": "2027-01-18",
+      "kickoff": "2027-01-18T17:00:00Z",
+      "stage": "preliminary",
+      "group": "F",
+      "venue_is": "Magdeburg",
+      "home": "Poland",
+      "home_is": "Pólland",
+      "away": "Algeria",
+      "away_is": "Alsír",
+      "p_home": 0.8136,
+      "p_draw": 0.0466,
+      "p_away": 0.1398,
+      "eg_home": 31.11,
+      "eg_away": 25.8,
+      "goal_diff_distribution": [
+        {
+          "diff": -20,
+          "p": 0
+        },
+        {
+          "diff": -16,
+          "p": 0.0001
+        },
+        {
+          "diff": -14,
+          "p": 0.0001
+        },
+        {
+          "diff": -12,
+          "p": 0.0018
+        },
+        {
+          "diff": -10,
+          "p": 0.0009
+        },
+        {
+          "diff": -8,
+          "p": 0.0121
+        },
+        {
+          "diff": -6,
+          "p": 0.008
+        },
+        {
+          "diff": -4,
+          "p": 0.0491
+        },
+        {
+          "diff": -2,
+          "p": 0.0317
+        },
+        {
+          "diff": 0,
+          "p": 0.1373
+        },
+        {
+          "diff": 2,
+          "p": 0.0608
+        },
+        {
+          "diff": 4,
+          "p": 0.2134
+        },
+        {
+          "diff": 6,
+          "p": 0.068
+        },
+        {
+          "diff": 8,
+          "p": 0.1948
+        },
+        {
+          "diff": 10,
+          "p": 0.0529
+        },
+        {
+          "diff": 12,
+          "p": 0.1027
+        },
+        {
+          "diff": 14,
+          "p": 0.0205
+        },
+        {
+          "diff": 16,
+          "p": 0.0332
+        },
+        {
+          "diff": 18,
+          "p": 0.0049
+        },
+        {
+          "diff": 20,
+          "p": 0.0073
+        }
+      ]
+    },
+    {
+      "match_date": "2027-01-18",
+      "kickoff": "2027-01-18T19:30:00Z",
+      "stage": "preliminary",
+      "group": "C",
+      "venue_is": "Munich",
+      "home": "Croatia",
+      "home_is": "Króatía",
+      "away": "Spain",
+      "away_is": "Spánn",
+      "p_home": 0.4268,
+      "p_draw": 0.0744,
+      "p_away": 0.4988,
+      "eg_home": 29.52,
+      "eg_away": 30.06,
+      "goal_diff_distribution": [
+        {
+          "diff": -20,
+          "p": 0.0008
+        },
+        {
+          "diff": -18,
+          "p": 0.0006
+        },
+        {
+          "diff": -16,
+          "p": 0.0046
+        },
+        {
+          "diff": -14,
+          "p": 0.0036
+        },
+        {
+          "diff": -12,
+          "p": 0.024
+        },
+        {
+          "diff": -10,
+          "p": 0.016
+        },
+        {
+          "diff": -8,
+          "p": 0.0866
+        },
+        {
+          "diff": -6,
+          "p": 0.0435
+        },
+        {
+          "diff": -4,
+          "p": 0.1789
+        },
+        {
+          "diff": -2,
+          "p": 0.0678
+        },
+        {
+          "diff": 0,
+          "p": 0.218
+        },
+        {
+          "diff": 2,
+          "p": 0.0707
+        },
+        {
+          "diff": 4,
+          "p": 0.1522
+        },
+        {
+          "diff": 6,
+          "p": 0.0367
+        },
+        {
+          "diff": 8,
+          "p": 0.0652
+        },
+        {
+          "diff": 10,
+          "p": 0.0108
+        },
+        {
+          "diff": 12,
+          "p": 0.0158
+        },
+        {
+          "diff": 14,
+          "p": 0.0016
+        },
+        {
+          "diff": 16,
+          "p": 0.0023
+        },
+        {
+          "diff": 18,
+          "p": 0.0001
+        },
+        {
+          "diff": 20,
+          "p": 0.0003
+        }
+      ]
+    },
+    {
+      "match_date": "2027-01-18",
+      "kickoff": "2027-01-18T19:30:00Z",
+      "stage": "preliminary",
+      "group": "D",
+      "venue_is": "Stuttgart",
+      "home": "Argentina",
+      "home_is": "Argentína",
+      "away": "France",
+      "away_is": "Frakkland",
+      "p_home": 0.0566,
+      "p_draw": 0.025,
+      "p_away": 0.9184,
+      "eg_home": 26.22,
+      "eg_away": 34.34,
+      "goal_diff_distribution": [
+        {
+          "diff": -20,
+          "p": 0.0293
+        },
+        {
+          "diff": -18,
+          "p": 0.0141
+        },
+        {
+          "diff": -16,
+          "p": 0.078
+        },
+        {
+          "diff": -14,
+          "p": 0.0425
+        },
+        {
+          "diff": -12,
+          "p": 0.1686
+        },
+        {
+          "diff": -10,
+          "p": 0.0685
+        },
+        {
+          "diff": -8,
+          "p": 0.2124
+        },
+        {
+          "diff": -6,
+          "p": 0.0655
+        },
+        {
+          "diff": -4,
+          "p": 0.1668
+        },
+        {
+          "diff": -2,
+          "p": 0.0394
+        },
+        {
+          "diff": 0,
+          "p": 0.0765
+        },
+        {
+          "diff": 2,
+          "p": 0.0133
+        },
+        {
+          "diff": 4,
+          "p": 0.0189
+        },
+        {
+          "diff": 6,
+          "p": 0.0024
+        },
+        {
+          "diff": 8,
+          "p": 0.0032
+        },
+        {
+          "diff": 10,
+          "p": 0.0003
+        },
+        {
+          "diff": 12,
+          "p": 0.0003
+        }
+      ]
+    },
+    {
+      "match_date": "2027-01-18",
+      "kickoff": "2027-01-18T19:30:00Z",
+      "stage": "preliminary",
+      "group": "E",
+      "venue_is": "Kiel",
+      "home": "Sweden",
+      "home_is": "Svíþjóð",
+      "away": "Norway",
+      "away_is": "Noregur",
+      "p_home": 0.6132,
+      "p_draw": 0.0662,
+      "p_away": 0.3207,
+      "eg_home": 32.46,
+      "eg_away": 30.39,
+      "goal_diff_distribution": [
+        {
+          "diff": -20,
+          "p": 0
+        },
+        {
+          "diff": -18,
+          "p": 0
+        },
+        {
+          "diff": -16,
+          "p": 0.001
+        },
+        {
+          "diff": -14,
+          "p": 0.0006
+        },
+        {
+          "diff": -12,
+          "p": 0.0086
+        },
+        {
+          "diff": -10,
+          "p": 0.0063
+        },
+        {
+          "diff": -8,
+          "p": 0.0432
+        },
+        {
+          "diff": -6,
+          "p": 0.024
+        },
+        {
+          "diff": -4,
+          "p": 0.1164
+        },
+        {
+          "diff": -2,
+          "p": 0.0566
+        },
+        {
+          "diff": 0,
+          "p": 0.2001
+        },
+        {
+          "diff": 2,
+          "p": 0.0722
+        },
+        {
+          "diff": 4,
+          "p": 0.2052
+        },
+        {
+          "diff": 6,
+          "p": 0.0579
+        },
+        {
+          "diff": 8,
+          "p": 0.1206
+        },
+        {
+          "diff": 10,
+          "p": 0.0265
+        },
+        {
+          "diff": 12,
+          "p": 0.0424
+        },
+        {
+          "diff": 14,
+          "p": 0.0063
+        },
+        {
+          "diff": 16,
+          "p": 0.009
+        },
+        {
+          "diff": 18,
+          "p": 0.0012
+        },
+        {
+          "diff": 20,
+          "p": 0.0016
+        }
+      ]
+    },
+    {
+      "match_date": "2027-01-18",
+      "kickoff": "2027-01-18T19:30:00Z",
+      "stage": "preliminary",
+      "group": "F",
+      "venue_is": "Magdeburg",
+      "home": "Portugal",
+      "home_is": "Portúgal",
+      "away": "Faroe Islands",
+      "away_is": "Færeyjar",
+      "p_home": 0.7183,
+      "p_draw": 0.0575,
+      "p_away": 0.2242,
+      "eg_home": 32.9,
+      "eg_away": 29.25,
+      "goal_diff_distribution": [
+        {
+          "diff": -20,
+          "p": 0
+        },
+        {
+          "diff": -18,
+          "p": 0.0001
+        },
+        {
+          "diff": -16,
+          "p": 0.0003
+        },
+        {
+          "diff": -14,
+          "p": 0.0004
+        },
+        {
+          "diff": -12,
+          "p": 0.0037
+        },
+        {
+          "diff": -10,
+          "p": 0.0032
+        },
+        {
+          "diff": -8,
+          "p": 0.0234
+        },
+        {
+          "diff": -6,
+          "p": 0.015
+        },
+        {
+          "diff": -4,
+          "p": 0.0846
+        },
+        {
+          "diff": -2,
+          "p": 0.0404
+        },
+        {
+          "diff": 0,
+          "p": 0.1772
+        },
+        {
+          "diff": 2,
+          "p": 0.0698
+        },
+        {
+          "diff": 4,
+          "p": 0.2165
+        },
+        {
+          "diff": 6,
+          "p": 0.0668
+        },
+        {
+          "diff": 8,
+          "p": 0.157
+        },
+        {
+          "diff": 10,
+          "p": 0.0352
+        },
+        {
+          "diff": 12,
+          "p": 0.0708
+        },
+        {
+          "diff": 14,
+          "p": 0.0119
+        },
+        {
+          "diff": 16,
+          "p": 0.0175
+        },
+        {
+          "diff": 18,
+          "p": 0.0024
+        },
+        {
+          "diff": 20,
+          "p": 0.0037
+        }
+      ]
+    },
+    {
+      "match_date": "2027-01-19",
+      "kickoff": "2027-01-19T17:00:00Z",
+      "stage": "preliminary",
+      "group": "G",
+      "venue_is": "Kiel",
+      "home": "USA",
+      "home_is": "Bandaríkin",
+      "away": "Angola",
+      "away_is": "Angóla",
+      "p_home": 0.4102,
+      "p_draw": 0.0709,
+      "p_away": 0.5188,
+      "eg_home": 28.94,
+      "eg_away": 29.71,
+      "goal_diff_distribution": [
+        {
+          "diff": -20,
+          "p": 0.001
+        },
+        {
+          "diff": -18,
+          "p": 0.0009
+        },
+        {
+          "diff": -16,
+          "p": 0.0053
+        },
+        {
+          "diff": -14,
+          "p": 0.0052
+        },
+        {
+          "diff": -12,
+          "p": 0.0303
+        },
+        {
+          "diff": -10,
+          "p": 0.0177
+        },
+        {
+          "diff": -8,
+          "p": 0.0908
+        },
+        {
+          "diff": -6,
+          "p": 0.0466
+        },
+        {
+          "diff": -4,
+          "p": 0.182
+        },
+        {
+          "diff": -2,
+          "p": 0.0676
+        },
+        {
+          "diff": 0,
+          "p": 0.2076
+        },
+        {
+          "diff": 2,
+          "p": 0.0637
+        },
+        {
+          "diff": 4,
+          "p": 0.1495
+        },
+        {
+          "diff": 6,
+          "p": 0.035
+        },
+        {
+          "diff": 8,
+          "p": 0.0635
+        },
+        {
+          "diff": 10,
+          "p": 0.0112
+        },
+        {
+          "diff": 12,
+          "p": 0.0162
+        },
+        {
+          "diff": 14,
+          "p": 0.0026
+        },
+        {
+          "diff": 16,
+          "p": 0.0027
+        },
+        {
+          "diff": 18,
+          "p": 0.0003
+        },
+        {
+          "diff": 20,
+          "p": 0.0003
+        }
+      ]
+    },
+    {
+      "match_date": "2027-01-19",
+      "kickoff": "2027-01-19T17:00:00Z",
+      "stage": "preliminary",
+      "group": "H",
+      "venue_is": "Magdeburg",
+      "home": "Bahrain",
+      "home_is": "Barein",
+      "away": "Japan",
+      "away_is": "Japan",
+      "p_home": 0.6953,
+      "p_draw": 0.0663,
+      "p_away": 0.2384,
+      "eg_home": 32.03,
+      "eg_away": 28.88,
+      "goal_diff_distribution": [
+        {
+          "diff": -16,
+          "p": 0.0002
+        },
+        {
+          "diff": -14,
+          "p": 0.0003
+        },
+        {
+          "diff": -12,
+          "p": 0.0043
+        },
+        {
+          "diff": -10,
+          "p": 0.003
+        },
+        {
+          "diff": -8,
+          "p": 0.0256
+        },
+        {
+          "diff": -6,
+          "p": 0.0169
+        },
+        {
+          "diff": -4,
+          "p": 0.0883
+        },
+        {
+          "diff": -2,
+          "p": 0.0452
+        },
+        {
+          "diff": 0,
+          "p": 0.1914
+        },
+        {
+          "diff": 2,
+          "p": 0.0738
+        },
+        {
+          "diff": 4,
+          "p": 0.2226
+        },
+        {
+          "diff": 6,
+          "p": 0.0688
+        },
+        {
+          "diff": 8,
+          "p": 0.1513
+        },
+        {
+          "diff": 10,
+          "p": 0.0306
+        },
+        {
+          "diff": 12,
+          "p": 0.0532
+        },
+        {
+          "diff": 14,
+          "p": 0.0092
+        },
+        {
+          "diff": 16,
+          "p": 0.0121
+        },
+        {
+          "diff": 18,
+          "p": 0.0015
+        },
+        {
+          "diff": 20,
+          "p": 0.0018
+        }
+      ]
+    },
+    {
+      "match_date": "2027-01-19",
+      "kickoff": "2027-01-19T19:30:00Z",
+      "stage": "preliminary",
+      "group": "G",
+      "venue_is": "Kiel",
+      "home": "Denmark",
+      "home_is": "Danmörk",
+      "away": "Slovenia",
+      "away_is": "Slóvenía",
+      "p_home": 0.8742,
+      "p_draw": 0.0337,
+      "p_away": 0.0921,
+      "eg_home": 34.29,
+      "eg_away": 27.61,
+      "goal_diff_distribution": [
+        {
+          "diff": -14,
+          "p": 0
+        },
+        {
+          "diff": -12,
+          "p": 0.0004
+        },
+        {
+          "diff": -10,
+          "p": 0.0008
+        },
+        {
+          "diff": -8,
+          "p": 0.0055
+        },
+        {
+          "diff": -6,
+          "p": 0.0044
+        },
+        {
+          "diff": -4,
+          "p": 0.0328
+        },
+        {
+          "diff": -2,
+          "p": 0.0205
+        },
+        {
+          "diff": 0,
+          "p": 0.1057
+        },
+        {
+          "diff": 2,
+          "p": 0.0498
+        },
+        {
+          "diff": 4,
+          "p": 0.1945
+        },
+        {
+          "diff": 6,
+          "p": 0.0745
+        },
+        {
+          "diff": 8,
+          "p": 0.2109
+        },
+        {
+          "diff": 10,
+          "p": 0.0621
+        },
+        {
+          "diff": 12,
+          "p": 0.1345
+        },
+        {
+          "diff": 14,
+          "p": 0.0306
+        },
+        {
+          "diff": 16,
+          "p": 0.05
+        },
+        {
+          "diff": 18,
+          "p": 0.0083
+        },
+        {
+          "diff": 20,
+          "p": 0.0148
+        }
+      ]
+    },
+    {
+      "match_date": "2027-01-19",
+      "kickoff": "2027-01-19T19:30:00Z",
+      "stage": "preliminary",
+      "group": "H",
+      "venue_is": "Magdeburg",
+      "home": "Iceland",
+      "home_is": "Ísland",
+      "away": "North Macedonia",
+      "away_is": "Norður-Makedónía",
+      "p_home": 0.8172,
+      "p_draw": 0.0436,
+      "p_away": 0.1391,
+      "eg_home": 32.19,
+      "eg_away": 26.7,
+      "goal_diff_distribution": [
+        {
+          "diff": -16,
+          "p": 0
+        },
+        {
+          "diff": -14,
+          "p": 0.0001
+        },
+        {
+          "diff": -12,
+          "p": 0.0014
+        },
+        {
+          "diff": -10,
+          "p": 0.0014
+        },
+        {
+          "diff": -8,
+          "p": 0.0117
+        },
+        {
+          "diff": -6,
+          "p": 0.009
+        },
+        {
+          "diff": -4,
+          "p": 0.05
+        },
+        {
+          "diff": -2,
+          "p": 0.0293
+        },
+        {
+          "diff": 0,
+          "p": 0.1319
+        },
+        {
+          "diff": 2,
+          "p": 0.0594
+        },
+        {
+          "diff": 4,
+          "p": 0.2072
+        },
+        {
+          "diff": 6,
+          "p": 0.0716
+        },
+        {
+          "diff": 8,
+          "p": 0.1918
+        },
+        {
+          "diff": 10,
+          "p": 0.0523
+        },
+        {
+          "diff": 12,
+          "p": 0.1089
+        },
+        {
+          "diff": 14,
+          "p": 0.0225
+        },
+        {
+          "diff": 16,
+          "p": 0.0378
+        },
+        {
+          "diff": 18,
+          "p": 0.0047
+        },
+        {
+          "diff": 20,
+          "p": 0.0092
+        }
+      ]
+    }
+  ]
+}

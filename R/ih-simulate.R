@@ -287,6 +287,66 @@ ih_rank_table <- function(teams, home, away, gh, ga, h2h_reapply = "none") {
   )
 }
 
+#' Which matches belong to the championship of `spec`
+#' @return Logical per row of `matches`: the championship's competition and
+#'   edition, outside qualification, within its dates, between its nations.
+#' @noRd
+.ih_championship_rows <- function(matches, spec) {
+  teams <- unlist(spec$groups, use.names = FALSE)
+  matches$competition == spec$competition & matches$edition == spec$edition &
+    !grepl("qualif", matches$block, ignore.case = TRUE) &
+    matches$match_date >= spec$start & matches$match_date <= spec$end &
+    matches$home_team %in% teams & matches$away_team %in% teams
+}
+
+#' Stage of a championship match from its date
+#' @return "preliminary", "main" or "knockout" per date.
+#' @noRd
+.ih_stage <- function(spec, date) {
+  last_prelim <- max(spec$prelim$match_date)
+  first_ko <- min(spec$knockout$match_date, na.rm = TRUE)
+  ifelse(date <= last_prelim, "preliminary", ifelse(date < first_ko, "main", "knockout"))
+}
+
+#' Give the championship being forecast its own schedule's venues
+#'
+#' Its matches train the model with the venue the simulator gives its
+#' fixtures: a preliminary match is at home for the host of its group's
+#' venue, a main-round match for the host of its group's venue
+#' (`spec$main_host`), a knockout match for the host of that day's knockout
+#' venue.
+#' @param matches [ih_read_matches()] rows.
+#' @param spec [ih_tournament_spec()].
+#' @return `matches`, with `venue` replaced on the championship's matches.
+#' @noRd
+ih_with_spec_venues <- function(matches, spec) {
+  idx <- which(.ih_championship_rows(matches, spec))
+  if (!length(idx)) {
+    return(matches)
+  }
+  r <- matches[idx, , drop = FALSE]
+  stage <- .ih_stage(spec, r$match_date)
+  host <- rep(NA_character_, length(idx))
+  pair <- function(h, a) paste(pmin(h, a), pmax(h, a))
+  pre <- stage == "preliminary"
+  at <- match(pair(r$home_team[pre], r$away_team[pre]), pair(spec$prelim$home_team, spec$prelim$away_team))
+  host[pre] <- spec$prelim$host[at]
+  mr <- stage == "main"
+  team_group <- stats::setNames(rep(names(spec$groups), lengths(spec$groups)), unlist(spec$groups, use.names = FALSE))
+  main_of <- stats::setNames(rep(names(spec$main), lengths(spec$main)), unlist(spec$main, use.names = FALSE))
+  host[mr] <- unname(spec$main_host[main_of[team_group[r$home_team[mr]]]])
+  ko <- which(stage == "knockout")
+  host[ko] <- vapply(ko, function(i) {
+    h <- unique(spec$knockout$host[spec$knockout$match_date == r$match_date[i]])
+    if (length(h) == 1L) h else NA_character_
+  }, character(1))
+  known <- !is.na(host)
+  v <- integer(length(idx))
+  v[known] <- as.integer(r$home_team[known] == host[known]) - as.integer(r$away_team[known] == host[known])
+  matches$venue[idx] <- v
+  matches
+}
+
 #' The played matches of a championship, by stage
 #'
 #' @param matches [ih_read_matches()] rows of the championship's sex.
@@ -298,15 +358,8 @@ ih_rank_table <- function(teams, home, away, gh, ga, h2h_reapply = "none") {
 #'   through, knockouts).
 #' @noRd
 ih_tournament_results <- function(matches, spec) {
-  r <- matches[matches$competition == spec$competition & matches$edition == spec$edition &
-    !grepl("qualif", matches$block, ignore.case = TRUE) &
-    matches$match_date >= spec$start & matches$match_date <= spec$end &
-    !is.na(matches$home_score), , drop = FALSE]
-  teams <- unlist(spec$groups, use.names = FALSE)
-  r <- r[r$home_team %in% teams & r$away_team %in% teams, , drop = FALSE]
-  last_prelim <- max(spec$prelim$match_date)
-  first_ko <- min(spec$knockout$match_date, na.rm = TRUE)
-  r$stage <- ifelse(r$match_date <= last_prelim, "preliminary", ifelse(r$match_date < first_ko, "main", "knockout"))
+  r <- matches[.ih_championship_rows(matches, spec) & !is.na(matches$home_score), , drop = FALSE]
+  r$stage <- .ih_stage(spec, r$match_date)
   # WHY: the tables and the simulator read the 60-minute score, and one NA
   # stops the ranking. A preliminary or main-round match never goes to extra
   # time, so its final score is its 60-minute score; a knockout match keeps NA

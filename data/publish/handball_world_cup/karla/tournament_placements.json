@@ -1,0 +1,1145 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-11-25T08:22:31Z",
+  "rounds": [
+    {
+      "code": "MR"
+    },
+    {
+      "code": "QF"
+    },
+    {
+      "code": "SF"
+    },
+    {
+      "code": "Final"
+    },
+    {
+      "code": "Champion"
+    }
+  ],
+  "records": [
+    {
+      "team": "Germany",
+      "team_is": "Þýskaland",
+      "round_name": "MR",
+      "probability": 1
+    },
+    {
+      "team": "Germany",
+      "team_is": "Þýskaland",
+      "round_name": "QF",
+      "probability": 0.8948
+    },
+    {
+      "team": "Germany",
+      "team_is": "Þýskaland",
+      "round_name": "SF",
+      "probability": 0.6548
+    },
+    {
+      "team": "Germany",
+      "team_is": "Þýskaland",
+      "round_name": "Final",
+      "probability": 0.3436
+    },
+    {
+      "team": "Germany",
+      "team_is": "Þýskaland",
+      "round_name": "Champion",
+      "probability": 0.1755
+    },
+    {
+      "team": "Serbia",
+      "team_is": "Serbía",
+      "round_name": "MR",
+      "probability": 1
+    },
+    {
+      "team": "Serbia",
+      "team_is": "Serbía",
+      "round_name": "QF",
+      "probability": 0.3656
+    },
+    {
+      "team": "Serbia",
+      "team_is": "Serbía",
+      "round_name": "SF",
+      "probability": 0.1559
+    },
+    {
+      "team": "Serbia",
+      "team_is": "Serbía",
+      "round_name": "Final",
+      "probability": 0.0378
+    },
+    {
+      "team": "Serbia",
+      "team_is": "Serbía",
+      "round_name": "Champion",
+      "probability": 0.01
+    },
+    {
+      "team": "Tunisia",
+      "team_is": "Túnis",
+      "round_name": "MR",
+      "probability": 0.9849
+    },
+    {
+      "team": "Tunisia",
+      "team_is": "Túnis",
+      "round_name": "QF",
+      "probability": 0.0038
+    },
+    {
+      "team": "Tunisia",
+      "team_is": "Túnis",
+      "round_name": "SF",
+      "probability": 0.0003
+    },
+    {
+      "team": "Tunisia",
+      "team_is": "Túnis",
+      "round_name": "Final",
+      "probability": 0
+    },
+    {
+      "team": "Tunisia",
+      "team_is": "Túnis",
+      "round_name": "Champion",
+      "probability": 0
+    },
+    {
+      "team": "Uruguay",
+      "team_is": "Úrúgvæ",
+      "round_name": "MR",
+      "probability": 0.0152
+    },
+    {
+      "team": "Uruguay",
+      "team_is": "Úrúgvæ",
+      "round_name": "QF",
+      "probability": 0
+    },
+    {
+      "team": "Uruguay",
+      "team_is": "Úrúgvæ",
+      "round_name": "SF",
+      "probability": 0
+    },
+    {
+      "team": "Uruguay",
+      "team_is": "Úrúgvæ",
+      "round_name": "Final",
+      "probability": 0
+    },
+    {
+      "team": "Uruguay",
+      "team_is": "Úrúgvæ",
+      "round_name": "Champion",
+      "probability": 0
+    },
+    {
+      "team": "Egypt",
+      "team_is": "Egyptaland",
+      "round_name": "MR",
+      "probability": 0.9994
+    },
+    {
+      "team": "Egypt",
+      "team_is": "Egyptaland",
+      "round_name": "QF",
+      "probability": 0.677
+    },
+    {
+      "team": "Egypt",
+      "team_is": "Egyptaland",
+      "round_name": "SF",
+      "probability": 0.3626
+    },
+    {
+      "team": "Egypt",
+      "team_is": "Egyptaland",
+      "round_name": "Final",
+      "probability": 0.1188
+    },
+    {
+      "team": "Egypt",
+      "team_is": "Egyptaland",
+      "round_name": "Champion",
+      "probability": 0.0385
+    },
+    {
+      "team": "Italy",
+      "team_is": "Ítalía",
+      "round_name": "MR",
+      "probability": 0.9516
+    },
+    {
+      "team": "Italy",
+      "team_is": "Ítalía",
+      "round_name": "QF",
+      "probability": 0.0546
+    },
+    {
+      "team": "Italy",
+      "team_is": "Ítalía",
+      "round_name": "SF",
+      "probability": 0.0101
+    },
+    {
+      "team": "Italy",
+      "team_is": "Ítalía",
+      "round_name": "Final",
+      "probability": 0.0013
+    },
+    {
+      "team": "Italy",
+      "team_is": "Ítalía",
+      "round_name": "Champion",
+      "probability": 0
+    },
+    {
+      "team": "Cape Verde",
+      "team_is": "Grænhöfðaeyjar",
+      "round_name": "MR",
+      "probability": 0.5511
+    },
+    {
+      "team": "Cape Verde",
+      "team_is": "Grænhöfðaeyjar",
+      "round_name": "QF",
+      "probability": 0.0024
+    },
+    {
+      "team": "Cape Verde",
+      "team_is": "Grænhöfðaeyjar",
+      "round_name": "SF",
+      "probability": 0.0001
+    },
+    {
+      "team": "Cape Verde",
+      "team_is": "Grænhöfðaeyjar",
+      "round_name": "Final",
+      "probability": 0
+    },
+    {
+      "team": "Cape Verde",
+      "team_is": "Grænhöfðaeyjar",
+      "round_name": "Champion",
+      "probability": 0
+    },
+    {
+      "team": "Saudi Arabia",
+      "team_is": "Sádi-Arabía",
+      "round_name": "MR",
+      "probability": 0.498
+    },
+    {
+      "team": "Saudi Arabia",
+      "team_is": "Sádi-Arabía",
+      "round_name": "QF",
+      "probability": 0.0018
+    },
+    {
+      "team": "Saudi Arabia",
+      "team_is": "Sádi-Arabía",
+      "round_name": "SF",
+      "probability": 0.0001
+    },
+    {
+      "team": "Saudi Arabia",
+      "team_is": "Sádi-Arabía",
+      "round_name": "Final",
+      "probability": 0
+    },
+    {
+      "team": "Saudi Arabia",
+      "team_is": "Sádi-Arabía",
+      "round_name": "Champion",
+      "probability": 0
+    },
+    {
+      "team": "Croatia",
+      "team_is": "Króatía",
+      "round_name": "MR",
+      "probability": 0.9982
+    },
+    {
+      "team": "Croatia",
+      "team_is": "Króatía",
+      "round_name": "QF",
+      "probability": 0.4508
+    },
+    {
+      "team": "Croatia",
+      "team_is": "Króatía",
+      "round_name": "SF",
+      "probability": 0.1466
+    },
+    {
+      "team": "Croatia",
+      "team_is": "Króatía",
+      "round_name": "Final",
+      "probability": 0.0687
+    },
+    {
+      "team": "Croatia",
+      "team_is": "Króatía",
+      "round_name": "Champion",
+      "probability": 0.0243
+    },
+    {
+      "team": "Spain",
+      "team_is": "Spánn",
+      "round_name": "MR",
+      "probability": 0.9988
+    },
+    {
+      "team": "Spain",
+      "team_is": "Spánn",
+      "round_name": "QF",
+      "probability": 0.5254
+    },
+    {
+      "team": "Spain",
+      "team_is": "Spánn",
+      "round_name": "SF",
+      "probability": 0.1841
+    },
+    {
+      "team": "Spain",
+      "team_is": "Spánn",
+      "round_name": "Final",
+      "probability": 0.0872
+    },
+    {
+      "team": "Spain",
+      "team_is": "Spánn",
+      "round_name": "Champion",
+      "probability": 0.0312
+    },
+    {
+      "team": "Chile",
+      "team_is": "Síle",
+      "round_name": "MR",
+      "probability": 0.3865
+    },
+    {
+      "team": "Chile",
+      "team_is": "Síle",
+      "round_name": "QF",
+      "probability": 0.0003
+    },
+    {
+      "team": "Chile",
+      "team_is": "Síle",
+      "round_name": "SF",
+      "probability": 0
+    },
+    {
+      "team": "Chile",
+      "team_is": "Síle",
+      "round_name": "Final",
+      "probability": 0
+    },
+    {
+      "team": "Chile",
+      "team_is": "Síle",
+      "round_name": "Champion",
+      "probability": 0
+    },
+    {
+      "team": "Turkey",
+      "team_is": "Tyrkland",
+      "round_name": "MR",
+      "probability": 0.6165
+    },
+    {
+      "team": "Turkey",
+      "team_is": "Tyrkland",
+      "round_name": "QF",
+      "probability": 0.0006
+    },
+    {
+      "team": "Turkey",
+      "team_is": "Tyrkland",
+      "round_name": "SF",
+      "probability": 0
+    },
+    {
+      "team": "Turkey",
+      "team_is": "Tyrkland",
+      "round_name": "Final",
+      "probability": 0
+    },
+    {
+      "team": "Turkey",
+      "team_is": "Tyrkland",
+      "round_name": "Champion",
+      "probability": 0
+    },
+    {
+      "team": "Argentina",
+      "team_is": "Argentína",
+      "round_name": "MR",
+      "probability": 0.8868
+    },
+    {
+      "team": "Argentina",
+      "team_is": "Argentína",
+      "round_name": "QF",
+      "probability": 0.039
+    },
+    {
+      "team": "Argentina",
+      "team_is": "Argentína",
+      "round_name": "SF",
+      "probability": 0.0046
+    },
+    {
+      "team": "Argentina",
+      "team_is": "Argentína",
+      "round_name": "Final",
+      "probability": 0.0008
+    },
+    {
+      "team": "Argentina",
+      "team_is": "Argentína",
+      "round_name": "Champion",
+      "probability": 0
+    },
+    {
+      "team": "France",
+      "team_is": "Frakkland",
+      "round_name": "MR",
+      "probability": 0.9994
+    },
+    {
+      "team": "France",
+      "team_is": "Frakkland",
+      "round_name": "QF",
+      "probability": 0.8276
+    },
+    {
+      "team": "France",
+      "team_is": "Frakkland",
+      "round_name": "SF",
+      "probability": 0.4668
+    },
+    {
+      "team": "France",
+      "team_is": "Frakkland",
+      "round_name": "Final",
+      "probability": 0.2975
+    },
+    {
+      "team": "France",
+      "team_is": "Frakkland",
+      "round_name": "Champion",
+      "probability": 0.1525
+    },
+    {
+      "team": "Brazil",
+      "team_is": "Brasilía",
+      "round_name": "MR",
+      "probability": 0.9715
+    },
+    {
+      "team": "Brazil",
+      "team_is": "Brasilía",
+      "round_name": "QF",
+      "probability": 0.1563
+    },
+    {
+      "team": "Brazil",
+      "team_is": "Brasilía",
+      "round_name": "SF",
+      "probability": 0.034
+    },
+    {
+      "team": "Brazil",
+      "team_is": "Brasilía",
+      "round_name": "Final",
+      "probability": 0.0124
+    },
+    {
+      "team": "Brazil",
+      "team_is": "Brasilía",
+      "round_name": "Champion",
+      "probability": 0.0032
+    },
+    {
+      "team": "Kuwait",
+      "team_is": "Kúveit",
+      "round_name": "MR",
+      "probability": 0.1423
+    },
+    {
+      "team": "Kuwait",
+      "team_is": "Kúveit",
+      "round_name": "QF",
+      "probability": 0.0001
+    },
+    {
+      "team": "Kuwait",
+      "team_is": "Kúveit",
+      "round_name": "SF",
+      "probability": 0
+    },
+    {
+      "team": "Kuwait",
+      "team_is": "Kúveit",
+      "round_name": "Final",
+      "probability": 0
+    },
+    {
+      "team": "Kuwait",
+      "team_is": "Kúveit",
+      "round_name": "Champion",
+      "probability": 0
+    },
+    {
+      "team": "Sweden",
+      "team_is": "Svíþjóð",
+      "round_name": "MR",
+      "probability": 0.9928
+    },
+    {
+      "team": "Sweden",
+      "team_is": "Svíþjóð",
+      "round_name": "QF",
+      "probability": 0.8255
+    },
+    {
+      "team": "Sweden",
+      "team_is": "Svíþjóð",
+      "round_name": "SF",
+      "probability": 0.4592
+    },
+    {
+      "team": "Sweden",
+      "team_is": "Svíþjóð",
+      "round_name": "Final",
+      "probability": 0.1759
+    },
+    {
+      "team": "Sweden",
+      "team_is": "Svíþjóð",
+      "round_name": "Champion",
+      "probability": 0.0771
+    },
+    {
+      "team": "Norway",
+      "team_is": "Noregur",
+      "round_name": "MR",
+      "probability": 0.9755
+    },
+    {
+      "team": "Norway",
+      "team_is": "Noregur",
+      "round_name": "QF",
+      "probability": 0.5944
+    },
+    {
+      "team": "Norway",
+      "team_is": "Noregur",
+      "round_name": "SF",
+      "probability": 0.2285
+    },
+    {
+      "team": "Norway",
+      "team_is": "Noregur",
+      "round_name": "Final",
+      "probability": 0.0671
+    },
+    {
+      "team": "Norway",
+      "team_is": "Noregur",
+      "round_name": "Champion",
+      "probability": 0.0197
+    },
+    {
+      "team": "Greece",
+      "team_is": "Grikkland",
+      "round_name": "MR",
+      "probability": 0.6848
+    },
+    {
+      "team": "Greece",
+      "team_is": "Grikkland",
+      "round_name": "QF",
+      "probability": 0.0482
+    },
+    {
+      "team": "Greece",
+      "team_is": "Grikkland",
+      "round_name": "SF",
+      "probability": 0.006
+    },
+    {
+      "team": "Greece",
+      "team_is": "Grikkland",
+      "round_name": "Final",
+      "probability": 0.0004
+    },
+    {
+      "team": "Greece",
+      "team_is": "Grikkland",
+      "round_name": "Champion",
+      "probability": 0
+    },
+    {
+      "team": "Qatar",
+      "team_is": "Katar",
+      "round_name": "MR",
+      "probability": 0.347
+    },
+    {
+      "team": "Qatar",
+      "team_is": "Katar",
+      "round_name": "QF",
+      "probability": 0.0093
+    },
+    {
+      "team": "Qatar",
+      "team_is": "Katar",
+      "round_name": "SF",
+      "probability": 0.0006
+    },
+    {
+      "team": "Qatar",
+      "team_is": "Katar",
+      "round_name": "Final",
+      "probability": 0
+    },
+    {
+      "team": "Qatar",
+      "team_is": "Katar",
+      "round_name": "Champion",
+      "probability": 0
+    },
+    {
+      "team": "Portugal",
+      "team_is": "Portúgal",
+      "round_name": "MR",
+      "probability": 0.973
+    },
+    {
+      "team": "Portugal",
+      "team_is": "Portúgal",
+      "round_name": "QF",
+      "probability": 0.3099
+    },
+    {
+      "team": "Portugal",
+      "team_is": "Portúgal",
+      "round_name": "SF",
+      "probability": 0.0795
+    },
+    {
+      "team": "Portugal",
+      "team_is": "Portúgal",
+      "round_name": "Final",
+      "probability": 0.0147
+    },
+    {
+      "team": "Portugal",
+      "team_is": "Portúgal",
+      "round_name": "Champion",
+      "probability": 0.0032
+    },
+    {
+      "team": "Faroe Islands",
+      "team_is": "Færeyjar",
+      "round_name": "MR",
+      "probability": 0.7842
+    },
+    {
+      "team": "Faroe Islands",
+      "team_is": "Færeyjar",
+      "round_name": "QF",
+      "probability": 0.0493
+    },
+    {
+      "team": "Faroe Islands",
+      "team_is": "Færeyjar",
+      "round_name": "SF",
+      "probability": 0.0069
+    },
+    {
+      "team": "Faroe Islands",
+      "team_is": "Færeyjar",
+      "round_name": "Final",
+      "probability": 0.0007
+    },
+    {
+      "team": "Faroe Islands",
+      "team_is": "Færeyjar",
+      "round_name": "Champion",
+      "probability": 0
+    },
+    {
+      "team": "Poland",
+      "team_is": "Pólland",
+      "round_name": "MR",
+      "probability": 0.915
+    },
+    {
+      "team": "Poland",
+      "team_is": "Pólland",
+      "round_name": "QF",
+      "probability": 0.1601
+    },
+    {
+      "team": "Poland",
+      "team_is": "Pólland",
+      "round_name": "SF",
+      "probability": 0.0351
+    },
+    {
+      "team": "Poland",
+      "team_is": "Pólland",
+      "round_name": "Final",
+      "probability": 0.0056
+    },
+    {
+      "team": "Poland",
+      "team_is": "Pólland",
+      "round_name": "Champion",
+      "probability": 0.0014
+    },
+    {
+      "team": "Algeria",
+      "team_is": "Alsír",
+      "round_name": "MR",
+      "probability": 0.3278
+    },
+    {
+      "team": "Algeria",
+      "team_is": "Alsír",
+      "round_name": "QF",
+      "probability": 0.0032
+    },
+    {
+      "team": "Algeria",
+      "team_is": "Alsír",
+      "round_name": "SF",
+      "probability": 0.0003
+    },
+    {
+      "team": "Algeria",
+      "team_is": "Alsír",
+      "round_name": "Final",
+      "probability": 0
+    },
+    {
+      "team": "Algeria",
+      "team_is": "Alsír",
+      "round_name": "Champion",
+      "probability": 0
+    },
+    {
+      "team": "Denmark",
+      "team_is": "Danmörk",
+      "round_name": "MR",
+      "probability": 1
+    },
+    {
+      "team": "Denmark",
+      "team_is": "Danmörk",
+      "round_name": "QF",
+      "probability": 0.9556
+    },
+    {
+      "team": "Denmark",
+      "team_is": "Danmörk",
+      "round_name": "SF",
+      "probability": 0.7358
+    },
+    {
+      "team": "Denmark",
+      "team_is": "Danmörk",
+      "round_name": "Final",
+      "probability": 0.5622
+    },
+    {
+      "team": "Denmark",
+      "team_is": "Danmörk",
+      "round_name": "Champion",
+      "probability": 0.3945
+    },
+    {
+      "team": "Slovenia",
+      "team_is": "Slóvenía",
+      "round_name": "MR",
+      "probability": 0.9986
+    },
+    {
+      "team": "Slovenia",
+      "team_is": "Slóvenía",
+      "round_name": "QF",
+      "probability": 0.2686
+    },
+    {
+      "team": "Slovenia",
+      "team_is": "Slóvenía",
+      "round_name": "SF",
+      "probability": 0.0818
+    },
+    {
+      "team": "Slovenia",
+      "team_is": "Slóvenía",
+      "round_name": "Final",
+      "probability": 0.0295
+    },
+    {
+      "team": "Slovenia",
+      "team_is": "Slóvenía",
+      "round_name": "Champion",
+      "probability": 0.0065
+    },
+    {
+      "team": "USA",
+      "team_is": "Bandaríkin",
+      "round_name": "MR",
+      "probability": 0.4434
+    },
+    {
+      "team": "USA",
+      "team_is": "Bandaríkin",
+      "round_name": "QF",
+      "probability": 0.0001
+    },
+    {
+      "team": "USA",
+      "team_is": "Bandaríkin",
+      "round_name": "SF",
+      "probability": 0
+    },
+    {
+      "team": "USA",
+      "team_is": "Bandaríkin",
+      "round_name": "Final",
+      "probability": 0
+    },
+    {
+      "team": "USA",
+      "team_is": "Bandaríkin",
+      "round_name": "Champion",
+      "probability": 0
+    },
+    {
+      "team": "Angola",
+      "team_is": "Angóla",
+      "round_name": "MR",
+      "probability": 0.5579
+    },
+    {
+      "team": "Angola",
+      "team_is": "Angóla",
+      "round_name": "QF",
+      "probability": 0
+    },
+    {
+      "team": "Angola",
+      "team_is": "Angóla",
+      "round_name": "SF",
+      "probability": 0
+    },
+    {
+      "team": "Angola",
+      "team_is": "Angóla",
+      "round_name": "Final",
+      "probability": 0
+    },
+    {
+      "team": "Angola",
+      "team_is": "Angóla",
+      "round_name": "Champion",
+      "probability": 0
+    },
+    {
+      "team": "Iceland",
+      "team_is": "Ísland",
+      "round_name": "MR",
+      "probability": 0.9966
+    },
+    {
+      "team": "Iceland",
+      "team_is": "Ísland",
+      "round_name": "QF",
+      "probability": 0.6871
+    },
+    {
+      "team": "Iceland",
+      "team_is": "Ísland",
+      "round_name": "SF",
+      "probability": 0.331
+    },
+    {
+      "team": "Iceland",
+      "team_is": "Ísland",
+      "round_name": "Final",
+      "probability": 0.1717
+    },
+    {
+      "team": "Iceland",
+      "team_is": "Ísland",
+      "round_name": "Champion",
+      "probability": 0.0618
+    },
+    {
+      "team": "North Macedonia",
+      "team_is": "Norður-Makedónía",
+      "round_name": "MR",
+      "probability": 0.9112
+    },
+    {
+      "team": "North Macedonia",
+      "team_is": "Norður-Makedónía",
+      "round_name": "QF",
+      "probability": 0.0717
+    },
+    {
+      "team": "North Macedonia",
+      "team_is": "Norður-Makedónía",
+      "round_name": "SF",
+      "probability": 0.0139
+    },
+    {
+      "team": "North Macedonia",
+      "team_is": "Norður-Makedónía",
+      "round_name": "Final",
+      "probability": 0.0037
+    },
+    {
+      "team": "North Macedonia",
+      "team_is": "Norður-Makedónía",
+      "round_name": "Champion",
+      "probability": 0.0005
+    },
+    {
+      "team": "Bahrain",
+      "team_is": "Barein",
+      "round_name": "MR",
+      "probability": 0.7808
+    },
+    {
+      "team": "Bahrain",
+      "team_is": "Barein",
+      "round_name": "QF",
+      "probability": 0.016
+    },
+    {
+      "team": "Bahrain",
+      "team_is": "Barein",
+      "round_name": "SF",
+      "probability": 0.0014
+    },
+    {
+      "team": "Bahrain",
+      "team_is": "Barein",
+      "round_name": "Final",
+      "probability": 0.0002
+    },
+    {
+      "team": "Bahrain",
+      "team_is": "Barein",
+      "round_name": "Champion",
+      "probability": 0
+    },
+    {
+      "team": "Japan",
+      "team_is": "Japan",
+      "round_name": "MR",
+      "probability": 0.3114
+    },
+    {
+      "team": "Japan",
+      "team_is": "Japan",
+      "round_name": "QF",
+      "probability": 0.0007
+    },
+    {
+      "team": "Japan",
+      "team_is": "Japan",
+      "round_name": "SF",
+      "probability": 0
+    },
+    {
+      "team": "Japan",
+      "team_is": "Japan",
+      "round_name": "Final",
+      "probability": 0
+    },
+    {
+      "team": "Japan",
+      "team_is": "Japan",
+      "round_name": "Champion",
+      "probability": 0
+    }
+  ],
+  "summary": [
+    {
+      "team": "Denmark",
+      "team_is": "Danmörk",
+      "p_champion": 0.3945
+    },
+    {
+      "team": "Germany",
+      "team_is": "Þýskaland",
+      "p_champion": 0.1755
+    },
+    {
+      "team": "France",
+      "team_is": "Frakkland",
+      "p_champion": 0.1525
+    },
+    {
+      "team": "Sweden",
+      "team_is": "Svíþjóð",
+      "p_champion": 0.0771
+    },
+    {
+      "team": "Iceland",
+      "team_is": "Ísland",
+      "p_champion": 0.0618
+    },
+    {
+      "team": "Egypt",
+      "team_is": "Egyptaland",
+      "p_champion": 0.0385
+    },
+    {
+      "team": "Spain",
+      "team_is": "Spánn",
+      "p_champion": 0.0312
+    },
+    {
+      "team": "Croatia",
+      "team_is": "Króatía",
+      "p_champion": 0.0243
+    },
+    {
+      "team": "Norway",
+      "team_is": "Noregur",
+      "p_champion": 0.0197
+    },
+    {
+      "team": "Serbia",
+      "team_is": "Serbía",
+      "p_champion": 0.01
+    },
+    {
+      "team": "Slovenia",
+      "team_is": "Slóvenía",
+      "p_champion": 0.0065
+    },
+    {
+      "team": "Portugal",
+      "team_is": "Portúgal",
+      "p_champion": 0.0032
+    },
+    {
+      "team": "Brazil",
+      "team_is": "Brasilía",
+      "p_champion": 0.0032
+    },
+    {
+      "team": "Poland",
+      "team_is": "Pólland",
+      "p_champion": 0.0014
+    },
+    {
+      "team": "North Macedonia",
+      "team_is": "Norður-Makedónía",
+      "p_champion": 0.0005
+    },
+    {
+      "team": "Italy",
+      "team_is": "Ítalía",
+      "p_champion": 0
+    },
+    {
+      "team": "Argentina",
+      "team_is": "Argentína",
+      "p_champion": 0
+    },
+    {
+      "team": "Faroe Islands",
+      "team_is": "Færeyjar",
+      "p_champion": 0
+    },
+    {
+      "team": "Tunisia",
+      "team_is": "Túnis",
+      "p_champion": 0
+    },
+    {
+      "team": "Uruguay",
+      "team_is": "Úrúgvæ",
+      "p_champion": 0
+    },
+    {
+      "team": "Cape Verde",
+      "team_is": "Grænhöfðaeyjar",
+      "p_champion": 0
+    },
+    {
+      "team": "Saudi Arabia",
+      "team_is": "Sádi-Arabía",
+      "p_champion": 0
+    },
+    {
+      "team": "Chile",
+      "team_is": "Síle",
+      "p_champion": 0
+    },
+    {
+      "team": "Turkey",
+      "team_is": "Tyrkland",
+      "p_champion": 0
+    },
+    {
+      "team": "Kuwait",
+      "team_is": "Kúveit",
+      "p_champion": 0
+    },
+    {
+      "team": "Greece",
+      "team_is": "Grikkland",
+      "p_champion": 0
+    },
+    {
+      "team": "Qatar",
+      "team_is": "Katar",
+      "p_champion": 0
+    },
+    {
+      "team": "Algeria",
+      "team_is": "Alsír",
+      "p_champion": 0
+    },
+    {
+      "team": "USA",
+      "team_is": "Bandaríkin",
+      "p_champion": 0
+    },
+    {
+      "team": "Angola",
+      "team_is": "Angóla",
+      "p_champion": 0
+    },
+    {
+      "team": "Bahrain",
+      "team_is": "Barein",
+      "p_champion": 0
+    },
+    {
+      "team": "Japan",
+      "team_is": "Japan",
+      "p_champion": 0
+    }
+  ]
+}

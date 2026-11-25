@@ -14,8 +14,10 @@ Code: `R/ih-data.R` (match table, seasons, venues), `R/ih-model.R` (the nations
 model on the handball v2 engine), `R/ih-simulate.R` (championship simulator under
 the EHF / IHF rules), `R/ih-publish.R` (the five files metill-platform renders),
 `scripts/ih/run_tournament.R` (fit, simulate, publish). Config:
-`config/intl-handball/` (hosts, team names, each championship's groups and
-schedule). Tests: `tests/testthat/test-ih-*.R`.
+`config/intl-handball/` (hosts; the venues of the matches hosts played at
+co-hosted championships, `championship_venues.csv`; the venues of the qualification
+tournaments played at one venue, `qualifier_venues.csv`; team names; each
+championship's groups and schedule). Tests: `tests/testthat/test-ih-*.R`.
 
 The match table is not in this repository: the scripts read it from the folder
 named by `IH_DATA_DIR`, and the backtest writes its per-match output to the folder

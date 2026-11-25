@@ -1,0 +1,3177 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-11-25T08:22:31Z",
+  "fit_date": "2026-11-25",
+  "teams": [
+    {
+      "team": "Denmark",
+      "team_is": "Danmörk",
+      "iso2": "dk",
+      "rating": 10.369,
+      "offence": 5.402,
+      "defence": 4.967,
+      "rating_rank": 1
+    },
+    {
+      "team": "France",
+      "team_is": "Frakkland",
+      "iso2": "fr",
+      "rating": 8.231,
+      "offence": 5.668,
+      "defence": 2.563,
+      "rating_rank": 2
+    },
+    {
+      "team": "Germany",
+      "team_is": "Þýskaland",
+      "iso2": "de",
+      "rating": 6.679,
+      "offence": 3.709,
+      "defence": 2.97,
+      "rating_rank": 3
+    },
+    {
+      "team": "Sweden",
+      "team_is": "Svíþjóð",
+      "iso2": "se",
+      "rating": 6.654,
+      "offence": 3.935,
+      "defence": 2.719,
+      "rating_rank": 4
+    },
+    {
+      "team": "Iceland",
+      "team_is": "Ísland",
+      "iso2": "is",
+      "rating": 6.464,
+      "offence": 3.414,
+      "defence": 3.05,
+      "rating_rank": 5
+    },
+    {
+      "team": "Spain",
+      "team_is": "Spánn",
+      "iso2": "es",
+      "rating": 5.693,
+      "offence": 3.122,
+      "defence": 2.572,
+      "rating_rank": 6
+    },
+    {
+      "team": "Egypt",
+      "team_is": "Egyptaland",
+      "iso2": "eg",
+      "rating": 5.584,
+      "offence": 2.935,
+      "defence": 2.648,
+      "rating_rank": 7
+    },
+    {
+      "team": "Croatia",
+      "team_is": "Króatía",
+      "iso2": "hr",
+      "rating": 5.205,
+      "offence": 2.236,
+      "defence": 2.97,
+      "rating_rank": 8
+    },
+    {
+      "team": "Norway",
+      "team_is": "Noregur",
+      "iso2": "no",
+      "rating": 4.591,
+      "offence": 3.191,
+      "defence": 1.399,
+      "rating_rank": 9
+    },
+    {
+      "team": "Slovenia",
+      "team_is": "Slóvenía",
+      "iso2": "si",
+      "rating": 3.682,
+      "offence": 2.642,
+      "defence": 1.039,
+      "rating_rank": 10
+    },
+    {
+      "team": "Serbia",
+      "team_is": "Serbía",
+      "iso2": "rs",
+      "rating": 3.611,
+      "offence": 1.825,
+      "defence": 1.786,
+      "rating_rank": 11
+    },
+    {
+      "team": "Portugal",
+      "team_is": "Portúgal",
+      "iso2": "pt",
+      "rating": 2.732,
+      "offence": 2.852,
+      "defence": -0.119,
+      "rating_rank": 12
+    },
+    {
+      "team": "Brazil",
+      "team_is": "Brasilía",
+      "iso2": "br",
+      "rating": 2.636,
+      "offence": 1.103,
+      "defence": 1.533,
+      "rating_rank": 13
+    },
+    {
+      "team": "Poland",
+      "team_is": "Pólland",
+      "iso2": "pl",
+      "rating": 1.153,
+      "offence": -0.055,
+      "defence": 1.208,
+      "rating_rank": 14
+    },
+    {
+      "team": "North Macedonia",
+      "team_is": "Norður-Makedónía",
+      "iso2": "mk",
+      "rating": 0.986,
+      "offence": -0.137,
+      "defence": 1.123,
+      "rating_rank": 15
+    },
+    {
+      "team": "Argentina",
+      "team_is": "Argentína",
+      "iso2": "ar",
+      "rating": 0.067,
+      "offence": -1.189,
+      "defence": 1.257,
+      "rating_rank": 16
+    },
+    {
+      "team": "Italy",
+      "team_is": "Ítalía",
+      "iso2": "it",
+      "rating": -0.008,
+      "offence": 0.202,
+      "defence": -0.21,
+      "rating_rank": 17
+    },
+    {
+      "team": "Greece",
+      "team_is": "Grikkland",
+      "iso2": "gr",
+      "rating": -0.607,
+      "offence": -0.707,
+      "defence": 0.099,
+      "rating_rank": 18
+    },
+    {
+      "team": "Faroe Islands",
+      "team_is": "Færeyjar",
+      "iso2": "fo",
+      "rating": -0.896,
+      "offence": -0.762,
+      "defence": -0.134,
+      "rating_rank": 19
+    },
+    {
+      "team": "Bahrain",
+      "team_is": "Barein",
+      "iso2": "bh",
+      "rating": -1.195,
+      "offence": -1.379,
+      "defence": 0.184,
+      "rating_rank": 20
+    },
+    {
+      "team": "Qatar",
+      "team_is": "Katar",
+      "iso2": "qa",
+      "rating": -2.79,
+      "offence": -1.983,
+      "defence": -0.807,
+      "rating_rank": 21
+    },
+    {
+      "team": "Tunisia",
+      "team_is": "Túnis",
+      "iso2": "tn",
+      "rating": -3.704,
+      "offence": -0.965,
+      "defence": -2.738,
+      "rating_rank": 22
+    },
+    {
+      "team": "Algeria",
+      "team_is": "Alsír",
+      "iso2": "dz",
+      "rating": -4.126,
+      "offence": -2.916,
+      "defence": -1.21,
+      "rating_rank": 23
+    },
+    {
+      "team": "Japan",
+      "team_is": "Japan",
+      "iso2": "jp",
+      "rating": -4.325,
+      "offence": -0.838,
+      "defence": -3.487,
+      "rating_rank": 24
+    },
+    {
+      "team": "Turkey",
+      "team_is": "Tyrkland",
+      "iso2": "tr",
+      "rating": -4.736,
+      "offence": -1.342,
+      "defence": -3.394,
+      "rating_rank": 25
+    },
+    {
+      "team": "Cape Verde",
+      "team_is": "Grænhöfðaeyjar",
+      "iso2": "cv",
+      "rating": -4.836,
+      "offence": -2.339,
+      "defence": -2.497,
+      "rating_rank": 26
+    },
+    {
+      "team": "Saudi Arabia",
+      "team_is": "Sádi-Arabía",
+      "iso2": "sa",
+      "rating": -5.265,
+      "offence": -3.873,
+      "defence": -1.392,
+      "rating_rank": 27
+    },
+    {
+      "team": "Kuwait",
+      "team_is": "Kúveit",
+      "iso2": "kw",
+      "rating": -5.829,
+      "offence": -3.991,
+      "defence": -1.838,
+      "rating_rank": 28
+    },
+    {
+      "team": "Chile",
+      "team_is": "Síle",
+      "iso2": "cl",
+      "rating": -6.249,
+      "offence": -3.235,
+      "defence": -3.014,
+      "rating_rank": 29
+    },
+    {
+      "team": "Angola",
+      "team_is": "Angóla",
+      "iso2": "ao",
+      "rating": -6.927,
+      "offence": -4.431,
+      "defence": -2.497,
+      "rating_rank": 30
+    },
+    {
+      "team": "USA",
+      "team_is": "Bandaríkin",
+      "iso2": "us",
+      "rating": -7.722,
+      "offence": -3.508,
+      "defence": -4.213,
+      "rating_rank": 31
+    },
+    {
+      "team": "Uruguay",
+      "team_is": "Úrúgvæ",
+      "iso2": "uy",
+      "rating": -15.123,
+      "offence": -8.585,
+      "defence": -6.538,
+      "rating_rank": 32
+    }
+  ],
+  "records": [
+    {
+      "team": "Germany",
+      "team_is": "Þýskaland",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 6.682,
+      "lower": 5.571,
+      "upper": 7.757
+    },
+    {
+      "team": "Germany",
+      "team_is": "Þýskaland",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 6.682,
+      "lower": 4.671,
+      "upper": 8.71
+    },
+    {
+      "team": "Germany",
+      "team_is": "Þýskaland",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 6.682,
+      "lower": 3.574,
+      "upper": 9.933
+    },
+    {
+      "team": "Germany",
+      "team_is": "Þýskaland",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 3.717,
+      "lower": 2.917,
+      "upper": 4.489
+    },
+    {
+      "team": "Germany",
+      "team_is": "Þýskaland",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 3.717,
+      "lower": 2.219,
+      "upper": 5.212
+    },
+    {
+      "team": "Germany",
+      "team_is": "Þýskaland",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 3.717,
+      "lower": 1.4,
+      "upper": 6.049
+    },
+    {
+      "team": "Germany",
+      "team_is": "Þýskaland",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 2.983,
+      "lower": 2.163,
+      "upper": 3.77
+    },
+    {
+      "team": "Germany",
+      "team_is": "Þýskaland",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 2.983,
+      "lower": 1.376,
+      "upper": 4.528
+    },
+    {
+      "team": "Germany",
+      "team_is": "Þýskaland",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 2.983,
+      "lower": 0.625,
+      "upper": 5.381
+    },
+    {
+      "team": "Serbia",
+      "team_is": "Serbía",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 3.617,
+      "lower": 2.456,
+      "upper": 4.786
+    },
+    {
+      "team": "Serbia",
+      "team_is": "Serbía",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 3.617,
+      "lower": 1.414,
+      "upper": 5.814
+    },
+    {
+      "team": "Serbia",
+      "team_is": "Serbía",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 3.617,
+      "lower": 0.201,
+      "upper": 6.94
+    },
+    {
+      "team": "Serbia",
+      "team_is": "Serbía",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 1.82,
+      "lower": 0.978,
+      "upper": 2.653
+    },
+    {
+      "team": "Serbia",
+      "team_is": "Serbía",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 1.82,
+      "lower": 0.211,
+      "upper": 3.433
+    },
+    {
+      "team": "Serbia",
+      "team_is": "Serbía",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 1.82,
+      "lower": -0.641,
+      "upper": 4.316
+    },
+    {
+      "team": "Serbia",
+      "team_is": "Serbía",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 1.756,
+      "lower": 0.928,
+      "upper": 2.629
+    },
+    {
+      "team": "Serbia",
+      "team_is": "Serbía",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 1.756,
+      "lower": 0.152,
+      "upper": 3.415
+    },
+    {
+      "team": "Serbia",
+      "team_is": "Serbía",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 1.756,
+      "lower": -0.693,
+      "upper": 4.255
+    },
+    {
+      "team": "Tunisia",
+      "team_is": "Túnis",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -3.694,
+      "lower": -4.637,
+      "upper": -2.783
+    },
+    {
+      "team": "Tunisia",
+      "team_is": "Túnis",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -3.694,
+      "lower": -5.456,
+      "upper": -1.957
+    },
+    {
+      "team": "Tunisia",
+      "team_is": "Túnis",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -3.694,
+      "lower": -6.447,
+      "upper": -1.026
+    },
+    {
+      "team": "Tunisia",
+      "team_is": "Túnis",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -0.967,
+      "lower": -1.662,
+      "upper": -0.275
+    },
+    {
+      "team": "Tunisia",
+      "team_is": "Túnis",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -0.967,
+      "lower": -2.292,
+      "upper": 0.419
+    },
+    {
+      "team": "Tunisia",
+      "team_is": "Túnis",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -0.967,
+      "lower": -3.079,
+      "upper": 1.073
+    },
+    {
+      "team": "Tunisia",
+      "team_is": "Túnis",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -2.736,
+      "lower": -3.422,
+      "upper": -2.06
+    },
+    {
+      "team": "Tunisia",
+      "team_is": "Túnis",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -2.736,
+      "lower": -4.045,
+      "upper": -1.431
+    },
+    {
+      "team": "Tunisia",
+      "team_is": "Túnis",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -2.736,
+      "lower": -4.731,
+      "upper": -0.76
+    },
+    {
+      "team": "Uruguay",
+      "team_is": "Úrúgvæ",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -15.145,
+      "lower": -16.492,
+      "upper": -13.773
+    },
+    {
+      "team": "Uruguay",
+      "team_is": "Úrúgvæ",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -15.145,
+      "lower": -17.644,
+      "upper": -12.504
+    },
+    {
+      "team": "Uruguay",
+      "team_is": "Úrúgvæ",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -15.145,
+      "lower": -19.036,
+      "upper": -11.197
+    },
+    {
+      "team": "Uruguay",
+      "team_is": "Úrúgvæ",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -8.63,
+      "lower": -9.546,
+      "upper": -7.633
+    },
+    {
+      "team": "Uruguay",
+      "team_is": "Úrúgvæ",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -8.63,
+      "lower": -10.39,
+      "upper": -6.775
+    },
+    {
+      "team": "Uruguay",
+      "team_is": "Úrúgvæ",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -8.63,
+      "lower": -11.249,
+      "upper": -5.754
+    },
+    {
+      "team": "Uruguay",
+      "team_is": "Úrúgvæ",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -6.5,
+      "lower": -7.509,
+      "upper": -5.575
+    },
+    {
+      "team": "Uruguay",
+      "team_is": "Úrúgvæ",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -6.5,
+      "lower": -8.388,
+      "upper": -4.749
+    },
+    {
+      "team": "Uruguay",
+      "team_is": "Úrúgvæ",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -6.5,
+      "lower": -9.312,
+      "upper": -3.741
+    },
+    {
+      "team": "Egypt",
+      "team_is": "Egyptaland",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 5.603,
+      "lower": 4.697,
+      "upper": 6.48
+    },
+    {
+      "team": "Egypt",
+      "team_is": "Egyptaland",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 5.603,
+      "lower": 3.849,
+      "upper": 7.275
+    },
+    {
+      "team": "Egypt",
+      "team_is": "Egyptaland",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 5.603,
+      "lower": 2.931,
+      "upper": 8.192
+    },
+    {
+      "team": "Egypt",
+      "team_is": "Egyptaland",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 2.926,
+      "lower": 2.254,
+      "upper": 3.621
+    },
+    {
+      "team": "Egypt",
+      "team_is": "Egyptaland",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 2.926,
+      "lower": 1.644,
+      "upper": 4.239
+    },
+    {
+      "team": "Egypt",
+      "team_is": "Egyptaland",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 2.926,
+      "lower": 0.978,
+      "upper": 4.927
+    },
+    {
+      "team": "Egypt",
+      "team_is": "Egyptaland",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 2.635,
+      "lower": 1.972,
+      "upper": 3.345
+    },
+    {
+      "team": "Egypt",
+      "team_is": "Egyptaland",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 2.635,
+      "lower": 1.335,
+      "upper": 3.982
+    },
+    {
+      "team": "Egypt",
+      "team_is": "Egyptaland",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 2.635,
+      "lower": 0.618,
+      "upper": 4.619
+    },
+    {
+      "team": "Italy",
+      "team_is": "Ítalía",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -0,
+      "lower": -0.93,
+      "upper": 0.899
+    },
+    {
+      "team": "Italy",
+      "team_is": "Ítalía",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -0,
+      "lower": -1.741,
+      "upper": 1.726
+    },
+    {
+      "team": "Italy",
+      "team_is": "Ítalía",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -0,
+      "lower": -2.682,
+      "upper": 2.573
+    },
+    {
+      "team": "Italy",
+      "team_is": "Ítalía",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.192,
+      "lower": -0.503,
+      "upper": 0.909
+    },
+    {
+      "team": "Italy",
+      "team_is": "Ítalía",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.192,
+      "lower": -1.115,
+      "upper": 1.521
+    },
+    {
+      "team": "Italy",
+      "team_is": "Ítalía",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.192,
+      "lower": -1.816,
+      "upper": 2.264
+    },
+    {
+      "team": "Italy",
+      "team_is": "Ítalía",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -0.206,
+      "lower": -0.91,
+      "upper": 0.503
+    },
+    {
+      "team": "Italy",
+      "team_is": "Ítalía",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -0.206,
+      "lower": -1.553,
+      "upper": 1.098
+    },
+    {
+      "team": "Italy",
+      "team_is": "Ítalía",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -0.206,
+      "lower": -2.282,
+      "upper": 1.86
+    },
+    {
+      "team": "Cape Verde",
+      "team_is": "Grænhöfðaeyjar",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -4.831,
+      "lower": -6.117,
+      "upper": -3.57
+    },
+    {
+      "team": "Cape Verde",
+      "team_is": "Grænhöfðaeyjar",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -4.831,
+      "lower": -7.206,
+      "upper": -2.474
+    },
+    {
+      "team": "Cape Verde",
+      "team_is": "Grænhöfðaeyjar",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -4.831,
+      "lower": -8.463,
+      "upper": -1.088
+    },
+    {
+      "team": "Cape Verde",
+      "team_is": "Grænhöfðaeyjar",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -2.333,
+      "lower": -3.264,
+      "upper": -1.448
+    },
+    {
+      "team": "Cape Verde",
+      "team_is": "Grænhöfðaeyjar",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -2.333,
+      "lower": -4.052,
+      "upper": -0.615
+    },
+    {
+      "team": "Cape Verde",
+      "team_is": "Grænhöfðaeyjar",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -2.333,
+      "lower": -4.927,
+      "upper": 0.258
+    },
+    {
+      "team": "Cape Verde",
+      "team_is": "Grænhöfðaeyjar",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -2.491,
+      "lower": -3.388,
+      "upper": -1.599
+    },
+    {
+      "team": "Cape Verde",
+      "team_is": "Grænhöfðaeyjar",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -2.491,
+      "lower": -4.225,
+      "upper": -0.759
+    },
+    {
+      "team": "Cape Verde",
+      "team_is": "Grænhöfðaeyjar",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -2.491,
+      "lower": -5.18,
+      "upper": 0.125
+    },
+    {
+      "team": "Saudi Arabia",
+      "team_is": "Sádi-Arabía",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -5.264,
+      "lower": -6.461,
+      "upper": -4.022
+    },
+    {
+      "team": "Saudi Arabia",
+      "team_is": "Sádi-Arabía",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -5.264,
+      "lower": -7.64,
+      "upper": -2.909
+    },
+    {
+      "team": "Saudi Arabia",
+      "team_is": "Sádi-Arabía",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -5.264,
+      "lower": -8.907,
+      "upper": -1.671
+    },
+    {
+      "team": "Saudi Arabia",
+      "team_is": "Sádi-Arabía",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -3.857,
+      "lower": -4.758,
+      "upper": -2.996
+    },
+    {
+      "team": "Saudi Arabia",
+      "team_is": "Sádi-Arabía",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -3.857,
+      "lower": -5.585,
+      "upper": -2.19
+    },
+    {
+      "team": "Saudi Arabia",
+      "team_is": "Sádi-Arabía",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -3.857,
+      "lower": -6.453,
+      "upper": -1.298
+    },
+    {
+      "team": "Saudi Arabia",
+      "team_is": "Sádi-Arabía",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -1.388,
+      "lower": -2.282,
+      "upper": -0.498
+    },
+    {
+      "team": "Saudi Arabia",
+      "team_is": "Sádi-Arabía",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -1.388,
+      "lower": -3.053,
+      "upper": 0.271
+    },
+    {
+      "team": "Saudi Arabia",
+      "team_is": "Sádi-Arabía",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -1.388,
+      "lower": -3.97,
+      "upper": 1.14
+    },
+    {
+      "team": "Croatia",
+      "team_is": "Króatía",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 5.19,
+      "lower": 4.102,
+      "upper": 6.3
+    },
+    {
+      "team": "Croatia",
+      "team_is": "Króatía",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 5.19,
+      "lower": 3.101,
+      "upper": 7.302
+    },
+    {
+      "team": "Croatia",
+      "team_is": "Króatía",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 5.19,
+      "lower": 2.081,
+      "upper": 8.398
+    },
+    {
+      "team": "Croatia",
+      "team_is": "Króatía",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 2.269,
+      "lower": 1.431,
+      "upper": 3.017
+    },
+    {
+      "team": "Croatia",
+      "team_is": "Króatía",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 2.269,
+      "lower": 0.69,
+      "upper": 3.751
+    },
+    {
+      "team": "Croatia",
+      "team_is": "Króatía",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 2.269,
+      "lower": -0.114,
+      "upper": 4.613
+    },
+    {
+      "team": "Croatia",
+      "team_is": "Króatía",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 2.985,
+      "lower": 2.176,
+      "upper": 3.796
+    },
+    {
+      "team": "Croatia",
+      "team_is": "Króatía",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 2.985,
+      "lower": 1.425,
+      "upper": 4.498
+    },
+    {
+      "team": "Croatia",
+      "team_is": "Króatía",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 2.985,
+      "lower": 0.593,
+      "upper": 5.244
+    },
+    {
+      "team": "Spain",
+      "team_is": "Spánn",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 5.682,
+      "lower": 4.695,
+      "upper": 6.722
+    },
+    {
+      "team": "Spain",
+      "team_is": "Spánn",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 5.682,
+      "lower": 3.762,
+      "upper": 7.656
+    },
+    {
+      "team": "Spain",
+      "team_is": "Spánn",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 5.682,
+      "lower": 2.734,
+      "upper": 8.683
+    },
+    {
+      "team": "Spain",
+      "team_is": "Spánn",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 3.125,
+      "lower": 2.33,
+      "upper": 3.878
+    },
+    {
+      "team": "Spain",
+      "team_is": "Spánn",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 3.125,
+      "lower": 1.694,
+      "upper": 4.559
+    },
+    {
+      "team": "Spain",
+      "team_is": "Spánn",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 3.125,
+      "lower": 0.963,
+      "upper": 5.352
+    },
+    {
+      "team": "Spain",
+      "team_is": "Spánn",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 2.558,
+      "lower": 1.829,
+      "upper": 3.305
+    },
+    {
+      "team": "Spain",
+      "team_is": "Spánn",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 2.558,
+      "lower": 1.135,
+      "upper": 4.017
+    },
+    {
+      "team": "Spain",
+      "team_is": "Spánn",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 2.558,
+      "lower": 0.344,
+      "upper": 4.837
+    },
+    {
+      "team": "Chile",
+      "team_is": "Síle",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -6.224,
+      "lower": -7.477,
+      "upper": -4.982
+    },
+    {
+      "team": "Chile",
+      "team_is": "Síle",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -6.224,
+      "lower": -8.622,
+      "upper": -3.873
+    },
+    {
+      "team": "Chile",
+      "team_is": "Síle",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -6.224,
+      "lower": -9.966,
+      "upper": -2.676
+    },
+    {
+      "team": "Chile",
+      "team_is": "Síle",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -3.222,
+      "lower": -4.131,
+      "upper": -2.33
+    },
+    {
+      "team": "Chile",
+      "team_is": "Síle",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -3.222,
+      "lower": -4.998,
+      "upper": -1.482
+    },
+    {
+      "team": "Chile",
+      "team_is": "Síle",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -3.222,
+      "lower": -5.858,
+      "upper": -0.643
+    },
+    {
+      "team": "Chile",
+      "team_is": "Síle",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -3.03,
+      "lower": -3.919,
+      "upper": -2.117
+    },
+    {
+      "team": "Chile",
+      "team_is": "Síle",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -3.03,
+      "lower": -4.717,
+      "upper": -1.293
+    },
+    {
+      "team": "Chile",
+      "team_is": "Síle",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -3.03,
+      "lower": -5.634,
+      "upper": -0.47
+    },
+    {
+      "team": "Turkey",
+      "team_is": "Tyrkland",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -4.729,
+      "lower": -5.931,
+      "upper": -3.51
+    },
+    {
+      "team": "Turkey",
+      "team_is": "Tyrkland",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -4.729,
+      "lower": -7.053,
+      "upper": -2.391
+    },
+    {
+      "team": "Turkey",
+      "team_is": "Tyrkland",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -4.729,
+      "lower": -8.311,
+      "upper": -1.188
+    },
+    {
+      "team": "Turkey",
+      "team_is": "Tyrkland",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -1.382,
+      "lower": -2.236,
+      "upper": -0.438
+    },
+    {
+      "team": "Turkey",
+      "team_is": "Tyrkland",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -1.382,
+      "lower": -3.034,
+      "upper": 0.363
+    },
+    {
+      "team": "Turkey",
+      "team_is": "Tyrkland",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -1.382,
+      "lower": -3.898,
+      "upper": 1.321
+    },
+    {
+      "team": "Turkey",
+      "team_is": "Tyrkland",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -3.418,
+      "lower": -4.253,
+      "upper": -2.511
+    },
+    {
+      "team": "Turkey",
+      "team_is": "Tyrkland",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -3.418,
+      "lower": -5.081,
+      "upper": -1.712
+    },
+    {
+      "team": "Turkey",
+      "team_is": "Tyrkland",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -3.418,
+      "lower": -6.008,
+      "upper": -0.755
+    },
+    {
+      "team": "Argentina",
+      "team_is": "Argentína",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.077,
+      "lower": -1.11,
+      "upper": 1.292
+    },
+    {
+      "team": "Argentina",
+      "team_is": "Argentína",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.077,
+      "lower": -2.264,
+      "upper": 2.331
+    },
+    {
+      "team": "Argentina",
+      "team_is": "Argentína",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.077,
+      "lower": -3.46,
+      "upper": 3.522
+    },
+    {
+      "team": "Argentina",
+      "team_is": "Argentína",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -1.158,
+      "lower": -2.048,
+      "upper": -0.328
+    },
+    {
+      "team": "Argentina",
+      "team_is": "Argentína",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -1.158,
+      "lower": -2.859,
+      "upper": 0.463
+    },
+    {
+      "team": "Argentina",
+      "team_is": "Argentína",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -1.158,
+      "lower": -3.789,
+      "upper": 1.249
+    },
+    {
+      "team": "Argentina",
+      "team_is": "Argentína",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 1.26,
+      "lower": 0.401,
+      "upper": 2.137
+    },
+    {
+      "team": "Argentina",
+      "team_is": "Argentína",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 1.26,
+      "lower": -0.426,
+      "upper": 2.892
+    },
+    {
+      "team": "Argentina",
+      "team_is": "Argentína",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 1.26,
+      "lower": -1.262,
+      "upper": 3.753
+    },
+    {
+      "team": "France",
+      "team_is": "Frakkland",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 8.242,
+      "lower": 7.112,
+      "upper": 9.34
+    },
+    {
+      "team": "France",
+      "team_is": "Frakkland",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 8.242,
+      "lower": 6.134,
+      "upper": 10.303
+    },
+    {
+      "team": "France",
+      "team_is": "Frakkland",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 8.242,
+      "lower": 4.97,
+      "upper": 11.353
+    },
+    {
+      "team": "France",
+      "team_is": "Frakkland",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 5.643,
+      "lower": 4.86,
+      "upper": 6.481
+    },
+    {
+      "team": "France",
+      "team_is": "Frakkland",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 5.643,
+      "lower": 4.118,
+      "upper": 7.239
+    },
+    {
+      "team": "France",
+      "team_is": "Frakkland",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 5.643,
+      "lower": 3.274,
+      "upper": 8.096
+    },
+    {
+      "team": "France",
+      "team_is": "Frakkland",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 2.577,
+      "lower": 1.774,
+      "upper": 3.388
+    },
+    {
+      "team": "France",
+      "team_is": "Frakkland",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 2.577,
+      "lower": 0.994,
+      "upper": 4.099
+    },
+    {
+      "team": "France",
+      "team_is": "Frakkland",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 2.577,
+      "lower": 0.193,
+      "upper": 4.859
+    },
+    {
+      "team": "Brazil",
+      "team_is": "Brasilía",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 2.632,
+      "lower": 1.481,
+      "upper": 3.82
+    },
+    {
+      "team": "Brazil",
+      "team_is": "Brasilía",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 2.632,
+      "lower": 0.375,
+      "upper": 4.836
+    },
+    {
+      "team": "Brazil",
+      "team_is": "Brasilía",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 2.632,
+      "lower": -0.826,
+      "upper": 6
+    },
+    {
+      "team": "Brazil",
+      "team_is": "Brasilía",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 1.098,
+      "lower": 0.256,
+      "upper": 1.974
+    },
+    {
+      "team": "Brazil",
+      "team_is": "Brasilía",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 1.098,
+      "lower": -0.525,
+      "upper": 2.74
+    },
+    {
+      "team": "Brazil",
+      "team_is": "Brasilía",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 1.098,
+      "lower": -1.502,
+      "upper": 3.676
+    },
+    {
+      "team": "Brazil",
+      "team_is": "Brasilía",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 1.53,
+      "lower": 0.708,
+      "upper": 2.37
+    },
+    {
+      "team": "Brazil",
+      "team_is": "Brasilía",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 1.53,
+      "lower": -0.093,
+      "upper": 3.173
+    },
+    {
+      "team": "Brazil",
+      "team_is": "Brasilía",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 1.53,
+      "lower": -0.997,
+      "upper": 3.996
+    },
+    {
+      "team": "Kuwait",
+      "team_is": "Kúveit",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -5.841,
+      "lower": -6.803,
+      "upper": -4.858
+    },
+    {
+      "team": "Kuwait",
+      "team_is": "Kúveit",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -5.841,
+      "lower": -7.676,
+      "upper": -3.99
+    },
+    {
+      "team": "Kuwait",
+      "team_is": "Kúveit",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -5.841,
+      "lower": -8.593,
+      "upper": -3.018
+    },
+    {
+      "team": "Kuwait",
+      "team_is": "Kúveit",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -3.992,
+      "lower": -4.721,
+      "upper": -3.269
+    },
+    {
+      "team": "Kuwait",
+      "team_is": "Kúveit",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -3.992,
+      "lower": -5.399,
+      "upper": -2.612
+    },
+    {
+      "team": "Kuwait",
+      "team_is": "Kúveit",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -3.992,
+      "lower": -6.083,
+      "upper": -1.831
+    },
+    {
+      "team": "Kuwait",
+      "team_is": "Kúveit",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -1.837,
+      "lower": -2.583,
+      "upper": -1.11
+    },
+    {
+      "team": "Kuwait",
+      "team_is": "Kúveit",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -1.837,
+      "lower": -3.228,
+      "upper": -0.444
+    },
+    {
+      "team": "Kuwait",
+      "team_is": "Kúveit",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -1.837,
+      "lower": -3.943,
+      "upper": 0.244
+    },
+    {
+      "team": "Sweden",
+      "team_is": "Svíþjóð",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 6.658,
+      "lower": 5.514,
+      "upper": 7.806
+    },
+    {
+      "team": "Sweden",
+      "team_is": "Svíþjóð",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 6.658,
+      "lower": 4.527,
+      "upper": 8.793
+    },
+    {
+      "team": "Sweden",
+      "team_is": "Svíþjóð",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 6.658,
+      "lower": 3.399,
+      "upper": 9.917
+    },
+    {
+      "team": "Sweden",
+      "team_is": "Svíþjóð",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 3.926,
+      "lower": 3.11,
+      "upper": 4.781
+    },
+    {
+      "team": "Sweden",
+      "team_is": "Svíþjóð",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 3.926,
+      "lower": 2.348,
+      "upper": 5.494
+    },
+    {
+      "team": "Sweden",
+      "team_is": "Svíþjóð",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 3.926,
+      "lower": 1.564,
+      "upper": 6.294
+    },
+    {
+      "team": "Sweden",
+      "team_is": "Svíþjóð",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 2.701,
+      "lower": 1.906,
+      "upper": 3.538
+    },
+    {
+      "team": "Sweden",
+      "team_is": "Svíþjóð",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 2.701,
+      "lower": 1.152,
+      "upper": 4.289
+    },
+    {
+      "team": "Sweden",
+      "team_is": "Svíþjóð",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 2.701,
+      "lower": 0.39,
+      "upper": 5.042
+    },
+    {
+      "team": "Norway",
+      "team_is": "Noregur",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 4.626,
+      "lower": 3.506,
+      "upper": 5.693
+    },
+    {
+      "team": "Norway",
+      "team_is": "Noregur",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 4.626,
+      "lower": 2.515,
+      "upper": 6.649
+    },
+    {
+      "team": "Norway",
+      "team_is": "Noregur",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 4.626,
+      "lower": 1.405,
+      "upper": 7.688
+    },
+    {
+      "team": "Norway",
+      "team_is": "Noregur",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 3.201,
+      "lower": 2.379,
+      "upper": 4.026
+    },
+    {
+      "team": "Norway",
+      "team_is": "Noregur",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 3.201,
+      "lower": 1.629,
+      "upper": 4.71
+    },
+    {
+      "team": "Norway",
+      "team_is": "Noregur",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 3.201,
+      "lower": 0.87,
+      "upper": 5.519
+    },
+    {
+      "team": "Norway",
+      "team_is": "Noregur",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 1.405,
+      "lower": 0.616,
+      "upper": 2.19
+    },
+    {
+      "team": "Norway",
+      "team_is": "Noregur",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 1.405,
+      "lower": -0.164,
+      "upper": 2.962
+    },
+    {
+      "team": "Norway",
+      "team_is": "Noregur",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 1.405,
+      "lower": -1.008,
+      "upper": 3.746
+    },
+    {
+      "team": "Greece",
+      "team_is": "Grikkland",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -0.607,
+      "lower": -1.592,
+      "upper": 0.353
+    },
+    {
+      "team": "Greece",
+      "team_is": "Grikkland",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -0.607,
+      "lower": -2.45,
+      "upper": 1.252
+    },
+    {
+      "team": "Greece",
+      "team_is": "Grikkland",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -0.607,
+      "lower": -3.474,
+      "upper": 2.251
+    },
+    {
+      "team": "Greece",
+      "team_is": "Grikkland",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -0.705,
+      "lower": -1.454,
+      "upper": 0.014
+    },
+    {
+      "team": "Greece",
+      "team_is": "Grikkland",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -0.705,
+      "lower": -2.114,
+      "upper": 0.726
+    },
+    {
+      "team": "Greece",
+      "team_is": "Grikkland",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -0.705,
+      "lower": -2.905,
+      "upper": 1.459
+    },
+    {
+      "team": "Greece",
+      "team_is": "Grikkland",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.102,
+      "lower": -0.645,
+      "upper": 0.817
+    },
+    {
+      "team": "Greece",
+      "team_is": "Grikkland",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.102,
+      "lower": -1.307,
+      "upper": 1.491
+    },
+    {
+      "team": "Greece",
+      "team_is": "Grikkland",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.102,
+      "lower": -2.008,
+      "upper": 2.223
+    },
+    {
+      "team": "Qatar",
+      "team_is": "Katar",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -2.781,
+      "lower": -3.715,
+      "upper": -1.851
+    },
+    {
+      "team": "Qatar",
+      "team_is": "Katar",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -2.781,
+      "lower": -4.534,
+      "upper": -1.044
+    },
+    {
+      "team": "Qatar",
+      "team_is": "Katar",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -2.781,
+      "lower": -5.543,
+      "upper": -0.142
+    },
+    {
+      "team": "Qatar",
+      "team_is": "Katar",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -1.99,
+      "lower": -2.676,
+      "upper": -1.316
+    },
+    {
+      "team": "Qatar",
+      "team_is": "Katar",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -1.99,
+      "lower": -3.26,
+      "upper": -0.694
+    },
+    {
+      "team": "Qatar",
+      "team_is": "Katar",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -1.99,
+      "lower": -3.968,
+      "upper": 0.069
+    },
+    {
+      "team": "Qatar",
+      "team_is": "Katar",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -0.812,
+      "lower": -1.484,
+      "upper": -0.116
+    },
+    {
+      "team": "Qatar",
+      "team_is": "Katar",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -0.812,
+      "lower": -2.119,
+      "upper": 0.474
+    },
+    {
+      "team": "Qatar",
+      "team_is": "Katar",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -0.812,
+      "lower": -2.825,
+      "upper": 1.176
+    },
+    {
+      "team": "Portugal",
+      "team_is": "Portúgal",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 2.761,
+      "lower": 1.881,
+      "upper": 3.588
+    },
+    {
+      "team": "Portugal",
+      "team_is": "Portúgal",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 2.761,
+      "lower": 1.053,
+      "upper": 4.352
+    },
+    {
+      "team": "Portugal",
+      "team_is": "Portúgal",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 2.761,
+      "lower": 0.193,
+      "upper": 5.219
+    },
+    {
+      "team": "Portugal",
+      "team_is": "Portúgal",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 2.847,
+      "lower": 2.198,
+      "upper": 3.527
+    },
+    {
+      "team": "Portugal",
+      "team_is": "Portúgal",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 2.847,
+      "lower": 1.607,
+      "upper": 4.127
+    },
+    {
+      "team": "Portugal",
+      "team_is": "Portúgal",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 2.847,
+      "lower": 0.844,
+      "upper": 4.778
+    },
+    {
+      "team": "Portugal",
+      "team_is": "Portúgal",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -0.118,
+      "lower": -0.768,
+      "upper": 0.527
+    },
+    {
+      "team": "Portugal",
+      "team_is": "Portúgal",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -0.118,
+      "lower": -1.357,
+      "upper": 1.144
+    },
+    {
+      "team": "Portugal",
+      "team_is": "Portúgal",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -0.118,
+      "lower": -2.044,
+      "upper": 1.788
+    },
+    {
+      "team": "Faroe Islands",
+      "team_is": "Færeyjar",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -0.929,
+      "lower": -2.127,
+      "upper": 0.326
+    },
+    {
+      "team": "Faroe Islands",
+      "team_is": "Færeyjar",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -0.929,
+      "lower": -3.169,
+      "upper": 1.383
+    },
+    {
+      "team": "Faroe Islands",
+      "team_is": "Færeyjar",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -0.929,
+      "lower": -4.268,
+      "upper": 2.614
+    },
+    {
+      "team": "Faroe Islands",
+      "team_is": "Færeyjar",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -0.79,
+      "lower": -1.644,
+      "upper": 0.119
+    },
+    {
+      "team": "Faroe Islands",
+      "team_is": "Færeyjar",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -0.79,
+      "lower": -2.408,
+      "upper": 0.938
+    },
+    {
+      "team": "Faroe Islands",
+      "team_is": "Færeyjar",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -0.79,
+      "lower": -3.293,
+      "upper": 1.716
+    },
+    {
+      "team": "Faroe Islands",
+      "team_is": "Færeyjar",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -0.129,
+      "lower": -0.984,
+      "upper": 0.714
+    },
+    {
+      "team": "Faroe Islands",
+      "team_is": "Færeyjar",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -0.129,
+      "lower": -1.768,
+      "upper": 1.466
+    },
+    {
+      "team": "Faroe Islands",
+      "team_is": "Færeyjar",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -0.129,
+      "lower": -2.643,
+      "upper": 2.332
+    },
+    {
+      "team": "Poland",
+      "team_is": "Pólland",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 1.138,
+      "lower": -0.025,
+      "upper": 2.337
+    },
+    {
+      "team": "Poland",
+      "team_is": "Pólland",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 1.138,
+      "lower": -1.083,
+      "upper": 3.338
+    },
+    {
+      "team": "Poland",
+      "team_is": "Pólland",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 1.138,
+      "lower": -2.253,
+      "upper": 4.68
+    },
+    {
+      "team": "Poland",
+      "team_is": "Pólland",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -0.028,
+      "lower": -0.939,
+      "upper": 0.816
+    },
+    {
+      "team": "Poland",
+      "team_is": "Pólland",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -0.028,
+      "lower": -1.735,
+      "upper": 1.592
+    },
+    {
+      "team": "Poland",
+      "team_is": "Pólland",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -0.028,
+      "lower": -2.573,
+      "upper": 2.501
+    },
+    {
+      "team": "Poland",
+      "team_is": "Pólland",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 1.216,
+      "lower": 0.381,
+      "upper": 2.06
+    },
+    {
+      "team": "Poland",
+      "team_is": "Pólland",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 1.216,
+      "lower": -0.41,
+      "upper": 2.831
+    },
+    {
+      "team": "Poland",
+      "team_is": "Pólland",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 1.216,
+      "lower": -1.338,
+      "upper": 3.721
+    },
+    {
+      "team": "Algeria",
+      "team_is": "Alsír",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -4.134,
+      "lower": -5.092,
+      "upper": -3.157
+    },
+    {
+      "team": "Algeria",
+      "team_is": "Alsír",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -4.134,
+      "lower": -5.95,
+      "upper": -2.342
+    },
+    {
+      "team": "Algeria",
+      "team_is": "Alsír",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -4.134,
+      "lower": -6.828,
+      "upper": -1.368
+    },
+    {
+      "team": "Algeria",
+      "team_is": "Alsír",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -2.9,
+      "lower": -3.621,
+      "upper": -2.215
+    },
+    {
+      "team": "Algeria",
+      "team_is": "Alsír",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -2.9,
+      "lower": -4.246,
+      "upper": -1.581
+    },
+    {
+      "team": "Algeria",
+      "team_is": "Alsír",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -2.9,
+      "lower": -5.018,
+      "upper": -0.82
+    },
+    {
+      "team": "Algeria",
+      "team_is": "Alsír",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -1.217,
+      "lower": -1.935,
+      "upper": -0.469
+    },
+    {
+      "team": "Algeria",
+      "team_is": "Alsír",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -1.217,
+      "lower": -2.583,
+      "upper": 0.155
+    },
+    {
+      "team": "Algeria",
+      "team_is": "Alsír",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -1.217,
+      "lower": -3.257,
+      "upper": 0.871
+    },
+    {
+      "team": "Denmark",
+      "team_is": "Danmörk",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 10.36,
+      "lower": 9.36,
+      "upper": 11.356
+    },
+    {
+      "team": "Denmark",
+      "team_is": "Danmörk",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 10.36,
+      "lower": 8.459,
+      "upper": 12.277
+    },
+    {
+      "team": "Denmark",
+      "team_is": "Danmörk",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 10.36,
+      "lower": 7.544,
+      "upper": 13.213
+    },
+    {
+      "team": "Denmark",
+      "team_is": "Danmörk",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 5.409,
+      "lower": 4.652,
+      "upper": 6.144
+    },
+    {
+      "team": "Denmark",
+      "team_is": "Danmörk",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 5.409,
+      "lower": 3.97,
+      "upper": 6.835
+    },
+    {
+      "team": "Denmark",
+      "team_is": "Danmörk",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 5.409,
+      "lower": 3.21,
+      "upper": 7.584
+    },
+    {
+      "team": "Denmark",
+      "team_is": "Danmörk",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 4.98,
+      "lower": 4.197,
+      "upper": 5.703
+    },
+    {
+      "team": "Denmark",
+      "team_is": "Danmörk",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 4.98,
+      "lower": 3.571,
+      "upper": 6.422
+    },
+    {
+      "team": "Denmark",
+      "team_is": "Danmörk",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 4.98,
+      "lower": 2.762,
+      "upper": 7.112
+    },
+    {
+      "team": "Slovenia",
+      "team_is": "Slóvenía",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 3.646,
+      "lower": 2.591,
+      "upper": 4.787
+    },
+    {
+      "team": "Slovenia",
+      "team_is": "Slóvenía",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 3.646,
+      "lower": 1.609,
+      "upper": 5.812
+    },
+    {
+      "team": "Slovenia",
+      "team_is": "Slóvenía",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 3.646,
+      "lower": 0.374,
+      "upper": 7.024
+    },
+    {
+      "team": "Slovenia",
+      "team_is": "Slóvenía",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 2.641,
+      "lower": 1.83,
+      "upper": 3.466
+    },
+    {
+      "team": "Slovenia",
+      "team_is": "Slóvenía",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 2.641,
+      "lower": 1.062,
+      "upper": 4.237
+    },
+    {
+      "team": "Slovenia",
+      "team_is": "Slóvenía",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 2.641,
+      "lower": 0.159,
+      "upper": 5.11
+    },
+    {
+      "team": "Slovenia",
+      "team_is": "Slóvenía",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 1.008,
+      "lower": 0.23,
+      "upper": 1.844
+    },
+    {
+      "team": "Slovenia",
+      "team_is": "Slóvenía",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 1.008,
+      "lower": -0.466,
+      "upper": 2.561
+    },
+    {
+      "team": "Slovenia",
+      "team_is": "Slóvenía",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 1.008,
+      "lower": -1.337,
+      "upper": 3.429
+    },
+    {
+      "team": "USA",
+      "team_is": "Bandaríkin",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -7.705,
+      "lower": -9.019,
+      "upper": -6.407
+    },
+    {
+      "team": "USA",
+      "team_is": "Bandaríkin",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -7.705,
+      "lower": -10.232,
+      "upper": -5.312
+    },
+    {
+      "team": "USA",
+      "team_is": "Bandaríkin",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -7.705,
+      "lower": -11.542,
+      "upper": -4.047
+    },
+    {
+      "team": "USA",
+      "team_is": "Bandaríkin",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -3.498,
+      "lower": -4.462,
+      "upper": -2.544
+    },
+    {
+      "team": "USA",
+      "team_is": "Bandaríkin",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -3.498,
+      "lower": -5.298,
+      "upper": -1.681
+    },
+    {
+      "team": "USA",
+      "team_is": "Bandaríkin",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -3.498,
+      "lower": -6.335,
+      "upper": -0.766
+    },
+    {
+      "team": "USA",
+      "team_is": "Bandaríkin",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -4.218,
+      "lower": -5.155,
+      "upper": -3.281
+    },
+    {
+      "team": "USA",
+      "team_is": "Bandaríkin",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -4.218,
+      "lower": -5.987,
+      "upper": -2.452
+    },
+    {
+      "team": "USA",
+      "team_is": "Bandaríkin",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -4.218,
+      "lower": -6.903,
+      "upper": -1.446
+    },
+    {
+      "team": "Angola",
+      "team_is": "Angóla",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -6.948,
+      "lower": -8.17,
+      "upper": -5.665
+    },
+    {
+      "team": "Angola",
+      "team_is": "Angóla",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -6.948,
+      "lower": -9.354,
+      "upper": -4.468
+    },
+    {
+      "team": "Angola",
+      "team_is": "Angóla",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -6.948,
+      "lower": -10.777,
+      "upper": -3.163
+    },
+    {
+      "team": "Angola",
+      "team_is": "Angóla",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -4.447,
+      "lower": -5.364,
+      "upper": -3.471
+    },
+    {
+      "team": "Angola",
+      "team_is": "Angóla",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -4.447,
+      "lower": -6.198,
+      "upper": -2.724
+    },
+    {
+      "team": "Angola",
+      "team_is": "Angóla",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -4.447,
+      "lower": -7.136,
+      "upper": -1.731
+    },
+    {
+      "team": "Angola",
+      "team_is": "Angóla",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -2.507,
+      "lower": -3.422,
+      "upper": -1.569
+    },
+    {
+      "team": "Angola",
+      "team_is": "Angóla",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -2.507,
+      "lower": -4.238,
+      "upper": -0.75
+    },
+    {
+      "team": "Angola",
+      "team_is": "Angóla",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -2.507,
+      "lower": -5.19,
+      "upper": 0.239
+    },
+    {
+      "team": "Iceland",
+      "team_is": "Ísland",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 6.471,
+      "lower": 5.342,
+      "upper": 7.512
+    },
+    {
+      "team": "Iceland",
+      "team_is": "Ísland",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 6.471,
+      "lower": 4.408,
+      "upper": 8.565
+    },
+    {
+      "team": "Iceland",
+      "team_is": "Ísland",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 6.471,
+      "lower": 3.288,
+      "upper": 9.763
+    },
+    {
+      "team": "Iceland",
+      "team_is": "Ísland",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 3.42,
+      "lower": 2.613,
+      "upper": 4.231
+    },
+    {
+      "team": "Iceland",
+      "team_is": "Ísland",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 3.42,
+      "lower": 1.861,
+      "upper": 4.919
+    },
+    {
+      "team": "Iceland",
+      "team_is": "Ísland",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 3.42,
+      "lower": 1.066,
+      "upper": 5.778
+    },
+    {
+      "team": "Iceland",
+      "team_is": "Ísland",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 3.047,
+      "lower": 2.239,
+      "upper": 3.851
+    },
+    {
+      "team": "Iceland",
+      "team_is": "Ísland",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 3.047,
+      "lower": 1.433,
+      "upper": 4.633
+    },
+    {
+      "team": "Iceland",
+      "team_is": "Ísland",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 3.047,
+      "lower": 0.713,
+      "upper": 5.469
+    },
+    {
+      "team": "North Macedonia",
+      "team_is": "Norður-Makedónía",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.974,
+      "lower": -0.156,
+      "upper": 2.106
+    },
+    {
+      "team": "North Macedonia",
+      "team_is": "Norður-Makedónía",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.974,
+      "lower": -1.173,
+      "upper": 3.182
+    },
+    {
+      "team": "North Macedonia",
+      "team_is": "Norður-Makedónía",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.974,
+      "lower": -2.346,
+      "upper": 4.451
+    },
+    {
+      "team": "North Macedonia",
+      "team_is": "Norður-Makedónía",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -0.117,
+      "lower": -0.968,
+      "upper": 0.71
+    },
+    {
+      "team": "North Macedonia",
+      "team_is": "Norður-Makedónía",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -0.117,
+      "lower": -1.751,
+      "upper": 1.511
+    },
+    {
+      "team": "North Macedonia",
+      "team_is": "Norður-Makedónía",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -0.117,
+      "lower": -2.7,
+      "upper": 2.361
+    },
+    {
+      "team": "North Macedonia",
+      "team_is": "Norður-Makedónía",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 1.143,
+      "lower": 0.294,
+      "upper": 1.975
+    },
+    {
+      "team": "North Macedonia",
+      "team_is": "Norður-Makedónía",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 1.143,
+      "lower": -0.495,
+      "upper": 2.679
+    },
+    {
+      "team": "North Macedonia",
+      "team_is": "Norður-Makedónía",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 1.143,
+      "lower": -1.312,
+      "upper": 3.644
+    },
+    {
+      "team": "Bahrain",
+      "team_is": "Barein",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -1.2,
+      "lower": -2.076,
+      "upper": -0.318
+    },
+    {
+      "team": "Bahrain",
+      "team_is": "Barein",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -1.2,
+      "lower": -2.847,
+      "upper": 0.48
+    },
+    {
+      "team": "Bahrain",
+      "team_is": "Barein",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -1.2,
+      "lower": -3.771,
+      "upper": 1.336
+    },
+    {
+      "team": "Bahrain",
+      "team_is": "Barein",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -1.385,
+      "lower": -2.044,
+      "upper": -0.702
+    },
+    {
+      "team": "Bahrain",
+      "team_is": "Barein",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -1.385,
+      "lower": -2.663,
+      "upper": -0.11
+    },
+    {
+      "team": "Bahrain",
+      "team_is": "Barein",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -1.385,
+      "lower": -3.29,
+      "upper": 0.562
+    },
+    {
+      "team": "Bahrain",
+      "team_is": "Barein",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": 0.177,
+      "lower": -0.468,
+      "upper": 0.823
+    },
+    {
+      "team": "Bahrain",
+      "team_is": "Barein",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": 0.177,
+      "lower": -1.062,
+      "upper": 1.445
+    },
+    {
+      "team": "Bahrain",
+      "team_is": "Barein",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": 0.177,
+      "lower": -1.722,
+      "upper": 2.117
+    },
+    {
+      "team": "Japan",
+      "team_is": "Japan",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -4.324,
+      "lower": -5.264,
+      "upper": -3.413
+    },
+    {
+      "team": "Japan",
+      "team_is": "Japan",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -4.324,
+      "lower": -6.061,
+      "upper": -2.613
+    },
+    {
+      "team": "Japan",
+      "team_is": "Japan",
+      "component": "total",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -4.324,
+      "lower": -6.939,
+      "upper": -1.607
+    },
+    {
+      "team": "Japan",
+      "team_is": "Japan",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -0.832,
+      "lower": -1.51,
+      "upper": -0.161
+    },
+    {
+      "team": "Japan",
+      "team_is": "Japan",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -0.832,
+      "lower": -2.143,
+      "upper": 0.468
+    },
+    {
+      "team": "Japan",
+      "team_is": "Japan",
+      "component": "offence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -0.832,
+      "lower": -2.836,
+      "upper": 1.15
+    },
+    {
+      "team": "Japan",
+      "team_is": "Japan",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.5,
+      "median": -3.491,
+      "lower": -4.186,
+      "upper": -2.786
+    },
+    {
+      "team": "Japan",
+      "team_is": "Japan",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.8,
+      "median": -3.491,
+      "lower": -4.788,
+      "upper": -2.184
+    },
+    {
+      "team": "Japan",
+      "team_is": "Japan",
+      "component": "defence",
+      "location": "avg",
+      "coverage": 0.95,
+      "median": -3.491,
+      "lower": -5.505,
+      "upper": -1.481
+    }
+  ]
+}
