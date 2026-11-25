@@ -170,3 +170,9 @@ test_that("the World Cup simulator ranks groups under the rule it is given", {
   expect_equal(h2h$teams$p_first + h2h$teams$p_second + h2h$teams$p_third + h2h$teams$p_fourth, rep(1, 48))
   expect_equal(sum(h2h$teams$p_advance), 32)
 })
+
+test_that("two-legged ties use each draw's own rates", {
+  withr::local_seed(9)
+  res <- nt_simulate_two_leg(c(8, 0.01), c(0.01, 8), c(8, 0.01), c(0.01, 8))
+  expect_identical(res$a_wins, c(TRUE, FALSE))
+})

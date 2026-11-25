@@ -175,6 +175,8 @@ nt_fit_inla <- function(prep,
     family = "poisson",
     data = INLA::inla.stack.data(stk),
     control.predictor = list(A = INLA::inla.stack.A(stk), compute = FALSE, link = 1),
+    # WHY per call: R-INLA reads its session-wide `internal.opt` only when the
+    # call's is NULL, so this holds for this fit alone.
     control.compute = c(
       list(config = TRUE, dic = FALSE, waic = FALSE, mlik = TRUE),
       if (reproducible) list(internal.opt = FALSE)
@@ -325,6 +327,41 @@ nt_rw_sd_for_half_life <- function(half_life_years, matches_per_year = 11,
   log(2) / (half_life_years * sqrt(12 * matches_per_year * goals_per_match))
 }
 
+# Venue flags as numbers 0 (neutral) and 1 (home side at home).
+.nt_venue_values <- function(venue) {
+  # WHY: as.numeric() on a factor returns its level codes (1, 2), not 0 and 1.
+  venue <- if (is.factor(venue)) {
+    suppressWarnings(as.numeric(as.character(venue)))
+  } else {
+    suppressWarnings(as.numeric(venue))
+  }
+  if (anyNA(venue) || !all(venue %in% c(0, 1))) {
+    cli::cli_abort("{.arg venue} must be 0 (neutral) or 1 (home side at home).")
+  }
+  venue
+}
+
+# Scoring rates of simulated matches: `draw` (one posterior draw per row) and
+# `home`, `away` (matrices or vectors of column indices into the fit's teams,
+# one row per draw entry) give each match's teams; `venue` is recycled along
+# the columns, or given as a matrix of the same shape. Same arithmetic, in the same order, as nt_match_rates().
+.nt_sim_rates <- function(fit, draw, home, away, venue) {
+  d <- fit$draws
+  home <- as.matrix(home)
+  away <- as.matrix(away)
+  n <- nrow(home)
+  m <- ncol(home)
+  rows <- rep(draw, m)
+  get <- function(x, idx) matrix(x[cbind(rows, c(idx))], n, m)
+  gap <- get(d$theta, home) - get(d$theta, away)
+  base <- d$mu[draw] + (get(d$delta, home) + get(d$delta, away))
+  if (!is.matrix(venue)) venue <- matrix(rep(venue, each = n), n, m)
+  list(
+    home = exp(base + gap + d$home_for[draw] * venue),
+    away = exp(base - gap + d$home_against[draw] * venue)
+  )
+}
+
 #' Per-draw scoring rates for a set of fixtures.
 #'
 #' @param fit A fit from [nt_fit_inla()] (or any list with the same `draws`,
@@ -346,16 +383,7 @@ nt_match_rates <- function(fit, home, away, venue = 0L, friendly = FALSE) {
   }
   d <- fit$draws
   n_fix <- length(home)
-  # WHY: as.numeric() on a factor returns its level codes (1, 2), not 0 and 1.
-  venue <- if (is.factor(venue)) {
-    suppressWarnings(as.numeric(as.character(venue)))
-  } else {
-    suppressWarnings(as.numeric(venue))
-  }
-  if (anyNA(venue) || !all(venue %in% c(0, 1))) {
-    cli::cli_abort("{.arg venue} must be 0 (neutral) or 1 (home side at home).")
-  }
-  venue <- rep_len(venue, n_fix)
+  venue <- rep_len(.nt_venue_values(venue), n_fix)
   w <- ifelse(rep_len(friendly, n_fix), fit$kappa, 1)
   gap <- d$theta[, home, drop = FALSE] - d$theta[, away, drop = FALSE]
   open <- d$delta[, home, drop = FALSE] + d$delta[, away, drop = FALSE]

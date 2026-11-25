@@ -1,0 +1,55 @@
+team,pot,nl_rank,nl_league,nl_group,nl_group_position,nl_knockout,host
+England,1,1,A,A3,1,QF,TRUE
+Portugal,1,2,A,A4,1,QF,FALSE
+France,1,3,A,A1,1,QF,FALSE
+Germany,1,4,A,A2,1,QF,FALSE
+Spain,1,5,A,A3,2,QF,FALSE
+Belgium,1,6,A,A1,2,QF,FALSE
+Netherlands,1,7,A,A2,2,QF,FALSE
+Norway,1,8,A,A4,2,QF,FALSE
+Greece,1,9,A,A2,3,,FALSE
+Italy,1,10,A,A1,3,,FALSE
+Denmark,1,11,A,A4,3,AB_PO,FALSE
+Croatia,1,12,A,A3,3,AB_PO,FALSE
+Wales,2,13,A,A4,4,AB_PO,TRUE
+Serbia,2,14,A,A2,4,AB_PO,FALSE
+Türkiye,2,15,A,A1,4,,FALSE
+Czechia,2,16,A,A3,4,,FALSE
+Switzerland,2,17,B,B1,1,,FALSE
+Sweden,2,18,B,B4,1,,FALSE
+Austria,2,19,B,B3,1,,FALSE
+Northern Ireland,2,20,B,B2,1,,FALSE
+Slovenia,2,21,B,B1,2,AB_PO,FALSE
+Bosnia-Herzegovina,2,22,B,B4,2,AB_PO,FALSE
+Hungary,2,23,B,B2,2,AB_PO,FALSE
+Republic of Ireland,2,24,B,B3,2,AB_PO,TRUE
+Ukraine,3,25,B,B2,3,,FALSE
+Scotland,3,26,B,B1,3,,TRUE
+Kosovo,3,27,B,B3,3,,FALSE
+Poland,3,28,B,B4,3,,FALSE
+Israel,3,29,B,B3,4,BC_PO,FALSE
+Romania,3,30,B,B4,4,BC_PO,FALSE
+Georgia,3,31,B,B2,4,BC_PO,FALSE
+North Macedonia,3,32,B,B1,4,BC_PO,FALSE
+Montenegro,3,33,C,C2,1,,FALSE
+Albania,3,34,C,C1,1,,FALSE
+Iceland,3,35,C,C4,1,,FALSE
+Slovakia,3,36,C,C3,1,,FALSE
+Estonia,4,37,C,C4,2,BC_PO,FALSE
+Belarus,4,38,C,C1,2,BC_PO,FALSE
+Faroe Islands,4,39,C,C3,2,BC_PO,FALSE
+Cyprus,4,40,C,C2,2,BC_PO,FALSE
+Finland,4,41,C,C1,3,,FALSE
+Moldova,4,42,C,C3,3,,FALSE
+Armenia,4,43,C,C2,3,,FALSE
+Bulgaria,4,44,C,C4,3,,FALSE
+Kazakhstan,4,45,C,C3,4,,FALSE
+Luxembourg,4,46,C,C4,4,,FALSE
+Latvia,4,47,C,C2,4,,FALSE
+San Marino,4,48,C,C1,4,,FALSE
+Malta,5,49,D,D1,1,,FALSE
+Azerbaijan,5,50,D,D2,1,,FALSE
+Lithuania,5,51,D,D2,2,,FALSE
+Andorra,5,52,D,D1,2,,FALSE
+Gibraltar,5,53,D,D1,3,,FALSE
+Liechtenstein,5,54,D,D2,3,,FALSE

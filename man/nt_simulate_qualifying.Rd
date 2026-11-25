@@ -12,6 +12,9 @@ nt_simulate_qualifying(
   n_best_runners_up = 8L,
   counted_positions = NULL,
   h2h_reapply = c("repeat", "once"),
+  quarter_finals = NULL,
+  et_factor = 1/3,
+  shootout_p = 0.5,
   seed = NULL
 )
 }
@@ -19,14 +22,15 @@ nt_simulate_qualifying(
 \item{fit}{A fit from [nt_fit_inla()] (or any list with the same `draws`,
 `teams` and `kappa` elements).}
 
-\item{groups}{Named list of character vectors: the teams of each group.}
+\item{groups}{Named list of character vectors: the teams (or placeholder
+slots) of each group.}
 
 \item{fixtures}{Optional data frame of group matches with `group`,
 `home_team`, `away_team`, `home_score`, `away_score` (`NA` for unplayed)
 and `venue` (1 when the home side plays at home, 0 at a neutral venue;
-default 1). Each group's fixtures must be its double round robin: every
-ordered pair of its teams exactly once (Article 14.01). `NULL` plays
-every pair home and away, all unplayed.}
+default 1), in the labels of `groups`. Each group's fixtures must be its
+double round robin: every ordered pair of its teams exactly once
+(Article 14.01). `NULL` plays every pair home and away, all unplayed.}
 
 \item{n_sims}{Number of simulated group stages.}
 
@@ -38,16 +42,33 @@ smallest group (4 for Euro 2028: results against fifth place).}
 
 \item{h2h_reapply}{Passed to [nt_rank_uefa_group()].}
 
+\item{quarter_finals}{Optional data frame of ties that decide placeholder
+slots: `winner_slot`, `defeated_slot` (labels used in `groups`),
+`first_leg_home`, `second_leg_home` (teams in the fit). Rows whose slots
+are not drawn are ignored.}
+
+\item{et_factor, shootout_p}{Passed to [nt_simulate_two_leg()].}
+
 \item{seed}{Optional seed.}
 }
 \value{
-List: `teams` (tibble: `team`, `group`, `p_pos1` ... `p_posK`,
-  `p_winner`, `p_runner_up_direct`, `p_runner_up_other`, `p_qualify_direct`,
-  `exp_points`), `positions` (n_sims x teams matrix of group positions),
-  `runner_up` (n_sims x groups matrix of each group's runner-up), and
-  `runner_up_rank` (n_sims x groups matrix of that runner-up's rank among
-  the runners-up). The last three are the inputs a play-off and
-  host-place step needs.
+List:
+  * `teams`: tibble per team (`team`, `group` (for a team behind a
+    placeholder, the winner's and defeated team's groups as `"A/G"`),
+    `p_pos1` ... `p_posK`, `p_winner`, `p_runner_up_direct`,
+    `p_runner_up_other`, `p_qualify_direct`, `exp_points`);
+  * `slots`: the same per slot of `groups`;
+  * `positions` (n_sims x teams) and `slot_positions` (n_sims x slots):
+    group positions;
+  * `runner_up` (n_sims x groups): each group's runner-up (team);
+  * `runner_up_rank` (n_sims x groups): its rank among the runners-up;
+  * `overall`: list of n_sims x teams matrices, each team's Article 23
+    statistics (`points`, `gd`, `gf`, `away_gf`, `won`, `away_won`) over
+    the matches that ranking counts for it, plus a uniform `tiebreak`
+    standing in for disciplinary points;
+  * `qf_winner` (n_sims x ties, `NULL` without placeholders);
+  * `draw`: the posterior draw behind each simulation; and `n_sims`.
+  These are the inputs a play-off and host-place step needs.
 }
 \description{
 Each simulation uses one posterior draw of the strengths for every match,
@@ -59,6 +80,12 @@ under Article 23, discarding results against teams placed below the size
 of the smallest group.
 }
 \details{
+Groups may hold placeholders for the two sides of a two-legged tie that is
+played before the qualifiers (the 2026/27 Nations League quarter-finals
+enter the EURO 2028 draw as "QFk winner" and "QFk defeated"). Each tie is
+simulated per simulation with [nt_simulate_two_leg()], each side at home
+in one leg, and the placeholders take its winner and defeated team.
+
 Disciplinary points (criterion j) are not modelled: a uniform random draw
 per team and simulation stands in for them, which settles every tie that
 reaches j), so k) is never needed.

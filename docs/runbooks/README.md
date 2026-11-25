@@ -16,6 +16,12 @@ same shape: **symptom -> diagnose -> fix -> verify**.
 | `publish_freshness` FAIL, `publish_format` WARN | [stale-publish.md](stale-publish.md) |
 | `season_resolution` FAIL (a federation season id will not resolve) | [season-restart.md](season-restart.md) |
 
+Scheduled operations (not health checks):
+
+| Operation | Runbook |
+|---|---|
+| EURO 2028 qualifying draw, 6 December 2026: odds from UEFA's groups | [euro2028-draw-night.md](euro2028-draw-night.md) |
+
 ## First principles
 
 - **Confirm-intent before "fixing".** Several states that look like faults are
