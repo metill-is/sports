@@ -159,6 +159,36 @@ test_that("World Cup group ties level on head-to-head go to overall goal differe
   expect_equal(rk$rank[1, c(1, 2)], c(2, 1))
 })
 
+test_that("the 2023 order ranks on goal difference before head-to-head", {
+  # A beat B and both finish on 6 points; B's goal difference is +7, A's +1.
+  # FIFA Women's World Cup 2023 Regulations, art. 13: all group matches first.
+  g <- wc_group_games(
+    "A", "B", 1, 0, "A", "C", 0, 1, "A", "D", 1, 0,
+    "B", "C", 5, 0, "B", "D", 3, 0, "C", "D", 0, 1
+  )
+  rk <- .nt_wc_rank_group(
+    g$home, g$away, c("A", "B", "C", "D"), g$goals_h, g$goals_a,
+    matrix(c(0.1, 0.2, 0.3, 0.4), 1),
+    rule = "wwc_2023"
+  )
+  expect_equal(rk$rank[1, ], c(2, 1, 4, 3))
+})
+
+test_that("the 2023 order settles teams level on points, goal difference and goals head-to-head", {
+  # A and B: 4 points, 1-1 in goals each; A beat B. The tiebreak favours B, so
+  # only the head-to-head step puts A above B.
+  g <- wc_group_games(
+    "A", "B", 1, 0, "A", "C", 0, 0, "A", "D", 0, 1,
+    "B", "C", 1, 0, "B", "D", 0, 0, "C", "D", 0, 0
+  )
+  tb <- matrix(c(0.1, 0.9, 0.3, 0.4), 1)
+  rank_under <- function(rule) {
+    .nt_wc_rank_group(g$home, g$away, c("A", "B", "C", "D"), g$goals_h, g$goals_a, tb, rule = rule)$rank[1, ]
+  }
+  expect_equal(rank_under("wwc_2023"), c(2, 3, 4, 1))
+  expect_equal(rank_under("goal_difference"), c(3, 2, 4, 1))
+})
+
 test_that("the World Cup simulator ranks groups under the rule it is given", {
   s <- wc_structure()
   teams <- unlist(s$groups, use.names = FALSE)

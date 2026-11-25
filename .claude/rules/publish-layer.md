@@ -232,6 +232,12 @@ unchecked-but-green shape as B4. It now aborts. All three sports that reach
 since 2026-09-04). `publish_world_cup()` (`R/wc-publish.R`) never calls
 `publish_one()` or `.validate_or_abort()` — verified by grep and pinned by a
 test — so `world_cup`, which has no schema directory by design, is untouched.
+The 2027 Women's World Cup tree `world_cup/kvenna/` (`R/nt-wwc2027.R`:
+`meta.json` and `playoff.json` now, `groups.json` and
+`tournament_placements.json` from the 11 December 2026 draw) is the same: no
+schema, never through `publish_one()`, written locally by
+`scripts/nt/wwc2027_publish_playoff.R` and `scripts/nt/wwc2027_finals.R`.
+No metill-platform route reads it (owner, 2026-11-24: "Sports-side JSON only").
 The escape hatch for a synthetic-data test whose payload the schema would
 reject by design is `validate = FALSE`, never loosening the default. A sport
 that published NOTHING stays a warning rather than an abort.

@@ -131,6 +131,7 @@ Collate:
     'nt-simulate.R'
     'nt-stan.R'
     'nt-qualifying.R'
+    'nt-wwc2027.R'
     'nt-euro2028.R'
     'nt-euro2028-draw.R'
     'placer-ledger.R'

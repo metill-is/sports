@@ -324,12 +324,14 @@ nt_uefa_overall_ranking <- function(matches, groups, disciplinary = NULL,
 # more pass, `"none"` no re-application (the head-to-head table among all the
 # teams level on points, then straight on to `overall`; the literal reading of
 # the EHF and IHF handball rules, R/ih-simulate.R).
+# `level` (a list of n x k matrices, default the points) is what teams must be
+# level on before the head-to-head step: the FIFA Women's World Cup 2023 order
+# passes points, goal difference and goals in all group matches.
 .nt_rank_group_vec <- function(pts_vs, gd_vs, gf_vs, overall, tiebreak,
-                               h2h_reapply = "repeat") {
+                               h2h_reapply = "repeat", level = NULL) {
   n <- dim(pts_vs)[1]
   k <- dim(pts_vs)[2]
-  points <- apply(pts_vs, c(1, 2), sum)
-  keys <- list(points)
+  keys <- if (is.null(level)) list(apply(pts_vs, c(1, 2), sum)) else level
   same_class <- function(cls) {
     ci <- array(cls, c(n, k, k))
     eq <- ci == aperm(ci, c(1, 3, 2))

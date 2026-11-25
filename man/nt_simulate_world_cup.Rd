@@ -11,7 +11,7 @@ nt_simulate_world_cup(
   knockout = c("extra_time", "replay"),
   et_factor = 1/3,
   shootout_p = 0.5,
-  group_rule = c("head_to_head", "goal_difference"),
+  group_rule = NULL,
   h2h_reapply = c("repeat", "once"),
   seed = NULL
 )
@@ -31,10 +31,14 @@ nt_simulate_world_cup(
 \item{group_rule}{How teams level on points are ranked within a group:
 `"head_to_head"` (FIFA World Cup 2026 Regulations, Article 13: results
 between the teams level first, then goal difference and goals in all
-group matches) or `"goal_difference"` (the earlier order: goal difference,
-then goals). Team conduct and the FIFA ranking are not modelled; a random
-draw settles what is still level. Third-placed teams are compared on
-points, goal difference and goals under either rule.}
+group matches), `"wwc_2023"` (FIFA Women's World Cup 2023 Regulations,
+Article 13: goal difference and goals in all group matches, then
+head-to-head points, goal difference and goals among the teams still
+level) or `"goal_difference"` (goal difference, then goals, kept to
+reproduce earlier runs). `NULL` (the default) takes `structure$group_rule`
+and falls back to `"head_to_head"`. Team conduct and the FIFA ranking are
+not modelled; a random draw settles what is still level. Third-placed
+teams are compared on points, goal difference and goals under any rule.}
 
 \item{h2h_reapply}{How often step 2 re-applies the head-to-head criteria to
 teams still level: `"repeat"` (until nothing changes) or `"once"`. With
@@ -58,7 +62,9 @@ List: `teams` (tibble: `team`, `group`, group-position and
 Group stage and knockouts are simulated jointly: each simulation uses one
 posterior draw of the strengths for every match, so a team's uncertain
 strength carries through its whole run. Hosts play their group matches at
-home; knockout matches are neutral. The format comes from `structure`: the
+home; knockout matches are neutral, except that a team in
+`structure$knockout_hosts` plays its knockout matches at home (Brazil in
+2027 by default; nobody in 2026). The format comes from `structure`: the
 48-team men's World Cup of 2026 ([wc_structure()]: twelve groups, eight
 best third-placed teams, a round of 32) or the 32-team Women's World Cup of
 2027 ([nt_wwc2027_structure()]: eight groups, the top two to a round of

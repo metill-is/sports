@@ -4,19 +4,33 @@
 \alias{nt_wwc2027_structure}
 \title{2027 Women's World Cup tournament structure.}
 \usage{
-nt_wwc2027_structure(groups)
+nt_wwc2027_structure(
+  groups,
+  group_rule = "wwc_2023",
+  host_knockout_home = TRUE
+)
 }
 \arguments{
 \item{groups}{Named list `A` to `H` of four team names each (martj42
 spelling), from the final draw of 11 December 2026. Brazil must be in
 group A.}
+
+\item{group_rule}{How teams level on points are ranked within a group; see
+[nt_simulate_world_cup()]. Default `"wwc_2023"`: the FIFA Women's World
+Cup 2023 order, goal difference and goals in all group matches before
+head-to-head.}
+
+\item{host_knockout_home}{Whether Brazil has home advantage in its knockout
+matches (the bronze final included). Default `TRUE`.}
 }
 \value{
 A structure for [nt_simulate_world_cup()]: `groups`, `group_of`,
-  `hosts`, `bracket` (tibble `match_no`, `round`, `feeder_a`, `feeder_b`;
-  `"1A"` = winner of group A, `"2B"` = runner-up of group B, `"W49"` =
-  winner of match 49), `third_slots` (`NULL`: no third-placed team
-  qualifies), `rounds` and `third_place` (the bronze final).
+  `hosts`, `knockout_hosts` (`"Brazil"`, or empty when
+  `host_knockout_home = FALSE`), `group_rule`, `bracket` (tibble
+  `match_no`, `round`, `feeder_a`, `feeder_b`; `"1A"` = winner of group A,
+  `"2B"` = runner-up of group B, `"W49"` = winner of match 49),
+  `third_slots` (`NULL`: no third-placed team qualifies), `rounds` and
+  `third_place` (the bronze final).
 }
 \description{
 Thirty-two teams in eight groups of four; the top two of each group go to
@@ -27,4 +41,10 @@ The bracket is FIFA's match schedule of 19 November 2026
 2026): matches 49 to 56 are the round of 16, 57 to 60 the quarter-finals,
 61 and 62 the semi-finals. Winners of groups A and B can meet only in the
 final.
+}
+\details{
+The defaults follow the owner's decision of 24 November 2026, "Take all
+three": rank groups by the 2023 order until FIFA publishes the 2027
+regulations, and count Brazil's knockout matches as home matches (every
+match is played in Brazil).
 }
