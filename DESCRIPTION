@@ -119,6 +119,7 @@ Collate:
     'ingest-log.R'
     'lengjan-archive.R'
     'lengjan-closing.R'
+    'lengjan-compare.R'
     'model-fit.R'
     'model-posteriors.R'
     'model-league.R'

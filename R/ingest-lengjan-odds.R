@@ -240,22 +240,47 @@ parse_lengjan_dates <- function(date_strings) {
   parsed
 }
 
-#' Scrape live Lengjan odds for active leagues and write to facts/odds Parquet.
+#' Scrape Lengjan odds through the browser, in memory.
 #'
-#' Two-stage: (1) competition page yields 1x2 + match URLs; (2) match-detail
-#' pages yield handicap + totals. All odds rows go into one long-form tibble
-#' and a single `write_table("odds", ...)` append.
+#' The Chromote DOM scraper without the write: for each competition, the
+#' competition page yields 1x2 rows and match links, then each match's detail
+#' page yields handicap and totals rows. [ingest_lengjan_odds()] writes what
+#' this returns; the shadow comparison (`scripts/0Nc_compare_odds_sources.R`)
+#' reads it against the JSON API and writes nothing.
 #'
-#' @param leagues Filtered list (output of `filter_leagues(active_only = TRUE,
-#'   has_lengjan = TRUE)`).
-#' @param scraped_at Single timestamp for the entire run.
-#' @param root Storage root.
-#' @param chromote_session Existing session; NULL means create + close one.
-#' @return Number of rows written (invisible).
+#' Detail pages are paired with matches by position: the i-th link with the
+#' i-th priced match on the competition page. A match the competition page
+#' skips (fewer than 3 numeric odds) shifts every later pairing, so `visits`
+#' records each link's event id (from its `id=` or `match=` parameter) next to
+#' the teams it was paired with, and the comparison can check the pair.
+#'
+#' @param leagues Named list of league definitions (each with `sport`,
+#'   `country` and `lengjan$competitions`).
+#' @param scraped_at Single timestamp stamped on every row.
+#' @param chromote_session Existing session; NULL means create and close one.
+#' @param max_detail Detail pages to open per competition, in page order;
+#'   the rest are recorded in `visits` as `"not_visited"`. `Inf` (the
+#'   default, as in production) opens every one.
+#' @param fetch Page fetcher `function(session, url, expand_aria)` returning
+#'   parsed HTML; tests pass fixtures.
+#' @param delay_s Named `min`/`max` seconds slept after each detail page.
+#' @return List: `rows` (tibble: sport, country, scraped_at, match_date,
+#'   home_team, away_team, market, outcome, line, odds), `visits` (one row per
+#'   paired match link: league, competition_id, position, event_id, href,
+#'   match_date, home_team, away_team, detail = "ok" / "failed" /
+#'   "not_visited", n_rows) and `pages` (one row per competition page:
+#'   league, competition_id, n_containers, n_links, n_matches).
+#'
+#' A competition page without match containers is a quiet 0 rows (no
+#' listing). Match containers on at least one page and no row parsed from
+#' any of them is a classed `lengjan_parse_error`: a layout or selector change
+#' must fail the scrape loudly. It is not a `lengjan_fetch_error`, so
+#' `ingest_one_lengjan()` does not soft-fail it.
 #' @export
-ingest_lengjan_odds <- function(leagues, scraped_at = Sys.time(),
-                                root = here::here("data"),
-                                chromote_session = NULL) {
+scrape_lengjan_dom <- function(leagues, scraped_at = Sys.time(),
+                               chromote_session = NULL, max_detail = Inf,
+                               fetch = .lengjan_fetch,
+                               delay_s = .LENGJAN_DETAIL_DELAY_S) {
   stopifnot(is.list(leagues), length(leagues) > 0L)
 
   owns_session <- is.null(chromote_session)
@@ -269,6 +294,8 @@ ingest_lengjan_odds <- function(leagues, scraped_at = Sys.time(),
   on.exit(if (owns_session) chromote_session$close(), add = TRUE)
 
   rows <- list()
+  visits <- list()
+  pages <- list()
   for (key in names(leagues)) {
     league <- leagues[[key]]
     comps <- league$lengjan$competitions %||% list()
@@ -282,7 +309,7 @@ ingest_lengjan_odds <- function(leagues, scraped_at = Sys.time(),
         .lengjan_country_code(league$country),
         comp$id
       )
-      html <- .lengjan_fetch(chromote_session, url)
+      html <- fetch(chromote_session, url)
       comp_rows <- parse_competition_page(
         html,
         sport = league$sport, country = league$country
@@ -292,6 +319,13 @@ ingest_lengjan_odds <- function(leagues, scraped_at = Sys.time(),
         rvest::html_elements(html, .lengjan_selectors$match_link), "href"
       )
       n_matches <- nrow(comp_rows) %/% 3L
+      pages[[length(pages) + 1L]] <- tibble::tibble(
+        league = key, competition_id = as.character(comp$id),
+        n_containers = length(
+          rvest::html_elements(html, .lengjan_selectors$match_container)
+        ),
+        n_links = length(match_links), n_matches = n_matches
+      )
       for (i in seq_along(match_links)) {
         if (i > n_matches) break
         match_meta <- list(
@@ -300,6 +334,17 @@ ingest_lengjan_odds <- function(leagues, scraped_at = Sys.time(),
           away_team = comp_rows$away_team[1L + (i - 1L) * 3L],
           match_date = comp_rows$match_date[1L + (i - 1L) * 3L]
         )
+        visit <- tibble::tibble(
+          league = key, competition_id = as.character(comp$id),
+          position = i, event_id = .lengjan_href_event_id(match_links[[i]]),
+          href = match_links[[i]], match_date = match_meta$match_date,
+          home_team = match_meta$home_team, away_team = match_meta$away_team,
+          detail = "not_visited", n_rows = 0L
+        )
+        if (i > max_detail) {
+          visits[[length(visits) + 1L]] <- visit
+          next
+        }
         # Append marketTab=allMarkets to switch the detail page to the
         # all-markets tab. Each individual section (row-HC_FT, row-OU_FT) is
         # still rendered collapsed and contains no <table>/<tr> until clicked
@@ -311,7 +356,7 @@ ingest_lengjan_odds <- function(leagues, scraped_at = Sys.time(),
           if (grepl("\\?", match_links[[i]])) "&" else "?"
         )
         detail_html <- tryCatch(
-          .lengjan_fetch(
+          fetch(
             chromote_session, match_url,
             expand_aria = c("row-OU_FT", "row-HC_FT")
           ),
@@ -320,27 +365,103 @@ ingest_lengjan_odds <- function(leagues, scraped_at = Sys.time(),
             NULL
           }
         )
-        if (!is.null(detail_html)) {
-          comp_rows <- dplyr::bind_rows(
-            comp_rows,
-            parse_match_detail(detail_html, match_meta)
-          )
+        if (is.null(detail_html)) {
+          visit$detail <- "failed"
+        } else {
+          detail_rows <- parse_match_detail(detail_html, match_meta)
+          comp_rows <- dplyr::bind_rows(comp_rows, detail_rows)
+          visit$detail <- "ok"
+          visit$n_rows <- nrow(detail_rows)
         }
-        Sys.sleep(stats::runif(
-          1, .LENGJAN_DETAIL_DELAY_S[["min"]], .LENGJAN_DETAIL_DELAY_S[["max"]]
-        ))
+        visits[[length(visits) + 1L]] <- visit
+        Sys.sleep(stats::runif(1, delay_s[["min"]], delay_s[["max"]]))
       }
 
-      rows[[key]] <- dplyr::bind_rows(rows[[key]], comp_rows)
+      rows[[length(rows) + 1L]] <- comp_rows
     }
   }
 
-  all_rows <- dplyr::bind_rows(rows) |>
-    dplyr::mutate(scraped_at = !!scraped_at) |>
-    dplyr::select(
+  all_rows <- dplyr::bind_rows(c(list(empty_lengjan_dom_rows()), rows))
+  all_rows$scraped_at <- rep(scraped_at, nrow(all_rows))
+  pages <- dplyr::bind_rows(c(list(tibble::tibble(
+    league = character(), competition_id = character(),
+    n_containers = integer(), n_links = integer(), n_matches = integer()
+  )), pages))
+  n_containers <- sum(pages$n_containers)
+  if (nrow(all_rows) == 0L && n_containers > 0L) {
+    stop(structure(
+      class = c("lengjan_parse_error", "error", "condition"),
+      list(
+        message = paste0(
+          "Lengjan DOM scrape: ", n_containers, " match container(s) on ",
+          sum(pages$n_containers > 0L), " competition page(s) but no row ",
+          "parsed (no team spans or fewer than 3 numeric odds). The page ",
+          "layout or the selectors have likely changed."
+        ),
+        call = NULL
+      )
+    ))
+  }
+  list(
+    rows = all_rows[, c(
       "sport", "country", "scraped_at", "match_date",
       "home_team", "away_team", "market", "outcome", "line", "odds"
-    )
+    )],
+    visits = dplyr::bind_rows(c(list(empty_lengjan_dom_visits()), visits)),
+    pages = pages
+  )
+}
+
+#' @noRd
+empty_lengjan_dom_rows <- function() {
+  tibble::tibble(
+    sport = character(), country = character(),
+    match_date = as.Date(character()),
+    home_team = character(), away_team = character(),
+    market = character(), outcome = character(),
+    line = numeric(), odds = numeric()
+  )
+}
+
+#' @noRd
+empty_lengjan_dom_visits <- function() {
+  tibble::tibble(
+    league = character(), competition_id = character(), position = integer(),
+    event_id = character(), href = character(),
+    match_date = as.Date(character()),
+    home_team = character(), away_team = character(),
+    detail = character(), n_rows = integer()
+  )
+}
+
+#' The Lengjan event id in a match link's `id=` or `match=` parameter; NA when
+#' the link carries neither.
+#' @noRd
+.lengjan_href_event_id <- function(href) {
+  hit <- regmatches(href, regexec("[?&](?:id|match)=([0-9]+)", href))
+  vapply(hit, function(h) if (length(h) == 2L) h[[2]] else NA_character_, character(1))
+}
+
+#' Scrape live Lengjan odds for active leagues and write to facts/odds Parquet.
+#'
+#' Two-stage: (1) competition page yields 1x2 + match URLs; (2) match-detail
+#' pages yield handicap + totals ([scrape_lengjan_dom()]). All odds rows go
+#' into one long-form tibble and a single upsert.
+#'
+#' @param leagues Filtered list (output of `filter_leagues(active_only = TRUE,
+#'   has_lengjan = TRUE)`).
+#' @param scraped_at Single timestamp for the entire run.
+#' @param root Storage root.
+#' @param chromote_session Existing session; NULL means create + close one.
+#' @return Number of rows written (invisible).
+#' @export
+ingest_lengjan_odds <- function(leagues, scraped_at = Sys.time(),
+                                root = here::here("data"),
+                                chromote_session = NULL) {
+  all_rows <- scrape_lengjan_dom(
+    leagues,
+    scraped_at = scraped_at, chromote_session = chromote_session
+  )$rows
 
   if (nrow(all_rows) == 0L) {
     cli::cli_alert_info("No odds rows scraped")
@@ -350,10 +471,10 @@ ingest_lengjan_odds <- function(leagues, scraped_at = Sys.time(),
   # Upsert into the (sport, country, scraped_date) partition with the natural
   # key (sport, country, scraped_at, match_date, home_team, away_team, market,
   # outcome, line). Each cron snapshot has a distinct `scraped_at` so the
-  # three daily scrapes accrete rather than overwrite each other — pre-2026-05-15
+  # three daily scrapes accrete rather than overwrite each other -- pre-2026-05-15
   # the plain write_table() call deleted the earlier scrape's data via
   # arrow's `existing_data_behavior = "overwrite"`, leaving only the last
-  # scrape of the day visible. Audit 2026-05-15 §F.
+  # scrape of the day visible. Audit 2026-05-15 section F.
   upsert_table(all_rows, "odds", root = root)
   cli::cli_alert_success("Wrote {nrow(all_rows)} odds rows to facts/odds/")
   invisible(nrow(all_rows))

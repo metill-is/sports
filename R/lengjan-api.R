@@ -308,7 +308,15 @@ empty_lengjan_markets <- function() {
 #' @return Tibble: event_id, market, outcome, line, odds.
 #' @export
 lengjan_markets_to_odds <- function(markets) {
-  m <- .lengjan_open_priced(markets)
+  out <- .lengjan_canonical_rows(.lengjan_open_priced(markets))
+  out[, c("event_id", "market", "outcome", "line", "odds"), drop = FALSE]
+}
+
+#' The canonical mapping of [lengjan_markets_to_odds()] without its open and
+#' priced filter: every column of `m` is kept, `status` included, so the
+#' shadow comparison can tell a suspended selection from a missing one.
+#' @noRd
+.lengjan_canonical_rows <- function(m) {
   three_way <- c("1" = "home", "X" = "draw", "2" = "away")
   over_under <- c(Yfir = "over", Undir = "under")
 
@@ -331,8 +339,7 @@ lengjan_markets_to_odds <- function(markets) {
   hc$line <- suppressWarnings(as.numeric(hc$special_value))
 
   out <- dplyr::bind_rows(ml, tot, hc)
-  out <- out[out$market == "moneyline" | is.finite(out$line), , drop = FALSE]
-  out[, c("event_id", "market", "outcome", "line", "odds"), drop = FALSE]
+  out[out$market == "moneyline" | is.finite(out$line), , drop = FALSE]
 }
 
 #' Every open, priced selection of every market, in the odds_markets
@@ -441,7 +448,16 @@ lengjan_markets_long <- function(markets) {
 #' @return Tibble matching `schemas()$odds`.
 #' @export
 lengjan_api_odds_rows <- function(events, markets, league, scraped_at) {
-  j <- .lengjan_league_rows(events, lengjan_markets_to_odds(markets), league)
+  .lengjan_odds_shape(
+    events, lengjan_markets_to_odds(markets), league, scraped_at
+  )
+}
+
+#' Odds-table rows for one league from canonical rows keyed by `event_id`.
+#' @noRd
+.lengjan_odds_shape <- function(events, odds, league, scraped_at,
+                                bad_kickoff = "stop") {
+  j <- .lengjan_league_rows(events, odds, league, bad_kickoff = bad_kickoff)
   if (nrow(j) == 0L) {
     return(empty_lengjan_api_odds())
   }
@@ -517,6 +533,69 @@ empty_lengjan_api_market_rows <- function() {
       kickoff_at = as.POSIXct(character(), tz = "UTC")
     ),
     lengjan_markets_long(empty_lengjan_markets())[, .LENGJAN_MARKET_COLUMNS]
+  )
+}
+
+#' One in-memory API snapshot of leagues' odds, for the shadow comparison.
+#'
+#' Fetches markets for the leagues' listed events that have open markets
+#' (the selection [ingest_lengjan_api()] makes) and maps them as the API
+#' scrape would write them. Writes nothing. Pass `events` to reuse a parsed
+#' program, so a before-and-after pair costs one program request.
+#'
+#' @param leagues Named list of league definitions (each with `lengjan`).
+#' @param events Output of [parse_lengjan_program()]; NULL fetches it.
+#' @param fetch_program,fetch_markets Injectable fetchers, as for
+#'   [ingest_lengjan_api()].
+#' @param now Clock, called once the markets have arrived.
+#' @return List: `taken_at` (POSIXct), `events` (the program rows of the
+#'   leagues' competitions), `odds` (the rows [lengjan_api_odds_rows()] gives,
+#'   stamped `taken_at`) and `closed` (the same shape, for selections in those
+#'   markets that are not open or carry no valid price: what the API scrape
+#'   leaves out).
+#' @export
+lengjan_api_snapshot <- function(leagues, events = NULL,
+                                 fetch_program = lengjan_fetch_program,
+                                 fetch_markets = lengjan_fetch_markets,
+                                 now = Sys.time) {
+  stopifnot(is.list(leagues), length(leagues) > 0L)
+  if (is.null(events)) events <- parse_lengjan_program(fetch_program())
+  mine <- rep(FALSE, nrow(events))
+  for (lg in leagues) {
+    ids <- vapply(lg$lengjan$competitions %||% list(), function(cp) {
+      as.character(cp$id)
+    }, character(1))
+    mine <- mine | (events$sport_id == .lengjan_sport_id(lg$sport) &
+      events$competition_id %in% ids)
+  }
+  events <- events[mine, , drop = FALSE]
+  wanted <- events$event_id[events$market_count > 0L]
+  markets <- if (length(wanted) == 0L) {
+    empty_lengjan_markets()
+  } else {
+    parse_lengjan_markets(fetch_markets(wanted))
+  }
+  taken_at <- now()
+
+  open <- .lengjan_open_priced(markets)
+  mapped <- .lengjan_canonical_rows(markets)
+  is_open <- paste(mapped$event_id, mapped$market_id, mapped$selection) %in%
+    paste(open$event_id, open$market_id, open$selection)
+  closed <- mapped[!is_open, c("event_id", "market", "outcome", "line", "odds"),
+    drop = FALSE
+  ]
+  per_league <- function(build) {
+    dplyr::bind_rows(c(list(empty_lengjan_api_odds()), lapply(leagues, build)))
+  }
+  list(
+    taken_at = taken_at,
+    events = events,
+    odds = per_league(function(lg) {
+      lengjan_api_odds_rows(events, markets, lg, taken_at)
+    }),
+    closed = per_league(function(lg) {
+      .lengjan_odds_shape(events, closed, lg, taken_at, bad_kickoff = "drop")
+    })
   )
 }
 

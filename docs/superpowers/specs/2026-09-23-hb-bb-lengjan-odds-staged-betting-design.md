@@ -124,6 +124,15 @@ off < scrape < paper < manual < auto
 
 ### WS3: football cutover with a shadow comparison
 
+> **Status 2026-11-24:** the comparison exists (`scripts/0Nc_compare_odds_sources.R`,
+> `compare_odds_sources()`), with a team-name audit (`scripts/0Nc_audit_team_names.R`).
+> "Identical" is replaced by a proposed bracketed rule awaiting the owner: a DOM row
+> passes when the API shows the same price in a snapshot taken just before or just after
+> the DOM run. The cutover change set is prepared on branch
+> `claude/football-lengjan-api-cutover`, not merged. Runbook:
+> `docs/runbooks/odds-source-cutover.md`; first results:
+> `docs/reports/2026-11-24-football-api-shadow.md`.
+
 - A per-league `lengjan.source: api | dom`, defaulting to `dom`. Handball and basketball are `api`
   from day one. Football stays `dom` until cutover.
 - `scripts/0Nc_compare_odds_sources.R` runs both scrapers in memory for football at the same moment
