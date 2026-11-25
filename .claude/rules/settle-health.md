@@ -57,7 +57,9 @@ semantics or a coordination mechanism.
 (`data/beliefs/diagnostics/`, written per fit by `fit_league`), the weekly
 Stan reference fit (`check_engine_reference`: one row per football, handball
 and basketball cell; WARN when the cell's newest
-`data/health/engine_reference/` row did not pass or is over 15 days old, or
+`data/health/engine_reference/` row did not pass (handball and basketball:
+a mean or a single fixture's difference past the limits the row carries) or
+is over 15 days old, or
 when a run covered its sport (the rows' `run_sports`) and wrote no row for it;
 PAUSED before the first run and for a sport no run has covered yet),
 orphaned-bet,

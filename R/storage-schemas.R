@@ -291,6 +291,15 @@ schemas <- function() {
       total_mean_abs_diff  = arrow::float64(),
       total_max_abs_diff   = arrow::float64(),
       line_threshold       = arrow::float64(),
+      # The limits on any single fixture's difference, result and each line
+      # (HBBB_REFERENCE_LIMITS' result_max and line_max). NA on football rows.
+      max_threshold        = arrow::float64(),
+      line_max_threshold   = arrow::float64(),
+      # What nuts_max_rhat covers: "forecasts" on handball / basketball rows
+      # (each fixture's predictive location and the observation sd),
+      # "hyperparameters and states" on football's. NA on rows written
+      # before 2026-11-25, whose scope follows from the sport.
+      nuts_rhat_scope      = arrow::string(),
       # The sports the run fitted, comma-separated: tells a cell its run never
       # covered (PAUSED) from one it covered and wrote nothing for (WARN). NA
       # on rows written before 2026-11-24, which covered football only.
@@ -329,6 +338,9 @@ optional_columns <- function(table) {
       total_mean_abs_diff = NA_real_,
       total_max_abs_diff = NA_real_,
       line_threshold = NA_real_,
+      max_threshold = NA_real_,
+      line_max_threshold = NA_real_,
+      nuts_rhat_scope = NA_character_,
       run_sports = NA_character_
     ),
     list()

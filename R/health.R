@@ -42,6 +42,8 @@ health_thresholds <- function() {
     engine_reference_max_mean_abs_diff = FV2_REFERENCE_MAX_MEAN_ABS_DIFF,
     engine_reference_hbbb_max_mean_abs_diff = HBBB_REFERENCE_LIMITS$in_season[["result"]],
     engine_reference_hbbb_max_line_mean_abs_diff = HBBB_REFERENCE_LIMITS$in_season[["line"]],
+    engine_reference_hbbb_max_fixture_abs_diff = HBBB_REFERENCE_LIMITS$in_season[["result_max"]],
+    engine_reference_hbbb_max_line_fixture_abs_diff = HBBB_REFERENCE_LIMITS$in_season[["line_max"]],
     engine_reference_max_age_days = 15
   )
 }
@@ -454,17 +456,20 @@ check_diagnostics_drift <- function(root, th, paused_cells = character(0)) {
 #' and basketball (scripts/engine_reference.R, weekly). WARN when that run did
 #' not pass (a mean absolute difference in outcome probabilities above its
 #' limit -- `engine_reference_max_mean_abs_diff` for football; for handball and
-#' basketball the limits stored on the row, `threshold` on the result and
-#' `line_threshold` on each of the spread and total lines, which depend on
-#' whether the row's fixtures cross the season break, else
-#' `engine_reference_hbbb_max_mean_abs_diff` and
-#' `engine_reference_hbbb_max_line_mean_abs_diff` -- a NUTS fit past `div_frac_warn` or `rhat_warn`, or an INLA
-#' fit without a mode or failing its gate), or when it is older than
+#' basketball the limits stored on the row, which depend on whether the row's
+#' fixtures cross the season break: `threshold` on the mean result
+#' difference, `line_threshold` on the mean difference on each of the spread
+#' and total lines, `max_threshold` and `line_max_threshold` on any single
+#' fixture's, else the in-season `engine_reference_hbbb_*` limits -- a NUTS
+#' fit past `div_frac_warn` or `rhat_warn`, or an INLA fit without a mode or
+#' failing its gate), or when it is older than
 #' `engine_reference_max_age_days` (the weekly run stopped). PAUSED before the
 #' first run (no store yet), and for a sport no run has covered yet (no row's
 #' `run_sports` names it; a row without one covered its own sport): nothing to
 #' judge, and not an alarm. An unreadable store, or a cell with no row while a
-#' run has covered its sport, is WARN.
+#' run has covered its sport, is WARN. The value names what the row's Rhat
+#' covers (`nuts_rhat_scope`): the forecasts for handball and basketball, the
+#' hyperparameters and states for football.
 #' @noRd
 check_engine_reference <- function(root, now, th) {
   cells <- expand.grid(
@@ -520,9 +525,17 @@ check_engine_reference <- function(root, now, th) {
     mine$run_date <- as.Date(as.character(mine$run_date))
     newest <- mine[order(mine$run_date, mine$run_at, decreasing = TRUE)[1L], , drop = FALSE]
     age <- as.numeric(difftime(now, newest$run_at, units = "days"))
+    rhat_scope <- if ("nuts_rhat_scope" %in% names(newest) && !is.na(newest$nuts_rhat_scope)) {
+      newest$nuts_rhat_scope
+    } else if (identical(sport, "football")) {
+      FV2_REFERENCE_RHAT_SCOPE
+    } else {
+      HBBB_REFERENCE_RHAT_SCOPE
+    }
     tail_of <- sprintf(
-      "over %d fixtures (%s); NUTS %d divergences, Rhat %.3f; INLA mode status %d",
-      newest$n_fixtures, newest$fixtures, newest$nuts_divergences, newest$nuts_max_rhat, newest$inla_mode_status
+      "over %d fixtures (%s); NUTS %d divergences, Rhat %.3f (%s); INLA mode status %d",
+      newest$n_fixtures, newest$fixtures, newest$nuts_divergences, newest$nuts_max_rhat, rhat_scope,
+      newest$inla_mode_status
     )
     if (identical(sport, "football")) {
       breach <- !isTRUE(newest$passed) ||
@@ -532,16 +545,31 @@ check_engine_reference <- function(root, now, th) {
     } else {
       # The limits the row was judged by: its regime's (within a season or
       # across the season break); the in-season ones for a row without them.
-      result <- if (is.na(newest$threshold)) th$engine_reference_hbbb_max_mean_abs_diff else newest$threshold
-      line <- if (is.na(newest$line_threshold)) th$engine_reference_hbbb_max_line_mean_abs_diff else newest$line_threshold
+      stored <- function(col, default) {
+        x <- if (col %in% names(newest)) newest[[col]] else NA_real_
+        if (is.na(x)) default else x
+      }
+      result <- stored("threshold", th$engine_reference_hbbb_max_mean_abs_diff)
+      line <- stored("line_threshold", th$engine_reference_hbbb_max_line_mean_abs_diff)
+      result_max <- stored("max_threshold", th$engine_reference_hbbb_max_fixture_abs_diff)
+      line_max <- stored("line_max_threshold", th$engine_reference_hbbb_max_line_fixture_abs_diff)
       breach <- !isTRUE(newest$passed) ||
         isTRUE(newest$mean_abs_diff > result) ||
-        isTRUE(newest$spread_mean_abs_diff > line) || isTRUE(newest$total_mean_abs_diff > line)
+        isTRUE(newest$spread_mean_abs_diff > line) || isTRUE(newest$total_mean_abs_diff > line) ||
+        isTRUE(newest$max_abs_diff > result_max) ||
+        isTRUE(newest$spread_max_abs_diff > line_max) || isTRUE(newest$total_max_abs_diff > line_max)
       what <- sprintf(
-        "%s: mean |p_INLA - p_NUTS| = %.4f (result), %.4f (spread line), %.4f (total line) %s",
-        format(newest$run_date), newest$mean_abs_diff, newest$spread_mean_abs_diff, newest$total_mean_abs_diff, tail_of
+        paste(
+          "%s: mean |p_INLA - p_NUTS| = %.4f (result), %.4f (spread line), %.4f (total line);",
+          "largest at one fixture %.4f, %.4f, %.4f %s"
+        ),
+        format(newest$run_date), newest$mean_abs_diff, newest$spread_mean_abs_diff, newest$total_mean_abs_diff,
+        newest$max_abs_diff, newest$spread_max_abs_diff, newest$total_max_abs_diff, tail_of
       )
-      limits <- sprintf("result <= %s, spread and total lines <= %s", result, line)
+      limits <- sprintf(
+        "mean: result <= %s, spread and total lines <= %s; one fixture: result <= %s, lines <= %s",
+        result, line, result_max, line_max
+      )
     }
     if (age > th$engine_reference_max_age_days) {
       health_row(

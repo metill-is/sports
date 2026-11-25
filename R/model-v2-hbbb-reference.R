@@ -14,11 +14,11 @@ NULL
 # the two engines' predictive probabilities for the same fixtures are
 # compared: the result (home, level, away) and the probability of clearing
 # the half-point spread and total lines nearest the fixture's expected margin
-# and total, where a predictive is steepest. A mean absolute difference above
-# its limit (HBBB_REFERENCE_LIMITS: one pair within a season, a looser one
-# across the season break), an unsound NUTS fit or an INLA fit without a mode
-# or failing its gate does not pass, and the health check
-# (check_engine_reference()) warns.
+# and total, where a predictive is steepest. A mean absolute difference, or
+# one fixture's difference, above its limit (HBBB_REFERENCE_LIMITS: one set
+# within a season, a looser one across the season break), an unsound NUTS
+# fit or an INLA fit without a mode or failing its gate does not pass, and
+# the health check (check_engine_reference()) warns.
 #
 # The comparison reads the predictive locations and observation sds, not the
 # score draws, so no score-sampling noise enters it; the level-score shift
@@ -29,39 +29,68 @@ NULL
 # within the season) or a week ahead in the next season (the off-season), so
 # the check runs all year.
 
-#' The largest mean absolute differences between INLA and NUTS that pass,
-#' per regime: `result` for the result probabilities (home, level, away),
-#' `line` for each of the spread and total lines nearest the fixture's
-#' expected margin and total.
+#' The largest differences between INLA and NUTS that pass, per regime.
 #'
-#' Set from measured differences (2026-11-24, `.claude/rules/model-decide.md`,
-#' `docs/evidence/hbbb-engine-reference/`): within a season, where the check
-#' is to catch the approximation getting worse as data arrive, the largest
-#' measured means were 0.0039 (result) and 0.0116 (a line), over twelve
-#' cell-runs at three dates (late in the regular season, a round or two into
-#' a season, mid-season). Across the season break -- a fixture in a season
-#' the cell has no match of yet: pre-season, and the first fixtures of a
-#' season -- a team's next-season state depends on how its strength splits
-#' between club and season level, which the data identify only as a sum; the
-#' engines differ more there, for that reason (basketball women's mean total
-#' gap 0.0250, measured with NUTS converged, Rhat 1.005), so the limits are
-#' looser.
+#' `result` and `line` hold the mean absolute difference over the compared
+#' fixtures: `result` of the result probabilities (home, level, away), `line`
+#' of each of the spread and total lines nearest a fixture's expected margin
+#' and total. `result_max` holds the largest difference in any one result
+#' probability of any one fixture, `line_max` on either line of any one
+#' fixture: a mean over 10 to 260 fixtures hides an error confined to a few
+#' of them (one team's indices, one division's map), and the largest
+#' difference is what moves first.
+#'
+#' Set from measured differences (`docs/evidence/hbbb-engine-reference/`,
+#' which says which limits were set after seeing which runs). Within a
+#' season, where the check is to catch the approximation getting worse as
+#' data arrive, the largest measured means were 0.0039 (result) and 0.0116 (a
+#' line) and the largest single-fixture differences 0.0203 and 0.0370, over
+#' eleven cell-runs at three dates. Across the season break (any fixture
+#' team without a match yet in the fixture's season, `hbbb_v2_across_break()`)
+#' a team's next-season state depends on how its strength splits between
+#' club and season level, which the data identify only as a sum; the engines
+#' differ more there, for that reason (basketball women's mean total gap
+#' 0.0250, measured with NUTS converged, Rhat 1.005; largest single-fixture
+#' differences 0.0302 and 0.0704), so the limits are looser. The
+#' single-fixture limits are about twice the largest measured, as the mean
+#' limits are two to three times theirs.
 #' @noRd
 HBBB_REFERENCE_LIMITS <- list(
-  in_season = c(result = 0.01, line = 0.025),
-  across_break = c(result = 0.02, line = 0.05)
+  in_season = c(result = 0.01, line = 0.025, result_max = 0.04, line_max = 0.075),
+  across_break = c(result = 0.02, line = 0.05, result_max = 0.06, line_max = 0.14)
 )
 
-#' Does a spec forecast a fixture in a season it has no training match of?
-#' The season-break regime of `HBBB_REFERENCE_LIMITS`.
+#' Does a spec forecast a team in a season it has no match of yet? The
+#' season-break regime of `HBBB_REFERENCE_LIMITS`.
+#'
+#' Decided per team, not per cell: a team without a match in the fixture's
+#' season (a match with a response, one the likelihood sees) has its season
+#' state from the AR(1)'s reversion of the last, so its forecast reads the
+#' club / season split however many other teams have played. The first
+#' weeks of a season are across the break until every fixture team has
+#' played (2026-10-09: one women's basketball team of twenty, in three
+#' fixtures of 22).
 #' @noRd
 hbbb_v2_across_break <- function(spec) {
-  spec$v$N_pred > 0L && max(spec$v$season_pred) > max(spec$v$season)
+  v <- spec$v
+  if (v$N_pred == 0L) {
+    return(FALSE)
+  }
+  obs <- spec$observed
+  played <- c(v$ts_home[obs], v$ts_away[obs])
+  !all(c(v$ts_home_pred, v$ts_away_pred) %in% played)
 }
 
 #' Where the Stan reference programs live, relative to the repository root.
 #' @noRd
 HBBB_REFERENCE_STAN_DIR <- c("docs", "reports", "2026-11-15-hb-bb-v2", "stan")
+
+#' What a handball / basketball row's `nuts_max_rhat` covers
+#' (`hbbb_v2_rhat_groups()`): the forecasts, every fixture's predictive
+#' location and the observation sd. A football row's covers the
+#' hyperparameters and states (`FV2_REFERENCE_RHAT_SCOPE`).
+#' @noRd
+HBBB_REFERENCE_RHAT_SCOPE <- "forecasts"
 
 #' One fingerprint of the two Stan reference programs and the fragments they
 #' include: a change to any of them changes the model the reference fits.
@@ -295,8 +324,13 @@ hbbb_v2_weekly_reference <- function(league, sex, end_date = Sys.Date(),
   spread_mad <- mean(diff[, "spread"])
   total_mad <- mean(diff[, "total"])
   limits <- HBBB_REFERENCE_LIMITS[[if (across) "across_break" else "in_season"]]
+  result_max <- max(result)
+  spread_max <- max(diff[, "spread"])
+  total_max <- max(diff[, "total"])
   passed <- isTRUE(mad <= limits[["result"]]) &&
     isTRUE(spread_mad <= limits[["line"]]) && isTRUE(total_mad <= limits[["line"]]) &&
+    isTRUE(result_max <= limits[["result_max"]]) &&
+    isTRUE(spread_max <= limits[["line_max"]]) && isTRUE(total_max <= limits[["line_max"]]) &&
     isTRUE(div_frac <= th$div_frac_warn) && isTRUE(nuts_rhat <= th$rhat_warn) &&
     mode_ok && gate_passed
   prov <- function(name) as.character(provenance[[name]] %||% NA_character_)
@@ -306,7 +340,7 @@ hbbb_v2_weekly_reference <- function(league, sex, end_date = Sys.Date(),
     run_date = end_date,
     run_at = as.POSIXct(floor(as.numeric(Sys.time())), origin = "1970-01-01", tz = "UTC"),
     fixtures = kind, n_fixtures = as.integer(spec$v$N_pred), n_train = as.integer(sum(spec$observed)),
-    mean_abs_diff = mad, max_abs_diff = max(result),
+    mean_abs_diff = mad, max_abs_diff = result_max,
     threshold = limits[["result"]],
     nuts_divergences = divergences, nuts_max_rhat = nuts_rhat,
     inla_mode_status = mode_status, inla_gate_passed = gate_passed, passed = passed,
@@ -316,9 +350,11 @@ hbbb_v2_weekly_reference <- function(league, sex, end_date = Sys.Date(),
       sha <- Sys.getenv("GITHUB_SHA")
       if (nzchar(sha)) sha else NA_character_
     },
-    spread_mean_abs_diff = spread_mad, spread_max_abs_diff = max(diff[, "spread"]),
-    total_mean_abs_diff = total_mad, total_max_abs_diff = max(diff[, "total"]),
-    line_threshold = limits[["line"]]
+    spread_mean_abs_diff = spread_mad, spread_max_abs_diff = spread_max,
+    total_mean_abs_diff = total_mad, total_max_abs_diff = total_max,
+    line_threshold = limits[["line"]],
+    max_threshold = limits[["result_max"]], line_max_threshold = limits[["line_max"]],
+    nuts_rhat_scope = HBBB_REFERENCE_RHAT_SCOPE
   )
   fx <- spec$pred
   fixtures <- tibble::tibble(
@@ -390,11 +426,13 @@ hbbb_v2_reference_inla <- function(league, sex, end_date, root = here::here("dat
 #' held to it. `states`: the club and season levels (`b`, `u`). `hyper`: the
 #' hyperparameters and fixed effects. A team's club level and its season
 #' levels are identified only as a sum (the season level's memory is high),
-#' so NUTS moves slowly along that ridge and their Rhat sits near 1.02 to 1.03
-#' while the sum, and every fixture's location, has converged (handball women,
+#' so NUTS moves slowly along that ridge and their Rhat runs past 1.02 while
+#' the sum, and every fixture's location, has converged (handball women,
 #' 2026-11-24: `b[6]` and `u[6, ]` at 1.023 to 1.026, `sigma_u` 1.024, the
-#' locations at most 1.003). The production gate's jump check leaves the
-#' same split ungated (`HBBB_V2_JUMP_CHECKED`).
+#' locations at most 1.003; men's basketball margin, 2026-10-09: the
+#' hyperparameters at 1.076 with a smallest bulk ESS of 46, the states at
+#' 1.046, the locations at 1.005). The production gate's jump check leaves
+#' the same split ungated (`HBBB_V2_JUMP_CHECKED`).
 #'
 #' @param summary `posterior::summarise_draws()` output with `variable` and
 #'   `rhat`.

@@ -212,24 +212,40 @@ paths:
   fixture (a break inside the season keeps the season; women's handball on
   2026-11-24 had none until 2026-12-10), or a week ahead in the next season
   when nothing is scheduled (`hbbb_v2_break_fixtures()`). Limits
-  (`HBBB_REFERENCE_LIMITS`, mean absolute differences, set from measured ones
-  in `docs/evidence/hbbb-engine-reference/`): within a season 0.01 on the
-  result and 0.025 on each line (largest measured 0.0039 and 0.0116 over
-  twelve cell-runs at three dates, one a round or two into a season); across the season break, when a fixture's
-  season has no training match yet (pre-season and the first fixtures of a
-  season; `hbbb_v2_across_break()`), 0.02 and 0.05 (largest measured 0.0065
-  and 0.0250). The break is looser because a team's next-season state
-  depends on how its strength splits between club and season level, which the
-  data identify only as a sum, and the engines differ there (basketball's
-  off-season totals 0.4 to 0.8 points apart on average, NUTS converged). The
-  row stores the limits it was judged by (`threshold`, `line_threshold`) and
-  the health check reads them. **The NUTS bar** is the health layer's
-  (divergences under 0.5 % of transitions per half, Rhat at most 1.02) applied
-  to what the comparison reads, each fixture's predictive location and the
-  observation sd (`hbbb_v2_rhat_groups()`): the club and season levels and
-  their sds run at Rhat 1.02 to 1.05 on fits whose forecasts are at 1.003 to
-  1.007, the same split the gate's jump check leaves ungated. The other
-  groups' Rhat goes to the run's `diagnostics_*.csv`. NUTS runs at
+  (`HBBB_REFERENCE_LIMITS`, set from measured differences in
+  `docs/evidence/hbbb-engine-reference/`, which says which limits were set
+  after seeing which runs: 2026-10-09 is the one held-out in-season date,
+  and the break has none beyond one cell): on the mean over the compared
+  fixtures, within a season 0.01 on the result and 0.025 on each line
+  (largest measured 0.0039 and 0.0116 over eleven cell-runs at three dates)
+  and across the season break 0.02 and 0.05 (0.0065 and 0.0250); on any
+  single fixture, 0.04 on a result probability and 0.075 on a line within a
+  season, 0.06 and 0.14 across the break, about twice the largest measured
+  (0.0203 / 0.0370 and 0.0302 / 0.0704). The single-fixture limits catch an
+  error confined to a few fixtures (one team's indices, one division's map)
+  that the means hide: one team's margin off by about 0.6 goals (handball)
+  or 1.6 points (basketball) for the median team within a season, against 1
+  to 3 goals and 7 to 9.5 points with the means alone
+  (`docs/evidence/hbbb-engine-reference/diagnostics/detection.R`). A run is
+  across the break while any fixture team has no
+  match (with a response) yet in the fixture's season
+  (`hbbb_v2_across_break()`, decided per team: such a team's state is the
+  AR(1)'s reversion of the last season, so its forecast reads the club /
+  season split however many others have played). The break is looser
+  because that split, which the data identify only as a sum, reaches the
+  forecast, and the engines split it differently (basketball's off-season
+  totals 0.4 to 0.8 points apart on average, NUTS converged). The row
+  stores the limits it was judged by (`threshold`, `line_threshold`,
+  `max_threshold`, `line_max_threshold`) and the health check reads them.
+  **The NUTS bar** is the health layer's (divergences under 0.5 % of
+  transitions per half, Rhat at most 1.02) applied to what the comparison
+  reads, each fixture's predictive location and the observation sd
+  (`hbbb_v2_rhat_groups()`; the row's `nuts_rhat_scope` is `"forecasts"`,
+  football's `"hyperparameters and states"`). The forecasts were at most
+  1.007 on every passing fit while the hyperparameters reached 1.076 (bulk
+  ESS 46) and the club and season levels 1.046 (men's basketball margin,
+  2026-10-09), the same split the gate's jump check leaves ungated. The
+  other groups' Rhat goes to the run's `diagnostics_*.csv`. NUTS runs at
   `adapt_delta` 0.99 (women's basketball margin: 41 divergences in 4,000 at
   0.95, none at 0.99, 1.7 times the sampling time), and each chain samples
   2,000 iterations instead of 1,000 across the season break, where the

@@ -121,6 +121,9 @@ test_that("the weekly reference compares the two engines' probabilities fixture 
   expect_identical(res$row$sex, "male")
   expect_identical(res$row$run_date, s$end_date)
   expect_equal(res$row$n_train, s$n_obs)
+  # Its Rhat covers the hyperparameters and states, where handball's and
+  # basketball's covers the forecasts.
+  expect_identical(res$row$nuts_rhat_scope, "hyperparameters and states")
   # As write_table() stores it: the columns football does not fill are optional.
   expect_no_error(validate_against_schema(fill_optional_columns(res$row, "engine_reference"), "engine_reference"))
 

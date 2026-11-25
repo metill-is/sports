@@ -11,14 +11,17 @@ hbbb_stan_dir <- function() do.call(testthat::test_path, as.list(c("..", "..", H
 
 # Draws of a fixture's predictive in the fitters' shared layout: the same
 # location in every draw, shifted by `shift` on the margin and `shift_t` on
-# the total.
+# the total, and the first fixture's alone by `shift_one` and `shift_one_t`.
 .hbbb_fake_fit <- function(shift = 0, shift_t = 0, divergent = c(0L, 0L), rhat = c(1.002, 1.004),
-                           mode_status = c(0L, 0L), gate_passed = TRUE, n_draws = 40L) {
+                           mode_status = c(0L, 0L), gate_passed = TRUE, n_draws = 40L,
+                           shift_one = 0, shift_one_t = 0) {
   function(spec) {
     n_pred <- spec$v$N_pred
     big <- identical(spec$opts$within, "ar1")
     centre_m <- seq(-3, 3, length.out = n_pred) + shift
     centre_t <- rep(if (big) 165 else 55, n_pred) + shift_t
+    centre_m[1] <- centre_m[1] + shift_one
+    centre_t[1] <- centre_t[1] + shift_one_t
     list(
       loc_m = matrix(centre_m, n_draws, n_pred, byrow = TRUE),
       loc_t = matrix(centre_t, n_draws, n_pred, byrow = TRUE),
@@ -272,6 +275,8 @@ test_that("the weekly reference compares the two engines fixture by fixture, bot
     expect_identical(same$row$model_version, HBBB_V2_VERSION)
     expect_equal(c(same$row$mean_abs_diff, same$row$spread_mean_abs_diff, same$row$total_mean_abs_diff), c(0, 0, 0))
     expect_true(same$row$passed, info = sport)
+    # Its Rhat is the forecasts', where football's is the hyperparameters' and states'.
+    expect_identical(same$row$nuts_rhat_scope, "forecasts")
     # As write_table() stores it: the script adds run_sports.
     expect_no_error(validate_against_schema(fill_optional_columns(same$row, "engine_reference"), "engine_reference"))
 
@@ -362,6 +367,61 @@ test_that("a spec crosses the season break when a fixture's season has no traini
   expect_true(hbbb_v2_across_break(hbbb_fixture_spec("handball", root = fixture_hbbb_root(schedule_season = 2101L))$spec))
 })
 
+test_that("one fixture team without a match in its season puts the spec across the break, however many have played", {
+  for (sport in c("handball", "basketball")) {
+    spec <- hbbb_fixture_spec(sport, root = fixture_hbbb_root())$spec
+    v <- spec$v
+    expect_false(hbbb_v2_across_break(spec))
+    # The first fixture's home team, in the fixture's season.
+    ts <- v$ts_home_pred[1]
+    mine <- v$ts_home == ts | v$ts_away == ts
+    expect_true(any(mine & spec$observed), info = sport)
+
+    # Its matches of the season not played yet: every other team has played
+    # the season, so the season is under way.
+    unplayed <- spec
+    keep <- !mine
+    for (nm in c("home", "away", "season", "ts_home", "ts_away")) unplayed$v[[nm]] <- v[[nm]][keep]
+    unplayed$observed <- spec$observed[keep]
+    expect_identical(max(unplayed$v$season[unplayed$observed]), max(v$season_pred), info = sport)
+    expect_true(hbbb_v2_across_break(unplayed), info = sport)
+
+    # Played, but without a response the likelihood sees (a basketball match
+    # without regulation-time scores): its season state is still the prior's.
+    no_response <- spec
+    no_response$observed[mine] <- FALSE
+    expect_true(hbbb_v2_across_break(no_response), info = sport)
+  }
+})
+
+test_that("one fixture far apart does not pass, though the means do", {
+  run <- function(root, fit_nuts) .hbbb_reference("handball", root, fit_inla = .hbbb_fake_fit(), fit_nuts = fit_nuts)$row
+  lim <- HBBB_REFERENCE_LIMITS$in_season
+  # The first of six fixtures 0.7 goals apart on the margin: about 0.05 on one
+  # of its result probabilities, under 0.01 on the mean. Its total 1.5 goals
+  # apart: about 0.1 on its line, under 0.02 on the mean.
+  one <- run(fixture_hbbb_root(), .hbbb_fake_fit(shift_one = 0.7))
+  tot <- run(fixture_hbbb_root(), .hbbb_fake_fit(shift_one_t = 1.5))
+  expect_false(one$passed)
+  expect_false(tot$passed)
+  expect_lte(one$mean_abs_diff, lim[["result"]])
+  expect_lte(one$spread_mean_abs_diff, lim[["line"]])
+  expect_gt(one$max_abs_diff, lim[["result_max"]])
+  expect_identical(c(one$max_threshold, one$line_max_threshold), unname(lim[c("result_max", "line_max")]))
+  expect_lte(tot$total_mean_abs_diff, lim[["line"]])
+  expect_gt(tot$total_max_abs_diff, lim[["line_max"]])
+
+  # Across the season break the looser single-fixture limits apply.
+  brk <- HBBB_REFERENCE_LIMITS$across_break
+  pre <- fixture_hbbb_root(schedule_season = 2101L)
+  for (fit in list(.hbbb_fake_fit(shift_one = 0.7), .hbbb_fake_fit(shift_one_t = 1.5))) {
+    row <- run(pre, fit)
+    expect_lte(max(row$max_abs_diff), brk[["result_max"]])
+    expect_true(row$passed)
+    expect_identical(c(row$max_threshold, row$line_max_threshold), unname(brk[c("result_max", "line_max")]))
+  }
+})
+
 test_that("with nothing scheduled the weekly reference pairs last season's teams in the next season", {
   gone <- function(s) s[!(s$sport == "handball" & s$sex == "male"), ]
   root <- fixture_hbbb_root(schedule_edit = gone)
@@ -409,18 +469,22 @@ test_that("the INLA side pairs the halves as production does and records the gat
 # ---- Health -------------------------------------------------------------------------
 
 .hbbb_ref_row <- function(sport = "handball", sex = "male", run_date = as.Date("2026-11-30"), mad = 0.003,
-                          spread = 0.004, total = 0.003, passed = TRUE, run_sports = "football,handball,basketball") {
+                          spread = 0.004, total = 0.003, passed = TRUE, run_sports = "football,handball,basketball",
+                          mad_max = mad * 3, spread_max = spread * 3, total_max = total * 3) {
   tibble::tibble(
     sport = sport, country = "iceland", sex = sex, run_date = run_date,
     run_at = as.POSIXct(paste(run_date, "10:00:00"), tz = "UTC"),
     fixtures = "upcoming", n_fixtures = 20L, n_train = 1300L,
-    mean_abs_diff = mad, max_abs_diff = mad * 3, threshold = HBBB_REFERENCE_LIMITS$in_season[["result"]],
+    mean_abs_diff = mad, max_abs_diff = mad_max, threshold = HBBB_REFERENCE_LIMITS$in_season[["result"]],
     nuts_divergences = 0L, nuts_max_rhat = 1.004, inla_mode_status = 0L,
     inla_gate_passed = TRUE, passed = passed, inla_version = "25.6.7", cmdstan_version = "2.38.0",
     stan_md5 = "abc", model_version = HBBB_V2_VERSION, code_commit = "sha",
-    spread_mean_abs_diff = spread, spread_max_abs_diff = spread * 3,
-    total_mean_abs_diff = total, total_max_abs_diff = total * 3,
-    line_threshold = HBBB_REFERENCE_LIMITS$in_season[["line"]], run_sports = run_sports
+    spread_mean_abs_diff = spread, spread_max_abs_diff = spread_max,
+    total_mean_abs_diff = total, total_max_abs_diff = total_max,
+    line_threshold = HBBB_REFERENCE_LIMITS$in_season[["line"]],
+    max_threshold = unname(HBBB_REFERENCE_LIMITS$in_season["result_max"]),
+    line_max_threshold = unname(HBBB_REFERENCE_LIMITS$in_season["line_max"]),
+    nuts_rhat_scope = "forecasts", run_sports = run_sports
   )
 }
 
@@ -494,6 +558,8 @@ test_that("a handball or basketball row is judged by the limits it carries", {
   row <- .hbbb_ref_row("handball", "female", total = 0.04)
   row$threshold <- brk[["result"]]
   row$line_threshold <- brk[["line"]]
+  row$max_threshold <- brk[["result_max"]]
+  row$line_max_threshold <- brk[["line_max"]]
   row$fixtures <- "off-season pairings, across the season break"
   write_table(row, "engine_reference", root = root)
   expect_identical(status_of(), "OK")
@@ -502,6 +568,75 @@ test_that("a handball or basketball row is judged by the limits it carries", {
   row$line_threshold <- NA_real_
   write_table(row, "engine_reference", root = root)
   expect_identical(status_of(), "WARN")
+})
+
+test_that("one fixture past its limit warns, by the single-fixture limits the row carries", {
+  root <- withr::local_tempdir()
+  now <- as.POSIXct("2026-12-01 12:00:00", tz = "UTC")
+  status_of <- function() {
+    h <- check_engine_reference(root, now, health_thresholds())
+    h[h$scope == "basketball/iceland/male", ]
+  }
+  # A row as stored before rows carried single-fixture limits is held to the
+  # in-season ones, 0.04 on a result probability and 0.075 on a line: with
+  # its means well inside and stored as passed, one fixture past a limit
+  # still warns.
+  legacy <- function(...) {
+    row <- .hbbb_ref_row("basketball", "male", ...)
+    row[setdiff(names(row), c("max_threshold", "line_max_threshold", "nuts_rhat_scope"))]
+  }
+  write_table(legacy(), "engine_reference", root = root)
+  expect_identical(status_of()$status, "OK")
+  day <- as.Date("2026-12-01")
+  for (past in list(list(mad_max = 0.05), list(spread_max = 0.085), list(total_max = 0.085))) {
+    write_table(do.call(legacy, c(list(run_date = day), past)), "engine_reference", root = root)
+    expect_identical(status_of()$status, "WARN", info = names(past))
+  }
+  lim <- HBBB_REFERENCE_LIMITS$in_season
+  expect_gt(0.05, lim[["result_max"]])
+  expect_gt(0.085, lim[["line_max"]])
+  expect_match(status_of()$value, "largest at one fixture", fixed = TRUE)
+
+  # A row carries its regime's: within a season the in-season ones, across
+  # the season break looser ones.
+  write_table(.hbbb_ref_row("basketball", "male", run_date = day, total_max = 0.085), "engine_reference", root = root)
+  expect_identical(status_of()$status, "WARN")
+  brk <- HBBB_REFERENCE_LIMITS$across_break
+  row <- .hbbb_ref_row("basketball", "male", run_date = day, total_max = 0.085)
+  row$fixtures <- "off-season pairings, across the season break"
+  row$threshold <- brk[["result"]]
+  row$line_threshold <- brk[["line"]]
+  row$max_threshold <- brk[["result_max"]]
+  row$line_max_threshold <- brk[["line_max"]]
+  write_table(row, "engine_reference", root = root)
+  expect_identical(status_of()$status, "OK")
+})
+
+test_that("the health value says what each row's Rhat covers: forecasts, or football's hyperparameters and states", {
+  root <- withr::local_tempdir()
+  now <- as.POSIXct("2026-12-01 12:00:00", tz = "UTC")
+  # Rows as written before they carried the scope: it follows from the sport.
+  football <- tibble::tibble(
+    sport = "football", country = "iceland", sex = "male", run_date = as.Date("2026-11-30"),
+    run_at = as.POSIXct("2026-11-30 10:00:00", tz = "UTC"), fixtures = "upcoming", n_fixtures = 10L,
+    n_train = 2900L, mean_abs_diff = 0.003, max_abs_diff = 0.01, threshold = 0.01, nuts_divergences = 0L,
+    nuts_max_rhat = 1.019, inla_mode_status = 0L, inla_gate_passed = TRUE, passed = TRUE,
+    inla_version = "25.6.7", cmdstan_version = "2.38.0", stan_md5 = "abc", model_version = "2.0", code_commit = "sha"
+  )
+  write_table(football, "engine_reference", root = root)
+  handball <- .hbbb_ref_row("handball", "male")
+  write_table(handball[setdiff(names(handball), c("max_threshold", "line_max_threshold", "nuts_rhat_scope"))],
+    "engine_reference",
+    root = root
+  )
+  h <- check_engine_reference(root, now, health_thresholds())
+  value <- stats::setNames(h$value, h$scope)
+  expect_match(value[["football/iceland/male"]], "Rhat 1.019 (hyperparameters and states)", fixed = TRUE)
+  expect_match(value[["handball/iceland/male"]], "Rhat 1.004 (forecasts)", fixed = TRUE)
+  # A row that carries it is named by it.
+  write_table(.hbbb_ref_row("basketball", "female"), "engine_reference", root = root)
+  h <- check_engine_reference(root, now, health_thresholds())
+  expect_match(h$value[h$scope == "basketball/iceland/female"], "Rhat 1.004 (forecasts)", fixed = TRUE)
 })
 
 # ---- The script ---------------------------------------------------------------------
