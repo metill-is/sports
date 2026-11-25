@@ -1,0 +1,588 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-11-24T22:00:27Z",
+  "groups": [
+    {
+      "group": "A",
+      "label_is": "Riðill A",
+      "stage": "preliminary",
+      "venue_is": "Oradea",
+      "advance_n": 2,
+      "teams": [
+        {
+          "team": "Hungary",
+          "team_is": "Ungverjaland",
+          "iso2": "hu",
+          "played": 0,
+          "won": 0,
+          "drawn": 0,
+          "lost": 0,
+          "points": 0,
+          "gf": 0,
+          "ga": 0,
+          "gd": 0,
+          "proj_points": 5.32,
+          "proj_gd": 21.98,
+          "p_pos": [
+            0.8012,
+            0.1587,
+            0.0306,
+            0.0095
+          ],
+          "p_advance": 0.9599
+        },
+        {
+          "team": "Montenegro",
+          "team_is": "Svartfjallaland",
+          "iso2": "me",
+          "played": 0,
+          "won": 0,
+          "drawn": 0,
+          "lost": 0,
+          "points": 0,
+          "gf": 0,
+          "ga": 0,
+          "gd": 0,
+          "proj_points": 2.77,
+          "proj_gd": -2.55,
+          "p_pos": [
+            0.1001,
+            0.3831,
+            0.3173,
+            0.1995
+          ],
+          "p_advance": 0.4832
+        },
+        {
+          "team": "Slovenia",
+          "team_is": "Slóvenía",
+          "iso2": "si",
+          "played": 0,
+          "won": 0,
+          "drawn": 0,
+          "lost": 0,
+          "points": 0,
+          "gf": 0,
+          "ga": 0,
+          "gd": 0,
+          "proj_points": 2.37,
+          "proj_gd": -5.92,
+          "p_pos": [
+            0.069,
+            0.3002,
+            0.3514,
+            0.2793
+          ],
+          "p_advance": 0.3693
+        },
+        {
+          "team": "Iceland",
+          "team_is": "Ísland",
+          "iso2": "is",
+          "played": 0,
+          "won": 0,
+          "drawn": 0,
+          "lost": 0,
+          "points": 0,
+          "gf": 0,
+          "ga": 0,
+          "gd": 0,
+          "proj_points": 1.54,
+          "proj_gd": -13.52,
+          "p_pos": [
+            0.0296,
+            0.158,
+            0.3007,
+            0.5117
+          ],
+          "p_advance": 0.1876
+        }
+      ]
+    },
+    {
+      "group": "B",
+      "label_is": "Riðill B",
+      "stage": "preliminary",
+      "venue_is": "Cluj-Napoca",
+      "advance_n": 2,
+      "teams": [
+        {
+          "team": "Norway",
+          "team_is": "Noregur",
+          "iso2": "no",
+          "played": 0,
+          "won": 0,
+          "drawn": 0,
+          "lost": 0,
+          "points": 0,
+          "gf": 0,
+          "ga": 0,
+          "gd": 0,
+          "proj_points": 5.87,
+          "proj_gd": 52.4,
+          "p_pos": [
+            0.9496,
+            0.05,
+            0.0004,
+            0
+          ],
+          "p_advance": 0.9996
+        },
+        {
+          "team": "Romania",
+          "team_is": "Rúmenía",
+          "iso2": "ro",
+          "played": 0,
+          "won": 0,
+          "drawn": 0,
+          "lost": 0,
+          "points": 0,
+          "gf": 0,
+          "ga": 0,
+          "gd": 0,
+          "proj_points": 3.85,
+          "proj_gd": 16.03,
+          "p_pos": [
+            0.0494,
+            0.8298,
+            0.1206,
+            0.0001
+          ],
+          "p_advance": 0.8792
+        },
+        {
+          "team": "Switzerland",
+          "team_is": "Sviss",
+          "iso2": "ch",
+          "played": 0,
+          "won": 0,
+          "drawn": 0,
+          "lost": 0,
+          "points": 0,
+          "gf": 0,
+          "ga": 0,
+          "gd": 0,
+          "proj_points": 2.23,
+          "proj_gd": -10.69,
+          "p_pos": [
+            0.001,
+            0.1201,
+            0.8579,
+            0.021
+          ],
+          "p_advance": 0.1211
+        },
+        {
+          "team": "North Macedonia",
+          "team_is": "Norður-Makedónía",
+          "iso2": "mk",
+          "played": 0,
+          "won": 0,
+          "drawn": 0,
+          "lost": 0,
+          "points": 0,
+          "gf": 0,
+          "ga": 0,
+          "gd": 0,
+          "proj_points": 0.06,
+          "proj_gd": -57.73,
+          "p_pos": [
+            0,
+            0.0001,
+            0.0211,
+            0.9788
+          ],
+          "p_advance": 0.0001
+        }
+      ]
+    },
+    {
+      "group": "C",
+      "label_is": "Riðill C",
+      "stage": "preliminary",
+      "venue_is": "Antalya",
+      "advance_n": 2,
+      "teams": [
+        {
+          "team": "Denmark",
+          "team_is": "Danmörk",
+          "iso2": "dk",
+          "played": 0,
+          "won": 0,
+          "drawn": 0,
+          "lost": 0,
+          "points": 0,
+          "gf": 0,
+          "ga": 0,
+          "gd": 0,
+          "proj_points": 5.72,
+          "proj_gd": 41.61,
+          "p_pos": [
+            0.8776,
+            0.1222,
+            0.0003,
+            0
+          ],
+          "p_advance": 0.9998
+        },
+        {
+          "team": "Spain",
+          "team_is": "Spánn",
+          "iso2": "es",
+          "played": 0,
+          "won": 0,
+          "drawn": 0,
+          "lost": 0,
+          "points": 0,
+          "gf": 0,
+          "ga": 0,
+          "gd": 0,
+          "proj_points": 4.14,
+          "proj_gd": 15.73,
+          "p_pos": [
+            0.122,
+            0.8382,
+            0.0378,
+            0.0021
+          ],
+          "p_advance": 0.9601
+        },
+        {
+          "team": "Turkey",
+          "team_is": "Tyrkland",
+          "iso2": "tr",
+          "played": 0,
+          "won": 0,
+          "drawn": 0,
+          "lost": 0,
+          "points": 0,
+          "gf": 0,
+          "ga": 0,
+          "gd": 0,
+          "proj_points": 1.31,
+          "proj_gd": -25.43,
+          "p_pos": [
+            0.0004,
+            0.0303,
+            0.5808,
+            0.3885
+          ],
+          "p_advance": 0.0307
+        },
+        {
+          "team": "Greece",
+          "team_is": "Grikkland",
+          "iso2": "gr",
+          "played": 0,
+          "won": 0,
+          "drawn": 0,
+          "lost": 0,
+          "points": 0,
+          "gf": 0,
+          "ga": 0,
+          "gd": 0,
+          "proj_points": 0.84,
+          "proj_gd": -31.91,
+          "p_pos": [
+            0,
+            0.0094,
+            0.3812,
+            0.6094
+          ],
+          "p_advance": 0.0094
+        }
+      ]
+    },
+    {
+      "group": "D",
+      "label_is": "Riðill D",
+      "stage": "preliminary",
+      "venue_is": "Brno",
+      "advance_n": 2,
+      "teams": [
+        {
+          "team": "Netherlands",
+          "team_is": "Holland",
+          "iso2": "nl",
+          "played": 0,
+          "won": 0,
+          "drawn": 0,
+          "lost": 0,
+          "points": 0,
+          "gf": 0,
+          "ga": 0,
+          "gd": 0,
+          "proj_points": 5.57,
+          "proj_gd": 26.6,
+          "p_pos": [
+            0.8788,
+            0.1016,
+            0.016,
+            0.0036
+          ],
+          "p_advance": 0.9804
+        },
+        {
+          "team": "Czech Republic",
+          "team_is": "Tékkland",
+          "iso2": "cz",
+          "played": 0,
+          "won": 0,
+          "drawn": 0,
+          "lost": 0,
+          "points": 0,
+          "gf": 0,
+          "ga": 0,
+          "gd": 0,
+          "proj_points": 2.61,
+          "proj_gd": -4.59,
+          "p_pos": [
+            0.06,
+            0.4048,
+            0.317,
+            0.2182
+          ],
+          "p_advance": 0.4648
+        },
+        {
+          "team": "Croatia",
+          "team_is": "Króatía",
+          "iso2": "hr",
+          "played": 0,
+          "won": 0,
+          "drawn": 0,
+          "lost": 0,
+          "points": 0,
+          "gf": 0,
+          "ga": 0,
+          "gd": 0,
+          "proj_points": 2.18,
+          "proj_gd": -8.42,
+          "p_pos": [
+            0.0399,
+            0.2963,
+            0.359,
+            0.3048
+          ],
+          "p_advance": 0.3362
+        },
+        {
+          "team": "Austria",
+          "team_is": "Austurríki",
+          "iso2": "at",
+          "played": 0,
+          "won": 0,
+          "drawn": 0,
+          "lost": 0,
+          "points": 0,
+          "gf": 0,
+          "ga": 0,
+          "gd": 0,
+          "proj_points": 1.63,
+          "proj_gd": -13.58,
+          "p_pos": [
+            0.0213,
+            0.1974,
+            0.308,
+            0.4734
+          ],
+          "p_advance": 0.2187
+        }
+      ]
+    },
+    {
+      "group": "E",
+      "label_is": "Riðill E",
+      "stage": "preliminary",
+      "venue_is": "Katowice",
+      "advance_n": 2,
+      "teams": [
+        {
+          "team": "France",
+          "team_is": "Frakkland",
+          "iso2": "fr",
+          "played": 0,
+          "won": 0,
+          "drawn": 0,
+          "lost": 0,
+          "points": 0,
+          "gf": 0,
+          "ga": 0,
+          "gd": 0,
+          "proj_points": 5.75,
+          "proj_gd": 36.36,
+          "p_pos": [
+            0.9152,
+            0.0778,
+            0.0068,
+            0.0002
+          ],
+          "p_advance": 0.993
+        },
+        {
+          "team": "Poland",
+          "team_is": "Pólland",
+          "iso2": "pl",
+          "played": 0,
+          "won": 0,
+          "drawn": 0,
+          "lost": 0,
+          "points": 0,
+          "gf": 0,
+          "ga": 0,
+          "gd": 0,
+          "proj_points": 3.45,
+          "proj_gd": 4.35,
+          "p_pos": [
+            0.0693,
+            0.644,
+            0.255,
+            0.0316
+          ],
+          "p_advance": 0.7134
+        },
+        {
+          "team": "Faroe Islands",
+          "team_is": "Færeyjar",
+          "iso2": "fo",
+          "played": 0,
+          "won": 0,
+          "drawn": 0,
+          "lost": 0,
+          "points": 0,
+          "gf": 0,
+          "ga": 0,
+          "gd": 0,
+          "proj_points": 2.3,
+          "proj_gd": -8.64,
+          "p_pos": [
+            0.0148,
+            0.2542,
+            0.5844,
+            0.1466
+          ],
+          "p_advance": 0.269
+        },
+        {
+          "team": "Ukraine",
+          "team_is": "Úkraína",
+          "iso2": "ua",
+          "played": 0,
+          "won": 0,
+          "drawn": 0,
+          "lost": 0,
+          "points": 0,
+          "gf": 0,
+          "ga": 0,
+          "gd": 0,
+          "proj_points": 0.5,
+          "proj_gd": -32.07,
+          "p_pos": [
+            0.0006,
+            0.0239,
+            0.154,
+            0.8216
+          ],
+          "p_advance": 0.0245
+        }
+      ]
+    },
+    {
+      "group": "F",
+      "label_is": "Riðill F",
+      "stage": "preliminary",
+      "venue_is": "Bratislava",
+      "advance_n": 2,
+      "teams": [
+        {
+          "team": "Germany",
+          "team_is": "Þýskaland",
+          "iso2": "de",
+          "played": 0,
+          "won": 0,
+          "drawn": 0,
+          "lost": 0,
+          "points": 0,
+          "gf": 0,
+          "ga": 0,
+          "gd": 0,
+          "proj_points": 5.21,
+          "proj_gd": 26.82,
+          "p_pos": [
+            0.655,
+            0.3318,
+            0.0121,
+            0.0012
+          ],
+          "p_advance": 0.9868
+        },
+        {
+          "team": "Sweden",
+          "team_is": "Svíþjóð",
+          "iso2": "se",
+          "played": 0,
+          "won": 0,
+          "drawn": 0,
+          "lost": 0,
+          "points": 0,
+          "gf": 0,
+          "ga": 0,
+          "gd": 0,
+          "proj_points": 4.51,
+          "proj_gd": 17.53,
+          "p_pos": [
+            0.3408,
+            0.6078,
+            0.0469,
+            0.0046
+          ],
+          "p_advance": 0.9486
+        },
+        {
+          "team": "Serbia",
+          "team_is": "Serbía",
+          "iso2": "rs",
+          "played": 0,
+          "won": 0,
+          "drawn": 0,
+          "lost": 0,
+          "points": 0,
+          "gf": 0,
+          "ga": 0,
+          "gd": 0,
+          "proj_points": 1.19,
+          "proj_gd": -21.43,
+          "p_pos": [
+            0.0021,
+            0.0314,
+            0.4966,
+            0.4699
+          ],
+          "p_advance": 0.0335
+        },
+        {
+          "team": "Slovakia",
+          "team_is": "Slóvakía",
+          "iso2": "sk",
+          "played": 0,
+          "won": 0,
+          "drawn": 0,
+          "lost": 0,
+          "points": 0,
+          "gf": 0,
+          "ga": 0,
+          "gd": 0,
+          "proj_points": 1.08,
+          "proj_gd": -22.92,
+          "p_pos": [
+            0.0022,
+            0.029,
+            0.4444,
+            0.5244
+          ],
+          "p_advance": 0.0312
+        }
+      ]
+    }
+  ]
+}

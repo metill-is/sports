@@ -26,6 +26,6 @@ Number of rows written (invisible).
 }
 \description{
 Two-stage: (1) competition page yields 1x2 + match URLs; (2) match-detail
-pages yield handicap + totals. All odds rows go into one long-form tibble
-and a single `write_table("odds", ...)` append.
+pages yield handicap + totals ([scrape_lengjan_dom()]). All odds rows go
+into one long-form tibble and a single upsert.
 }

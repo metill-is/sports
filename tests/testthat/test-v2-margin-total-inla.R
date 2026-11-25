@@ -496,8 +496,10 @@ test_that("latent draws are joint with the prediction rows and index the compone
   skip_if_no_inla()
   d <- v2_train_pred()
   for (response in c("margin", "total")) {
-    fit <- fit_v2_inla(d$v, response, v2_priors("handball"), within = "ar1",
-                       int_strategy = "eb", n_samples = 200L, latent = TRUE)
+    fit <- fit_v2_inla(d$v, response, v2_priors("handball"),
+      within = "ar1",
+      int_strategy = "eb", n_samples = 200L, latent = TRUE
+    )
     lat <- fit$samples$latent
     expected <- c("u_s", "b", "w_t", if (response == "margin") c("ha", "hfa") else c("s_s", paste0("alpha", seq_len(d$v$ND))))
     expect_setequal(names(lat), expected)
@@ -513,15 +515,49 @@ test_that("latent draws can be limited to chosen nodes and come back under their
   skip_if_no_inla()
   d <- v2_train_pred()
   pick <- c(17L, 3L, 9L)
-  fit <- fit_v2_inla(d$v, "margin", v2_priors("handball"), within = "ar1", int_strategy = "eb",
-                     n_samples = 50L, latent = list(w_t = pick, hfa = 0L))
+  fit <- fit_v2_inla(d$v, "margin", v2_priors("handball"),
+    within = "ar1", int_strategy = "eb",
+    n_samples = 50L, latent = list(w_t = pick, hfa = 0L)
+  )
   expect_setequal(names(fit$samples$latent), c("w_t", "hfa"))
   expect_identical(colnames(fit$samples$latent$w_t), as.character(pick))
-  all_nodes <- fit_v2_inla(d$v, "margin", v2_priors("handball"), within = "ar1", int_strategy = "eb",
-                           n_samples = 50L, latent = list(w_t = 0L))
+  all_nodes <- fit_v2_inla(d$v, "margin", v2_priors("handball"),
+    within = "ar1", int_strategy = "eb",
+    n_samples = 50L, latent = list(w_t = 0L)
+  )
   expect_equal(fit$samples$latent$w_t, all_nodes$samples$latent$w_t[, pick])
   expect_error(
     fit_v2_inla(d$v, "margin", v2_priors("handball"), within = "none", n_samples = 5L, latent = list(w_t = 1L)),
     "w_t"
   )
+})
+
+test_that("a venue of 1 on every row is the default fit, and venues 0 and -1 move the home advantage", {
+  # WHY: international matches are mostly on neutral ground; only the host side
+  # (listed home, venue 1, or listed away, venue -1) gets the home advantage.
+  skip_if_no_inla()
+  sim <- simulate_v2_league(hfa = 0)
+  m <- sim$matches
+  set.seed(11)
+  venue <- sample(c(-1, 0, 1), nrow(m), replace = TRUE, prob = c(0.25, 0.5, 0.25))
+  total <- m$home_score + m$away_score
+  margin <- m$home_score - m$away_score + 4 * venue
+  m$home_score <- (total + margin) / 2
+  m$away_score <- (total - margin) / 2
+  v <- build_v2_data(m, m[0, ], sim$teams)
+  pr <- v2_priors("handball")
+
+  default <- fit_v2_inla(v, "margin", pr, within = "none", int_strategy = "eb")
+  ones <- fit_v2_inla(v, "margin", pr, within = "none", int_strategy = "eb", venue = rep(1, v$N))
+  expect_equal(ones$fixed, default$fixed)
+  expect_equal(ones$fitted, default$fitted)
+
+  fit <- fit_v2_inla(v, "margin", pr, within = "none", int_strategy = "eb", venue = venue)
+  hfa <- fit$fixed["hfa", ]
+  expect_lt(abs(hfa$mean - 4), 3 * hfa$sd)
+  expect_lt(abs(default$fixed["hfa", "mean"]), 1.5)
+  expect_lt(fit$sigma2, default$sigma2)
+
+  expect_error(fit_v2_inla(v, "margin", pr, within = "none", venue = rep(2, v$N)), "venue")
+  expect_error(fit_v2_inla(v, "margin", pr, within = "none", venue = rep(1, 3)), "venue")
 })

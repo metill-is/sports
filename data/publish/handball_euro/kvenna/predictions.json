@@ -1,0 +1,3258 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-11-24T22:00:27Z",
+  "matches": [
+    {
+      "match_date": "2026-12-03",
+      "kickoff": "2026-12-03T15:30:00Z",
+      "stage": "preliminary",
+      "group": "C",
+      "venue_is": "Antalya",
+      "home": "Turkey",
+      "home_is": "Tyrkland",
+      "away": "Greece",
+      "away_is": "Grikkland",
+      "p_home": 0.5733,
+      "p_draw": 0.0618,
+      "p_away": 0.365,
+      "eg_home": 30.13,
+      "eg_away": 28.5,
+      "goal_diff_distribution": [
+        {
+          "diff": -20,
+          "p": 0.0003
+        },
+        {
+          "diff": -18,
+          "p": 0.0001
+        },
+        {
+          "diff": -16,
+          "p": 0.003
+        },
+        {
+          "diff": -14,
+          "p": 0.0019
+        },
+        {
+          "diff": -12,
+          "p": 0.0179
+        },
+        {
+          "diff": -10,
+          "p": 0.0094
+        },
+        {
+          "diff": -8,
+          "p": 0.0578
+        },
+        {
+          "diff": -6,
+          "p": 0.0288
+        },
+        {
+          "diff": -4,
+          "p": 0.1281
+        },
+        {
+          "diff": -2,
+          "p": 0.0565
+        },
+        {
+          "diff": 0,
+          "p": 0.1878
+        },
+        {
+          "diff": 2,
+          "p": 0.0673
+        },
+        {
+          "diff": 4,
+          "p": 0.1779
+        },
+        {
+          "diff": 6,
+          "p": 0.0515
+        },
+        {
+          "diff": 8,
+          "p": 0.1157
+        },
+        {
+          "diff": 10,
+          "p": 0.0261
+        },
+        {
+          "diff": 12,
+          "p": 0.0423
+        },
+        {
+          "diff": 14,
+          "p": 0.0092
+        },
+        {
+          "diff": 16,
+          "p": 0.0142
+        },
+        {
+          "diff": 18,
+          "p": 0.0015
+        },
+        {
+          "diff": 20,
+          "p": 0.0026
+        }
+      ]
+    },
+    {
+      "match_date": "2026-12-03",
+      "kickoff": "2026-12-03T16:30:00Z",
+      "stage": "preliminary",
+      "group": "A",
+      "venue_is": "Oradea",
+      "home": "Slovenia",
+      "home_is": "Slóvenía",
+      "away": "Iceland",
+      "away_is": "Ísland",
+      "p_home": 0.5938,
+      "p_draw": 0.0612,
+      "p_away": 0.3451,
+      "eg_home": 28.65,
+      "eg_away": 26.74,
+      "goal_diff_distribution": [
+        {
+          "diff": -20,
+          "p": 0.0004
+        },
+        {
+          "diff": -18,
+          "p": 0.0001
+        },
+        {
+          "diff": -16,
+          "p": 0.0027
+        },
+        {
+          "diff": -14,
+          "p": 0.0021
+        },
+        {
+          "diff": -12,
+          "p": 0.0162
+        },
+        {
+          "diff": -10,
+          "p": 0.0095
+        },
+        {
+          "diff": -8,
+          "p": 0.0514
+        },
+        {
+          "diff": -6,
+          "p": 0.0247
+        },
+        {
+          "diff": -4,
+          "p": 0.1252
+        },
+        {
+          "diff": -2,
+          "p": 0.0529
+        },
+        {
+          "diff": 0,
+          "p": 0.1862
+        },
+        {
+          "diff": 2,
+          "p": 0.0665
+        },
+        {
+          "diff": 4,
+          "p": 0.187
+        },
+        {
+          "diff": 6,
+          "p": 0.0548
+        },
+        {
+          "diff": 8,
+          "p": 0.1184
+        },
+        {
+          "diff": 10,
+          "p": 0.0257
+        },
+        {
+          "diff": 12,
+          "p": 0.0491
+        },
+        {
+          "diff": 14,
+          "p": 0.0084
+        },
+        {
+          "diff": 16,
+          "p": 0.0141
+        },
+        {
+          "diff": 18,
+          "p": 0.0018
+        },
+        {
+          "diff": 20,
+          "p": 0.0028
+        }
+      ]
+    },
+    {
+      "match_date": "2026-12-03",
+      "kickoff": "2026-12-03T18:00:00Z",
+      "stage": "preliminary",
+      "group": "C",
+      "venue_is": "Antalya",
+      "home": "Denmark",
+      "home_is": "Danmörk",
+      "away": "Spain",
+      "away_is": "Spánn",
+      "p_home": 0.8437,
+      "p_draw": 0.0391,
+      "p_away": 0.1172,
+      "eg_home": 30.77,
+      "eg_away": 24.32,
+      "goal_diff_distribution": [
+        {
+          "diff": -16,
+          "p": 0.0002
+        },
+        {
+          "diff": -14,
+          "p": 0.0003
+        },
+        {
+          "diff": -12,
+          "p": 0.0016
+        },
+        {
+          "diff": -10,
+          "p": 0.0012
+        },
+        {
+          "diff": -8,
+          "p": 0.0114
+        },
+        {
+          "diff": -6,
+          "p": 0.0076
+        },
+        {
+          "diff": -4,
+          "p": 0.0411
+        },
+        {
+          "diff": -2,
+          "p": 0.0242
+        },
+        {
+          "diff": 0,
+          "p": 0.1125
+        },
+        {
+          "diff": 2,
+          "p": 0.0534
+        },
+        {
+          "diff": 4,
+          "p": 0.1825
+        },
+        {
+          "diff": 6,
+          "p": 0.067
+        },
+        {
+          "diff": 8,
+          "p": 0.1944
+        },
+        {
+          "diff": 10,
+          "p": 0.0574
+        },
+        {
+          "diff": 12,
+          "p": 0.1282
+        },
+        {
+          "diff": 14,
+          "p": 0.0308
+        },
+        {
+          "diff": 16,
+          "p": 0.0545
+        },
+        {
+          "diff": 18,
+          "p": 0.0101
+        },
+        {
+          "diff": 20,
+          "p": 0.0215
+        }
+      ]
+    },
+    {
+      "match_date": "2026-12-03",
+      "kickoff": "2026-12-03T19:00:00Z",
+      "stage": "preliminary",
+      "group": "A",
+      "venue_is": "Oradea",
+      "home": "Hungary",
+      "home_is": "Ungverjaland",
+      "away": "Montenegro",
+      "away_is": "Svartfjallaland",
+      "p_home": 0.8298,
+      "p_draw": 0.0391,
+      "p_away": 0.1311,
+      "eg_home": 29.63,
+      "eg_away": 23.49,
+      "goal_diff_distribution": [
+        {
+          "diff": -16,
+          "p": 0.0004
+        },
+        {
+          "diff": -12,
+          "p": 0.0018
+        },
+        {
+          "diff": -10,
+          "p": 0.0016
+        },
+        {
+          "diff": -8,
+          "p": 0.0126
+        },
+        {
+          "diff": -6,
+          "p": 0.0089
+        },
+        {
+          "diff": -4,
+          "p": 0.0464
+        },
+        {
+          "diff": -2,
+          "p": 0.0279
+        },
+        {
+          "diff": 0,
+          "p": 0.1182
+        },
+        {
+          "diff": 2,
+          "p": 0.0532
+        },
+        {
+          "diff": 4,
+          "p": 0.1886
+        },
+        {
+          "diff": 6,
+          "p": 0.0655
+        },
+        {
+          "diff": 8,
+          "p": 0.1893
+        },
+        {
+          "diff": 10,
+          "p": 0.0529
+        },
+        {
+          "diff": 12,
+          "p": 0.1236
+        },
+        {
+          "diff": 14,
+          "p": 0.0278
+        },
+        {
+          "diff": 16,
+          "p": 0.054
+        },
+        {
+          "diff": 18,
+          "p": 0.0089
+        },
+        {
+          "diff": 20,
+          "p": 0.0184
+        }
+      ]
+    },
+    {
+      "match_date": "2026-12-04",
+      "kickoff": "2026-12-04T16:30:00Z",
+      "stage": "preliminary",
+      "group": "B",
+      "venue_is": "Cluj-Napoca",
+      "home": "Switzerland",
+      "home_is": "Sviss",
+      "away": "North Macedonia",
+      "away_is": "Norður-Makedónía",
+      "p_home": 0.9683,
+      "p_draw": 0.0101,
+      "p_away": 0.0216,
+      "eg_home": 32.09,
+      "eg_away": 20.33,
+      "goal_diff_distribution": [
+        {
+          "diff": -12,
+          "p": 0.0001
+        },
+        {
+          "diff": -10,
+          "p": 0
+        },
+        {
+          "diff": -8,
+          "p": 0.0011
+        },
+        {
+          "diff": -6,
+          "p": 0.0012
+        },
+        {
+          "diff": -4,
+          "p": 0.0069
+        },
+        {
+          "diff": -2,
+          "p": 0.004
+        },
+        {
+          "diff": 0,
+          "p": 0.0314
+        },
+        {
+          "diff": 2,
+          "p": 0.0186
+        },
+        {
+          "diff": 4,
+          "p": 0.0866
+        },
+        {
+          "diff": 6,
+          "p": 0.0426
+        },
+        {
+          "diff": 8,
+          "p": 0.157
+        },
+        {
+          "diff": 10,
+          "p": 0.0649
+        },
+        {
+          "diff": 12,
+          "p": 0.1954
+        },
+        {
+          "diff": 14,
+          "p": 0.0647
+        },
+        {
+          "diff": 16,
+          "p": 0.1579
+        },
+        {
+          "diff": 18,
+          "p": 0.0366
+        },
+        {
+          "diff": 20,
+          "p": 0.1311
+        }
+      ]
+    },
+    {
+      "match_date": "2026-12-04",
+      "kickoff": "2026-12-04T17:00:00Z",
+      "stage": "preliminary",
+      "group": "D",
+      "venue_is": "Brno",
+      "home": "Austria",
+      "home_is": "Austurríki",
+      "away": "Croatia",
+      "away_is": "Króatía",
+      "p_home": 0.3812,
+      "p_draw": 0.0661,
+      "p_away": 0.5527,
+      "eg_home": 26.45,
+      "eg_away": 27.69,
+      "goal_diff_distribution": [
+        {
+          "diff": -20,
+          "p": 0.0016
+        },
+        {
+          "diff": -18,
+          "p": 0.0012
+        },
+        {
+          "diff": -16,
+          "p": 0.0099
+        },
+        {
+          "diff": -14,
+          "p": 0.0066
+        },
+        {
+          "diff": -12,
+          "p": 0.0406
+        },
+        {
+          "diff": -10,
+          "p": 0.0211
+        },
+        {
+          "diff": -8,
+          "p": 0.1065
+        },
+        {
+          "diff": -6,
+          "p": 0.0496
+        },
+        {
+          "diff": -4,
+          "p": 0.1786
+        },
+        {
+          "diff": -2,
+          "p": 0.0707
+        },
+        {
+          "diff": 0,
+          "p": 0.1924
+        },
+        {
+          "diff": 2,
+          "p": 0.0566
+        },
+        {
+          "diff": 4,
+          "p": 0.1356
+        },
+        {
+          "diff": 6,
+          "p": 0.0331
+        },
+        {
+          "diff": 8,
+          "p": 0.06
+        },
+        {
+          "diff": 10,
+          "p": 0.0114
+        },
+        {
+          "diff": 12,
+          "p": 0.018
+        },
+        {
+          "diff": 14,
+          "p": 0.0032
+        },
+        {
+          "diff": 16,
+          "p": 0.0029
+        },
+        {
+          "diff": 18,
+          "p": 0
+        },
+        {
+          "diff": 20,
+          "p": 0.0004
+        }
+      ]
+    },
+    {
+      "match_date": "2026-12-04",
+      "kickoff": "2026-12-04T17:00:00Z",
+      "stage": "preliminary",
+      "group": "F",
+      "venue_is": "Bratislava",
+      "home": "Sweden",
+      "home_is": "Svíþjóð",
+      "away": "Germany",
+      "away_is": "Þýskaland",
+      "p_home": 0.3231,
+      "p_draw": 0.0631,
+      "p_away": 0.6138,
+      "eg_home": 26.75,
+      "eg_away": 29.05,
+      "goal_diff_distribution": [
+        {
+          "diff": -20,
+          "p": 0.0036
+        },
+        {
+          "diff": -18,
+          "p": 0.0023
+        },
+        {
+          "diff": -16,
+          "p": 0.0171
+        },
+        {
+          "diff": -14,
+          "p": 0.0092
+        },
+        {
+          "diff": -12,
+          "p": 0.0534
+        },
+        {
+          "diff": -10,
+          "p": 0.0281
+        },
+        {
+          "diff": -8,
+          "p": 0.1262
+        },
+        {
+          "diff": -6,
+          "p": 0.0575
+        },
+        {
+          "diff": -4,
+          "p": 0.1844
+        },
+        {
+          "diff": -2,
+          "p": 0.0669
+        },
+        {
+          "diff": 0,
+          "p": 0.1868
+        },
+        {
+          "diff": 2,
+          "p": 0.0542
+        },
+        {
+          "diff": 4,
+          "p": 0.1156
+        },
+        {
+          "diff": 6,
+          "p": 0.0251
+        },
+        {
+          "diff": 8,
+          "p": 0.046
+        },
+        {
+          "diff": 10,
+          "p": 0.0078
+        },
+        {
+          "diff": 12,
+          "p": 0.0111
+        },
+        {
+          "diff": 14,
+          "p": 0.0016
+        },
+        {
+          "diff": 16,
+          "p": 0.0026
+        },
+        {
+          "diff": 18,
+          "p": 0.0001
+        },
+        {
+          "diff": 20,
+          "p": 0.0002
+        }
+      ]
+    },
+    {
+      "match_date": "2026-12-04",
+      "kickoff": "2026-12-04T19:00:00Z",
+      "stage": "preliminary",
+      "group": "B",
+      "venue_is": "Cluj-Napoca",
+      "home": "Norway",
+      "home_is": "Noregur",
+      "away": "Romania",
+      "away_is": "Rúmenía",
+      "p_home": 0.9272,
+      "p_draw": 0.0209,
+      "p_away": 0.0518,
+      "eg_home": 34.03,
+      "eg_away": 24.96,
+      "goal_diff_distribution": [
+        {
+          "diff": -12,
+          "p": 0.0003
+        },
+        {
+          "diff": -10,
+          "p": 0.0003
+        },
+        {
+          "diff": -8,
+          "p": 0.0037
+        },
+        {
+          "diff": -6,
+          "p": 0.0022
+        },
+        {
+          "diff": -4,
+          "p": 0.018
+        },
+        {
+          "diff": -2,
+          "p": 0.0119
+        },
+        {
+          "diff": 0,
+          "p": 0.0633
+        },
+        {
+          "diff": 2,
+          "p": 0.0328
+        },
+        {
+          "diff": 4,
+          "p": 0.138
+        },
+        {
+          "diff": 6,
+          "p": 0.0578
+        },
+        {
+          "diff": 8,
+          "p": 0.2006
+        },
+        {
+          "diff": 10,
+          "p": 0.0695
+        },
+        {
+          "diff": 12,
+          "p": 0.1746
+        },
+        {
+          "diff": 14,
+          "p": 0.0487
+        },
+        {
+          "diff": 16,
+          "p": 0.1028
+        },
+        {
+          "diff": 18,
+          "p": 0.021
+        },
+        {
+          "diff": 20,
+          "p": 0.0543
+        }
+      ]
+    },
+    {
+      "match_date": "2026-12-04",
+      "kickoff": "2026-12-04T19:30:00Z",
+      "stage": "preliminary",
+      "group": "D",
+      "venue_is": "Brno",
+      "home": "Netherlands",
+      "home_is": "Holland",
+      "away": "Czech Republic",
+      "away_is": "Tékkland",
+      "p_home": 0.8925,
+      "p_draw": 0.0285,
+      "p_away": 0.079,
+      "eg_home": 32.19,
+      "eg_away": 24.39,
+      "goal_diff_distribution": [
+        {
+          "diff": -16,
+          "p": 0.0001
+        },
+        {
+          "diff": -14,
+          "p": 0.0001
+        },
+        {
+          "diff": -12,
+          "p": 0.0007
+        },
+        {
+          "diff": -10,
+          "p": 0.0006
+        },
+        {
+          "diff": -8,
+          "p": 0.006
+        },
+        {
+          "diff": -6,
+          "p": 0.0044
+        },
+        {
+          "diff": -4,
+          "p": 0.0278
+        },
+        {
+          "diff": -2,
+          "p": 0.0165
+        },
+        {
+          "diff": 0,
+          "p": 0.0853
+        },
+        {
+          "diff": 2,
+          "p": 0.0435
+        },
+        {
+          "diff": 4,
+          "p": 0.1646
+        },
+        {
+          "diff": 6,
+          "p": 0.0642
+        },
+        {
+          "diff": 8,
+          "p": 0.2025
+        },
+        {
+          "diff": 10,
+          "p": 0.0638
+        },
+        {
+          "diff": 12,
+          "p": 0.155
+        },
+        {
+          "diff": 14,
+          "p": 0.0375
+        },
+        {
+          "diff": 16,
+          "p": 0.0748
+        },
+        {
+          "diff": 18,
+          "p": 0.0157
+        },
+        {
+          "diff": 20,
+          "p": 0.0369
+        }
+      ]
+    },
+    {
+      "match_date": "2026-12-04",
+      "kickoff": "2026-12-04T19:30:00Z",
+      "stage": "preliminary",
+      "group": "F",
+      "venue_is": "Bratislava",
+      "home": "Slovakia",
+      "home_is": "Slóvakía",
+      "away": "Serbia",
+      "away_is": "Serbía",
+      "p_home": 0.4392,
+      "p_draw": 0.0662,
+      "p_away": 0.4946,
+      "eg_home": 25.94,
+      "eg_away": 26.33,
+      "goal_diff_distribution": [
+        {
+          "diff": -20,
+          "p": 0.0013
+        },
+        {
+          "diff": -18,
+          "p": 0.0013
+        },
+        {
+          "diff": -16,
+          "p": 0.0069
+        },
+        {
+          "diff": -14,
+          "p": 0.0049
+        },
+        {
+          "diff": -12,
+          "p": 0.0308
+        },
+        {
+          "diff": -10,
+          "p": 0.0191
+        },
+        {
+          "diff": -8,
+          "p": 0.0884
+        },
+        {
+          "diff": -6,
+          "p": 0.0423
+        },
+        {
+          "diff": -4,
+          "p": 0.1678
+        },
+        {
+          "diff": -2,
+          "p": 0.0638
+        },
+        {
+          "diff": 0,
+          "p": 0.2019
+        },
+        {
+          "diff": 2,
+          "p": 0.06
+        },
+        {
+          "diff": 4,
+          "p": 0.15
+        },
+        {
+          "diff": 6,
+          "p": 0.0358
+        },
+        {
+          "diff": 8,
+          "p": 0.0779
+        },
+        {
+          "diff": 10,
+          "p": 0.0146
+        },
+        {
+          "diff": 12,
+          "p": 0.0228
+        },
+        {
+          "diff": 14,
+          "p": 0.0036
+        },
+        {
+          "diff": 16,
+          "p": 0.005
+        },
+        {
+          "diff": 18,
+          "p": 0.0006
+        },
+        {
+          "diff": 20,
+          "p": 0.0013
+        }
+      ]
+    },
+    {
+      "match_date": "2026-12-05",
+      "kickoff": "2026-12-05T15:30:00Z",
+      "stage": "preliminary",
+      "group": "C",
+      "venue_is": "Antalya",
+      "home": "Spain",
+      "home_is": "Spánn",
+      "away": "Greece",
+      "away_is": "Grikkland",
+      "p_home": 0.9747,
+      "p_draw": 0.0082,
+      "p_away": 0.017,
+      "eg_home": 33.33,
+      "eg_away": 21.4,
+      "goal_diff_distribution": [
+        {
+          "diff": -12,
+          "p": 0
+        },
+        {
+          "diff": -8,
+          "p": 0.0008
+        },
+        {
+          "diff": -6,
+          "p": 0.0007
+        },
+        {
+          "diff": -4,
+          "p": 0.0045
+        },
+        {
+          "diff": -2,
+          "p": 0.0046
+        },
+        {
+          "diff": 0,
+          "p": 0.0269
+        },
+        {
+          "diff": 2,
+          "p": 0.0167
+        },
+        {
+          "diff": 4,
+          "p": 0.085
+        },
+        {
+          "diff": 6,
+          "p": 0.0425
+        },
+        {
+          "diff": 8,
+          "p": 0.1583
+        },
+        {
+          "diff": 10,
+          "p": 0.0646
+        },
+        {
+          "diff": 12,
+          "p": 0.197
+        },
+        {
+          "diff": 14,
+          "p": 0.0646
+        },
+        {
+          "diff": 16,
+          "p": 0.1615
+        },
+        {
+          "diff": 18,
+          "p": 0.0407
+        },
+        {
+          "diff": 20,
+          "p": 0.1316
+        }
+      ]
+    },
+    {
+      "match_date": "2026-12-05",
+      "kickoff": "2026-12-05T16:30:00Z",
+      "stage": "preliminary",
+      "group": "A",
+      "venue_is": "Oradea",
+      "home": "Montenegro",
+      "home_is": "Svartfjallaland",
+      "away": "Iceland",
+      "away_is": "Ísland",
+      "p_home": 0.6458,
+      "p_draw": 0.0598,
+      "p_away": 0.2943,
+      "eg_home": 27.99,
+      "eg_away": 25.28,
+      "goal_diff_distribution": [
+        {
+          "diff": -20,
+          "p": 0.0002
+        },
+        {
+          "diff": -18,
+          "p": 0.0002
+        },
+        {
+          "diff": -16,
+          "p": 0.0018
+        },
+        {
+          "diff": -14,
+          "p": 0.0018
+        },
+        {
+          "diff": -12,
+          "p": 0.0109
+        },
+        {
+          "diff": -10,
+          "p": 0.007
+        },
+        {
+          "diff": -8,
+          "p": 0.0402
+        },
+        {
+          "diff": -6,
+          "p": 0.0231
+        },
+        {
+          "diff": -4,
+          "p": 0.1071
+        },
+        {
+          "diff": -2,
+          "p": 0.0489
+        },
+        {
+          "diff": 0,
+          "p": 0.1762
+        },
+        {
+          "diff": 2,
+          "p": 0.067
+        },
+        {
+          "diff": 4,
+          "p": 0.1962
+        },
+        {
+          "diff": 6,
+          "p": 0.0553
+        },
+        {
+          "diff": 8,
+          "p": 0.1354
+        },
+        {
+          "diff": 10,
+          "p": 0.0342
+        },
+        {
+          "diff": 12,
+          "p": 0.0596
+        },
+        {
+          "diff": 14,
+          "p": 0.0107
+        },
+        {
+          "diff": 16,
+          "p": 0.0173
+        },
+        {
+          "diff": 18,
+          "p": 0.0029
+        },
+        {
+          "diff": 20,
+          "p": 0.004
+        }
+      ]
+    },
+    {
+      "match_date": "2026-12-05",
+      "kickoff": "2026-12-05T17:00:00Z",
+      "stage": "preliminary",
+      "group": "E",
+      "venue_is": "Katowice",
+      "home": "France",
+      "home_is": "Frakkland",
+      "away": "Poland",
+      "away_is": "Pólland",
+      "p_home": 0.8978,
+      "p_draw": 0.0266,
+      "p_away": 0.0756,
+      "eg_home": 31.23,
+      "eg_away": 23.26,
+      "goal_diff_distribution": [
+        {
+          "diff": -16,
+          "p": 0.0001
+        },
+        {
+          "diff": -14,
+          "p": 0.0001
+        },
+        {
+          "diff": -12,
+          "p": 0.0004
+        },
+        {
+          "diff": -10,
+          "p": 0.0008
+        },
+        {
+          "diff": -8,
+          "p": 0.0063
+        },
+        {
+          "diff": -6,
+          "p": 0.005
+        },
+        {
+          "diff": -4,
+          "p": 0.0264
+        },
+        {
+          "diff": -2,
+          "p": 0.0152
+        },
+        {
+          "diff": 0,
+          "p": 0.081
+        },
+        {
+          "diff": 2,
+          "p": 0.045
+        },
+        {
+          "diff": 4,
+          "p": 0.1572
+        },
+        {
+          "diff": 6,
+          "p": 0.0649
+        },
+        {
+          "diff": 8,
+          "p": 0.1968
+        },
+        {
+          "diff": 10,
+          "p": 0.0642
+        },
+        {
+          "diff": 12,
+          "p": 0.162
+        },
+        {
+          "diff": 14,
+          "p": 0.0405
+        },
+        {
+          "diff": 16,
+          "p": 0.0803
+        },
+        {
+          "diff": 18,
+          "p": 0.0161
+        },
+        {
+          "diff": 20,
+          "p": 0.0378
+        }
+      ]
+    },
+    {
+      "match_date": "2026-12-05",
+      "kickoff": "2026-12-05T18:00:00Z",
+      "stage": "preliminary",
+      "group": "C",
+      "venue_is": "Antalya",
+      "home": "Denmark",
+      "home_is": "Danmörk",
+      "away": "Turkey",
+      "away_is": "Tyrkland",
+      "p_home": 0.9965,
+      "p_draw": 0.0011,
+      "p_away": 0.0024,
+      "eg_home": 37.92,
+      "eg_away": 21.11,
+      "goal_diff_distribution": [
+        {
+          "diff": -8,
+          "p": 0
+        },
+        {
+          "diff": -6,
+          "p": 0.0001
+        },
+        {
+          "diff": -4,
+          "p": 0.0005
+        },
+        {
+          "diff": -2,
+          "p": 0.0004
+        },
+        {
+          "diff": 0,
+          "p": 0.0044
+        },
+        {
+          "diff": 2,
+          "p": 0.0027
+        },
+        {
+          "diff": 4,
+          "p": 0.0211
+        },
+        {
+          "diff": 6,
+          "p": 0.0141
+        },
+        {
+          "diff": 8,
+          "p": 0.0692
+        },
+        {
+          "diff": 10,
+          "p": 0.0344
+        },
+        {
+          "diff": 12,
+          "p": 0.1426
+        },
+        {
+          "diff": 14,
+          "p": 0.0601
+        },
+        {
+          "diff": 16,
+          "p": 0.1968
+        },
+        {
+          "diff": 18,
+          "p": 0.0628
+        },
+        {
+          "diff": 20,
+          "p": 0.3906
+        }
+      ]
+    },
+    {
+      "match_date": "2026-12-05",
+      "kickoff": "2026-12-05T19:00:00Z",
+      "stage": "preliminary",
+      "group": "A",
+      "venue_is": "Oradea",
+      "home": "Hungary",
+      "home_is": "Ungverjaland",
+      "away": "Slovenia",
+      "away_is": "Slóvenía",
+      "p_home": 0.8638,
+      "p_draw": 0.0311,
+      "p_away": 0.1051,
+      "eg_home": 31.15,
+      "eg_away": 24.21,
+      "goal_diff_distribution": [
+        {
+          "diff": -16,
+          "p": 0.0003
+        },
+        {
+          "diff": -14,
+          "p": 0.0002
+        },
+        {
+          "diff": -12,
+          "p": 0.0011
+        },
+        {
+          "diff": -10,
+          "p": 0.0006
+        },
+        {
+          "diff": -8,
+          "p": 0.0088
+        },
+        {
+          "diff": -6,
+          "p": 0.0064
+        },
+        {
+          "diff": -4,
+          "p": 0.0385
+        },
+        {
+          "diff": -2,
+          "p": 0.0207
+        },
+        {
+          "diff": 0,
+          "p": 0.1013
+        },
+        {
+          "diff": 2,
+          "p": 0.0469
+        },
+        {
+          "diff": 4,
+          "p": 0.1778
+        },
+        {
+          "diff": 6,
+          "p": 0.0687
+        },
+        {
+          "diff": 8,
+          "p": 0.1973
+        },
+        {
+          "diff": 10,
+          "p": 0.0609
+        },
+        {
+          "diff": 12,
+          "p": 0.1352
+        },
+        {
+          "diff": 14,
+          "p": 0.0348
+        },
+        {
+          "diff": 16,
+          "p": 0.0635
+        },
+        {
+          "diff": 18,
+          "p": 0.0125
+        },
+        {
+          "diff": 20,
+          "p": 0.0245
+        }
+      ]
+    },
+    {
+      "match_date": "2026-12-05",
+      "kickoff": "2026-12-05T19:30:00Z",
+      "stage": "preliminary",
+      "group": "E",
+      "venue_is": "Katowice",
+      "home": "Faroe Islands",
+      "home_is": "Færeyjar",
+      "away": "Ukraine",
+      "away_is": "Úkraína",
+      "p_home": 0.802,
+      "p_draw": 0.0408,
+      "p_away": 0.1572,
+      "eg_home": 29.79,
+      "eg_away": 23.94,
+      "goal_diff_distribution": [
+        {
+          "diff": -20,
+          "p": 0.0001
+        },
+        {
+          "diff": -16,
+          "p": 0.0004
+        },
+        {
+          "diff": -14,
+          "p": 0.0004
+        },
+        {
+          "diff": -12,
+          "p": 0.0036
+        },
+        {
+          "diff": -10,
+          "p": 0.0029
+        },
+        {
+          "diff": -8,
+          "p": 0.018
+        },
+        {
+          "diff": -6,
+          "p": 0.0112
+        },
+        {
+          "diff": -4,
+          "p": 0.0574
+        },
+        {
+          "diff": -2,
+          "p": 0.0278
+        },
+        {
+          "diff": 0,
+          "p": 0.1218
+        },
+        {
+          "diff": 2,
+          "p": 0.0508
+        },
+        {
+          "diff": 4,
+          "p": 0.1809
+        },
+        {
+          "diff": 6,
+          "p": 0.0646
+        },
+        {
+          "diff": 8,
+          "p": 0.1778
+        },
+        {
+          "diff": 10,
+          "p": 0.051
+        },
+        {
+          "diff": 12,
+          "p": 0.1196
+        },
+        {
+          "diff": 14,
+          "p": 0.0283
+        },
+        {
+          "diff": 16,
+          "p": 0.051
+        },
+        {
+          "diff": 18,
+          "p": 0.01
+        },
+        {
+          "diff": 20,
+          "p": 0.0221
+        }
+      ]
+    },
+    {
+      "match_date": "2026-12-06",
+      "kickoff": "2026-12-06T14:30:00Z",
+      "stage": "preliminary",
+      "group": "F",
+      "venue_is": "Bratislava",
+      "home": "Sweden",
+      "home_is": "Svíþjóð",
+      "away": "Slovakia",
+      "away_is": "Slóvakía",
+      "p_home": 0.9436,
+      "p_draw": 0.016,
+      "p_away": 0.0404,
+      "eg_home": 32.44,
+      "eg_away": 22.35,
+      "goal_diff_distribution": [
+        {
+          "diff": -16,
+          "p": 0
+        },
+        {
+          "diff": -14,
+          "p": 0
+        },
+        {
+          "diff": -12,
+          "p": 0.0002
+        },
+        {
+          "diff": -10,
+          "p": 0.0003
+        },
+        {
+          "diff": -8,
+          "p": 0.0023
+        },
+        {
+          "diff": -6,
+          "p": 0.0022
+        },
+        {
+          "diff": -4,
+          "p": 0.0138
+        },
+        {
+          "diff": -2,
+          "p": 0.0094
+        },
+        {
+          "diff": 0,
+          "p": 0.0498
+        },
+        {
+          "diff": 2,
+          "p": 0.0273
+        },
+        {
+          "diff": 4,
+          "p": 0.1198
+        },
+        {
+          "diff": 6,
+          "p": 0.0545
+        },
+        {
+          "diff": 8,
+          "p": 0.1851
+        },
+        {
+          "diff": 10,
+          "p": 0.0633
+        },
+        {
+          "diff": 12,
+          "p": 0.1853
+        },
+        {
+          "diff": 14,
+          "p": 0.0512
+        },
+        {
+          "diff": 16,
+          "p": 0.1239
+        },
+        {
+          "diff": 18,
+          "p": 0.028
+        },
+        {
+          "diff": 20,
+          "p": 0.0835
+        }
+      ]
+    },
+    {
+      "match_date": "2026-12-06",
+      "kickoff": "2026-12-06T16:30:00Z",
+      "stage": "preliminary",
+      "group": "B",
+      "venue_is": "Cluj-Napoca",
+      "home": "Romania",
+      "home_is": "Rúmenía",
+      "away": "North Macedonia",
+      "away_is": "Norður-Makedónía",
+      "p_home": 0.9988,
+      "p_draw": 0.0005,
+      "p_away": 0.0006,
+      "eg_home": 37.36,
+      "eg_away": 18.93,
+      "goal_diff_distribution": [
+        {
+          "diff": -4,
+          "p": 0
+        },
+        {
+          "diff": -2,
+          "p": 0.0004
+        },
+        {
+          "diff": 0,
+          "p": 0.0016
+        },
+        {
+          "diff": 2,
+          "p": 0.0016
+        },
+        {
+          "diff": 4,
+          "p": 0.0097
+        },
+        {
+          "diff": 6,
+          "p": 0.0061
+        },
+        {
+          "diff": 8,
+          "p": 0.0426
+        },
+        {
+          "diff": 10,
+          "p": 0.0216
+        },
+        {
+          "diff": 12,
+          "p": 0.1129
+        },
+        {
+          "diff": 14,
+          "p": 0.0522
+        },
+        {
+          "diff": 16,
+          "p": 0.1888
+        },
+        {
+          "diff": 18,
+          "p": 0.0669
+        },
+        {
+          "diff": 20,
+          "p": 0.4956
+        }
+      ]
+    },
+    {
+      "match_date": "2026-12-06",
+      "kickoff": "2026-12-06T17:00:00Z",
+      "stage": "preliminary",
+      "group": "D",
+      "venue_is": "Brno",
+      "home": "Czech Republic",
+      "home_is": "Tékkland",
+      "away": "Croatia",
+      "away_is": "Króatía",
+      "p_home": 0.5313,
+      "p_draw": 0.0694,
+      "p_away": 0.3993,
+      "eg_home": 26.16,
+      "eg_away": 25.23,
+      "goal_diff_distribution": [
+        {
+          "diff": -20,
+          "p": 0.0004
+        },
+        {
+          "diff": -18,
+          "p": 0.0002
+        },
+        {
+          "diff": -16,
+          "p": 0.0036
+        },
+        {
+          "diff": -14,
+          "p": 0.0023
+        },
+        {
+          "diff": -12,
+          "p": 0.0191
+        },
+        {
+          "diff": -10,
+          "p": 0.0114
+        },
+        {
+          "diff": -8,
+          "p": 0.0646
+        },
+        {
+          "diff": -6,
+          "p": 0.0332
+        },
+        {
+          "diff": -4,
+          "p": 0.1406
+        },
+        {
+          "diff": -2,
+          "p": 0.0588
+        },
+        {
+          "diff": 0,
+          "p": 0.2032
+        },
+        {
+          "diff": 2,
+          "p": 0.0693
+        },
+        {
+          "diff": 4,
+          "p": 0.1788
+        },
+        {
+          "diff": 6,
+          "p": 0.0458
+        },
+        {
+          "diff": 8,
+          "p": 0.0988
+        },
+        {
+          "diff": 10,
+          "p": 0.021
+        },
+        {
+          "diff": 12,
+          "p": 0.0332
+        },
+        {
+          "diff": 14,
+          "p": 0.0062
+        },
+        {
+          "diff": 16,
+          "p": 0.0072
+        },
+        {
+          "diff": 18,
+          "p": 0.001
+        },
+        {
+          "diff": 20,
+          "p": 0.0016
+        }
+      ]
+    },
+    {
+      "match_date": "2026-12-06",
+      "kickoff": "2026-12-06T17:00:00Z",
+      "stage": "preliminary",
+      "group": "F",
+      "venue_is": "Bratislava",
+      "home": "Germany",
+      "home_is": "Þýskaland",
+      "away": "Serbia",
+      "away_is": "Serbía",
+      "p_home": 0.9762,
+      "p_draw": 0.0094,
+      "p_away": 0.0144,
+      "eg_home": 32.61,
+      "eg_away": 20.53,
+      "goal_diff_distribution": [
+        {
+          "diff": -12,
+          "p": 0
+        },
+        {
+          "diff": -8,
+          "p": 0.0005
+        },
+        {
+          "diff": -6,
+          "p": 0.0004
+        },
+        {
+          "diff": -4,
+          "p": 0.0045
+        },
+        {
+          "diff": -2,
+          "p": 0.0033
+        },
+        {
+          "diff": 0,
+          "p": 0.0279
+        },
+        {
+          "diff": 2,
+          "p": 0.0159
+        },
+        {
+          "diff": 4,
+          "p": 0.0792
+        },
+        {
+          "diff": 6,
+          "p": 0.039
+        },
+        {
+          "diff": 8,
+          "p": 0.1598
+        },
+        {
+          "diff": 10,
+          "p": 0.0645
+        },
+        {
+          "diff": 12,
+          "p": 0.2001
+        },
+        {
+          "diff": 14,
+          "p": 0.0646
+        },
+        {
+          "diff": 16,
+          "p": 0.1631
+        },
+        {
+          "diff": 18,
+          "p": 0.0397
+        },
+        {
+          "diff": 20,
+          "p": 0.1371
+        }
+      ]
+    },
+    {
+      "match_date": "2026-12-06",
+      "kickoff": "2026-12-06T19:00:00Z",
+      "stage": "preliminary",
+      "group": "B",
+      "venue_is": "Cluj-Napoca",
+      "home": "Norway",
+      "home_is": "Noregur",
+      "away": "Switzerland",
+      "away_is": "Sviss",
+      "p_home": 0.9947,
+      "p_draw": 0.0024,
+      "p_away": 0.003,
+      "eg_home": 35.47,
+      "eg_away": 19.69,
+      "goal_diff_distribution": [
+        {
+          "diff": -8,
+          "p": 0.0001
+        },
+        {
+          "diff": -4,
+          "p": 0.001
+        },
+        {
+          "diff": -2,
+          "p": 0.0008
+        },
+        {
+          "diff": 0,
+          "p": 0.006
+        },
+        {
+          "diff": 2,
+          "p": 0.0049
+        },
+        {
+          "diff": 4,
+          "p": 0.0291
+        },
+        {
+          "diff": 6,
+          "p": 0.017
+        },
+        {
+          "diff": 8,
+          "p": 0.0898
+        },
+        {
+          "diff": 10,
+          "p": 0.0404
+        },
+        {
+          "diff": 12,
+          "p": 0.1625
+        },
+        {
+          "diff": 14,
+          "p": 0.0658
+        },
+        {
+          "diff": 16,
+          "p": 0.1953
+        },
+        {
+          "diff": 18,
+          "p": 0.0632
+        },
+        {
+          "diff": 20,
+          "p": 0.324
+        }
+      ]
+    },
+    {
+      "match_date": "2026-12-06",
+      "kickoff": "2026-12-06T19:30:00Z",
+      "stage": "preliminary",
+      "group": "D",
+      "venue_is": "Brno",
+      "home": "Netherlands",
+      "home_is": "Holland",
+      "away": "Austria",
+      "away_is": "Austurríki",
+      "p_home": 0.9428,
+      "p_draw": 0.0175,
+      "p_away": 0.0396,
+      "eg_home": 34.68,
+      "eg_away": 24.61,
+      "goal_diff_distribution": [
+        {
+          "diff": -18,
+          "p": 0
+        },
+        {
+          "diff": -12,
+          "p": 0.0004
+        },
+        {
+          "diff": -10,
+          "p": 0.0004
+        },
+        {
+          "diff": -8,
+          "p": 0.0024
+        },
+        {
+          "diff": -6,
+          "p": 0.0016
+        },
+        {
+          "diff": -4,
+          "p": 0.0134
+        },
+        {
+          "diff": -2,
+          "p": 0.0082
+        },
+        {
+          "diff": 0,
+          "p": 0.0517
+        },
+        {
+          "diff": 2,
+          "p": 0.0257
+        },
+        {
+          "diff": 4,
+          "p": 0.1216
+        },
+        {
+          "diff": 6,
+          "p": 0.0504
+        },
+        {
+          "diff": 8,
+          "p": 0.1887
+        },
+        {
+          "diff": 10,
+          "p": 0.0661
+        },
+        {
+          "diff": 12,
+          "p": 0.1848
+        },
+        {
+          "diff": 14,
+          "p": 0.0532
+        },
+        {
+          "diff": 16,
+          "p": 0.1202
+        },
+        {
+          "diff": 18,
+          "p": 0.028
+        },
+        {
+          "diff": 20,
+          "p": 0.0833
+        }
+      ]
+    },
+    {
+      "match_date": "2026-12-07",
+      "kickoff": "2026-12-07T15:30:00Z",
+      "stage": "preliminary",
+      "group": "C",
+      "venue_is": "Antalya",
+      "home": "Turkey",
+      "home_is": "Tyrkland",
+      "away": "Spain",
+      "away_is": "Spánn",
+      "p_home": 0.0378,
+      "p_draw": 0.0161,
+      "p_away": 0.946,
+      "eg_home": 24.19,
+      "eg_away": 34.44,
+      "goal_diff_distribution": [
+        {
+          "diff": -20,
+          "p": 0.0894
+        },
+        {
+          "diff": -18,
+          "p": 0.0305
+        },
+        {
+          "diff": -16,
+          "p": 0.1241
+        },
+        {
+          "diff": -14,
+          "p": 0.0528
+        },
+        {
+          "diff": -12,
+          "p": 0.1862
+        },
+        {
+          "diff": -10,
+          "p": 0.0625
+        },
+        {
+          "diff": -8,
+          "p": 0.1818
+        },
+        {
+          "diff": -6,
+          "p": 0.0494
+        },
+        {
+          "diff": -4,
+          "p": 0.1204
+        },
+        {
+          "diff": -2,
+          "p": 0.027
+        },
+        {
+          "diff": 0,
+          "p": 0.0501
+        },
+        {
+          "diff": 2,
+          "p": 0.0092
+        },
+        {
+          "diff": 4,
+          "p": 0.0127
+        },
+        {
+          "diff": 6,
+          "p": 0.0015
+        },
+        {
+          "diff": 8,
+          "p": 0.0013
+        },
+        {
+          "diff": 10,
+          "p": 0.0006
+        },
+        {
+          "diff": 12,
+          "p": 0.0004
+        },
+        {
+          "diff": 16,
+          "p": 0
+        }
+      ]
+    },
+    {
+      "match_date": "2026-12-07",
+      "kickoff": "2026-12-07T16:30:00Z",
+      "stage": "preliminary",
+      "group": "A",
+      "venue_is": "Oradea",
+      "home": "Slovenia",
+      "home_is": "Slóvenía",
+      "away": "Montenegro",
+      "away_is": "Svartfjallaland",
+      "p_home": 0.4102,
+      "p_draw": 0.0638,
+      "p_away": 0.526,
+      "eg_home": 25.79,
+      "eg_away": 26.68,
+      "goal_diff_distribution": [
+        {
+          "diff": -20,
+          "p": 0.0013
+        },
+        {
+          "diff": -18,
+          "p": 0.0012
+        },
+        {
+          "diff": -16,
+          "p": 0.0084
+        },
+        {
+          "diff": -14,
+          "p": 0.006
+        },
+        {
+          "diff": -12,
+          "p": 0.0355
+        },
+        {
+          "diff": -10,
+          "p": 0.0205
+        },
+        {
+          "diff": -8,
+          "p": 0.0989
+        },
+        {
+          "diff": -6,
+          "p": 0.047
+        },
+        {
+          "diff": -4,
+          "p": 0.175
+        },
+        {
+          "diff": -2,
+          "p": 0.0651
+        },
+        {
+          "diff": 0,
+          "p": 0.1975
+        },
+        {
+          "diff": 2,
+          "p": 0.0597
+        },
+        {
+          "diff": 4,
+          "p": 0.1434
+        },
+        {
+          "diff": 6,
+          "p": 0.0342
+        },
+        {
+          "diff": 8,
+          "p": 0.0675
+        },
+        {
+          "diff": 10,
+          "p": 0.0118
+        },
+        {
+          "diff": 12,
+          "p": 0.0193
+        },
+        {
+          "diff": 14,
+          "p": 0.0027
+        },
+        {
+          "diff": 16,
+          "p": 0.0033
+        },
+        {
+          "diff": 18,
+          "p": 0.0008
+        },
+        {
+          "diff": 20,
+          "p": 0.0009
+        }
+      ]
+    },
+    {
+      "match_date": "2026-12-07",
+      "kickoff": "2026-12-07T17:00:00Z",
+      "stage": "preliminary",
+      "group": "E",
+      "venue_is": "Katowice",
+      "home": "Poland",
+      "home_is": "Pólland",
+      "away": "Ukraine",
+      "away_is": "Úkraína",
+      "p_home": 0.9169,
+      "p_draw": 0.0239,
+      "p_away": 0.0592,
+      "eg_home": 31.99,
+      "eg_away": 22.9,
+      "goal_diff_distribution": [
+        {
+          "diff": -14,
+          "p": 0.0001
+        },
+        {
+          "diff": -12,
+          "p": 0.0004
+        },
+        {
+          "diff": -10,
+          "p": 0.0006
+        },
+        {
+          "diff": -8,
+          "p": 0.0035
+        },
+        {
+          "diff": -6,
+          "p": 0.0036
+        },
+        {
+          "diff": -4,
+          "p": 0.022
+        },
+        {
+          "diff": -2,
+          "p": 0.0129
+        },
+        {
+          "diff": 0,
+          "p": 0.0678
+        },
+        {
+          "diff": 2,
+          "p": 0.0333
+        },
+        {
+          "diff": 4,
+          "p": 0.1326
+        },
+        {
+          "diff": 6,
+          "p": 0.0586
+        },
+        {
+          "diff": 8,
+          "p": 0.1915
+        },
+        {
+          "diff": 10,
+          "p": 0.0631
+        },
+        {
+          "diff": 12,
+          "p": 0.1734
+        },
+        {
+          "diff": 14,
+          "p": 0.0484
+        },
+        {
+          "diff": 16,
+          "p": 0.1044
+        },
+        {
+          "diff": 18,
+          "p": 0.0225
+        },
+        {
+          "diff": 20,
+          "p": 0.0615
+        }
+      ]
+    },
+    {
+      "match_date": "2026-12-07",
+      "kickoff": "2026-12-07T18:00:00Z",
+      "stage": "preliminary",
+      "group": "C",
+      "venue_is": "Antalya",
+      "home": "Greece",
+      "home_is": "Grikkland",
+      "away": "Denmark",
+      "away_is": "Danmörk",
+      "p_home": 0.0004,
+      "p_draw": 0.0006,
+      "p_away": 0.999,
+      "eg_home": 18.38,
+      "eg_away": 36.73,
+      "goal_diff_distribution": [
+        {
+          "diff": -20,
+          "p": 0.491
+        },
+        {
+          "diff": -18,
+          "p": 0.0682
+        },
+        {
+          "diff": -16,
+          "p": 0.1863
+        },
+        {
+          "diff": -14,
+          "p": 0.051
+        },
+        {
+          "diff": -12,
+          "p": 0.1154
+        },
+        {
+          "diff": -10,
+          "p": 0.0227
+        },
+        {
+          "diff": -8,
+          "p": 0.0425
+        },
+        {
+          "diff": -6,
+          "p": 0.0072
+        },
+        {
+          "diff": -4,
+          "p": 0.0122
+        },
+        {
+          "diff": -2,
+          "p": 0.0013
+        },
+        {
+          "diff": 0,
+          "p": 0.0019
+        },
+        {
+          "diff": 2,
+          "p": 0.0001
+        },
+        {
+          "diff": 4,
+          "p": 0.0001
+        },
+        {
+          "diff": 6,
+          "p": 0
+        }
+      ]
+    },
+    {
+      "match_date": "2026-12-07",
+      "kickoff": "2026-12-07T19:00:00Z",
+      "stage": "preliminary",
+      "group": "A",
+      "venue_is": "Oradea",
+      "home": "Iceland",
+      "home_is": "Ísland",
+      "away": "Hungary",
+      "away_is": "Ungverjaland",
+      "p_home": 0.0597,
+      "p_draw": 0.0219,
+      "p_away": 0.9184,
+      "eg_home": 23.57,
+      "eg_away": 32.47,
+      "goal_diff_distribution": [
+        {
+          "diff": -20,
+          "p": 0.0553
+        },
+        {
+          "diff": -18,
+          "p": 0.0214
+        },
+        {
+          "diff": -16,
+          "p": 0.099
+        },
+        {
+          "diff": -14,
+          "p": 0.046
+        },
+        {
+          "diff": -12,
+          "p": 0.1776
+        },
+        {
+          "diff": -10,
+          "p": 0.0625
+        },
+        {
+          "diff": -8,
+          "p": 0.1922
+        },
+        {
+          "diff": -6,
+          "p": 0.058
+        },
+        {
+          "diff": -4,
+          "p": 0.1461
+        },
+        {
+          "diff": -2,
+          "p": 0.0326
+        },
+        {
+          "diff": 0,
+          "p": 0.0669
+        },
+        {
+          "diff": 2,
+          "p": 0.0134
+        },
+        {
+          "diff": 4,
+          "p": 0.0206
+        },
+        {
+          "diff": 6,
+          "p": 0.0033
+        },
+        {
+          "diff": 8,
+          "p": 0.0039
+        },
+        {
+          "diff": 10,
+          "p": 0.0004
+        },
+        {
+          "diff": 12,
+          "p": 0.0005
+        },
+        {
+          "diff": 14,
+          "p": 0
+        },
+        {
+          "diff": 16,
+          "p": 0.0001
+        }
+      ]
+    },
+    {
+      "match_date": "2026-12-07",
+      "kickoff": "2026-12-07T19:30:00Z",
+      "stage": "preliminary",
+      "group": "E",
+      "venue_is": "Katowice",
+      "home": "France",
+      "home_is": "Frakkland",
+      "away": "Faroe Islands",
+      "away_is": "Færeyjar",
+      "p_home": 0.9621,
+      "p_draw": 0.011,
+      "p_away": 0.0268,
+      "eg_home": 32.29,
+      "eg_away": 21.03,
+      "goal_diff_distribution": [
+        {
+          "diff": -12,
+          "p": 0
+        },
+        {
+          "diff": -10,
+          "p": 0.0002
+        },
+        {
+          "diff": -8,
+          "p": 0.0013
+        },
+        {
+          "diff": -6,
+          "p": 0.0014
+        },
+        {
+          "diff": -4,
+          "p": 0.009
+        },
+        {
+          "diff": -2,
+          "p": 0.006
+        },
+        {
+          "diff": 0,
+          "p": 0.0356
+        },
+        {
+          "diff": 2,
+          "p": 0.0232
+        },
+        {
+          "diff": 4,
+          "p": 0.0944
+        },
+        {
+          "diff": 6,
+          "p": 0.0452
+        },
+        {
+          "diff": 8,
+          "p": 0.1656
+        },
+        {
+          "diff": 10,
+          "p": 0.063
+        },
+        {
+          "diff": 12,
+          "p": 0.197
+        },
+        {
+          "diff": 14,
+          "p": 0.0615
+        },
+        {
+          "diff": 16,
+          "p": 0.1478
+        },
+        {
+          "diff": 18,
+          "p": 0.0358
+        },
+        {
+          "diff": 20,
+          "p": 0.1129
+        }
+      ]
+    },
+    {
+      "match_date": "2026-12-08",
+      "kickoff": "2026-12-08T16:30:00Z",
+      "stage": "preliminary",
+      "group": "B",
+      "venue_is": "Cluj-Napoca",
+      "home": "Switzerland",
+      "home_is": "Sviss",
+      "away": "Romania",
+      "away_is": "Rúmenía",
+      "p_home": 0.1177,
+      "p_draw": 0.0371,
+      "p_away": 0.8452,
+      "eg_home": 25.98,
+      "eg_away": 32.65,
+      "goal_diff_distribution": [
+        {
+          "diff": -20,
+          "p": 0.0247
+        },
+        {
+          "diff": -18,
+          "p": 0.0106
+        },
+        {
+          "diff": -16,
+          "p": 0.0633
+        },
+        {
+          "diff": -14,
+          "p": 0.0303
+        },
+        {
+          "diff": -12,
+          "p": 0.1358
+        },
+        {
+          "diff": -10,
+          "p": 0.0558
+        },
+        {
+          "diff": -8,
+          "p": 0.1915
+        },
+        {
+          "diff": -6,
+          "p": 0.064
+        },
+        {
+          "diff": -4,
+          "p": 0.1799
+        },
+        {
+          "diff": -2,
+          "p": 0.0459
+        },
+        {
+          "diff": 0,
+          "p": 0.1124
+        },
+        {
+          "diff": 2,
+          "p": 0.0213
+        },
+        {
+          "diff": 4,
+          "p": 0.0427
+        },
+        {
+          "diff": 6,
+          "p": 0.0066
+        },
+        {
+          "diff": 8,
+          "p": 0.0112
+        },
+        {
+          "diff": 10,
+          "p": 0.0018
+        },
+        {
+          "diff": 12,
+          "p": 0.0019
+        },
+        {
+          "diff": 14,
+          "p": 0.0001
+        },
+        {
+          "diff": 16,
+          "p": 0.0001
+        },
+        {
+          "diff": 20,
+          "p": 0
+        }
+      ]
+    },
+    {
+      "match_date": "2026-12-08",
+      "kickoff": "2026-12-08T17:00:00Z",
+      "stage": "preliminary",
+      "group": "D",
+      "venue_is": "Brno",
+      "home": "Austria",
+      "home_is": "Austurríki",
+      "away": "Czech Republic",
+      "away_is": "Tékkland",
+      "p_home": 0.3239,
+      "p_draw": 0.0604,
+      "p_away": 0.6157,
+      "eg_home": 27.85,
+      "eg_away": 30.12,
+      "goal_diff_distribution": [
+        {
+          "diff": -20,
+          "p": 0.0038
+        },
+        {
+          "diff": -18,
+          "p": 0.0025
+        },
+        {
+          "diff": -16,
+          "p": 0.0166
+        },
+        {
+          "diff": -14,
+          "p": 0.0094
+        },
+        {
+          "diff": -12,
+          "p": 0.0514
+        },
+        {
+          "diff": -10,
+          "p": 0.0308
+        },
+        {
+          "diff": -8,
+          "p": 0.125
+        },
+        {
+          "diff": -6,
+          "p": 0.0567
+        },
+        {
+          "diff": -4,
+          "p": 0.187
+        },
+        {
+          "diff": -2,
+          "p": 0.0688
+        },
+        {
+          "diff": 0,
+          "p": 0.1818
+        },
+        {
+          "diff": 2,
+          "p": 0.0516
+        },
+        {
+          "diff": 4,
+          "p": 0.1157
+        },
+        {
+          "diff": 6,
+          "p": 0.0273
+        },
+        {
+          "diff": 8,
+          "p": 0.0474
+        },
+        {
+          "diff": 10,
+          "p": 0.0072
+        },
+        {
+          "diff": 12,
+          "p": 0.0132
+        },
+        {
+          "diff": 14,
+          "p": 0.0014
+        },
+        {
+          "diff": 16,
+          "p": 0.002
+        },
+        {
+          "diff": 18,
+          "p": 0.0003
+        },
+        {
+          "diff": 20,
+          "p": 0.0003
+        }
+      ]
+    },
+    {
+      "match_date": "2026-12-08",
+      "kickoff": "2026-12-08T17:00:00Z",
+      "stage": "preliminary",
+      "group": "F",
+      "venue_is": "Bratislava",
+      "home": "Slovakia",
+      "home_is": "Slóvakía",
+      "away": "Germany",
+      "away_is": "Þýskaland",
+      "p_home": 0.0162,
+      "p_draw": 0.0069,
+      "p_away": 0.9769,
+      "eg_home": 20.65,
+      "eg_away": 33.09,
+      "goal_diff_distribution": [
+        {
+          "diff": -20,
+          "p": 0.158
+        },
+        {
+          "diff": -18,
+          "p": 0.0447
+        },
+        {
+          "diff": -16,
+          "p": 0.1641
+        },
+        {
+          "diff": -14,
+          "p": 0.0611
+        },
+        {
+          "diff": -12,
+          "p": 0.1984
+        },
+        {
+          "diff": -10,
+          "p": 0.0608
+        },
+        {
+          "diff": -8,
+          "p": 0.1516
+        },
+        {
+          "diff": -6,
+          "p": 0.036
+        },
+        {
+          "diff": -4,
+          "p": 0.076
+        },
+        {
+          "diff": -2,
+          "p": 0.0144
+        },
+        {
+          "diff": 0,
+          "p": 0.0244
+        },
+        {
+          "diff": 2,
+          "p": 0.0037
+        },
+        {
+          "diff": 4,
+          "p": 0.0053
+        },
+        {
+          "diff": 6,
+          "p": 0.0008
+        },
+        {
+          "diff": 8,
+          "p": 0.0008
+        },
+        {
+          "diff": 10,
+          "p": 0
+        },
+        {
+          "diff": 12,
+          "p": 0
+        }
+      ]
+    },
+    {
+      "match_date": "2026-12-08",
+      "kickoff": "2026-12-08T19:00:00Z",
+      "stage": "preliminary",
+      "group": "B",
+      "venue_is": "Cluj-Napoca",
+      "home": "North Macedonia",
+      "home_is": "Norður-Makedónía",
+      "away": "Norway",
+      "away_is": "Noregur",
+      "p_home": 0,
+      "p_draw": 0,
+      "p_away": 1,
+      "eg_home": 12.65,
+      "eg_away": 40.19,
+      "goal_diff_distribution": [
+        {
+          "diff": -20,
+          "p": 0.9421
+        },
+        {
+          "diff": -18,
+          "p": 0.0166
+        },
+        {
+          "diff": -16,
+          "p": 0.0286
+        },
+        {
+          "diff": -14,
+          "p": 0.0052
+        },
+        {
+          "diff": -12,
+          "p": 0.0059
+        },
+        {
+          "diff": -10,
+          "p": 0.0007
+        },
+        {
+          "diff": -8,
+          "p": 0.0009
+        },
+        {
+          "diff": -6,
+          "p": 0.0001
+        }
+      ]
+    },
+    {
+      "match_date": "2026-12-08",
+      "kickoff": "2026-12-08T19:30:00Z",
+      "stage": "preliminary",
+      "group": "D",
+      "venue_is": "Brno",
+      "home": "Croatia",
+      "home_is": "Króatía",
+      "away": "Netherlands",
+      "away_is": "Holland",
+      "p_home": 0.0607,
+      "p_draw": 0.0229,
+      "p_away": 0.9164,
+      "eg_home": 21.91,
+      "eg_away": 30.64,
+      "goal_diff_distribution": [
+        {
+          "diff": -20,
+          "p": 0.0473
+        },
+        {
+          "diff": -18,
+          "p": 0.0188
+        },
+        {
+          "diff": -16,
+          "p": 0.0993
+        },
+        {
+          "diff": -14,
+          "p": 0.0482
+        },
+        {
+          "diff": -12,
+          "p": 0.1693
+        },
+        {
+          "diff": -10,
+          "p": 0.064
+        },
+        {
+          "diff": -8,
+          "p": 0.2016
+        },
+        {
+          "diff": -6,
+          "p": 0.0606
+        },
+        {
+          "diff": -4,
+          "p": 0.144
+        },
+        {
+          "diff": -2,
+          "p": 0.036
+        },
+        {
+          "diff": 0,
+          "p": 0.0696
+        },
+        {
+          "diff": 2,
+          "p": 0.0131
+        },
+        {
+          "diff": 4,
+          "p": 0.0203
+        },
+        {
+          "diff": 6,
+          "p": 0.0024
+        },
+        {
+          "diff": 8,
+          "p": 0.0046
+        },
+        {
+          "diff": 10,
+          "p": 0.0006
+        },
+        {
+          "diff": 12,
+          "p": 0.0005
+        },
+        {
+          "diff": 14,
+          "p": 0
+        },
+        {
+          "diff": 16,
+          "p": 0.0001
+        }
+      ]
+    },
+    {
+      "match_date": "2026-12-08",
+      "kickoff": "2026-12-08T19:30:00Z",
+      "stage": "preliminary",
+      "group": "F",
+      "venue_is": "Bratislava",
+      "home": "Serbia",
+      "home_is": "Serbía",
+      "away": "Sweden",
+      "away_is": "Svíþjóð",
+      "p_home": 0.0408,
+      "p_draw": 0.0171,
+      "p_away": 0.9422,
+      "eg_home": 22.24,
+      "eg_away": 31.98,
+      "goal_diff_distribution": [
+        {
+          "diff": -20,
+          "p": 0.0699
+        },
+        {
+          "diff": -18,
+          "p": 0.0282
+        },
+        {
+          "diff": -16,
+          "p": 0.109
+        },
+        {
+          "diff": -14,
+          "p": 0.0528
+        },
+        {
+          "diff": -12,
+          "p": 0.1888
+        },
+        {
+          "diff": -10,
+          "p": 0.0663
+        },
+        {
+          "diff": -8,
+          "p": 0.192
+        },
+        {
+          "diff": -6,
+          "p": 0.0577
+        },
+        {
+          "diff": -4,
+          "p": 0.1262
+        },
+        {
+          "diff": -2,
+          "p": 0.0291
+        },
+        {
+          "diff": 0,
+          "p": 0.0512
+        },
+        {
+          "diff": 2,
+          "p": 0.0091
+        },
+        {
+          "diff": 4,
+          "p": 0.0144
+        },
+        {
+          "diff": 6,
+          "p": 0.0022
+        },
+        {
+          "diff": 8,
+          "p": 0.0024
+        },
+        {
+          "diff": 10,
+          "p": 0.0004
+        },
+        {
+          "diff": 12,
+          "p": 0.0002
+        }
+      ]
+    },
+    {
+      "match_date": "2026-12-09",
+      "kickoff": "2026-12-09T17:00:00Z",
+      "stage": "preliminary",
+      "group": "E",
+      "venue_is": "Katowice",
+      "home": "Faroe Islands",
+      "home_is": "Færeyjar",
+      "away": "Poland",
+      "away_is": "Pólland",
+      "p_home": 0.2652,
+      "p_draw": 0.0587,
+      "p_away": 0.6762,
+      "eg_home": 26.35,
+      "eg_away": 29.58,
+      "goal_diff_distribution": [
+        {
+          "diff": -20,
+          "p": 0.0055
+        },
+        {
+          "diff": -18,
+          "p": 0.0022
+        },
+        {
+          "diff": -16,
+          "p": 0.0217
+        },
+        {
+          "diff": -14,
+          "p": 0.014
+        },
+        {
+          "diff": -12,
+          "p": 0.0688
+        },
+        {
+          "diff": -10,
+          "p": 0.0365
+        },
+        {
+          "diff": -8,
+          "p": 0.1469
+        },
+        {
+          "diff": -6,
+          "p": 0.0592
+        },
+        {
+          "diff": -4,
+          "p": 0.1931
+        },
+        {
+          "diff": -2,
+          "p": 0.0677
+        },
+        {
+          "diff": 0,
+          "p": 0.169
+        },
+        {
+          "diff": 2,
+          "p": 0.0446
+        },
+        {
+          "diff": 4,
+          "p": 0.0974
+        },
+        {
+          "diff": 6,
+          "p": 0.0185
+        },
+        {
+          "diff": 8,
+          "p": 0.0378
+        },
+        {
+          "diff": 10,
+          "p": 0.0056
+        },
+        {
+          "diff": 12,
+          "p": 0.0082
+        },
+        {
+          "diff": 14,
+          "p": 0.0011
+        },
+        {
+          "diff": 16,
+          "p": 0.0019
+        },
+        {
+          "diff": 18,
+          "p": 0.0001
+        },
+        {
+          "diff": 20,
+          "p": 0.0001
+        }
+      ]
+    },
+    {
+      "match_date": "2026-12-09",
+      "kickoff": "2026-12-09T19:30:00Z",
+      "stage": "preliminary",
+      "group": "E",
+      "venue_is": "Katowice",
+      "home": "Ukraine",
+      "home_is": "Úkraína",
+      "away": "France",
+      "away_is": "Frakkland",
+      "p_home": 0.0024,
+      "p_draw": 0.001,
+      "p_away": 0.9967,
+      "eg_home": 17.51,
+      "eg_away": 34.64,
+      "goal_diff_distribution": [
+        {
+          "diff": -20,
+          "p": 0.4106
+        },
+        {
+          "diff": -18,
+          "p": 0.0614
+        },
+        {
+          "diff": -16,
+          "p": 0.1909
+        },
+        {
+          "diff": -14,
+          "p": 0.057
+        },
+        {
+          "diff": -12,
+          "p": 0.1386
+        },
+        {
+          "diff": -10,
+          "p": 0.0353
+        },
+        {
+          "diff": -8,
+          "p": 0.0642
+        },
+        {
+          "diff": -6,
+          "p": 0.012
+        },
+        {
+          "diff": -4,
+          "p": 0.0223
+        },
+        {
+          "diff": -2,
+          "p": 0.0029
+        },
+        {
+          "diff": 0,
+          "p": 0.0036
+        },
+        {
+          "diff": 2,
+          "p": 0.0003
+        },
+        {
+          "diff": 4,
+          "p": 0.0007
+        },
+        {
+          "diff": 6,
+          "p": 0.0001
+        },
+        {
+          "diff": 8,
+          "p": 0.0001
+        }
+      ]
+    }
+  ]
+}

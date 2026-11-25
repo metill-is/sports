@@ -1,0 +1,66 @@
+match_no,stage,group,date,local_time,tz,venue_city,home_team,away_team
+1,Preliminary Round,A,2026-12-03,18:30,EET (UTC+2),Oradea,Slovenia,Iceland
+13,Preliminary Round,C,2026-12-03,18:30,TRT (UTC+3),Antalya,Türkiye,Greece
+2,Preliminary Round,A,2026-12-03,21:00,EET (UTC+2),Oradea,Hungary,Montenegro
+14,Preliminary Round,C,2026-12-03,21:00,TRT (UTC+3),Antalya,Denmark,Spain
+19,Preliminary Round,D,2026-12-04,18:00,CET (UTC+1),Brno,Austria,Croatia
+32,Preliminary Round,F,2026-12-04,18:00,CET (UTC+1),Bratislava,Sweden,Germany
+7,Preliminary Round,B,2026-12-04,18:30,EET (UTC+2),Cluj-Napoca,Switzerland,North Macedonia
+20,Preliminary Round,D,2026-12-04,20:30,CET (UTC+1),Brno,Netherlands,Czechia
+31,Preliminary Round,F,2026-12-04,20:30,CET (UTC+1),Bratislava,Slovakia,Serbia
+8,Preliminary Round,B,2026-12-04,21:00,EET (UTC+2),Cluj-Napoca,Norway,Romania
+26,Preliminary Round,E,2026-12-05,18:00,CET (UTC+1),Katowice,France,Poland
+4,Preliminary Round,A,2026-12-05,18:30,EET (UTC+2),Oradea,Montenegro,Iceland
+16,Preliminary Round,C,2026-12-05,18:30,TRT (UTC+3),Antalya,Spain,Greece
+25,Preliminary Round,E,2026-12-05,20:30,CET (UTC+1),Katowice,Faroe Islands,Ukraine
+3,Preliminary Round,A,2026-12-05,21:00,EET (UTC+2),Oradea,Hungary,Slovenia
+15,Preliminary Round,C,2026-12-05,21:00,TRT (UTC+3),Antalya,Denmark,Türkiye
+33,Preliminary Round,F,2026-12-06,15:30,CET (UTC+1),Bratislava,Sweden,Slovakia
+22,Preliminary Round,D,2026-12-06,18:00,CET (UTC+1),Brno,Czechia,Croatia
+34,Preliminary Round,F,2026-12-06,18:00,CET (UTC+1),Bratislava,Germany,Serbia
+10,Preliminary Round,B,2026-12-06,18:30,EET (UTC+2),Cluj-Napoca,Romania,North Macedonia
+21,Preliminary Round,D,2026-12-06,20:30,CET (UTC+1),Brno,Netherlands,Austria
+9,Preliminary Round,B,2026-12-06,21:00,EET (UTC+2),Cluj-Napoca,Norway,Switzerland
+28,Preliminary Round,E,2026-12-07,18:00,CET (UTC+1),Katowice,Poland,Ukraine
+6,Preliminary Round,A,2026-12-07,18:30,EET (UTC+2),Oradea,Slovenia,Montenegro
+18,Preliminary Round,C,2026-12-07,18:30,TRT (UTC+3),Antalya,Türkiye,Spain
+27,Preliminary Round,E,2026-12-07,20:30,CET (UTC+1),Katowice,France,Faroe Islands
+5,Preliminary Round,A,2026-12-07,21:00,EET (UTC+2),Oradea,Iceland,Hungary
+17,Preliminary Round,C,2026-12-07,21:00,TRT (UTC+3),Antalya,Greece,Denmark
+24,Preliminary Round,D,2026-12-08,18:00,CET (UTC+1),Brno,Austria,Czechia
+36,Preliminary Round,F,2026-12-08,18:00,CET (UTC+1),Bratislava,Slovakia,Germany
+12,Preliminary Round,B,2026-12-08,18:30,EET (UTC+2),Cluj-Napoca,Switzerland,Romania
+23,Preliminary Round,D,2026-12-08,20:30,CET (UTC+1),Brno,Croatia,Netherlands
+35,Preliminary Round,F,2026-12-08,20:30,CET (UTC+1),Bratislava,Serbia,Sweden
+11,Preliminary Round,B,2026-12-08,21:00,EET (UTC+2),Cluj-Napoca,North Macedonia,Norway
+30,Preliminary Round,E,2026-12-09,18:00,CET (UTC+1),Katowice,Faroe Islands,Poland
+29,Preliminary Round,E,2026-12-09,20:30,CET (UTC+1),Katowice,Ukraine,France
+37,Main Round,I,2026-12-10,,EET (UTC+2),Cluj-Napoca,1C,2B
+38,Main Round,I,2026-12-10,,EET (UTC+2),Cluj-Napoca,2A,2C
+39,Main Round,I,2026-12-10,,EET (UTC+2),Cluj-Napoca,1A,1B
+49,Main Round,II,2026-12-11,,CET (UTC+1),Katowice,1F,2E
+50,Main Round,II,2026-12-11,,CET (UTC+1),Katowice,2D,2F
+51,Main Round,II,2026-12-11,,CET (UTC+1),Katowice,1D,1E
+40,Main Round,I,2026-12-12,,EET (UTC+2),Cluj-Napoca,1C,1B
+41,Main Round,I,2026-12-12,,EET (UTC+2),Cluj-Napoca,1A,2C
+42,Main Round,I,2026-12-12,,EET (UTC+2),Cluj-Napoca,2A,2B
+52,Main Round,II,2026-12-13,,CET (UTC+1),Katowice,1F,1E
+53,Main Round,II,2026-12-13,,CET (UTC+1),Katowice,1D,2F
+54,Main Round,II,2026-12-13,,CET (UTC+1),Katowice,2D,2E
+43,Main Round,I,2026-12-14,,EET (UTC+2),Cluj-Napoca,1A,2B
+44,Main Round,I,2026-12-14,,EET (UTC+2),Cluj-Napoca,2A,1C
+45,Main Round,I,2026-12-14,,EET (UTC+2),Cluj-Napoca,1B,2C
+46,Main Round,I,2026-12-15,,EET (UTC+2),Cluj-Napoca,1A,1C
+47,Main Round,I,2026-12-15,,EET (UTC+2),Cluj-Napoca,2A,1B
+48,Main Round,I,2026-12-15,,EET (UTC+2),Cluj-Napoca,2B,2C
+55,Main Round,II,2026-12-15,,CET (UTC+1),Katowice,1D,2E
+56,Main Round,II,2026-12-15,,CET (UTC+1),Katowice,2D,1F
+57,Main Round,II,2026-12-15,,CET (UTC+1),Katowice,1E,2F
+58,Main Round,II,2026-12-16,,CET (UTC+1),Katowice,1D,1F
+59,Main Round,II,2026-12-16,,CET (UTC+1),Katowice,2D,1E
+60,Main Round,II,2026-12-16,,CET (UTC+1),Katowice,2E,2F
+63,Placement 5/6,,2026-12-18,15:00,CET (UTC+1),Katowice,3 MR I,3 MR II
+61,Semi-final,,2026-12-18,,CET (UTC+1),Katowice,1 MR I,2 MR II
+62,Semi-final,,2026-12-18,,CET (UTC+1),Katowice,2 MR I,1 MR II
+64,Bronze medal match,,2026-12-20,15:15,CET (UTC+1),Katowice,L61,L62
+65,Final,,2026-12-20,18:00,CET (UTC+1),Katowice,W61,W62
