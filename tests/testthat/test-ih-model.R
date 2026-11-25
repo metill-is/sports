@@ -1,29 +1,5 @@
 # International handball: seasons, venues and the nations model.
 
-simulate_nations <- function(seed = 5, n_teams = 12, seasons = 2021:2024, hfa = 3) {
-  set.seed(seed)
-  teams <- sprintf("N%02d", seq_len(n_teams))
-  level <- rnorm(n_teams, 0, 6)
-  pace <- rnorm(n_teams, 0, 2)
-  rows <- list()
-  for (s in seasons) {
-    state <- level + rnorm(n_teams, 0, 2)
-    pairs <- expand.grid(h = seq_len(n_teams), a = seq_len(n_teams))
-    pairs <- pairs[pairs$h < pairs$a, ]
-    venue <- sample(c(-1L, 0L, 1L), nrow(pairs), replace = TRUE, prob = c(0.2, 0.5, 0.3))
-    margin <- state[pairs$h] - state[pairs$a] + hfa * venue + rnorm(nrow(pairs), 0, 5)
-    total <- 55 + pace[pairs$h] + pace[pairs$a] + rnorm(nrow(pairs), 0, 6)
-    home <- round((total + margin) / 2)
-    away <- round((total - margin) / 2)
-    rows[[length(rows) + 1L]] <- data.frame(
-      match_date = as.Date(sprintf("%d-09-01", s)) + sort(sample(0:250, nrow(pairs), replace = TRUE)),
-      season = s, division = "intl", home_team = teams[pairs$h], away_team = teams[pairs$a],
-      home_score = home, away_score = away, home_60 = home, away_60 = away, venue = venue
-    )
-  }
-  list(matches = do.call(rbind, rows), teams = teams, level = level)
-}
-
 test_that("a season runs from July to June", {
   expect_equal(ih_season(as.Date(c("2026-06-30", "2026-07-01", "2026-12-03", "2027-01-13"))), c(2025L, 2026L, 2026L, 2026L))
 })

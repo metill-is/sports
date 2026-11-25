@@ -9,8 +9,9 @@
 #   IH_DATA_DIR=... Rscript scripts/ih/run_tournament.R --tournament euro2026w \
 #     [--as-of 2026-12-03] [--n-sims 20000] [--draws 4000] [--seed 1] \
 #     [--h2h none|once|repeat] [--out data/publish]
-# --as-of: the fit trains on matches before this day and the simulation keeps
-# the championship's results before it (default: today).
+# --as-of D: the forecast knows every match up to and including D (the fit
+# trains on matches before D + 1, the simulation keeps the championship's
+# results from D) and is dated D (default: today in UTC).
 options(width = 120)
 suppressPackageStartupMessages(devtools::load_all(here::here(), quiet = TRUE))
 
@@ -20,7 +21,7 @@ arg <- function(name, default = NULL) {
   if (is.na(i)) default else args[[i + 1L]]
 }
 id <- arg("tournament", "euro2026w")
-as_of <- as.Date(arg("as-of", as.character(Sys.Date())))
+as_of <- as.Date(arg("as-of", format(Sys.time(), "%Y-%m-%d", tz = "UTC")))
 n_sims <- as.integer(arg("n-sims", "20000"))
 n_draws <- as.integer(arg("draws", "4000"))
 seed <- as.integer(arg("seed", "1"))
@@ -29,13 +30,11 @@ out_root <- arg("out", here::here("data", "publish"))
 
 spec <- ih_tournament_spec(id)
 matches <- ih_read_matches(spec$sex)
-results <- ih_tournament_results(matches[matches$match_date < as_of, , drop = FALSE], spec)
-cli::cli_inform("{spec$title}: {nrow(matches)} matches read, last {max(matches$match_date)}; {nrow(results)} championship result{?s} before {as_of}.")
-
-season <- ih_season(spec$start)
-empty <- data.frame(match_date = as.Date(character()), home_team = character(), away_team = character(), venue = integer())
 t0 <- Sys.time()
-fit <- ih_fit(matches, empty, as_of, season = season, n_draws = n_draws, seed = seed)
+ff <- ih_forecast_fit(matches, spec, as_of, n_draws = n_draws, seed = seed)
+fit <- ff$fit
+results <- ff$results
+cli::cli_inform("{spec$title}: {nrow(matches)} matches read, last {max(matches$match_date)}; {nrow(results)} championship result{?s} up to {as_of}.")
 cli::cli_inform("Fit: {fit$n_train} training matches ({fit$n_train_60} with a 60-minute score), mode status {paste(fit$mode_status, collapse = '/')}, {round(as.numeric(difftime(Sys.time(), t0, units = 'secs')))} s.")
 problems <- ih_fit_check(fit)
 if (length(problems)) cli::cli_abort(c("The fit failed its checks; nothing published.", stats::setNames(problems, rep("x", length(problems)))))

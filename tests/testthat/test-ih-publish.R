@@ -1,47 +1,5 @@
 # International handball: the files written for metill-platform.
 
-publish_fixture <- function() {
-  teams <- sprintf("T%02d", 1:24)
-  groups <- split(teams, rep(LETTERS[1:6], each = 4))
-  prelim <- do.call(rbind, lapply(names(groups), function(g) {
-    p <- t(utils::combn(groups[[g]], 2))
-    data.frame(
-      match_no = NA, group = g, match_date = as.Date("2026-12-03") + 0:5,
-      kickoff = as.POSIXct("2026-12-03 17:00", tz = "UTC") + 86400 * 0:5,
-      venue_city = paste("City", g), host = NA_character_, home_team = p[, 1], away_team = p[, 2]
-    )
-  }))
-  slots <- function(gs) as.vector(t(outer(gs, 1:2, function(g, p) paste0(p, g))))
-  mf <- do.call(rbind, lapply(list(I = LETTERS[1:3], II = LETTERS[4:6]), function(gs) {
-    s <- slots(gs)
-    pr <- t(utils::combn(s, 2))
-    pr <- pr[substr(pr[, 1], 2, 2) != substr(pr[, 2], 2, 2), ]
-    data.frame(home_slot = pr[, 1], away_slot = pr[, 2])
-  }))
-  mf$group <- rep(c("I", "II"), each = 12)
-  mf$match_date <- as.Date("2026-12-10")
-  mf$kickoff <- as.POSIXct(NA)
-  spec <- IH_TOURNAMENTS$euro2026w
-  spec$groups <- groups
-  spec$prelim <- prelim
-  spec$main_fixtures <- mf
-  spec$main_city <- c(I = "City I", II = "City II")
-  spec$main_host <- c(I = NA_character_, II = NA_character_)
-  spec$knockout$match_date <- as.Date(c("2026-12-18", "2026-12-18", "2026-12-18", "2026-12-20", "2026-12-20"))
-  spec$knockout$kickoff <- as.POSIXct(NA)
-  spec$knockout$venue_city <- "City K"
-  spec$knockout$host <- NA_character_
-  strength <- stats::setNames(rep(c(6, 2, -2, -6), 6), teams)
-  n <- 200L
-  m <- matrix(rep(strength, each = n), n, 24, dimnames = list(NULL, teams))
-  fit <- list(
-    teams = teams, m_state = m, t_state = m * 0, level = rep(55, n), hfa = rep(0, n), ha = m * 0,
-    sigma_m = rep(5, n), sigma_t = rep(6, n), as_of = as.Date("2026-12-01")
-  )
-  names <- data.frame(team = teams, official = teams, team_is = paste0("Li\u00f0 ", 1:24), iso2 = NA_character_)
-  list(spec = spec, fit = fit, names = names)
-}
-
 test_that("before the start: six groups, every preliminary match priced, contract fields present", {
   x <- publish_fixture()
   sim <- ih_simulate_tournament(x$fit, x$spec, n_sims = 400L, seed = 1)
@@ -68,6 +26,7 @@ test_that("before the start: six groups, every preliminary match priced, contrac
   expect_equal(sum(vapply(pl$summary, function(s) s$p_champion, 0)), 1, tolerance = 1e-3)
   meta <- jsonlite::read_json(file.path(out, "meta.json"))
   expect_false(meta$placeholder)
+  expect_equal(meta$fit_date, "2026-12-01")
   expect_equal(meta$matches_group_total, 36L)
   expect_equal(meta$focus_round, "SF")
   st <- jsonlite::read_json(file.path(out, "team_strengths.json"))
@@ -221,4 +180,45 @@ test_that("a group match without a 60-minute score counts with its final score; 
   tab <- ih_actual_standings(spec, r)$prelim$A$table
   expect_equal(tab$points[tab$team == pf$home_team[1]], 2)
   expect_equal(tab$gd[tab$team == pf$away_team[1]], -5)
+})
+
+test_that("a forecast as of day D counts D's matches and is dated D", {
+  # WHY: the refresh runs in the evening after the day's matches; a forecast
+  # as of D that left out D's results would carry a finished match as still to
+  # be played, under D's date.
+  skip_if_no_inla()
+  x <- publish_fixture()
+  spec <- x$spec
+  hist <- simulate_nations(n_teams = 24)$matches
+  hist$home_team <- sub("^N", "T", hist$home_team)
+  hist$away_team <- sub("^N", "T", hist$away_team)
+  hist$competition <- "FRI"
+  day <- min(spec$prelim$match_date)
+  first <- spec$prelim[spec$prelim$match_date == day, ][1, ]
+  champ <- data.frame(
+    match_date = day, season = ih_season(day), division = "intl", home_team = first$home_team,
+    away_team = first$away_team, home_score = 30L, away_score = 25L, home_60 = 30L, away_60 = 25L,
+    venue = 0L, competition = spec$competition
+  )
+  m <- rbind(hist, champ)
+  m$edition <- spec$edition
+  m$block <- ""
+  m$pen_home <- NA_integer_
+  m$pen_away <- NA_integer_
+
+  on_day <- ih_forecast_fit(m, spec, day, n_draws = 50L, int_strategy = "eb")
+  before <- ih_forecast_fit(m, spec, day - 1, n_draws = 50L, int_strategy = "eb")
+  expect_equal(nrow(on_day$results), 1L)
+  expect_equal(nrow(before$results), 0L)
+  expect_equal(on_day$fit$n_train, nrow(hist) + 1L)
+  expect_equal(before$fit$n_train, nrow(hist))
+  expect_equal(on_day$fit$as_of, day)
+  expect_equal(before$fit$as_of, day - 1)
+
+  sim <- ih_simulate_tournament(on_day$fit, spec, on_day$results, n_sims = 200L, seed = 1)
+  out <- withr::local_tempdir()
+  ih_publish_tournament(on_day$fit, sim, spec, on_day$results, out, names = x$names, n_sims_matches = 200L)
+  meta <- jsonlite::read_json(file.path(out, "meta.json"))
+  expect_equal(meta$fit_date, format(day))
+  expect_equal(meta$matches_played, 1L)
 })

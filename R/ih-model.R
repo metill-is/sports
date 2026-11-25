@@ -147,6 +147,35 @@ ih_fit <- function(matches, fixtures, as_of, season = NULL, from_season = NULL,
   out
 }
 
+#' Fit the nations model for a championship forecast made on a given day
+#'
+#' A forecast as of day D knows every match played up to and including D: the
+#' model trains on the matches dated before D + 1, the championship keeps its
+#' results from D, and the fit is dated D (`fit$as_of`, which the publisher
+#' writes as `fit_date`).
+#'
+#' @param matches Played matches of the championship's sex, see [ih_fit()].
+#' @param spec [ih_tournament_spec()].
+#' @param as_of The forecast's day.
+#' @inheritParams ih_fit
+#' @return list(fit, results): the [ih_fit()] result for the championship's
+#'   season, with `as_of` = D and `cutoff` = D + 1, and the championship's
+#'   [ih_tournament_results()] up to D.
+#' @noRd
+ih_forecast_fit <- function(matches, spec, as_of, n_draws = 4000L, seed = 1L, int_strategy = "auto") {
+  as_of <- as.Date(as_of)
+  cutoff <- as_of + 1L
+  results <- ih_tournament_results(matches[matches$match_date < cutoff, , drop = FALSE], spec)
+  empty <- data.frame(match_date = as.Date(character()), home_team = character(), away_team = character(), venue = integer())
+  fit <- ih_fit(
+    matches, empty, cutoff,
+    season = ih_season(spec$start), n_draws = n_draws, seed = seed, int_strategy = int_strategy
+  )
+  fit$as_of <- as_of
+  fit$cutoff <- cutoff
+  list(fit = fit, results = results)
+}
+
 #' Refuse a nations fit that has gone wrong
 #'
 #' The checks a fit must pass before its forecast is published: R-INLA found
