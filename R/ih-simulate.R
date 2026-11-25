@@ -97,7 +97,8 @@ ih_team_names <- function(path = here::here("config", "intl-handball", "teams.cs
 #'   `knockout` with `match_date`, `venue_city` and `host`.
 #' @noRd
 ih_tournament_spec <- function(id, names = ih_team_names()) {
-  spec <- IH_TOURNAMENTS[[id]]
+  # A replay (IH_REPLAYS, R/ih-replay.R) is read the same way as a live one.
+  spec <- IH_TOURNAMENTS[[id]] %||% IH_REPLAYS[[id]]
   if (is.null(spec)) cli::cli_abort("Unknown championship {.val {id}}.")
   dir <- here::here("config", "intl-handball", id)
   g <- utils::read.csv(file.path(dir, "groups.csv"), stringsAsFactors = FALSE, encoding = "UTF-8")
