@@ -103,6 +103,13 @@ to 2026-09 while every composed check stayed green (B4).
   `expected_meetings`. The value carries BOTH numbers side by side. Skips cups,
   cells with no publish output, pre-v2 metas and divisions with nothing
   configured to compare against.
+- **`check_ih_tournament_freshness`** (`R/health-publish.R`, 2026-11-25) — one
+  row per international handball championship (`IH_TOURNAMENTS`). From its first
+  day to the day after its last, WARN when its published `meta.json` is missing
+  or its `generated_at` is older than `ih_forecast_max_age_hours` (14: the
+  refresh runs after the 10:05, 16:35, 19:35 and 22:35 UTC fetches, and the
+  night's gap is 11.5 h); PAUSED outside those days. WARN, never FAIL: the
+  refresh's own failed runs email the owner already.
 
 **HONEST LIMIT, and it constrains the design.** The alert channel is a GitHub
 workflow-failure email. That is signal, not a pager: `healthcheck.yml` runs

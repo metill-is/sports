@@ -135,6 +135,7 @@ jobs:
       - name: Commit the forecast
         id: commit
         run: |
+          # shellcheck disable=SC2016 # the $ inside the quotes is R, not the shell
           sub=$(Rscript -e 'suppressMessages(devtools::load_all(quiet = TRUE)); cat(paste(IH_TOURNAMENTS[[Sys.getenv("TOURNAMENT")]]$publish, collapse = "/"))')
           pub="data/publish/$sub"
           [ -d "$pub" ] || { echo "no publish folder $pub"; exit 1; }

@@ -44,7 +44,12 @@ health_thresholds <- function() {
     engine_reference_hbbb_max_line_mean_abs_diff = HBBB_REFERENCE_LIMITS$in_season[["line"]],
     engine_reference_hbbb_max_fixture_abs_diff = HBBB_REFERENCE_LIMITS$in_season[["result_max"]],
     engine_reference_hbbb_max_line_fixture_abs_diff = HBBB_REFERENCE_LIMITS$in_season[["line_max"]],
-    engine_reference_max_age_days = 15
+    engine_reference_max_age_days = 15,
+    # The international handball forecast during a championship
+    # (check_ih_tournament_freshness): it is refreshed after the 10:05,
+    # 16:35, 19:35 and 22:35 UTC fetches, so the longest normal gap is the
+    # night, 22:35 to 10:05 (11.5 h); 14 h means one missed run past that.
+    ih_forecast_max_age_hours = 14
   )
 }
 
@@ -1133,7 +1138,8 @@ pipeline_health <- function(root = here::here("data"),
     # printed table.
     safe(check_publish_freshness(leagues, root, now, th)),
     safe(check_season_resolution(leagues, root, now)),
-    safe(check_publish_format_agreement(leagues, root))
+    safe(check_publish_format_agreement(leagues, root)),
+    safe(check_ih_tournament_freshness(root, now, th))
   )
 }
 
