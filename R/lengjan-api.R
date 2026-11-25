@@ -134,11 +134,17 @@ lengjan_fetch_markets <- function(event_ids, batch_size = .LENGJAN_MARKETS_BATCH
 #' first copy of each event id. `country_code` falls back to `countryName`:
 #' Icelandic events carry `countryName: "IS"` and no `countryCode` (L4).
 #'
+#' Participant names are squished (`stringr::str_squish()`): the API carries
+#' stray spaces in a few names (`"Newcastle "`, handball's `"Víkingur "`) that
+#' the site shows trimmed.
+#'
 #' @param prog Parsed JSON from [lengjan_fetch_program()].
+#' @param squish_names `FALSE` keeps participant names exactly as the API sends
+#'   them (the team-name audit lists the padded ones).
 #' @return Tibble: event_id, sport_id, competition_id, competition_name,
 #'   country_code, kickoff_at (POSIXct UTC), home_team, away_team, market_count.
 #' @export
-parse_lengjan_program <- function(prog) {
+parse_lengjan_program <- function(prog, squish_names = TRUE) {
   if (!is.list(prog) || !all(c("events", "liveSoon") %in% names(prog))) {
     stop(
       "parse_lengjan_program: unexpected current-program shape ",
@@ -150,17 +156,21 @@ parse_lengjan_program <- function(prog) {
   if (length(evs) == 0L) {
     return(empty_lengjan_events())
   }
-  out <- dplyr::bind_rows(lapply(evs, .lengjan_event_row))
+  out <- dplyr::bind_rows(lapply(evs, .lengjan_event_row, squish_names = squish_names))
   out[!duplicated(out$event_id), , drop = FALSE]
 }
 
 #' @noRd
-.lengjan_event_row <- function(e) {
+.lengjan_event_row <- function(e, squish_names = TRUE) {
   parts <- e$participants %||% list()
+  # WHY squish: the API carries stray spaces in some names ("Newcastle ",
+  # "Víkingur "); the site shows them trimmed, which is what the DOM scraper
+  # wrote and what team_names maps (football cutover audit, 2026-11-24).
   side <- function(k) {
     for (p in parts) {
       if (identical(as.integer(p$homeOrAway), k)) {
-        return(as.character(p$name))
+        name <- as.character(p$name)
+        return(if (squish_names) stringr::str_squish(name) else name)
       }
     }
     NA_character_

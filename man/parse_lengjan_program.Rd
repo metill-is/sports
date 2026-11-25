@@ -4,10 +4,13 @@
 \alias{parse_lengjan_program}
 \title{Flatten Lengjan's current-program JSON into one row per event.}
 \usage{
-parse_lengjan_program(prog)
+parse_lengjan_program(prog, squish_names = TRUE)
 }
 \arguments{
 \item{prog}{Parsed JSON from [lengjan_fetch_program()].}
+
+\item{squish_names}{`FALSE` keeps participant names exactly as the API sends
+them (the team-name audit lists the padded ones).}
 }
 \value{
 Tibble: event_id, sport_id, competition_id, competition_name,
@@ -18,4 +21,9 @@ Unions `events`, `liveSoon`, `popular` and `liveNow` -- an Icelandic event
 with no open market yet sits only in `liveSoon` (spec L7) -- keeping the
 first copy of each event id. `country_code` falls back to `countryName`:
 Icelandic events carry `countryName: "IS"` and no `countryCode` (L4).
+}
+\details{
+Participant names are squished (`stringr::str_squish()`): the API carries
+stray spaces in a few names (`"Newcastle "`, handball's `"Víkingur "`) that
+the site shows trimmed.
 }
