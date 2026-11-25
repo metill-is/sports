@@ -11,8 +11,9 @@
 #   - DOM: every name the DOM scraper wrote to data/facts/odds for the league
 #     (no sex: checked against both maps).
 # It also lists every API participant name with stray whitespace, in any
-# sport: the DOM's text extraction trims and collapses spaces, the API does
-# not, so such a name keys differently on the two scrapers.
+# sport. The API parser squishes names by default (as the DOM's text
+# extraction does), so the audit parses programs with squish_names = FALSE to
+# see the names exactly as the API sends them.
 #
 # Usage:
 #   Rscript scripts/0Nc_audit_team_names.R                  # football_iceland
@@ -45,12 +46,12 @@ programs <- list(fixture = list(
   events = parse_lengjan_program(jsonlite::fromJSON(
     here::here("tests", "testthat", "fixtures", "lengjan-api", "current-program.json"),
     simplifyVector = FALSE
-  ))
+  ), squish_names = FALSE)
 ))
 if ("--live" %in% args) {
   programs$live <- list(
     when = format(Sys.time(), "%Y-%m-%d %H:%M UTC", tz = "UTC"),
-    events = parse_lengjan_program(lengjan_fetch_program())
+    events = parse_lengjan_program(lengjan_fetch_program(), squish_names = FALSE)
   )
 }
 archive_dir <- tryCatch(.lengjan_archive_dir(flag("archive-dir")), error = function(e) "")
@@ -65,7 +66,7 @@ if (nzchar(archive_dir) && dir.exists(archive_dir)) {
     if (is.character(body)) next
     programs[[paste0("archive_", i)]] <- list(
       when = format(ix$ts[[i]], "%Y-%m-%d %H:%M UTC", tz = "UTC"),
-      events = parse_lengjan_program(body[[1]])
+      events = parse_lengjan_program(body[[1]], squish_names = FALSE)
     )
   }
   cli::cli_alert_info("Read {nrow(ix)} archived program{?s}, one per {every_h} h.")

@@ -543,3 +543,17 @@ test_that("a relative --out under data/ stops each script before it does anythin
     expect_false(dir.exists(file.path(root, target)), info = s)
   }
 })
+
+test_that("the team-name audit parses programs with raw participant names", {
+  # parse_lengjan_program() squishes names by default; the audit's
+  # stray-whitespace list and its `whitespace` status need them raw, or they
+  # report 0 whatever the API sends.
+  file <- testthat::test_path("..", "..", "scripts", "0Nc_audit_team_names.R")
+  pd <- utils::getParseData(parse(file, keep.source = TRUE))
+  fn <- pd$id[pd$token == "SYMBOL_FUNCTION_CALL" & pd$text == "parse_lengjan_program"]
+  expect_gt(length(fn), 0L)
+  for (id in fn) {
+    call_id <- pd$parent[pd$id == pd$parent[pd$id == id]]
+    expect_match(utils::getParseText(pd, call_id), "squish_names = FALSE", fixed = TRUE)
+  }
+})
