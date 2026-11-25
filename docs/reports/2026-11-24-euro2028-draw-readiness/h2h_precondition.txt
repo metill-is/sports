@@ -1,0 +1,3 @@
+Rehearsal group H (Italy, Slovenia, Poland, Finland, Azerbaijan): 200,000 simulations; 3+ level on points 2879 (1.440%); 4+ level 46 (0.023%); readings differ 0
+Rehearsal group B (Denmark, Austria, Iceland, Moldova): 200,000 simulations; 3+ level on points 2271 (1.135%); 4+ level 0 (0.000%); readings differ 0
+Stress test, five evenly matched teams (Serbia, Slovenia, Hungary, Georgia, Romania): 200,000 simulations; 3+ level on points 7840 (3.920%); 4+ level 301 (0.150%); readings differ 0

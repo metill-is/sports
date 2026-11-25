@@ -106,6 +106,12 @@ v2_priors <- function(sport = c("handball", "basketball")) {
 #'   with the node indices as column names (index `(k - 1) * NS + s` for
 #'   team `k` in season `s` in `u_s`, `(ts - 1) * W + week` in `w_t`,
 #'   `(d - 1) * NS + s` for division `d` in `s_s`).
+#' @param venue Optional venue of each row, training rows then prediction
+#'   rows, for the margin model: `1` when the listed home side plays at home
+#'   (every row of a league, the default), `0` on neutral ground, `-1` when
+#'   the listed away side does (a tournament host listed second). The league
+#'   home advantage and the host side's own deviation from it enter with this
+#'   sign; on a neutral row neither enters. Ignored by the total model.
 #' @param seed Seed for the posterior sampler: for R-INLA's sampler of the
 #'   latent field and for R's generator, which picks the hyperparameter
 #'   configuration of each draw. Drawing does not move the caller's random
@@ -135,9 +141,14 @@ fit_v2_inla <- function(v, response = c("margin", "total"),
                         int_strategy = "auto", num_threads = "1:1",
                         n_samples = 0L, cpo = FALSE, theta_start = NULL,
                         y = NULL, seed = 1L, reproducible = TRUE,
-                        latent = NULL) {
+                        latent = NULL, venue = NULL) {
   response <- match.arg(response)
   within <- match.arg(within)
+  if (!is.null(venue) && (length(venue) != v$N + v$N_pred || anyNA(venue) || !all(venue %in% c(-1, 0, 1)))) {
+    cli::cli_abort(
+      "{.arg venue} needs one value of -1, 0 or 1 per row ({v$N + v$N_pred}: training rows, then prediction rows)."
+    )
+  }
   # WHY before R-INLA is asked: with no training rows its program exits with an error
   # that does not say why.
   if (v$N == 0L) {
@@ -209,10 +220,12 @@ fit_v2_inla <- function(v, response = c("margin", "total"),
     })
   }
   if (is_margin) {
+    x_venue <- if (is.null(venue)) rep(1, n) else as.numeric(venue)
+    host <- ifelse(x_venue < 0, away, home)
     a_list <- c(a_list, list(
-      Matrix::sparseMatrix(i = rows, j = home, x = 1, dims = c(n, v$K)), 1
+      Matrix::sparseMatrix(i = rows, j = host, x = x_venue, dims = c(n, v$K)), 1
     ))
-    effects <- c(effects, list(list(ha = seq_len(v$K)), data.frame(hfa = rep(1, n))))
+    effects <- c(effects, list(list(ha = seq_len(v$K)), data.frame(hfa = x_venue)))
     terms <- c("hfa", terms, "f(ha, model = \"iid\", values = seq_len(v$K), hyper = hyper_ha)")
     fixed_names <- "hfa"
     control_fixed <- list(mean = 0, prec = 1 / priors$hfa_sd^2)

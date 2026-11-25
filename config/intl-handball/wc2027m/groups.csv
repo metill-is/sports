@@ -1,0 +1,33 @@
+group,position,team,venue_city
+A,1,Germany,Munich
+A,2,Serbia,Munich
+A,3,Tunisia,Munich
+A,4,Uruguay,Munich
+B,1,Egypt,Stuttgart
+B,2,Italy,Stuttgart
+B,3,Cape Verde,Stuttgart
+B,4,Saudi Arabia,Stuttgart
+C,1,Croatia,Munich
+C,2,Spain,Munich
+C,3,Chile,Munich
+C,4,Türkiye,Munich
+D,1,Argentina,Stuttgart
+D,2,France,Stuttgart
+D,3,Brazil,Stuttgart
+D,4,Kuwait,Stuttgart
+E,1,Sweden,Kiel
+E,2,Norway,Kiel
+E,3,Greece,Kiel
+E,4,Qatar,Kiel
+F,1,Portugal,Magdeburg
+F,2,Faroe Islands,Magdeburg
+F,3,Poland,Magdeburg
+F,4,Algeria,Magdeburg
+G,1,Denmark,Kiel
+G,2,Slovenia,Kiel
+G,3,United States of America,Kiel
+G,4,Angola,Kiel
+H,1,Iceland,Magdeburg
+H,2,North Macedonia,Magdeburg
+H,3,Bahrain,Magdeburg
+H,4,Japan,Magdeburg

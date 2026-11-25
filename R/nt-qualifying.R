@@ -37,10 +37,9 @@ NULL
 # deciding. Every function here takes `h2h_reapply`: "repeat" (default, the
 # published reading) or "once" (the literal wording).
 #
-# Not modelled here: the play-offs (Articles 16 and 17) and the reserved host
-# places (14.04). nt_simulate_qualifying() returns every simulated group
-# position and the runners-up ranking, which is all a later play-off step
-# needs besides the Nations League ranking.
+# The reserved host places (14.04) and the play-offs (Articles 16 and 17) are
+# in R/nt-euro2028.R, which takes nt_simulate_qualifying()'s group positions,
+# runners-up ranking and per-team Article 23 statistics.
 
 .nt_uefa_overall_criteria <- c(
   e_goal_difference = "gd", f_goals_for = "gf", g_away_goals = "away_gf",
@@ -321,7 +320,10 @@ nt_uefa_overall_ranking <- function(matches, groups, disciplinary = NULL,
 # goals); `overall` is a list of n x k matrices applied in order once the
 # head-to-head criteria are exhausted; `tiebreak` (n x k, larger is better)
 # settles whatever is still level after them. Pass 1 of the loop is a) to c),
-# later passes re-apply them; `h2h_reapply = "none"` stops after pass 1.
+# later passes re-apply them: `"repeat"` until nothing splits, `"once"` one
+# more pass, `"none"` no re-application (the head-to-head table among all the
+# teams level on points, then straight on to `overall`; the literal reading of
+# the EHF and IHF handball rules, R/ih-simulate.R).
 # `level` (a list of n x k matrices, default the points) is what teams must be
 # level on before the head-to-head step: the FIFA Women's World Cup 2023 order
 # passes points, goal difference and goals in all group matches.
@@ -341,7 +343,11 @@ nt_uefa_overall_ranking <- function(matches, groups, disciplinary = NULL,
     matrix(match(lab, unique(lab)), n, k)
   }
   cls <- class_of(keys)
-  max_pass <- switch(h2h_reapply, once = 2L, none = 1L, k)
+  max_pass <- switch(h2h_reapply,
+    none = 1L,
+    once = 2L,
+    k
+  )
   for (pass in seq_len(max_pass)) {
     eq <- same_class(cls)
     h_pts <- apply(eq * pts_vs, c(1, 2), sum)
@@ -405,69 +411,119 @@ nt_uefa_overall_ranking <- function(matches, groups, disciplinary = NULL,
 #' under Article 23, discarding results against teams placed below the size
 #' of the smallest group.
 #'
+#' Groups may hold placeholders for the two sides of a two-legged tie that is
+#' played before the qualifiers (the 2026/27 Nations League quarter-finals
+#' enter the EURO 2028 draw as "QFk winner" and "QFk defeated"). Each tie is
+#' simulated per simulation with [nt_simulate_two_leg()], each side at home
+#' in one leg, and the placeholders take its winner and defeated team.
+#'
 #' Disciplinary points (criterion j) are not modelled: a uniform random draw
 #' per team and simulation stands in for them, which settles every tie that
 #' reaches j), so k) is never needed.
 #'
 #' @param fit A fit from [nt_fit_inla()] (or any list with the same `draws`,
 #'   `teams` and `kappa` elements).
-#' @param groups Named list of character vectors: the teams of each group.
+#' @param groups Named list of character vectors: the teams (or placeholder
+#'   slots) of each group.
 #' @param fixtures Optional data frame of group matches with `group`,
 #'   `home_team`, `away_team`, `home_score`, `away_score` (`NA` for unplayed)
 #'   and `venue` (1 when the home side plays at home, 0 at a neutral venue;
-#'   default 1). Each group's fixtures must be its double round robin: every
-#'   ordered pair of its teams exactly once (Article 14.01). `NULL` plays
-#'   every pair home and away, all unplayed.
+#'   default 1), in the labels of `groups`. Each group's fixtures must be its
+#'   double round robin: every ordered pair of its teams exactly once
+#'   (Article 14.01). `NULL` plays every pair home and away, all unplayed.
 #' @param n_sims Number of simulated group stages.
 #' @param n_best_runners_up Runners-up that qualify directly.
 #' @param counted_positions Results against teams placed below this position
 #'   are discarded from the runners-up ranking. Defaults to the size of the
 #'   smallest group (4 for Euro 2028: results against fifth place).
 #' @param h2h_reapply Passed to [nt_rank_uefa_group()].
+#' @param quarter_finals Optional data frame of ties that decide placeholder
+#'   slots: `winner_slot`, `defeated_slot` (labels used in `groups`),
+#'   `first_leg_home`, `second_leg_home` (teams in the fit). Rows whose slots
+#'   are not drawn are ignored.
+#' @param et_factor,shootout_p Passed to [nt_simulate_two_leg()].
 #' @param seed Optional seed.
-#' @return List: `teams` (tibble: `team`, `group`, `p_pos1` ... `p_posK`,
-#'   `p_winner`, `p_runner_up_direct`, `p_runner_up_other`, `p_qualify_direct`,
-#'   `exp_points`), `positions` (n_sims x teams matrix of group positions),
-#'   `runner_up` (n_sims x groups matrix of each group's runner-up), and
-#'   `runner_up_rank` (n_sims x groups matrix of that runner-up's rank among
-#'   the runners-up). The last three are the inputs a play-off and
-#'   host-place step needs.
+#' @return List:
+#'   * `teams`: tibble per team (`team`, `group` (for a team behind a
+#'     placeholder, the winner's and defeated team's groups as `"A/G"`),
+#'     `p_pos1` ... `p_posK`, `p_winner`, `p_runner_up_direct`,
+#'     `p_runner_up_other`, `p_qualify_direct`, `exp_points`);
+#'   * `slots`: the same per slot of `groups`;
+#'   * `positions` (n_sims x teams) and `slot_positions` (n_sims x slots):
+#'     group positions;
+#'   * `runner_up` (n_sims x groups): each group's runner-up (team);
+#'   * `runner_up_rank` (n_sims x groups): its rank among the runners-up;
+#'   * `overall`: list of n_sims x teams matrices, each team's Article 23
+#'     statistics (`points`, `gd`, `gf`, `away_gf`, `won`, `away_won`) over
+#'     the matches that ranking counts for it, plus a uniform `tiebreak`
+#'     standing in for disciplinary points;
+#'   * `qf_winner` (n_sims x ties, `NULL` without placeholders);
+#'   * `draw`: the posterior draw behind each simulation; and `n_sims`.
+#'   These are the inputs a play-off and host-place step needs.
 #' @export
 nt_simulate_qualifying <- function(fit, groups, fixtures = NULL, n_sims = 10000L,
                                    n_best_runners_up = 8L,
                                    counted_positions = NULL,
                                    h2h_reapply = c("repeat", "once"),
+                                   quarter_finals = NULL,
+                                   et_factor = 1 / 3, shootout_p = 0.5,
                                    seed = NULL) {
   h2h_reapply <- match.arg(h2h_reapply)
   if (!is.null(seed)) set.seed(seed)
   groups <- lapply(groups, as.character)
-  all_teams <- unlist(groups, use.names = FALSE)
-  if (anyDuplicated(all_teams)) cli::cli_abort("A team appears in more than one group.")
+  slots <- unlist(groups, use.names = FALSE)
+  if (anyDuplicated(slots)) cli::cli_abort("A team appears in more than one group.")
   if (is.null(fixtures)) fixtures <- nt_qualifying_fixtures(groups)
   fixtures <- .nt_check_qualifying_fixtures(fixtures, groups)
   if (length(groups) < n_best_runners_up) {
     cli::cli_abort("{n_best_runners_up} best runners-up need at least that many groups.")
   }
+  qf <- .nt_check_quarter_finals(quarter_finals, slots)
+  placeholders <- c(qf$winner_slot, qf$defeated_slot)
+  teams <- c(setdiff(slots, placeholders), as.vector(rbind(qf$first_leg_home, qf$second_leg_home)))
+  unknown <- setdiff(teams, fit$teams)
+  if (length(unknown) > 0L) cli::cli_abort("Team{?s} not in the fit: {.val {unknown}}.")
   comparable <- counted_positions %||% min(lengths(groups))
+  sims <- seq_len(n_sims)
+
+  draw <- sample.int(length(fit$draws$mu), n_sims, replace = TRUE)
+  slot_team <- matrix(slots, n_sims, length(slots), byrow = TRUE, dimnames = list(NULL, slots))
+  qf_winner <- NULL
+  if (nrow(qf) > 0L) {
+    qf_winner <- matrix(NA_character_, n_sims, nrow(qf), dimnames = list(NULL, paste0("QF", qf$qf)))
+    for (i in seq_len(nrow(qf))) {
+      a <- qf$first_leg_home[i]
+      b <- qf$second_leg_home[i]
+      legs <- function(x) matrix(rep(match(x, fit$teams), each = n_sims), n_sims)
+      r <- .nt_sim_rates(fit, draw, legs(c(a, b)), legs(c(b, a)), c(1, 1))
+      res <- nt_simulate_two_leg(
+        r$home[, 1], r$away[, 1], r$away[, 2], r$home[, 2], et_factor, shootout_p
+      )
+      qf_winner[, i] <- ifelse(res$a_wins, a, b)
+      slot_team[, qf$winner_slot[i]] <- qf_winner[, i]
+      slot_team[, qf$defeated_slot[i]] <- ifelse(res$a_wins, b, a)
+    }
+  }
 
   open <- which(is.na(fixtures$home_score) | is.na(fixtures$away_score))
-  draw <- sample.int(length(fit$draws$mu), n_sims, replace = TRUE)
   goals_h <- matrix(fixtures$home_score, n_sims, nrow(fixtures), byrow = TRUE)
   goals_a <- matrix(fixtures$away_score, n_sims, nrow(fixtures), byrow = TRUE)
   if (length(open) > 0L) {
-    rates <- nt_match_rates(
-      fit, fixtures$home_team[open], fixtures$away_team[open], fixtures$venue[open]
+    idx <- function(lab) matrix(match(slot_team[, lab, drop = FALSE], fit$teams), n_sims)
+    rates <- .nt_sim_rates(
+      fit, draw, idx(fixtures$home_team[open]), idx(fixtures$away_team[open]),
+      .nt_venue_values(fixtures$venue[open])
     )
-    lh <- rates$home[draw, , drop = FALSE]
-    la <- rates$away[draw, , drop = FALSE]
-    goals_h[, open] <- stats::rpois(length(lh), lh)
-    goals_a[, open] <- stats::rpois(length(la), la)
+    goals_h[, open] <- stats::rpois(length(rates$home), rates$home)
+    goals_a[, open] <- stats::rpois(length(rates$away), rates$away)
   }
 
-  positions <- matrix(0L, n_sims, length(all_teams), dimnames = list(NULL, all_teams))
-  points <- positions
+  crit <- unname(c("points", .nt_uefa_overall_criteria))
+  slot_positions <- matrix(0L, n_sims, length(slots), dimnames = list(NULL, slots))
+  slot_points <- matrix(0, n_sims, length(slots), dimnames = list(NULL, slots))
+  slot_overall <- stats::setNames(rep(list(slot_points), length(crit)), crit)
   ru_keys <- list()
-  runner_up <- matrix(NA_character_, n_sims, length(groups), dimnames = list(NULL, names(groups)))
+  runner_up_slot <- matrix(NA_character_, n_sims, length(groups), dimnames = list(NULL, names(groups)))
   for (g in names(groups)) {
     tg <- groups[[g]]
     k <- length(tg)
@@ -479,18 +535,17 @@ nt_simulate_qualifying <- function(fit, groups, fixtures = NULL, n_sims = 10000L
     pos <- .nt_rank_group_arrays(
       x, matrix(stats::runif(n_sims * k), n_sims, k), h2h_reapply
     )
-    positions[, tg] <- pos
-    points[, tg] <- apply(x$points, c(1, 2), sum)
-
-    # Runner-up's record against the teams placed within the comparable size.
+    slot_positions[, tg] <- pos
+    slot_points[, tg] <- apply(x$points, c(1, 2), sum)
+    # Article 23: a team placed within `comparable` counts only its matches
+    # against teams also placed within it; a team placed below keeps all.
+    within <- array(pos <= comparable, c(n_sims, k, k))
+    counted <- aperm(within, c(1, 3, 2)) | !within
+    for (nm in crit) slot_overall[[nm]][, tg] <- apply(x[[nm]] * counted, c(1, 2), sum)
     second <- max.col(pos == 2L, ties.method = "first")
-    keep <- pos <= comparable
-    pick <- function(x) {
-      vals <- x[cbind(rep(seq_len(n_sims), k), rep(second, k), rep(seq_len(k), each = n_sims))]
-      rowSums(matrix(vals, n_sims, k) * keep)
-    }
-    ru_keys[[g]] <- lapply(x, pick)
-    runner_up[, g] <- tg[second]
+    at <- cbind(sims, match(tg[second], slots))
+    ru_keys[[g]] <- lapply(slot_overall, function(m) m[at])
+    runner_up_slot[, g] <- tg[second]
   }
 
   key_mat <- function(name) {
@@ -505,34 +560,96 @@ nt_simulate_qualifying <- function(fit, groups, fixtures = NULL, n_sims = 10000L
     matrix(stats::runif(n_sims * length(groups)), n_sims, length(groups))
   ))
   dimnames(ru_rank) <- list(NULL, names(groups))
+  slot_overall$tiebreak <- matrix(
+    stats::runif(n_sims * length(slots)), n_sims, length(slots), dimnames = list(NULL, slots)
+  )
 
-  max_k <- max(lengths(groups))
-  pos_cols <- vapply(seq_len(max_k), function(p) colMeans(positions == p), numeric(length(all_teams)))
-  pos_cols <- matrix(pos_cols, ncol = max_k, dimnames = list(all_teams, paste0("p_pos", seq_len(max_k))))
-  direct_ru <- stats::setNames(numeric(length(all_teams)), all_teams)
-  other_ru <- direct_ru
-  for (g in names(groups)) {
-    is_direct <- ru_rank[, g] <= n_best_runners_up
-    for (t in groups[[g]]) {
-      mine <- runner_up[, g] == t
-      direct_ru[t] <- mean(mine & is_direct)
-      other_ru[t] <- mean(mine & !is_direct)
+  # Per team: the column of the slot each team occupies in each simulation.
+  slot_of <- matrix(match(teams, slots), n_sims, length(teams), byrow = TRUE, dimnames = list(NULL, teams))
+  for (i in seq_len(nrow(qf))) {
+    for (t in c(qf$first_leg_home[i], qf$second_leg_home[i])) {
+      slot_of[, t] <- match(ifelse(qf_winner[, i] == t, qf$winner_slot[i], qf$defeated_slot[i]), slots)
     }
   }
-  team_tab <- tibble::tibble(
-    team = all_teams,
-    group = rep(names(groups), lengths(groups)),
-    tibble::as_tibble(pos_cols),
-    p_winner = pos_cols[, "p_pos1"],
-    p_runner_up_direct = unname(direct_ru),
-    p_runner_up_other = unname(other_ru),
-    p_qualify_direct = pos_cols[, "p_pos1"] + unname(direct_ru),
-    exp_points = colMeans(points)
+  by_team <- function(m) {
+    out <- m[cbind(rep(sims, length(teams)), c(slot_of))]
+    matrix(out, n_sims, length(teams), dimnames = list(NULL, teams))
+  }
+  runner_up <- matrix(
+    slot_team[cbind(rep(sims, length(groups)), c(match(runner_up_slot, slots)))],
+    n_sims, length(groups), dimnames = list(NULL, names(groups))
   )
+  direct <- ru_rank <= n_best_runners_up
+  group_of_slot <- stats::setNames(rep(names(groups), lengths(groups)), slots)
+  team_group <- stats::setNames(group_of_slot[teams], teams)
+  for (i in seq_len(nrow(qf))) {
+    both <- paste(group_of_slot[qf$winner_slot[i]], group_of_slot[qf$defeated_slot[i]], sep = "/")
+    team_group[c(qf$first_leg_home[i], qf$second_leg_home[i])] <- both
+  }
+  max_k <- max(lengths(groups))
+  summarise <- function(ids, group, positions, points, holder) {
+    pos_cols <- vapply(seq_len(max_k), function(p) colMeans(positions == p), numeric(length(ids)))
+    pos_cols <- matrix(pos_cols, ncol = max_k, dimnames = list(ids, paste0("p_pos", seq_len(max_k))))
+    # A team sits in one group per simulation, so each row holds it at most once.
+    ru_direct <- vapply(ids, function(t) mean(rowSums(holder == t & direct) > 0), numeric(1))
+    ru_other <- vapply(ids, function(t) mean(rowSums(holder == t & !direct) > 0), numeric(1))
+    tibble::tibble(
+      team = ids, group = unname(group),
+      tibble::as_tibble(pos_cols),
+      p_winner = pos_cols[, "p_pos1"],
+      p_runner_up_direct = unname(ru_direct),
+      p_runner_up_other = unname(ru_other),
+      p_qualify_direct = pos_cols[, "p_pos1"] + unname(ru_direct),
+      exp_points = colMeans(points)
+    )
+  }
+  team_tab <- summarise(teams, team_group, by_team(slot_positions), by_team(slot_points), runner_up)
+  slot_tab <- summarise(slots, group_of_slot, slot_positions, slot_points, runner_up_slot)
+  names(slot_tab)[1] <- "slot"
   list(
-    teams = team_tab, positions = positions, runner_up = runner_up,
-    runner_up_rank = ru_rank, n_sims = n_sims
+    teams = team_tab, slots = slot_tab,
+    positions = by_team(slot_positions), slot_positions = slot_positions,
+    runner_up = runner_up, runner_up_rank = ru_rank,
+    overall = lapply(slot_overall, by_team),
+    qf_winner = qf_winner, draw = draw, n_sims = n_sims
   )
+}
+
+# Check the ties behind placeholder slots: keep those whose slots are drawn,
+# refuse half-drawn ties and quarter-finalists drawn as themselves.
+.nt_check_quarter_finals <- function(quarter_finals, slots) {
+  empty <- data.frame(
+    qf = integer(), winner_slot = character(), defeated_slot = character(),
+    first_leg_home = character(), second_leg_home = character(), stringsAsFactors = FALSE
+  )
+  if (is.null(quarter_finals) || nrow(quarter_finals) == 0L) {
+    stray <- grep("^QF[0-9]+ (winner|defeated)$", slots, value = TRUE)
+    if (length(stray) > 0L) {
+      cli::cli_abort("Placeholder{?s} {.val {stray}} need {.arg quarter_finals}.")
+    }
+    return(empty)
+  }
+  need <- c("winner_slot", "defeated_slot", "first_leg_home", "second_leg_home")
+  if (!all(need %in% names(quarter_finals))) {
+    cli::cli_abort("{.arg quarter_finals} needs columns {.field {need}}.")
+  }
+  q <- as.data.frame(quarter_finals, stringsAsFactors = FALSE)
+  if (is.null(q$qf)) q$qf <- seq_len(nrow(q))
+  for (col in need) q[[col]] <- as.character(q[[col]])
+  drawn_w <- q$winner_slot %in% slots
+  drawn_d <- q$defeated_slot %in% slots
+  half <- xor(drawn_w, drawn_d)
+  if (any(half)) {
+    cli::cli_abort("Only one placeholder of tie{?s} {.val {paste0('QF', q$qf[half])}} is in the groups.")
+  }
+  q <- q[drawn_w & drawn_d, , drop = FALSE]
+  direct <- intersect(c(q$first_leg_home, q$second_leg_home), slots)
+  if (length(direct) > 0L) {
+    cli::cli_abort("{.val {direct}} {?is/are} drawn directly and behind a placeholder.")
+  }
+  stray <- setdiff(grep("^QF[0-9]+ (winner|defeated)$", slots, value = TRUE), c(q$winner_slot, q$defeated_slot))
+  if (length(stray) > 0L) cli::cli_abort("Placeholder{?s} {.val {stray}} match no tie.")
+  q[, c("qf", need)]
 }
 
 # Check that the fixtures are each group's double round robin (every ordered
