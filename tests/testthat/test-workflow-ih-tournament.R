@@ -76,6 +76,27 @@ test_that("only the championship's publish folder is committed, and the platform
   expect_true(any(grepl("nothing published", runner, fixed = TRUE)))
 })
 
+test_that("the job runs in the ih-refresh environment with least privilege, two scoped tokens and pinned actions", {
+  skip_if_not(file.exists(ih_workflow))
+  wf <- yaml::read_yaml(ih_workflow)
+  job <- wf$jobs$forecast
+  # The secrets live in the environment, which only the main branch may use.
+  expect_identical(job$environment, "ih-refresh")
+  expect_length(wf$permissions, 0L)
+  expect_identical(job$permissions, list(contents = "write"))
+  # One token per purpose: the table's read, the platform's dispatch.
+  expect_identical(ih_step("Fetch the match table")$env$GH_TOKEN, "${{ secrets.IH_DATA_TOKEN }}")
+  expect_identical(ih_step("Dispatch metill-platform's pull")$env$GH_TOKEN, "${{ secrets.PLATFORM_DISPATCH_TOKEN }}")
+  lines <- readLines(ih_workflow, warn = FALSE)
+  secrets <- unique(unlist(regmatches(lines, gregexpr("secrets\\.[A-Z_]+", lines))))
+  expect_setequal(secrets, paste0("secrets.", c("GITHUB_TOKEN", "IH_DATA_REPO", "IH_DATA_FILE", "IH_DATA_TOKEN", "PLATFORM_DISPATCH_TOKEN")))
+  expect_false(any(grepl("IH_DATA_TOKEN", lines[grepl("gh workflow run", lines)])))
+  # Every action is pinned to a full commit, its tag in a comment.
+  uses <- trimws(sub("^.*uses:", "", lines[grepl("^\\s*(- )?uses:", lines)]))
+  expect_gt(length(uses), 0L)
+  expect_true(all(grepl("^[A-Za-z0-9_.-]+/[A-Za-z0-9_./-]+@[0-9a-f]{40} # v[0-9.]+$", uses)), info = paste(uses, collapse = "; "))
+})
+
 test_that("no tracked file names the private data source, the machines around it or how it is fetched", {
   # WHY hashes: the names themselves must not appear in this public
   # repository, not even here. Each entry is the SHA-256 of a forbidden word
