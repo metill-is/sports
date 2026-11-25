@@ -51,7 +51,7 @@ IH_TOURNAMENTS <- list(
       Katowice = "Poland", Bratislava = "Slovakia"
     ),
     start = as.Date("2026-12-03"), end = as.Date("2026-12-20"),
-    publish = c("handball_euro", "kvenna"), focus_team = "Iceland"
+    publish = c("handball_euro", "kvenna"), focus_team = "Iceland", focus_round = "MR"
   ),
   wc2027m = list(
     title = "Men's IHF World Championship 2027", sex = "male", competition = "WC", edition = 2027L,
