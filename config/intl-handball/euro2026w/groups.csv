@@ -1,0 +1,25 @@
+group,position,team,venue_city
+A,1,Hungary,Oradea
+A,2,Montenegro,Oradea
+A,3,Slovenia,Oradea
+A,4,Iceland,Oradea
+B,1,Norway,Cluj-Napoca
+B,2,Romania,Cluj-Napoca
+B,3,Switzerland,Cluj-Napoca
+B,4,North Macedonia,Cluj-Napoca
+C,1,Denmark,Antalya
+C,2,Spain,Antalya
+C,3,Türkiye,Antalya
+C,4,Greece,Antalya
+D,1,Netherlands,Brno
+D,2,Czechia,Brno
+D,3,Austria,Brno
+D,4,Croatia,Brno
+E,1,France,Katowice
+E,2,Poland,Katowice
+E,3,Faroe Islands,Katowice
+E,4,Ukraine,Katowice
+F,1,Sweden,Bratislava
+F,2,Germany,Bratislava
+F,3,Slovakia,Bratislava
+F,4,Serbia,Bratislava

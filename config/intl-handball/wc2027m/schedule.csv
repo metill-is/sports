@@ -1,0 +1,113 @@
+match_no,stage,group,date,local_time,tz,venue_city,home_team,away_team
+307513,Preliminary Round,A,2027-01-13,17:30,CET (UTC+1),Munich,Serbia,Uruguay
+307525,Preliminary Round,B,2027-01-13,18:00,CET (UTC+1),Stuttgart,Italy,Saudi Arabia
+307515,Preliminary Round,A,2027-01-13,20:30,CET (UTC+1),Munich,Germany,Tunisia
+307527,Preliminary Round,B,2027-01-13,20:30,CET (UTC+1),Stuttgart,Egypt,Cape Verde
+307561,Preliminary Round,E,2027-01-14,18:00,CET (UTC+1),Kiel,Sweden,Greece
+307573,Preliminary Round,F,2027-01-14,18:00,CET (UTC+1),Magdeburg,Faroe Islands,Algeria
+307537,Preliminary Round,C,2027-01-14,18:00,CET (UTC+1),Munich,Spain,Türkiye
+307549,Preliminary Round,D,2027-01-14,18:00/18:30,CET (UTC+1),Stuttgart,Argentina,Brazil
+307563,Preliminary Round,E,2027-01-14,20:30,CET (UTC+1),Kiel,Norway,Qatar
+307575,Preliminary Round,F,2027-01-14,20:30,CET (UTC+1),Magdeburg,Portugal,Poland
+307539,Preliminary Round,C,2027-01-14,20:30,CET (UTC+1),Munich,Croatia,Chile
+307551,Preliminary Round,D,2027-01-14,20:30/21:00,CET (UTC+1),Stuttgart,France,Kuwait
+307585,Preliminary Round,G,2027-01-15,18:00,CET (UTC+1),Kiel,Slovenia,Angola
+307597,Preliminary Round,H,2027-01-15,18:00,CET (UTC+1),Magdeburg,North Macedonia,Japan
+307519,Preliminary Round,A,2027-01-15,18:00,CET (UTC+1),Munich,Serbia,Tunisia
+307529,Preliminary Round,B,2027-01-15,18:00,CET (UTC+1),Stuttgart,Saudi Arabia,Egypt
+307587,Preliminary Round,G,2027-01-15,20:30,CET (UTC+1),Kiel,Denmark,United States of America
+307599,Preliminary Round,H,2027-01-15,20:30,CET (UTC+1),Magdeburg,Iceland,Bahrain
+307517,Preliminary Round,A,2027-01-15,20:30,CET (UTC+1),Munich,Uruguay,Germany
+307531,Preliminary Round,B,2027-01-15,20:30,CET (UTC+1),Stuttgart,Italy,Cape Verde
+307565,Preliminary Round,E,2027-01-16,18:00,CET (UTC+1),Kiel,Qatar,Sweden
+307577,Preliminary Round,F,2027-01-16,18:00,CET (UTC+1),Magdeburg,Algeria,Portugal
+307541,Preliminary Round,C,2027-01-16,18:00,CET (UTC+1),Munich,Spain,Chile
+307553,Preliminary Round,D,2027-01-16,18:00/18:30,CET (UTC+1),Stuttgart,France,Brazil
+307567,Preliminary Round,E,2027-01-16,20:30,CET (UTC+1),Kiel,Norway,Greece
+307579,Preliminary Round,F,2027-01-16,20:30,CET (UTC+1),Magdeburg,Faroe Islands,Poland
+307543,Preliminary Round,C,2027-01-16,20:30,CET (UTC+1),Munich,Türkiye,Croatia
+307555,Preliminary Round,D,2027-01-16,20:30/21:00,CET (UTC+1),Stuttgart,Kuwait,Argentina
+307589,Preliminary Round,G,2027-01-17,18:00,CET (UTC+1),Kiel,Slovenia,United States of America
+307601,Preliminary Round,H,2027-01-17,18:00,CET (UTC+1),Magdeburg,North Macedonia,Bahrain
+307521,Preliminary Round,A,2027-01-17,18:00,CET (UTC+1),Munich,Tunisia,Uruguay
+307533,Preliminary Round,B,2027-01-17,18:00,CET (UTC+1),Stuttgart,Cape Verde,Saudi Arabia
+307591,Preliminary Round,G,2027-01-17,20:30,CET (UTC+1),Kiel,Angola,Denmark
+307603,Preliminary Round,H,2027-01-17,20:30,CET (UTC+1),Magdeburg,Japan,Iceland
+307523,Preliminary Round,A,2027-01-17,20:30,CET (UTC+1),Munich,Germany,Serbia
+307535,Preliminary Round,B,2027-01-17,20:30,CET (UTC+1),Stuttgart,Egypt,Italy
+307569,Preliminary Round,E,2027-01-18,18:00,CET (UTC+1),Kiel,Greece,Qatar
+307581,Preliminary Round,F,2027-01-18,18:00,CET (UTC+1),Magdeburg,Poland,Algeria
+307545,Preliminary Round,C,2027-01-18,18:00,CET (UTC+1),Munich,Chile,Türkiye
+307557,Preliminary Round,D,2027-01-18,18:00/18:30,CET (UTC+1),Stuttgart,Brazil,Kuwait
+307571,Preliminary Round,E,2027-01-18,20:30,CET (UTC+1),Kiel,Sweden,Norway
+307583,Preliminary Round,F,2027-01-18,20:30,CET (UTC+1),Magdeburg,Portugal,Faroe Islands
+307547,Preliminary Round,C,2027-01-18,20:30,CET (UTC+1),Munich,Croatia,Spain
+307559,Preliminary Round,D,2027-01-18,20:30/21:00,CET (UTC+1),Stuttgart,Argentina,France
+307593,Preliminary Round,G,2027-01-19,18:00,CET (UTC+1),Kiel,United States of America,Angola
+307605,Preliminary Round,H,2027-01-19,18:00,CET (UTC+1),Magdeburg,Bahrain,Japan
+307595,Preliminary Round,G,2027-01-19,20:30,CET (UTC+1),Kiel,Denmark,Slovenia
+307607,Preliminary Round,H,2027-01-19,20:30,CET (UTC+1),Magdeburg,Iceland,North Macedonia
+307609,Main Round,I,2027-01-20,,CET (UTC+1),Cologne,1A,3B
+307611,Main Round,I,2027-01-20,,CET (UTC+1),Cologne,1B,2A
+307613,Main Round,I,2027-01-20,,CET (UTC+1),Cologne,3A,2B
+307645,Main Round,III,2027-01-20,,CET (UTC+1),Hanover,1E,3F
+307647,Main Round,III,2027-01-20,,CET (UTC+1),Hanover,1F,2E
+307649,Main Round,III,2027-01-20,,CET (UTC+1),Hanover,3E,2F
+307681,President's Cup,PC I,2027-01-20,,CET (UTC+1),Magdeburg,4A,4B
+307683,President's Cup,PC I,2027-01-20,,CET (UTC+1),Magdeburg,4E,4F
+307627,Main Round,II,2027-01-21,,CET (UTC+1),Cologne,1C,3D
+307629,Main Round,II,2027-01-21,,CET (UTC+1),Cologne,1D,2C
+307631,Main Round,II,2027-01-21,,CET (UTC+1),Cologne,3C,2D
+307663,Main Round,IV,2027-01-21,,CET (UTC+1),Hanover,1G,3H
+307665,Main Round,IV,2027-01-21,,CET (UTC+1),Hanover,1H,2G
+307667,Main Round,IV,2027-01-21,,CET (UTC+1),Hanover,3G,2H
+307693,President's Cup,PC II,2027-01-21,,CET (UTC+1),Magdeburg,4C,4D
+307695,President's Cup,PC II,2027-01-21,,CET (UTC+1),Magdeburg,4G,4H
+307615,Main Round,I,2027-01-22,,CET (UTC+1),Cologne,2A,3B
+307617,Main Round,I,2027-01-22,,CET (UTC+1),Cologne,2B,1A
+307619,Main Round,I,2027-01-22,,CET (UTC+1),Cologne,3A,1B
+307651,Main Round,III,2027-01-22,,CET (UTC+1),Hanover,2E,3F
+307653,Main Round,III,2027-01-22,,CET (UTC+1),Hanover,2F,1E
+307655,Main Round,III,2027-01-22,,CET (UTC+1),Hanover,3E,1F
+307685,President's Cup,PC I,2027-01-22,,CET (UTC+1),Magdeburg,4A,4E
+307687,President's Cup,PC I,2027-01-22,,CET (UTC+1),Magdeburg,4B,4F
+307633,Main Round,II,2027-01-23,,CET (UTC+1),Cologne,2C,3D
+307635,Main Round,II,2027-01-23,,CET (UTC+1),Cologne,2D,1C
+307637,Main Round,II,2027-01-23,,CET (UTC+1),Cologne,3C,1D
+307669,Main Round,IV,2027-01-23,,CET (UTC+1),Hanover,2G,3H
+307671,Main Round,IV,2027-01-23,,CET (UTC+1),Hanover,2H,1G
+307673,Main Round,IV,2027-01-23,,CET (UTC+1),Hanover,3G,1H
+307697,President's Cup,PC II,2027-01-23,,CET (UTC+1),Magdeburg,4C,4G
+307699,President's Cup,PC II,2027-01-23,,CET (UTC+1),Magdeburg,4D,4H
+307621,Main Round,I,2027-01-24,,CET (UTC+1),Cologne,1B,1A
+307623,Main Round,I,2027-01-24,,CET (UTC+1),Cologne,2B,2A
+307625,Main Round,I,2027-01-24,,CET (UTC+1),Cologne,3B,3A
+307657,Main Round,III,2027-01-24,,CET (UTC+1),Hanover,1F,1E
+307659,Main Round,III,2027-01-24,,CET (UTC+1),Hanover,2F,2E
+307661,Main Round,III,2027-01-24,,CET (UTC+1),Hanover,3F,3E
+307689,President's Cup,PC I,2027-01-24,,CET (UTC+1),Magdeburg,4F,4A
+307691,President's Cup,PC I,2027-01-24,,CET (UTC+1),Magdeburg,4B,4E
+307639,Main Round,II,2027-01-25,,CET (UTC+1),Cologne,1D,1C
+307641,Main Round,II,2027-01-25,,CET (UTC+1),Cologne,2D,2C
+307643,Main Round,II,2027-01-25,,CET (UTC+1),Cologne,3D,3C
+307675,Main Round,IV,2027-01-25,,CET (UTC+1),Hanover,1H,1G
+307677,Main Round,IV,2027-01-25,,CET (UTC+1),Hanover,2H,2G
+307679,Main Round,IV,2027-01-25,,CET (UTC+1),Hanover,3H,3G
+307701,President's Cup,PC II,2027-01-25,,CET (UTC+1),Magdeburg,4H,4C
+307703,President's Cup,PC II,2027-01-25,,CET (UTC+1),Magdeburg,4D,4G
+307705,Quarter-final (QF1),,2027-01-26,,CET (UTC+1),Cologne,1 MR I,2 MR III
+307707,Quarter-final (QF2),,2027-01-26,,CET (UTC+1),Cologne,1 MR III,2 MR I
+307709,Quarter-final (QF3),,2027-01-27,,CET (UTC+1),Cologne,1 MR II,2 MR IV
+307711,Quarter-final (QF4),,2027-01-27,,CET (UTC+1),Cologne,1 MR IV,2 MR II
+307713,President's Cup placement 25/26,,2027-01-27,,CET (UTC+1),Magdeburg,1 PC I,1 PC II
+307715,President's Cup placement 27/28,,2027-01-27,,CET (UTC+1),Magdeburg,2 PC I,2 PC II
+307717,President's Cup placement 29/30,,2027-01-27,,CET (UTC+1),Magdeburg,3 PC I,3 PC II
+307719,President's Cup placement 31/32,,2027-01-27,,CET (UTC+1),Magdeburg,4 PC I,4 PC II
+307721,Semi-final (SF1),,2027-01-29,,CET (UTC+1),Cologne,W QF1,W QF3
+307723,Semi-final (SF2),,2027-01-29,,CET (UTC+1),Cologne,W QF2,W QF4
+307725,Placement 5-8 semi-final (PM1),,2027-01-29,,CET (UTC+1),Cologne,L QF1,L QF3
+307727,Placement 5-8 semi-final (PM2),,2027-01-29,,CET (UTC+1),Cologne,L QF2,L QF4
+307729,Final,,2027-01-31,,CET (UTC+1),Cologne,W SF1,W SF2
+307731,Bronze medal match,,2027-01-31,,CET (UTC+1),Cologne,L SF1,L SF2
+307733,Placement 5/6,,2027-01-31,,CET (UTC+1),Cologne,W 5-8.1,W 5-8.2
+307735,Placement 7/8,,2027-01-31,,CET (UTC+1),Cologne,L 5-8.1,L 5-8.2

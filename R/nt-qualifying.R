@@ -321,7 +321,10 @@ nt_uefa_overall_ranking <- function(matches, groups, disciplinary = NULL,
 # goals); `overall` is a list of n x k matrices applied in order once the
 # head-to-head criteria are exhausted; `tiebreak` (n x k, larger is better)
 # settles whatever is still level after them. Pass 1 of the loop is a) to c),
-# later passes re-apply them.
+# later passes re-apply them: `"repeat"` until nothing splits, `"once"` one
+# more pass, `"none"` no re-application (the head-to-head table among all the
+# teams level on points, then straight on to `overall`; the literal reading of
+# the EHF and IHF handball rules, R/ih-simulate.R).
 .nt_rank_group_vec <- function(pts_vs, gd_vs, gf_vs, overall, tiebreak,
                                h2h_reapply = "repeat") {
   n <- dim(pts_vs)[1]
@@ -339,7 +342,11 @@ nt_uefa_overall_ranking <- function(matches, groups, disciplinary = NULL,
     matrix(match(lab, unique(lab)), n, k)
   }
   cls <- class_of(keys)
-  max_pass <- if (h2h_reapply == "once") 2L else k
+  max_pass <- switch(h2h_reapply,
+    none = 1L,
+    once = 2L,
+    k
+  )
   for (pass in seq_len(max_pass)) {
     eq <- same_class(cls)
     h_pts <- apply(eq * pts_vs, c(1, 2), sum)
