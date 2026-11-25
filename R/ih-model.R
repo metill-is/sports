@@ -152,7 +152,9 @@ ih_fit <- function(matches, fixtures, as_of, season = NULL, from_season = NULL,
 #' A forecast as of day D knows every match played up to and including D: the
 #' model trains on the matches dated before D + 1, the championship keeps its
 #' results from D, and the fit is dated D (`fit$as_of`, which the publisher
-#' writes as `fit_date`).
+#' writes as `fit_date`). The championship's own matches train with the
+#' venues of its schedule ([ih_with_spec_venues()]), as the simulator prices
+#' its fixtures.
 #'
 #' @param matches Played matches of the championship's sex, see [ih_fit()].
 #' @param spec [ih_tournament_spec()].
@@ -165,6 +167,7 @@ ih_fit <- function(matches, fixtures, as_of, season = NULL, from_season = NULL,
 ih_forecast_fit <- function(matches, spec, as_of, n_draws = 4000L, seed = 1L, int_strategy = "auto") {
   as_of <- as.Date(as_of)
   cutoff <- as_of + 1L
+  matches <- ih_with_spec_venues(matches, spec)
   results <- ih_tournament_results(matches[matches$match_date < cutoff, , drop = FALSE], spec)
   empty <- data.frame(match_date = as.Date(character()), home_team = character(), away_team = character(), venue = integer())
   fit <- ih_fit(
