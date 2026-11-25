@@ -149,7 +149,7 @@ ih_upcoming <- function(spec, results, actual) {
 #' @return `up` with `p_home`, `p_draw`, `p_away` (after 60 minutes),
 #'   `p_advance` (knockouts: the home side goes through), `eg_home`,
 #'   `eg_away` and `goal_diff_distribution` (a list of data frames `diff`, `p`
-#'   in the Iceland leagues' two-goal buckets).
+#'   with one bin per goal, [.ih_goal_diff_bins()]).
 #' @noRd
 ih_predict_upcoming <- function(fit, up, n_sims = 20000L, seed = 1L) {
   if (!nrow(up)) {
@@ -170,12 +170,47 @@ ih_predict_upcoming <- function(fit, up, n_sims = 20000L, seed = 1L) {
   up$p_advance <- ifelse(up$stage == "knockout", colMeans(hw), NA_real_)
   up$eg_home <- colMeans(sc$home)
   up$eg_away <- colMeans(sc$away)
-  up$goal_diff_distribution <- lapply(seq_len(nrow(up)), function(j) {
-    b <- .bucket_centre_2dt(d[, j], 2L, -20L, 20L)
-    tb <- table(b) / n_sims
-    data.frame(diff = as.integer(names(tb)), p = as.numeric(tb))
-  })
+  up$goal_diff_distribution <- lapply(seq_len(nrow(up)), function(j) .ih_goal_diff_bins(d[, j]))
   up
+}
+
+#' The round whose chance the page shows as the focus team's headline
+#'
+#' `spec$focus_round` when the championship names one (the EURO 2026: the main
+#' round, owner 2026-11-25), else the quarter-finals when there are any, else
+#' the semi-finals.
+#' @param spec [ih_tournament_spec()] or an `IH_TOURNAMENTS` entry.
+#' @return A code from `spec$rounds`.
+#' @noRd
+ih_focus_round <- function(spec) {
+  if (!is.null(spec$focus_round)) {
+    return(spec$focus_round)
+  }
+  if ("QF" %in% spec$rounds) "QF" else "SF"
+}
+
+#' Widest goal difference published; a margin beyond it counts at the edge
+#'
+#' Set from the most lopsided match forecast so far, North Macedonia-Norway
+#' at the EURO 2026 (expected margin -27.5 goals): at 40 it put 1.8 % of its
+#' mass in the end bin; at 50 none of the 20,000 simulations of any EURO 2026
+#' or WC 2027 match reached it (widest 48, forecasts of 2026-11-25).
+#' @noRd
+IH_GOAL_DIFF_LIMIT <- 50L
+
+#' Distribution of simulated 60-minute goal differences, one goal per bin
+#'
+#' The margins are integers, so each gets its own bin: the 0 bin is the draw,
+#' and the bins on either side sum to the home and away wins. A margin beyond
+#' `IH_GOAL_DIFF_LIMIT` counts in the end bin.
+#' @param d Integer margins (home minus away), one per simulation.
+#' @return data.frame `diff`, `p` over the margins that occur.
+#' @noRd
+.ih_goal_diff_bins <- function(d, limit = IH_GOAL_DIFF_LIMIT) {
+  x <- pmin(pmax(as.integer(d), -limit), limit)
+  p <- tabulate(x + limit + 1L, nbins = 2L * limit + 1L) / length(x)
+  keep <- p > 0
+  data.frame(diff = (-limit:limit)[keep], p = p[keep])
 }
 
 #' Write the five files of a championship forecast
@@ -355,7 +390,7 @@ ih_publish_tournament <- function(fit, sim, spec, results, out_dir, names = ih_t
     fit_date = as.character(fit$as_of), start_date = as.character(spec$start), end_date = as.character(spec$end),
     title = spec$title, n_teams = length(teams), n_groups = length(spec$groups), n_draws = as.integer(sim$n_sims),
     matches_played = as.integer(n_played), matches_group_total = nrow(spec$prelim),
-    focus_team = spec$focus_team, focus_round = if ("QF" %in% spec$rounds) "QF" else "SF",
+    focus_team = spec$focus_team, focus_round = ih_focus_round(spec),
     champion_favourite = list(team = fav$team, team_is = is_name(fav$team), p_champion = rnd(fav$p_Champion)),
     model = list(
       engine = "inla", model_version = "ih-v2.0",

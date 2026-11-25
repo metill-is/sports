@@ -70,6 +70,7 @@ NULL
     dplyr::arrange(.data$game_nr, .data$diff)
 }
 
+# WHY: assumes continuous input; on integer margins an even `bw` sends odd ones half-to-even (a sawtooth).
 .bucket_centre_2dt <- function(x, bw, low, high) {
   clamped <- pmin(pmax(x, low), high)
   as.integer(round(clamped / bw) * bw)

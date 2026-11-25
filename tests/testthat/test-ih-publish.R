@@ -20,7 +20,8 @@ test_that("before the start: six groups, every preliminary match priced, contrac
   expect_length(p, 36L)
   expect_equal(p[[1]]$p_home + p[[1]]$p_draw + p[[1]]$p_away, 1, tolerance = 1e-3)
   expect_equal(sum(vapply(p[[1]]$goal_diff_distribution, function(b) b$p, 0)), 1, tolerance = 1e-3)
-  expect_true(all(vapply(p[[1]]$goal_diff_distribution, function(b) b$diff %% 2 == 0, TRUE)))
+  g1 <- p[[1]]$goal_diff_distribution
+  expect_equal(sum(vapply(g1, function(b) b$p, 0)[vapply(g1, function(b) b$diff, 0) == 0]), p[[1]]$p_draw, tolerance = 1e-9)
   pl <- jsonlite::read_json(file.path(out, "tournament_placements.json"))
   expect_equal(vapply(pl$rounds, function(r) r$code, ""), c("MR", "SF", "Final", "Champion"))
   expect_equal(sum(vapply(pl$summary, function(s) s$p_champion, 0)), 1, tolerance = 1e-3)
@@ -28,7 +29,7 @@ test_that("before the start: six groups, every preliminary match priced, contrac
   expect_false(meta$placeholder)
   expect_equal(meta$fit_date, "2026-12-01")
   expect_equal(meta$matches_group_total, 36L)
-  expect_equal(meta$focus_round, "SF")
+  expect_equal(meta$focus_round, "MR")
   st <- jsonlite::read_json(file.path(out, "team_strengths.json"))
   expect_length(st$teams, 24L)
   expect_length(st$records, 24L * 3L * 3L)
@@ -180,6 +181,48 @@ test_that("a group match without a 60-minute score counts with its final score; 
   tab <- ih_actual_standings(spec, r)$prelim$A$table
   expect_equal(tab$points[tab$team == pf$home_team[1]], 2)
   expect_equal(tab$gd[tab$team == pf$away_team[1]], -5)
+})
+
+test_that("the EURO page leads with the main round, the world championship with the quarter-finals", {
+  # Owner, 2026-11-25: "Yes, main round" -- Iceland's headline on the EURO page
+  # is its chance of the main round, not of the semi-finals.
+  expect_equal(ih_focus_round(IH_TOURNAMENTS$euro2026w), "MR")
+  expect_equal(ih_focus_round(IH_TOURNAMENTS$wc2027m), "QF")
+  expect_true(ih_focus_round(IH_TOURNAMENTS$euro2026w) %in% IH_TOURNAMENTS$euro2026w$rounds)
+})
+
+test_that("goal-difference bins are single goals: the level bin is the draw and odd margins keep their own mass", {
+  # WHY: two-goal buckets of integer margins put each odd margin, by R's
+  # round-half-to-even, into the nearest multiple of 4, so the bars alternated
+  # tall and short and the 0 bar held the -1, 0 and +1 margins (seen live on
+  # metill.is, 2026-11-25).
+  x <- publish_fixture()
+  up <- data.frame(home = c("T01", "T02"), away = c("T05", "T06"), host = NA_character_, stage = "preliminary")
+  p <- ih_predict_upcoming(x$fit, up, n_sims = 20000L, seed = 1)
+  for (j in seq_len(nrow(p))) {
+    g <- p$goal_diff_distribution[[j]]
+    expect_equal(sum(g$p), 1, tolerance = 1e-9)
+    expect_equal(g$p[g$diff == 0], p$p_draw[j], tolerance = 1e-12)
+    expect_equal(sum(g$p[g$diff > 0]), p$p_home[j], tolerance = 1e-12)
+    expect_equal(sum(g$p[g$diff < 0]), p$p_away[j], tolerance = 1e-12)
+    # No parity sawtooth: where there is mass, every bin sits close to the
+    # mean of its two neighbours (the margin's sd is 5 goals here).
+    full <- stats::setNames(numeric(121), -60:60)
+    full[as.character(g$diff)] <- g$p
+    mid <- which(full > 0.01)
+    expect_lt(max(abs(full[mid] - (full[mid - 1] + full[mid + 1]) / 2)), 0.01)
+  }
+})
+
+test_that("a lopsided match is not piled into the end bin", {
+  x <- publish_fixture()
+  fit <- x$fit
+  fit$m_state[, "T01"] <- 13
+  up <- data.frame(home = "T01", away = "T04", host = NA_character_, stage = "preliminary")
+  # T04 is rated -6: a 19-goal favourite.
+  g <- ih_predict_upcoming(fit, up, n_sims = 20000L, seed = 1)$goal_diff_distribution[[1]]
+  expect_lt(sum(g$p[g$diff == max(g$diff)]), 0.005)
+  expect_equal(sum(g$p * g$diff), 19, tolerance = 0.3)
 })
 
 test_that("a forecast as of day D counts D's matches and is dated D", {
