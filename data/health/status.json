@@ -1,14 +1,14 @@
 {
-  "generated_at": "2026-11-24T21:54:35Z",
+  "generated_at": "2026-11-25T21:02:06Z",
   "overall": "WARN",
   "n_fail": 0,
-  "n_warn": 4,
+  "n_warn": 3,
   "checks": [
     {
       "check": "fit_freshness",
       "scope": "basketball_iceland male",
       "status": "OK",
-      "value": "0d old, current with results",
+      "value": "1d old, current with results",
       "threshold": "<= 2d"
     },
     {
@@ -22,7 +22,7 @@
       "check": "fit_freshness",
       "scope": "handball_iceland male",
       "status": "OK",
-      "value": "1d old, current with results",
+      "value": "0d old, current with results",
       "threshold": "<= 2d"
     },
     {
@@ -49,15 +49,15 @@
     {
       "check": "odds_freshness",
       "scope": "basketball_iceland",
-      "status": "WARN",
-      "value": "fixture today, no odds scraped (betting.mode: scrape, capped at WARN)",
+      "status": "OK",
+      "value": "next fixture in 6d; odds not posted yet",
       "threshold": "odds for fixtures within 3d"
     },
     {
       "check": "odds_freshness",
       "scope": "handball_iceland",
       "status": "WARN",
-      "value": "next fixture in 2d, no upcoming odds scraped",
+      "value": "next fixture in 1d, no upcoming odds scraped",
       "threshold": "odds for fixtures within 3d"
     },
     {
@@ -71,7 +71,7 @@
       "check": "rhat_drift",
       "scope": "basketball/iceland/female",
       "status": "OK",
-      "value": "1.009",
+      "value": "1.020",
       "threshold": "< 1.020"
     },
     {
@@ -141,22 +141,50 @@
       "check": "rhat_drift",
       "scope": "handball/iceland/male",
       "status": "OK",
-      "value": "1.014",
+      "value": "1.012",
       "threshold": "< 1.020"
     },
     {
       "check": "engine_reference",
       "scope": "football/iceland/male",
       "status": "WARN",
-      "value": "2026-11-23: mean |p_INLA - p_NUTS| = 0.0032 over 528 fixtures (off-season pairings); NUTS 0 divergences, Rhat 1.026; INLA mode status 0",
+      "value": "2026-11-23: mean |p_INLA - p_NUTS| = 0.0032 over 528 fixtures (off-season pairings); NUTS 0 divergences, Rhat 1.026 (hyperparameters and states); INLA mode status 0",
       "threshold": "<= 0.01; NUTS divergences < 0.5%, Rhat <= 1.02; INLA mode found and gate passed"
     },
     {
       "check": "engine_reference",
       "scope": "football/iceland/female",
       "status": "OK",
-      "value": "2026-11-23: mean |p_INLA - p_NUTS| = 0.0030 over 312 fixtures (off-season pairings); NUTS 0 divergences, Rhat 1.005; INLA mode status 0",
+      "value": "2026-11-23: mean |p_INLA - p_NUTS| = 0.0030 over 312 fixtures (off-season pairings); NUTS 0 divergences, Rhat 1.005 (hyperparameters and states); INLA mode status 0",
       "threshold": "<= 0.01; NUTS divergences < 0.5%, Rhat <= 1.02; INLA mode found and gate passed"
+    },
+    {
+      "check": "engine_reference",
+      "scope": "handball/iceland/male",
+      "status": "PAUSED",
+      "value": "no weekly reference fit of handball yet",
+      "threshold": "n/a"
+    },
+    {
+      "check": "engine_reference",
+      "scope": "handball/iceland/female",
+      "status": "PAUSED",
+      "value": "no weekly reference fit of handball yet",
+      "threshold": "n/a"
+    },
+    {
+      "check": "engine_reference",
+      "scope": "basketball/iceland/male",
+      "status": "PAUSED",
+      "value": "no weekly reference fit of basketball yet",
+      "threshold": "n/a"
+    },
+    {
+      "check": "engine_reference",
+      "scope": "basketball/iceland/female",
+      "status": "PAUSED",
+      "value": "no weekly reference fit of basketball yet",
+      "threshold": "n/a"
     },
     {
       "check": "orphaned_bets",
@@ -416,6 +444,20 @@
       "status": "OK",
       "value": "n_rounds=23 (schedule), 10 teams",
       "threshold": "config agreement"
+    },
+    {
+      "check": "ih_tournament_freshness",
+      "scope": "euro2026w",
+      "status": "PAUSED",
+      "value": "outside the championship (2026-12-03 to 2026-12-20)",
+      "threshold": "14h"
+    },
+    {
+      "check": "ih_tournament_freshness",
+      "scope": "wc2027m",
+      "status": "PAUSED",
+      "value": "outside the championship (2027-01-13 to 2027-01-31)",
+      "threshold": "14h"
     }
   ]
 }
