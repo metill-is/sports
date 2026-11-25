@@ -11,9 +11,13 @@ name: International Handball Forecast
 # outside this repository once the day's results are in. The match table is
 # not in this repository: it is read from a private repository that only the
 # secrets name (IH_DATA_REPO, IH_DATA_FILE), into RUNNER_TEMP, with a
-# read-only token (IH_DATA_TOKEN). The same token may dispatch the platform's
-# pull. ih_fit_check() is the publish gate: a fit that fails it publishes
-# nothing and fails the run.
+# read-only token (IH_DATA_TOKEN: contents read on that repository only);
+# the platform's pull is dispatched with a second token
+# (PLATFORM_DISPATCH_TOKEN: actions on metill-platform only). All four secrets
+# live in the environment ih-refresh, limited to the main branch, which the
+# job declares. Permissions are granted at job level, and every action is
+# pinned to a commit (its tag in the comment). ih_fit_check() is the publish
+# gate: a fit that fails it publishes nothing and fails the run.
 #
 # Replay (input `replay`): a past championship (IH_REPLAYS, R/ih-replay.R)
 # is forecast day by day as if live (scripts/ih/replay_tournament.R), each
@@ -60,8 +64,8 @@ on:
         type: string
         default: ''
 
-permissions:
-  contents: write
+# Least privilege: nothing at the top; the job asks for what it needs.
+permissions: {}
 
 # One run per championship at a time; not fit.yml's group (a fit runs about
 # two hours). A second dispatch waits rather than cancelling a running fit.
@@ -72,6 +76,9 @@ concurrency:
 jobs:
   forecast:
     runs-on: ubuntu-latest
+    environment: ih-refresh
+    permissions:
+      contents: write
     # Live: measured on the Mac on 2026-11-25, the WC fit 61 s and 20,000
     # simulations; the R-INLA install is most of a cold run. A replay fits
     # once a day of its championship (about 20 fits); its step has its own
@@ -103,14 +110,13 @@ jobs:
           [[ "$AS_OF" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || { echo "as_of must be YYYY-MM-DD, got: $AS_OF"; exit 1; }
           case "$TOURNAMENT" in euro2026w|wc2027m) ;; *) echo "unknown championship: $TOURNAMENT"; exit 1 ;; esac
 
-      - uses: actions/checkout@v5
-
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       - name: Describe the runner's CPU
         run: |
           lscpu | grep -E '^(Vendor ID|Model name|CPU\(s\)):'
           grep -q -m1 -w avx512f /proc/cpuinfo && echo "avx512f: yes" || echo "avx512f: no"
 
-      - uses: r-lib/actions/setup-r@v2
+      - uses: r-lib/actions/setup-r@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2.14.0
         with:
           r-version: '4.5.3' # pinned to local R, not 'release' (ci-conventions.md section 3)
           use-public-rspm: true
@@ -124,7 +130,7 @@ jobs:
           sudo apt-get install -y --no-install-recommends libgdal-dev libgeos-dev libproj-dev libudunits2-dev
 
       # sn: INLA only suggests it, but its posterior sampler stops without it.
-      - uses: r-lib/actions/setup-r-dependencies@v2
+      - uses: r-lib/actions/setup-r-dependencies@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2.14.0
         env:
           PKG_SYSREQS: "false"
         with:
@@ -190,7 +196,7 @@ jobs:
 
       - name: Upload the replay
         if: always() && inputs.replay != 'none'
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ih-replay-${{ inputs.replay }}
           path: ${{ runner.temp }}/replay
@@ -224,5 +230,5 @@ jobs:
       - name: Dispatch metill-platform's pull
         if: inputs.replay == 'none' && steps.commit.outputs.changed == 'true'
         env:
-          GH_TOKEN: ${{ secrets.IH_DATA_TOKEN }}
+          GH_TOKEN: ${{ secrets.PLATFORM_DISPATCH_TOKEN }}
         run: gh workflow run pull-sports-data.yml --repo metill-is/metill-platform --ref main
