@@ -152,9 +152,10 @@ ih_fit <- function(matches, fixtures, as_of, season = NULL, from_season = NULL,
 #' A forecast as of day D knows every match played up to and including D: the
 #' model trains on the matches dated before D + 1, the championship keeps its
 #' results from D, and the fit is dated D (`fit$as_of`, which the publisher
-#' writes as `fit_date`). The championship's own matches train with the
-#' venues of its schedule ([ih_with_spec_venues()]), as the simulator prices
-#' its fixtures.
+#' writes as `fit_date`). The date is the forecast's day, not that of its last
+#' result: a forecast made before D's first match is dated D and holds no
+#' match of D. The championship's own matches train with the venues of its
+#' schedule ([ih_with_spec_venues()]), as the simulator prices its fixtures.
 #'
 #' @param matches Played matches of the championship's sex, see [ih_fit()].
 #' @param spec [ih_tournament_spec()].

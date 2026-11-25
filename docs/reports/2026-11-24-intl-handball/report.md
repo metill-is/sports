@@ -150,6 +150,10 @@ match played in its own country.
   (`championship_venues.csv`; 35 host appearances outside the host's own country)
   come from the English Wikipedia articles and EHF pages each row cites; 15 rows were
   checked against the pages by hand.
+- `qualifier_venues.csv` is the authority: a qualification match that looks like a
+  one-venue tournament but is not listed stays home and away and is named in a
+  warning, so a home-and-away group whose return legs are still to come never turns
+  neutral. On the match table of 24 November every candidate is listed.
 - The championship being forecast trains on its own schedule's venues.
 
 The fitted home advantage rises from about 1.0 goal to 1.2 for women and from

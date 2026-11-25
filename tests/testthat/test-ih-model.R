@@ -55,7 +55,7 @@ test_that("championship venues: only a host playing in its own country is at hom
   expect_equal(v, 0L)
 })
 
-test_that("qualifiers: home and away at home; a single-venue tournament at home only for its host", {
+test_that("qualifiers: home and away at home; a listed one-venue tournament at home only for its host; an unlisted one warns", {
   hosts <- data.frame(competition = character(), sex = character(), edition = integer(), host = character())
   rr <- function(teams, first, block, competition, edition) {
     p <- t(utils::combn(teams, 2))
@@ -95,10 +95,47 @@ test_that("qualifiers: home and away at home; a single-venue tournament at home 
     venue_city = c("Debrecen", "Mexico City"), venue_country = c("Hungary", "Mexico"), source = "test"
   )
   side <- function(x, country) as.integer((x$home_team == country) - (x$away_team == country))
-  expect_equal(
-    ih_venue(m, hosts, ih_championship_venues()[0, ], qv),
-    c(rep(1L, 8), side(oqt, "Hungary"), rep(0L, 3), side(amer, "Mexico"), 1L, 1L)
+  # The first-stage tournament looks like one venue but is not listed: it stays
+  # home and away, and the warning names it so that its venue gets listed.
+  expect_warning(
+    v <- ih_venue(m, hosts, ih_championship_venues()[0, ], qv),
+    "World Championship Women - Qualification - First stage"
   )
+  expect_equal(v, c(rep(1L, 8), side(oqt, "Hungary"), rep(1L, 3), side(amer, "Mexico"), 1L, 1L))
+})
+
+test_that("a home-and-away group short of its return legs stays home and away", {
+  # WHY: a three-team group whose first legs fall in one week reads as a single
+  # round robin until its return legs are played; it must not turn neutral
+  # while they are pending (a refresh in the middle of qualification).
+  hosts <- data.frame(competition = character(), sex = character(), edition = integer(), host = character())
+  trio <- data.frame(
+    sex = "male", competition = "EURO", kind = "tournament", edition = 2028L,
+    block = "EHF Euro - Qualification - Second stage",
+    match_date = as.Date(c("2026-11-04", "2026-11-07", "2026-11-11")),
+    home_team = c("Iceland", "Georgia", "Bosnia"), away_team = c("Georgia", "Bosnia", "Iceland")
+  )
+  expect_true(all(ih_single_venue(trio)))
+  expect_warning(v <- ih_venue(trio, hosts, ih_championship_venues()[0, ], no_qualifier_venues()), "qualifier_venues")
+  expect_equal(v, c(1L, 1L, 1L))
+})
+
+test_that("reading for the championship being forecast does not warn about its own unlisted host matches", {
+  # WHY: its matches take their venues from its schedule (ih_with_spec_venues()),
+  # so a missing championship_venues.csv row is expected, and a warning on
+  # every refresh would bury the ones that matter.
+  spec <- list(competition = "EURO", sex = "female", edition = 2026L)
+  hosts <- data.frame(competition = "EURO", sex = "female", edition = 2026L, host = c("Poland", "Romania"))
+  m <- data.frame(
+    sex = "female", competition = "EURO", kind = "tournament", edition = c(2026L, 2026L), block = "EHF Euro Women",
+    match_date = as.Date(c("2026-12-04", "2026-12-05")), home_team = c("Poland", "Hungary"), away_team = c("Hungary", "Romania")
+  )
+  expect_no_warning(v <- ih_venue(m, hosts, ih_championship_venues()[0, ], no_qualifier_venues(), forecast = spec))
+  expect_equal(v, c(0L, 0L))
+  other <- m
+  other$edition <- 2024L
+  hosts2 <- rbind(hosts, transform(hosts, edition = 2024L))
+  expect_warning(ih_venue(other, hosts2, ih_championship_venues()[0, ], no_qualifier_venues(), forecast = spec), "no venue")
 })
 
 test_that("a single-venue tournament is a short single round robin; a group short of its return legs is not", {

@@ -112,16 +112,20 @@ IH_PLACEMENT_BLOCK <- " - (Play Offs|[0-9]+(st|nd|rd|th)-[0-9]+(st|nd|rd|th) pla
   lab
 }
 
-#' Qualification matches played as a tournament at one venue
+#' Qualification matches that look like a tournament at one venue
 #'
 #' The match table records no venue. A qualification stage's matches linked
-#' by a team playing again within `window` days are taken to be one
-#' tournament at one venue when they are a single round robin of three or
-#' more nations within `window` days whose pairs meet nowhere else in the
-#' stage (a home-and-away group plays its pairs twice, and a group short of
-#' its return legs is no round robin). A play-off or placement match of the
-#' stage joins when both its nations played such a tournament of the stage
-#' within `window` days.
+#' by a team playing again within `window` days look like one tournament at
+#' one venue when they are a single round robin of three or more nations
+#' within `window` days whose pairs meet nowhere else in the stage (a
+#' home-and-away group plays its pairs twice). A play-off or placement match
+#' of the stage joins when both its nations played such a tournament of the
+#' stage within `window` days.
+#'
+#' A candidate, not a verdict: a home-and-away group whose first legs fall in
+#' one week reads the same until its return legs are played. [ih_venue()]
+#' therefore takes the venue only from [ih_qualifier_venues()] and uses this
+#' to warn about a tournament missing from it.
 #' @param m Matches with `sex`, `competition`, `kind`, `edition`, `block`,
 #'   `match_date`, `home_team`, `away_team`.
 #' @param window Days.
@@ -166,13 +170,18 @@ ih_single_venue <- function(m, window = 10L) {
 #' when the listed away side does, 0 on neutral ground.
 #'
 #' * Qualifiers and the EHF Euro Cup played home and away: 1.
-#' * A qualification tournament at one venue ([ih_single_venue()], or listed
-#'   in [ih_qualifier_venues()]): at home for the nation of the venue's
-#'   country when [ih_qualifier_venues()] names it, else neutral.
+#' * A qualification tournament at one venue listed in
+#'   [ih_qualifier_venues()]: at home only for the nation of the venue's
+#'   country. A qualification match that [ih_single_venue()] finds looking
+#'   like such a tournament but that is not listed stays home and away (1),
+#'   with a warning naming its stage, so that a home-and-away group whose
+#'   return legs are still to come never turns neutral.
 #' * Championship matches: at home for the host when there is one host. With
 #'   several hosts, at home for the nation of the venue's country as
 #'   [ih_championship_venues()] lists it; a host's match missing from that
-#'   list is counted neutral, with a warning.
+#'   list is counted neutral, with a warning (not for the championship being
+#'   forecast, whose matches take their venues from its schedule,
+#'   [ih_with_spec_venues()]).
 #' * A friendly is the listed home side's home match (1), except in a
 #'   friendly tournament named after its host, where the host's matches are
 #'   home matches (1 or -1) and the rest neutral (0).
@@ -181,13 +190,15 @@ ih_single_venue <- function(m, window = 10L) {
 #' @param hosts [ih_hosts()].
 #' @param venues [ih_championship_venues()].
 #' @param qualifier_venues [ih_qualifier_venues()].
+#' @param forecast The championship being forecast (a list with
+#'   `competition`, `sex`, `edition`, such as [ih_tournament_spec()]), or NULL.
 #' @return Integer vector of -1, 0, 1.
 #' @noRd
 ih_venue <- function(m, hosts = ih_hosts(), venues = ih_championship_venues(),
-                     qualifier_venues = ih_qualifier_venues()) {
+                     qualifier_venues = ih_qualifier_venues(), forecast = NULL) {
   n <- nrow(m)
   qual <- m$kind == "tournament" & grepl("qualif", m$block, ignore.case = TRUE)
-  home_away <- (qual & !ih_single_venue(m)) | (m$kind == "tournament" & m$competition == "EUROCUP")
+  home_away <- qual | (m$kind == "tournament" & m$competition == "EUROCUP")
   champ <- m$kind == "tournament" & !qual & m$competition != "EUROCUP"
   key <- paste(m$competition, m$sex, m$edition, sep = "|")
   host_key <- paste(hosts$competition, hosts$sex, hosts$edition, sep = "|")
@@ -204,6 +215,9 @@ ih_venue <- function(m, hosts = ih_hosts(), venues = ih_championship_venues(),
   country[listed] <- venues$venue_country[match(match_key[listed], venue_key)]
   is_host <- function(team) paste(key, team) %in% paste(host_key, hosts$host)
   unplaced <- champ & !single & !listed & (is_host(m$home_team) | is_host(m$away_team))
+  if (!is.null(forecast)) {
+    unplaced <- unplaced & key != paste(forecast$competition, forecast$sex, forecast$edition, sep = "|")
+  }
   if (any(unplaced)) {
     cli::cli_warn(c(
       "{sum(unplaced)} co-hosted championship match{?es} with a host ha{?s/ve} no venue in {.file championship_venues.csv}; counted neutral.",
@@ -217,6 +231,14 @@ ih_venue <- function(m, hosts = ih_hosts(), venues = ih_championship_venues(),
       m$match_date >= q$first & m$match_date <= q$last & m$home_team %in% teams & m$away_team %in% teams
     country[hit] <- q$venue_country
     home_away[hit] <- FALSE
+  }
+  unlisted <- qual & home_away & ih_single_venue(m)
+  if (any(unlisted)) {
+    stage <- unique(paste(m$sex[unlisted], m$competition[unlisted], m$edition[unlisted], m$block[unlisted]))
+    cli::cli_warn(c(
+      "{sum(unlisted)} qualification match{?es} look{?s/} like a tournament at one venue but {?is/are} not in {.file qualifier_venues.csv}; counted home and away.",
+      i = "{.val {stage}}"
+    ))
   }
   at <- !is.na(country)
   side <- integer(n)
@@ -240,6 +262,7 @@ IH_TEAM_ALIASES <- c(RHF = "Russia")
 #' @param hosts [ih_hosts()].
 #' @param venues [ih_championship_venues()].
 #' @param qualifier_venues [ih_qualifier_venues()].
+#' @param forecast The championship being forecast, passed to [ih_venue()].
 #' @return data.frame, one row per match in date order: `match_id`,
 #'   `competition`, `kind` (`"tournament"` or `"friendly"`), `edition`,
 #'   `block`, `round`, `match_date`, `season` ([ih_season()]),
@@ -250,7 +273,8 @@ IH_TEAM_ALIASES <- c(RHF = "Russia")
 #'   one), `venue` ([ih_venue()]) and `division` (`"intl"`).
 #' @noRd
 ih_read_matches <- function(sex = c("female", "male"), dir = ih_data_dir(), hosts = ih_hosts(),
-                            venues = ih_championship_venues(), qualifier_venues = ih_qualifier_venues()) {
+                            venues = ih_championship_venues(), qualifier_venues = ih_qualifier_venues(),
+                            forecast = NULL) {
   sex <- match.arg(sex)
   raw <- as.data.frame(arrow::read_parquet(file.path(dir, "handball_matches.parquet")))
   raw <- raw[raw$sex == sex, , drop = FALSE]
@@ -284,7 +308,7 @@ ih_read_matches <- function(sex = c("female", "male"), dir = ih_data_dir(), host
   }
   m$awarded <- !is.na(m$status) & m$status %in% c("Awrd", "WO")
   m$season <- ih_season(m$match_date)
-  m$venue <- ih_venue(m, hosts, venues, qualifier_venues)
+  m$venue <- ih_venue(m, hosts, venues, qualifier_venues, forecast = forecast)
   m$division <- "intl"
   m <- m[order(m$match_date, m$match_id), , drop = FALSE]
   rownames(m) <- NULL
