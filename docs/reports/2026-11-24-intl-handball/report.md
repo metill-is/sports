@@ -218,11 +218,12 @@ re-run before the championship.
 
 ## Not done, and open points
 
-- **Live updates during the championship.** The forecast is refreshed by re-running
-  `scripts/ih/run_tournament.R` on new results. A scheduled job that does this four
-  times a day from 3 to 21 December and pushes the five files to `main` is written but
-  not installed: installing it needs the owner's approval. Until then a refresh is a
-  manual run.
+- **Live updates during the championship.** The forecast is refreshed by
+  `.github/workflows/ih-tournament.yml` (dispatched with the championship and the
+  day: it fits, publishes the five files to `main` and tells metill-platform to pull).
+  A schedule outside this repository dispatches it after each match day's results are
+  in; until that schedule runs, a refresh is a manual dispatch or a manual run of
+  `scripts/ih/run_tournament.R`.
 - **Too few draws.** Both models under-predict 60-minute draws by about a third (see
   Calibration). A draw is worth a point each in the group tables, so this mostly
   shifts close group races a little. Not corrected here. The match probabilities come

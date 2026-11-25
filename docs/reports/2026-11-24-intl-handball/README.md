@@ -23,7 +23,8 @@ The match table is not in this repository: the scripts read it from the folder
 named by `IH_DATA_DIR`, and the backtest writes its per-match output to the folder
 named by `IH_RESULTS_DIR`.
 
-Rebuild the forecast (local only, no workflow runs it):
+During a championship `.github/workflows/ih-tournament.yml` rebuilds the forecast
+when dispatched with the championship and the day. By hand:
 
 ```bash
 IH_DATA_DIR=<folder> Rscript scripts/ih/run_tournament.R --tournament euro2026w
