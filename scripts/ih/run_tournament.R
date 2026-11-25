@@ -11,7 +11,9 @@
 #     [--h2h none|once|repeat] [--out data/publish]
 # --as-of D: the forecast knows every match up to and including D (the fit
 # trains on matches before D + 1, the simulation keeps the championship's
-# results from D) and is dated D (default: today in UTC).
+# results from D) and is dated D (default: today in UTC). The date is the
+# run's day, not that of the last result: a run before D's first match is
+# dated D but holds no match of D, which changes no number, only the label.
 options(width = 120)
 suppressPackageStartupMessages(devtools::load_all(here::here(), quiet = TRUE))
 
@@ -29,7 +31,7 @@ h2h <- arg("h2h", "none")
 out_root <- arg("out", here::here("data", "publish"))
 
 spec <- ih_tournament_spec(id)
-matches <- ih_read_matches(spec$sex)
+matches <- ih_read_matches(spec$sex, forecast = spec)
 t0 <- Sys.time()
 ff <- ih_forecast_fit(matches, spec, as_of, n_draws = n_draws, seed = seed)
 fit <- ff$fit
