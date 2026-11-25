@@ -376,3 +376,49 @@ check_publish_format_agreement <- function(leagues, root = here::here("data")) {
     threshold = "config agreement"
   )
 }
+
+#' Freshness of the international handball forecasts during their championships
+#'
+#' One row per championship in `IH_TOURNAMENTS`. From its first day to the
+#' day after its last, the forecast is refreshed several times a day
+#' (`.github/workflows/ih-tournament.yml`), so a missing `meta.json` or a
+#' `generated_at` older than `th$ih_forecast_max_age_hours` is WARN; outside
+#' those days the row is PAUSED (before the start the forecast is not
+#' refreshed, however old it is). WARN, not FAIL: the domestic pipeline is
+#' unaffected, and the refresh's own failed runs already email the owner.
+#'
+#' @param root Data root (holds `publish/`).
+#' @param now Current time.
+#' @param th [health_thresholds()].
+#' @param tournaments Championship specs, as `IH_TOURNAMENTS`.
+#' @return Health rows (`check = "ih_tournament_freshness"`, scope the id).
+#' @noRd
+check_ih_tournament_freshness <- function(root = here::here("data"), now = Sys.time(),
+                                          th = health_thresholds(), tournaments = IH_TOURNAMENTS) {
+  max_age <- th$ih_forecast_max_age_hours
+  thr_lbl <- paste0(max_age, "h")
+  today <- as.Date(now, tz = "UTC")
+  rows <- lapply(names(tournaments), function(id) {
+    spec <- tournaments[[id]]
+    if (today < spec$start || today > spec$end + 1L) {
+      return(health_row(
+        "ih_tournament_freshness", id, "PAUSED",
+        sprintf("outside the championship (%s to %s)", spec$start, spec$end), thr_lbl
+      ))
+    }
+    meta <- file.path(root, "publish", spec$publish[1], spec$publish[2], "meta.json")
+    if (!file.exists(meta)) {
+      return(health_row("ih_tournament_freshness", id, "WARN", "no forecast published", thr_lbl))
+    }
+    generated <- as.POSIXct(jsonlite::read_json(meta)$generated_at %||% NA_character_, format = "%Y-%m-%dT%H:%M:%SZ", tz = "UTC")
+    if (is.na(generated)) {
+      return(health_row("ih_tournament_freshness", id, "WARN", "meta.json has no readable generated_at", thr_lbl))
+    }
+    age <- as.numeric(difftime(now, generated, units = "hours"))
+    health_row(
+      "ih_tournament_freshness", id, if (age > max_age) "WARN" else "OK",
+      sprintf("%.1fh old (generated %s)", age, format(generated, "%Y-%m-%d %H:%MZ", tz = "UTC")), thr_lbl
+    )
+  })
+  dplyr::bind_rows(rows)
+}

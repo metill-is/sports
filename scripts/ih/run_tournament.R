@@ -3,7 +3,8 @@
 # write its forecast for metill-platform.
 #
 # Needs the match table (handball_matches.parquet) in the folder named by
-# IH_DATA_DIR. Local only: no workflow runs this.
+# IH_DATA_DIR. Run by .github/workflows/ih-tournament.yml during a
+# championship, or by hand.
 #
 # Usage:
 #   IH_DATA_DIR=... Rscript scripts/ih/run_tournament.R --tournament euro2026w \

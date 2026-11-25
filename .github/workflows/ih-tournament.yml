@@ -1,0 +1,160 @@
+name: International Handball Forecast
+
+# One refresh of a national-team championship forecast on metill.is while the
+# championship is played (the women's EURO 2026, the men's WC 2027): the
+# nations model fitted on R-INLA, the championship simulated, and the five
+# files of its data/publish/ folder committed to main
+# (scripts/ih/run_tournament.R); then metill-platform's pull is dispatched so
+# the page updates within minutes instead of at its next poll.
+#
+# Dispatched with the championship and the forecast's day, by a schedule kept
+# outside this repository once the day's results are in. The match table is
+# not in this repository: it is read from a private repository that only the
+# secrets name (IH_DATA_REPO, IH_DATA_FILE), into RUNNER_TEMP, with a
+# read-only token (IH_DATA_TOKEN). The same token may dispatch the platform's
+# pull. ih_fit_check() is the publish gate: a fit that fails it publishes
+# nothing and fails the run.
+#
+# R-INLA's Linux build runs on MKL, whose code path follows the CPU, so a
+# runner's fit can differ slightly from a Mac's; ih_fit() restarts an
+# unusable half at its mode for the degenerate case. Pinned by
+# tests/testthat/test-workflow-ih-tournament.R.
+on:
+  workflow_dispatch:
+    inputs:
+      tournament:
+        description: 'Championship'
+        type: choice
+        options:
+          - euro2026w
+          - wc2027m
+        required: true
+      as_of:
+        description: "The forecast's day, YYYY-MM-DD (UTC): its matches count"
+        type: string
+        required: true
+
+permissions:
+  contents: write
+
+# One run per championship at a time; not fit.yml's group (a fit runs about
+# two hours). A second dispatch waits rather than cancelling a running fit.
+concurrency:
+  group: ih-tournament-${{ inputs.tournament }}
+  cancel-in-progress: false
+
+jobs:
+  forecast:
+    runs-on: ubuntu-latest
+    # Measured on the Mac on 2026-11-25: the WC fit 61 s and 20,000
+    # simulations; the R-INLA install is most of a cold run.
+    timeout-minutes: 60
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      # The same pin and repository as inla-engine.yml, fit.yml and
+      # engine-reference.yml.
+      INLA_VERSION: '25.06.07'
+      INLA_REPO: 'https://inla.r-inla-download.org/R/stable'
+      TOURNAMENT: ${{ inputs.tournament }}
+      AS_OF: ${{ inputs.as_of }}
+
+    steps:
+      - name: Check the inputs
+        run: |
+          [[ "$AS_OF" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || { echo "as_of must be YYYY-MM-DD, got: $AS_OF"; exit 1; }
+          case "$TOURNAMENT" in euro2026w|wc2027m) ;; *) echo "unknown championship: $TOURNAMENT"; exit 1 ;; esac
+
+      - uses: actions/checkout@v5
+
+      - name: Describe the runner's CPU
+        run: |
+          lscpu | grep -E '^(Vendor ID|Model name|CPU\(s\)):'
+          grep -q -m1 -w avx512f /proc/cpuinfo && echo "avx512f: yes" || echo "avx512f: no"
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: '4.5.3' # pinned to local R, not 'release' (ci-conventions.md section 3)
+          use-public-rspm: true
+
+      # INLA imports fmesher, which imports sf, and sf's binary loads GDAL,
+      # GEOS, PROJ and udunits. pak's own system-requirements step is off
+      # (ci-conventions.md section 1), so they are installed here.
+      - name: "R-INLA: install the system libraries sf loads"
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libgdal-dev libgeos-dev libproj-dev libudunits2-dev
+
+      # sn: INLA only suggests it, but its posterior sampler stops without it.
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        env:
+          PKG_SYSREQS: "false"
+        with:
+          dependencies: '"hard"'
+          extra-packages: |
+            any::devtools
+            any::fmesher
+            any::MatrixModels
+            any::sn
+
+      - name: Reinstall V8 from source with bundled static libv8
+        env:
+          DOWNLOAD_STATIC_LIBV8: "1"
+        run: |
+          Rscript -e 'install.packages("V8", type = "source", repos = c(CRAN = "https://cloud.r-project.org"))'
+
+      # Not on CRAN and not in DESCRIPTION. The repository serves one tarball
+      # per release, so the pin is the file name.
+      - name: "R-INLA: install the pinned version"
+        run: |
+          Rscript -e 'install.packages(sprintf("%s/src/contrib/INLA_%s.tar.gz", Sys.getenv("INLA_REPO"), Sys.getenv("INLA_VERSION")), repos = NULL, type = "source")'
+          Rscript -e 'stopifnot(packageVersion("INLA") == Sys.getenv("INLA_VERSION")); cat("INLA", as.character(packageVersion("INLA")), "\n")'
+
+      # Into RUNNER_TEMP, never the workspace, so no commit can pick it up; the
+      # source's name and the file's path stay in the secrets.
+      - name: Fetch the match table
+        env:
+          GH_TOKEN: ${{ secrets.IH_DATA_TOKEN }}
+          IH_DATA_REPO: ${{ secrets.IH_DATA_REPO }}
+          IH_DATA_FILE: ${{ secrets.IH_DATA_FILE }}
+        run: |
+          echo "::add-mask::$IH_DATA_REPO"
+          echo "::add-mask::$IH_DATA_FILE"
+          dir="$RUNNER_TEMP/ih-data"
+          mkdir -p "$dir"
+          gh api -H "Accept: application/vnd.github.raw" "repos/$IH_DATA_REPO/contents/$IH_DATA_FILE" > "$dir/handball_matches.parquet"
+          [ "$(head -c 4 "$dir/handball_matches.parquet")" = "PAR1" ] || { echo "the match table did not download as a parquet file"; exit 1; }
+          echo "Match table: $(wc -c < "$dir/handball_matches.parquet") bytes"
+          echo "IH_DATA_DIR=$dir" >> "$GITHUB_ENV"
+
+      - name: Fit, simulate and write the forecast
+        run: Rscript scripts/ih/run_tournament.R --tournament "$TOURNAMENT" --as-of "$AS_OF"
+
+      # Only the championship's own publish folder is staged; its path comes
+      # from the championship's spec (IH_TOURNAMENTS), not from a second list.
+      - name: Commit the forecast
+        id: commit
+        run: |
+          # shellcheck disable=SC2016 # the $ inside the quotes is R, not the shell
+          sub=$(Rscript -e 'suppressMessages(devtools::load_all(quiet = TRUE)); cat(paste(IH_TOURNAMENTS[[Sys.getenv("TOURNAMENT")]]$publish, collapse = "/"))')
+          pub="data/publish/$sub"
+          [ -d "$pub" ] || { echo "no publish folder $pub"; exit 1; }
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -- "$pub"
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "The forecast is unchanged"
+            exit 0
+          fi
+          git commit -m "data: $TOURNAMENT forecast as of $AS_OF"
+          # Its folder is written by nothing else, so plain retry: a content
+          # conflict here would mean something unexpected and should fail.
+          .github/scripts/push-with-retry.sh
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Dispatch metill-platform's pull
+        if: steps.commit.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.IH_DATA_TOKEN }}
+        run: gh workflow run pull-sports-data.yml --repo metill-is/metill-platform --ref main
