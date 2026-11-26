@@ -80,7 +80,12 @@ fit_nuts <- function(spec) {
   csv_dir <- tempfile("fv2-reference-csv-")
   dir.create(csv_dir)
   on.exit(unlink(csv_dir, recursive = TRUE), add = TRUE)
-  fv2_fit_stan(spec, fv2_stan_file(spec, fv2_stan_dir), exe_dir, csv_dir, seed = seed, refresh = 0L)
+  # WHY: 2,000 draws per chain. At 1,000 the men's strength-walk sd (sigma[1])
+  # mixed slowly (Rhat 1.031, bulk ESS 147, data of 2026-11-23) though every
+  # forecast was at Rhat 1.007; at 2,000 it was 1.0026 (ESS 329).
+  fv2_fit_stan(spec, fv2_stan_file(spec, fv2_stan_dir), exe_dir, csv_dir,
+    seed = seed, refresh = 0L, iter_sampling = 2000L
+  )
 }
 football_cell <- function(sex) {
   fv2_weekly_reference(

@@ -151,7 +151,13 @@ paths:
   1.02, `health_thresholds()`; or no Rhat at all), or an INLA fit without a
   mode or failing its gate does not pass; the summary row goes to
   `data/health/engine_reference/` and `check_engine_reference()` warns. The
-  Stan program stays in `research/` until the switch.
+  Stan program stays in `research/` until the switch. NUTS samples 2,000
+  iterations per chain (4 chains, 1,000 warmup): at 1,000 the men's cell
+  failed the Rhat bar on every run from its first (1.026 on 2026-11-23, 1.041
+  the next day) on one slowly mixing hyperparameter, the strength walk's sd
+  `sigma[1]` (Rhat 1.031, bulk ESS 147, while every forecast was at 1.007
+  and every state at 1.005); at 2,000 it was 1.0026 (ESS 329) and nothing
+  exceeded 1.004, for 348 s against 232 s on the Mac.
 - **Handball / basketball on the INLA engine (switch path, 2026-11-23).**
   `engine: inla` on `handball_iceland` or `basketball_iceland` routes to
   `fit_model_v2_hbbb()` (`R/model-v2-hbbb.R`): v2 (margin, total) of
