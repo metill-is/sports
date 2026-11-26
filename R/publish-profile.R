@@ -235,14 +235,14 @@ NULL
     ),
     basketball = twodt(
       units = list(
-        strength = "points", home_advantage = "points", diff_bin_width = 5L
+        strength = "points", home_advantage = "points", diff_bin_width = 1L
       ),
       has_ties = FALSE,
       tie_threshold = 0
     ),
     handball = twodt(
       units = list(
-        strength = "goals", home_advantage = "goals", diff_bin_width = 2L
+        strength = "goals", home_advantage = "goals", diff_bin_width = 1L
       ),
       has_ties = TRUE,
       tie_threshold = 0.5,

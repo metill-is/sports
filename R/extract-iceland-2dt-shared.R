@@ -37,11 +37,11 @@ NULL
     dplyr::ungroup()
 }
 
-# Bin a continuous goal-diff into score-difference buckets and tabulate
-# probability per bucket. Used by the predicted_matches.parquet shape:
-# basketball uses a 5-point bucket in [-50, +50]; handball a 2-point in
-# [-20, +20]. Returns a long tibble {game_nr, diff, p} where `diff` is
-# the bucket centre (integer).
+# Bin each draw's goal difference into score-difference buckets and tabulate
+# probability per bucket. Used by the predicted_matches.parquet shape: one
+# bucket per whole point (basketball, [-50, +50]) or goal (handball,
+# [-20, +20]), the width in `sport_publish_profile()`. Returns a long tibble
+# {game_nr, diff, p} where `diff` is the bucket centre (integer).
 .bin_goal_diff_distribution_2dt <- function(posterior_goals,
                                             bucket_width = 1L,
                                             range_low = -50L,
@@ -70,10 +70,12 @@ NULL
     dplyr::arrange(.data$game_nr, .data$diff)
 }
 
-# WHY: assumes continuous input; on integer margins an even `bw` sends odd ones half-to-even (a sawtooth).
+# WHY: half-open buckets [k - bw/2, k + bw/2) -> k, never round()'s half-to-even.
+# With bw = 1 a whole-number margin (the INLA engine's draws) is a bucket centre;
+# a bucket of 2 centred on 0 put every odd margin on an edge (a sawtooth).
 .bucket_centre_2dt <- function(x, bw, low, high) {
   clamped <- pmin(pmax(x, low), high)
-  as.integer(round(clamped / bw) * bw)
+  as.integer(floor(clamped / bw + 0.5) * bw)
 }
 
 # Extract per-match posterior summaries to a tibble for the

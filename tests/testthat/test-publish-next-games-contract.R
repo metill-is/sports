@@ -36,8 +36,8 @@ test_that("every next_games match ships exactly the contract key set", {
 
 test_that("goal_diff_distribution is binned at the width meta declares", {
   # The cross-FILE consistency check that makes the units claim falsifiable:
-  # meta.units.diff_bin_width is 1 stig for football, 5 for basketball and
-  # 2 for handball, and the bins in next_games.json must actually be on it.
+  # meta.units.diff_bin_width is 1 for every sport (one bucket per whole goal
+  # or point), and the bins in next_games.json must actually be on it.
   out <- .publish_all_cells()
   checked <- 0L
   for (cell in .published_cells(out)) {

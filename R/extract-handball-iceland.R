@@ -15,7 +15,7 @@ NULL
 #' Handball-specific configuration vs the shared 2DT extractor: draws
 #' permitted (`has_ties = TRUE` if the league config sets it; default per
 #' `config/leagues.yml::handball_iceland.betting.scoring`), goal-diff binned
-#' in 2-point buckets across [-20, +20] to match the score scale.
+#' in 1-goal buckets across [-20, +20] to match the score scale.
 #'
 #' Handball's post-season is a SEPARATE division (`PO`), not extra rounds
 #' inside `OD`, so unlike basketball it needs no regular-season round cut --

@@ -160,11 +160,11 @@ test_that("the football-only surfaces are football-only", {
 test_that("units, season scope, postseason and placement basis are per-sport", {
   expect_equal(
     sport_publish_profile("basketball")$units,
-    list(strength = "points", home_advantage = "points", diff_bin_width = 5L)
+    list(strength = "points", home_advantage = "points", diff_bin_width = 1L)
   )
   expect_equal(
     sport_publish_profile("handball")$units,
-    list(strength = "goals", home_advantage = "goals", diff_bin_width = 2L)
+    list(strength = "goals", home_advantage = "goals", diff_bin_width = 1L)
   )
   expect_equal(
     sport_publish_profile("football")$units,
