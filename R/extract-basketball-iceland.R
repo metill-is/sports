@@ -40,7 +40,7 @@ NULL
 #' simulated on post-season points. See R/publish-format.R.
 #'
 #' Basketball-specific configuration vs the shared 2DT extractor: no draws
-#' (`has_ties = FALSE`), goal-diff binned in 5-point buckets across
+#' (`has_ties = FALSE`), goal-diff binned in 1-point buckets across
 #' [-50, +50] to match the score scale.
 #'
 #' @param fit CmdStanMCMC fit object.

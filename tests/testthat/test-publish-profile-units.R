@@ -20,8 +20,8 @@
 
 test_that("the 2DT extractors read the bin width from the profile", {
   specs <- list(
-    list(file = "extract-basketball-iceland.R", sport = "basketball", width = 5L),
-    list(file = "extract-handball-iceland.R", sport = "handball", width = 2L)
+    list(file = "extract-basketball-iceland.R", sport = "basketball", width = 1L),
+    list(file = "extract-handball-iceland.R", sport = "handball", width = 1L)
   )
   for (spec in specs) {
     src <- .extractor_source(spec$file)
@@ -50,8 +50,8 @@ test_that("the committed 2DT bins are multiples of the profile width", {
   # A contract lock, not a TDD cycle: this is expected to hold on arrival. It
   # fails the day someone changes a width in one place only.
   specs <- list(
-    list(sport = "basketball", width = 5L),
-    list(sport = "handball", width = 2L)
+    list(sport = "basketball", width = 1L),
+    list(sport = "handball", width = 1L)
   )
   for (spec in specs) {
     predicted <- arrow::read_parquet(testthat::test_path(
