@@ -165,3 +165,4 @@ Collate:
     'wc-knockout.R'
     'wc-render-html.R'
     'wc-schedule.R'
+    'zzz.R'
