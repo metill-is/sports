@@ -112,6 +112,13 @@ paths:
   call. `fit_league()` passes no `threads`, and
   `test-model-v2.R` pins the thread count, the option and a two-process
   comparison.
+  **Team order (2026-11-26):** `fv2_build()` numbers teams in byte order
+  (`sort(method = "radix")`), the same under every collation. The index sets
+  R-INLA's node order, and reordering moved the football cells' outcome
+  probabilities by 0.0016 to 0.0025 on average and states by up to 0.11
+  posterior sd (C against en_US.UTF-8, data of 2026-11-23); testthat sorts
+  under C and production scripts under en_US, so a locale-dependent order
+  made tests and production fit different models (`test-model-v2-team-order.R`).
   **What "current strength" means on this engine:** each team's state at its
   next match, and the league levels of the first fixture week. The simulators
   hold a team at one state for all its remaining matches and the forecast of

@@ -99,7 +99,9 @@ fv2_build <- function(train, pred = NULL, carry = NULL,
   }
   if (div_offsets) stopifnot("cell" %in% names(train))
 
-  teams <- sort(unique(c(train$home_team, train$away_team)))
+  # WHY: byte order, the same under every collation; the team index sets
+  # R-INLA's node order, which moves a fit slightly (test-model-v2-team-order.R).
+  teams <- sort(unique(c(train$home_team, train$away_team)), method = "radix")
   K <- length(teams)
   if (is.null(pred) || !nrow(pred)) {
     pred <- train[0, , drop = FALSE]
@@ -586,7 +588,7 @@ fv2_division_table <- function(matches, rank_order) {
     return(data.frame(team = character(), season = integer(), division = character(), rank = integer()))
   }
   tab <- stats::aggregate(list(n = rep(1L, nrow(d))), d[c("team", "season", "division")], sum)
-  tab <- tab[order(tab$team, tab$season, -tab$n, tab$division), , drop = FALSE]
+  tab <- tab[order(tab$team, tab$season, -tab$n, tab$division, method = "radix"), , drop = FALSE]
   tab <- tab[!duplicated(tab[c("team", "season")]), c("team", "season", "division"), drop = FALSE]
   tab$rank <- match(tab$division, rank_order, nomatch = length(rank_order) + 1L)
   rownames(tab) <- NULL
