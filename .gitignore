@@ -82,3 +82,7 @@ data/health/placement_status.json
 
 # GISKO optimal-picks scratch output (regenerable)
 data/wc/gisko/
+
+# Sports cockpit: its private state lives in a separate private repo, cloned here.
+# Never commit it to this public repo (guard: tests/testthat/test-cockpit-private.R).
+cockpit/
