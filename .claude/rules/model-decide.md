@@ -108,8 +108,13 @@ paths:
   basketball only, on one AMD runner: 7.9 against 7.9 s for men's handball,
   35.0 against 35.3 s for men's basketball, 35.8 against 27.0 s for women's
   basketball (two fits each). It was not measured on Intel or for football.
-  It is not set; pinning it changes every engine's numbers and is the owner's
-  call. `fit_league()` passes no `threads`, and
+  **Pinned since 2026-11-26** (owner, cockpit card `mkl-cbwr`: "Pin it
+  (one-off shift in numbers)", confirmed in chat): the package sets
+  `MKL_CBWR=COMPATIBLE` when it loads unless the environment already sets
+  it (`.pin_mkl_cbwr()`, `R/zzz.R`), so every R-INLA fit and posterior draw,
+  each a child process that inherits the variable, takes the same code path
+  on CI and locally. Every engine's numbers shift once on Linux; whether the
+  macOS build of R-INLA reads the variable was not checked. `fit_league()` passes no `threads`, and
   `test-model-v2.R` pins the thread count, the option and a two-process
   comparison.
   **Team order (2026-11-26):** `fv2_build()` numbers teams in byte order
