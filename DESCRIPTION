@@ -132,6 +132,7 @@ Collate:
     'nt-stan.R'
     'nt-qualifying.R'
     'nt-wwc2027.R'
+    'nt-wwc2027-auto.R'
     'nt-euro2028.R'
     'nt-euro2028-draw.R'
     'nt-euro2028-publish.R'

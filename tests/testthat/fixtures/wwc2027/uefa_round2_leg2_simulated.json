@@ -1,0 +1,566 @@
+[
+ {
+  "id": "2048864",
+  "status": "FINISHED",
+  "kickOffTime": {
+   "dateTime": "2026-12-01T16:00:00Z"
+  },
+  "round": {
+   "metaData": {
+    "name": "WEQ Play-offs Round 2"
+   }
+  },
+  "leg": {
+   "number": 1
+  },
+  "homeTeam": {
+   "internationalName": "Slovenia"
+  },
+  "awayTeam": {
+   "internationalName": "Netherlands"
+  },
+  "score": {
+   "regular": {
+    "home": 0,
+    "away": 3
+   },
+   "total": {
+    "home": 0,
+    "away": 3
+   }
+  }
+ },
+ {
+  "id": "2048858",
+  "status": "FINISHED",
+  "kickOffTime": {
+   "dateTime": "2026-12-01T16:30:00Z"
+  },
+  "round": {
+   "metaData": {
+    "name": "WEQ Play-offs Round 2"
+   }
+  },
+  "leg": {
+   "number": 1
+  },
+  "homeTeam": {
+   "internationalName": "Finland"
+  },
+  "awayTeam": {
+   "internationalName": "Italy"
+  },
+  "score": {
+   "regular": {
+    "home": 1,
+    "away": 1
+   },
+   "total": {
+    "home": 1,
+    "away": 1
+   }
+  }
+ },
+ {
+  "id": "2048857",
+  "status": "FINISHED",
+  "kickOffTime": {
+   "dateTime": "2026-12-01T17:00:00Z"
+  },
+  "round": {
+   "metaData": {
+    "name": "WEQ Play-offs Round 2"
+   }
+  },
+  "leg": {
+   "number": 1
+  },
+  "homeTeam": {
+   "internationalName": "Ukraine"
+  },
+  "awayTeam": {
+   "internationalName": "England"
+  },
+  "score": {
+   "regular": {
+    "home": 0,
+    "away": 4
+   },
+   "total": {
+    "home": 0,
+    "away": 4
+   }
+  }
+ },
+ {
+  "id": "2048859",
+  "status": "FINISHED",
+  "kickOffTime": {
+   "dateTime": "2026-12-01T17:00:00Z"
+  },
+  "round": {
+   "metaData": {
+    "name": "WEQ Play-offs Round 2"
+   }
+  },
+  "leg": {
+   "number": 1
+  },
+  "homeTeam": {
+   "internationalName": "Portugal"
+  },
+  "awayTeam": {
+   "internationalName": "Iceland"
+  },
+  "score": {
+   "regular": {
+    "home": 1,
+    "away": 2
+   },
+   "total": {
+    "home": 1,
+    "away": 2
+   }
+  }
+ },
+ {
+  "id": "2048863",
+  "status": "FINISHED",
+  "kickOffTime": {
+   "dateTime": "2026-12-01T17:00:00Z"
+  },
+  "round": {
+   "metaData": {
+    "name": "WEQ Play-offs Round 2"
+   }
+  },
+  "leg": {
+   "number": 1
+  },
+  "homeTeam": {
+   "internationalName": "Poland"
+  },
+  "awayTeam": {
+   "internationalName": "Republic of Ireland"
+  },
+  "score": {
+   "regular": {
+    "home": 1,
+    "away": 0
+   },
+   "total": {
+    "home": 1,
+    "away": 0
+   }
+  }
+ },
+ {
+  "id": "2048861",
+  "status": "FINISHED",
+  "kickOffTime": {
+   "dateTime": "2026-12-01T18:00:00Z"
+  },
+  "round": {
+   "metaData": {
+    "name": "WEQ Play-offs Round 2"
+   }
+  },
+  "leg": {
+   "number": 1
+  },
+  "homeTeam": {
+   "internationalName": "Switzerland"
+  },
+  "awayTeam": {
+   "internationalName": "Austria"
+  },
+  "score": {
+   "regular": {
+    "home": 2,
+    "away": 2
+   },
+   "total": {
+    "home": 2,
+    "away": 2
+   }
+  }
+ },
+ {
+  "id": "2048860",
+  "status": "FINISHED",
+  "kickOffTime": {
+   "dateTime": "2026-12-01T19:15:00Z"
+  },
+  "round": {
+   "metaData": {
+    "name": "WEQ Play-offs Round 2"
+   }
+  },
+  "leg": {
+   "number": 1
+  },
+  "homeTeam": {
+   "internationalName": "Wales"
+  },
+  "awayTeam": {
+   "internationalName": "Norway"
+  },
+  "score": {
+   "regular": {
+    "home": 0,
+    "away": 2
+   },
+   "total": {
+    "home": 0,
+    "away": 2
+   }
+  }
+ },
+ {
+  "id": "2048862",
+  "status": "FINISHED",
+  "kickOffTime": {
+   "dateTime": "2026-12-01T19:25:00Z"
+  },
+  "round": {
+   "metaData": {
+    "name": "WEQ Play-offs Round 2"
+   }
+  },
+  "leg": {
+   "number": 1
+  },
+  "homeTeam": {
+   "internationalName": "Scotland"
+  },
+  "awayTeam": {
+   "internationalName": "Sweden"
+  },
+  "score": {
+   "regular": {
+    "home": 1,
+    "away": 1
+   },
+   "total": {
+    "home": 1,
+    "away": 1
+   }
+  }
+ },
+ {
+  "id": "2048867",
+  "status": "FINISHED",
+  "kickOffTime": {
+   "dateTime": "2026-12-05T14:00:00Z"
+  },
+  "round": {
+   "metaData": {
+    "name": "WEQ Play-offs Round 2"
+   }
+  },
+  "leg": {
+   "number": 2
+  },
+  "homeTeam": {
+   "internationalName": "Iceland"
+  },
+  "awayTeam": {
+   "internationalName": "Portugal"
+  },
+  "score": {
+   "regular": {
+    "home": 1,
+    "away": 1
+   },
+   "total": {
+    "home": 1,
+    "away": 1
+   }
+  },
+  "winner": {
+   "aggregate": {
+    "reason": "WIN_ON_AGGREGATE",
+    "team": {
+     "internationalName": "Iceland"
+    }
+   }
+  }
+ },
+ {
+  "id": "2048870",
+  "status": "FINISHED",
+  "kickOffTime": {
+   "dateTime": "2026-12-05T15:00:00Z"
+  },
+  "round": {
+   "metaData": {
+    "name": "WEQ Play-offs Round 2"
+   }
+  },
+  "leg": {
+   "number": 2
+  },
+  "homeTeam": {
+   "internationalName": "Sweden"
+  },
+  "awayTeam": {
+   "internationalName": "Scotland"
+  },
+  "score": {
+   "regular": {
+    "home": 2,
+    "away": 0
+   },
+   "total": {
+    "home": 2,
+    "away": 0
+   }
+  },
+  "winner": {
+   "aggregate": {
+    "reason": "WIN_ON_AGGREGATE",
+    "team": {
+     "internationalName": "Sweden"
+    }
+   }
+  }
+ },
+ {
+  "id": "2048869",
+  "status": "FINISHED",
+  "kickOffTime": {
+   "dateTime": "2026-12-05T15:10:00Z"
+  },
+  "round": {
+   "metaData": {
+    "name": "WEQ Play-offs Round 2"
+   }
+  },
+  "leg": {
+   "number": 2
+  },
+  "homeTeam": {
+   "internationalName": "Austria"
+  },
+  "awayTeam": {
+   "internationalName": "Switzerland"
+  },
+  "score": {
+   "regular": {
+    "home": 2,
+    "away": 1
+   },
+   "total": {
+    "home": 2,
+    "away": 1
+   }
+  },
+  "winner": {
+   "aggregate": {
+    "reason": "WIN_ON_AGGREGATE",
+    "team": {
+     "internationalName": "Austria"
+    }
+   }
+  }
+ },
+ {
+  "id": "2048868",
+  "status": "FINISHED",
+  "kickOffTime": {
+   "dateTime": "2026-12-05T16:00:00Z"
+  },
+  "round": {
+   "metaData": {
+    "name": "WEQ Play-offs Round 2"
+   }
+  },
+  "leg": {
+   "number": 2
+  },
+  "homeTeam": {
+   "internationalName": "Norway"
+  },
+  "awayTeam": {
+   "internationalName": "Wales"
+  },
+  "score": {
+   "regular": {
+    "home": 1,
+    "away": 1
+   },
+   "total": {
+    "home": 1,
+    "away": 1
+   }
+  },
+  "winner": {
+   "aggregate": {
+    "reason": "WIN_ON_AGGREGATE",
+    "team": {
+     "internationalName": "Norway"
+    }
+   }
+  }
+ },
+ {
+  "id": "2048871",
+  "status": "FINISHED",
+  "kickOffTime": {
+   "dateTime": "2026-12-05T17:00:00Z"
+  },
+  "round": {
+   "metaData": {
+    "name": "WEQ Play-offs Round 2"
+   }
+  },
+  "leg": {
+   "number": 2
+  },
+  "homeTeam": {
+   "internationalName": "Republic of Ireland"
+  },
+  "awayTeam": {
+   "internationalName": "Poland"
+  },
+  "score": {
+   "regular": {
+    "home": 1,
+    "away": 0
+   },
+   "total": {
+    "home": 1,
+    "away": 0
+   },
+   "penalty": {
+    "home": 4,
+    "away": 3
+   }
+  },
+  "winner": {
+   "aggregate": {
+    "reason": "WIN_ON_PENALTIES",
+    "team": {
+     "internationalName": "Republic of Ireland"
+    }
+   }
+  }
+ },
+ {
+  "id": "2048872",
+  "status": "FINISHED",
+  "kickOffTime": {
+   "dateTime": "2026-12-05T17:00:00Z"
+  },
+  "round": {
+   "metaData": {
+    "name": "WEQ Play-offs Round 2"
+   }
+  },
+  "leg": {
+   "number": 2
+  },
+  "homeTeam": {
+   "internationalName": "Netherlands"
+  },
+  "awayTeam": {
+   "internationalName": "Slovenia"
+  },
+  "score": {
+   "regular": {
+    "home": 2,
+    "away": 0
+   },
+   "total": {
+    "home": 2,
+    "away": 0
+   }
+  },
+  "winner": {
+   "aggregate": {
+    "reason": "WIN_ON_AGGREGATE",
+    "team": {
+     "internationalName": "Netherlands"
+    }
+   }
+  }
+ },
+ {
+  "id": "2048865",
+  "status": "FINISHED",
+  "kickOffTime": {
+   "dateTime": "2026-12-05T17:30:00Z"
+  },
+  "round": {
+   "metaData": {
+    "name": "WEQ Play-offs Round 2"
+   }
+  },
+  "leg": {
+   "number": 2
+  },
+  "homeTeam": {
+   "internationalName": "England"
+  },
+  "awayTeam": {
+   "internationalName": "Ukraine"
+  },
+  "score": {
+   "regular": {
+    "home": 3,
+    "away": 0
+   },
+   "total": {
+    "home": 3,
+    "away": 0
+   }
+  },
+  "winner": {
+   "aggregate": {
+    "reason": "WIN_ON_AGGREGATE",
+    "team": {
+     "internationalName": "England"
+    }
+   }
+  }
+ },
+ {
+  "id": "2048866",
+  "status": "FINISHED",
+  "kickOffTime": {
+   "dateTime": "2026-12-05T20:15:00Z"
+  },
+  "round": {
+   "metaData": {
+    "name": "WEQ Play-offs Round 2"
+   }
+  },
+  "leg": {
+   "number": 2
+  },
+  "homeTeam": {
+   "internationalName": "Italy"
+  },
+  "awayTeam": {
+   "internationalName": "Finland"
+  },
+  "score": {
+   "regular": {
+    "home": 1,
+    "away": 0
+   },
+   "total": {
+    "home": 1,
+    "away": 0
+   }
+  },
+  "winner": {
+   "aggregate": {
+    "reason": "WIN_ON_AGGREGATE",
+    "team": {
+     "internationalName": "Italy"
+    }
+   }
+  }
+ }
+]
