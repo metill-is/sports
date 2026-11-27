@@ -22,7 +22,7 @@ judging, 2026-11-26).
 - **What:** modelling choices; any change that moves published forecasts or other reader-visible output, including a
   refit after a merged code fix; publishing anything new; reader-visible wording; irreversible actions (deleting data
   that exists nowhere else, force-pushes); money (resuming betting, stakes, paid services).
-- **Write `cockpit/cards/<id>.md`** with the options, their consequences and your recommendation, get everything else
+- **Write `cockpit/cards/<id>.json`** (schema 3, explain first: `cockpit/docs/card-schema.md`) with the options, their consequences and your recommendation, get everything else
   ready, and do not act. Keep the change off `main` so no scheduled run publishes it.
 - **Ask about these only** as a card (or one clear question if he is in the session). Never assume his answer.
 - **Silence is never consent.** An unanswered card waits; nothing goes ahead because a date passed.
