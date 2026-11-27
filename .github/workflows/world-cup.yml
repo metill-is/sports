@@ -221,7 +221,9 @@ jobs:
           echo "$UPSTREAM_SHA" > data/wc/martj42_pointer.txt
           # Stage every output by OWNED SUBTREE, not by enumerated leaf. These
           # four roots are world-cup-exclusive (the disjoint-path invariant in
-          # git-hygiene.md): no other workflow writes under them, and the
+          # git-hygiene.md): no other workflow writes under them, except
+          # wwc2027-playoff.yml, which owns data/wc/structure/wwc2027_playoff_round2.csv
+          # and data/publish/world_cup/kvenna/ (this job never writes those), and the
           # gitignored children (data/wc/{raw,fit}/, forecast.html, gisko/) are
           # skipped by `git add`. Staging whole subtrees means a future new WC
           # output is committed automatically -- a leaf-list `git add` silently

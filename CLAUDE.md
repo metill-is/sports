@@ -97,6 +97,11 @@ print(DBI::dbGetQuery(con, "SELECT sport, country, COUNT(*) AS n, SUM(pnl) AS pn
 Tournament-time manual overlay refresh (martj42 score lag), knockout
 conditioning and ingest date-correction: **`/wc-refresh` skill**.
 
+The 2027 Women's World Cup play-off (legs 1 and 5 Dec 2026) refreshes itself:
+`wwc2027-playoff.yml` reads UEFA's match feed and republishes
+`data/publish/world_cup/kvenna/` from the committed compact fit; the manual
+fallback is `scripts/nt/wwc2027_publish_playoff.R` (header has the steps).
+
 ## metill-platform integration
 
 `metill-is/metill-platform` polls this repo 7×/day (`pull-sports-data.yml`) and deploys fly.metill.is when the publish JSONs change semantically, so propagation takes up to a few hours; cadence and the force-refresh command are in [`docs/runbooks/metill-platform-desync.md`](docs/runbooks/metill-platform-desync.md).

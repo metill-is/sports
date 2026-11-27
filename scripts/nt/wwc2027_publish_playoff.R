@@ -13,6 +13,12 @@
 # draws by its likelihood, so use it only with a fit whose data predate the
 # first legs (or the match is counted twice).
 #
+# Since 27 November 2026 CI does this by itself after each leg
+# (.github/workflows/wwc2027-playoff.yml, scripts/nt/wwc2027_auto_playoff.R,
+# on the compact fit data/wc/wwc2027/playoff_fit.rds); this script is the
+# manual fallback, and the same code path (wwc2027_publish_from_saved()).
+# The compact fit works here too.
+#
 # Usage:
 #   Rscript scripts/nt/wwc2027_publish_playoff.R <fit.rds> [ties.csv] [data root]
 
@@ -27,13 +33,8 @@ ties_csv <- if (length(args) >= 2L) {
   here::here("data", "wc", "structure", "wwc2027_playoff_round2.csv")
 }
 root <- if (length(args) >= 3L) args[[3]] else here::here("data")
-ties <- utils::read.csv(ties_csv,
-  stringsAsFactors = FALSE, encoding = "UTF-8", na.strings = c("", "NA")
-)
-fc <- nt_two_leg_forecast(saved$fit, ties)
-out <- publish_wwc2027_playoff(fc,
-  n_direct = 7L, state_as_of = saved$cutoff, data_through = saved$last_match, root = root
-)
+ties <- wwc2027_read_ties(ties_csv)
+out <- wwc2027_publish_from_saved(saved, ties, root = root)
 pl <- jsonlite::read_json(file.path(out, "playoff.json"))
 cat(sprintf("Wrote %s (effective draws %.0f of %d)\n", out, pl$effective_draws, pl$n_draws))
 print(data.frame(
